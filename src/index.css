@@ -3,7 +3,8 @@
   /* Put your IE-only styles here. Works for IE 10 & IE 11*/
   /* for more see: https://github.com/philipwalton/flexbugs#flexbug-3 */
   html,
-  body {
+  body,
+  #root {
     height: 100%; /* fix IE flexbox height issues */
   }
 }
