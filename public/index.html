@@ -27,7 +27,18 @@
     <title>React App</title>
     <!-- add base style before JS is loaded -->
     <style>
+      /* add fixes for Internet Explorer */
+      @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+        /* Put your IE-only styles here. Works for IE 10 & IE 11*/
+        /* for more see: https://github.com/philipwalton/flexbugs#flexbug-3 */
+        html,
+        body,
+        #root {
+          height: 100%; /* fix IE flexbox height issues */
+        }
+      }
       html, body {
+        margin: 0;
         font-family: sans-serif;
         background-color: #282c34;
         color: #eeeeee;
@@ -39,8 +50,10 @@
     <div id="root">
       <!-- add style only for loading page -->
       <style>
-        .full-flex-container {
+        #root {
           min-height: 100vh;
+        }
+        #root, .full-flex-container {
           display: flex;
           flex-direction: column;
           align-items: center;
