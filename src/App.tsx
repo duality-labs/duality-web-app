@@ -1,4 +1,4 @@
-import logo from './logo.svg';
+import logo from './assets/logo/logo.svg';
 import './App.scss';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Swap from './pages/Swap';
