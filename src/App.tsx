@@ -1,6 +1,6 @@
 import logo from './logo.svg';
 import './App.scss';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Swap from './pages/Swap';
 import Pool from './pages/Pool';
 
@@ -8,8 +8,14 @@ function App() {
   return (
     <BrowserRouter>
       <header>
-        <img src={logo} className="logo" alt="logo" />
-        <p>Duality</p>
+        <nav>
+          <Link to="/">
+            <img src={logo} className="logo" alt="logo" />
+            <h1>Duality</h1>
+          </Link>
+          <Link to="/swap">Swap</Link>
+          <Link to="/pool">Pool</Link>
+        </nav>
       </header>
       <main>
         <Routes>
