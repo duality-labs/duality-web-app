@@ -6,22 +6,20 @@ import Pool from './pages/Pool';
 
 function App() {
   return (
-    <div className="App">
+    <BrowserRouter>
       <header>
         <img src={logo} className="logo" alt="logo" />
         <p>Duality</p>
       </header>
       <main>
-        <BrowserRouter>
-          <Routes>
-            <Route index element={<div>Home</div>} />
-            <Route path="swap" element={<Swap />} />
-            <Route path="pool" element={<Pool />} />
-            <Route path="*" element={<div>Not found</div>} />
-          </Routes>
-        </BrowserRouter>
+        <Routes>
+          <Route index element={<div>Home</div>} />
+          <Route path="swap" element={<Swap />} />
+          <Route path="pool" element={<Pool />} />
+          <Route path="*" element={<div>Not found</div>} />
+        </Routes>
       </main>
-    </div>
+    </BrowserRouter>
   );
 }
 
