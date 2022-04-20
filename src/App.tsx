@@ -7,7 +7,7 @@ import Pool from './pages/Pool';
 function App() {
   return (
     <div className="App">
-      <header className="App-splash-screen">
+      <header>
         <img src={logo} className="logo" alt="logo" />
         <p>Duality</p>
       </header>
