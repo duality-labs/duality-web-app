@@ -1,22 +1,15 @@
-import logo from '../../assets/logo/logo.svg';
-import './App.scss';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+import Header from '../../components/Header';
 import Swap from '../Swap';
 import Pool from '../Pool';
+
+import './App.scss';
 
 function App() {
   return (
     <BrowserRouter>
-      <header>
-        <nav>
-          <Link to="/">
-            <img src={logo} className="logo" alt="logo" />
-            <h1>Duality</h1>
-          </Link>
-          <Link to="/swap">Swap</Link>
-          <Link to="/pool">Pool</Link>
-        </nav>
-      </header>
+      <Header />
       <main>
         <Routes>
           <Route index element={<div>Home</div>} />
