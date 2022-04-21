@@ -6,12 +6,12 @@ const tokens = ['ETH', 'USDC'];
 
 export function useTokens() {
   const [data, setData] = useState(undefined as string[]|undefined);
-  const [verifying, setVerifying] = useState(true);
+  const [validating, setValidating] = useState(true);
 
   // return mock data after requestTime has passed
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setVerifying(false);
+      setValidating(false);
       setData(tokens);
     }, requestTime);
     return () => {
@@ -19,5 +19,5 @@ export function useTokens() {
     }
   }, []);
 
-  return { data, isVerifying: verifying };
+  return { data, isValidating: validating };
 }
