@@ -6,7 +6,7 @@ import './Header.scss';
 
 export default function Header() {
   return (
-    <header>
+    <header className="flex flex-row content-center justify-start">
       <nav>
         <Link to="/">
           <img src={logo} className="logo" alt="logo" />
