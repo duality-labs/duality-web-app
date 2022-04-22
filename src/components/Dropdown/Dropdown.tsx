@@ -4,9 +4,11 @@ import { useFloating } from '@floating-ui/react-dom';
 export default function Dropdown({
   overlay,
   children,
+  closeIfClickedOutside = true,
 }: {
   overlay: React.ReactNode;
   children: React.ReactElement;
+  closeIfClickedOutside?: boolean;
 }) {
   const { x, y, reference, floating, strategy } =
     useFloating<HTMLButtonElement>({
@@ -25,6 +27,9 @@ export default function Dropdown({
   return (
     <>
       {cloneElement(children, { ref: reference, onClick: open })}
+      {closeIfClickedOutside && visible && (
+        <div className="fixed top-0 bottom-0 left-0 right-0" onClick={close} />
+      )}
       <div
         ref={floating}
         className="dropdown w-60 max-w-full border border-slate-200 rounded-xl"
