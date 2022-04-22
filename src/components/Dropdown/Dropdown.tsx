@@ -2,11 +2,11 @@ import React, { cloneElement, useCallback, useState } from 'react';
 import { offset, useFloating } from '@floating-ui/react-dom';
 
 export default function Dropdown({
-  overlay,
+  renderOverlay,
   children,
   closeIfClickedOutside = true,
 }: {
-  overlay: React.ReactNode;
+  renderOverlay: ({ close }: { close: () => void }) => React.ReactNode;
   children: React.ReactElement;
   closeIfClickedOutside?: boolean;
 }) {
@@ -41,7 +41,7 @@ export default function Dropdown({
           left: visible ? x ?? '' : -9999,
         }}
       >
-        {overlay}
+        {renderOverlay({ close })}
         <button
           className="absolute top-0 right-0 py-2 px-3 rounded-xl"
           onClick={close}
