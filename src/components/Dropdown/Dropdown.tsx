@@ -21,13 +21,13 @@ export default function Dropdown({
 
   // update position when screen size changes
   useEffect(() => {
-    if (!refs.reference.current || !refs.floating.current) {
+    if (!visible || !refs.reference.current || !refs.floating.current) {
       return;
     }
 
     // Only call this when the floating element is rendered
     return autoUpdate(refs.reference.current, refs.floating.current, update);
-  }, [refs.reference, refs.floating, update]);
+  }, [visible, refs.reference, refs.floating, update]);
 
   if (Array.isArray(children)) {
     throw new Error('Dropdown must have only one child component');
