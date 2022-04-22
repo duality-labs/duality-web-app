@@ -1,5 +1,5 @@
 import React, { cloneElement, useCallback, useState } from 'react';
-import { useFloating } from '@floating-ui/react-dom';
+import { offset, useFloating } from '@floating-ui/react-dom';
 
 export default function Dropdown({
   overlay,
@@ -13,6 +13,7 @@ export default function Dropdown({
   const { x, y, reference, floating, strategy } =
     useFloating<HTMLButtonElement>({
       placement: 'bottom',
+      middleware: [offset(4)],
     });
   const [visible, setVisbile] = useState(false);
   const open = useCallback(() => setVisbile(true), [setVisbile]);
