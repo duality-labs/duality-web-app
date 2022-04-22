@@ -1,5 +1,5 @@
-import React, { cloneElement, useCallback, useState } from 'react';
-import { offset, useFloating } from '@floating-ui/react-dom';
+import React, { cloneElement, useCallback, useState, useEffect } from 'react';
+import { offset, useFloating, autoUpdate } from '@floating-ui/react-dom';
 
 export default function Dropdown({
   renderOverlay,
@@ -10,7 +10,7 @@ export default function Dropdown({
   children: React.ReactElement;
   closeIfClickedOutside?: boolean;
 }) {
-  const { x, y, reference, floating, strategy } =
+  const { x, y, reference, floating, strategy, update, refs } =
     useFloating<HTMLButtonElement>({
       placement: 'bottom',
       middleware: [offset(4)],
@@ -18,6 +18,16 @@ export default function Dropdown({
   const [visible, setVisbile] = useState(false);
   const open = useCallback(() => setVisbile(true), [setVisbile]);
   const close = useCallback(() => setVisbile(false), [setVisbile]);
+
+  // update position when screen size changes
+  useEffect(() => {
+    if (!refs.reference.current || !refs.floating.current) {
+      return;
+    }
+
+    // Only call this when the floating element is rendered
+    return autoUpdate(refs.reference.current, refs.floating.current, update);
+  }, [refs.reference, refs.floating, update]);
 
   if (Array.isArray(children)) {
     throw new Error('Dropdown must have only one child component');
