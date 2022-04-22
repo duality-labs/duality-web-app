@@ -49,7 +49,7 @@
       "prettier --write"
     ],
     "src/**/*.{js,jsx,ts,tsx}": [
-      "eslint"
+      "eslint --max-warnings 0"
     ]
   },
   "browserslist": {
