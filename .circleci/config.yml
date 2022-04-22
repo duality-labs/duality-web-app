@@ -15,6 +15,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: "Install dependencies"
+          command: "npm ci"
+      - run:
           name: "Run ESLint"
           command: "npm run lint -- --max-warnings=0"
       - run:
