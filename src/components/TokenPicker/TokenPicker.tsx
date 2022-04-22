@@ -1,10 +1,9 @@
 import { useTokens } from './mockHooks';
 
 export default function TokenPicker() {
-  const { data: tokens = [], isValidating } = useTokens();
+  const { data: tokens = [] } = useTokens();
   return (
     <div className="token-picker">
-      {isValidating && <div>Loading...</div>}
       {tokens.length > 0 && (
         <ul>
           {tokens.map((token) => {
