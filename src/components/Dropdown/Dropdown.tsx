@@ -37,7 +37,11 @@ export default function Dropdown({
   // add dropdown content
   return (
     <>
-      {cloneElement(children, { ref: reference, onClick: open })}
+      {cloneElement(children, {
+        ref: reference,
+        onClick: open,
+        onFocus: update,
+      })}
       {closeIfClickedOutside && visible && (
         <div className="fixed top-0 bottom-0 left-0 right-0" onClick={close} />
       )}
