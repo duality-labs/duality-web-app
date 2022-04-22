@@ -1,6 +1,12 @@
 import { useTokens } from './mockHooks';
 
-export default function TokenPicker() {
+export default function TokenPicker({
+  value,
+  onChange,
+}: {
+  value: string | undefined;
+  onChange: (eventOrValue: string) => void;
+}) {
   const { data: tokens = [] } = useTokens();
   return (
     <div className="token-picker w-60 max-w-full">
@@ -9,7 +15,10 @@ export default function TokenPicker() {
         {tokens?.map((token) => (
           <li
             key={token}
-            className="py-1 px-2 hover:bg-slate-600 cursor-pointer"
+            className={`py-1 px-2 hover:bg-slate-600 cursor-pointer${
+              value === token ? ' bg-slate-700' : ''
+            }`}
+            onClick={() => onChange(token)}
           >
             {token}
           </li>
