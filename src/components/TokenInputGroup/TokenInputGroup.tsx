@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import TokenPicker from '../TokenPicker';
+
+import './TokenInputGroup.scss';
 
 interface InputGroupProps {
   changeValue: (value: string, token: string) => void;
@@ -20,8 +22,16 @@ export default function TokenInputGroup({
   const [selectedToken, setToken] = useState(token || '');
   const [selectedValue, setValue] = useState(value || '');
 
+  useEffect(() => {
+    setValue(value || '');
+  }, [value]);
+
+  useEffect(() => {
+    setToken(token || '');
+  }, [token]);
+
   return (
-    <div className="input-group">
+    <div className="token-input-group">
       <input
         type="text"
         className="form-control"

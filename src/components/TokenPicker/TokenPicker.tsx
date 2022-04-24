@@ -26,9 +26,13 @@ export default function TokenPicker({
               {tokenList?.map((token) => (
                 <li
                   key={token}
-                  className={`py-1 px-2 hover:bg-slate-600 cursor-pointer${
+                  className={`py-1 px-2  cursor-pointer${
                     value === token ? ' bg-slate-700' : ''
-                  }${exclusion === token ? 'disabled:opacity-75' : ''}`}
+                  }${
+                    exclusion === token
+                      ? ' disabled opacity-25'
+                      : ' hover:bg-slate-600'
+                  }`}
                   onClick={() => {
                     onChange(token);
                     close();
@@ -52,8 +56,8 @@ export default function TokenPicker({
         [value, onChange, tokenList, exclusion]
       )}
     >
-      <button className="py-1 px-3 border border-slate-200 rounded-lg">
-        {value ?? 'Choose Token'}
+      <button className="py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle">
+        {value || 'Choose Token'}
       </button>
     </Dropdown>
   );

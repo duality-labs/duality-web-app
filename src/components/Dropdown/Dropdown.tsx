@@ -71,7 +71,7 @@ export default function Dropdown({
       })}
       <div
         ref={floating}
-        className="dropdown w-60 max-w-full border border-slate-200 rounded-xl"
+        className="dropdown w-60 max-w-full border border-slate-200 rounded-xl bg-white z-10 overflow-hidden"
         style={{
           position: strategy,
           top: y ?? '',

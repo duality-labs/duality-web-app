@@ -8,8 +8,7 @@ export default function Swap() {
   const [tokens, setTokens] = useState([tokenList[0], null]);
   const [values, setValues] = useState(['0', null]);
   return (
-    <div className="swap-page">
-      {isValidating ? 'Loading' : 'Loaded'}
+    <div className="swap">
       <TokenInputGroup
         changeValue={(value, token) => changeGroupValue(value, token, 0)}
         tokenList={tokenList}
