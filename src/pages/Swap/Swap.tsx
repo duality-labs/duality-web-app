@@ -51,12 +51,15 @@ export default function Swap() {
         value={values[1]}
         exclusion={tokens[0]}
       ></TokenInputGroup>
+      <button
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
+        onClick={() => swapTokens()}
+      >
+        Swap
+      </button>
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
         <i className="text-transparent">.</i>
       )}
-      <button className="btn" onClick={() => swapTokens()}>
-        Swap
-      </button>
     </div>
   );
 
