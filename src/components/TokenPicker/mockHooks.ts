@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 
 const seconds = 1000;
-const pollTime = 5 * seconds;
 const requestTime = 2 * seconds;
-const tokens = ['ETH', 'USDC'];
+const tokens = ['ETH', 'USDC', 'BAT', 'DAI'];
 
 function usePoll<T>(mockData: T): {
   data: T | undefined;
@@ -23,10 +22,6 @@ function usePoll<T>(mockData: T): {
     };
     // start poll
     fetch();
-    const interval = setInterval(fetch, pollTime);
-    return () => {
-      clearInterval(interval);
-    };
   }, [mockData]);
 
   return { data, isValidating: validating };
