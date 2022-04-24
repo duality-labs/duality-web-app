@@ -1,15 +1,19 @@
 import React, { cloneElement, useCallback, useState, useEffect } from 'react';
 import { offset, useFloating, autoUpdate } from '@floating-ui/react-dom';
 
+interface IDropdownProps {
+  renderOverlay: ({ close }: { close: () => void }) => React.ReactNode;
+  closeIfClickedOutside?: boolean;
+  children: React.ReactElement;
+  onStateChange?: (isOpen: boolean) => void;
+}
+
 export default function Dropdown({
   renderOverlay,
   children,
   closeIfClickedOutside = true,
-}: {
-  renderOverlay: ({ close }: { close: () => void }) => React.ReactNode;
-  children: React.ReactElement;
-  closeIfClickedOutside?: boolean;
-}) {
+  onStateChange,
+}: IDropdownProps) {
   const { x, y, reference, floating, strategy, update, refs } =
     useFloating<HTMLButtonElement>({
       placement: 'bottom',
@@ -18,6 +22,10 @@ export default function Dropdown({
   const [visible, setVisbile] = useState(false);
   const open = useCallback(() => setVisbile(true), [setVisbile]);
   const close = useCallback(() => setVisbile(false), [setVisbile]);
+
+  useEffect(() => {
+    if (onStateChange) onStateChange(visible);
+  }, [visible, onStateChange]);
 
   // update position when screen size changes
   useEffect(() => {
@@ -71,7 +79,7 @@ export default function Dropdown({
       })}
       <div
         ref={floating}
-        className="dropdown w-60 max-w-full border border-slate-200 rounded-xl"
+        className="dropdown w-60 max-w-full border border-slate-200 rounded-xl bg-white z-10 overflow-hidden"
         style={{
           position: strategy,
           top: y ?? '',
