@@ -1,12 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import { useTokens } from '../../components/TokenPicker/mockHooks';
+import {
+  useTokens,
+  useExchangeRate,
+  useDotCounter,
+} from '../../components/TokenPicker/mockHooks';
+
+import './Swap.scss';
 
 export default function Swap() {
-  const { data: tokenList = [], isValidating } = useTokens();
+  const [lastUpdatedPrice, setLastUpdatedPrice] = useState('0');
+  const [lastUpdatedIndex, setLastUpdatedIndex] = useState(0);
+  const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
+    lastUpdatedPrice,
+    lastUpdatedIndex
+  );
+  const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
   const [tokens, setTokens] = useState([tokenList[0], null]);
   const [values, setValues] = useState(['0', null]);
+  const dotCount = useDotCounter(0.25e3);
+
+  useEffect(() => {
+    const otherIndex = +!rateData?.index;
+    setValues(
+      values.map((item, i) =>
+        i === otherIndex ? rateData?.price || '0' : item
+      )
+    );
+  }, [rateData, values]);
+
   return (
     <div className="swap">
       <TokenInputGroup
@@ -23,11 +46,16 @@ export default function Swap() {
         value={values[1]}
         exclusion={tokens[0]}
       ></TokenInputGroup>
+      {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
+        <i className="text-transparent">.</i>
+      )}
     </div>
   );
 
   function changeGroupValue(value: string, token: string, index: number) {
     setTokens(tokens.map((item, i) => (i === index ? token : item)));
     setValues(values.map((item, i) => (i === index ? value : item)));
+    setLastUpdatedIndex(index);
+    setLastUpdatedPrice(value);
   }
 }
