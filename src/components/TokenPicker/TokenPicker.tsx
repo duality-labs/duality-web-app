@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import Dropdown from '../Dropdown';
 
 interface TokenPickerProps {
@@ -14,6 +14,8 @@ export default function TokenPicker({
   exclusion,
   tokenList,
 }: TokenPickerProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <Dropdown
       renderOverlay={useCallback(
@@ -55,8 +57,14 @@ export default function TokenPicker({
         ),
         [value, onChange, tokenList, exclusion]
       )}
+      onStateChange={(isOpen) => setIsOpen(isOpen)}
     >
-      <button className="py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle">
+      <button
+        className={
+          'py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle' +
+          (isOpen ? ' open' : '')
+        }
+      >
         {value || 'Choose Token'}
       </button>
     </Dropdown>
