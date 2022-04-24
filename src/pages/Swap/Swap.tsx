@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
@@ -30,6 +30,11 @@ export default function Swap() {
     );
   }, [rateData, values]);
 
+  const swapTokens = useCallback(() => {
+    setTokens(tokens.reverse());
+    setValues(values.reverse());
+  }, [tokens, values]);
+
   return (
     <div className="swap">
       <TokenInputGroup
@@ -49,6 +54,9 @@ export default function Swap() {
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
         <i className="text-transparent">.</i>
       )}
+      <button className="btn" onClick={() => swapTokens()}>
+        Swap
+      </button>
     </div>
   );
 
