@@ -17,10 +17,18 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Update nvmrc
+    - name: Set Node version
       # use basic regex to get Node engine version from package.json
       # will fail if not correctly specified
-      run: node -p "require('./package.json').engines.node.match(/\d.*/)[0]" > .nvmrc
+      run: |
+        NODE_VERSION=$(node -p "require('./package.json').engines.node.match(/\d.*/)[0]")
+        echo "::set-output name=NODE_VERSION::$NODE_VERSION"
+      id: get-node-version
+
+    - name: Use Node.js ${{ steps.get-node-version.outputs.NODE_VERSION }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ steps.get-node-version.outputs.NODE_VERSION }}
 
     - name: Deploy preview to Netlify
       id: netlify_deploy
