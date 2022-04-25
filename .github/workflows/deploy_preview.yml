@@ -12,10 +12,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout branch head (not merged head)
+    - name: Checkout merged branch head (default behaviour)
       uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Checkout unmerged branch head
+      run: git checkout ${{ github.event.pull_request.head.sha }}
 
     - name: Update nvmrc
       # use basic regex to get Node engine version from package.json
