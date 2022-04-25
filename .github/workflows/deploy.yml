@@ -18,13 +18,14 @@ jobs:
       # will fail if not correctly specified
       run: node -p "require('./package.json').engines.node.match(/\d.*/)[0]" > .nvmrc
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+    - name: Deploy preview to Netlify
+      id: netlify_deploy
+      uses: jsmrcaga/action-netlify-deploy@v1.7.2
       with:
-        node-version-file: '.nvmrc'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Build
-      run: npm run build
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        NETLIFY_DEPLOY_MESSAGE: "Prod deploy v${{ github.ref }}"
+        NETLIFY_DEPLOY_TO_PROD: true
+        build_directory: build
+        build_command: npm run build
+        install_command: npm ci
