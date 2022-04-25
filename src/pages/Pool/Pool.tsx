@@ -30,6 +30,7 @@ export default function Pool() {
 
   return (
     <div className="pool-page">
+      <h2 className="my-3 pt-1">Select Pair</h2>
       <TokenPicker
         value={tokenA}
         onChange={setTokenA}
@@ -48,6 +49,7 @@ export default function Pool() {
       <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
         <strong>0.3% fee tier</strong>
       </div>
+      <h2 className="my-3 pt-1">Deposit Amounts</h2>
       <TokenInputGroup
         readOnly
         tokenList={tokenList}
