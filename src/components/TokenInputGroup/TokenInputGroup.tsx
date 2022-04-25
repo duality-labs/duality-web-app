@@ -9,6 +9,7 @@ import { cleanInput } from './utils';
 import './TokenInputGroup.scss';
 
 interface InputGroupProps {
+  readOnly?: boolean;
   onTokenChanged?: (token?: Token) => void;
   onValueChanged?: (value: string) => void;
   tokenList: Array<Token>;
@@ -19,6 +20,7 @@ interface InputGroupProps {
 }
 
 export default function TokenInputGroup({
+  readOnly = false,
   onTokenChanged,
   onValueChanged,
   tokenList,
@@ -52,12 +54,21 @@ export default function TokenInputGroup({
         onInput={onInput}
         onChange={onInputChange}
       />
-      <TokenPicker
-        value={token}
-        onChange={onPickerChange}
-        tokenList={tokenList}
-        exclusion={exclusion}
-      />
+      {readOnly ? (
+        <button
+          type="button"
+          className="py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle"
+        >
+          {token?.name || 'No Token'}
+        </button>
+      ) : (
+        <TokenPicker
+          value={token}
+          onChange={onPickerChange}
+          tokenList={tokenList}
+          exclusion={exclusion}
+        />
+      )}
     </div>
   );
 }
