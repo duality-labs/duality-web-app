@@ -1,12 +1,12 @@
 name: Deploy Preview
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [ main ]
     types: [ opened, reopened, edited, synchronize, labeled ]
 
 jobs:
-  build:
+  build_preview:
     # require 'deploy preview' label
     if: contains(github.event.pull_request.labels.*.name, 'deploy preview') 
     runs-on: ubuntu-latest

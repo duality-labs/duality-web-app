@@ -4,10 +4,14 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    types:
+      - closed
+
 
 jobs:
   build:
+    # build on merged PRs
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
