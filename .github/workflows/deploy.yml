@@ -1,0 +1,20 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: node:16.14.2-slim
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build
+      run: npm run build
