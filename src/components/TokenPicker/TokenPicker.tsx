@@ -37,12 +37,14 @@ export default function TokenPicker({
                       : ' hover:bg-slate-600'
                   }`}
                   onClick={() => {
-                    onChange(token);
-                    close();
+                    if (token !== exclusion) {
+                      onChange(token);
+                      close();
+                    }
                   }}
                   onKeyPress={(e) => {
                     // accept space key press as input (like buttons)
-                    if (e.key === ' ') {
+                    if (e.key === ' ' && token !== exclusion) {
                       onChange(token);
                       close();
                     }
