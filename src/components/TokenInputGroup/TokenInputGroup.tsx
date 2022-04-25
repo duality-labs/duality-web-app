@@ -5,6 +5,7 @@ import TokenPicker from '../TokenPicker';
 import './TokenInputGroup.scss';
 
 interface InputGroupProps {
+  readOnly?: boolean;
   changeValue?: (value: string, token: string) => void;
   exclusion: string | null | undefined;
   token: string | null | undefined;
@@ -13,6 +14,7 @@ interface InputGroupProps {
 }
 
 export default function TokenInputGroup({
+  readOnly = false,
   tokenList,
   changeValue,
   value,
@@ -38,12 +40,21 @@ export default function TokenInputGroup({
         value={selectedValue}
         onChange={(e) => onInputChange(e.target.value)}
       />
-      <TokenPicker
-        value={selectedToken}
-        onChange={changeSelected}
-        tokenList={tokenList}
-        exclusion={exclusion}
-      />
+      {readOnly ? (
+        <button
+          type="button"
+          className="py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle"
+        >
+          {selectedToken || 'No Token'}
+        </button>
+      ) : (
+        <TokenPicker
+          value={selectedToken}
+          onChange={changeSelected}
+          tokenList={tokenList}
+          exclusion={exclusion}
+        />
+      )}
     </div>
   );
 
