@@ -31,7 +31,14 @@ export default function TokenPicker({
                     onChange(token);
                     close();
                   }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      onChange(token);
+                      close();
+                    }
+                  }}
                   role="menuitem"
+                  tabIndex={0}
                 >
                   {token}
                 </li>
