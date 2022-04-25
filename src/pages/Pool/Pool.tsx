@@ -104,6 +104,9 @@ export default function Pool() {
         value={`${values[1]}`}
         exclusion={tokenA}
       ></TokenInputGroup>
+      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block">
+        Add Liquidity
+      </button>
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
         <i className="text-transparent">.</i>
       )}
