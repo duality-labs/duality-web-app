@@ -28,6 +28,16 @@ export default function Pool() {
     }
   }, [tokenA, tokenList]);
 
+  const [rangeMin, setRangeMin] = useState('3');
+  const [rangeMax, setRangeMax] = useState('3');
+  const [values, setValues] = useState([1, 1]);
+  useEffect(() => {
+    // get pair deposit amounts
+    setValues([
+      parseInt(rangeMin) * Math.random(),
+      parseInt(rangeMax) * Math.random(),
+    ]);
+  }, [rangeMin, rangeMax]);
   return (
     <div className="pool-page">
       <h2 className="my-3 pt-1">Select Pair</h2>
@@ -49,19 +59,36 @@ export default function Pool() {
       <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
         <strong>0.3% fee tier</strong>
       </div>
+      <input
+        type="range"
+        min="0"
+        max="10"
+        value={rangeMin}
+        onChange={(e) => setRangeMin(e.target.value)}
+        step="1"
+        style={{ transform: 'rotate(180deg)' }}
+      ></input>
+      <input
+        type="range"
+        min="0"
+        max="10"
+        value={rangeMax}
+        onChange={(e) => setRangeMax(e.target.value)}
+        step="1"
+      ></input>
       <h2 className="my-3 pt-1">Deposit Amounts</h2>
       <TokenInputGroup
         readOnly
         tokenList={tokenList}
         token={tokenA}
-        value="0"
+        value={`${values[0]}`}
         exclusion={tokenB}
       ></TokenInputGroup>
       <TokenInputGroup
         readOnly
         tokenList={tokenList}
         token={tokenB}
-        value="0"
+        value={`${values[1]}`}
         exclusion={tokenA}
       ></TokenInputGroup>
       <button
