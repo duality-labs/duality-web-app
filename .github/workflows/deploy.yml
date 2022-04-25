@@ -24,6 +24,7 @@ jobs:
 
     - name: Deploy preview to Netlify
       id: netlify_deploy
+      # see: https://github.com/marketplace/actions/netlify-deploy
       uses: jsmrcaga/action-netlify-deploy@v1.7.2
       with:
         NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
