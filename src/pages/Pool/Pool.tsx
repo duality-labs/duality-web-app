@@ -45,7 +45,9 @@ export default function Pool() {
         tokenList={tokenList}
         exclusion={tokenA}
       />
-
+      <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
+        <strong>0.3% fee tier</strong>
+      </div>
       <TokenInputGroup
         readOnly
         tokenList={tokenList}
