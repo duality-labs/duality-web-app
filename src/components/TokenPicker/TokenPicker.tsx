@@ -31,6 +31,7 @@ export default function TokenPicker({
                     onChange(token);
                     close();
                   }}
+                  role="menuitem"
                 >
                   {token}
                 </li>
