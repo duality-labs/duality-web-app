@@ -17,7 +17,10 @@ export default function Pool() {
     setTokenA(tokenB);
     setTokenB(tokenA);
   }, [tokenA, tokenB]);
-  const { isValidating: isValidatingRate } = useExchangeRate(tokenA || '', 0);
+  const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
+    '100',
+    0
+  );
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
   const dotCount = useDotCounter(0.25e3);
 
@@ -58,6 +61,16 @@ export default function Pool() {
       />
       <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
         <strong>0.3% fee tier</strong>
+      </div>
+      <h2 className="my-3 pt-1">Set price range</h2>
+      <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
+        {tokenA && tokenB ? (
+          <span>
+            Current Price: {rateData?.price} {tokenA} per {tokenB}
+          </span>
+        ) : (
+          <span>Current Price:</span>
+        )}
       </div>
       <input
         type="range"
