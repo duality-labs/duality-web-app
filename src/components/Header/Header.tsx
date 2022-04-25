@@ -1,8 +1,16 @@
 import { Link } from 'react-router-dom';
 
+import { useWeb3 } from '../../lib/web3/useWeb3';
+
 import logo from '../../assets/logo/logo.svg';
 
 export default function Header() {
+  const { connectWallet, address } = useWeb3();
+
+  const onConnectClick = () => {
+    connectWallet && connectWallet();
+  };
+
   return (
     <header className="flex flex-row items-center justify-start w-full text-xl">
       <nav className="w-full p-4 inline-flex items-end shadow shadow-white/10 text-slate-50">
@@ -16,6 +24,13 @@ export default function Header() {
         <Link className="ml-3" to="/pool">
           Pool
         </Link>
+        {address ? (
+          <span className="ml-3">{address}</span>
+        ) : (
+          <button className="ml-3" onClick={onConnectClick}>
+            Connect Wallet
+          </button>
+        )}
       </nav>
     </header>
   );
