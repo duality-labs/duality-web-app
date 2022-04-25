@@ -1,0 +1,5 @@
+## Redirects unknown paths in Netlify previews back to serving index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
