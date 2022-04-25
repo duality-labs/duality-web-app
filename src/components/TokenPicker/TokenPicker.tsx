@@ -15,9 +15,9 @@ export default function TokenPicker({
     <Dropdown
       renderOverlay={useCallback(
         ({ close }) => (
-          <div className="token-picker">
+          <div className="token-picker" aria-label="Token selection">
             <div className="p-2">
-              <label className="mr-2">Select a token</label>
+              <div className="mr-2">Select a token</div>
               {isValidating && <span className="opacity-25">loading...</span>}
             </div>
             <ul className="token-picker-list border-t border-slate-500 py-2">
