@@ -5,7 +5,7 @@ import TokenPicker from '../TokenPicker';
 import './TokenInputGroup.scss';
 
 interface InputGroupProps {
-  changeValue: (value: string, token: string) => void;
+  changeValue?: (value: string, token: string) => void;
   exclusion: string | null | undefined;
   token: string | null | undefined;
   value: string | null | undefined;
@@ -49,12 +49,12 @@ export default function TokenInputGroup({
 
   function onInputChange(newValue: string) {
     setValue(newValue);
-    changeValue(newValue, selectedToken);
+    changeValue?.(newValue, selectedToken);
   }
 
   function changeSelected(newToken: string) {
     if (newToken === exclusion) return;
     setToken(newToken);
-    changeValue(selectedValue, newToken);
+    changeValue?.(selectedValue, newToken);
   }
 }
