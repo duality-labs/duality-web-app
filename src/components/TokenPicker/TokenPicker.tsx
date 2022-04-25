@@ -32,7 +32,8 @@ export default function TokenPicker({
                     close();
                   }}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    // accept space key press as input (like buttons)
+                    if (e.key === ' ') {
                       onChange(token);
                       close();
                     }

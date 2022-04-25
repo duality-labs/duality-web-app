@@ -47,11 +47,15 @@ export default function Dropdown({
     const addHandler = closeIfClickedOutside && visible;
     if (addHandler) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keyup', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
     }
     return () => {
       // Unbind the event listener on clean up
       if (addHandler) {
         document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keyup', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
       }
     };
   }, [closeIfClickedOutside, refs.floating, visible, close]);
