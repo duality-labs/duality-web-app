@@ -8,10 +8,20 @@ on:
 
 jobs:
   build:
-    runs-on: node:16.14.2-slim
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Update nvmrc
+      # use basic regex to get Node engine version from package.json
+      # will fail if not correctly specified
+      run: node -p "require('./package.json').engines.node.match(/\d.*/)[0]" > .nvmrc
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version-file: '.nvmrc'
 
     - name: Install dependencies
       run: npm ci
