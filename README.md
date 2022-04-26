@@ -15,7 +15,7 @@ The code for the Duality front-end web app.
    2. Enter contract addresses as output from the deploy command
    3. You can run as many instances of this command as you'd like to simulate multiple traders
 8. `$ cd path/to/duality-web-app`
-9. Copy `.env.template` to `.env` and change the variables to match the output contract addresses
+9. Copy `.env.template` to `.env.local` and change the variables to match the output contract addresses
    1. The chain ID for your local hardhat testnet is `31337`.
 10. `$ npm start` 
 11. Dev site is available at `http://localhost:3000`
