@@ -1,0 +1,325 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract IDEX",
+        "name": "_duality",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address[2]",
+            "name": "tokens",
+            "type": "address[2]"
+          },
+          {
+            "internalType": "uint120",
+            "name": "price0",
+            "type": "uint120"
+          },
+          {
+            "internalType": "uint120",
+            "name": "price1",
+            "type": "uint120"
+          },
+          {
+            "internalType": "uint16",
+            "name": "fee",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint256",
+            "name": "sharesOut",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "receiver",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "useReserves",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct IDEX.ExitInput",
+        "name": "_input",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "_receiver",
+        "type": "address"
+      }
+    ],
+    "name": "callLimitOrder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address[2]",
+            "name": "tokens",
+            "type": "address[2]"
+          },
+          {
+            "internalType": "uint120",
+            "name": "price0",
+            "type": "uint120"
+          },
+          {
+            "internalType": "uint120",
+            "name": "price1",
+            "type": "uint120"
+          },
+          {
+            "internalType": "uint16",
+            "name": "fee",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint128",
+            "name": "amount0",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "amount1",
+            "type": "uint128"
+          },
+          {
+            "internalType": "address",
+            "name": "receiver",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "useReserves",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "contract IERC20Permit",
+                "name": "tokenContract",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expiration",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "r",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "s",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "v",
+                "type": "uint8"
+              }
+            ],
+            "internalType": "struct IDEX.PermitData[]",
+            "name": "permitData",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct IDEX.JoinInput",
+        "name": "_input",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "strike1",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "closed",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct LimitOrder.Order",
+        "name": "_order",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "contract IERC20Permit",
+            "name": "tokenContract",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "spender",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiration",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "r",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "s",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint8",
+            "name": "v",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct IDEX.PermitData[]",
+        "name": "_permitData",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "createLimitOrder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "orders",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "strike1",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "closed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "positions",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20[]",
+        "name": "_tokens",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_targets",
+        "type": "address[]"
+      }
+    ],
+    "name": "tokenApproval",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
