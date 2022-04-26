@@ -73,6 +73,7 @@ export default function Pool() {
         )}
       </div>
       <input
+        className="w-32"
         type="range"
         min="0"
         max="10"
@@ -82,7 +83,25 @@ export default function Pool() {
         style={{ transform: 'rotate(180deg)' }}
       ></input>
       <input
+        className="w-32"
         type="range"
+        min="0"
+        max="10"
+        value={rangeMax}
+        onChange={(e) => setRangeMax(e.target.value)}
+        step="1"
+      ></input>
+      <br />
+      <input
+        className="w-32 text-center"
+        min="0"
+        max="10"
+        value={rangeMin}
+        onChange={(e) => setRangeMin(e.target.value)}
+        step="1"
+      ></input>
+      <input
+        className="w-32 text-center"
         min="0"
         max="10"
         value={rangeMax}
