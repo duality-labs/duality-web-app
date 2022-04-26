@@ -33,6 +33,33 @@ export default function Dropdown({
     throw new Error('Dropdown must have only one child component');
   }
 
+  useEffect(() => {
+    function handleClickOutside(event: Event) {
+      if (
+        event.target &&
+        refs.floating.current &&
+        !refs.floating.current.contains(event.target as Node)
+      ) {
+        close();
+      }
+    }
+    // Bind the event listener to document
+    const addHandler = closeIfClickedOutside && visible;
+    if (addHandler) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keyup', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      // Unbind the event listener on clean up
+      if (addHandler) {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keyup', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      }
+    };
+  }, [closeIfClickedOutside, refs.floating, visible, close]);
+
   // pass reference and action to child
   // add dropdown content
   return (
@@ -42,9 +69,6 @@ export default function Dropdown({
         onClick: open,
         onFocus: update,
       })}
-      {closeIfClickedOutside && visible && (
-        <div className="fixed top-0 bottom-0 left-0 right-0" onClick={close} />
-      )}
       <div
         ref={floating}
         className="dropdown w-60 max-w-full border border-slate-200 rounded-xl"
