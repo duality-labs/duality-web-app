@@ -6,6 +6,7 @@ interface LiquiditySelectorProps {
   existingTicks: Array<[number, number, number, number]>;
   tickCount: number;
   backgrounds?: boolean;
+  showUserTicks?: boolean;
 }
 
 function roundUp(value: number) {
@@ -20,6 +21,7 @@ export default function LiquiditySelector({
   tickCount,
   existingTicks,
   backgrounds = false,
+  showUserTicks = false,
 }: LiquiditySelectorProps) {
   const [graphStart, setGraphStart] = useState(0);
   const [graphEnd, setGraphEnd] = useState(5);
@@ -100,13 +102,14 @@ export default function LiquiditySelector({
           className="tick old-tick tick-b"
         />
       ))}
-      {userTicks.map((tick, index) => (
-        <path
-          key={index}
-          d={`M ${tick}, ${graphHeight} L ${tick} ${0}`}
-          className="tick current-tick"
-        />
-      ))}
+      {showUserTicks &&
+        userTicks.map((tick, index) => (
+          <path
+            key={index}
+            d={`M ${tick}, ${graphHeight} L ${tick} ${0}`}
+            className="tick current-tick"
+          />
+        ))}
     </svg>
   );
 }

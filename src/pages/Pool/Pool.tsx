@@ -43,6 +43,7 @@ export default function Pool() {
     [56, 0, 5, 1],
   ] as Array<[number, number, number, number]>);
   const [backgrounds, setBackgrounds] = useState(false);
+  const [showUserTicks, setUserTicks] = useState(false);
 
   // set token A to be first token in list if not already populated
   useEffect(() => {
@@ -160,6 +161,7 @@ export default function Pool() {
             tickCount={parseInt(rangeMin)}
             existingTicks={existingTicks}
             backgrounds={backgrounds}
+            showUserTicks={showUserTicks}
           ></LiquiditySelector>
           <div className="mock-controls">
             <button onClick={() => setExistingTicks(buy(10))}>Buy 10</button>
@@ -169,6 +171,9 @@ export default function Pool() {
             <br />
             <button onClick={() => setBackgrounds((value) => !value)}>
               Toggle tick backgrounds
+            </button>
+            <button onClick={() => setUserTicks((value) => !value)}>
+              Toggle User ticks
             </button>
           </div>
         </div>
