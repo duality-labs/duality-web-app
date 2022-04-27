@@ -23,7 +23,6 @@ export default function TokenPicker({
           <div className="token-picker" aria-label="Token selection">
             <div className="p-2">
               <div className="mr-2">Select a token</div>
-              {isValidating && <span className="opacity-25">loading...</span>}
             </div>
             <ul className="token-picker-list border-t border-slate-500 py-2 bg-white">
               {tokenList?.map((token) => (
