@@ -1,0 +1,16 @@
+.tick {
+  & {
+    transition: stroke-width 0.25s ease-in-out;
+    stroke-width: 1px;
+    stroke: rgb(87, 87, 87);
+    cursor: pointer;
+  }
+
+  &.current-tick {
+    stroke: rgb(125, 133, 112);
+  }
+
+  &:hover {
+    stroke-width: 3px;
+  }
+}
