@@ -15,7 +15,18 @@
   &.current-tick {
     stroke: rgb(45, 237, 61);
     stroke-width: 0.5px;
-    // stroke-width: 0;
+    &.tick-a {
+      stroke: rgb(45, 237, 61);
+      &.tick-background {
+        stroke: rgba(45, 237, 61, 0.3);
+      }
+    }
+    &.tick-b {
+      stroke: rgb(21, 131, 30);
+      &.tick-background {
+        stroke: rgba(21, 131, 30, 0.3);
+      }
+    }
   }
   &.tick-a {
     stroke: rgb(45, 128, 237);

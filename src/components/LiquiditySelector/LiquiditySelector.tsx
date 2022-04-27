@@ -5,6 +5,7 @@ import './LiquiditySelector.scss';
 interface LiquiditySelectorProps {
   existingTicks: Array<[number, number, number, number]>;
   tickCount: number;
+  userFeeTier?: number;
   backgrounds?: boolean;
   showUserTicks?: boolean;
 }
@@ -20,6 +21,7 @@ function roundDown(value: number) {
 export default function LiquiditySelector({
   tickCount,
   existingTicks,
+  userFeeTier = 1, // 1%
   backgrounds = false,
   showUserTicks = false,
 }: LiquiditySelectorProps) {
@@ -106,8 +108,20 @@ export default function LiquiditySelector({
         userTicks.map((tick, index) => (
           <path
             key={index}
-            d={`M ${tick}, ${graphHeight} L ${tick} ${0}`}
-            className="tick current-tick"
+            d={`M ${tick * (1 - userFeeTier / 100)}, ${graphHeight} L ${
+              tick * (1 - userFeeTier / 100)
+            } ${0}`}
+            className="tick current-tick tick-a"
+          />
+        ))}
+      {showUserTicks &&
+        userTicks.map((tick, index) => (
+          <path
+            key={index}
+            d={`M ${tick * (1 + userFeeTier / 100)}, ${graphHeight} L ${
+              tick * (1 + userFeeTier / 100)
+            } ${0}`}
+            className="tick current-tick tick-b"
           />
         ))}
     </svg>
