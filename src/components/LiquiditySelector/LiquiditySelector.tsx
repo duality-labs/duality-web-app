@@ -5,6 +5,7 @@ import './LiquiditySelector.scss';
 interface LiquiditySelectorProps {
   existingTicks: Array<[number, number, number, number]>;
   tickCount: number;
+  backgrounds?: boolean;
 }
 
 function roundUp(value: number) {
@@ -18,6 +19,7 @@ function roundDown(value: number) {
 export default function LiquiditySelector({
   tickCount,
   existingTicks,
+  backgrounds = false,
 }: LiquiditySelectorProps) {
   const [graphStart, setGraphStart] = useState(0);
   const [graphEnd, setGraphEnd] = useState(5);
@@ -57,25 +59,27 @@ export default function LiquiditySelector({
   return (
     <svg viewBox={`${graphStart} 0 ${graphEnd - graphStart} ${graphHeight}`}>
       {/* buy tick backgrounds */}
-      {existingTicks.map(([rate, valueA, valueB, fee]) => (
-        <path
-          key={`${rate}-a`}
-          d={`M ${rate * (1 - fee / 100)}, ${graphHeight} L ${
-            rate * (1 - fee / 100)
-          } ${graphHeight - valueA - valueB}`}
-          className="tick old-tick tick-background tick-a"
-        />
-      ))}
+      {backgrounds &&
+        existingTicks.map(([rate, valueA, valueB, fee]) => (
+          <path
+            key={`${rate}-a`}
+            d={`M ${rate * (1 - fee / 100)}, ${graphHeight} L ${
+              rate * (1 - fee / 100)
+            } ${graphHeight - valueA - valueB}`}
+            className="tick old-tick tick-background tick-a"
+          />
+        ))}
       {/* sell tick backgrounds */}
-      {existingTicks.map(([rate, valueA, valueB, fee]) => (
-        <path
-          key={`${rate}-b`}
-          d={`M ${rate * (1 + fee / 100)}, ${graphHeight} L ${
-            rate * (1 + fee / 100)
-          } ${graphHeight - valueA - valueB}`}
-          className="tick old-tick tick-background tick-b"
-        />
-      ))}
+      {backgrounds &&
+        existingTicks.map(([rate, valueA, valueB, fee]) => (
+          <path
+            key={`${rate}-b`}
+            d={`M ${rate * (1 + fee / 100)}, ${graphHeight} L ${
+              rate * (1 + fee / 100)
+            } ${graphHeight - valueA - valueB}`}
+            className="tick old-tick tick-background tick-b"
+          />
+        ))}
       {/* buy ticks */}
       {existingTicks.map(([rate, valueA, valueB, fee]) => (
         <path
