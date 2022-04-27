@@ -25,12 +25,23 @@ export default function Pool() {
   );
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
   const dotCount = useDotCounter(0.25e3);
-  const [existingTicks /*setExistingTicks*/] = useState([
-    [20, 5],
-    [30, 7],
-    [40, 4],
-    [50, 2],
-  ] as Array<[number, number]>);
+  const [existingTicks, setExistingTicks] = useState([
+    [20, 15, 0, 1],
+    [24, 11, 0, 1],
+    [30, 17, 0, 1],
+    [32, 19, 0, 1],
+    [37, 15, 0, 1],
+    [39, 10, 0, 1],
+    [40, 4, 14, 1],
+    [43, 0, 10, 1],
+    [45, 0, 18, 1],
+    [47, 0, 8, 1],
+    [48, 0, 17, 1],
+    [50, 0, 12, 1],
+    [53, 0, 14, 1],
+    [55, 0, 13, 1],
+    [56, 0, 5, 1],
+  ] as Array<[number, number, number, number]>);
 
   // set token A to be first token in list if not already populated
   useEffect(() => {
@@ -38,6 +49,10 @@ export default function Pool() {
       setTokenA(tokenList[0]);
     }
   }, [tokenA, tokenList]);
+
+  useEffect(() => {
+    console.log('existingTicks', existingTicks);
+  }, [existingTicks]);
 
   const [rangeMin, setRangeMin] = useState('3');
   const [rangeMax, setRangeMax] = useState('3');
@@ -144,8 +159,48 @@ export default function Pool() {
             tickCount={parseInt(rangeMin)}
             existingTicks={existingTicks}
           ></LiquiditySelector>
+          <div className="mock-controls">
+            <button onClick={() => setExistingTicks(buy(10))}>Buy 10</button>
+            <button onClick={() => setExistingTicks(buy(1))}>Buy 1</button>
+            <button onClick={() => setExistingTicks(sell(1))}>Sell 1</button>
+            <button onClick={() => setExistingTicks(sell(10))}>Sell 10</button>
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+type Tick = [number, number, number, number];
+type Ticks = Array<Tick>;
+
+function sell(units: number) {
+  return (existingTicks: Ticks): Ticks => {
+    let toSell = units;
+    return existingTicks.map(([rate, valueA, valueB, fee]) => {
+      if (toSell > 0 && valueB > 0) {
+        const swap = Math.min(valueB, toSell);
+        toSell -= swap;
+        return [rate, valueA + swap, valueB - swap, fee] as Tick;
+      }
+      return [rate, valueA, valueB, fee] as Tick;
+    });
+  };
+}
+function buy(units: number) {
+  return (existingTicks: Ticks): Ticks => {
+    let toBuy = units;
+    return existingTicks
+      .slice()
+      .reverse()
+      .map(([rate, valueA, valueB, fee]) => {
+        if (toBuy > 0 && valueA > 0) {
+          const swap = Math.min(valueA, toBuy);
+          toBuy -= swap;
+          return [rate, valueA - swap, valueB + swap, fee] as Tick;
+        }
+        return [rate, valueA, valueB, fee] as Tick;
+      })
+      .reverse();
+  };
 }

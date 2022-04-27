@@ -1,16 +1,40 @@
+.pool-page svg {
+  border-bottom: 1px solid #ddd;
+}
+
 .tick {
   & {
     transition: stroke-width 0.25s ease-in-out;
-    stroke-width: 1px;
-    stroke: rgb(87, 87, 87);
+    stroke-width: 0.5px;
     cursor: pointer;
+  }
+  &.tick-background {
+    stroke-width: 0.25px;
+    stroke-width: 0px;
   }
 
   &.current-tick {
-    stroke: rgb(125, 133, 112);
+    stroke: rgb(45, 237, 61);
+    stroke-width: 0.5px;
+    stroke-width: 0;
+  }
+  &.tick-a {
+    stroke: rgb(45, 128, 237);
+    &.tick-background {
+      stroke: rgba(45, 128, 237, 0.3);
+    }
+  }
+  &.tick-b {
+    stroke: rgb(255, 149, 0);
+    &.tick-background {
+      stroke: rgba(255, 149, 0, 0.3);
+    }
   }
 
   &:hover {
-    stroke-width: 3px;
+    stroke-width: 1px;
+    &.tick-background {
+      stroke-width: 0.5px;
+    }
   }
 }
