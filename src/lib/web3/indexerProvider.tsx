@@ -31,7 +31,7 @@ export interface PairInfo {
 /**
  * TickMap contains a mapping from tickIDs to tick indexes inside poolsZeroToOne and poolsOneToZero
  */
-interface TickMap {
+export interface TickMap {
   [tickID: string]: PoolTicks;
 }
 

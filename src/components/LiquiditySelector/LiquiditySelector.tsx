@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
 
 interface LiquiditySelectorProps {
-  existingTicks: Array<[number, number]>;
+  ticks: TickMap | undefined;
   tickCount: number;
 }
 
@@ -17,8 +18,17 @@ function roundDown(value: number) {
 
 export default function LiquiditySelector({
   tickCount,
-  existingTicks,
+  ticks = {},
 }: LiquiditySelectorProps) {
+
+  // collect tick information in a more useable form
+  const existingTicks: Array<[number, number]> = useMemo(() => {
+    return Object.values(ticks)
+      .map(poolTicks => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
+      .filter((tick): tick is TickInfo => !!tick) // filter to only found ticks
+      .map(tick => [tick.price.toNumber(), tick.totalShares.toNumber()]);
+  }, [ticks]);
+
   const [graphStart, setGraphStart] = useState(0);
   const [graphEnd, setGraphEnd] = useState(5);
   const [graphHeight, setGraphHeight] = useState(100);

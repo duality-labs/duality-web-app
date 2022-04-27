@@ -12,6 +12,8 @@ import RadioInput from '../../components/RadioInput';
 import StepNumberInput from '../../components/StepNumberInput';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
+import LiquiditySelector from '../../components/LiquiditySelector';
+
 import {
   useTokens,
   useExchangeRate,
@@ -193,10 +195,10 @@ export default function Pool() {
         </div>
       </div>
       <div className="chart-card page-card">
-        <div>
-          Ticks: {tickFetching ? 'loading...' : ''} &nbsp;
-          {JSON.stringify(ticks, null, 2)}
-        </div>
+        <LiquiditySelector
+          tickCount={parseInt(rangeMin)}
+          ticks={ticks}
+        ></LiquiditySelector>
       </div>
       <div className="fee-card page-card">
         <div className="card-header">
