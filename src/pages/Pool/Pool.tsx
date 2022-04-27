@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 
 import TokenPicker from '../../components/TokenPicker';
 import TokenInputGroup from '../../components/TokenInputGroup';
+import LiquiditySelector from '../../components/LiquiditySelector';
+
 import {
   useTokens,
   useExchangeRate,
@@ -23,6 +25,12 @@ export default function Pool() {
   );
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
   const dotCount = useDotCounter(0.25e3);
+  const [existingTicks /*setExistingTicks*/] = useState([
+    [20, 5],
+    [30, 7],
+    [40, 4],
+    [50, 2],
+  ] as Array<[number, number]>);
 
   // set token A to be first token in list if not already populated
   useEffect(() => {
@@ -43,92 +51,101 @@ export default function Pool() {
   }, [rangeMin, rangeMax]);
   return (
     <div className="pool-page">
-      <h2 className="my-3 pt-1">Select Pair</h2>
-      <TokenPicker
-        value={tokenA}
-        onChange={setTokenA}
-        tokenList={tokenList}
-        exclusion={tokenB}
-      />
-      <button className="mx-2 py-1 px-3" onClick={swapTokens}>
-        {'<->'}
-      </button>
-      <TokenPicker
-        value={tokenB}
-        onChange={setTokenB}
-        tokenList={tokenList}
-        exclusion={tokenA}
-      />
-      <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
-        <strong>0.3% fee tier</strong>
+      <div className="flex flex-row">
+        <div className="basis-1/2 w-32">
+          <h2 className="my-3 pt-1">Select Pair</h2>
+          <TokenPicker
+            value={tokenA}
+            onChange={setTokenA}
+            tokenList={tokenList}
+            exclusion={tokenB}
+          />
+          <button className="mx-2 py-1 px-3" onClick={swapTokens}>
+            {'<->'}
+          </button>
+          <TokenPicker
+            value={tokenB}
+            onChange={setTokenB}
+            tokenList={tokenList}
+            exclusion={tokenA}
+          />
+          <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
+            <strong>0.3% fee tier</strong>
+          </div>
+          <h2 className="my-3 pt-1">Set price range</h2>
+          <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
+            {tokenA && tokenB ? (
+              <span>
+                Current Price: {rateData?.price} {tokenA} per {tokenB}
+              </span>
+            ) : (
+              <span>Current Price:</span>
+            )}
+          </div>
+          <input
+            className="w-32"
+            type="range"
+            min="0"
+            max="10"
+            value={rangeMin}
+            onChange={(e) => setRangeMin(e.target.value)}
+            step="1"
+            style={{ transform: 'rotate(180deg)' }}
+          ></input>
+          <input
+            className="w-32"
+            type="range"
+            min="0"
+            max="10"
+            value={rangeMax}
+            onChange={(e) => setRangeMax(e.target.value)}
+            step="1"
+          ></input>
+          <br />
+          <input
+            className="w-32 text-center"
+            min="0"
+            max="10"
+            value={rangeMin}
+            onChange={(e) => setRangeMin(e.target.value)}
+            step="1"
+          ></input>
+          <input
+            className="w-32 text-center"
+            min="0"
+            max="10"
+            value={rangeMax}
+            onChange={(e) => setRangeMax(e.target.value)}
+            step="1"
+          ></input>
+          <h2 className="my-3 pt-1">Deposit Amounts</h2>
+          <TokenInputGroup
+            readOnly
+            tokenList={tokenList}
+            token={tokenA}
+            value={`${values[0]}`}
+            exclusion={tokenB}
+          ></TokenInputGroup>
+          <TokenInputGroup
+            readOnly
+            tokenList={tokenList}
+            token={tokenB}
+            value={`${values[1]}`}
+            exclusion={tokenA}
+          ></TokenInputGroup>
+          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block">
+            Add Liquidity
+          </button>
+          {((isValidaingTokens || isValidatingRate) &&
+            '.'.repeat(dotCount)) || <i className="text-transparent">.</i>}
+        </div>
+        <div className="basis-1/2 w-32">
+          <LiquiditySelector
+            tickCount={parseInt(rangeMin)}
+            existingTicks={existingTicks}
+          ></LiquiditySelector>
+        </div>
       </div>
-      <h2 className="my-3 pt-1">Set price range</h2>
-      <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
-        {tokenA && tokenB ? (
-          <span>
-            Current Price: {rateData?.price} {tokenA} per {tokenB}
-          </span>
-        ) : (
-          <span>Current Price:</span>
-        )}
-      </div>
-      <input
-        className="w-32"
-        type="range"
-        min="0"
-        max="10"
-        value={rangeMin}
-        onChange={(e) => setRangeMin(e.target.value)}
-        step="1"
-        style={{ transform: 'rotate(180deg)' }}
-      ></input>
-      <input
-        className="w-32"
-        type="range"
-        min="0"
-        max="10"
-        value={rangeMax}
-        onChange={(e) => setRangeMax(e.target.value)}
-        step="1"
-      ></input>
-      <br />
-      <input
-        className="w-32 text-center"
-        min="0"
-        max="10"
-        value={rangeMin}
-        onChange={(e) => setRangeMin(e.target.value)}
-        step="1"
-      ></input>
-      <input
-        className="w-32 text-center"
-        min="0"
-        max="10"
-        value={rangeMax}
-        onChange={(e) => setRangeMax(e.target.value)}
-        step="1"
-      ></input>
-      <h2 className="my-3 pt-1">Deposit Amounts</h2>
-      <TokenInputGroup
-        readOnly
-        tokenList={tokenList}
-        token={tokenA}
-        value={`${values[0]}`}
-        exclusion={tokenB}
-      ></TokenInputGroup>
-      <TokenInputGroup
-        readOnly
-        tokenList={tokenList}
-        token={tokenB}
-        value={`${values[1]}`}
-        exclusion={tokenA}
-      ></TokenInputGroup>
-      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block">
-        Add Liquidity
-      </button>
-      {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
-        <i className="text-transparent">.</i>
-      )}
     </div>
   );
 }
