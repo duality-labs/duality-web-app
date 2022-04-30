@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useA11yDialog } from 'react-a11y-dialog';
+import { generateId } from '../../utils/id';
 
 export default function Dialog() {
   // `instance` is the `a11y-dialog` instance.
@@ -13,7 +14,7 @@ export default function Dialog() {
     useA11yDialog({
       // The required HTML `id` attribute of the dialog element, internally used
       // a11y-dialog to manipulate the dialog.
-      id: 'my-dialog',
+      id: `dialog-${generateId()}`,
       // The optional `role` attribute of the dialog element, either `dialog`
       // (default) or `alertdialog` to make it a modal (preventing closing on
       // click outside of ESC key).
