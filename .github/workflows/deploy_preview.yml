@@ -18,10 +18,10 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Set Node version
-      # use basic regex to get Node engine version from package.json
+      # use basic regex (first found digits and dots) to get Node engine version from package.json
       # will fail if not correctly specified
       run: |
-        NODE_VERSION=$(node -p "require('./package.json').engines.node.match(/\d.*/)[0]")
+        NODE_VERSION=$(node -p "require('./package.json').engines.node.match(/[\d.]+/)[0]")
         echo "::set-output name=NODE_VERSION::$NODE_VERSION"
       id: get-node-version
 
