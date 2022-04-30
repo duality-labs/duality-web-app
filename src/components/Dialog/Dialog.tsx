@@ -1,12 +1,17 @@
+import { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useA11yDialog } from 'react-a11y-dialog';
 import { generateId } from '../../utils/id';
 
 interface IDialog {
   title: string;
+  renderDialog: RenderDialogComponent;
 }
+type RenderDialogComponent = (props: {
+  close: () => void;
+}) => ReactNode | ReactNode[];
 
-export default function Dialog({ title }: IDialog) {
+export default function Dialog({ title, renderDialog }: IDialog) {
   // `instance` is the `a11y-dialog` instance.
   // `attr` is an object with the following keys:
   // - `container`: the dialog container
@@ -37,7 +42,7 @@ export default function Dialog({ title }: IDialog) {
           {title}
         </p>
 
-        <p>Your dialog content</p>
+        {renderDialog({ close: attr.closeButton.onClick })}
 
         <button {...attr.closeButton} className="dialog-close">
           Close dialog
