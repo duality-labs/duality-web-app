@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { cloneElement, ReactElement, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useA11yDialog } from 'react-a11y-dialog';
 import { generateId } from '../../utils/id';
@@ -6,12 +6,13 @@ import { generateId } from '../../utils/id';
 interface IDialog {
   title: string;
   dialog: ReactNode | ReactNode[] | RenderDialogFunction;
+  children: ReactElement;
 }
 type RenderDialogFunction = (props: {
   close: () => void;
 }) => ReactNode | ReactNode[];
 
-export default function Dialog({ title, dialog }: IDialog) {
+export default function Dialog({ title, dialog, children }: IDialog) {
   // `instance` is the `a11y-dialog` instance.
   // `attr` is an object with the following keys:
   // - `container`: the dialog container
@@ -54,11 +55,15 @@ export default function Dialog({ title, dialog }: IDialog) {
     document.body
   );
 
+  if (Array.isArray(children)) {
+    throw new Error('Dropdown must have only one child component');
+  }
+
   return (
     <>
-      <button type="button" onClick={() => instance.show()}>
-        Open dialog
-      </button>
+      {cloneElement(children, {
+        onClick: () => instance.show(),
+      })}
       {dialogPortal}
     </>
   );
