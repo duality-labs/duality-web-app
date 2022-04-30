@@ -9,6 +9,9 @@ jobs:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
+      # Here we've hardcoded the current Node version. This is not good. We can in future switch over
+      # to run tests on GitHub workflows for consistency and targeting the package.json Node version.
+      # Then if needed, we can also use our own GitHub workflow runners to reduce costs there.
       - image: cimg/node:16.14.2
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
