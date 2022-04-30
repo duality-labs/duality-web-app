@@ -43,7 +43,7 @@ jobs:
         # secret tokens are added in Github project settings under [project]/settings/secrets/actions
         NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
         NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        NETLIFY_DEPLOY_MESSAGE: "Prod deploy ${{ github.ref }}"
+        NETLIFY_DEPLOY_MESSAGE: "Production deploy ${{ github.ref }}" # github.ref looks like `refs/pull/[PR#]/merge`
         NETLIFY_DEPLOY_TO_PROD: true
         build_directory: build
         build_command: echo "already built app"
