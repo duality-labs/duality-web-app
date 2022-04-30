@@ -24,9 +24,10 @@ export default function Dialog() {
     });
 
   const dialogPortal = createPortal(
+    // @ts-expect-error: react-a11y type for container.ref is not incorrect
+    // see: https://github.com/KittyGiraudel/a11y-dialog/blob/7.4.0/a11y-dialog.js#L12-L28
     <div {...attr.container} className="dialog-container">
       <div {...attr.overlay} className="dialog-overlay" />
-
       <div {...attr.dialog} className="dialog-content">
         <p {...attr.title} className="dialog-title">
           Your dialog title
