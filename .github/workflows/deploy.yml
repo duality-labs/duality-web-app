@@ -46,5 +46,9 @@ jobs:
         NETLIFY_DEPLOY_MESSAGE: "Production deploy ${{ github.ref }}" # github.ref looks like `refs/pull/[PR#]/merge`
         NETLIFY_DEPLOY_TO_PROD: true
         build_directory: build
+        # we skip the build steps in this custom step because if we allow the project to build inside this step
+        # and specify the node version for that, this action will first download the latest node version,
+        # then switch back to the specified node version, then build the project.
+        # this wastes build minutes, so we instead pre-build the "build" folder
         build_command: echo "already built app"
         install_command: echo "already installed dependencies"
