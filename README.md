@@ -19,3 +19,7 @@ The code for the Duality front-end web app.
    1. The chain ID for your local hardhat testnet is `31337`.
 10. `$ npm start`
 11. Dev site is available at `http://localhost:3000`
+
+## Deployed At
+
+Current build preview should be available at https://graceful-palmier-ff28ba.netlify.app/
