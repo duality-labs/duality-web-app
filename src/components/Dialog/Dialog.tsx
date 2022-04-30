@@ -5,13 +5,13 @@ import { generateId } from '../../utils/id';
 
 interface IDialog {
   title: string;
-  renderDialog: RenderDialogComponent;
+  dialog: ReactNode | ReactNode[] | RenderDialogFunction;
 }
-type RenderDialogComponent = (props: {
+type RenderDialogFunction = (props: {
   close: () => void;
 }) => ReactNode | ReactNode[];
 
-export default function Dialog({ title, renderDialog }: IDialog) {
+export default function Dialog({ title, dialog }: IDialog) {
   // `instance` is the `a11y-dialog` instance.
   // `attr` is an object with the following keys:
   // - `container`: the dialog container
@@ -42,7 +42,9 @@ export default function Dialog({ title, renderDialog }: IDialog) {
           {title}
         </p>
 
-        {renderDialog({ close: attr.closeButton.onClick })}
+        {typeof dialog === 'function'
+          ? dialog({ close: attr.closeButton.onClick })
+          : dialog}
 
         <button {...attr.closeButton} className="dialog-close">
           Close dialog
