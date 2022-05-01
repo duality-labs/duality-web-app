@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState, useMemo } from 'react';
 
 import { useNextID } from './mockHooks';
 
+import './TokenPicker.scss';
+
 interface TokenPickerProps {
   onChange: (eventOrValue: string) => void;
   exclusion: string | null | undefined;

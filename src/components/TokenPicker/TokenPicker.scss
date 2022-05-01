@@ -1,0 +1,11 @@
+.token-picker-dialog {
+  & {
+    box-shadow: 0 0 1rem 0rem rgba(255, 255, 255, 0.4);
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+
+  &::backdrop {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+}
