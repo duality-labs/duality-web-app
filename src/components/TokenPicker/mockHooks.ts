@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 
+let idCounter = 0;
 const seconds = 1000;
 const requestTime = 2 * seconds;
 const tokens = ['ETH', 'USDC', 'BAT', 'DAI'];
@@ -69,4 +70,10 @@ export function useDotCounter(
 
 export function useTokens() {
   return usePoll(tokens);
+}
+
+export function useNextID() {
+  idCounter += 1;
+  if (idCounter >= Number.MAX_SAFE_INTEGER) idCounter = 0;
+  return idCounter;
 }
