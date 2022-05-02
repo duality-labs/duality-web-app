@@ -1,14 +1,20 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 
-import { useNextID } from './mockHooks';
+import { useNextID, Token } from './mockHooks';
 
 import './TokenPicker.scss';
 
+interface TokenResult {
+  symbol: Array<string>;
+  name: Array<string>;
+  token: Token;
+}
+
 interface TokenPickerProps {
-  onChange: (eventOrValue: string) => void;
-  exclusion: string | null | undefined;
-  value: string | undefined;
-  tokenList: Array<string>;
+  onChange: (newToken: Token | undefined) => void;
+  exclusion: Token | undefined;
+  value: Token | undefined;
+  tokenList: Array<Token>;
 }
 
 export default function TokenPicker({
@@ -17,7 +23,9 @@ export default function TokenPicker({
   exclusion,
   tokenList,
 }: TokenPickerProps) {
-  const [filteredList, setFilteredList] = useState(tokenList);
+  const [filteredList, setFilteredList] = useState(
+    null as Array<TokenResult | null> | null
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const currentID = useMemo(useNextID, []);
@@ -41,21 +49,32 @@ export default function TokenPicker({
 
   useEffect(
     function () {
-      const regexQuery = RegExp(
-        '(' +
-          searchQuery
-            .toLowerCase()
-            .replace(/[.*\\{}[\]+$^]/gi, (char) => `\\${char}`)
-            .replace(/\s+/g, '\\s*') +
-          ')',
-        'i'
-      );
-      // According to several benchmark tests the efficiency of filter + map is the same as a reduce call
+      if (!searchQuery)
+        return setFilteredList(
+          tokenList?.map((token) => ({
+            name: [token.name],
+            symbol: [token.symbol],
+            token,
+          }))
+        );
+      // remove invalid characters + remove space limitations (but still match any found)
+      const queryRegexText = searchQuery
+        .toLowerCase()
+        .replace(/[.*\\{}[\]+$^]/gi, (char) => `\\${char}`)
+        .replace(/\s+/g, '\\s*');
+      const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
       setFilteredList(
         tokenList
-          ?.filter(function (item) {
-            const result = item.split(regexQuery);
-            return result.length === 1 ? null : result;
+          ?.map(function (token) {
+            const symbolResult = token.symbol?.split(regexQuery) || [''];
+            const nameResult = token.name?.split(regexQuery) || [''];
+            if (
+              symbolResult.length === 1 &&
+              nameResult.length === 1 &&
+              !regexQuery.test(token.address)
+            )
+              return null;
+            return { name: nameResult, symbol: symbolResult, token };
           })
           ?.filter(Boolean)
       );
@@ -76,14 +95,13 @@ export default function TokenPicker({
   return (
     <>
       <label
-        className={
-          'py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle flex justify-center items-center text-center' +
-          (isOpen ? ' open' : '')
-        }
+        className={`py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle flex justify-center items-center text-center${
+          isOpen ? ' open' : ''
+        }`}
         onClick={open}
-        htmlFor={'token-selector-' + currentID}
+        htmlFor={`token-selector-${currentID}`}
       >
-        {value || 'Choose Token'}
+        {value?.symbol || 'Choose Token'}
       </label>
       <dialog
         ref={(dom) => setDialogDom(dom)}
@@ -91,43 +109,55 @@ export default function TokenPicker({
         className="token-picker-dialog"
       >
         <div className="token-picker">
-          <div className="p-2">
-            <label className="mr-2" htmlFor={'token-selector-' + currentID}>
+          <div className="token-picker-header">
+            <label htmlFor={`token-selector-${currentID}`}>
               Select a token
             </label>
             <input
               type="search"
+              id={`token-selector-${currentID}`}
               onInput={(e) => setSearchQuery(e.currentTarget.value)}
               value={searchQuery}
-            ></input>
+              placeholder="Search for a token"
+            />
           </div>
-          <ul className="token-picker-list border-t border-slate-500 py-2 bg-white">
+          <ul className="token-picker-body">
             {filteredList?.map((token) => (
-              <li key={token}>
-                <button
-                  className={`py-1 px-2 w-full text-left${
-                    value === token ? ' bg-slate-700' : ''
-                  }${
-                    exclusion === token
-                      ? ' disabled opacity-25'
-                      : ' hover:bg-slate-600'
-                  }`}
-                  onClick={() => {
-                    onChange(token);
-                    close();
-                  }}
-                  onKeyPress={(e) => {
-                    // accept space key press as input (like buttons)
-                    if (e.key === ' ') {
-                      onChange(token);
+              <li key={token?.token?.address}>
+                <data value={token?.token?.address}>
+                  <button
+                    className={`${
+                      exclusion?.address === token?.token?.address
+                        ? 'disabled'
+                        : ''
+                    }`}
+                    onClick={() => {
+                      if (exclusion?.address === token?.token?.address) return;
+                      onChange(token?.token);
                       close();
-                    }
-                  }}
-                  role="menuitem"
-                  tabIndex={0}
-                >
-                  {token}
-                </button>
+                    }}
+                  >
+                    <div className="token-image">
+                      {token?.token?.logo ? (
+                        <img
+                          src={token?.token?.logo}
+                          alt={`${token?.token?.symbol || 'Token'} logo`}
+                        />
+                      ) : (
+                        <i className="no-token-logo"></i>
+                      )}
+                    </div>
+                    <dfn className="token-symbol">
+                      <abbr title={token?.token?.address}>
+                        {textListWithMark(token?.symbol || [])}
+                      </abbr>
+                    </dfn>
+                    <span className="token-name">
+                      {textListWithMark(token?.name || [])}
+                    </span>
+                    <span className="token-balance"></span>
+                  </button>
+                </data>
               </li>
             ))}
           </ul>
@@ -135,4 +165,11 @@ export default function TokenPicker({
       </dialog>
     </>
   );
+}
+
+function textListWithMark(textList: Array<string>) {
+  return textList.map(function (text, index) {
+    if (index % 2) return <mark key={index}>{text}</mark>;
+    return <span key={index}>{text}</span>;
+  });
 }

@@ -3,7 +3,29 @@ import { useState, useEffect } from 'react';
 let idCounter = 0;
 const seconds = 1000;
 const requestTime = 2 * seconds;
-const tokens = ['ETH', 'USDC', 'BAT', 'DAI'];
+
+export interface Token {
+  logo: string | null;
+  address: string;
+  symbol: string;
+  name: string;
+}
+
+const tokens: Array<Token> = [
+  { logo: null, symbol: 'Eth', name: 'Ether', address: '0x0001' },
+  { logo: null, symbol: 'Dai', name: 'Dai Stablecoin', address: '0x0002' },
+  { logo: null, symbol: 'USDC', name: 'USDCoin', address: '0x0003' },
+  { logo: null, symbol: 'USDT', name: 'Tether USD', address: '0x0004' },
+  { logo: null, symbol: 'WBTC', name: 'Wrapped BTC', address: '0x0005' },
+  { logo: null, symbol: 'WETH', name: 'Wrapped Ether', address: '0x0006' },
+  {
+    logo: null,
+    symbol: 'BAT',
+    name: 'Basic Attention Token',
+    address: '0x0007',
+  },
+];
+
 interface IExchangeRate {
   price?: string;
   index?: number;

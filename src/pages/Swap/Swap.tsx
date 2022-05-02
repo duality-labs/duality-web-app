@@ -5,6 +5,7 @@ import {
   useTokens,
   useExchangeRate,
   useDotCounter,
+  Token,
 } from '../../components/TokenPicker/mockHooks';
 
 import './Swap.scss';
@@ -17,8 +18,8 @@ export default function Swap() {
     lastUpdatedIndex
   );
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
-  const [tokens, setTokens] = useState([tokenList[0], null]);
-  const [values, setValues] = useState(['0', null]);
+  const [tokens, setTokens] = useState([tokenList[0], undefined]);
+  const [values, setValues] = useState(['0', '0']);
   const dotCount = useDotCounter(0.25e3);
 
   useEffect(() => {
@@ -63,7 +64,11 @@ export default function Swap() {
     </div>
   );
 
-  function changeGroupValue(value: string, token: string, index: number) {
+  function changeGroupValue(
+    value: string,
+    token: Token | undefined,
+    index: number
+  ) {
     setTokens(tokens.map((item, i) => (i === index ? token : item)));
     setValues(values.map((item, i) => (i === index ? value : item)));
     setLastUpdatedIndex(index);
