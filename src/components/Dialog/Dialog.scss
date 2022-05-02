@@ -1,0 +1,8 @@
+// override base '@reach/dialog/styles.css'
+[data-reach-dialog-overlay] {
+  background-color: hsla(0, 0, 0, 0.33);
+}
+[data-reach-dialog-content] {
+  background: hsl(220, 13%, 18%);
+  box-shadow: 0 4px 8px 0 hsla(0, 0, 0, 0.33);
+}
