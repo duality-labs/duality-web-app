@@ -45,9 +45,10 @@ export default function TokenPicker({
       if (!previousElement) return;
       while (previousElement && previousElement !== dialogDom)
         previousElement = previousElement.parentElement;
-      if (!previousElement) open();
+      if (!previousElement && event.target instanceof HTMLElement)
+        event.target.click();
     },
-    [dialogDom, open]
+    [dialogDom]
   );
 
   const close = useCallback(() => {
@@ -67,6 +68,7 @@ export default function TokenPicker({
       let newIndex = selectedIndex;
       if (event.key === 'ArrowUp') newIndex -= 1;
       else if (event.key === 'ArrowDown') newIndex += 1;
+      else if (event.key === 'Escape') return close();
       else if (event.key === 'Enter') {
         const token = (filteredList || [])[selectedIndex];
         if (token && exclusion?.address !== token.token?.address) {
