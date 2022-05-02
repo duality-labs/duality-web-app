@@ -14,6 +14,8 @@
 .dialog-content {
   margin: 10vh auto;
   padding: 0;
+  display: flex;
+  flex-direction: column;
   border-radius: 20px;
 
   // dynamic max width based on viewport size
@@ -46,4 +48,14 @@
 .dialog-body,
 .dialog-footer {
   padding: 2rem;
+}
+
+.dialog-scrollable {
+  .dialog-content {
+    max-height: 80vh;
+  }
+  .dialog-body {
+    overflow: auto;
+    flex: 1;
+  }
 }

@@ -27,7 +27,7 @@ export default function Dialog({
     <>
       {isOpen && (
         <DialogOverlay
-          className={className}
+          className={['dialog-scrollable', className].filter(Boolean).join(' ')}
           onDismiss={onDismiss}
           initialFocusRef={initialFocusRef}
         >
