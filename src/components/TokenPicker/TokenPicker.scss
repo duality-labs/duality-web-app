@@ -3,7 +3,7 @@ $color-secondary: rgb(177, 177, 177);
 $transition-duration: 0.25s;
 $font-primary: 1.2rem;
 $font-secondary: 1rem;
-$border-radius: 1.25rem;
+$border-radius: 0.5rem;
 
 .token-picker-dialog {
   & {
@@ -107,6 +107,7 @@ $border-radius: 1.25rem;
 
   .token-picker-body {
     & {
+      scroll-behavior: smooth;
       overflow: auto;
       flex: 1 1 60px;
     }
@@ -128,6 +129,7 @@ $border-radius: 1.25rem;
           padding: 0.5rem 0;
           text-align: start;
           display: block;
+          outline: none;
           display: grid;
           width: 100%;
         }
@@ -206,5 +208,33 @@ $border-radius: 1.25rem;
     transform: rotateZ(45deg);
     left: calc(50% - 0.025em);
     width: 0.05em;
+  }
+}
+
+.token-picker {
+  ::-webkit-scrollbar {
+    height: 11px;
+    width: 11px;
+  }
+
+  ::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 2px -1px rgb(153, 153, 153);
+    background: rgb(241, 241, 241);
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: 0.3;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(85, 85, 85, 0.8);
+    border-radius: $border-radius;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(85, 85, 85, 1);
+  }
+
+  ::-webkit-scrollbar-button {
+    display: none;
   }
 }

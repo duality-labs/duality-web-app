@@ -32,6 +32,7 @@ export default function TokenPicker({
   const currentID = useMemo(useNextID, []);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [dialogDom, setDialogDom] = useState(undefined as any);
+  const [bodyDom, setBody] = useState(null as HTMLElement | null);
 
   const open = useCallback(() => {
     dialogDom.showModal();
@@ -61,12 +62,21 @@ export default function TokenPicker({
           close();
         }
       } else return;
+      event.stopPropagation();
       event.preventDefault();
       if (newIndex < 0) newIndex = (filteredList?.length || 1) - 1;
       else if (newIndex >= (filteredList?.length || 0)) newIndex = 0;
       setSelectedIndex(newIndex);
     },
     [filteredList, selectedIndex, exclusion, onChange, close]
+  );
+
+  useEffect(
+    function () {
+      const child = bodyDom?.children[selectedIndex];
+      if (child) child.scrollIntoView();
+    },
+    [bodyDom, selectedIndex]
   );
 
   useEffect(
@@ -149,7 +159,7 @@ export default function TokenPicker({
               autoComplete="off"
             />
           </div>
-          <ul className="token-picker-body">
+          <ul className="token-picker-body" ref={(dom) => setBody(dom)}>
             {filteredList?.map((token, index) => (
               <li key={token?.token?.address}>
                 <data value={token?.token?.address}>
@@ -164,6 +174,7 @@ export default function TokenPicker({
                       onChange(token?.token);
                       close();
                     }}
+                    onFocus={() => setSelectedIndex(index)}
                   >
                     <div className="token-image">
                       {token?.token?.logo ? (
