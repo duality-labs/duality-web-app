@@ -67,16 +67,10 @@ export default function TokenPicker({
       if (newIndex < 0) newIndex = (filteredList?.length || 1) - 1;
       else if (newIndex >= (filteredList?.length || 0)) newIndex = 0;
       setSelectedIndex(newIndex);
-    },
-    [filteredList, selectedIndex, exclusion, onChange, close]
-  );
-
-  useEffect(
-    function () {
-      const child = bodyDom?.children[selectedIndex];
+      const child = bodyDom?.children[newIndex];
       if (child) child.scrollIntoView();
     },
-    [bodyDom, selectedIndex]
+    [filteredList, selectedIndex, exclusion, onChange, close, bodyDom]
   );
 
   useEffect(
