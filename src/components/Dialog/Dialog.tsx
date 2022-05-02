@@ -31,7 +31,9 @@ export default function Dialog({
         >
           <DialogContent className="dialog-content" aria-label="dialog content">
             <div className="dialog-header-row">
-              <div className="dialog-header">{header}</div>
+              <div className="dialog-header" role="heading" aria-level={1}>
+                {header}
+              </div>
               <button
                 className="dialog-header-close-button"
                 onClick={onDismiss}
