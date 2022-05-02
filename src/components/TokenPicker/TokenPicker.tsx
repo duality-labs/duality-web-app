@@ -28,6 +28,7 @@ export default function TokenPicker({
   );
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const currentID = useMemo(useNextID, []);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [dialogDom, setDialogDom] = useState(undefined as any);
@@ -45,6 +46,26 @@ export default function TokenPicker({
       if (event.target === dialogDom) close();
     },
     [dialogDom, close]
+  );
+
+  const onKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      let newIndex = selectedIndex;
+      if (event.key === 'ArrowUp') newIndex -= 1;
+      else if (event.key === 'ArrowDown') newIndex += 1;
+      else if (event.key === 'Enter') {
+        const token = (filteredList || [])[selectedIndex];
+        if (token && exclusion?.address !== token.token?.address) {
+          onChange(token.token);
+          close();
+        }
+      } else return;
+      event.preventDefault();
+      if (newIndex < 0) newIndex = (filteredList?.length || 1) - 1;
+      else if (newIndex >= (filteredList?.length || 0)) newIndex = 0;
+      setSelectedIndex(newIndex);
+    },
+    [filteredList, selectedIndex, exclusion, onChange, close]
   );
 
   useEffect(
@@ -78,6 +99,7 @@ export default function TokenPicker({
           })
           ?.filter(Boolean)
       );
+      setSelectedIndex(0);
     },
     [tokenList, searchQuery]
   );
@@ -117,12 +139,13 @@ export default function TokenPicker({
               type="search"
               id={`token-selector-${currentID}`}
               onInput={(e) => setSearchQuery(e.currentTarget.value)}
+              onKeyDown={onKeyDown}
               value={searchQuery}
               placeholder="Search for a token"
             />
           </div>
           <ul className="token-picker-body">
-            {filteredList?.map((token) => (
+            {filteredList?.map((token, index) => (
               <li key={token?.token?.address}>
                 <data value={token?.token?.address}>
                   <button
@@ -130,7 +153,7 @@ export default function TokenPicker({
                       exclusion?.address === token?.token?.address
                         ? 'disabled'
                         : ''
-                    }`}
+                    }${index === selectedIndex ? ' selected' : ''}`}
                     onClick={() => {
                       if (exclusion?.address === token?.token?.address) return;
                       onChange(token?.token);

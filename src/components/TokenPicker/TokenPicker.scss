@@ -92,7 +92,9 @@ $border-radius: 1.25rem;
           width: 100%;
         }
 
-        &:hover {
+        &:hover,
+        &:focus,
+        &.selected {
           background-color: rgba($color-secondary, 0.2);
         }
 
