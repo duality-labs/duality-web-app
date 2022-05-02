@@ -89,10 +89,11 @@ export function useExchangeRate(request: TokenRequest) {
         exchangeRates.find(
           (rate) => rate.token === token && rate.otherToken === otherToken
         )?.rate || 1;
+      const price = Math.round(rate * Number(value) * 1e6) / 1e6;
       setData({
         rate: `${rate}`,
         gas: '5',
-        price: `${rate * Number(value)}`,
+        price: `${price}`,
         value,
         otherToken,
         token,
