@@ -1,6 +1,8 @@
 import React from 'react';
 import { DialogContent, DialogOverlay } from '@reach/dialog';
 
+import ScrollableArea from '../ScrollableArea';
+
 import '@reach/dialog/styles.css';
 import './Dialog.scss';
 
@@ -57,7 +59,7 @@ export default function Dialog({
                 </svg>
               </button>
             </div>
-            <div className="dialog-body">{children}</div>
+            <ScrollableArea className="dialog-body">{children}</ScrollableArea>
             {footer && <div className="dialog-footer">{footer}</div>}
           </DialogContent>
         </DialogOverlay>
