@@ -4,6 +4,21 @@ let idCounter = 0;
 const seconds = 1000;
 const requestTime = 2 * seconds;
 
+interface IExchangeRate {
+  otherToken?: string;
+  price?: string;
+  value?: string;
+  token?: string;
+  rate: string;
+  gas: string;
+}
+
+export interface TokenRequest {
+  otherToken: string;
+  token: string;
+  value: string;
+}
+
 export interface Token {
   logo: string | null;
   address: string;
@@ -26,13 +41,18 @@ const tokens: Array<Token> = [
   },
 ];
 
-interface IExchangeRate {
-  price?: string;
-  index?: number;
-  rate: string;
-  gas: string;
-}
-const exchangeRate: IExchangeRate = { rate: '100', gas: '5' };
+const exchangeRates = [
+  { token: '0x0001', otherToken: '0x0002', rate: 2809 },
+  { token: '0x0002', otherToken: '0x0001', rate: 0.000356 },
+  { token: '0x0001', otherToken: '0x0003', rate: 2814 },
+  { token: '0x0003', otherToken: '0x0001', rate: 0.0003554 },
+  { token: '0x0001', otherToken: '0x0004', rate: 2814 },
+  { token: '0x0004', otherToken: '0x0001', rate: 0.0003554 },
+  { token: '0x0001', otherToken: '0x0005', rate: 13.65 },
+  { token: '0x0005', otherToken: '0x0001', rate: 0.07326 },
+  { token: '0x0001', otherToken: '0x0006', rate: 1 },
+  { token: '0x0006', otherToken: '0x0001', rate: 1 },
+];
 
 function usePoll<T>(mockData: T): {
   data: T | undefined;
@@ -57,21 +77,29 @@ function usePoll<T>(mockData: T): {
   return { data, isValidating: validating };
 }
 
-export function useExchangeRate(otherPrice: string, index: number) {
+export function useExchangeRate(request: TokenRequest) {
   const [data, setData] = useState(undefined as IExchangeRate | undefined);
   const [validating, setValidating] = useState(true);
 
   useEffect(() => {
+    const { token, otherToken, value } = request;
     setValidating(true);
     setTimeout(() => {
+      const rate =
+        exchangeRates.find(
+          (rate) => rate.token === token && rate.otherToken === otherToken
+        )?.rate || 1;
       setData({
-        ...exchangeRate,
-        price: String(+exchangeRate.rate * +otherPrice),
-        index: index,
+        rate: `${rate}`,
+        gas: '5',
+        price: `${rate * Number(value)}`,
+        value,
+        otherToken,
+        token,
       });
       setValidating(false);
     }, requestTime);
-  }, [otherPrice, index]);
+  }, [request]);
 
   return { data, isValidating: validating };
 }

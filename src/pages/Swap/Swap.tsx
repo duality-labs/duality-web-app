@@ -11,46 +11,79 @@ import {
 import './Swap.scss';
 
 export default function Swap() {
-  const [lastUpdatedPrice, setLastUpdatedPrice] = useState('0');
-  const [lastUpdatedIndex, setLastUpdatedIndex] = useState(0);
-  const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
-    lastUpdatedPrice,
-    lastUpdatedIndex
-  );
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
-  const [tokens, setTokens] = useState([tokenList[0], undefined]);
-  const [values, setValues] = useState(['0', '0']);
+  const [tokenA, setTokenA] = useState(tokenList[0] as Token | undefined);
+  const [tokenB, setTokenB] = useState(undefined as Token | undefined);
+  const [valueA, setValueA] = useState('0');
+  const [valueB, setValueB] = useState('0');
+  const [lastUpdated, setLastUpdated] = useState(true);
+  const [tokenRequest, setTokenRequest] = useState({
+    token: tokenA?.address || '',
+    otherToken: tokenB?.address || '',
+    value: valueA,
+  });
+  const { data: rateData, isValidating: isValidatingRate } =
+    useExchangeRate(tokenRequest);
   const dotCount = useDotCounter(0.25e3);
 
   useEffect(() => {
-    const otherIndex = +!rateData?.index;
-    setValues(
-      values.map((item, i) =>
-        i === otherIndex ? rateData?.price || '0' : item
-      )
-    );
-  }, [rateData, values]);
+    const token = lastUpdated ? tokenA : tokenB;
+    const otherToken = lastUpdated ? tokenB : tokenA;
+    const value = lastUpdated ? valueA : valueB;
+    if (!token || !otherToken || !value) return; // TODO add clear
+    setTokenRequest({
+      token: token?.address || '',
+      otherToken: otherToken?.address || '',
+      value: value,
+    });
+  }, [valueA, tokenA, valueB, tokenB, lastUpdated]);
+
+  useEffect(() => {
+    const token = lastUpdated ? tokenA : tokenB;
+    const otherToken = lastUpdated ? tokenB : tokenA;
+    const value = lastUpdated ? valueA : valueB;
+    if (token?.address !== rateData?.token) return;
+    if (otherToken?.address !== rateData?.otherToken) return;
+    if (value !== rateData?.value) return;
+    if (lastUpdated) setValueB(rateData.price || '0');
+    else setValueA(rateData.price || '0');
+    // This should only run when the rate data change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rateData]);
 
   const swapTokens = useCallback(() => {
-    setTokens(tokens.reverse());
-    setValues(values.reverse());
-  }, [tokens, values]);
+    setTokenA(tokenB);
+    setTokenB(tokenA);
+    setValueA(valueB);
+    setValueB(valueA);
+  }, [tokenA, tokenB, valueA, valueB]);
+
+  const updateValueA = useCallback((newValue: string) => {
+    setValueA(newValue);
+    setLastUpdated(true);
+  }, []);
+  const updateValueB = useCallback((newValue: string) => {
+    setValueB(newValue);
+    setLastUpdated(false);
+  }, []);
 
   return (
     <div className="swap">
       <TokenInputGroup
-        changeValue={(value, token) => changeGroupValue(value, token, 0)}
+        changeValue={updateValueA}
+        changeToken={setTokenA}
         tokenList={tokenList}
-        token={tokens[0]}
-        value={values[0]}
-        exclusion={tokens[1]}
+        token={tokenA}
+        value={valueA}
+        exclusion={tokenB}
       ></TokenInputGroup>
       <TokenInputGroup
-        changeValue={(value, token) => changeGroupValue(value, token, 1)}
+        changeValue={updateValueB}
+        changeToken={setTokenB}
         tokenList={tokenList}
-        token={tokens[1]}
-        value={values[1]}
-        exclusion={tokens[0]}
+        token={tokenB}
+        value={valueB}
+        exclusion={tokenA}
       ></TokenInputGroup>
       <button
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
@@ -63,15 +96,4 @@ export default function Swap() {
       )}
     </div>
   );
-
-  function changeGroupValue(
-    value: string,
-    token: Token | undefined,
-    index: number
-  ) {
-    setTokens(tokens.map((item, i) => (i === index ? token : item)));
-    setValues(values.map((item, i) => (i === index ? value : item)));
-    setLastUpdatedIndex(index);
-    setLastUpdatedPrice(value);
-  }
 }

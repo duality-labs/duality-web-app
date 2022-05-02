@@ -7,7 +7,8 @@ import { Token } from '../TokenPicker/mockHooks';
 import './TokenInputGroup.scss';
 
 interface InputGroupProps {
-  changeValue: (value: string, token: Token | undefined) => void;
+  changeToken: (token: Token | undefined) => void;
+  changeValue: (value: string) => void;
   exclusion: Token | undefined;
   token: Token | undefined;
   value: string | undefined;
@@ -17,6 +18,7 @@ interface InputGroupProps {
 export default function TokenInputGroup({
   tokenList,
   changeValue,
+  changeToken,
   value,
   exclusion,
   token,
@@ -51,12 +53,12 @@ export default function TokenInputGroup({
 
   function onInputChange(newValue: string) {
     setValue(newValue);
-    changeValue(newValue, selectedToken);
+    changeValue(newValue);
   }
 
   function changeSelected(newToken: Token | undefined) {
     if (newToken === exclusion) return;
     setToken(newToken);
-    changeValue(selectedValue || '0', newToken);
+    changeToken(newToken);
   }
 }
