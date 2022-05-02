@@ -13,7 +13,7 @@
 //    .token-dialog .dialog-content { width: 600px }
 .dialog-content {
   margin: 10vh auto;
-  padding: 2rem;
+  padding: 0;
   border-radius: 20px;
 
   // dynamic max width based on viewport size
@@ -36,9 +36,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 2rem;
 }
 
 .dialog-header-close-button {
   margin-left: 2rem;
+}
+
+.dialog-header-row,
+.dialog-body {
+  padding: 2rem;
 }

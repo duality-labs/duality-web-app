@@ -10,7 +10,7 @@ interface DialogProps {
   initialFocusRef?: React.RefObject<HTMLInputElement | HTMLButtonElement>;
   header?: React.ReactNode | React.ReactNode[];
   className?: string;
-  children?: React.ReactNode;
+  children?: React.ReactNode | React.ReactNode[];
 }
 
 export default function Dialog({
@@ -55,7 +55,7 @@ export default function Dialog({
                 </svg>
               </button>
             </div>
-            {children}
+            <div className="dialog-body">{children}</div>
           </DialogContent>
         </DialogOverlay>
       )}
