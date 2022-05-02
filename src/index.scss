@@ -1,3 +1,5 @@
+@import './theme/colors.scss';
+
 // Tailwind base includes its own version of CSS reset styles
 @tailwind base;
 @tailwind components;
@@ -12,7 +14,14 @@
   body {
     margin: 0;
     font-family: sans-serif;
-    background-color: #282c34;
-    color: #eeeeee;
+    background-color: $background-color;
+    color: $text-color;
   }
+}
+
+theme {
+  --blue: hsl(206, 66, 70);
+  --pink: hsl(303, 54, 80);
+  --off-white: hsl(287, 42, 90);
+  --grey-light: hsl(223, 45, 78);
 }

@@ -1,5 +1,15 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
+# overwrite auto-generated CSS for public/index.html
+node -e "require('fs');"\
+"  var css = require('sass').compile('public/index.scss').css;"\
+"  fs.writeFileSync("\
+"    'public/index.html',"\
+"    fs.readFileSync('public/index.html').toString()"\
+"      .replace(/\<style id=\"base-styles\"\>.*\<\/style\>/, '<style id=\"base-styles\">'+css+'</style>')"\
+"  );"
+# node -e "fs.writeFileSync('public/_auto_generated.css', require('sass').compile('public/index.scss').css);"
+
 # run linters over staged changes
 npx lint-staged --verbose

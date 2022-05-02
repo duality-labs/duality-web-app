@@ -1,0 +1,11 @@
+// this file gets auto-compiled and added to index.html by the .husky/pre-commit hook
+
+@import '../src/theme/colors.scss';
+
+html,
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background-color: $background-color;
+  color: $text-color;
+}
