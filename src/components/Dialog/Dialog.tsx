@@ -9,6 +9,7 @@ interface DialogProps {
   onDismiss: () => void;
   initialFocusRef?: React.RefObject<HTMLInputElement | HTMLButtonElement>;
   header?: React.ReactNode | React.ReactNode[];
+  footer?: React.ReactNode | React.ReactNode[];
   className?: string;
   children?: React.ReactNode | React.ReactNode[];
 }
@@ -18,6 +19,7 @@ export default function Dialog({
   onDismiss,
   initialFocusRef,
   header,
+  footer,
   className = '',
   children,
 }: DialogProps) {
@@ -56,6 +58,7 @@ export default function Dialog({
               </button>
             </div>
             <div className="dialog-body">{children}</div>
+            {footer && <div className="dialog-footer">{footer}</div>}
           </DialogContent>
         </DialogOverlay>
       )}
