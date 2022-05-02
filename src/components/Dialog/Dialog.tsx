@@ -8,6 +8,7 @@ interface DialogProps {
   isOpen: boolean;
   onDismiss: () => void;
   initialFocusRef?: React.RefObject<HTMLInputElement | HTMLButtonElement>;
+  className?: string;
   children?: React.ReactNode;
 }
 
@@ -15,13 +16,20 @@ export default function Dialog({
   isOpen,
   onDismiss,
   initialFocusRef,
+  className = '',
   children,
 }: DialogProps) {
   return (
     <>
       {isOpen && (
-        <DialogOverlay onDismiss={onDismiss} initialFocusRef={initialFocusRef}>
-          <DialogContent aria-label="dialog content">{children}</DialogContent>
+        <DialogOverlay
+          className={className}
+          onDismiss={onDismiss}
+          initialFocusRef={initialFocusRef}
+        >
+          <DialogContent className="dialog-content" aria-label="dialog content">
+            {children}
+          </DialogContent>
         </DialogOverlay>
       )}
     </>

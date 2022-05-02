@@ -6,3 +6,28 @@
   background: hsl(220, 13%, 18%);
   box-shadow: 0 4px 8px 0 hsla(0, 0, 0, 0.33);
 }
+
+// add more opinionated content styling
+// easily overrideable by custom classNames, eg.
+//    <Dialog className="token-dialog">
+//    .token-dialog .dialog-content { width: 600px }
+.dialog-content {
+  margin: 10vh auto;
+  padding: 2rem;
+  border-radius: 20px;
+
+  // dynamic max width based on viewport size
+  max-width: 90vw;
+  @media screen and (min-width: 576px) {
+    max-width: 80vw;
+  }
+  @media screen and (min-width: 768px) {
+    max-width: 70vw;
+  }
+  @media screen and (min-width: 992px) {
+    max-width: 60vw;
+  }
+  @media screen and (min-width: 1200px) {
+    max-width: 50vw;
+  }
+}
