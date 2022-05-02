@@ -38,6 +38,18 @@ export default function TokenPicker({
     dialogDom.showModal();
   }, [dialogDom]);
 
+  // Open the control when the label gets focused using Tab, otherwise ignore
+  const onLabelFocus = useCallback(
+    (event: React.FocusEvent) => {
+      let previousElement = event.relatedTarget;
+      if (!previousElement) return;
+      while (previousElement && previousElement !== dialogDom)
+        previousElement = previousElement.parentElement;
+      if (!previousElement) open();
+    },
+    [dialogDom, open]
+  );
+
   const close = useCallback(() => {
     setSearchQuery('');
     dialogDom.close();
@@ -126,6 +138,8 @@ export default function TokenPicker({
           isOpen ? ' open' : ''
         }`}
         onClick={open}
+        onFocus={onLabelFocus}
+        tabIndex={0}
         htmlFor={`token-selector-${currentID}`}
       >
         {value?.symbol || 'Choose Token'}
