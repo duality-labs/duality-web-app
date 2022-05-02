@@ -31,3 +31,14 @@
     max-width: 50vw;
   }
 }
+
+.dialog-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 2rem;
+}
+
+.dialog-header-close-button {
+  margin-left: 2rem;
+}
