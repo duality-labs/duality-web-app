@@ -38,6 +38,7 @@ export default function TokenPicker({
   }, [dialogDom]);
 
   const close = useCallback(() => {
+    setSearchQuery('');
     dialogDom.close();
   }, [dialogDom]);
 
@@ -132,9 +133,12 @@ export default function TokenPicker({
       >
         <div className="token-picker">
           <div className="token-picker-header">
-            <label htmlFor={`token-selector-${currentID}`}>
-              Select a token
-            </label>
+            <div className="token-picker-controls">
+              <label htmlFor={`token-selector-${currentID}`}>
+                Select a token
+              </label>
+              <button className="close" onClick={close}></button>
+            </div>
             <input
               type="search"
               id={`token-selector-${currentID}`}
@@ -142,6 +146,7 @@ export default function TokenPicker({
               onKeyDown={onKeyDown}
               value={searchQuery}
               placeholder="Search for a token"
+              autoComplete="off"
             />
           </div>
           <ul className="token-picker-body">

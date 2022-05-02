@@ -29,7 +29,39 @@ $border-radius: 1.25rem;
   .token-picker-header {
     & {
       padding: 1rem 1.5rem;
+      position: relative;
       flex: 0 0 auto;
+    }
+
+    .token-picker-controls {
+      flex-direction: row;
+      display: flex;
+    }
+
+    .close {
+      & {
+        transition: all $transition-duration ease-in-out;
+        background-color: transparent;
+        border: 0 none transparent;
+        align-self: flex-start;
+        color: $color-primary;
+        outline: none;
+        opacity: 0.4;
+        flex: 0 0 auto;
+      }
+
+      &::before {
+        content: '\2716';
+      }
+
+      &:hover,
+      &:focus {
+        opacity: 1;
+      }
+
+      &:focus {
+        text-shadow: 0.25rem 0.25rem 0.25rem rgba($color-primary, 0.25);
+      }
     }
 
     label {
@@ -37,6 +69,7 @@ $border-radius: 1.25rem;
       padding: 0.5rem 0rem;
       cursor: pointer;
       display: block;
+      flex: 1 1 auto;
     }
 
     input {
@@ -61,6 +94,13 @@ $border-radius: 1.25rem;
 
       &:hover::placeholder {
         opacity: 0.6;
+      }
+
+      &::-webkit-search-decoration,
+      &::-webkit-search-cancel-button,
+      &::-webkit-search-results-button,
+      &::-webkit-search-results-decoration {
+        display: none;
       }
     }
   }
