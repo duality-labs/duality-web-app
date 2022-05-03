@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
@@ -17,28 +17,17 @@ export default function Swap() {
   const [valueA, setValueA] = useState('0');
   const [valueB, setValueB] = useState('0');
   const [lastUpdated, setLastUpdated] = useState(true);
-  const [tokenRequest, setTokenRequest] = useState({
-    token: tokenA?.address || '',
-    otherToken: tokenB?.address || '',
-    value: valueA,
-  });
-  // get exchange rate
-  const { data: rateData, isValidating: isValidatingRate } =
-    useExchangeRate(tokenRequest);
-  const dotCount = useDotCounter(0.25e3);
 
-  // change rate request params
-  useEffect(() => {
-    const token = lastUpdated ? tokenA : tokenB;
-    const otherToken = lastUpdated ? tokenB : tokenA;
-    const value = lastUpdated ? valueA : valueB;
-    if (!token || !otherToken || !value) return; // TODO add clear
-    setTokenRequest({
-      token: token?.address || '',
-      otherToken: otherToken?.address || '',
-      value: value,
-    });
-  }, [valueA, tokenA, valueB, tokenB, lastUpdated]);
+  const tokenAddress = lastUpdated ? tokenA?.address : tokenB?.address;
+  const otherTokenAddress = lastUpdated ? tokenB?.address : tokenA?.address;
+  const value = lastUpdated ? valueA : valueB;
+  // get exchange rate
+  const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
+    tokenAddress,
+    otherTokenAddress,
+    value
+  );
+  const dotCount = useDotCounter(0.25e3);
 
   const valueAConverted = lastUpdated ? valueA : rateData?.price || '0';
   const valueBConverted = lastUpdated ? rateData?.price || '0' : valueB;

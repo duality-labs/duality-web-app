@@ -13,12 +13,6 @@ interface IExchangeRate {
   gas: string;
 }
 
-export interface TokenRequest {
-  otherToken: string;
-  token: string;
-  value: string;
-}
-
 export interface Token {
   logo: string | null;
   address: string;
@@ -77,12 +71,18 @@ function usePoll<T>(mockData: T): {
   return { data, isValidating: validating };
 }
 
-export function useExchangeRate(request: TokenRequest) {
+export function useExchangeRate(
+  token: string | undefined,
+  otherToken: string | undefined,
+  value: string | undefined
+) {
   const [data, setData] = useState(undefined as IExchangeRate | undefined);
   const [validating, setValidating] = useState(true);
 
   useEffect(() => {
-    const { token, otherToken, value } = request;
+    if (!token || !otherToken || !value) {
+      return setData(undefined);
+    }
     setValidating(true);
     setTimeout(() => {
       const rate =
@@ -100,7 +100,7 @@ export function useExchangeRate(request: TokenRequest) {
       });
       setValidating(false);
     }, requestTime);
-  }, [request]);
+  }, [token, otherToken, value]);
 
   return { data, isValidating: validating };
 }
