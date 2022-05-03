@@ -36,9 +36,10 @@ export default function Swap() {
   useEffect(() => rateData && setLastKnownRate(rateData?.rate), [rateData]);
 
   // calculate with last known rate immediately
-  const price = lastUpdatedA
-    ? Math.round(Number(valueA) * 1e6 * Number(lastKnownRate || 0)) / 1e6
-    : Math.round((Number(valueB) * 1e6) / Number(lastKnownRate || 0)) / 1e6;
+  const price =
+    Math.round(
+      Number(lastUpdatedA ? valueA : valueB) * Number(lastKnownRate || 0) * 1e6
+    ) / 1e6;
   const valueAConverted = lastUpdatedA
     ? valueA
     : `${lastKnownRate ? price : '...'}`;
