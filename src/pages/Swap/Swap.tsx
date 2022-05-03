@@ -22,7 +22,7 @@ export default function Swap() {
     undefined as string | undefined
   );
   // remove last known rate if tokens change
-  useEffect(() => setLastKnownRate(undefined), [tokenA, tokenB]);
+  useEffect(() => setLastKnownRate(undefined), [tokenA, tokenB, lastUpdatedA]);
 
   // get exchange rate
   const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
