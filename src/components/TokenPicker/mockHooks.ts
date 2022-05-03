@@ -71,20 +71,31 @@ function usePoll<T>(mockData: T): {
   return { data, isValidating: validating };
 }
 
+type IRequestResponse<T> =
+  | {
+      requestId: number;
+      response?: undefined;
+    }
+  | {
+      requestId?: undefined;
+      response?: T;
+    };
+
 export function useExchangeRate(
   token: Token | undefined,
   otherToken: Token | undefined,
   value: string | undefined
 ) {
-  const [data, setData] = useState(undefined as IExchangeRate | undefined);
-  const [validating, setValidating] = useState(true);
+  const [{ requestId, response }, setRequestResponse] = useState(
+    {} as IRequestResponse<IExchangeRate | undefined>
+  );
 
   useEffect(() => {
     if (!token || !otherToken || !value) {
-      return setData(undefined);
+      return setRequestResponse({});
     }
-    setData(undefined);
-    setValidating(true);
+    const requestId = getNextID();
+    setRequestResponse({ requestId });
     setTimeout(() => {
       const rate =
         exchangeRates.find(
@@ -93,19 +104,25 @@ export function useExchangeRate(
             rate.otherToken === otherToken.address
         )?.rate || 1;
       const price = Math.round(rate * Number(value) * 1e6) / 1e6;
-      setData({
-        rate: `${rate}`,
-        gas: '5',
-        price: `${price}`,
-        value,
-        otherToken: otherToken.address,
-        token: token.address,
+      setRequestResponse((state) => {
+        if (state.requestId === requestId) {
+          return {
+            response: {
+              rate: `${rate}`,
+              gas: '5',
+              price: `${price}`,
+              value,
+              otherToken: otherToken.address,
+              token: token.address,
+            },
+          };
+        }
+        return state;
       });
-      setValidating(false);
     }, requestTime);
   }, [token, otherToken, value]);
 
-  return { data, isValidating: validating };
+  return { data: response, isValidating: !!requestId };
 }
 
 export function useDotCounter(
