@@ -97,12 +97,13 @@ export function useExchangeRate(
     const requestId = getNextID();
     setRequestResponse({ requestId });
     setTimeout(() => {
-      const rate =
+      const baseRate =
         exchangeRates.find(
           (rate) =>
             rate.token === token.address &&
             rate.otherToken === otherToken.address
         )?.rate || 1;
+      const rate = baseRate * (0.99 + Math.random() / 50);
       const price = Math.round(rate * Number(value) * 1e6) / 1e6;
       setRequestResponse((state) => {
         if (state.requestId === requestId) {
