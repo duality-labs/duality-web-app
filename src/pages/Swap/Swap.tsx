@@ -18,14 +18,11 @@ export default function Swap() {
   const [valueB, setValueB] = useState('0');
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
 
-  const tokenAddress = lastUpdatedA ? tokenA?.address : tokenB?.address;
-  const otherTokenAddress = lastUpdatedA ? tokenB?.address : tokenA?.address;
-  const value = lastUpdatedA ? valueA : valueB;
   // get exchange rate
   const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
-    tokenAddress,
-    otherTokenAddress,
-    value
+    lastUpdatedA ? tokenA?.address : tokenB?.address,
+    lastUpdatedA ? tokenB?.address : tokenA?.address,
+    lastUpdatedA ? valueA : valueB
   );
   const dotCount = useDotCounter(0.25e3);
 
