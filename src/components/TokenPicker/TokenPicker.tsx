@@ -135,17 +135,20 @@ export default function TokenPicker({
 
   return (
     <>
-      <label
+      {/* eslint-disable-next-line */}
+      <button
         className={`py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle flex justify-center items-center text-center${
           isOpen ? ' open' : ''
         }`}
         onClick={open}
         onFocus={onLabelFocus}
+        // eslint-disable-next-line
         tabIndex={0}
-        htmlFor={`token-selector-${currentID}`}
+        // htmlFor={`token-selector-${currentID}`}
       >
         {value?.symbol || 'Choose Token'}
-      </label>
+      </button>
+      {/* eslint-disable-next-line */}
       <dialog
         ref={(dom) => setDialogDom(dom)}
         onClick={closeOnClick}
