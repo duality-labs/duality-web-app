@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
@@ -18,6 +18,12 @@ export default function Swap() {
   const [valueB, setValueB] = useState('0');
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
 
+  const [lastKnownRate, setLastKnownRate] = useState(
+    undefined as string | undefined
+  );
+  // remove last known rate if tokens change
+  useEffect(() => setLastKnownRate(undefined), [tokenA, tokenB]);
+
   // get exchange rate
   const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
     lastUpdatedA ? tokenA : tokenB,
@@ -26,15 +32,18 @@ export default function Swap() {
   );
   const dotCount = useDotCounter(0.25e3);
 
+  // update last known rate if new information is known and available
+  useEffect(() => rateData && setLastKnownRate(rateData?.rate), [rateData]);
+
   // calculate with last known rate immediately
   const price = lastUpdatedA
-    ? Math.round(Number(valueA) * 1e6 * Number(rateData?.rate || 0)) / 1e6
-    : Math.round((Number(valueB) * 1e6) / Number(rateData?.rate || 0)) / 1e6;
+    ? Math.round(Number(valueA) * 1e6 * Number(lastKnownRate || 0)) / 1e6
+    : Math.round((Number(valueB) * 1e6) / Number(lastKnownRate || 0)) / 1e6;
   const valueAConverted = lastUpdatedA
     ? valueA
-    : `${rateData?.rate ? price : '...'}`;
+    : `${lastKnownRate ? price : '...'}`;
   const valueBConverted = lastUpdatedA
-    ? `${rateData?.rate ? price : '...'}`
+    ? `${lastKnownRate ? price : '...'}`
     : valueB;
 
   const swapTokens = useCallback(() => {

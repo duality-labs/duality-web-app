@@ -79,13 +79,11 @@ export function useExchangeRate(
   const [data, setData] = useState(undefined as IExchangeRate | undefined);
   const [validating, setValidating] = useState(true);
 
-  // if tokens change, set undefined status
-  useEffect(() => setData(undefined), [token, otherToken]);
-
   useEffect(() => {
     if (!token || !otherToken || !value) {
       return setData(undefined);
     }
+    setData(undefined);
     setValidating(true);
     setTimeout(() => {
       const rate =
