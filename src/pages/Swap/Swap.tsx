@@ -86,6 +86,7 @@ export default function Swap() {
       >
         Swap
       </button>
+      <span>Gas price: {rateData?.gas}</span>
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
         <i className="text-transparent">.</i>
       )}
