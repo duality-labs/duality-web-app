@@ -72,8 +72,8 @@ function usePoll<T>(mockData: T): {
 }
 
 export function useExchangeRate(
-  token: string | undefined,
-  otherToken: string | undefined,
+  token: Token | undefined,
+  otherToken: Token | undefined,
   value: string | undefined
 ) {
   const [data, setData] = useState(undefined as IExchangeRate | undefined);
@@ -90,7 +90,9 @@ export function useExchangeRate(
     setTimeout(() => {
       const rate =
         exchangeRates.find(
-          (rate) => rate.token === token && rate.otherToken === otherToken
+          (rate) =>
+            rate.token === token.address &&
+            rate.otherToken === otherToken.address
         )?.rate || 1;
       const price = Math.round(rate * Number(value) * 1e6) / 1e6;
       setData({
@@ -98,8 +100,8 @@ export function useExchangeRate(
         gas: '5',
         price: `${price}`,
         value,
-        otherToken,
-        token,
+        otherToken: otherToken.address,
+        token: token.address,
       });
       setValidating(false);
     }, requestTime);

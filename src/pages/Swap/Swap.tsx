@@ -20,8 +20,8 @@ export default function Swap() {
 
   // get exchange rate
   const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
-    lastUpdatedA ? tokenA?.address : tokenB?.address,
-    lastUpdatedA ? tokenB?.address : tokenA?.address,
+    lastUpdatedA ? tokenA : tokenB,
+    lastUpdatedA ? tokenB : tokenA,
     lastUpdatedA ? valueA : valueB
   );
   const dotCount = useDotCounter(0.25e3);
