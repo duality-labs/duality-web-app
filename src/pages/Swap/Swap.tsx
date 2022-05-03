@@ -31,10 +31,14 @@ export default function Swap() {
 
   // calculate with last known rate immediately
   const price = lastUpdatedA
-    ? Math.round(Number(value) * 1e6 * Number(rateData?.rate || 0)) / 1e6
-    : Math.round((Number(value) * 1e6) / Number(rateData?.rate || 0)) / 1e6;
-  const valueAConverted = lastUpdatedA ? valueA : `${price || 0}`;
-  const valueBConverted = lastUpdatedA ? `${price || 0}` : valueB;
+    ? Math.round(Number(valueA) * 1e6 * Number(rateData?.rate || 0)) / 1e6
+    : Math.round((Number(valueB) * 1e6) / Number(rateData?.rate || 0)) / 1e6;
+  const valueAConverted = lastUpdatedA
+    ? valueA
+    : `${rateData?.rate ? price : '...'}`;
+  const valueBConverted = lastUpdatedA
+    ? `${rateData?.rate ? price : '...'}`
+    : valueB;
 
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
