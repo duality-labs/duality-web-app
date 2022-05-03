@@ -25,8 +25,6 @@ export default function Swap() {
   const [lastKnownRate, setLastKnownRate] = useState(
     undefined as IExchangeRate | undefined
   );
-  // remove last known rate if tokens change
-  useEffect(() => setLastKnownRate(undefined), [tokenA, tokenB]);
 
   // get exchange rate
   const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
@@ -78,6 +76,7 @@ export default function Swap() {
     setTokenB(tokenA);
     setValueA(valueBConverted);
     setValueB(valueAConverted);
+    setLastUpdatedA((a) => !a);
   }, [tokenA, tokenB, valueAConverted, valueBConverted]);
 
   const updateValueA = useCallback((newValue: string) => {
