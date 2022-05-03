@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 let idCounter = 0;
 const seconds = 1000;
@@ -126,8 +126,14 @@ export function useTokens() {
   return usePoll(tokens);
 }
 
-export function useNextID() {
-  idCounter += 1;
+function getNextID() {
   if (idCounter >= Number.MAX_SAFE_INTEGER) idCounter = 0;
+  idCounter += 1;
   return idCounter;
+}
+
+// return an unchanging initial value
+export function useNextID() {
+  const ref = useRef(() => getNextID());
+  return ref.current;
 }

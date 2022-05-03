@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { useNextID, Token } from './mockHooks';
 
@@ -29,7 +29,7 @@ export default function TokenPicker({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const currentID = useMemo(useNextID, []);
+  const currentID = useNextID();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [dialogDom, setDialogDom] = useState(undefined as any);
   const [bodyDom, setBody] = useState(null as HTMLElement | null);
