@@ -93,7 +93,13 @@ export default function Swap() {
     <div className="swap">
       <TokenInputGroup
         changeValue={updateValueA}
-        changeToken={setTokenA}
+        changeToken={(tokenA) => {
+          if (valueBConverted) {
+            setLastUpdatedA(false);
+            setValueB(valueBConverted);
+          }
+          setTokenA(tokenA);
+        }}
         tokenList={tokenList}
         token={tokenA}
         value={valueAConverted}
@@ -101,7 +107,13 @@ export default function Swap() {
       ></TokenInputGroup>
       <TokenInputGroup
         changeValue={updateValueB}
-        changeToken={setTokenB}
+        changeToken={(tokenB) => {
+          if (valueAConverted) {
+            setLastUpdatedA(true);
+            setValueA(valueAConverted);
+          }
+          setTokenB(tokenB);
+        }}
         tokenList={tokenList}
         token={tokenB}
         value={valueBConverted}
