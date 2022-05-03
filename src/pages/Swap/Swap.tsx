@@ -16,11 +16,11 @@ export default function Swap() {
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
   const [valueA, setValueA] = useState('0');
   const [valueB, setValueB] = useState('0');
-  const [lastUpdated, setLastUpdated] = useState(true);
+  const [lastUpdatedA, setLastUpdatedA] = useState(true);
 
-  const tokenAddress = lastUpdated ? tokenA?.address : tokenB?.address;
-  const otherTokenAddress = lastUpdated ? tokenB?.address : tokenA?.address;
-  const value = lastUpdated ? valueA : valueB;
+  const tokenAddress = lastUpdatedA ? tokenA?.address : tokenB?.address;
+  const otherTokenAddress = lastUpdatedA ? tokenB?.address : tokenA?.address;
+  const value = lastUpdatedA ? valueA : valueB;
   // get exchange rate
   const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
     tokenAddress,
@@ -29,8 +29,8 @@ export default function Swap() {
   );
   const dotCount = useDotCounter(0.25e3);
 
-  const valueAConverted = lastUpdated ? valueA : rateData?.price || '0';
-  const valueBConverted = lastUpdated ? rateData?.price || '0' : valueB;
+  const valueAConverted = lastUpdatedA ? valueA : rateData?.price || '0';
+  const valueBConverted = lastUpdatedA ? rateData?.price || '0' : valueB;
 
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
@@ -41,11 +41,11 @@ export default function Swap() {
 
   const updateValueA = useCallback((newValue: string) => {
     setValueA(newValue);
-    setLastUpdated(true);
+    setLastUpdatedA(true);
   }, []);
   const updateValueB = useCallback((newValue: string) => {
     setValueB(newValue);
-    setLastUpdated(false);
+    setLastUpdatedA(false);
   }, []);
 
   return (
