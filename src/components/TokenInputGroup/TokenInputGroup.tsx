@@ -27,7 +27,7 @@ export default function TokenInputGroup({
   const [selectedValue, setValue] = useState(value);
 
   useEffect(() => {
-    setValue(value || '');
+    setValue(value);
   }, [value]);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function TokenInputGroup({
       <input
         type="text"
         className="form-control"
-        value={selectedValue || ''}
+        value={selectedValue ?? '...'}
         onChange={(e) => onInputChange(e.target.value)}
       />
       <TokenPicker

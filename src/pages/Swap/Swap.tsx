@@ -15,8 +15,8 @@ export default function Swap() {
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
   const [tokenA, setTokenA] = useState(tokenList[0] as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [valueA, setValueA] = useState('0');
-  const [valueB, setValueB] = useState('0');
+  const [valueA, setValueA] = useState('0' as string | undefined);
+  const [valueB, setValueB] = useState('0' as string | undefined);
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
 
   const token = lastUpdatedA ? tokenA : tokenB;
@@ -60,12 +60,17 @@ export default function Swap() {
 
   // calculate with last known rate immediately
   const price =
+    approximateRate &&
     Math.round(Number(value) * Number(approximateRate || 0) * 1e6) / 1e6;
   const valueAConverted = lastUpdatedA
     ? valueA
-    : `${approximateRate ? price : '...'}`;
+    : price
+    ? `${price}`
+    : undefined;
   const valueBConverted = lastUpdatedA
-    ? `${approximateRate ? price : '...'}`
+    ? price
+      ? `${price}`
+      : undefined
     : valueB;
 
   const swapTokens = useCallback(() => {
