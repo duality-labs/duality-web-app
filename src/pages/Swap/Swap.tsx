@@ -22,10 +22,12 @@ export default function Swap() {
     otherToken: tokenB?.address || '',
     value: valueA,
   });
+  // get exchange rate
   const { data: rateData, isValidating: isValidatingRate } =
     useExchangeRate(tokenRequest);
   const dotCount = useDotCounter(0.25e3);
 
+  // change rate request params
   useEffect(() => {
     const token = lastUpdated ? tokenA : tokenB;
     const otherToken = lastUpdated ? tokenB : tokenA;
@@ -38,6 +40,7 @@ export default function Swap() {
     });
   }, [valueA, tokenA, valueB, tokenB, lastUpdated]);
 
+  // calculate new value of otherToken
   useEffect(() => {
     const token = lastUpdated ? tokenA : tokenB;
     const otherToken = lastUpdated ? tokenB : tokenA;
