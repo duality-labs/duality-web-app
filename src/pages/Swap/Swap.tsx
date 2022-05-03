@@ -40,26 +40,15 @@ export default function Swap() {
     });
   }, [valueA, tokenA, valueB, tokenB, lastUpdated]);
 
-  // calculate new value of otherToken
-  useEffect(() => {
-    const token = lastUpdated ? tokenA : tokenB;
-    const otherToken = lastUpdated ? tokenB : tokenA;
-    const value = lastUpdated ? valueA : valueB;
-    if (token?.address !== rateData?.token) return;
-    if (otherToken?.address !== rateData?.otherToken) return;
-    if (value !== rateData?.value) return;
-    if (lastUpdated) setValueB(rateData.price || '0');
-    else setValueA(rateData.price || '0');
-    // This should only run when the rate data change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rateData]);
+  const valueAConverted = lastUpdated ? valueA : rateData?.price || '0';
+  const valueBConverted = lastUpdated ? rateData?.price || '0' : valueB;
 
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
     setTokenB(tokenA);
-    setValueA(valueB);
-    setValueB(valueA);
-  }, [tokenA, tokenB, valueA, valueB]);
+    setValueA(valueBConverted);
+    setValueB(valueAConverted);
+  }, [tokenA, tokenB, valueAConverted, valueBConverted]);
 
   const updateValueA = useCallback((newValue: string) => {
     setValueA(newValue);
@@ -77,7 +66,7 @@ export default function Swap() {
         changeToken={setTokenA}
         tokenList={tokenList}
         token={tokenA}
-        value={valueA}
+        value={valueAConverted}
         exclusion={tokenB}
       ></TokenInputGroup>
       <TokenInputGroup
@@ -85,7 +74,7 @@ export default function Swap() {
         changeToken={setTokenB}
         tokenList={tokenList}
         token={tokenB}
-        value={valueB}
+        value={valueBConverted}
         exclusion={tokenA}
       ></TokenInputGroup>
       <button
