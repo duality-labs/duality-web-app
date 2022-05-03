@@ -6,6 +6,7 @@ import {
   useExchangeRate,
   useDotCounter,
   Token,
+  IExchangeRate,
 } from '../../components/TokenPicker/mockHooks';
 
 import './Swap.scss';
@@ -22,10 +23,10 @@ export default function Swap() {
   const otherToken = lastUpdatedA ? tokenB : tokenA;
   const value = lastUpdatedA ? valueA : valueB;
   const [lastKnownRate, setLastKnownRate] = useState(
-    undefined as string | undefined
+    undefined as IExchangeRate | undefined
   );
   // remove last known rate if tokens change
-  useEffect(() => setLastKnownRate(undefined), [tokenA, tokenB, lastUpdatedA]);
+  useEffect(() => setLastKnownRate(undefined), [tokenA, tokenB]);
 
   // get exchange rate
   const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
@@ -36,16 +37,35 @@ export default function Swap() {
   const dotCount = useDotCounter(0.25e3);
 
   // update last known rate if new information is known and available
-  useEffect(() => rateData && setLastKnownRate(rateData?.rate), [rateData]);
+  useEffect(() => rateData && setLastKnownRate(rateData), [rateData]);
+
+  const [approximateRate, setApproximateRate] = useState(
+    undefined as string | undefined
+  );
+  useEffect(() => {
+    if (
+      lastKnownRate?.token === token?.address &&
+      lastKnownRate?.otherToken === otherToken?.address
+    ) {
+      setApproximateRate(lastKnownRate?.rate);
+    } else if (
+      lastKnownRate?.token === otherToken?.address &&
+      lastKnownRate?.otherToken === token?.address
+    ) {
+      setApproximateRate(`${1 / Number(lastKnownRate?.rate)}`);
+    } else {
+      setApproximateRate(undefined);
+    }
+  }, [lastKnownRate, token, otherToken]);
 
   // calculate with last known rate immediately
   const price =
-    Math.round(Number(value) * Number(lastKnownRate || 0) * 1e6) / 1e6;
+    Math.round(Number(value) * Number(approximateRate || 0) * 1e6) / 1e6;
   const valueAConverted = lastUpdatedA
     ? valueA
-    : `${lastKnownRate ? price : '...'}`;
+    : `${approximateRate ? price : '...'}`;
   const valueBConverted = lastUpdatedA
-    ? `${lastKnownRate ? price : '...'}`
+    ? `${approximateRate ? price : '...'}`
     : valueB;
 
   const swapTokens = useCallback(() => {

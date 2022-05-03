@@ -4,7 +4,7 @@ let idCounter = 0;
 const seconds = 1000;
 const requestTime = 2 * seconds;
 
-interface IExchangeRate {
+export interface IExchangeRate {
   otherToken?: string;
   price?: string;
   value?: string;
