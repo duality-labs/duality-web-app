@@ -29,8 +29,12 @@ export default function Swap() {
   );
   const dotCount = useDotCounter(0.25e3);
 
-  const valueAConverted = lastUpdatedA ? valueA : rateData?.price || '0';
-  const valueBConverted = lastUpdatedA ? rateData?.price || '0' : valueB;
+  // calculate with last known rate immediately
+  const price = lastUpdatedA
+    ? Math.round(Number(value) * 1e6 * Number(rateData?.rate || 0)) / 1e6
+    : Math.round((Number(value) * 1e6) / Number(rateData?.rate || 0)) / 1e6;
+  const valueAConverted = lastUpdatedA ? valueA : `${price || 0}`;
+  const valueBConverted = lastUpdatedA ? `${price || 0}` : valueB;
 
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
