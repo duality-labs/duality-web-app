@@ -18,6 +18,9 @@ export default function Swap() {
   const [valueB, setValueB] = useState('0');
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
 
+  const token = lastUpdatedA ? tokenA : tokenB;
+  const otherToken = lastUpdatedA ? tokenB : tokenA;
+  const value = lastUpdatedA ? valueA : valueB;
   const [lastKnownRate, setLastKnownRate] = useState(
     undefined as string | undefined
   );
@@ -26,9 +29,9 @@ export default function Swap() {
 
   // get exchange rate
   const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
-    lastUpdatedA ? tokenA : tokenB,
-    lastUpdatedA ? tokenB : tokenA,
-    lastUpdatedA ? valueA : valueB
+    token,
+    otherToken,
+    value
   );
   const dotCount = useDotCounter(0.25e3);
 
@@ -37,9 +40,7 @@ export default function Swap() {
 
   // calculate with last known rate immediately
   const price =
-    Math.round(
-      Number(lastUpdatedA ? valueA : valueB) * Number(lastKnownRate || 0) * 1e6
-    ) / 1e6;
+    Math.round(Number(value) * Number(lastKnownRate || 0) * 1e6) / 1e6;
   const valueAConverted = lastUpdatedA
     ? valueA
     : `${lastKnownRate ? price : '...'}`;
