@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { useNextID, Token } from './mockHooks';
 
+import Dialog from '../Dialog/Dialog';
+
 import './TokenPicker.scss';
 
 interface TokenResult {
@@ -29,39 +31,18 @@ export default function TokenPicker({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [inputDom, setInputDom] = useState(null as HTMLElement | null);
+  const [bodyDom, setBodyDom] = useState(null as HTMLElement | null);
   const currentID = useNextID();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [dialogDom, setDialogDom] = useState(undefined as any);
-  const [bodyDom, setBody] = useState(null as HTMLElement | null);
 
   const open = useCallback(() => {
-    dialogDom.showModal();
-  }, [dialogDom]);
-
-  // Open the control when the label gets focused using Tab, otherwise ignore
-  const onLabelFocus = useCallback(
-    (event: React.FocusEvent) => {
-      let previousElement = event.relatedTarget;
-      if (!previousElement) return;
-      while (previousElement && previousElement !== dialogDom)
-        previousElement = previousElement.parentElement;
-      if (!previousElement && event.target instanceof HTMLElement)
-        event.target.click();
-    },
-    [dialogDom]
-  );
+    setIsOpen(true);
+  }, []);
 
   const close = useCallback(() => {
     setSearchQuery('');
-    dialogDom.close();
-  }, [dialogDom]);
-
-  const closeOnClick = useCallback(
-    (event: React.MouseEvent) => {
-      if (event.target === dialogDom) close();
-    },
-    [dialogDom, close]
-  );
+    setIsOpen(false);
+  }, []);
 
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -123,98 +104,93 @@ export default function TokenPicker({
     [tokenList, searchQuery]
   );
 
-  useEffect(
-    function () {
-      if (!dialogDom) return;
-      dialogDom.addEventListener('close', function () {
-        setIsOpen(false);
-      });
+  const onItemFocus = useCallback(
+    (index: number) => {
+      setSelectedIndex(index);
+      inputDom?.focus();
     },
-    [dialogDom]
+    [inputDom]
   );
+
+  function getHeader() {
+    return (
+      <div className="token-picker-head">
+        <label htmlFor={`token-selector-${currentID}`}>Select a token</label>
+        <input
+          type="search"
+          id={`token-selector-${currentID}`}
+          onInput={(e) => setSearchQuery(e.currentTarget.value)}
+          onKeyDown={onKeyDown}
+          value={searchQuery}
+          placeholder="Search for a token"
+          autoComplete="off"
+          ref={setInputDom}
+        />
+      </div>
+    );
+  }
+
+  function getBody() {
+    return (
+      <ul className="token-picker-body" ref={setBodyDom}>
+        {filteredList?.map((token, index) => (
+          <li key={token?.token?.address}>
+            <data value={token?.token?.address}>
+              <button
+                className={`${
+                  exclusion?.address === token?.token?.address ? 'disabled' : ''
+                }${index === selectedIndex ? ' selected' : ''}`}
+                onClick={() => {
+                  if (exclusion?.address === token?.token?.address) return;
+                  onChange(token?.token);
+                  close();
+                }}
+                onFocus={() => onItemFocus(index)}
+              >
+                <div className="token-image">
+                  {token?.token?.logo ? (
+                    <img
+                      src={token?.token?.logo}
+                      alt={`${token?.token?.symbol || 'Token'} logo`}
+                    />
+                  ) : (
+                    <i className="no-token-logo"></i>
+                  )}
+                </div>
+                <dfn className="token-symbol">
+                  <abbr title={token?.token?.address}>
+                    {textListWithMark(token?.symbol || [])}
+                  </abbr>
+                </dfn>
+                <span className="token-name">
+                  {textListWithMark(token?.name || [])}
+                </span>
+                <span className="token-balance"></span>
+              </button>
+            </data>
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   return (
     <>
-      {/* eslint-disable-next-line */}
       <button
         className={`py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle flex justify-center items-center text-center${
           isOpen ? ' open' : ''
         }`}
         onClick={open}
-        onFocus={onLabelFocus}
-        // eslint-disable-next-line
-        tabIndex={0}
-        // htmlFor={`token-selector-${currentID}`}
       >
         {value?.symbol || 'Choose Token'}
       </button>
-      {/* eslint-disable-next-line */}
-      <dialog
-        ref={(dom) => setDialogDom(dom)}
-        onClick={closeOnClick}
-        className="token-picker-dialog"
+      <Dialog
+        isOpen={isOpen}
+        onDismiss={close}
+        header={getHeader()} /*initialFocusRef={inputDom || undefined}*/
       >
-        <div className="token-picker">
-          <div className="token-picker-header">
-            <div className="token-picker-controls">
-              <label htmlFor={`token-selector-${currentID}`}>
-                Select a token
-              </label>
-              <button className="close" onClick={close}></button>
-            </div>
-            <input
-              type="search"
-              id={`token-selector-${currentID}`}
-              onInput={(e) => setSearchQuery(e.currentTarget.value)}
-              onKeyDown={onKeyDown}
-              value={searchQuery}
-              placeholder="Search for a token"
-              autoComplete="off"
-            />
-          </div>
-          <ul className="token-picker-body" ref={(dom) => setBody(dom)}>
-            {filteredList?.map((token, index) => (
-              <li key={token?.token?.address}>
-                <data value={token?.token?.address}>
-                  <button
-                    className={`${
-                      exclusion?.address === token?.token?.address
-                        ? 'disabled'
-                        : ''
-                    }${index === selectedIndex ? ' selected' : ''}`}
-                    onClick={() => {
-                      if (exclusion?.address === token?.token?.address) return;
-                      onChange(token?.token);
-                      close();
-                    }}
-                    onFocus={() => setSelectedIndex(index)}
-                  >
-                    <div className="token-image">
-                      {token?.token?.logo ? (
-                        <img
-                          src={token?.token?.logo}
-                          alt={`${token?.token?.symbol || 'Token'} logo`}
-                        />
-                      ) : (
-                        <i className="no-token-logo"></i>
-                      )}
-                    </div>
-                    <dfn className="token-symbol">
-                      <abbr title={token?.token?.address}>
-                        {textListWithMark(token?.symbol || [])}
-                      </abbr>
-                    </dfn>
-                    <span className="token-name">
-                      {textListWithMark(token?.name || [])}
-                    </span>
-                    <span className="token-balance"></span>
-                  </button>
-                </data>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </dialog>
+        {getBody()}
+      </Dialog>
     </>
   );
 }
