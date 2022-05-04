@@ -48,9 +48,9 @@ export default function Swap() {
         rate = 1 / Number(lastRate?.rate);
       const price = round(Number(otherValue) * rate, 1e6);
       if (!isNaN(price)) return `${price}`;
-      return '...';
+      return '.'.repeat(dotCount);
     },
-    [rateData, lastRate]
+    [rateData, lastRate, dotCount]
   );
   const valueAConverted = getTempRate(
     lastUpdatedA,
