@@ -71,31 +71,19 @@ function usePoll<T>(mockData: T): {
   return { data, isValidating: validating };
 }
 
-type IRequestResponse<T> =
-  | {
-      requestId: number;
-      response?: undefined;
-    }
-  | {
-      requestId?: undefined;
-      response?: T;
-    };
-
 export function useExchangeRate(
   token: Token | undefined,
   otherToken: Token | undefined,
   value: string | undefined
 ) {
-  const [{ requestId, response }, setRequestResponse] = useState(
-    {} as IRequestResponse<IExchangeRate | undefined>
-  );
+  const [data, setData] = useState(undefined as IExchangeRate | undefined);
+  const [validating, setValidating] = useState(false);
 
   useEffect(() => {
-    if (!token || !otherToken || !value) {
-      return setRequestResponse({});
-    }
-    const requestId = getNextID();
-    setRequestResponse({ requestId });
+    if (!token || !otherToken || !value) return setData(undefined);
+    setData(undefined);
+    setValidating(true);
+
     setTimeout(() => {
       const baseRate =
         exchangeRates.find(
@@ -105,30 +93,26 @@ export function useExchangeRate(
         )?.rate || 1;
       const rate = baseRate * (0.99 + Math.random() / 50);
       const price = Math.round(rate * Number(value) * 1e6) / 1e6;
-      setRequestResponse((state) => {
-        if (state.requestId === requestId) {
-          return {
-            response: {
-              rate: `${rate}`,
-              gas: '5',
-              price: `${price}`,
-              value,
-              otherToken: otherToken.address,
-              token: token.address,
-            },
-          };
-        }
-        return state;
+      setData({
+        rate: `${rate}`,
+        gas: '5',
+        price: `${price}`,
+        value,
+        otherToken: otherToken.address,
+        token: token.address,
       });
+      setValidating(false);
     }, requestTime);
   }, [token, otherToken, value]);
 
-  return { data: response, isValidating: !!requestId };
+  return { data, isValidating: validating };
 }
 
-export function useDotCounter(
-  interval: number /* gap between increments in ms */
-) {
+/**
+ * @param {number} interval gap between increments in ms
+ * @returns {number}
+ */
+export function useDotCounter(interval: number) {
   const [dotCount, setDotCount] = useState(0);
   useEffect(() => {
     const timerId = setInterval(

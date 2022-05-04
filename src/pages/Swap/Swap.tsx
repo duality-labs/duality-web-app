@@ -6,7 +6,6 @@ import {
   useExchangeRate,
   useDotCounter,
   Token,
-  IExchangeRate,
 } from '../../components/TokenPicker/mockHooks';
 
 import './Swap.scss';
@@ -15,61 +14,62 @@ export default function Swap() {
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
   const [tokenA, setTokenA] = useState(tokenList[0] as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [valueA, setValueA] = useState('0' as string | undefined);
-  const [valueB, setValueB] = useState('0' as string | undefined);
+  const [valueA, setValueA] = useState('0');
+  const [valueB, setValueB] = useState('0');
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
-
-  const token = lastUpdatedA ? tokenA : tokenB;
-  const otherToken = lastUpdatedA ? tokenB : tokenA;
-  const value = lastUpdatedA ? valueA : valueB;
-  const [lastKnownRate, setLastKnownRate] = useState(
-    undefined as IExchangeRate | undefined
-  );
-
-  // get exchange rate
   const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
-    token,
-    otherToken,
-    value
+    lastUpdatedA ? tokenA : tokenB,
+    lastUpdatedA ? tokenB : tokenA,
+    lastUpdatedA ? valueA : valueB
   );
+  const [lastRate, setLastRate] = useState(rateData);
   const dotCount = useDotCounter(0.25e3);
 
-  // update last known rate if new information is known and available
-  useEffect(() => rateData && setLastKnownRate(rateData), [rateData]);
-
-  const [approximateRate, setApproximateRate] = useState(
-    undefined as string | undefined
+  const getTempRate = useCallback(
+    (
+      mode: boolean,
+      token: Token | undefined,
+      otherToken: Token | undefined,
+      value: string,
+      otherValue: string
+    ): string => {
+      if (mode) return value;
+      if (rateData?.price) return rateData?.price;
+      let rate = NaN;
+      if (
+        token?.address === lastRate?.otherToken &&
+        otherToken?.address === lastRate?.token
+      )
+        rate = Number(lastRate?.rate);
+      else if (
+        token?.address === lastRate?.token &&
+        otherToken?.address === lastRate?.otherToken
+      )
+        rate = 1 / Number(lastRate?.rate);
+      const price = round(Number(otherValue) * rate, 1e6);
+      if (!isNaN(price)) return `${price}`;
+      return '...';
+    },
+    [rateData, lastRate]
   );
-  useEffect(() => {
-    if (
-      lastKnownRate?.token === token?.address &&
-      lastKnownRate?.otherToken === otherToken?.address
-    ) {
-      setApproximateRate(lastKnownRate?.rate);
-    } else if (
-      lastKnownRate?.token === otherToken?.address &&
-      lastKnownRate?.otherToken === token?.address
-    ) {
-      setApproximateRate(`${1 / Number(lastKnownRate?.rate)}`);
-    } else {
-      setApproximateRate(undefined);
-    }
-  }, [lastKnownRate, token, otherToken]);
+  const valueAConverted = getTempRate(
+    lastUpdatedA,
+    tokenA,
+    tokenB,
+    valueA,
+    valueB
+  );
+  const valueBConverted = getTempRate(
+    !lastUpdatedA,
+    tokenB,
+    tokenA,
+    valueB,
+    valueA
+  );
 
-  // calculate with last known rate immediately
-  const price =
-    approximateRate &&
-    Math.round(Number(value) * Number(approximateRate || 0) * 1e6) / 1e6;
-  const valueAConverted = lastUpdatedA
-    ? valueA
-    : price
-    ? `${price}`
-    : undefined;
-  const valueBConverted = lastUpdatedA
-    ? price
-      ? `${price}`
-      : undefined
-    : valueB;
+  useEffect(() => {
+    if (rateData) setLastRate(rateData);
+  }, [rateData]);
 
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
@@ -92,13 +92,7 @@ export default function Swap() {
     <div className="swap">
       <TokenInputGroup
         changeValue={updateValueA}
-        changeToken={(tokenA) => {
-          if (valueBConverted) {
-            setLastUpdatedA(false);
-            setValueB(valueBConverted);
-          }
-          setTokenA(tokenA);
-        }}
+        changeToken={setTokenA}
         tokenList={tokenList}
         token={tokenA}
         value={valueAConverted}
@@ -106,13 +100,7 @@ export default function Swap() {
       ></TokenInputGroup>
       <TokenInputGroup
         changeValue={updateValueB}
-        changeToken={(tokenB) => {
-          if (valueAConverted) {
-            setLastUpdatedA(true);
-            setValueA(valueAConverted);
-          }
-          setTokenB(tokenB);
-        }}
+        changeToken={setTokenB}
         tokenList={tokenList}
         token={tokenB}
         value={valueBConverted}
@@ -130,4 +118,8 @@ export default function Swap() {
       )}
     </div>
   );
+}
+
+function round(value: number, roundNumber: number) {
+  return Math.round(value * roundNumber) / roundNumber;
 }
