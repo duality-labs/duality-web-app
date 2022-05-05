@@ -1,8 +1,8 @@
 $color-primary: rgb(0, 0, 0);
 $color-secondary: rgb(177, 177, 177);
 $transition-duration: 0.25s;
-$font-primary: 1.2rem;
-$font-secondary: 1rem;
+$font-size-primary: 1.2rem;
+$font-size-secondary: 1rem;
 $border-radius: 0.5rem;
 
 .token-picker-dialog {
@@ -27,7 +27,7 @@ $border-radius: 0.5rem;
   }
 
   label {
-    font-size: $font-primary;
+    font-size: $font-size-primary;
     padding: 0.5rem 0rem;
     cursor: pointer;
     display: block;
@@ -38,7 +38,7 @@ $border-radius: 0.5rem;
     & {
       border: 1px solid rgba(0, 0, 0, 0.3);
       border-radius: $border-radius;
-      font-size: $font-primary;
+      font-size: $font-size-primary;
       color: $color-primary;
       padding: 0.5rem 1rem;
       display: block;
@@ -117,7 +117,7 @@ $border-radius: 0.5rem;
 
     .token-image {
       color: $color-secondary;
-      font-size: 1.25rem;
+      font-size: $font-size-primary;
       align-self: center;
       text-align: center;
       grid-column: 1;
