@@ -57,6 +57,10 @@
   border-top: 1px solid hsla(0, 0, 0, 0.1);
 }
 
+.dialog-header {
+  flex: 1 1 auto;
+}
+
 .dialog-scrollable {
   .dialog-content {
     max-height: 80vh;
