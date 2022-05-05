@@ -7,11 +7,12 @@ import { Token } from '../TokenPicker/mockHooks';
 import './TokenInputGroup.scss';
 
 interface InputGroupProps {
-  changeToken: (token: Token | undefined) => void;
+  changeToken: (token?: Token) => void;
   changeValue: (value: string) => void;
-  exclusion: Token | undefined;
-  token: Token | undefined;
-  value: string | undefined;
+  exclusion?: Token;
+  token?: Token;
+  value?: string;
+  className?: string;
   tokenList: Array<Token>;
 }
 
@@ -21,6 +22,7 @@ export default function TokenInputGroup({
   changeToken,
   value,
   exclusion,
+  className,
   token,
 }: InputGroupProps) {
   const [selectedToken, setToken] = useState(token);
@@ -35,7 +37,7 @@ export default function TokenInputGroup({
   }, [token]);
 
   return (
-    <div className="token-input-group">
+    <div className={`${className || ''} token-input-group`}>
       <input
         type="text"
         className="form-control"

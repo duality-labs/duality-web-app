@@ -101,6 +101,7 @@ export default function Swap() {
         tokenList={tokenList}
         token={tokenA}
         value={valueAConverted || '0'}
+        className={valueAConverted ? '' : 'loading-token'}
         exclusion={tokenB}
       ></TokenInputGroup>
       <TokenInputGroup
@@ -109,6 +110,7 @@ export default function Swap() {
         tokenList={tokenList}
         token={tokenB}
         value={valueBConverted || '0'}
+        className={valueBConverted ? '' : 'loading-token'}
         exclusion={tokenA}
       ></TokenInputGroup>
       <button
