@@ -6,18 +6,30 @@ interface InputProperties {
   value: string;
 }
 
-test.concurrent.each([['0|', '0|']])(
-  'converts "%s" to "%s"',
-  function (originalValue, expectedValue) {
-    const { value, selectionStart, selectionEnd } = parseValue(originalValue);
-    const dom = createInput(value, selectionStart, selectionEnd);
-    const expected = parseValue(expectedValue);
-    cleanInput(dom);
-    expect(dom.value).toBe(expected.value);
-    expect(dom.selectionStart).toBe(expected.selectionStart);
-    expect(dom.selectionEnd).toBe(expected.selectionEnd);
-  }
-);
+test.concurrent.each([
+  ['0|', '0|'],
+  ['.|', '0.|0'],
+  ['.0|', '0.0|'],
+  ['0.|', '0.|0'],
+  ['00.|', '0.|0'],
+  ['-4|', '4|'],
+  ['-|4', '|4'],
+  ['-04|', '4|'],
+  ['-0|4', '|4'],
+  ['-0|4.00', '|4.0'],
+  ['-04|.00', '4|.0'],
+  ['-04.|00', '4.|0'],
+  ['-04.0|0', '4.0|'],
+  ['-04.00|', '4.0|'],
+])('converts "%s" to "%s"', function (originalValue, expectedValue) {
+  const { value, selectionStart, selectionEnd } = parseValue(originalValue);
+  const dom = createInput(value, selectionStart, selectionEnd);
+  const expected = parseValue(expectedValue);
+  cleanInput(dom);
+  expect(dom.value).toBe(expected.value);
+  expect(dom.selectionStart).toBe(expected.selectionStart);
+  expect(dom.selectionEnd).toBe(expected.selectionEnd);
+});
 
 function createInput(
   value: string,
