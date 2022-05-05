@@ -17,7 +17,7 @@
   display: flex;
   flex-direction: column;
   border-radius: 20px;
-  z-index: 3
+  z-index: 3;
   // dynamic max width based on viewport size
   width: 90vw;
   @media screen and (min-width: 576px) {
