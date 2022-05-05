@@ -94,7 +94,7 @@ export default function Swap() {
   }, []);
 
   return (
-    <div className="swap">
+    <div className="swap-page">
       <TokenInputGroup
         changeValue={updateValueA}
         changeToken={setTokenA}
