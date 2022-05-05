@@ -10,6 +10,14 @@ import {
 
 import './Swap.scss';
 
+type GetRateType = (
+  keepValueMode: boolean,
+  token: Token | undefined,
+  otherToken: Token | undefined,
+  value: string,
+  otherValue: string
+) => string;
+
 export default function Swap() {
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
   const [tokenA, setTokenA] = useState(tokenList[0] as Token | undefined);
@@ -25,41 +33,38 @@ export default function Swap() {
   const [lastRate, setLastRate] = useState(rateData);
   const dotCount = useDotCounter(0.25e3);
 
-  const getTempRate = useCallback(
-    (
-      mode: boolean,
-      token: Token | undefined,
-      otherToken: Token | undefined,
-      value: string,
-      otherValue: string
-    ): string => {
-      if (mode) return value;
+  const getRate = useCallback<GetRateType>(
+    /**
+     * Updates the value of a token based on the rate data and
+     * recent data until the rate data get fetched
+     * @param {boolean} keepValueMode when true the value will remain the same (true if this was the last value to change)
+     * @param {Token} token the token of the group
+     * @param {Token} otherToken the token of the other group
+     * @param {string} value the value of the group
+     * @param {string} otherValue the value of the the other group
+     * @returns {string} the value of the taken as a string
+     */
+    (keepValueMode, token, otherToken, value, otherValue) => {
+      if (keepValueMode) return value;
       if (rateData?.price) return rateData?.price;
+
+      const listIn = [token?.address, otherToken?.address];
+      const listOut = [lastRate?.token, lastRate?.otherToken];
+
       let rate = NaN;
-      if (
-        token?.address === lastRate?.otherToken &&
-        otherToken?.address === lastRate?.token
-      )
+      if (`${listIn}` === `${listOut}`) {
         rate = Number(lastRate?.rate);
-      else if (
-        token?.address === lastRate?.token &&
-        otherToken?.address === lastRate?.otherToken
-      )
+      } else if (`${listIn}` === `${listOut.reverse()}`) {
         rate = 1 / Number(lastRate?.rate);
-      const price = round(Number(otherValue) * rate, 1e6);
-      if (!isNaN(price)) return `${price}`;
-      return '.'.repeat(dotCount);
+      }
+
+      return `${round(Number(otherValue) * rate, 1e6) || ''}`;
     },
-    [rateData, lastRate, dotCount]
+    [rateData, lastRate]
   );
-  const valueAConverted = getTempRate(
-    lastUpdatedA,
-    tokenA,
-    tokenB,
-    valueA,
-    valueB
-  );
-  const valueBConverted = getTempRate(
+
+  const valueAConverted = getRate(lastUpdatedA, tokenA, tokenB, valueA, valueB);
+  const valueBConverted = getRate(
     !lastUpdatedA,
     tokenB,
     tokenA,
@@ -95,7 +100,7 @@ export default function Swap() {
         changeToken={setTokenA}
         tokenList={tokenList}
         token={tokenA}
-        value={valueAConverted}
+        value={valueAConverted || '0'}
         exclusion={tokenB}
       ></TokenInputGroup>
       <TokenInputGroup
@@ -103,7 +108,7 @@ export default function Swap() {
         changeToken={setTokenB}
         tokenList={tokenList}
         token={tokenB}
-        value={valueBConverted}
+        value={valueBConverted || '0'}
         exclusion={tokenA}
       ></TokenInputGroup>
       <button
