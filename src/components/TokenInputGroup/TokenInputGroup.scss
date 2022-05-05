@@ -52,6 +52,7 @@
     }
 
     &:hover,
+    &:focus,
     &.open {
       background-color: rgba(116, 89, 220, 1);
       color: rgb(255, 255, 255);
