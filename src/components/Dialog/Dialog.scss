@@ -19,7 +19,7 @@
   border-radius: 20px;
   z-index: 3
   // dynamic max width based on viewport size
-  max-width: 90vw;
+  width: 90vw;
   @media screen and (min-width: 576px) {
     max-width: 80vw;
   }
