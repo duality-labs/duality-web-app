@@ -1,0 +1,72 @@
+// override base '@reach/dialog/styles.css'
+[data-reach-dialog-overlay] {
+  background-color: hsla(0, 0, 0, 0.33);
+}
+[data-reach-dialog-content] {
+  background: hsl(220, 13%, 18%);
+  box-shadow: 0 4px 8px 0 hsla(0, 0, 0, 0.33);
+}
+
+// add more opinionated content styling
+// easily overrideable by custom classNames, eg.
+//    <Dialog className="token-dialog">
+//    .token-dialog .dialog-content { width: 600px }
+.dialog-content {
+  margin: 10vh auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  z-index: 3
+  // dynamic max width based on viewport size
+  width: 90vw;
+  @media screen and (min-width: 576px) {
+    max-width: 80vw;
+  }
+  @media screen and (min-width: 768px) {
+    max-width: 70vw;
+  }
+  @media screen and (min-width: 992px) {
+    max-width: 60vw;
+  }
+  @media screen and (min-width: 1200px) {
+    max-width: 50vw;
+  }
+}
+
+.dialog-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dialog-header-close-button {
+  margin-left: 2rem;
+}
+
+.dialog-header-row,
+.dialog-body,
+.dialog-footer {
+  padding: 2rem;
+}
+
+.dialog-header-row {
+  border-bottom: 1px solid hsla(0, 0, 0, 0.1);
+}
+.dialog-footer {
+  border-top: 1px solid hsla(0, 0, 0, 0.1);
+}
+
+.dialog-header {
+  flex: 1 1 auto;
+}
+
+.dialog-scrollable {
+  .dialog-content {
+    max-height: 80vh;
+  }
+  .dialog-body {
+    overflow: auto;
+    flex: 1;
+  }
+}

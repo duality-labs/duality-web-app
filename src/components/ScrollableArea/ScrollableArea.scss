@@ -1,0 +1,8 @@
+.scrollable-area {
+  overflow: scroll;
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.scrollable-area--scrolled {
+  box-shadow: hsla(0, 0, 0, 0.1) 0 2px inset;
+}

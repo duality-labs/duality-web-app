@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@floating-ui/react-dom": "^0.6.3",
+    "@reach/dialog": "^0.17.0",
     "ethers": "^5.6.4",
     "invariant": "^2.2.4",
     "react": "^18.0.0",
