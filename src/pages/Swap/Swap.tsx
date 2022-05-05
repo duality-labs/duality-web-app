@@ -49,7 +49,7 @@ export default function Swap() {
       if (rateData?.price) return rateData?.price;
 
       const listIn = [token?.address, otherToken?.address];
-      const listOut = [lastRate?.token, lastRate?.otherToken];
+      const listOut = [lastRate?.otherToken, lastRate?.token];
 
       let rate = NaN;
       if (`${listIn}` === `${listOut}`) {
