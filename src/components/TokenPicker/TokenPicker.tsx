@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useNextID, Token } from './mockHooks';
 
@@ -31,8 +31,8 @@ export default function TokenPicker({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [inputDom, setInputDom] = useState(null as HTMLElement | null);
-  const [bodyDom, setBodyDom] = useState(null as HTMLElement | null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLUListElement>(null);
   const currentID = useNextID();
 
   const open = useCallback(() => {
@@ -44,33 +44,54 @@ export default function TokenPicker({
     setIsOpen(false);
   }, []);
 
+  const selectToken = useCallback(
+    (token?: Token) => {
+      onChange(token);
+      close();
+    },
+    [close, onChange]
+  );
+
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       let newIndex = selectedIndex;
-      if (event.key === 'ArrowUp') newIndex -= 1;
-      else if (event.key === 'ArrowDown') newIndex += 1;
-      else if (event.key === 'Escape') return close();
-      else if (event.key === 'Enter') {
+
+      if (event.key === 'ArrowUp') {
+        newIndex -= 1;
+      } else if (event.key === 'ArrowDown') {
+        newIndex += 1;
+      } else if (event.key === 'Escape') {
+        return close();
+      } else if (event.key === 'Enter') {
         const token = (filteredList || [])[selectedIndex];
-        if (token && exclusion?.address !== token.token?.address) {
-          onChange(token.token);
-          close();
-        }
-      } else return;
+        if (token && exclusion?.address !== token.token?.address)
+          selectToken(token?.token);
+      } else {
+        // Ignore all of the keys not including above
+        return;
+      }
+      // If key pressed is in the list above then cancel all default behaviour
       event.stopPropagation();
       event.preventDefault();
+
+      // fix the selected index if it's out of bounds
       if (newIndex < 0) newIndex = (filteredList?.length || 1) - 1;
       else if (newIndex >= (filteredList?.length || 0)) newIndex = 0;
+
       setSelectedIndex(newIndex);
-      const child = bodyDom?.children[newIndex];
+
+      // scroll active item into view
+      const child = bodyRef?.current?.children[newIndex];
       if (child) child.scrollIntoView();
     },
-    [filteredList, selectedIndex, exclusion, onChange, close, bodyDom]
+    [selectedIndex, filteredList, close, exclusion?.address, selectToken]
   );
 
+  // update the filtered list whenever the query or the list changes
   useEffect(
     function () {
-      if (!searchQuery)
+      // if the query is empty return the full list
+      if (!searchQuery) {
         return setFilteredList(
           tokenList?.map((token) => ({
             name: [token.name],
@@ -78,38 +99,36 @@ export default function TokenPicker({
             token,
           }))
         );
+      }
+
       // remove invalid characters + remove space limitations (but still match any found)
       const queryRegexText = searchQuery
         .toLowerCase()
         .replace(/[.*\\{}[\]+$^]/gi, (char) => `\\${char}`)
         .replace(/\s+/g, '\\s*');
       const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
+
       setFilteredList(
         tokenList
           ?.map(function (token) {
+            // Split the symbol and name using the query (and include the query in the list)
             const symbolResult = token.symbol?.split(regexQuery) || [''];
             const nameResult = token.name?.split(regexQuery) || [''];
-            if (
-              symbolResult.length === 1 &&
-              nameResult.length === 1 &&
-              !regexQuery.test(token.address)
-            )
-              return null;
-            return { name: nameResult, symbol: symbolResult, token };
+            const result = { name: nameResult, symbol: symbolResult, token };
+
+            // check if the length of a list is larger than 1 (so the query existed in the list) or if the query is part of the address
+            return symbolResult.length > 1 ||
+              nameResult.length > 1 ||
+              regexQuery.test(token.address)
+              ? result
+              : null;
           })
           ?.filter(Boolean)
       );
+
       setSelectedIndex(0);
     },
     [tokenList, searchQuery]
-  );
-
-  const onItemFocus = useCallback(
-    (index: number) => {
-      setSelectedIndex(index);
-      inputDom?.focus();
-    },
-    [inputDom]
   );
 
   function getHeader() {
@@ -124,52 +143,62 @@ export default function TokenPicker({
           value={searchQuery}
           placeholder="Search for a token"
           autoComplete="off"
-          ref={setInputDom}
+          ref={inputRef}
         />
       </div>
     );
   }
 
+  function showListItem(token: TokenResult | null, index: number) {
+    const address = token?.token?.address;
+    const symbol = token?.token?.symbol;
+    const logo = token?.token?.logo;
+    const isDisabled = exclusion?.address === address;
+
+    function onClick() {
+      selectToken(token?.token);
+    }
+
+    function onFocus() {
+      setSelectedIndex(index);
+    }
+
+    return (
+      <li key={address}>
+        <data value={address}>
+          <button
+            className={`${isDisabled ? 'disabled' : ''}${
+              index === selectedIndex ? ' selected' : ''
+            }`}
+            onClick={onClick}
+            onFocus={onFocus}
+          >
+            <div className="token-image">
+              {logo ? (
+                <img src={logo} alt={`${symbol || 'Token'} logo`} />
+              ) : (
+                <i className="no-token-logo"></i>
+              )}
+            </div>
+            <dfn className="token-symbol">
+              <abbr title={address}>
+                {textListWithMark(token?.symbol || [])}
+              </abbr>
+            </dfn>
+            <span className="token-name">
+              {textListWithMark(token?.name || [])}
+            </span>
+            <span className="token-balance"></span>
+          </button>
+        </data>
+      </li>
+    );
+  }
+
   function getBody() {
     return (
-      <ul className="token-picker-body" ref={setBodyDom}>
-        {filteredList?.map((token, index) => (
-          <li key={token?.token?.address}>
-            <data value={token?.token?.address}>
-              <button
-                className={`${
-                  exclusion?.address === token?.token?.address ? 'disabled' : ''
-                }${index === selectedIndex ? ' selected' : ''}`}
-                onClick={() => {
-                  if (exclusion?.address === token?.token?.address) return;
-                  onChange(token?.token);
-                  close();
-                }}
-                onFocus={() => onItemFocus(index)}
-              >
-                <div className="token-image">
-                  {token?.token?.logo ? (
-                    <img
-                      src={token?.token?.logo}
-                      alt={`${token?.token?.symbol || 'Token'} logo`}
-                    />
-                  ) : (
-                    <i className="no-token-logo"></i>
-                  )}
-                </div>
-                <dfn className="token-symbol">
-                  <abbr title={token?.token?.address}>
-                    {textListWithMark(token?.symbol || [])}
-                  </abbr>
-                </dfn>
-                <span className="token-name">
-                  {textListWithMark(token?.name || [])}
-                </span>
-                <span className="token-balance"></span>
-              </button>
-            </data>
-          </li>
-        ))}
+      <ul className="token-picker-body" ref={bodyRef}>
+        {filteredList?.map(showListItem)}
       </ul>
     );
   }
@@ -187,7 +216,8 @@ export default function TokenPicker({
       <Dialog
         isOpen={isOpen}
         onDismiss={close}
-        header={getHeader()} /*initialFocusRef={inputDom || undefined}*/
+        header={getHeader()}
+        initialFocusRef={inputRef}
       >
         {getBody()}
       </Dialog>
