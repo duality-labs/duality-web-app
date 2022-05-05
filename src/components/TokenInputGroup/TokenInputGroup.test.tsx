@@ -27,7 +27,7 @@ function createInput(
   const input = document.createElement('input');
   input.value = value;
   input.selectionStart = start;
-  input.selectionStart = end ?? start;
+  input.selectionEnd = end ?? start;
   return input;
 }
 
