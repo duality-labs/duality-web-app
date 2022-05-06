@@ -25,6 +25,12 @@ test.concurrent.each([
   ['0.00000|1220000', '0.00000|122'],
   ['0.00000122|0000', '0.00000122|'],
   ['0.0000012200|00', '0.00000122|'],
+  ['000', '0'],
+  ['00|0', '|0'],
+  ['0000.|', '0.|0'],
+  ['0000.0|', '0.0|'],
+  ['0000.|0', '0.|0'],
+  ['0|000.0', '|0.0'],
 ])('converts "%s" to "%s"', function (originalValue, expectedValue) {
   const { value, selectionStart, selectionEnd } = parseValue(originalValue);
   const dom = createInput(value, selectionStart, selectionEnd);

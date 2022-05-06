@@ -53,18 +53,11 @@ export function cleanInput(dom: HTMLInputElement) {
   });
 
   // remove leading zeros
-  result = result.replace(
-    /^(0+)(.?)/,
-    function (_: string, text: string, nextChar: string, index: number) {
-      if (!nextChar || nextChar === '.') {
-        removeChar(index, text.length - 1);
-        return `0${nextChar}`;
-      } else {
-        removeChar(index, text.length);
-        return nextChar;
-      }
-    }
-  );
+  const oldSize = result.length;
+  result = result.replace(/^0+((?:\d+\.)|(?:\d$))/, '$1'); // todo
+  const sizeDiff = oldSize - result.length;
+  selectionStart = Math.max(selectionStart - sizeDiff, 0);
+  selectionEnd = Math.max(selectionEnd - sizeDiff, 0);
 
   // remove lagging zeros
   result = result.replace(/(\.\d+?)0+$/, '$1');
