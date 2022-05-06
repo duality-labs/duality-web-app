@@ -20,6 +20,12 @@ export interface Token {
   name: string;
 }
 
+export interface SwapRequest {
+  otherToken: string;
+  token: string;
+  value: string;
+}
+
 const tokens: Array<Token> = [
   { logo: null, symbol: 'Eth', name: 'Ether', address: '0x0001' },
   { logo: null, symbol: 'Dai', name: 'Dai Stablecoin', address: '0x0002' },
@@ -126,6 +132,28 @@ export function useDotCounter(interval: number) {
 
 export function useTokens() {
   return usePoll(tokens);
+}
+
+export function useSwap(request: SwapRequest | undefined) {
+  const [data, setData] = useState(undefined as string | undefined);
+  const [validating, setValidating] = useState(false);
+
+  useEffect(() => {
+    if (!request) {
+      setValidating(false);
+      setData(undefined);
+      return;
+    }
+    setData(undefined);
+    setValidating(true);
+
+    setTimeout(() => {
+      setData('Ok');
+      setValidating(false);
+    }, requestTime);
+  }, [request]);
+
+  return { data, isValidating: validating };
 }
 
 function getNextID() {

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
@@ -6,6 +6,8 @@ import {
   useExchangeRate,
   useDotCounter,
   Token,
+  useSwap,
+  SwapRequest,
 } from '../../components/TokenPicker/mockHooks';
 
 import './Swap.scss';
@@ -31,6 +33,11 @@ export default function Swap() {
     lastUpdatedA ? valueA : valueB
   );
   const [lastRate, setLastRate] = useState(rateData);
+  const [swapRequest, setSwapRequest] = useState(
+    undefined as SwapRequest | undefined
+  );
+  const { data: swapResponse, isValidating: isValidatingSwap } =
+    useSwap(swapRequest);
   const dotCount = useDotCounter(0.25e3);
 
   const getRate = useCallback<GetRateType>(
@@ -76,13 +83,29 @@ export default function Swap() {
     if (rateData) setLastRate(rateData);
   }, [rateData]);
 
-  const swapTokens = useCallback(() => {
-    setTokenA(tokenB);
-    setTokenB(tokenA);
-    setValueA(valueBConverted);
-    setValueB(valueAConverted);
-    setLastUpdatedA((a) => !a);
-  }, [tokenA, tokenB, valueAConverted, valueBConverted]);
+  const swapTokens = useCallback(
+    function (event?: React.MouseEvent) {
+      if (event) event.preventDefault();
+      setTokenA(tokenB);
+      setTokenB(tokenA);
+      setValueA(valueBConverted);
+      setValueB(valueAConverted);
+      setLastUpdatedA((a) => !a);
+    },
+    [tokenA, tokenB, valueAConverted, valueBConverted]
+  );
+
+  const commitSwap = useCallback(
+    function (event?: React.FormEvent) {
+      if (event) event.preventDefault();
+      setSwapRequest({
+        token: tokenA?.address || '',
+        otherToken: tokenB?.address || '',
+        value: valueA,
+      });
+    },
+    [tokenA?.address, tokenB?.address, valueA]
+  );
 
   const updateValueA = useCallback((newValue: string) => {
     setValueA(newValue);
@@ -94,7 +117,7 @@ export default function Swap() {
   }, []);
 
   return (
-    <div className="swap-page">
+    <form className="swap-page" onSubmit={commitSwap}>
       <TokenInputGroup
         changeValue={updateValueA}
         changeToken={setTokenA}
@@ -104,6 +127,12 @@ export default function Swap() {
         className={valueAConverted ? '' : 'loading-token'}
         exclusion={tokenB}
       ></TokenInputGroup>
+      <button
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
+        onClick={swapTokens}
+      >
+        Swap
+      </button>
       <TokenInputGroup
         changeValue={updateValueB}
         changeToken={setTokenB}
@@ -113,17 +142,17 @@ export default function Swap() {
         className={valueBConverted ? '' : 'loading-token'}
         exclusion={tokenA}
       ></TokenInputGroup>
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
-        onClick={() => swapTokens()}
-      >
-        Swap
-      </button>
       <span>Gas price: {rateData?.gas}</span>
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
         <i className="text-transparent">.</i>
       )}
-    </div>
+      <div>{isValidatingSwap ? 'Loading...' : swapResponse}</div>
+      <input
+        type="submit"
+        value="Swap"
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
+      />
+    </form>
   );
 }
 
