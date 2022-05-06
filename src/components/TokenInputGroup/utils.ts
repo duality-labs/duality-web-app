@@ -67,24 +67,9 @@ export function cleanInput(dom: HTMLInputElement) {
   );
 
   // remove lagging zeros
-  result = result.replace(
-    /(\.)(.*)0+$/,
-    function (
-      fullText: string,
-      point: string,
-      previousText: string,
-      text: string,
-      index: number
-    ) {
-      if (previousText) {
-        removeChar(index, text.length - 1);
-        return `${point}${previousText}`;
-      } else {
-        removeChar(index + fullText.length - text.length + 1, text.length - 1);
-        return `${point}${previousText}${0}`;
-      }
-    }
-  );
+  result = result.replace(/(\.\d+?)0+$/, '$1');
+  selectionStart = Math.min(selectionStart, result.length);
+  selectionEnd = Math.min(selectionEnd, result.length);
 
   // special case, fully empty text
   if (!value) {
