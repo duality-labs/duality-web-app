@@ -123,7 +123,13 @@ export default function Swap() {
         tokenList={tokenList}
         token={tokenA}
         value={valueAConverted || '0'}
-        className={valueAConverted ? '' : 'loading-token'}
+        className={
+          isValidatingRate && !lastUpdatedA
+            ? valueAConverted
+              ? 'estimated-rate'
+              : 'loading-token'
+            : ''
+        }
         exclusion={tokenB}
       ></TokenInputGroup>
       <button
@@ -139,7 +145,13 @@ export default function Swap() {
         tokenList={tokenList}
         token={tokenB}
         value={valueBConverted || '0'}
-        className={valueBConverted ? '' : 'loading-token'}
+        className={
+          isValidatingRate && lastUpdatedA
+            ? valueBConverted
+              ? 'estimated-rate'
+              : 'loading-token'
+            : ''
+        }
         exclusion={tokenA}
       ></TokenInputGroup>
       <span>Gas price: {rateData?.gas}</span>
