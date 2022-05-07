@@ -167,6 +167,7 @@ export default function TokenPicker({
       <li key={address}>
         <data value={address}>
           <button
+            type="button"
             className={`${isDisabled ? 'disabled' : ''}${
               index === selectedIndex ? ' selected' : ''
             }`}
@@ -206,6 +207,7 @@ export default function TokenPicker({
   return (
     <>
       <button
+        type="button"
         className={`py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle flex justify-center items-center text-center${
           isOpen ? ' open' : ''
         }`}

@@ -84,8 +84,7 @@ export default function Swap() {
   }, [rateData]);
 
   const swapTokens = useCallback(
-    function (event?: React.MouseEvent) {
-      if (event) event.preventDefault();
+    function () {
       setTokenA(tokenB);
       setTokenB(tokenA);
       setValueA(valueBConverted);
@@ -128,6 +127,7 @@ export default function Swap() {
         exclusion={tokenB}
       ></TokenInputGroup>
       <button
+        type="button"
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
         onClick={swapTokens}
       >
