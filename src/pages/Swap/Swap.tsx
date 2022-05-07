@@ -131,7 +131,7 @@ export default function Swap() {
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
         onClick={swapTokens}
       >
-        Swap
+        &#8693;
       </button>
       <TokenInputGroup
         changeValue={updateValueB}
@@ -150,7 +150,7 @@ export default function Swap() {
       <input
         type="submit"
         value="Swap"
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block cursor-pointer"
       />
     </form>
   );
