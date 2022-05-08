@@ -1,0 +1,57 @@
+.orbs-bg {
+  pointer-events: none;
+  position: fixed;
+  z-index: 0;
+  bottom: 0px;
+  right: 0px;
+  top: 68px;
+  left: 0;
+}
+
+.orbs-bg + * {
+  position: relative;
+  z-index: 1;
+}
+
+svg {
+  path.circle {
+    & {
+      animation: orb-rotation-a 60s linear infinite;
+      transition: stroke-width 0.25s linear;
+      fill: none;
+      stroke-width: 50px;
+      stroke-linecap: round;
+      stroke: #1ecd97;
+      stroke-dashoffset: 0%;
+      stroke-dasharray: 0 198%;
+    }
+
+    &.circle-a {
+      animation-name: orb-rotation-a;
+    }
+
+    &.circle-b {
+      animation-name: orb-rotation-b;
+    }
+  }
+}
+
+@keyframes orb-rotation-a {
+  from {
+    stroke-dashoffset: 0%;
+  }
+
+  to {
+    stroke-dashoffset: 198%;
+  }
+}
+
+@keyframes orb-rotation-b {
+  from {
+    stroke-dashoffset: 99%;
+  }
+
+  to {
+    stroke-dashoffset: 297%;
+  }
+}
