@@ -6,6 +6,9 @@ interface OrbsProps {
   rate: number;
 }
 
+const xmlLink = 'http://www.w3.org/2000/svg',
+  xmlLinkX = 'http://www.w3.org/1999/xlink';
+
 export default function Orbs({ rate }: OrbsProps) {
   const [fullHeight, setfullHeight] = useState(0);
   const [fullWidth, setFullWidth] = useState(0);
@@ -39,7 +42,12 @@ export default function Orbs({ rate }: OrbsProps) {
 
   return (
     <div className="orbs-bg" ref={bodyRef}>
-      <svg width={fullWidth} height={fullHeight}>
+      <svg
+        width={fullWidth}
+        height={fullHeight}
+        xmlns={xmlLink}
+        xmlnsXlink={xmlLinkX}
+      >
         <path
           d={circlePath}
           className="circle circle-a"
