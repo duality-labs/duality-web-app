@@ -1,9 +1,11 @@
+$animation-duration: 50s;
+$base-ord-bg: #1ecd97;
+
 .orbs-bg {
-  pointer-events: none;
   position: fixed;
-  z-index: 0;
   bottom: 0px;
   right: 0px;
+  z-index: 0;
   top: 68px;
   left: 0;
 }
@@ -13,45 +15,62 @@
   z-index: 1;
 }
 
-svg {
-  path.circle {
-    & {
-      animation: orb-rotation-a 60s linear infinite;
-      transition: stroke-width 0.25s linear;
-      fill: none;
-      stroke-width: 50px;
-      stroke-linecap: round;
-      stroke: #1ecd97;
-      stroke-dashoffset: 0%;
-      stroke-dasharray: 0 198%;
-    }
-
-    &.circle-a {
-      animation-name: orb-rotation-a;
-    }
-
-    &.circle-b {
-      animation-name: orb-rotation-b;
-    }
-  }
+.y-shrink {
+  transform: scaleY(var(--scale-ratio));
+  transform-origin: 50% 0%;
+  border-radius: 50%;
+  position: absolute;
+  aspect-ratio: 1;
+  width: 100%;
+  left: 0;
+  top: 0%;
 }
 
-@keyframes orb-rotation-a {
+.y-expand {
+  transform: scaleY(var(--scale-ratio));
+  transform-origin: 50% 50%;
+}
+
+.orb-container {
+  position: absolute;
+}
+
+.orb {
+  background-color: $base-ord-bg;
+  border-radius: 50%;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+.rotate-slow {
+  animation: rotation $animation-duration linear infinite;
+  transform-origin: 50% 50%;
+  height: 100%;
+  width: 100%;
+}
+
+.counter-rotate-slow {
+  animation: counter-rotation $animation-duration linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes rotation {
   from {
-    stroke-dashoffset: 0%;
+    transform: rotateZ(0deg);
   }
 
   to {
-    stroke-dashoffset: 198%;
+    transform: rotateZ(360deg);
   }
 }
 
-@keyframes orb-rotation-b {
+@keyframes counter-rotation {
   from {
-    stroke-dashoffset: 99%;
+    transform: rotateZ(0deg);
   }
 
   to {
-    stroke-dashoffset: 297%;
+    transform: rotateZ(-360deg);
   }
 }
