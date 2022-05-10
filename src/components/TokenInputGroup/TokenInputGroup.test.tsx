@@ -6,12 +6,17 @@ interface InputProperties {
   value: string;
 }
 
+// The '|' represents the selectionStart
+// The selectionEnd can also be specified by using another '|' (defaults to same as start)
+// If no '|' are found then it defaults to right after the last character
 test.concurrent.each([
+  // 0 and . tests
   ['0|', '0|'],
   ['.|', '0.|0'],
   ['.0|', '0.0|'],
   ['0.|', '0.|0'],
   ['00.|', '0.|0'],
+  // Invalid character tests
   ['-4|', '4|'],
   ['-|4', '|4'],
   ['-04|', '4|'],
@@ -21,10 +26,12 @@ test.concurrent.each([
   ['-04.|00', '4.|0'],
   ['-04.0|0', '4.0|'],
   ['-04.00|', '4.0|'],
-  ['0.000001220000', '0.00000122'],
+  // Trailing 0s tests
+  ['0.000001220000|', '0.00000122|'],
   ['0.00000|1220000', '0.00000|122'],
   ['0.00000122|0000', '0.00000122|'],
   ['0.0000012200|00', '0.00000122|'],
+  // Leading 0s tests
   ['000', '0'],
   ['00|0', '|0'],
   ['0000.|', '0.|0'],

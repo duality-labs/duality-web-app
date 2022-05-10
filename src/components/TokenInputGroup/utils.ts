@@ -27,14 +27,14 @@ export function cleanInput(dom: HTMLInputElement) {
       result += char;
     } else if (char === '.') {
       if (pointFound) {
-        // Ignore multiple points (0._0)
+        // Remove the character if the current one is a '.' but one has already been found
         removeChar(index);
       } else if (firstDigitFound) {
-        // Check for the first point (0_0)
+        // If this is the first '.' found and a digit has already been registered
         result += char;
         pointFound = true;
       } else {
-        // Check for the first point if no digit has been registered and add a 0 (_0)
+        // If the first dot appears prior to any digits add a 0 and push selection
         result += '0' + char;
         if (index < selectionStart) selectionStart += 1;
         if (index < selectionEnd) selectionEnd += 1;
