@@ -49,7 +49,7 @@ export default function TokenInputGroup({
         type="text"
         className="form-control"
         value={value || '...'}
-        onInput={cleanUpInput}
+        onInput={onInput}
         onChange={onInputChange}
       />
       <TokenPicker
@@ -67,6 +67,6 @@ export default function TokenInputGroup({
  * @param {React.UIEvent<HTMLInputElement>} event change event
  * @returns {void}
  */
-function cleanUpInput(event: React.UIEvent<HTMLInputElement>) {
+function onInput(event: React.UIEvent<HTMLInputElement>) {
   cleanInput(event.currentTarget);
 }
