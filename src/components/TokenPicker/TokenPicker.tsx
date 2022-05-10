@@ -87,9 +87,9 @@ export default function TokenPicker({
   useEffect(
     function () {
       // if the query is empty return the full list
-      if (!searchQuery || !tokenList) {
+      if (!searchQuery) {
         return setFilteredList(
-          tokenList?.map((token) => ({
+          tokenList.map((token) => ({
             name: [token.name],
             symbol: [token.symbol],
             token,
