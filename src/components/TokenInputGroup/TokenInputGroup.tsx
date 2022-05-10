@@ -48,7 +48,7 @@ export default function TokenInputGroup({
       <input
         type="text"
         className="form-control"
-        value={value ?? '...'}
+        value={value || '...'}
         onInput={onInput}
         onChange={onInputChange}
       />

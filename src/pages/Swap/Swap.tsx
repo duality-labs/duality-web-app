@@ -122,7 +122,7 @@ export default function Swap() {
         onTokenChanged={setTokenA}
         tokenList={tokenList}
         token={tokenA}
-        value={valueAConverted || '0'}
+        value={valueAConverted}
         className={
           isValidatingRate && !lastUpdatedA
             ? valueAConverted
@@ -144,7 +144,7 @@ export default function Swap() {
         onTokenChanged={setTokenB}
         tokenList={tokenList}
         token={tokenB}
-        value={valueBConverted || '0'}
+        value={valueBConverted}
         className={
           isValidatingRate && lastUpdatedA
             ? valueBConverted
