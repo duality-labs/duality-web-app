@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useId } from 'react';
 
-import { useNextID, Token } from './mockHooks';
+import { Token } from './mockHooks';
 
 import Dialog from '../Dialog/Dialog';
 
@@ -25,15 +25,13 @@ export default function TokenPicker({
   exclusion,
   tokenList,
 }: TokenPickerProps) {
-  const [filteredList, setFilteredList] = useState(
-    null as Array<TokenResult | null> | null
-  );
+  const [filteredList, setFilteredList] = useState<Array<TokenResult>>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
-  const currentID = useNextID();
+  const currentID = useId();
 
   const open = useCallback(() => {
     setIsOpen(true);
@@ -53,45 +51,43 @@ export default function TokenPicker({
   );
 
   const onKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      let newIndex = selectedIndex;
+    function (event: React.KeyboardEvent) {
+      setSelectedIndex(function (newIndex) {
+        if (event.key === 'ArrowUp') {
+          newIndex -= 1;
+        } else if (event.key === 'ArrowDown') {
+          newIndex += 1;
+        } else if (event.key === 'Escape') {
+          close();
+          return newIndex;
+        } else if (event.key === 'Enter') {
+          const token = filteredList[newIndex];
+          if (token && exclusion?.address !== token.token?.address)
+            selectToken(token?.token);
+        } else {
+          // Ignore all of the keys not including above
+          return newIndex;
+        }
+        // If key pressed is in the list above then cancel all default behaviour
+        event.stopPropagation();
+        event.preventDefault();
 
-      if (event.key === 'ArrowUp') {
-        newIndex -= 1;
-      } else if (event.key === 'ArrowDown') {
-        newIndex += 1;
-      } else if (event.key === 'Escape') {
-        return close();
-      } else if (event.key === 'Enter') {
-        const token = (filteredList || [])[selectedIndex];
-        if (token && exclusion?.address !== token.token?.address)
-          selectToken(token?.token);
-      } else {
-        // Ignore all of the keys not including above
-        return;
-      }
-      // If key pressed is in the list above then cancel all default behaviour
-      event.stopPropagation();
-      event.preventDefault();
+        // fix the selected index if it's out of bounds
+        if (newIndex < 0) newIndex = filteredList.length - 1;
+        else if (newIndex >= filteredList.length) newIndex = 0;
 
-      // fix the selected index if it's out of bounds
-      if (newIndex < 0) newIndex = (filteredList?.length || 1) - 1;
-      else if (newIndex >= (filteredList?.length || 0)) newIndex = 0;
-
-      setSelectedIndex(newIndex);
-
-      // scroll active item into view
-      const child = bodyRef?.current?.children[newIndex];
-      if (child) child.scrollIntoView();
+        bodyRef?.current?.children[newIndex]?.scrollIntoView();
+        return newIndex;
+      });
     },
-    [selectedIndex, filteredList, close, exclusion?.address, selectToken]
+    [filteredList, close, exclusion?.address, selectToken]
   );
 
   // update the filtered list whenever the query or the list changes
   useEffect(
     function () {
       // if the query is empty return the full list
-      if (!searchQuery) {
+      if (!searchQuery || !tokenList) {
         return setFilteredList(
           tokenList?.map((token) => ({
             name: [token.name],
@@ -110,25 +106,44 @@ export default function TokenPicker({
 
       setFilteredList(
         tokenList
-          ?.map(function (token) {
+          .filter((token) =>
+            [token.symbol, token.name, token.address].some((txt) =>
+              regexQuery.test(txt)
+            )
+          )
+          .map(function (token) {
             // Split the symbol and name using the query (and include the query in the list)
             const symbolResult = token.symbol?.split(regexQuery) || [''];
             const nameResult = token.name?.split(regexQuery) || [''];
-            const result = { name: nameResult, symbol: symbolResult, token };
-
-            // check if the length of a list is larger than 1 (so the query existed in the list) or if the query is part of the address
-            return symbolResult.length > 1 ||
-              nameResult.length > 1 ||
-              regexQuery.test(token.address)
-              ? result
-              : null;
+            return { name: nameResult, symbol: symbolResult, token };
           })
-          ?.filter(Boolean)
       );
 
       setSelectedIndex(0);
     },
     [tokenList, searchQuery]
+  );
+
+  return (
+    <>
+      <button
+        type="button"
+        className={`token-picker-toggle ${isOpen ? ' open' : ''}`}
+        onClick={open}
+      >
+        {value?.symbol || 'Choose Token'}
+      </button>
+      <Dialog
+        isOpen={isOpen}
+        onDismiss={close}
+        header={getHeader()}
+        initialFocusRef={inputRef}
+      >
+        <ul className="token-picker-body" ref={bodyRef}>
+          {filteredList.map(showListItem)}
+        </ul>
+      </Dialog>
+    </>
   );
 
   function getHeader() {
@@ -195,34 +210,6 @@ export default function TokenPicker({
       </li>
     );
   }
-
-  function getBody() {
-    return (
-      <ul className="token-picker-body" ref={bodyRef}>
-        {filteredList?.map(showListItem)}
-      </ul>
-    );
-  }
-
-  return (
-    <>
-      <button
-        type="button"
-        className={`token-picker-toggle ${isOpen ? ' open' : ''}`}
-        onClick={open}
-      >
-        {value?.symbol || 'Choose Token'}
-      </button>
-      <Dialog
-        isOpen={isOpen}
-        onDismiss={close}
-        header={getHeader()}
-        initialFocusRef={inputRef}
-      >
-        {getBody()}
-      </Dialog>
-    </>
-  );
 }
 
 function textListWithMark(textList: Array<string>) {
