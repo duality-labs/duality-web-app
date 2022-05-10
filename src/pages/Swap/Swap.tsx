@@ -118,8 +118,8 @@ export default function Swap() {
   return (
     <form className="swap-page" onSubmit={commitSwap}>
       <TokenInputGroup
-        changeValue={updateValueA}
-        changeToken={setTokenA}
+        onValueChanged={updateValueA}
+        onTokenChanged={setTokenA}
         tokenList={tokenList}
         token={tokenA}
         value={valueAConverted || '0'}
@@ -140,8 +140,8 @@ export default function Swap() {
         &#8693;
       </button>
       <TokenInputGroup
-        changeValue={updateValueB}
-        changeToken={setTokenB}
+        onValueChanged={updateValueB}
+        onTokenChanged={setTokenB}
         tokenList={tokenList}
         token={tokenB}
         value={valueBConverted || '0'}

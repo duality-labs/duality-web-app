@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback } from 'react';
 
 import TokenPicker from '../TokenPicker';
 
@@ -9,63 +9,57 @@ import { cleanInput } from './utils';
 import './TokenInputGroup.scss';
 
 interface InputGroupProps {
-  changeToken: (token?: Token) => void;
-  changeValue: (value: string) => void;
-  exclusion?: Token;
-  token?: Token;
-  value?: string;
-  className?: string;
+  onTokenChanged?: (token?: Token) => void;
+  onValueChanged?: (value: string) => void;
   tokenList: Array<Token>;
+  className?: string;
+  exclusion?: Token;
+  value?: string;
+  token?: Token;
 }
 
 export default function TokenInputGroup({
+  onTokenChanged,
+  onValueChanged,
   tokenList,
-  changeValue,
-  changeToken,
-  value,
-  exclusion,
   className,
+  exclusion,
+  value,
   token,
 }: InputGroupProps) {
-  const [selectedToken, setToken] = useState(token);
-  const [selectedValue, setValue] = useState(value);
+  const onInputChange = useCallback(
+    function (event: React.ChangeEvent<HTMLInputElement>) {
+      if (typeof onValueChanged === 'function')
+        onValueChanged(event.currentTarget.value);
+    },
+    [onValueChanged]
+  );
 
-  useEffect(() => {
-    setValue(value);
-  }, [value]);
-
-  useEffect(() => {
-    setToken(token);
-  }, [token]);
+  const onPickerChange = useCallback(
+    function (newToken: Token | undefined) {
+      if (newToken === exclusion) return;
+      if (typeof onTokenChanged === 'function') onTokenChanged(newToken);
+    },
+    [onTokenChanged, exclusion]
+  );
 
   return (
     <div className={`${className || ''} token-input-group`}>
       <input
         type="text"
         className="form-control"
-        value={selectedValue ?? '...'}
+        value={value ?? '...'}
         onInput={onInput}
-        onChange={(e) => onInputChange(e.target.value)}
+        onChange={onInputChange}
       />
       <TokenPicker
-        value={selectedToken}
-        onChange={changeSelected}
+        value={token}
+        onChange={onPickerChange}
         tokenList={tokenList}
         exclusion={exclusion}
       />
     </div>
   );
-
-  function onInputChange(newValue: string) {
-    setValue(newValue);
-    changeValue(newValue);
-  }
-
-  function changeSelected(newToken: Token | undefined) {
-    if (newToken === exclusion) return;
-    setToken(newToken);
-    changeToken(newToken);
-  }
 }
 
 /**
