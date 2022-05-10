@@ -54,7 +54,7 @@ export function cleanInput(dom: HTMLInputElement) {
 
   // remove leading zeros
   const oldSize = result.length;
-  result = result.replace(/^0+((?:\d+\.)|(?:\d$))/, '$1'); // todo
+  result = result.replace(/^0+((?:\d+\.)|(?:\d$))/, '$1');
   const sizeDiff = oldSize - result.length;
   selectionStart = Math.max(selectionStart - sizeDiff, 0);
   selectionEnd = Math.max(selectionEnd - sizeDiff, 0);
