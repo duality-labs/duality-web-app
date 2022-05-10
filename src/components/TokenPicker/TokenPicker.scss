@@ -144,6 +144,29 @@ $border-radius: 0.5rem;
   }
 }
 
+.token-picker-toggle {
+  & {
+    transition: all 0.5s ease-in-out;
+    border-radius: 0 0.5rem 0.5rem 0;
+    color: rgb(0, 0, 0);
+    padding: 0.5rem 1rem;
+    position: relative;
+    max-width: 120px;
+    font-size: 1rem;
+    flex: 0 0 100%;
+    width: 100%;
+    z-index: 1;
+  }
+
+  &:hover,
+  &:focus,
+  &.open {
+    background-color: rgba(116, 89, 220, 1);
+    color: rgb(255, 255, 255);
+    max-width: 160px;
+  }
+}
+
 .no-token-logo {
   & {
     display: inline-block;

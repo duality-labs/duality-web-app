@@ -208,9 +208,7 @@ export default function TokenPicker({
     <>
       <button
         type="button"
-        className={`py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle flex justify-center items-center text-center${
-          isOpen ? ' open' : ''
-        }`}
+        className={`token-picker-toggle ${isOpen ? ' open' : ''}`}
         onClick={open}
       >
         {value?.symbol || 'Choose Token'}
