@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
-let idCounter = 0;
 const seconds = 1000;
 const requestTime = 2 * seconds;
 
@@ -154,16 +153,4 @@ export function useSwap(request: SwapRequest | undefined) {
   }, [request]);
 
   return { data, isValidating: validating };
-}
-
-function getNextID() {
-  if (idCounter >= Number.MAX_SAFE_INTEGER) idCounter = 0;
-  idCounter += 1;
-  return idCounter;
-}
-
-// return an unchanging initial value
-export function useNextID() {
-  const ref = useRef(() => getNextID());
-  return ref.current;
 }
