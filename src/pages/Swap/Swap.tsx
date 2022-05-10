@@ -95,8 +95,7 @@ export default function Swap() {
   );
 
   const commitSwap = useCallback(
-    function (event?: React.FormEvent) {
-      if (event) event.preventDefault();
+    function () {
       setSwapRequest({
         token: tokenA?.address || '',
         otherToken: tokenB?.address || '',
