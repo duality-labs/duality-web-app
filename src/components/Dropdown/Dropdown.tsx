@@ -5,14 +5,12 @@ interface IDropdownProps {
   renderOverlay: ({ close }: { close: () => void }) => React.ReactNode;
   closeIfClickedOutside?: boolean;
   children: React.ReactElement;
-  onStateChange?: (isOpen: boolean) => void;
 }
 
 export default function Dropdown({
   renderOverlay,
   children,
   closeIfClickedOutside = true,
-  onStateChange,
 }: IDropdownProps) {
   const { x, y, reference, floating, strategy, update, refs } =
     useFloating<HTMLButtonElement>({
