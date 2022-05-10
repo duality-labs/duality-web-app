@@ -23,10 +23,6 @@ export default function Dropdown({
   const open = useCallback(() => setVisbile(true), [setVisbile]);
   const close = useCallback(() => setVisbile(false), [setVisbile]);
 
-  useEffect(() => {
-    if (onStateChange) onStateChange(visible);
-  }, [visible, onStateChange]);
-
   // update position when screen size changes
   useEffect(() => {
     if (!visible || !refs.reference.current || !refs.floating.current) {
@@ -79,7 +75,7 @@ export default function Dropdown({
       })}
       <div
         ref={floating}
-        className="dropdown w-60 max-w-full border border-slate-200 rounded-xl bg-white z-10 overflow-hidden"
+        className="dropdown w-60 max-w-full border border-slate-200 rounded-xl"
         style={{
           position: strategy,
           top: y ?? '',
