@@ -65,7 +65,7 @@ export default function Swap() {
         rate = 1 / Number(lastRate?.rate);
       }
 
-      return `${round(Number(otherValue) * rate, 1e6) || ''}`;
+      return formatTokenValue(Number(otherValue) * rate);
     },
     [rateData, lastRate]
   );
@@ -167,6 +167,11 @@ export default function Swap() {
   );
 }
 
-function round(value: number, roundNumber: number) {
-  return Math.round(value * roundNumber) / roundNumber;
+function formatTokenValue(value: number) {
+  return isNaN(value)
+    ? ''
+    : Number(value).toLocaleString('en-US', {
+        maximumSignificantDigits: 6,
+        useGrouping: false,
+      });
 }
