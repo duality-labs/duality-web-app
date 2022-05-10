@@ -60,7 +60,13 @@ export function cleanInput(dom: HTMLInputElement) {
   selectionEnd = Math.max(selectionEnd - sizeDiff, 0);
 
   // remove lagging zeros
-  result = result.replace(/(\.\d+?)0+$/, '$1');
+  result = result.replace(/(\.\d+?)0+$/, function (_, text, index) {
+    const zeroIndex = index + text.length;
+    const extraZeroes = '0'.repeat(
+      Math.max(0, Math.max(selectionStart, selectionEnd) - zeroIndex)
+    );
+    return text + extraZeroes;
+  });
   selectionStart = Math.min(selectionStart, result.length);
   selectionEnd = Math.min(selectionEnd, result.length);
 
