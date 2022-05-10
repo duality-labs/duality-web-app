@@ -49,7 +49,7 @@ export default function Swap() {
      * @param {Token} otherToken the token of the other group
      * @param {string} value the value of the group
      * @param {string} otherValue the value of the the other group
-     * @returns {string} the value of the taken as a string
+     * @returns {string} the value of the token as a string
      */
     (keepValueMode, token, otherToken, value, otherValue) => {
       if (keepValueMode) return value;
