@@ -1,0 +1,71 @@
+import { cleanInput } from './utils';
+
+interface InputProperties {
+  selectionStart: number;
+  selectionEnd: number;
+  value: string;
+}
+
+// The '|' represents the selectionStart
+// The selectionEnd can also be specified by using another '|' (defaults to same as start)
+// If no '|' are found then it defaults to right after the last character
+test.concurrent.each([
+  // 0 and . tests
+  ['0|', '0|'],
+  ['.|', '0.|0'],
+  ['.0|', '0.0|'],
+  ['0.|', '0.|0'],
+  ['00.|', '0.|0'],
+  // Invalid character tests
+  ['-4|', '4|'],
+  ['-|4', '|4'],
+  ['-04|', '4|'],
+  ['-0|4', '|4'],
+  ['-0|4.00', '|4.0'],
+  ['-04|.00', '4|.0'],
+  ['-04.|00', '4.|0'],
+  ['-04.0|0', '4.0|'],
+  ['-04.00|', '4.00|'],
+  // Trailing 0s tests
+  ['0.000001220000|', '0.000001220000|'],
+  ['0.00000|1220000', '0.00000|122'],
+  ['0.00000122|0000', '0.00000122|'],
+  ['0.0000012200|00', '0.0000012200|'],
+  // Leading 0s tests
+  ['000', '0'],
+  ['00|0', '|0'],
+  ['0000.|', '0.|0'],
+  ['0000.0|', '0.0|'],
+  ['0000.|0', '0.|0'],
+  ['0|000.0', '|0.0'],
+])('converts "%s" to "%s"', function (originalValue, expectedValue) {
+  const { value, selectionStart, selectionEnd } = parseValue(originalValue);
+  const dom = createInput(value, selectionStart, selectionEnd);
+  const expected = parseValue(expectedValue);
+  cleanInput(dom);
+  expect(dom.value).toBe(expected.value);
+  expect(dom.selectionStart).toBe(expected.selectionStart);
+  expect(dom.selectionEnd).toBe(expected.selectionEnd);
+});
+
+function createInput(
+  value: string,
+  start: number,
+  end?: number
+): HTMLInputElement {
+  const input = document.createElement('input');
+  input.value = value;
+  input.selectionStart = start;
+  input.selectionEnd = end ?? start;
+  return input;
+}
+
+function parseValue(text: string): InputProperties {
+  const start = text.indexOf('|');
+  const end = text.lastIndexOf('|');
+  return {
+    value: text.replace(/\|/g, ''),
+    selectionStart: start === -1 ? text.length : start,
+    selectionEnd: start === -1 ? text.length : start === end ? start : end - 1,
+  };
+}

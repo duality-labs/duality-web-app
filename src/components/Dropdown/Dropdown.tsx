@@ -1,15 +1,17 @@
 import React, { cloneElement, useCallback, useState, useEffect } from 'react';
 import { offset, useFloating, autoUpdate } from '@floating-ui/react-dom';
 
+interface IDropdownProps {
+  renderOverlay: ({ close }: { close: () => void }) => React.ReactNode;
+  closeIfClickedOutside?: boolean;
+  children: React.ReactElement;
+}
+
 export default function Dropdown({
   renderOverlay,
   children,
   closeIfClickedOutside = true,
-}: {
-  renderOverlay: ({ close }: { close: () => void }) => React.ReactNode;
-  children: React.ReactElement;
-  closeIfClickedOutside?: boolean;
-}) {
+}: IDropdownProps) {
   const { x, y, reference, floating, strategy, update, refs } =
     useFloating<HTMLButtonElement>({
       placement: 'bottom',
