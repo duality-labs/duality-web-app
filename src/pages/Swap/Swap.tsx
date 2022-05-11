@@ -94,8 +94,9 @@ export default function Swap() {
     [tokenA, tokenB, valueAConverted, valueBConverted]
   );
 
-  const commitSwap = useCallback(
-    function () {
+  const onFormSubmit = useCallback(
+    function (event?: React.FormEvent<HTMLFormElement>) {
+      if (event instanceof Event) event.preventDefault();
       setSwapRequest({
         token: tokenA?.address || '',
         otherToken: tokenB?.address || '',
@@ -105,19 +106,19 @@ export default function Swap() {
     [tokenA?.address, tokenB?.address, valueA]
   );
 
-  const updateValueA = useCallback((newValue: string) => {
+  const onValueAChanged = useCallback((newValue: string) => {
     setValueA(newValue);
     setLastUpdatedA(true);
   }, []);
-  const updateValueB = useCallback((newValue: string) => {
+  const onValueBChanged = useCallback((newValue: string) => {
     setValueB(newValue);
     setLastUpdatedA(false);
   }, []);
 
   return (
-    <form className="swap-page" onSubmit={commitSwap}>
+    <form className="swap-page" onSubmit={onFormSubmit}>
       <TokenInputGroup
-        onValueChanged={updateValueA}
+        onValueChanged={onValueAChanged}
         onTokenChanged={setTokenA}
         tokenList={tokenList}
         token={tokenA}
@@ -139,7 +140,7 @@ export default function Swap() {
         &#8693;
       </button>
       <TokenInputGroup
-        onValueChanged={updateValueB}
+        onValueChanged={onValueBChanged}
         onTokenChanged={setTokenB}
         tokenList={tokenList}
         token={tokenB}
