@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import './Orbs.scss';
 
+import Orb from '../Orb';
+
 interface OrbsProps {
   rate: number;
 }
@@ -17,7 +19,7 @@ export default function Orbs({ rate }: OrbsProps) {
   const radiusB = baseOrbRadius / safeRate;
   const dx = fullWidth / 3;
   const xCenter = fullWidth / 2;
-  const windowRatio = fullHeight / fullWidth;
+  const windowRatio = fullHeight / fullWidth || 1;
   const reverseRatio = 1 / windowRatio;
 
   const updateDimensions = useCallback(function () {
@@ -37,35 +39,18 @@ export default function Orbs({ rate }: OrbsProps) {
         style={{ '--scale-ratio': windowRatio } as React.CSSProperties}
       >
         <div className="rotate-slow">
-          <div
-            className="orb-container counter-rotate-slow"
-            style={{
-              width: radiusA * 2,
-              height: radiusA * 2,
-              top: xCenter - radiusA,
-              left: xCenter - dx - radiusA,
-            }}
-          >
-            <div
-              className="orb y-expand"
-              style={{ '--scale-ratio': reverseRatio } as React.CSSProperties}
-            ></div>
-          </div>
-
-          <div
-            className="orb-container counter-rotate-slow"
-            style={{
-              width: radiusB * 2,
-              height: radiusB * 2,
-              top: xCenter - radiusB,
-              left: xCenter + dx - radiusB,
-            }}
-          >
-            <div
-              className="orb y-expand"
-              style={{ '--scale-ratio': reverseRatio } as React.CSSProperties}
-            ></div>
-          </div>
+          <Orb
+            left={xCenter - dx - radiusA}
+            top={xCenter - radiusA}
+            radius={radiusA}
+            scaleRatio={reverseRatio}
+          ></Orb>
+          <Orb
+            left={xCenter + dx - radiusB}
+            top={xCenter - radiusB}
+            radius={radiusB}
+            scaleRatio={reverseRatio}
+          ></Orb>
         </div>
       </div>
     </div>

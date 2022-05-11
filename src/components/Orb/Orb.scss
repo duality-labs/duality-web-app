@@ -1,0 +1,40 @@
+$bubble-duration: 25s;
+$buble-shake-duration: 8s;
+$bubble-shake-distance: 15px;
+
+.bubble {
+  animation: bubble-shake $buble-shake-duration ease-in-out infinite;
+  transition: margin $bubble-duration linear, opacity 2s ease-in-out;
+  box-shadow: -1px 2px 4px 0px rgba(0, 0, 0, 0.2),
+    inset -1px 2px 3px 0px rgba(255, 255, 255, 1);
+  background-color: transparent;
+  position: absolute;
+  border-radius: 50%;
+  margin-top: 0%;
+  left: -100%;
+  top: -100%;
+  opacity: 0;
+}
+
+.bubble.bubbling {
+  margin-top: -100%;
+  opacity: 1;
+}
+
+@keyframes bubble-shake {
+  0% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-$bubble-shake-distance);
+  }
+
+  75% {
+    transform: translateX($bubble-shake-distance);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
