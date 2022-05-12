@@ -32,6 +32,8 @@ export default function Orbs({ rate }: OrbsProps) {
     updateDimensions();
   }, [updateDimensions]);
 
+  const maxHeight = Math.max(radiusA, radiusB) * 2;
+
   return (
     <div className="orbs-bg" ref={bodyRef}>
       <div
@@ -51,6 +53,40 @@ export default function Orbs({ rate }: OrbsProps) {
             radius={radiusB}
             scaleRatio={reverseRatio}
           ></Orb>
+          <div
+            className="counter-rotate-slow"
+            style={{
+              position: 'absolute',
+              left: xCenter - dx,
+              top: xCenter - Math.max(radiusA, radiusB),
+              width: dx * 2,
+              height: maxHeight,
+            }}
+          >
+            <svg
+              className="y-expand"
+              width={dx * 2}
+              height={maxHeight}
+              style={{ '--scale-ratio': reverseRatio } as React.CSSProperties}
+            >
+              <path
+                d={`M 0, ${Math.max(radiusA, radiusB) - radiusA} L ${dx * 2}, ${
+                  Math.max(radiusA, radiusB) - radiusB
+                }`}
+                stroke="red"
+                strokeWidth={20}
+                className="orb-svg-particle"
+              ></path>
+              <path
+                d={`M 0, ${Math.max(radiusA, radiusB) + radiusA} L ${dx * 2}, ${
+                  Math.max(radiusA, radiusB) + radiusB
+                }`}
+                stroke="red"
+                strokeWidth={20}
+                className="orb-svg-particle orb-animation-delay-3"
+              ></path>
+            </svg>
+          </div>
         </div>
       </div>
     </div>

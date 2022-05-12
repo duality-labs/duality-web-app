@@ -74,3 +74,42 @@ $base-ord-bg: #1ecd97;
     transform: rotateZ(-360deg);
   }
 }
+
+.orb-svg-particle {
+  animation: orb-svg-particle 10s linear infinite;
+  stroke-linecap: round;
+  stroke-dasharray: 2px 50%;
+  stroke-dashoffset: 0;
+  stroke: $base-ord-bg;
+  stroke-width: 8px;
+}
+
+.orb-animation-delay-1 {
+  animation-delay: 1s;
+}
+
+.orb-animation-delay-2 {
+  animation-delay: 2s;
+}
+
+.orb-animation-delay-3 {
+  animation-delay: 3s;
+}
+
+.orb-animation-delay-4 {
+  animation-delay: 4s;
+}
+
+.orb-animation-delay-5 {
+  animation-delay: 5s;
+}
+
+@keyframes orb-svg-particle {
+  from {
+    stroke-dashoffset: 0;
+  }
+
+  from {
+    stroke-dashoffset: 100%;
+  }
+}
