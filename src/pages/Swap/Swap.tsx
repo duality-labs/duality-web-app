@@ -1,6 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
+
+import Orbs from '../../components/Orbs';
+
 import {
   useTokens,
   useExchangeRate,
@@ -116,55 +119,58 @@ export default function Swap() {
   }, []);
 
   return (
-    <form className="swap-page" onSubmit={onFormSubmit}>
-      <TokenInputGroup
-        onValueChanged={onValueAChanged}
-        onTokenChanged={setTokenA}
-        tokenList={tokenList}
-        token={tokenA}
-        value={valueAConverted}
-        className={
-          isValidatingRate && !lastUpdatedA
-            ? valueAConverted
-              ? 'estimated-rate'
-              : 'loading-token'
-            : ''
-        }
-        exclusion={tokenB}
-      ></TokenInputGroup>
-      <button
-        type="button"
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
-        onClick={swapTokens}
-      >
-        &#8693;
-      </button>
-      <TokenInputGroup
-        onValueChanged={onValueBChanged}
-        onTokenChanged={setTokenB}
-        tokenList={tokenList}
-        token={tokenB}
-        value={valueBConverted}
-        className={
-          isValidatingRate && lastUpdatedA
-            ? valueBConverted
-              ? 'estimated-rate'
-              : 'loading-token'
-            : ''
-        }
-        exclusion={tokenA}
-      ></TokenInputGroup>
-      <span>Gas price: {rateData?.gas}</span>
-      {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
-        <i className="text-transparent">.</i>
-      )}
-      <div>{isValidatingSwap ? 'Loading...' : swapResponse}</div>
-      <input
-        type="submit"
-        value="Swap"
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block cursor-pointer"
-      />
-    </form>
+    <>
+      <Orbs rate={Number(valueAConverted) / Number(valueBConverted)}></Orbs>
+      <form className="swap-page" onSubmit={onFormSubmit}>
+        <TokenInputGroup
+          onValueChanged={onValueAChanged}
+          onTokenChanged={setTokenA}
+          tokenList={tokenList}
+          token={tokenA}
+          value={valueAConverted}
+          className={
+            isValidatingRate && !lastUpdatedA
+              ? valueAConverted
+                ? 'estimated-rate'
+                : 'loading-token'
+              : ''
+          }
+          exclusion={tokenB}
+        ></TokenInputGroup>
+        <button
+          type="button"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
+          onClick={swapTokens}
+        >
+          &#8693;
+        </button>
+        <TokenInputGroup
+          onValueChanged={onValueBChanged}
+          onTokenChanged={setTokenB}
+          tokenList={tokenList}
+          token={tokenB}
+          value={valueBConverted}
+          className={
+            isValidatingRate && lastUpdatedA
+              ? valueBConverted
+                ? 'estimated-rate'
+                : 'loading-token'
+              : ''
+          }
+          exclusion={tokenA}
+        ></TokenInputGroup>
+        <span>Gas price: {rateData?.gas}</span>
+        {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
+          <i className="text-transparent">.</i>
+        )}
+        <div>{isValidatingSwap ? 'Loading...' : swapResponse}</div>
+        <input
+          type="submit"
+          value="Swap"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block cursor-pointer"
+        />
+      </form>
+    </>
   );
 }
 
