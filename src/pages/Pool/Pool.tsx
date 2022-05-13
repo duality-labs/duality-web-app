@@ -21,7 +21,8 @@ export default function Pool() {
     '100',
     0
   );
-  const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
+  const { data: tokenList = [], isValidating: isValidatingTokens } =
+    useTokens();
   const dotCount = useDotCounter(0.25e3);
 
   // set token A to be first token in list if not already populated
@@ -126,7 +127,7 @@ export default function Pool() {
       <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block">
         Add Liquidity
       </button>
-      {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
+      {((isValidatingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
         <i className="text-transparent">.</i>
       )}
     </div>
