@@ -6,20 +6,22 @@ import {
   useTokens,
   useExchangeRate,
   useDotCounter,
+  Token,
 } from '../../components/TokenPicker/mockHooks';
 
 import './Pool.scss';
 
 export default function Pool() {
-  const [tokenA, setTokenA] = useState(undefined as string | undefined);
-  const [tokenB, setTokenB] = useState(undefined as string | undefined);
+  const [tokenA, setTokenA] = useState(undefined as Token | undefined);
+  const [tokenB, setTokenB] = useState(undefined as Token | undefined);
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
     setTokenB(tokenA);
   }, [tokenA, tokenB]);
   const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
-    '100',
-    0
+    tokenA,
+    tokenB,
+    '1'
   );
   const { data: tokenList = [], isValidating: isValidatingTokens } =
     useTokens();
@@ -67,7 +69,7 @@ export default function Pool() {
       <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
         {tokenA && tokenB ? (
           <span>
-            Current Price: {rateData?.price} {tokenA} per {tokenB}
+            Current Price: {rateData?.price} {tokenB.name} per {tokenA.name}
           </span>
         ) : (
           <span>Current Price:</span>
