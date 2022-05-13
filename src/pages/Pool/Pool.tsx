@@ -69,7 +69,8 @@ export default function Pool() {
       <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
         {tokenA && tokenB ? (
           <span>
-            Current Price: {rateData?.price} {tokenB.name} per {tokenA.name}
+            Current Price: {rateData?.price || '...'} {tokenB.name} per{' '}
+            {tokenA.name}
           </span>
         ) : (
           <span>Current Price:</span>
