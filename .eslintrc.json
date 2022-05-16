@@ -8,9 +8,7 @@
     "plugin:jsx-a11y/recommended",
     "prettier"
   ],
-  "plugins": [
-    "jsx-a11y"
-  ],
+  "plugins": ["jsx-a11y"],
   "rules": {
     "no-console": "warn",
     "react/react-in-jsx-scope": "off"
