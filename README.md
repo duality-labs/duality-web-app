@@ -10,7 +10,7 @@ The code for the Duality front-end web app.
 4. `$ npx hardhat node` (this will start a local testnet)
 5. Open a new terminal session, and cd back to the contracts repository
 6. `$ npx hardhat run scripts/deployTestEnv.js` This will deploy contracts and set up some sample trading pairs. Note down the deployed addresses the command outputs.
-7. `npx hardhat run scripts/simulateTrades.js`
+7. `$ npx hardhat run scripts/simulateTrades.js`
    1. Select a signer by entering a number from 0-2 when prompted.
    2. Enter contract addresses as output from the deploy command
    3. You can run as many instances of this command as you'd like to simulate multiple traders
