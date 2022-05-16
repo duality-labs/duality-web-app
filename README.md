@@ -6,7 +6,7 @@ The code for the Duality front-end web app.
 
 1. `$ npm install`
 2. Clone the contracts repository alongside this repository.
-3. `$ cd path/to/duality && npm install`
+3. `$ cd path/to/duality && yarn install` (duality core uses yarn package management)
 4. `$ npx hardhat node` (this will start a local testnet)
 5. Open a new terminal session, and cd back to the contracts repository
 6. `$ npx hardhat run scripts/deployTestEnv.js` This will deploy contracts and set up some sample trading pairs. Note down the deployed addresses the command outputs.
