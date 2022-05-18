@@ -14,7 +14,9 @@ module.exports = {
         preset: 'angular',
         // see default rules: https://github.com/semantic-release/commit-analyzer/blob/master/lib/default-release-rules.js
         releaseRules: [
-          { type: 'feat', release: 'minor' },
+          // while in "alpha" mode don't increment anything but the patch version
+          { breaking: true, release: 'patch' },
+          { type: 'feat', release: 'patch' },
           { type: 'fix', release: 'patch' },
           { type: 'perf', release: 'patch' },
         ],
