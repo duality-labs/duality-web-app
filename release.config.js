@@ -4,57 +4,57 @@
  **/
 
 module.exports = {
-  branches: ["main"],
+  branches: ['main'],
   dryRun: false,
   plugins: [
-    ["@semantic-release/commit-analyzer", {
-      preset: "angular",
-      // see default rules: https://github.com/semantic-release/commit-analyzer/blob/master/lib/default-release-rules.js
-      releaseRules: [
-        { type: "feat", release: "minor" },
-        { type: "fix", release: "patch" },
-        { type: "perf", release: "patch" },
-      ],
-    }],
     [
-      "@semantic-release/release-notes-generator",
+      '@semantic-release/commit-analyzer',
       {
-        preset: "conventionalcommits",
+        preset: 'angular',
+        // see default rules: https://github.com/semantic-release/commit-analyzer/blob/master/lib/default-release-rules.js
+        releaseRules: [
+          { type: 'feat', release: 'minor' },
+          { type: 'fix', release: 'patch' },
+          { type: 'perf', release: 'patch' },
+        ],
+      },
+    ],
+    [
+      '@semantic-release/release-notes-generator',
+      {
+        preset: 'conventionalcommits',
         presetConfig: {
           types: [
-            { type: "feat", section: "Features" },
-            { type: "fix", section: "Fixes" },
-            { type: "chore", hidden: false, section: "Other" },
-            { type: "docs", hidden: false, section: "Other" },
-            { type: "style", hidden: false, section: "Other" },
-            { type: "refactor", hidden: false, section: "Other" },
-            { type: "perf", hidden: false, section: "Other" },
-            { type: "revert", hidden: false, section: "Other "},
-            { type: "test", hidden: false, section: "Other "},
-            { type: "build", hidden: false, section: "Other" },
-            { type: "ci", hidden: true },
+            { type: 'feat', section: 'Features' },
+            { type: 'fix', section: 'Fixes' },
+            { type: 'chore', hidden: false, section: 'Other' },
+            { type: 'docs', hidden: false, section: 'Other' },
+            { type: 'style', hidden: false, section: 'Other' },
+            { type: 'refactor', hidden: false, section: 'Other' },
+            { type: 'perf', hidden: false, section: 'Other' },
+            { type: 'revert', hidden: false, section: 'Other ' },
+            { type: 'test', hidden: false, section: 'Other ' },
+            { type: 'build', hidden: false, section: 'Other' },
+            { type: 'ci', hidden: true },
           ],
         },
       },
     ],
     [
-      "@semantic-release/changelog",
+      '@semantic-release/changelog',
       {
-        changelogFile: "CHANGELOG.md",
-        changelogTitle: "# Changelog",
+        changelogFile: 'CHANGELOG.md',
+        changelogTitle: '# Changelog',
       },
     ],
     [
-      "@semantic-release/git",
+      '@semantic-release/git',
       {
-        assets: [
-          "CHANGELOG.md",
-          "package.json",
-          "package-lock.json",
-        ],
-        message: "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+        assets: ['CHANGELOG.md', 'package.json', 'package-lock.json'],
+        message:
+          'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
       },
     ],
-    "@semantic-release/github",
+    '@semantic-release/github',
   ],
-}
+};
