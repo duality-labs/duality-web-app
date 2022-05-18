@@ -1,0 +1,22 @@
+name: Semantic Release Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, reopened, edited ]
+
+# disallow reading anything
+permissions:
+  contents: none
+
+jobs:
+  PR-title-check:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: check title starts with major/feat/fix/chore/docs/style/refactor/perf/revert/test/build/ci
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          if ! [[ "$PR_TITLE" =~ ^(major|feat|fix|chore|docs|style|refactor|perf|revert|test|build|ci)(\(.+\))?: ]]; then
+            exit 1
+          fi
