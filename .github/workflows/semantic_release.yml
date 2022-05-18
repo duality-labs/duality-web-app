@@ -53,7 +53,7 @@ jobs:
             conventional-changelog-conventionalcommits
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GIT_COMMITTER_EMAIL: bot@duality
+          GIT_COMMITTER_EMAIL: dib542@gmail.com
 
       - name: Echo new release
         if: steps.semantic.outputs.new_release_published == 'true'
