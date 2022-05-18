@@ -26,9 +26,12 @@ jobs:
         with:
           extra_plugins: |
             @semantic-release/commit-analyzer
+            @semantic-release/release-notes-generator
             @semantic-release/git
+            @semantic-release/changelog
             @semantic-release/github
             @semantic-release/exec
+            conventional-changelog-conventionalcommits
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GIT_COMMITTER_EMAIL: bot@duality

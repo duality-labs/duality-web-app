@@ -16,6 +16,45 @@ module.exports = {
         { type: "perf", release: "patch" },
       ],
     }],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        preset: "conventionalcommits",
+        presetConfig: {
+          types: [
+            { type: "feat", section: "Features" },
+            { type: "fix", section: "Fixes" },
+            { type: "chore", hidden: false, section: "Other" },
+            { type: "docs", hidden: false, section: "Other" },
+            { type: "style", hidden: false, section: "Other" },
+            { type: "refactor", hidden: false, section: "Other" },
+            { type: "perf", hidden: false, section: "Other" },
+            { type: "revert", hidden: false, section: "Other "},
+            { type: "test", hidden: false, section: "Other "},
+            { type: "build", hidden: false, section: "Other" },
+            { type: "ci", hidden: true },
+          ],
+        },
+      },
+    ],
+    [
+      "@semantic-release/changelog",
+      {
+        changelogFile: "CHANGELOG.md",
+        changelogTitle: "# Changelog",
+      },
+    ],
+    [
+      "@semantic-release/git",
+      {
+        assets: [
+          "CHANGELOG.md",
+          "package.json",
+          "package-lock.json",
+        ],
+        message: "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+      },
+    ],
     "@semantic-release/github",
   ],
 }
