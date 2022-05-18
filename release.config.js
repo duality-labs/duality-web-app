@@ -7,6 +7,7 @@ module.exports = {
   branches: ['main'],
   dryRun: false,
   plugins: [
+    // determine what type of semver change this commit may generate
     [
       '@semantic-release/commit-analyzer',
       {
@@ -19,6 +20,7 @@ module.exports = {
         ],
       },
     ],
+    // create CHANGELOG text for changelog and commit description
     [
       '@semantic-release/release-notes-generator',
       {
@@ -40,6 +42,7 @@ module.exports = {
         },
       },
     ],
+    // edits CHANGELOG.md
     [
       '@semantic-release/changelog',
       {
@@ -47,6 +50,7 @@ module.exports = {
         changelogTitle: '# Changelog',
       },
     ],
+    // creates git commit and tag
     [
       '@semantic-release/git',
       {
@@ -55,6 +59,7 @@ module.exports = {
           'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
       },
     ],
+    // creates github release from git tag
     '@semantic-release/github',
   ],
 };
