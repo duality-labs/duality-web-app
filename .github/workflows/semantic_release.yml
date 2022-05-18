@@ -29,6 +29,7 @@ jobs:
             @semantic-release/git
             @semantic-release/changelog
             @semantic-release/github
+            @semantic-release/npm
             @semantic-release/exec
             conventional-changelog-conventionalcommits
         env:

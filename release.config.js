@@ -50,6 +50,13 @@ module.exports = {
         changelogTitle: '# Changelog',
       },
     ],
+    // edits package.json and package-lock.json
+    [
+      '@semantic-release/npm',
+      {
+        npmPublish: false,
+      },
+    ],
     // creates git commit and tag
     [
       '@semantic-release/git',
