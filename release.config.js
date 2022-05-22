@@ -13,7 +13,7 @@ module.exports = {
     [
       '@semantic-release/commit-analyzer',
       {
-        preset: 'angular',
+        preset: 'conventionalcommits',
         // see default rules: https://github.com/semantic-release/commit-analyzer/blob/master/lib/default-release-rules.js
         releaseRules: [
           // while in "alpha" mode don't increment anything but the patch version
