@@ -35,7 +35,6 @@ jobs:
     - name: Build
       run: npm run build
       env:
-        REACT_APP__COMMIT_SHA: ${{ github.sha }}
         REACT_APP__BUILD_NUMBER: ${{ github.run_id }}-${{ github.run_attempt }}
 
     - name: Deploy preview to Netlify
