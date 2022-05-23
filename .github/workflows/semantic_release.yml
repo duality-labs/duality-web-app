@@ -22,26 +22,26 @@ jobs:
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v3.0.0
         id: semantic
-        semantic_version: 19
-        # replace master branch with main as a release branch
-        # see https://github.com/semantic-release/semantic-release/issues/1581
-        # note that branches may already be filtered by the triggers of this workflow
-        branches: |
-          [
-            '+([0-9])?(.{+([0-9]),x}).x',
-            'main',
-            'next',
-            'next-major',
-            {
-              name: 'beta',
-              prerelease: true
-            },
-            {
-              name: 'alpha',
-              prerelease: true
-            }
-          ]
         with:
+          semantic_version: 19
+          # replace master branch with main as a release branch
+          # see https://github.com/semantic-release/semantic-release/issues/1581
+          # note that branches may already be filtered by the triggers of this workflow
+          branches: |
+            [
+              '+([0-9])?(.{+([0-9]),x}).x',
+              'main',
+              'next',
+              'next-major',
+              {
+                name: 'beta',
+                prerelease: true
+              },
+              {
+                name: 'alpha',
+                prerelease: true
+              }
+            ]
           extra_plugins: |
             @semantic-release/commit-analyzer
             @semantic-release/release-notes-generator
