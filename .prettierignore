@@ -8,3 +8,6 @@
 
 # production
 /build
+
+# ignore change log, it is auto-formatted by semantic release
+CHANGELOG.md
