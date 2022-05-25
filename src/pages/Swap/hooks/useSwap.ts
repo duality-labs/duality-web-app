@@ -4,7 +4,7 @@ import { PairRequest, PairResult, ErrorMessage } from './index';
 import { ethers } from 'ethers';
 
 function sendSwap(
-  signer: ethers.providers.JsonRpcSigner,
+  provider: ethers.providers.Web3Provider,
   { address0, address1, value0 }: PairRequest
 ): Promise<PairResult> {
   return new Promise(function (resolve, reject) {
@@ -31,7 +31,7 @@ export function useSwap(request?: PairRequest) {
     setValidating(true);
     setError(undefined);
     setData(undefined);
-    sendSwap(provider.getSigner(), request)
+    sendSwap(provider, request)
       .then(function (result?: PairResult) {
         setValidating(false);
         setData({
