@@ -88,9 +88,10 @@ function fetchEstimates({
       );
       const rate =
         address0 === sortedList[0]
-          ? totalReserves.value1 / totalReserves.value0
-          : totalReserves.value0 / totalReserves.value1;
-      const value1 = (Number(value0) * rate).toLocaleString('en-US', {
+          ? (totalReserves.value1 - Number(value0)) / totalReserves.value0
+          : (totalReserves.value0 - Number(value0)) / totalReserves.value1;
+      const safeRate = Math.max(rate, 0);
+      const value1 = (Number(value0) * safeRate).toLocaleString('en-US', {
         maximumSignificantDigits: 6,
         useGrouping: false,
       });
@@ -98,7 +99,7 @@ function fetchEstimates({
       resolve({
         address0,
         address1,
-        rate: `${rate}`,
+        rate: `${safeRate}`,
         value0,
         value1,
         gas: '5',
