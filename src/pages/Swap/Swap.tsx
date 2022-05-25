@@ -5,11 +5,12 @@ import {
   useTokens,
   useDotCounter,
   Token,
-  useSwap,
-  SwapRequest,
 } from '../../components/TokenPicker/mockHooks';
 
+import { PairRequest } from './hooks/index';
+
 import { useIndexer } from './hooks/useIndexer';
+import { useSwap } from './hooks/useSwap';
 
 import './Swap.scss';
 
@@ -29,11 +30,12 @@ export default function Swap() {
     address1: lastUpdatedA ? tokenB?.address : tokenA?.address,
     value0: lastUpdatedA ? valueA : valueB,
   });
-  const [swapRequest, setSwapRequest] = useState(
-    undefined as SwapRequest | undefined
-  );
-  const { data: swapResponse, isValidating: isValidatingSwap } =
-    useSwap(swapRequest);
+  const [swapRequest, setSwapRequest] = useState<PairRequest>();
+  const {
+    data: swapResponse,
+    isValidating: isValidatingSwap,
+    error: swapError,
+  } = useSwap(swapRequest);
   const dotCount = useDotCounter(0.25e3);
 
   const valueAConverted = lastUpdatedA ? valueA : rateData?.value1;
@@ -52,11 +54,11 @@ export default function Swap() {
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
-      if (event instanceof Event) event.preventDefault();
+      if (event) event.preventDefault();
       setSwapRequest({
-        token: tokenA?.address ?? '',
-        otherToken: tokenB?.address ?? '',
-        value: valueA ?? '',
+        address0: tokenA?.address ?? '',
+        address1: tokenB?.address ?? '',
+        value0: valueA ?? '',
       });
     },
     [tokenA?.address, tokenB?.address, valueA]
@@ -114,8 +116,13 @@ export default function Swap() {
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
         <i className="text-transparent">.</i>
       )}
+      <div className="text-red-500">{swapError}</div>
       <div className="text-red-500">{rateError}</div>
-      <div>{isValidatingSwap ? 'Loading...' : swapResponse}</div>
+      <div className="text-sky-500">
+        {!isValidatingSwap && swapResponse
+          ? `Traded ${swapResponse?.value0} ${swapResponse?.address0} to ${swapResponse?.value1} ${swapResponse?.address1}`
+          : ``}
+      </div>
       <input
         type="submit"
         value="Swap"
