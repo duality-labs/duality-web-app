@@ -27,8 +27,18 @@ export interface SwapRequest {
 
 const tokens: Array<Token> = [
   { logo: null, symbol: 'Eth', name: 'Ether', address: '0x0001' },
-  { logo: null, symbol: 'Dai', name: 'Dai Stablecoin', address: '0x0002' },
-  { logo: null, symbol: 'USDC', name: 'USDCoin', address: '0x0003' },
+  {
+    logo: null,
+    symbol: 'Dai',
+    name: 'Dai Stablecoin',
+    address: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+  },
+  {
+    logo: null,
+    symbol: 'USDC',
+    name: 'USDCoin',
+    address: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+  },
   { logo: null, symbol: 'USDT', name: 'Tether USD', address: '0x0004' },
   { logo: null, symbol: 'WBTC', name: 'Wrapped BTC', address: '0x0005' },
   { logo: null, symbol: 'WETH', name: 'Wrapped Ether', address: '0x0006' },
