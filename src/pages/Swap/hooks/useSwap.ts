@@ -10,7 +10,7 @@ function sendSwap(
 ): Promise<PairResult> {
   return new Promise(function (resolve, reject) {
     if (!address0 || !address1 || !value0)
-      return reject(Error('Invalid Input'));
+      return reject(new Error('Invalid Input'));
     const contract = getContract(Contract.DUALITY_CORE, provider);
     contract
       .connect(provider.getSigner())

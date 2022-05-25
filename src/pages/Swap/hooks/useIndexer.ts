@@ -68,7 +68,7 @@ function fetchEstimates({
     delayDiff = 0.5e3;
   return new Promise(function (resolve, reject) {
     if (!address0 || !address1 || !value0)
-      return reject(Error('Invalid Input'));
+      return reject(new Error('Invalid Input'));
 
     setTimeout(function () {
       const sortedList = [address0, address1].sort();
