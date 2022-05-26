@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 
+import Hint from '../../components/Hint';
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
   useTokens,
@@ -39,6 +40,24 @@ export default function Swap() {
   const { data: swapResponse, isValidating: isValidatingSwap } =
     useSwap(swapRequest);
   const dotCount = useDotCounter(0.25e3);
+
+  const topInputRef = useRef<HTMLInputElement>(null);
+  const topButtonRef = useRef<HTMLButtonElement>(null);
+  const botInputRef = useRef<HTMLInputElement>(null);
+  const botButtonRef = useRef<HTMLButtonElement>(null);
+  const swapButtonRef = useRef<HTMLInputElement>(null);
+  const [hintIndex, setHintIndex] = useState(0);
+
+  useEffect(() => {
+    if (tokenA?.address) setHintIndex(1);
+  }, [tokenA]);
+  useEffect(() => {
+    if (valueA && valueA !== '0' && tokenA?.address) setHintIndex(2);
+  }, [valueA, tokenA]);
+  useEffect(() => {
+    if (valueA && valueA !== '0' && tokenA?.address && tokenB?.address)
+      setHintIndex(3);
+  }, [valueA, tokenA, tokenB]);
 
   const getRate = useCallback<GetRateType>(
     /**
@@ -117,6 +136,28 @@ export default function Swap() {
 
   return (
     <form className="swap-page" onSubmit={onFormSubmit}>
+      <Hint
+        refList={[
+          topButtonRef,
+          topInputRef,
+          botButtonRef,
+          botInputRef,
+          swapButtonRef,
+        ]}
+        index={hintIndex}
+      >
+        <div>Select a token by clicking on the button below</div>
+        <div>
+          Input the value for{' '}
+          {tokenA ? `token ${tokenA.name}` : 'the top token'}
+        </div>
+        <div>Select a token by clicking on the button below</div>
+        <div>
+          The value for {tokenB ? `token ${tokenB.name}` : 'the bottom token'}{' '}
+          will be calculated on its own
+        </div>
+        <div>Press on Swap to execute the transaction</div>
+      </Hint>
       <TokenInputGroup
         onValueChanged={onValueAChanged}
         onTokenChanged={setTokenA}
@@ -131,6 +172,8 @@ export default function Swap() {
             : ''
         }
         exclusion={tokenB}
+        refButton={topButtonRef}
+        refInput={topInputRef}
       ></TokenInputGroup>
       <button
         type="button"
@@ -153,6 +196,8 @@ export default function Swap() {
             : ''
         }
         exclusion={tokenA}
+        refButton={botButtonRef}
+        refInput={botInputRef}
       ></TokenInputGroup>
       <span>Gas price: {rateData?.gas}</span>
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
@@ -163,6 +208,7 @@ export default function Swap() {
         type="submit"
         value="Swap"
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block cursor-pointer"
+        ref={swapButtonRef}
       />
     </form>
   );

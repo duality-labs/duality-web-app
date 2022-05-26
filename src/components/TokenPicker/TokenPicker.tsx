@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, useId } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useId,
+  RefObject,
+} from 'react';
 
 import { Token } from './mockHooks';
 
@@ -14,6 +21,7 @@ interface TokenResult {
 
 interface TokenPickerProps {
   onChange: (newToken: Token | undefined) => void;
+  refButton?: RefObject<HTMLButtonElement>;
   exclusion: Token | undefined;
   value: Token | undefined;
   tokenList: Array<Token>;
@@ -24,6 +32,7 @@ export default function TokenPicker({
   onChange,
   exclusion,
   tokenList,
+  refButton,
 }: TokenPickerProps) {
   const [filteredList, setFilteredList] = useState<Array<TokenResult>>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -130,6 +139,7 @@ export default function TokenPicker({
         type="button"
         className={`token-picker-toggle ${isOpen ? ' open' : ''}`}
         onClick={open}
+        ref={refButton}
       >
         {value?.symbol || 'Choose Token'}
       </button>

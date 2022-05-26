@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, RefObject } from 'react';
 
 import TokenPicker from '../TokenPicker';
 
@@ -11,6 +11,8 @@ import './TokenInputGroup.scss';
 interface InputGroupProps {
   onTokenChanged?: (token?: Token) => void;
   onValueChanged?: (value: string) => void;
+  refButton?: RefObject<HTMLButtonElement>;
+  refInput?: RefObject<HTMLInputElement>;
   tokenList: Array<Token>;
   className?: string;
   exclusion?: Token;
@@ -26,6 +28,8 @@ export default function TokenInputGroup({
   exclusion,
   value,
   token,
+  refButton,
+  refInput,
 }: InputGroupProps) {
   const onInputChange = useCallback(
     function (event: React.ChangeEvent<HTMLInputElement>) {
@@ -51,12 +55,14 @@ export default function TokenInputGroup({
         value={value || '...'}
         onInput={onInput}
         onChange={onInputChange}
+        ref={refInput}
       />
       <TokenPicker
         value={token}
         onChange={onPickerChange}
         tokenList={tokenList}
         exclusion={exclusion}
+        refButton={refButton}
       />
     </div>
   );
