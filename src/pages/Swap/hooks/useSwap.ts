@@ -47,26 +47,22 @@ export function useSwap(request?: PairRequest) {
   const { provider } = useWeb3();
 
   useEffect(() => {
-    if (
-      !request?.address0 ||
-      !request?.address1 ||
-      !request?.value0 ||
-      !provider
-    )
-      return;
+    if (!request || !provider) return;
+    const { address0, address1, value0 } = request;
+    if (!address0 || !address1 || !value0) return;
     setValidating(true);
     setError(undefined);
     setData(undefined);
     sendSwap(provider, request)
-      .then(function (result?: PairResult) {
+      .then(function (result: PairResult) {
         setValidating(false);
         setData({
-          address0: request.address0 ?? '??',
-          address1: request.address1 ?? '??',
-          value0: request.value0 ?? '??',
-          value1: result?.value1 ?? '??',
-          rate: result?.rate ?? '??',
-          gas: result?.gas ?? '??',
+          address0: address0,
+          address1: address1,
+          value0: value0,
+          value1: result.value1,
+          rate: result.rate,
+          gas: result.gas,
         });
       })
       .catch(function (err: ErrorMessage | Error) {
