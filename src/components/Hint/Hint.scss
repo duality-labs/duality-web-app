@@ -1,0 +1,60 @@
+.hint-box {
+  & {
+    transition: transform 0.75s ease-in-out, opacity 0.75s ease-in-out;
+    padding: 1rem 2.5rem;
+    border-radius: 1rem;
+    border: 1px solid rgb(0, 0, 0);
+    transform: translateY(-5rem);
+    background: rgb(255, 255, 255);
+    visibility: hidden;
+    position: fixed;
+    display: block;
+    z-index: 4;
+    opacity: 0;
+    left: 0;
+    top: 0;
+  }
+
+  &.active {
+    transform: translateY(0);
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .button-group {
+    & {
+      display: flex;
+      flex-direction: row;
+      font-size: 0.75rem;
+    }
+
+    & > * {
+      align-self: center;
+      margin-left: 1rem;
+    }
+
+    & > :first-child {
+      margin-left: auto;
+    }
+
+    [type='button'] {
+      & {
+        background: rgb(66, 153, 225);
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.5rem;
+        color: rgb(255, 255, 255);
+      }
+
+      &:hover,
+      &:focus {
+        background: rgb(43, 108, 176);
+      }
+
+      &.disabled {
+        pointer-events: none;
+        filter: grayscale(1);
+        user-select: none;
+      }
+    }
+  }
+}
