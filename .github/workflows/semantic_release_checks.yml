@@ -2,8 +2,8 @@ name: Semantic Release Checks
 
 on:
   pull_request:
-    branches: [ main ]
-    types: [ opened, reopened, edited ]
+    branches: [main]
+    types: [opened, reopened, edited]
 
 # disallow reading anything
 permissions:
