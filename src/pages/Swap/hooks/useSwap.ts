@@ -40,7 +40,16 @@ function sendSwap(
   });
 }
 
-export function useSwap(request?: PairRequest) {
+/**
+ * Sends a transaction request
+ * @param pairRequest the respective addresses and value
+ * @returns result of request, loading state and possible error
+ */
+export function useSwap(request?: PairRequest): {
+  data?: PairResult;
+  isValidating: boolean;
+  error?: string;
+} {
   const [data, setData] = useState<PairResult>();
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();

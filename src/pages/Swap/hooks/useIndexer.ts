@@ -110,10 +110,14 @@ function fetchEstimates({
 
 /**
  * Gets the estimated info of a swap transaction
- * @param {PairRequest} pairRequest the respective addresses and value
- * @returns {{ result?: PairResult, isValidating: boolean, error: string }} estimated info of swap, loading state and possible error
+ * @param pairRequest the respective addresses and value
+ * @returns estimated info of swap, loading state and possible error
  */
-export function useIndexer(pairRequest: PairRequest) {
+export function useIndexer(pairRequest: PairRequest): {
+  result?: PairResult;
+  isValidating: boolean;
+  error?: string;
+} {
   const [result, setResult] = useState<PairResult>();
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string>();
