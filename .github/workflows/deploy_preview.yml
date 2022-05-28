@@ -44,7 +44,7 @@ jobs:
           # secret tokens are added in Github project settings under [project]/settings/secrets/actions
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_DEPLOY_MESSAGE: 'Preview deploy ${{ github.ref }}' # github.ref looks like `refs/pull/[PR#]/merge`
+          NETLIFY_DEPLOY_MESSAGE: Preview deploy ${{ github.ref }} # github.ref looks like `refs/pull/[PR#]/merge`
           NETLIFY_DEPLOY_TO_PROD: false
           build_directory: build
           # we skip the build steps in this custom step because if we allow the project to build inside this step

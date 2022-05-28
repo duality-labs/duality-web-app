@@ -1,0 +1,112 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  semantic_release:
+    # disallow reading code, should only need commit message
+    permissions:
+      contents: none
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout head
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v3.0.0
+        id: semantic
+        with:
+          semantic_version: 19
+          # replace master branch with main as a release branch
+          # see https://github.com/semantic-release/semantic-release/issues/1581
+          # note that branches may already be filtered by the triggers of this workflow
+          branches: |
+            [
+              '+([0-9])?(.{+([0-9]),x}).x',
+              'main',
+              'next',
+              'next-major',
+              {
+                name: 'beta',
+                prerelease: true
+              },
+              {
+                name: 'alpha',
+                prerelease: true
+              }
+            ]
+          extra_plugins: |
+            @semantic-release/commit-analyzer
+            @semantic-release/release-notes-generator
+            @semantic-release/git
+            @semantic-release/changelog
+            @semantic-release/github
+            @semantic-release/npm
+            @semantic-release/exec
+            conventional-changelog-conventionalcommits
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Echo new release
+        if: steps.semantic.outputs.new_release_published == 'true'
+        run: echo ${{ steps.semantic.outputs.new_release_version }}
+
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }} # 'true' | 'false'
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }} # eg. '1.0.0'
+      new_release_major_version: ${{ steps.semantic.outputs.new_release_major_version }} # eg '1'
+      new_release_minor_version: ${{ steps.semantic.outputs.new_release_minor_version }} # eg '0'
+      new_release_patch_version: ${{ steps.semantic.outputs.new_release_patch_version }} # eg '0'
+
+  build:
+    # deploy only if a new release was created
+    needs: semantic_release
+    if: needs.semantic_release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set Node version
+        # use basic regex (first found digits and dots) to get Node engine version from package.json
+        # will fail if not correctly specified
+        run: |
+          NODE_VERSION=$(node -p "require('./package.json').engines.node.match(/[\d.]+/)[0]")
+          echo "::set-output name=NODE_VERSION::$NODE_VERSION"
+        id: get-node-version
+
+      - name: Use Node.js ${{ steps.get-node-version.outputs.NODE_VERSION }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ steps.get-node-version.outputs.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
+
+      - name: Deploy preview to Netlify
+        id: netlify_deploy
+        # see: https://github.com/marketplace/actions/netlify-deploy
+        uses: jsmrcaga/action-netlify-deploy@v1.7.2
+        with:
+          # secret tokens are added in Github project settings under [project]/settings/secrets/actions
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_DEPLOY_MESSAGE: 'Production deploy ${{ github.ref }}' # github.ref looks like `refs/pull/[PR#]/merge`
+          NETLIFY_DEPLOY_TO_PROD: true
+          build_directory: build
+          # we skip the build steps in this custom step because if we allow the project to build inside this step
+          # and specify the node version for that, this action will first download the latest node version,
+          # then switch back to the specified node version, then build the project.
+          # this wastes build minutes, so we instead pre-build the "build" folder
+          build_command: echo "already built app"
+          install_command: echo "already installed dependencies"
