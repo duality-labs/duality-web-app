@@ -21,9 +21,3 @@ export interface PairResult {
   /** (estimated) gas fee */
   gas: string;
 }
-
-export interface ErrorMessage {
-  message: string;
-  stack: string;
-  code: number;
-}

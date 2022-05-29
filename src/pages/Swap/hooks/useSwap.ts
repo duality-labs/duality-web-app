@@ -1,7 +1,7 @@
 import getContract, { Contract } from '../../../lib/web3/getContract';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
 import { useState, useEffect } from 'react';
-import { PairRequest, PairResult, ErrorMessage } from './index';
+import { PairRequest, PairResult } from './index';
 import { ethers, utils, BigNumber } from 'ethers';
 
 function sendSwap(
@@ -34,7 +34,7 @@ function sendSwap(
           gas: res?.gasPrice?.toString() ?? '??',
         });
       })
-      .catch(function (err: ErrorMessage | Error) {
+      .catch(function (err: Error) {
         reject(err);
       });
   });
@@ -74,7 +74,7 @@ export function useSwap(request?: PairRequest): {
           gas: result.gas,
         });
       })
-      .catch(function (err: ErrorMessage | Error) {
+      .catch(function (err: Error) {
         setValidating(false);
         setError(err?.message ?? 'Unknown error');
       });

@@ -77,7 +77,7 @@ function fetchEstimates({
           pairInfo.address0 === sortedList[0] &&
           pairInfo.address1 === sortedList[1]
       );
-      if (!pairInfo) return reject('Insufficient data');
+      if (!pairInfo) return reject(new Error('Insufficient data'));
       const totalReserves = pairInfo.ticks.reduce(
         function (total, tick) {
           total.value0 += tick.reserves0;
