@@ -26,8 +26,8 @@ export default function Swap() {
     isValidating: isValidatingRate,
     error: rateError,
   } = useIndexer({
-    address0: lastUpdatedA ? tokenA?.address : tokenB?.address,
-    address1: lastUpdatedA ? tokenB?.address : tokenA?.address,
+    token0: lastUpdatedA ? tokenA?.address : tokenB?.address,
+    token1: lastUpdatedA ? tokenB?.address : tokenA?.address,
     value0: lastUpdatedA ? valueA : valueB,
   });
   const [swapRequest, setSwapRequest] = useState<PairRequest>();
@@ -56,8 +56,8 @@ export default function Swap() {
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
       setSwapRequest({
-        address0: tokenA?.address ?? '',
-        address1: tokenB?.address ?? '',
+        token0: tokenA?.address ?? '',
+        token1: tokenB?.address ?? '',
         value0: valueA ?? '',
       });
     },
@@ -120,7 +120,7 @@ export default function Swap() {
       <div className="text-red-500">{rateError}</div>
       <div className="text-sky-500">
         {!isValidatingSwap && swapResponse
-          ? `Traded ${swapResponse?.value0} ${swapResponse?.address0} to ${swapResponse?.value1} ${swapResponse?.address1}`
+          ? `Traded ${swapResponse?.value0} ${swapResponse?.token0} to ${swapResponse?.value1} ${swapResponse?.token1}`
           : ``}
       </div>
       <input

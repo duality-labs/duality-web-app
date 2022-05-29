@@ -6,14 +6,14 @@ import { utils, BigNumber } from 'ethers';
 import data from './data.json';
 
 const cachedRequests: {
-  [address0: string]: { [address1: string]: PairResult };
+  [token0: string]: { [token1: string]: PairResult };
 } = {};
 
 const pairMap = data.reduce<{ [pairID: string]: typeof data[0] }>(function (
   result,
   pairInfo
 ) {
-  const list = [pairInfo.address0, pairInfo.address1].sort();
+  const list = [pairInfo.token0, pairInfo.token1].sort();
   const pairID = utils.solidityKeccak256(['address[2]'], [list]);
   result[pairID] = pairInfo;
   return result;
@@ -60,22 +60,21 @@ function useEvents() {
 }
 
 function fetchEstimates({
-  address0,
-  address1,
+  token0,
+  token1,
   value0,
 }: PairRequest): Promise<PairResult> {
   const averageDelay = 1e3,
     delayDiff = 0.5e3;
   return new Promise(function (resolve, reject) {
-    if (!address0 || !address1 || !value0)
+    if (!token0 || !token1 || !value0)
       return reject(new Error('Invalid Input'));
 
     setTimeout(function () {
-      const sortedList = [address0, address1].sort();
+      const sortedList = [token0, token1].sort();
       const pairInfo = data.find(
         (pairInfo) =>
-          pairInfo.address0 === sortedList[0] &&
-          pairInfo.address1 === sortedList[1]
+          pairInfo.token0 === sortedList[0] && pairInfo.token1 === sortedList[1]
       );
       if (!pairInfo) return reject(new Error('Insufficient data'));
       const totalReserves = pairInfo.ticks.reduce(
@@ -87,7 +86,7 @@ function fetchEstimates({
         { value0: 0, value1: 0 }
       );
       const rate =
-        address0 === sortedList[0]
+        token0 === sortedList[0]
           ? (totalReserves.value1 - Number(value0)) / totalReserves.value0
           : (totalReserves.value0 - Number(value0)) / totalReserves.value1;
       const safeRate = Math.max(rate, 0);
@@ -97,8 +96,8 @@ function fetchEstimates({
       });
 
       resolve({
-        address0,
-        address1,
+        token0,
+        token1,
         rate: `${safeRate}`,
         value0,
         value1,
@@ -124,13 +123,13 @@ export function useIndexer(pairRequest: PairRequest): {
   useEvents();
 
   const setSwappedResult = useCallback(
-    (result: PairResult, originalAddress0: string) => {
-      if (result.address0 === originalAddress0) return setResult(result);
-      const { address0, address1, value0, value1 } = result;
+    (result: PairResult, originalToken0: string) => {
+      if (result.token0 === originalToken0) return setResult(result);
+      const { token0, token1, value0, value1 } = result;
       setResult({
         ...result,
-        address0: address1,
-        address1: address0,
+        token0: token1,
+        token1: token0,
         value0: value1,
         value1: value0,
       });
@@ -139,47 +138,44 @@ export function useIndexer(pairRequest: PairRequest): {
   );
 
   useEffect(() => {
-    if (!pairRequest.address0 || !pairRequest.address1 || !pairRequest.value0)
+    if (!pairRequest.token0 || !pairRequest.token1 || !pairRequest.value0)
       return;
     setIsValidating(true);
     setResult(undefined);
     setError(undefined);
-    const [address0, address1] = [
-      pairRequest.address0,
-      pairRequest.address1,
-    ].sort();
-    const originalAddress0 = pairRequest.address0;
+    const [token0, token1] = [pairRequest.token0, pairRequest.token1].sort();
+    const originalToken0 = pairRequest.token0;
     let cancelled = false;
-    cachedRequests[address0] = cachedRequests[address0] || {};
-    const cachedPairInfo = cachedRequests[address0][address1];
+    cachedRequests[token0] = cachedRequests[token0] || {};
+    const cachedPairInfo = cachedRequests[token0][token1];
     if (cachedPairInfo) {
-      if (originalAddress0 === cachedPairInfo.address0) {
+      if (originalToken0 === cachedPairInfo.token0) {
         const tempValue1 =
           Number(pairRequest.value0) * Number(cachedPairInfo.rate);
         setSwappedResult(
           { ...cachedPairInfo, value1: `${tempValue1}` },
-          originalAddress0
+          originalToken0
         );
       } else {
         const tempValue1 =
           Number(pairRequest.value0) / Number(cachedPairInfo.rate);
         setSwappedResult(
           { ...cachedPairInfo, value0: `${tempValue1}` },
-          originalAddress0
+          originalToken0
         );
       }
     }
 
     fetchEstimates({
-      address0: pairRequest.address0,
-      address1: pairRequest.address1,
+      token0: pairRequest.token0,
+      token1: pairRequest.token1,
       value0: pairRequest.value0,
     })
       .then(function (result) {
         if (cancelled) return;
-        cachedRequests[address0][address1] = result;
+        cachedRequests[token0][token1] = result;
         setIsValidating(false);
-        setSwappedResult(result, originalAddress0);
+        setSwappedResult(result, originalToken0);
       })
       .catch(function (err) {
         if (cancelled) return;
@@ -191,8 +187,8 @@ export function useIndexer(pairRequest: PairRequest): {
       cancelled = true;
     };
   }, [
-    pairRequest.address0,
-    pairRequest.address1,
+    pairRequest.token0,
+    pairRequest.token1,
     pairRequest.value0,
     setSwappedResult,
   ]);

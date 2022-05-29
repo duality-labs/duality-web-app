@@ -6,17 +6,17 @@ import { ethers, utils, BigNumber } from 'ethers';
 
 function sendSwap(
   provider: ethers.providers.Web3Provider,
-  { address0, address1, value0 }: PairRequest
+  { token0, token1, value0 }: PairRequest
 ): Promise<PairResult> {
   return new Promise(function (resolve, reject) {
-    if (!address0 || !address1 || !value0)
+    if (!token0 || !token1 || !value0)
       return reject(new Error('Invalid Input'));
     const contract = getContract(Contract.DUALITY_CORE, provider);
     contract
       .connect(provider.getSigner())
       .route({
         amountIn: utils.parseEther(`${value0}`),
-        tokens: [address0, address1],
+        tokens: [token0, token1],
         prices0: [[100]],
         prices1: [[100]],
         fee: [[10000]],
@@ -26,8 +26,8 @@ function sendSwap(
       })
       .then(function (res?: { gasPrice: BigNumber }) {
         resolve({
-          address0: address0 ?? '??',
-          address1: address1 ?? '??',
+          token0: token0 ?? '??',
+          token1: token1 ?? '??',
           value0: value0 ?? '??',
           value1: '??',
           rate: '??',
@@ -57,8 +57,8 @@ export function useSwap(request?: PairRequest): {
 
   useEffect(() => {
     if (!request || !provider) return;
-    const { address0, address1, value0 } = request;
-    if (!address0 || !address1 || !value0) return;
+    const { token0, token1, value0 } = request;
+    if (!token0 || !token1 || !value0) return;
     setValidating(true);
     setError(undefined);
     setData(undefined);
@@ -66,8 +66,8 @@ export function useSwap(request?: PairRequest): {
       .then(function (result: PairResult) {
         setValidating(false);
         setData({
-          address0: address0,
-          address1: address1,
+          token0: token0,
+          token1: token1,
           value0: value0,
           value1: result.value1,
           rate: result.rate,
