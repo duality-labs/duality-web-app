@@ -58,10 +58,10 @@ export default function Swap() {
       setSwapRequest({
         token0: tokenA?.address ?? '',
         token1: tokenB?.address ?? '',
-        value0: valueA ?? '',
+        value0: valueAConverted ?? '',
       });
     },
-    [tokenA?.address, tokenB?.address, valueA]
+    [tokenA?.address, tokenB?.address, valueAConverted]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
@@ -120,7 +120,7 @@ export default function Swap() {
       <div className="text-red-500">{rateError}</div>
       <div className="text-sky-500">
         {!isValidatingSwap && swapResponse
-          ? `Traded ${swapResponse?.value0} ${swapResponse?.token0} to ${swapResponse?.value1} ${swapResponse?.token1}`
+          ? `Traded ${swapResponse.value0} ${swapResponse.token0} to ${swapResponse.value1} ${swapResponse.token1}`
           : ``}
       </div>
       <input
