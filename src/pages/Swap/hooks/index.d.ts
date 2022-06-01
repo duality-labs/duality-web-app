@@ -12,9 +12,9 @@ export interface PairResult {
   token0: string;
   /** address of token 1 */
   token1: string;
-  /** value for token 1 */
+  /** value for token 0 */
   value0: string;
-  /** (estimated) value for token 2 */
+  /** (estimated) value for token 1 */
   value1: string;
   /** (estimated) rate of exchange */
   rate: string;
