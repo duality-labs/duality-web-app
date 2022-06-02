@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/dib542/duality-web-app/compare/v0.1.2...v0.1.3) (2022-06-02)
+
+
+### Fixes
+
+* 78-fix string template issue in swap page ([#79](https://github.com/dib542/duality-web-app/issues/79)) ([c20203f](https://github.com/dib542/duality-web-app/commit/c20203fcedc8470022859848cdc9a036583c4d78))
+
 ## [0.1.2](https://github.com/dib542/duality-web-app/compare/v0.1.1...v0.1.2) (2022-06-02)
 
 
