@@ -1,6 +1,6 @@
 import getContract, { Contract } from '../../../lib/web3/getContract';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { PairRequest, PairResult } from './index';
 import { ethers, utils, BigNumber } from 'ethers';
 
@@ -54,16 +54,29 @@ export function useSwap(request?: PairRequest): {
   const [data, setData] = useState<PairResult>();
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
+  const providerRef = useRef<ethers.providers.Web3Provider>();
   const { provider } = useWeb3();
 
   useEffect(() => {
-    if (!request || !provider) return;
+    providerRef.current = provider ?? undefined;
+  }, [provider]);
+
+  const onError = useCallback((message?: string) => {
+    setValidating(false);
+    setData(undefined);
+    setError(message);
+  }, []);
+
+  useEffect(() => {
+    if (!request) return onError('Missing Tokens and value');
+    if (!providerRef.current) return onError('Missing Provider');
     const { token0, token1, value0 } = request;
-    if (!token0 || !token1 || !value0) return;
+    if (!token0 || !token1) return onError('Missing token pair');
+    if (!value0) return onError('Missing value');
     setValidating(true);
     setError(undefined);
     setData(undefined);
-    sendSwap(provider, request)
+    sendSwap(providerRef.current, request)
       .then(function (result: PairResult) {
         setValidating(false);
         setData({
@@ -76,10 +89,9 @@ export function useSwap(request?: PairRequest): {
         });
       })
       .catch(function (err: Error) {
-        setValidating(false);
-        setError(err?.message ?? 'Unknown error');
+        onError(err?.message ?? 'Unknown error');
       });
-  }, [request, provider]);
+  }, [request, onError]);
 
   return { data, isValidating: validating, error };
 }

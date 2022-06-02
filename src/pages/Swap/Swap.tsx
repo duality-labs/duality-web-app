@@ -116,7 +116,7 @@ export default function Swap() {
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
         <i className="text-transparent">.</i>
       )}
-      <div className="text-red-500">{swapError}</div>
+      <div className="text-red-500">{swapRequest && swapError}</div>
       <div className="text-red-500">{rateError}</div>
       <div className="text-sky-500">
         {!isValidatingSwap && swapResponse
