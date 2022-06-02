@@ -1,87 +1,45 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
   useTokens,
-  useExchangeRate,
   useDotCounter,
   Token,
-  useSwap,
-  SwapRequest,
 } from '../../components/TokenPicker/mockHooks';
 
-import './Swap.scss';
+import { PairRequest } from './hooks/index';
 
-type GetRateType = (
-  keepValueMode: boolean,
-  token: Token | undefined,
-  otherToken: Token | undefined,
-  value: string,
-  otherValue: string
-) => string;
+import { useIndexer } from './hooks/useIndexer';
+import { useSwap } from './hooks/useSwap';
+
+import './Swap.scss';
 
 export default function Swap() {
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
   const [tokenA, setTokenA] = useState(tokenList[0] as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [valueA, setValueA] = useState('0');
-  const [valueB, setValueB] = useState('0');
+  const [valueA, setValueA] = useState<string | undefined>('0');
+  const [valueB, setValueB] = useState<string>();
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
-  const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
-    lastUpdatedA ? tokenA : tokenB,
-    lastUpdatedA ? tokenB : tokenA,
-    lastUpdatedA ? valueA : valueB
-  );
-  const [lastRate, setLastRate] = useState(rateData);
-  const [swapRequest, setSwapRequest] = useState(
-    undefined as SwapRequest | undefined
-  );
-  const { data: swapResponse, isValidating: isValidatingSwap } =
-    useSwap(swapRequest);
+  const {
+    data: rateData,
+    isValidating: isValidatingRate,
+    error: rateError,
+  } = useIndexer({
+    token0: lastUpdatedA ? tokenA?.address : tokenB?.address,
+    token1: lastUpdatedA ? tokenB?.address : tokenA?.address,
+    value0: lastUpdatedA ? valueA : valueB,
+  });
+  const [swapRequest, setSwapRequest] = useState<PairRequest>();
+  const {
+    data: swapResponse,
+    isValidating: isValidatingSwap,
+    error: swapError,
+  } = useSwap(swapRequest);
   const dotCount = useDotCounter(0.25e3);
 
-  const getRate = useCallback<GetRateType>(
-    /**
-     * Updates the value of a token based on the rate data and
-     * recent data until the rate data get fetched
-     * @param {boolean} keepValueMode when true the value will remain the same (true if this was the last value to change)
-     * @param {Token} token the token of the group
-     * @param {Token} otherToken the token of the other group
-     * @param {string} value the value of the group
-     * @param {string} otherValue the value of the the other group
-     * @returns {string} the value of the token as a string
-     */
-    (keepValueMode, token, otherToken, value, otherValue) => {
-      if (keepValueMode) return value;
-      if (rateData?.price) return rateData?.price;
-
-      const listIn = [token?.address, otherToken?.address];
-      const listOut = [lastRate?.otherToken, lastRate?.token];
-
-      let rate = NaN;
-      if (`${listIn}` === `${listOut}`) {
-        rate = Number(lastRate?.rate);
-      } else if (`${listIn}` === `${listOut.reverse()}`) {
-        rate = 1 / Number(lastRate?.rate);
-      }
-
-      return formatTokenValue(Number(otherValue) * rate);
-    },
-    [rateData, lastRate]
-  );
-
-  const valueAConverted = getRate(lastUpdatedA, tokenA, tokenB, valueA, valueB);
-  const valueBConverted = getRate(
-    !lastUpdatedA,
-    tokenB,
-    tokenA,
-    valueB,
-    valueA
-  );
-
-  useEffect(() => {
-    if (rateData) setLastRate(rateData);
-  }, [rateData]);
+  const valueAConverted = lastUpdatedA ? valueA : rateData?.value1;
+  const valueBConverted = lastUpdatedA ? rateData?.value1 : valueB;
 
   const swapTokens = useCallback(
     function () {
@@ -96,14 +54,14 @@ export default function Swap() {
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
-      if (event instanceof Event) event.preventDefault();
+      if (event) event.preventDefault();
       setSwapRequest({
-        token: tokenA?.address || '',
-        otherToken: tokenB?.address || '',
-        value: valueA,
+        token0: tokenA?.address,
+        token1: tokenB?.address,
+        value0: valueAConverted,
       });
     },
-    [tokenA?.address, tokenB?.address, valueA]
+    [tokenA?.address, tokenB?.address, valueAConverted]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
@@ -154,11 +112,17 @@ export default function Swap() {
         }
         exclusion={tokenA}
       ></TokenInputGroup>
-      <span>Gas price: {rateData?.gas}</span>
+      <div className="text-stone-500">Gas price: {rateData?.gas}</div>
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
         <i className="text-transparent">.</i>
       )}
-      <div>{isValidatingSwap ? 'Loading...' : swapResponse}</div>
+      <div className="text-red-500">{swapRequest && swapError}</div>
+      <div className="text-red-500">{rateError}</div>
+      <div className="text-sky-500">
+        {!isValidatingSwap && swapResponse
+          ? `Traded ${swapResponse.value0} ${swapResponse.token0} to ${swapResponse.value1} ${swapResponse.token1}`
+          : ``}
+      </div>
       <input
         type="submit"
         value="Swap"
@@ -166,13 +130,4 @@ export default function Swap() {
       />
     </form>
   );
-}
-
-function formatTokenValue(value: number) {
-  return isNaN(value)
-    ? ''
-    : Number(value).toLocaleString('en-US', {
-        maximumSignificantDigits: 6,
-        useGrouping: false,
-      });
 }

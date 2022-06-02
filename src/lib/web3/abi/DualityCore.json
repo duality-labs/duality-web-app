@@ -3,19 +3,19 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address[2]",
         "name": "tokens",
         "type": "address[2]"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint120[3]",
         "name": "priceFeeArr",
         "type": "uint120[3]"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint128[2]",
         "name": "amountsIn",
         "type": "uint128[2]"
@@ -34,7 +34,7 @@
         "type": "bytes32"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint120[3]",
         "name": "priceFeeArr",
         "type": "uint120[3]"
@@ -59,7 +59,7 @@
         "type": "bytes32"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint120[3]",
         "name": "priceFeeArr",
         "type": "uint120[3]"
@@ -78,19 +78,19 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address[2]",
         "name": "tokens",
         "type": "address[2]"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint120[3]",
         "name": "priceFeeArr",
         "type": "uint120[3]"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint128[2]",
         "name": "amountsOut",
         "type": "uint128[2]"
@@ -109,39 +109,46 @@
             "type": "address[2]"
           },
           {
-            "internalType": "uint120[]",
-            "name": "prices0",
-            "type": "uint120[]"
-          },
-          {
-            "internalType": "uint120[]",
-            "name": "prices1",
-            "type": "uint120[]"
-          },
-          {
-            "internalType": "uint16[]",
-            "name": "fees",
-            "type": "uint16[]"
-          },
-          {
-            "internalType": "uint128[]",
-            "name": "amounts0",
-            "type": "uint128[]"
-          },
-          {
-            "internalType": "uint128[]",
-            "name": "amounts1",
-            "type": "uint128[]"
-          },
-          {
-            "internalType": "address",
-            "name": "receiver",
-            "type": "address"
+            "components": [
+              {
+                "internalType": "uint120",
+                "name": "prices0",
+                "type": "uint120"
+              },
+              {
+                "internalType": "uint120",
+                "name": "prices1",
+                "type": "uint120"
+              },
+              {
+                "internalType": "uint16",
+                "name": "fee",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint128",
+                "name": "amounts0",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128",
+                "name": "amounts1",
+                "type": "uint128"
+              }
+            ],
+            "internalType": "struct DualityHelpers.depositHelperInput[]",
+            "name": "helperInput",
+            "type": "tuple[]"
           },
           {
             "internalType": "bool[]",
             "name": "jitProtectionArr",
             "type": "bool[]"
+          },
+          {
+            "internalType": "address",
+            "name": "receiver",
+            "type": "address"
           },
           {
             "internalType": "bool",
@@ -186,18 +193,134 @@
                 "type": "uint8"
               }
             ],
-            "internalType": "struct DualityCore.PermitData[]",
+            "internalType": "struct DualityHelpers.PermitData[]",
             "name": "permitData",
             "type": "tuple[]"
           }
         ],
-        "internalType": "struct DualityCore.DepositTickInput",
+        "internalType": "struct DualityHelpers.DepositTickInput",
         "name": "_input",
         "type": "tuple"
       }
     ],
     "name": "depositTick",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address[2]",
+            "name": "tokens",
+            "type": "address[2]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint120",
+                "name": "prices0",
+                "type": "uint120"
+              },
+              {
+                "internalType": "uint120",
+                "name": "prices1",
+                "type": "uint120"
+              },
+              {
+                "internalType": "uint16",
+                "name": "fee",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint256",
+                "name": "shares",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct DualityHelpers.depositHelperSharesInput[]",
+            "name": "helperInput",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "bool[]",
+            "name": "jitProtectionArr",
+            "type": "bool[]"
+          },
+          {
+            "internalType": "address",
+            "name": "receiver",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "useInternalAccounts",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "contract IERC20Permit",
+                "name": "tokenContract",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expiration",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "r",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "s",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "v",
+                "type": "uint8"
+              }
+            ],
+            "internalType": "struct DualityHelpers.PermitData[]",
+            "name": "permitData",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct DualityHelpers.DepositSharesInput",
+        "name": "_input",
+        "type": "tuple"
+      }
+    ],
+    "name": "depositTickShares",
+    "outputs": [
+      {
+        "internalType": "uint128[2][]",
+        "name": "",
+        "type": "uint128[2][]"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -382,7 +505,7 @@
           },
           {
             "internalType": "uint16[2]",
-            "name": "fees",
+            "name": "fee",
             "type": "uint16[2]"
           },
           {
@@ -416,7 +539,7 @@
             "type": "bool"
           }
         ],
-        "internalType": "struct DualityCore.MoveInput",
+        "internalType": "struct DualityHelpers.MoveInput",
         "name": "_input",
         "type": "tuple"
       }
@@ -452,7 +575,7 @@
           },
           {
             "internalType": "uint16[][]",
-            "name": "fees",
+            "name": "fee",
             "type": "uint16[][]"
           },
           {
@@ -503,12 +626,12 @@
                 "type": "uint8"
               }
             ],
-            "internalType": "struct DualityCore.PermitData[]",
+            "internalType": "struct DualityHelpers.PermitData[]",
             "name": "permitData",
             "type": "tuple[]"
           }
         ],
-        "internalType": "struct DualityCore.RouteInput",
+        "internalType": "struct DualityHelpers.RouteInput",
         "name": "_input",
         "type": "tuple"
       }
@@ -521,71 +644,113 @@
   {
     "inputs": [
       {
-        "internalType": "address[2]",
-        "name": "tokens",
-        "type": "address[2]"
+        "components": [
+          {
+            "internalType": "address[2]",
+            "name": "tokens",
+            "type": "address[2]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint120",
+                "name": "prices0",
+                "type": "uint120"
+              },
+              {
+                "internalType": "uint120",
+                "name": "prices1",
+                "type": "uint120"
+              },
+              {
+                "internalType": "uint16",
+                "name": "fee",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint128",
+                "name": "amounts0",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128",
+                "name": "amounts1",
+                "type": "uint128"
+              }
+            ],
+            "internalType": "struct DualityHelpers.depositHelperInput",
+            "name": "helperInput",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "jitProtection",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "receiver",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "useInternalAccounts",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "contract IERC20Permit",
+                "name": "tokenContract",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expiration",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "r",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "s",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "v",
+                "type": "uint8"
+              }
+            ],
+            "internalType": "struct DualityHelpers.PermitData[]",
+            "name": "permitData",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct DualityHelpers.SingleDepositInput",
+        "name": "_input",
+        "type": "tuple"
       }
     ],
-    "name": "sortTokens",
+    "name": "singleDeposit",
     "outputs": [
       {
-        "internalType": "address[2]",
+        "internalType": "uint256",
         "name": "",
-        "type": "address[2]"
-      }
-    ],
-    "stateMutability": "pure",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint128",
-        "name": "_amountIn",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint128",
-        "name": "_amountOut",
-        "type": "uint128"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "_pairID",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "uint120",
-        "name": "_price0",
-        "type": "uint120"
-      },
-      {
-        "internalType": "uint120",
-        "name": "_price1",
-        "type": "uint120"
-      },
-      {
-        "internalType": "uint16",
-        "name": "_fee",
-        "type": "uint16"
-      },
-      {
-        "internalType": "bool",
-        "name": "_jitProtected",
-        "type": "bool"
-      }
-    ],
-    "name": "swap0to1",
-    "outputs": [
-      {
-        "internalType": "uint128",
-        "name": "",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint128",
-        "name": "",
-        "type": "uint128"
+        "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",
@@ -594,54 +759,97 @@
   {
     "inputs": [
       {
-        "internalType": "uint128",
-        "name": "_amountIn",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint128",
-        "name": "_amountOut",
-        "type": "uint128"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "_pairID",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "uint120",
-        "name": "_price0",
-        "type": "uint120"
-      },
-      {
-        "internalType": "uint120",
-        "name": "_price1",
-        "type": "uint120"
-      },
-      {
-        "internalType": "uint16",
-        "name": "_fee",
-        "type": "uint16"
-      },
-      {
-        "internalType": "bool",
-        "name": "_jitProtected",
-        "type": "bool"
+        "components": [
+          {
+            "internalType": "address[2]",
+            "name": "tokens",
+            "type": "address[2]"
+          },
+          {
+            "internalType": "uint120",
+            "name": "prices0",
+            "type": "uint120"
+          },
+          {
+            "internalType": "uint120",
+            "name": "prices1",
+            "type": "uint120"
+          },
+          {
+            "internalType": "uint16",
+            "name": "fee",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint256",
+            "name": "sharesRemoving",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "receiver",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "jitProtection",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "useInternalAccounts",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "contract IERC20Permit",
+                "name": "tokenContract",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "expiration",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "r",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "s",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "v",
+                "type": "uint8"
+              }
+            ],
+            "internalType": "struct DualityHelpers.PermitData[]",
+            "name": "permitData",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct DualityHelpers.SingleWithdrawInput",
+        "name": "_input",
+        "type": "tuple"
       }
     ],
-    "name": "swap1to0",
-    "outputs": [
-      {
-        "internalType": "uint128",
-        "name": "",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint128",
-        "name": "",
-        "type": "uint128"
-      }
-    ],
+    "name": "singleWithdraw",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -666,7 +874,7 @@
           },
           {
             "internalType": "uint16[]",
-            "name": "fees",
+            "name": "fee",
             "type": "uint16[]"
           },
           {
@@ -727,12 +935,12 @@
                 "type": "uint8"
               }
             ],
-            "internalType": "struct DualityCore.PermitData[]",
+            "internalType": "struct DualityHelpers.PermitData[]",
             "name": "permitData",
             "type": "tuple[]"
           }
         ],
-        "internalType": "struct DualityCore.WithdrawTickInput",
+        "internalType": "struct DualityHelpers.WithdrawTickInput",
         "name": "_input",
         "type": "tuple"
       }

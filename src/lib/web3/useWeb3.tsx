@@ -10,7 +10,7 @@ declare global {
 }
 
 interface Web3ContextValue {
-  provider: ethers.providers.Provider | null;
+  provider: ethers.providers.Web3Provider | null;
   // eslint-disable-next-line
   connectWallet: (() => any) | null;
   address: string | null;
