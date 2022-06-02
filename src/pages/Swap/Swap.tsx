@@ -121,7 +121,7 @@ export default function Swap() {
       <div className="text-sky-500">
         {!isValidatingSwap && swapResponse
           ? `Traded ${swapResponse.value0} ${swapResponse.token0} to ${swapResponse.value1} ${swapResponse.token1}`
-          : ``}
+          : ''}
       </div>
       <input
         type="submit"
