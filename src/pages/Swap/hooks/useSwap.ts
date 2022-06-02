@@ -1,6 +1,6 @@
 import getContract, { Contract } from '../../../lib/web3/getContract';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PairRequest, PairResult } from './index';
 import { ethers, utils, BigNumber } from 'ethers';
 
@@ -61,12 +61,6 @@ export function useSwap(request?: PairRequest): {
     providerRef.current = provider ?? undefined;
   }, [provider]);
 
-  const onError = useCallback((message?: string) => {
-    setValidating(false);
-    setData(undefined);
-    setError(message);
-  }, []);
-
   useEffect(() => {
     if (!request) return onError('Missing Tokens and value');
     if (!providerRef.current) return onError('Missing Provider');
@@ -91,7 +85,13 @@ export function useSwap(request?: PairRequest): {
       .catch(function (err: Error) {
         onError(err?.message ?? 'Unknown error');
       });
-  }, [request, onError]);
+
+    function onError(message?: string) {
+      setValidating(false);
+      setData(undefined);
+      setError(message);
+    }
+  }, [request]);
 
   return { data, isValidating: validating, error };
 }
