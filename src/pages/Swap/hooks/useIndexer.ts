@@ -177,10 +177,10 @@ export function useIndexer(pairRequest: PairRequest): {
         setIsValidating(false);
         setSwappedResult(result, originalToken0);
       })
-      .catch(function (err) {
+      .catch(function (err: Error) {
         if (cancelled) return;
         setIsValidating(false);
-        setError(err);
+        setError(err?.message ?? 'Unknown error');
       });
 
     return () => {
