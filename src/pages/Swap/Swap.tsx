@@ -22,7 +22,7 @@ export default function Swap() {
   const [valueB, setValueB] = useState<string>();
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
   const {
-    result: rateData,
+    data: rateData,
     isValidating: isValidatingRate,
     error: rateError,
   } = useIndexer({

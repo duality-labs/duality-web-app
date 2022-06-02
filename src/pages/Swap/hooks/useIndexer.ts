@@ -113,20 +113,20 @@ function fetchEstimates({
  * @returns estimated info of swap, loading state and possible error
  */
 export function useIndexer(pairRequest: PairRequest): {
-  result?: PairResult;
+  data?: PairResult;
   isValidating: boolean;
   error?: string;
 } {
-  const [result, setResult] = useState<PairResult>();
+  const [data, setData] = useState<PairResult>();
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string>();
   useEvents();
 
   const setSwappedResult = useCallback(
     (result: PairResult, originalToken0: string) => {
-      if (result.token0 === originalToken0) return setResult(result);
+      if (result.token0 === originalToken0) return setData(result);
       const { token0, token1, value0, value1 } = result;
-      setResult({
+      setData({
         ...result,
         token0: token1,
         token1: token0,
@@ -141,7 +141,7 @@ export function useIndexer(pairRequest: PairRequest): {
     if (!pairRequest.token0 || !pairRequest.token1 || !pairRequest.value0)
       return;
     setIsValidating(true);
-    setResult(undefined);
+    setData(undefined);
     setError(undefined);
     const [token0, token1] = [pairRequest.token0, pairRequest.token1].sort();
     const originalToken0 = pairRequest.token0;
@@ -193,5 +193,5 @@ export function useIndexer(pairRequest: PairRequest): {
     setSwappedResult,
   ]);
 
-  return { result, isValidating, error };
+  return { data, isValidating, error };
 }
