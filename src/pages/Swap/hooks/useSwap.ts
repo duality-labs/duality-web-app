@@ -25,13 +25,14 @@ function sendSwap(
         permitData: [],
       })
       .then(function (res?: { gasPrice: BigNumber }) {
+        if (!res) return reject('No response');
         resolve({
-          token0: token0 ?? '??',
-          token1: token1 ?? '??',
-          value0: value0 ?? '??',
+          token0: token0,
+          token1: token1,
+          value0: value0,
           value1: '??',
           rate: '??',
-          gas: res?.gasPrice?.toString() ?? '??',
+          gas: res.gasPrice.toString(),
         });
       })
       .catch(function (err: Error) {

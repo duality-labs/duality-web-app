@@ -56,9 +56,9 @@ export default function Swap() {
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
       setSwapRequest({
-        token0: tokenA?.address ?? '',
-        token1: tokenB?.address ?? '',
-        value0: valueAConverted ?? '',
+        token0: tokenA?.address,
+        token1: tokenB?.address,
+        value0: valueAConverted,
       });
     },
     [tokenA?.address, tokenB?.address, valueAConverted]
