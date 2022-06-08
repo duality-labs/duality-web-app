@@ -40,7 +40,7 @@
         "type": "uint120[3]"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint256",
         "name": "amountIn",
         "type": "uint256"
@@ -65,7 +65,7 @@
         "type": "uint120[3]"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "uint256",
         "name": "amountIn",
         "type": "uint256"
@@ -109,46 +109,39 @@
             "type": "address[2]"
           },
           {
-            "components": [
-              {
-                "internalType": "uint120",
-                "name": "prices0",
-                "type": "uint120"
-              },
-              {
-                "internalType": "uint120",
-                "name": "prices1",
-                "type": "uint120"
-              },
-              {
-                "internalType": "uint16",
-                "name": "fee",
-                "type": "uint16"
-              },
-              {
-                "internalType": "uint128",
-                "name": "amounts0",
-                "type": "uint128"
-              },
-              {
-                "internalType": "uint128",
-                "name": "amounts1",
-                "type": "uint128"
-              }
-            ],
-            "internalType": "struct DualityHelpers.depositHelperInput[]",
-            "name": "helperInput",
-            "type": "tuple[]"
+            "internalType": "uint120[]",
+            "name": "prices0",
+            "type": "uint120[]"
           },
           {
-            "internalType": "bool[]",
-            "name": "jitProtectionArr",
-            "type": "bool[]"
+            "internalType": "uint120[]",
+            "name": "prices1",
+            "type": "uint120[]"
+          },
+          {
+            "internalType": "uint16[]",
+            "name": "fees",
+            "type": "uint16[]"
+          },
+          {
+            "internalType": "uint128[]",
+            "name": "amounts0",
+            "type": "uint128[]"
+          },
+          {
+            "internalType": "uint128[]",
+            "name": "amounts1",
+            "type": "uint128[]"
           },
           {
             "internalType": "address",
             "name": "receiver",
             "type": "address"
+          },
+          {
+            "internalType": "bool[]",
+            "name": "jitProtectionArr",
+            "type": "bool[]"
           },
           {
             "internalType": "bool",
@@ -209,116 +202,6 @@
         "internalType": "uint256[]",
         "name": "",
         "type": "uint256[]"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "address[2]",
-            "name": "tokens",
-            "type": "address[2]"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint120",
-                "name": "prices0",
-                "type": "uint120"
-              },
-              {
-                "internalType": "uint120",
-                "name": "prices1",
-                "type": "uint120"
-              },
-              {
-                "internalType": "uint16",
-                "name": "fee",
-                "type": "uint16"
-              },
-              {
-                "internalType": "uint256",
-                "name": "shares",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct DualityHelpers.depositHelperSharesInput[]",
-            "name": "helperInput",
-            "type": "tuple[]"
-          },
-          {
-            "internalType": "bool[]",
-            "name": "jitProtectionArr",
-            "type": "bool[]"
-          },
-          {
-            "internalType": "address",
-            "name": "receiver",
-            "type": "address"
-          },
-          {
-            "internalType": "bool",
-            "name": "useInternalAccounts",
-            "type": "bool"
-          },
-          {
-            "components": [
-              {
-                "internalType": "contract IERC20Permit",
-                "name": "tokenContract",
-                "type": "address"
-              },
-              {
-                "internalType": "address",
-                "name": "spender",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "expiration",
-                "type": "uint256"
-              },
-              {
-                "internalType": "bytes32",
-                "name": "r",
-                "type": "bytes32"
-              },
-              {
-                "internalType": "bytes32",
-                "name": "s",
-                "type": "bytes32"
-              },
-              {
-                "internalType": "uint8",
-                "name": "v",
-                "type": "uint8"
-              }
-            ],
-            "internalType": "struct DualityHelpers.PermitData[]",
-            "name": "permitData",
-            "type": "tuple[]"
-          }
-        ],
-        "internalType": "struct DualityHelpers.DepositSharesInput",
-        "name": "_input",
-        "type": "tuple"
-      }
-    ],
-    "name": "depositTickShares",
-    "outputs": [
-      {
-        "internalType": "uint128[2][]",
-        "name": "",
-        "type": "uint128[2][]"
       }
     ],
     "stateMutability": "nonpayable",
@@ -505,7 +388,7 @@
           },
           {
             "internalType": "uint16[2]",
-            "name": "fee",
+            "name": "fees",
             "type": "uint16[2]"
           },
           {
@@ -575,7 +458,7 @@
           },
           {
             "internalType": "uint16[][]",
-            "name": "fee",
+            "name": "fees",
             "type": "uint16[][]"
           },
           {
@@ -651,46 +534,39 @@
             "type": "address[2]"
           },
           {
-            "components": [
-              {
-                "internalType": "uint120",
-                "name": "prices0",
-                "type": "uint120"
-              },
-              {
-                "internalType": "uint120",
-                "name": "prices1",
-                "type": "uint120"
-              },
-              {
-                "internalType": "uint16",
-                "name": "fee",
-                "type": "uint16"
-              },
-              {
-                "internalType": "uint128",
-                "name": "amounts0",
-                "type": "uint128"
-              },
-              {
-                "internalType": "uint128",
-                "name": "amounts1",
-                "type": "uint128"
-              }
-            ],
-            "internalType": "struct DualityHelpers.depositHelperInput",
-            "name": "helperInput",
-            "type": "tuple"
+            "internalType": "uint120",
+            "name": "prices0",
+            "type": "uint120"
           },
           {
-            "internalType": "bool",
-            "name": "jitProtection",
-            "type": "bool"
+            "internalType": "uint120",
+            "name": "prices1",
+            "type": "uint120"
+          },
+          {
+            "internalType": "uint16",
+            "name": "fee",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint128",
+            "name": "amount0",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "amount1",
+            "type": "uint128"
           },
           {
             "internalType": "address",
             "name": "receiver",
             "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "jitProtectionArr",
+            "type": "bool"
           },
           {
             "internalType": "bool",
@@ -746,13 +622,7 @@
       }
     ],
     "name": "singleDeposit",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -777,7 +647,7 @@
           },
           {
             "internalType": "uint16",
-            "name": "fee",
+            "name": "fees",
             "type": "uint16"
           },
           {
@@ -856,6 +726,133 @@
   {
     "inputs": [
       {
+        "internalType": "address[2]",
+        "name": "tokens",
+        "type": "address[2]"
+      }
+    ],
+    "name": "sortTokens",
+    "outputs": [
+      {
+        "internalType": "address[2]",
+        "name": "",
+        "type": "address[2]"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint128",
+        "name": "_amountIn",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_amountOut",
+        "type": "uint128"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_pairID",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint120",
+        "name": "_price0",
+        "type": "uint120"
+      },
+      {
+        "internalType": "uint120",
+        "name": "_price1",
+        "type": "uint120"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_fee",
+        "type": "uint16"
+      },
+      {
+        "internalType": "bool",
+        "name": "_jitProtected",
+        "type": "bool"
+      }
+    ],
+    "name": "swap0to1",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint128",
+        "name": "_amountIn",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_amountOut",
+        "type": "uint128"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_pairID",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint120",
+        "name": "_price0",
+        "type": "uint120"
+      },
+      {
+        "internalType": "uint120",
+        "name": "_price1",
+        "type": "uint120"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_fee",
+        "type": "uint16"
+      },
+      {
+        "internalType": "bool",
+        "name": "_jitProtected",
+        "type": "bool"
+      }
+    ],
+    "name": "swap1to0",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint128",
+        "name": "",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "components": [
           {
             "internalType": "address[2]",
@@ -874,7 +871,7 @@
           },
           {
             "internalType": "uint16[]",
-            "name": "fee",
+            "name": "fees",
             "type": "uint16[]"
           },
           {
