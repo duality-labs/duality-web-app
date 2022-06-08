@@ -1,3 +1,5 @@
+import { BigNumber } from 'ethers';
+
 export interface PairRequest {
   /** address of altered token */
   token0?: string;
@@ -20,4 +22,19 @@ export interface PairResult {
   rate: string;
   /** (estimated) gas fee */
   gas: string;
+}
+
+// TODO Add interface structure and remove esline comment
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface PermitData {}
+
+export interface RouterResult {
+  amountIn: BigNumber;
+  tokens: Array<string>;
+  prices0: Array<Array<BigNumber>>;
+  prices1: Array<Array<BigNumber>>;
+  fees: Array<Array<BigNumber>>;
+  jitProtectionArr: Array<Array<boolean>>;
+  useInternalAccounts: boolean;
+  permitData: Array<PermitData>;
 }
