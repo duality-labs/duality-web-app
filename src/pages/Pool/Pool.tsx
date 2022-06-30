@@ -9,6 +9,9 @@ import {
   Token,
 } from '../../components/TokenPicker/mockHooks';
 
+import { queryClient } from '../../generated/duality/duality.duality/module/index';
+import { DualityQueryAllTickResponse } from '../../generated/duality/duality.duality/module/rest';
+
 import './Pool.scss';
 
 export default function Pool() {
@@ -64,6 +67,44 @@ export default function Pool() {
       }
     });
   }, [totalValue, rateData, rangeMin, rangeMax]);
+
+  const [ticks, setTicks] = useState<DualityQueryAllTickResponse['tick']>();
+  const [ticksError, setTicksError] = useState<string>();
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const client = await queryClient({ addr: 'http://localhost:1317' });
+        const [token0, token1] = [tokenA, tokenB].sort((a, b) =>
+          (a?.address ?? '').localeCompare(b?.address ?? '')
+        );
+        // accumulate ticks by looping through result pages
+        setTicks([]);
+        let result: DualityQueryAllTickResponse | undefined;
+        do {
+          result = await client
+            .queryTickAll({
+              'pagination.limit': '100',
+              'pagination.key': result?.pagination?.next_key,
+              token0: token0?.address,
+              token1: token1?.address,
+            })
+            .then((response) => response.json());
+          // append to ticks
+          if (!cancel && result?.tick) {
+            const { tick } = result;
+            setTicks((ticks) => ticks?.concat(tick));
+          }
+        } while (!cancel && result?.pagination?.next_key);
+      } catch (e) {
+        setTicksError(`${e}`);
+      }
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, [tokenA, tokenB]);
+
   return (
     <div className="pool-page">
       <h2 className="my-3 pt-1">Select Pair</h2>
@@ -95,6 +136,11 @@ export default function Pool() {
         ) : (
           <span>Current Price:</span>
         )}
+      </div>
+      <br />
+      <div>
+        Ticks: {JSON.stringify(ticks)}
+        Ticks Error: <span style={{ color: 'red' }}>{ticksError}</span>
       </div>
       <div className="inline-block w-1/2 text-center">Minimum tick</div>
       <div className="inline-block w-1/2 text-center">Maximum tick</div>
