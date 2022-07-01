@@ -100,7 +100,7 @@ export default function Pool() {
             }
           } while (!cancel && result?.pagination?.next_key);
         } catch (e) {
-          setTicksError(`${e}`);
+          if (!cancel) setTicksError(`${e}`);
         }
       })();
     return () => {
