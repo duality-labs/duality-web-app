@@ -82,6 +82,7 @@ export default function Pool() {
           );
           // accumulate ticks by looping through result pages
           setTicks([]);
+          setTicksError(undefined);
           let result: DualityQueryAllTickResponse | undefined;
           do {
             result = await client
