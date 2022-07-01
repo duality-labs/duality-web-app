@@ -131,7 +131,8 @@ export default function Pool() {
         exclusion={tokenA}
       />
       <div>
-        Ticks: {tickFetching ? 'loading...' : ''} {JSON.stringify(ticks)}
+        Ticks: {tickFetching ? 'loading...' : ''}{' '}
+        {JSON.stringify(ticks, null, 2)}
       </div>
       <div>
         TickFetch Error: <span style={{ color: 'red' }}>{ticksError}</span>
