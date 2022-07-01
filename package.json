@@ -28,6 +28,11 @@
     "react-router-dom": "^6.3.0",
     "web-vitals": "^2.1.4"
   },
+  "peerDependencies": {
+    "crypto": "npm:crypto-browserify@^3.12.0",
+    "path": "npm:path-browserify@^1.0.1",
+    "stream": "npm:stream-browserify@3.0.0"
+  },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
