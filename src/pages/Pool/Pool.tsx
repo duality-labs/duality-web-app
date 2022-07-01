@@ -72,34 +72,36 @@ export default function Pool() {
   const [ticksError, setTicksError] = useState<string>();
   useEffect(() => {
     let cancel = false;
-    (async () => {
-      try {
-        const client = await queryClient({ addr: 'http://localhost:1317' });
-        const [token0, token1] = [tokenA, tokenB].sort((a, b) =>
-          (a?.address ?? '').localeCompare(b?.address ?? '')
-        );
-        // accumulate ticks by looping through result pages
-        setTicks([]);
-        let result: DualityQueryAllTickResponse | undefined;
-        do {
-          result = await client
-            .queryTickAll({
-              'pagination.limit': '100',
-              'pagination.key': result?.pagination?.next_key,
-              token0: token0?.address,
-              token1: token1?.address,
-            })
-            .then((response) => response.json());
-          // append to ticks
-          if (!cancel && result?.tick) {
-            const { tick } = result;
-            setTicks((ticks) => ticks?.concat(tick));
-          }
-        } while (!cancel && result?.pagination?.next_key);
-      } catch (e) {
-        setTicksError(`${e}`);
-      }
-    })();
+    tokenA &&
+      tokenB &&
+      (async () => {
+        try {
+          const client = await queryClient({ addr: 'http://localhost:1317' });
+          const [token0, token1] = [tokenA, tokenB].sort((a, b) =>
+            (a?.address ?? '').localeCompare(b?.address ?? '')
+          );
+          // accumulate ticks by looping through result pages
+          setTicks([]);
+          let result: DualityQueryAllTickResponse | undefined;
+          do {
+            result = await client
+              .queryTickAll({
+                'pagination.limit': '100',
+                'pagination.key': result?.pagination?.next_key,
+                token0: token0?.address,
+                token1: token1?.address,
+              })
+              .then((response) => response.json());
+            // append to ticks
+            if (!cancel && result?.tick) {
+              const { tick } = result;
+              setTicks((ticks) => ticks?.concat(tick));
+            }
+          } while (!cancel && result?.pagination?.next_key);
+        } catch (e) {
+          setTicksError(`${e}`);
+        }
+      })();
     return () => {
       cancel = true;
     };
