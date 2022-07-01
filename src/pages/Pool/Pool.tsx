@@ -69,6 +69,7 @@ export default function Pool() {
   }, [totalValue, rateData, rangeMin, rangeMax]);
 
   const [ticks, setTicks] = useState<DualityQueryAllTickResponse['tick']>();
+  const [tickFetching, setTickFetching] = useState<boolean>(false);
   const [ticksError, setTicksError] = useState<string>();
   useEffect(() => {
     let cancel = false;
@@ -81,7 +82,8 @@ export default function Pool() {
             (a?.address ?? '').localeCompare(b?.address ?? '')
           );
           // accumulate ticks by looping through result pages
-          setTicks([]);
+          setTicks(undefined);
+          setTickFetching(true);
           setTicksError(undefined);
           let result: DualityQueryAllTickResponse | undefined;
           do {
@@ -96,15 +98,17 @@ export default function Pool() {
             // append to ticks
             if (!cancel && result?.tick) {
               const { tick } = result;
-              setTicks((ticks) => ticks?.concat(tick));
+              setTicks((ticks = []) => ticks?.concat(tick));
             }
           } while (!cancel && result?.pagination?.next_key);
         } catch (e) {
           if (!cancel) setTicksError(`${e}`);
         }
+        if (!cancel) setTickFetching(false);
       })();
     return () => {
       cancel = true;
+      setTickFetching(false);
     };
   }, [tokenA, tokenB]);
 
@@ -126,7 +130,9 @@ export default function Pool() {
         tokenList={tokenList}
         exclusion={tokenA}
       />
-      <div>Ticks: {JSON.stringify(ticks)}</div>
+      <div>
+        Ticks: {tickFetching ? 'loading...' : ''} {JSON.stringify(ticks)}
+      </div>
       <div>
         TickFetch Error: <span style={{ color: 'red' }}>{ticksError}</span>
       </div>
