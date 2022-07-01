@@ -11,8 +11,12 @@ import {
 
 import { queryClient } from '../../generated/duality/duality.duality/module/index';
 import { DualityQueryAllTickResponse } from '../../generated/duality/duality.duality/module/rest';
+import { EventType, MessageListener, createSubscriptionManager } from '../../lib/web3/events';
 
 import './Pool.scss';
+
+const url = 'ws://localhost:26657/websocket';
+const subscriptionManager = createSubscriptionManager(url);
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
@@ -110,6 +114,40 @@ export default function Pool() {
       cancel = true;
       setTickFetching(false);
     };
+  }, [tokenA, tokenB]);
+
+  // open websocket while page is open
+  useEffect(() => {
+    subscriptionManager.open();
+    return () => subscriptionManager.close();
+  }, []);
+
+  // subscribe to certain events
+  useEffect(() => {
+    if (tokenA && tokenB) {
+      const onMessage: MessageListener = (data, tmEvent, originalEvent) => {
+
+        const keys = Object.keys(tmEvent);
+        const events = tmEvent['message.action'].map((actionName, index) => {
+          return actionName === 'deposit_shares' && keys.reduce((event, key) => {
+            const [group, field] = key.split(/\./);
+            switch (group) {
+              case 'message': return Object.assign(event, { [field]: tmEvent[key][index] });
+              case 'tx': return Object.assign(event, { [key]: tmEvent[key][index] }); // maybe shouldn't add this
+              default: return event;
+            }
+          }, {} as object);
+        }).filter(Boolean);
+
+        setTicks((ticks=[]) => {
+          // todo: calculate new ticks from events
+          console.log('events', events)
+          return [...ticks];
+        })
+      }
+      subscriptionManager.subscribe(onMessage, EventType.EventTxValue);
+      return () => subscriptionManager.unsubscribe(onMessage, EventType.EventTxValue);
+    }
   }, [tokenA, tokenB]);
 
   return (
