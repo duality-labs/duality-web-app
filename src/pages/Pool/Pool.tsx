@@ -91,7 +91,7 @@ export default function Pool() {
                 token0: token0?.address,
                 token1: token1?.address,
               })
-              .then((response) => response.json());
+              .then((response) => response.data);
             // append to ticks
             if (!cancel && result?.tick) {
               const { tick } = result;
