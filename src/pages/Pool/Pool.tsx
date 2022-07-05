@@ -123,7 +123,12 @@ export default function Pool() {
         className="w-32 text-center"
         min="0"
         max="100"
-        value={`${parseInt(rangeMin, 10) > 0 ? '-' : ''}${rangeMin}%`}
+        value={`${parseInt(rangeMin, 10) > 0 ? '-' : ''}${parseFloat(
+          rangeMin
+        ).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        })}%`}
         onChange={(e) => setRangeMin(e.target.value.replace(/\D/g, ''))}
         step="1"
       ></input>
@@ -131,7 +136,10 @@ export default function Pool() {
         className="w-32 text-center"
         min="0"
         max="100"
-        value={`${rangeMax}%`}
+        value={`${parseFloat(rangeMax).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        })}%`}
         onChange={(e) => setRangeMax(e.target.value.replace(/\D/g, ''))}
         step="1"
       ></input>
@@ -143,11 +151,23 @@ export default function Pool() {
         value={`${
           rateData?.price
             ? Math.round(
-                parseInt(rateData?.price, 10) * (1 - parseInt(rangeMin) / 100)
+                parseInt(rateData?.price, 10) * (1 - parseFloat(rangeMin) / 100)
               )
             : ''
         } ${tokenB?.symbol} per ${tokenA?.symbol}`}
-        onChange={(e) => setRangeMin(e.target.value.replace(/\D/g, ''))}
+        onChange={(e) =>
+          setRangeMin(
+            (current) =>
+              `${
+                rateData?.price
+                  ? (-parseInt(e.target.value.replace(/\D/g, ''), 10) /
+                      parseInt(rateData?.price, 10)) *
+                      100 +
+                    100
+                  : current
+              }`
+          )
+        }
         step="1"
       ></input>
       <input
@@ -157,11 +177,23 @@ export default function Pool() {
         value={`${
           rateData?.price
             ? Math.round(
-                parseInt(rateData?.price, 10) * (1 + parseInt(rangeMax) / 100)
+                parseInt(rateData?.price, 10) * (1 + parseFloat(rangeMax) / 100)
               )
             : ''
         } ${tokenB?.symbol} per ${tokenA?.symbol}`}
-        onChange={(e) => setRangeMax(e.target.value.replace(/\D/g, ''))}
+        onChange={(e) =>
+          setRangeMax(
+            (current) =>
+              `${
+                rateData?.price
+                  ? (parseInt(e.target.value.replace(/\D/g, ''), 10) /
+                      parseInt(rateData?.price, 10)) *
+                      100 -
+                    100
+                  : current
+              }`
+          )
+        }
         step="1"
       ></input>
       <h2 className="my-3 pt-1">Deposit Amounts</h2>
