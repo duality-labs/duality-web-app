@@ -36,14 +36,34 @@ export default function Pool() {
 
   const [rangeMin, setRangeMin] = useState('50');
   const [rangeMax, setRangeMax] = useState('50');
-  const [values, setValues] = useState([1, 1]);
+  const [values, setValues] = useState([0, 0]);
+  const [totalValue, setTotalValue] = useState(2000);
+
+  // update total value when rates or values change
+  useEffect(() => {
+    const rateAtoB = parseInt(rateData?.price || '0', 10);
+    const totalValue = values[0] * rateAtoB + values[1];
+    if (totalValue) {
+      setTotalValue(totalValue);
+    }
+  }, [values, rateData]);
+
+  // update values when rates or shape changes
   useEffect(() => {
     // get pair deposit amounts
-    setValues([
-      parseInt(rangeMin) * Math.random(),
-      parseInt(rangeMax) * Math.random(),
-    ]);
-  }, [rangeMin, rangeMax]);
+    setValues(() => {
+      const rateAtoB = parseInt(rateData?.price || '0', 10);
+      const valueMin = parseInt(rangeMin);
+      const valueMax = parseInt(rangeMax);
+      if (rateAtoB > 0 && totalValue > 0) {
+        const valueA = (totalValue * valueMin) / (valueMin + valueMax);
+        const valueB = (totalValue * valueMax) / (valueMin + valueMax);
+        return [valueA / rateAtoB, valueB];
+      } else {
+        return [0, 0];
+      }
+    });
+  }, [totalValue, rateData, rangeMin, rangeMax]);
   return (
     <div className="pool-page">
       <h2 className="my-3 pt-1">Select Pair</h2>
@@ -121,6 +141,9 @@ export default function Pool() {
         tokenList={tokenList}
         token={tokenA}
         value={`${values[0]}`}
+        onValueChanged={(valueA) =>
+          setValues(([, valueB]) => [parseInt(valueA, 10), valueB])
+        }
         exclusion={tokenB}
       ></TokenInputGroup>
       <TokenInputGroup
@@ -128,6 +151,9 @@ export default function Pool() {
         tokenList={tokenList}
         token={tokenB}
         value={`${values[1]}`}
+        onValueChanged={(valueB) =>
+          setValues(([valueA]) => [valueA, parseInt(valueB, 10)])
+        }
         exclusion={tokenA}
       ></TokenInputGroup>
       <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block">
