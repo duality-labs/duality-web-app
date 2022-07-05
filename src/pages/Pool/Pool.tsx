@@ -135,6 +135,35 @@ export default function Pool() {
         onChange={(e) => setRangeMax(e.target.value.replace(/\D/g, ''))}
         step="1"
       ></input>
+      <br />
+      <input
+        className="w-32 text-center"
+        min="0"
+        max="100"
+        value={`${
+          rateData?.price
+            ? Math.round(
+                parseInt(rateData?.price, 10) * (1 - parseInt(rangeMin) / 100)
+              )
+            : ''
+        } ${tokenB?.symbol} per ${tokenA?.symbol}`}
+        onChange={(e) => setRangeMin(e.target.value.replace(/\D/g, ''))}
+        step="1"
+      ></input>
+      <input
+        className="w-32 text-center"
+        min="0"
+        max="100"
+        value={`${
+          rateData?.price
+            ? Math.round(
+                parseInt(rateData?.price, 10) * (1 + parseInt(rangeMax) / 100)
+              )
+            : ''
+        } ${tokenB?.symbol} per ${tokenA?.symbol}`}
+        onChange={(e) => setRangeMax(e.target.value.replace(/\D/g, ''))}
+        step="1"
+      ></input>
       <h2 className="my-3 pt-1">Deposit Amounts</h2>
       <TokenInputGroup
         readOnly
