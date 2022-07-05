@@ -148,13 +148,18 @@ export default function Pool() {
         className="w-1/2 text-center"
         min="0"
         max="100"
-        value={`${
-          rateData?.price
-            ? Math.round(
-                parseInt(rateData?.price, 10) * (1 - parseFloat(rangeMin) / 100)
-              )
+        value={
+          tokenA && tokenB
+            ? `${
+                rateData?.price
+                  ? Math.round(
+                      parseInt(rateData?.price, 10) *
+                        (1 - parseFloat(rangeMin) / 100)
+                    )
+                  : ''
+              } ${tokenB?.symbol} per ${tokenA?.symbol}`
             : ''
-        } ${tokenB?.symbol} per ${tokenA?.symbol}`}
+        }
         onChange={(e) =>
           setRangeMin(
             (current) =>
@@ -174,13 +179,18 @@ export default function Pool() {
         className="w-1/2 text-center"
         min="0"
         max="100"
-        value={`${
-          rateData?.price
-            ? Math.round(
-                parseInt(rateData?.price, 10) * (1 + parseFloat(rangeMax) / 100)
-              )
+        value={
+          tokenA && tokenB
+            ? `${
+                rateData?.price
+                  ? Math.round(
+                      parseInt(rateData?.price, 10) *
+                        (1 + parseFloat(rangeMax) / 100)
+                    )
+                  : ''
+              } ${tokenB?.symbol} per ${tokenA?.symbol}`
             : ''
-        } ${tokenB?.symbol} per ${tokenA?.symbol}`}
+        }
         onChange={(e) =>
           setRangeMax(
             (current) =>
