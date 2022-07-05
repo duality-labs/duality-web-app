@@ -85,7 +85,7 @@ export default function Pool() {
       <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
         <strong>0.3% fee tier</strong>
       </div>
-      <h2 className="my-3 pt-1">Set price range</h2>
+      <h2 className="mt-4 mb-3 pt-1">Set price range</h2>
       <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
         {tokenA && tokenB ? (
           <span>
@@ -96,11 +96,11 @@ export default function Pool() {
           <span>Current Price:</span>
         )}
       </div>
-      <div className="inline-block w-32 text-center">Minimum tick</div>
-      <div className="inline-block w-32 text-center">Maximum tick</div>
+      <div className="inline-block w-1/2 text-center">Minimum tick</div>
+      <div className="inline-block w-1/2 text-center">Maximum tick</div>
       <br />
       <input
-        className="w-32"
+        className="w-1/2"
         type="range"
         min="0"
         max="100"
@@ -110,7 +110,7 @@ export default function Pool() {
         style={{ transform: 'rotate(180deg)' }}
       ></input>
       <input
-        className="w-32"
+        className="w-1/2"
         type="range"
         min="0"
         max="100"
@@ -120,7 +120,7 @@ export default function Pool() {
       ></input>
       <br />
       <input
-        className="w-32 text-center"
+        className="w-1/2 text-center"
         min="0"
         max="100"
         value={`${parseInt(rangeMin, 10) > 0 ? '-' : ''}${parseFloat(
@@ -133,7 +133,7 @@ export default function Pool() {
         step="1"
       ></input>
       <input
-        className="w-32 text-center"
+        className="w-1/2 text-center"
         min="0"
         max="100"
         value={`${parseFloat(rangeMax).toLocaleString('en-US', {
@@ -145,7 +145,7 @@ export default function Pool() {
       ></input>
       <br />
       <input
-        className="w-32 text-center"
+        className="w-1/2 text-center"
         min="0"
         max="100"
         value={`${
@@ -171,7 +171,7 @@ export default function Pool() {
         step="1"
       ></input>
       <input
-        className="w-32 text-center"
+        className="w-1/2 text-center"
         min="0"
         max="100"
         value={`${
@@ -196,7 +196,7 @@ export default function Pool() {
         }
         step="1"
       ></input>
-      <h2 className="my-3 pt-1">Deposit Amounts</h2>
+      <h2 className="mt-4 mb-3 pt-1">Deposit Amounts</h2>
       <TokenInputGroup
         readOnly
         tokenList={tokenList}
