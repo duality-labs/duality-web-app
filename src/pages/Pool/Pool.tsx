@@ -76,9 +76,8 @@ export default function Pool() {
   const [tickFetching, setTickFetching] = useState<boolean>(false);
   const [ticksError, setTicksError] = useState<string>();
   useEffect(() => {
-    let cancel = false;
-    tokenA &&
-      tokenB &&
+    if (tokenA && tokenB) {
+      let cancel = false;
       (async () => {
         try {
           const client = await queryClient({ addr: 'http://localhost:1317' });
@@ -110,10 +109,11 @@ export default function Pool() {
         }
         if (!cancel) setTickFetching(false);
       })();
-    return () => {
-      cancel = true;
-      setTickFetching(false);
-    };
+      return () => {
+        cancel = true;
+        setTickFetching(false);
+      };
+    }
   }, [tokenA, tokenB]);
 
   // open websocket while page is open
