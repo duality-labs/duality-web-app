@@ -34,8 +34,8 @@ export default function Pool() {
     }
   }, [tokenA, tokenList]);
 
-  const [rangeMin, setRangeMin] = useState('3');
-  const [rangeMax, setRangeMax] = useState('3');
+  const [rangeMin, setRangeMin] = useState('50');
+  const [rangeMax, setRangeMax] = useState('50');
   const [values, setValues] = useState([1, 1]);
   useEffect(() => {
     // get pair deposit amounts
@@ -76,40 +76,43 @@ export default function Pool() {
           <span>Current Price:</span>
         )}
       </div>
+      <div className="inline-block w-32 text-center">Minimum tick</div>
+      <div className="inline-block w-32 text-center">Maximum tick</div>
+      <br />
       <input
         className="w-32"
         type="range"
         min="0"
-        max="10"
+        max="100"
         value={rangeMin}
         onChange={(e) => setRangeMin(e.target.value)}
-        step="1"
+        step="10"
         style={{ transform: 'rotate(180deg)' }}
       ></input>
       <input
         className="w-32"
         type="range"
         min="0"
-        max="10"
+        max="100"
         value={rangeMax}
         onChange={(e) => setRangeMax(e.target.value)}
-        step="1"
+        step="10"
       ></input>
       <br />
       <input
         className="w-32 text-center"
         min="0"
-        max="10"
-        value={rangeMin}
-        onChange={(e) => setRangeMin(e.target.value)}
+        max="100"
+        value={`${parseInt(rangeMin, 10) > 0 ? '-' : ''}${rangeMin}%`}
+        onChange={(e) => setRangeMin(e.target.value.replace(/\D/g, ''))}
         step="1"
       ></input>
       <input
         className="w-32 text-center"
         min="0"
-        max="10"
-        value={rangeMax}
-        onChange={(e) => setRangeMax(e.target.value)}
+        max="100"
+        value={`${rangeMax}%`}
+        onChange={(e) => setRangeMax(e.target.value.replace(/\D/g, ''))}
         step="1"
       ></input>
       <h2 className="my-3 pt-1">Deposit Amounts</h2>
