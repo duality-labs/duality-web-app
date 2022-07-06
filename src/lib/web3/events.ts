@@ -276,11 +276,12 @@ export function createSubscriptionManager(
 
   function open() {
     if (isOpen()) throw new Error('Socket is already open');
-    socket = new WebSocket(url);
+    const currentSocket = new WebSocket(url);
+    socket = currentSocket;
     socket.addEventListener('open', function () {
       reconnectInterval = startingReconnectInterval;
-      if (this !== socket) return; // socket has been altered
-      socket?.addEventListener('message', bubbleOnMessage);
+      if (currentSocket !== socket) return; // socket has been altered
+      currentSocket.addEventListener('message', bubbleOnMessage);
       Object.entries(listeners).forEach(([paramQuery, queryGroup]) => {
         if (!queryGroup.active) {
           const message = {
@@ -289,7 +290,7 @@ export function createSubscriptionManager(
             params: [paramQuery],
             id: 1,
           };
-          socket?.send(JSON.stringify(message));
+          currentSocket.send(JSON.stringify(message));
           queryGroup.active = true;
         }
       });
@@ -304,8 +305,8 @@ export function createSubscriptionManager(
         }
       });
     });
-    socket.addEventListener('error', function (ev) {
-      if (this !== socket) return; // socket has been altered
+    currentSocket.addEventListener('error', function (ev) {
+      if (currentSocket !== socket) return; // socket has been altered
       errorListeners.forEach(function (cb) {
         try {
           cb(ev);
@@ -317,8 +318,8 @@ export function createSubscriptionManager(
         }
       });
     });
-    socket.addEventListener('close', function (event) {
-      if (this !== socket) return; // socket has been altered
+    currentSocket.addEventListener('close', function (event) {
+      if (currentSocket !== socket) return; // socket has been altered
       // disable all listeners (without removing) after a close
       Object.values(listeners).forEach((group) => (group.active = false));
       if (!event.wasClean) {
