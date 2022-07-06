@@ -419,7 +419,7 @@ export function subscribe(
       .map(([key, value]) => (value ? `${key}='${value}'` : null))
       .filter(Boolean)
       .join(' AND ');
-    const isGeneric = Object.values(paramMap).filter(Boolean).length === 0;
+    const isGeneric = !paramQuery;
     sendMessageQuery(method, onMessage, paramQuery, isGeneric);
   }
 
@@ -455,13 +455,15 @@ export function subscribe(
             unsubscribeAll();
             return;
           }
-          const filters = Object.keys(listeners).filter(function (paramQuery) {
-            const listenerGroup = listeners[paramQuery];
-            return listenerGroup.callBacks.some((cb) => cb === onMessage);
+          Object.entries(listeners).forEach(function ([
+            paramQuery,
+            listenerGroup,
+          ]) {
+            if (listenerGroup.callBacks.some((cb) => cb === onMessage)) {
+              // send sub query to matching listener groups
+              sendMessageQuery(method, onMessage, paramQuery, false);
+            }
           });
-          filters.forEach((subQuery) =>
-            sendMessageQuery(method, onMessage, subQuery, false)
-          );
           // abort message sending since it was managed by the loop
           return;
         }
