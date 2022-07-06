@@ -177,7 +177,7 @@ export interface SubscriptionManager {
 const startingReconnectInterval = 2e3,
   maxReconnectInterval = 2 * 60e3;
 
-export function subscribe(
+export function createSubscriptionManager(
   url: string,
   onMessage?: MessageListener,
   eventType?: EventType,
