@@ -54,6 +54,9 @@ type MessageType = 'subscribe' | 'unsubscribe' | 'unsubscribeall';
 
 type SocketListenerType = 'open' | 'error' | 'close';
 
+/**
+ * @see https://github.com/tendermint/tendermint/blob/master/types/events.go
+ */
 export enum EventType {
   EventNewBlockValue = 'NewBlock',
   EventNewBlockHeaderValue = 'NewBlockHeader',
