@@ -490,16 +490,13 @@ export function createSubscriptionManager(
         if (!isOpen()) return;
         break;
       case 'unsubscribeall':
-        const hasSubs = Object.values(listeners).filter(function (
-          listenerGroup
-        ) {
+        const hasSubs = Object.values(listeners).some(
+          (listenerGroup) => listenerGroup.active
+        );
+        Object.values(listeners).forEach(function (listenerGroup) {
           listenerGroup.callBacks = [];
-          if (listenerGroup.active) {
-            listenerGroup.active = false;
-            return true;
-          }
-          return false;
-        }).length;
+          listenerGroup.active = false;
+        });
         // if there are no active subscriptions then abort
         if (!hasSubs) return;
         if (!isOpen()) return;
