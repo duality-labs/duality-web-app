@@ -299,7 +299,7 @@ export function createSubscriptionManager(
           cb();
         } catch (err) {
           // eslint-disable-next-line no-console
-          console.error('Failed to call open listener:');
+          console.error('Failed to execute open listener:');
           // eslint-disable-next-line no-console
           console.error(err);
         }
@@ -312,7 +312,7 @@ export function createSubscriptionManager(
           cb(ev);
         } catch (err) {
           // eslint-disable-next-line no-console
-          console.error('Failed to call error listener:');
+          console.error('Failed to execute error listener:');
           // eslint-disable-next-line no-console
           console.error(err);
         }
@@ -334,7 +334,7 @@ export function createSubscriptionManager(
           cb();
         } catch (err) {
           // eslint-disable-next-line no-console
-          console.error('Failed to call close listener:');
+          console.error('Failed to execute close listener:');
           // eslint-disable-next-line no-console
           console.error(err);
         }
