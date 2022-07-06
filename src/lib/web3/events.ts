@@ -319,6 +319,8 @@ export function createSubscriptionManager(
     });
     socket.addEventListener('close', function (event) {
       if (this !== socket) return; // socket has been altered
+      // disable all listeners (without removing) after a close
+      Object.values(listeners).forEach((group) => (group.active = false));
       if (!event.wasClean) {
         setTimeout(open, reconnectInterval);
         reconnectInterval = Math.min(
