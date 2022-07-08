@@ -553,10 +553,8 @@ export function createSubscriptionManager(
               listenerGroup,
             ]) {
               if (
-                listenerGroup.callBacks.some(
-                  (cb) =>
-                    cb.genericListener === onMessage.genericListener ||
-                    cb.messageListener === onMessage.messageListener
+                listenerGroup.callBacks.some((cb) =>
+                  isSameWrapper(cb, onMessage)
                 )
               ) {
                 // send sub query to matching listener groups
@@ -571,9 +569,7 @@ export function createSubscriptionManager(
         // if no callback is supplied the remove everything
         if (onMessage) {
           listenerGroup.callBacks = listenerGroup.callBacks.filter(
-            (cb) =>
-              cb.genericListener !== onMessage.genericListener &&
-              cb.messageListener !== onMessage.messageListener
+            (cb) => !isSameWrapper(cb, onMessage)
           );
           // if there are more functions listening abort
           if (listenerGroup.callBacks.length) return;
@@ -668,4 +664,10 @@ let idCounter = 1;
 
 function createID() {
   return idCounter++;
+}
+
+function isSameWrapper(wrapper: CallBackWrapper, other: CallBackWrapper) {
+  if (wrapper.genericListener === other.genericListener) return true;
+  if (wrapper.messageListener === other.messageListener) return true;
+  return false;
 }
