@@ -6,7 +6,8 @@ enum ActionNames {
 }
 
 enum QueryStatus {
-  DisConnected,
+  Disconnecting,
+  Disconnected,
   Connecting,
   Connected,
 }
@@ -63,7 +64,7 @@ interface CallBackWrapper {
   messageAction?: string;
 }
 
-type MessageType = 'subscribe' | 'unsubscribe' | 'unsubscribeall';
+type MessageType = 'subscribe' | 'unsubscribe';
 
 type SocketListenerType = 'open' | 'error' | 'close';
 
@@ -226,6 +227,8 @@ export interface SubscriptionManager {
 const startingReconnectInterval = 2e3,
   maxReconnectInterval = 2 * 60e3;
 
+const unsubDebounceInterval = 1e3;
+
 export function createSubscriptionManager(
   url: string,
   onMessage?: MessageListener,
@@ -240,6 +243,7 @@ export function createSubscriptionManager(
     [query: string]: {
       callBacks: Array<CallBackWrapper>;
       status: QueryStatus;
+      idUnsub: number;
       id: number;
     };
   } = {};
@@ -250,6 +254,7 @@ export function createSubscriptionManager(
   const closeListeners: Array<() => void> = [];
   const errorListeners: Array<(ev: Event) => void> = [];
   let reconnectInterval = startingReconnectInterval;
+  let lastAbortTimeout = -1;
   if (eventType && onMessage)
     subscribe(
       onMessage,
@@ -340,9 +345,18 @@ export function createSubscriptionManager(
       reconnectInterval = startingReconnectInterval;
       if (currentSocket !== socket) return; // socket has been altered
       currentSocket.addEventListener('message', bubbleOnMessage);
-      Object.keys(listeners).forEach((paramQuery) =>
-        sendMessage('subscribe', paramQuery)
-      );
+      Object.entries(listeners).forEach(([paramQuery, group]) => {
+        // refresh ids after a new connection
+        group.id = createID();
+        // send pending requests
+        if (
+          group.status === QueryStatus.Disconnected &&
+          group.callBacks.length
+        ) {
+          sendMessage('subscribe', paramQuery, group.id);
+          group.status = QueryStatus.Connecting;
+        }
+      });
       openListeners.forEach(function (cb) {
         try {
           cb();
@@ -371,7 +385,7 @@ export function createSubscriptionManager(
       if (currentSocket !== socket) return; // socket has been altered
       // disable all listeners (without removing) after a close
       Object.values(listeners).forEach(
-        (group) => (group.status = QueryStatus.DisConnected)
+        (group) => (group.status = QueryStatus.Disconnected)
       );
       if (!event.wasClean) {
         setTimeout(open, reconnectInterval);
@@ -407,8 +421,7 @@ export function createSubscriptionManager(
     blockHeight?: string,
     indexingHeight?: string
   ) {
-    registerMessage(
-      'subscribe',
+    abstractSubscribe(
       { messageListener: onMessage, messageAction: messageAction },
       eventType,
       messageAction,
@@ -426,8 +439,7 @@ export function createSubscriptionManager(
     blockHeight?: string,
     indexingHeight?: string
   ) {
-    registerMessage(
-      'unsubscribe',
+    abstractUnsubscribe(
       { messageListener: onMessage },
       eventType,
       messageAction,
@@ -445,8 +457,7 @@ export function createSubscriptionManager(
     blockHeight?: string,
     indexingHeight?: string
   ) {
-    registerMessage(
-      'subscribe',
+    abstractSubscribe(
       { genericListener: onMessage },
       eventType,
       messageAction,
@@ -454,6 +465,41 @@ export function createSubscriptionManager(
       blockHeight,
       indexingHeight
     );
+  }
+
+  function abstractSubscribe(
+    onMessage: CallBackWrapper,
+    eventType: EventType,
+    messageAction?: string,
+    hashKey?: string,
+    blockHeight?: string,
+    indexingHeight?: string
+  ) {
+    const id = createID(),
+      idUnsub = createID();
+    const paramQuery = getParamQuery(
+      eventType,
+      messageAction,
+      hashKey,
+      blockHeight,
+      indexingHeight
+    );
+    listeners[paramQuery] = listeners[paramQuery] || {
+      status: QueryStatus.Disconnected,
+      idUnsub: idUnsub,
+      callBacks: [],
+      id: id,
+    };
+    idListenerMap[id] = listeners[paramQuery];
+    idListenerMap[idUnsub] = listeners[paramQuery];
+    listeners[paramQuery].callBacks.push(onMessage);
+    if (isOpen()) {
+      sendMessage('subscribe', paramQuery, id);
+      listeners[paramQuery].status = QueryStatus.Connecting;
+    } else if (!socket) {
+      open();
+    }
+    debounceUnsub();
   }
 
   function unsubscribe(
@@ -464,8 +510,7 @@ export function createSubscriptionManager(
     blockHeight?: string,
     indexingHeight?: string
   ) {
-    registerMessage(
-      'unsubscribe',
+    abstractUnsubscribe(
       { genericListener: onMessage },
       eventType,
       messageAction,
@@ -475,15 +520,7 @@ export function createSubscriptionManager(
     );
   }
 
-  function unsubscribeAll() {
-    registerMessage('unsubscribeall', {});
-  }
-
-  /**
-   * "Overload" for registerQuery
-   */
-  function registerMessage(
-    method: MessageType,
+  function abstractUnsubscribe(
     onMessage?: CallBackWrapper,
     eventType?: EventType,
     messageAction?: string,
@@ -491,117 +528,79 @@ export function createSubscriptionManager(
     blockHeight?: string,
     indexingHeight?: string
   ) {
-    registerParam(method, onMessage, {
+    const paramQuery = getParamQuery(
+      eventType,
+      messageAction,
+      hashKey,
+      blockHeight,
+      indexingHeight
+    );
+    const isGeneric = !paramQuery;
+    const listenerGroups = isGeneric ? Object.keys(listeners) : [paramQuery];
+    listenerGroups.forEach(function (query) {
+      const group = listeners[query];
+      if (!group) return;
+      group.callBacks = onMessage
+        ? group.callBacks.filter((cb) => !isSameWrapper(cb, onMessage))
+        : [];
+    });
+    debounceUnsub();
+  }
+
+  function unsubscribeAll() {
+    abstractUnsubscribe();
+  }
+
+  function getParamQuery(
+    eventType?: EventType,
+    messageAction?: string,
+    hashKey?: string,
+    blockHeight?: string,
+    indexingHeight?: string
+  ): string {
+    const paramMap = {
       'tm.event': eventType,
       'message.action': messageAction,
       'tx.hash': hashKey,
       'tx.height': blockHeight,
       'block.height': indexingHeight,
-    });
-  }
-
-  /**
-   * "Overload" for registerQuery
-   */
-  function registerParam(
-    method: MessageType,
-    onMessage: CallBackWrapper | undefined,
-    paramMap: { [key: string]: string | undefined }
-  ) {
-    const paramQuery = Object.entries(paramMap)
+    };
+    return Object.entries(paramMap)
       .map(([key, value]) => (value ? `${key}='${value}'` : null))
       .filter(Boolean)
       .join(' AND ');
-    const isGeneric = !paramQuery;
-    registerQuery(method, onMessage, paramQuery, isGeneric);
   }
 
-  /**
-   * Manages the event listeners and sends the appropriate messages when necessary
-   * @param method type of call
-   * @param onMessage callback action
-   * @param paramQuery the query param that identifies the request
-   * @param isGeneric (only used for unsub to check whether the call is query based or function based)
-   */
-  function registerQuery(
-    method: MessageType,
-    onMessage: CallBackWrapper | undefined,
-    paramQuery: string,
-    isGeneric: boolean
-  ) {
-    switch (method) {
-      case 'subscribe':
-        if (!onMessage)
-          throw new Error('Cannot subscribe without a callback method');
-        const id = createID();
-        listeners[paramQuery] = listeners[paramQuery] || {
-          status: QueryStatus.DisConnected,
-          callBacks: [],
-          id: id,
-        };
-        idListenerMap[id] = listeners[paramQuery];
-        listeners[paramQuery].callBacks.push(onMessage);
-        sendMessage(method, paramQuery);
-        break;
-      case 'unsubscribe':
-        if (isGeneric) {
-          if (!onMessage) {
-            unsubscribeAll();
-          } else {
-            Object.entries(listeners).forEach(function ([
-              paramQuery,
-              listenerGroup,
-            ]) {
-              if (
-                listenerGroup.callBacks.some((cb) =>
-                  isSameWrapper(cb, onMessage)
-                )
-              ) {
-                // send sub query to matching listener groups
-                registerQuery(method, onMessage, paramQuery, false);
-              }
-            });
-          }
-        }
-        const listenerGroup = listeners[paramQuery];
-        // null check
-        if (!listenerGroup) return;
-        // if no callback is supplied the remove everything
-        if (onMessage) {
-          listenerGroup.callBacks = listenerGroup.callBacks.filter(
-            (cb) => !isSameWrapper(cb, onMessage)
-          );
-          // if there are more functions listening abort
-          if (listenerGroup.callBacks.length) return;
-        } else {
-          listenerGroup.callBacks = [];
-        }
-        break;
-      case 'unsubscribeall':
-        Object.values(listeners).forEach(function (listenerGroup) {
-          listenerGroup.callBacks = [];
-          listenerGroup.status = QueryStatus.DisConnected;
-        });
-        break;
+  function debounceUnsub() {
+    clearTimeout(lastAbortTimeout);
+    const emptyListeners = Object.entries(listeners).filter(
+      ([, group]) => !group.callBacks.length
+    );
+    if (emptyListeners.length && isOpen()) {
+      lastAbortTimeout = setTimeout(
+        function removeList() {
+          if (!isOpen()) return;
+          emptyListeners.forEach(function ([paramQuery, group]) {
+            sendMessage('unsubscribe', paramQuery, group.idUnsub);
+            group.status = QueryStatus.Disconnecting;
+          });
+        } as TimerHandler,
+        unsubDebounceInterval
+      );
     }
-    // if the socket hasn't been initialized then open it after the the listener has been registered
-    if (!socket) open();
   }
 
-  function sendMessage(method: string, paramQuery: string) {
-    const listenerGroup = listeners[paramQuery];
-    if (!listenerGroup)
-      throw new Error(`Unregistered paramQuery ${paramQuery}`);
-    if (listenerGroup.status === QueryStatus.DisConnected && isOpen()) {
-      const message = {
-        jsonrpc: '2.0',
-        method: method,
-        params: [paramQuery],
-        id: listenerGroup.id,
-      };
-      socket?.send(JSON.stringify(message));
-      listenerGroup.status = QueryStatus.Connecting;
+  function sendMessage(method: MessageType, paramQuery: string, id: number) {
+    if (!isOpen()) {
+      throw new Error('Socket connection is not open');
     }
+    const message = {
+      jsonrpc: '2.0',
+      method: method,
+      params: paramQuery ? [paramQuery] : undefined,
+      id: id,
+    };
+    socket?.send(JSON.stringify(message));
   }
 
   function isOpen() {
@@ -615,11 +614,17 @@ export function createSubscriptionManager(
   function bubbleOnMessage(event: MessageEvent) {
     const parsedData = JSON.parse(event.data);
     const { error, id, result } = parsedData;
+    if (id === 1) {
+      Object.values(listeners).forEach(function (cb) {
+        if (cb.status === QueryStatus.Disconnecting)
+          cb.status = QueryStatus.Disconnected;
+      });
+      return;
+    }
     const listenerGroup = idListenerMap[id];
     if (!listenerGroup) {
-      // TODO (add event listener for this type of error or add to existing socket error handler?)
       // eslint-disable-next-line no-console
-      console.error(`Received unregistered id ${id}`);
+      console.warn(`Received unregistered id ${id}`);
       return;
     }
     if (error) {
@@ -633,7 +638,10 @@ export function createSubscriptionManager(
       events = result.events as TendermintEvent;
     // set status after the original handshake
     if (!data || !events) {
-      listenerGroup.status = QueryStatus.Connected;
+      listenerGroup.status =
+        listenerGroup.idUnsub === id
+          ? QueryStatus.Disconnected
+          : QueryStatus.Connected;
       return;
     }
     if (data.type === 'tendermint/event/Tx') {
@@ -660,7 +668,8 @@ export function createSubscriptionManager(
   }
 }
 
-let idCounter = 1;
+// 1 reserved for unsub all
+let idCounter = 2;
 
 function createID() {
   return idCounter++;
