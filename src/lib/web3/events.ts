@@ -672,7 +672,7 @@ export function createSubscriptionManager(
 let idCounter = 2;
 
 function createID() {
-  return idCounter++;
+  return (idCounter = idCounter < Number.MAX_SAFE_INTEGER ? idCounter + 1 : 2);
 }
 
 function isSameWrapper(wrapper: CallBackWrapper, other: CallBackWrapper) {
