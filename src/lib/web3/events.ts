@@ -1,10 +1,5 @@
 import { Buffer } from 'buffer';
 
-enum ActionNames {
-  DepositShares = 'deposit_shares',
-  NewDeposit = 'NewDeposit',
-}
-
 enum QueryStatus {
   Disconnecting,
   Disconnected,
@@ -12,8 +7,27 @@ enum QueryStatus {
   Connected,
 }
 
+interface SubscriptionOptions {
+  /**
+   * messageAction the name of the event/message
+   */
+  messageAction?: string;
+  /**
+   * hashKey hash key of transaction
+   */
+  hashKey?: string;
+  /**
+   * blockHeight height of block of transaction
+   */
+  blockHeight?: string;
+  /**
+   * indexingHeight used for indexing FinalizeBlock events (sorting rather than filtering)
+   */
+  indexingHeight?: string;
+}
+
 interface TendermintEvent {
-  'message.action': Array<ActionNames>;
+  'message.action': Array<string>;
   'tm.event': Array<string>;
   'tx.acc_seq': Array<string>;
   'tx.fee': Array<string>;
@@ -97,54 +111,35 @@ export interface SubscriptionManager {
    * Adds an event listener that only listens to message actions
    * @param onMessage the function listening for the event
    * @param eventType the event type listening to (when/how the event will get emitted)
-   * @param messageAction the name of the event/message
-   * @param hashKey hash key of transaction
-   * @param blockHeight height of block of transaction
-   * @param indexingHeight used for indexing FinalizeBlock events (sorting rather than filtering)
+   * @param options SubscriptionOptions
    */
   readonly subscribeMessage: (
     onMessage: (event: { [key: string]: string }) => void,
     eventType: EventType,
-    messageAction: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    options?: SubscriptionOptions
   ) => void;
 
   /**
    * Removes an event listener that only listens to message actions
    * @param onMessage the function listening for the event
    * @param eventType the event type listening to (when/how the event will get emitted)
-   * @param messageAction the name of the event/message
-   * @param hashKey hash key of transaction
-   * @param blockHeight height of block of transaction
-   * @param indexingHeight used for indexing FinalizeBlock events (sorting rather than filtering)
+   * @param options SubscriptionOptions
    */
   readonly unsubscribeMessage: (
     onMessage: (event: { [key: string]: string }) => void,
     eventType?: EventType,
-    messageAction?: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    options?: SubscriptionOptions
   ) => void;
 
   /**
    * Adds an event listener
    * @param onMessage the function listening for the event
    * @param eventType the event type listening to (when/how the event will get emitted)
-   * @param messageAction the name of the event/message
-   * @param hashKey hash key of transaction
-   * @param blockHeight height of block of transaction
-   * @param indexingHeight used for indexing FinalizeBlock events (sorting rather than filtering)
    */
   readonly subscribe: (
     onMessage: MessageListener,
     eventType: EventType,
-    messageAction?: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    options?: SubscriptionOptions
   ) => void;
 
   /**
@@ -153,18 +148,12 @@ export interface SubscriptionManager {
    * if no other arguments are supplied then all instances of the function will be removed
    * if this is not defined then all of the listeners for the relevant query will be removed
    * @param eventType the event type listening to (when/how the event will get emitted)
-   * @param messageAction the name of the event/message
-   * @param hashKey hash key of transaction
-   * @param blockHeight height of block of transaction
-   * @param indexingHeight used for indexing FinalizeBlock events (sorting rather than filtering)
+   * @param options SubscriptionOptions
    */
   readonly unsubscribe: (
-    onMessage: MessageListener,
+    onMessage?: MessageListener,
     eventType?: EventType,
-    messageAction?: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    options?: SubscriptionOptions
   ) => void;
 
   /**
@@ -233,10 +222,7 @@ export function createSubscriptionManager(
   url: string,
   onMessage?: MessageListener,
   eventType?: EventType,
-  messageAction?: string,
-  hashKey?: string,
-  blockHeight?: string,
-  indexingHeight?: string
+  options?: SubscriptionOptions
 ): SubscriptionManager {
   let socket: WebSocket | null = null;
   const listeners: {
@@ -255,15 +241,7 @@ export function createSubscriptionManager(
   const errorListeners: Array<(ev: Event) => void> = [];
   let reconnectInterval = startingReconnectInterval;
   let lastAbortTimeout = -1;
-  if (eventType && onMessage)
-    subscribe(
-      onMessage,
-      eventType,
-      messageAction,
-      hashKey,
-      blockHeight,
-      indexingHeight
-    );
+  if (eventType && onMessage) subscribe(onMessage, eventType, options || {});
 
   const manager = {
     open,
@@ -416,74 +394,43 @@ export function createSubscriptionManager(
   function subscribeMessage(
     onMessage: (event: { [key: string]: string }) => void,
     eventType: EventType,
-    messageAction: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    options?: SubscriptionOptions
   ) {
     abstractSubscribe(
-      { messageListener: onMessage, messageAction: messageAction },
+      { messageListener: onMessage, messageAction: options?.messageAction },
       eventType,
-      messageAction,
-      hashKey,
-      blockHeight,
-      indexingHeight
+      options || {}
     );
   }
 
   function unsubscribeMessage(
     onMessage: (event: { [key: string]: string }) => void,
     eventType?: EventType,
-    messageAction?: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    options?: SubscriptionOptions
   ) {
     abstractUnsubscribe(
       { messageListener: onMessage },
       eventType,
-      messageAction,
-      hashKey,
-      blockHeight,
-      indexingHeight
+      options || {}
     );
   }
 
   function subscribe(
     onMessage: MessageListener,
     eventType: EventType,
-    messageAction?: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    options?: SubscriptionOptions
   ) {
-    abstractSubscribe(
-      { genericListener: onMessage },
-      eventType,
-      messageAction,
-      hashKey,
-      blockHeight,
-      indexingHeight
-    );
+    abstractSubscribe({ genericListener: onMessage }, eventType, options || {});
   }
 
   function abstractSubscribe(
     onMessage: CallBackWrapper,
     eventType: EventType,
-    messageAction?: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    options: SubscriptionOptions
   ) {
     const id = createID(),
       idUnsub = createID();
-    const paramQuery = getParamQuery(
-      eventType,
-      messageAction,
-      hashKey,
-      blockHeight,
-      indexingHeight
-    );
+    const paramQuery = getParamQuery(eventType, options);
     listeners[paramQuery] = listeners[paramQuery] || {
       status: QueryStatus.Disconnected,
       idUnsub: idUnsub,
@@ -505,36 +452,21 @@ export function createSubscriptionManager(
   function unsubscribe(
     onMessage?: MessageListener,
     eventType?: EventType,
-    messageAction?: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    options?: SubscriptionOptions
   ) {
     abstractUnsubscribe(
       { genericListener: onMessage },
       eventType,
-      messageAction,
-      hashKey,
-      blockHeight,
-      indexingHeight
+      options || {}
     );
   }
 
   function abstractUnsubscribe(
-    onMessage?: CallBackWrapper,
-    eventType?: EventType,
-    messageAction?: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    onMessage: CallBackWrapper | undefined,
+    eventType: EventType | undefined,
+    options: SubscriptionOptions
   ) {
-    const paramQuery = getParamQuery(
-      eventType,
-      messageAction,
-      hashKey,
-      blockHeight,
-      indexingHeight
-    );
+    const paramQuery = getParamQuery(eventType, options);
     const isGeneric = !paramQuery;
     const listenerGroups = isGeneric ? Object.keys(listeners) : [paramQuery];
     listenerGroups.forEach(function (query) {
@@ -548,16 +480,14 @@ export function createSubscriptionManager(
   }
 
   function unsubscribeAll() {
-    abstractUnsubscribe();
+    abstractUnsubscribe(undefined, undefined, {});
   }
 
   function getParamQuery(
-    eventType?: EventType,
-    messageAction?: string,
-    hashKey?: string,
-    blockHeight?: string,
-    indexingHeight?: string
+    eventType: EventType | undefined,
+    options: SubscriptionOptions
   ): string {
+    const { messageAction, hashKey, blockHeight, indexingHeight } = options;
     const paramMap = {
       'tm.event': eventType,
       'message.action': messageAction,
@@ -612,8 +542,7 @@ export function createSubscriptionManager(
    * @param event the event emitted by tendermint
    */
   function bubbleOnMessage(event: MessageEvent) {
-    const parsedData = JSON.parse(event.data);
-    const { error, id, result } = parsedData;
+    const { error, id, result } = JSON.parse(event.data);
     if (id === 1) {
       Object.values(listeners).forEach(function (cb) {
         if (cb.status === QueryStatus.Disconnecting)
@@ -631,7 +560,7 @@ export function createSubscriptionManager(
       // eslint-disable-next-line no-console
       console.error('Received error from server');
       // eslint-disable-next-line no-console
-      console.error(parsedData.error);
+      console.error(error);
       return;
     }
     const data = result.data as TendermintTxData,
