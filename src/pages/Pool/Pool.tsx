@@ -116,9 +116,9 @@ export default function Pool() {
     }
   }, [tokenA, tokenB]);
 
-  // open websocket while page is open
+  // close websocket after exiting page
+  // websocket will be opened upon first subscription
   useEffect(() => {
-    subscriptionManager.open();
     return () => subscriptionManager.close();
   }, []);
 
