@@ -155,16 +155,14 @@ export default function Pool() {
           return newTicks;
         });
       };
-      subscriptionManager.subscribeMessage(
-        onMessage,
-        EventType.EventTxValue,
-        'NewDeposit'
-      );
+      subscriptionManager.subscribeMessage(onMessage, EventType.EventTxValue, {
+        messageAction: 'NewDeposit',
+      });
       return () =>
         subscriptionManager.subscribeMessage(
           onMessage,
           EventType.EventTxValue,
-          'NewDeposit'
+          { messageAction: 'NewDeposit' }
         );
     }
   }, [tokenA, tokenB]);
