@@ -441,11 +441,17 @@ export function createSubscriptionManager(
       callBacks: [],
       id: createID(),
     };
+    // If disconnected, set back to disconnected and erase old disconnecting traces
+    if (listenerGroup.status === QueryStatus.Disconnecting) {
+      listenerGroup.status = QueryStatus.Disconnected;
+      idListenerMap[listenerGroup.idUnsub] = null;
+      listenerGroup.idUnsub = createID();
+    }
     listeners[paramQuery] = listenerGroup;
     idListenerMap[listenerGroup.id] = listenerGroup;
     idListenerMap[listenerGroup.idUnsub] = listenerGroup;
     listenerGroup.callBacks.push(onMessage);
-    if (isOpen()) {
+    if (isOpen() && listenerGroup.status === QueryStatus.Disconnected) {
       sendMessage('subscribe', paramQuery, listenerGroup.id);
       listenerGroup.status = QueryStatus.Connecting;
     } else if (!socket) {
@@ -509,7 +515,8 @@ export function createSubscriptionManager(
   function debounceUnsub() {
     clearTimeout(lastAbortTimeout);
     const emptyListeners = Object.entries(listeners).filter(
-      ([, group]) => !group.callBacks.length
+      ([, group]) =>
+        !group.callBacks.length && group.status === QueryStatus.Disconnected
     );
     if (emptyListeners.length && isOpen()) {
       lastAbortTimeout = setTimeout(
