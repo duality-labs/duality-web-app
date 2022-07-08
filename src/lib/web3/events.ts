@@ -56,6 +56,13 @@ export type MessageListener = (
   transactionEvents?: Array<{ [key: string]: string }>
 ) => void;
 
+interface CallBackWrapper {
+  genericListener?: MessageListener;
+  messageListener?: (event: { [key: string]: string }) => void;
+  // to compare with the action of each event and filter out those that don't match
+  messageAction?: string;
+}
+
 type MessageType = 'subscribe' | 'unsubscribe' | 'unsubscribeall';
 
 type SocketListenerType = 'open' | 'error' | 'close';
@@ -85,6 +92,42 @@ export enum EventType {
 }
 
 export interface SubscriptionManager {
+  /**
+   * Adds an event listener that only listens to message actions
+   * @param onMessage the function listening for the event
+   * @param eventType the event type listening to (when/how the event will get emitted)
+   * @param messageAction the name of the event/message
+   * @param hashKey hash key of transaction
+   * @param blockHeight height of block of transaction
+   * @param indexingHeight used for indexing FinalizeBlock events (sorting rather than filtering)
+   */
+  readonly subscribeMessage: (
+    onMessage: (event: { [key: string]: string }) => void,
+    eventType: EventType,
+    messageAction: string,
+    hashKey?: string,
+    blockHeight?: string,
+    indexingHeight?: string
+  ) => void;
+
+  /**
+   * Removes an event listener that only listens to message actions
+   * @param onMessage the function listening for the event
+   * @param eventType the event type listening to (when/how the event will get emitted)
+   * @param messageAction the name of the event/message
+   * @param hashKey hash key of transaction
+   * @param blockHeight height of block of transaction
+   * @param indexingHeight used for indexing FinalizeBlock events (sorting rather than filtering)
+   */
+  readonly unsubscribeMessage: (
+    onMessage: (event: { [key: string]: string }) => void,
+    eventType?: EventType,
+    messageAction?: string,
+    hashKey?: string,
+    blockHeight?: string,
+    indexingHeight?: string
+  ) => void;
+
   /**
    * Adds an event listener
    * @param onMessage the function listening for the event
@@ -195,7 +238,7 @@ export function createSubscriptionManager(
   let socket: WebSocket | null = null;
   const listeners: {
     [query: string]: {
-      callBacks: Array<MessageListener>;
+      callBacks: Array<CallBackWrapper>;
       status: QueryStatus;
       id: number;
     };
@@ -226,6 +269,8 @@ export function createSubscriptionManager(
     addSocketListener,
     removeSocketListener,
     isOpen,
+    subscribeMessage,
+    unsubscribeMessage,
   } as SubscriptionManager;
   Object.defineProperty(manager, 'onopen', {
     set: function (value) {
@@ -354,6 +399,44 @@ export function createSubscriptionManager(
     socket = null;
   }
 
+  function subscribeMessage(
+    onMessage: (event: { [key: string]: string }) => void,
+    eventType: EventType,
+    messageAction: string,
+    hashKey?: string,
+    blockHeight?: string,
+    indexingHeight?: string
+  ) {
+    registerMessage(
+      'subscribe',
+      { messageListener: onMessage, messageAction: messageAction },
+      eventType,
+      messageAction,
+      hashKey,
+      blockHeight,
+      indexingHeight
+    );
+  }
+
+  function unsubscribeMessage(
+    onMessage: (event: { [key: string]: string }) => void,
+    eventType?: EventType,
+    messageAction?: string,
+    hashKey?: string,
+    blockHeight?: string,
+    indexingHeight?: string
+  ) {
+    registerMessage(
+      'unsubscribe',
+      { messageListener: onMessage },
+      eventType,
+      messageAction,
+      hashKey,
+      blockHeight,
+      indexingHeight
+    );
+  }
+
   function subscribe(
     onMessage: MessageListener,
     eventType: EventType,
@@ -364,15 +447,13 @@ export function createSubscriptionManager(
   ) {
     registerMessage(
       'subscribe',
-      onMessage,
+      { genericListener: onMessage },
       eventType,
       messageAction,
       hashKey,
       blockHeight,
       indexingHeight
     );
-    // if the socket hasn't been initialized then open it after the the listener has been registered
-    if (!socket) open();
   }
 
   function unsubscribe(
@@ -385,7 +466,7 @@ export function createSubscriptionManager(
   ) {
     registerMessage(
       'unsubscribe',
-      onMessage,
+      { genericListener: onMessage },
       eventType,
       messageAction,
       hashKey,
@@ -395,7 +476,7 @@ export function createSubscriptionManager(
   }
 
   function unsubscribeAll() {
-    registerMessage('unsubscribeall');
+    registerMessage('unsubscribeall', {});
   }
 
   /**
@@ -403,7 +484,7 @@ export function createSubscriptionManager(
    */
   function registerMessage(
     method: MessageType,
-    onMessage?: MessageListener,
+    onMessage?: CallBackWrapper,
     eventType?: EventType,
     messageAction?: string,
     hashKey?: string,
@@ -424,7 +505,7 @@ export function createSubscriptionManager(
    */
   function registerParam(
     method: MessageType,
-    onMessage: MessageListener | undefined,
+    onMessage: CallBackWrapper | undefined,
     paramMap: { [key: string]: string | undefined }
   ) {
     const paramQuery = Object.entries(paramMap)
@@ -444,7 +525,7 @@ export function createSubscriptionManager(
    */
   function registerQuery(
     method: MessageType,
-    onMessage: MessageListener | undefined,
+    onMessage: CallBackWrapper | undefined,
     paramQuery: string,
     isGeneric: boolean
   ) {
@@ -471,7 +552,13 @@ export function createSubscriptionManager(
               paramQuery,
               listenerGroup,
             ]) {
-              if (listenerGroup.callBacks.some((cb) => cb === onMessage)) {
+              if (
+                listenerGroup.callBacks.some(
+                  (cb) =>
+                    cb.genericListener === onMessage.genericListener ||
+                    cb.messageListener === onMessage.messageListener
+                )
+              ) {
                 // send sub query to matching listener groups
                 registerQuery(method, onMessage, paramQuery, false);
               }
@@ -484,7 +571,9 @@ export function createSubscriptionManager(
         // if no callback is supplied the remove everything
         if (onMessage) {
           listenerGroup.callBacks = listenerGroup.callBacks.filter(
-            (cb) => cb !== onMessage
+            (cb) =>
+              cb.genericListener !== onMessage.genericListener &&
+              cb.messageListener !== onMessage.messageListener
           );
           // if there are more functions listening abort
           if (listenerGroup.callBacks.length) return;
@@ -499,6 +588,8 @@ export function createSubscriptionManager(
         });
         break;
     }
+    // if the socket hasn't been initialized then open it after the the listener has been registered
+    if (!socket) open();
   }
 
   function sendMessage(method: string, paramQuery: string) {
@@ -544,8 +635,6 @@ export function createSubscriptionManager(
     }
     const data = result.data as TendermintTxData,
       events = result.events as TendermintEvent;
-    let transactionEvents: Array<{ [key: string]: string }> | undefined =
-      undefined;
     // set status after the original handshake
     if (!data || !events) {
       listenerGroup.status = QueryStatus.Connected;
@@ -553,22 +642,24 @@ export function createSubscriptionManager(
     }
     if (data.type === 'tendermint/event/Tx') {
       const events = data.value?.TxResult?.result?.events;
-      transactionEvents = events.map(function (event) {
-        return event.attributes.reduce<{ [key: string]: string }>(function (
-          result,
-          { key, value }
-        ) {
+      events.forEach(function (originalEvent) {
+        const event = originalEvent.attributes.reduce<{
+          [key: string]: string;
+        }>(function (result, { key, value }) {
           result[Buffer.from(key, 'base64').toString()] = Buffer.from(
             value,
             'base64'
           ).toString();
           return result;
-        },
-        {});
+        }, {});
+        listenerGroup.callBacks.forEach(function (wrapper) {
+          if (wrapper.messageListener && wrapper.messageAction === event.action)
+            wrapper.messageListener(event);
+        });
       });
     }
-    listenerGroup.callBacks.forEach(function (callBack) {
-      callBack(data, events, event, transactionEvents);
+    listenerGroup.callBacks.forEach(function (wrapper) {
+      if (wrapper.genericListener) wrapper.genericListener(data, events, event);
     });
   }
 }
