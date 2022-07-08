@@ -116,11 +116,14 @@ export default function Pool() {
     }
   }, [tokenA, tokenB]);
 
-  // close websocket after exiting page
-  // websocket will be opened upon first subscription
+  // open websocket while tokens are selected
+  const hasTokens = !!(tokenA && tokenB);
   useEffect(() => {
-    return () => subscriptionManager.close();
-  }, []);
+    if (hasTokens) {
+      subscriptionManager.open();
+      return () => subscriptionManager.close();
+    }
+  }, [hasTokens]);
 
   // subscribe to certain events
   useEffect(() => {
