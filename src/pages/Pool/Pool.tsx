@@ -125,15 +125,47 @@ export default function Pool() {
   // subscribe to certain events
   useEffect(() => {
     if (tokenA && tokenB) {
-      const onMessage: ((event: { [key: string]: string }) => void) = (event) => {
-        setTicks((ticks=[]) => {
-          // todo: calculate new ticks from events
-          console.log('event', event)
-          return [...ticks];
-        })
-      }
-      subscriptionManager.subscribeMessage(onMessage, EventType.EventTxValue, 'NewDeposit');
-      return () => subscriptionManager.subscribeMessage(onMessage, EventType.EventTxValue, 'NewDeposit');
+      const onMessage: (event: { [key: string]: string }) => void = (event) => {
+        setTicks((ticks = []) => {
+          // replace ticks
+          const newTick = {
+            token0: event.Token0,
+            token1: event.Token1,
+            price0: event.Price0,
+            price1: event.Price1,
+            fee: event.Fee,
+            reserves0: event.NewReserves0,
+            reserves1: event.NewReserves1,
+          };
+          const matchingTickIndex = ticks.findIndex((tick) => {
+            return (
+              tick.token0 === newTick.token0 &&
+              tick.token1 === newTick.token1 &&
+              tick.price0 === newTick.price0 &&
+              tick.price1 === newTick.price1 &&
+              tick.fee === newTick.fee
+            );
+          });
+          const newTicks = ticks.slice();
+          if (matchingTickIndex >= 0) {
+            newTicks[matchingTickIndex] = newTick;
+          } else {
+            newTicks.push(newTick);
+          }
+          return newTicks;
+        });
+      };
+      subscriptionManager.subscribeMessage(
+        onMessage,
+        EventType.EventTxValue,
+        'NewDeposit'
+      );
+      return () =>
+        subscriptionManager.subscribeMessage(
+          onMessage,
+          EventType.EventTxValue,
+          'NewDeposit'
+        );
     }
   }, [tokenA, tokenB]);
 
