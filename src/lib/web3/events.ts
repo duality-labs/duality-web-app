@@ -233,8 +233,8 @@ export function createSubscriptionManager(
       id: number;
     };
   } = {};
-  const idListenerMap: {
-    [id: number]: typeof listeners[keyof typeof listeners];
+  let idListenerMap: {
+    [id: number]: typeof listeners[keyof typeof listeners] | null;
   } = {};
   const openListeners: Array<() => void> = [];
   const closeListeners: Array<() => void> = [];
@@ -325,7 +325,12 @@ export function createSubscriptionManager(
       currentSocket.addEventListener('message', bubbleOnMessage);
       Object.entries(listeners).forEach(([paramQuery, group]) => {
         // refresh ids after a new connection
+        idListenerMap[group.idUnsub] = null;
+        idListenerMap[group.id] = null;
         group.id = createID();
+        group.idUnsub = createID();
+        idListenerMap[group.idUnsub] = group;
+        idListenerMap[group.id] = group;
         // send pending requests
         if (
           group.status === QueryStatus.Disconnected &&
@@ -388,6 +393,7 @@ export function createSubscriptionManager(
   function close() {
     unsubscribeAll();
     if (isOpen()) socket?.close();
+    idListenerMap = {};
     socket = null;
   }
 
@@ -428,21 +434,20 @@ export function createSubscriptionManager(
     eventType: EventType,
     options: SubscriptionOptions
   ) {
-    const id = createID(),
-      idUnsub = createID();
     const paramQuery = getParamQuery(eventType, options);
-    listeners[paramQuery] = listeners[paramQuery] || {
+    const listenerGroup = listeners[paramQuery] || {
       status: QueryStatus.Disconnected,
-      idUnsub: idUnsub,
+      idUnsub: createID(),
       callBacks: [],
-      id: id,
+      id: createID(),
     };
-    idListenerMap[id] = listeners[paramQuery];
-    idListenerMap[idUnsub] = listeners[paramQuery];
-    listeners[paramQuery].callBacks.push(onMessage);
+    listeners[paramQuery] = listenerGroup;
+    idListenerMap[listenerGroup.id] = listenerGroup;
+    idListenerMap[listenerGroup.idUnsub] = listenerGroup;
+    listenerGroup.callBacks.push(onMessage);
     if (isOpen()) {
-      sendMessage('subscribe', paramQuery, id);
-      listeners[paramQuery].status = QueryStatus.Connecting;
+      sendMessage('subscribe', paramQuery, listenerGroup.id);
+      listenerGroup.status = QueryStatus.Connecting;
     } else if (!socket) {
       open();
     }
@@ -548,6 +553,7 @@ export function createSubscriptionManager(
         if (cb.status === QueryStatus.Disconnecting)
           cb.status = QueryStatus.Disconnected;
       });
+      idListenerMap = {};
       return;
     }
     const listenerGroup = idListenerMap[id];
