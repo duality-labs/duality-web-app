@@ -427,7 +427,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * @tags Query
    * @name QueryTickAll
    * @summary Queries a list of Tick items.
-   * @request GET:/duality/duality/tick
+   * @request GET:/duality/duality/ticks
    */
   queryTickAll = (
     query?: {
@@ -445,7 +445,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     params: RequestParams = {},
   ) =>
     this.request<DualityQueryAllTickResponse, RpcStatus>({
-      path: `/duality/duality/tick`,
+      path: `/duality/duality/ticks`,
       method: "GET",
       query: query,
       format: "json",
@@ -458,7 +458,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * @tags Query
    * @name QueryTickAllByTokens
    * @summary Queries a list of Tick items by tokens.
-   * @request GET:/duality/duality/tick/{token0}/{token1}
+   * @request GET:/duality/duality/ticks/{token0}/{token1}
    */
   queryTickAllByTokens = (
     token0: string,
@@ -476,7 +476,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     params: RequestParams = {},
   ) =>
     this.request<DualityQueryAllTickResponse, RpcStatus>({
-      path: `/duality/duality/tick/${token0}/${token1}`,
+      path: `/duality/duality/ticks/${token0}/${token1}`,
       method: "GET",
       query: query,
       format: "json",
@@ -489,7 +489,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * @tags Query
    * @name QueryTick
    * @summary Queries a Tick by index.
-   * @request GET:/duality/duality/tick/{token0}/{token1}/{price0}/{price1}/{fee}
+   * @request GET:/duality/duality/ticks/{token0}/{token1}/{price0}/{price1}/{fee}
    */
   queryTick = (
     token0: string,
@@ -500,7 +500,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     params: RequestParams = {},
   ) =>
     this.request<DualityQueryGetTickResponse, RpcStatus>({
-      path: `/duality/duality/tick/${token0}/${token1}/${price0}/${price1}/${fee}`,
+      path: `/duality/duality/ticks/${token0}/${token1}/${price0}/${price1}/${fee}`,
       method: "GET",
       format: "json",
       ...params,
