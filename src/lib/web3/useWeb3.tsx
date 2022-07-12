@@ -2,12 +2,40 @@ import * as React from 'react';
 import invariant from 'invariant';
 
 import { SigningStargateClient } from '@cosmjs/stargate';
-import { Window as KeplrWindow } from '@keplr-wallet/types';
+import { ChainInfo, Window as KeplrWindow } from '@keplr-wallet/types';
 
 const { REACT_APP__RPC_URL, REACT_APP__CHAIN_ID } = process.env;
 
 const chainId = REACT_APP__CHAIN_ID || '';
 const rpcEndpoint = REACT_APP__RPC_URL || '';
+const restEndpoint = REACT_APP__RPC_URL || '';
+
+const currency = {
+  coinDenom: 'DUAL',
+  coinMinimalDenom: 'udual',
+  coinDecimals: 6,
+};
+
+const chainInfo: ChainInfo = {
+  chainId,
+  chainName: 'Duality testnet',
+  rpc: rpcEndpoint,
+  rest: restEndpoint,
+  currencies: [currency],
+  stakeCurrency: currency,
+  feeCurrencies: [currency],
+  bip44: {
+    coinType: 118,
+  },
+  bech32Config: {
+    bech32PrefixAccAddr: 'dual',
+    bech32PrefixAccPub: 'dualpub',
+    bech32PrefixValAddr: 'dualvaloper',
+    bech32PrefixValPub: 'dualvaloperpub',
+    bech32PrefixConsAddr: 'dualvalcons',
+    bech32PrefixConsPub: 'dualvalconspub',
+  },
+};
 
 declare global {
   interface Window extends KeplrWindow {
@@ -44,7 +72,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
   const connectWallet = async (keplr: KeplrWindow['keplr'] | null) => {
     invariant(chainId, `Invalid chain id: ${chainId}`);
     invariant(keplr, 'Keplr extension is not installed or enabled');
-    await keplr.experimentalSuggestChain({});
+    await keplr.experimentalSuggestChain(chainInfo);
     await keplr.enable(chainId);
     const offlineSigner = keplr.getOfflineSigner(chainId);
     const accounts = await offlineSigner.getAccounts();
