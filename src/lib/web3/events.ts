@@ -224,6 +224,12 @@ const startingReconnectInterval = 2e3,
 
 const unsubDebounceInterval = 1e3;
 
+let socketClass = WebSocket;
+
+export function setSocketClass(newSocketClass: typeof WebSocket) {
+  socketClass = newSocketClass;
+}
+
 export function createSubscriptionManager(
   url: string,
   onMessage?: MessageListener,
@@ -323,7 +329,7 @@ export function createSubscriptionManager(
 
   function open() {
     if (isOpen()) throw new Error('Socket is already open');
-    const currentSocket = new WebSocket(url);
+    const currentSocket = new socketClass(url);
     socket = currentSocket;
     socket.addEventListener('open', function (event) {
       reconnectInterval = startingReconnectInterval;
