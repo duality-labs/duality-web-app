@@ -37,6 +37,12 @@ interface TendermintEvent {
   [key: string]: Array<string>;
 }
 
+interface MessageActionEvent {
+  [key: string]: string | undefined;
+  action?: string;
+  module?: string;
+}
+
 interface GenericTendermintData {
   type: string;
   value: object;
@@ -68,12 +74,12 @@ export type MessageListener = (
   data: TendermintDataType,
   event: TendermintEvent,
   originalEvent: MessageEvent,
-  transactionEvents?: Array<{ [key: string]: string }>
+  transactionEvents?: Array<MessageActionEvent>
 ) => void;
 
 interface CallBackWrapper {
   genericListener?: MessageListener;
-  messageListener?: (event: { [key: string]: string }) => void;
+  messageListener?: (event: MessageActionEvent) => void;
   // to compare with the action of each event and filter out those that don't match
   messageAction?: string;
 }
@@ -114,7 +120,7 @@ export interface SubscriptionManager {
    * @param options SubscriptionOptions
    */
   readonly subscribeMessage: (
-    onMessage: (event: { [key: string]: string }) => void,
+    onMessage: (event: MessageActionEvent) => void,
     eventType: EventType,
     options?: SubscriptionOptions
   ) => void;
@@ -126,7 +132,7 @@ export interface SubscriptionManager {
    * @param options SubscriptionOptions
    */
   readonly unsubscribeMessage: (
-    onMessage: (event: { [key: string]: string }) => void,
+    onMessage: (event: MessageActionEvent) => void,
     eventType?: EventType,
     options?: SubscriptionOptions
   ) => void;
@@ -398,7 +404,7 @@ export function createSubscriptionManager(
   }
 
   function subscribeMessage(
-    onMessage: (event: { [key: string]: string }) => void,
+    onMessage: (event: MessageActionEvent) => void,
     eventType: EventType,
     options?: SubscriptionOptions
   ) {
@@ -410,7 +416,7 @@ export function createSubscriptionManager(
   }
 
   function unsubscribeMessage(
-    onMessage: (event: { [key: string]: string }) => void,
+    onMessage: (event: MessageActionEvent) => void,
     eventType?: EventType,
     options?: SubscriptionOptions
   ) {
