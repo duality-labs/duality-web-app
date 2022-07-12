@@ -7,7 +7,7 @@ enum QueryStatus {
   Connected,
 }
 
-interface SubscriptionOptions {
+export interface SubscriptionOptions {
   /**
    * messageAction the name of the event/message
    */
@@ -26,7 +26,7 @@ interface SubscriptionOptions {
   indexingHeight?: string;
 }
 
-interface TendermintEvent {
+export interface TendermintEvent {
   'message.action': Array<string>;
   'tm.event': Array<string>;
   'tx.acc_seq': Array<string>;
@@ -37,18 +37,18 @@ interface TendermintEvent {
   [key: string]: Array<string>;
 }
 
-interface MessageActionEvent {
+export interface MessageActionEvent {
   [key: string]: string | undefined;
   action?: string;
   module?: string;
 }
 
-interface GenericTendermintData {
+export interface GenericTendermintData {
   type: string;
   value: object;
 }
 
-interface TendermintTxData {
+export interface TendermintTxData {
   type: 'tendermint/event/Tx';
   value: {
     TxResult: {
@@ -68,7 +68,7 @@ interface TendermintTxData {
   };
 }
 
-type TendermintDataType = TendermintTxData | GenericTendermintData;
+export type TendermintDataType = TendermintTxData | GenericTendermintData;
 
 export type MessageListener = (
   data: TendermintDataType,
