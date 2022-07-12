@@ -611,7 +611,10 @@ export function createSubscriptionManager(
           return result;
         }, {});
         listenerGroup.callBacks.forEach(function (wrapper) {
-          if (wrapper.messageListener && wrapper.messageAction === event.action)
+          if (
+            wrapper.messageListener &&
+            (wrapper.messageAction ?? event.action) === event.action
+          )
             wrapper.messageListener(event);
         });
       });
