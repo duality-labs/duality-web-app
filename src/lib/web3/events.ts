@@ -180,7 +180,7 @@ export interface SubscriptionManager {
   /**
    * Use this setter to add an event listener for when the socket gets connected
    */
-  onopen: () => void;
+  onopen: (ev: Event) => void;
 
   /**
    * Use this setter to add an event listener for when there is an error with the socket
@@ -190,7 +190,7 @@ export interface SubscriptionManager {
   /**
    * Use this setter to add an event listener for when the socket gets closed
    */
-  onclose: () => void;
+  onclose: (ev: Event) => void;
 
   /**
    * Adds an event listener for socket events (interchangeable with the event setters)
@@ -242,8 +242,8 @@ export function createSubscriptionManager(
   let idListenerMap: {
     [id: number]: typeof listeners[keyof typeof listeners] | null;
   } = {};
-  const openListeners: Array<() => void> = [];
-  const closeListeners: Array<() => void> = [];
+  const openListeners: Array<(ev: Event) => void> = [];
+  const closeListeners: Array<(ev: Event) => void> = [];
   const errorListeners: Array<(ev: Event) => void> = [];
   let reconnectInterval = startingReconnectInterval;
   let lastAbortTimeout = -1;
@@ -325,7 +325,7 @@ export function createSubscriptionManager(
     if (isOpen()) throw new Error('Socket is already open');
     const currentSocket = new WebSocket(url);
     socket = currentSocket;
-    socket.addEventListener('open', function () {
+    socket.addEventListener('open', function (event) {
       reconnectInterval = startingReconnectInterval;
       if (currentSocket !== socket) return; // socket has been altered
       currentSocket.addEventListener('message', bubbleOnMessage);
@@ -348,7 +348,7 @@ export function createSubscriptionManager(
       });
       openListeners.forEach(function (cb) {
         try {
-          cb();
+          cb(event);
         } catch (err) {
           // eslint-disable-next-line no-console
           console.error('Failed to execute open listener:');
@@ -385,7 +385,7 @@ export function createSubscriptionManager(
       }
       closeListeners.forEach(function (cb) {
         try {
-          cb();
+          cb(event);
         } catch (err) {
           // eslint-disable-next-line no-console
           console.error('Failed to execute close listener:');
