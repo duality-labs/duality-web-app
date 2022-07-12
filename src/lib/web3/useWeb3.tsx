@@ -1,11 +1,13 @@
 import * as React from 'react';
 import invariant from 'invariant';
 
+import { SigningStargateClient } from '@cosmjs/stargate';
 import { Window as KeplrWindow } from '@keplr-wallet/types';
 
-const { REACT_APP__CHAIN_ID } = process.env;
+const { REACT_APP__RPC_URL, REACT_APP__CHAIN_ID } = process.env;
 
 const chainId = REACT_APP__CHAIN_ID || '';
+const rpcEndpoint = REACT_APP__RPC_URL || '';
 
 declare global {
   interface Window extends KeplrWindow {
@@ -16,12 +18,14 @@ declare global {
 interface Web3ContextValue {
   provider: KeplrWindow['keplr'] | null;
   connectWallet: (() => void) | null;
+  getSigningClient: (() => Promise<SigningStargateClient | null>) | null;
   address: string | null;
 }
 
 const Web3Context = React.createContext<Web3ContextValue>({
   provider: null,
   connectWallet: null,
+  getSigningClient: null,
   address: null,
 });
 
@@ -74,6 +78,18 @@ export function Web3Provider({ children }: Web3ContextProps) {
         provider,
         connectWallet: () => connectWallet(provider),
         address,
+        getSigningClient: async () => {
+          const keplr = provider;
+          if (keplr && chainId) {
+            await keplr.enable(chainId);
+            const offlineSigner = keplr.getOfflineSigner(chainId);
+            return await SigningStargateClient.connectWithSigner(
+              rpcEndpoint,
+              offlineSigner
+            );
+          }
+          return null;
+        },
       }}
     >
       {children}
