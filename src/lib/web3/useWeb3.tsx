@@ -2,7 +2,9 @@ import * as React from 'react';
 import invariant from 'invariant';
 
 import { SigningStargateClient } from '@cosmjs/stargate';
-import { ChainInfo, Window as KeplrWindow } from '@keplr-wallet/types';
+import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
+
+export type Provider = Keplr;
 
 const {
   REACT_APP__CHAIN_ID,
@@ -14,9 +16,9 @@ const {
   REACT_APP__BECH_PREFIX,
 } = process.env;
 
-const chainId = REACT_APP__CHAIN_ID || '';
+export const chainId = REACT_APP__CHAIN_ID || '';
 const chainName = REACT_APP__CHAIN_NAME || '';
-const rpcEndpoint = REACT_APP__RPC_API || '';
+export const rpcEndpoint = REACT_APP__RPC_API || '';
 const restEndpoint = REACT_APP__REST_API || '';
 const coinDenom = REACT_APP__COIN_DENOM || '';
 const coinMinimalDenom =
@@ -52,12 +54,12 @@ const chainInfo: ChainInfo = {
 
 declare global {
   interface Window extends KeplrWindow {
-    keplr: KeplrWindow['keplr'];
+    keplr: Provider;
   }
 }
 
 interface Web3ContextValue {
-  provider: KeplrWindow['keplr'] | null;
+  provider: Provider | null;
   connectWallet: (() => void) | null;
   getSigningClient: (() => Promise<SigningStargateClient | null>) | null;
   address: string | null;
@@ -77,12 +79,10 @@ interface Web3ContextProps {
 const LOCAL_STORAGE_WALLET_CONNECTED_KEY = 'duality.web3.walletConnected';
 
 export function Web3Provider({ children }: Web3ContextProps) {
-  const [provider, setProvider] = React.useState<KeplrWindow['keplr'] | null>(
-    null
-  );
+  const [provider, setProvider] = React.useState<Provider | null>(null);
   const [address, setAddress] = React.useState<string | null>(null);
 
-  const connectWallet = async (keplr: KeplrWindow['keplr'] | null) => {
+  const connectWallet = async (keplr: Provider | null) => {
     invariant(chainId, `Invalid chain id: ${chainId}`);
     invariant(keplr, 'Keplr extension is not installed or enabled');
     await keplr.experimentalSuggestChain(chainInfo);
