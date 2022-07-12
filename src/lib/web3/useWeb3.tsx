@@ -15,8 +15,7 @@ declare global {
 
 interface Web3ContextValue {
   provider: KeplrWindow['keplr'] | null;
-  // eslint-disable-next-line
-  connectWallet: (() => any) | null;
+  connectWallet: (() => void) | null;
   address: string | null;
 }
 
