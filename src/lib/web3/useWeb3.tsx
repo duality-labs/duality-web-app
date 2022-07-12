@@ -1,16 +1,20 @@
 import * as React from 'react';
 import invariant from 'invariant';
 
-import { ethers } from 'ethers';
+import { Window as KeplrWindow } from '@keplr-wallet/types';
+
+const { REACT_APP__CHAIN_ID } = process.env;
+
+const chainId = REACT_APP__CHAIN_ID || '';
 
 declare global {
-  interface Window {
-    ethereum: ethers.providers.ExternalProvider | undefined;
+  interface Window extends KeplrWindow {
+    keplr: KeplrWindow['keplr'];
   }
 }
 
 interface Web3ContextValue {
-  provider: ethers.providers.Web3Provider | null;
+  provider: KeplrWindow['keplr'] | null;
   // eslint-disable-next-line
   connectWallet: (() => any) | null;
   address: string | null;
@@ -29,17 +33,19 @@ interface Web3ContextProps {
 const LOCAL_STORAGE_WALLET_CONNECTED_KEY = 'duality.web3.walletConnected';
 
 export function Web3Provider({ children }: Web3ContextProps) {
-  const [provider, setProvider] =
-    React.useState<ethers.providers.Web3Provider | null>(null);
+  const [provider, setProvider] = React.useState<KeplrWindow['keplr'] | null>(
+    null
+  );
   const [address, setAddress] = React.useState<string | null>(null);
 
-  const connectWallet = async (
-    provider: ethers.providers.Web3Provider | null
-  ) => {
-    invariant(provider, 'provider not set');
-    await provider.send('eth_requestAccounts', []);
-    const signerAddress = await provider.getSigner().getAddress();
-    const address = ethers.utils.getAddress(signerAddress);
+  const connectWallet = async (keplr: KeplrWindow['keplr'] | null) => {
+    invariant(chainId, `Invalid chain id: ${chainId}`);
+    invariant(keplr, 'Keplr extension is not installed or enabled');
+    await keplr.experimentalSuggestChain({});
+    await keplr.enable(chainId);
+    const offlineSigner = keplr.getOfflineSigner(chainId);
+    const accounts = await offlineSigner.getAccounts();
+    const address = accounts[0].address;
     setAddress(address);
 
     localStorage.setItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY, 'true');
@@ -47,11 +53,8 @@ export function Web3Provider({ children }: Web3ContextProps) {
 
   React.useEffect(() => {
     async function run() {
-      if (window.ethereum) {
-        const provider = new ethers.providers.Web3Provider(
-          window.ethereum,
-          'any'
-        );
+      if (window.keplr && window.getOfflineSigner) {
+        const provider = window.keplr;
         if (localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY)) {
           try {
             await connectWallet(provider);
