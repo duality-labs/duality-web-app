@@ -4,21 +4,34 @@ import invariant from 'invariant';
 import { SigningStargateClient } from '@cosmjs/stargate';
 import { ChainInfo, Window as KeplrWindow } from '@keplr-wallet/types';
 
-const { REACT_APP__RPC_URL, REACT_APP__CHAIN_ID } = process.env;
+const {
+  REACT_APP__CHAIN_ID,
+  REACT_APP__CHAIN_NAME,
+  REACT_APP__RPC_API,
+  REACT_APP__REST_API,
+  REACT_APP__COIN_DENOM,
+  REACT_APP__COIN_MIN_DENOM,
+  REACT_APP__BECH_PREFIX,
+} = process.env;
 
 const chainId = REACT_APP__CHAIN_ID || '';
-const rpcEndpoint = REACT_APP__RPC_URL || '';
-const restEndpoint = REACT_APP__RPC_URL || '';
+const chainName = REACT_APP__CHAIN_NAME || '';
+const rpcEndpoint = REACT_APP__RPC_API || '';
+const restEndpoint = REACT_APP__REST_API || '';
+const coinDenom = REACT_APP__COIN_DENOM || '';
+const coinMinimalDenom =
+  REACT_APP__COIN_MIN_DENOM || `u${coinDenom.toLowerCase()}`;
+const bech32Prefix = REACT_APP__BECH_PREFIX || coinDenom.toLowerCase();
 
 const currency = {
-  coinDenom: 'DUAL',
-  coinMinimalDenom: 'udual',
+  coinDenom,
+  coinMinimalDenom,
   coinDecimals: 6,
 };
 
 const chainInfo: ChainInfo = {
   chainId,
-  chainName: 'Duality testnet',
+  chainName,
   rpc: rpcEndpoint,
   rest: restEndpoint,
   currencies: [currency],
@@ -28,12 +41,12 @@ const chainInfo: ChainInfo = {
     coinType: 118,
   },
   bech32Config: {
-    bech32PrefixAccAddr: 'dual',
-    bech32PrefixAccPub: 'dualpub',
-    bech32PrefixValAddr: 'dualvaloper',
-    bech32PrefixValPub: 'dualvaloperpub',
-    bech32PrefixConsAddr: 'dualvalcons',
-    bech32PrefixConsPub: 'dualvalconspub',
+    bech32PrefixAccAddr: `${bech32Prefix}`,
+    bech32PrefixAccPub: `${bech32Prefix}pub`,
+    bech32PrefixValAddr: `${bech32Prefix}valoper`,
+    bech32PrefixValPub: `${bech32Prefix}valoperpub`,
+    bech32PrefixConsAddr: `${bech32Prefix}valcons`,
+    bech32PrefixConsPub: `${bech32Prefix}valconspub`,
   },
 };
 
