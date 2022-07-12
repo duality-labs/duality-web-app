@@ -1,18 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { PairRequest, PairResult } from './index';
-
-function sendSwap({
-  tokenA,
-  tokenB,
-  valueA,
-  valueB,
-}: PairRequest): Promise<PairResult> {
-  return new Promise(function (resolve, reject) {
-    if (!tokenA || !tokenB || (!valueA && !valueB))
-      return reject(new Error('Invalid Input'));
-    reject('Not yet implemented');
-  });
-}
 
 /**
  * Sends a transaction request
@@ -24,33 +11,9 @@ export function useSwap(request?: PairRequest): {
   isValidating: boolean;
   error?: string;
 } {
-  const [data, setData] = useState<PairResult>();
-  const [validating, setValidating] = useState(false);
-  const [error, setError] = useState<string>();
-
-  useEffect(() => {
-    if (!request) return onError('Missing Tokens and value');
-    const { tokenA, tokenB, valueA, valueB } = request;
-    if (!tokenA || !tokenB) return onError('Missing token pair');
-    if (!valueA && !valueB) return onError('Missing value');
-    setValidating(true);
-    setError(undefined);
-    setData(undefined);
-    sendSwap(request)
-      .then(function (result: PairResult) {
-        setValidating(false);
-        setData(result);
-      })
-      .catch(function (err: Error) {
-        onError(err?.message ?? 'Unknown error');
-      });
-
-    function onError(message?: string) {
-      setValidating(false);
-      setData(undefined);
-      setError(message);
-    }
-  }, [request]);
+  const [data] = useState<PairResult>();
+  const [validating] = useState(false);
+  const [error] = useState<string>();
 
   return { data, isValidating: validating, error };
 }
