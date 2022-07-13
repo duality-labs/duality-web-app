@@ -132,7 +132,7 @@ export interface SubscriptionManager {
    * @param options SubscriptionOptions
    */
   readonly unsubscribeMessage: (
-    onMessage: (event: MessageActionEvent) => void,
+    onMessage?: (event: MessageActionEvent) => void,
     eventType?: EventType,
     options?: SubscriptionOptions
   ) => void;
@@ -421,7 +421,7 @@ export function createSubscriptionManager(
   }
 
   function unsubscribeMessage(
-    onMessage: (event: MessageActionEvent) => void,
+    onMessage?: (event: MessageActionEvent) => void,
     eventType?: EventType,
     options?: SubscriptionOptions
   ) {
@@ -494,9 +494,10 @@ export function createSubscriptionManager(
     listenerGroups.forEach(function (query) {
       const group = listeners[query];
       if (!group) return;
-      group.callBacks = onMessage
-        ? group.callBacks.filter((cb) => !isSameWrapper(cb, onMessage))
-        : [];
+      group.callBacks =
+        onMessage?.genericListener || onMessage?.messageListener
+          ? group.callBacks.filter((cb) => !isSameWrapper(cb, onMessage))
+          : [];
     });
     debounceUnsub();
   }
@@ -632,7 +633,15 @@ function createID() {
 }
 
 function isSameWrapper(wrapper: CallBackWrapper, other: CallBackWrapper) {
-  if (wrapper.genericListener === other.genericListener) return true;
-  if (wrapper.messageListener === other.messageListener) return true;
+  if (
+    wrapper.genericListener === other.genericListener &&
+    wrapper.genericListener
+  )
+    return true;
+  if (
+    wrapper.messageListener === other.messageListener &&
+    wrapper.messageListener
+  )
+    return true;
   return false;
 }
