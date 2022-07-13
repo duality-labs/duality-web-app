@@ -1,7 +1,8 @@
 import * as React from 'react';
 import invariant from 'invariant';
 
-import { SigningStargateClient } from '@cosmjs/stargate';
+import { Registry } from '@cosmjs/proto-signing';
+import { defaultRegistryTypes, SigningStargateClient } from '@cosmjs/stargate';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
 
 export type Provider = Keplr;
@@ -51,6 +52,12 @@ const chainInfo: ChainInfo = {
     bech32PrefixConsPub: `${bech32Prefix}valconspub`,
   },
 };
+
+const registry = new Registry([
+  ...defaultRegistryTypes,
+  // custom Msg definitions go here like
+  // ['/duality/ticks', Msg]
+]);
 
 declare global {
   interface Window extends KeplrWindow {
@@ -126,7 +133,8 @@ export function Web3Provider({ children }: Web3ContextProps) {
             const offlineSigner = keplr.getOfflineSigner(chainId);
             return await SigningStargateClient.connectWithSigner(
               rpcEndpoint,
-              offlineSigner
+              offlineSigner,
+              { registry }
             );
           }
           return null;
