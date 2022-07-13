@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   assertIsDeliverTxSuccess,
   SigningStargateClient,
+  StdFee,
 } from '@cosmjs/stargate';
 import { BigNumber } from 'bignumber.js';
 
@@ -26,38 +27,36 @@ function sendSwap(
 
     // TODO: calculate fees from router ticks
     const feeBigNum = new BigNumber('0x0').dividedBy(10000);
-    client
-      .signAndBroadcast(
-        fromAddress,
-        [
-          {
-            typeUrl: '/duality.custom.MsgSwapTicks',
-            value: MsgSwapTicks.fromPartial({
-              amountIn,
-              tokens,
-              prices0,
-              prices1,
-              fees,
-              creator,
-            }),
-          },
-        ],
+    const message = {
+      typeUrl: '/duality.custom.MsgSwapTicks',
+      value: MsgSwapTicks.fromPartial({
+        amountIn,
+        tokens,
+        prices0,
+        prices1,
+        fees,
+        creator,
+      }),
+    };
+    const tokenFee: StdFee = {
+      amount: [
         {
-          amount: [
-            {
-              denom: currency.coinMinimalDenom,
-              amount: `0x${totalBigInt
-                .multipliedBy(feeBigNum)
-                .integerValue(BigNumber.ROUND_UP)
-                .toString(16)}`,
-            },
-          ],
-          gas: `0x${totalBigInt
-            .multipliedBy(0.001)
+          denom: currency.coinMinimalDenom,
+          amount: `0x${totalBigInt
+            .multipliedBy(feeBigNum)
             .integerValue(BigNumber.ROUND_UP)
-            .toFormat(16)}`,
-        }
-      )
+            .toString(16)}`,
+        },
+      ],
+      gas: `0x${totalBigInt
+        .multipliedBy(0.001)
+        .integerValue(BigNumber.ROUND_UP)
+        .toFormat(16)}`,
+    };
+
+    // send message to chain
+    client
+      .signAndBroadcast(fromAddress, [message], tokenFee)
       .then(function (res) {
         if (!res) return reject('No response');
         assertIsDeliverTxSuccess(res);
