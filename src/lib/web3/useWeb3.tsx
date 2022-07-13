@@ -26,7 +26,7 @@ const coinMinimalDenom =
   REACT_APP__COIN_MIN_DENOM || `u${coinDenom.toLowerCase()}`;
 const bech32Prefix = REACT_APP__BECH_PREFIX || coinDenom.toLowerCase();
 
-const currency = {
+export const currency = {
   coinDenom,
   coinMinimalDenom,
   coinDecimals: 6,
@@ -65,7 +65,7 @@ declare global {
   }
 }
 
-interface Web3ContextValue {
+export interface Web3ContextValue {
   provider: Provider | null;
   connectWallet: (() => void) | null;
   getSigningClient: (() => Promise<SigningStargateClient | null>) | null;
