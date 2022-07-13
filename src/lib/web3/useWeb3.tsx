@@ -54,10 +54,12 @@ const chainInfo: ChainInfo = {
   },
 };
 
+const appVersion = process.env['REACT_APP__COSMOS_VERSION'];
+
 const registry = new Registry(defaultRegistryTypes);
 
 // add additional Msgs here
-registry.register('/duality.custom.MsgDepositShares', MsgDepositShares);
+registry.register(`/duality.${appVersion}.MsgDepositShares`, MsgDepositShares);
 
 declare global {
   interface Window extends KeplrWindow {
