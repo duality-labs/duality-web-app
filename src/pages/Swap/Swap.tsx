@@ -7,14 +7,18 @@ import {
   Token,
 } from '../../components/TokenPicker/mockHooks';
 
-import { PairRequest } from './hooks/index';
+import { useWeb3 } from '../../lib/web3/useWeb3';
+import { MsgSwapTicks } from '../../lib/web3/generated/duality/duality.duality/module/types/duality/tx';
 
 import { useRouter } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import './Swap.scss';
+import { router } from './hooks/router';
+import { useIndexerData } from '../../lib/web3/indexerProvider';
 
 export default function Swap() {
+  const { address } = useWeb3();
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
   const [tokenA, setTokenA] = useState(tokenList[0] as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
@@ -31,7 +35,7 @@ export default function Swap() {
     valueA: lastUpdatedA ? valueA : undefined,
     valueB: lastUpdatedA ? undefined : valueB,
   });
-  const [swapRequest, setSwapRequest] = useState<PairRequest>();
+  const [swapRequest, setSwapRequest] = useState<MsgSwapTicks>();
   const {
     data: swapResponse,
     isValidating: isValidatingSwap,
@@ -53,17 +57,26 @@ export default function Swap() {
     [tokenA, tokenB, valueAConverted, valueBConverted]
   );
 
+  const { data: state } = useIndexerData();
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
-      setSwapRequest({
-        tokenA: tokenA?.address,
-        tokenB: tokenB?.address,
-        valueA: lastUpdatedA ? valueA : undefined,
-        valueB: lastUpdatedA ? undefined : valueB,
-      });
+      if (address && state && tokenA?.address && tokenB?.address && valueAConverted && valueBConverted) {
+        // convert to swap request format
+        const result = router(state, tokenA?.address, tokenB?.address, valueAConverted);
+        setSwapRequest({
+          amountIn: result.amountIn.toString(),
+          tokens: result.tokens,
+          prices0: JSON.stringify(result.prices0.map(prices => prices.map(price => price.toString()))),
+          prices1: JSON.stringify(result.prices1.map(prices => prices.map(price => price.toString()))),
+          fees: JSON.stringify(result.fees.map(fees => fees.map(fee => fee.toString()))),
+          // minAmountOut: calculateOut(result).toString(),
+          // fee: calculateFee(result).toString(),
+          creator: address,
+        });
+      }
     },
-    [tokenA?.address, tokenB?.address, valueA, valueB, lastUpdatedA]
+    [state, address, tokenA?.address, tokenB?.address, valueAConverted, valueBConverted]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
@@ -123,7 +136,7 @@ export default function Swap() {
       <div className="text-red-500">{rateError}</div>
       <div className="text-sky-500">
         {!isValidatingSwap && swapResponse
-          ? `Traded ${swapResponse.valueA} ${swapResponse.tokenA} to ${swapResponse.valueB} ${swapResponse.tokenB}`
+          ? `Traded ~ ${valueA} ${tokenA?.address} to ${valueB} ${tokenB?.address}`
           : ''}
       </div>
       <input
