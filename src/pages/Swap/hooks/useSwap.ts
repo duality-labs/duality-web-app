@@ -3,6 +3,7 @@ import {
   assertIsDeliverTxSuccess,
   SigningStargateClient,
 } from '@cosmjs/stargate';
+import { BigNumber } from 'bignumber.js';
 
 import { currency, useWeb3, Web3ContextValue } from '../../../lib/web3/useWeb3';
 import { PairRequest, PairResult } from './index';
@@ -16,11 +17,12 @@ function sendSwap(
     if (!token0 || !token1 || !value0)
       return reject(new Error('Invalid Input'));
 
-    const value0Int = parseInt(value0);
-    if (!value0Int) return reject(new Error('Invalid Input (0 value)'));
+    const value0BigInt = new BigNumber(value0);
+    if (!value0BigInt.isGreaterThan(0))
+      return reject(new Error('Invalid Input (0 value)'));
 
     // TODO: calculate fees from router ticks
-    const fee = '0x0';
+    const fee = new BigNumber('0x0').dividedBy(10000);
     client
       .signAndBroadcast(
         fromAddress,
@@ -38,10 +40,16 @@ function sendSwap(
           amount: [
             {
               denom: currency.coinMinimalDenom,
-              amount: `${Math.ceil((parseInt(fee) / 10000) * value0Int)}`,
+              amount: `0x${value0BigInt
+                .multipliedBy(fee)
+                .integerValue(BigNumber.ROUND_UP)
+                .toString(16)}`,
             },
           ],
-          gas: `${Math.ceil(0.001 * value0Int)}`,
+          gas: `0x${value0BigInt
+            .multipliedBy(0.001)
+            .integerValue(BigNumber.ROUND_UP)
+            .toFormat(16)}`,
         }
       )
       .then(function (res) {
