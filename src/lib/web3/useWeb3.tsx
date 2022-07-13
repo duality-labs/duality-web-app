@@ -4,6 +4,7 @@ import invariant from 'invariant';
 import { Registry } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes, SigningStargateClient } from '@cosmjs/stargate';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
+import { MsgDepositShares } from './generated/duality/duality.duality/module/types/duality/tx';
 
 export type Provider = Keplr;
 
@@ -53,11 +54,10 @@ const chainInfo: ChainInfo = {
   },
 };
 
-const registry = new Registry([
-  ...defaultRegistryTypes,
-  // custom Msg definitions go here like
-  // ['/duality/ticks', Msg]
-]);
+const registry = new Registry(defaultRegistryTypes);
+
+// add additional Msgs here
+registry.register('/duality.custom.MsgDepositShares', MsgDepositShares);
 
 declare global {
   interface Window extends KeplrWindow {
