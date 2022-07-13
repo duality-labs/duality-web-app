@@ -406,7 +406,6 @@ export function createSubscriptionManager(
     unsubscribeAll();
     if (isOpen()) socket?.close();
     idListenerMap = {};
-    socket = null;
   }
 
   function subscribeMessage(
