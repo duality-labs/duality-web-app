@@ -600,7 +600,7 @@ export function createSubscriptionManager(
     }
     if (data.type === 'tendermint/event/Tx') {
       const events = data.value?.TxResult?.result?.events;
-      events.forEach(function (originalEvent) {
+      events?.forEach(function (originalEvent) {
         const event = originalEvent.attributes.reduce<{
           [key: string]: string;
         }>(function (result, { key, value }) {
