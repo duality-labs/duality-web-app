@@ -48,9 +48,9 @@ function sendSwap(
             .toString(),
         },
       ],
-      gas: totalBigInt
+      gas: BigNumber.maximum(1000, totalBigInt
         .multipliedBy(0.001)
-        .integerValue(BigNumber.ROUND_UP)
+        .integerValue(BigNumber.ROUND_UP))
         .toString(),
     };
 
