@@ -56,7 +56,7 @@ function sendSwap(
 
     // send message to chain
     client
-      .signAndBroadcast(fromAddress, [message], tokenFee)
+      .signAndBroadcast(fromAddress, [message], 'auto')
       .then(function (res) {
         if (!res) return reject('No response');
         assertIsDeliverTxSuccess(res);

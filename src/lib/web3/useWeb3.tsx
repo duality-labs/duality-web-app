@@ -2,7 +2,11 @@ import * as React from 'react';
 import invariant from 'invariant';
 
 import { Registry } from '@cosmjs/proto-signing';
-import { defaultRegistryTypes, SigningStargateClient } from '@cosmjs/stargate';
+import {
+  defaultRegistryTypes,
+  GasPrice,
+  SigningStargateClient,
+} from '@cosmjs/stargate';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
 import { MsgDepositShares } from './generated/duality/duality.duality/module/types/duality/tx';
 
@@ -134,7 +138,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
             return await SigningStargateClient.connectWithSigner(
               rpcEndpoint,
               offlineSigner,
-              { registry }
+              { registry, gasPrice: GasPrice.fromString('10token') }
             );
           }
           return null;
