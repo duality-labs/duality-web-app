@@ -220,7 +220,6 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(1);
         expect(handler).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: expect.any(String),
             value: expect.objectContaining(getEventObject(actionName)),
           }),
           expect.anything(),
@@ -252,7 +251,6 @@ describe('The event subscription manager', function () {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
             expect.objectContaining({
-              type: expect.any(String),
               value: expect.objectContaining(getEventObject(actionName)),
             }),
             expect.anything(),
@@ -276,7 +274,6 @@ describe('The event subscription manager', function () {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
             expect.objectContaining({
-              type: expect.any(String),
               value: expect.objectContaining(getEventObject(actionName)),
             }),
             expect.anything(),
@@ -302,7 +299,6 @@ describe('The event subscription manager', function () {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
             expect.objectContaining({
-              type: expect.any(String),
               value: expect.objectContaining(getEventObject(actionName)),
             }),
             expect.anything(),
@@ -329,7 +325,6 @@ describe('The event subscription manager', function () {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
             expect.objectContaining({
-              type: expect.any(String),
               value: expect.objectContaining(getEventObject(actionName)),
             }),
             expect.anything(),
@@ -357,7 +352,6 @@ describe('The event subscription manager', function () {
         expect(otherHandler).toHaveBeenCalledTimes(1);
         expect(handler).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: expect.any(String),
             value: expect.objectContaining(getEventObject(actionName)),
           }),
           expect.anything(),
@@ -365,7 +359,6 @@ describe('The event subscription manager', function () {
         );
         expect(otherHandler).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: expect.any(String),
             value: expect.objectContaining(getEventObject(otherActionName)),
           }),
           expect.anything(),
@@ -475,7 +468,6 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(1);
         expect(handler).toHaveBeenLastCalledWith(
           expect.objectContaining({
-            type: expect.any(String),
             value: expect.objectContaining(getEventObject(otherActionName)),
           }),
           expect.anything(),
@@ -503,7 +495,6 @@ describe('The event subscription manager', function () {
         expect(otherHandler).toHaveBeenCalledTimes(1);
         expect(otherHandler).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: expect.any(String),
             value: expect.objectContaining(getEventObject(actionName)),
           }),
           expect.anything(),
@@ -530,7 +521,6 @@ describe('The event subscription manager', function () {
         expect(otherHandler).toHaveBeenCalledTimes(1);
         expect(otherHandler).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: expect.any(String),
             value: expect.objectContaining(getEventObject(actionName)),
           }),
           expect.anything(),
