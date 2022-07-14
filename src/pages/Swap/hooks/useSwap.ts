@@ -12,8 +12,6 @@ import {
   MsgSwapTicksResponse,
 } from '../../../lib/web3/generated/duality/duality.duality/module/types/duality/tx';
 
-const appVersion = process.env['REACT_APP__COSMOS_VERSION'];
-
 function sendSwap(
   client: SigningStargateClient,
   fromAddress: string,
@@ -30,7 +28,7 @@ function sendSwap(
     // TODO: calculate fees from router ticks
     const feeBigNum = new BigNumber('0x0').dividedBy(10000);
     const message = {
-      typeUrl: `/duality.${appVersion}.MsgSwapTicks`,
+      typeUrl: '/duality.duality.MsgSwapTicks',
       value: MsgSwapTicks.fromPartial({
         amountIn,
         tokens,
