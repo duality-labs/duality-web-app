@@ -10,23 +10,38 @@ import {
 import { Buffer } from 'buffer';
 
 const url = 'ws://localhost:26657/websocket';
-const genericTimeout = 5e3;
-jest.setTimeout(genericTimeout);
+const shortTimeout = 0.5e3;
+const mediumTimeout = 2e3;
+const longerTimeout = 3e3;
+jest.setTimeout(mediumTimeout);
 
 let subManager: SubscriptionManager;
 let currentSocket: CustomSocket;
-// the id doesn't reset on clean so it's estimated value is stored here
-let currentID = 3;
 
 class CustomSocket extends WebSocket {
   private static list: Array<CustomSocket> = [];
   private listeners: Array<
     (this: WebSocket, ev: WebSocketEventMap['message']) => void
   > = [];
+  // array of promise resolves for each actionName (in case the same action is emitted twice)
+  private receiveResolveMap: { [actionName: string]: Array<() => void> } = {};
+  private actionIDMap: { [action: string]: number } = {};
 
   constructor(url: string, protocols?: string | string[]) {
     super(url, protocols);
     CustomSocket.list.push(this);
+  }
+
+  send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+    if (typeof data === 'string') {
+      const { method, params, id } = JSON.parse(data);
+      if (method === 'subscribe') {
+        const [, messageAction] =
+          (params?.[0] && /action='([^']+)'/.exec(params?.[0])) ?? [];
+        this.actionIDMap[messageAction] = id;
+      }
+    }
+    super.send(data);
   }
 
   addEventListener<K extends keyof WebSocketEventMap>(
@@ -42,48 +57,82 @@ class CustomSocket extends WebSocket {
     super.addEventListener(type, listener, options);
   }
 
-  emulateMessage(eventData: MessageActionEvent, id: number) {
-    const customEvent = {
-      data: JSON.stringify({
-        id: id,
-        result: {
-          data: {
-            type: 'tendermint/event/Tx',
-            value: {
-              TxResult: {
-                result: {
-                  events: [
-                    {
-                      attributes: Object.entries(eventData).map(
-                        ([key, value]) => ({
-                          key: Buffer.from(key).toString('base64'),
-                          value: value && Buffer.from(value).toString('base64'),
-                        })
-                      ),
-                    },
-                  ],
+  async waitUntilReceived(...actionNames: Array<string>) {
+    const promises = actionNames.map(
+      (actionName) =>
+        new Promise<void>(
+          (resolve) =>
+            (this.receiveResolveMap[actionName] = [
+              ...(this.receiveResolveMap[actionName] ?? []),
+              resolve,
+            ])
+        )
+    );
+    await Promise.all(promises);
+  }
+
+  emulateEvent(
+    action: string,
+    otherAttributes: { [key: string]: string } = {}
+  ) {
+    const idList = [
+      this.actionIDMap.undefined,
+      this.actionIDMap[action],
+    ].filter(Boolean);
+    // if there are no relevant subscriptions then don't call bubbleOnMessage (will log the unregistered id error) and skip the waiting
+    if (!idList.length)
+      return setTimeout(
+        () => this.receiveResolveMap[action]?.pop()?.(),
+        shortTimeout
+      );
+    idList.forEach((id) => {
+      const eventData = {
+        module: 'duality',
+        ...otherAttributes,
+        action: action,
+      };
+      const customEvent = {
+        data: JSON.stringify({
+          id: id,
+          result: {
+            data: {
+              type: 'tendermint/event/Tx',
+              value: {
+                TxResult: {
+                  result: {
+                    events: [
+                      {
+                        attributes: Object.entries(eventData).map(
+                          ([key, value]) => ({
+                            key: Buffer.from(key).toString('base64'),
+                            value:
+                              value && Buffer.from(value).toString('base64'),
+                          })
+                        ),
+                      },
+                    ],
+                  },
                 },
               },
             },
+            events: {
+              'message.action': eventData.action ? [eventData.action] : [],
+              'tm.event': ['Event'],
+              'tx.acc_seq': ['seq'],
+              'tx.fee': ['fee'],
+              'tx.hash': ['hash'],
+              'tx.height': ['height'],
+              'tx.signature': ['sig'],
+            },
           },
-          events: {
-            'message.action': eventData.action ? [eventData.action] : [],
-            'tm.event': ['Event'],
-            'tx.acc_seq': ['seq'],
-            'tx.fee': ['fee'],
-            'tx.hash': ['hash'],
-            'tx.height': ['height'],
-            'tx.signature': ['sig'],
-          },
-        },
-      }),
-    } as WebSocketEventMap['message'];
-    // wait 50ms before emitting event
-    setTimeout(
-      () =>
-        this.listeners.forEach((listener) => listener.call(this, customEvent)),
-      250
-    );
+        }),
+      } as WebSocketEventMap['message'];
+
+      setTimeout(() => {
+        this.listeners.forEach((listener) => listener.call(this, customEvent));
+        this.receiveResolveMap[action]?.pop()?.();
+      }, shortTimeout);
+    });
   }
 }
 
@@ -93,60 +142,54 @@ describe('The event subscription manager', function () {
   });
 
   describe('should be able to manage the connection state', function () {
-    it('should be able to open a connection', function () {
-      subManager = createSubscriptionManager(url);
-      subManager.open();
-      return new Promise((resolve) =>
-        subManager.addSocketListener('open', resolve)
-      );
+    afterEach(function () {
+      subManager?.close();
     });
 
-    it('should be able to close an open connection', function () {
-      return new Promise(function (resolve) {
-        subManager = createSubscriptionManager(url);
-        subManager.addSocketListener('close', function (event) {
-          expect(event instanceof CloseEvent && event.wasClean).toBe(true);
-          resolve('Done');
-        });
-        subManager.addSocketListener('open', subManager.close);
-        subManager.open();
+    it('should be able to open a connection', function (done) {
+      subManager = createSubscriptionManager(url);
+      subManager.open();
+      subManager.addSocketListener('open', () => done());
+    });
+
+    it('should be able to close an open connection', function (done) {
+      subManager = createSubscriptionManager(url);
+      subManager.addSocketListener('close', function (event) {
+        expect(event instanceof CloseEvent && event.wasClean).toBe(true);
+        done();
       });
+      subManager.addSocketListener('open', subManager.close);
+      subManager.open();
     });
 
     it('should be able to call close without an open connection', function () {
-      let succesfullRun = false;
-      try {
-        subManager = createSubscriptionManager(url);
-        subManager.close();
-        succesfullRun = true;
-      } catch (e) {
-        succesfullRun = false;
-      }
-      expect(succesfullRun).toBe(true);
+      subManager = createSubscriptionManager(url);
+      subManager.close();
+      expect(subManager.isOpen()).toBe(false);
     });
 
     it(
       'should be able to call open twice without opening two sockets',
       async function () {
-        let openCount = 0;
+        const handler = jest.fn();
         subManager = createSubscriptionManager(url);
-        subManager.addSocketListener('open', () => (openCount += 1));
+        subManager.addSocketListener('open', handler);
         subManager.open();
         subManager.open();
-        await wait(genericTimeout);
-        expect(openCount).toBe(1);
+        await delay(mediumTimeout);
+        expect(handler).toHaveBeenCalledTimes(1);
       },
-      genericTimeout * 2
+      longerTimeout
     );
-
-    afterEach(function () {
-      subManager?.close();
-    });
   });
 
   describe('should be able to manage subscribing', function () {
-    beforeEach(function () {
-      return new Promise(function (resolve, reject) {
+    const actionName = 'Test';
+    const otherActionName = 'steT';
+    const actionNames = [actionName, otherActionName];
+
+    beforeEach(async function () {
+      await new Promise(function (resolve, reject) {
         subManager = createSubscriptionManager(url);
         subManager.addSocketListener('open', function (e) {
           if (e?.target instanceof CustomSocket) {
@@ -161,814 +204,642 @@ describe('The event subscription manager', function () {
       });
     });
 
+    afterEach(function () {
+      subManager.close();
+    });
+
     describe('(subscription tests)', function () {
       it('should be able to listen for any type of event', async function () {
-        const requestID = currentID;
-        currentID += 2;
-        const actionName = 'Test';
-        currentSocket.emulateMessage(
-          { module: 'duality', action: actionName },
-          requestID
+        const handler = jest.fn();
+
+        subManager.subscribe(handler, EventType.EventTxValue);
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(handler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: expect.any(String),
+            value: expect.objectContaining(getEventObject(actionName)),
+          }),
+          expect.anything(),
+          expect.anything()
         );
-        const result = await new Promise<TendermintDataType>((resolve) =>
-          subManager.subscribe(resolve, EventType.EventTxValue)
-        );
-        const actionNames = getActionNames(result);
-        expect(actionNames).toStrictEqual([actionName]);
       });
-      it('should be able to listen for a specific type of message', async function () {
-        const actionName = 'Test';
-        const requestID = currentID;
-        currentID += 2;
-        currentSocket.emulateMessage(
-          { module: 'duality', action: actionName },
-          requestID
+      it('should be able to listen for a specific type of event', async function () {
+        const { waiter, resolve } = createWaiter<TendermintDataType>();
+
+        subManager.subscribe(resolve, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        currentSocket.emulateEvent(actionName);
+
+        expect(getActionNames(await waiter)).toStrictEqual([actionName]);
+      });
+      it('should be able to listen to multiple events', async function () {
+        const handler = jest.fn();
+
+        subManager.subscribe(handler, EventType.EventTxValue);
+        actionNames.forEach((actionName) =>
+          currentSocket.emulateEvent(actionName)
         );
-        const result = await new Promise<TendermintDataType>((resolve) =>
-          subManager.subscribe(resolve, EventType.EventTxValue, {
+
+        await currentSocket.waitUntilReceived(...actionNames);
+
+        expect(handler).toHaveBeenCalledTimes(actionNames.length);
+        actionNames.forEach((actionName, index) => {
+          expect(handler).toHaveBeenNthCalledWith(
+            index + 1,
+            expect.objectContaining({
+              type: expect.any(String),
+              value: expect.objectContaining(getEventObject(actionName)),
+            }),
+            expect.anything(),
+            expect.anything()
+          );
+        });
+      });
+      it('should be ok to subscribe multiple times without an actionMessage', async function () {
+        const handler = jest.fn();
+        const repeatArray = Array.from({ length: 2 });
+
+        repeatArray.forEach(() =>
+          subManager.subscribe(handler, EventType.EventTxValue)
+        );
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(repeatArray.length);
+        repeatArray.forEach((_, index) => {
+          expect(handler).toHaveBeenNthCalledWith(
+            index + 1,
+            expect.objectContaining({
+              type: expect.any(String),
+              value: expect.objectContaining(getEventObject(actionName)),
+            }),
+            expect.anything(),
+            expect.anything()
+          );
+        });
+      });
+      it('should be ok to subscribe multiple times with an actionMessage', async function () {
+        const handler = jest.fn();
+        const repeatArray = Array.from({ length: 2 });
+
+        repeatArray.forEach(() =>
+          subManager.subscribe(handler, EventType.EventTxValue, {
             messageAction: actionName,
           })
         );
-        const actionNames = getActionNames(result);
-        expect(actionNames).toStrictEqual([actionName]);
-      });
-      it('should be able to listen to mutliple messages', function () {
-        const actionNames = ['Test', 'tseT'];
-        const result: Array<string | null> = [];
-        const requestID = currentID;
-        currentID += 2;
+        currentSocket.emulateEvent(actionName);
 
-        return new Promise(function (resolve) {
-          subManager.subscribe(function (event) {
-            result.push(...getActionNames(event));
-            expect(result.length).toBeLessThanOrEqual(actionNames.length);
-            if (result.length !== actionNames.length) return;
-            expect(result.sort()).toStrictEqual(actionNames.sort());
-            resolve('Done');
-          }, EventType.EventTxValue);
-          actionNames.forEach((actionName) =>
-            currentSocket.emulateMessage(
-              { module: 'duality', action: actionName },
-              requestID
-            )
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(repeatArray.length);
+        repeatArray.forEach((_, index) => {
+          expect(handler).toHaveBeenNthCalledWith(
+            index + 1,
+            expect.objectContaining({
+              type: expect.any(String),
+              value: expect.objectContaining(getEventObject(actionName)),
+            }),
+            expect.anything(),
+            expect.anything()
           );
         });
       });
-      it('should be ok to subscribe multiple times without a message', function () {
-        const actionName = 'Test';
-        const result: Array<string | null> = [];
-        const repeatCount = 2;
-        const requestID = currentID;
-        currentID += 2;
+      it('should be ok to subscribe multiple times with different actionMessages', async function () {
+        const handler = jest.fn();
 
-        return new Promise(function (resolve) {
-          Array.from({ length: repeatCount }).forEach(() =>
-            subManager.subscribe(onEvent, EventType.EventTxValue)
-          );
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-
-          function onEvent(event: TendermintDataType) {
-            const actionNames = getActionNames(event);
-            result.push(...actionNames);
-            expect(actionNames).toStrictEqual([actionName]);
-            expect(result.length).toBeLessThanOrEqual(repeatCount);
-            if (result.length !== repeatCount) return;
-            resolve('Done');
-          }
-        });
-      });
-      it('should be ok to subscribe multiple times with a message', function () {
-        const actionName = 'Test';
-        const result: Array<string | null> = [];
-        const repeatCount = 2;
-        const requestID = currentID;
-        currentID += 2;
-
-        return new Promise(function (resolve) {
-          Array.from({ length: repeatCount }).forEach(() =>
-            subManager.subscribe(onEvent, EventType.EventTxValue, {
-              messageAction: actionName,
-            })
-          );
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-
-          function onEvent(event: TendermintDataType) {
-            const actionNames = getActionNames(event);
-            result.push(...actionNames);
-            expect(actionNames).toStrictEqual([actionName]);
-            expect(result.length).toBeLessThanOrEqual(repeatCount);
-            if (result.length !== repeatCount) return;
-            resolve('Done');
-          }
-        });
-      });
-      it('should be ok to subscribe multiple times with different messages', function () {
-        const actionNames = ['Test', 'tseT'];
-        const result: Array<string | null> = [];
-        const requestIDMap = getNewIDMap(actionNames);
-
-        return new Promise(function (resolve) {
-          actionNames.forEach((actionName) =>
-            subManager.subscribe(onEvent, EventType.EventTxValue, {
-              messageAction: actionName,
-            })
-          );
-          actionNames.forEach((actionName) =>
-            currentSocket.emulateMessage(
-              { module: 'duality', action: actionName },
-              requestIDMap[actionName]
-            )
-          );
-
-          function onEvent(event: TendermintDataType) {
-            const actionNames = getActionNames(event);
-            result.push(...actionNames);
-            expect(result.length).toBeLessThanOrEqual(actionNames.length);
-            if (result.length !== actionNames.length) return;
-            expect(result.sort()).toStrictEqual(actionNames.sort());
-            resolve('Done');
-          }
-        });
-      });
-      it(
-        'should be ok to ignore unregistered messages',
-        async function () {
-          const actionName = 'Test';
-          const fakeActionName = 'tseT';
-          const requestID = currentID;
-          currentID += 2;
-
-          subManager.subscribe(onEvent, EventType.EventTxValue, {
+        actionNames.forEach((actionName) =>
+          subManager.subscribe(handler, EventType.EventTxValue, {
             messageAction: actionName,
-          });
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          currentSocket.emulateMessage(
-            { module: 'duality', action: fakeActionName },
-            // no other way to test
-            requestID + 2
-          );
-          // give it a while to ensure the other event won't get read
-          await wait(genericTimeout);
+          })
+        );
+        actionNames.forEach((actionName) =>
+          currentSocket.emulateEvent(actionName)
+        );
 
-          function onEvent(event: TendermintDataType) {
-            expect(getActionNames(event)).toStrictEqual([actionName]);
-          }
+        await currentSocket.waitUntilReceived(...actionNames);
 
-          // double the timeout to ensure the timeout won't be an issue
-        },
-        genericTimeout * 2
-      );
+        expect(handler).toHaveBeenCalledTimes(actionNames.length);
+        actionNames.forEach((actionName, index) => {
+          expect(handler).toHaveBeenNthCalledWith(
+            index + 1,
+            expect.objectContaining({
+              type: expect.any(String),
+              value: expect.objectContaining(getEventObject(actionName)),
+            }),
+            expect.anything(),
+            expect.anything()
+          );
+        });
+      });
+      it('should be ok to ignore unregistered events', async function () {
+        const handler = jest.fn();
+        const otherHandler = jest.fn();
+
+        subManager.subscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.subscribe(otherHandler, EventType.EventTxValue, {
+          messageAction: otherActionName,
+        });
+
+        currentSocket.emulateEvent(actionName);
+        currentSocket.emulateEvent(otherActionName);
+
+        await currentSocket.waitUntilReceived(actionName, otherActionName);
+
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(otherHandler).toHaveBeenCalledTimes(1);
+        expect(handler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: expect.any(String),
+            value: expect.objectContaining(getEventObject(actionName)),
+          }),
+          expect.anything(),
+          expect.anything()
+        );
+        expect(otherHandler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: expect.any(String),
+            value: expect.objectContaining(getEventObject(otherActionName)),
+          }),
+          expect.anything(),
+          expect.anything()
+        );
+      });
     });
 
     describe('(unsubscription tests)', function () {
-      it(
-        'should be able to unsubscribe from a specific event',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
+      it('should be able to unsubscribe from a specific event', async function () {
+        const handler = jest.fn();
 
-          subManager.subscribe(onEvent, EventType.EventTxValue, {
+        subManager.subscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.unsubscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to unsubscribe without params', async function () {
+        const handler = jest.fn();
+
+        subManager.subscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.unsubscribe();
+
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to unsubscribe from a generic subscription', async function () {
+        const handler = jest.fn();
+
+        subManager.subscribe(handler, EventType.EventTxValue);
+        subManager.unsubscribe(handler, EventType.EventTxValue);
+
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to unsubscribe from multiple specific subscriptions with one call', async function () {
+        const handler = jest.fn();
+
+        subManager.subscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.subscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.unsubscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to unsubscribe from multiple subscriptions with one fully generic call', async function () {
+        const handler = jest.fn();
+
+        actionNames.forEach((actionName) => {
+          subManager.subscribe(handler, EventType.EventTxValue, {
             messageAction: actionName,
           });
-          subManager.unsubscribe(onEvent, EventType.EventTxValue, {
+        });
+        subManager.unsubscribe();
+
+        actionNames.forEach((actionName) =>
+          currentSocket.emulateEvent(actionName)
+        );
+
+        await currentSocket.waitUntilReceived(...actionNames);
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to only unsubscribe from a specific subscription and not all (based on the action name)', async function () {
+        const handler = jest.fn();
+
+        actionNames.forEach((actionName) => {
+          subManager.subscribe(handler, EventType.EventTxValue, {
             messageAction: actionName,
           });
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(0);
+        });
+        subManager.unsubscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
 
-          function onEvent() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to unsubscribe without params',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
+        actionNames.forEach((actionName) =>
+          currentSocket.emulateEvent(actionName)
+        );
 
-          subManager.subscribe(onEvent, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          subManager.unsubscribe();
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(0);
+        await currentSocket.waitUntilReceived(...actionNames);
 
-          function onEvent() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to unsubscribe from a generic subscription',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(handler).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            type: expect.any(String),
+            value: expect.objectContaining(getEventObject(otherActionName)),
+          }),
+          expect.anything(),
+          expect.anything()
+        );
+      });
+      it('should be able to only unsubscribe from a specific subscription and not all (based on the callback)', async function () {
+        const handler = jest.fn();
+        const otherHandler = jest.fn();
 
-          subManager.subscribe(onEvent, EventType.EventTxValue);
-          subManager.unsubscribe(onEvent, EventType.EventTxValue);
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(0);
+        subManager.subscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.subscribe(otherHandler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.unsubscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        currentSocket.emulateEvent(actionName);
 
-          function onEvent() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to unsubscribe from multiple specific subscriptions with one call',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
+        await currentSocket.waitUntilReceived(actionName);
 
-          subManager.subscribe(onEvent, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          subManager.subscribe(onEvent, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          subManager.unsubscribe(onEvent, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(0);
+        expect(handler).toHaveBeenCalledTimes(0);
+        expect(otherHandler).toHaveBeenCalledTimes(1);
+        expect(otherHandler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: expect.any(String),
+            value: expect.objectContaining(getEventObject(actionName)),
+          }),
+          expect.anything(),
+          expect.anything()
+        );
+      });
+      it('should be able to only unsubscribe from a specific subscription and not all (based on the callback but otherwise generic)', async function () {
+        const handler = jest.fn();
+        const otherHandler = jest.fn();
 
-          function onEvent() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to unsubscribe from multiple subscriptions with one fully generic call',
-        async function () {
-          const actionNames = ['Test', 'tseT'];
-          let messageCount = 0;
-          const requestIDMap = getNewIDMap(actionNames);
+        subManager.subscribe(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.subscribe(otherHandler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.unsubscribe(handler);
 
-          actionNames.forEach((actionName) =>
-            subManager.subscribe(onEvent, EventType.EventTxValue, {
-              messageAction: actionName,
-            })
-          );
-          subManager.unsubscribe();
-          actionNames.forEach((actionName) =>
-            currentSocket.emulateMessage(
-              { module: 'duality', action: actionName },
-              requestIDMap[actionName]
-            )
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(0);
+        currentSocket.emulateEvent(actionName);
 
-          function onEvent() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to only unsubscribe from a specific subscription and not all (based on the action name)',
-        async function () {
-          const actionNames = ['Test', 'tseT'];
-          let messageCount = 0;
-          const requestIDMap = getNewIDMap(actionNames);
+        await currentSocket.waitUntilReceived(actionName);
 
-          actionNames.forEach((actionName) =>
-            subManager.subscribe(onEvent, EventType.EventTxValue, {
-              messageAction: actionName,
-            })
-          );
-          subManager.unsubscribe(onEvent, EventType.EventTxValue, {
-            messageAction: actionNames[0],
-          });
-          actionNames.forEach((actionName) =>
-            currentSocket.emulateMessage(
-              { module: 'duality', action: actionName },
-              requestIDMap[actionName]
-            )
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(1);
-
-          function onEvent() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to only unsubscribe from a specific subscription and not all (based on the callback)',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
-
-          subManager.subscribe(onEvent, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          subManager.subscribe(
-            () => (messageCount += 1),
-            EventType.EventTxValue,
-            { messageAction: actionName }
-          );
-          subManager.unsubscribe(onEvent, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(1);
-
-          function onEvent() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to only unsubscribe from a specific subscription and not all (based on the callback but otherwise generic)',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
-
-          subManager.subscribe(onEvent, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          subManager.subscribe(
-            () => (messageCount += 1),
-            EventType.EventTxValue,
-            { messageAction: actionName }
-          );
-          subManager.unsubscribe(onEvent);
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(1);
-
-          function onEvent() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
+        expect(handler).toHaveBeenCalledTimes(0);
+        expect(otherHandler).toHaveBeenCalledTimes(1);
+        expect(otherHandler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: expect.any(String),
+            value: expect.objectContaining(getEventObject(actionName)),
+          }),
+          expect.anything(),
+          expect.anything()
+        );
+      });
     });
 
     describe('(message subscription tests)', function () {
       it('should be able to listen for any type of message', async function () {
-        const requestID = currentID;
-        currentID += 2;
-        const actionName = 'Test';
-        currentSocket.emulateMessage(
-          { module: 'duality', action: actionName },
-          requestID
-        );
-        const result = await new Promise<MessageActionEvent>((resolve) =>
-          subManager.subscribeMessage(resolve, EventType.EventTxValue)
-        );
-        expect(result.action).toBe(actionName);
+        const handler = jest.fn();
+
+        subManager.subscribeMessage(handler, EventType.EventTxValue);
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(handler).toHaveBeenCalledWith(getMessageObject(actionName));
       });
       it('should be able to listen for a specific type of message', async function () {
-        const actionName = 'Test';
-        const requestID = currentID;
-        currentID += 2;
-        currentSocket.emulateMessage(
-          { module: 'duality', action: actionName },
-          requestID
+        const { waiter, resolve } = createWaiter<MessageActionEvent>();
+
+        subManager.subscribeMessage(resolve, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        currentSocket.emulateEvent(actionName);
+
+        expect(await waiter).toStrictEqual(getMessageObject(actionName));
+      });
+      it('should be able to listen to multiple messages', async function () {
+        const handler = jest.fn();
+
+        subManager.subscribeMessage(handler, EventType.EventTxValue);
+        actionNames.forEach((actionName) =>
+          currentSocket.emulateEvent(actionName)
         );
-        const result = await new Promise<MessageActionEvent>((resolve) =>
-          subManager.subscribeMessage(resolve, EventType.EventTxValue, {
+
+        await currentSocket.waitUntilReceived(...actionNames);
+
+        expect(handler).toHaveBeenCalledTimes(actionNames.length);
+        actionNames.forEach((actionName, index) => {
+          expect(handler).toHaveBeenNthCalledWith(
+            index + 1,
+            getMessageObject(actionName)
+          );
+        });
+      });
+      it('should be ok to subscribe multiple times without an actionMessage', async function () {
+        const handler = jest.fn();
+        const repeatArray = Array.from({ length: 2 });
+
+        repeatArray.forEach(() =>
+          subManager.subscribeMessage(handler, EventType.EventTxValue)
+        );
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(repeatArray.length);
+        repeatArray.forEach((_, index) => {
+          expect(handler).toHaveBeenNthCalledWith(
+            index + 1,
+            getMessageObject(actionName)
+          );
+        });
+      });
+      it('should be ok to subscribe multiple times with an actionMessage', async function () {
+        const handler = jest.fn();
+        const repeatArray = Array.from({ length: 2 });
+
+        repeatArray.forEach(() =>
+          subManager.subscribeMessage(handler, EventType.EventTxValue, {
             messageAction: actionName,
           })
         );
-        expect(result.action).toBe(actionName);
-      });
-      it('should be able to listen to mutliple messages', function () {
-        const actionNames = ['Test', 'tseT'];
-        const result: Array<string | undefined> = [];
-        const requestID = currentID;
-        currentID += 2;
+        currentSocket.emulateEvent(actionName);
 
-        return new Promise(function (resolve) {
-          subManager.subscribeMessage(function (event) {
-            result.push(event.action);
-            expect(result.length).toBeLessThanOrEqual(actionNames.length);
-            if (result.length !== actionNames.length) return;
-            expect(result.sort()).toStrictEqual(actionNames.sort());
-            resolve('Done');
-          }, EventType.EventTxValue);
-          actionNames.forEach((actionName) =>
-            currentSocket.emulateMessage(
-              { module: 'duality', action: actionName },
-              requestID
-            )
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(repeatArray.length);
+        repeatArray.forEach((_, index) => {
+          expect(handler).toHaveBeenNthCalledWith(
+            index + 1,
+            getMessageObject(actionName)
           );
         });
       });
-      it('should be ok to subscribe multiple times without a message', function () {
-        const actionName = 'Test';
-        const result: Array<string | undefined> = [];
-        const repeatCount = 2;
-        const requestID = currentID;
-        currentID += 2;
+      it('should be ok to subscribe multiple times with different actionMessages', async function () {
+        const handler = jest.fn();
 
-        return new Promise(function (resolve) {
-          Array.from({ length: repeatCount }).forEach(() =>
-            subManager.subscribeMessage(onMessage, EventType.EventTxValue)
-          );
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-
-          function onMessage(event: MessageActionEvent) {
-            result.push(event.action);
-            expect(event.action).toBe(actionName);
-            expect(result.length).toBeLessThanOrEqual(repeatCount);
-            if (result.length !== repeatCount) return;
-            resolve('Done');
-          }
-        });
-      });
-      it('should be ok to subscribe multiple times with a message', function () {
-        const actionName = 'Test';
-        const result: Array<string | undefined> = [];
-        const repeatCount = 2;
-        const requestID = currentID;
-        currentID += 2;
-
-        return new Promise(function (resolve) {
-          Array.from({ length: repeatCount }).forEach(() =>
-            subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
-              messageAction: actionName,
-            })
-          );
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-
-          function onMessage(event: MessageActionEvent) {
-            result.push(event.action);
-            expect(event.action).toBe(actionName);
-            expect(result.length).toBeLessThanOrEqual(repeatCount);
-            if (result.length !== repeatCount) return;
-            resolve('Done');
-          }
-        });
-      });
-      it('should be ok to subscribe multiple times with different messages', function () {
-        const actionNames = ['Test', 'tseT'];
-        const result: Array<string | undefined> = [];
-        const requestIDMap = getNewIDMap(actionNames);
-
-        return new Promise(function (resolve) {
-          actionNames.forEach((actionName) =>
-            subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
-              messageAction: actionName,
-            })
-          );
-          actionNames.forEach((actionName) =>
-            currentSocket.emulateMessage(
-              { module: 'duality', action: actionName },
-              requestIDMap[actionName]
-            )
-          );
-
-          function onMessage(event: MessageActionEvent) {
-            result.push(event.action);
-            expect(result.length).toBeLessThanOrEqual(actionNames.length);
-            if (result.length !== actionNames.length) return;
-            expect(result.sort()).toStrictEqual(actionNames.sort());
-            resolve('Done');
-          }
-        });
-      });
-      it(
-        'should be ok to ignore unregistered messages',
-        async function () {
-          const actionName = 'Test';
-          const fakeActionName = 'tseT';
-          const requestID = currentID;
-          currentID += 2;
-
-          subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
+        actionNames.forEach((actionName) =>
+          subManager.subscribeMessage(handler, EventType.EventTxValue, {
             messageAction: actionName,
-          });
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          currentSocket.emulateMessage(
-            { module: 'duality', action: fakeActionName },
-            requestID
-          );
-          // give it a while to ensure the other event won't get read
-          await wait(genericTimeout);
+          })
+        );
+        actionNames.forEach((actionName) =>
+          currentSocket.emulateEvent(actionName)
+        );
 
-          function onMessage(event: MessageActionEvent) {
-            expect(event.action).toBe(actionName);
-          }
+        await currentSocket.waitUntilReceived(...actionNames);
 
-          // double the timeout to ensure the timeout won't be an issue
-        },
-        genericTimeout * 2
-      );
+        expect(handler).toHaveBeenCalledTimes(actionNames.length);
+        actionNames.forEach((actionName, index) => {
+          expect(handler).toHaveBeenNthCalledWith(
+            index + 1,
+            getMessageObject(actionName)
+          );
+        });
+      });
+      it('should be ok to ignore unregistered messages', async function () {
+        const handler = jest.fn();
+        const otherHandler = jest.fn();
+
+        subManager.subscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.subscribeMessage(otherHandler, EventType.EventTxValue, {
+          messageAction: otherActionName,
+        });
+
+        currentSocket.emulateEvent(actionName);
+        currentSocket.emulateEvent(otherActionName);
+
+        await currentSocket.waitUntilReceived(actionName, otherActionName);
+
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(otherHandler).toHaveBeenCalledTimes(1);
+        expect(handler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(otherHandler).toHaveBeenCalledWith(
+          getMessageObject(otherActionName)
+        );
+      });
     });
 
     describe('(message unsubscription tests)', function () {
-      it(
-        'should be able to unsubscribe from a specific message',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
+      it('should be able to unsubscribe from a specific message', async function () {
+        const handler = jest.fn();
 
-          subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
+        subManager.subscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.unsubscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to unsubscribe without params', async function () {
+        const handler = jest.fn();
+
+        subManager.subscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.unsubscribeMessage();
+
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to unsubscribe from a generic subscription', async function () {
+        const handler = jest.fn();
+
+        subManager.subscribeMessage(handler, EventType.EventTxValue);
+        subManager.unsubscribeMessage(handler, EventType.EventTxValue);
+
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to unsubscribe from multiple specific subscriptions with one call', async function () {
+        const handler = jest.fn();
+
+        subManager.subscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.subscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.unsubscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+
+        currentSocket.emulateEvent(actionName);
+
+        await currentSocket.waitUntilReceived(actionName);
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to unsubscribe from multiple subscriptions with one fully generic call', async function () {
+        const handler = jest.fn();
+
+        actionNames.forEach((actionName) => {
+          subManager.subscribeMessage(handler, EventType.EventTxValue, {
             messageAction: actionName,
           });
-          subManager.unsubscribeMessage(onMessage, EventType.EventTxValue, {
+        });
+        subManager.unsubscribeMessage();
+
+        actionNames.forEach((actionName) =>
+          currentSocket.emulateEvent(actionName)
+        );
+
+        await currentSocket.waitUntilReceived(...actionNames);
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to only unsubscribe from a specific subscription and not all (based on the action name)', async function () {
+        const handler = jest.fn();
+
+        actionNames.forEach((actionName) => {
+          subManager.subscribeMessage(handler, EventType.EventTxValue, {
             messageAction: actionName,
           });
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(0);
+        });
+        subManager.unsubscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
 
-          function onMessage() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to unsubscribe without params',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
+        actionNames.forEach((actionName) =>
+          currentSocket.emulateEvent(actionName)
+        );
 
-          subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          subManager.unsubscribeMessage();
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(0);
+        await currentSocket.waitUntilReceived(...actionNames);
 
-          function onMessage() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to unsubscribe from a generic subscription',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(handler).toHaveBeenLastCalledWith(
+          getMessageObject(otherActionName)
+        );
+      });
+      it('should be able to only unsubscribe from a specific subscription and not all (based on the callback)', async function () {
+        const handler = jest.fn();
+        const otherHandler = jest.fn();
 
-          subManager.subscribeMessage(onMessage, EventType.EventTxValue);
-          subManager.unsubscribeMessage(onMessage, EventType.EventTxValue);
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(0);
+        subManager.subscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.subscribeMessage(otherHandler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.unsubscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        currentSocket.emulateEvent(actionName);
 
-          function onMessage() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to unsubscribe from multiple specific subscriptions with one call',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
+        await currentSocket.waitUntilReceived(actionName);
 
-          subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          subManager.unsubscribeMessage(onMessage, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(0);
+        expect(handler).toHaveBeenCalledTimes(0);
+        expect(otherHandler).toHaveBeenCalledTimes(1);
+        expect(otherHandler).toHaveBeenCalledWith(getMessageObject(actionName));
+      });
+      it('should be able to only unsubscribe from a specific subscription and not all (based on the callback but otherwise generic)', async function () {
+        const handler = jest.fn();
+        const otherHandler = jest.fn();
 
-          function onMessage() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to unsubscribe from multiple subscriptions with one fully generic call',
-        async function () {
-          const actionNames = ['Test', 'tseT'];
-          let messageCount = 0;
-          const requestIDMap = getNewIDMap(actionNames);
+        subManager.subscribeMessage(handler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.subscribeMessage(otherHandler, EventType.EventTxValue, {
+          messageAction: actionName,
+        });
+        subManager.unsubscribeMessage(handler);
 
-          actionNames.forEach((actionName) =>
-            subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
-              messageAction: actionName,
-            })
-          );
-          subManager.unsubscribeMessage();
-          actionNames.forEach((actionName) =>
-            currentSocket.emulateMessage(
-              { module: 'duality', action: actionName },
-              requestIDMap[actionName]
-            )
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(0);
+        currentSocket.emulateEvent(actionName);
 
-          function onMessage() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to only unsubscribe from a specific subscription and not all (based on the action name)',
-        async function () {
-          const actionNames = ['Test', 'tseT'];
-          let messageCount = 0;
-          const requestIDMap = getNewIDMap(actionNames);
+        await currentSocket.waitUntilReceived(actionName);
 
-          actionNames.forEach((actionName) =>
-            subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
-              messageAction: actionName,
-            })
-          );
-          subManager.unsubscribeMessage(onMessage, EventType.EventTxValue, {
-            messageAction: actionNames[0],
-          });
-          actionNames.forEach((actionName) =>
-            currentSocket.emulateMessage(
-              { module: 'duality', action: actionName },
-              requestIDMap[actionName]
-            )
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(1);
-
-          function onMessage() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to only unsubscribe from a specific subscription and not all (based on the callback)',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
-
-          subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          subManager.subscribeMessage(
-            () => (messageCount += 1),
-            EventType.EventTxValue,
-            { messageAction: actionName }
-          );
-          subManager.unsubscribeMessage(onMessage, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(1);
-
-          function onMessage() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-      it(
-        'should be able to only unsubscribe from a specific subscription and not all (based on the callback but otherwise generic)',
-        async function () {
-          const actionName = 'Test';
-          let messageCount = 0;
-          const requestID = currentID;
-          currentID += 2;
-
-          subManager.subscribeMessage(onMessage, EventType.EventTxValue, {
-            messageAction: actionName,
-          });
-          subManager.subscribeMessage(
-            () => (messageCount += 1),
-            EventType.EventTxValue,
-            { messageAction: actionName }
-          );
-          subManager.unsubscribeMessage(onMessage);
-          currentSocket.emulateMessage(
-            { module: 'duality', action: actionName },
-            requestID
-          );
-          await wait(genericTimeout);
-          expect(messageCount).toBe(1);
-
-          function onMessage() {
-            messageCount += 1;
-          }
-        },
-        genericTimeout * 2
-      );
-    });
-
-    afterEach(function () {
-      subManager.close();
+        expect(handler).toHaveBeenCalledTimes(0);
+        expect(otherHandler).toHaveBeenCalledTimes(1);
+        expect(otherHandler).toHaveBeenCalledWith(getMessageObject(actionName));
+      });
     });
   });
 });
 
-function wait(ms: number) {
-  return new Promise(function (resolve) {
-    setTimeout(resolve, ms);
-  });
+async function delay(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function getNewIDMap(actionNames: Array<string>) {
-  return actionNames.reduce<{ [actionName: string]: number }>(function (
-    result,
-    name
-  ) {
-    result[name] = currentID;
-    currentID += 2;
-    return result;
-  },
-  {});
+function createWaiter<T>() {
+  let resolveCB: ((result: T) => void) | undefined;
+  let alreadyCalled = false;
+  let readyResult: T;
+  const waiter = new Promise<T>(function (resolve) {
+    if (alreadyCalled) {
+      resolve(readyResult);
+    } else {
+      resolveCB = resolve;
+    }
+  });
+
+  return { waiter, resolve: resolveWrapper };
+
+  function resolveWrapper(result: T) {
+    if (resolveCB) {
+      resolveCB(result);
+    } else {
+      readyResult = result;
+      alreadyCalled = true;
+    }
+  }
 }
 
 function getActionNames(data: TendermintDataType) {
@@ -983,4 +854,34 @@ function getActionNames(data: TendermintDataType) {
         : null;
     })
     .filter(Boolean);
+}
+
+function getEventObject(actionName: string) {
+  return {
+    TxResult: {
+      result: {
+        events: [
+          {
+            attributes: [
+              {
+                key: 'bW9kdWxl',
+                value: 'ZHVhbGl0eQ==',
+              },
+              {
+                key: Buffer.from('action').toString('base64'),
+                value: Buffer.from(actionName).toString('base64'),
+              },
+            ],
+          },
+        ],
+      },
+    },
+  };
+}
+
+function getMessageObject(actionName: string) {
+  return {
+    module: 'duality',
+    action: actionName,
+  };
 }
