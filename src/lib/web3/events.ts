@@ -383,6 +383,7 @@ export function createSubscriptionManager(
         (group) => (group.status = QueryStatus.Disconnected)
       );
       if (!event.wasClean) {
+        socket = null;
         setTimeout(open, reconnectInterval);
         reconnectInterval = Math.min(
           maxReconnectInterval,
