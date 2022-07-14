@@ -44,16 +44,16 @@ function sendSwap(
       amount: [
         {
           denom: currency.coinMinimalDenom,
-          amount: `0x${totalBigInt
+          amount: totalBigInt
             .multipliedBy(feeBigNum)
             .integerValue(BigNumber.ROUND_UP)
-            .toString(16)}`,
+            .toString(),
         },
       ],
-      gas: `0x${totalBigInt
+      gas: totalBigInt
         .multipliedBy(0.001)
         .integerValue(BigNumber.ROUND_UP)
-        .toFormat(16)}`,
+        .toString(),
     };
 
     // send message to chain
