@@ -76,8 +76,6 @@ describe('The event subscription manager', function () {
     afterEach(async function () {
       server?.close();
       await server?.closed;
-      subManager?.close();
-      await delay(0);
     });
 
     it('should be able to open a connection', function (done) {
