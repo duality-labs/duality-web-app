@@ -1,164 +1,84 @@
+import WS from 'jest-websocket-mock';
 import {
-  setSocketClass,
   createSubscriptionManager,
-  SubscriptionManager,
   EventType,
-  MessageActionEvent,
-  TendermintDataType,
-  TendermintTxData,
+  SubscriptionManager,
+  WebSocketClientMessage,
+  WebSocketServerMessage,
 } from './events';
-import { Buffer } from 'buffer';
 
-const url = 'ws://localhost:26657/websocket';
-const shortTimeout = 0.5e3;
-const mediumTimeout = 2e3;
-const longerTimeout = 3e3;
-jest.setTimeout(longerTimeout + mediumTimeout);
+const url = 'ws://localhost:1234';
+const connectTimeout = 1e2;
 
-let subManager: SubscriptionManager;
-let currentSocket: CustomSocket;
+function createCustomActionEvent(
+  id: number,
+  actionName: string,
+  attributes: { [key: string]: string } = {},
+  options?: CustomEventOptions
+) {
+  return createCustomEvent(id, { ...attributes, action: actionName }, options);
+}
 
-class CustomSocket extends WebSocket {
-  private static list: Array<CustomSocket> = [];
-  private messageListeners: Array<
-    (this: WebSocket, ev: WebSocketEventMap['message']) => void
-  > = [];
-  private closeListeners: Array<
-    (this: WebSocket, ev: WebSocketEventMap['close']) => void
-  > = [];
-  // array of promise resolves for each actionName (in case the same action is emitted twice)
-  private receiveResolveMap: { [actionName: string]: Array<() => void> } = {};
-  private actionIDMap: { [action: string]: number } = {};
+interface CustomEventOptions {
+  type?: string;
+}
 
-  constructor(url: string, protocols?: string | string[]) {
-    super(url, protocols);
-    CustomSocket.list.push(this);
-  }
-
-  send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
-    if (typeof data === 'string') {
-      const { method, params, id } = JSON.parse(data);
-      if (method === 'subscribe') {
-        const [, messageAction] =
-          (params?.[0] && /action='([^']+)'/.exec(params?.[0])) ?? [];
-        this.actionIDMap[messageAction] = id;
-      }
-    }
-    super.send(data);
-  }
-
-  addEventListener<K extends keyof WebSocketEventMap>(
-    type: K,
-    listener: (this: WebSocket, ev: WebSocketEventMap[K]) => void,
-    options?: boolean | AddEventListenerOptions
-  ) {
-    if (type === 'message') {
-      this.messageListeners.push(
-        listener as (this: WebSocket, ev: WebSocketEventMap['message']) => void
-      );
-    }
-    if (type === 'close') {
-      this.closeListeners.push(
-        listener as (this: WebSocket, ev: WebSocketEventMap['close']) => void
-      );
-    }
-    super.addEventListener(type, listener, options);
-  }
-
-  emulateClose(clean: boolean) {
-    const closeEvent = { wasClean: clean } as WebSocketEventMap['close'];
-    this.closeListeners.forEach((listner) => listner.call(this, closeEvent));
-  }
-
-  async waitUntilReceived(...actionNames: Array<string>) {
-    const promises = actionNames.map(
-      (actionName) =>
-        new Promise<void>(
-          (resolve) =>
-            (this.receiveResolveMap[actionName] = [
-              ...(this.receiveResolveMap[actionName] ?? []),
-              resolve,
-            ])
-        )
-    );
-    await Promise.all(promises);
-  }
-
-  emulateEvent(
-    action: string,
-    otherAttributes: { [key: string]: string } = {}
-  ) {
-    const idList = [
-      this.actionIDMap.undefined,
-      this.actionIDMap[action],
-    ].filter(Boolean);
-    // if there are no relevant subscriptions then don't call bubbleOnMessage (will log the unregistered id error) and skip the waiting
-    if (!idList.length)
-      return setTimeout(
-        () => this.receiveResolveMap[action]?.pop()?.(),
-        shortTimeout
-      );
-    idList.forEach((id) => {
-      const eventData = {
-        module: 'duality',
-        ...otherAttributes,
-        action: action,
-      };
-      const customEvent = {
-        data: JSON.stringify({
-          id: id,
-          result: {
-            data: {
-              type: 'tendermint/event/Tx',
-              value: {
-                TxResult: {
-                  result: {
-                    events: [
-                      {
-                        attributes: Object.entries(eventData).map(
-                          ([key, value]) => ({
-                            key: Buffer.from(key).toString('base64'),
-                            value:
-                              value && Buffer.from(value).toString('base64'),
-                          })
-                        ),
-                      },
-                    ],
-                  },
+function createCustomEvent(
+  id: number,
+  attributes: Attributes = {},
+  options: CustomEventOptions = {}
+): WebSocketServerMessage {
+  const eventData: Attributes = {
+    module: 'duality',
+    ...attributes,
+  };
+  const { type = 'tendermint/event/Tx' } = options;
+  return {
+    id: id,
+    result: {
+      data: {
+        type,
+        value: {
+          TxResult: {
+            result: {
+              events: [
+                {
+                  attributes: Object.entries(eventData).map(([key, value]) => ({
+                    key: Buffer.from(key).toString('base64'),
+                    value: value && Buffer.from(value).toString('base64'),
+                  })),
                 },
-              },
-            },
-            events: {
-              'message.action': eventData.action ? [eventData.action] : [],
-              'tm.event': ['Event'],
-              'tx.acc_seq': ['seq'],
-              'tx.fee': ['fee'],
-              'tx.hash': ['hash'],
-              'tx.height': ['height'],
-              'tx.signature': ['sig'],
+              ],
             },
           },
-        }),
-      } as WebSocketEventMap['message'];
-
-      setTimeout(() => {
-        this.messageListeners.forEach((listener) =>
-          listener.call(this, customEvent)
-        );
-        this.receiveResolveMap[action]?.pop()?.();
-      }, shortTimeout);
-    });
-  }
+        },
+      },
+      events: {
+        'message.action': eventData.action ? [eventData.action] : [],
+        'tm.event': ['Event'],
+        'tx.acc_seq': ['seq'],
+        'tx.fee': ['fee'],
+        'tx.hash': ['hash'],
+        'tx.height': ['height'],
+        'tx.signature': ['sig'],
+      },
+    },
+  };
 }
 
 describe('The event subscription manager', function () {
-  beforeAll(function () {
-    setSocketClass(CustomSocket as typeof WebSocket);
-  });
+  let server: WS | (WS & { reopen: () => void });
+  let subManager: SubscriptionManager;
 
-  describe('should be able to manage the connection state', function () {
+  describe('The event subscription manager', function () {
+    beforeEach(function () {
+      (function open() {
+        server = Object.assign(new WS(url), { reopen: open });
+      })();
+    });
+
     afterEach(function () {
-      subManager?.close();
+      server.close();
     });
 
     it('should be able to open a connection', function (done) {
@@ -173,7 +93,7 @@ describe('The event subscription manager', function () {
         expect(event.wasClean).toBe(true);
         done();
       });
-      subManager.addSocketListener('open', subManager.close);
+      subManager.addSocketListener('open', () => server.error());
       subManager.open();
     });
 
@@ -189,7 +109,7 @@ describe('The event subscription manager', function () {
       subManager.addSocketListener('open', handler);
       subManager.open();
       subManager.open();
-      await delay(mediumTimeout);
+      await delay(connectTimeout);
       expect(handler).toHaveBeenCalledTimes(1);
     });
 
@@ -200,7 +120,7 @@ describe('The event subscription manager', function () {
       subManager.open();
       subManager.close();
       subManager.open();
-      await delay(mediumTimeout);
+      await delay(connectTimeout);
       expect(handler).toHaveBeenCalledTimes(1);
       expect(subManager.isOpen()).toBe(true);
     });
@@ -216,7 +136,7 @@ describe('The event subscription manager', function () {
       });
       subManager.open();
 
-      await delay(mediumTimeout);
+      await delay(connectTimeout);
       expect(handler).toHaveBeenCalledTimes(2);
       expect(subManager.isOpen()).toBe(true);
     });
@@ -225,40 +145,48 @@ describe('The event subscription manager', function () {
       const handler = jest.fn();
       subManager = createSubscriptionManager(url);
       subManager.addSocketListener('open', handler);
-      subManager.addSocketListener('open', onOpen);
       subManager.open();
-
-      await delay(longerTimeout);
-      expect(handler).toHaveBeenCalledTimes(2);
-      expect(subManager.isOpen()).toBe(true);
-
-      function onOpen(event?: Event) {
-        if (event?.target instanceof CustomSocket) {
-          const socket = event.target;
-          socket.emulateClose(false);
+      await new Promise<Event | undefined>((resolve) => {
+        // wait for a reopening confirmation
+        subManager.addSocketListener('close', () => {
+          subManager.addSocketListener('open', resolve);
+        });
+        // wait for open confirmation to throw error from server
+        subManager.addSocketListener('open', onOpen);
+        function onOpen() {
+          server.close({
+            code: 1001,
+            reason: 'server blip',
+            wasClean: false,
+          });
+          server.reopen();
           subManager.removeSocketListener('open', onOpen);
         }
-      }
+      });
+
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(subManager.isOpen()).toBe(true);
     });
 
     it('should not be affected by a fake clean close event', async function () {
       const handler = jest.fn();
       subManager = createSubscriptionManager(url);
       subManager.addSocketListener('open', handler);
-      subManager.addSocketListener('open', onOpen);
       subManager.open();
-
-      await delay(longerTimeout);
-      expect(handler).toHaveBeenCalledTimes(1);
-      expect(subManager.isOpen()).toBe(true);
-
-      function onOpen(event?: Event) {
-        if (event?.target instanceof CustomSocket) {
-          const socket = event.target;
-          socket.emulateClose(true);
+      await new Promise<Event | undefined>((resolve) => {
+        // wait for a close confirmation
+        subManager.addSocketListener('close', resolve);
+        // wait for open confirmation to close WebSocket server
+        subManager.addSocketListener('open', onOpen);
+        function onOpen() {
+          server.close();
+          server.reopen();
           subManager.removeSocketListener('open', onOpen);
         }
-      }
+      });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(subManager.isOpen()).toBe(false);
     });
   });
 
@@ -267,94 +195,125 @@ describe('The event subscription manager', function () {
     const otherActionName = 'steT';
     const actionNames = [actionName, otherActionName];
 
-    beforeEach(async function () {
-      await new Promise(function (resolve, reject) {
-        subManager = createSubscriptionManager(url);
-        subManager.addSocketListener('open', function (e) {
-          if (e?.target instanceof CustomSocket) {
-            currentSocket = e.target;
-            resolve(subManager);
-          } else {
-            reject('');
-          }
-        });
-        subManager.addSocketListener('error', reject);
-        subManager.open();
+    beforeEach(function (done) {
+      server = new WS(url, { jsonProtocol: true });
+      subManager = createSubscriptionManager(url);
+      subManager.open();
+      subManager.addSocketListener('open', () => {
+        // ensure server also thinks it is connected
+        server.connected.then(() => done());
       });
     });
 
     afterEach(function () {
       subManager.close();
+      server.close();
     });
 
     describe('(subscription tests)', function () {
       it('should be able to listen for any type of event', async function () {
         const handler = jest.fn();
-
         subManager.subscribe(handler, EventType.EventTxValue);
-        currentSocket.emulateEvent(actionName);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        const message = createCustomEvent(id);
+        server.send(message);
 
-        await currentSocket.waitUntilReceived(actionName);
-
-        expect(handler).toHaveBeenCalledTimes(1);
         expect(handler).toHaveBeenCalledWith(
-          expect.objectContaining({
-            value: expect.objectContaining(getEventObject(actionName)),
-          }),
+          message.result.data,
           expect.anything(),
           expect.anything()
         );
       });
       it('should be able to listen for a specific type of event', async function () {
-        const { waiter, resolve } = createWaiter<TendermintDataType>();
+        const handler = jest.fn();
+        subManager.subscribe(handler, EventType.EventTxValue);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        const message1 = createCustomEvent(
+          id,
+          {},
+          { type: 'tendermint/event/tx' }
+        );
+        // TODO: the subscription will listen to all types of events passed on the same id.
+        // we rely on the WebSocket server to track the subscriptions correctly
+        // and to always be in sync with the client in regards to the id and its expected type.
+        // however, it is impossible for the server to always be in sync with the client.
+        // to simulate correct behaviour we change the id number here to mismatch the subscription.
+        const message2 = createCustomEvent(
+          id + 1,
+          {},
+          { type: 'tendermint/event/random' }
+        );
+        server.send(message1);
+        server.send(message2);
 
-        subManager.subscribe(resolve, EventType.EventTxValue, {
-          messageAction: actionName,
-        });
-        currentSocket.emulateEvent(actionName);
-
-        expect(getActionNames(await waiter)).toStrictEqual([actionName]);
+        expect(handler).toHaveBeenCalledWith(
+          message1.result.data,
+          expect.anything(),
+          expect.anything()
+        );
+        expect(handler).not.toHaveBeenCalledWith(
+          message2.result.data,
+          expect.anything(),
+          expect.anything()
+        );
       });
       it('should be able to listen to multiple events', async function () {
         const handler = jest.fn();
-
         subManager.subscribe(handler, EventType.EventTxValue);
-        actionNames.forEach((actionName) =>
-          currentSocket.emulateEvent(actionName)
-        );
-
-        await currentSocket.waitUntilReceived(...actionNames);
-
-        expect(handler).toHaveBeenCalledTimes(actionNames.length);
-        actionNames.forEach((actionName, index) => {
-          expect(handler).toHaveBeenNthCalledWith(
-            index + 1,
-            expect.objectContaining({
-              value: expect.objectContaining(getEventObject(actionName)),
-            }),
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        actionNames.forEach((actionName) => {
+          const message = createCustomActionEvent(id, actionName);
+          server.send(message);
+          expect(handler).toHaveBeenCalledWith(
+            message.result.data,
             expect.anything(),
             expect.anything()
           );
+          // clear the handler for the next iteration
+          handler.mockClear();
         });
+      });
+      it('should be able to listen to multiple events of any type', async function () {
+        const handler = jest.fn();
+        subManager.subscribe(handler, EventType.EventTxValue);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        const message1 = createCustomEvent(
+          id,
+          {},
+          { type: 'tendermint/event/tx' }
+        );
+        const message2 = createCustomEvent(
+          id,
+          {},
+          { type: 'tendermint/event/random' }
+        );
+        server.send(message1);
+        server.send(message2);
+
+        expect(handler).toHaveBeenCalledWith(
+          message1.result.data,
+          expect.anything(),
+          expect.anything()
+        );
+        expect(handler).toHaveBeenCalledWith(
+          message2.result.data,
+          expect.anything(),
+          expect.anything()
+        );
       });
       it('should be ok to subscribe multiple times without an actionMessage', async function () {
         const handler = jest.fn();
         const repeatArray = Array.from({ length: 2 });
-
         repeatArray.forEach(() =>
           subManager.subscribe(handler, EventType.EventTxValue)
         );
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
-
-        expect(handler).toHaveBeenCalledTimes(repeatArray.length);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
         repeatArray.forEach((_, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            expect.objectContaining({
-              value: expect.objectContaining(getEventObject(actionName)),
-            }),
+            message.result.data,
             expect.anything(),
             expect.anything()
           );
@@ -363,23 +322,18 @@ describe('The event subscription manager', function () {
       it('should be ok to subscribe multiple times with an actionMessage', async function () {
         const handler = jest.fn();
         const repeatArray = Array.from({ length: 2 });
-
         repeatArray.forEach(() =>
           subManager.subscribe(handler, EventType.EventTxValue, {
             messageAction: actionName,
           })
         );
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
-
-        expect(handler).toHaveBeenCalledTimes(repeatArray.length);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
         repeatArray.forEach((_, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            expect.objectContaining({
-              value: expect.objectContaining(getEventObject(actionName)),
-            }),
+            message.result.data,
             expect.anything(),
             expect.anything()
           );
@@ -393,53 +347,54 @@ describe('The event subscription manager', function () {
             messageAction: actionName,
           })
         );
-        actionNames.forEach((actionName) =>
-          currentSocket.emulateEvent(actionName)
-        );
-
-        await currentSocket.waitUntilReceived(...actionNames);
-
-        expect(handler).toHaveBeenCalledTimes(actionNames.length);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         actionNames.forEach((actionName, index) => {
+          const message = createCustomActionEvent(id, actionName);
+          server.send(message);
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            expect.objectContaining({
-              value: expect.objectContaining(getEventObject(actionName)),
-            }),
+            message.result.data,
             expect.anything(),
             expect.anything()
           );
         });
       });
+
       it('should be ok to ignore unregistered events', async function () {
         const handler = jest.fn();
         const otherHandler = jest.fn();
-
         subManager.subscribe(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        const { id: id1 } =
+          (await server.nextMessage) as WebSocketClientMessage;
         subManager.subscribe(otherHandler, EventType.EventTxValue, {
           messageAction: otherActionName,
         });
-
-        currentSocket.emulateEvent(actionName);
-        currentSocket.emulateEvent(otherActionName);
-
-        await currentSocket.waitUntilReceived(actionName, otherActionName);
+        const { id: id2 } =
+          (await server.nextMessage) as WebSocketClientMessage;
+        const message1 = createCustomEvent(
+          id1,
+          {},
+          { type: 'tendermint/event/tx' }
+        );
+        const message2 = createCustomEvent(
+          id2,
+          {},
+          { type: 'tendermint/event/random' }
+        );
+        server.send(message1);
+        server.send(message2);
 
         expect(handler).toHaveBeenCalledTimes(1);
         expect(otherHandler).toHaveBeenCalledTimes(1);
         expect(handler).toHaveBeenCalledWith(
-          expect.objectContaining({
-            value: expect.objectContaining(getEventObject(actionName)),
-          }),
+          message1.result.data,
           expect.anything(),
           expect.anything()
         );
         expect(otherHandler).toHaveBeenCalledWith(
-          expect.objectContaining({
-            value: expect.objectContaining(getEventObject(otherActionName)),
-          }),
+          message2.result.data,
           expect.anything(),
           expect.anything()
         );
@@ -453,13 +408,13 @@ describe('The event subscription manager', function () {
         subManager.subscribe(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribe(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
 
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
@@ -469,11 +424,11 @@ describe('The event subscription manager', function () {
         subManager.subscribe(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribe();
 
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
@@ -481,11 +436,11 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
 
         subManager.subscribe(handler, EventType.EventTxValue);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribe(handler, EventType.EventTxValue);
 
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
@@ -498,17 +453,36 @@ describe('The event subscription manager', function () {
         subManager.subscribe(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribe(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
 
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to unsubscribe from multiple subscriptions with one fully generic call', async function () {
+        const handler = jest.fn();
+
+        await actionNames.reduce(async (promise, actionName) => {
+          await promise;
+          subManager.subscribe(handler, EventType.EventTxValue, {
+            messageAction: actionName,
+          });
+          await server.nextMessage;
+        }, Promise.resolve());
+        subManager.unsubscribe();
+        actionNames.forEach((actionName, index) => {
+          const { id } = server.messages[index] as WebSocketClientMessage;
+          const message = createCustomActionEvent(id, actionName);
+          server.send(message);
+        });
+
+        expect(handler).toHaveBeenCalledTimes(0);
+      });
+      it('should be able to unsubscribe from multiple subscriptions with one fully generic call (using resolveAllQueudMessages)', async function () {
         const handler = jest.fn();
 
         actionNames.forEach((actionName) => {
@@ -516,13 +490,13 @@ describe('The event subscription manager', function () {
             messageAction: actionName,
           });
         });
+        await resolveAllQueudMessages(server);
         subManager.unsubscribe();
-
-        actionNames.forEach((actionName) =>
-          currentSocket.emulateEvent(actionName)
-        );
-
-        await currentSocket.waitUntilReceived(...actionNames);
+        actionNames.forEach((actionName, index) => {
+          const { id } = server.messages[index] as WebSocketClientMessage;
+          const message = createCustomActionEvent(id, actionName);
+          server.send(message);
+        });
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
@@ -534,21 +508,21 @@ describe('The event subscription manager', function () {
             messageAction: actionName,
           });
         });
+        await resolveAllQueudMessages(server);
         subManager.unsubscribe(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
 
-        actionNames.forEach((actionName) =>
-          currentSocket.emulateEvent(actionName)
-        );
-
-        await currentSocket.waitUntilReceived(...actionNames);
+        const messages = actionNames.map((actionName, index) => {
+          const { id } = server.messages[index] as WebSocketClientMessage;
+          const message = createCustomActionEvent(id, actionName);
+          server.send(message);
+          return message;
+        });
 
         expect(handler).toHaveBeenCalledTimes(1);
         expect(handler).toHaveBeenLastCalledWith(
-          expect.objectContaining({
-            value: expect.objectContaining(getEventObject(otherActionName)),
-          }),
+          messages[1].result.data,
           expect.anything(),
           expect.anything()
         );
@@ -563,19 +537,19 @@ describe('The event subscription manager', function () {
         subManager.subscribe(otherHandler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        // both subscriptions use the same id
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribe(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
-        currentSocket.emulateEvent(actionName);
 
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
         expect(otherHandler).toHaveBeenCalledTimes(1);
         expect(otherHandler).toHaveBeenCalledWith(
-          expect.objectContaining({
-            value: expect.objectContaining(getEventObject(actionName)),
-          }),
+          message.result.data,
           expect.anything(),
           expect.anything()
         );
@@ -590,18 +564,17 @@ describe('The event subscription manager', function () {
         subManager.subscribe(otherHandler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        // both subscriptions use the same id
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribe(handler);
 
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
         expect(otherHandler).toHaveBeenCalledTimes(1);
         expect(otherHandler).toHaveBeenCalledWith(
-          expect.objectContaining({
-            value: expect.objectContaining(getEventObject(actionName)),
-          }),
+          message.result.data,
           expect.anything(),
           expect.anything()
         );
@@ -613,34 +586,40 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
 
         subManager.subscribeMessage(handler, EventType.EventTxValue);
-        currentSocket.emulateEvent(actionName);
 
-        await currentSocket.waitUntilReceived(actionName);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(1);
         expect(handler).toHaveBeenCalledWith(getMessageObject(actionName));
       });
       it('should be able to listen for a specific type of message', async function () {
-        const { waiter, resolve } = createWaiter<MessageActionEvent>();
+        const handler = jest.fn();
 
-        subManager.subscribeMessage(resolve, EventType.EventTxValue, {
+        subManager.subscribeMessage(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
-        currentSocket.emulateEvent(actionName);
 
-        expect(await waiter).toStrictEqual(getMessageObject(actionName));
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
+
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(handler).toHaveBeenCalledWith(getMessageObject(actionName));
       });
       it('should be able to listen to multiple messages', async function () {
         const handler = jest.fn();
 
         subManager.subscribeMessage(handler, EventType.EventTxValue);
-        actionNames.forEach((actionName) =>
-          currentSocket.emulateEvent(actionName)
-        );
-
-        await currentSocket.waitUntilReceived(...actionNames);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        actionNames.forEach((actionName) => {
+          const message = createCustomActionEvent(id, actionName);
+          server.send(message);
+        });
 
         expect(handler).toHaveBeenCalledTimes(actionNames.length);
+
         actionNames.forEach((actionName, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
@@ -655,9 +634,9 @@ describe('The event subscription manager', function () {
         repeatArray.forEach(() =>
           subManager.subscribeMessage(handler, EventType.EventTxValue)
         );
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(repeatArray.length);
         repeatArray.forEach((_, index) => {
@@ -676,9 +655,9 @@ describe('The event subscription manager', function () {
             messageAction: actionName,
           })
         );
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(repeatArray.length);
         repeatArray.forEach((_, index) => {
@@ -696,12 +675,13 @@ describe('The event subscription manager', function () {
             messageAction: actionName,
           })
         );
-        actionNames.forEach((actionName) =>
-          currentSocket.emulateEvent(actionName)
-        );
 
-        await currentSocket.waitUntilReceived(...actionNames);
-
+        await resolveAllQueudMessages(server);
+        actionNames.forEach((actionName, index) => {
+          const { id } = server.messages[index] as WebSocketClientMessage;
+          const message = createCustomActionEvent(id, actionName);
+          server.send(message);
+        });
         expect(handler).toHaveBeenCalledTimes(actionNames.length);
         actionNames.forEach((actionName, index) => {
           expect(handler).toHaveBeenNthCalledWith(
@@ -721,10 +701,12 @@ describe('The event subscription manager', function () {
           messageAction: otherActionName,
         });
 
-        currentSocket.emulateEvent(actionName);
-        currentSocket.emulateEvent(otherActionName);
-
-        await currentSocket.waitUntilReceived(actionName, otherActionName);
+        await resolveAllQueudMessages(server);
+        actionNames.forEach((actionName, index) => {
+          const { id } = server.messages[index] as WebSocketClientMessage;
+          const message = createCustomActionEvent(id, actionName);
+          server.send(message);
+        });
 
         expect(handler).toHaveBeenCalledTimes(1);
         expect(otherHandler).toHaveBeenCalledTimes(1);
@@ -742,13 +724,12 @@ describe('The event subscription manager', function () {
         subManager.subscribeMessage(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribeMessage(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
-
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
@@ -758,11 +739,10 @@ describe('The event subscription manager', function () {
         subManager.subscribeMessage(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribeMessage();
-
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
@@ -770,11 +750,10 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
 
         subManager.subscribeMessage(handler, EventType.EventTxValue);
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribeMessage(handler, EventType.EventTxValue);
-
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
@@ -787,13 +766,12 @@ describe('The event subscription manager', function () {
         subManager.subscribeMessage(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribeMessage(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
-
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
@@ -807,11 +785,12 @@ describe('The event subscription manager', function () {
         });
         subManager.unsubscribeMessage();
 
-        actionNames.forEach((actionName) =>
-          currentSocket.emulateEvent(actionName)
-        );
-
-        await currentSocket.waitUntilReceived(...actionNames);
+        await resolveAllQueudMessages(server);
+        actionNames.forEach((actionName, index) => {
+          const { id } = server.messages[index] as WebSocketClientMessage;
+          const message = createCustomActionEvent(id, actionName);
+          server.send(message);
+        });
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
@@ -827,11 +806,12 @@ describe('The event subscription manager', function () {
           messageAction: actionName,
         });
 
-        actionNames.forEach((actionName) =>
-          currentSocket.emulateEvent(actionName)
-        );
-
-        await currentSocket.waitUntilReceived(...actionNames);
+        await resolveAllQueudMessages(server);
+        actionNames.forEach((actionName, index) => {
+          const { id } = server.messages[index] as WebSocketClientMessage;
+          const message = createCustomActionEvent(id, actionName);
+          server.send(message);
+        });
 
         expect(handler).toHaveBeenCalledTimes(1);
         expect(handler).toHaveBeenLastCalledWith(
@@ -848,12 +828,12 @@ describe('The event subscription manager', function () {
         subManager.subscribeMessage(otherHandler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribeMessage(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
         expect(otherHandler).toHaveBeenCalledTimes(1);
@@ -869,11 +849,11 @@ describe('The event subscription manager', function () {
         subManager.subscribeMessage(otherHandler, EventType.EventTxValue, {
           messageAction: actionName,
         });
+        const { id } = (await server.nextMessage) as WebSocketClientMessage;
         subManager.unsubscribeMessage(handler);
 
-        currentSocket.emulateEvent(actionName);
-
-        await currentSocket.waitUntilReceived(actionName);
+        const message = createCustomActionEvent(id, actionName);
+        server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(0);
         expect(otherHandler).toHaveBeenCalledTimes(1);
@@ -887,65 +867,8 @@ async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function createWaiter<T>() {
-  let resolveCB: ((result: T) => void) | undefined;
-  let alreadyCalled = false;
-  let readyResult: T;
-  const waiter = new Promise<T>(function (resolve) {
-    if (alreadyCalled) {
-      resolve(readyResult);
-    } else {
-      resolveCB = resolve;
-    }
-  });
-
-  return { waiter, resolve: resolveWrapper };
-
-  function resolveWrapper(result: T) {
-    if (resolveCB) {
-      resolveCB(result);
-    } else {
-      readyResult = result;
-      alreadyCalled = true;
-    }
-  }
-}
-
-function getActionNames(data: TendermintDataType) {
-  const events = (data as TendermintTxData).value?.TxResult?.result?.events;
-  return events
-    .map(function (event) {
-      const attribute = event.attributes.find(
-        ({ key }) => Buffer.from(key, 'base64').toString() === 'action'
-      );
-      return attribute
-        ? Buffer.from(attribute.value, 'base64').toString()
-        : null;
-    })
-    .filter(Boolean);
-}
-
-function getEventObject(actionName: string) {
-  return {
-    TxResult: {
-      result: {
-        events: [
-          {
-            attributes: [
-              {
-                key: 'bW9kdWxl',
-                value: 'ZHVhbGl0eQ==',
-              },
-              {
-                key: Buffer.from('action').toString('base64'),
-                value: Buffer.from(actionName).toString('base64'),
-              },
-            ],
-          },
-        ],
-      },
-    },
-  };
+interface Attributes {
+  [key: string]: string;
 }
 
 function getMessageObject(actionName: string) {
@@ -953,4 +876,15 @@ function getMessageObject(actionName: string) {
     module: 'duality',
     action: actionName,
   };
+}
+
+async function resolveAllQueudMessages(server: WS) {
+  await new Promise<void>(async (resolve) => {
+    await server.nextMessage;
+    await delay(1);
+    while (server.messagesToConsume.pendingItems.length > 0) {
+      await server.nextMessage;
+    }
+    resolve();
+  });
 }

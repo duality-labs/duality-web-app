@@ -56,12 +56,13 @@ export interface TendermintTxData {
       result: {
         data: string;
         events: Array<{
-          attributes: [{ index: boolean; key: string; value: string }];
+          // does this really contain an index?
+          attributes: Array<{ index: boolean; key: string; value: string }>;
           type: 'tx' | 'message';
         }>;
-        gas_used: string;
-        gas_wanted: string;
-        log: string;
+        gas_used?: string;
+        gas_wanted?: string;
+        log?: string;
       };
       tx: string;
     };
@@ -82,6 +83,21 @@ interface CallBackWrapper {
   messageListener?: (event: MessageActionEvent) => void;
   // to compare with the action of each event and filter out those that don't match
   messageAction?: string;
+}
+
+export interface WebSocketClientMessage {
+  jsonrpc: '2.0';
+  id: number;
+  method: MessageType;
+  params?: Array<string>;
+}
+
+export interface WebSocketServerMessage {
+  id: number;
+  result: {
+    data: TendermintDataType;
+  };
+  error: string;
 }
 
 type MessageType = 'subscribe' | 'unsubscribe';
@@ -224,12 +240,6 @@ const startingReconnectInterval = 2e3,
 
 const unsubDebounceInterval = 1e3;
 
-let socketClass = WebSocket;
-
-export function setSocketClass(newSocketClass: typeof WebSocket) {
-  socketClass = newSocketClass;
-}
-
 export function createSubscriptionManager(
   url: string,
   onMessage?: MessageListener,
@@ -317,7 +327,7 @@ export function createSubscriptionManager(
 
   function open() {
     if (isOpen()) throw new Error('Socket is already open');
-    const currentSocket = new socketClass(url);
+    const currentSocket = new WebSocket(url);
     socket = currentSocket;
     socket.addEventListener('open', function (event) {
       reconnectInterval = startingReconnectInterval;
@@ -537,7 +547,7 @@ export function createSubscriptionManager(
     if (!isOpen()) {
       throw new Error('Socket connection is not open');
     }
-    const message = {
+    const message: WebSocketClientMessage = {
       jsonrpc: '2.0',
       method: method,
       params: paramQuery ? [paramQuery] : undefined,
@@ -554,8 +564,11 @@ export function createSubscriptionManager(
    * Calls the respective callback functions when a message is received
    * @param event the event emitted by tendermint
    */
-  function bubbleOnMessage(event: MessageEvent) {
-    const { error, id, result } = JSON.parse(event.data);
+
+  function bubbleOnMessage(event: MessageEvent<string>) {
+    const { error, id, result } = JSON.parse(
+      event.data
+    ) as WebSocketServerMessage;
     if (id === 1) {
       Object.values(listeners).forEach(function (cb) {
         if (cb.status === QueryStatus.Disconnecting)
