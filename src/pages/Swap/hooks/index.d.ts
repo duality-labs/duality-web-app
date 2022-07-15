@@ -1,3 +1,5 @@
+import { BigNumber } from 'bignumber.js';
+
 export interface PairRequest {
   /** address of altered token */
   token0?: string;
@@ -20,4 +22,14 @@ export interface PairResult {
   rate: string;
   /** (estimated) gas fee */
   gas: string;
+}
+
+export interface RouterResult {
+  amountIn: BigNumber;
+  tokens: Array<string>;
+  prices0: Array<Array<BigNumber>>;
+  prices1: Array<Array<BigNumber>>;
+  fees: Array<Array<BigNumber>>;
+  reserves0: Array<Array<BigNumber>>;
+  reserves1: Array<Array<BigNumber>>;
 }
