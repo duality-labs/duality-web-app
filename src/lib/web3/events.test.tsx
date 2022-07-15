@@ -8,7 +8,6 @@ import {
 } from './events';
 
 const url = 'ws://localhost:1234';
-const connectTimeout = 1e2;
 
 function createCustomActionEvent(
   id: number,
@@ -74,9 +73,11 @@ describe('The event subscription manager', function () {
     beforeEach(function () {
       server = new WS(url);
     });
-
-    afterEach(function () {
-      server.close();
+    afterEach(async function () {
+      server?.close();
+      await server?.closed;
+      subManager?.close();
+      await delay(0);
     });
 
     it('should be able to open a connection', function (done) {
@@ -107,7 +108,7 @@ describe('The event subscription manager', function () {
       subManager.addSocketListener('open', handler);
       subManager.open();
       subManager.open();
-      await delay(connectTimeout);
+      await server.connected;
       expect(handler).toHaveBeenCalledTimes(1);
     });
 
@@ -118,7 +119,7 @@ describe('The event subscription manager', function () {
       subManager.open();
       subManager.close();
       subManager.open();
-      await delay(connectTimeout);
+      await server.connected;
       expect(handler).toHaveBeenCalledTimes(1);
       expect(subManager.isOpen()).toBe(true);
     });
@@ -127,14 +128,25 @@ describe('The event subscription manager', function () {
       const handler = jest.fn();
       subManager = createSubscriptionManager(url);
       subManager.addSocketListener('open', handler);
-      subManager.addSocketListener('open', subManager.close);
-      subManager.addSocketListener('close', () => {
-        subManager.removeSocketListener('open', subManager.close);
-        subManager.open();
+      const reopenedPromise = new Promise((resolve) => {
+        // wait for open confirmation to close server
+        subManager.addSocketListener('open', onOpen);
+        function onOpen() {
+          subManager.removeSocketListener('open', onOpen);
+          server.close();
+          server = new WS(url);
+        }
+        // wait for a reopening confirmation
+        subManager.addSocketListener('close', onClose);
+        async function onClose() {
+          subManager.removeSocketListener('close', onClose);
+          await delay(0);
+          subManager.addSocketListener('open', resolve);
+          subManager.open();
+        }
       });
       subManager.open();
-
-      await delay(connectTimeout);
+      await reopenedPromise;
       expect(handler).toHaveBeenCalledTimes(2);
       expect(subManager.isOpen()).toBe(true);
     });
@@ -143,24 +155,27 @@ describe('The event subscription manager', function () {
       const handler = jest.fn();
       subManager = createSubscriptionManager(url);
       subManager.addSocketListener('open', handler);
-      subManager.open();
-      await new Promise<Event | undefined>((resolve) => {
-        // wait for a reopening confirmation
-        subManager.addSocketListener('close', () => {
-          subManager.addSocketListener('open', resolve);
-        });
+      const reopenedPromise = new Promise((resolve) => {
         // wait for open confirmation to throw error from server
         subManager.addSocketListener('open', onOpen);
         function onOpen() {
+          subManager.removeSocketListener('open', onOpen);
           server.close({
             code: 1001,
             reason: 'server blip',
             wasClean: false,
           });
           server = new WS(url);
-          subManager.removeSocketListener('open', onOpen);
+        }
+        // wait for a reopening confirmation
+        subManager.addSocketListener('close', onClose);
+        function onClose() {
+          subManager.removeSocketListener('close', onClose);
+          subManager.addSocketListener('open', resolve);
         }
       });
+      subManager.open();
+      await reopenedPromise;
 
       expect(handler).toHaveBeenCalledTimes(2);
       expect(subManager.isOpen()).toBe(true);
