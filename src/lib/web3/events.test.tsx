@@ -67,14 +67,12 @@ function createCustomEvent(
 }
 
 describe('The event subscription manager', function () {
-  let server: WS | (WS & { reopen: () => void });
+  let server: WS;
   let subManager: SubscriptionManager;
 
   describe('The event subscription manager', function () {
     beforeEach(function () {
-      (function open() {
-        server = Object.assign(new WS(url), { reopen: open });
-      })();
+      server = new WS(url);
     });
 
     afterEach(function () {
@@ -159,7 +157,7 @@ describe('The event subscription manager', function () {
             reason: 'server blip',
             wasClean: false,
           });
-          server.reopen();
+          server = new WS(url);
           subManager.removeSocketListener('open', onOpen);
         }
       });
@@ -180,7 +178,7 @@ describe('The event subscription manager', function () {
         subManager.addSocketListener('open', onOpen);
         function onOpen() {
           server.close();
-          server.reopen();
+          server = new WS(url);
           subManager.removeSocketListener('open', onOpen);
         }
       });
