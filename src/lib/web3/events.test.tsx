@@ -113,6 +113,7 @@ describe('The event subscription manager', function () {
       subManager.open();
       subManager.open();
       await server.connected;
+      await delay(0);
       expect(handler).toHaveBeenCalledTimes(1);
     });
 
@@ -124,6 +125,7 @@ describe('The event subscription manager', function () {
       subManager.close();
       subManager.open();
       await server.connected;
+      await delay(0);
       expect(handler).toHaveBeenCalledTimes(1);
       expect(subManager.isOpen()).toBe(true);
     });
