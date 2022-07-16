@@ -70,6 +70,12 @@ describe('The event subscription manager', function () {
   let subManager: SubscriptionManager;
 
   describe('The event subscription manager', function () {
+    afterEach(() => {
+      // should call the following line for safety but it prints a large warning everytime
+      // jest.runOnlyPendingTimers();
+      jest.useRealTimers();
+    });
+
     beforeEach(function () {
       server = new WS(url);
     });
@@ -156,14 +162,20 @@ describe('The event subscription manager', function () {
       const reopenedPromise = new Promise((resolve) => {
         // wait for open confirmation to throw error from server
         subManager.addSocketListener('open', onOpen);
-        function onOpen() {
+        async function onOpen() {
           subManager.removeSocketListener('open', onOpen);
+          jest.useFakeTimers({ legacyFakeTimers: false });
           server.close({
             code: 1001,
             reason: 'server blip',
             wasClean: false,
           });
+          await server.closed;
           server = new WS(url);
+          // speed up reconnection waiting time
+          jest.advanceTimersByTime(10000);
+          await server.connected;
+          jest.useRealTimers();
         }
         // wait for a reopening confirmation
         subManager.addSocketListener('close', onClose);
