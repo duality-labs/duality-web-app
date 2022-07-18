@@ -170,7 +170,7 @@ describe('The event subscription manager', function () {
     it('should be able to close an open connection', function (done) {
       subManager = createSubscriptionManager(url);
       subManager.addSocketListener('close', function (event) {
-        expect(event instanceof CloseEvent && event.wasClean).toBe(true);
+        expect(event.wasClean).toBe(true);
         done();
       });
       subManager.addSocketListener('open', subManager.close);

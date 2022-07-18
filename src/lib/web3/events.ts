@@ -86,7 +86,7 @@ interface CallBackWrapper {
 
 type MessageType = 'subscribe' | 'unsubscribe';
 
-type SocketListenerType = 'open' | 'error' | 'close';
+type SocketEventMap = Omit<WebSocketEventMap, 'message'>;
 
 /**
  * @see https://github.com/tendermint/tendermint/blob/master/types/events.go
@@ -197,9 +197,9 @@ export interface SubscriptionManager {
    * @param event name of event
    * @param cb callback
    */
-  readonly addSocketListener: (
-    event: SocketListenerType,
-    cb: (ev?: Event) => void
+  readonly addSocketListener: <EventType extends keyof SocketEventMap>(
+    event: EventType,
+    cb: (ev: SocketEventMap[EventType]) => void
   ) => void;
 
   /**
@@ -207,9 +207,9 @@ export interface SubscriptionManager {
    * @param event name of event
    * @param cb callback
    */
-  readonly removeSocketListener: (
-    event: SocketListenerType,
-    cb: (ev?: Event) => void
+  readonly removeSocketListener: <EventType extends keyof SocketEventMap>(
+    event: EventType,
+    cb: (ev: SocketEventMap[EventType]) => void
   ) => void;
 
   /**
@@ -248,9 +248,15 @@ export function createSubscriptionManager(
   let idListenerMap: {
     [id: number]: typeof listeners[keyof typeof listeners] | null;
   } = {};
-  const openListeners: Array<(ev: Event) => void> = [];
-  const closeListeners: Array<(ev: Event) => void> = [];
-  const errorListeners: Array<(ev: Event) => void> = [];
+  const socketListeners: {
+    [EventType in keyof SocketEventMap]: Array<
+      (ev: SocketEventMap[EventType]) => void
+    >;
+  } = {
+    open: [],
+    close: [],
+    error: [],
+  };
   let reconnectInterval = startingReconnectInterval;
   let lastAbortTimeout = -1;
   if (eventType && onMessage) subscribe(onMessage, eventType, options || {});
@@ -270,61 +276,43 @@ export function createSubscriptionManager(
   Object.defineProperty(manager, 'onopen', {
     set: function (value) {
       if (typeof value !== 'function') throw new Error('Invalid open listener');
-      openListeners.push(value);
+      socketListeners.open.push(value);
     },
   });
   Object.defineProperty(manager, 'onerror', {
     set: function (value) {
       if (typeof value !== 'function')
         throw new Error('Invalid error listener');
-      errorListeners.push(value);
+      socketListeners.error.push(value);
     },
   });
   Object.defineProperty(manager, 'onclose', {
     set: function (value) {
       if (typeof value !== 'function')
         throw new Error('Invalid close listener');
-      closeListeners.push(value);
+      socketListeners.close.push(value);
     },
   });
 
   return manager;
 
-  function addSocketListener(
-    event: SocketListenerType,
-    cb: (ev?: Event) => void
+  function addSocketListener<EventType extends keyof SocketEventMap>(
+    event: EventType,
+    cb: (ev: SocketEventMap[EventType]) => void
   ) {
-    switch (event) {
-      case 'open':
-        openListeners.push(cb);
-        break;
-      case 'error':
-        errorListeners.push(cb);
-        break;
-      case 'close':
-        closeListeners.push(cb);
-        break;
-    }
+    const list = socketListeners[event];
+    if (!list) throw Error('Invalid listener type');
+    list.push(cb);
   }
 
-  function removeSocketListener(
-    event: SocketListenerType,
-    cb: (ev?: Event) => void
+  function removeSocketListener<EventType extends keyof SocketEventMap>(
+    event: EventType,
+    cb: (ev: SocketEventMap[EventType]) => void
   ) {
-    switch (event) {
-      case 'open':
-        let index = openListeners.lastIndexOf(cb);
-        if (index !== -1) openListeners.splice(index, 1);
-        break;
-      case 'error':
-        index = errorListeners.lastIndexOf(cb);
-        if (index !== -1) errorListeners.splice(index, 1);
-        break;
-      case 'close':
-        index = closeListeners.lastIndexOf(cb);
-        if (index !== -1) closeListeners.splice(index, 1);
-        break;
-    }
+    const list = socketListeners[event];
+    if (!list) throw Error('Invalid listener type');
+    const index = list.lastIndexOf(cb);
+    if (index !== -1) list.splice(index, 1);
   }
 
   function open() {
@@ -352,7 +340,7 @@ export function createSubscriptionManager(
           group.status = QueryStatus.Connecting;
         }
       });
-      openListeners.forEach(function (cb) {
+      socketListeners.open.forEach(function (cb) {
         try {
           cb(event);
         } catch (err) {
@@ -365,7 +353,7 @@ export function createSubscriptionManager(
     });
     currentSocket.addEventListener('error', function (ev) {
       if (currentSocket !== socket) return; // socket has been altered
-      errorListeners.forEach(function (cb) {
+      socketListeners.error.forEach(function (cb) {
         try {
           cb(ev);
         } catch (err) {
@@ -390,7 +378,7 @@ export function createSubscriptionManager(
           reconnectInterval * 2
         );
       }
-      closeListeners.forEach(function (cb) {
+      socketListeners.close.forEach(function (cb) {
         try {
           cb(event);
         } catch (err) {
