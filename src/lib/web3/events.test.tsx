@@ -13,7 +13,7 @@ const url = 'ws://localhost:26657/websocket';
 const shortTimeout = 0.5e3;
 const mediumTimeout = 2e3;
 const longerTimeout = 3e3;
-jest.setTimeout(mediumTimeout);
+jest.setTimeout(longerTimeout + mediumTimeout);
 
 let subManager: SubscriptionManager;
 let currentSocket: CustomSocket;
@@ -183,103 +183,83 @@ describe('The event subscription manager', function () {
       expect(subManager.isOpen()).toBe(false);
     });
 
-    it(
-      'should be able to call open twice without opening two sockets',
-      async function () {
-        const handler = jest.fn();
-        subManager = createSubscriptionManager(url);
-        subManager.addSocketListener('open', handler);
-        subManager.open();
-        subManager.open();
-        await delay(mediumTimeout);
-        expect(handler).toHaveBeenCalledTimes(1);
-      },
-      longerTimeout
-    );
+    it('should be able to call open twice without opening two sockets', async function () {
+      const handler = jest.fn();
+      subManager = createSubscriptionManager(url);
+      subManager.addSocketListener('open', handler);
+      subManager.open();
+      subManager.open();
+      await delay(mediumTimeout);
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
 
-    it(
-      'should be able to open, close and reopen a connection',
-      async function () {
-        const handler = jest.fn();
-        subManager = createSubscriptionManager(url);
-        subManager.addSocketListener('open', handler);
+    it('should be able to open, close and reopen a connection', async function () {
+      const handler = jest.fn();
+      subManager = createSubscriptionManager(url);
+      subManager.addSocketListener('open', handler);
+      subManager.open();
+      subManager.close();
+      subManager.open();
+      await delay(mediumTimeout);
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(subManager.isOpen()).toBe(true);
+    });
+
+    it('should be able to open, wait, close and reopen a connection', async function () {
+      const handler = jest.fn();
+      subManager = createSubscriptionManager(url);
+      subManager.addSocketListener('open', handler);
+      subManager.addSocketListener('open', subManager.close);
+      subManager.addSocketListener('close', () => {
+        subManager.removeSocketListener('open', subManager.close);
         subManager.open();
-        subManager.close();
-        subManager.open();
-        await delay(mediumTimeout);
-        expect(handler).toHaveBeenCalledTimes(1);
-        expect(subManager.isOpen()).toBe(true);
-      },
-      longerTimeout
-    );
+      });
+      subManager.open();
 
-    it(
-      'should be able to open, wait, close and reopen a connection',
-      async function () {
-        const handler = jest.fn();
-        subManager = createSubscriptionManager(url);
-        subManager.addSocketListener('open', handler);
-        subManager.addSocketListener('open', subManager.close);
-        subManager.addSocketListener('close', () => {
-          subManager.removeSocketListener('open', subManager.close);
-          subManager.open();
-        });
-        subManager.open();
+      await delay(mediumTimeout);
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(subManager.isOpen()).toBe(true);
+    });
 
-        await delay(mediumTimeout);
-        expect(handler).toHaveBeenCalledTimes(2);
-        expect(subManager.isOpen()).toBe(true);
-      },
-      longerTimeout
-    );
+    it('should be able to able to reconnect after a "network error"', async function () {
+      const handler = jest.fn();
+      subManager = createSubscriptionManager(url);
+      subManager.addSocketListener('open', handler);
+      subManager.addSocketListener('open', onOpen);
+      subManager.open();
 
-    it(
-      'should be able to able to reconnect after a "network error"',
-      async function () {
-        const handler = jest.fn();
-        subManager = createSubscriptionManager(url);
-        subManager.addSocketListener('open', handler);
-        subManager.addSocketListener('open', onOpen);
-        subManager.open();
+      await delay(longerTimeout);
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(subManager.isOpen()).toBe(true);
 
-        await delay(longerTimeout);
-        expect(handler).toHaveBeenCalledTimes(2);
-        expect(subManager.isOpen()).toBe(true);
-
-        function onOpen(event?: Event) {
-          if (event?.target instanceof CustomSocket) {
-            const socket = event.target;
-            socket.emulateClose(false);
-            subManager.removeSocketListener('open', onOpen);
-          }
+      function onOpen(event?: Event) {
+        if (event?.target instanceof CustomSocket) {
+          const socket = event.target;
+          socket.emulateClose(false);
+          subManager.removeSocketListener('open', onOpen);
         }
-      },
-      longerTimeout + shortTimeout
-    );
+      }
+    });
 
-    it(
-      'should not be affected by a fake clean close event',
-      async function () {
-        const handler = jest.fn();
-        subManager = createSubscriptionManager(url);
-        subManager.addSocketListener('open', handler);
-        subManager.addSocketListener('open', onOpen);
-        subManager.open();
+    it('should not be affected by a fake clean close event', async function () {
+      const handler = jest.fn();
+      subManager = createSubscriptionManager(url);
+      subManager.addSocketListener('open', handler);
+      subManager.addSocketListener('open', onOpen);
+      subManager.open();
 
-        await delay(longerTimeout);
-        expect(handler).toHaveBeenCalledTimes(1);
-        expect(subManager.isOpen()).toBe(true);
+      await delay(longerTimeout);
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(subManager.isOpen()).toBe(true);
 
-        function onOpen(event?: Event) {
-          if (event?.target instanceof CustomSocket) {
-            const socket = event.target;
-            socket.emulateClose(true);
-            subManager.removeSocketListener('open', onOpen);
-          }
+      function onOpen(event?: Event) {
+        if (event?.target instanceof CustomSocket) {
+          const socket = event.target;
+          socket.emulateClose(true);
+          subManager.removeSocketListener('open', onOpen);
         }
-      },
-      longerTimeout + shortTimeout
-    );
+      }
+    });
   });
 
   describe('should be able to manage subscribing', function () {
