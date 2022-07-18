@@ -24,10 +24,10 @@ interface CustomEventOptions {
 
 function createCustomEvent(
   id: number,
-  attributes: Attributes = {},
+  attributes: { [key: string]: string } = {},
   options: CustomEventOptions = {}
 ): WebSocketServerMessage {
-  const eventData: Attributes = {
+  const eventData: { [key: string]: string } = {
     module: 'duality',
     ...attributes,
   };
@@ -890,10 +890,6 @@ describe('The event subscription manager', function () {
 
 async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-interface Attributes {
-  [key: string]: string;
 }
 
 function getMessageObject(actionName: string) {
