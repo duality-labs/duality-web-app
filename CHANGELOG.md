@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/duality-labz/duality-web-app/compare/v0.1.3...v0.1.4) (2022-07-18)
+
+
+### Features
+
+* Events subscription helper ([#90](https://github.com/duality-labz/duality-web-app/issues/90)) ([20bd10c](https://github.com/duality-labz/duality-web-app/commit/20bd10c6dfbd11fbaa97e4be9e1f3448367d1714))
+
 ## [0.1.3](https://github.com/dib542/duality-web-app/compare/v0.1.2...v0.1.3) (2022-06-02)
 
 
