@@ -226,7 +226,7 @@ describe('The event subscription manager', function () {
       subManager.open();
       subManager.addSocketListener('open', () => {
         // ensure server also thinks it is connected
-        server.connected.then(done);
+        server.connected.then(() => done());
       });
     });
 
