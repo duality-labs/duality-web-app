@@ -35,6 +35,9 @@ function createCustomEvent(
   return {
     id: id,
     result: {
+      query: `tm.event='Tx'${
+        attributes.action ? ` AND message.action='${attributes.action}'` : ''
+      }`,
       data: {
         type,
         value: {
