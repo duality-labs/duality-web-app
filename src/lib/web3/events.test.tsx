@@ -267,7 +267,7 @@ describe('The event subscription manager', function () {
         // however, it is impossible for the server to always be in sync with the client.
         // to simulate correct behaviour we change the id number here to mismatch the subscription.
         const message2 = createCustomEvent(
-          id + 1,
+          id + 2,
           {},
           { type: 'tendermint/event/Custom' }
         );
