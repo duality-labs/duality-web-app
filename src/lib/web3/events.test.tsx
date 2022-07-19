@@ -2,6 +2,7 @@ import WS from 'jest-websocket-mock';
 import {
   createSubscriptionManager,
   EventType,
+  ReservedEventType,
   SubscriptionManager,
   WebSocketClientMessage,
   WebSocketServerMessage,
@@ -19,7 +20,7 @@ function createCustomActionEvent(
 }
 
 interface CustomEventOptions {
-  type?: string;
+  type?: ReservedEventType['type'];
 }
 
 function createCustomEvent(
@@ -39,19 +40,29 @@ function createCustomEvent(
         attributes.action ? ` AND message.action='${attributes.action}'` : ''
       }`,
       data: {
-        type,
+        type: type,
         value: {
           TxResult: {
+            height: '0', //mock height
             result: {
+              data: Buffer.from(JSON.stringify([attributes.action])).toString(
+                'base64'
+              ), // mock data,
               events: [
                 {
+                  type: 'message',
                   attributes: Object.entries(eventData).map(([key, value]) => ({
+                    index: true,
                     key: Buffer.from(key).toString('base64'),
                     value: value && Buffer.from(value).toString('base64'),
                   })),
                 },
               ],
+              gas_used: '0',
+              gas_wanted: '0',
+              log: JSON.stringify([eventData]), // mock log
             },
+            tx: Buffer.from(JSON.stringify(eventData)).toString('base64'), // mock hash
           },
         },
       },
@@ -63,6 +74,14 @@ function createCustomEvent(
         'tx.hash': ['hash'],
         'tx.height': ['height'],
         'tx.signature': ['sig'],
+        // add message key values
+        ...Object.entries(eventData).reduce(
+          (acc, [key, value]) => ({
+            ...acc,
+            [`message.${key}`]: [value],
+          }),
+          {}
+        ),
       },
     },
   };
@@ -259,7 +278,7 @@ describe('The event subscription manager', function () {
         const message1 = createCustomEvent(
           id,
           {},
-          { type: 'tendermint/event/tx' }
+          { type: 'tendermint/event/Tx' }
         );
         // TODO: the subscription will listen to all types of events passed on the same id.
         // we rely on the WebSocket server to track the subscriptions correctly
@@ -269,10 +288,11 @@ describe('The event subscription manager', function () {
         const message2 = createCustomEvent(
           id + 1,
           {},
-          { type: 'tendermint/event/random' }
+          { type: 'tendermint/event/Vote' }
         );
         server.send(message1);
         server.send(message2);
+        await delay(10);
 
         expect(handler).toHaveBeenCalledWith(
           message1.result.data,
@@ -308,12 +328,12 @@ describe('The event subscription manager', function () {
         const message1 = createCustomEvent(
           id,
           {},
-          { type: 'tendermint/event/tx' }
+          { type: 'tendermint/event/Tx' }
         );
         const message2 = createCustomEvent(
           id,
           {},
-          { type: 'tendermint/event/random' }
+          { type: 'tendermint/event/Vote' }
         );
         server.send(message1);
         server.send(message2);
@@ -401,12 +421,12 @@ describe('The event subscription manager', function () {
         const message1 = createCustomEvent(
           id1,
           {},
-          { type: 'tendermint/event/tx' }
+          { type: 'tendermint/event/Tx' }
         );
         const message2 = createCustomEvent(
           id2,
           {},
-          { type: 'tendermint/event/random' }
+          { type: 'tendermint/event/Vote' }
         );
         server.send(message1);
         server.send(message2);

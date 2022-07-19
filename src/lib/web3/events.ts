@@ -43,12 +43,34 @@ export interface MessageActionEvent {
   module?: string;
 }
 
-export interface GenericTendermintData {
+interface GenericTendermintData {
   type: string;
   value: object;
 }
 
-export interface TendermintTxData {
+export interface ReservedEventType extends GenericTendermintData {
+  type:
+    | 'tendermint/event/NewBlock'
+    | 'tendermint/event/NewBlockHeader'
+    | 'tendermint/event/NewEvidence'
+    | 'tendermint/event/Tx'
+    | 'tendermint/event/ValidatorSetUpdates'
+    | 'tendermint/event/CompleteProposal'
+    | 'tendermint/event/BlockSyncStatus'
+    | 'tendermint/event/Lock'
+    | 'tendermint/event/NewRound'
+    | 'tendermint/event/NewRoundStep'
+    | 'tendermint/event/Polka'
+    | 'tendermint/event/Relock'
+    | 'tendermint/event/StateSyncStatus'
+    | 'tendermint/event/TimeoutPropose'
+    | 'tendermint/event/TimeoutWait'
+    | 'tendermint/event/ValidBlock'
+    | 'tendermint/event/Vote'
+    | 'tendermint/event/EvidenceValidated';
+}
+
+export interface TendermintTxData extends GenericTendermintData {
   type: 'tendermint/event/Tx';
   value: {
     TxResult: {
@@ -73,7 +95,8 @@ export interface TendermintTxData {
   };
 }
 
-export type TendermintDataType = TendermintTxData | GenericTendermintData;
+// disallow GenericTendermintData to allow more restrictive type checking
+export type TendermintDataType = TendermintTxData | ReservedEventType;
 
 export type MessageListener = (
   data: TendermintDataType,
