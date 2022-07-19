@@ -54,15 +54,19 @@ export interface TendermintTxData {
     TxResult: {
       height: string;
       result: {
-        data: string;
+        data: string; // base64 encoded Msg path
         events: Array<{
           // does this really contain an index?
-          attributes: Array<{ index: boolean; key: string; value: string }>;
+          attributes: Array<{
+            index: boolean; // attribute is indexed
+            key: string; // base64 encoded attribute key
+            value: string; // base64 encoded attribute value
+          }>;
           type: 'tx' | 'message';
         }>;
-        gas_used?: string;
-        gas_wanted?: string;
-        log?: string;
+        gas_used: string;
+        gas_wanted: string;
+        log: string; // JSON stringified log of events
       };
       tx: string;
     };
@@ -94,10 +98,18 @@ export interface WebSocketClientMessage {
 
 export interface WebSocketServerMessage {
   id: number;
+  // an empty result object with an ID means
+  // that a successful subscription on that ID has been established
   result: {
-    data: TendermintDataType;
+    query: string; // subscribed query string eg. "tm.event='Tx' AND message.action='NewDeposit'"
+    data?: TendermintDataType;
+    events?: TendermintEvent;
   };
-  error: string;
+  error?: {
+    code: number;
+    data: string;
+    message: string;
+  };
 }
 
 type MessageType = 'subscribe' | 'unsubscribe';
