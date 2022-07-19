@@ -254,8 +254,10 @@ describe('The event subscription manager', function () {
       });
       it('should be able to listen for a specific type of event', async function () {
         const handler = jest.fn();
+        const otherHandler = jest.fn();
         subManager.subscribe(handler, EventType.EventTxValue);
-        const [id] = await resolveQueuedMessageIDs(server);
+        subManager.subscribe(otherHandler, EventType.EventNewBlockValue);
+        const [id, id2] = await resolveQueuedMessageIDs(server);
         const message1 = createCustomEvent(
           id,
           {},
@@ -267,9 +269,9 @@ describe('The event subscription manager', function () {
         // however, it is impossible for the server to always be in sync with the client.
         // to simulate correct behaviour we change the id number here to mismatch the subscription.
         const message2 = createCustomEvent(
-          id + 2,
+          id2,
           {},
-          { type: 'tendermint/event/Custom' }
+          { type: 'tendermint/event/NewBlock' }
         );
         server.send(message1);
         server.send(message2);
@@ -280,6 +282,16 @@ describe('The event subscription manager', function () {
           expect.anything()
         );
         expect(handler).not.toHaveBeenCalledWith(
+          message2.result.data,
+          expect.anything(),
+          expect.anything()
+        );
+        expect(otherHandler).not.toHaveBeenCalledWith(
+          message1.result.data,
+          expect.anything(),
+          expect.anything()
+        );
+        expect(otherHandler).toHaveBeenCalledWith(
           message2.result.data,
           expect.anything(),
           expect.anything()
