@@ -259,7 +259,7 @@ describe('The event subscription manager', function () {
         const message1 = createCustomEvent(
           id,
           {},
-          { type: 'tendermint/event/tx' }
+          { type: 'tendermint/event/Tx' }
         );
         // TODO: the subscription will listen to all types of events passed on the same id.
         // we rely on the WebSocket server to track the subscriptions correctly
@@ -269,7 +269,7 @@ describe('The event subscription manager', function () {
         const message2 = createCustomEvent(
           id + 1,
           {},
-          { type: 'tendermint/event/random' }
+          { type: 'tendermint/event/Custom' }
         );
         server.send(message1);
         server.send(message2);
@@ -308,12 +308,12 @@ describe('The event subscription manager', function () {
         const message1 = createCustomEvent(
           id,
           {},
-          { type: 'tendermint/event/tx' }
+          { type: 'tendermint/event/Tx' }
         );
         const message2 = createCustomEvent(
           id,
           {},
-          { type: 'tendermint/event/random' }
+          { type: 'tendermint/event/Custom' }
         );
         server.send(message1);
         server.send(message2);
@@ -401,12 +401,12 @@ describe('The event subscription manager', function () {
         const message1 = createCustomEvent(
           id1,
           {},
-          { type: 'tendermint/event/tx' }
+          { type: 'tendermint/event/Tx' }
         );
         const message2 = createCustomEvent(
           id2,
           {},
-          { type: 'tendermint/event/random' }
+          { type: 'tendermint/event/Custom' }
         );
         server.send(message1);
         server.send(message2);
