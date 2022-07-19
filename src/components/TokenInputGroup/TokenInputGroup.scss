@@ -1,3 +1,5 @@
+$disabled-color: #888;
+
 .token-input-group {
   & {
     padding: 0.25rem 1rem;
@@ -11,6 +13,11 @@
       border: 0px none transparent;
       outline: none;
       z-index: 1;
+    }
+
+    &:disabled {
+      pointer-events: none;
+      color: $disabled-color;
     }
 
     &:hover {

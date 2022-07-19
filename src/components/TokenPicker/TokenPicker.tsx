@@ -17,6 +17,7 @@ interface TokenPickerProps {
   exclusion: Token | undefined;
   value: Token | undefined;
   tokenList: Array<Token>;
+  disabled?: boolean;
 }
 
 export default function TokenPicker({
@@ -24,6 +25,7 @@ export default function TokenPicker({
   onChange,
   exclusion,
   tokenList,
+  disabled = false,
 }: TokenPickerProps) {
   const [filteredList, setFilteredList] = useState<Array<TokenResult>>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -130,6 +132,7 @@ export default function TokenPicker({
         type="button"
         className={`token-picker-toggle ${isOpen ? ' open' : ''}`}
         onClick={open}
+        disabled={disabled}
       >
         {value?.symbol || 'Choose Token'}
       </button>
