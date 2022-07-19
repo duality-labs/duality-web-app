@@ -48,12 +48,15 @@ export interface GenericTendermintData {
   value: object;
 }
 
+// see Comos reference: https://github.com/tendermint/tendermint/blob/v0.35.8/abci/types/types.pb.go#L2415
+// see cosm.js reference: https://github.com/cosmos/cosmjs/blob/v0.27.1/packages/tendermint-rpc/src/tendermint34/adaptor/responses.ts#L706-L715
 export interface TendermintTxData {
   type: 'tendermint/event/Tx';
   value: {
     TxResult: {
       height: string;
       result: {
+        code?: number;
         data: string; // base64 encoded Msg path
         events: Array<{
           // does this really contain an index?
@@ -69,6 +72,7 @@ export interface TendermintTxData {
         log: string; // JSON stringified log of events
       };
       tx: string;
+      index?: string;
     };
   };
 }
