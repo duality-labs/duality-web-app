@@ -1,5 +1,17 @@
 import { useContext, createContext, useState, useEffect } from 'react';
+import {
+  EventType,
+  createSubscriptionManager,
+  MessageActionEvent,
+} from './events';
 import { BigNumber } from 'bignumber.js';
+
+const eventsURL = process.env.REACT_APP__INDEXER_EVENT_URL;
+if (typeof eventsURL !== 'string' || !eventsURL)
+  throw new Error(
+    'Invalid value for env variable REACT_APP__INDEXER_EVENT_URL'
+  );
+const subscriber = createSubscriptionManager(eventsURL);
 
 export interface PairInfo {
   token0: string;
@@ -101,6 +113,60 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     pairs: indexerData ?? {},
     error: error,
   });
+
+  useEffect(() => {
+    const onTickChange = function (event: MessageActionEvent) {
+      const {
+        Token0,
+        Token1,
+        NewReserves0,
+        NewReserves1,
+        Price0,
+        Price1,
+        Fee,
+      } = event;
+      if (
+        !Token0 ||
+        !Token1 ||
+        !Price0 ||
+        !Price1 ||
+        !NewReserves0 ||
+        !NewReserves1 ||
+        !Fee
+      ) {
+        setError('Invalid event response from server');
+        return;
+      }
+      const pairID = getPairID(Token0, Token1);
+      const tickID = getTickID(Price0, Price1, Fee);
+      setIndexerData((oldData) => {
+        if (!oldData) oldData = {};
+        oldData[pairID] = oldData[pairID] || {
+          ticks: {},
+          token0: Token0,
+          token1: Token1,
+        };
+        const tickInfo = oldData[pairID].ticks[tickID] || {
+          price0: new BigNumber(Price0),
+          price1: new BigNumber(Price1),
+          fee: new BigNumber(Fee),
+        };
+        tickInfo.reserves0 = new BigNumber(NewReserves0);
+        tickInfo.reserves1 = new BigNumber(NewReserves1);
+        oldData[pairID].ticks[tickID] = tickInfo;
+        return { ...oldData };
+      });
+    };
+    subscriber.subscribeMessage(onTickChange, EventType.EventTxValue, {
+      messageAction: 'NewDeposit',
+    });
+    subscriber.subscribeMessage(onTickChange, EventType.EventTxValue, {
+      messageAction: 'NewWithdraw',
+    });
+    return () => {
+      subscriber.unsubscribeMessage(onTickChange);
+    };
+  }, []);
 
   useEffect(() => {
     setResult({ pairs: indexerData ?? {}, error: error });
