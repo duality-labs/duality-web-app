@@ -507,7 +507,7 @@ describe('The event subscription manager', function () {
 
         expect(handler).toHaveBeenCalledTimes(0);
       });
-      it('should be able to unsubscribe from multiple subscriptions with one fully generic call (using resolveAllQueudMessages)', async function () {
+      it('should be able to unsubscribe from multiple subscriptions with one fully generic call (using resolveAllQueuedMessages)', async function () {
         const handler = jest.fn();
 
         actionNames.forEach((actionName) => {
@@ -515,7 +515,7 @@ describe('The event subscription manager', function () {
             messageAction: actionName,
           });
         });
-        await resolveAllQueudMessages(server);
+        await resolveAllQueuedMessages(server);
         subManager.unsubscribe();
         actionNames.forEach((actionName, index) => {
           const { id } = server.messages[index] as WebSocketClientMessage;
@@ -533,7 +533,7 @@ describe('The event subscription manager', function () {
             messageAction: actionName,
           });
         });
-        await resolveAllQueudMessages(server);
+        await resolveAllQueuedMessages(server);
         subManager.unsubscribe(handler, EventType.EventTxValue, {
           messageAction: actionName,
         });
@@ -701,7 +701,7 @@ describe('The event subscription manager', function () {
           })
         );
 
-        await resolveAllQueudMessages(server);
+        await resolveAllQueuedMessages(server);
         actionNames.forEach((actionName, index) => {
           const { id } = server.messages[index] as WebSocketClientMessage;
           const message = createCustomActionEvent(id, actionName);
@@ -726,7 +726,7 @@ describe('The event subscription manager', function () {
           messageAction: otherActionName,
         });
 
-        await resolveAllQueudMessages(server);
+        await resolveAllQueuedMessages(server);
         actionNames.forEach((actionName, index) => {
           const { id } = server.messages[index] as WebSocketClientMessage;
           const message = createCustomActionEvent(id, actionName);
@@ -810,7 +810,7 @@ describe('The event subscription manager', function () {
         });
         subManager.unsubscribeMessage();
 
-        await resolveAllQueudMessages(server);
+        await resolveAllQueuedMessages(server);
         actionNames.forEach((actionName, index) => {
           const { id } = server.messages[index] as WebSocketClientMessage;
           const message = createCustomActionEvent(id, actionName);
@@ -831,7 +831,7 @@ describe('The event subscription manager', function () {
           messageAction: actionName,
         });
 
-        await resolveAllQueudMessages(server);
+        await resolveAllQueuedMessages(server);
         actionNames.forEach((actionName, index) => {
           const { id } = server.messages[index] as WebSocketClientMessage;
           const message = createCustomActionEvent(id, actionName);
@@ -899,7 +899,7 @@ function getMessageObject(actionName: string) {
   };
 }
 
-async function resolveAllQueudMessages(server: WS) {
+async function resolveAllQueuedMessages(server: WS) {
   await new Promise<void>(async (resolve) => {
     await server.nextMessage;
     await delay(1);
