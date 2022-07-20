@@ -63,10 +63,7 @@ export default function TokenInputGroup({
         disabled={disabledInput}
       />
       {readOnly ? (
-        <button
-          type="button"
-          className="py-1 px-3 border border-slate-200 rounded-lg dropdown-toggle"
-        >
+        <button type="button" className="token-picker-toggle--readonly">
           {token?.name || 'No Token'}
         </button>
       ) : (
