@@ -16,6 +16,10 @@ interface InputGroupProps {
   exclusion?: Token;
   value?: string;
   token?: Token;
+  /** disables both the input and the token (gets overwritten by the other 2) */
+  disabled?: boolean;
+  disabledInput?: boolean;
+  disabledToken?: boolean;
 }
 
 export default function TokenInputGroup({
@@ -26,6 +30,9 @@ export default function TokenInputGroup({
   exclusion,
   value,
   token,
+  disabled = false,
+  disabledInput = disabled,
+  disabledToken = disabled,
 }: InputGroupProps) {
   const onInputChange = useCallback(
     function (event: React.ChangeEvent<HTMLInputElement>) {
@@ -51,12 +58,14 @@ export default function TokenInputGroup({
         value={value || '...'}
         onInput={onInput}
         onChange={onInputChange}
+        disabled={disabledInput}
       />
       <TokenPicker
         value={token}
         onChange={onPickerChange}
         tokenList={tokenList}
         exclusion={exclusion}
+        disabled={disabledToken}
       />
     </div>
   );

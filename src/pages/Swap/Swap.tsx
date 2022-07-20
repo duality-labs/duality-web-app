@@ -111,6 +111,7 @@ export default function Swap() {
             : ''
         }
         exclusion={tokenA}
+        disabledInput={true}
       ></TokenInputGroup>
       <div className="text-stone-500">Gas price: {rateData?.gas}</div>
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
