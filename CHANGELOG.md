@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.5](https://github.com/duality-labz/duality-web-app/compare/v0.1.4...v0.1.5) (2022-07-20)
+
+
+### Features
+
+* 91 swap page disable the editing of the bottom token group ([#94](https://github.com/duality-labz/duality-web-app/issues/94)) ([1b70435](https://github.com/duality-labz/duality-web-app/commit/1b70435a4c18ae9f86915683486771b3d9590dbf))
+
+
+### Other
+
+* create cosmos event subscription manager tests with ws mock ([#92](https://github.com/duality-labz/duality-web-app/issues/92)) ([dba6d4b](https://github.com/duality-labz/duality-web-app/commit/dba6d4b52dd6d53302933360ea4049e66a19fee6))
+
 ## [0.1.4](https://github.com/duality-labz/duality-web-app/compare/v0.1.3...v0.1.4) (2022-07-18)
 
 
