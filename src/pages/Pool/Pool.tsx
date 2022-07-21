@@ -41,7 +41,7 @@ export default function Pool() {
 
   // update total value when rates or values change
   useEffect(() => {
-    const rateAtoB = parseInt(rateData?.price || '0', 10);
+    const rateAtoB = parseFloat(rateData?.price || '0');
     const totalValue = values[0] * rateAtoB + values[1];
     if (totalValue) {
       setTotalValue(totalValue);
@@ -52,7 +52,7 @@ export default function Pool() {
   useEffect(() => {
     // get pair deposit amounts
     setValues(() => {
-      const rateAtoB = parseInt(rateData?.price || '0', 10);
+      const rateAtoB = parseFloat(rateData?.price || '0');
       const valueMin = parseInt(rangeMin);
       const valueMax = parseInt(rangeMax);
       if (rateAtoB > 0 && totalValue > 0) {
@@ -153,7 +153,7 @@ export default function Pool() {
             ? `${
                 rateData?.price
                   ? Math.round(
-                      parseInt(rateData?.price, 10) *
+                      parseFloat(rateData?.price) *
                         (1 - parseFloat(rangeMin) / 100)
                     )
                   : ''
@@ -166,7 +166,7 @@ export default function Pool() {
               `${
                 rateData?.price
                   ? (-parseInt(e.target.value.replace(/\D/g, ''), 10) /
-                      parseInt(rateData?.price, 10)) *
+                      parseFloat(rateData?.price)) *
                       100 +
                     100
                   : current
@@ -184,7 +184,7 @@ export default function Pool() {
             ? `${
                 rateData?.price
                   ? Math.round(
-                      parseInt(rateData?.price, 10) *
+                      parseFloat(rateData?.price) *
                         (1 + parseFloat(rangeMax) / 100)
                     )
                   : ''
@@ -197,7 +197,7 @@ export default function Pool() {
               `${
                 rateData?.price
                   ? (parseInt(e.target.value.replace(/\D/g, ''), 10) /
-                      parseInt(rateData?.price, 10)) *
+                      parseFloat(rateData?.price)) *
                       100 -
                     100
                   : current
