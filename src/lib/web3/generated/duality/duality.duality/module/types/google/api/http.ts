@@ -1,7 +1,7 @@
 /* eslint-disable */
-import { Writer, Reader } from "protobufjs/minimal";
+import { Writer, Reader } from 'protobufjs/minimal';
 
-export const protobufPackage = "google.api";
+export const protobufPackage = 'google.api';
 
 /**
  * Defines the HTTP configuration for an API service. It contains a list of
@@ -390,11 +390,11 @@ export const Http = {
   },
 };
 
-const baseHttpRule: object = { selector: "", body: "", response_body: "" };
+const baseHttpRule: object = { selector: '', body: '', response_body: '' };
 
 export const HttpRule = {
   encode(message: HttpRule, writer: Writer = Writer.create()): Writer {
-    if (message.selector !== "") {
+    if (message.selector !== '') {
       writer.uint32(10).string(message.selector);
     }
     if (message.get !== undefined) {
@@ -418,10 +418,10 @@ export const HttpRule = {
         writer.uint32(66).fork()
       ).ldelim();
     }
-    if (message.body !== "") {
+    if (message.body !== '') {
       writer.uint32(58).string(message.body);
     }
-    if (message.response_body !== "") {
+    if (message.response_body !== '') {
       writer.uint32(98).string(message.response_body);
     }
     for (const v of message.additional_bindings) {
@@ -484,7 +484,7 @@ export const HttpRule = {
     if (object.selector !== undefined && object.selector !== null) {
       message.selector = String(object.selector);
     } else {
-      message.selector = "";
+      message.selector = '';
     }
     if (object.get !== undefined && object.get !== null) {
       message.get = String(object.get);
@@ -519,12 +519,12 @@ export const HttpRule = {
     if (object.body !== undefined && object.body !== null) {
       message.body = String(object.body);
     } else {
-      message.body = "";
+      message.body = '';
     }
     if (object.response_body !== undefined && object.response_body !== null) {
       message.response_body = String(object.response_body);
     } else {
-      message.response_body = "";
+      message.response_body = '';
     }
     if (
       object.additional_bindings !== undefined &&
@@ -568,7 +568,7 @@ export const HttpRule = {
     if (object.selector !== undefined && object.selector !== null) {
       message.selector = object.selector;
     } else {
-      message.selector = "";
+      message.selector = '';
     }
     if (object.get !== undefined && object.get !== null) {
       message.get = object.get;
@@ -603,12 +603,12 @@ export const HttpRule = {
     if (object.body !== undefined && object.body !== null) {
       message.body = object.body;
     } else {
-      message.body = "";
+      message.body = '';
     }
     if (object.response_body !== undefined && object.response_body !== null) {
       message.response_body = object.response_body;
     } else {
-      message.response_body = "";
+      message.response_body = '';
     }
     if (
       object.additional_bindings !== undefined &&
@@ -622,14 +622,14 @@ export const HttpRule = {
   },
 };
 
-const baseCustomHttpPattern: object = { kind: "", path: "" };
+const baseCustomHttpPattern: object = { kind: '', path: '' };
 
 export const CustomHttpPattern = {
   encode(message: CustomHttpPattern, writer: Writer = Writer.create()): Writer {
-    if (message.kind !== "") {
+    if (message.kind !== '') {
       writer.uint32(10).string(message.kind);
     }
-    if (message.path !== "") {
+    if (message.path !== '') {
       writer.uint32(18).string(message.path);
     }
     return writer;
@@ -661,12 +661,12 @@ export const CustomHttpPattern = {
     if (object.kind !== undefined && object.kind !== null) {
       message.kind = String(object.kind);
     } else {
-      message.kind = "";
+      message.kind = '';
     }
     if (object.path !== undefined && object.path !== null) {
       message.path = String(object.path);
     } else {
-      message.path = "";
+      message.path = '';
     }
     return message;
   },
@@ -683,12 +683,12 @@ export const CustomHttpPattern = {
     if (object.kind !== undefined && object.kind !== null) {
       message.kind = object.kind;
     } else {
-      message.kind = "";
+      message.kind = '';
     }
     if (object.path !== undefined && object.path !== null) {
       message.path = object.path;
     } else {
-      message.path = "";
+      message.path = '';
     }
     return message;
   },

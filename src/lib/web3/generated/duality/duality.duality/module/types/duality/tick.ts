@@ -1,7 +1,7 @@
 /* eslint-disable */
-import { Writer, Reader } from "protobufjs/minimal";
+import { Writer, Reader } from 'protobufjs/minimal';
 
-export const protobufPackage = "duality.duality";
+export const protobufPackage = 'duality.duality';
 
 export interface Tick {
   token0: string;
@@ -14,36 +14,36 @@ export interface Tick {
 }
 
 const baseTick: object = {
-  token0: "",
-  token1: "",
-  price0: "",
-  price1: "",
-  fee: "",
-  reserves0: "",
-  reserves1: "",
+  token0: '',
+  token1: '',
+  price0: '',
+  price1: '',
+  fee: '',
+  reserves0: '',
+  reserves1: '',
 };
 
 export const Tick = {
   encode(message: Tick, writer: Writer = Writer.create()): Writer {
-    if (message.token0 !== "") {
+    if (message.token0 !== '') {
       writer.uint32(10).string(message.token0);
     }
-    if (message.token1 !== "") {
+    if (message.token1 !== '') {
       writer.uint32(18).string(message.token1);
     }
-    if (message.price0 !== "") {
+    if (message.price0 !== '') {
       writer.uint32(26).string(message.price0);
     }
-    if (message.price1 !== "") {
+    if (message.price1 !== '') {
       writer.uint32(34).string(message.price1);
     }
-    if (message.fee !== "") {
+    if (message.fee !== '') {
       writer.uint32(42).string(message.fee);
     }
-    if (message.reserves0 !== "") {
+    if (message.reserves0 !== '') {
       writer.uint32(50).string(message.reserves0);
     }
-    if (message.reserves1 !== "") {
+    if (message.reserves1 !== '') {
       writer.uint32(58).string(message.reserves1);
     }
     return writer;
@@ -90,37 +90,37 @@ export const Tick = {
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = String(object.token0);
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = String(object.token1);
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = String(object.price0);
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = String(object.price1);
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = String(object.fee);
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     if (object.reserves0 !== undefined && object.reserves0 !== null) {
       message.reserves0 = String(object.reserves0);
     } else {
-      message.reserves0 = "";
+      message.reserves0 = '';
     }
     if (object.reserves1 !== undefined && object.reserves1 !== null) {
       message.reserves1 = String(object.reserves1);
     } else {
-      message.reserves1 = "";
+      message.reserves1 = '';
     }
     return message;
   },
@@ -142,37 +142,37 @@ export const Tick = {
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = object.token0;
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = object.token1;
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = object.price0;
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = object.price1;
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = object.fee;
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     if (object.reserves0 !== undefined && object.reserves0 !== null) {
       message.reserves0 = object.reserves0;
     } else {
-      message.reserves0 = "";
+      message.reserves0 = '';
     }
     if (object.reserves1 !== undefined && object.reserves1 !== null) {
       message.reserves1 = object.reserves1;
     } else {
-      message.reserves1 = "";
+      message.reserves1 = '';
     }
     return message;
   },

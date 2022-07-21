@@ -3,11 +3,11 @@
 import { StdFee } from '@cosmjs/launchpad';
 import { defaultRegistryTypes, SigningStargateClient } from '@cosmjs/stargate';
 import { Registry, OfflineSigner, EncodeObject } from '@cosmjs/proto-signing';
-import { Api } from '../../generated/duality/duality.duality/module/rest';
+import { Api } from './generated/duality/duality.duality/module/rest';
 import {
   MsgWithdrawShares,
   MsgDepositShares,
-} from '../../generated/duality/duality.duality/module/types/duality/tx';
+} from './generated/duality/duality.duality/module/types/duality/tx';
 
 const { REACT_APP__RPC_URL = '', REACT_APP__REST_URL = '' } = process.env;
 

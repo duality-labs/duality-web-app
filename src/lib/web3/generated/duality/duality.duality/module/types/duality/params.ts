@@ -1,7 +1,7 @@
 /* eslint-disable */
-import { Writer, Reader } from "protobufjs/minimal";
+import { Writer, Reader } from 'protobufjs/minimal';
 
-export const protobufPackage = "duality.duality";
+export const protobufPackage = 'duality.duality';
 
 /** Params defines the parameters for the module. */
 export interface Params {}

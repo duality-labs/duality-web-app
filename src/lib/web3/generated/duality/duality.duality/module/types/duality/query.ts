@@ -1,14 +1,14 @@
 /* eslint-disable */
-import { Reader, Writer } from "protobufjs/minimal";
-import { Params } from "../duality/params";
-import { Share } from "../duality/share";
+import { Reader, Writer } from 'protobufjs/minimal';
+import { Params } from '../duality/params';
+import { Share } from '../duality/share';
 import {
   PageRequest,
   PageResponse,
-} from "../cosmos/base/query/v1beta1/pagination";
-import { Tick } from "../duality/tick";
+} from '../cosmos/base/query/v1beta1/pagination';
+import { Tick } from '../duality/tick';
 
-export const protobufPackage = "duality.duality";
+export const protobufPackage = 'duality.duality';
 
 /** QueryParamsRequest is request type for the Query/Params RPC method. */
 export interface QueryParamsRequest {}
@@ -184,12 +184,12 @@ export const QueryParamsResponse = {
 };
 
 const baseQueryGetShareRequest: object = {
-  owner: "",
-  token0: "",
-  token1: "",
-  price0: "",
-  price1: "",
-  fee: "",
+  owner: '',
+  token0: '',
+  token1: '',
+  price0: '',
+  price1: '',
+  fee: '',
 };
 
 export const QueryGetShareRequest = {
@@ -197,22 +197,22 @@ export const QueryGetShareRequest = {
     message: QueryGetShareRequest,
     writer: Writer = Writer.create()
   ): Writer {
-    if (message.owner !== "") {
+    if (message.owner !== '') {
       writer.uint32(10).string(message.owner);
     }
-    if (message.token0 !== "") {
+    if (message.token0 !== '') {
       writer.uint32(18).string(message.token0);
     }
-    if (message.token1 !== "") {
+    if (message.token1 !== '') {
       writer.uint32(26).string(message.token1);
     }
-    if (message.price0 !== "") {
+    if (message.price0 !== '') {
       writer.uint32(34).string(message.price0);
     }
-    if (message.price1 !== "") {
+    if (message.price1 !== '') {
       writer.uint32(42).string(message.price1);
     }
-    if (message.fee !== "") {
+    if (message.fee !== '') {
       writer.uint32(50).string(message.fee);
     }
     return writer;
@@ -256,32 +256,32 @@ export const QueryGetShareRequest = {
     if (object.owner !== undefined && object.owner !== null) {
       message.owner = String(object.owner);
     } else {
-      message.owner = "";
+      message.owner = '';
     }
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = String(object.token0);
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = String(object.token1);
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = String(object.price0);
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = String(object.price1);
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = String(object.fee);
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     return message;
   },
@@ -302,32 +302,32 @@ export const QueryGetShareRequest = {
     if (object.owner !== undefined && object.owner !== null) {
       message.owner = object.owner;
     } else {
-      message.owner = "";
+      message.owner = '';
     }
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = object.token0;
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = object.token1;
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = object.price0;
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = object.price1;
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = object.fee;
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     return message;
   },
@@ -546,11 +546,11 @@ export const QueryAllShareResponse = {
 };
 
 const baseQueryGetTickRequest: object = {
-  token0: "",
-  token1: "",
-  price0: "",
-  price1: "",
-  fee: "",
+  token0: '',
+  token1: '',
+  price0: '',
+  price1: '',
+  fee: '',
 };
 
 export const QueryGetTickRequest = {
@@ -558,19 +558,19 @@ export const QueryGetTickRequest = {
     message: QueryGetTickRequest,
     writer: Writer = Writer.create()
   ): Writer {
-    if (message.token0 !== "") {
+    if (message.token0 !== '') {
       writer.uint32(10).string(message.token0);
     }
-    if (message.token1 !== "") {
+    if (message.token1 !== '') {
       writer.uint32(18).string(message.token1);
     }
-    if (message.price0 !== "") {
+    if (message.price0 !== '') {
       writer.uint32(26).string(message.price0);
     }
-    if (message.price1 !== "") {
+    if (message.price1 !== '') {
       writer.uint32(34).string(message.price1);
     }
-    if (message.fee !== "") {
+    if (message.fee !== '') {
       writer.uint32(42).string(message.fee);
     }
     return writer;
@@ -611,27 +611,27 @@ export const QueryGetTickRequest = {
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = String(object.token0);
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = String(object.token1);
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = String(object.price0);
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = String(object.price1);
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = String(object.fee);
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     return message;
   },
@@ -651,27 +651,27 @@ export const QueryGetTickRequest = {
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = object.token0;
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = object.token1;
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = object.price0;
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = object.price1;
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = object.fee;
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     return message;
   },
@@ -737,11 +737,11 @@ export const QueryGetTickResponse = {
 };
 
 const baseQueryAllTickByTokensRequest: object = {
-  token0: "",
-  token1: "",
-  fee: "",
-  price0: "",
-  price1: "",
+  token0: '',
+  token1: '',
+  fee: '',
+  price0: '',
+  price1: '',
 };
 
 export const QueryAllTickByTokensRequest = {
@@ -749,22 +749,22 @@ export const QueryAllTickByTokensRequest = {
     message: QueryAllTickByTokensRequest,
     writer: Writer = Writer.create()
   ): Writer {
-    if (message.token0 !== "") {
+    if (message.token0 !== '') {
       writer.uint32(10).string(message.token0);
     }
-    if (message.token1 !== "") {
+    if (message.token1 !== '') {
       writer.uint32(18).string(message.token1);
     }
     if (message.pagination !== undefined) {
       PageRequest.encode(message.pagination, writer.uint32(26).fork()).ldelim();
     }
-    if (message.fee !== "") {
+    if (message.fee !== '') {
       writer.uint32(34).string(message.fee);
     }
-    if (message.price0 !== "") {
+    if (message.price0 !== '') {
       writer.uint32(42).string(message.price0);
     }
-    if (message.price1 !== "") {
+    if (message.price1 !== '') {
       writer.uint32(50).string(message.price1);
     }
     return writer;
@@ -815,12 +815,12 @@ export const QueryAllTickByTokensRequest = {
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = String(object.token0);
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = String(object.token1);
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.pagination !== undefined && object.pagination !== null) {
       message.pagination = PageRequest.fromJSON(object.pagination);
@@ -830,17 +830,17 @@ export const QueryAllTickByTokensRequest = {
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = String(object.fee);
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = String(object.price0);
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = String(object.price1);
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     return message;
   },
@@ -868,12 +868,12 @@ export const QueryAllTickByTokensRequest = {
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = object.token0;
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = object.token1;
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.pagination !== undefined && object.pagination !== null) {
       message.pagination = PageRequest.fromPartial(object.pagination);
@@ -883,28 +883,28 @@ export const QueryAllTickByTokensRequest = {
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = object.fee;
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = object.price0;
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = object.price1;
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     return message;
   },
 };
 
 const baseQueryAllTickRequest: object = {
-  token0: "",
-  token1: "",
-  fee: "",
-  price0: "",
-  price1: "",
+  token0: '',
+  token1: '',
+  fee: '',
+  price0: '',
+  price1: '',
 };
 
 export const QueryAllTickRequest = {
@@ -915,19 +915,19 @@ export const QueryAllTickRequest = {
     if (message.pagination !== undefined) {
       PageRequest.encode(message.pagination, writer.uint32(10).fork()).ldelim();
     }
-    if (message.token0 !== "") {
+    if (message.token0 !== '') {
       writer.uint32(18).string(message.token0);
     }
-    if (message.token1 !== "") {
+    if (message.token1 !== '') {
       writer.uint32(26).string(message.token1);
     }
-    if (message.fee !== "") {
+    if (message.fee !== '') {
       writer.uint32(34).string(message.fee);
     }
-    if (message.price0 !== "") {
+    if (message.price0 !== '') {
       writer.uint32(42).string(message.price0);
     }
-    if (message.price1 !== "") {
+    if (message.price1 !== '') {
       writer.uint32(50).string(message.price1);
     }
     return writer;
@@ -976,27 +976,27 @@ export const QueryAllTickRequest = {
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = String(object.token0);
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = String(object.token1);
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = String(object.fee);
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = String(object.price0);
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = String(object.price1);
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     return message;
   },
@@ -1025,27 +1025,27 @@ export const QueryAllTickRequest = {
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = object.token0;
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = object.token1;
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = object.fee;
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = object.price0;
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = object.price1;
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     return message;
   },
@@ -1164,13 +1164,13 @@ export class QueryClientImpl implements Query {
   }
   Params(request: QueryParamsRequest): Promise<QueryParamsResponse> {
     const data = QueryParamsRequest.encode(request).finish();
-    const promise = this.rpc.request("duality.duality.Query", "Params", data);
+    const promise = this.rpc.request('duality.duality.Query', 'Params', data);
     return promise.then((data) => QueryParamsResponse.decode(new Reader(data)));
   }
 
   Share(request: QueryGetShareRequest): Promise<QueryGetShareResponse> {
     const data = QueryGetShareRequest.encode(request).finish();
-    const promise = this.rpc.request("duality.duality.Query", "Share", data);
+    const promise = this.rpc.request('duality.duality.Query', 'Share', data);
     return promise.then((data) =>
       QueryGetShareResponse.decode(new Reader(data))
     );
@@ -1178,7 +1178,7 @@ export class QueryClientImpl implements Query {
 
   ShareAll(request: QueryAllShareRequest): Promise<QueryAllShareResponse> {
     const data = QueryAllShareRequest.encode(request).finish();
-    const promise = this.rpc.request("duality.duality.Query", "ShareAll", data);
+    const promise = this.rpc.request('duality.duality.Query', 'ShareAll', data);
     return promise.then((data) =>
       QueryAllShareResponse.decode(new Reader(data))
     );
@@ -1186,7 +1186,7 @@ export class QueryClientImpl implements Query {
 
   Tick(request: QueryGetTickRequest): Promise<QueryGetTickResponse> {
     const data = QueryGetTickRequest.encode(request).finish();
-    const promise = this.rpc.request("duality.duality.Query", "Tick", data);
+    const promise = this.rpc.request('duality.duality.Query', 'Tick', data);
     return promise.then((data) =>
       QueryGetTickResponse.decode(new Reader(data))
     );
@@ -1197,8 +1197,8 @@ export class QueryClientImpl implements Query {
   ): Promise<QueryAllTickResponse> {
     const data = QueryAllTickByTokensRequest.encode(request).finish();
     const promise = this.rpc.request(
-      "duality.duality.Query",
-      "TickAllByTokens",
+      'duality.duality.Query',
+      'TickAllByTokens',
       data
     );
     return promise.then((data) =>
@@ -1208,7 +1208,7 @@ export class QueryClientImpl implements Query {
 
   TickAll(request: QueryAllTickRequest): Promise<QueryAllTickResponse> {
     const data = QueryAllTickRequest.encode(request).finish();
-    const promise = this.rpc.request("duality.duality.Query", "TickAll", data);
+    const promise = this.rpc.request('duality.duality.Query', 'TickAll', data);
     return promise.then((data) =>
       QueryAllTickResponse.decode(new Reader(data))
     );

@@ -1,7 +1,7 @@
 /* eslint-disable */
-import { Reader, Writer } from "protobufjs/minimal";
+import { Reader, Writer } from 'protobufjs/minimal';
 
-export const protobufPackage = "duality.duality";
+export const protobufPackage = 'duality.duality';
 
 export interface MsgDepositShares {
   creator: string;
@@ -30,40 +30,40 @@ export interface MsgWithdrawShares {
 export interface MsgWithdrawSharesResponse {}
 
 const baseMsgDepositShares: object = {
-  creator: "",
-  token0: "",
-  token1: "",
-  price0: "",
-  price1: "",
-  fee: "",
-  shares0: "",
-  shares1: "",
+  creator: '',
+  token0: '',
+  token1: '',
+  price0: '',
+  price1: '',
+  fee: '',
+  shares0: '',
+  shares1: '',
 };
 
 export const MsgDepositShares = {
   encode(message: MsgDepositShares, writer: Writer = Writer.create()): Writer {
-    if (message.creator !== "") {
+    if (message.creator !== '') {
       writer.uint32(10).string(message.creator);
     }
-    if (message.token0 !== "") {
+    if (message.token0 !== '') {
       writer.uint32(18).string(message.token0);
     }
-    if (message.token1 !== "") {
+    if (message.token1 !== '') {
       writer.uint32(26).string(message.token1);
     }
-    if (message.price0 !== "") {
+    if (message.price0 !== '') {
       writer.uint32(34).string(message.price0);
     }
-    if (message.price1 !== "") {
+    if (message.price1 !== '') {
       writer.uint32(42).string(message.price1);
     }
-    if (message.fee !== "") {
+    if (message.fee !== '') {
       writer.uint32(50).string(message.fee);
     }
-    if (message.shares0 !== "") {
+    if (message.shares0 !== '') {
       writer.uint32(58).string(message.shares0);
     }
-    if (message.shares1 !== "") {
+    if (message.shares1 !== '') {
       writer.uint32(66).string(message.shares1);
     }
     return writer;
@@ -113,42 +113,42 @@ export const MsgDepositShares = {
     if (object.creator !== undefined && object.creator !== null) {
       message.creator = String(object.creator);
     } else {
-      message.creator = "";
+      message.creator = '';
     }
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = String(object.token0);
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = String(object.token1);
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = String(object.price0);
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = String(object.price1);
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = String(object.fee);
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     if (object.shares0 !== undefined && object.shares0 !== null) {
       message.shares0 = String(object.shares0);
     } else {
-      message.shares0 = "";
+      message.shares0 = '';
     }
     if (object.shares1 !== undefined && object.shares1 !== null) {
       message.shares1 = String(object.shares1);
     } else {
-      message.shares1 = "";
+      message.shares1 = '';
     }
     return message;
   },
@@ -171,42 +171,42 @@ export const MsgDepositShares = {
     if (object.creator !== undefined && object.creator !== null) {
       message.creator = object.creator;
     } else {
-      message.creator = "";
+      message.creator = '';
     }
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = object.token0;
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = object.token1;
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = object.price0;
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = object.price1;
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = object.fee;
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     if (object.shares0 !== undefined && object.shares0 !== null) {
       message.shares0 = object.shares0;
     } else {
-      message.shares0 = "";
+      message.shares0 = '';
     }
     if (object.shares1 !== undefined && object.shares1 !== null) {
       message.shares1 = object.shares1;
     } else {
-      message.shares1 = "";
+      message.shares1 = '';
     }
     return message;
   },
@@ -265,40 +265,40 @@ export const MsgDepositSharesResponse = {
 };
 
 const baseMsgWithdrawShares: object = {
-  creator: "",
-  token0: "",
-  token1: "",
-  price0: "",
-  price1: "",
-  fee: "",
-  shares0: "",
-  shares1: "",
+  creator: '',
+  token0: '',
+  token1: '',
+  price0: '',
+  price1: '',
+  fee: '',
+  shares0: '',
+  shares1: '',
 };
 
 export const MsgWithdrawShares = {
   encode(message: MsgWithdrawShares, writer: Writer = Writer.create()): Writer {
-    if (message.creator !== "") {
+    if (message.creator !== '') {
       writer.uint32(10).string(message.creator);
     }
-    if (message.token0 !== "") {
+    if (message.token0 !== '') {
       writer.uint32(18).string(message.token0);
     }
-    if (message.token1 !== "") {
+    if (message.token1 !== '') {
       writer.uint32(26).string(message.token1);
     }
-    if (message.price0 !== "") {
+    if (message.price0 !== '') {
       writer.uint32(34).string(message.price0);
     }
-    if (message.price1 !== "") {
+    if (message.price1 !== '') {
       writer.uint32(42).string(message.price1);
     }
-    if (message.fee !== "") {
+    if (message.fee !== '') {
       writer.uint32(50).string(message.fee);
     }
-    if (message.shares0 !== "") {
+    if (message.shares0 !== '') {
       writer.uint32(58).string(message.shares0);
     }
-    if (message.shares1 !== "") {
+    if (message.shares1 !== '') {
       writer.uint32(66).string(message.shares1);
     }
     return writer;
@@ -348,42 +348,42 @@ export const MsgWithdrawShares = {
     if (object.creator !== undefined && object.creator !== null) {
       message.creator = String(object.creator);
     } else {
-      message.creator = "";
+      message.creator = '';
     }
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = String(object.token0);
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = String(object.token1);
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = String(object.price0);
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = String(object.price1);
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = String(object.fee);
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     if (object.shares0 !== undefined && object.shares0 !== null) {
       message.shares0 = String(object.shares0);
     } else {
-      message.shares0 = "";
+      message.shares0 = '';
     }
     if (object.shares1 !== undefined && object.shares1 !== null) {
       message.shares1 = String(object.shares1);
     } else {
-      message.shares1 = "";
+      message.shares1 = '';
     }
     return message;
   },
@@ -406,42 +406,42 @@ export const MsgWithdrawShares = {
     if (object.creator !== undefined && object.creator !== null) {
       message.creator = object.creator;
     } else {
-      message.creator = "";
+      message.creator = '';
     }
     if (object.token0 !== undefined && object.token0 !== null) {
       message.token0 = object.token0;
     } else {
-      message.token0 = "";
+      message.token0 = '';
     }
     if (object.token1 !== undefined && object.token1 !== null) {
       message.token1 = object.token1;
     } else {
-      message.token1 = "";
+      message.token1 = '';
     }
     if (object.price0 !== undefined && object.price0 !== null) {
       message.price0 = object.price0;
     } else {
-      message.price0 = "";
+      message.price0 = '';
     }
     if (object.price1 !== undefined && object.price1 !== null) {
       message.price1 = object.price1;
     } else {
-      message.price1 = "";
+      message.price1 = '';
     }
     if (object.fee !== undefined && object.fee !== null) {
       message.fee = object.fee;
     } else {
-      message.fee = "";
+      message.fee = '';
     }
     if (object.shares0 !== undefined && object.shares0 !== null) {
       message.shares0 = object.shares0;
     } else {
-      message.shares0 = "";
+      message.shares0 = '';
     }
     if (object.shares1 !== undefined && object.shares1 !== null) {
       message.shares1 = object.shares1;
     } else {
-      message.shares1 = "";
+      message.shares1 = '';
     }
     return message;
   },
@@ -516,8 +516,8 @@ export class MsgClientImpl implements Msg {
   DepositShares(request: MsgDepositShares): Promise<MsgDepositSharesResponse> {
     const data = MsgDepositShares.encode(request).finish();
     const promise = this.rpc.request(
-      "duality.duality.Msg",
-      "DepositShares",
+      'duality.duality.Msg',
+      'DepositShares',
       data
     );
     return promise.then((data) =>
@@ -530,8 +530,8 @@ export class MsgClientImpl implements Msg {
   ): Promise<MsgWithdrawSharesResponse> {
     const data = MsgWithdrawShares.encode(request).finish();
     const promise = this.rpc.request(
-      "duality.duality.Msg",
-      "WithdrawShares",
+      'duality.duality.Msg',
+      'WithdrawShares',
       data
     );
     return promise.then((data) =>

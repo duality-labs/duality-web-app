@@ -1,10 +1,10 @@
 /* eslint-disable */
-import { Params } from "../duality/params";
-import { Share } from "../duality/share";
-import { Tick } from "../duality/tick";
-import { Writer, Reader } from "protobufjs/minimal";
+import { Params } from '../duality/params';
+import { Share } from '../duality/share';
+import { Tick } from '../duality/tick';
+import { Writer, Reader } from 'protobufjs/minimal';
 
-export const protobufPackage = "duality.duality";
+export const protobufPackage = 'duality.duality';
 
 /** GenesisState defines the duality module's genesis state. */
 export interface GenesisState {
