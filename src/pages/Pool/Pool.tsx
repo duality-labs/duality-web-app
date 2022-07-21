@@ -208,7 +208,7 @@ export default function Pool() {
       ></input>
       <h2 className="mt-4 mb-3 pt-1">Deposit Amounts</h2>
       <TokenInputGroup
-        readOnly
+        disabled
         tokenList={tokenList}
         token={tokenA}
         value={`${values[0]}`}
@@ -218,7 +218,7 @@ export default function Pool() {
         exclusion={tokenB}
       ></TokenInputGroup>
       <TokenInputGroup
-        readOnly
+        disabled
         tokenList={tokenList}
         token={tokenB}
         value={`${values[1]}`}

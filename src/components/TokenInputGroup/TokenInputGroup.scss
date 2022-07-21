@@ -45,10 +45,4 @@ $disabled-color: #888;
   .token-picker-toggle:not(:hover):not(:focus):not(.open) {
     background-color: rgb(239, 237, 237);
   }
-
-  .token-picker-toggle--readonly {
-    padding: 0.25rem 0.75rem;
-    border-width: 1px;
-    border-radius: 0.5rem;
-  }
 }
