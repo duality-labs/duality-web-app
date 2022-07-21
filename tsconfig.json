@@ -17,5 +17,5 @@
     "jsx": "react-jsx"
   },
   "include": ["src"],
-  "exclude": ["src/generated"]
+  "exclude": ["src/lib/web3/generated"]
 }
