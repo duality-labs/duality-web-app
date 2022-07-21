@@ -27,7 +27,7 @@ interface TxClientOptions {
 }
 
 interface SignAndBroadcastOptions {
-  fee: StdFee,
+  fee: StdFee | "auto" | number,
   memo?: string
 }
 
