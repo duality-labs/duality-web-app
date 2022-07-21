@@ -9,7 +9,6 @@ import { cleanInput } from './utils';
 import './TokenInputGroup.scss';
 
 interface InputGroupProps {
-  readOnly?: boolean;
   onTokenChanged?: (token?: Token) => void;
   onValueChanged?: (value: string) => void;
   tokenList: Array<Token>;
@@ -24,7 +23,6 @@ interface InputGroupProps {
 }
 
 export default function TokenInputGroup({
-  readOnly = false,
   onTokenChanged,
   onValueChanged,
   tokenList,
@@ -62,19 +60,13 @@ export default function TokenInputGroup({
         onChange={onInputChange}
         disabled={disabledInput}
       />
-      {readOnly ? (
-        <button type="button" className="token-picker-toggle--readonly">
-          {token?.name || 'No Token'}
-        </button>
-      ) : (
-        <TokenPicker
-          value={token}
-          onChange={onPickerChange}
-          tokenList={tokenList}
-          exclusion={exclusion}
-          disabled={disabledToken}
-        />
-      )}
+      <TokenPicker
+        value={token}
+        onChange={onPickerChange}
+        tokenList={tokenList}
+        exclusion={exclusion}
+        disabled={disabledToken}
+      />
     </div>
   );
 }
