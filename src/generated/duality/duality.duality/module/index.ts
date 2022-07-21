@@ -17,17 +17,12 @@ export const MissingWalletError = new Error("wallet is required");
 
 export const registry = new Registry(<any>types);
 
-const defaultFee = {
-  amount: [],
-  gas: "200000",
-};
-
 interface TxClientOptions {
   addr: string
 }
 
 interface SignAndBroadcastOptions {
-  fee: StdFee | "auto" | number,
+  fee?: StdFee | "auto" | number,
   memo?: string
 }
 
@@ -39,7 +34,7 @@ const txClient = async (wallet: OfflineSigner, { addr: addr }: TxClientOptions =
   const { address } = (await wallet.getAccounts())[0];
 
   return {
-    signAndBroadcast: (msgs: EncodeObject[], { fee, memo }: SignAndBroadcastOptions = {fee: defaultFee, memo: ""}) => client.signAndBroadcast(address, msgs, fee,memo),
+    signAndBroadcast: (msgs: EncodeObject[], { fee='auto', memo }: SignAndBroadcastOptions = {}) => client.signAndBroadcast(address, msgs, fee, memo),
     msgWithdrawShares: (data: MsgWithdrawShares): EncodeObject => ({ typeUrl: "/duality.duality.MsgWithdrawShares", value: MsgWithdrawShares.fromPartial( data ) }),
     msgDepositShares: (data: MsgDepositShares): EncodeObject => ({ typeUrl: "/duality.duality.MsgDepositShares", value: MsgDepositShares.fromPartial( data ) }),
     
