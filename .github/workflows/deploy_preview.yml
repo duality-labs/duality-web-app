@@ -2,66 +2,66 @@ name: Deploy Preview
 
 on:
   pull_request:
-    branches: [ main ]
-    types: [ opened, reopened, synchronize, labeled ]
+    branches: [main]
+    types: [opened, reopened, synchronize, labeled]
 
 jobs:
   build_preview:
     # require 'deploy preview' label
-    if: contains(github.event.pull_request.labels.*.name, 'deploy preview') 
+    if: contains(github.event.pull_request.labels.*.name, 'deploy preview')
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout branch head (not merged head)
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout branch head (not merged head)
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: Set Node version
-      # use basic regex (first found digits and dots) to get Node engine version from package.json
-      # will fail if not correctly specified
-      run: |
-        NODE_VERSION=$(node -p "require('./package.json').engines.node.match(/[\d.]+/)[0]")
-        echo "::set-output name=NODE_VERSION::$NODE_VERSION"
-      id: get-node-version
+      - name: Set Node version
+        # use basic regex (first found digits and dots) to get Node engine version from package.json
+        # will fail if not correctly specified
+        run: |
+          NODE_VERSION=$(node -p "require('./package.json').engines.node.match(/[\d.]+/)[0]")
+          echo "::set-output name=NODE_VERSION::$NODE_VERSION"
+        id: get-node-version
 
-    - name: Use Node.js ${{ steps.get-node-version.outputs.NODE_VERSION }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ steps.get-node-version.outputs.NODE_VERSION }}
+      - name: Use Node.js ${{ steps.get-node-version.outputs.NODE_VERSION }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ steps.get-node-version.outputs.NODE_VERSION }}
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Build
-      run: npm run build
+      - name: Build
+        run: npm run build
 
-    - name: Deploy preview to Netlify
-      id: netlify_deploy
-      # see: https://github.com/marketplace/actions/netlify-deploy
-      uses: jsmrcaga/action-netlify-deploy@v1.7.2
-      with:
-        # secret tokens are added in Github project settings under [project]/settings/secrets/actions
-        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        NETLIFY_DEPLOY_MESSAGE: "Preview deploy ${{ github.ref }}" # github.ref looks like `refs/pull/[PR#]/merge`
-        NETLIFY_DEPLOY_TO_PROD: false
-        build_directory: build
-        # we skip the build steps in this custom step because if we allow the project to build inside this step
-        # and specify the node version for that, this action will first download the latest node version,
-        # then switch back to the specified node version, then build the project.
-        # this wastes build minutes, so we instead pre-build the "build" folder
-        build_command: echo "already built app"
-        install_command: echo "already installed dependencies"
+      - name: Deploy preview to Netlify
+        id: netlify_deploy
+        # see: https://github.com/marketplace/actions/netlify-deploy
+        uses: jsmrcaga/action-netlify-deploy@v1.7.2
+        with:
+          # secret tokens are added in Github project settings under [project]/settings/secrets/actions
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_DEPLOY_MESSAGE: Preview deploy ${{ github.ref }} # github.ref looks like `refs/pull/[PR#]/merge`
+          NETLIFY_DEPLOY_TO_PROD: false
+          build_directory: build
+          # we skip the build steps in this custom step because if we allow the project to build inside this step
+          # and specify the node version for that, this action will first download the latest node version,
+          # then switch back to the specified node version, then build the project.
+          # this wastes build minutes, so we instead pre-build the "build" folder
+          build_command: echo "already built app"
+          install_command: echo "already installed dependencies"
 
-    - name: Add comment to PR
-      if: github.ref != 'refs/heads/main' #github.ref looks like `refs/pull/[PR#]/merge`
-      env:
-        # secret tokens are added in Github project settings under [project]/settings/secrets/actions
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # get deploy outputs: see https://github.com/marketplace/actions/netlify-deploy#outputs
-      # get PR number: see https://github.com/actions/checkout/issues/58#issuecomment-812259610
-      run: |
-        echo "Preview URL: ${{ steps.netlify_deploy.outputs.NETLIFY_PREVIEW_URL }}" > netlify.txt
-        echo "Logs: ${{ steps.netlify_deploy.outputs.NETLIFY_LOGS_URL }}" >> netlify.txt
-        gh pr comment ${{ github.event.pull_request.number }} --body-file netlify.txt || true
+      - name: Add comment to PR
+        if: github.ref != 'refs/heads/main' #github.ref looks like `refs/pull/[PR#]/merge`
+        env:
+          # secret tokens are added in Github project settings under [project]/settings/secrets/actions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # get deploy outputs: see https://github.com/marketplace/actions/netlify-deploy#outputs
+        # get PR number: see https://github.com/actions/checkout/issues/58#issuecomment-812259610
+        run: |
+          echo "Preview URL: ${{ steps.netlify_deploy.outputs.NETLIFY_PREVIEW_URL }}" > netlify.txt
+          echo "Logs: ${{ steps.netlify_deploy.outputs.NETLIFY_LOGS_URL }}" >> netlify.txt
+          gh pr comment ${{ github.event.pull_request.number }} --body-file netlify.txt || true

@@ -2,8 +2,6 @@
 
 # dependencies
 /node_modules
-/.pnp
-.pnp.js
 
 # testing
 /coverage
@@ -13,6 +11,8 @@
 
 # misc
 .DS_Store
+
+# local environment variables
 .env.local
 .env.development.local
 .env.test.local

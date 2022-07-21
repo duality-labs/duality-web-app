@@ -1,0 +1,26 @@
+name: Semantic Release Checks
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, edited]
+
+# disallow reading anything
+permissions:
+  contents: none
+
+jobs:
+  PR-title-check:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      # see https://www.conventionalcommits.org/en/v1.0.0/#summary for conventional commit spec
+      - name: |
+          check title starts with type of
+          feat/fix/chore/docs/style/refactor/perf/revert/test/build/ci
+          and may have optional scope and may use "!" to denote breaking changes
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          if ! [[ "$PR_TITLE" =~ ^(feat|fix|chore|docs|style|refactor|perf|revert|test|build|ci)(\(.+\))?\!?: ]]; then
+            exit 1
+          fi
