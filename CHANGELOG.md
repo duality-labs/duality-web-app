@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.6](https://github.com/duality-labz/duality-web-app/compare/v0.1.5...v0.1.6) (2022-07-21)
+
+
+### Features
+
+* 16 - components add liquidity card ([#31](https://github.com/duality-labz/duality-web-app/issues/31)) ([aaeca40](https://github.com/duality-labz/duality-web-app/commit/aaeca405c55cccb79400ff8642fc22ee48a63681))
+
+
+### Other
+
+* fix CSS rule in base modal component ([#95](https://github.com/duality-labz/duality-web-app/issues/95)) ([1cf7849](https://github.com/duality-labz/duality-web-app/commit/1cf78496db98d5db449f166cf5bd1ae2330c788c))
+
 ## [0.1.5](https://github.com/duality-labz/duality-web-app/compare/v0.1.4...v0.1.5) (2022-07-20)
 
 
