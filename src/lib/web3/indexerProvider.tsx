@@ -44,13 +44,15 @@ const IndexerContext = createContext<IndexerContextType>({
 
 function getFullData(): Promise<PairMap> {
   return new Promise(function (resolve, reject) {
-    if (!REACT_APP__REST_API)
-      return reject(new Error('Undefined rest api URL'));
-    fetch(REACT_APP__REST_API)
-      .then((res) => res.json())
-      .then(transformData)
-      .then(resolve)
-      .catch(reject);
+    if (!REACT_APP__REST_API) {
+      reject(new Error('Undefined rest api base URL'));
+    } else {
+      fetch(`${REACT_APP__REST_API}/duality/duality/ticks`)
+        .then((res) => res.json())
+        .then(transformData)
+        .then(resolve)
+        .catch(reject);
+    }
   });
 }
 
