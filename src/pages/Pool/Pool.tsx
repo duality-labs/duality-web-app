@@ -19,9 +19,9 @@ import {
 
 import './Pool.scss';
 
-const { REACT_APP__REST_URL = '', REACT_APP__WS_URL = '' } = process.env;
+const { REACT_APP__REST_API = '', REACT_APP__WEBSOCKET_URL = '' } = process.env;
 
-const subscriptionManager = createSubscriptionManager(REACT_APP__WS_URL);
+const subscriptionManager = createSubscriptionManager(REACT_APP__WEBSOCKET_URL);
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
@@ -85,7 +85,7 @@ export default function Pool() {
       let cancel = false;
       (async () => {
         try {
-          const client = await queryClient({ addr: REACT_APP__REST_URL });
+          const client = await queryClient({ addr: REACT_APP__REST_API });
           const [token0, token1] = [tokenA, tokenB].sort((a, b) =>
             (a?.address ?? '').localeCompare(b?.address ?? '')
           );
