@@ -9,19 +9,8 @@ import {
   Token,
 } from '../../components/TokenPicker/mockHooks';
 
-import { queryClient } from '../../generated/duality/duality.duality/module/index';
-import { DualityQueryAllTickResponse } from '../../generated/duality/duality.duality/module/rest';
-import {
-  EventType,
-  createSubscriptionManager,
-  MessageActionEvent,
-} from '../../lib/web3/events';
-
 import './Pool.scss';
-
-const { REACT_APP__REST_API = '', REACT_APP__WEBSOCKET_URL = '' } = process.env;
-
-const subscriptionManager = createSubscriptionManager(REACT_APP__WEBSOCKET_URL);
+import { useIndexerPairData } from '../../lib/web3/indexerProvider';
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
@@ -77,100 +66,12 @@ export default function Pool() {
     });
   }, [totalValue, rateData, rangeMin, rangeMax]);
 
-  const [ticks, setTicks] = useState<DualityQueryAllTickResponse['tick']>();
-  const [tickFetching, setTickFetching] = useState<boolean>(false);
-  const [ticksError, setTicksError] = useState<string>();
-  useEffect(() => {
-    if (tokenA && tokenB) {
-      let cancel = false;
-      (async () => {
-        try {
-          const client = await queryClient({ addr: REACT_APP__REST_API });
-          const [token0, token1] = [tokenA, tokenB].sort((a, b) =>
-            (a?.address ?? '').localeCompare(b?.address ?? '')
-          );
-          // accumulate ticks by looping through result pages
-          setTicks(undefined);
-          setTickFetching(true);
-          setTicksError(undefined);
-          let result: DualityQueryAllTickResponse | undefined;
-          do {
-            result = await client
-              .queryTickAll({
-                'pagination.limit': '100',
-                'pagination.key': result?.pagination?.next_key,
-                token0: token0?.address,
-                token1: token1?.address,
-              })
-              .then((response) => response.data);
-            // append to ticks
-            if (!cancel && result?.tick) {
-              const { tick } = result;
-              setTicks((ticks = []) => ticks?.concat(tick));
-            }
-          } while (!cancel && result?.pagination?.next_key);
-        } catch (e) {
-          if (!cancel) setTicksError(`${e}`);
-        }
-        if (!cancel) setTickFetching(false);
-      })();
-      return () => {
-        cancel = true;
-        setTickFetching(false);
-      };
-    }
-  }, [tokenA, tokenB]);
-
-  // close websocket after exiting page
-  // websocket will be opened upon first subscription
-  useEffect(() => {
-    return () => subscriptionManager.close();
-  }, []);
-
-  // subscribe to certain events
-  useEffect(() => {
-    if (tokenA && tokenB) {
-      const onMessage = (event: MessageActionEvent) => {
-        setTicks((ticks = []) => {
-          // replace ticks
-          const newTick = {
-            token0: event.Token0,
-            token1: event.Token1,
-            price0: event.Price0,
-            price1: event.Price1,
-            fee: event.Fee,
-            reserves0: event.NewReserves0,
-            reserves1: event.NewReserves1,
-          };
-          const matchingTickIndex = ticks.findIndex((tick) => {
-            return (
-              tick.token0 === newTick.token0 &&
-              tick.token1 === newTick.token1 &&
-              tick.price0 === newTick.price0 &&
-              tick.price1 === newTick.price1 &&
-              tick.fee === newTick.fee
-            );
-          });
-          const newTicks = ticks.slice();
-          if (matchingTickIndex >= 0) {
-            newTicks[matchingTickIndex] = newTick;
-          } else {
-            newTicks.push(newTick);
-          }
-          return newTicks;
-        });
-      };
-      subscriptionManager.subscribeMessage(onMessage, EventType.EventTxValue, {
-        messageAction: 'NewDeposit',
-      });
-      return () =>
-        subscriptionManager.subscribeMessage(
-          onMessage,
-          EventType.EventTxValue,
-          { messageAction: 'NewDeposit' }
-        );
-    }
-  }, [tokenA, tokenB]);
+  const {
+    data: pairInfo,
+    error: ticksError,
+    isValidating: tickFetching,
+  } = useIndexerPairData(tokenA?.address, tokenB?.address);
+  const ticks = pairInfo?.ticks;
 
   return (
     <div className="pool-page">
