@@ -1,4 +1,7 @@
 // This file is modified from an original generated/duality/duality.duality/module/index.ts file
+//
+// This file will not auto generate changes:
+// if new Msgs are created they should be added to the txClient below
 
 import { StdFee } from '@cosmjs/launchpad';
 import { defaultRegistryTypes, SigningStargateClient } from '@cosmjs/stargate';
@@ -15,7 +18,7 @@ export const MissingWalletError = new Error('wallet is required');
 
 export const registry = new Registry(defaultRegistryTypes);
 
-// register additional Msgs here
+// -----> register our Msgs here
 registry.register('/duality.duality.MsgDepositShares', MsgDepositShares);
 registry.register('/duality.duality.MsgWithdrawShares', MsgWithdrawShares);
 
@@ -43,6 +46,8 @@ const txClient = async (
       msgs: EncodeObject[],
       { fee = 'auto', memo }: SignAndBroadcastOptions = {}
     ) => client.signAndBroadcast(address, msgs, fee, memo),
+
+    // -----> register our Msg client methods here
     msgWithdrawShares: (data: MsgWithdrawShares): EncodeObject => ({
       typeUrl: '/duality.duality.MsgWithdrawShares',
       value: MsgWithdrawShares.fromPartial(data),
