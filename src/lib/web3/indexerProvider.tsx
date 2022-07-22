@@ -8,6 +8,9 @@ import { BigNumber } from 'bignumber.js';
 
 const { REACT_APP__REST_API, REACT_APP__WEBSOCKET_URL } = process.env;
 
+type TokenAddress = string; // a valid hex address, eg. 0x01
+type BigNumberString = string; // a number in string format, eg. "1"
+
 if (!REACT_APP__WEBSOCKET_URL)
   throw new Error('Invalid value for env variable REACT_APP__WEBSOCKET_URL');
 const subscriber = createSubscriptionManager(REACT_APP__WEBSOCKET_URL);
@@ -51,15 +54,29 @@ function getFullData(): Promise<PairMap> {
   });
 }
 
-function getPairID(token0: string, token1: string) {
+/**
+ * Gets the pair id for a sorted pair of tokens
+ * @param token0 address of token 0
+ * @param token1 address of token 1
+ * @returns pair id for tokens
+ */
+function getPairID(token0: TokenAddress, token1: TokenAddress) {
   return `${token0}-${token1}`;
-  // warning: will throw an error if `tokens` aren't valid hex addresses
-  // return utils.solidityKeccak256(['address[2]'], [tokens.slice().sort()]);
 }
 
-function getTickID(price0: string, price1: string, fee: string) {
+/**
+ * Gets the tick id
+ * @param price0 price of token 0
+ * @param price1 price of token 1
+ * @param fee tick's fee
+ * @returns tick id
+ */
+function getTickID(
+  price0: BigNumberString,
+  price1: BigNumberString,
+  fee: BigNumberString
+) {
   return `${price0}-${price1}-${fee}`;
-  //return utils.solidityKeccak256(['uint256', 'uint256', 'uint256'], [price0, price1, fee]);
 }
 
 function transformData(data: {
