@@ -6,7 +6,10 @@
 import { StdFee } from '@cosmjs/launchpad';
 import { defaultRegistryTypes, SigningStargateClient } from '@cosmjs/stargate';
 import { Registry, OfflineSigner, EncodeObject } from '@cosmjs/proto-signing';
-import { Api } from './generated/duality/duality.duality/module/rest';
+import {
+  Api,
+  ApiConfig,
+} from './generated/duality/duality.duality/module/rest';
 import {
   MsgWithdrawShares,
   MsgDepositShares,
@@ -59,14 +62,12 @@ const txClient = async (
   };
 };
 
-interface QueryClientOptions {
-  addr?: string;
-}
-
 const queryClient = async ({
-  addr = REACT_APP__REST_API,
-}: QueryClientOptions = {}) => {
-  return new Api({ baseUrl: addr });
+  baseUrl = REACT_APP__REST_API,
+  baseApiParams,
+  securityWorker,
+}: ApiConfig = {}) => {
+  return new Api({ baseUrl, baseApiParams, securityWorker });
 };
 
 export { txClient, queryClient };
