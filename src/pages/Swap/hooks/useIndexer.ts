@@ -64,7 +64,12 @@ export function useIndexer(pairRequest: PairRequest): {
   );
 
   useEffect(() => {
-    if (!pairRequest.token0 || !pairRequest.token1 || !pairRequest.value0)
+    if (
+      !pairRequest.token0 ||
+      !pairRequest.token1 ||
+      !pairRequest.value0 ||
+      !pairs
+    )
       return;
     setIsValidating(true);
     setData(undefined);

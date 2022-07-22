@@ -34,7 +34,7 @@ export interface PairMap {
 }
 
 interface IndexerContextType {
-  pairs: PairMap;
+  pairs?: PairMap;
   error?: string;
 }
 
@@ -118,9 +118,7 @@ function transformData(data: {
 }
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
-  const [indexerData, setIndexerData] = useState<{
-    [pairID: string]: PairInfo;
-  }>();
+  const [indexerData, setIndexerData] = useState<PairMap>();
   const [error, setError] = useState<string>();
   // avoid sending more than once
   const [, setRequestedFlag] = useState(false);
@@ -184,7 +182,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setResult({ pairs: indexerData ?? {}, error: error });
+    setResult({ pairs: indexerData, error: error });
   }, [indexerData, error]);
 
   useEffect(() => {
