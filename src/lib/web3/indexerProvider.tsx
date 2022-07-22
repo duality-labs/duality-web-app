@@ -6,12 +6,11 @@ import {
 } from './events';
 import { BigNumber } from 'bignumber.js';
 
-const eventsURL = process.env.REACT_APP__INDEXER_EVENT_URL;
-if (typeof eventsURL !== 'string' || !eventsURL)
-  throw new Error(
-    'Invalid value for env variable REACT_APP__INDEXER_EVENT_URL'
-  );
-const subscriber = createSubscriptionManager(eventsURL);
+const { REACT_APP__REST_API, REACT_APP__WEBSOCKET_URL } = process.env;
+
+if (!REACT_APP__WEBSOCKET_URL)
+  throw new Error('Invalid value for env variable REACT_APP__WEBSOCKET_URL');
+const subscriber = createSubscriptionManager(REACT_APP__WEBSOCKET_URL);
 
 export interface PairInfo {
   token0: string;
@@ -40,12 +39,11 @@ const IndexerContext = createContext<IndexerContextType>({
   pairs: {},
 });
 
-const indexerURL = process.env.REACT_APP__INDEXER_URL;
-
 function getFullData(): Promise<PairMap> {
   return new Promise(function (resolve, reject) {
-    if (!indexerURL) return reject(new Error('Undefined indexer URL'));
-    fetch(indexerURL)
+    if (!REACT_APP__REST_API)
+      return reject(new Error('Undefined rest api URL'));
+    fetch(REACT_APP__REST_API)
       .then((res) => res.json())
       .then(transformData)
       .then(resolve)
