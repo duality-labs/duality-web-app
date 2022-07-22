@@ -148,22 +148,28 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       }
       const pairID = getPairID(Token0, Token1);
       const tickID = getTickID(Price0, Price1, Fee);
-      setIndexerData((oldData) => {
-        if (!oldData) oldData = {};
-        oldData[pairID] = oldData[pairID] || {
-          ticks: {},
-          token0: Token0,
-          token1: Token1,
+      setIndexerData((oldData = {}) => {
+        const oldPairInfo = oldData[pairID];
+        const oldTickInfo = oldPairInfo?.ticks?.[tickID];
+        return {
+          ...oldData,
+          [pairID]: {
+            ...oldPairInfo, // not needed, displayed for consistency
+            token0: Token0,
+            token1: Token1,
+            ticks: {
+              ...oldPairInfo?.ticks,
+              [tickID]: {
+                ...oldTickInfo, // not needed, displayed for consistency
+                price0: new BigNumber(Price0),
+                price1: new BigNumber(Price1),
+                fee: new BigNumber(Fee),
+                reserves0: new BigNumber(NewReserves0),
+                reserves1: new BigNumber(NewReserves1),
+              },
+            },
+          },
         };
-        const tickInfo = oldData[pairID].ticks[tickID] || {
-          price0: new BigNumber(Price0),
-          price1: new BigNumber(Price1),
-          fee: new BigNumber(Fee),
-        };
-        tickInfo.reserves0 = new BigNumber(NewReserves0);
-        tickInfo.reserves1 = new BigNumber(NewReserves1);
-        oldData[pairID].ticks[tickID] = tickInfo;
-        return { ...oldData };
       });
     };
     subscriber.subscribeMessage(onTickChange, EventType.EventTxValue, {
