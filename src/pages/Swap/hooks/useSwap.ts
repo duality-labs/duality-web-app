@@ -9,6 +9,7 @@ function sendSwap({
   return new Promise(function (resolve, reject) {
     if (!token0 || !token1 || !value0)
       return reject(new Error('Invalid Input'));
+    reject('Not yet implemented');
   });
 }
 
