@@ -129,7 +129,7 @@ export default function Pool() {
   // subscribe to certain events
   useEffect(() => {
     if (tokenA && tokenB) {
-      const onMessage: (event: MessageActionEvent) => void = (event) => {
+      const onMessage = (event: MessageActionEvent) => {
         setTicks((ticks = []) => {
           // replace ticks
           const newTick = {
