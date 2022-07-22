@@ -4,7 +4,10 @@ import { StdFee } from '@cosmjs/launchpad';
 import { defaultRegistryTypes, SigningStargateClient } from '@cosmjs/stargate';
 import { Registry, OfflineSigner, EncodeObject } from '@cosmjs/proto-signing';
 import { Api } from './generated/duality/duality.duality/module/rest';
-import * as msgs from './generated/duality/duality.duality/module/types/duality/tx';
+import {
+  MsgWithdrawShares,
+  MsgDepositShares,
+} from './generated/duality/duality.duality/module/types/duality/tx';
 
 const { REACT_APP__RPC_URL = '', REACT_APP__REST_URL = '' } = process.env;
 
@@ -12,12 +15,9 @@ export const MissingWalletError = new Error('wallet is required');
 
 export const registry = new Registry(defaultRegistryTypes);
 
-Object.entries(msgs).forEach(([key, value]) => {
-  // register additional Msgs here
-  if (typeof value === 'object') {
-    registry.register(`/duality.duality.${key}`, value);
-  }
-});
+// register additional Msgs here
+registry.register('/duality.duality.MsgDepositShares', MsgDepositShares);
+registry.register('/duality.duality.MsgWithdrawShares', MsgWithdrawShares);
 
 interface TxClientOptions {
   addr?: string;
@@ -43,20 +43,14 @@ const txClient = async (
       msgs: EncodeObject[],
       { fee = 'auto', memo }: SignAndBroadcastOptions = {}
     ) => client.signAndBroadcast(address, msgs, fee, memo),
-    ...Object.entries(msgs).reduce<{ [key: string]: object }>(
-      (acc, [key, value]) => {
-        // register additional Msgs here
-        if (typeof value === 'object') {
-          acc[key] = (data: typeof value): EncodeObject => ({
-            typeUrl: `/duality.duality.${key}`,
-            value: value.fromPartial(data as object),
-          });
-          registry.register(`/duality.duality.${key}`, value);
-        }
-        return acc;
-      },
-      {}
-    ),
+    msgWithdrawShares: (data: MsgWithdrawShares): EncodeObject => ({
+      typeUrl: '/duality.duality.MsgWithdrawShares',
+      value: MsgWithdrawShares.fromPartial(data),
+    }),
+    msgDepositShares: (data: MsgDepositShares): EncodeObject => ({
+      typeUrl: '/duality.duality.MsgDepositShares',
+      value: MsgDepositShares.fromPartial(data),
+    }),
   };
 };
 
