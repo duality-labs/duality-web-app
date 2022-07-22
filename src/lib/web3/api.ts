@@ -9,7 +9,7 @@ import {
   MsgDepositShares,
 } from './generated/duality/duality.duality/module/types/duality/tx';
 
-const { REACT_APP__RPC_URL = '', REACT_APP__REST_URL = '' } = process.env;
+const { REACT_APP__RPC_API = '', REACT_APP__REST_API = '' } = process.env;
 
 export const MissingWalletError = new Error('wallet is required');
 
@@ -30,7 +30,7 @@ interface SignAndBroadcastOptions {
 
 const txClient = async (
   wallet: OfflineSigner,
-  { addr = REACT_APP__RPC_URL }: TxClientOptions = {}
+  { addr = REACT_APP__RPC_API }: TxClientOptions = {}
 ) => {
   if (!wallet) throw MissingWalletError;
   const client = addr
@@ -59,7 +59,7 @@ interface QueryClientOptions {
 }
 
 const queryClient = async ({
-  addr = REACT_APP__REST_URL,
+  addr = REACT_APP__REST_API,
 }: QueryClientOptions = {}) => {
   return new Api({ baseUrl: addr });
 };
