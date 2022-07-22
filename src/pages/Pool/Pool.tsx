@@ -67,11 +67,10 @@ export default function Pool() {
   }, [totalValue, rateData, rangeMin, rangeMax]);
 
   const {
-    data: pairInfo,
+    data: { ticks } = {},
     error: ticksError,
     isValidating: tickFetching,
   } = useIndexerPairData(tokenA?.address, tokenB?.address);
-  const ticks = pairInfo?.ticks;
 
   return (
     <div className="pool-page">
