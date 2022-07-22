@@ -89,32 +89,28 @@ function transformData(data: {
     reserves0: string;
     reserves1: string;
   }>;
-}): Promise<PairMap> {
-  return new Promise(function (resolve) {
-    resolve(
-      data.tick.reduce<PairMap>(function (
-        result,
-        { token0, token1, price0, price1, fee, reserves0, reserves1 }
-      ) {
-        const pairID = getPairID(token0, token1);
-        const tickID = getTickID(price0, price1, fee);
-        result[pairID] = result[pairID] || {
-          token0: token0,
-          token1: token1,
-          ticks: {},
-        };
-        result[pairID].ticks[tickID] = {
-          price0: new BigNumber(price0),
-          price1: new BigNumber(price1),
-          reserves0: new BigNumber(reserves0),
-          reserves1: new BigNumber(reserves1),
-          fee: new BigNumber(fee),
-        };
-        return result;
-      },
-      {})
-    );
-  });
+}): PairMap {
+  return data.tick.reduce<PairMap>(function (
+    result,
+    { token0, token1, price0, price1, fee, reserves0, reserves1 }
+  ) {
+    const pairID = getPairID(token0, token1);
+    const tickID = getTickID(price0, price1, fee);
+    result[pairID] = result[pairID] || {
+      token0: token0,
+      token1: token1,
+      ticks: {},
+    };
+    result[pairID].ticks[tickID] = {
+      price0: new BigNumber(price0),
+      price1: new BigNumber(price1),
+      reserves0: new BigNumber(reserves0),
+      reserves1: new BigNumber(reserves1),
+      fee: new BigNumber(fee),
+    };
+    return result;
+  },
+  {});
 }
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {

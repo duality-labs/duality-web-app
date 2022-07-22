@@ -44,15 +44,13 @@ export function router(
   }
 }
 
-export function routerAsync(
+export async function routerAsync(
   state: PairMap,
   token0: string,
   token1: string,
   value0: string
 ): Promise<RouterResult> {
-  return new Promise(function (resolve) {
-    resolve(router(state, token0, token1, value0));
-  });
+  return await router(state, token0, token1, value0);
 }
 
 /**

@@ -7,30 +7,25 @@ const cachedRequests: {
   [token0: string]: { [token1: string]: PairResult };
 } = {};
 
-function fetchEstimates(
+async function fetchEstimates(
   state: PairMap,
   token0: string,
   token1: string,
   value0: string
 ): Promise<PairResult> {
-  return new Promise(function (resolve, reject) {
-    routerAsync(state, token0, token1, value0)
-      .then(function (res) {
-        const value1 = calculateOut(res);
-        // TODO multiply by 10k for better accuracy
-        const rate = res.amountIn.dividedBy(value1);
-        const extraFee = calculateFee(res);
-        resolve({
-          token0,
-          token1,
-          rate: rate.toString(),
-          value0,
-          value1: value1.toString(),
-          gas: extraFee.toString(),
-        });
-      })
-      .catch(reject);
-  });
+  const result = await routerAsync(state, token0, token1, value0);
+  const value1 = calculateOut(result);
+  // TODO multiply by 10k for better accuracy
+  const rate = result.amountIn.dividedBy(value1);
+  const extraFee = calculateFee(result);
+  return {
+    token0,
+    token1,
+    rate: rate.toString(),
+    value0,
+    value1: value1.toString(),
+    gas: extraFee.toString(),
+  };
 }
 
 /**
