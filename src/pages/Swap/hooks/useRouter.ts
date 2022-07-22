@@ -81,20 +81,21 @@ export function calculateOut(data: RouterResult): BigNumber {
         : data.reserves0[pairIndex][tickIndex];
       const maxOut = amountLeft.multipliedBy(priceIn).dividedBy(priceOut);
 
-      // reservesOut < maxOut
-      if (reservesOut.comparedTo(maxOut) < 0) {
+      if (reservesOut.isLessThan(maxOut)) {
         const amountInTraded = reservesOut
           .multipliedBy(priceOut)
           .dividedBy(priceIn);
         amountLeft = amountLeft.minus(amountInTraded);
         amountOut = amountOut.plus(reservesOut);
+        if (amountLeft.isEqualTo(0)) return amountOut;
+        if (amountLeft.isLessThan(0))
+          throw new Error(
+            'Error while calculating amount out (negative amount)'
+          );
       } else {
-        amountLeft = new BigNumber(0);
-        amountOut = amountOut.plus(maxOut);
+        return amountOut.plus(maxOut);
       }
-      if (amountLeft.isLessThanOrEqualTo(0)) return amountOut;
     }
-    if (amountLeft.isLessThanOrEqualTo(0)) return amountOut;
   }
   return amountOut;
 }

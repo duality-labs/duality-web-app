@@ -2,6 +2,7 @@ import { useIndexerData, PairMap } from '../../../lib/web3/indexerProvider';
 import { useCallback, useEffect, useState } from 'react';
 import { PairRequest, PairResult } from './index';
 import { routerAsync, calculateOut, calculateFee } from './useRouter';
+import BigNumber from 'bignumber.js';
 
 const cachedRequests: {
   [token0: string]: { [token1: string]: PairResult };
@@ -88,18 +89,19 @@ export function useIndexer(pairRequest: PairRequest): {
     const cachedPairInfo = cachedRequests[token0][token1];
     if (cachedPairInfo) {
       if (originalToken0 === cachedPairInfo.token0) {
-        // TODO use bignumber
-        const tempValue1 =
-          Number(pairRequest.value0) * Number(cachedPairInfo.rate);
+        const tempValue1 = new BigNumber(pairRequest.value0).multipliedBy(
+          cachedPairInfo.rate
+        );
         setSwappedResult(
-          { ...cachedPairInfo, value1: `${tempValue1}` },
+          { ...cachedPairInfo, value1: tempValue1.toString() },
           originalToken0
         );
       } else {
-        const tempValue1 =
-          Number(pairRequest.value0) / Number(cachedPairInfo.rate);
+        const tempValue1 = new BigNumber(pairRequest.value0).dividedBy(
+          cachedPairInfo.rate
+        );
         setSwappedResult(
-          { ...cachedPairInfo, value0: `${tempValue1}` },
+          { ...cachedPairInfo, value0: tempValue1.toString() },
           originalToken0
         );
       }
