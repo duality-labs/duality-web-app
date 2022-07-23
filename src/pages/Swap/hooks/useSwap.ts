@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { PairRequest, PairResult } from './index';
 
 function sendSwap({
-  token0,
-  token1,
-  value0,
+  tokenA,
+  tokenB,
+  valueA,
 }: PairRequest): Promise<PairResult> {
   return new Promise(function (resolve, reject) {
-    if (!token0 || !token1 || !value0)
+    if (!tokenA || !tokenB || !valueA)
       return reject(new Error('Invalid Input'));
     reject('Not yet implemented');
   });
@@ -29,9 +29,9 @@ export function useSwap(request?: PairRequest): {
 
   useEffect(() => {
     if (!request) return onError('Missing Tokens and value');
-    const { token0, token1, value0 } = request;
-    if (!token0 || !token1) return onError('Missing token pair');
-    if (!value0) return onError('Missing value');
+    const { tokenA, tokenB, valueA } = request;
+    if (!tokenA || !tokenB) return onError('Missing token pair');
+    if (!valueA) return onError('Missing value');
     setValidating(true);
     setError(undefined);
     setData(undefined);
@@ -39,10 +39,10 @@ export function useSwap(request?: PairRequest): {
       .then(function (result: PairResult) {
         setValidating(false);
         setData({
-          token0: token0,
-          token1: token1,
-          value0: value0,
-          value1: result.value1,
+          tokenA: tokenA,
+          tokenB: tokenB,
+          valueA: valueA,
+          valueB: result.valueB,
           rate: result.rate,
           gas: result.gas,
         });

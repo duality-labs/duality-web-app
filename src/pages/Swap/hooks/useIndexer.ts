@@ -10,21 +10,20 @@ const cachedRequests: {
 
 async function fetchEstimates(
   state: PairMap,
-  token0: string,
-  token1: string,
-  value0: string
+  tokenA: string,
+  tokenB: string,
+  valueA: string
 ): Promise<PairResult> {
-  const result = await routerAsync(state, token0, token1, value0);
-  const value1 = calculateOut(result);
-  // TODO multiply by 10k for better accuracy
-  const rate = result.amountIn.dividedBy(value1);
+  const result = await routerAsync(state, tokenA, tokenB, valueA);
+  const valueB = calculateOut(result);
+  const rate = result.amountIn.dividedBy(valueB);
   const extraFee = calculateFee(result);
   return {
-    token0,
-    token1,
+    tokenA,
+    tokenB,
     rate: rate.toString(),
-    value0,
-    value1: value1.toString(),
+    valueA,
+    valueB: valueB.toString(),
     gas: extraFee.toString(),
   };
 }
@@ -45,15 +44,15 @@ export function useIndexer(pairRequest: PairRequest): {
   const { data: pairs } = useIndexerData();
 
   const setSwappedResult = useCallback(
-    (result: PairResult, originalToken0: string) => {
-      if (result.token0 === originalToken0) return setData(result);
-      const { token0, token1, value0, value1 } = result;
+    (result: PairResult, originalTokenA: string) => {
+      if (result.tokenA === originalTokenA) return setData(result);
+      const { tokenA, tokenB, valueA, valueB } = result;
       setData({
         ...result,
-        token0: token1,
-        token1: token0,
-        value0: value1,
-        value1: value0,
+        tokenA: tokenA,
+        tokenB: tokenB,
+        valueA: valueA,
+        valueB: valueB,
       });
     },
     []
@@ -61,47 +60,47 @@ export function useIndexer(pairRequest: PairRequest): {
 
   useEffect(() => {
     if (
-      !pairRequest.token0 ||
-      !pairRequest.token1 ||
-      !pairRequest.value0 ||
+      !pairRequest.tokenA ||
+      !pairRequest.tokenB ||
+      !pairRequest.valueA ||
       !pairs
     )
       return;
     setIsValidating(true);
     setData(undefined);
     setError(undefined);
-    if (pairRequest.value0 === '0') {
+    if (pairRequest.valueA === '0') {
       setIsValidating(false);
       setData({
-        value0: '0',
-        value1: '0',
+        valueA: '0',
+        valueB: '0',
         rate: '0',
         gas: '0',
-        token0: pairRequest.token0,
-        token1: pairRequest.token1,
+        tokenA: pairRequest.tokenA,
+        tokenB: pairRequest.tokenB,
       });
       return;
     }
-    const [token0, token1] = [pairRequest.token0, pairRequest.token1].sort();
-    const originalToken0 = pairRequest.token0;
+    const [token0, token1] = [pairRequest.tokenA, pairRequest.tokenB].sort();
+    const originalToken0 = pairRequest.tokenA;
     let cancelled = false;
     cachedRequests[token0] = cachedRequests[token0] || {};
     const cachedPairInfo = cachedRequests[token0][token1];
     if (cachedPairInfo) {
-      if (originalToken0 === cachedPairInfo.token0) {
-        const tempValue1 = new BigNumber(pairRequest.value0).multipliedBy(
+      if (originalToken0 === cachedPairInfo.tokenA) {
+        const tempValue1 = new BigNumber(pairRequest.valueA).multipliedBy(
           cachedPairInfo.rate
         );
         setSwappedResult(
-          { ...cachedPairInfo, value1: tempValue1.toString() },
+          { ...cachedPairInfo, valueA: tempValue1.toString() },
           originalToken0
         );
       } else {
-        const tempValue1 = new BigNumber(pairRequest.value0).dividedBy(
+        const tempValue1 = new BigNumber(pairRequest.valueA).dividedBy(
           cachedPairInfo.rate
         );
         setSwappedResult(
-          { ...cachedPairInfo, value0: tempValue1.toString() },
+          { ...cachedPairInfo, valueA: tempValue1.toString() },
           originalToken0
         );
       }
@@ -109,9 +108,9 @@ export function useIndexer(pairRequest: PairRequest): {
 
     fetchEstimates(
       pairs,
-      pairRequest.token0,
-      pairRequest.token1,
-      pairRequest.value0
+      pairRequest.tokenA,
+      pairRequest.tokenB,
+      pairRequest.valueA
     )
       .then(function (result) {
         if (cancelled) return;
@@ -129,9 +128,9 @@ export function useIndexer(pairRequest: PairRequest): {
       cancelled = true;
     };
   }, [
-    pairRequest.token0,
-    pairRequest.token1,
-    pairRequest.value0,
+    pairRequest.tokenA,
+    pairRequest.tokenB,
+    pairRequest.valueA,
     setSwappedResult,
     pairs,
   ]);

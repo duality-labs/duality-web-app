@@ -2,22 +2,22 @@ import { BigNumber } from 'bignumber.js';
 
 export interface PairRequest {
   /** address of altered token */
-  token0?: string;
+  tokenA?: string;
   /** address of other token */
-  token1?: string;
+  tokenB?: string;
   /** value of altered token */
-  value0?: string;
+  valueA?: string;
 }
 
 export interface PairResult {
   /** address of token 0 */
-  token0: string;
+  tokenA: string;
   /** address of token 1 */
-  token1: string;
+  tokenB: string;
   /** value for token 0 */
-  value0: string;
+  valueA: string;
   /** (estimated) value for token 1 */
-  value1: string;
+  valueB: string;
   /** (estimated) rate of exchange */
   rate: string;
   /** (estimated) gas fee */

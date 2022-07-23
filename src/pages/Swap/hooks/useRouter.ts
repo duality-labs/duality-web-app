@@ -5,18 +5,18 @@ import { BigNumber } from 'bignumber.js';
 // mock implementation of router (no hop)
 export function router(
   state: PairMap,
-  token0: string,
-  token1: string,
+  tokenA: string,
+  tokenB: string,
   value0: string
 ): RouterResult {
-  const [sorted0, sorted1] = [token0, token1].sort();
+  const [token0, token1] = [tokenA, tokenB].sort();
   const exactPair = Object.values(state).find(
-    (pairInfo) => pairInfo.token0 === sorted0 && pairInfo.token1 === sorted1
+    (pairInfo) => pairInfo.token0 === token0 && pairInfo.token1 === token1
   );
   if (!exactPair) {
     return {
       amountIn: new BigNumber(value0),
-      tokens: [token0, token1],
+      tokens: [tokenA, tokenB],
       prices0: [],
       prices1: [],
       fees: [],
@@ -24,7 +24,7 @@ export function router(
       reserves1: [],
     };
   } else {
-    const sortMultiplier = sorted0 === token0 ? -1 : 1;
+    const sortMultiplier = token1 === tokenA ? -1 : 1;
     const sortedTicks = Object.values(exactPair.ticks).sort(
       (tick0, tick1) =>
         sortMultiplier *
@@ -34,7 +34,7 @@ export function router(
     );
     return {
       amountIn: new BigNumber(value0),
-      tokens: [token0, token1],
+      tokens: [tokenA, tokenB],
       prices0: [sortedTicks.map((tickInfo) => tickInfo.price0)], // price
       prices1: [sortedTicks.map((tickInfo) => tickInfo.price1)],
       fees: [sortedTicks.map((tickInfo) => tickInfo.fee)],
