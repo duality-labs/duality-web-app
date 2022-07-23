@@ -42,7 +42,7 @@ export function useIndexer(pairRequest: PairRequest): {
   const [data, setData] = useState<PairResult>();
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string>();
-  const { pairs } = useIndexerData();
+  const { data: pairs } = useIndexerData();
 
   const setSwappedResult = useCallback(
     (result: PairResult, originalToken0: string) => {

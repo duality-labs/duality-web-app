@@ -34,12 +34,13 @@ export interface PairMap {
 }
 
 interface IndexerContextType {
-  pairs?: PairMap;
+  data?: PairMap;
   error?: string;
+  isValidating: boolean;
 }
 
 const IndexerContext = createContext<IndexerContextType>({
-  pairs: {},
+  isValidating: true,
 });
 
 function getFullData(): Promise<PairMap> {
@@ -83,8 +84,8 @@ function getTickID(
 
 function transformData(data: {
   tick: Array<{
-    token0: string;
-    token1: string;
+    token0: TokenAddress;
+    token1: TokenAddress;
     price0: string;
     price1: string;
     fee: string;
@@ -121,8 +122,9 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   // avoid sending more than once
   const [, setRequestedFlag] = useState(false);
   const [result, setResult] = useState<IndexerContextType>({
-    pairs: indexerData ?? {},
+    data: indexerData,
     error: error,
+    isValidating: true,
   });
 
   useEffect(() => {
@@ -186,7 +188,11 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setResult({ pairs: indexerData, error: error });
+    setResult({
+      data: indexerData,
+      error: error,
+      isValidating: !indexerData && !error,
+    });
   }, [indexerData, error]);
 
   useEffect(() => {
@@ -210,4 +216,18 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
 export function useIndexerData() {
   return useContext(IndexerContext);
+}
+
+export function useIndexerPairData(
+  tokenA?: TokenAddress,
+  tokenB?: TokenAddress
+) {
+  const { data: pairs, isValidating, error } = useIndexerData();
+  const [token0, token1] = [tokenA, tokenB].sort();
+  const pairID = token0 && token1 && getPairID(token0, token1);
+  return {
+    data: pairID && pairs?.[pairID],
+    error,
+    isValidating,
+  };
 }
