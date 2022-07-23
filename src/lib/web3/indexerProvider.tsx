@@ -149,6 +149,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       ) {
         setError('Invalid event response from server');
         return;
+      } else {
+        setError(undefined);
       }
       const pairID = getPairID(Token0, Token1);
       const tickID = getTickID(Price0, Price1, Fee);
