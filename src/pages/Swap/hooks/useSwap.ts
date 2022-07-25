@@ -2,11 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import {
   assertIsDeliverTxSuccess,
   SigningStargateClient,
-  StdFee,
 } from '@cosmjs/stargate';
 import { BigNumber } from 'bignumber.js';
 
-import { currency, useWeb3, Web3ContextValue } from '../../../lib/web3/useWeb3';
+import { useWeb3, Web3ContextValue } from '../../../lib/web3/useWeb3';
 import {
   MsgSwapTicks,
   MsgSwapTicksResponse,
@@ -25,8 +24,6 @@ function sendSwap(
     if (!totalBigInt.isGreaterThan(0))
       return reject(new Error('Invalid Input (0 value)'));
 
-    // TODO: calculate fees from router ticks
-    const feeBigNum = new BigNumber('0x0').dividedBy(10000);
     const message = {
       typeUrl: '/duality.duality.MsgSwapTicks',
       value: MsgSwapTicks.fromPartial({
@@ -38,24 +35,10 @@ function sendSwap(
         creator,
       }),
     };
-    const tokenFee: StdFee = {
-      amount: [
-        {
-          denom: currency.coinMinimalDenom,
-          amount: totalBigInt
-            .multipliedBy(feeBigNum)
-            .integerValue(BigNumber.ROUND_UP)
-            .toString(),
-        },
-      ],
-      gas: BigNumber.maximum(1000, totalBigInt
-        .multipliedBy(0.001)
-        .integerValue(BigNumber.ROUND_UP))
-        .toString(),
-    };
 
     // send message to chain
     client
+      // TODO: calculate fees?
       .signAndBroadcast(fromAddress, [message], 'auto')
       .then(function (res) {
         if (!res) return reject('No response');
