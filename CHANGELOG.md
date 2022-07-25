@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/duality-labz/duality-web-app/compare/v0.1.6...v0.1.7) (2022-07-25)
+
+
+### Features
+
+* 85 update swap page logic to cosmjs usage ([#93](https://github.com/duality-labz/duality-web-app/issues/93)) ([ec69ea4](https://github.com/duality-labz/duality-web-app/commit/ec69ea492f76e98eea44a446fe9edcf957729192))
+
 ## [0.1.6](https://github.com/duality-labz/duality-web-app/compare/v0.1.5...v0.1.6) (2022-07-21)
 
 
