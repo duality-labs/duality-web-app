@@ -1,107 +1,143 @@
-import { PairMap } from '../../../lib/web3/indexerProvider';
-import { RouterResult } from './index';
-import { BigNumber } from 'bignumber.js';
+import { useIndexerData, PairMap } from '../../../lib/web3/indexerProvider';
+import { useEffect, useState } from 'react';
+import { PairRequest, PairResult } from './index';
+import { routerAsync, calculateOut, calculateFee } from './router';
+import BigNumber from 'bignumber.js';
 
-// mock implementation of router (no hop)
-export function router(
+const cachedRequests: {
+  [token0: string]: { [token1: string]: PairResult };
+} = {};
+
+async function fetchEstimates(
   state: PairMap,
   tokenA: string,
   tokenB: string,
-  value0: string
-): RouterResult {
-  const [token0, token1] = [tokenA, tokenB].sort();
-  const exactPair = Object.values(state).find(
-    (pairInfo) => pairInfo.token0 === token0 && pairInfo.token1 === token1
-  );
-  if (!exactPair) {
-    throw new Error('There are no ticks for the supplied token pair');
+  alteredValue: string,
+  reverseSwap: boolean
+): Promise<PairResult> {
+  if (reverseSwap) {
+    // The router can't calculate the value of the buying token based on the value of the selling token (yet)
+    throw new Error('Cannot calculate the reverse value');
   } else {
-    const sortMultiplier = token1 === tokenA ? -1 : 1;
-    const sortedTicks = Object.values(exactPair.ticks).sort(
-      (tick0, tick1) =>
-        sortMultiplier *
-        tick0.price0
-          .dividedBy(tick0.price1)
-          .comparedTo(tick1.price0.dividedBy(tick1.price1))
-    );
+    const result = await routerAsync(state, tokenA, tokenB, alteredValue);
+    const valueB = calculateOut(result);
+    const rate = result.amountIn.dividedBy(valueB);
+    const extraFee = calculateFee(result);
     return {
-      amountIn: new BigNumber(value0),
-      tokens: [tokenA, tokenB],
-      prices0: [sortedTicks.map((tickInfo) => tickInfo.price0)], // price
-      prices1: [sortedTicks.map((tickInfo) => tickInfo.price1)],
-      fees: [sortedTicks.map((tickInfo) => tickInfo.fee)],
-      reserves0: [sortedTicks.map((tickInfo) => tickInfo.reserves0)], // reserves
-      reserves1: [sortedTicks.map((tickInfo) => tickInfo.reserves1)],
+      tokenA,
+      tokenB,
+      rate: rate.toString(),
+      valueA: alteredValue,
+      valueB: valueB.toString(),
+      gas: extraFee.toString(),
     };
   }
 }
 
-export async function routerAsync(
-  state: PairMap,
-  token0: string,
-  token1: string,
-  value0: string
-): Promise<RouterResult> {
-  return await router(state, token0, token1, value0);
-}
-
 /**
- * Calculates the amountOut using the (amountIn * price0) / (price1) formula
- * for each tick, until the amountIn amount has been covered
- * @param data the RouteInput struct
- * @returns estimated value for amountOut
+ * Gets the estimated info of a swap transaction
+ * @param pairRequest the respective addresses and value
+ * @returns estimated info of swap, loading state and possible error
  */
-export function calculateOut(data: RouterResult): BigNumber {
-  let amountLeft = data.amountIn;
-  let amountOut = new BigNumber(0);
-  for (let pairIndex = 0; pairIndex < data.tokens.length - 1; pairIndex++) {
-    const tokens = [data.tokens[pairIndex], data.tokens[pairIndex + 1]].sort();
-    for (
-      let tickIndex = 0;
-      tickIndex < data.prices0[pairIndex].length;
-      tickIndex++
+export function useRouter(pairRequest: PairRequest): {
+  data?: PairResult;
+  isValidating: boolean;
+  error?: string;
+} {
+  const [data, setData] = useState<PairResult>();
+  const [isValidating, setIsValidating] = useState(false);
+  const [error, setError] = useState<string>();
+  const { data: pairs } = useIndexerData();
+
+  useEffect(() => {
+    if (
+      !pairRequest.tokenA ||
+      !pairRequest.tokenB ||
+      (!pairRequest.valueA && !pairRequest.valueB) ||
+      !pairs
     ) {
-      const isSameOrder = tokens[0] === data.tokens[pairIndex];
-      const priceIn = isSameOrder
-        ? data.prices0[pairIndex][tickIndex]
-        : data.prices1[pairIndex][tickIndex];
-      const priceOut = isSameOrder
-        ? data.prices1[pairIndex][tickIndex]
-        : data.prices0[pairIndex][tickIndex];
-      const reservesOut = isSameOrder
-        ? data.reserves1[pairIndex][tickIndex]
-        : data.reserves0[pairIndex][tickIndex];
-      const maxOut = amountLeft.multipliedBy(priceIn).dividedBy(priceOut);
-
-      if (reservesOut.isLessThan(maxOut)) {
-        const amountInTraded = reservesOut
-          .multipliedBy(priceOut)
-          .dividedBy(priceIn);
-        amountLeft = amountLeft.minus(amountInTraded);
-        amountOut = amountOut.plus(reservesOut);
-        if (amountLeft.isEqualTo(0)) return amountOut;
-        if (amountLeft.isLessThan(0))
-          throw new Error(
-            'Error while calculating amount out (negative amount)'
-          );
-      } else {
-        return amountOut.plus(maxOut);
-      }
+      return;
     }
-  }
-  return amountOut;
-}
+    if (pairRequest.tokenA === pairRequest.tokenB) {
+      setData(undefined);
+      setError('The tokens cannot be the same');
+      return;
+    }
+    if (pairRequest.valueA && pairRequest.valueB) {
+      setData(undefined);
+      setError('One value must be falsy');
+      return;
+    }
+    setIsValidating(true);
+    setData(undefined);
+    setError(undefined);
+    const alteredValue = pairRequest.valueA ?? pairRequest.valueB;
+    const reverseSwap = !!pairRequest.valueB;
+    if (!alteredValue || alteredValue === '0') {
+      setIsValidating(false);
+      setData({
+        valueA: '0',
+        valueB: '0',
+        rate: '0',
+        gas: '0',
+        tokenA: pairRequest.tokenA,
+        tokenB: pairRequest.tokenB,
+      });
+      return;
+    }
+    const [token0, token1] = [pairRequest.tokenA, pairRequest.tokenB].sort();
+    let cancelled = false;
+    cachedRequests[token0] = cachedRequests[token0] || {};
+    const cachedPairInfo = cachedRequests[token0][token1];
+    if (cachedPairInfo) {
+      const { rate, gas } = cachedPairInfo;
+      const convertedRate =
+        pairRequest.tokenA === cachedPairInfo.tokenA
+          ? new BigNumber(rate)
+          : new BigNumber(1).dividedBy(rate);
+      const roughEstimate = new BigNumber(alteredValue)
+        .multipliedBy(convertedRate)
+        .toString();
+      setData({
+        tokenA: pairRequest.tokenA,
+        tokenB: pairRequest.tokenB,
+        rate: convertedRate.toString(),
+        valueA: reverseSwap ? roughEstimate : alteredValue,
+        valueB: reverseSwap ? alteredValue : roughEstimate,
+        gas,
+      });
+    }
 
-// mock implementation of fee calculation
-export function calculateFee(data: RouterResult): BigNumber {
-  return data.fees[0][0];
-}
+    fetchEstimates(
+      pairs,
+      pairRequest.tokenA,
+      pairRequest.tokenB,
+      alteredValue,
+      reverseSwap
+    )
+      .then(function (result) {
+        if (cancelled) return;
+        cachedRequests[token0][token1] = result;
+        setIsValidating(false);
+        setData(result);
+      })
+      .catch(function (err: Error) {
+        if (cancelled) return;
+        setIsValidating(false);
+        setError(err?.message ?? 'Unknown error');
+        setData(undefined);
+      });
 
-export function useRouter(
-  state: PairMap,
-  token0: string,
-  token1: string,
-  value0: string
-): RouterResult {
-  return router(state, token0, token1, value0);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    pairRequest.tokenA,
+    pairRequest.tokenB,
+    pairRequest.valueA,
+    pairRequest.valueB,
+    pairs,
+  ]);
+
+  return { data, isValidating, error };
 }

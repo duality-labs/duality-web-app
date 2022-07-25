@@ -9,7 +9,7 @@ import {
 
 import { PairRequest } from './hooks/index';
 
-import { useIndexer } from './hooks/useIndexer';
+import { useRouter } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import './Swap.scss';
@@ -25,7 +25,7 @@ export default function Swap() {
     data: rateData,
     isValidating: isValidatingRate,
     error: rateError,
-  } = useIndexer({
+  } = useRouter({
     tokenA: tokenA?.address,
     tokenB: tokenB?.address,
     valueA: lastUpdatedA ? valueA : undefined,
