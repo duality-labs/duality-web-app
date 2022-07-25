@@ -7,13 +7,17 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "lint": "eslint .",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "update": "sh ./scripts/update-generated-files.sh"
   },
   "engines": {
     "node": "^16.14.2",
     "npm": "^8.5.0"
   },
   "dependencies": {
+    "@cosmjs/launchpad": "^0.27.1",
+    "@cosmjs/proto-signing": "^0.27.1",
+    "@cosmjs/stargate": "^0.27.1",
     "@floating-ui/react-dom": "^0.6.3",
     "@reach/dialog": "^0.17.0",
     "bignumber.js": "^9.0.2",
@@ -25,6 +29,11 @@
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.3.0",
     "web-vitals": "^2.1.4"
+  },
+  "peerDependencies": {
+    "crypto": "npm:crypto-browserify@^3.12.0",
+    "path": "npm:path-browserify@^1.0.1",
+    "stream": "npm:stream-browserify@3.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.4",
