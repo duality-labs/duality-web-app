@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/duality-labz/duality-web-app/compare/v0.1.7...v0.1.8) (2022-07-25)
+
+
+### Features
+
+* 83 add cosmos service: add query and tx clients ([#96](https://github.com/duality-labz/duality-web-app/issues/96)) ([abafc31](https://github.com/duality-labz/duality-web-app/commit/abafc31726c8da4e9b75e30b66b25de508c2bb1b))
+
 ## [0.1.7](https://github.com/duality-labz/duality-web-app/compare/v0.1.6...v0.1.7) (2022-07-25)
 
 
