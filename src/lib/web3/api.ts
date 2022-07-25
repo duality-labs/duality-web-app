@@ -62,12 +62,8 @@ const txClient = async (
   };
 };
 
-const queryClient = async ({
-  baseUrl = REACT_APP__REST_API,
-  baseApiParams,
-  securityWorker,
-}: ApiConfig = {}) => {
-  return new Api({ baseUrl, baseApiParams, securityWorker });
+const queryClient = async (config: ApiConfig = {}) => {
+  return new Api({ baseUrl: REACT_APP__REST_API, ...config });
 };
 
 export { txClient, queryClient };
