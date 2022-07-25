@@ -9,7 +9,7 @@ import {
 
 import { PairRequest } from './hooks/index';
 
-import { useIndexer } from './hooks/useIndexer';
+import { useRouter } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import './Swap.scss';
@@ -25,10 +25,11 @@ export default function Swap() {
     data: rateData,
     isValidating: isValidatingRate,
     error: rateError,
-  } = useIndexer({
-    token0: lastUpdatedA ? tokenA?.address : tokenB?.address,
-    token1: lastUpdatedA ? tokenB?.address : tokenA?.address,
-    value0: lastUpdatedA ? valueA : valueB,
+  } = useRouter({
+    tokenA: tokenA?.address,
+    tokenB: tokenB?.address,
+    valueA: lastUpdatedA ? valueA : undefined,
+    valueB: lastUpdatedA ? undefined : valueB,
   });
   const [swapRequest, setSwapRequest] = useState<PairRequest>();
   const {
@@ -38,8 +39,8 @@ export default function Swap() {
   } = useSwap(swapRequest);
   const dotCount = useDotCounter(0.25e3);
 
-  const valueAConverted = lastUpdatedA ? valueA : rateData?.value1;
-  const valueBConverted = lastUpdatedA ? rateData?.value1 : valueB;
+  const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
+  const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
 
   const swapTokens = useCallback(
     function () {
@@ -47,7 +48,7 @@ export default function Swap() {
       setTokenB(tokenA);
       setValueA(valueBConverted);
       setValueB(valueAConverted);
-      setLastUpdatedA((a) => !a);
+      setLastUpdatedA((flag) => !flag);
     },
     [tokenA, tokenB, valueAConverted, valueBConverted]
   );
@@ -56,12 +57,13 @@ export default function Swap() {
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
       setSwapRequest({
-        token0: tokenA?.address,
-        token1: tokenB?.address,
-        value0: valueAConverted,
+        tokenA: tokenA?.address,
+        tokenB: tokenB?.address,
+        valueA: lastUpdatedA ? valueA : undefined,
+        valueB: lastUpdatedA ? undefined : valueB,
       });
     },
-    [tokenA?.address, tokenB?.address, valueAConverted]
+    [tokenA?.address, tokenB?.address, valueA, valueB, lastUpdatedA]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
@@ -121,7 +123,7 @@ export default function Swap() {
       <div className="text-red-500">{rateError}</div>
       <div className="text-sky-500">
         {!isValidatingSwap && swapResponse
-          ? `Traded ${swapResponse.value0} ${swapResponse.token0} to ${swapResponse.value1} ${swapResponse.token1}`
+          ? `Traded ${swapResponse.valueA} ${swapResponse.tokenA} to ${swapResponse.valueB} ${swapResponse.tokenB}`
           : ''}
       </div>
       <input
