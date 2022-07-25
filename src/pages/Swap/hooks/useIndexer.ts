@@ -1,5 +1,5 @@
 import { useIndexerData, PairMap } from '../../../lib/web3/indexerProvider';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PairRequest, PairResult } from './index';
 import { routerAsync, calculateOut, calculateFee } from './useRouter';
 import BigNumber from 'bignumber.js';
@@ -12,20 +12,26 @@ async function fetchEstimates(
   state: PairMap,
   tokenA: string,
   tokenB: string,
-  valueA: string
+  alteredValue: string,
+  reverseSwap: boolean
 ): Promise<PairResult> {
-  const result = await routerAsync(state, tokenA, tokenB, valueA);
-  const valueB = calculateOut(result);
-  const rate = result.amountIn.dividedBy(valueB);
-  const extraFee = calculateFee(result);
-  return {
-    tokenA,
-    tokenB,
-    rate: rate.toString(),
-    valueA,
-    valueB: valueB.toString(),
-    gas: extraFee.toString(),
-  };
+  if (reverseSwap) {
+    // The router can't calculate the value of the buying token based on the value of the selling token (yet)
+    throw new Error('Cannot calculate the reverse value');
+  } else {
+    const result = await routerAsync(state, tokenA, tokenB, alteredValue);
+    const valueB = calculateOut(result);
+    const rate = result.amountIn.dividedBy(valueB);
+    const extraFee = calculateFee(result);
+    return {
+      tokenA,
+      tokenB,
+      rate: rate.toString(),
+      valueA: alteredValue,
+      valueB: valueB.toString(),
+      gas: extraFee.toString(),
+    };
+  }
 }
 
 /**
@@ -43,33 +49,31 @@ export function useIndexer(pairRequest: PairRequest): {
   const [error, setError] = useState<string>();
   const { data: pairs } = useIndexerData();
 
-  const setSwappedResult = useCallback(
-    (result: PairResult, originalTokenA: string) => {
-      if (result.tokenA === originalTokenA) return setData(result);
-      const { tokenA, tokenB, valueA, valueB } = result;
-      setData({
-        ...result,
-        tokenA: tokenA,
-        tokenB: tokenB,
-        valueA: valueA,
-        valueB: valueB,
-      });
-    },
-    []
-  );
-
   useEffect(() => {
     if (
       !pairRequest.tokenA ||
       !pairRequest.tokenB ||
-      !pairRequest.valueA ||
+      (!pairRequest.valueA && !pairRequest.valueB) ||
       !pairs
-    )
+    ) {
       return;
+    }
+    if (pairRequest.tokenA === pairRequest.tokenB) {
+      setData(undefined);
+      setError('The tokens cannot be the same');
+      return;
+    }
+    if (pairRequest.valueA && pairRequest.valueB) {
+      setData(undefined);
+      setError('One value must be falsy');
+      return;
+    }
     setIsValidating(true);
     setData(undefined);
     setError(undefined);
-    if (pairRequest.valueA === '0') {
+    const alteredValue = pairRequest.valueA ?? pairRequest.valueB;
+    const reverseSwap = !!pairRequest.valueB;
+    if (!alteredValue || alteredValue === '0') {
       setIsValidating(false);
       setData({
         valueA: '0',
@@ -82,46 +86,46 @@ export function useIndexer(pairRequest: PairRequest): {
       return;
     }
     const [token0, token1] = [pairRequest.tokenA, pairRequest.tokenB].sort();
-    const originalToken0 = pairRequest.tokenA;
     let cancelled = false;
     cachedRequests[token0] = cachedRequests[token0] || {};
     const cachedPairInfo = cachedRequests[token0][token1];
     if (cachedPairInfo) {
-      if (originalToken0 === cachedPairInfo.tokenA) {
-        const tempValue1 = new BigNumber(pairRequest.valueA).multipliedBy(
-          cachedPairInfo.rate
-        );
-        setSwappedResult(
-          { ...cachedPairInfo, valueA: tempValue1.toString() },
-          originalToken0
-        );
-      } else {
-        const tempValue1 = new BigNumber(pairRequest.valueA).dividedBy(
-          cachedPairInfo.rate
-        );
-        setSwappedResult(
-          { ...cachedPairInfo, valueA: tempValue1.toString() },
-          originalToken0
-        );
-      }
+      const { rate, gas } = cachedPairInfo;
+      const convertedRate =
+        pairRequest.tokenA === cachedPairInfo.tokenA
+          ? new BigNumber(rate)
+          : new BigNumber(1).dividedBy(rate);
+      const roughEstimate = new BigNumber(alteredValue)
+        .multipliedBy(convertedRate)
+        .toString();
+      setData({
+        tokenA: pairRequest.tokenA,
+        tokenB: pairRequest.tokenB,
+        rate: convertedRate.toString(),
+        valueA: reverseSwap ? roughEstimate : alteredValue,
+        valueB: reverseSwap ? alteredValue : roughEstimate,
+        gas,
+      });
     }
 
     fetchEstimates(
       pairs,
       pairRequest.tokenA,
       pairRequest.tokenB,
-      pairRequest.valueA
+      alteredValue,
+      reverseSwap
     )
       .then(function (result) {
         if (cancelled) return;
         cachedRequests[token0][token1] = result;
         setIsValidating(false);
-        setSwappedResult(result, originalToken0);
+        setData(result);
       })
       .catch(function (err: Error) {
         if (cancelled) return;
         setIsValidating(false);
         setError(err?.message ?? 'Unknown error');
+        setData(undefined);
       });
 
     return () => {
@@ -131,7 +135,7 @@ export function useIndexer(pairRequest: PairRequest): {
     pairRequest.tokenA,
     pairRequest.tokenB,
     pairRequest.valueA,
-    setSwappedResult,
+    pairRequest.valueB,
     pairs,
   ]);
 

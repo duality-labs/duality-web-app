@@ -26,9 +26,10 @@ export default function Swap() {
     isValidating: isValidatingRate,
     error: rateError,
   } = useIndexer({
-    tokenA: lastUpdatedA ? tokenA?.address : tokenB?.address,
-    tokenB: lastUpdatedA ? tokenB?.address : tokenA?.address,
-    valueA: lastUpdatedA ? valueA : valueB,
+    tokenA: tokenA?.address,
+    tokenB: tokenB?.address,
+    valueA: lastUpdatedA ? valueA : undefined,
+    valueB: lastUpdatedA ? undefined : valueB,
   });
   const [swapRequest, setSwapRequest] = useState<PairRequest>();
   const {
@@ -38,7 +39,7 @@ export default function Swap() {
   } = useSwap(swapRequest);
   const dotCount = useDotCounter(0.25e3);
 
-  const valueAConverted = lastUpdatedA ? valueA : rateData?.valueB;
+  const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
   const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
 
   const swapTokens = useCallback(
@@ -47,7 +48,7 @@ export default function Swap() {
       setTokenB(tokenA);
       setValueA(valueBConverted);
       setValueB(valueAConverted);
-      setLastUpdatedA((a) => !a);
+      setLastUpdatedA((flag) => !flag);
     },
     [tokenA, tokenB, valueAConverted, valueBConverted]
   );
@@ -58,10 +59,11 @@ export default function Swap() {
       setSwapRequest({
         tokenA: tokenA?.address,
         tokenB: tokenB?.address,
-        valueA: valueAConverted,
+        valueA: lastUpdatedA ? valueA : undefined,
+        valueB: lastUpdatedA ? undefined : valueB,
       });
     },
-    [tokenA?.address, tokenB?.address, valueAConverted]
+    [tokenA?.address, tokenB?.address, valueA, valueB, lastUpdatedA]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
