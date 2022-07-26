@@ -9,6 +9,7 @@ export interface PairRequest {
   valueA?: string;
   /** value of token B (falsy if A was just altered) */
   valueB?: string;
+  path?: RouterResult;
 }
 
 export interface PairResult {
@@ -24,6 +25,7 @@ export interface PairResult {
   rate: string;
   /** (estimated) gas fee */
   gas: string;
+  path?: RouterResult;
 }
 
 export interface RouterResult {

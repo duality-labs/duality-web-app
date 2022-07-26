@@ -61,9 +61,17 @@ export default function Swap() {
         tokenB: tokenB?.address,
         valueA: lastUpdatedA ? valueA : undefined,
         valueB: lastUpdatedA ? undefined : valueB,
+        path: rateData?.path,
       });
     },
-    [tokenA?.address, tokenB?.address, valueA, valueB, lastUpdatedA]
+    [
+      tokenA?.address,
+      tokenB?.address,
+      valueA,
+      valueB,
+      lastUpdatedA,
+      rateData?.path,
+    ]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
