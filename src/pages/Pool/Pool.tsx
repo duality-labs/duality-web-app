@@ -10,6 +10,7 @@ import {
 } from '../../components/TokenPicker/mockHooks';
 
 import './Pool.scss';
+import { useIndexerPairData } from '../../lib/web3/indexerProvider';
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
@@ -64,6 +65,13 @@ export default function Pool() {
       }
     });
   }, [totalValue, rateData, rangeMin, rangeMax]);
+
+  const {
+    data: { ticks } = {},
+    error: ticksError,
+    isValidating: tickFetching,
+  } = useIndexerPairData(tokenA?.address, tokenB?.address);
+
   return (
     <div className="pool-page">
       <h2 className="my-3 pt-1">Select Pair</h2>
@@ -82,6 +90,15 @@ export default function Pool() {
         tokenList={tokenList}
         exclusion={tokenA}
       />
+      <div>
+        Ticks: {tickFetching ? 'loading...' : ''} &nbsp;
+        {JSON.stringify(ticks, null, 2)}
+      </div>
+      {ticksError && (
+        <div>
+          TickFetch Error: <span style={{ color: 'red' }}>{ticksError}</span>
+        </div>
+      )}
       <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
         <strong>0.3% fee tier</strong>
       </div>
@@ -89,13 +106,14 @@ export default function Pool() {
       <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
         {tokenA && tokenB ? (
           <span>
-            Current Price: {rateData?.price || '...'} {tokenB.name} per{' '}
+            Current Price: {rateData?.price || '...'} {tokenB.name} per &nbsp;
             {tokenA.name}
           </span>
         ) : (
           <span>Current Price:</span>
         )}
       </div>
+      <br />
       <div className="inline-block w-1/2 text-center">Minimum tick</div>
       <div className="inline-block w-1/2 text-center">Maximum tick</div>
       <br />
