@@ -94,9 +94,11 @@ export default function Pool() {
         Ticks: {tickFetching ? 'loading...' : ''} &nbsp;
         {JSON.stringify(ticks, null, 2)}
       </div>
-      <div>
-        TickFetch Error: <span style={{ color: 'red' }}>{ticksError}</span>
-      </div>
+      {ticksError && (
+        <div>
+          TickFetch Error: <span style={{ color: 'red' }}>{ticksError}</span>
+        </div>
+      )}
       <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
         <strong>0.3% fee tier</strong>
       </div>
