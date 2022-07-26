@@ -24,7 +24,7 @@ export default function Pool() {
     tokenB,
     '1'
   );
-  const { data: tokenList = [], isValidating: isValidatingTokens } =
+  const { result: tokenList = [], isValidating: isValidatingTokens } =
     useTokens();
   const dotCount = useDotCounter(0.25e3);
 
