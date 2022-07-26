@@ -13,6 +13,7 @@ import {
 import {
   MsgWithdrawShares,
   MsgDepositShares,
+  MsgSwapTicks,
 } from './generated/duality/duality.duality/module/types/duality/tx';
 
 const { REACT_APP__RPC_API = '', REACT_APP__REST_API = '' } = process.env;
@@ -24,6 +25,7 @@ export const registry = new Registry(defaultRegistryTypes);
 // -----> register our Msgs here
 registry.register('/duality.duality.MsgDepositShares', MsgDepositShares);
 registry.register('/duality.duality.MsgWithdrawShares', MsgWithdrawShares);
+registry.register('/duality.duality.MsgSwapTicks', MsgSwapTicks);
 
 interface TxClientOptions {
   addr?: string;
@@ -58,6 +60,10 @@ const txClient = async (
     msgDepositShares: (data: MsgDepositShares): EncodeObject => ({
       typeUrl: '/duality.duality.MsgDepositShares',
       value: MsgDepositShares.fromPartial(data),
+    }),
+    msgSwapTicks: (data: MsgSwapTicks): EncodeObject => ({
+      typeUrl: '/duality.duality.MsgSwapTicks',
+      value: MsgSwapTicks.fromPartial(data),
     }),
   };
 };
