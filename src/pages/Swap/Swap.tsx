@@ -92,11 +92,7 @@ export default function Swap() {
         }
         exclusion={tokenB}
       ></TokenInputGroup>
-      <button
-        type="button"
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
-        onClick={swapTokens}
-      >
+      <button type="button" onClick={swapTokens}>
         &#8693;
       </button>
       <TokenInputGroup
@@ -115,22 +111,18 @@ export default function Swap() {
         exclusion={tokenA}
         disabledInput={true}
       ></TokenInputGroup>
-      <div className="text-stone-500">Gas price: {rateData?.gas}</div>
+      <div>Gas price: {rateData?.gas}</div>
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
-        <i className="text-transparent">.</i>
+        <i>.</i>
       )}
-      <div className="text-red-500">{swapRequest && swapError}</div>
-      <div className="text-red-500">{rateError}</div>
-      <div className="text-sky-500">
+      <div>{swapRequest && swapError}</div>
+      <div>{rateError}</div>
+      <div>
         {!isValidatingSwap && swapResponse
           ? `Traded ${swapResponse.valueA} ${swapResponse.tokenA} to ${swapResponse.valueB} ${swapResponse.tokenB}`
           : ''}
       </div>
-      <input
-        type="submit"
-        value="Swap"
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block cursor-pointer"
-      />
+      <input type="submit" value="Swap" />
     </form>
   );
 }

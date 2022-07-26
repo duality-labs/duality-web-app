@@ -12,24 +12,18 @@ export default function Header() {
   };
 
   return (
-    <header className="flex flex-row items-center justify-start w-full text-xl">
-      <nav className="w-full p-4 inline-flex items-end shadow shadow-white/10 text-slate-50">
-        <Link className="ml-3 inline-flex items-center" to="/">
-          <img src={logo} className="logo inline h-6 mr-3" alt="logo" />
-          <h1 className="inline text-3xl">Duality</h1>
+    <header>
+      <nav>
+        <Link to="/">
+          <img src={logo} className="logo" alt="logo" />
+          <h1>Duality</h1>
         </Link>
-        <Link className="ml-3" to="/swap">
-          Swap
-        </Link>
-        <Link className="ml-3" to="/pool">
-          Pool
-        </Link>
+        <Link to="/swap">Swap</Link>
+        <Link to="/pool">Pool</Link>
         {address ? (
-          <span className="ml-3">{address}</span>
+          <span>{address}</span>
         ) : (
-          <button className="ml-3" onClick={onConnectClick}>
-            Connect Wallet
-          </button>
+          <button onClick={onConnectClick}>Connect Wallet</button>
         )}
       </nav>
     </header>

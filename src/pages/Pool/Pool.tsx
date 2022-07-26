@@ -74,16 +74,14 @@ export default function Pool() {
 
   return (
     <div className="pool-page">
-      <h2 className="my-3 pt-1">Select Pair</h2>
+      <h2>Select Pair</h2>
       <TokenPicker
         value={tokenA}
         onChange={setTokenA}
         tokenList={tokenList}
         exclusion={tokenB}
       />
-      <button className="mx-2 py-1 px-3" onClick={swapTokens}>
-        {'<->'}
-      </button>
+      <button onClick={swapTokens}>{'<->'}</button>
       <TokenPicker
         value={tokenB}
         onChange={setTokenB}
@@ -99,11 +97,11 @@ export default function Pool() {
           TickFetch Error: <span style={{ color: 'red' }}>{ticksError}</span>
         </div>
       )}
-      <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
+      <div className="fee-group">
         <strong>0.3% fee tier</strong>
       </div>
-      <h2 className="mt-4 mb-3 pt-1">Set price range</h2>
-      <div className="card fee-group bg-slate-300 my-2 p-3 rounded-xl">
+      <h2>Set price range</h2>
+      <div className="fee-group">
         {tokenA && tokenB ? (
           <span>
             Current Price: {rateData?.price || '...'} {tokenB.name} per &nbsp;
@@ -114,11 +112,10 @@ export default function Pool() {
         )}
       </div>
       <br />
-      <div className="inline-block w-1/2 text-center">Minimum tick</div>
-      <div className="inline-block w-1/2 text-center">Maximum tick</div>
+      <div>Minimum tick</div>
+      <div>Maximum tick</div>
       <br />
       <input
-        className="w-1/2"
         type="range"
         min="0"
         max="100"
@@ -128,7 +125,6 @@ export default function Pool() {
         style={{ transform: 'rotate(180deg)' }}
       ></input>
       <input
-        className="w-1/2"
         type="range"
         min="0"
         max="100"
@@ -138,7 +134,6 @@ export default function Pool() {
       ></input>
       <br />
       <input
-        className="w-1/2 text-center"
         min="0"
         max="100"
         value={`${parseInt(rangeMin, 10) > 0 ? '-' : ''}${parseFloat(
@@ -151,7 +146,6 @@ export default function Pool() {
         step="1"
       ></input>
       <input
-        className="w-1/2 text-center"
         min="0"
         max="100"
         value={`${parseFloat(rangeMax).toLocaleString('en-US', {
@@ -163,7 +157,6 @@ export default function Pool() {
       ></input>
       <br />
       <input
-        className="w-1/2 text-center"
         min="0"
         max="100"
         value={
@@ -194,7 +187,6 @@ export default function Pool() {
         step="1"
       ></input>
       <input
-        className="w-1/2 text-center"
         min="0"
         max="100"
         value={
@@ -224,7 +216,7 @@ export default function Pool() {
         }
         step="1"
       ></input>
-      <h2 className="mt-4 mb-3 pt-1">Deposit Amounts</h2>
+      <h2>Deposit Amounts</h2>
       <TokenInputGroup
         disabled
         tokenList={tokenList}
@@ -245,11 +237,9 @@ export default function Pool() {
         }
         exclusion={tokenA}
       ></TokenInputGroup>
-      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block">
-        Add Liquidity
-      </button>
+      <button>Add Liquidity</button>
       {((isValidatingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
-        <i className="text-transparent">.</i>
+        <i>.</i>
       )}
     </div>
   );
