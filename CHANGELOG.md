@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/duality-labz/duality-web-app/compare/v0.1.8...v0.1.9) (2022-07-26)
+
+
+### Features
+
+* 86 - update liquidity page to read tick state from cosmos ([#89](https://github.com/duality-labz/duality-web-app/issues/89)) ([91dcbe9](https://github.com/duality-labz/duality-web-app/commit/91dcbe9aaba3f7ceafe159d3fdbd9660f4b3835c))
+
 ## [0.1.8](https://github.com/duality-labz/duality-web-app/compare/v0.1.7...v0.1.8) (2022-07-25)
 
 
