@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const seconds = 1000;
 const requestTime = 2 * seconds;
@@ -13,10 +13,12 @@ export interface IExchangeRate {
 }
 
 export interface Token {
-  logo: string | null;
+  name: string;
   address: string;
   symbol: string;
-  name: string;
+  decimals: number;
+  chainId: number;
+  logoURI: string | null;
 }
 
 export interface SwapRequest {
@@ -25,30 +27,8 @@ export interface SwapRequest {
   value: string;
 }
 
-const tokens: Array<Token> = [
-  { logo: null, symbol: 'Eth', name: 'Ether', address: 'ETH' },
-  {
-    logo: null,
-    symbol: 'Dai',
-    name: 'Dai Stablecoin',
-    address: 'Dai',
-  },
-  {
-    logo: null,
-    symbol: 'USDC',
-    name: 'USDCoin',
-    address: 'USDC',
-  },
-  { logo: null, symbol: 'USDT', name: 'Tether USD', address: '0x0004' },
-  { logo: null, symbol: 'WBTC', name: 'Wrapped BTC', address: '0x0005' },
-  { logo: null, symbol: 'WETH', name: 'Wrapped Ether', address: '0x0006' },
-  {
-    logo: null,
-    symbol: 'BAT',
-    name: 'Basic Attention Token',
-    address: '0x0007',
-  },
-];
+let cachedTokens: Array<Token>;
+let validatingTokens = false;
 
 const exchangeRates = [
   { token: '0x0001', otherToken: '0x0002', rate: 2809 },
@@ -62,29 +42,6 @@ const exchangeRates = [
   { token: '0x0001', otherToken: '0x0006', rate: 1 },
   { token: '0x0006', otherToken: '0x0001', rate: 1 },
 ];
-
-function usePoll<T>(mockData: T): {
-  data: T | undefined;
-  isValidating: boolean;
-} {
-  const [data, setData] = useState(undefined as T | undefined);
-  const [validating, setValidating] = useState(true);
-
-  // return mock data after requestTime has passed
-  useEffect(() => {
-    // mock a fetch request
-    const fetch = async () => {
-      setValidating(true);
-      await new Promise((resolve) => setTimeout(resolve, requestTime));
-      setData(mockData);
-      setValidating(false);
-    };
-    // start poll
-    fetch();
-  }, [mockData]);
-
-  return { data, isValidating: validating };
-}
 
 export function useExchangeRate(
   token: Token | undefined,
@@ -139,8 +96,67 @@ export function useDotCounter(interval: number) {
   return dotCount;
 }
 
-export function useTokens() {
-  return usePoll(tokens);
+export function useTokens(chainID = 1) {
+  const [result, setResult] = useState<Array<Token>>();
+  const [error, setError] = useState<string>();
+  const [validating, setValidating] = useState(true);
+
+  const resolve = useCallback(
+    function () {
+      const ethToken: Token = {
+        name: 'ETH',
+        address: '0x0',
+        symbol: 'ETH',
+        decimals: 2,
+        chainId: chainID,
+        logoURI: 'https://avatars.githubusercontent.com/u/6250754?s=200&v=4',
+      };
+      const tokens = [ethToken].concat(
+        cachedTokens.filter((token) => token.chainId === chainID)
+      );
+      setResult(tokens);
+    },
+    [chainID]
+  );
+
+  useEffect(() => {
+    if (cachedTokens) {
+      resolve();
+      // TODO handle !validatingTokens (run the useEffect again when cachedTokens gets updated)
+    } else if (!validatingTokens) {
+      setValidating(true);
+      validatingTokens = true;
+      fetch('https://tokens.uniswap.org/')
+        .then((res) => res.json())
+        .then(({ tokens }: { tokens: Array<Token> }) => {
+          cachedTokens = tokens;
+          resolve();
+          setValidating(false);
+          setError(undefined);
+        })
+        .catch((err) => {
+          setResult(undefined);
+          setError(err);
+        });
+    } else {
+      setValidating(true);
+      validatingTokens = true;
+      fetch('https://tokens.uniswap.org/')
+        .then((res) => res.json())
+        .then(({ tokens }: { tokens: Array<Token> }) => {
+          cachedTokens = tokens;
+          resolve();
+          setValidating(false);
+          setError(undefined);
+        })
+        .catch((err) => {
+          setResult(undefined);
+          setError(err);
+        });
+    }
+  }, [resolve]);
+
+  return { result, isValidating: validating, error };
 }
 
 export function useSwap(request: SwapRequest | undefined) {

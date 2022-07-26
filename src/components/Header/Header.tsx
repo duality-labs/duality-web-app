@@ -1,33 +1,60 @@
+import { useEffect, useState } from 'react';
+
 import { Link } from 'react-router-dom';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 
-import logo from '../../assets/logo/logo.svg';
+import './Header.scss';
+
+let listener: () => void;
+
+(function (history) {
+  const pushState = history.pushState;
+  history.pushState = function (
+    data: unknown,
+    unused: string,
+    url?: string | URL | null
+  ) {
+    setTimeout(() => listener?.());
+    return pushState.call(history, data, unused, url);
+  };
+})(window.history);
 
 export default function Header() {
   const { connectWallet, address } = useWeb3();
+  const [selected, setSelected] = useState('/');
 
   const onConnectClick = () => {
     connectWallet && connectWallet();
   };
 
+  useEffect(() => {
+    listener = checkSelection;
+    checkSelection();
+  }, []);
+
+  function checkSelection() {
+    // todo check right way for url
+    // eslint-disable-next-line no-restricted-globals
+    setSelected(new URL(location.href).pathname ?? '/');
+  }
+
   return (
-    <header className="flex flex-row items-center justify-start w-full text-xl">
-      <nav className="w-full p-4 inline-flex items-end shadow shadow-white/10 text-slate-50">
-        <Link className="ml-3 inline-flex items-center" to="/">
-          <img src={logo} className="logo inline h-6 mr-3" alt="logo" />
-          <h1 className="inline text-3xl">Duality</h1>
+    <header id="header">
+      <nav>
+        <Link to="/" className={selected === '/' ? 'selected' : ''}>
+          <h1 className="logo-text">Duality</h1>
         </Link>
-        <Link className="ml-3" to="/swap">
-          Swap
+        <Link to="/swap" className={selected === '/swap' ? 'selected' : ''}>
+          Trade
         </Link>
-        <Link className="ml-3" to="/pool">
-          Pool
+        <Link to="/pool" className={selected === '/pool' ? 'selected' : ''}>
+          Add Liquidity
         </Link>
         {address ? (
-          <span className="ml-3">{address}</span>
+          <span className="link">{address}</span>
         ) : (
-          <button className="ml-3" onClick={onConnectClick}>
+          <button className="link" onClick={onConnectClick}>
             Connect Wallet
           </button>
         )}

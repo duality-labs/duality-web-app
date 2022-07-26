@@ -16,10 +16,10 @@ interface InputGroupProps {
   exclusion?: Token;
   value?: string;
   token?: Token;
-  /** disables both the input and the token (gets overwritten by the other 2) */
   disabled?: boolean;
   disabledInput?: boolean;
   disabledToken?: boolean;
+  text?: string;
 }
 
 export default function TokenInputGroup({
@@ -33,6 +33,7 @@ export default function TokenInputGroup({
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
+  text,
 }: InputGroupProps) {
   const onInputChange = useCallback(
     function (event: React.ChangeEvent<HTMLInputElement>) {
@@ -52,6 +53,7 @@ export default function TokenInputGroup({
 
   return (
     <div className={`${className || ''} token-input-group`}>
+      {text && <span>{text}</span>}
       <input
         type="text"
         className="form-control"

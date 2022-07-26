@@ -1,0 +1,73 @@
+#header {
+  & {
+    font-family: Segoe UI, Frutiger, Frutiger Linotype, Dejavu Sans,
+      Helvetica Neue, Arial, sans-serif;
+    text-align: left;
+    padding: 2rem 8rem;
+    width: 100%;
+    font-size: 1.25rem;
+  }
+
+  nav {
+    a,
+    .link {
+      & {
+        background-color: transparent;
+        border: 2px solid transparent;
+        text-decoration: none;
+        padding: 0.8rem 1.5rem;
+        position: relative;
+        margin: 0rem 0.25rem;
+      }
+
+      &:not(.selected)::after {
+        background-color: rgb(186, 195, 213);
+        transition: all 0.25s ease-in-out;
+        content: '';
+        display: block;
+        position: absolute;
+        height: 1px;
+        width: 0%;
+        left: 50%;
+        bottom: 0.25rem;
+      }
+
+      &:hover,
+      &:focus {
+        &::after {
+          width: calc(100% - 2rem);
+          left: 1rem;
+        }
+      }
+
+      &.selected {
+        & {
+          transition: box-shadow 0.25s ease-in-out, color 0.25s ease-in-out;
+          border: 2px solid white;
+          box-shadow: inset 0 0 0.25rem 0 transparent;
+          color: white;
+        }
+
+        &:hover,
+        &:focus {
+          background-color: white;
+          color: black;
+        }
+
+        &:hover:active {
+          box-shadow: inset 0 0 0.25rem 0 black;
+        }
+      }
+    }
+  }
+
+  .logo {
+    height: 1rem;
+  }
+
+  .logo,
+  .logo-text {
+    display: inline-block;
+    font-size: 2rem;
+  }
+}

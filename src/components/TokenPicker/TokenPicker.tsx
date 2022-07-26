@@ -134,6 +134,13 @@ export default function TokenPicker({
         onClick={open}
         disabled={disabled}
       >
+        {value?.logoURI && (
+          <img
+            className="token-image"
+            src={value.logoURI}
+            alt={`${value.symbol || 'Token'} logo`}
+          />
+        )}
         {value?.symbol || 'Choose Token'}
       </button>
       <Dialog
@@ -159,7 +166,7 @@ export default function TokenPicker({
           onInput={(e) => setSearchQuery(e.currentTarget.value)}
           onKeyDown={onKeyDown}
           value={searchQuery}
-          placeholder="Search for a token"
+          placeholder="Search name or paste address"
           autoComplete="off"
           ref={inputRef}
         />
@@ -170,7 +177,7 @@ export default function TokenPicker({
   function showListItem(token: TokenResult | null, index: number) {
     const address = token?.token?.address;
     const symbol = token?.token?.symbol;
-    const logo = token?.token?.logo;
+    const logo = token?.token?.logoURI;
     const isDisabled = exclusion?.address === address;
 
     function onClick() {

@@ -1,4 +1,4 @@
-$color-primary: rgb(0, 0, 0);
+$color-primary: rgb(255, 255, 255);
 $color-secondary: rgb(177, 177, 177);
 $transition-duration: 0.25s;
 $font-size-primary: 1.2rem;
@@ -12,11 +12,17 @@ $border-radius: 0.5rem;
     overflow: hidden;
     height: 80vh;
     padding: 0;
+    border: 2px solid blue;
   }
 
   &::backdrop {
     background-color: rgba(0, 0, 0, 0.3);
   }
+}
+
+.dialog-content {
+  border: 2px solid #4eb1e8;
+  background: #101010;
 }
 
 .token-picker-head {
@@ -44,6 +50,10 @@ $border-radius: 0.5rem;
       display: block;
       outline: none;
       width: 100%;
+      color: #575757;
+      background: transparent;
+      border: 1px solid #282828;
+      box-shadow: none !important;
     }
 
     &:focus {
@@ -102,7 +112,7 @@ $border-radius: 0.5rem;
       }
 
       &.selected {
-        animation: item-selected-pulse 2s ease-in-out infinite;
+        background: black;
       }
 
       &.disabled {
@@ -120,6 +130,13 @@ $border-radius: 0.5rem;
       text-align: center;
       grid-column: 1;
       grid-row: 1/3;
+      width: 2.5rem;
+      padding: 0.25rem;
+    }
+
+    .token-image img {
+      width: 2rem;
+      border-radius: 50%;
     }
 
     .token-symbol,
@@ -148,7 +165,7 @@ $border-radius: 0.5rem;
   & {
     transition: all 0.5s ease-in-out;
     border-radius: 0 0.5rem 0.5rem 0;
-    color: rgb(0, 0, 0);
+    color: white;
     padding: 0.5rem 1rem;
     position: relative;
     max-width: 120px;
@@ -161,7 +178,6 @@ $border-radius: 0.5rem;
   &:hover,
   &:focus,
   &.open {
-    background-color: rgba(116, 89, 220, 1);
     color: rgb(255, 255, 255);
     max-width: 160px;
   }
@@ -215,4 +231,15 @@ $border-radius: 0.5rem;
   100% {
     @include y-shadow(0, rgba($color-primary, 0.4));
   }
+}
+
+.token-picker-toggle {
+  box-shadow: none !important;
+}
+
+img.token-image {
+  width: 2rem;
+  margin: 0.25rem;
+  border-radius: 50%;
+  display: inline-block;
 }

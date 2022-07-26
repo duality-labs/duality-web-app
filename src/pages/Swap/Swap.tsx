@@ -1,11 +1,7 @@
 import React, { useState, useCallback } from 'react';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import {
-  useTokens,
-  useDotCounter,
-  Token,
-} from '../../components/TokenPicker/mockHooks';
+import { useTokens, Token } from '../../components/TokenPicker/mockHooks';
 
 import { PairRequest } from './hooks/index';
 
@@ -15,7 +11,11 @@ import { useSwap } from './hooks/useSwap';
 import './Swap.scss';
 
 export default function Swap() {
-  const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
+  const {
+    result: tokenList = [],
+    isValidating: isValidaingTokens,
+    error: tokenError,
+  } = useTokens();
   const [tokenA, setTokenA] = useState(tokenList[0] as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
   const [valueA, setValueA] = useState<string | undefined>('0');
@@ -37,7 +37,7 @@ export default function Swap() {
     isValidating: isValidatingSwap,
     error: swapError,
   } = useSwap(swapRequest);
-  const dotCount = useDotCounter(0.25e3);
+  const dotCount = 3; //useDotCounter(0.25e3);
 
   const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
   const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
@@ -77,6 +77,7 @@ export default function Swap() {
 
   return (
     <form className="swap-page" onSubmit={onFormSubmit}>
+      <h2 className="cull-hover">Trade</h2>
       <TokenInputGroup
         onValueChanged={onValueAChanged}
         onTokenChanged={setTokenA}
@@ -91,12 +92,9 @@ export default function Swap() {
             : ''
         }
         exclusion={tokenB}
+        text="You Pay"
       ></TokenInputGroup>
-      <button
-        type="button"
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
-        onClick={swapTokens}
-      >
+      <button type="button" id="inverse-btn" onClick={swapTokens}>
         &#8693;
       </button>
       <TokenInputGroup
@@ -114,6 +112,7 @@ export default function Swap() {
         }
         exclusion={tokenA}
         disabledInput={true}
+        text="You Receive"
       ></TokenInputGroup>
       <div className="text-stone-500">Gas price: {rateData?.gas}</div>
       {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
@@ -121,16 +120,13 @@ export default function Swap() {
       )}
       <div className="text-red-500">{swapRequest && swapError}</div>
       <div className="text-red-500">{rateError}</div>
+      <div className="text-red-500">{tokenError}</div>
       <div className="text-sky-500">
         {!isValidatingSwap && swapResponse
           ? `Traded ${swapResponse.valueA} ${swapResponse.tokenA} to ${swapResponse.valueB} ${swapResponse.tokenB}`
           : ''}
       </div>
-      <input
-        type="submit"
-        value="Swap"
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block cursor-pointer"
-      />
+      <input type="submit" value="Swap" id="swap-btn" />
     </form>
   );
 }
