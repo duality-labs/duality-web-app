@@ -31,7 +31,7 @@ function sendSwap(
       // overridden by the signAndBroadcast method with value of 'auto'
       // TODO: base price may need to vary with transaction complexity
       //       eg. a certain rate of tokens per ticks used in the route
-      gasPrice: GasPrice.fromString('1token'),
+      gasPrice: GasPrice.fromString('0token'),
     });
     // send message to chain
     client
