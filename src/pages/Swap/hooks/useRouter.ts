@@ -121,7 +121,7 @@ export function getRouterEstimates(
       const extraFee = calculateFee(routerResult);
       const estimate = {
         tokenA: routerResult.tokens[0],
-        tokenB: routerResult.tokens[routerResult.tokens.length],
+        tokenB: routerResult.tokens[routerResult.tokens.length - 1],
         rate: rate.toString(),
         valueA: routerResult.amountIn.toString(),
         valueB: valueB.toString(),
