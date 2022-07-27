@@ -1,6 +1,6 @@
 import { useIndexerData, PairMap } from '../../../lib/web3/indexerProvider';
 import { useEffect, useState } from 'react';
-import { PairRequest, PairResult } from './index';
+import { PairRequest, PairResult, RouterResult } from './index';
 import { routerAsync, calculateOut, calculateFee } from './router';
 import BigNumber from 'bignumber.js';
 
@@ -8,29 +8,18 @@ const cachedRequests: {
   [token0: string]: { [token1: string]: PairResult };
 } = {};
 
-async function fetchEstimates(
+async function getRouterResult(
   state: PairMap,
   tokenA: string,
   tokenB: string,
   alteredValue: string,
   reverseSwap: boolean
-): Promise<PairResult> {
+): Promise<RouterResult> {
   if (reverseSwap) {
     // The router can't calculate the value of the buying token based on the value of the selling token (yet)
     throw new Error('Cannot calculate the reverse value');
   } else {
-    const result = await routerAsync(state, tokenA, tokenB, alteredValue);
-    const valueB = calculateOut(result);
-    const rate = result.amountIn.dividedBy(valueB);
-    const extraFee = calculateFee(result);
-    return {
-      tokenA,
-      tokenB,
-      rate: rate.toString(),
-      valueA: alteredValue,
-      valueB: valueB.toString(),
-      gas: extraFee.toString(),
-    };
+    return await routerAsync(state, tokenA, tokenB, alteredValue);
   }
 }
 
@@ -39,12 +28,12 @@ async function fetchEstimates(
  * @param pairRequest the respective addresses and value
  * @returns estimated info of swap, loading state and possible error
  */
-export function useRouter(pairRequest: PairRequest): {
-  data?: PairResult;
+export function useRouterResult(pairRequest: PairRequest): {
+  data?: RouterResult;
   isValidating: boolean;
   error?: string;
 } {
-  const [data, setData] = useState<PairResult>();
+  const [data, setData] = useState<RouterResult>();
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string>();
   const { data: pairs } = useIndexerData();
@@ -75,40 +64,12 @@ export function useRouter(pairRequest: PairRequest): {
     const reverseSwap = !!pairRequest.valueB;
     if (!alteredValue || alteredValue === '0') {
       setIsValidating(false);
-      setData({
-        valueA: '0',
-        valueB: '0',
-        rate: '0',
-        gas: '0',
-        tokenA: pairRequest.tokenA,
-        tokenB: pairRequest.tokenB,
-      });
+      setData(undefined);
       return;
     }
-    const [token0, token1] = [pairRequest.tokenA, pairRequest.tokenB].sort();
     let cancelled = false;
-    cachedRequests[token0] = cachedRequests[token0] || {};
-    const cachedPairInfo = cachedRequests[token0][token1];
-    if (cachedPairInfo) {
-      const { rate, gas } = cachedPairInfo;
-      const convertedRate =
-        pairRequest.tokenA === cachedPairInfo.tokenA
-          ? new BigNumber(rate)
-          : new BigNumber(1).dividedBy(rate);
-      const roughEstimate = new BigNumber(alteredValue)
-        .multipliedBy(convertedRate)
-        .toString();
-      setData({
-        tokenA: pairRequest.tokenA,
-        tokenB: pairRequest.tokenB,
-        rate: convertedRate.toString(),
-        valueA: reverseSwap ? roughEstimate : alteredValue,
-        valueB: reverseSwap ? alteredValue : roughEstimate,
-        gas,
-      });
-    }
 
-    fetchEstimates(
+    getRouterResult(
       pairs,
       pairRequest.tokenA,
       pairRequest.tokenB,
@@ -117,7 +78,6 @@ export function useRouter(pairRequest: PairRequest): {
     )
       .then(function (result) {
         if (cancelled) return;
-        cachedRequests[token0][token1] = result;
         setIsValidating(false);
         setData(result);
       })
@@ -140,4 +100,81 @@ export function useRouter(pairRequest: PairRequest): {
   ]);
 
   return { data, isValidating, error };
+}
+
+/**
+ * Gets the estimated info of a swap transaction
+ * @param pairRequest the respective addresses and value
+ * @param routerResult the results of the router (if they exist)
+ * @returns estimated info of swap
+ */
+export function getRouterEstimates(
+  pairRequest: PairRequest,
+  routerResult?: RouterResult
+): PairResult | undefined {
+  const [token0, token1] = [pairRequest.tokenA, pairRequest.tokenB].sort();
+  if (token0 && token1) {
+    // return estimate from current result
+    if (routerResult) {
+      const valueB = calculateOut(routerResult);
+      const rate = routerResult.amountIn.dividedBy(valueB);
+      const extraFee = calculateFee(routerResult);
+      const estimate = {
+        tokenA: routerResult.tokens[0],
+        tokenB: routerResult.tokens[routerResult.tokens.length],
+        rate: rate.toString(),
+        valueA: routerResult.amountIn.toString(),
+        valueB: valueB.toString(),
+        gas: extraFee.toString(),
+      };
+      cachedRequests[token0] = cachedRequests[token0] || {};
+      cachedRequests[token0][token1] = estimate;
+      return estimate;
+    }
+    // if current result is not available, return cached value rough estimate
+    else {
+      cachedRequests[token0] = cachedRequests[token0] || {};
+      const cachedPairInfo = cachedRequests[token0][token1];
+
+      const alteredValue = pairRequest.valueA ?? pairRequest.valueB;
+      const reverseSwap = !!pairRequest.valueB;
+      if (
+        cachedPairInfo &&
+        pairRequest.tokenA &&
+        pairRequest.tokenB &&
+        alteredValue
+      ) {
+        const { rate, gas } = cachedPairInfo;
+        const convertedRate =
+          pairRequest.tokenA === cachedPairInfo.tokenA
+            ? new BigNumber(rate)
+            : new BigNumber(1).dividedBy(rate);
+        const roughEstimate = new BigNumber(alteredValue)
+          .multipliedBy(convertedRate)
+          .toString();
+        return {
+          tokenA: pairRequest.tokenA,
+          tokenB: pairRequest.tokenB,
+          rate: convertedRate.toString(),
+          valueA: reverseSwap ? roughEstimate : alteredValue,
+          valueB: reverseSwap ? alteredValue : roughEstimate,
+          gas,
+        };
+      }
+    }
+  }
+}
+
+/**
+ * Gets the estimated info of a swap transaction
+ * @param pairRequest the respective addresses and value
+ * @returns estimated info of swap, loading state and possible error
+ */
+export function useRouterEstimates(pairRequest: PairRequest): {
+  data?: PairResult;
+  isValidating: boolean;
+  error?: string;
+} {
+  const { data, error, isValidating } = useRouterResult(pairRequest);
+  return { data: getRouterEstimates(pairRequest, data), isValidating, error };
 }

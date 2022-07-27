@@ -10,7 +10,7 @@ import {
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { MsgSwapTicks } from '../../lib/web3/generated/duality/duality.duality/module/types/duality/tx';
 
-import { useRouter } from './hooks/useRouter';
+import { useRouterEstimates } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import './Swap.scss';
@@ -29,7 +29,7 @@ export default function Swap() {
     data: rateData,
     isValidating: isValidatingRate,
     error: rateError,
-  } = useRouter({
+  } = useRouterEstimates({
     tokenA: tokenA?.address,
     tokenB: tokenB?.address,
     valueA: lastUpdatedA ? valueA : undefined,
@@ -61,22 +61,51 @@ export default function Swap() {
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
-      if (address && state && tokenA?.address && tokenB?.address && valueAConverted && valueBConverted) {
+      if (
+        address &&
+        state &&
+        tokenA?.address &&
+        tokenB?.address &&
+        valueAConverted &&
+        valueBConverted
+      ) {
         // convert to swap request format
-        const result = router(state, tokenA?.address, tokenB?.address, valueAConverted);
+        const result = router(
+          state,
+          tokenA?.address,
+          tokenB?.address,
+          valueAConverted
+        );
         setSwapRequest({
           amountIn: result.amountIn.toString(),
           tokens: result.tokens,
-          prices0: JSON.stringify(result.prices0.map(prices => prices.map(price => price.toString()))),
-          prices1: JSON.stringify(result.prices1.map(prices => prices.map(price => price.toString()))),
-          fees: JSON.stringify(result.fees.map(fees => fees.map(fee => fee.toString()))),
+          prices0: JSON.stringify(
+            result.prices0.map((prices) =>
+              prices.map((price) => price.toString())
+            )
+          ),
+          prices1: JSON.stringify(
+            result.prices1.map((prices) =>
+              prices.map((price) => price.toString())
+            )
+          ),
+          fees: JSON.stringify(
+            result.fees.map((fees) => fees.map((fee) => fee.toString()))
+          ),
           // minAmountOut: calculateOut(result).toString(),
           // fee: calculateFee(result).toString(),
           creator: address,
         });
       }
     },
-    [state, address, tokenA?.address, tokenB?.address, valueAConverted, valueBConverted]
+    [
+      state,
+      address,
+      tokenA?.address,
+      tokenB?.address,
+      valueAConverted,
+      valueBConverted,
+    ]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
