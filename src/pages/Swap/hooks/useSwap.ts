@@ -10,6 +10,10 @@ import {
   MsgSwapTicksResponse,
 } from '../../../lib/web3/generated/duality/duality.duality/module/types/duality/tx';
 
+// standard error codes can be found in https://github.com/cosmos/cosmos-sdk/blob/v0.45.4/types/errors/errors.go
+// however custom modules may register additional error codes
+const REQUEST_SUCCESS = 0;
+
 function sendSwap(
   wallet: OfflineSigner,
   { amountIn, tokens, prices0, prices1, fees, creator }: MsgSwapTicks
@@ -41,8 +45,7 @@ function sendSwap(
         if (!res) return reject('No response');
         assertIsDeliverTxSuccess(res);
         const { code, gasUsed, rawLog } = res;
-
-        if (code === 0) {
+        if (code === REQUEST_SUCCESS) {
           resolve({
             amountIn,
             tokens,
