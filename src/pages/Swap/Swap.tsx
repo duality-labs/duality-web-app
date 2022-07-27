@@ -10,12 +10,10 @@ import {
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { MsgSwapTicks } from '../../lib/web3/generated/duality/duality.duality/module/types/duality/tx';
 
-import { useRouterEstimates } from './hooks/useRouter';
+import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import './Swap.scss';
-import { router } from './hooks/router';
-import { useIndexerData } from '../../lib/web3/indexerProvider';
 
 export default function Swap() {
   const { address } = useWeb3();
@@ -25,16 +23,23 @@ export default function Swap() {
   const [valueA, setValueA] = useState<string | undefined>('0');
   const [valueB, setValueB] = useState<string>();
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
+  const pairRequest = {
+    tokenA: tokenA?.address,
+    tokenB: tokenB?.address,
+    valueA: lastUpdatedA ? valueA : undefined,
+    valueB: lastUpdatedA ? undefined : valueB,
+  };
   const {
-    data: rateData,
+    data: routerResult,
     isValidating: isValidatingRate,
     error: rateError,
-  } = useRouterEstimates({
+  } = useRouterResult({
     tokenA: tokenA?.address,
     tokenB: tokenB?.address,
     valueA: lastUpdatedA ? valueA : undefined,
     valueB: lastUpdatedA ? undefined : valueB,
   });
+  const rateData = getRouterEstimates(pairRequest, routerResult);
   const [swapRequest, setSwapRequest] = useState<MsgSwapTicks>();
   const {
     data: swapResponse,
@@ -57,25 +62,12 @@ export default function Swap() {
     [tokenA, tokenB, valueAConverted, valueBConverted]
   );
 
-  const { data: state } = useIndexerData();
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
-      if (
-        address &&
-        state &&
-        tokenA?.address &&
-        tokenB?.address &&
-        valueAConverted &&
-        valueBConverted
-      ) {
+      if (address && routerResult) {
         // convert to swap request format
-        const result = router(
-          state,
-          tokenA?.address,
-          tokenB?.address,
-          valueAConverted
-        );
+        const result = routerResult;
         setSwapRequest({
           amountIn: result.amountIn.toString(),
           tokens: result.tokens,
@@ -98,14 +90,7 @@ export default function Swap() {
         });
       }
     },
-    [
-      state,
-      address,
-      tokenA?.address,
-      tokenB?.address,
-      valueAConverted,
-      valueBConverted,
-    ]
+    [address, routerResult]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
