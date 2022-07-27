@@ -22,7 +22,6 @@
     "@reach/dialog": "^0.17.0",
     "bignumber.js": "^9.0.2",
     "buffer": "^6.0.3",
-    "ethers": "^5.6.4",
     "invariant": "^2.2.4",
     "react": "^18.0.0",
     "react-app-polyfill": "^3.0.0",
@@ -36,6 +35,7 @@
     "stream": "npm:stream-browserify@3.0.0"
   },
   "devDependencies": {
+    "@keplr-wallet/types": "^0.10.13",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",

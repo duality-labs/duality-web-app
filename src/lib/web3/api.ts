@@ -4,7 +4,11 @@
 // if new Msgs are created they should be added to the txClient below
 
 import { StdFee } from '@cosmjs/launchpad';
-import { defaultRegistryTypes, SigningStargateClient } from '@cosmjs/stargate';
+import {
+  defaultRegistryTypes,
+  SigningStargateClient,
+  SigningStargateClientOptions,
+} from '@cosmjs/stargate';
 import { Registry, OfflineSigner, EncodeObject } from '@cosmjs/proto-signing';
 import {
   Api,
@@ -13,6 +17,7 @@ import {
 import {
   MsgWithdrawShares,
   MsgDepositShares,
+  MsgSwapTicks,
 } from './generated/duality/duality.duality/module/types/duality/tx';
 
 const { REACT_APP__RPC_API = '', REACT_APP__REST_API = '' } = process.env;
@@ -24,10 +29,7 @@ export const registry = new Registry(defaultRegistryTypes);
 // -----> register our Msgs here
 registry.register('/duality.duality.MsgDepositShares', MsgDepositShares);
 registry.register('/duality.duality.MsgWithdrawShares', MsgWithdrawShares);
-
-interface TxClientOptions {
-  addr?: string;
-}
+registry.register('/duality.duality.MsgSwapTicks', MsgSwapTicks);
 
 interface SignAndBroadcastOptions {
   fee?: StdFee | 'auto' | number;
@@ -36,11 +38,15 @@ interface SignAndBroadcastOptions {
 
 const txClient = async (
   wallet: OfflineSigner,
-  { addr = REACT_APP__RPC_API }: TxClientOptions = {}
+  options: SigningStargateClientOptions = {},
+  addr = REACT_APP__RPC_API
 ) => {
   if (!wallet) throw MissingWalletError;
   const client = addr
-    ? await SigningStargateClient.connectWithSigner(addr, wallet, { registry })
+    ? await SigningStargateClient.connectWithSigner(addr, wallet, {
+        registry,
+        ...options,
+      })
     : await SigningStargateClient.offline(wallet, { registry });
   const { address } = (await wallet.getAccounts())[0];
 
@@ -58,6 +64,10 @@ const txClient = async (
     msgDepositShares: (data: MsgDepositShares): EncodeObject => ({
       typeUrl: '/duality.duality.MsgDepositShares',
       value: MsgDepositShares.fromPartial(data),
+    }),
+    msgSwapTicks: (data: MsgSwapTicks): EncodeObject => ({
+      typeUrl: '/duality.duality.MsgSwapTicks',
+      value: MsgSwapTicks.fromPartial(data),
     }),
   };
 };

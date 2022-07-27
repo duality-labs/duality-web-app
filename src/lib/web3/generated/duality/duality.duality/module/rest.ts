@@ -11,6 +11,8 @@
 
 export type DualityMsgDepositSharesResponse = object;
 
+export type DualityMsgSwapTicksResponse = object;
+
 export type DualityMsgWithdrawSharesResponse = object;
 
 /**

@@ -29,6 +29,17 @@ export interface MsgWithdrawShares {
 
 export interface MsgWithdrawSharesResponse {}
 
+export interface MsgSwapTicks {
+  creator: string;
+  amountIn: string;
+  tokens: string[];
+  prices0: string;
+  prices1: string;
+  fees: string;
+}
+
+export interface MsgSwapTicksResponse {}
+
 const baseMsgDepositShares: object = {
   creator: '',
   token0: '',
@@ -499,13 +510,206 @@ export const MsgWithdrawSharesResponse = {
   },
 };
 
+const baseMsgSwapTicks: object = {
+  creator: '',
+  amountIn: '',
+  tokens: '',
+  prices0: '',
+  prices1: '',
+  fees: '',
+};
+
+export const MsgSwapTicks = {
+  encode(message: MsgSwapTicks, writer: Writer = Writer.create()): Writer {
+    if (message.creator !== '') {
+      writer.uint32(10).string(message.creator);
+    }
+    if (message.amountIn !== '') {
+      writer.uint32(18).string(message.amountIn);
+    }
+    for (const v of message.tokens) {
+      writer.uint32(26).string(v!);
+    }
+    if (message.prices0 !== '') {
+      writer.uint32(34).string(message.prices0);
+    }
+    if (message.prices1 !== '') {
+      writer.uint32(42).string(message.prices1);
+    }
+    if (message.fees !== '') {
+      writer.uint32(50).string(message.fees);
+    }
+    return writer;
+  },
+
+  decode(input: Reader | Uint8Array, length?: number): MsgSwapTicks {
+    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseMsgSwapTicks } as MsgSwapTicks;
+    message.tokens = [];
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.creator = reader.string();
+          break;
+        case 2:
+          message.amountIn = reader.string();
+          break;
+        case 3:
+          message.tokens.push(reader.string());
+          break;
+        case 4:
+          message.prices0 = reader.string();
+          break;
+        case 5:
+          message.prices1 = reader.string();
+          break;
+        case 6:
+          message.fees = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MsgSwapTicks {
+    const message = { ...baseMsgSwapTicks } as MsgSwapTicks;
+    message.tokens = [];
+    if (object.creator !== undefined && object.creator !== null) {
+      message.creator = String(object.creator);
+    } else {
+      message.creator = '';
+    }
+    if (object.amountIn !== undefined && object.amountIn !== null) {
+      message.amountIn = String(object.amountIn);
+    } else {
+      message.amountIn = '';
+    }
+    if (object.tokens !== undefined && object.tokens !== null) {
+      for (const e of object.tokens) {
+        message.tokens.push(String(e));
+      }
+    }
+    if (object.prices0 !== undefined && object.prices0 !== null) {
+      message.prices0 = String(object.prices0);
+    } else {
+      message.prices0 = '';
+    }
+    if (object.prices1 !== undefined && object.prices1 !== null) {
+      message.prices1 = String(object.prices1);
+    } else {
+      message.prices1 = '';
+    }
+    if (object.fees !== undefined && object.fees !== null) {
+      message.fees = String(object.fees);
+    } else {
+      message.fees = '';
+    }
+    return message;
+  },
+
+  toJSON(message: MsgSwapTicks): unknown {
+    const obj: any = {};
+    message.creator !== undefined && (obj.creator = message.creator);
+    message.amountIn !== undefined && (obj.amountIn = message.amountIn);
+    if (message.tokens) {
+      obj.tokens = message.tokens.map((e) => e);
+    } else {
+      obj.tokens = [];
+    }
+    message.prices0 !== undefined && (obj.prices0 = message.prices0);
+    message.prices1 !== undefined && (obj.prices1 = message.prices1);
+    message.fees !== undefined && (obj.fees = message.fees);
+    return obj;
+  },
+
+  fromPartial(object: DeepPartial<MsgSwapTicks>): MsgSwapTicks {
+    const message = { ...baseMsgSwapTicks } as MsgSwapTicks;
+    message.tokens = [];
+    if (object.creator !== undefined && object.creator !== null) {
+      message.creator = object.creator;
+    } else {
+      message.creator = '';
+    }
+    if (object.amountIn !== undefined && object.amountIn !== null) {
+      message.amountIn = object.amountIn;
+    } else {
+      message.amountIn = '';
+    }
+    if (object.tokens !== undefined && object.tokens !== null) {
+      for (const e of object.tokens) {
+        message.tokens.push(e);
+      }
+    }
+    if (object.prices0 !== undefined && object.prices0 !== null) {
+      message.prices0 = object.prices0;
+    } else {
+      message.prices0 = '';
+    }
+    if (object.prices1 !== undefined && object.prices1 !== null) {
+      message.prices1 = object.prices1;
+    } else {
+      message.prices1 = '';
+    }
+    if (object.fees !== undefined && object.fees !== null) {
+      message.fees = object.fees;
+    } else {
+      message.fees = '';
+    }
+    return message;
+  },
+};
+
+const baseMsgSwapTicksResponse: object = {};
+
+export const MsgSwapTicksResponse = {
+  encode(_: MsgSwapTicksResponse, writer: Writer = Writer.create()): Writer {
+    return writer;
+  },
+
+  decode(input: Reader | Uint8Array, length?: number): MsgSwapTicksResponse {
+    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = { ...baseMsgSwapTicksResponse } as MsgSwapTicksResponse;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+
+  fromJSON(_: any): MsgSwapTicksResponse {
+    const message = { ...baseMsgSwapTicksResponse } as MsgSwapTicksResponse;
+    return message;
+  },
+
+  toJSON(_: MsgSwapTicksResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  fromPartial(_: DeepPartial<MsgSwapTicksResponse>): MsgSwapTicksResponse {
+    const message = { ...baseMsgSwapTicksResponse } as MsgSwapTicksResponse;
+    return message;
+  },
+};
+
 /** Msg defines the Msg service. */
 export interface Msg {
   DepositShares(request: MsgDepositShares): Promise<MsgDepositSharesResponse>;
-  /** this line is used by starport scaffolding # proto/tx/rpc */
   WithdrawShares(
     request: MsgWithdrawShares
   ): Promise<MsgWithdrawSharesResponse>;
+  /** this line is used by starport scaffolding # proto/tx/rpc */
+  SwapTicks(request: MsgSwapTicks): Promise<MsgSwapTicksResponse>;
 }
 
 export class MsgClientImpl implements Msg {
@@ -536,6 +740,14 @@ export class MsgClientImpl implements Msg {
     );
     return promise.then((data) =>
       MsgWithdrawSharesResponse.decode(new Reader(data))
+    );
+  }
+
+  SwapTicks(request: MsgSwapTicks): Promise<MsgSwapTicksResponse> {
+    const data = MsgSwapTicks.encode(request).finish();
+    const promise = this.rpc.request('duality.duality.Msg', 'SwapTicks', data);
+    return promise.then((data) =>
+      MsgSwapTicksResponse.decode(new Reader(data))
     );
   }
 }
