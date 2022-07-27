@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.10](https://github.com/duality-labz/duality-web-app/compare/v0.1.9...v0.1.10) (2022-07-27)
+
+
+### Features
+
+* Update MetaMask usage to Keplr usage (83+84) ([#88](https://github.com/duality-labz/duality-web-app/issues/88)) ([ce1e817](https://github.com/duality-labz/duality-web-app/commit/ce1e817fc6f44e458f7f1dd62b0f6aaeac1c97da))
+
 ## [0.1.9](https://github.com/duality-labz/duality-web-app/compare/v0.1.8...v0.1.9) (2022-07-26)
 
 
