@@ -27,6 +27,10 @@ function sendSwap(
       return reject(new Error('Invalid Input (0 value)'));
 
     const client = await txClient(wallet, {
+      // gas price here is the default base price of the client and is
+      // overridden by the signAndBroadcast method with value of 'auto'
+      // TODO: base price may need to vary with transaction complexity
+      //       eg. a certain rate of tokens per ticks used in the route
       gasPrice: GasPrice.fromString('1token'),
     });
     // send message to chain
