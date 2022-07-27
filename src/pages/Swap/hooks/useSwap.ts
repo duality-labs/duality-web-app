@@ -1,19 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  assertIsDeliverTxSuccess,
-  SigningStargateClient,
-} from '@cosmjs/stargate';
+import { assertIsDeliverTxSuccess, GasPrice } from '@cosmjs/stargate';
+import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 
 import { useWeb3, Web3ContextValue } from '../../../lib/web3/useWeb3';
+import { txClient } from '../../../lib/web3/api';
 import {
   MsgSwapTicks,
   MsgSwapTicksResponse,
 } from '../../../lib/web3/generated/duality/duality.duality/module/types/duality/tx';
 
 function sendSwap(
-  client: SigningStargateClient,
-  fromAddress: string,
+  wallet: OfflineSigner,
   { amountIn, tokens, prices0, prices1, fees, creator }: MsgSwapTicks
 ): Promise<MsgSwapTicksResponse> {
   return new Promise(async function (resolve, reject) {
@@ -24,22 +22,21 @@ function sendSwap(
     if (!totalBigInt.isGreaterThan(0))
       return reject(new Error('Invalid Input (0 value)'));
 
-    const message = {
-      typeUrl: '/duality.duality.MsgSwapTicks',
-      value: MsgSwapTicks.fromPartial({
-        amountIn,
-        tokens,
-        prices0,
-        prices1,
-        fees,
-        creator,
-      }),
-    };
-
+    const client = await txClient(wallet, {
+      gasPrice: GasPrice.fromString('1token'),
+    });
     // send message to chain
     client
-      // TODO: calculate fees?
-      .signAndBroadcast(fromAddress, [message], 'auto')
+      .signAndBroadcast([
+        client.msgSwapTicks({
+          amountIn,
+          tokens,
+          prices0,
+          prices1,
+          fees,
+          creator,
+        }),
+      ])
       .then(function (res) {
         if (!res) return reject('No response');
         assertIsDeliverTxSuccess(res);
@@ -97,22 +94,17 @@ export function useSwap(request?: MsgSwapTicks): {
     setError(undefined);
     setData(undefined);
 
-    (async () => {
-      if (!web3Ref.current) return onError('Missing Provider');
-      const address = web3Ref.current.address;
-      if (!address) return onError('Client has no address');
-      const client = await web3Ref.current.getSigningClient?.();
-      if (!client) return onError('Client not signed');
+    const { wallet } = web3Ref.current;
+    if (!wallet) return onError('Client has no wallet');
 
-      sendSwap(client, address, request)
-        .then(function (result: MsgSwapTicksResponse) {
-          setValidating(false);
-          setData(result);
-        })
-        .catch(function (err: Error) {
-          onError(err?.message ?? 'Unknown error');
-        });
-    })();
+    sendSwap(wallet, request)
+      .then(function (result: MsgSwapTicksResponse) {
+        setValidating(false);
+        setData(result);
+      })
+      .catch(function (err: Error) {
+        onError(err?.message ?? 'Unknown error');
+      });
 
     function onError(message?: string) {
       setValidating(false);

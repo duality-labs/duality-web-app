@@ -1,12 +1,8 @@
 import * as React from 'react';
 import invariant from 'invariant';
 
-import { Registry } from '@cosmjs/proto-signing';
-import {
-  defaultRegistryTypes,
-  GasPrice,
-  SigningStargateClient,
-} from '@cosmjs/stargate';
+import { OfflineSigner, Registry } from '@cosmjs/proto-signing';
+import { defaultRegistryTypes } from '@cosmjs/stargate';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
 import { MsgDepositShares } from './generated/duality/duality.duality/module/types/duality/tx';
 
@@ -72,14 +68,14 @@ declare global {
 export interface Web3ContextValue {
   provider: Provider | null;
   connectWallet: (() => void) | null;
-  getSigningClient: (() => Promise<SigningStargateClient | null>) | null;
+  wallet: OfflineSigner | null;
   address: string | null;
 }
 
 const Web3Context = React.createContext<Web3ContextValue>({
   provider: null,
   connectWallet: null,
-  getSigningClient: null,
+  wallet: null,
   address: null,
 });
 
@@ -92,6 +88,7 @@ const LOCAL_STORAGE_WALLET_CONNECTED_KEY = 'duality.web3.walletConnected';
 export function Web3Provider({ children }: Web3ContextProps) {
   const [provider, setProvider] = React.useState<Provider | null>(null);
   const [address, setAddress] = React.useState<string | null>(null);
+  const [wallet, setWallet] = React.useState<OfflineSigner | null>(null);
 
   const connectWallet = async (keplr: Provider | null) => {
     invariant(chainId, `Invalid chain id: ${chainId}`);
@@ -102,6 +99,8 @@ export function Web3Provider({ children }: Web3ContextProps) {
     const accounts = await offlineSigner.getAccounts();
     const address = accounts[0].address;
     setAddress(address);
+    // set wallet if address is knowable
+    setWallet(address ? offlineSigner : null);
 
     localStorage.setItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY, 'true');
   };
@@ -129,20 +128,8 @@ export function Web3Provider({ children }: Web3ContextProps) {
       value={{
         provider,
         connectWallet: () => connectWallet(provider),
+        wallet,
         address,
-        getSigningClient: async () => {
-          const keplr = provider;
-          if (keplr && chainId) {
-            await keplr.enable(chainId);
-            const offlineSigner = keplr.getOfflineSigner(chainId);
-            return await SigningStargateClient.connectWithSigner(
-              rpcEndpoint,
-              offlineSigner,
-              { registry, gasPrice: GasPrice.fromString('10token') }
-            );
-          }
-          return null;
-        },
       }}
     >
       {children}
