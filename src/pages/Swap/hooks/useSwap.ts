@@ -84,8 +84,8 @@ export function useSwap(request?: MsgSwapTicks): {
   const [data, setData] = useState<MsgSwapTicksResponse>();
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
-  const web3Ref = useRef<Web3ContextValue>();
   const web3 = useWeb3();
+  const web3Ref = useRef<Web3ContextValue>(web3);
 
   useEffect(() => {
     web3Ref.current = web3 ?? undefined;
