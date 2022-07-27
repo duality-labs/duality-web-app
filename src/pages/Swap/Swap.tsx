@@ -150,7 +150,7 @@ export default function Swap() {
       <div className="text-red-500">{rateError}</div>
       <div className="text-sky-500">
         {!isValidatingSwap && swapResponse
-          ? `Traded ~ ${valueA} ${tokenA?.address} to ${valueB} ${tokenB?.address}`
+          ? `Swapped ${valueAConverted} ${tokenA?.address} for ${valueBConverted} ${tokenB?.address}`
           : ''}
       </div>
       <input
