@@ -110,7 +110,7 @@ export function useRouterResult(pairRequest: PairRequest): {
  */
 export function getRouterEstimates(
   pairRequest: PairRequest,
-  routerResult?: RouterResult
+  routerResult: RouterResult | undefined
 ): PairResult | undefined {
   const [token0, token1] = [pairRequest.tokenA, pairRequest.tokenB].sort();
   if (token0 && token1) {
