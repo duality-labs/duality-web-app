@@ -4,7 +4,11 @@
 // if new Msgs are created they should be added to the txClient below
 
 import { StdFee } from '@cosmjs/launchpad';
-import { defaultRegistryTypes, SigningStargateClient } from '@cosmjs/stargate';
+import {
+  defaultRegistryTypes,
+  SigningStargateClient,
+  SigningStargateClientOptions,
+} from '@cosmjs/stargate';
 import { Registry, OfflineSigner, EncodeObject } from '@cosmjs/proto-signing';
 import {
   Api,
@@ -27,10 +31,6 @@ registry.register('/duality.duality.MsgDepositShares', MsgDepositShares);
 registry.register('/duality.duality.MsgWithdrawShares', MsgWithdrawShares);
 registry.register('/duality.duality.MsgSwapTicks', MsgSwapTicks);
 
-interface TxClientOptions {
-  addr?: string;
-}
-
 interface SignAndBroadcastOptions {
   fee?: StdFee | 'auto' | number;
   memo?: string;
@@ -38,11 +38,15 @@ interface SignAndBroadcastOptions {
 
 const txClient = async (
   wallet: OfflineSigner,
-  { addr = REACT_APP__RPC_API }: TxClientOptions = {}
+  options: SigningStargateClientOptions = {},
+  addr = REACT_APP__RPC_API
 ) => {
   if (!wallet) throw MissingWalletError;
   const client = addr
-    ? await SigningStargateClient.connectWithSigner(addr, wallet, { registry })
+    ? await SigningStargateClient.connectWithSigner(addr, wallet, {
+        registry,
+        ...options,
+      })
     : await SigningStargateClient.offline(wallet, { registry });
   const { address } = (await wallet.getAccounts())[0];
 
