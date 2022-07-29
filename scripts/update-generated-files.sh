@@ -16,5 +16,4 @@ cp -r "$DUALITY_CORE_DIRECTORY/vue/src/store/generated/$CHAIN_REPO" \
 cp -r "$DUALITY_CORE_DIRECTORY/vue/src/store/generated/readme.md" \
       "src/lib/web3/generated/readme.md"
 
-# # remove index files that fail in Webpack compilation
-# rm -rf "$DUALITY_CORE_DIRECTORY/vue/src/store/generated/$CHAIN_REPO"/**/*/index.ts
+node ./scripts/update-generated-files.mjs
