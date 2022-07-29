@@ -26,6 +26,8 @@ export interface SwapRequest {
 }
 
 const tokens: Array<Token> = [
+  { logo: null, symbol: 'TKN', name: 'TokenCoin', address: 'token' },
+  { logo: null, symbol: 'STK', name: 'StakeCoin', address: 'stake' },
   { logo: null, symbol: 'Eth', name: 'Ether', address: 'ETH' },
   {
     logo: null,
