@@ -5,6 +5,8 @@ import {
   MessageActionEvent,
 } from './events';
 import { BigNumber } from 'bignumber.js';
+import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
+import { DexTicks } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
 
 const { REACT_APP__REST_API, REACT_APP__WEBSOCKET_URL } = process.env;
 
@@ -21,12 +23,17 @@ export interface PairInfo {
   ticks: { [tickID: string]: TickInfo };
 }
 
+/**
+ * TickInfo is a reflection of the backend structue "DexPool"
+ * but utilising BigNumber type instead of BigNumberString type properties
+ */
 export interface TickInfo {
-  price0: BigNumber;
-  price1: BigNumber;
-  reserves0: BigNumber;
-  reserves1: BigNumber;
+  index: number;
+  price: BigNumber;
+  reserve0: BigNumber;
+  reserve1: BigNumber;
   fee: BigNumber;
+  totalShares: BigNumber;
 }
 
 export interface PairMap {
@@ -48,9 +55,18 @@ function getFullData(): Promise<PairMap> {
     if (!REACT_APP__REST_API) {
       reject(new Error('Undefined rest api base URL'));
     } else {
-      fetch(`${REACT_APP__REST_API}/duality/duality/ticks`)
-        .then((res) => res.json())
-        .then(transformData)
+      // TODO: handle pagination
+      queryClient({ addr: REACT_APP__REST_API })
+        .then((client) => client.queryTicksAll())
+        .then((res) => {
+          if (res.ok) {
+            return res.data;
+          } else {
+            // remove API error details from public view
+            throw new Error(`API error code: ${res.error.code}`);
+          }
+        })
+        .then((data) => transformData(data.ticks || []))
         .then(resolve)
         .catch(reject);
     }
@@ -69,48 +85,52 @@ function getPairID(token0: TokenAddress, token1: TokenAddress) {
 
 /**
  * Gets the tick id
- * @param price0 price of token 0
- * @param price1 price of token 1
+ * @param price price ratio of (token 1) / (token 0)
  * @param fee tick's fee
  * @returns tick id
  */
 function getTickID(
-  price0: BigNumberString,
-  price1: BigNumberString,
-  fee: BigNumberString
+  price: BigNumberString, // decimal form eg. "1.000000000000000000"
+  fee: BigNumberString // decimal form eg. "1.000000000000000000"
 ) {
-  return `${price0}-${price1}-${fee}`;
+  return `${price}-${fee}`;
 }
 
-function transformData(data: {
-  tick: Array<{
-    token0: TokenAddress;
-    token1: TokenAddress;
-    price0: string;
-    price1: string;
-    fee: string;
-    reserves0: string;
-    reserves1: string;
-  }>;
-}): PairMap {
-  return data.tick.reduce<PairMap>(function (
+function transformData(ticks: Array<DexTicks>): PairMap {
+  return ticks.reduce<PairMap>(function (
     result,
-    { token0, token1, price0, price1, fee, reserves0, reserves1 }
+    { token0, token1, poolsZeroToOne }
   ) {
-    const pairID = getPairID(token0, token1);
-    const tickID = getTickID(price0, price1, fee);
-    result[pairID] = result[pairID] || {
-      token0: token0,
-      token1: token1,
-      ticks: {},
-    };
-    result[pairID].ticks[tickID] = {
-      price0: new BigNumber(price0),
-      price1: new BigNumber(price1),
-      reserves0: new BigNumber(reserves0),
-      reserves1: new BigNumber(reserves1),
-      fee: new BigNumber(fee),
-    };
+    if (token0 && token1 && poolsZeroToOne?.length) {
+      const pairID = getPairID(token0, token1);
+      poolsZeroToOne.forEach(
+        ({ index = 0, price, fee, reserve0, reserve1, totalShares }) => {
+          if (
+            index >= 0 &&
+            price &&
+            fee &&
+            reserve0 &&
+            reserve1 &&
+            totalShares
+          ) {
+            const tickID = getTickID(price, fee);
+            result[pairID] = result[pairID] || {
+              token0: token0,
+              token1: token1,
+              ticks: {},
+            };
+            result[pairID].ticks[tickID] = {
+              index,
+              price: new BigNumber(price),
+              reserve0: new BigNumber(reserve0),
+              reserve1: new BigNumber(reserve1),
+              fee: new BigNumber(fee),
+              totalShares: new BigNumber(totalShares),
+            };
+          }
+        }
+      );
+    }
     return result;
   },
   {});
@@ -129,23 +149,16 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const onTickChange = function (event: MessageActionEvent) {
-      const {
-        Token0,
-        Token1,
-        NewReserves0,
-        NewReserves1,
-        Price0,
-        Price1,
-        Fee,
-      } = event;
+      const { Token0, Token1, Reserve0, Reserve1, Price, Fee, TotalShares } =
+        event;
       if (
         !Token0 ||
         !Token1 ||
-        !Price0 ||
-        !Price1 ||
-        !NewReserves0 ||
-        !NewReserves1 ||
-        !Fee
+        !Price ||
+        !Reserve0 ||
+        !Reserve1 ||
+        !Fee ||
+        !TotalShares
       ) {
         setError('Invalid event response from server');
         return;
@@ -153,7 +166,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         setError(undefined);
       }
       const pairID = getPairID(Token0, Token1);
-      const tickID = getTickID(Price0, Price1, Fee);
+      const tickID = getTickID(Price, Fee);
       setIndexerData((oldData = {}) => {
         const oldPairInfo = oldData[pairID];
         const oldTickInfo = oldPairInfo?.ticks?.[tickID];
@@ -167,11 +180,11 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
               ...oldPairInfo?.ticks,
               [tickID]: {
                 ...oldTickInfo, // not needed, displayed for consistency
-                price0: new BigNumber(Price0),
-                price1: new BigNumber(Price1),
+                price: new BigNumber(Price),
                 fee: new BigNumber(Fee),
-                reserves0: new BigNumber(NewReserves0),
-                reserves1: new BigNumber(NewReserves1),
+                reserve0: new BigNumber(Reserve0),
+                reserve1: new BigNumber(Reserve1),
+                totalShares: new BigNumber(TotalShares),
               },
             },
           },

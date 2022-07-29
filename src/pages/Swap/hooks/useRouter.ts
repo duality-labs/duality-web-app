@@ -1,7 +1,7 @@
 import { useIndexerData, PairMap } from '../../../lib/web3/indexerProvider';
 import { useEffect, useState } from 'react';
 import { PairRequest, PairResult, RouterResult } from './index';
-import { routerAsync, calculateOut, calculateFee } from './router';
+import { routerAsync, calculateFee } from './router';
 import BigNumber from 'bignumber.js';
 
 const cachedRequests: {
@@ -116,15 +116,14 @@ export function getRouterEstimates(
   if (token0 && token1) {
     // return estimate from current result
     if (routerResult) {
-      const valueB = calculateOut(routerResult);
-      const rate = valueB.dividedBy(routerResult.amountIn);
+      const rate = routerResult.amountOut.dividedBy(routerResult.amountIn);
       const extraFee = calculateFee(routerResult);
       const estimate = {
-        tokenA: routerResult.tokens[0],
-        tokenB: routerResult.tokens[routerResult.tokens.length - 1],
+        tokenA: routerResult.tokenIn,
+        tokenB: routerResult.tokenOut,
         rate: rate.toString(),
         valueA: routerResult.amountIn.toString(),
-        valueB: valueB.toString(),
+        valueB: routerResult.amountOut.toString(),
         gas: extraFee.toString(),
       };
       cachedRequests[token0] = cachedRequests[token0] || {};
