@@ -10,8 +10,11 @@ export function router(
   value0: string
 ): RouterResult {
   const [token0, token1] = [tokenA, tokenB].sort();
+  // find pair by searching both directions in the current state
   const exactPair = Object.values(state).find(
-    (pairInfo) => pairInfo.token0 === token0 && pairInfo.token1 === token1
+    (pairInfo) =>
+      (pairInfo.token0 === token0 && pairInfo.token1 === token1) ||
+      (pairInfo.token0 === token1 && pairInfo.token1 === token0)
   );
   if (!exactPair) {
     throw new Error('There are no ticks for the supplied token pair');

@@ -239,9 +239,12 @@ export function useIndexerPairData(
 ) {
   const { data: pairs, isValidating, error } = useIndexerData();
   const [token0, token1] = [tokenA, tokenB].sort();
-  const pairID = token0 && token1 && getPairID(token0, token1);
+  const pair =
+    pairs && token0 && token1
+      ? pairs[getPairID(token0, token1)] || pairs[getPairID(token1, token0)]
+      : undefined;
   return {
-    data: pairID ? pairs?.[pairID] : undefined,
+    data: pair,
     error,
     isValidating,
   };
