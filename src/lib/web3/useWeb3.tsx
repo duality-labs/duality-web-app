@@ -1,10 +1,8 @@
 import * as React from 'react';
 import invariant from 'invariant';
 
-import { OfflineSigner, Registry } from '@cosmjs/proto-signing';
-import { defaultRegistryTypes } from '@cosmjs/stargate';
+import { OfflineSigner } from '@cosmjs/proto-signing';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
-import { MsgDepositShares } from './generated/duality/duality.duality/module/types/duality/tx';
 
 export type Provider = Keplr;
 
@@ -53,11 +51,6 @@ const chainInfo: ChainInfo = {
     bech32PrefixConsPub: `${bech32Prefix}valconspub`,
   },
 };
-
-const registry = new Registry(defaultRegistryTypes);
-
-// add additional Msgs here
-registry.register('/duality.duality.MsgDepositShares', MsgDepositShares);
 
 declare global {
   interface Window extends KeplrWindow {
