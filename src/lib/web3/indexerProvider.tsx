@@ -205,6 +205,10 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       setIndexerData((oldData = {}) => {
         const oldPairInfo = oldData[pairID];
         const oldTickInfo = oldPairInfo?.ticks?.[tickID];
+        const price = new BigNumber(Price);
+        const fee = new BigNumber(Fee);
+        const reserve0 = new BigNumber(NewReserves0);
+        const reserve1 = new BigNumber(NewReserves1);
         return {
           ...oldData,
           [pairID]: {
@@ -215,14 +219,12 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
               ...oldPairInfo?.ticks,
               [tickID]: {
                 ...oldTickInfo, // not needed, displayed for consistency
-                price: new BigNumber(Price),
-                fee: new BigNumber(Fee),
-                reserve0: new BigNumber(NewReserves0),
-                reserve1: new BigNumber(NewReserves1),
+                price,
+                fee,
+                reserve0,
+                reserve1,
                 // calculate new total
-                totalShares: new BigNumber(NewReserves1)
-                  .multipliedBy(new BigNumber(Price))
-                  .plus(new BigNumber(NewReserves0)),
+                totalShares: reserve0.plus(reserve1.multipliedBy(price)),
               },
             },
           },
