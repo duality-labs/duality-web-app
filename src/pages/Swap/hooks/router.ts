@@ -1,4 +1,8 @@
-import { PairMap, TickInfo } from '../../../lib/web3/indexerProvider';
+import {
+  getPairID,
+  PairMap,
+  TickInfo,
+} from '../../../lib/web3/indexerProvider';
 import { RouterResult } from './index';
 import { BigNumber } from 'bignumber.js';
 
@@ -9,18 +13,17 @@ export function router(
   tokenB: string,
   value0: string
 ): RouterResult {
-  const [token0, token1] = [tokenA, tokenB].sort();
   // find pair by searching both directions in the current state
-  const exactPair = Object.values(state).find(
-    (pairInfo) =>
-      (pairInfo.token0 === token0 && pairInfo.token1 === token1) ||
-      (pairInfo.token0 === token1 && pairInfo.token1 === token0)
-  );
+  // the pairs are sorted by the backend not here
+  const reverse = state[getPairID(tokenA, tokenB)];
+  const forward = state[getPairID(tokenB, tokenA)];
+  const exactPair = forward || reverse;
   if (!exactPair) {
     throw new Error('There are no ticks for the supplied token pair');
   } else {
-    const sortedTicks =
-      token1 === tokenA ? exactPair.poolsZeroToOne : exactPair.poolsOneToZero;
+    const sortedTicks = forward
+      ? exactPair.poolsZeroToOne
+      : exactPair.poolsOneToZero;
     const amountIn = new BigNumber(value0);
     return {
       amountIn: amountIn,

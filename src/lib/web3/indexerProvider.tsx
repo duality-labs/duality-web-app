@@ -91,7 +91,7 @@ function getFullData(): Promise<PairMap> {
  * @param token1 address of token 1
  * @returns pair id for tokens
  */
-function getPairID(token0: TokenAddress, token1: TokenAddress) {
+export function getPairID(token0: TokenAddress, token1: TokenAddress) {
   return `${token0}-${token1}`;
 }
 
@@ -111,6 +111,7 @@ function getTickID(
 function transformData(ticks: Array<DexTicks>): PairMap {
   return ticks.reduce<PairMap>(function (
     result,
+    // token0 and token1 are sorted by the back end
     { token0, token1, poolsZeroToOne = [], poolsOneToZero = [] }
   ) {
     if (token0 && token1 && poolsZeroToOne?.length) {
@@ -169,8 +170,7 @@ function transformData(ticks: Array<DexTicks>): PairMap {
         return tickInfo;
       }
     }
-  },
-  {});
+  }, {});
 }
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
