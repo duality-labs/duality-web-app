@@ -186,16 +186,14 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const onTickChange = function (event: MessageActionEvent) {
-      const { Token0, Token1, Reserve0, Reserve1, Price, Fee, TotalShares } =
-        event;
+      const { Token0, Token1, NewReserves0, NewReserves1, Price, Fee } = event;
       if (
         !Token0 ||
         !Token1 ||
         !Price ||
-        !Reserve0 ||
-        !Reserve1 ||
-        !Fee ||
-        !TotalShares
+        !NewReserves0 ||
+        !NewReserves1 ||
+        !Fee
       ) {
         setError('Invalid event response from server');
         return;
@@ -219,9 +217,12 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 ...oldTickInfo, // not needed, displayed for consistency
                 price: new BigNumber(Price),
                 fee: new BigNumber(Fee),
-                reserve0: new BigNumber(Reserve0),
-                reserve1: new BigNumber(Reserve1),
-                totalShares: new BigNumber(TotalShares),
+                reserve0: new BigNumber(NewReserves0),
+                reserve1: new BigNumber(NewReserves1),
+                // calculate new total
+                totalShares: new BigNumber(NewReserves1)
+                  .multipliedBy(new BigNumber(Price))
+                  .plus(new BigNumber(NewReserves0)),
               },
             },
           },
