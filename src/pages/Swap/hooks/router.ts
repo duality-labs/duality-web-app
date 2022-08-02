@@ -19,10 +19,8 @@ export function router(
   if (!exactPair) {
     throw new Error('There are no ticks for the supplied token pair');
   } else {
-    const sortMultiplier = token1 === tokenA ? -1 : 1;
-    const sortedTicks = Object.values(exactPair.ticks).sort(
-      (tick0, tick1) => sortMultiplier * (tick0.index - tick1.index)
-    );
+    const sortedTicks =
+      token1 === tokenA ? exactPair.poolsZeroToOne : exactPair.poolsOneToZero;
     const amountIn = new BigNumber(value0);
     return {
       amountIn: amountIn,

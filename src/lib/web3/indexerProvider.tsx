@@ -6,7 +6,10 @@ import {
 } from './events';
 import { BigNumber } from 'bignumber.js';
 import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
-import { DexTicks } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
+import {
+  DexPool,
+  DexTicks,
+} from './generated/duality/nicholasdotsol.duality.dex/module/rest';
 
 const { REACT_APP__REST_API, REACT_APP__WEBSOCKET_URL } = process.env;
 
@@ -20,7 +23,16 @@ const subscriber = createSubscriptionManager(REACT_APP__WEBSOCKET_URL);
 export interface PairInfo {
   token0: string;
   token1: string;
-  ticks: { [tickID: string]: TickInfo };
+  ticks: TickMap;
+  poolsZeroToOne: Array<TickInfo>;
+  poolsOneToZero: Array<TickInfo>;
+}
+
+/**
+ * TickMap contains a mapping from tickIDs to tick indexes inside poolsZeroToOne and poolsOneToZero
+ */
+interface TickMap {
+  [tickID: string]: [index0to1: TickInfo, index1to0: TickInfo];
 }
 
 /**
@@ -99,7 +111,7 @@ function getTickID(
 function transformData(ticks: Array<DexTicks>): PairMap {
   return ticks.reduce<PairMap>(function (
     result,
-    { token0, token1, poolsZeroToOne }
+    { token0, token1, poolsZeroToOne = [], poolsOneToZero = [] }
   ) {
     if (token0 && token1 && poolsZeroToOne?.length) {
       const pairID = getPairID(token0, token1);
@@ -114,24 +126,58 @@ function transformData(ticks: Array<DexTicks>): PairMap {
             totalShares
           ) {
             const tickID = getTickID(price, fee);
-            result[pairID] = result[pairID] || {
+            const ticks: TickMap = {};
+            result[pairID] = {
               token0: token0,
               token1: token1,
-              ticks: {},
-            };
-            result[pairID].ticks[tickID] = {
-              index,
-              price: new BigNumber(price),
-              reserve0: new BigNumber(reserve0),
-              reserve1: new BigNumber(reserve1),
-              fee: new BigNumber(fee),
-              totalShares: new BigNumber(totalShares),
+              ticks: ticks,
+              poolsZeroToOne: poolsZeroToOne
+                .map(toTickInfo)
+                // append tickInfo into tickID map before returning defined values
+                .filter((tickInfo) => {
+                  if (tickInfo) {
+                    ticks[tickID] = ticks[tickID] || [];
+                    ticks[tickID][0] = tickInfo;
+                  }
+                  return tickInfo;
+                }) as Array<TickInfo>,
+              poolsOneToZero: poolsOneToZero
+                .map(toTickInfo)
+                // append tickInfo into tickID map before returning defined values
+                .filter((tickInfo) => {
+                  if (tickInfo) {
+                    ticks[tickID] = ticks[tickID] || [];
+                    ticks[tickID][1] = tickInfo;
+                  }
+                  return tickInfo;
+                }) as Array<TickInfo>,
             };
           }
         }
       );
     }
     return result;
+    // convert from API JSON big number strings to BigNumbers
+    function toTickInfo({
+      index = 0,
+      price,
+      reserve0,
+      reserve1,
+      fee,
+      totalShares,
+    }: DexPool): TickInfo | undefined {
+      if (index >= 0 && price && reserve0 && reserve1 && fee && totalShares) {
+        const tickInfo = {
+          index,
+          price: new BigNumber(price),
+          reserve0: new BigNumber(reserve0),
+          reserve1: new BigNumber(reserve1),
+          fee: new BigNumber(fee),
+          totalShares: new BigNumber(totalShares),
+        };
+        return tickInfo;
+      }
+    }
   },
   {});
 }
