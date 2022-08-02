@@ -40,7 +40,7 @@ interface TickMap {
  * but utilising BigNumber type instead of BigNumberString type properties
  */
 export interface TickInfo {
-  index: number;
+  // index: number; do not store index as they may change with partial updates
   price: BigNumber;
   reserve0: BigNumber;
   reserve1: BigNumber;
@@ -116,15 +116,8 @@ function transformData(ticks: Array<DexTicks>): PairMap {
     if (token0 && token1 && poolsZeroToOne?.length) {
       const pairID = getPairID(token0, token1);
       poolsZeroToOne.forEach(
-        ({ index = 0, price, fee, reserve0, reserve1, totalShares }) => {
-          if (
-            index >= 0 &&
-            price &&
-            fee &&
-            reserve0 &&
-            reserve1 &&
-            totalShares
-          ) {
+        ({ price, fee, reserve0, reserve1, totalShares }) => {
+          if (price && fee && reserve0 && reserve1 && totalShares) {
             const tickID = getTickID(price, fee);
             const ticks: TickMap = {};
             result[pairID] = {
@@ -159,16 +152,14 @@ function transformData(ticks: Array<DexTicks>): PairMap {
     return result;
     // convert from API JSON big number strings to BigNumbers
     function toTickInfo({
-      index = 0,
       price,
       reserve0,
       reserve1,
       fee,
       totalShares,
     }: DexPool): TickInfo | undefined {
-      if (index >= 0 && price && reserve0 && reserve1 && fee && totalShares) {
+      if (price && reserve0 && reserve1 && fee && totalShares) {
         const tickInfo = {
-          index,
           price: new BigNumber(price),
           reserve0: new BigNumber(reserve0),
           reserve1: new BigNumber(reserve1),
