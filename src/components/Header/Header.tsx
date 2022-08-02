@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 
-import { Link } from 'react-router-dom';
-
 import { useWeb3 } from '../../lib/web3/useWeb3';
 
 import './Header.scss';
@@ -42,15 +40,15 @@ export default function Header() {
   return (
     <header id="header">
       <nav>
-        <Link to="/" className={selected === '/' ? 'selected' : ''}>
+        <a href="/" className={selected === '/' ? 'selected' : ''}>
           <h1 className="logo-text">Duality</h1>
-        </Link>
-        <Link to="/swap" className={selected === '/swap' ? 'selected' : ''}>
+        </a>
+        <a href="swap" className={selected === '/swap' ? 'selected' : ''}>
           Trade
-        </Link>
-        <Link to="/pool" className={selected === '/pool' ? 'selected' : ''}>
+        </a>
+        <a href="pool" className={selected === '/pool' ? 'selected' : ''}>
           Add Liquidity
-        </Link>
+        </a>
         {address ? (
           <span className="link">{address}</span>
         ) : (

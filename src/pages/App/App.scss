@@ -9,7 +9,8 @@ body,
   justify-content: center;
 }
 
-main {
+main,
+main > .router > .router-page {
   display: flex;
   flex-direction: column;
   align-items: center;
