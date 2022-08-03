@@ -116,61 +116,60 @@ function transformData(ticks: Array<DexTicks>): PairMap {
   ) {
     if (token0 && token1 && poolsZeroToOne?.length) {
       const pairID = getPairID(token0, token1);
-      poolsZeroToOne.forEach(
-        ({ price, fee, reserve0, reserve1, totalShares }) => {
-          if (price && fee && reserve0 && reserve1 && totalShares) {
-            const tickID = getTickID(price, fee);
-            const ticks: TickMap = {};
-            result[pairID] = {
-              token0: token0,
-              token1: token1,
-              ticks: ticks,
-              poolsZeroToOne: poolsZeroToOne
-                .map(toTickInfo)
-                // append tickInfo into tickID map before returning defined values
-                .filter((tickInfo) => {
-                  if (tickInfo) {
-                    ticks[tickID] = ticks[tickID] || [];
-                    ticks[tickID][0] = tickInfo;
-                  }
-                  return tickInfo;
-                }) as Array<TickInfo>,
-              poolsOneToZero: poolsOneToZero
-                .map(toTickInfo)
-                // append tickInfo into tickID map before returning defined values
-                .filter((tickInfo) => {
-                  if (tickInfo) {
-                    ticks[tickID] = ticks[tickID] || [];
-                    ticks[tickID][1] = tickInfo;
-                  }
-                  return tickInfo;
-                }) as Array<TickInfo>,
-            };
-          }
-        }
-      );
+      const ticks: TickMap = {};
+      result[pairID] = {
+        token0: token0,
+        token1: token1,
+        ticks: ticks,
+        poolsZeroToOne: poolsZeroToOne
+          .map((dexPool) => {
+            const tickInfo = toTickInfo(dexPool);
+            const { price, fee } = dexPool;
+            // append tickInfo into tickID map before returning defined values
+            if (tickInfo && price && fee) {
+              const tickID = getTickID(price, fee);
+              ticks[tickID] = ticks[tickID] || [];
+              ticks[tickID][0] = tickInfo;
+            }
+            return tickInfo;
+          })
+          .filter(Boolean) as Array<TickInfo>,
+        poolsOneToZero: poolsOneToZero
+          .map((dexPool) => {
+            const tickInfo = toTickInfo(dexPool);
+            const { price, fee } = dexPool;
+            // append tickInfo into tickID map before returning defined values
+            if (tickInfo && price && fee) {
+              const tickID = getTickID(price, fee);
+              ticks[tickID] = ticks[tickID] || [];
+              ticks[tickID][1] = tickInfo;
+            }
+            return tickInfo;
+          })
+          .filter(Boolean) as Array<TickInfo>,
+      };
     }
     return result;
-    // convert from API JSON big number strings to BigNumbers
-    function toTickInfo({
-      price,
-      reserve0,
-      reserve1,
-      fee,
-      totalShares,
-    }: DexPool): TickInfo | undefined {
-      if (price && reserve0 && reserve1 && fee && totalShares) {
-        const tickInfo = {
-          price: new BigNumber(price),
-          reserve0: new BigNumber(reserve0),
-          reserve1: new BigNumber(reserve1),
-          fee: new BigNumber(fee),
-          totalShares: new BigNumber(totalShares),
-        };
-        return tickInfo;
-      }
-    }
   }, {});
+  // convert from API JSON big number strings to BigNumbers
+  function toTickInfo({
+    price,
+    reserve0,
+    reserve1,
+    fee,
+    totalShares,
+  }: DexPool): TickInfo | undefined {
+    if (price && reserve0 && reserve1 && fee && totalShares) {
+      const tickInfo = {
+        price: new BigNumber(price),
+        reserve0: new BigNumber(reserve0),
+        reserve1: new BigNumber(reserve1),
+        fee: new BigNumber(fee),
+        totalShares: new BigNumber(totalShares),
+      };
+      return tickInfo;
+    }
+  }
 }
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
