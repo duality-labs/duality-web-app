@@ -15,6 +15,9 @@ import { useSwap } from './hooks/useSwap';
 
 import './Swap.scss';
 
+const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
+const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
+
 export default function Swap() {
   const { address } = useWeb3();
   const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
@@ -68,12 +71,13 @@ export default function Swap() {
       if (address && routerResult) {
         // convert to swap request format
         const result = routerResult;
+        // Cosmos requires tokens in integer format of smallest denomination
         setSwapRequest({
-          amountIn: result.amountIn.toString(),
-          tokenIn: result.tokenIn.toString(),
-          tokenOut: result.tokenOut.toString(),
+          amountIn: result.amountIn.toFixed(denomExponent),
+          tokenIn: result.tokenIn,
+          tokenOut: result.tokenOut,
           // TODO: add tolerance factor
-          minOut: result.amountOut.toString(),
+          minOut: result.amountOut.toFixed(denomExponent),
           creator: address,
         });
       }
