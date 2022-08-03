@@ -226,6 +226,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 totalShares: reserve0.plus(reserve1.multipliedBy(price)),
               },
             },
+            // new poolsZeroToOne and poolsOneToZero values are unknown at this point in time
+            // the previous pool values persist
           },
         };
       });
