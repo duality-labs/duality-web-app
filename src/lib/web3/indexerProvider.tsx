@@ -208,28 +208,43 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         const fee = new BigNumber(Fee);
         const reserve0 = new BigNumber(NewReserves0);
         const reserve1 = new BigNumber(NewReserves1);
+        const ticks = {
+          ...oldPairInfo?.ticks,
+          [tickID]: {
+            ...oldTickInfo, // not needed, displayed for consistency
+            price,
+            fee,
+            reserve0,
+            reserve1,
+            // calculate new total
+            totalShares: reserve0.plus(reserve1.multipliedBy(price)),
+          },
+        };
         return {
           ...oldData,
           [pairID]: {
             ...oldPairInfo, // not needed, displayed for consistency
             token0: Token0,
             token1: Token1,
-            ticks: {
-              ...oldPairInfo?.ticks,
-              [tickID]: {
-                ...oldTickInfo, // not needed, displayed for consistency
-                price,
-                fee,
-                reserve0,
-                reserve1,
-                // calculate new total
-                totalShares: reserve0.plus(reserve1.multipliedBy(price)),
-              },
-            },
-            // new poolsZeroToOne and poolsOneToZero values are unknown at this point in time
-            // the previous pool values persist
+            ticks,
+            // reorder pools by "real" price (the price after fees are applied)
+            poolsZeroToOne: Object.values(ticks)
+              .map((ticks) => ticks[0])
+              .sort((a, b) =>
+                getRealPrice(a, 1).minus(getRealPrice(b, 1)).toNumber()
+              ),
+            poolsOneToZero: Object.values(ticks)
+              .map((ticks) => ticks[1])
+              .sort((a, b) =>
+                getRealPrice(b, -1).minus(getRealPrice(a, -1)).toNumber()
+              ),
           },
         };
+        function getRealPrice(tick: TickInfo, forward: number) {
+          return forward >= 0
+            ? tick.price.plus(tick.fee)
+            : tick.price.minus(tick.fee);
+        }
       });
     };
     subscriber.subscribeMessage(onTickChange, EventType.EventTxValue, {
