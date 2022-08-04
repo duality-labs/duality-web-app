@@ -31,16 +31,16 @@ if (storedMode) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeMode, setThemeMode] = useState(
+  const [savedTheme, setSavedTheme] = useState(
     localStorage.getItem(storageName) as ThemeMode | null
   );
-  const safeTheme = themeMode ?? getCSSTheme();
+  const themeMode = savedTheme ?? getCSSTheme();
 
   const toggleThemeMode = useCallback(
     function () {
-      setThemeMode(safeTheme === 'dark' ? 'light' : 'dark');
+      setSavedTheme(themeMode === 'dark' ? 'light' : 'dark');
     },
-    [safeTheme]
+    [themeMode]
   );
 
   useEffect(() => {
@@ -48,35 +48,35 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('storage', onStorageChange, false);
 
     function onStorageChange() {
-      setThemeMode(localStorage.getItem(storageName) as ThemeMode | null);
+      setSavedTheme(localStorage.getItem(storageName) as ThemeMode | null);
     }
   }, []);
 
   // When the mode gets updated then update the document attribute
   useEffect(() => {
-    if (themeMode) {
-      document.documentElement.setAttribute(attributeName, themeMode);
+    if (savedTheme) {
+      document.documentElement.setAttribute(attributeName, savedTheme);
     } else {
       document.documentElement.removeAttribute(attributeName);
     }
-  }, [themeMode]);
+  }, [savedTheme]);
 
   // When the mode gets updated then update the persisted preference
   useEffect(() => {
-    if (themeMode) {
-      if (localStorage.getItem(storageName) !== themeMode) {
-        localStorage.setItem(storageName, themeMode);
+    if (savedTheme) {
+      if (localStorage.getItem(storageName) !== savedTheme) {
+        localStorage.setItem(storageName, savedTheme);
       }
     } else {
       if (localStorage.getItem(storageName)) {
         localStorage.removeItem(storageName);
       }
     }
-  }, [themeMode]);
+  }, [savedTheme]);
 
   return (
     <ThemeContext.Provider
-      value={{ themeMode: safeTheme, setThemeMode, toggleThemeMode }}
+      value={{ themeMode, setThemeMode: setSavedTheme, toggleThemeMode }}
     >
       {children}
     </ThemeContext.Provider>
