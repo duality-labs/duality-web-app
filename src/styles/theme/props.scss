@@ -10,29 +10,27 @@
 
 :root {
   @include color-list(core.$map);
-  --theme: dark;
+  --default-theme: dark;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
     @include color-list(light.$map);
-    --theme: light;
+    --default-theme: light;
   }
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     @include color-list(dark.$map);
-    --theme: dark;
+    --default-theme: dark;
   }
 }
 
 html[data-theme-mode='light'] {
   @include color-list(light.$map);
-  --theme: light;
 }
 
 html[data-theme-mode='dark'] {
   @include color-list(dark.$map);
-  --theme: dark;
 }

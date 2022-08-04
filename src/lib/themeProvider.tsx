@@ -11,7 +11,7 @@ export type ThemeMode = 'light' | 'dark';
 const storageName = 'themeMode';
 const attributeName = 'data-theme-mode';
 // name of css property indicating mode
-const themeProperty = '--theme';
+const themeProperty = '--default-theme';
 
 interface ThemeContextType {
   setThemeMode: (theme: ThemeMode | null) => void;
@@ -34,7 +34,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [savedTheme, setSavedTheme] = useState(
     localStorage.getItem(storageName) as ThemeMode | null
   );
-  const themeMode = savedTheme ?? getCSSTheme();
+  const themeMode = savedTheme ?? getDefaultBrowserTheme();
 
   const toggleThemeMode = useCallback(
     function () {
@@ -89,11 +89,12 @@ export function useThemeMode() {
 
 export function getTheme(): ThemeMode {
   return (
-    (localStorage.getItem(storageName) as ThemeMode | null) ?? getCSSTheme()
+    (localStorage.getItem(storageName) as ThemeMode | null) ??
+    getDefaultBrowserTheme()
   );
 }
 
-export function getCSSTheme(): ThemeMode {
+export function getDefaultBrowserTheme(): ThemeMode {
   return getComputedStyle(document.documentElement)
     .getPropertyValue(themeProperty)
     .trim() as ThemeMode;
