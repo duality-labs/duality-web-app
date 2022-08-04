@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.11](https://github.com/duality-labz/duality-web-app/compare/v0.1.10...v0.1.11) (2022-08-04)
+
+
+### Features
+
+* 51 - add icon library ([#105](https://github.com/duality-labz/duality-web-app/issues/105)) ([b9b8756](https://github.com/duality-labz/duality-web-app/commit/b9b87564efebb8a6919474e876b57aaabcb76727))
+
+
+### Other
+
+* Remove unused reference to Cosmos registry ([#103](https://github.com/duality-labz/duality-web-app/issues/103)) ([3857bf1](https://github.com/duality-labz/duality-web-app/commit/3857bf14a09d76002833c6a51fd2724531a0a81c))
+
 ## [0.1.10](https://github.com/duality-labz/duality-web-app/compare/v0.1.9...v0.1.10) (2022-07-27)
 
 
