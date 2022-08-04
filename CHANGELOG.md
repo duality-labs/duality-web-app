@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.12](https://github.com/duality-labz/duality-web-app/compare/v0.1.11...v0.1.12) (2022-08-04)
+
+
+### Features
+
+* 52 - add theming ([#104](https://github.com/duality-labz/duality-web-app/issues/104)) ([eb86a72](https://github.com/duality-labz/duality-web-app/commit/eb86a7205a800daa3bcc111127c5fa618b2dd2e0))
+
 ## [0.1.11](https://github.com/duality-labz/duality-web-app/compare/v0.1.10...v0.1.11) (2022-08-04)
 
 
