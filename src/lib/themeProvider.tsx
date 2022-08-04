@@ -7,6 +7,7 @@ import {
 } from 'react';
 
 export type ThemeMode = 'light' | 'dark';
+export type SavedThemeMode = ThemeMode | null;
 
 const storageName = 'themeMode';
 const attributeName = 'data-theme-mode';
@@ -14,7 +15,7 @@ const attributeName = 'data-theme-mode';
 const themeProperty = '--default-theme';
 
 interface ThemeContextType {
-  setThemeMode: (theme: ThemeMode | null) => void;
+  setThemeMode: (theme: SavedThemeMode) => void;
   toggleThemeMode: () => void;
   themeMode: ThemeMode;
 }
@@ -25,15 +26,13 @@ const ThemeContext = createContext<ThemeContextType>({
   themeMode: getTheme(),
 });
 
-const storedMode = localStorage.getItem(storageName) as ThemeMode | null;
+const storedMode = getSavedTheme();
 if (storedMode) {
   document.documentElement.setAttribute(attributeName, storedMode);
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [savedTheme, setSavedTheme] = useState(
-    localStorage.getItem(storageName) as ThemeMode | null
-  );
+  const [savedTheme, setSavedTheme] = useState(getSavedTheme);
   const themeMode = savedTheme ?? getDefaultBrowserTheme();
 
   const toggleThemeMode = useCallback(
@@ -48,7 +47,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('storage', onStorageChange, false);
 
     function onStorageChange() {
-      setSavedTheme(localStorage.getItem(storageName) as ThemeMode | null);
+      setSavedTheme(getSavedTheme());
     }
   }, []);
 
@@ -87,11 +86,12 @@ export function useThemeMode() {
   return useContext(ThemeContext);
 }
 
+function getSavedTheme(): SavedThemeMode {
+  return localStorage.getItem(storageName) as SavedThemeMode;
+}
+
 export function getTheme(): ThemeMode {
-  return (
-    (localStorage.getItem(storageName) as ThemeMode | null) ??
-    getDefaultBrowserTheme()
-  );
+  return getSavedTheme() ?? getDefaultBrowserTheme();
 }
 
 export function getDefaultBrowserTheme(): ThemeMode {
