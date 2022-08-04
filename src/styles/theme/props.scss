@@ -1,0 +1,36 @@
+@use 'light.scss' as light;
+@use 'dark.scss' as dark;
+@use 'core.scss' as core;
+
+@mixin color-list($map) {
+  @each $name, $value in $map {
+    --#{$name}: #{$value};
+  }
+}
+
+:root {
+  @include color-list(core.$map);
+  --default-theme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    @include color-list(light.$map);
+    --default-theme: light;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include color-list(dark.$map);
+    --default-theme: dark;
+  }
+}
+
+html[data-theme-mode='light'] {
+  @include color-list(light.$map);
+}
+
+html[data-theme-mode='dark'] {
+  @include color-list(dark.$map);
+}

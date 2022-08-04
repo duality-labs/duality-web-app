@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
+import { useThemeMode } from '../../lib/themeProvider';
 
 import logo from '../../assets/logo/logo.svg';
 
 export default function Header() {
   const { connectWallet, address } = useWeb3();
+  const { themeMode, toggleThemeMode } = useThemeMode();
 
   const onConnectClick = () => {
     connectWallet && connectWallet();
@@ -31,6 +33,9 @@ export default function Header() {
             Connect Wallet
           </button>
         )}
+        <button className="ml-3" type="button" onClick={toggleThemeMode}>
+          {themeMode === 'light' ? '🌕' : '🌞'}
+        </button>
       </nav>
     </header>
   );
