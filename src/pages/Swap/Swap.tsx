@@ -1,4 +1,9 @@
 import React, { useState, useCallback } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faArrowUpLong,
+  faArrowDownLong,
+} from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
@@ -124,6 +129,8 @@ export default function Swap() {
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-auto block"
         onClick={swapTokens}
       >
+        <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
+        <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
         &#8693;
       </button>
       <TokenInputGroup

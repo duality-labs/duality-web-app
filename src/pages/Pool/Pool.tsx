@@ -1,4 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faArrowLeftLong,
+  faArrowRightLong,
+} from '@fortawesome/free-solid-svg-icons';
 
 import TokenPicker from '../../components/TokenPicker';
 import TokenInputGroup from '../../components/TokenInputGroup';
@@ -81,8 +86,13 @@ export default function Pool() {
         tokenList={tokenList}
         exclusion={tokenB}
       />
-      <button className="mx-2 py-1 px-3" onClick={swapTokens}>
-        {'<->'}
+      <button
+        className="mx-2 py-1 px-3"
+        onClick={swapTokens}
+        style={{ display: 'inline-flex', flexDirection: 'column' }}
+      >
+        <FontAwesomeIcon icon={faArrowLeftLong}></FontAwesomeIcon>
+        <FontAwesomeIcon icon={faArrowRightLong}></FontAwesomeIcon>
       </button>
       <TokenPicker
         value={tokenB}
