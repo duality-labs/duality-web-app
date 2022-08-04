@@ -27,7 +27,10 @@ files
     const data = fs.readFileSync(file, { encoding: 'utf8' });
     fs.writeFileSync(
       file,
-      `/* eslint-disable */\n/* tslint:disable */\n${data}`
+      `
+/* eslint-disable */
+/* tslint:disable */
+${data}`.trimStart()
     );
   });
 
