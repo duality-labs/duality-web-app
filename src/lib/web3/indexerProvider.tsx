@@ -41,7 +41,7 @@ interface TickMap {
  */
 export interface TickInfo {
   // index: number; do not store index as they may change with partial updates
-  price: BigNumber;
+  price: BigNumber; // price is a decimal (to 18 places) ratio of price1/price0
   reserve0: BigNumber;
   reserve1: BigNumber;
   fee: BigNumber;
