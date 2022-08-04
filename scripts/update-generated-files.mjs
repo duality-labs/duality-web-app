@@ -1,5 +1,9 @@
 import fs from 'fs';
 
+/**
+ * @param {string} directory
+ * @param {{ recursive: boolean }} opts
+ */
 function getDirFilenames(directory, opts = {}) {
   return fs
     .readdirSync(directory, { withFileTypes: true })
