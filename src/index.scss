@@ -1,3 +1,5 @@
+@forward 'styles/theme/' as theme-*;
+
 // Tailwind base includes its own version of CSS reset styles
 @tailwind base;
 @tailwind components;
