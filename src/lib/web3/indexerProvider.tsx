@@ -32,7 +32,10 @@ export interface PairInfo {
  * TickMap contains a mapping from tickIDs to tick indexes inside poolsZeroToOne and poolsOneToZero
  */
 interface TickMap {
-  [tickID: string]: [index0to1: TickInfo, index1to0: TickInfo];
+  [tickID: string]: [
+    index0to1: TickInfo | undefined,
+    index1to0: TickInfo | undefined
+  ];
 }
 
 /**
@@ -128,7 +131,7 @@ function transformData(ticks: Array<DexTicks>): PairMap {
             // append tickInfo into tickID map before returning defined values
             if (tickInfo && price && fee) {
               const tickID = getTickID(price, fee);
-              ticks[tickID] = ticks[tickID] || [];
+              ticks[tickID] = ticks[tickID] || [undefined, undefined];
               ticks[tickID][0] = tickInfo;
             }
             return tickInfo;
@@ -141,7 +144,7 @@ function transformData(ticks: Array<DexTicks>): PairMap {
             // append tickInfo into tickID map before returning defined values
             if (tickInfo && price && fee) {
               const tickID = getTickID(price, fee);
-              ticks[tickID] = ticks[tickID] || [];
+              ticks[tickID] = ticks[tickID] || [undefined, undefined];
               ticks[tickID][1] = tickInfo;
             }
             return tickInfo;
@@ -208,17 +211,33 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         const fee = new BigNumber(Fee);
         const reserve0 = new BigNumber(NewReserves0);
         const reserve1 = new BigNumber(NewReserves1);
+        const newTick: TickInfo = {
+          price,
+          fee,
+          reserve0,
+          reserve1,
+          // calculate new total
+          totalShares: reserve0.plus(reserve1.multipliedBy(price)),
+        };
+        const newPoolTicks: [TickInfo | undefined, TickInfo | undefined] = [
+          undefined,
+          undefined,
+        ];
+        if (reserve0.isGreaterThan(0)) {
+          newPoolTicks[0] = {
+            ...oldTickInfo[0], // not needed, displayed for consistency
+            ...newTick,
+          };
+        }
+        if (reserve1.isGreaterThan(0)) {
+          newPoolTicks[1] = {
+            ...oldTickInfo[1], // not needed, displayed for consistency
+            ...newTick,
+          };
+        }
         const ticks = {
           ...oldPairInfo?.ticks,
-          [tickID]: {
-            ...oldTickInfo, // not needed, displayed for consistency
-            price,
-            fee,
-            reserve0,
-            reserve1,
-            // calculate new total
-            totalShares: reserve0.plus(reserve1.multipliedBy(price)),
-          },
+          [tickID]: newPoolTicks,
         };
         return {
           ...oldData,
@@ -230,11 +249,13 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             // reorder pools by "real" price (the price after fees are applied)
             poolsZeroToOne: Object.values(ticks)
               .map((ticks) => ticks[0])
+              .filter((tick): tick is TickInfo => !!tick)
               .sort((a, b) =>
                 getRealPrice(a, 1).minus(getRealPrice(b, 1)).toNumber()
               ),
             poolsOneToZero: Object.values(ticks)
               .map((ticks) => ticks[1])
+              .filter((tick): tick is TickInfo => !!tick)
               .sort((a, b) =>
                 getRealPrice(b, -1).minus(getRealPrice(a, -1)).toNumber()
               ),
