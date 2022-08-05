@@ -9,7 +9,6 @@ import { Token } from '../../components/TokenPicker/mockHooks';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
-const denomRatio = new BigNumber(10).exponentiatedBy(denomExponent);
 
 export function useDeposit(): [
   {
@@ -73,8 +72,8 @@ export function useDeposit(): [
                 // fake some price points and amounts that can be tested in dev
                 price: new BigNumber(1).toFixed(denomExponent),
                 fee: new BigNumber(0).toFixed(denomExponent),
-                amounts0: amount0.dividedBy(denomRatio).toFixed(denomExponent),
-                amounts1: amount1.dividedBy(denomRatio).toFixed(denomExponent),
+                amounts0: amount0.toFixed(denomExponent),
+                amounts1: amount1.toFixed(denomExponent),
               }),
             ]);
 

@@ -20,6 +20,10 @@ import {
 import './Pool.scss';
 import { useDeposit } from './useDeposit';
 
+const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
+const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
+const denomRatio = new BigNumber(10).exponentiatedBy(denomExponent);
+
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
@@ -45,34 +49,37 @@ export default function Pool() {
 
   const [rangeMin, setRangeMin] = useState('50');
   const [rangeMax, setRangeMax] = useState('50');
-  const [values, setValues] = useState([0, 0]);
-  const [totalValue, setTotalValue] = useState(2000);
-
-  // update total value when rates or values change
-  useEffect(() => {
-    const rateAtoB = parseFloat(rateData?.price || '0');
-    const totalValue = values[0] * rateAtoB + values[1];
-    if (totalValue) {
-      setTotalValue(totalValue);
-    }
-  }, [values, rateData]);
+  const [values, setValues] = useState<[string, string]>(() => [
+    new BigNumber(1000).dividedBy(denomRatio).toFixed(denomExponent),
+    new BigNumber(1000).dividedBy(denomRatio).toFixed(denomExponent),
+  ]);
 
   // update values when rates or shape changes
   useEffect(() => {
     // get pair deposit amounts
-    setValues(() => {
-      const rateAtoB = parseFloat(rateData?.price || '0');
-      const valueMin = parseInt(rangeMin);
-      const valueMax = parseInt(rangeMax);
-      if (rateAtoB > 0 && totalValue > 0) {
-        const valueA = (totalValue * valueMin) / (valueMin + valueMax);
-        const valueB = (totalValue * valueMax) / (valueMin + valueMax);
-        return [valueA / rateAtoB, valueB];
+    setValues((values) => {
+      const rateAtoB = parseFloat(rateData?.price || '1');
+      const valueMin = new BigNumber(rangeMin);
+      const valueMax = new BigNumber(rangeMax);
+      const totalValue = new BigNumber(values[0])
+        .multipliedBy(rateAtoB)
+        .plus(values[1]);
+      if (rateAtoB > 0 && new BigNumber(totalValue).isGreaterThan(0)) {
+        const valueA = valueMin
+          .multipliedBy(totalValue)
+          .dividedBy(valueMin.plus(valueMax));
+        const valueB = valueMax
+          .multipliedBy(totalValue)
+          .dividedBy(valueMin.plus(valueMax));
+        return [
+          valueA.dividedBy(rateAtoB).toFixed(denomExponent),
+          valueB.toFixed(denomExponent),
+        ];
       } else {
-        return [0, 0];
+        return ['0', '0'];
       }
     });
-  }, [totalValue, rateData, rangeMin, rangeMax]);
+  }, [rateData, rangeMin, rangeMax]);
 
   const {
     data: { ticks } = {},
@@ -259,20 +266,16 @@ export default function Pool() {
         disabled
         tokenList={tokenList}
         token={tokenA}
-        value={`${values[0]}`}
-        onValueChanged={(valueA) =>
-          setValues(([, valueB]) => [parseInt(valueA, 10), valueB])
-        }
+        value={values[0]}
+        onValueChanged={(valueA) => setValues(([, valueB]) => [valueA, valueB])}
         exclusion={tokenB}
       ></TokenInputGroup>
       <TokenInputGroup
         disabled
         tokenList={tokenList}
         token={tokenB}
-        value={`${values[1]}`}
-        onValueChanged={(valueB) =>
-          setValues(([valueA]) => [valueA, parseInt(valueB, 10)])
-        }
+        value={values[1]}
+        onValueChanged={(valueB) => setValues(([valueA]) => [valueA, valueB])}
         exclusion={tokenA}
       ></TokenInputGroup>
       {(isValidatingTokens || isValidatingRate) && (
