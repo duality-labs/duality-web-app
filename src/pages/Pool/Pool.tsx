@@ -1,9 +1,15 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, FormEvent } from 'react';
+import { assertIsDeliverTxSuccess } from '@cosmjs/stargate';
+import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowLeftLong,
   faArrowRightLong,
 } from '@fortawesome/free-solid-svg-icons';
+
+import { useIndexerPairData } from '../../lib/web3/indexerProvider';
+import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module';
+import { useWeb3 } from '../../lib/web3/useWeb3';
 
 import TokenPicker from '../../components/TokenPicker';
 import TokenInputGroup from '../../components/TokenInputGroup';
@@ -15,7 +21,10 @@ import {
 } from '../../components/TokenPicker/mockHooks';
 
 import './Pool.scss';
-import { useIndexerPairData } from '../../lib/web3/indexerProvider';
+
+const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
+const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
+const denomRatio = new BigNumber(10).exponentiatedBy(denomExponent);
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
@@ -77,8 +86,64 @@ export default function Pool() {
     isValidating: tickFetching,
   } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
+  const web3 = useWeb3();
+  const onSubmit = useCallback(
+    async function (e: FormEvent<HTMLFormElement>) {
+      e.preventDefault();
+      const [amount0 = 0, amount1 = 0] = values;
+      // check for correct inputs
+      if (!web3.address || !web3.wallet) {
+        throw new Error('Wallet not connected');
+      }
+      if (!tokenA || !tokenB) {
+        throw new Error('Tokens not set');
+      }
+      if (amount0 + amount1 <= 0) {
+        throw new Error('Amounts not set');
+      }
+
+      // add each tick message into a signed broadcast
+      const client = await dexTxClient(web3.wallet);
+      const res = await client.signAndBroadcast([
+        client.msgSingleDeposit({
+          creator: web3.address,
+          token0: tokenA.address,
+          token1: tokenB.address,
+          receiver: web3.address,
+          // fake some price points and amounts that can be tested in dev
+          price: new BigNumber(1).toFixed(denomExponent),
+          fee: new BigNumber(0).toFixed(denomExponent),
+          amounts0: new BigNumber(amount0)
+            .dividedBy(denomRatio)
+            .toFixed(denomExponent),
+          amounts1: new BigNumber(amount1)
+            .dividedBy(denomRatio)
+            .toFixed(denomExponent),
+        }),
+      ]);
+
+      // check for response
+      if (!res) {
+        throw new Error('No response');
+      }
+
+      // check for response errors
+      const { code, gasUsed, rawLog } = res;
+      assertIsDeliverTxSuccess(res);
+      if (code) {
+        // eslint-disable-next-line
+        console.warn(`Failed to send tx (code: ${code}): ${rawLog}`);
+        throw new Error(`Tx error: ${code}`);
+      }
+
+      // return new information
+      return gasUsed.toString();
+    },
+    [tokenA, tokenB, values, web3.address, web3.wallet]
+  );
+
   return (
-    <form className="pool-page card page-card my-4">
+    <form className="pool-page card page-card my-4" onSubmit={onSubmit}>
       <h2 className="card-header card-title">Select Pair</h2>
       <div className="card-row">
         <TokenPicker
