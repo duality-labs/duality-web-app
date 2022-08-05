@@ -202,9 +202,19 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       } else {
         setError(undefined);
       }
-      const pairID = getPairID(Token0, Token1);
-      const tickID = getTickID(Price, Fee);
-      setIndexerData((oldData = {}) => {
+      function addTickData(
+        oldData: PairMap = {},
+        {
+          Token0,
+          Token1,
+          Price,
+          Fee,
+          NewReserves0,
+          NewReserves1,
+        }: { [eventKey: string]: string }
+      ): PairMap {
+        const pairID = getPairID(Token0, Token1);
+        const tickID = getTickID(Price, Fee);
         const oldPairInfo = oldData[pairID];
         const oldTickInfo = oldPairInfo?.ticks?.[tickID];
         const price = new BigNumber(Price);
@@ -266,6 +276,16 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             ? tick.price.plus(tick.fee)
             : tick.price.minus(tick.fee);
         }
+      }
+      setIndexerData((oldData) => {
+        return addTickData(oldData, {
+          Token0,
+          Token1,
+          Price,
+          Fee,
+          NewReserves0,
+          NewReserves1,
+        });
       });
     };
     subscriber.subscribeMessage(onTickChange, EventType.EventTxValue, {
