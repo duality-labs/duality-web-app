@@ -301,6 +301,57 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const onRouterUpdateMessage = function (event: MessageActionEvent) {
+      const {
+        TokenIn,
+        TokenOut,
+        NewReserve0,
+        NewReserve1,
+        PriceOfSwap,
+        FeeOfSwap,
+      } = event;
+      // skip NewSwap events that are not about individual swaps
+      // eg. the final NewSwap event of a MsgSwap action is the "overall" swap details
+      if (!PriceOfSwap) return;
+      if (
+        !TokenIn ||
+        !TokenOut ||
+        !PriceOfSwap ||
+        !FeeOfSwap ||
+        !NewReserve0 ||
+        !NewReserve1
+      ) {
+        setError('Invalid event response from server');
+        return;
+      } else {
+        setError(undefined);
+      }
+      setIndexerData((oldData) => {
+        // NewSwap is movement of existing ticks so the pair should already exist
+        const forward = !!oldData?.[getPairID(TokenIn, TokenOut)];
+        const reverse = !!oldData?.[getPairID(TokenOut, TokenIn)];
+        if (forward || reverse) {
+          return addTickData(oldData, {
+            Token0: forward ? TokenIn : TokenOut,
+            Token1: forward ? TokenOut : TokenIn,
+            Price: PriceOfSwap,
+            Fee: FeeOfSwap,
+            NewReserves0: NewReserve0,
+            NewReserves1: NewReserve1,
+          });
+        }
+        return oldData;
+      });
+    };
+    subscriber.subscribeMessage(onRouterUpdateMessage, EventType.EventTxValue, {
+      messageAction: 'NewSwap',
+    });
+    return () => {
+      subscriber.unsubscribeMessage(onRouterUpdateMessage);
+    };
+  }, []);
+
+  useEffect(() => {
     setResult({
       data: indexerData,
       error: error,
