@@ -175,6 +175,82 @@ function transformData(ticks: Array<DexTicks>): PairMap {
   }
 }
 
+function addTickData(
+  oldData: PairMap = {},
+  {
+    Token0,
+    Token1,
+    Price,
+    Fee,
+    NewReserves0,
+    NewReserves1,
+  }: { [eventKey: string]: string }
+): PairMap {
+  const pairID = getPairID(Token0, Token1);
+  const tickID = getTickID(Price, Fee);
+  const oldPairInfo = oldData[pairID];
+  const oldTickInfo = oldPairInfo?.ticks?.[tickID];
+  const price = new BigNumber(Price);
+  const fee = new BigNumber(Fee);
+  const reserve0 = new BigNumber(NewReserves0);
+  const reserve1 = new BigNumber(NewReserves1);
+  const newTick: TickInfo = {
+    price,
+    fee,
+    reserve0,
+    reserve1,
+    // calculate new total
+    totalShares: reserve0.plus(reserve1.multipliedBy(price)),
+  };
+  const newPoolTicks: [TickInfo | undefined, TickInfo | undefined] = [
+    undefined,
+    undefined,
+  ];
+  if (reserve0.isGreaterThan(0)) {
+    newPoolTicks[0] = {
+      ...oldTickInfo[0], // not needed, displayed for consistency
+      ...newTick,
+    };
+  }
+  if (reserve1.isGreaterThan(0)) {
+    newPoolTicks[1] = {
+      ...oldTickInfo[1], // not needed, displayed for consistency
+      ...newTick,
+    };
+  }
+  const ticks = {
+    ...oldPairInfo?.ticks,
+    [tickID]: newPoolTicks,
+  };
+  return {
+    ...oldData,
+    [pairID]: {
+      ...oldPairInfo, // not needed, displayed for consistency
+      token0: Token0,
+      token1: Token1,
+      ticks,
+      // reorder pools by "real" price (the price after fees are applied)
+      poolsZeroToOne: Object.values(ticks)
+        .map((ticks) => ticks[0])
+        .filter((tick): tick is TickInfo => !!tick)
+        .sort((a, b) =>
+          getRealPrice(a, 1).minus(getRealPrice(b, 1)).toNumber()
+        ),
+      poolsOneToZero: Object.values(ticks)
+        .map((ticks) => ticks[1])
+        .filter((tick): tick is TickInfo => !!tick)
+        .sort((a, b) =>
+          getRealPrice(b, -1).minus(getRealPrice(a, -1)).toNumber()
+        ),
+    },
+  };
+  function getRealPrice(tick: TickInfo, forward: number) {
+    return forward >= 0
+      ? tick.price.plus(tick.fee)
+      : tick.price.minus(tick.fee);
+  }
+}
+
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [indexerData, setIndexerData] = useState<PairMap>();
   const [error, setError] = useState<string>();
@@ -201,81 +277,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         return;
       } else {
         setError(undefined);
-      }
-      function addTickData(
-        oldData: PairMap = {},
-        {
-          Token0,
-          Token1,
-          Price,
-          Fee,
-          NewReserves0,
-          NewReserves1,
-        }: { [eventKey: string]: string }
-      ): PairMap {
-        const pairID = getPairID(Token0, Token1);
-        const tickID = getTickID(Price, Fee);
-        const oldPairInfo = oldData[pairID];
-        const oldTickInfo = oldPairInfo?.ticks?.[tickID];
-        const price = new BigNumber(Price);
-        const fee = new BigNumber(Fee);
-        const reserve0 = new BigNumber(NewReserves0);
-        const reserve1 = new BigNumber(NewReserves1);
-        const newTick: TickInfo = {
-          price,
-          fee,
-          reserve0,
-          reserve1,
-          // calculate new total
-          totalShares: reserve0.plus(reserve1.multipliedBy(price)),
-        };
-        const newPoolTicks: [TickInfo | undefined, TickInfo | undefined] = [
-          undefined,
-          undefined,
-        ];
-        if (reserve0.isGreaterThan(0)) {
-          newPoolTicks[0] = {
-            ...oldTickInfo[0], // not needed, displayed for consistency
-            ...newTick,
-          };
-        }
-        if (reserve1.isGreaterThan(0)) {
-          newPoolTicks[1] = {
-            ...oldTickInfo[1], // not needed, displayed for consistency
-            ...newTick,
-          };
-        }
-        const ticks = {
-          ...oldPairInfo?.ticks,
-          [tickID]: newPoolTicks,
-        };
-        return {
-          ...oldData,
-          [pairID]: {
-            ...oldPairInfo, // not needed, displayed for consistency
-            token0: Token0,
-            token1: Token1,
-            ticks,
-            // reorder pools by "real" price (the price after fees are applied)
-            poolsZeroToOne: Object.values(ticks)
-              .map((ticks) => ticks[0])
-              .filter((tick): tick is TickInfo => !!tick)
-              .sort((a, b) =>
-                getRealPrice(a, 1).minus(getRealPrice(b, 1)).toNumber()
-              ),
-            poolsOneToZero: Object.values(ticks)
-              .map((ticks) => ticks[1])
-              .filter((tick): tick is TickInfo => !!tick)
-              .sort((a, b) =>
-                getRealPrice(b, -1).minus(getRealPrice(a, -1)).toNumber()
-              ),
-          },
-        };
-        function getRealPrice(tick: TickInfo, forward: number) {
-          return forward >= 0
-            ? tick.price.plus(tick.fee)
-            : tick.price.minus(tick.fee);
-        }
       }
       setIndexerData((oldData) => {
         return addTickData(oldData, {
