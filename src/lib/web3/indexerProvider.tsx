@@ -32,11 +32,13 @@ export interface PairInfo {
  * TickMap contains a mapping from tickIDs to tick indexes inside poolsZeroToOne and poolsOneToZero
  */
 interface TickMap {
-  [tickID: string]: [
-    index0to1: TickInfo | undefined,
-    index1to0: TickInfo | undefined
-  ];
+  [tickID: string]: PoolTicks;
 }
+
+type PoolTicks = [
+  index0to1: TickInfo | undefined,
+  index1to0: TickInfo | undefined
+];
 
 /**
  * TickInfo is a reflection of the backend structue "DexPool"
@@ -201,10 +203,7 @@ function addTickData(
     // calculate new total
     totalShares: reserve0.plus(reserve1.multipliedBy(price)),
   };
-  const newPoolTicks: [TickInfo | undefined, TickInfo | undefined] = [
-    undefined,
-    undefined,
-  ];
+  const newPoolTicks: PoolTicks = [undefined, undefined];
   if (reserve0.isGreaterThan(0)) {
     newPoolTicks[0] = newTick;
   }
