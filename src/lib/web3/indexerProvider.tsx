@@ -189,9 +189,6 @@ function addTickData(
   const pairID = getPairID(Token0, Token1);
   const tickID = getTickID(Price, Fee);
   const oldPairInfo = oldData[pairID];
-  const oldTickInfo = oldPairInfo?.ticks?.[tickID]
-    ? oldPairInfo?.ticks?.[tickID]
-    : undefined;
   const price = new BigNumber(Price);
   const fee = new BigNumber(Fee);
   const reserve0 = new BigNumber(NewReserves0);
@@ -209,16 +206,10 @@ function addTickData(
     undefined,
   ];
   if (reserve0.isGreaterThan(0)) {
-    newPoolTicks[0] = {
-      ...oldTickInfo?.[0], // not needed, displayed for consistency
-      ...newTick,
-    };
+    newPoolTicks[0] = newTick;
   }
   if (reserve1.isGreaterThan(0)) {
-    newPoolTicks[1] = {
-      ...oldTickInfo?.[1], // not needed, displayed for consistency
-      ...newTick,
-    };
+    newPoolTicks[1] = newTick;
   }
   const ticks = {
     ...oldPairInfo?.ticks,
