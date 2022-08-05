@@ -114,7 +114,7 @@ function transformData(ticks: Array<DexTicks>): PairMap {
     // token0 and token1 are sorted by the back end
     { token0, token1, poolsZeroToOne = [], poolsOneToZero = [] }
   ) {
-    if (token0 && token1 && poolsZeroToOne?.length) {
+    if (token0 && token1) {
       const pairID = getPairID(token0, token1);
       const ticks: TickMap = {};
       result[pairID] = {
