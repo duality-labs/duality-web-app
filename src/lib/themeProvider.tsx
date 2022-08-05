@@ -32,8 +32,9 @@ if (storedMode) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [defaultTheme, setDefaultTheme] = useState(getDefaultBrowserTheme);
   const [savedTheme, setSavedTheme] = useState(getSavedTheme);
-  const themeMode = savedTheme ?? getDefaultBrowserTheme();
+  const themeMode = savedTheme ?? defaultTheme;
 
   const toggleThemeMode = useCallback(
     function () {
@@ -42,12 +43,25 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     [themeMode]
   );
 
+  // local storage change (if the theme was changed from another tab)
   useEffect(() => {
     window.addEventListener('storage', onStorageChange, false);
     return () => window.removeEventListener('storage', onStorageChange, false);
 
     function onStorageChange() {
       setSavedTheme(getSavedTheme());
+    }
+  }, []);
+
+  // preference change (if the browser settings were changed)
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', onPreferenceChange, false);
+    return () =>
+      mediaQuery.removeEventListener('change', onPreferenceChange, false);
+
+    function onPreferenceChange() {
+      setDefaultTheme(getDefaultBrowserTheme());
     }
   }, []);
 
