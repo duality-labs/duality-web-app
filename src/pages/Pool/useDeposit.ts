@@ -19,6 +19,8 @@ export function useDeposit(): [
   (
     tokenA: Token | undefined,
     tokenB: Token | undefined,
+    price: BigNumber | undefined,
+    fee: BigNumber | undefined,
     amount0: BigNumber | undefined,
     amount1: BigNumber | undefined
   ) => Promise<string | void>
@@ -32,6 +34,8 @@ export function useDeposit(): [
     async function (
       tokenA: Token | undefined,
       tokenB: Token | undefined,
+      price: BigNumber | undefined,
+      fee: BigNumber | undefined,
       amount0: BigNumber | undefined,
       amount1: BigNumber | undefined
     ) {
@@ -44,6 +48,12 @@ export function useDeposit(): [
             }
             if (!tokenA || !tokenB) {
               throw new Error('Tokens not set');
+            }
+            if (!price || !price.isGreaterThan(0)) {
+              throw new Error('Price not set');
+            }
+            if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
+              throw new Error('Fee not set');
             }
             if (
               !amount0 ||
@@ -70,8 +80,8 @@ export function useDeposit(): [
                 token1: tokenB.address,
                 receiver: web3.address,
                 // fake some price points and amounts that can be tested in dev
-                price: new BigNumber(1).toFixed(denomExponent),
-                fee: new BigNumber(0).toFixed(denomExponent),
+                price: price.toFixed(denomExponent),
+                fee: fee.toFixed(denomExponent),
                 amounts0: amount0.toFixed(denomExponent),
                 amounts1: amount1.toFixed(denomExponent),
               }),

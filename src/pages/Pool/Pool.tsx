@@ -27,6 +27,8 @@ const denomRatio = new BigNumber(10).exponentiatedBy(denomExponent);
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
+  const [price, setPrice] = useState(new BigNumber(1).toFixed(denomExponent));
+  const [fee, setFee] = useState('0.30');
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
     setTokenB(tokenA);
@@ -101,11 +103,13 @@ export default function Pool() {
       await sendDepositRequest(
         tokenA,
         tokenB,
+        new BigNumber(price),
+        new BigNumber(fee),
         new BigNumber(values[0]),
         new BigNumber(values[0])
       );
     },
-    [tokenA, tokenB, values, sendDepositRequest]
+    [tokenA, tokenB, price, fee, values, sendDepositRequest]
   );
 
   return (
@@ -143,7 +147,16 @@ export default function Pool() {
         </div>
       )}
       <div className="fee-group">
-        <strong>0.3% fee tier</strong>
+        Use fee:{' '}
+        <input
+          className="w-1/2"
+          type="number"
+          min="0.01"
+          max="1"
+          step="0.01"
+          value={fee}
+          onChange={(e) => setFee(new BigNumber(e.target.value).toFixed(2))}
+        ></input>
       </div>
       <h2 className="card-header card-title">Set price range</h2>
       <div className="fee-group">
@@ -155,6 +168,17 @@ export default function Pool() {
         ) : (
           <span>Current Price:</span>
         )}
+        Use price:{' '}
+        <input
+          className="w-1/2"
+          type="number"
+          min="0.0000000000000000001"
+          max="1000000000000000000"
+          value={price}
+          onChange={(e) =>
+            setPrice(new BigNumber(e.target.value).toFixed(denomExponent))
+          }
+        ></input>
       </div>
       <br />
       <div>Minimum tick</div>
