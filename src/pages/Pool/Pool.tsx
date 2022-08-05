@@ -80,7 +80,14 @@ export default function Pool() {
     isValidating: tickFetching,
   } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
-  const [, sendDepositRequest] = useDeposit();
+  const [
+    {
+      data: depositResponse,
+      isValidating: isValidatingDeposit,
+      error: depositError,
+    },
+    sendDepositRequest,
+  ] = useDeposit();
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
@@ -272,6 +279,13 @@ export default function Pool() {
         <div className="text-secondary card-row">{'.'.repeat(dotCount)}</div>
       )}
       <input type="submit" value="Add Liquidity" />
+      <br />
+      <div className="text-red-500">{!isValidatingDeposit && depositError}</div>
+      <div className="text-sky-500">
+        {!isValidatingDeposit && depositResponse
+          ? `Deposited ${values[0]} ${tokenA?.address} for ${values[1]} ${tokenB?.address}`
+          : ''}
+      </div>
     </form>
   );
 }
