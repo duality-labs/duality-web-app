@@ -263,7 +263,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    const onTickChange = function (event: MessageActionEvent) {
+    const onDexUpdateMessage = function (event: MessageActionEvent) {
       const { Token0, Token1, NewReserves0, NewReserves1, Price, Fee } = event;
       if (
         !Token0 ||
@@ -289,14 +289,14 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         });
       });
     };
-    subscriber.subscribeMessage(onTickChange, EventType.EventTxValue, {
+    subscriber.subscribeMessage(onDexUpdateMessage, EventType.EventTxValue, {
       messageAction: 'NewDeposit',
     });
-    subscriber.subscribeMessage(onTickChange, EventType.EventTxValue, {
+    subscriber.subscribeMessage(onDexUpdateMessage, EventType.EventTxValue, {
       messageAction: 'NewWithdraw',
     });
     return () => {
-      subscriber.unsubscribeMessage(onTickChange);
+      subscriber.unsubscribeMessage(onDexUpdateMessage);
     };
   }, []);
 
