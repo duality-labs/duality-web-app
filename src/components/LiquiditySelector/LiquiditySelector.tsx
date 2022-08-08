@@ -57,10 +57,9 @@ export default function LiquiditySelector({
     if (tickCount === 1) setUserTicks([graphStart + gap / 2]);
     else
       setUserTicks(
-        '0'
-          .repeat(tickCount)
-          .split('')
-          .map((_, index) => start + index * partGap)
+        Array.from({ length: tickCount }).map(
+          (_, index) => start + index * partGap
+        )
       );
   }, [tickCount, graphStart, graphEnd]);
 
