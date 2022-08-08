@@ -52,6 +52,31 @@ $token-search-bg: transparent;
 $token-search-text: core.$dark-gray;
 $token-search-border: core.$light-black;
 
+$input: rgb(0, 0, 0);
+$ghost: rgba(0, 0, 0, 0.5);
+$page-card: rgb(255, 255, 255);
+$token-group: rgb(76, 142, 180);
+$icon-button-bg: rgba(170, 169, 169, 0.4);
+$icon-button-text: rgb(188, 188, 188);
+$submit-button-bg: rgb(78, 177, 232);
+$submit-button-text: rgb(0, 0, 0);
+$ghost-button: rgb(71, 182, 241);
+$card-border: rgb(152, 203, 231);
+$dialog-bg: rgb(227, 227, 227);
+$selected-token: rgb(218, 218, 218);
+$badge-main-bg: rgb(18, 93, 135);
+$badge-main-text: rgb(255, 255, 255);
+$badge-secondary-bg: rgb(168, 168, 168);
+$badge-secondary-text: rgb(255, 255, 255);
+$badge-success-bg: rgb(38, 128, 27);
+$badge-success-text: rgb(255, 255, 255);
+$badge-info-bg: rgb(224, 184, 121);
+$badge-info-text: rgb(255, 255, 255);
+$badge-warning-text: rgb(218, 225, 137);
+$badge-warning-bg: rgb(255, 255, 255);
+$badge-error-bg: rgb(177, 81, 74);
+$badge-error-text: rgb(255, 255, 255);
+
 $scrollbar: transparent;
 $scrollbar-handle: core.$dark-white;
 $scrollbar-handle-hover: core.$dark-white;
@@ -106,6 +131,19 @@ $map: (
   'token-search-bg': $token-search-bg,
   'token-search-text': $token-search-text,
   'token-search-border': $token-search-border,
+
+  'badge-main-bg': $badge-main-bg,
+  'badge-main-text': $badge-main-text,
+  'badge-secondary-bg': $badge-secondary-bg,
+  'badge-secondary-text': $badge-secondary-text,
+  'badge-success-bg': $badge-success-bg,
+  'badge-success-text': $badge-success-text,
+  'badge-info-bg': $badge-info-bg,
+  'badge-info-text': $badge-info-text,
+  'badge-warning-bg': $badge-warning-bg,
+  'badge-warning-text': $badge-warning-text,
+  'badge-error-bg': $badge-error-bg,
+  'badge-error-text': $badge-error-text,
 
   'scrollbar': $scrollbar,
   'scrollbar-handle': $scrollbar-handle,

@@ -6,11 +6,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import {
-  useTokens,
-  useDotCounter,
-  Token,
-} from '../../components/TokenPicker/mockHooks';
+import { useTokens, Token } from '../../components/TokenPicker/mockHooks';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { MsgSwap } from '../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
@@ -25,7 +21,7 @@ const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 
 export default function Swap() {
   const { address } = useWeb3();
-  const { data: tokenList = [], isValidating: isValidaingTokens } = useTokens();
+  const { data: tokenList = [] } = useTokens();
   const [tokenA, setTokenA] = useState(tokenList[0] as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
   const [valueA, setValueA] = useState<string | undefined>('0');
@@ -37,16 +33,13 @@ export default function Swap() {
     valueA: lastUpdatedA ? valueA : undefined,
     valueB: lastUpdatedA ? undefined : valueB,
   };
-  const {
-    data: routerResult,
-    isValidating: isValidatingRate,
-    error: rateError,
-  } = useRouterResult({
-    tokenA: tokenA?.address,
-    tokenB: tokenB?.address,
-    valueA: lastUpdatedA ? valueA : undefined,
-    valueB: lastUpdatedA ? undefined : valueB,
-  });
+  const { data: routerResult, isValidating: isValidatingRate } =
+    useRouterResult({
+      tokenA: tokenA?.address,
+      tokenB: tokenB?.address,
+      valueA: lastUpdatedA ? valueA : undefined,
+      valueB: lastUpdatedA ? undefined : valueB,
+    });
   const rateData = getRouterEstimates(pairRequest, routerResult);
   const [swapRequest, setSwapRequest] = useState<MsgSwap>();
   const {
@@ -54,7 +47,6 @@ export default function Swap() {
     isValidating: isValidatingSwap,
     error: swapError,
   } = useSwap(swapRequest);
-  const dotCount = useDotCounter(0.25e3);
 
   const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
   const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
@@ -101,7 +93,7 @@ export default function Swap() {
 
   return (
     <form onSubmit={onFormSubmit} className="swap-page">
-      <div className="card page-card">
+      <div className="page-card">
         <h2 className="card-title">Trade</h2>
         <div className="card-row">
           <TokenInputGroup
@@ -118,13 +110,14 @@ export default function Swap() {
                 : ''
             }
             exclusion={tokenB}
+            title="You Pay"
           ></TokenInputGroup>
         </div>
         <div className="card-row">
           <button
             type="button"
             onClick={swapTokens}
-            className="icon-button mx-auto"
+            className="icon-button swap-button"
           >
             <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
             <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
@@ -146,22 +139,32 @@ export default function Swap() {
             }
             exclusion={tokenA}
             disabledInput={true}
+            title="You Receive"
           ></TokenInputGroup>
         </div>
-        <div className="text-secondary text-row card-row">
-          <span className="text-header">Gas price</span>
-          <span className="text-value">{rateData?.gas}</span>
+        <div className="text-info text-row card-row">
+          <span className="text-header">Exchange Rate</span>
+          <span className="text-value">
+            {tokenA && tokenB && routerResult
+              ? `1 ${
+                  tokenA.symbol
+                } = ${
+                  routerResult.tokenIn === tokenA.address
+                ? routerResult.amountOut.dividedBy(routerResult.amountIn).toPrecision(6)
+                : routerResult.amountIn.dividedBy(routerResult.amountOut).toPrecision(6)
+              } ${tokenB.symbol}`
+              : 'No pair selected'}
+          </span>
+        </div>
+        <div className="text-info text-row card-row">
+          <span className="text-header">Price Impact</span>
+          <span className="text-value">
+            ...
+          </span>
         </div>
         {swapRequest && swapError && (
           <div className="text-error card-row">{swapError}</div>
         )}
-        {rateError && <div className="text-error card-row">{rateError}</div>}
-        {isValidaingTokens ||
-          (isValidatingRate && (
-            <div className="text-secondary card-row">
-              {'.'.repeat(dotCount)}
-            </div>
-          ))}
         {!isValidatingSwap && swapResponse && (
           <div className="text-secondary card-row">
             Swapped {valueAConverted} {tokenA?.address} for {valueBConverted}{' '}

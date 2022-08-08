@@ -17,12 +17,15 @@
 }
 
 .card {
-  @extend .card-2;
+  @extend .card-3;
 }
 
 .page-card {
+  @extend .card-4;
   background-color: var(--page-card);
   color: var(--text-default);
+  flex-direction: column;
+  display: flex;
 }
 
 .card-row {
@@ -37,6 +40,7 @@
 }
 
 .card-title {
+  @include margins.margin('y', 2);
   font-size: font-size.$h2;
-  text-align: center;
+  width: 100%;
 }

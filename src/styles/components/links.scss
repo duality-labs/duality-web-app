@@ -4,7 +4,6 @@
 .link,
 a {
   font-size: font-size.$link;
-  background-color: var(--link);
-  color: var(--link-alt);
+  color: var(--link);
   cursor: pointer;
 }
