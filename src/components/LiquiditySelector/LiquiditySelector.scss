@@ -2,12 +2,15 @@
   & {
     transition: opacity 0.15s ease-in-out;
     stroke-width: 1px;
-    stroke: hsl(240, 60%, 50%);
     cursor: pointer;
     opacity: 0.7;
   }
 
-  &.current-tick {
+  &.old-tick {
+    stroke: hsl(240, 60%, 50%);
+  }
+
+  &.new-tick {
     stroke: hsl(0, 60%, 50%);
   }
 

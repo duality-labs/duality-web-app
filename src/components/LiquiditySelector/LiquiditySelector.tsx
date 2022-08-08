@@ -77,7 +77,7 @@ export default function LiquiditySelector({
         <path
           key={index}
           d={`M ${tick}, ${graphHeight} L ${tick} ${0}`}
-          className="tick current-tick"
+          className="tick new-tick"
         />
       ))}
     </svg>
