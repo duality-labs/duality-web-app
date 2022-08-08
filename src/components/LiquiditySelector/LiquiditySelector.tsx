@@ -53,18 +53,27 @@ export default function LiquiditySelector({
   }, [existingTicks]);
 
   useEffect(() => {
-    // spread evenly after adding padding on each side
-    const range = graphEnd - graphStart;
-    const tickStart = graphStart + range * paddingPercent;
-    const tickEnd = graphEnd - range * paddingPercent;
-    const tickGap = (tickEnd - tickStart) / (tickCount - 1);
-    if (tickCount === 1) setUserTicks([graphStart + range / 2]);
-    else
-      setUserTicks(
-        Array.from({ length: tickCount }).map(
+    setUserTicks(() => {
+      const range = graphEnd - graphStart;
+      // set multiple ticks across the range
+      if (tickCount > 1) {
+        // spread evenly after adding padding on each side
+        const tickStart = graphStart + range * paddingPercent;
+        const tickEnd = graphEnd - range * paddingPercent;
+        const tickGap = (tickEnd - tickStart) / (tickCount - 1);
+        return Array.from({ length: tickCount }).map(
           (_, index) => tickStart + index * tickGap
-        )
-      );
+        );
+      }
+      // or set single center tick
+      else if (tickCount === 1) {
+        return [graphStart + range / 2];
+      }
+      // or set no ticks
+      else {
+        return [];
+      }
+    });
   }, [tickCount, graphStart, graphEnd]);
 
   if (!graphEnd) {
