@@ -56,13 +56,13 @@ export default function LiquiditySelector({
       Math.floor(graphStart - graphPadding.x)
     } ${
       // right
-      '0'
+      Math.floor(0 - graphPadding.y)
     } ${
       // width
       Math.ceil(graphEnd - graphStart + graphPadding.x)
     } ${
       // height
-      Math.ceil(graphHeight + graphPadding.y)
+      Math.ceil(graphHeight + 2 * graphPadding.y)
     }`;
   }, [graphStart, graphEnd, graphHeight]);
 
