@@ -10,14 +10,6 @@ interface LiquiditySelectorProps {
 
 const paddingPercent = 0.2;
 
-function roundUp(value: number) {
-  return Math.round((value * (1 + paddingPercent)) * paddingPercent) / paddingPercent;
-}
-
-function roundDown(value: number) {
-  return Math.round((value / (1 + paddingPercent)) * paddingPercent) / paddingPercent;
-}
-
 export default function LiquiditySelector({
   tickCount,
   ticks = {},
@@ -48,10 +40,18 @@ export default function LiquiditySelector({
       },
       { xMin: Infinity, xMax: -Infinity, yMax: -Infinity }
     );
-    setGraphStart(roundDown(xMin));
-    setGraphEnd(roundUp(xMax));
-    setGraphHeight(roundUp(yMax));
+    setGraphStart(xMin);
+    setGraphEnd(xMax);
+    setGraphHeight(yMax);
   }, [existingTicks]);
+
+  const graphPadding = useMemo(() => {
+    const range = graphEnd - graphStart;
+    return {
+      x: range * paddingPercent,
+      y: graphHeight * paddingPercent,
+    };
+  }, [graphStart, graphEnd, graphHeight]);
 
   useEffect(() => {
     setUserTicks(() => {
@@ -82,7 +82,21 @@ export default function LiquiditySelector({
   }
 
   return (
-    <svg viewBox={`${graphStart} 0 ${graphEnd - graphStart} ${graphHeight}`}>
+    <svg
+      viewBox={`${
+        //left
+        Math.floor(graphStart - graphPadding.x)
+      } ${
+        // right
+        '0'
+      } ${
+        // width
+        Math.ceil(graphEnd - graphStart + 2 * graphPadding.x)
+      } ${
+        // height
+        Math.ceil(graphHeight + graphPadding.y)
+      }`}
+    >
       {existingTicks.map(([rate, value]) => (
         <path
           key={rate}
