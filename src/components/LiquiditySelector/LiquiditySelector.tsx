@@ -29,10 +29,12 @@ export default function LiquiditySelector({
       .map(tick => [tick.price.toNumber(), tick.totalShares.toNumber()]);
   }, [ticks]);
 
+  // todo: base graph start and end on existing ticks and current price
+  //       (if no existing ticks exist only cuurent price can indicate start and end)
   const [graphStart, setGraphStart] = useState(0);
-  const [graphEnd, setGraphEnd] = useState(5);
+  const [graphEnd, setGraphEnd] = useState(0);
   const [graphHeight, setGraphHeight] = useState(100);
-  const [userTicks, setUserTicks] = useState([1, 4]);
+  const [userTicks, setUserTicks] = useState<Array<number>>([]);
 
   useEffect(() => {
     let maxValue = -Infinity,
@@ -62,6 +64,10 @@ export default function LiquiditySelector({
         )
       );
   }, [tickCount, graphStart, graphEnd]);
+
+  if (!graphEnd) {
+    return <div>Chart is not currently available</div>;
+  }
 
   return (
     <svg viewBox={`${graphStart} 0 ${graphEnd - graphStart} ${graphHeight}`}>
