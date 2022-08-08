@@ -8,12 +8,14 @@ interface LiquiditySelectorProps {
   tickCount: number;
 }
 
+const paddingPercent = 0.2;
+
 function roundUp(value: number) {
-  return Math.round((value * 1.2) / 5) * 5;
+  return Math.round((value * (1 + paddingPercent)) * paddingPercent) / paddingPercent;
 }
 
 function roundDown(value: number) {
-  return Math.round((value * 0.8) / 5) * 5; // not exactly the same gap but close enough
+  return Math.round((value / (1 + paddingPercent)) * paddingPercent) / paddingPercent;
 }
 
 export default function LiquiditySelector({
@@ -51,16 +53,16 @@ export default function LiquiditySelector({
   }, [existingTicks]);
 
   useEffect(() => {
-    // spread evenly after ignoring 20% on each side
-    const gap = graphEnd - graphStart,
-      start = graphStart + gap / 5,
-      end = graphEnd - gap / 5,
-      partGap = (end - start) / (tickCount - 1);
-    if (tickCount === 1) setUserTicks([graphStart + gap / 2]);
+    // spread evenly after adding padding on each side
+    const range = graphEnd - graphStart;
+    const tickStart = graphStart + range * paddingPercent;
+    const tickEnd = graphEnd - range * paddingPercent;
+    const tickGap = (tickEnd - tickStart) / (tickCount - 1);
+    if (tickCount === 1) setUserTicks([graphStart + range / 2]);
     else
       setUserTicks(
         Array.from({ length: tickCount }).map(
-          (_, index) => start + index * partGap
+          (_, index) => tickStart + index * tickGap
         )
       );
   }, [tickCount, graphStart, graphEnd]);
