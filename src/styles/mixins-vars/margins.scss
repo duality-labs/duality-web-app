@@ -1,0 +1,48 @@
+$sizes: (
+  '0': 0rem,
+  '1': 0.125rem,
+  '2': 0.25rem,
+  '3': 0.5rem,
+  '4': 1rem,
+  '5': 2rem,
+  '6': 4rem,
+);
+
+@each $name, $size in $sizes {
+  .margin#{$name},
+  .m#{$name} {
+    margin: #{$size};
+  }
+
+  .marginx#{$name},
+  .mx#{$name} {
+    margin-right: #{$size};
+    margin-left: #{$size};
+  }
+
+  .marginright#{$name},
+  .mr#{$name} {
+    margin-right: #{$size};
+  }
+
+  .marginleft#{$name},
+  .ml#{$name} {
+    margin-left: #{$size};
+  }
+
+  .marginy#{$name},
+  .my#{$name} {
+    margin-bottom: #{$size};
+    margin-top: #{$size};
+  }
+
+  .marginbottom#{$name},
+  .mb#{$name} {
+    margin-bottom: #{$size};
+  }
+
+  .margintop#{$name},
+  .mt#{$name} {
+    margin-top: #{$size};
+  }
+}

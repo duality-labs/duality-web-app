@@ -1,0 +1,87 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/font/family.scss' as font-family;
+@use '../../styles/components/cards.scss' as cards;
+@use '../../styles/font/size.scss' as font-size;
+@use 'sass:map';
+
+$border-width: 2px;
+
+.range-step-input {
+  & {
+    @extend .card-4;
+    border: $border-width solid var(--card-border);
+    flex-direction: column;
+    display: flex;
+  }
+
+  .range-step-title {
+    @extend .marginy2;
+    @extend .marginx0;
+    color: var(--ghost-button);
+    font-size: font-size.$h4;
+    text-align: center;
+    width: 100%;
+  }
+
+  .range-step-description {
+    @extend .marginy1;
+    @extend .marginx0;
+    color: var(--text);
+    font-size: font-size.$text;
+    text-align: center;
+    width: 100%;
+  }
+
+  .range-step-controls {
+    & {
+      flex-direction: row;
+      display: flex;
+    }
+
+    button {
+      border-radius: map-get(paddings.$sizes, '2');
+      padding: map-get(paddings.$sizes, '2');
+      background-color: var(--ghost-button);
+      font-size: font-size.$button-large;
+      font-family: font-family.$console;
+      border: 0px none transparent;
+      box-sizing: content-box;
+      mix-blend-mode: screen;
+      line-height: 1em;
+      aspect-ratio: 1;
+      flex: 0 0 auto;
+      color: black;
+      height: 1em;
+      width: 1em;
+    }
+
+    input,
+    span {
+      @extend .paddingx4;
+      @extend .paddingy0;
+      font-family: font-family.$console;
+      background-color: transparent;
+      border: 0px none transparent;
+      font-size: font-size.$input;
+      text-align: center;
+      color: var(--text);
+      flex: 1 1 auto;
+      outline: none;
+    }
+
+    input[type='number'] {
+      /* For Chrome and Safari  */
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      /* For Firefox  */
+      & {
+        -moz-appearance: textfield;
+      }
+    }
+  }
+}

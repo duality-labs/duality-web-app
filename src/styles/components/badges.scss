@@ -1,0 +1,49 @@
+@use '../mixins-vars/paddings.scss' as paddings;
+@use '../font/size.scss' as font;
+@use './cards.scss' as cards;
+@use 'sass:map';
+
+@each $name in ('main', 'secondary', 'success', 'info', 'warning', 'error') {
+  .badge-#{$name} {
+    @extend .paddingx3;
+    @extend .paddingy3;
+    background-color: var(--badge-#{$name}-bg);
+    color: var(--badge-#{$name}-text);
+    border: 0px none transparent;
+    border-radius: 100vmax;
+  }
+
+  .text-#{$name} {
+    color: var(--badge-#{$name}-text);
+  }
+}
+
+.badge {
+  @extend .badge-main;
+}
+
+.text-row {
+  & {
+    grid-template-columns: 50% 50%;
+    display: grid;
+    width: 100%;
+  }
+
+  & > .text-header {
+    grid-column: 1 / 2;
+    text-align: start;
+  }
+
+  & > .text-value {
+    grid-column: 2 / 3;
+    text-align: end;
+  }
+}
+
+@for $index from 2 to length(paddings.$sizes) {
+  .badge-#{$index} {
+    @extend .paddingx#{$index};
+    @extend .paddingy#{$index - 1};
+    font-size: map-get(font.$sizes, '#{$index - 1}');
+  }
+}

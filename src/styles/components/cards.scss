@@ -1,0 +1,36 @@
+@use '../mixins-vars/paddings.scss' as paddings;
+@use '../mixins-vars/margins.scss' as margins;
+@use '../font/size.scss' as font;
+@use 'sass:map';
+
+@for $index from 2 to length(paddings.$sizes) {
+  .card-#{$index} {
+    @extend .paddingx#{$index};
+    @extend .paddingy#{$index - 1};
+    border-radius: map-get(paddings.$sizes, #{$index - 1});
+  }
+}
+
+.card {
+  @extend .card-3;
+}
+
+.page-card {
+  @extend .card-4;
+  background-color: var(--page-card);
+  flex-direction: column;
+  color: var(--text);
+  display: flex;
+}
+
+.card-row {
+  flex-direction: row;
+  display: flex;
+}
+
+.card-title {
+  @extend .marginy2;
+  font-size: font.$h2;
+  text-align: center;
+  width: 100%;
+}

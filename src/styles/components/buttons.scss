@@ -1,0 +1,35 @@
+@use '../mixins-vars/paddings.scss' as paddings;
+@use '../font/size.scss' as font;
+@use './cards.scss' as cards;
+
+button,
+.button {
+  @extend .card-2;
+  cursor: pointer;
+  font-size: font.$button;
+}
+
+.text-button {
+  @extend .button;
+  @extend .paddingy3;
+  @extend .paddingx3;
+  border: 0px solid transparent;
+}
+
+.icon-button {
+  @extend .text-button;
+  border-radius: 50%;
+  background-color: var(--icon-button-bg);
+  color: var(--icon-button-text);
+}
+
+input[type='submit'],
+.submit-button {
+  @extend .card-4;
+  background-color: var(--submit-button-bg);
+  color: var(--submit-button-text);
+  border: 0px none transparent;
+  font-size: font.$button-large;
+  cursor: pointer;
+  width: 100%;
+}

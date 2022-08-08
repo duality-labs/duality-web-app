@@ -20,6 +20,7 @@ interface InputGroupProps {
   disabled?: boolean;
   disabledInput?: boolean;
   disabledToken?: boolean;
+  title?: string;
 }
 
 export default function TokenInputGroup({
@@ -33,6 +34,7 @@ export default function TokenInputGroup({
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
+  title,
 }: InputGroupProps) {
   const onInputChange = useCallback(
     function (event: React.ChangeEvent<HTMLInputElement>) {
@@ -52,9 +54,11 @@ export default function TokenInputGroup({
 
   return (
     <div className={`${className || ''} token-input-group`}>
+      {title && <h5 className="token-group-title">{title}</h5>}
+      <span className="token-group-balance">MAX 74.5</span>
       <input
         type="text"
-        className="form-control"
+        className="token-group-input"
         value={value || '...'}
         onInput={onInput}
         onChange={onInputChange}
@@ -67,6 +71,7 @@ export default function TokenInputGroup({
         exclusion={exclusion}
         disabled={disabledToken}
       />
+      <span className="token-group-value">$ 85.80</span>
     </div>
   );
 }

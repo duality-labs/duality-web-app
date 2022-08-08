@@ -20,12 +20,18 @@ $ghost-button: rgb(71, 182, 241);
 $card-border: rgb(152, 203, 231);
 $dialog-bg: rgb(227, 227, 227);
 $selected-token: rgb(218, 218, 218);
-$badge-main: rgb(88, 170, 218);
-$badge-secondary: rgb(168, 168, 168);
-$badge-success: rgb(136, 190, 129);
-$badge-info: rgb(224, 184, 121);
-$badge-warning: rgb(218, 225, 137);
-$badge-error: rgb(177, 81, 74);
+$badge-main-bg: rgb(18, 93, 135);
+$badge-main-text: rgb(255, 255, 255);
+$badge-secondary-bg: rgb(168, 168, 168);
+$badge-secondary-text: rgb(255, 255, 255);
+$badge-success-bg: rgb(38, 128, 27);
+$badge-success-text: rgb(255, 255, 255);
+$badge-info-bg: rgb(224, 184, 121);
+$badge-info-text: rgb(255, 255, 255);
+$badge-warning-text: rgb(218, 225, 137);
+$badge-warning-bg: rgb(255, 255, 255);
+$badge-error-bg: rgb(177, 81, 74);
+$badge-error-text: rgb(255, 255, 255);
 $scrollbar: transparent;
 $scrollbar-handle: rgb(217, 217, 217);
 $scrollbar-handle-hover: rgb(217, 217, 217);
@@ -51,12 +57,18 @@ $map: (
   'card-border': $card-border,
   'dialog-bg': $dialog-bg,
   'selected-token': $selected-token,
-  'badge-main': $badge-main,
-  'badge-secondary': $badge-secondary,
-  'badge-success': $badge-success,
-  'badge-info': $badge-info,
-  'badge-warning': $badge-warning,
-  'badge-error': $badge-error,
+  'badge-main-bg': $badge-main-bg,
+  'badge-main-text': $badge-main-text,
+  'badge-secondary-bg': $badge-secondary-bg,
+  'badge-secondary-text': $badge-secondary-text,
+  'badge-success-bg': $badge-success-bg,
+  'badge-success-text': $badge-success-text,
+  'badge-info-bg': $badge-info-bg,
+  'badge-info-text': $badge-info-text,
+  'badge-warning-bg': $badge-warning-bg,
+  'badge-warning-text': $badge-warning-text,
+  'badge-error-bg': $badge-error-bg,
+  'badge-error-text': $badge-error-text,
   'scrollbar': $scrollbar,
   'scrollbar-handle': $scrollbar-handle,
   'scrollbar-handle-hover': $scrollbar-handle-hover,

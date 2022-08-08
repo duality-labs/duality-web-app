@@ -1,9 +1,175 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/font/size.scss' as font;
+@use 'sass:map';
+
 .pool-page {
-  box-shadow: 0 0 0.25rem 0rem rgb(169, 169, 169);
-  background-color: rgb(255, 255, 255);
-  border: 1px solid rgb(169, 169, 169);
-  color: rgb(0, 0, 0);
-  border-radius: 0.5rem;
-  padding: 1rem 2rem;
-  width: 450px;
+  & {
+    @extend .marginy4;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto 1fr auto;
+    gap: map-get(margins.$sizes, '3');
+    width: 1400px;
+    display: grid;
+  }
+
+  .card-title {
+    & {
+      font-size: font.$h4;
+      align-self: center;
+      text-align: start;
+      margin: 0;
+    }
+
+    & + .card-row {
+      margin-top: map-get(margins.$sizes, '2');
+    }
+  }
+
+  .card-row {
+    .badge {
+      margin-left: auto;
+    }
+
+    .badge + .badge {
+      margin-left: map-get(margins.$sizes, '2');
+    }
+
+    & + .card-row {
+      margin-top: map-get(margins.$sizes, '2');
+    }
+  }
+
+  .assets-card {
+    & {
+      grid-column: 1 / 2;
+      grid-row: 1 / 2;
+    }
+
+    .card-row {
+      & {
+        @extend .marginy2;
+      }
+
+      .token-input-group {
+        box-sizing: border-box;
+        width: 100%;
+      }
+
+      .swap-button {
+        margin: 0 auto;
+      }
+    }
+  }
+
+  .chart-card {
+    grid-column: 2 / 4;
+    grid-row: 1 / 2;
+  }
+
+  .fee-card {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+  }
+
+  .precision-card {
+    & {
+      grid-column: 1 / 2;
+      grid-row: 3 / 4;
+    }
+
+    .range-step-input {
+      border: 0px none transparent;
+      margin-left: auto;
+      padding: 0px;
+    }
+  }
+
+  .price-card {
+    grid-column: 2 / 3;
+    grid-row: 2 / 4;
+  }
+
+  .curve-card {
+    grid-column: 3 / 4;
+    grid-row: 2 / 4;
+  }
+
+  .pool-options {
+    grid-column: 1 / 4;
+    grid-row: 4 / 5;
+  }
+
+  @media screen and (max-width: 1250px) {
+    & {
+      grid-template-rows: auto auto auto auto;
+      grid-template-columns: auto 1fr;
+      width: 1250px;
+    }
+
+    .assets-card {
+      grid-column: 1 / 2;
+      grid-row: 1 / 2;
+    }
+
+    .chart-card {
+      grid-column: 2 / 3;
+      grid-row: 1 / 2;
+    }
+
+    .fee-card {
+      grid-column: 1 / 2;
+      grid-row: 2 / 3;
+    }
+
+    .precision-card {
+      grid-column: 1 / 2;
+      grid-row: 3 / 4;
+    }
+
+    .price-card {
+      grid-column: 2 / 3;
+      grid-row: 2 / 3;
+    }
+
+    .curve-card {
+      grid-column: 2 / 3;
+      grid-row: 3 / 4;
+    }
+
+    .pool-options {
+      grid-column: 1 / 3;
+      grid-row: 4 / 5;
+    }
+  }
+
+  @media screen and (max-width: 850px) {
+    & {
+      flex-direction: column;
+      display: flex;
+      width: 100%;
+    }
+  }
+
+  .range-step-input {
+    & {
+      @extend .marginx3;
+    }
+
+    &:first-child {
+      margin-left: 0;
+    }
+
+    &:first-child {
+      margin-right: 0;
+    }
+  }
+
+  input[type='submit'] {
+    @extend .paddingy3;
+    @extend .paddingx5;
+    border-radius: 100vmax;
+    margin: 0 auto;
+    width: auto;
+  }
 }

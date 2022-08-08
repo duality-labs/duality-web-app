@@ -134,7 +134,23 @@ export default function TokenPicker({
         onClick={open}
         disabled={disabled}
       >
-        {value?.symbol || 'Choose Token'}
+        {value?.symbol ? (
+          <>
+            {value.logo ? (
+              <img
+                className="token-image"
+                alt={`${value.symbol} logo`}
+                src={value.logo}
+              />
+            ) : (
+              <i className="token-image no-token-logo"></i>
+            )}
+            <span className="token-symbol">{value.symbol}</span>
+            <span className="token-chain">Duality Chain</span>
+          </>
+        ) : (
+          <span className="no-selected-token">Choose Token</span>
+        )}
       </button>
       <Dialog
         isOpen={isOpen}

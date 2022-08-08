@@ -1,21 +1,42 @@
 import { useEffect, useState, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeftLong,
-  faArrowRightLong,
+  faArrowUpLong,
+  faArrowDownLong,
 } from '@fortawesome/free-solid-svg-icons';
 
-import TokenPicker from '../../components/TokenPicker';
+import RadioInput from '../../components/RadioInput';
+import RangeStepInput from '../../components/RangeStepInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
   useTokens,
   useExchangeRate,
-  useDotCounter,
   Token,
 } from '../../components/TokenPicker/mockHooks';
 
 import './Pool.scss';
 import { useIndexerPairData } from '../../lib/web3/indexerProvider';
+
+const feeTypes: { [fee: string]: string } = {
+  '0.01': 'Best for very stable pairs.',
+  '0.05': 'Best for  stable pairs.',
+  '0.30': 'Best for most assets.',
+  '1.00': 'Best for exotic assets.',
+};
+
+const slopeTypes = ['UNIFORM', 'UP-SLOPE', 'BELL CURVE', 'DOWN-SLOPE'];
+
+const calculateFeeLiquidity = function (fee: string) {
+  const test: { [fee: string]: string } = {
+    '0.01': '1% liquidity',
+    '0.05': '9% liquidity',
+    '0.30': '83% liquidity',
+    '1.00': '7% liquidity',
+  };
+  return test[fee];
+};
+
+const defaultPrecision = 6;
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
@@ -24,14 +45,8 @@ export default function Pool() {
     setTokenA(tokenB);
     setTokenB(tokenA);
   }, [tokenA, tokenB]);
-  const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
-    tokenA,
-    tokenB,
-    '1'
-  );
-  const { data: tokenList = [], isValidating: isValidatingTokens } =
-    useTokens();
-  const dotCount = useDotCounter(0.25e3);
+  const { data: rateData } = useExchangeRate(tokenA, tokenB, '1');
+  const { data: tokenList = [] } = useTokens();
 
   // set token A to be first token in list if not already populated
   useEffect(() => {
@@ -40,8 +55,8 @@ export default function Pool() {
     }
   }, [tokenA, tokenList]);
 
-  const [rangeMin, setRangeMin] = useState('50');
-  const [rangeMax, setRangeMax] = useState('50');
+  const [rangeMin, setRangeMin] = useState(50);
+  const [rangeMax, setRangeMax] = useState(50);
   const [values, setValues] = useState([0, 0]);
   const [totalValue, setTotalValue] = useState(2000);
 
@@ -59,8 +74,8 @@ export default function Pool() {
     // get pair deposit amounts
     setValues(() => {
       const rateAtoB = parseFloat(rateData?.price || '0');
-      const valueMin = parseInt(rangeMin);
-      const valueMax = parseInt(rangeMax);
+      const valueMin = rangeMin;
+      const valueMax = rangeMax;
       if (rateAtoB > 0 && totalValue > 0) {
         const valueA = (totalValue * valueMin) / (valueMin + valueMax);
         const valueB = (totalValue * valueMax) / (valueMin + valueMax);
@@ -71,187 +86,161 @@ export default function Pool() {
     });
   }, [totalValue, rateData, rangeMin, rangeMax]);
 
-  const {
-    data: { ticks } = {},
-    error: ticksError,
-    isValidating: tickFetching,
-  } = useIndexerPairData(tokenA?.address, tokenB?.address);
+  /* const {
+     data: { ticks } = {},
+     error: ticksError,
+     isValidating: tickFetching,
+   } =*/ useIndexerPairData(tokenA?.address, tokenB?.address);
+
+  const [fee, setFee] = useState<string>(Object.keys(feeTypes)[0]);
+  const [editingFee, setEditingFee] = useState(false);
+  const [slopeType, setSlopeType] = useState<string>();
+  const [precision, setPrecision] = useState(defaultPrecision);
+
+  useEffect(() => {
+    setEditingFee(false);
+  }, [fee]);
 
   return (
-    <div className="pool-page">
-      <h2>Select Pair</h2>
-      <TokenPicker
-        value={tokenA}
-        onChange={setTokenA}
-        tokenList={tokenList}
-        exclusion={tokenB}
-      />
-      <button
-        onClick={swapTokens}
-        style={{ display: 'inline-flex', flexDirection: 'column' }}
-      >
-        <FontAwesomeIcon icon={faArrowLeftLong}></FontAwesomeIcon>
-        <FontAwesomeIcon icon={faArrowRightLong}></FontAwesomeIcon>
-      </button>
-      <TokenPicker
-        value={tokenB}
-        onChange={setTokenB}
-        tokenList={tokenList}
-        exclusion={tokenA}
-      />
-      <div>
-        Ticks: {tickFetching ? 'loading...' : ''} &nbsp;
-        {JSON.stringify(ticks, null, 2)}
-      </div>
-      {ticksError && (
-        <div>
-          TickFetch Error: <span style={{ color: 'red' }}>{ticksError}</span>
+    <form onSubmit={(e) => e.preventDefault()} className="pool-page">
+      <div className="assets-card page-card">
+        <div className="card-row">
+          <TokenInputGroup
+            onValueChanged={(newValue) =>
+              setValues(([, valueB]) => [Number(newValue), valueB])
+            }
+            onTokenChanged={setTokenA}
+            tokenList={tokenList}
+            token={tokenA}
+            value={`${values[0]}`}
+            exclusion={tokenB}
+            title="Asset 1"
+          />
         </div>
-      )}
-      <div className="fee-group">
-        <strong>0.3% fee tier</strong>
+        <div className="card-row">
+          <button
+            type="button"
+            onClick={swapTokens}
+            className="icon-button swap-button"
+          >
+            <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
+            <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
+          </button>
+        </div>
+        <div className="card-row">
+          <TokenInputGroup
+            onValueChanged={(newValue) =>
+              setValues(([valueA]) => [valueA, Number(newValue)])
+            }
+            onTokenChanged={setTokenB}
+            tokenList={tokenList}
+            token={tokenB}
+            value={`${values[1]}`}
+            exclusion={tokenA}
+            title="Asset 2"
+          />
+        </div>
       </div>
-      <h2>Set price range</h2>
-      <div className="fee-group">
-        {tokenA && tokenB ? (
-          <span>
-            Current Price: {rateData?.price || '...'} {tokenB.name} per &nbsp;
-            {tokenA.name}
-          </span>
-        ) : (
-          <span>Current Price:</span>
-        )}
+      <div className="chart-card page-card"></div>
+      <div className="fee-card page-card">
+        <div className="card-row">
+          <h3 className="card-title">Fee Tier</h3>
+          <div className="badge badge-4">{fee}</div>
+          <button
+            type="button"
+            className="badge badge-4 badge-secondary"
+            onClick={() => setEditingFee((mode) => !mode)}
+          >
+            {editingFee ? 'Hide' : 'Edit'}
+          </button>
+        </div>
+        <div className="card-row">
+          {editingFee ? (
+            <RadioInput
+              value={fee}
+              onChange={setFee}
+              render={() =>
+                Object.entries(feeTypes).map(([fee, description]) => (
+                  <div key={fee} className="badge">
+                    <span>{description}</span>
+                    <span className="badge">{calculateFeeLiquidity(fee)}</span>
+                  </div>
+                ))
+              }
+            />
+          ) : (
+            <>
+              <span className="badge badge-2 badge-info">
+                {calculateFeeLiquidity(fee)}
+              </span>
+              <span className="badge badge-2 badge-info">{feeTypes[fee]}</span>
+            </>
+          )}
+        </div>
       </div>
-      <br />
-      <div>Minimum tick</div>
-      <div>Maximum tick</div>
-      <br />
-      <input
-        type="range"
-        min="0"
-        max="100"
-        value={rangeMin}
-        onChange={(e) => setRangeMin(e.target.value)}
-        step="10"
-        style={{ transform: 'rotate(180deg)' }}
-      ></input>
-      <input
-        type="range"
-        min="0"
-        max="100"
-        value={rangeMax}
-        onChange={(e) => setRangeMax(e.target.value)}
-        step="10"
-      ></input>
-      <br />
-      <input
-        min="0"
-        max="100"
-        value={`${parseInt(rangeMin, 10) > 0 ? '-' : ''}${parseFloat(
-          rangeMin
-        ).toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        })}%`}
-        onChange={(e) => setRangeMin(e.target.value.replace(/\D/g, ''))}
-        step="1"
-      ></input>
-      <input
-        min="0"
-        max="100"
-        value={`${parseFloat(rangeMax).toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        })}%`}
-        onChange={(e) => setRangeMax(e.target.value.replace(/\D/g, ''))}
-        step="1"
-      ></input>
-      <br />
-      <input
-        min="0"
-        max="100"
-        value={
-          tokenA && tokenB
-            ? `${
-                rateData?.price
-                  ? Math.round(
-                      parseFloat(rateData?.price) *
-                        (1 - parseFloat(rangeMin) / 100)
-                    )
-                  : ''
-              } ${tokenB?.symbol} per ${tokenA?.symbol}`
-            : ''
-        }
-        onChange={(e) =>
-          setRangeMin(
-            (current) =>
-              `${
-                rateData?.price
-                  ? (-parseInt(e.target.value.replace(/\D/g, ''), 10) /
-                      parseFloat(rateData?.price)) *
-                      100 +
-                    100
-                  : current
-              }`
-          )
-        }
-        step="1"
-      ></input>
-      <input
-        min="0"
-        max="100"
-        value={
-          tokenA && tokenB
-            ? `${
-                rateData?.price
-                  ? Math.round(
-                      parseFloat(rateData?.price) *
-                        (1 + parseFloat(rangeMax) / 100)
-                    )
-                  : ''
-              } ${tokenB?.symbol} per ${tokenA?.symbol}`
-            : ''
-        }
-        onChange={(e) =>
-          setRangeMax(
-            (current) =>
-              `${
-                rateData?.price
-                  ? (parseInt(e.target.value.replace(/\D/g, ''), 10) /
-                      parseFloat(rateData?.price)) *
-                      100 -
-                    100
-                  : current
-              }`
-          )
-        }
-        step="1"
-      ></input>
-      <h2>Deposit Amounts</h2>
-      <TokenInputGroup
-        disabled
-        tokenList={tokenList}
-        token={tokenA}
-        value={`${values[0]}`}
-        onValueChanged={(valueA) =>
-          setValues(([, valueB]) => [parseInt(valueA, 10), valueB])
-        }
-        exclusion={tokenB}
-      ></TokenInputGroup>
-      <TokenInputGroup
-        disabled
-        tokenList={tokenList}
-        token={tokenB}
-        value={`${values[1]}`}
-        onValueChanged={(valueB) =>
-          setValues(([valueA]) => [valueA, parseInt(valueB, 10)])
-        }
-        exclusion={tokenA}
-      ></TokenInputGroup>
-      <button>Add Liquidity</button>
-      {((isValidatingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
-        <i>.</i>
-      )}
-    </div>
+      <div className="precision-card page-card">
+        <div className="card-row">
+          <h3 className="card-title">Precision</h3>
+          <RangeStepInput
+            editable={false}
+            min={2}
+            max={10}
+            value={precision}
+            onChange={setPrecision}
+          />
+          <button
+            type="button"
+            className="badge badge-info"
+            onClick={() => setPrecision(defaultPrecision)}
+          >
+            Auto
+          </button>
+        </div>
+      </div>
+      <div className="price-card page-card">
+        <h3 className="card-title">Price Range</h3>
+        <div className="card-row">
+          <RangeStepInput
+            title="MIN PRICE"
+            value={rangeMin}
+            onChange={setRangeMin}
+            max={rangeMax}
+            description={
+              tokenA && tokenB
+                ? `${tokenA.symbol} per ${tokenB.symbol}`
+                : 'No Tokens'
+            }
+          />
+          <RangeStepInput
+            title="MAX PRICE"
+            value={rangeMax}
+            onChange={setRangeMax}
+            min={rangeMin}
+            description={
+              tokenA && tokenB
+                ? `${tokenA.symbol} per ${tokenB.symbol}`
+                : 'No Tokens'
+            }
+          />
+        </div>
+      </div>
+      <div className="curve-card page-card">
+        <h3 className="card-title">Liquidity Curve</h3>
+        <div className="card-row">
+          <RadioInput
+            value={slopeType}
+            onChange={setSlopeType}
+            render={() =>
+              slopeTypes.map((type) => <span key={type}>{type}</span>)
+            }
+          />
+        </div>
+      </div>
+      <div className="pool-options">
+        <div className="card-row">
+          <input type="submit" value="Pool" />
+        </div>
+      </div>
+    </form>
   );
 }

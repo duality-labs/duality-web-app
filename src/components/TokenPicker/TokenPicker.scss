@@ -1,169 +1,43 @@
-$color-primary: rgb(0, 0, 0);
-$color-secondary: rgb(177, 177, 177);
-$transition-duration: 0.25s;
-$font-size-primary: 1.2rem;
-$font-size-secondary: 1rem;
-$border-radius: 0.5rem;
+@use '../../styles/font/size.scss' as font;
 
-.token-picker-dialog {
-  & {
-    box-shadow: 0 0 1rem 0rem rgba(255, 255, 255, 0.4);
-    border-radius: $border-radius;
-    overflow: hidden;
-    height: 80vh;
-    padding: 0;
-  }
-
-  &::backdrop {
-    background-color: rgba(0, 0, 0, 0.3);
-  }
-}
-
-.token-picker-head {
-  & {
-    padding: 1rem 1.5rem;
-    position: relative;
-    flex: 0 0 auto;
-  }
-
-  label {
-    font-size: $font-size-primary;
-    padding: 0.5rem 0rem;
-    cursor: pointer;
-    display: block;
-    flex: 1 1 auto;
-  }
-
-  input {
-    & {
-      border: 1px solid rgba(0, 0, 0, 0.3);
-      border-radius: $border-radius;
-      font-size: $font-size-primary;
-      color: $color-primary;
-      padding: 0.5rem 1rem;
-      display: block;
-      outline: none;
-      width: 100%;
-    }
-
-    &:focus {
-      box-shadow: 0 0 0.5rem 0rem $color-secondary;
-    }
-
-    &::placeholder {
-      transition: opacity $transition-duration ease-in-out;
-      color: $color-primary;
-      opacity: 0.25;
-    }
-
-    &:hover::placeholder {
-      opacity: 0.6;
-    }
-
-    &::-webkit-search-decoration,
-    &::-webkit-search-cancel-button,
-    &::-webkit-search-results-button,
-    &::-webkit-search-results-decoration {
-      display: none;
-    }
-  }
-}
-
-.token-picker-body {
-  & {
-    flex: 1 1 60px;
-  }
-
-  li {
-    & {
-      height: 64px;
-      padding: 0;
-    }
-
-    a,
-    button,
-    label {
-      & {
-        transition: background-color $transition-duration ease-in-out;
-        grid-template-columns: 3rem auto 10ch;
-        background-color: transparent;
-        grid-template-rows: 50% 50%;
-        padding: 0.5rem 0;
-        text-align: start;
-        outline: none;
-        display: grid;
-        width: 100%;
-      }
-
-      &:hover,
-      &:focus,
-      &.selected {
-        background-color: rgba($color-secondary, 0.2);
-      }
-
-      &.selected {
-        animation: item-selected-pulse 2s ease-in-out infinite;
-      }
-
-      &.disabled {
-        background-color: transparent;
-        cursor: not-allowed;
-        user-select: none;
-        opacity: 0.25;
-      }
-    }
-
-    .token-image {
-      color: $color-secondary;
-      font-size: $font-size-primary;
-      align-self: center;
-      text-align: center;
-      grid-column: 1;
-      grid-row: 1/3;
-    }
-
-    .token-symbol,
-    .token-symbol * {
-      text-decoration: none;
-      grid-column: 2;
-      grid-row: 1;
-    }
-
-    .token-name {
-      color: $color-secondary;
-      text-overflow: ellipsis;
-      overflow: hidden;
-      grid-column: 2;
-      grid-row: 2;
-    }
-
-    .token-balance {
-      grid-column: 3;
-      grid-row: 2;
-    }
-  }
-}
+$no-token-border-size: 2px;
 
 .token-picker-toggle {
   & {
-    transition: all 0.5s ease-in-out;
-    border-radius: 0 0.5rem 0.5rem 0;
-    color: rgb(0, 0, 0);
-    padding: 0.5rem 1rem;
-    position: relative;
-    max-width: 120px;
-    font-size: 1rem;
-    flex: 0 0 100%;
-    width: 100%;
-    z-index: 1;
-  }
+    & {
+      grid-template-columns: auto 1fr;
+      grid-template-rows: 1fr auto;
+      display: grid;
+    }
 
-  &:hover,
-  &:focus,
-  &.open {
-    background-color: rgba(116, 89, 220, 1);
-    color: rgb(255, 255, 255);
-    max-width: 160px;
+    .token-image {
+      font-size: 3rem;
+      align-self: center;
+      text-align: center;
+      grid-column: 1 / 2;
+      grid-row: 1 / 3;
+      margin-right: 0.3ch;
+    }
+
+    .token-symbol {
+      align-self: end;
+      grid-column: 2 / 3;
+      grid-row: 1 / 2;
+      font-size: font.$h4;
+    }
+
+    .token-chain {
+      white-space: nowrap;
+      grid-column: 2 / 3;
+      grid-row: 2 / 3;
+    }
+
+    .no-selected-token {
+      text-align: center;
+      align-self: center;
+      grid-column: 1 / 3;
+      grid-row: 1 / 3;
+    }
   }
 }
 
@@ -177,6 +51,7 @@ $border-radius: 0.5rem;
 
   &::before,
   &::after {
+    box-sizing: border-box;
     position: absolute;
     display: block;
     height: 100%;
@@ -186,33 +61,14 @@ $border-radius: 0.5rem;
   }
 
   &::before {
-    border: 0.1em solid currentColor;
+    border: $no-token-border-size solid currentColor;
     border-radius: 50%;
   }
 
   &::after {
     background-color: currentColor;
     transform: rotateZ(45deg);
-    left: calc(50% - 0.025em);
-    width: 0.05em;
-  }
-}
-
-@mixin y-shadow($size, $color) {
-  box-shadow: inset 0 #{$size} #{$size} #{-$size} $color,
-    inset 0 #{-$size} #{$size} #{-$size} $color;
-}
-
-@keyframes item-selected-pulse {
-  0% {
-    @include y-shadow(0, rgba($color-primary, 0.4));
-  }
-
-  50% {
-    @include y-shadow(1rem, rgba($color-primary, 0.4));
-  }
-
-  100% {
-    @include y-shadow(0, rgba($color-primary, 0.4));
+    left: calc(50% - #{$no-token-border-size});
+    width: $no-token-border-size;
   }
 }

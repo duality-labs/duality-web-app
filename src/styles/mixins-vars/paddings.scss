@@ -1,0 +1,48 @@
+$sizes: (
+  '0': 0rem,
+  '1': 0.125rem,
+  '2': 0.25rem,
+  '3': 0.5rem,
+  '4': 1rem,
+  '5': 2rem,
+  '6': 4rem,
+);
+
+@each $name, $size in $sizes {
+  .padding#{name},
+  .p#{name} {
+    padding: #{$size};
+  }
+
+  .paddingx#{$name},
+  .px#{$name} {
+    padding-right: #{$size};
+    padding-left: #{$size};
+  }
+
+  .paddingright#{$name},
+  .pr#{$name} {
+    padding-right: #{$size};
+  }
+
+  .paddingleft#{$name},
+  .pl#{$name} {
+    padding-left: #{$size};
+  }
+
+  .paddingy#{$name},
+  .py#{$name} {
+    padding-bottom: #{$size};
+    padding-top: #{$size};
+  }
+
+  .paddingbottom#{$name},
+  .pb#{$name} {
+    padding-bottom: #{$size};
+  }
+
+  .paddingtop#{$name},
+  .pt#{$name} {
+    padding-top: #{$size};
+  }
+}
