@@ -1,9 +1,10 @@
 .tick {
   & {
-    transition: stroke-width 0.25s ease-in-out;
+    transition: opacity 0.15s ease-in-out;
     stroke-width: 1px;
     stroke: hsl(240, 60%, 50%);
     cursor: pointer;
+    opacity: 0.7;
   }
 
   &.current-tick {
@@ -11,6 +12,6 @@
   }
 
   &:hover {
-    stroke-width: 3px;
+    opacity: 1;
   }
 }
