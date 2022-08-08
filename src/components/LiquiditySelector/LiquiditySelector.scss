@@ -2,12 +2,12 @@
   & {
     transition: stroke-width 0.25s ease-in-out;
     stroke-width: 1px;
-    stroke: rgb(87, 87, 87);
+    stroke: hsl(240, 60%, 50%);
     cursor: pointer;
   }
 
   &.current-tick {
-    stroke: rgb(125, 133, 112);
+    stroke: hsl(0, 60%, 50%);
   }
 
   &:hover {
