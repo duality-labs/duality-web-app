@@ -45,12 +45,25 @@ export default function LiquiditySelector({
     setGraphHeight(yMax);
   }, [existingTicks]);
 
-  const graphPadding = useMemo(() => {
+  const viewBox = useMemo(() => {
     const range = graphEnd - graphStart;
-    return {
+    const graphPadding = {
       x: range * paddingPercent,
       y: graphHeight * paddingPercent,
     };
+    return `${
+      //left
+      Math.floor(graphStart - graphPadding.x)
+    } ${
+      // right
+      '0'
+    } ${
+      // width
+      Math.ceil(graphEnd - graphStart + graphPadding.x)
+    } ${
+      // height
+      Math.ceil(graphHeight + graphPadding.y)
+    }`;
   }, [graphStart, graphEnd, graphHeight]);
 
   useEffect(() => {
@@ -82,21 +95,7 @@ export default function LiquiditySelector({
   }
 
   return (
-    <svg
-      viewBox={`${
-        //left
-        Math.floor(graphStart - graphPadding.x)
-      } ${
-        // right
-        '0'
-      } ${
-        // width
-        Math.ceil(graphEnd - graphStart + 2 * graphPadding.x)
-      } ${
-        // height
-        Math.ceil(graphHeight + graphPadding.y)
-      }`}
-    >
+    <svg viewBox={viewBox}>
       {existingTicks.map(([rate, value]) => (
         <path
           key={rate}
