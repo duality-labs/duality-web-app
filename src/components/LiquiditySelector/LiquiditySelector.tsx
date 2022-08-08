@@ -39,14 +39,15 @@ export default function LiquiditySelector({
   const [userTicks, setUserTicks] = useState<Array<number>>([]);
 
   useEffect(() => {
-    let maxValue = -Infinity,
-      minRate = Infinity,
-      maxRate = -Infinity; // More efficient than 3 foreach loops
-    existingTicks.forEach(function ([rate, value]) {
-      maxValue = Math.max(maxValue, value);
-      minRate = Math.min(minRate, rate);
-      maxRate = Math.max(maxRate, rate);
-    });
+    const { minRate, maxRate, maxValue } = existingTicks.reduce(
+      (result, [rate, value]) => {
+        if (rate < result.minRate) result.minRate = rate;
+        if (rate > result.maxRate) result.maxRate = rate;
+        if (value > result.maxValue) result.maxValue = value;
+        return result;
+      },
+      { minRate: Infinity, maxRate: -Infinity, maxValue: -Infinity }
+    );
     setGraphHeight(roundUp(maxValue));
     setGraphStart(roundDown(minRate));
     setGraphEnd(roundUp(maxRate));
