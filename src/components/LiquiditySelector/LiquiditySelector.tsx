@@ -65,7 +65,7 @@ export default function LiquiditySelector({
   }, [tickCount, graphStart, graphEnd]);
 
   return (
-    <svg viewBox={`${graphStart} 0 ${graphEnd} ${graphHeight}`}>
+    <svg viewBox={`${graphStart} 0 ${graphEnd - graphStart} ${graphHeight}`}>
       {existingTicks.map(([rate, value]) => (
         <path
           key={rate}
