@@ -1,0 +1,16 @@
+.radio-input-group {
+  & {
+  }
+
+  input[type='radio'] {
+    display: none;
+  }
+
+  input[type='radio'] + label {
+    display: block;
+  }
+
+  input[type='radio']:checked + label {
+    border: 1px solid red;
+  }
+}

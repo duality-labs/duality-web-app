@@ -156,18 +156,31 @@ export default function Pool() {
         </div>
         <div className="card-row">
           {editingFee ? (
-            <RadioInput
-              value={fee}
-              onChange={setFee}
-              render={() =>
-                Object.entries(feeTypes).map(([fee, description]) => (
+            <>
+              <RadioInput value={fee} onChange={setFee}>
+                {Object.entries(feeTypes).map(([fee, description]) => (
                   <div key={fee} className="badge">
                     <span>{description}</span>
                     <span className="badge">{calculateFeeLiquidity(fee)}</span>
                   </div>
-                ))
-              }
-            />
+                ))}
+              </RadioInput>
+
+              {/*<RadioInput
+                value={fee}
+                onChange={setFee}
+              >
+                {(input: JSX.Element, id: string) => Object.entries(feeTypes).map(([fee, description]) => (
+                  <>
+                    {input}
+                    <label htmlFor={id} key={fee} className="badge">
+                      <span>{description}</span>
+                      <span className="badge">{calculateFeeLiquidity(fee)}</span>
+                    </label>
+                  </>
+                ))}
+                </RadioInput>*/}
+            </>
           ) : (
             <>
               <span className="badge badge-2 badge-info">
@@ -227,13 +240,11 @@ export default function Pool() {
       <div className="curve-card page-card">
         <h3 className="card-title">Liquidity Curve</h3>
         <div className="card-row">
-          <RadioInput
-            value={slopeType}
-            onChange={setSlopeType}
-            render={() =>
-              slopeTypes.map((type) => <span key={type}>{type}</span>)
-            }
-          />
+          <RadioInput value={slopeType} onChange={setSlopeType}>
+            {slopeTypes.map((type) => (
+              <span key={type}>{type}</span>
+            ))}
+          </RadioInput>
         </div>
       </div>
       <div className="pool-options">

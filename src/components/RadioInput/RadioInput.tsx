@@ -1,22 +1,22 @@
-import { useEffect, useId, useState } from 'react';
+import { Fragment, useEffect, useId, useState } from 'react';
 import './RadioInput.scss';
 
 interface RadioInputProps {
   onChange?: (value: string, index: number) => void;
-  render: () => Array<JSX.Element>;
+  children: Array<JSX.Element>;
   value?: string;
   index?: number;
   name?: string;
 }
 
 export default function RadioInput({
-  render,
+  children,
   name,
   value,
   index,
   onChange,
 }: RadioInputProps) {
-  const entries = render().reduce<{ [key: string]: JSX.Element }>(function (
+  const entries = children.reduce<{ [key: string]: JSX.Element }>(function (
     result,
     value
   ) {
@@ -39,11 +39,11 @@ export default function RadioInput({
 
   return (
     <div className="radio-input-group">
-      {Object.entries(entries).map(function ([key, children], index) {
+      {Object.entries(entries).map(function ([key, child], index) {
         const id = `${groupName}-${key}`;
 
         return (
-          <>
+          <Fragment key={id}>
             <input
               type="radio"
               name={groupName}
@@ -51,8 +51,8 @@ export default function RadioInput({
               checked={index === selectedIndex}
               onChange={(e) => e.target.value && setSelectedIndex(index)}
             ></input>
-            <label htmlFor={id}>{children}</label>
-          </>
+            <label htmlFor={id}>{child}</label>
+          </Fragment>
         );
       })}
     </div>
