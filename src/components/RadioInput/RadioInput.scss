@@ -1,5 +1,8 @@
 .radio-input-group {
   & {
+    flex-direction: row;
+    flex-wrap: wrap;
+    display: flex;
   }
 
   input[type='radio'] {
@@ -7,10 +10,18 @@
   }
 
   input[type='radio'] + label {
+    box-sizing: border-box;
+    text-align: center;
+    cursor: pointer;
     display: block;
+    flex: 0 0 auto;
+    margin: auto;
   }
 
   input[type='radio']:checked + label {
-    border: 1px solid red;
+  }
+
+  input[type='radio']:not(:checked) + label {
+    background: transparent;
   }
 }

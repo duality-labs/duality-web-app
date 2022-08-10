@@ -159,9 +159,12 @@ export default function Pool() {
             <>
               <RadioInput value={fee} onChange={setFee}>
                 {Object.entries(feeTypes).map(([fee, description]) => (
-                  <div key={fee} className="badge">
-                    <span>{description}</span>
-                    <span className="badge">{calculateFeeLiquidity(fee)}</span>
+                  <div key={fee} className="badge card fee-type">
+                    <h5 className="fee-title">{fee}</h5>
+                    <span className="fee-description">{description}</span>
+                    <span className="badge fee-liquidity">
+                      {calculateFeeLiquidity(fee)}
+                    </span>
                   </div>
                 ))}
               </RadioInput>
@@ -240,7 +243,7 @@ export default function Pool() {
       <div className="curve-card page-card">
         <h3 className="card-title">Liquidity Curve</h3>
         <div className="card-row">
-          <RadioInput value={slopeType} onChange={setSlopeType}>
+          <RadioInput value={slopeType} onChange={setSlopeType} rowSize={2}>
             {slopeTypes.map((type) => (
               <span key={type}>{type}</span>
             ))}

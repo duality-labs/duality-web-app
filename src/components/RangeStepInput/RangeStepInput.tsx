@@ -66,11 +66,14 @@ export default function RangeStepInput({
 
   const onPressed = useCallback(
     function (direction: Direction) {
+      let lastID = 0; // fix react calling setPressedID twice
       setPressedID(function (oldID) {
+        if (lastID) return lastID;
         clearInterval(oldID);
         clearTimeout(oldID);
 
-        return setTimeout(startCounting as TimerHandler, pressedDelay);
+        lastID = setTimeout(startCounting as TimerHandler, pressedDelay);
+        return lastID;
       });
 
       function startCounting() {

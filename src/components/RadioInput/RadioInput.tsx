@@ -4,6 +4,7 @@ import './RadioInput.scss';
 interface RadioInputProps {
   onChange?: (value: string, index: number) => void;
   children: Array<JSX.Element>;
+  rowSize?: number;
   value?: string;
   index?: number;
   name?: string;
@@ -15,6 +16,7 @@ export default function RadioInput({
   value,
   index,
   onChange,
+  rowSize,
 }: RadioInputProps) {
   const entries = children.reduce<{ [key: string]: JSX.Element }>(function (
     result,
@@ -32,6 +34,7 @@ export default function RadioInput({
   );
   const groupID = useId();
   const groupName = name || groupID;
+  const flexBasis = rowSize ? `${100 / rowSize}%` : undefined;
 
   useEffect(() => {
     if (onChange) onChange(Object.keys(entries)[selectedIndex], selectedIndex);
@@ -51,7 +54,13 @@ export default function RadioInput({
               checked={index === selectedIndex}
               onChange={(e) => e.target.value && setSelectedIndex(index)}
             ></input>
-            <label htmlFor={id}>{child}</label>
+            <label
+              htmlFor={id}
+              className="badge badge-primary"
+              style={{ flexBasis }}
+            >
+              {child}
+            </label>
           </Fragment>
         );
       })}
