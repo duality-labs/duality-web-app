@@ -213,9 +213,12 @@ export default function Pool() {
               list={feeTypes}
               onChange={setFeeType}
               OptionComponent={({ option: { fee, description } }) =>
-                <div key={fee} className="badge">
-                  <span>{description}</span>
-                  <span className="badge">{calculateFeeLiquidity(fee)}</span>
+                <div key={fee} className="badge card fee-type">
+                  <h5 className="fee-title">{fee}</h5>
+                  <span className="fee-description">{description}</span>
+                  <span className="badge fee-liquidity">
+                    {calculateFeeLiquidity(fee)}
+                  </span>
                 </div>
               }
             />
@@ -282,6 +285,7 @@ export default function Pool() {
             value={slopeType}
             list={slopeTypes}
             onChange={setSlopeType}
+            maxColumnCount={2}
           />
         </div>
       </div>
