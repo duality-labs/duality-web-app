@@ -24,7 +24,7 @@ import { useDeposit } from './useDeposit';
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 const denomRatio = new BigNumber(10).exponentiatedBy(denomExponent);
-const defaultFee = '0.30';
+const defaultFee = '0.30%';
 const defaultPrice = '1';
 const defaultRangeMin = new BigNumber(defaultPrice)
   .dividedBy(denomRatio)
@@ -34,21 +34,21 @@ const defaultRangeMax = new BigNumber(defaultPrice)
   .toFixed(0);
 const defaultTokenAmount = '1000';
 
-const feeTypes: Array<{ fee: string, description: string }> = Object.entries({
-  '0.01': 'Best for very stable pairs.',
-  '0.05': 'Best for  stable pairs.',
-  '0.30': 'Best for most assets.',
-  '1.00': 'Best for exotic assets.',
+const feeTypes: Array<{ fee: string; description: string }> = Object.entries({
+  '0.01%': 'Best for very stable pairs.',
+  '0.05%': 'Best for  stable pairs.',
+  '0.30%': 'Best for most assets.',
+  '1.00%': 'Best for exotic assets.',
 }).map(([fee, description]) => ({ fee, description }));
 
 const slopeTypes = ['UNIFORM', 'UP-SLOPE', 'BELL CURVE', 'DOWN-SLOPE'];
 
 const calculateFeeLiquidity = function (fee: string) {
   const test: { [fee: string]: string } = {
-    '0.01': '1% liquidity',
-    '0.05': '9% liquidity',
-    '0.30': '83% liquidity',
-    '1.00': '7% liquidity',
+    '0.01%': '1% liquidity',
+    '0.05%': '9% liquidity',
+    '0.30%': '83% liquidity',
+    '1.00%': '7% liquidity',
   };
   return test[fee];
 };
@@ -58,7 +58,9 @@ const defaultPrecision = '6';
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [feeType, setFeeType] = useState<{ fee: string, description: string }|undefined>(() => feeTypes.find(({ fee }) => fee === defaultFee));
+  const [feeType, setFeeType] = useState<
+    { fee: string; description: string } | undefined
+  >(() => feeTypes.find(({ fee }) => fee === defaultFee));
   const fee = feeType?.fee || defaultFee;
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
@@ -113,10 +115,10 @@ export default function Pool() {
   }, [rateData, rangeMin, rangeMax]);
 
   const {
-     data: { ticks } = {},
-     error: ticksError,
-     isValidating: tickFetching,
-   } = useIndexerPairData(tokenA?.address, tokenB?.address);
+    data: { ticks } = {},
+    error: ticksError,
+    isValidating: tickFetching,
+  } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
   const [editingFee, setEditingFee] = useState(false);
   const [slopeType, setSlopeType] = useState<string>();
@@ -152,6 +154,7 @@ export default function Pool() {
   return (
     <form className="pool-page" onSubmit={onSubmit}>
       <div className="assets-card page-card">
+        <h3 className="card-header card-title">Assets</h3>
         <div className="card-row">
           <TokenInputGroup
             onValueChanged={(newValue) =>
@@ -169,7 +172,7 @@ export default function Pool() {
           <button
             type="button"
             onClick={swapTokens}
-            className="icon-button swap-button"
+            className="icon-button mx-auto"
           >
             <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
             <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
@@ -195,12 +198,14 @@ export default function Pool() {
       </div>
       <div className="chart-card page-card"></div>
       <div className="fee-card page-card">
-        <div className="card-row">
+        <div className="card-header">
           <h3 className="card-title">Fee Tier</h3>
-          <div className="badge badge-4">{fee}</div>
+          <div className="badge-primary corner-border badge-large font-console ml-auto">
+            {fee}
+          </div>
           <button
             type="button"
-            className="badge badge-4 badge-secondary"
+            className="button-secondary ml-2"
             onClick={() => setEditingFee((mode) => !mode)}
           >
             {editingFee ? 'Hide' : 'Edit'}
@@ -208,11 +213,11 @@ export default function Pool() {
         </div>
         <div className="card-row">
           {editingFee ? (
-            <RadioInput<{ fee: string, description: string }>
+            <RadioInput<{ fee: string; description: string }>
               value={feeType}
               list={feeTypes}
               onChange={setFeeType}
-              OptionComponent={({ option: { fee, description } }) =>
+              OptionComponent={({ option: { fee, description } }) => (
                 <div key={fee} className="badge card fee-type">
                   <h5 className="fee-title">{fee}</h5>
                   <span className="fee-description">{description}</span>
@@ -220,21 +225,23 @@ export default function Pool() {
                     {calculateFeeLiquidity(fee)}
                   </span>
                 </div>
-              }
+              )}
             />
           ) : (
             <>
-              <span className="badge badge-2 badge-info">
+              <span className="badge-info pill ml-auto badge-large text-slim fs-s mt-auto">
                 {calculateFeeLiquidity(fee)}
               </span>
-              <span className="badge badge-2 badge-info">{fee}</span>
+              <span className="badge-info pill ml-2 badge-large text-slim fs-s mt-auto">
+                {fee}
+              </span>
             </>
           )}
         </div>
       </div>
       <div className="precision-card page-card">
-        <div className="card-row">
-          <h3 className="card-title">Precision</h3>
+        <div className="card-header">
+          <h3 className="card-title">Precision {precision}</h3>
           <StepNumberInput
             editable={false}
             min={2}
@@ -244,7 +251,7 @@ export default function Pool() {
           />
           <button
             type="button"
-            className="badge badge-info"
+            className="button-info ml-2"
             onClick={() => setPrecision(defaultPrecision)}
           >
             Auto
@@ -252,7 +259,7 @@ export default function Pool() {
         </div>
       </div>
       <div className="price-card page-card">
-        <h3 className="card-title">Price Range</h3>
+        <h3 className="card-header">Price Range</h3>
         <div className="card-row">
           <StepNumberInput
             title="MIN PRICE"
@@ -279,7 +286,7 @@ export default function Pool() {
         </div>
       </div>
       <div className="curve-card page-card">
-        <h3 className="card-title">Liquidity Curve</h3>
+        <h3 className="card-header card-title">Liquidity Curve</h3>
         <div className="card-row">
           <RadioInput
             value={slopeType}
@@ -294,10 +301,18 @@ export default function Pool() {
           {(tickFetching || isValidatingDeposit) && (
             <div className="text-secondary card-row">...</div>
           )}
-          <input type="submit" value="Add Liquidity" />
+          <input
+            className="pill mx-auto px-5 py-3"
+            type="submit"
+            value="Add Liquidity"
+          />
           <br />
-          <div className="text-red-500">{!isValidatingDeposit && ticksError}</div>
-          <div className="text-red-500">{!isValidatingDeposit && depositError}</div>
+          <div className="text-red-500">
+            {!isValidatingDeposit && ticksError}
+          </div>
+          <div className="text-red-500">
+            {!isValidatingDeposit && depositError}
+          </div>
           <div className="text-sky-500">
             {!isValidatingDeposit && depositResponse
               ? `Deposited ${depositResponse.receivedTokenA} ${tokenA?.address} and ${depositResponse.receivedTokenB} ${tokenB?.address}`

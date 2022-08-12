@@ -23,32 +23,14 @@
     background-color: var(--#{$name}-alt);
     color: var(--#{$name});
   }
+}
 
-  .text-#{$name} {
-    color: var(--badge-#{$name}-text);
-  }
+.badge {
+  @extend .badge-primary;
 }
 
 .badge-large {
   @include paddings.padding('x', 3);
   @include paddings.padding('y', 2);
   font-size: font-size.$text-m;
-}
-
-.text-row {
-  & {
-    grid-template-columns: 50% 50%;
-    display: grid;
-    width: 100%;
-  }
-
-  & > .text-header {
-    grid-column: 1 / 2;
-    text-align: start;
-  }
-
-  & > .text-value {
-    grid-column: 2 / 3;
-    text-align: end;
-  }
 }
