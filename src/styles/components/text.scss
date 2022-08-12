@@ -1,0 +1,38 @@
+@use '../mixins-vars/paddings.scss' as paddings;
+@use '../theme/collections.scss' as colors;
+@use '../font/size.scss' as font;
+@use './cards.scss' as cards;
+@use 'sass:map';
+
+@each $name in colors.$main {
+  .badge-#{$name} {
+    @include paddings.padding('x', 3);
+    @include paddings.padding('y', 3);
+    background-color: var(--#{$name});
+    color: var(--#{$name}-alt);
+    border: 0px none transparent;
+    border-radius: 100vmax;
+  }
+
+  .text-#{$name} {
+    color: var(--#{$name}-alt);
+  }
+}
+
+.text-row {
+  & {
+    grid-template-columns: 50% 50%;
+    display: grid;
+    width: 100%;
+  }
+
+  & > .text-header {
+    grid-column: 1 / 2;
+    text-align: start;
+  }
+
+  & > .text-value {
+    grid-column: 2 / 3;
+    text-align: end;
+  }
+}

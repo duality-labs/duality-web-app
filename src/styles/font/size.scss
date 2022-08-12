@@ -24,3 +24,15 @@ $sizes: (
   '5': 1.5rem,
   '6': 2rem,
 );
+
+.fs-text {
+  font-size: $text !important;
+}
+
+.fs-small {
+  font-size: $small !important;
+}
+
+.fs-xs {
+  font-size: $xs !important;
+}

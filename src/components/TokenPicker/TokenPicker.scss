@@ -43,6 +43,7 @@ $no-token-border-size: 2px;
 
 .no-token-logo {
   & {
+    transform: rotateZ(45deg);
     display: inline-block;
     position: relative;
     height: 1em;
@@ -66,9 +67,8 @@ $no-token-border-size: 2px;
   }
 
   &::after {
-    background-color: currentColor;
-    transform: rotateZ(45deg);
     left: calc(50% - #{$no-token-border-size});
+    background-color: currentColor;
     width: $no-token-border-size;
   }
 }

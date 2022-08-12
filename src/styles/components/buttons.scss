@@ -1,18 +1,38 @@
 @use '../mixins-vars/paddings.scss' as paddings;
-@use '../font/size.scss' as font;
-@use './cards.scss' as cards;
+@use '../theme/collections.scss' as colors;
+@use '../font/weight.scss' as font-weight;
+@use '../font/size.scss' as font-size;
+
+@mixin base($bg, $color) {
+  @include paddings.padding('x', 3);
+  @include paddings.padding('y', 2);
+  border-radius: paddings.size(2);
+  border: 0px none transparent;
+  font-size: font-size.$button;
+  background-color: $bg;
+  cursor: pointer;
+  color: $color;
+}
+
+@each $name in colors.$main {
+  .button-#{$name} {
+    @include base(var(--#{$name}), var(--#{$name}-alt));
+  }
+
+  .button-#{$name}-inverse {
+    @include base(var(--#{$name}-alt), var(--#{$name}));
+  }
+}
 
 button,
 .button {
-  @extend .card-2;
-  cursor: pointer;
-  font-size: font.$button;
+  @extend .button-primary;
 }
 
 .text-button {
   @extend .button;
-  @extend .paddingy3;
-  @extend .paddingx3;
+  @include paddings.padding('y', 3);
+  @include paddings.padding('x', 3);
   border: 0px solid transparent;
 }
 
@@ -25,11 +45,12 @@ button,
 
 input[type='submit'],
 .submit-button {
-  @extend .card-4;
+  @include paddings.padding('y', 3);
+  @include paddings.padding('x', 4);
   background-color: var(--submit-button-bg);
+  font-size: font-size.$button-large;
   color: var(--submit-button-text);
+  border-radius: paddings.size(3);
   border: 0px none transparent;
-  font-size: font.$button-large;
   cursor: pointer;
-  width: 100%;
 }

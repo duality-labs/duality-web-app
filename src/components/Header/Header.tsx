@@ -41,7 +41,11 @@ export default function Header() {
             Connect Wallet
           </button>
         )}
-        <button className="ml3 link" type="button" onClick={toggleThemeMode}>
+        <button
+          className="ml-3 link no-blend"
+          type="button"
+          onClick={toggleThemeMode}
+        >
           {themeMode === 'light' ? '🌕' : '🌞'}
         </button>
       </nav>

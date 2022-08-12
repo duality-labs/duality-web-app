@@ -56,7 +56,7 @@ export default function RadioInput({
             ></input>
             <label
               htmlFor={id}
-              className="badge badge-primary"
+              className="button-primary"
               style={{ flexBasis }}
             >
               {child}

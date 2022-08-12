@@ -1,48 +1,101 @@
+$p-0: 0rem;
+$p-1: 0.125rem;
+$p-2: 0.25rem;
+$p-3: 0.5rem;
+$p-4: 1rem;
+$p-5: 2rem;
+$p-6: 4rem;
+
 $sizes: (
-  '0': 0rem,
-  '1': 0.125rem,
-  '2': 0.25rem,
-  '3': 0.5rem,
-  '4': 1rem,
-  '5': 2rem,
-  '6': 4rem,
+  '0': $p-0,
+  '1': $p-1,
+  '2': $p-2,
+  '3': $p-3,
+  '4': $p-4,
+  '5': $p-5,
+  '6': $p-6,
 );
 
+@function size($size) {
+  @return map-get($sizes, #{$size});
+}
+
+@mixin padding($type, $size, $important: false) {
+  $value: map-get($sizes, #{$size});
+
+  $abbrs: (
+    'x': (
+      'right',
+      'left',
+    ),
+    'r': (
+      'right',
+    ),
+    'l': (
+      'left',
+    ),
+    'y': (
+      'bottom',
+      'top',
+    ),
+    'b': (
+      'bottom',
+    ),
+    't': (
+      'top',
+    ),
+    '*': (
+      '',
+    ),
+  );
+
+  $direction-list: map-get($abbrs, $type);
+
+  @if not $value {
+    @error "Invalid size #{$size}";
+  }
+
+  @if not $direction-list {
+    @error "Invalid padding type #{$type}.";
+  }
+
+  @each $direction in $direction-list {
+    $property-name: if($direction== '', 'padding', 'padding-#{$direction}');
+
+    @if $important {
+      #{$property-name}: $value !important;
+    } @else {
+      #{$property-name}: $value;
+    }
+  }
+}
+
 @each $name, $size in $sizes {
-  .padding#{name},
-  .p#{name} {
-    padding: #{$size};
+  .p-#{$name} {
+    @include padding('*', $name, $important: true);
   }
 
-  .paddingx#{$name},
-  .px#{$name} {
-    padding-right: #{$size};
-    padding-left: #{$size};
+  .px-#{$name} {
+    @include padding('x', $name, $important: true);
   }
 
-  .paddingright#{$name},
-  .pr#{$name} {
-    padding-right: #{$size};
+  .pr-#{$name} {
+    @include padding('r', $name, $important: true);
   }
 
-  .paddingleft#{$name},
-  .pl#{$name} {
-    padding-left: #{$size};
+  .pl-#{$name} {
+    @include padding('l', $name, $important: true);
   }
 
-  .paddingy#{$name},
-  .py#{$name} {
-    padding-bottom: #{$size};
-    padding-top: #{$size};
+  .py-#{$name} {
+    @include padding('y', $name, $important: true);
   }
 
-  .paddingbottom#{$name},
-  .pb#{$name} {
-    padding-bottom: #{$size};
+  .pb-#{$name} {
+    @include padding('b', $name, $important: true);
   }
 
-  .paddingtop#{$name},
-  .pt#{$name} {
-    padding-top: #{$size};
+  .pt-#{$name} {
+    @include padding('t', $name, $important: true);
   }
 }

@@ -1,48 +1,102 @@
+$m-0: 0rem;
+$m-1: 0.125rem;
+$m-2: 0.25rem;
+$m-3: 0.5rem;
+$m-4: 1rem;
+$m-5: 2rem;
+$m-6: 4rem;
+
 $sizes: (
-  '0': 0rem,
-  '1': 0.125rem,
-  '2': 0.25rem,
-  '3': 0.5rem,
-  '4': 1rem,
-  '5': 2rem,
-  '6': 4rem,
+  '0': $m-0,
+  '1': $m-1,
+  '2': $m-2,
+  '3': $m-3,
+  '4': $m-4,
+  '5': $m-5,
+  '6': $m-6,
+  'auto': auto,
 );
 
+@function size($size) {
+  @return map-get($sizes, #{$size});
+}
+
+@mixin margin($type, $size, $important: false) {
+  $value: map-get($sizes, #{$size});
+
+  $abbrs: (
+    'x': (
+      'right',
+      'left',
+    ),
+    'r': (
+      'right',
+    ),
+    'l': (
+      'left',
+    ),
+    'y': (
+      'bottom',
+      'top',
+    ),
+    'b': (
+      'bottom',
+    ),
+    't': (
+      'top',
+    ),
+    '*': (
+      '',
+    ),
+  );
+
+  $direction-list: map-get($abbrs, $type);
+
+  @if not $value {
+    @error "Invalid size #{$size}";
+  }
+
+  @if not $direction-list {
+    @error "Invalid margin type #{$type}.";
+  }
+
+  @each $direction in $direction-list {
+    $property-name: if($direction== '', 'margin', 'margin-#{$direction}');
+
+    @if $important {
+      #{$property-name}: $value !important;
+    } @else {
+      #{$property-name}: $value;
+    }
+  }
+}
+
 @each $name, $size in $sizes {
-  .margin#{$name},
-  .m#{$name} {
-    margin: #{$size};
+  .m-#{$name} {
+    @include margin('*', $name, $important: true);
   }
 
-  .marginx#{$name},
-  .mx#{$name} {
-    margin-right: #{$size};
-    margin-left: #{$size};
+  .mx-#{$name} {
+    @include margin('x', $name, $important: true);
   }
 
-  .marginright#{$name},
-  .mr#{$name} {
-    margin-right: #{$size};
+  .mr-#{$name} {
+    @include margin('r', $name, $important: true);
   }
 
-  .marginleft#{$name},
-  .ml#{$name} {
-    margin-left: #{$size};
+  .ml-#{$name} {
+    @include margin('l', $name, $important: true);
   }
 
-  .marginy#{$name},
-  .my#{$name} {
-    margin-bottom: #{$size};
-    margin-top: #{$size};
+  .my-#{$name} {
+    @include margin('y', $name, $important: true);
   }
 
-  .marginbottom#{$name},
-  .mb#{$name} {
-    margin-bottom: #{$size};
+  .mb-#{$name} {
+    @include margin('b', $name, $important: true);
   }
 
-  .margintop#{$name},
-  .mt#{$name} {
-    margin-top: #{$size};
+  .mt-#{$name} {
+    @include margin('t', $name, $important: true);
   }
 }

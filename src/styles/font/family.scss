@@ -1,2 +1,6 @@
 $default: 'Segoe UI', Helvetica, 'Droid Sans', Tahoma, Geneva, sans-serif;
 $console: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+
+.font-console {
+  font-family: $console;
+}

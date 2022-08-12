@@ -18,20 +18,20 @@ import './Pool.scss';
 import { useIndexerPairData } from '../../lib/web3/indexerProvider';
 
 const feeTypes: { [fee: string]: string } = {
-  '0.01': 'Best for very stable pairs.',
-  '0.05': 'Best for  stable pairs.',
-  '0.30': 'Best for most assets.',
-  '1.00': 'Best for exotic assets.',
+  '0.01%': 'Best for very stable pairs.',
+  '0.05%': 'Best for  stable pairs.',
+  '0.30%': 'Best for most assets.',
+  '1.00%': 'Best for exotic assets.',
 };
 
 const slopeTypes = ['UNIFORM', 'UP-SLOPE', 'BELL CURVE', 'DOWN-SLOPE'];
 
 const calculateFeeLiquidity = function (fee: string) {
   const test: { [fee: string]: string } = {
-    '0.01': '1% liquidity',
-    '0.05': '9% liquidity',
-    '0.30': '83% liquidity',
-    '1.00': '7% liquidity',
+    '0.01%': '1% liquidity',
+    '0.05%': '9% liquidity',
+    '0.30%': '83% liquidity',
+    '1.00%': '7% liquidity',
   };
   return test[fee];
 };
@@ -104,6 +104,7 @@ export default function Pool() {
   return (
     <form onSubmit={(e) => e.preventDefault()} className="pool-page">
       <div className="assets-card page-card">
+        <div className="card-title">Assets</div>
         <div className="card-row">
           <TokenInputGroup
             onValueChanged={(newValue) =>
@@ -121,7 +122,7 @@ export default function Pool() {
           <button
             type="button"
             onClick={swapTokens}
-            className="icon-button swap-button"
+            className="icon-button mx-auto"
           >
             <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
             <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
@@ -145,10 +146,12 @@ export default function Pool() {
       <div className="fee-card page-card">
         <div className="card-row">
           <h3 className="card-title">Fee Tier</h3>
-          <div className="badge badge-4">{fee}</div>
+          <div className="badge-primary corner-border badge-large font-console ml-auto">
+            {fee}
+          </div>
           <button
             type="button"
-            className="badge badge-4 badge-secondary"
+            className="button-secondary ml-2"
             onClick={() => setEditingFee((mode) => !mode)}
           >
             {editingFee ? 'Hide' : 'Edit'}
@@ -159,37 +162,24 @@ export default function Pool() {
             <>
               <RadioInput value={fee} onChange={setFee}>
                 {Object.entries(feeTypes).map(([fee, description]) => (
-                  <div key={fee} className="badge card fee-type">
+                  <div key={fee} className="panel fee-type px-2">
                     <h5 className="fee-title">{fee}</h5>
                     <span className="fee-description">{description}</span>
-                    <span className="badge fee-liquidity">
+                    <span className="badge-primary-inverse pill mt-2">
                       {calculateFeeLiquidity(fee)}
                     </span>
                   </div>
                 ))}
               </RadioInput>
-
-              {/*<RadioInput
-                value={fee}
-                onChange={setFee}
-              >
-                {(input: JSX.Element, id: string) => Object.entries(feeTypes).map(([fee, description]) => (
-                  <>
-                    {input}
-                    <label htmlFor={id} key={fee} className="badge">
-                      <span>{description}</span>
-                      <span className="badge">{calculateFeeLiquidity(fee)}</span>
-                    </label>
-                  </>
-                ))}
-                </RadioInput>*/}
             </>
           ) : (
             <>
-              <span className="badge badge-2 badge-info">
+              <span className="badge-info pill ml-auto badge-large text-slim fs-small mt-4">
                 {calculateFeeLiquidity(fee)}
               </span>
-              <span className="badge badge-2 badge-info">{feeTypes[fee]}</span>
+              <span className="badge-info pill ml-2 badge-large text-slim fs-small mt-4">
+                {feeTypes[fee]}
+              </span>
             </>
           )}
         </div>
@@ -206,7 +196,7 @@ export default function Pool() {
           />
           <button
             type="button"
-            className="badge badge-info"
+            className="button-info ml-2"
             onClick={() => setPrecision(defaultPrecision)}
           >
             Auto
@@ -215,7 +205,7 @@ export default function Pool() {
       </div>
       <div className="price-card page-card">
         <h3 className="card-title">Price Range</h3>
-        <div className="card-row">
+        <div className="card-row-edged">
           <RangeStepInput
             title="MIN PRICE"
             value={rangeMin}
@@ -252,7 +242,11 @@ export default function Pool() {
       </div>
       <div className="pool-options">
         <div className="card-row">
-          <input type="submit" value="Pool" />
+          <input
+            type="submit"
+            value="Pool"
+            className="pill mx-auto px-5 py-3"
+          />
         </div>
       </div>
     </form>

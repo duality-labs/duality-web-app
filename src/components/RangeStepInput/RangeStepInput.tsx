@@ -4,6 +4,12 @@ import './RangeStepInput.scss';
 type Direction = 1 | -1;
 
 interface RangeStepInputProps {
+  calculateStep?: (
+    value: number,
+    direction: Direction,
+    step: number,
+    defaultValue: number
+  ) => number;
   onChange?: (value: number, valueText: string) => void;
   abortInvalid?: boolean;
   pressedInterval?: number;
@@ -19,6 +25,7 @@ interface RangeStepInputProps {
 }
 
 export default function RangeStepInput({
+  calculateStep,
   value,
   textValue,
   title,
@@ -57,11 +64,14 @@ export default function RangeStepInput({
 
   const onStep = useCallback(
     function (direction: Direction) {
-      setCurrentValue((oldValue) =>
-        validateValue(oldValue, oldValue + step * direction)
-      );
+      setCurrentValue(function (oldValue) {
+        const newValue = validateValue(oldValue, oldValue + step * direction);
+        return calculateStep
+          ? calculateStep(oldValue, direction, step, newValue)
+          : newValue;
+      });
     },
-    [step, validateValue]
+    [calculateStep, step, validateValue]
   );
 
   const onPressed = useCallback(

@@ -9,15 +9,16 @@ $border-width: 2px;
 
 .range-step-input {
   & {
-    @extend .card-4;
+    @include cards.card(4);
     border: $border-width solid var(--card-border);
     flex-direction: column;
+    overflow: hidden;
     display: flex;
   }
 
   .range-step-title {
-    @extend .marginy2;
-    @extend .marginx0;
+    @include margins.margin('y', 2);
+    @include margins.margin('x', 0);
     color: var(--ghost-button);
     font-size: font-size.$h4;
     text-align: center;
@@ -25,9 +26,9 @@ $border-width: 2px;
   }
 
   .range-step-description {
-    @extend .marginy1;
-    @extend .marginx0;
-    color: var(--text);
+    @include margins.margin('y', 1);
+    @include margins.margin('x', 0);
+    color: var(--text-default);
     font-size: font-size.$text;
     text-align: center;
     width: 100%;
@@ -40,8 +41,8 @@ $border-width: 2px;
     }
 
     button {
-      border-radius: map-get(paddings.$sizes, '2');
-      padding: map-get(paddings.$sizes, '2');
+      @include paddings.padding('*', 2);
+      border-radius: paddings.$p-2;
       background-color: var(--ghost-button);
       font-size: font-size.$button-large;
       font-family: font-family.$console;
@@ -58,14 +59,14 @@ $border-width: 2px;
 
     input,
     span {
-      @extend .paddingx4;
-      @extend .paddingy0;
+      @include paddings.padding('y', 0);
+      @include paddings.padding('x', 4);
       font-family: font-family.$console;
       background-color: transparent;
       border: 0px none transparent;
       font-size: font-size.$input;
       text-align: center;
-      color: var(--text);
+      color: var(--text-default);
       flex: 1 1 auto;
       outline: none;
       width: 100%;

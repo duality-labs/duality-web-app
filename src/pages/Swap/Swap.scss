@@ -7,7 +7,7 @@
 
   .card-row {
     & {
-      @extend .marginy2;
+      @include margins.margin('y', 2);
     }
 
     .token-input-group {

@@ -6,31 +6,22 @@
 @mixin base($bg, $color) {
   @include paddings.padding('x', 3);
   @include paddings.padding('y', 2);
-  font-weight: font-weight.$heavy;
   border-radius: paddings.size(2);
   border: 0px none transparent;
   background-color: var($bg);
-  font-size: font-size.$xs;
-  white-space: nowrap;
   color: var($color);
 }
 
 @each $name in colors.$main {
-  .badge-#{$name} {
+  .panel-#{$name} {
     @include base(--#{$name}, --#{$name}-alt);
   }
 
-  .badge-#{$name}-inverse {
+  .panel-#{$name}-inverse {
     @include base(--#{$name}-alt, --#{$name});
   }
 }
 
-.badge {
-  @extend .badge-primary;
-}
-
-.badge-large {
-  @include paddings.padding('x', 3);
-  @include paddings.padding('y', 2);
-  font-size: font-size.$text;
+.panel {
+  @extend .panel-primary;
 }

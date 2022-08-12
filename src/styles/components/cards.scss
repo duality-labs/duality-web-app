@@ -3,11 +3,15 @@
 @use '../font/size.scss' as font;
 @use 'sass:map';
 
+@mixin card($index) {
+  @include paddings.padding('x', $index);
+  @include paddings.padding('y', $index - 1);
+  border-radius: paddings.size($index - 1);
+}
+
 @for $index from 2 to length(paddings.$sizes) {
   .card-#{$index} {
-    @extend .paddingx#{$index};
-    @extend .paddingy#{$index - 1};
-    border-radius: map-get(paddings.$sizes, #{$index - 1});
+    @include card($index);
   }
 }
 
@@ -16,20 +20,36 @@
 }
 
 .page-card {
-  @extend .card-4;
+  @include card(4);
   background-color: var(--page-card);
+  color: var(--text-default);
   flex-direction: column;
-  color: var(--text);
   display: flex;
 }
 
-.card-row {
+.card-row,
+.card-row-edged {
   flex-direction: row;
   display: flex;
 }
 
+.card-row-edged > * {
+  & {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  &:first-child {
+    margin-left: 0;
+  }
+
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
 .card-title {
-  @extend .marginy2;
+  @include margins.margin('y', 2);
   font-size: font.$h2;
   text-align: center;
   width: 100%;

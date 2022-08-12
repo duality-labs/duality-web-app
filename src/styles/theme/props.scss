@@ -1,6 +1,5 @@
 @use 'light.scss' as light;
 @use 'dark.scss' as dark;
-@use 'core.scss' as core;
 
 @mixin color-list($map) {
   @each $name, $value in $map {
@@ -9,7 +8,7 @@
 }
 
 :root {
-  @include color-list(core.$map);
+  @include color-list(dark.$map);
   --default-theme: dark;
 }
 

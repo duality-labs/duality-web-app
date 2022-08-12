@@ -5,42 +5,30 @@
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:map';
 
+$selected-fee-border-width: 1.5px;
+
 .pool-page {
   & {
-    @extend .marginy4;
+    @include margins.margin('y', 4);
     grid-template-columns: 400px 492px 380px;
     grid-template-rows: auto 1fr auto;
-    gap: map-get(margins.$sizes, '3');
+    gap: margins.$m-3;
     display: grid;
   }
 
-  .card-title {
-    & {
-      @extend .marginbottom2;
-      @extend .margintop0;
-      font-size: font-size.$h4;
-      align-self: center;
-      text-align: start;
-    }
-
-    & + .card-row {
-      margin-top: map-get(margins.$sizes, '2');
-    }
+  .page-card {
+    gap: margins.size('2');
   }
 
-  .card-row {
-    & > .badge {
-      margin-left: map-get(margins.$sizes, '2');
-    }
-
-    & > .card-title + .badge,
-    & > .badge:first-child {
-      margin-left: auto;
-    }
-
-    & + .card-row {
-      margin-top: map-get(margins.$sizes, '2');
-    }
+  .card-title {
+    @include margins.margin('b', 2);
+    @include margins.margin('t', 0);
+    font-size: font-size.$h4;
+    margin-right: auto;
+    align-self: center;
+    text-align: start;
+    display: inline;
+    width: auto;
   }
 
   .assets-card {
@@ -49,19 +37,9 @@
       grid-row: 1 / 2;
     }
 
-    .card-row {
-      & {
-        @extend .marginy2;
-      }
-
-      .token-input-group {
-        box-sizing: border-box;
-        width: 100%;
-      }
-
-      .swap-button {
-        margin: 0 auto;
-      }
+    .token-input-group {
+      box-sizing: border-box;
+      width: 100%;
     }
   }
 
@@ -79,14 +57,23 @@
     .radio-input-group {
       label {
         & {
-          flex-basis: calc(25% - #{map-get(margins.$sizes, '3')});
+          flex-basis: calc(25% - #{margins.$m-3});
           background: transparent;
-          margin: auto;
+          margin: 0 auto;
           padding: 0;
+        }
+
+        &:first-child {
+          margin-left: 0;
+        }
+
+        &:last-child {
+          margin-right: 0;
         }
 
         .fee-type {
           & {
+            margin-top: $selected-fee-border-width;
             font-size: font-size.$xs;
             flex-direction: column;
             text-align: center;
@@ -94,7 +81,7 @@
           }
 
           .fee-title {
-            @extend .marginy3;
+            @include margins.margin('y', 3);
             font-family: font-family.$console;
             font-size: font-size.$h5;
           }
@@ -102,18 +89,12 @@
           .fee-description {
             text-align: start;
           }
-
-          .fee-liquidity {
-            @extend .margintop2;
-            background-color: var(--badge-main-text);
-            color: var(--badge-main-bg);
-            white-space: nowrap;
-          }
         }
       }
 
       input:checked + label .fee-type {
-        border: 1.5px solid var(--badge-info-bg);
+        border: $selected-fee-border-width solid var(--info);
+        margin-top: 0;
       }
     }
   }
@@ -127,7 +108,8 @@
     .range-step-input {
       border: 0px none transparent;
       margin-left: auto;
-      padding: 0px;
+      border-radius: 0;
+      padding: 0;
     }
   }
 
@@ -196,26 +178,7 @@
     }
   }
 
-  .range-step-input {
-    & {
-      margin-right: auto;
-      margin-left: auto;
-    }
-
-    &:first-child {
-      margin-left: 0;
-    }
-
-    &:last-child {
-      margin-right: 0;
-    }
-  }
-
-  input[type='submit'] {
-    @extend .paddingy3;
-    @extend .paddingx5;
-    border-radius: 100vmax;
-    margin: 0 auto;
-    width: auto;
+  .price-card > .card-row-edged {
+    gap: margins.$m-4;
   }
 }
