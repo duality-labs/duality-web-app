@@ -1,66 +1,16 @@
-$text: rgb(255, 255, 255);
-$text-secondary: rgb(191, 191, 191);
-$disabled: rgb(136, 136, 136);
-$link: rgb(255, 255, 255);
-$bg: conic-gradient(
-  from 120deg at 50% 100%,
-  rgb(78, 177, 232) 0deg,
-  rgba(18, 93, 135, 0.8) 180deg,
-  rgba(0, 0, 0, 0.8) 360deg
-);
-$input: rgb(255, 255, 255);
-$ghost: rgba(255, 255, 255, 0.5);
-$page-card: rgb(0, 0, 0);
-$token-group: rgb(18, 92, 135);
-$icon-button-bg: rgba(125, 125, 125, 0.4);
-$icon-button-text: rgb(230, 230, 230);
-$submit-button-bg: rgb(78, 177, 232);
-$submit-button-text: rgb(255, 255, 255);
-$ghost-button: rgb(187, 225, 246);
-$card-border: rgb(78, 177, 232);
-$dialog-bg: rgb(16, 16, 16);
-$selected-token: rgb(12, 12, 12);
-$badge-main: rgb(18, 93, 135);
-$badge-secondary: rgb(168, 168, 168);
-$badge-success: rgb(38, 128, 27);
-$badge-info: rgb(224, 184, 121);
-$badge-warning: rgb(218, 225, 137);
-$badge-error: rgb(177, 81, 74);
-$scrollbar: transparent;
-$scrollbar-handle: rgb(217, 217, 217);
-$scrollbar-handle-hover: rgb(217, 217, 217);
-$tooltip-bg: rgb(51, 51, 51);
-$tooltip-color: rgb(187, 187, 187);
-$tooltip-border: rgb(18, 93, 135);
+@function grayscale($scale) {
+  @return rgb($scale, $scale, $scale);
+}
 
-$map: (
-  'text': $text,
-  'text-secondary': $text-secondary,
-  'disabled': $disabled,
-  'link': $link,
-  'bg': $bg,
-  'input': $input,
-  'ghost': $ghost,
-  'page-card': $page-card,
-  'token-group': $token-group,
-  'icon-button-bg': $icon-button-bg,
-  'icon-button-text': $icon-button-text,
-  'submit-button-bg': $submit-button-bg,
-  'submit-button-text': $submit-button-text,
-  'ghost-button': $ghost-button,
-  'card-border': $card-border,
-  'dialog-bg': $dialog-bg,
-  'selected-token': $selected-token,
-  'badge-main': $badge-main,
-  'badge-secondary': $badge-secondary,
-  'badge-success': $badge-success,
-  'badge-info': $badge-info,
-  'badge-warning': $badge-warning,
-  'badge-error': $badge-error,
-  'scrollbar': $scrollbar,
-  'scrollbar-handle': $scrollbar-handle,
-  'scrollbar-handle-hover': $scrollbar-handle-hover,
-  'tooltip-bg': $tooltip-bg,
-  'tooltip-color': $tooltip-color,
-  'tooltip-border': $tooltip-border,
-);
+$light-white: grayscale(255);
+$white: grayscale(230);
+$dark-white: grayscale(217);
+$light-gray: grayscale(187);
+$gray: grayscale(136);
+$dark-gray: grayscale(125);
+$light-black: grayscale(51);
+$black: grayscale(16);
+$dark-black: grayscale(0);
+
+$bg-light: rgb(78, 177, 232);
+$bg-dark: rgb(18, 92, 135);

@@ -1,65 +1,103 @@
-$text: rgb(0, 0, 0);
-$text-secondary: rgb(80, 80, 80);
-$disabled: rgb(136, 136, 136);
-$link: rgb(103, 159, 243);
+@use './core.scss' as core;
+
+$text-default: core.$light-white;
+$text-alt: core.$light-gray;
+$text-disabled: core.$gray;
+
+$primary: core.$bg-dark;
+$primary-alt: $text-default;
+$secondary: core.$light-gray;
+$secondary-alt: $text-default;
+$success: rgb(38, 128, 27);
+$success-alt: $text-default;
+$info: rgb(224, 184, 121);
+$info-alt: $text-default;
+$warning: rgb(218, 225, 137);
+$warning-alt: $text-default;
+$error: rgb(177, 81, 74);
+$error-alt: $text-default;
+$light: rgb(187, 225, 246);
+$light-alt: $text-default;
+$link: transparent;
+$link-alt: core.$light-white;
+
 $bg: conic-gradient(
   from 120deg at 50% 100%,
-  rgb(136, 196, 227) 0deg,
-  rgba(85, 160, 203, 0.8) 180deg,
-  rgba(194, 194, 194, 0.8) 360deg
+  core.$bg-light 0deg,
+  rgba(core.$bg-light, 80%) 180deg,
+  rgba(core.$light-white, 80%) 360deg
 );
-$input: rgb(0, 0, 0);
-$ghost: rgba(0, 0, 0, 0.5);
-$page-card: rgb(255, 255, 255);
-$token-group: rgb(76, 142, 180);
-$icon-button-bg: rgba(170, 169, 169, 0.4);
-$icon-button-text: rgb(188, 188, 188);
-$submit-button-bg: rgb(78, 177, 232);
-$submit-button-text: rgb(0, 0, 0);
-$ghost-button: rgb(71, 182, 241);
-$card-border: rgb(152, 203, 231);
-$dialog-bg: rgb(227, 227, 227);
-$selected-token: rgb(218, 218, 218);
-$badge-main: rgb(88, 170, 218);
-$badge-secondary: rgb(168, 168, 168);
-$badge-success: rgb(136, 190, 129);
-$badge-info: rgb(224, 184, 121);
-$badge-warning: rgb(218, 225, 137);
-$badge-error: rgb(177, 81, 74);
+
+$ghost-button: $light;
+$icon-button-bg: rgba(core.$dark-gray, 40%);
+$icon-button-text: core.$white;
+$submit-button-bg: core.$bg-light;
+$submit-button-text: $primary-alt;
+
+$input-text: core.$light-white;
+$input-bg: transparent;
+
+$token-group: core.$bg-dark;
+
+$page-card: rgba(core.$dark-black, 60%);
+$card-border: core.$bg-light;
+
+$dialog-bg: core.$black;
+$selected-token: core.$black;
+
 $scrollbar: transparent;
-$scrollbar-handle: rgb(217, 217, 217);
-$scrollbar-handle-hover: rgb(217, 217, 217);
-$tooltip-bg: rgb(207, 207, 207);
-$tooltip-color: rgb(85, 85, 85);
-$tooltip-border: rgb(49, 134, 183);
+$scrollbar-handle: core.$dark-white;
+$scrollbar-handle-hover: core.$dark-white;
+
+$tooltip-bg: core.$light-black;
+$tooltip-color: core.$light-gray;
+$tooltip-border: core.$bg-dark;
 
 $map: (
-  'text': $text,
-  'text-secondary': $text-secondary,
-  'disabled': $disabled,
+  'text-default': $text-default,
+  'text-alt': $text-alt,
+  'text-disabled': $text-disabled,
+
+  'primary': $primary,
+  'primary-alt': $primary-alt,
+  'secondary': $secondary,
+  'secondary-alt': $secondary-alt,
+  'success': $success,
+  'success-alt': $success-alt,
+  'info': $info,
+  'info-alt': $info-alt,
+  'warning': $warning,
+  'warning-alt': $warning-alt,
+  'error': $error,
+  'error-alt': $error-alt,
+  'light': $light,
+  'light-alt': $light-alt,
   'link': $link,
+  'link-alt': $link-alt,
+
   'bg': $bg,
-  'input': $input,
-  'ghost': $ghost,
-  'page-card': $page-card,
-  'token-group': $token-group,
+
+  'ghost-button': $ghost-button,
   'icon-button-bg': $icon-button-bg,
   'icon-button-text': $icon-button-text,
   'submit-button-bg': $submit-button-bg,
   'submit-button-text': $submit-button-text,
-  'ghost-button': $ghost-button,
+
+  'input-text': $input-text,
+  'input-bg': $input-bg,
+
+  'token-group': $token-group,
+
+  'page-card': $page-card,
   'card-border': $card-border,
+
   'dialog-bg': $dialog-bg,
   'selected-token': $selected-token,
-  'badge-main': $badge-main,
-  'badge-secondary': $badge-secondary,
-  'badge-success': $badge-success,
-  'badge-info': $badge-info,
-  'badge-warning': $badge-warning,
-  'badge-error': $badge-error,
+
   'scrollbar': $scrollbar,
   'scrollbar-handle': $scrollbar-handle,
   'scrollbar-handle-hover': $scrollbar-handle-hover,
+
   'tooltip-bg': $tooltip-bg,
   'tooltip-color': $tooltip-color,
   'tooltip-border': $tooltip-border,
