@@ -1,3 +1,4 @@
+@forward './collections.scss' as collections-*;
 @forward 'light.scss' as light-*;
 @forward 'dark.scss' as dark-*;
 @use './props.scss';
