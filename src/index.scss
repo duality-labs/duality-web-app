@@ -1,3 +1,4 @@
 @forward 'styles/theme/' as theme-*;
 @forward './styles/font/' as font-*;
+@forward './styles/components/' as components-*;
 @forward './styles/mixins-vars/' as mixins-*;

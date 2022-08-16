@@ -23,11 +23,13 @@ export default function Header() {
         <Link to="/swap">Swap</Link>
         <Link to="/pool">Pool</Link>
         {address ? (
-          <span>{address}</span>
+          <span className="link">{address}</span>
         ) : (
-          <button onClick={onConnectClick}>Connect Wallet</button>
+          <button className="link" onClick={onConnectClick}>
+            Connect Wallet
+          </button>
         )}
-        <button className="ml-3" type="button" onClick={toggleThemeMode}>
+        <button className="link" type="button" onClick={toggleThemeMode}>
           {themeMode === 'light' ? '🌕' : '🌞'}
         </button>
       </nav>
