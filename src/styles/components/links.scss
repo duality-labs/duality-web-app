@@ -24,13 +24,10 @@ a {
       background-color animations.$short-duration animations.$default-mode;
     border: $border-width solid var(--link-alt);
     background-color: transparent;
+    mix-blend-mode: screen;
     text-decoration: none;
     line-height: 1em;
     border-radius: 0;
-  }
-
-  &:not(.no-blend) {
-    mix-blend-mode: screen;
   }
 
   &:hover {

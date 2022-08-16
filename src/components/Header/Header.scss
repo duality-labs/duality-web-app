@@ -1,0 +1,62 @@
+@use '../../styles/mixins-vars/animations.scss' as animations;
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/components/links.scss' as links;
+@use '../../styles/font/size.scss' as font-size;
+@use 'sass:math';
+
+$underline-height: 1px;
+
+header,
+.header {
+  text-align: start;
+  @include margins.margin('y', 3);
+  @include margins.margin('x', 4);
+  width: calc(100% - #{margins.$m-4 * 2});
+}
+
+nav,
+.nav {
+  & > a,
+  & > .link {
+    & {
+      @extend .ghost-link;
+      @include margins.margin('x', 2);
+      font-size: font-size.$nav;
+      position: relative;
+    }
+
+    &::before {
+      transition: left animations.$short-duration animations.$default-mode,
+        width animations.$short-duration animations.$default-mode;
+      position: absolute;
+      background-color: currentColor;
+      bottom: #{math.div(paddings.size(links.$ghost-padding-y), 2)};
+      height: $underline-height;
+      display: block;
+      content: '';
+      left: 50%;
+      width: 0%;
+    }
+
+    &.selected::before {
+      width: calc(100% - #{paddings.size(links.$ghost-padding-x) * 2});
+      left: paddings.size(links.$ghost-padding-x);
+    }
+
+    & > img,
+    & > h1,
+    & > .h1 {
+      & {
+        @include margins.margin('*', 0);
+        display: inline-block;
+        font-size: inherit;
+        height: 1em;
+      }
+
+      & + * {
+        margin-left: 0.5ch;
+      }
+    }
+  }
+}

@@ -2,3 +2,7 @@
 @forward './styles/font/' as font-*;
 @forward './styles/components/' as components-*;
 @forward './styles/mixins-vars/' as mixins-*;
+
+.no-blend {
+  mix-blend-mode: normal !important;
+}
