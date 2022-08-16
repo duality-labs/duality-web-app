@@ -1,0 +1,55 @@
+@use '../mixins-vars/paddings.scss' as paddings;
+@use '../mixins-vars/margins.scss' as margins;
+@use '../font/size.scss' as font-size;
+
+@mixin card($index) {
+  @include paddings.padding('x', $index);
+  @include paddings.padding('y', $index - 1);
+  border-radius: paddings.size($index - 1);
+}
+
+@for $index from 2 to length(paddings.$sizes) {
+  .card-#{$index} {
+    @include card($index);
+  }
+}
+
+.card {
+  @extend .card-3;
+}
+
+.page-card {
+  @include card(4);
+  background-color: var(--page-card);
+  color: var(--text-default);
+  flex-direction: column;
+  display: flex;
+}
+
+.card-row,
+.card-row-edged {
+  flex-direction: row;
+  display: flex;
+}
+
+.card-row-edged > * {
+  & {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  &:first-child {
+    margin-left: 0;
+  }
+
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
+.card-title {
+  @include margins.margin('y', 2);
+  font-size: font-size.$h2;
+  text-align: center;
+  width: 100%;
+}

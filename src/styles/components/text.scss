@@ -1,0 +1,29 @@
+@use '../theme/collections.scss' as colors;
+
+@each $name in colors.$main {
+  .text-#{$name} {
+    color: var(--#{$name});
+  }
+
+  .text-#{$name}-alt {
+    color: var(--#{$name}-alt);
+  }
+}
+
+.text-row {
+  & {
+    grid-template-columns: 50% 50%;
+    display: grid;
+    width: 100%;
+  }
+
+  & > .text-header {
+    grid-column: 1 / 2;
+    text-align: start;
+  }
+
+  & > .text-value {
+    grid-column: 2 / 3;
+    text-align: end;
+  }
+}

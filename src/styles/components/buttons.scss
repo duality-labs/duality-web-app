@@ -1,0 +1,55 @@
+@use '../mixins-vars/paddings.scss' as paddings;
+@use '../theme/collections.scss' as colors;
+@use '../font/size.scss' as font-size;
+
+@mixin base($bg, $color) {
+  @include paddings.padding('x', 3);
+  @include paddings.padding('y', 2);
+  border-radius: paddings.size(2);
+  border: 0px none transparent;
+  font-size: font-size.$button;
+  background-color: $bg;
+  cursor: pointer;
+  color: $color;
+}
+
+@each $name in colors.$main {
+  .button-#{$name} {
+    @include base(var(--#{$name}), var(--#{$name}-alt));
+  }
+
+  .button-#{$name}-inverse {
+    @include base(var(--#{$name}-alt), var(--#{$name}));
+  }
+}
+
+button,
+.button {
+  @extend .button-primary;
+}
+
+.text-button {
+  @extend .button;
+  @include paddings.padding('y', 3);
+  @include paddings.padding('x', 3);
+  border: 0px solid transparent;
+}
+
+.icon-button {
+  @extend .text-button;
+  border-radius: 50%;
+  background-color: var(--icon-button-bg);
+  color: var(--icon-button-text);
+}
+
+input[type='submit'],
+.submit-button {
+  @include paddings.padding('y', 3);
+  @include paddings.padding('x', 4);
+  background-color: var(--submit-button-bg);
+  font-size: font-size.$button-large;
+  color: var(--submit-button-text);
+  border-radius: paddings.size(3);
+  border: 0px none transparent;
+  cursor: pointer;
+}

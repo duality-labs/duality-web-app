@@ -1,0 +1,25 @@
+@use '../mixins-vars/paddings.scss' as paddings;
+@use '../theme/collections.scss' as colors;
+
+@mixin base($bg, $color) {
+  @include paddings.padding('x', 3);
+  @include paddings.padding('y', 2);
+  border-radius: paddings.size(2);
+  border: 0px none transparent;
+  background-color: var($bg);
+  color: var($color);
+}
+
+@each $name in colors.$main {
+  .panel-#{$name} {
+    @include base(--#{$name}, --#{$name}-alt);
+  }
+
+  .panel-#{$name}-inverse {
+    @include base(--#{$name}-alt, --#{$name});
+  }
+}
+
+.panel {
+  @extend .panel-primary;
+}
