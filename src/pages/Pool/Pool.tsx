@@ -78,7 +78,7 @@ export default function Pool() {
   } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
   return (
-    <form className="pool-page page-card my-4">
+    <form className="pool-page card page-card my-4">
       <h2 className="card-title">Select Pair</h2>
       <div className="card-row">
         <TokenPicker

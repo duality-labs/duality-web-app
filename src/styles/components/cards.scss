@@ -6,6 +6,8 @@
   @include paddings.padding('x', $index + 1);
   @include paddings.padding('y', $index);
   border-radius: paddings.size($index);
+  flex-direction: column;
+  display: flex;
 }
 
 @for $index from 1 to length(paddings.$sizes) - 1 {
@@ -19,32 +21,13 @@
 }
 
 .page-card {
-  @include card(3);
   background-color: var(--page-card);
   color: var(--text-default);
-  flex-direction: column;
-  display: flex;
 }
 
-.card-row,
-.card-row-edged {
+.card-row {
   flex-direction: row;
   display: flex;
-}
-
-.card-row-edged > * {
-  & {
-    margin-right: auto;
-    margin-left: auto;
-  }
-
-  &:first-child {
-    margin-left: 0;
-  }
-
-  &:last-child {
-    margin-right: 0;
-  }
 }
 
 .card-title {
