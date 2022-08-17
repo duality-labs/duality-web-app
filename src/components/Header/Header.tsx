@@ -6,16 +6,13 @@ import { useThemeMode } from '../../lib/themeProvider';
 import logo from '../../assets/logo/logo.svg';
 
 import './Header.scss';
-import { useCallback } from 'react';
 
 export default function Header() {
   const { connectWallet, address } = useWeb3();
   const { themeMode, toggleThemeMode } = useThemeMode();
   const { pathname } = useLocation();
-  const getActiveClassName = useCallback(
-    (path: string) => (path === pathname ? 'active' : ''),
-    [pathname]
-  );
+  const getActiveClassName = (path: string) =>
+    path === pathname ? 'active' : '';
 
   const onConnectClick = () => {
     connectWallet && connectWallet();
