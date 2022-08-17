@@ -28,7 +28,9 @@ $bg: conic-gradient(
   rgba(core.$dark-black, 80%) 360deg
 );
 
+// color + border color in default state, background + border color in hover state
 $ghost-button: core.$light-blue;
+
 $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
 $submit-button-bg: core.$bg-light;
@@ -78,6 +80,7 @@ $map: (
   'bg': $bg,
 
   'ghost-button': $ghost-button,
+
   'icon-button-bg': $icon-button-bg,
   'icon-button-text': $icon-button-text,
   'submit-button-bg': $submit-button-bg,
