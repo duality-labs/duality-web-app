@@ -114,7 +114,7 @@ export default function Pool() {
       <div className="fee-group">
         <strong>0.3% fee tier</strong>
       </div>
-      <h2>Set price range</h2>
+      <h2 className="card-title">Set price range</h2>
       <div className="fee-group">
         {tokenA && tokenB ? (
           <span>
@@ -230,7 +230,7 @@ export default function Pool() {
         }
         step="1"
       ></input>
-      <h3 className="card-title">Deposit Amounts</h3>
+      <h2 className="card-title">Deposit Amounts</h2>
       <TokenInputGroup
         disabled
         tokenList={tokenList}
