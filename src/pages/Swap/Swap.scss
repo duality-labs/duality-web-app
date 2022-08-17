@@ -1,11 +1,12 @@
 .swap-page {
-  box-shadow: 0 0 0.25rem 0rem rgb(169, 169, 169);
-  background-color: rgb(255, 255, 255);
-  border: 1px solid rgb(169, 169, 169);
-  color: rgb(0, 0, 0);
-  border-radius: 0.5rem;
-  padding: 1rem 2rem;
-  width: 450px;
+  .page-card {
+    width: 450px;
+  }
+
+  .token-input-group {
+    box-sizing: border-box;
+    width: 100%;
+  }
 }
 
 // TODO add proper styling for both modes

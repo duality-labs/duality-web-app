@@ -108,54 +108,76 @@ export default function Swap() {
   }, []);
 
   return (
-    <form className="swap-page" onSubmit={onFormSubmit}>
-      <TokenInputGroup
-        onValueChanged={onValueAChanged}
-        onTokenChanged={setTokenA}
-        tokenList={tokenList}
-        token={tokenA}
-        value={valueAConverted}
-        className={
-          isValidatingRate && !lastUpdatedA
-            ? valueAConverted
-              ? 'estimated-rate'
-              : 'loading-token'
-            : ''
-        }
-        exclusion={tokenB}
-      ></TokenInputGroup>
-      <button type="button" onClick={swapTokens}>
-        <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
-        <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
-      </button>
-      <TokenInputGroup
-        onValueChanged={onValueBChanged}
-        onTokenChanged={setTokenB}
-        tokenList={tokenList}
-        token={tokenB}
-        value={valueBConverted}
-        className={
-          isValidatingRate && lastUpdatedA
-            ? valueBConverted
-              ? 'estimated-rate'
-              : 'loading-token'
-            : ''
-        }
-        exclusion={tokenA}
-        disabledInput={true}
-      ></TokenInputGroup>
-      <div>Gas price: {rateData?.gas}</div>
-      {((isValidaingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
-        <i>.</i>
-      )}
-      <div>{swapRequest && swapError}</div>
-      <div>{rateError}</div>
-      <div>
-        {!isValidatingSwap && swapResponse
-          ? `Swapped ${valueAConverted} ${tokenA?.address} for ${valueBConverted} ${tokenB?.address}`
-          : ''}
+    <form onSubmit={onFormSubmit} className="swap-page">
+      <div className="page-card">
+        <h2 className="card-title">Trade</h2>
+        <div className="card-row">
+          <TokenInputGroup
+            onValueChanged={onValueAChanged}
+            onTokenChanged={setTokenA}
+            tokenList={tokenList}
+            token={tokenA}
+            value={valueAConverted}
+            className={
+              isValidatingRate && !lastUpdatedA
+                ? valueAConverted
+                  ? 'estimated-rate'
+                  : 'loading-token'
+                : ''
+            }
+            exclusion={tokenB}
+          ></TokenInputGroup>
+        </div>
+        <div className="card-row">
+          <button
+            type="button"
+            onClick={swapTokens}
+            className="icon-button mx-auto"
+          >
+            <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
+            <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
+          </button>
+        </div>
+        <div className="card-row">
+          <TokenInputGroup
+            onValueChanged={onValueBChanged}
+            onTokenChanged={setTokenB}
+            tokenList={tokenList}
+            token={tokenB}
+            value={valueBConverted}
+            className={
+              isValidatingRate && lastUpdatedA
+                ? valueBConverted
+                  ? 'estimated-rate'
+                  : 'loading-token'
+                : ''
+            }
+            exclusion={tokenA}
+            disabledInput={true}
+          ></TokenInputGroup>
+        </div>
+        <div className="text-secondary text-row card-row">
+          <span className="text-header">Gas price</span>
+          <span className="text-value">{rateData?.gas}</span>
+        </div>
+        {swapRequest && swapError && (
+          <div className="text-error card-row">{swapError}</div>
+        )}
+        {rateError && <div className="text-error card-row">{rateError}</div>}
+        {isValidaingTokens ||
+          (isValidatingRate && (
+            <div className="text-secondary card-row">
+              {'.'.repeat(dotCount)}
+            </div>
+          ))}
+        {!isValidatingSwap && swapResponse && (
+          <div className="text-secondary card-row">
+            Swapped {valueAConverted} {tokenA?.address} for {valueBConverted}{' '}
+            {tokenB?.address}
+          </div>
+        )}
+        <input type="submit" value="Swap" />
       </div>
-      <input type="submit" value="Swap" />
     </form>
   );
 }
