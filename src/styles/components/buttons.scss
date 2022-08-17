@@ -1,6 +1,11 @@
+@use '../mixins-vars/animations.scss' as animations;
 @use '../mixins-vars/paddings.scss' as paddings;
 @use '../theme/collections.scss' as colors;
 @use '../font/size.scss' as font-size;
+
+$ghost-border-width: 1px;
+$ghost-padding-x: 4;
+$ghost-padding-y: 3;
 
 @mixin base($bg, $color) {
   @include paddings.padding('x', 3);
@@ -52,4 +57,27 @@ input[type='submit'],
   border-radius: paddings.size(3);
   border: 0px none transparent;
   cursor: pointer;
+}
+
+.ghost-button {
+  & {
+    @include paddings.padding('x', 4);
+    @include paddings.padding('y', 3);
+
+    transition: color animations.$short-duration animations.$default-mode,
+      background-color animations.$short-duration animations.$default-mode;
+    // border-color shouldn't be currentColor since on hover the color will be "invisible"
+    border: $ghost-border-width solid var(--ghost-button);
+    background-color: transparent;
+    color: var(--ghost-button);
+    mix-blend-mode: screen;
+    text-decoration: none;
+    line-height: 1em;
+    border-radius: 0;
+  }
+
+  &:hover {
+    background-color: var(--ghost-button);
+    color: black; // black = delete background color
+  }
 }

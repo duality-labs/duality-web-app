@@ -1,7 +1,7 @@
 @use '../../styles/mixins-vars/animations.scss' as animations;
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
 @use '../../styles/mixins-vars/margins.scss' as margins;
-@use '../../styles/components/links.scss' as links;
+@use '../../styles/components/buttons.scss' as buttons;
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:math';
 
@@ -20,7 +20,7 @@ nav,
   & > a,
   & > .link {
     & {
-      @extend .ghost-link;
+      @extend .ghost-button;
       @include margins.margin('x', 2);
       font-size: font-size.$nav;
       position: relative;
@@ -31,7 +31,7 @@ nav,
         width animations.$short-duration animations.$default-mode;
       position: absolute;
       background-color: currentColor;
-      bottom: #{math.div(paddings.size(links.$ghost-padding-y), 2)};
+      bottom: #{math.div(paddings.size(buttons.$ghost-padding-y), 2)};
       height: $underline-height;
       display: block;
       content: '';
@@ -40,8 +40,8 @@ nav,
     }
 
     &.selected::before {
-      width: calc(100% - #{paddings.size(links.$ghost-padding-x) * 2});
-      left: paddings.size(links.$ghost-padding-x);
+      width: calc(100% - #{paddings.size(buttons.$ghost-padding-x) * 2});
+      left: paddings.size(buttons.$ghost-padding-x);
     }
 
     & > img,

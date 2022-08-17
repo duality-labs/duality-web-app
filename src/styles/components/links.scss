@@ -1,10 +1,5 @@
-@use '../mixins-vars/animations.scss' as animations;
 @use '../mixins-vars/paddings.scss' as paddings;
 @use '../font/size.scss' as font-size;
-
-$border-width: 1px;
-$ghost-padding-x: 4;
-$ghost-padding-y: 3;
 
 .link,
 a {
@@ -12,26 +7,4 @@ a {
   background-color: var(--link);
   color: var(--link-alt);
   cursor: pointer;
-}
-
-.ghost-link {
-  & {
-    @include paddings.padding('x', 4);
-    @include paddings.padding('y', 3);
-    @extend .link;
-
-    transition: color animations.$short-duration animations.$default-mode,
-      background-color animations.$short-duration animations.$default-mode;
-    border: $border-width solid var(--link-alt);
-    background-color: transparent;
-    mix-blend-mode: screen;
-    text-decoration: none;
-    line-height: 1em;
-    border-radius: 0;
-  }
-
-  &:hover {
-    background-color: var(--link-alt);
-    color: black; // black = delete background color
-  }
 }
