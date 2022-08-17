@@ -3,23 +3,23 @@
 @use '../font/size.scss' as font-size;
 
 @mixin card($index) {
-  @include paddings.padding('x', $index);
-  @include paddings.padding('y', $index - 1);
-  border-radius: paddings.size($index - 1);
+  @include paddings.padding('x', $index + 1);
+  @include paddings.padding('y', $index);
+  border-radius: paddings.size($index);
 }
 
-@for $index from 2 to length(paddings.$sizes) {
+@for $index from 1 to length(paddings.$sizes) - 1 {
   .card-#{$index} {
     @include card($index);
   }
 }
 
 .card {
-  @extend .card-3;
+  @extend .card-2;
 }
 
 .page-card {
-  @include card(4);
+  @include card(3);
   background-color: var(--page-card);
   color: var(--text-default);
   flex-direction: column;
