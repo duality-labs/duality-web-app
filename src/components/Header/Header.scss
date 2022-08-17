@@ -17,13 +17,19 @@ header,
 
 nav,
 .nav {
+  & {
+    gap: margins.size(2);
+    display: flex;
+  }
+
   & > a,
   & > .link {
     & {
       @extend .ghost-button;
-      @include margins.margin('x', 2);
       font-size: font-size.$nav;
+      gap: margins.size(2);
       position: relative;
+      display: flex;
     }
 
     &::before {
@@ -47,16 +53,9 @@ nav,
     & > img,
     & > h1,
     & > .h1 {
-      & {
-        @include margins.margin('*', 0);
-        display: inline-block;
-        font-size: inherit;
-        height: 1em;
-      }
-
-      & + * {
-        margin-left: 0.5ch;
-      }
+      @include margins.margin('*', 0);
+      font-size: inherit;
+      height: 1em;
     }
   }
 }
