@@ -1,9 +1,19 @@
+@use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/font/size.scss' as font-size;
+
 .pool-page {
-  box-shadow: 0 0 0.25rem 0rem rgb(169, 169, 169);
-  background-color: rgb(255, 255, 255);
-  border: 1px solid rgb(169, 169, 169);
-  color: rgb(0, 0, 0);
-  border-radius: 0.5rem;
-  padding: 1rem 2rem;
-  width: 450px;
+  .page-card {
+    gap: margins.size('2');
+  }
+
+  .card-title {
+    @include margins.margin('b', 2);
+    @include margins.margin('t', 0);
+    font-size: font-size.$h4;
+    margin-right: auto;
+    align-self: center;
+    text-align: start;
+    display: inline;
+    width: auto;
+  }
 }

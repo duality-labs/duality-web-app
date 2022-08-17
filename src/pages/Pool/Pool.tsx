@@ -78,27 +78,30 @@ export default function Pool() {
   } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
   return (
-    <div className="pool-page">
-      <h2>Select Pair</h2>
-      <TokenPicker
-        value={tokenA}
-        onChange={setTokenA}
-        tokenList={tokenList}
-        exclusion={tokenB}
-      />
-      <button
-        onClick={swapTokens}
-        style={{ display: 'inline-flex', flexDirection: 'column' }}
-      >
-        <FontAwesomeIcon icon={faArrowLeftLong}></FontAwesomeIcon>
-        <FontAwesomeIcon icon={faArrowRightLong}></FontAwesomeIcon>
-      </button>
-      <TokenPicker
-        value={tokenB}
-        onChange={setTokenB}
-        tokenList={tokenList}
-        exclusion={tokenA}
-      />
+    <form className="pool-page page-card my-4">
+      <h2 className="card-title">Select Pair</h2>
+      <div className="card-row">
+        <TokenPicker
+          value={tokenA}
+          onChange={setTokenA}
+          tokenList={tokenList}
+          exclusion={tokenB}
+        />
+        <button
+          type="button"
+          onClick={swapTokens}
+          className="icon-button m-auto"
+        >
+          <FontAwesomeIcon icon={faArrowLeftLong}></FontAwesomeIcon>
+          <FontAwesomeIcon icon={faArrowRightLong}></FontAwesomeIcon>
+        </button>
+        <TokenPicker
+          value={tokenB}
+          onChange={setTokenB}
+          tokenList={tokenList}
+          exclusion={tokenA}
+        />
+      </div>
       <div>
         Ticks: {tickFetching ? 'loading...' : ''} &nbsp;
         {JSON.stringify(ticks, null, 2)}
@@ -227,7 +230,7 @@ export default function Pool() {
         }
         step="1"
       ></input>
-      <h2>Deposit Amounts</h2>
+      <h3 className="card-title">Deposit Amounts</h3>
       <TokenInputGroup
         disabled
         tokenList={tokenList}
@@ -248,10 +251,10 @@ export default function Pool() {
         }
         exclusion={tokenA}
       ></TokenInputGroup>
-      <button>Add Liquidity</button>
-      {((isValidatingTokens || isValidatingRate) && '.'.repeat(dotCount)) || (
-        <i>.</i>
+      {(isValidatingTokens || isValidatingRate) && (
+        <div className="text-secondary card-row">{'.'.repeat(dotCount)}</div>
       )}
-    </div>
+      <input type="submit" value="Add Liquidity" />
+    </form>
   );
 }
