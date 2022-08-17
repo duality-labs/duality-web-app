@@ -2,11 +2,4 @@
 @forward './styles/font/' as font-*;
 @forward './styles/components/' as components-*;
 @forward './styles/mixins-vars/' as mixins-*;
-
-.pill {
-  border-radius: 100vmax;
-}
-
-.no-blend {
-  mix-blend-mode: normal !important;
-}
+@use './styles/globals.scss';
