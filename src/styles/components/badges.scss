@@ -3,30 +3,26 @@
 @use '../font/weight.scss' as font-weight;
 @use '../font/size.scss' as font-size;
 
-@mixin base($bg, $color) {
+.badge {
   @include paddings.padding('x', 3);
   @include paddings.padding('y', 2);
   font-weight: font-weight.$heavy;
   border-radius: paddings.size(2);
-  border: 0px none transparent;
-  background-color: var($bg);
   font-size: font-size.$text-xs;
+  border: 0px none transparent;
   white-space: nowrap;
-  color: var($color);
 }
 
 @each $name in colors.$main {
   .badge-#{$name} {
-    @include base(--#{$name}, --#{$name}-alt);
+    background-color: var(--#{$name});
+    color: var(--#{$name}-alt);
   }
 
   .badge-#{$name}-inverse {
-    @include base(--#{$name}-alt, --#{$name});
+    background-color: var(--#{$name}-alt);
+    color: var(--#{$name});
   }
-}
-
-.badge {
-  @extend .badge-primary;
 }
 
 .badge-large {
