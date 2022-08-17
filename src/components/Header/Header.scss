@@ -39,7 +39,7 @@ nav,
       width: 0%;
     }
 
-    &.selected::before {
+    &.active::before {
       width: calc(100% - #{paddings.size(buttons.$ghost-padding-x) * 2});
       left: paddings.size(buttons.$ghost-padding-x);
     }

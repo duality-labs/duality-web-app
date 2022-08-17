@@ -12,8 +12,8 @@ export default function Header() {
   const { connectWallet, address } = useWeb3();
   const { themeMode, toggleThemeMode } = useThemeMode();
   const { pathname } = useLocation();
-  const getSelectedClass = useCallback(
-    (path: string) => (path === pathname ? 'selected' : ''),
+  const getActiveClassName = useCallback(
+    (path: string) => (path === pathname ? 'active' : ''),
     [pathname]
   );
 
@@ -24,14 +24,14 @@ export default function Header() {
   return (
     <header>
       <nav>
-        <Link to="/" className={getSelectedClass('/')}>
+        <Link to="/" className={getActiveClassName('/')}>
           <img src={logo} className="logo" alt="logo" />
           <h1>Duality</h1>
         </Link>
-        <Link to="/swap" className={getSelectedClass('/swap')}>
+        <Link to="/swap" className={getActiveClassName('/swap')}>
           Swap
         </Link>
-        <Link to="/pool" className={getSelectedClass('/pool')}>
+        <Link to="/pool" className={getActiveClassName('/pool')}>
           Pool
         </Link>
         {address ? (
