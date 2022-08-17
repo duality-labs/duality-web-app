@@ -9,10 +9,11 @@ $underline-height: 1px;
 
 header,
 .header {
+  @include paddings.padding('y', 3);
+  @include paddings.padding('x', 4);
+  box-sizing: border-box;
   text-align: start;
-  @include margins.margin('y', 3);
-  @include margins.margin('x', 4);
-  width: calc(100% - #{margins.$m-4 * 2});
+  width: 100%;
 }
 
 nav,
