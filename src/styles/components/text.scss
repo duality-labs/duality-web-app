@@ -5,7 +5,7 @@
     color: var(--#{$name});
   }
 
-  .text-#{$name}-alt {
+  .text-#{$name}-inverse {
     color: var(--#{$name}-alt);
   }
 }
