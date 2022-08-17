@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useThemeMode } from '../../lib/themeProvider';
@@ -10,9 +10,6 @@ import './Header.scss';
 export default function Header() {
   const { connectWallet, address } = useWeb3();
   const { themeMode, toggleThemeMode } = useThemeMode();
-  const { pathname } = useLocation();
-  const getActiveClassName = (path: string) =>
-    path === pathname ? 'active' : '';
 
   const onConnectClick = () => {
     connectWallet && connectWallet();
@@ -21,16 +18,12 @@ export default function Header() {
   return (
     <header>
       <nav>
-        <Link to="/" className={getActiveClassName('/')}>
+        <NavLink to="/">
           <img src={logo} className="logo" alt="logo" />
           <h1>Duality</h1>
-        </Link>
-        <Link to="/swap" className={getActiveClassName('/swap')}>
-          Swap
-        </Link>
-        <Link to="/pool" className={getActiveClassName('/pool')}>
-          Pool
-        </Link>
+        </NavLink>
+        <NavLink to="/swap">Swap</NavLink>
+        <NavLink to="/pool">Pool</NavLink>
         {address ? (
           <span className="link">{address}</span>
         ) : (
@@ -47,5 +40,18 @@ export default function Header() {
         </button>
       </nav>
     </header>
+  );
+}
+
+function NavLink({ to, children, className, ...otherProps }: LinkProps) {
+  const resolved = useResolvedPath(to);
+  const match = useMatch({ path: resolved.pathname, end: true });
+  const activeClassName = match ? 'active' : '';
+  const fullClassName = [className, activeClassName].filter(Boolean).join(' ');
+
+  return (
+    <Link to={to} className={fullClassName} {...otherProps}>
+      {children}
+    </Link>
   );
 }
