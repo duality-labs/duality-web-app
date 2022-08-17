@@ -16,7 +16,7 @@ $warning: rgb(218, 225, 137);
 $warning-alt: $text-default;
 $error: rgb(177, 81, 74);
 $error-alt: $text-default;
-$light: rgb(187, 225, 246);
+$light: core.$light-blue;
 $light-alt: $text-default;
 $link: transparent;
 $link-alt: core.$light-white;
@@ -28,7 +28,7 @@ $bg: conic-gradient(
   rgba(core.$light-white, 80%) 360deg
 );
 
-$ghost-button: $light;
+$ghost-button: core.$light-blue;
 $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
 $submit-button-bg: core.$bg-light;
