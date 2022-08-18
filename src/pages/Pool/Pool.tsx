@@ -104,7 +104,7 @@ export default function Pool() {
   return (
     <form onSubmit={(e) => e.preventDefault()} className="pool-page">
       <div className="assets-card page-card">
-        <div className="card-title">Assets</div>
+        <h3 className="card-header card-title">Assets</h3>
         <div className="card-row">
           <TokenInputGroup
             onValueChanged={(newValue) =>
@@ -144,7 +144,7 @@ export default function Pool() {
       </div>
       <div className="chart-card page-card"></div>
       <div className="fee-card page-card">
-        <div className="card-row">
+        <div className="card-header">
           <h3 className="card-title">Fee Tier</h3>
           <div className="badge-primary corner-border badge-large font-console ml-auto">
             {fee}
@@ -174,10 +174,10 @@ export default function Pool() {
             </>
           ) : (
             <>
-              <span className="badge-info pill ml-auto badge-large text-slim fs-small mt-4">
+              <span className="badge-info pill ml-auto badge-large text-slim fs-small mt-auto">
                 {calculateFeeLiquidity(fee)}
               </span>
-              <span className="badge-info pill ml-2 badge-large text-slim fs-small mt-4">
+              <span className="badge-info pill ml-2 badge-large text-slim fs-small mt-auto">
                 {feeTypes[fee]}
               </span>
             </>
@@ -185,7 +185,7 @@ export default function Pool() {
         </div>
       </div>
       <div className="precision-card page-card">
-        <div className="card-row">
+        <div className="card-header">
           <h3 className="card-title">Precision</h3>
           <RangeStepInput
             editable={false}
@@ -204,8 +204,8 @@ export default function Pool() {
         </div>
       </div>
       <div className="price-card page-card">
-        <h3 className="card-title">Price Range</h3>
-        <div className="card-row-edged">
+        <h3 className="card-header card-title">Price Range</h3>
+        <div className="card-row">
           <RangeStepInput
             title="MIN PRICE"
             value={rangeMin}
@@ -231,7 +231,7 @@ export default function Pool() {
         </div>
       </div>
       <div className="curve-card page-card">
-        <h3 className="card-title">Liquidity Curve</h3>
+        <h3 className="card-header card-title">Liquidity Curve</h3>
         <div className="card-row">
           <RadioInput value={slopeType} onChange={setSlopeType} rowSize={2}>
             {slopeTypes.map((type) => (

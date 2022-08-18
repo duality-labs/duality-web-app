@@ -20,15 +20,18 @@ $selected-fee-border-width: 1.5px;
     gap: margins.size('2');
   }
 
-  .card-title {
+  .card-header {
     @include margins.margin('b', 2);
     @include margins.margin('t', 0);
+  }
+
+  .card-title {
     font-size: font-size.$h4;
-    margin-right: auto;
-    align-self: center;
     text-align: start;
-    display: inline;
-    width: auto;
+  }
+
+  .card-header > .card-title {
+    @include margins.margin('y', 0);
   }
 
   .assets-card {
@@ -52,6 +55,10 @@ $selected-fee-border-width: 1.5px;
     & {
       grid-column: 1 / 2;
       grid-row: 2 / 3;
+    }
+
+    .card-row {
+      flex: 1 0 auto;
     }
 
     .radio-input-group {
@@ -178,7 +185,8 @@ $selected-fee-border-width: 1.5px;
     }
   }
 
-  .price-card > .card-row-edged {
+  .price-card > .card-row {
+    justify-content: space-between;
     gap: margins.$m-4;
   }
 }

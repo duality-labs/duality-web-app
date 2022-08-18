@@ -27,30 +27,18 @@
   display: flex;
 }
 
-.card-row,
-.card-row-edged {
+.card-row {
   flex-direction: row;
   display: flex;
 }
 
-.card-row-edged > * {
-  & {
-    margin-right: auto;
-    margin-left: auto;
-  }
-
-  &:first-child {
-    margin-left: 0;
-  }
-
-  &:last-child {
-    margin-right: 0;
-  }
+.card-header {
+  @include margins.margin('y', 2);
+  @extend .card-row;
+  width: 100%;
 }
 
 .card-title {
-  @include margins.margin('y', 2);
   font-size: font.$h2;
   text-align: center;
-  width: 100%;
 }
