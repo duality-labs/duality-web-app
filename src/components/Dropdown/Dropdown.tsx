@@ -73,7 +73,6 @@ export default function Dropdown({
       })}
       <div
         ref={floating}
-        className="dropdown w-60 max-w-full border border-slate-200 rounded-xl"
         style={{
           position: strategy,
           top: y ?? '',
@@ -82,12 +81,7 @@ export default function Dropdown({
         }}
       >
         {renderOverlay({ close })}
-        <button
-          className="absolute top-0 right-0 py-2 px-3 rounded-xl"
-          onClick={close}
-        >
-          ×
-        </button>
+        <button onClick={close}>×</button>
       </div>
     </>
   );

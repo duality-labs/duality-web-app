@@ -1,0 +1,32 @@
+@use '../mixins-vars/paddings.scss' as paddings;
+@use '../theme/collections.scss' as colors;
+@use '../font/weight.scss' as font-weight;
+@use '../font/size.scss' as font-size;
+
+.badge {
+  @include paddings.padding('x', 3);
+  @include paddings.padding('y', 2);
+  font-weight: font-weight.$heavy;
+  border-radius: paddings.size(2);
+  font-size: font-size.$text-xs;
+  border: 0px none transparent;
+  white-space: nowrap;
+}
+
+@each $name in colors.$main {
+  .badge-#{$name} {
+    background-color: var(--#{$name});
+    color: var(--#{$name}-alt);
+  }
+
+  .badge-#{$name}-inverse {
+    background-color: var(--#{$name}-alt);
+    color: var(--#{$name});
+  }
+}
+
+.badge-large {
+  @include paddings.padding('x', 3);
+  @include paddings.padding('y', 2);
+  font-size: font-size.$text-m;
+}

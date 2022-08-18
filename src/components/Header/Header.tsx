@@ -1,9 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useThemeMode } from '../../lib/themeProvider';
 
 import logo from '../../assets/logo/logo.svg';
+
+import './Header.scss';
 
 export default function Header() {
   const { connectWallet, address } = useWeb3();
@@ -14,29 +16,42 @@ export default function Header() {
   };
 
   return (
-    <header className="flex flex-row items-center justify-start w-full text-xl">
-      <nav className="w-full p-4 inline-flex items-end shadow shadow-white/10 text-slate-50">
-        <Link className="ml-3 inline-flex items-center" to="/">
-          <img src={logo} className="logo inline h-6 mr-3" alt="logo" />
-          <h1 className="inline text-3xl">Duality</h1>
-        </Link>
-        <Link className="ml-3" to="/swap">
-          Swap
-        </Link>
-        <Link className="ml-3" to="/pool">
-          Pool
-        </Link>
+    <header>
+      <nav>
+        <NavLink to="/">
+          <img src={logo} className="logo" alt="logo" />
+          <h1>Duality</h1>
+        </NavLink>
+        <NavLink to="/swap">Swap</NavLink>
+        <NavLink to="/pool">Pool</NavLink>
         {address ? (
-          <span className="ml-3">{address}</span>
+          <span className="link">{address}</span>
         ) : (
-          <button className="ml-3" onClick={onConnectClick}>
+          <button className="link" onClick={onConnectClick}>
             Connect Wallet
           </button>
         )}
-        <button className="ml-3" type="button" onClick={toggleThemeMode}>
+        <button
+          className="link no-blend"
+          type="button"
+          onClick={toggleThemeMode}
+        >
           {themeMode === 'light' ? '🌕' : '🌞'}
         </button>
       </nav>
     </header>
+  );
+}
+
+function NavLink({ to, children, className, ...otherProps }: LinkProps) {
+  const resolved = useResolvedPath(to);
+  const match = useMatch({ path: resolved.pathname, end: true });
+  const activeClassName = match ? 'active' : '';
+  const fullClassName = [className, activeClassName].filter(Boolean).join(' ');
+
+  return (
+    <Link to={to} className={fullClassName} {...otherProps}>
+      {children}
+    </Link>
   );
 }
