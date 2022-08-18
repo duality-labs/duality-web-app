@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.15](https://github.com/duality-labz/duality-web-app/compare/v0.1.14...v0.1.15) (2022-08-18)
+
+
+### Features
+
+* 98 - replace tailwind ([#111](https://github.com/duality-labz/duality-web-app/issues/111)) ([5e5eadf](https://github.com/duality-labz/duality-web-app/commit/5e5eadfc407bdfcacfacc9a7c638a66ffef24780))
+
 ## [0.1.14](https://github.com/duality-labz/duality-web-app/compare/v0.1.13...v0.1.14) (2022-08-17)
 
 
