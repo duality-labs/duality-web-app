@@ -58,7 +58,7 @@ $selected-fee-border-width: 1.5px;
     }
 
     .card-row {
-      flex: 1 0 auto;
+      flex-grow: 1;
     }
 
     .radio-input-group {
