@@ -20,6 +20,8 @@ interface TokenPickerProps {
   disabled?: boolean;
 }
 
+type AssetModeType = 'User' | 'All';
+
 export default function TokenPicker({
   value,
   onChange,
@@ -33,7 +35,16 @@ export default function TokenPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
+  const userList = tokenList.filter((_, i) => i & 1); // Todo actually filter (every other token for now)
+  const [assetMode, setAssetMode] = useState<AssetModeType>(
+    userList.length ? 'User' : 'All'
+  );
   const currentID = useId();
+
+  useEffect(() => {
+    if (!userList.length)
+      setAssetMode((oldMode) => (oldMode === 'User' ? 'All' : oldMode));
+  }, [userList.length]);
 
   const open = useCallback(() => {
     setIsOpen(true);
@@ -86,45 +97,44 @@ export default function TokenPicker({
   );
 
   // update the filtered list whenever the query or the list changes
-  useEffect(
-    function () {
-      // if the query is empty return the full list
-      if (!searchQuery) {
-        return setFilteredList(
-          tokenList.map((token) => ({
-            name: [token.name],
-            symbol: [token.symbol],
-            token,
-          }))
-        );
-      }
+  useEffect(() => {
+    const list = assetMode === 'All' ? tokenList : userList;
 
-      // remove invalid characters + remove space limitations (but still match any found)
-      const queryRegexText = searchQuery
-        .toLowerCase()
-        .replace(/[.*\\{}[\]+$^]/gi, (char) => `\\${char}`)
-        .replace(/\s+/g, '\\s*');
-      const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
-
-      setFilteredList(
-        tokenList
-          .filter((token) =>
-            [token.symbol, token.name, token.address].some((txt) =>
-              regexQuery.test(txt)
-            )
-          )
-          .map(function (token) {
-            // Split the symbol and name using the query (and include the query in the list)
-            const symbolResult = token.symbol?.split(regexQuery) || [''];
-            const nameResult = token.name?.split(regexQuery) || [''];
-            return { name: nameResult, symbol: symbolResult, token };
-          })
+    // if the query is empty return the full list
+    if (!searchQuery) {
+      return setFilteredList(
+        list.map((token) => ({
+          name: [token.name],
+          symbol: [token.symbol],
+          token,
+        }))
       );
+    }
 
-      setSelectedIndex(0);
-    },
-    [tokenList, searchQuery]
-  );
+    // remove invalid characters + remove space limitations (but still match any found)
+    const queryRegexText = searchQuery
+      .toLowerCase()
+      .replace(/[.*\\{}[\]+$^]/gi, (char) => `\\${char}`)
+      .replace(/\s+/g, '\\s*');
+    const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
+
+    setFilteredList(
+      list
+        .filter((token) =>
+          [token.symbol, token.name, token.address].some((txt) =>
+            regexQuery.test(txt)
+          )
+        )
+        .map(function (token) {
+          // Split the symbol and name using the query (and include the query in the list)
+          const symbolResult = token.symbol?.split(regexQuery) || [''];
+          const nameResult = token.name?.split(regexQuery) || [''];
+          return { name: nameResult, symbol: symbolResult, token };
+        })
+    );
+
+    setSelectedIndex(0);
+  }, [tokenList, userList, assetMode, searchQuery]);
 
   return (
     <>
@@ -159,6 +169,28 @@ export default function TokenPicker({
         initialFocusRef={inputRef}
         className="token-picker-dialog"
       >
+        <div className="card-row my-4 token-asset-selection">
+          {!!userList.length && (
+            <button
+              type="button"
+              className={`button pill py-3 px-4 ${
+                assetMode === 'User' ? 'button-primary' : ''
+              }`}
+              onClick={() => setAssetMode('User')}
+            >
+              Your Assets
+            </button>
+          )}
+          <button
+            type="button"
+            className={`button pill py-3 px-4 ${
+              assetMode === 'All' ? 'button-primary' : ''
+            }`}
+            onClick={() => setAssetMode('All')}
+          >
+            All Assets
+          </button>
+        </div>
         <ul className="token-picker-body" ref={bodyRef}>
           {filteredList.map(showListItem)}
         </ul>
