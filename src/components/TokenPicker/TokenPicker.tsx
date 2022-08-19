@@ -191,7 +191,7 @@ export default function TokenPicker({
             All Assets
           </button>
         </div>
-        <ul className="token-picker-body" ref={bodyRef}>
+        <ul className="token-picker-body duality-scrollbar" ref={bodyRef}>
           {filteredList.map(showListItem)}
         </ul>
       </Dialog>

@@ -5,7 +5,7 @@
 @use '../../styles/font/size.scss' as font-size;
 
 $no-token-border-size: 2px;
-$min-body-height: 60px;
+$min-body-height: 150px;
 
 .token-picker-head {
   & {
@@ -57,10 +57,6 @@ $min-body-height: 60px;
 }
 
 .token-picker-body {
-  & {
-    flex: 1 1 $min-body-height;
-  }
-
   li {
     & {
       @include paddings.padding('*', 0);
@@ -227,7 +223,24 @@ $min-body-height: 60px;
   }
 
   .dialog-body {
-    @include paddings.padding('t', 0);
+    & {
+      @include paddings.padding('y', 0);
+      @include paddings.padding('x', 0);
+      flex-direction: column;
+      overflow: hidden;
+      display: flex;
+    }
+
+    & > * {
+      @include paddings.padding('x', 5);
+      flex: 0 0 auto;
+    }
+
+    & > .token-picker-body {
+      @include margins.margin('t', 0);
+      @include margins.margin('b', 2);
+      flex: 1 1 $min-body-height;
+    }
   }
 
   .dialog-header-close-button {
