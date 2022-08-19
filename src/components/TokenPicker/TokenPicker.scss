@@ -4,38 +4,22 @@
 @use '../../styles/font/family.scss' as font-family;
 @use '../../styles/font/size.scss' as font-size;
 
-$color-primary: rgb(0, 0, 0);
-$color-secondary: rgb(177, 177, 177);
-$transition-duration: 0.25s;
-$font-size-primary: 1.2rem;
-$border-radius: 0.5rem;
 $no-token-border-size: 2px;
 $min-body-height: 60px;
 
-.token-picker-dialog {
-  & {
-    box-shadow: 0 0 1rem 0rem rgba(255, 255, 255, 0.4);
-    border-radius: $border-radius;
-    overflow: hidden;
-    height: 80vh;
-    padding: 0;
-  }
-
-  &::backdrop {
-    background-color: rgba(0, 0, 0, 0.3);
-  }
-}
-
 .token-picker-head {
   & {
-    padding: 1rem 1.5rem;
+    @include paddings.padding('y', 3);
+    @include paddings.padding('x', 4);
     position: relative;
     flex: 0 0 auto;
   }
 
   label {
-    font-size: $font-size-primary;
-    padding: 0.5rem 0rem;
+    @include paddings.padding('t', 0);
+    @include paddings.padding('x', 0);
+    @include paddings.padding('b', 4);
+    font-size: font-size.$h2;
     cursor: pointer;
     display: block;
     flex: 1 1 auto;
@@ -43,28 +27,18 @@ $min-body-height: 60px;
 
   input {
     & {
-      border: 1px solid rgba(0, 0, 0, 0.3);
-      border-radius: $border-radius;
-      font-size: $font-size-primary;
-      color: $color-primary;
-      padding: 0.5rem 1rem;
+      @include paddings.padding('y', 4);
+      @include paddings.padding('x', 5);
+      width: calc(
+        100% + #{paddings.size(4) * 2 + font-size.$text-m}
+      ); // 100% + parent paddings + x
+      border: 1px solid var(--token-search-border);
+      background-color: var(--token-search-bg);
+      font-size: font-size.$input-small;
+      color: var(--token-search-text);
+      border-radius: paddings.size(4);
       display: block;
       outline: none;
-      width: 100%;
-    }
-
-    &:focus {
-      box-shadow: 0 0 0.5rem 0rem $color-secondary;
-    }
-
-    &::placeholder {
-      transition: opacity $transition-duration ease-in-out;
-      color: $color-primary;
-      opacity: 0.25;
-    }
-
-    &:hover::placeholder {
-      opacity: 0.6;
     }
 
     &::-webkit-search-decoration,
@@ -235,5 +209,34 @@ $min-body-height: 60px;
     left: calc(50% - #{$no-token-border-size});
     background-color: currentColor;
     width: $no-token-border-size;
+  }
+}
+
+.token-picker-dialog {
+  & {
+    background-color: var(--dialog-backdrop);
+  }
+
+  .dialog-content {
+    border: paddings.size(2) solid var(--card-border);
+    background-color: var(--dialog-bg);
+  }
+
+  .dialog-header-row {
+    @include paddings.padding('b', 0);
+  }
+
+  .dialog-body {
+    @include paddings.padding('t', 0);
+  }
+
+  .dialog-header-close-button {
+    @include margins.margin('l', 'auto');
+    @include margins.margin('t', 0);
+    background-color: transparent;
+    border: 0px none transparent;
+    color: var(--text-default);
+    font-size: font-size.$h2;
+    margin-bottom: auto;
   }
 }

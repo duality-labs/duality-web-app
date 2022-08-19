@@ -45,7 +45,12 @@ $page-card: rgba(core.$dark-black, 60%);
 $card-border: core.$bg-light;
 
 $dialog-bg: core.$black;
+$dialog-backdrop: rgba(core.$dark-black, 50%);
 $selected-token: core.$dark-black;
+
+$token-search-bg: transparent;
+$token-search-text: core.$dark-gray;
+$token-search-border: core.$light-black;
 
 $scrollbar: transparent;
 $scrollbar-handle: core.$dark-white;
@@ -95,7 +100,12 @@ $map: (
   'card-border': $card-border,
 
   'dialog-bg': $dialog-bg,
+  'dialog-backdrop': $dialog-backdrop,
   'selected-token': $selected-token,
+
+  'token-search-bg': $token-search-bg,
+  'token-search-text': $token-search-text,
+  'token-search-border': $token-search-border,
 
   'scrollbar': $scrollbar,
   'scrollbar-handle': $scrollbar-handle,

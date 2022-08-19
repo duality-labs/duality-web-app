@@ -157,6 +157,7 @@ export default function TokenPicker({
         onDismiss={close}
         header={getHeader()}
         initialFocusRef={inputRef}
+        className="token-picker-dialog"
       >
         <ul className="token-picker-body" ref={bodyRef}>
           {filteredList.map(showListItem)}
