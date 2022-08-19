@@ -72,16 +72,16 @@ $min-body-height: 60px;
     button,
     label {
       & {
+        @include paddings.padding('*', 0);
+        @include margins.gap('x', 4);
         transition: background-color animations.$medium-duration
             animations.$default-mode,
           box-shadow animations.$medium-duration animations.$default-mode;
         box-shadow: 0 0 0 100vmax transparent; // shadow so that the background will ignore parent padding-x
         clip-path: inset(0 -100vmax); // so the shadow only "bleeds" on the side
         grid-template-columns: font-size.$token-logo-svg-list 1fr auto;
-        @include paddings.padding('*', 0);
         background-color: transparent;
         grid-template-rows: 50% 50%;
-        gap: 0 margins.size(4);
         text-align: start;
         border-radius: 0;
         outline: none;
@@ -239,8 +239,4 @@ $min-body-height: 60px;
     font-size: font-size.$h2;
     margin-bottom: auto;
   }
-}
-
-.token-asset-selection {
-  gap: 0 margins.size(3);
 }

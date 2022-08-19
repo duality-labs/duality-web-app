@@ -169,7 +169,7 @@ export default function TokenPicker({
         initialFocusRef={inputRef}
         className="token-picker-dialog"
       >
-        <div className="card-row my-4 token-asset-selection">
+        <div className="card-row my-4 gapx-3">
           {!!userList.length && (
             <button
               type="button"
