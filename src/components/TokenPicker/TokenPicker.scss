@@ -1,8 +1,10 @@
+@use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/font/size.scss' as font-size;
+
 $color-primary: rgb(0, 0, 0);
 $color-secondary: rgb(177, 177, 177);
 $transition-duration: 0.25s;
 $font-size-primary: 1.2rem;
-$font-size-secondary: 1rem;
 $border-radius: 0.5rem;
 $no-token-border-size: 2px;
 
@@ -147,24 +149,46 @@ $no-token-border-size: 2px;
 
 .token-picker-toggle {
   & {
-    transition: all 0.5s ease-in-out;
-    border-radius: 0 0.5rem 0.5rem 0;
-    color: rgb(0, 0, 0);
-    padding: 0.5rem 1rem;
-    position: relative;
-    max-width: 120px;
-    font-size: 1rem;
-    flex: 0 0 100%;
-    width: 100%;
-    z-index: 1;
+    background-color: var(--token-group);
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr auto;
+    border: 0px none transparent;
+    color: var(--text-default);
+    display: grid;
   }
 
-  &:hover,
-  &:focus,
-  &.open {
-    background-color: rgba(116, 89, 220, 1);
-    color: rgb(255, 255, 255);
-    max-width: 160px;
+  &:disabled {
+    color: var(--text-disabled);
+    pointer-events: none;
+  }
+
+  .token-image {
+    font-size: font-size.$token-logo-svg;
+    @include margins.margin('r', 3);
+    align-self: center;
+    text-align: center;
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;
+  }
+
+  .token-symbol {
+    font-size: font-size.$h4;
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    align-self: end;
+  }
+
+  .token-chain {
+    white-space: nowrap;
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+  }
+
+  .no-selected-token {
+    text-align: center;
+    align-self: center;
+    grid-column: 1 / 3;
+    grid-row: 1 / 3;
   }
 }
 
