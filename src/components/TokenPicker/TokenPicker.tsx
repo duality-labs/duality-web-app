@@ -39,6 +39,7 @@ export default function TokenPicker({
   const [assetMode, setAssetMode] = useState<AssetModeType>(
     userList.length ? 'User' : 'All'
   );
+  const movingAsset = useRef<HTMLButtonElement>(null);
   const currentID = useId();
 
   useEffect(() => {
@@ -136,6 +137,22 @@ export default function TokenPicker({
     setSelectedIndex(0);
   }, [tokenList, userList, assetMode, searchQuery]);
 
+  useEffect(() => {
+    const dom = movingAsset.current,
+      parent = dom?.parentElement;
+    if (!parent) return;
+    const siblings = [].slice
+      .call(parent.children)
+      .filter((cnild) => cnild !== dom)
+      .reverse() as Array<HTMLElement>;
+    const list = ['User', 'All'].reverse();
+    const item = siblings[list.indexOf(assetMode)];
+    dom.style.width = `${item.offsetWidth}px`;
+    dom.style.left = `${item.offsetLeft}px`;
+    // Should run every time the user button appears/disappears
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetMode, movingAsset.current, userList.length]);
+
   return (
     <>
       <button
@@ -169,13 +186,15 @@ export default function TokenPicker({
         initialFocusRef={inputRef}
         className="token-picker-dialog"
       >
-        <div className="card-row my-4 gapx-3">
+        <div className="card-row my-4 gapx-3 token-asset-selection">
+          <button
+            className="button button-primary pill token-moving-asset"
+            ref={movingAsset}
+          ></button>
           {!!userList.length && (
             <button
               type="button"
-              className={`button pill py-3 px-4 ${
-                assetMode === 'User' ? 'button-primary' : ''
-              }`}
+              className="button pill py-3 px-4"
               onClick={() => setAssetMode('User')}
             >
               Your Assets
@@ -183,9 +202,7 @@ export default function TokenPicker({
           )}
           <button
             type="button"
-            className={`button pill py-3 px-4 ${
-              assetMode === 'All' ? 'button-primary' : ''
-            }`}
+            className="button pill py-3 px-4"
             onClick={() => setAssetMode('All')}
           >
             All Assets
