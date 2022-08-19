@@ -261,13 +261,16 @@ $min-body-height: 150px;
   }
 
   .token-moving-asset {
-    transition: left animations.$medium-duration animations.$default-mode,
-      width animations.$medium-duration animations.$default-mode;
     position: absolute;
     height: 100%;
     width: 100%;
     z-index: -1;
     left: 0;
     top: 0;
+  }
+
+  .transition-ready {
+    transition: left animations.$medium-duration animations.$default-mode,
+      width animations.$medium-duration animations.$default-mode;
   }
 }

@@ -149,6 +149,7 @@ export default function TokenPicker({
     const item = siblings[list.indexOf(assetMode)];
     dom.style.width = `${item.offsetWidth}px`;
     dom.style.left = `${item.offsetLeft}px`;
+    dom.classList.add('transition-ready');
     // Should run every time the user button appears/disappears
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetMode, movingAsset.current, userList.length]);
