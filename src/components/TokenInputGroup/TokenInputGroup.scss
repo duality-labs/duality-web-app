@@ -16,6 +16,8 @@
   .token-picker-toggle {
     grid-column: 1 / 2;
     text-align: start;
+    grid-row-start: 1;
+    grid-row-end: 4;
     grid-row: 1 / 4;
   }
 
@@ -30,7 +32,7 @@
   }
 
   .token-group-title ~ .token-picker-toggle {
-    grid-row: 2 / 4;
+    grid-row-start: 2;
   }
 
   .token-group-balance {
@@ -38,6 +40,14 @@
     font-size: font-size.$text-s;
     grid-column: 2 / 3;
     grid-row: 1 / 2;
+    text-align: end;
+  }
+
+  .token-group-value {
+    font-family: font-family.$console;
+    font-size: font-size.$text-s;
+    grid-column: 2 / 3;
+    grid-row: 3 / 4;
     text-align: end;
   }
 
@@ -50,7 +60,9 @@
       color: var(--text-default);
       grid-column: 2 / 3;
       text-align: end;
-      grid-row: 2 / 3;
+      grid-row-start: 1;
+      grid-row-end: 4;
+      grid-row: 1 / 4;
       outline: none;
       width: 100%;
     }
@@ -61,11 +73,11 @@
     }
   }
 
-  .token-group-value {
-    font-family: font-family.$console;
-    font-size: font-size.$text-s;
-    grid-column: 2 / 3;
-    grid-row: 3 / 4;
-    text-align: end;
+  .token-group-balance ~ .token-group-input {
+    grid-row-start: 2;
+  }
+
+  .token-group-value ~ .token-group-input {
+    grid-row-end: 3;
   }
 }

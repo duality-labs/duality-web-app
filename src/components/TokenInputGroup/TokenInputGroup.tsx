@@ -60,6 +60,9 @@ export default function TokenInputGroup({
     <div className={`${className || ''} token-input-group`}>
       {title && <h5 className="token-group-title">{title}</h5>}
       {maxValue && <span className="token-group-balance">{maxValue}</span>}
+      {relevantValue && (
+        <span className="token-group-value">{relevantValue}</span>
+      )}
       <input
         type="text"
         className="token-group-input"
@@ -75,9 +78,6 @@ export default function TokenInputGroup({
         exclusion={exclusion}
         disabled={disabledToken}
       />
-      {relevantValue && (
-        <span className="token-group-value">{relevantValue}</span>
-      )}
     </div>
   );
 }
