@@ -188,6 +188,7 @@ export default function TokenPicker({
     const symbol = token?.token?.symbol;
     const logo = token?.token?.logo;
     const isDisabled = exclusion?.address === address;
+    const balance = '0.0'; // TODO get actual balance
 
     function onClick() {
       selectToken(token?.token);
@@ -202,19 +203,25 @@ export default function TokenPicker({
         <data value={address}>
           <button
             type="button"
-            className={`${isDisabled ? 'disabled' : ''}${
-              index === selectedIndex ? ' selected' : ''
-            }`}
+            className={[
+              isDisabled && 'disabled',
+              index === selectedIndex && ' selected',
+              'py-3',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             onClick={onClick}
             onFocus={onFocus}
           >
-            <div className="token-image">
-              {logo ? (
-                <img src={logo} alt={`${symbol || 'Token'} logo`} />
-              ) : (
-                <i className="no-token-logo"></i>
-              )}
-            </div>
+            {logo ? (
+              <img
+                src={logo}
+                alt={`${symbol || 'Token'} logo`}
+                className="token-image"
+              />
+            ) : (
+              <i className="token-image no-token-logo"></i>
+            )}
             <dfn className="token-symbol">
               <abbr title={address}>
                 {textListWithMark(token?.symbol || [])}
@@ -223,7 +230,7 @@ export default function TokenPicker({
             <span className="token-name">
               {textListWithMark(token?.name || [])}
             </span>
-            <span className="token-balance"></span>
+            <span className="token-balance">{balance}</span>
           </button>
         </data>
       </li>
