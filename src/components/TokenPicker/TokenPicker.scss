@@ -4,6 +4,7 @@ $transition-duration: 0.25s;
 $font-size-primary: 1.2rem;
 $font-size-secondary: 1rem;
 $border-radius: 0.5rem;
+$no-token-border-size: 2px;
 
 .token-picker-dialog {
   & {
@@ -169,14 +170,17 @@ $border-radius: 0.5rem;
 
 .no-token-logo {
   & {
+    transform: rotateZ(45deg);
     display: inline-block;
     position: relative;
+    // 1em to set the dimensions equal to the current font size
     height: 1em;
     width: 1em;
   }
 
   &::before,
   &::after {
+    box-sizing: border-box;
     position: absolute;
     display: block;
     height: 100%;
@@ -186,15 +190,14 @@ $border-radius: 0.5rem;
   }
 
   &::before {
-    border: 0.1em solid currentColor;
+    border: $no-token-border-size solid currentColor;
     border-radius: 50%;
   }
 
   &::after {
+    left: calc(50% - #{$no-token-border-size});
     background-color: currentColor;
-    transform: rotateZ(45deg);
-    left: calc(50% - 0.025em);
-    width: 0.05em;
+    width: $no-token-border-size;
   }
 }
 
