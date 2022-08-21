@@ -7,6 +7,7 @@ type Direction = 1 | -1;
 
 interface StepNumberInputProps<VT extends ValueType> {
   onChange?: (value: VT) => void;
+  revertInvalid?: boolean;
   value: VT;
   step?: VT;
   max?: VT;
@@ -15,6 +16,7 @@ interface StepNumberInputProps<VT extends ValueType> {
 
 export default function StepNumberInput<VT extends ValueType>({
   onChange,
+  revertInvalid = false,
   value,
   step: rawStep,
   max: rawMax,
@@ -40,18 +42,26 @@ export default function StepNumberInput<VT extends ValueType>({
    * @param newValue the proposed new value to be checked
    */
   const validateValue = useCallback(
-    (newValue: number) => {
+    (oldValue: number, newValue: number) => {
       let tempValue = newValue;
       if (isNaN(tempValue)) {
-        if (isNaN(numericValue)) {
+        if (revertInvalid) {
+          tempValue = oldValue;
+        } else if (isNaN(numericValue)) {
           tempValue = min;
         } else {
           tempValue = numericValue;
         }
       }
-      return Math.min(Math.max(min, tempValue), max);
+      if (revertInvalid) {
+        if (tempValue < min) return oldValue;
+        if (tempValue > max) return oldValue;
+        return tempValue;
+      } else {
+        return Math.min(Math.max(min, tempValue), max);
+      }
     },
-    [min, max, numericValue]
+    [min, max, revertInvalid, numericValue]
   );
 
   /**
@@ -60,7 +70,9 @@ export default function StepNumberInput<VT extends ValueType>({
    */
   const onStep = useCallback(
     (direction: Direction) => {
-      setCurrentValue((oldValue) => validateValue(oldValue + step * direction));
+      setCurrentValue((oldValue) =>
+        validateValue(oldValue, oldValue + step * direction)
+      );
     },
     [step, validateValue]
   );
@@ -69,8 +81,9 @@ export default function StepNumberInput<VT extends ValueType>({
    * To be called when there is a change with the input
    */
   const onInputChange = useCallback(() => {
-    if (!inputRef.current) return;
-    setCurrentValue(validateValue(parseText(inputRef.current.value)));
+    const value = inputRef.current?.value;
+    if (!value) return;
+    setCurrentValue((oldValue) => validateValue(oldValue, parseText(value)));
   }, [validateValue]);
 
   useEffect(() => {
