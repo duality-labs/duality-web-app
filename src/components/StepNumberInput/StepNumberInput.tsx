@@ -38,6 +38,14 @@ export default function StepNumberInput<VT extends ValueType>({
   const inputRef = useRef<HTMLInputElement>(null);
 
   /**
+   * If the min or max "push" the current value outside the valid range, readjust
+   */
+  useEffect(() => {
+    if (min > currentValue) setCurrentValue(min);
+    if (max < currentValue) setCurrentValue(max);
+  }, [min, max, currentValue]);
+
+  /**
    * Makes sure the value is valid number within the proper range
    * @param newValue the proposed new value to be checked
    */
