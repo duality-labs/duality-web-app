@@ -1,4 +1,5 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../styles/mixins-vars/margins.scss' as margins;
 @use '../../styles/font/family.scss' as font-family;
 @use '../../styles/components/cards.scss' as cards;
 @use '../../styles/font/size.scss' as font-size;
@@ -12,6 +13,24 @@ $border-width: 2px;
     flex-direction: column;
     overflow: hidden;
     display: flex;
+  }
+
+  .range-step-title {
+    @include margins.margin('y', 2);
+    @include margins.margin('x', 0);
+    color: var(--ghost-button);
+    font-size: font-size.$h4;
+    text-align: center;
+    width: 100%;
+  }
+
+  .range-step-description {
+    @include margins.margin('y', 1);
+    @include margins.margin('x', 0);
+    color: var(--text-default);
+    font-size: font-size.$text-m;
+    text-align: center;
+    width: 100%;
   }
 
   .range-step-controls {

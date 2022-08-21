@@ -10,6 +10,8 @@ interface StepNumberInputProps<VT extends ValueType> {
   pressedInterval?: number;
   revertInvalid?: boolean;
   pressedDelay?: number;
+  description?: string;
+  title?: string;
   value: VT;
   step?: VT;
   max?: VT;
@@ -21,6 +23,8 @@ export default function StepNumberInput<VT extends ValueType>({
   pressedInterval = 50,
   revertInvalid = false,
   pressedDelay = Infinity,
+  description,
+  title,
   value,
   step: rawStep,
   max: rawMax,
@@ -155,6 +159,7 @@ export default function StepNumberInput<VT extends ValueType>({
 
   return (
     <div className="range-step-input">
+      {title && <h6 className="range-step-title">{title}</h6>}
       <div className="range-step-controls">
         <button
           type="button"
@@ -181,6 +186,9 @@ export default function StepNumberInput<VT extends ValueType>({
           +
         </button>
       </div>
+      {description && (
+        <span className="range-step-description">{description}</span>
+      )}
     </div>
   );
 }
