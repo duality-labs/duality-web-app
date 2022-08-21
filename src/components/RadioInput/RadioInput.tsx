@@ -4,6 +4,7 @@ import './RadioInput.scss';
 interface RadioInputProps {
   onChange?: (value: string, index: number) => void;
   children: Array<JSX.Element>;
+  maxColumnCount?: number;
   value?: string;
   index?: number;
   name?: string;
@@ -12,6 +13,7 @@ interface RadioInputProps {
 export default function RadioInput({
   onChange,
   children,
+  maxColumnCount,
   value,
   index,
   name,
@@ -31,6 +33,7 @@ export default function RadioInput({
   );
   const groupID = useId();
   const groupName = name || groupID;
+  const flexBasis = maxColumnCount ? `${100 / maxColumnCount}%` : undefined;
 
   useEffect(() => {
     if (onChange) onChange(Object.keys(entries)[selectedIndex], selectedIndex);
@@ -50,7 +53,11 @@ export default function RadioInput({
               checked={index === selectedIndex}
               onChange={(e) => e.target.value && setSelectedIndex(index)}
             ></input>
-            <label htmlFor={id} className="button button-primary">
+            <label
+              htmlFor={id}
+              className="button button-primary"
+              style={{ flexBasis }}
+            >
               {child}
             </label>
           </Fragment>
