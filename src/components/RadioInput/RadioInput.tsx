@@ -1,16 +1,20 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useId, useState } from 'react';
 import './RadioInput.scss';
 
 interface RadioInputProps {
-  onChange?: (index: number) => void;
+  onChange?: (value: string, index: number) => void;
   children: Array<JSX.Element>;
+  value?: string;
   index?: number;
+  name?: string;
 }
 
 export default function RadioInput({
   onChange,
   children,
-  index = 0,
+  value,
+  index,
+  name,
 }: RadioInputProps) {
   const entries = children.reduce<{ [key: string]: JSX.Element }>(function (
     result,
@@ -21,24 +25,32 @@ export default function RadioInput({
     return result;
   },
   {});
-  const [selectedIndex, setSelectedIndex] = useState(index);
+  const valueIndex = value ? Object.keys(entries).indexOf(value) : -1;
+  const [selectedIndex, setSelectedIndex] = useState(
+    index ?? (valueIndex === -1 ? null : valueIndex) ?? 0
+  );
+  const groupID = useId();
+  const groupName = name || groupID;
 
   useEffect(() => {
-    if (onChange) onChange(selectedIndex);
-  }, [onChange, selectedIndex]);
+    if (onChange) onChange(Object.keys(entries)[selectedIndex], selectedIndex);
+  }, [onChange, selectedIndex, entries]);
 
   return (
     <div className="radio-input-group">
       {Object.entries(entries).map(([key, child], index) => {
+        const id = `${groupName}-${key}`;
+
         return (
-          <Fragment key={key}>
+          <Fragment key={id}>
             <input
               type="radio"
-              id={key}
+              name={groupName}
+              id={id}
               checked={index === selectedIndex}
               onChange={(e) => e.target.value && setSelectedIndex(index)}
             ></input>
-            <label htmlFor={key} className="button button-primary">
+            <label htmlFor={id} className="button button-primary">
               {child}
             </label>
           </Fragment>
