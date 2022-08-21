@@ -7,7 +7,9 @@ type Direction = 1 | -1;
 
 interface StepNumberInputProps<VT extends ValueType> {
   onChange?: (value: VT) => void;
+  pressedInterval?: number;
   revertInvalid?: boolean;
+  pressedDelay?: number;
   value: VT;
   step?: VT;
   max?: VT;
@@ -16,7 +18,9 @@ interface StepNumberInputProps<VT extends ValueType> {
 
 export default function StepNumberInput<VT extends ValueType>({
   onChange,
+  pressedInterval = 50,
   revertInvalid = false,
+  pressedDelay = Infinity,
   value,
   step: rawStep,
   max: rawMax,
@@ -35,6 +39,7 @@ export default function StepNumberInput<VT extends ValueType>({
   }
   const numericValue = typeof value === 'number' ? value : parseText(value);
   const [currentValue, setCurrentValue] = useState(numericValue);
+  const [, setPressedTimeID] = useState<number>();
   const inputRef = useRef<HTMLInputElement>(null);
 
   /**
@@ -86,6 +91,50 @@ export default function StepNumberInput<VT extends ValueType>({
   );
 
   /**
+   * To be called when the mouse gets released, to start the hold to step faster functionality
+   * @param direction -1 to start decreasing by -step every pressedInterval and 1 to start increasing by +step every pressedInterval
+   */
+  const onPressed = useCallback(
+    (direction: Direction) => {
+      let lastID = 0; // fix react calling setPressedID twice
+      setPressedTimeID((oldID) => {
+        if (pressedDelay === Infinity) return lastID;
+        if (lastID) return lastID;
+        clearInterval(oldID);
+        clearTimeout(oldID);
+
+        lastID = setTimeout(startCounting as TimerHandler, pressedDelay);
+        return lastID;
+      });
+
+      function startCounting() {
+        setPressedTimeID((oldID) => {
+          clearInterval(oldID);
+          clearTimeout(oldID);
+
+          return setInterval(onTick as TimerHandler, pressedInterval);
+        });
+      }
+
+      function onTick() {
+        onStep(direction);
+      }
+    },
+    [pressedDelay, pressedInterval, onStep]
+  );
+
+  /**
+   * To be called when the mouse gets released, so that all hold to step faster functionality ceases
+   */
+  const onReleased = useCallback(() => {
+    setPressedTimeID((oldID) => {
+      clearInterval(oldID);
+      clearTimeout(oldID);
+      return void 0;
+    });
+  }, []);
+
+  /**
    * To be called when there is a change with the input
    */
   const onInputChange = useCallback(() => {
@@ -107,7 +156,13 @@ export default function StepNumberInput<VT extends ValueType>({
   return (
     <div className="range-step-input">
       <div className="range-step-controls">
-        <button type="button" onClick={() => onStep(-1)}>
+        <button
+          type="button"
+          onClick={() => onStep(-1)}
+          onMouseDown={() => onPressed(-1)}
+          onMouseUp={onReleased}
+          onMouseLeave={onReleased}
+        >
           -
         </button>
         <input
@@ -116,7 +171,13 @@ export default function StepNumberInput<VT extends ValueType>({
           onInput={onInputChange}
           ref={inputRef}
         />
-        <button type="button" onClick={() => onStep(1)}>
+        <button
+          type="button"
+          onClick={() => onStep(1)}
+          onMouseDown={() => onPressed(1)}
+          onMouseUp={onReleased}
+          onMouseLeave={onReleased}
+        >
           +
         </button>
       </div>
