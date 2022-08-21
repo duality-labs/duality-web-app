@@ -2,30 +2,37 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import './StepNumberInput.scss';
 
+type ValueType = string | number;
 type Direction = 1 | -1;
 
-interface StepNumberInputProps {
-  onChange?: (value: number) => void;
-  value: number;
-  step?: number;
-  max?: number;
-  min?: number;
+interface StepNumberInputProps<VT extends ValueType> {
+  onChange?: (value: VT) => void;
+  value: VT;
+  step?: VT;
+  max?: VT;
+  min?: VT;
 }
 
-export default function StepNumberInput({
+export default function StepNumberInput<VT extends ValueType>({
   onChange,
-  value = 0,
-  step = 1,
-  max = Number.MAX_SAFE_INTEGER,
-  min = 0,
-}: StepNumberInputProps) {
+  value,
+  step: rawStep,
+  max: rawMax,
+  min: rawMin,
+}: StepNumberInputProps<VT>) {
+  const step =
+    typeof rawStep === 'number' ? rawStep : rawStep ? parseText(rawStep) : 1;
+  const max =
+    typeof rawMax === 'number' ? rawMax : rawMax ? parseText(rawMax) : Infinity;
+  const min =
+    typeof rawMin === 'number' ? rawMin : rawMin ? parseText(rawMin) : 0;
   if (max < min) {
     throw new Error(
       'Invalid Range, max limit cannot be smaller than the min limit'
     );
   }
-
-  const [currentValue, setCurrentValue] = useState(value);
+  const numericValue = typeof value === 'number' ? value : parseText(value);
+  const [currentValue, setCurrentValue] = useState(numericValue);
   const inputRef = useRef<HTMLInputElement>(null);
 
   /**
@@ -34,14 +41,17 @@ export default function StepNumberInput({
    */
   const validateValue = useCallback(
     (newValue: number) => {
-      const numberValue = isNaN(newValue)
-        ? isNaN(value)
-          ? min
-          : value
-        : newValue;
-      return Math.min(Math.max(min, numberValue), max);
+      let tempValue = newValue;
+      if (isNaN(tempValue)) {
+        if (isNaN(numericValue)) {
+          tempValue = min;
+        } else {
+          tempValue = numericValue;
+        }
+      }
+      return Math.min(Math.max(min, tempValue), max);
     },
-    [min, max, value]
+    [min, max, numericValue]
   );
 
   /**
@@ -64,8 +74,14 @@ export default function StepNumberInput({
   }, [validateValue]);
 
   useEffect(() => {
-    if (onChange) onChange(currentValue);
-  }, [onChange, currentValue]);
+    if (onChange) {
+      if (typeof value === 'string') {
+        onChange(numberToString(currentValue) as VT);
+      } else {
+        onChange(currentValue as VT);
+      }
+    }
+  }, [onChange, currentValue, value]);
 
   return (
     <div className="range-step-input">
@@ -85,6 +101,10 @@ export default function StepNumberInput({
       </div>
     </div>
   );
+}
+
+function numberToString(value: number) {
+  return `${value}`;
 }
 
 // TODO: improve/replace text=>number parser
