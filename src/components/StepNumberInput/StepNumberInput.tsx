@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import './StepNumberInput.scss';
+
 type Direction = 1 | -1;
 
 interface StepNumberInputProps {
