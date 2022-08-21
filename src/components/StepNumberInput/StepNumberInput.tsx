@@ -6,6 +6,12 @@ type ValueType = string | number;
 type Direction = 1 | -1;
 
 interface StepNumberInputProps<VT extends ValueType> {
+  calculateStep?: (
+    value: VT,
+    direction: Direction,
+    step: VT,
+    defaultValue: VT
+  ) => VT;
   onChange?: (value: VT) => void;
   pressedInterval?: number;
   revertInvalid?: boolean;
@@ -20,6 +26,7 @@ interface StepNumberInputProps<VT extends ValueType> {
 }
 
 export default function StepNumberInput<VT extends ValueType>({
+  calculateStep,
   onChange,
   pressedInterval = 50,
   revertInvalid = false,
@@ -89,11 +96,22 @@ export default function StepNumberInput<VT extends ValueType>({
    */
   const onStep = useCallback(
     (direction: Direction) => {
-      setCurrentValue((oldValue) =>
-        validateValue(oldValue, oldValue + step * direction)
-      );
+      setCurrentValue((oldValue) => {
+        let tempValue = oldValue + step * direction;
+        if (calculateStep) {
+          const mixedValue = calculateStep(
+            fixType(oldValue, value),
+            direction,
+            fixType(step, value),
+            fixType(tempValue, value)
+          );
+          tempValue =
+            typeof mixedValue === 'string' ? parseText(mixedValue) : mixedValue;
+        }
+        return validateValue(oldValue, tempValue);
+      });
     },
-    [step, validateValue]
+    [step, calculateStep, validateValue, value]
   );
 
   /**
@@ -151,11 +169,7 @@ export default function StepNumberInput<VT extends ValueType>({
 
   useEffect(() => {
     if (onChange) {
-      if (typeof value === 'string') {
-        onChange(numberToString(currentValue) as VT);
-      } else {
-        onChange(currentValue as VT);
-      }
+      onChange(fixType(currentValue, value));
     }
   }, [onChange, currentValue, value]);
 
@@ -206,4 +220,12 @@ function numberToString(value: number) {
 // TODO: improve/replace text=>number parser
 function parseText(text: string) {
   return +text;
+}
+
+function fixType<VT extends ValueType>(value: number, valueType: VT) {
+  if (typeof valueType === 'string') {
+    return numberToString(value) as VT;
+  } else {
+    return value as VT;
+  }
 }
