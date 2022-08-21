@@ -11,6 +11,7 @@ interface StepNumberInputProps<VT extends ValueType> {
   revertInvalid?: boolean;
   pressedDelay?: number;
   description?: string;
+  editable?: boolean;
   title?: string;
   value: VT;
   step?: VT;
@@ -24,6 +25,7 @@ export default function StepNumberInput<VT extends ValueType>({
   revertInvalid = false,
   pressedDelay = Infinity,
   description,
+  editable = true,
   title,
   value,
   step: rawStep,
@@ -170,12 +172,16 @@ export default function StepNumberInput<VT extends ValueType>({
         >
           -
         </button>
-        <input
-          type="number"
-          value={currentValue}
-          onInput={onInputChange}
-          ref={inputRef}
-        />
+        {editable ? (
+          <input
+            type="number"
+            value={currentValue}
+            onInput={onInputChange}
+            ref={inputRef}
+          />
+        ) : (
+          <span>{currentValue}</span>
+        )}
         <button
           type="button"
           onClick={() => onStep(1)}

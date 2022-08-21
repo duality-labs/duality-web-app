@@ -56,7 +56,8 @@ $border-width: 2px;
       width: 1em;
     }
 
-    input {
+    input,
+    span {
       @include paddings.padding('y', 0);
       @include paddings.padding('x', 4);
       font-family: font-family.$console;
