@@ -6,15 +6,41 @@ interface StepNumberInputProps {
   onChange?: (value: number) => void;
   value: number;
   step?: number;
+  max?: number;
+  min?: number;
 }
 
 export default function StepNumberInput({
   onChange,
   value = 0,
   step = 1,
+  max = Number.MAX_SAFE_INTEGER,
+  min = 0,
 }: StepNumberInputProps) {
+  if (max < min) {
+    throw new Error(
+      'Invalid Range, max limit cannot be smaller than the min limit'
+    );
+  }
+
   const [currentValue, setCurrentValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  /**
+   * Makes sure the value is valid number within the proper range
+   * @param newValue the proposed new value to be checked
+   */
+  const validateValue = useCallback(
+    (newValue: number) => {
+      const numberValue = isNaN(newValue)
+        ? isNaN(value)
+          ? min
+          : value
+        : newValue;
+      return Math.min(Math.max(min, numberValue), max);
+    },
+    [min, max, value]
+  );
 
   /**
    * Increases / Decreases the current value based on the step
@@ -22,9 +48,9 @@ export default function StepNumberInput({
    */
   const onStep = useCallback(
     (direction: Direction) => {
-      setCurrentValue((oldValue) => oldValue + step * direction);
+      setCurrentValue((oldValue) => validateValue(oldValue + step * direction));
     },
-    [step]
+    [step, validateValue]
   );
 
   /**
@@ -32,8 +58,8 @@ export default function StepNumberInput({
    */
   const onInputChange = useCallback(() => {
     if (!inputRef.current) return;
-    setCurrentValue(parseText(inputRef.current.value));
-  }, []);
+    setCurrentValue(validateValue(parseText(inputRef.current.value)));
+  }, [validateValue]);
 
   useEffect(() => {
     if (onChange) onChange(currentValue);
