@@ -1,5 +1,6 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
 @use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/font/size.scss' as font-size;
 
 .tooltip {
   & {
@@ -23,6 +24,7 @@
     background-color: var(--tooltip-bg);
     color: var(--tooltip-color);
     left: calc(100% + paddings.size(1));
+    font-size: font-size.$text-s;
     position: absolute;
     display: none;
     z-index: 2;
