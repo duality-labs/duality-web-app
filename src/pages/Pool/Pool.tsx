@@ -16,6 +16,7 @@ import {
 
 import './Pool.scss';
 import { useIndexerPairData } from '../../lib/web3/indexerProvider';
+import StepNumberInput from '../../components/StepNumberInput';
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
@@ -129,46 +130,39 @@ export default function Pool() {
       <div>Minimum tick</div>
       <div>Maximum tick</div>
       <br />
-      <input
-        type="range"
-        min="0"
-        max="100"
+      <StepNumberInput
         value={rangeMin}
-        onChange={(e) => setRangeMin(e.target.value)}
-        step="10"
-        style={{ transform: 'rotate(180deg)' }}
-      ></input>
-      <input
-        type="range"
-        min="0"
-        max="100"
+        onChange={setRangeMin}
+        max={rangeMax}
+        title="MIN PRICE"
+        description={
+          tokenA && tokenB
+            ? `${tokenA.symbol} per ${tokenB.symbol}`
+            : 'No Tokens'
+        }
+        pressedDelay={0.5e3}
+        pressedInterval={0.05e3}
+      />
+      <StepNumberInput
         value={rangeMax}
-        onChange={(e) => setRangeMax(e.target.value)}
-        step="10"
-      ></input>
-      <br />
-      <input
-        min="0"
-        max="100"
-        value={`${parseInt(rangeMin, 10) > 0 ? '-' : ''}${parseFloat(
-          rangeMin
-        ).toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        })}%`}
-        onChange={(e) => setRangeMin(e.target.value.replace(/\D/g, ''))}
-        step="1"
-      ></input>
-      <input
-        min="0"
-        max="100"
-        value={`${parseFloat(rangeMax).toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        })}%`}
-        onChange={(e) => setRangeMax(e.target.value.replace(/\D/g, ''))}
-        step="1"
-      ></input>
+        onChange={setRangeMax}
+        min={rangeMin}
+        title="MAX PRICE"
+        description={
+          tokenA && tokenB
+            ? `${tokenA.symbol} per ${tokenB.symbol}`
+            : 'No Tokens'
+        }
+        pressedDelay={0.5e3}
+        pressedInterval={0.05e3}
+      />
+      <StepNumberInput
+        value="0"
+        min={rangeMin}
+        max={rangeMax}
+        title="Test"
+        editable={false}
+      />
       <br />
       <input
         min="0"
