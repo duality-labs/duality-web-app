@@ -201,6 +201,8 @@ function addTickData(
     reserve0,
     reserve1,
     // calculate new total
+    // TODO: the back end may provide the totalShares property in the future
+    // so it should be used as the source of truth and not recalculated here
     totalShares: reserve0.plus(reserve1.multipliedBy(price)),
   };
   const newPoolTicks: PoolTicks = [undefined, undefined];
