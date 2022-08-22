@@ -16,6 +16,7 @@ import {
 
 import './Pool.scss';
 import { useIndexerPairData } from '../../lib/web3/indexerProvider';
+import Tooltip from '../../components/Tooltip';
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
@@ -79,7 +80,10 @@ export default function Pool() {
 
   return (
     <form className="pool-page card page-card my-4">
-      <h2 className="card-header card-title">Select Pair</h2>
+      <h2 className="card-header card-title">
+        Select Pair
+        <Tooltip>Some Text</Tooltip>
+      </h2>
       <div className="card-row">
         <TokenPicker
           value={tokenA}
