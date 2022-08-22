@@ -212,6 +212,11 @@ function addTickData(
   if (reserve1.isGreaterThan(0)) {
     newPoolTicks[1] = newTick;
   }
+  // note: the ticks structure isn't strictly needed as the pool arrays
+  // may be calculated without it. We keep it for now for logic simplicity.
+  // The ticks structure is easier to reason about than the pool arrays.
+  // This could be refactored for computation or storage optimisation later.
+  // see: https://github.com/duality-labz/duality-web-app/pull/102#discussion_r938174401
   const ticks = {
     ...oldPairInfo?.ticks,
     [tickID]: newPoolTicks,
