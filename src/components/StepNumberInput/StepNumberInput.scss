@@ -40,20 +40,27 @@ $border-width: 2px;
     }
 
     button {
-      @include paddings.padding('*', 2);
-      border-radius: paddings.$p-2;
-      background-color: var(--ghost-button);
-      font-size: font-size.$button-large;
-      font-family: font-family.$console;
-      border: 0px none transparent;
-      box-sizing: content-box;
-      mix-blend-mode: screen;
-      line-height: 1em;
-      aspect-ratio: 1;
-      flex: 0 0 auto;
-      color: black;
-      height: 1em;
-      width: 1em;
+      & {
+        @include paddings.padding('*', 2);
+        border-radius: paddings.$p-2;
+        background-color: var(--ghost-button);
+        font-size: font-size.$button-large;
+        font-family: font-family.$console;
+        border: 0px none transparent;
+        box-sizing: content-box;
+        mix-blend-mode: screen;
+        line-height: 1em;
+        aspect-ratio: 1;
+        flex: 0 0 auto;
+        color: black;
+        height: 1em;
+        width: 1em;
+      }
+
+      &:disabled {
+        filter: brightness(50%);
+        cursor: not-allowed;
+      }
     }
 
     input,
