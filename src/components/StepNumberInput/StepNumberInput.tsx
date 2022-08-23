@@ -18,6 +18,7 @@ interface StepNumberInputProps<VT extends ValueType> {
   disableLimit?: boolean;
   pressedDelay?: number;
   description?: string;
+  disabled?: boolean;
   editable?: boolean;
   title?: string;
   value: VT;
@@ -34,6 +35,7 @@ export default function StepNumberInput<VT extends ValueType>({
   disableLimit = true,
   pressedDelay = Infinity,
   description,
+  disabled = false,
   editable = true,
   title,
   value,
@@ -185,11 +187,11 @@ export default function StepNumberInput<VT extends ValueType>({
           onMouseDown={() => onPressed(-1)}
           onMouseUp={onReleased}
           onMouseLeave={onReleased}
-          disabled={disableLimit && currentValue <= min}
+          disabled={disabled || (disableLimit && currentValue <= min)}
         >
           -
         </button>
-        {editable ? (
+        {editable || disabled ? (
           <input
             type="number"
             value={currentValue}
@@ -205,7 +207,7 @@ export default function StepNumberInput<VT extends ValueType>({
           onMouseDown={() => onPressed(1)}
           onMouseUp={onReleased}
           onMouseLeave={onReleased}
-          disabled={disableLimit && currentValue >= max}
+          disabled={disabled || (disableLimit && currentValue >= max)}
         >
           +
         </button>
