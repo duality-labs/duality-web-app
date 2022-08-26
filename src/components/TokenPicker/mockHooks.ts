@@ -12,11 +12,16 @@ export interface IExchangeRate {
   gas: string;
 }
 
+/**
+ * Token eg. { symbol: ETH, name: Ethereurm, denom: ether, udenom: wei }
+ */
 export interface Token {
   logo: string | null;
   address: string;
   symbol: string;
   name: string;
+  denom: string;
+  udenom?: string;
 }
 
 export interface SwapRequest {
@@ -26,29 +31,69 @@ export interface SwapRequest {
 }
 
 const tokens: Array<Token> = [
-  { logo: null, symbol: 'TKN', name: 'TokenCoin', address: 'token' },
-  { logo: null, symbol: 'STK', name: 'StakeCoin', address: 'stake' },
-  { logo: null, symbol: 'Eth', name: 'Ether', address: 'ETH' },
+  {
+    logo: null,
+    symbol: 'TKN',
+    name: 'TokenCoin',
+    address: 'token',
+    denom: 'token',
+  },
+  {
+    logo: null,
+    symbol: 'STK',
+    name: 'StakeCoin',
+    address: 'stake',
+    denom: 'stake',
+  },
+  {
+    logo: null,
+    symbol: 'Eth',
+    name: 'Ether',
+    address: 'ETH',
+    denom: 'eth',
+    udenom: 'wei',
+  },
   {
     logo: null,
     symbol: 'Dai',
     name: 'Dai Stablecoin',
     address: 'Dai',
+    denom: 'dai',
   },
   {
     logo: null,
     symbol: 'USDC',
     name: 'USDCoin',
     address: 'USDC',
+    denom: 'usdc',
   },
-  { logo: null, symbol: 'USDT', name: 'Tether USD', address: '0x0004' },
-  { logo: null, symbol: 'WBTC', name: 'Wrapped BTC', address: '0x0005' },
-  { logo: null, symbol: 'WETH', name: 'Wrapped Ether', address: '0x0006' },
+  {
+    logo: null,
+    symbol: 'USDT',
+    name: 'Tether USD',
+    address: '0x0004',
+    denom: 'usdt',
+  },
+  {
+    logo: null,
+    symbol: 'WBTC',
+    name: 'Wrapped BTC',
+    address: '0x0005',
+    denom: 'wbtc',
+  },
+  {
+    logo: null,
+    symbol: 'WETH',
+    name: 'Wrapped Ether',
+    address: '0x0006',
+    denom: 'weth',
+  },
   {
     logo: null,
     symbol: 'BAT',
     name: 'Basic Attention Token',
     address: '0x0007',
+    denom: 'bat',
   },
 ];
 
