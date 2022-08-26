@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.20](https://github.com/duality-labz/duality-web-app/compare/v0.1.19...v0.1.20) (2022-08-26)
+
+
+### Features
+
+* 114 component for digital step number input ([#115](https://github.com/duality-labz/duality-web-app/issues/115)) ([6f19e0c](https://github.com/duality-labz/duality-web-app/commit/6f19e0c29b421e754b32d01013ce6ea9d3b877cb))
+
 ## [0.1.19](https://github.com/duality-labz/duality-web-app/compare/v0.1.18...v0.1.19) (2022-08-26)
 
 
