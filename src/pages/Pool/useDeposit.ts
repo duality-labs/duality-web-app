@@ -5,7 +5,6 @@ import BigNumber from 'bignumber.js';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module';
-import { MsgSingleDepositResponse } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/types/dex/tx';
 import { Token } from '../../components/TokenPicker/mockHooks';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
@@ -19,7 +18,7 @@ interface SendDepositResponse {
 
 export function useDeposit(): [
   {
-    data?: MsgSingleDepositResponse;
+    data?: SendDepositResponse;
     isValidating?: boolean;
     error?: string;
   },
@@ -30,9 +29,9 @@ export function useDeposit(): [
     fee: BigNumber | undefined,
     amount0: BigNumber | undefined,
     amount1: BigNumber | undefined
-  ) => Promise<SendDepositResponse | void>
+  ) => Promise<void>
 ] {
-  const [data, setData] = useState<MsgSingleDepositResponse>();
+  const [data, setData] = useState<SendDepositResponse | undefined>(undefined);
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string>();
   const web3 = useWeb3();
@@ -46,9 +45,9 @@ export function useDeposit(): [
       amount0: BigNumber | undefined,
       amount1: BigNumber | undefined
     ) {
-      return new Promise<SendDepositResponse | void>(async function (resolve) {
+      return new Promise<void>(async function (resolve) {
         try {
-          const result = await (async function () {
+          await (async function () {
             // check for correct inputs
             if (!web3.address || !web3.wallet) {
               throw new Error('Wallet not connected');
@@ -151,17 +150,15 @@ export function useDeposit(): [
               throw new Error('No new shares received');
             }
 
-            // return new information
-            setData({ sharesMinted: '' });
-            setIsValidating(false);
-
-            return {
+            // set new information
+            setData({
               gasUsed: gasUsed.toString(),
               receivedTokenA,
               receivedTokenB,
-            };
+            });
+            setIsValidating(false);
           })();
-          resolve(result);
+          resolve();
         } catch (e) {
           setIsValidating(false);
           setError((e as Error)?.message || (e as string));
