@@ -90,15 +90,12 @@ export default function StepNumberInput<VT extends ValueType>({
    */
   const onPressed = useCallback(
     (direction: Direction) => {
-      let lastID = 0; // fix react calling setPressedID twice
       setPressedTimeID((oldID) => {
-        if (pressedDelay === Infinity) return lastID;
-        if (lastID) return lastID;
+        if (pressedDelay === Infinity) return oldID;
         clearInterval(oldID);
         clearTimeout(oldID);
 
-        lastID = setTimeout(startCounting as TimerHandler, pressedDelay);
-        return lastID;
+        return setTimeout(startCounting as TimerHandler, pressedDelay);
       });
 
       function startCounting() {
