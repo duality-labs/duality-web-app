@@ -325,7 +325,7 @@ export default function Pool() {
       <div className="text-red-500">{!isValidatingDeposit && depositError}</div>
       <div className="text-sky-500">
         {!isValidatingDeposit && depositResponse
-          ? `Deposited ${depositResponse.receivedTokenA} ${tokenA?.address} for ${depositResponse.receivedTokenB} ${tokenB?.address}`
+          ? `Deposited ${depositResponse.receivedTokenA} ${tokenA?.address} and ${depositResponse.receivedTokenB} ${tokenB?.address}`
           : ''}
       </div>
     </form>
