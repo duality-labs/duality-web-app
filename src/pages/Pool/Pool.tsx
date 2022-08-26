@@ -204,20 +204,20 @@ export default function Pool() {
       <div>Minimum tick</div>
       <div>Maximum tick</div>
       <br />
-      <RadioInput value={slopeType} onChange={setSlopeType} maxColumnCount={2}>
-        {slopeTypes.map((type) => (
-          <span key={type}>{type}</span>
-        ))}
-      </RadioInput>
       <RadioInput
-        index={slopeType ? slopeTypes.indexOf(slopeType) : undefined}
+        list={slopeTypes}
+        value={slopeType}
+        onChange={setSlopeType}
+        maxColumnCount={2}
+        renderOption={(option) => option}
+      />
+      <RadioInput
+        list={slopeTypes}
+        value={slopeType}
         onChange={setSlopeType}
         maxColumnCount={3}
-      >
-        {slopeTypes.map((type) => (
-          <span key={type}>{type}</span>
-        ))}
-      </RadioInput>
+        renderOption={(option) => option}
+      />
       <input
         type="range"
         min="0"

@@ -1,48 +1,53 @@
-import { Fragment, useEffect, useId, useState } from 'react';
+import { Fragment, useCallback, useEffect, useId, useState } from 'react';
 import './RadioInput.scss';
 
-interface RadioInputProps {
-  onChange?: (value: string, index: number) => void;
-  children: Array<JSX.Element>;
+interface RadioInputProps<T> {
+  renderOption: (option: T, id: string, index: number) => React.ReactNode;
+  onChange?: (value: T, index: number) => void;
+  list: Array<T>;
   maxColumnCount?: number;
-  value?: string;
+  value?: T;
   index?: number;
   name?: string;
 }
 
-export default function RadioInput({
+export default function RadioInput<T>({
+  renderOption,
   onChange,
-  children,
+  list,
   maxColumnCount,
   value,
   index,
   name,
-}: RadioInputProps) {
-  const entries = children.reduce<{ [key: string]: JSX.Element }>(function (
-    result,
-    value
-  ) {
-    if (!value.key) throw new Error('All children must have a key');
-    result[value.key] = value;
-    return result;
-  },
-  {});
-  const valueIndex = value ? Object.keys(entries).indexOf(value) : -1;
+}: RadioInputProps<T>) {
+  const valueIndex = value ? list.indexOf(value) : -1;
   const [selectedIndex, setSelectedIndex] = useState(
     index ?? (valueIndex === -1 ? null : valueIndex) ?? 0
   );
   const groupID = useId();
   const groupName = name || groupID;
   const flexBasis = maxColumnCount ? `${100 / maxColumnCount}%` : undefined;
+  const getChild = useCallback(
+    (index: number) =>
+      renderOption(list[index], `${groupName}-${index}`, index),
+    [groupName, list, renderOption]
+  );
+  const [children, setChildren] = useState(
+    list.map((_, index) => getChild(index))
+  );
 
   useEffect(() => {
-    if (onChange) onChange(Object.keys(entries)[selectedIndex], selectedIndex);
-  }, [onChange, selectedIndex, entries]);
+    if (onChange) onChange(list[selectedIndex], selectedIndex);
+  }, [onChange, selectedIndex, list]);
+
+  useEffect(() => {
+    setChildren(list.map((_, index) => getChild(index)));
+  }, [getChild, list]);
 
   return (
     <div className="radio-input-group">
-      {Object.entries(entries).map(([key, child], index) => {
-        const id = `${groupName}-${key}`;
+      {children.map((child, index) => {
+        const id = `${groupName}-${index}`;
 
         return (
           <Fragment key={id}>
