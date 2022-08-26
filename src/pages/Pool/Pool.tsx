@@ -25,6 +25,12 @@ const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 const denomRatio = new BigNumber(10).exponentiatedBy(denomExponent);
 const defaultFee = '0.30';
 const defaultPrice = '1';
+const priceMin = new BigNumber(defaultPrice)
+  .dividedBy(denomRatio)
+  .toFixed(denomExponent);
+const priceMax = new BigNumber(defaultPrice)
+  .multipliedBy(denomRatio)
+  .toFixed(0);
 const defaultTokenAmount = '1000';
 
 export default function Pool() {
@@ -181,8 +187,8 @@ export default function Pool() {
         <input
           className="w-1/2"
           type="number"
-          min="0.0000000000000000001"
-          max="1000000000000000000"
+          min={priceMin}
+          max={priceMax}
           value={price}
           onChange={(e) =>
             setPrice(new BigNumber(e.target.value).toFixed(denomExponent))
