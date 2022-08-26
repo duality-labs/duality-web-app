@@ -9,7 +9,6 @@ interface StepNumberInputProps<VT extends ValueType> {
   onChange?: (value: VT) => void;
   tabbableButtons?: boolean;
   pressedInterval?: number;
-  revertInvalid?: boolean;
   disableLimit?: boolean;
   pressedDelay?: number;
   description?: string;
@@ -26,7 +25,6 @@ export default function StepNumberInput<VT extends ValueType>({
   onChange,
   tabbableButtons = false,
   pressedInterval = 50,
-  revertInvalid = false,
   disableLimit = true,
   pressedDelay = Infinity,
   description,
@@ -68,25 +66,9 @@ export default function StepNumberInput<VT extends ValueType>({
    */
   const validateValue = useCallback(
     (oldValue: number, newValue: number) => {
-      let tempValue = newValue;
-      if (isNaN(tempValue)) {
-        if (revertInvalid) {
-          tempValue = oldValue;
-        } else if (isNaN(numericValue)) {
-          tempValue = min;
-        } else {
-          tempValue = numericValue;
-        }
-      }
-      if (revertInvalid) {
-        if (tempValue < min) return oldValue;
-        if (tempValue > max) return oldValue;
-        return tempValue;
-      } else {
-        return Math.min(Math.max(min, tempValue), max);
-      }
+      return min <= newValue && newValue <= max ? newValue : oldValue;
     },
-    [min, max, revertInvalid, numericValue]
+    [min, max]
   );
 
   /**
