@@ -23,12 +23,13 @@ import { useDeposit } from './useDeposit';
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 const denomRatio = new BigNumber(10).exponentiatedBy(denomExponent);
+const defaultFee = '0.30';
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
   const [price, setPrice] = useState(new BigNumber(1).toFixed(denomExponent));
-  const [fee, setFee] = useState('0.30');
+  const [fee, setFee] = useState(defaultFee);
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
     setTokenB(tokenA);
