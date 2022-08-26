@@ -19,7 +19,15 @@ function sendSwap(
   { amountIn, tokenIn, tokenOut, minOut, creator }: MsgSwap
 ): Promise<MsgSwapResponse> {
   return new Promise(async function (resolve, reject) {
-    if (!amountIn || !amountIn || !tokenIn || !tokenOut || !minOut || !creator || !creator)
+    if (
+      !amountIn ||
+      !amountIn ||
+      !tokenIn ||
+      !tokenOut ||
+      !minOut ||
+      !creator ||
+      !creator
+    )
       return reject(new Error('Invalid Input'));
 
     const totalBigInt = new BigNumber(amountIn);
@@ -37,7 +45,14 @@ function sendSwap(
         assertIsDeliverTxSuccess(res);
         const { code, gasUsed, rawLog } = res;
         if (code === REQUEST_SUCCESS) {
-          resolve({ amountIn, tokenIn, tokenOut, minOut, creator, gas: gasUsed.toString() });
+          resolve({
+            amountIn,
+            tokenIn,
+            tokenOut,
+            minOut,
+            creator,
+            gas: gasUsed.toString(),
+          });
         } else {
           // eslint-disable-next-line
           console.warn(`Failed to send tx (code: ${code}): ${rawLog}`);
@@ -74,7 +89,8 @@ export function useSwap(request?: MsgSwap): {
     if (!request) return onError('Missing Tokens and value');
     if (!web3Ref.current) return onError('Missing Provider');
     const { amountIn, tokenIn, tokenOut, minOut, creator } = request;
-    if (! amountIn || !tokenIn || !tokenOut || !minOut || !creator) return onError('Invalid input');
+    if (!amountIn || !tokenIn || !tokenOut || !minOut || !creator)
+      return onError('Invalid input');
     setValidating(true);
     setError(undefined);
     setData(undefined);

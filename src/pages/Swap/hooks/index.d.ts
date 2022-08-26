@@ -30,9 +30,9 @@ export interface PairResult {
  * RouterResult is a reflection of the backend structue "MsgSwap"
  * but utilising BigNumber type instead of BigNumberString type properties
  */
- export interface RouterResult {
-  tokenIn: string, // address
-  tokenOut: string, // address
-  amountIn: BigNumber,
-  amountOut: BigNumber,
+export interface RouterResult {
+  tokenIn: string; // address
+  tokenOut: string; // address
+  amountIn: BigNumber;
+  amountOut: BigNumber;
 }
