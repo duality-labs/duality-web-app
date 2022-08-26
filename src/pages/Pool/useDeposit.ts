@@ -45,126 +45,125 @@ export function useDeposit(): [
       amount0: BigNumber | undefined,
       amount1: BigNumber | undefined
     ) {
-      return new Promise<void>(async function (resolve) {
+      return new Promise<void>(async function (resolve, reject) {
         try {
-          await (async function () {
-            // check for correct inputs
-            if (!web3.address || !web3.wallet) {
-              throw new Error('Wallet not connected');
-            }
-            if (!tokenA || !tokenB) {
-              throw new Error('Tokens not set');
-            }
-            if (!price || !price.isGreaterThan(0)) {
-              throw new Error('Price not set');
-            }
-            if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
-              throw new Error('Fee not set');
-            }
-            if (
-              !amount0 ||
-              !amount1 ||
-              amount0.isLessThan(0) ||
-              amount1.isLessThan(0)
-            ) {
-              throw new Error('Amounts not set');
-            }
-            if (!amount0.isGreaterThan(0) && !amount1.isGreaterThan(0)) {
-              throw new Error('Amounts are zero');
-            }
+          // check for correct inputs
+          if (!web3.address || !web3.wallet) {
+            throw new Error('Wallet not connected');
+          }
+          if (!tokenA || !tokenB) {
+            throw new Error('Tokens not set');
+          }
+          if (!price || !price.isGreaterThan(0)) {
+            throw new Error('Price not set');
+          }
+          if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
+            throw new Error('Fee not set');
+          }
+          if (
+            !amount0 ||
+            !amount1 ||
+            amount0.isLessThan(0) ||
+            amount1.isLessThan(0)
+          ) {
+            throw new Error('Amounts not set');
+          }
+          if (!amount0.isGreaterThan(0) && !amount1.isGreaterThan(0)) {
+            throw new Error('Amounts are zero');
+          }
 
-            setData(undefined);
-            setIsValidating(true);
-            setError(undefined);
+          setData(undefined);
+          setIsValidating(true);
+          setError(undefined);
 
-            // add each tick message into a signed broadcast
-            const client = await dexTxClient(web3.wallet);
-            const res = await client.signAndBroadcast([
-              client.msgSingleDeposit({
-                creator: web3.address,
-                token0: tokenA.address,
-                token1: tokenB.address,
-                receiver: web3.address,
-                // todo: replace with form input amounts
-                // fake some price points and amounts that can be tested in dev
-                price: price.toFixed(denomExponent),
-                fee: fee.toFixed(denomExponent),
-                amounts0: amount0.toFixed(denomExponent),
-                amounts1: amount1.toFixed(denomExponent),
-              }),
-            ]);
+          // add each tick message into a signed broadcast
+          const client = await dexTxClient(web3.wallet);
+          const res = await client.signAndBroadcast([
+            client.msgSingleDeposit({
+              creator: web3.address,
+              token0: tokenA.address,
+              token1: tokenB.address,
+              receiver: web3.address,
+              // todo: replace with form input amounts
+              // fake some price points and amounts that can be tested in dev
+              price: price.toFixed(denomExponent),
+              fee: fee.toFixed(denomExponent),
+              amounts0: amount0.toFixed(denomExponent),
+              amounts1: amount1.toFixed(denomExponent),
+            }),
+          ]);
 
-            // check for response
-            if (!res) {
-              throw new Error('No response');
-            }
+          // check for response
+          if (!res) {
+            throw new Error('No response');
+          }
 
-            // check for response errors
-            const { code, gasUsed, rawLog } = res;
-            assertIsDeliverTxSuccess(res);
-            if (code) {
-              // eslint-disable-next-line
-              console.warn(`Failed to send tx (code: ${code}): ${rawLog}`);
-              throw new Error(`Tx error: ${code}`);
-            }
+          // check for response errors
+          const { code, gasUsed, rawLog } = res;
+          assertIsDeliverTxSuccess(res);
+          if (code) {
+            // eslint-disable-next-line
+            console.warn(`Failed to send tx (code: ${code}): ${rawLog}`);
+            throw new Error(`Tx error: ${code}`);
+          }
 
-            const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
-            const foundEvents = foundLogs.flatMap((log) => log.events);
-            const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
-              receivedTokenA: string;
-              receivedTokenB: string;
-            }>(
-              (acc, event) => {
-                if (event.type === 'transfer') {
-                  event.attributes.forEach((attr, index, attrs) => {
-                    // if this attribute is the amount
-                    if (index > 0 && attr.key === 'amount') {
-                      // and the previous attribute was the sender
-                      const previousAttr = attrs[index - 1];
-                      if (
-                        previousAttr?.key === 'sender' &&
-                        previousAttr?.value === web3.address
-                      ) {
-                        // read the matching tokens into their values
-                        if (attr.value.endsWith(tokenA.denom.toLowerCase())) {
-                          acc.receivedTokenA = attr.value.slice(
-                            0,
-                            0 - tokenA.denom.length
-                          );
-                        }
-                        if (attr.value.endsWith(tokenB.denom.toLowerCase())) {
-                          acc.receivedTokenB = attr.value.slice(
-                            0,
-                            0 - tokenB.denom.length
-                          );
-                        }
+          const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
+          const foundEvents = foundLogs.flatMap((log) => log.events);
+          const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
+            receivedTokenA: string;
+            receivedTokenB: string;
+          }>(
+            (acc, event) => {
+              if (event.type === 'transfer') {
+                event.attributes.forEach((attr, index, attrs) => {
+                  // if this attribute is the amount
+                  if (index > 0 && attr.key === 'amount') {
+                    // and the previous attribute was the sender
+                    const previousAttr = attrs[index - 1];
+                    if (
+                      previousAttr?.key === 'sender' &&
+                      previousAttr?.value === web3.address
+                    ) {
+                      // read the matching tokens into their values
+                      if (attr.value.endsWith(tokenA.denom.toLowerCase())) {
+                        acc.receivedTokenA = attr.value.slice(
+                          0,
+                          0 - tokenA.denom.length
+                        );
+                      }
+                      if (attr.value.endsWith(tokenB.denom.toLowerCase())) {
+                        acc.receivedTokenB = attr.value.slice(
+                          0,
+                          0 - tokenB.denom.length
+                        );
                       }
                     }
-                  });
-                }
-                return acc;
-              },
-              { receivedTokenA: '0', receivedTokenB: '0' }
-            );
+                  }
+                });
+              }
+              return acc;
+            },
+            { receivedTokenA: '0', receivedTokenB: '0' }
+          );
 
-            if (!receivedTokenA && !receivedTokenB) {
-              throw new Error('No new shares received');
-            }
+          if (!receivedTokenA && !receivedTokenB) {
+            throw new Error('No new shares received');
+          }
 
-            // set new information
-            setData({
-              gasUsed: gasUsed.toString(),
-              receivedTokenA,
-              receivedTokenB,
-            });
-            setIsValidating(false);
-          })();
+          // set new information
+          setData({
+            gasUsed: gasUsed.toString(),
+            receivedTokenA,
+            receivedTokenB,
+          });
+          setIsValidating(false);
           resolve();
         } catch (e) {
-          setIsValidating(false);
-          setError((e as Error)?.message || (e as string));
-          resolve();
+          reject(e);
         }
+      }).catch((e: Error | string) => {
+        setIsValidating(false);
+        setError((e as Error)?.message || (e as string));
       });
     },
     [web3.address, web3.wallet]
