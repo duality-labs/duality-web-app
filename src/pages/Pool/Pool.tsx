@@ -20,6 +20,7 @@ import {
 import './Pool.scss';
 import { useDeposit } from './useDeposit';
 import RadioInput from '../../components/RadioInput';
+import { OptionProps } from '../../components/RadioInput/RadioInput';
 
 const slopeTypes = ['UNIFORM', 'UP-SLOPE', 'BELL CURVE', 'DOWN-SLOPE'];
 
@@ -209,6 +210,7 @@ export default function Pool() {
         value={slopeType}
         onChange={setSlopeType}
         maxColumnCount={2}
+        OptionComponent={OptionComponent}
       />
       <RadioInput
         list={slopeTypes}
@@ -347,4 +349,8 @@ export default function Pool() {
       </div>
     </form>
   );
+}
+
+function OptionComponent({ option }: OptionProps<string>) {
+  return <div>{option}</div>;
 }

@@ -1,7 +1,7 @@
 import { Fragment, useId, useMemo } from 'react';
 import './RadioInput.scss';
 
-interface OptionProps<T> {
+export interface OptionProps<T> {
   option: T;
   id: string;
   index: number;
