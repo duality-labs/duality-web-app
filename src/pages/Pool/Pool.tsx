@@ -19,10 +19,6 @@ import {
 
 import './Pool.scss';
 import { useDeposit } from './useDeposit';
-import RadioInput from '../../components/RadioInput';
-import { OptionProps } from '../../components/RadioInput/RadioInput';
-
-const slopeTypes = ['UNIFORM', 'UP-SLOPE', 'BELL CURVE', 'DOWN-SLOPE'];
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
@@ -74,8 +70,6 @@ export default function Pool() {
       .dividedBy(denomRatio)
       .toFixed(denomExponent),
   ]);
-
-  const [slopeType, setSlopeType] = useState<string>();
 
   // update values when rates or shape changes
   useEffect(() => {
@@ -205,19 +199,6 @@ export default function Pool() {
       <div>Minimum tick</div>
       <div>Maximum tick</div>
       <br />
-      <RadioInput
-        list={slopeTypes}
-        value={slopeType}
-        onChange={setSlopeType}
-        maxColumnCount={2}
-        OptionComponent={OptionComponent}
-      />
-      <RadioInput
-        list={slopeTypes}
-        value={slopeType}
-        onChange={setSlopeType}
-        maxColumnCount={3}
-      />
       <input
         type="range"
         min="0"
@@ -349,8 +330,4 @@ export default function Pool() {
       </div>
     </form>
   );
-}
-
-function OptionComponent({ option }: OptionProps<string>) {
-  return <div>{option}</div>;
 }
