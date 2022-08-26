@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.17](https://github.com/duality-labz/duality-web-app/compare/v0.1.16...v0.1.17) (2022-08-26)
+
+
+### Features
+
+* 107 add deposit tokens functionality on add liquidity page ([#108](https://github.com/duality-labz/duality-web-app/issues/108)) ([45c5c45](https://github.com/duality-labz/duality-web-app/commit/45c5c4555ed54172148f88af4358591cee912867))
+
 ## [0.1.16](https://github.com/duality-labz/duality-web-app/compare/v0.1.15...v0.1.16) (2022-08-26)
 
 
