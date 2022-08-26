@@ -35,7 +35,7 @@ export default function StepNumberInput({
   value,
   step: rawStep,
   max: rawMax,
-  min: rawMin,
+  min: rawMin = 0,
   parse = Number,
   format = String,
 }: StepNumberInputProps) {
