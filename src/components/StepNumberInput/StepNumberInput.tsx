@@ -2,11 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import './StepNumberInput.scss';
 
-type ValueType = string | number;
 type Direction = 1 | -1;
 
-interface StepNumberInputProps<VT extends ValueType> {
-  onChange?: (value: VT) => void;
+interface StepNumberInputProps {
+  onChange?: (value: string) => void;
   tabbableButtons?: boolean;
   pressedInterval?: number;
   disableLimit?: boolean;
@@ -15,13 +14,15 @@ interface StepNumberInputProps<VT extends ValueType> {
   disabled?: boolean;
   editable?: boolean;
   title?: string;
-  value: VT;
-  step?: VT;
-  max?: VT;
-  min?: VT;
+  value: string;
+  step?: string | number;
+  max?: string | number;
+  min?: string | number;
+  parse?: (value: string) => number;
+  format?: (value: number) => string;
 }
 
-export default function StepNumberInput<VT extends ValueType>({
+export default function StepNumberInput({
   onChange,
   tabbableButtons = false,
   pressedInterval = 50,
@@ -35,19 +36,21 @@ export default function StepNumberInput<VT extends ValueType>({
   step: rawStep,
   max: rawMax,
   min: rawMin,
-}: StepNumberInputProps<VT>) {
+  parse = Number,
+  format = String,
+}: StepNumberInputProps) {
   const step =
-    typeof rawStep === 'number' ? rawStep : rawStep ? parseText(rawStep) : 1;
+    typeof rawStep === 'number' ? rawStep : rawStep ? parse(rawStep) : 1;
   const max =
-    typeof rawMax === 'number' ? rawMax : rawMax ? parseText(rawMax) : Infinity;
+    typeof rawMax === 'number' ? rawMax : rawMax ? parse(rawMax) : undefined;
   const min =
-    typeof rawMin === 'number' ? rawMin : rawMin ? parseText(rawMin) : 0;
-  if (max < min) {
+    typeof rawMin === 'number' ? rawMin : rawMin ? parse(rawMin) : undefined;
+  if (min !== undefined && max !== undefined && max < min) {
     throw new Error(
       'Invalid Range, max limit cannot be smaller than the min limit'
     );
   }
-  const numericValue = typeof value === 'number' ? value : parseText(value);
+  const numericValue = typeof value === 'number' ? value : parse(value);
   const [currentValue, setCurrentValue] = useState(numericValue);
   const [, setTimeoutID] = useState<number>();
   const [, setIntervalID] = useState<number>();
@@ -57,8 +60,8 @@ export default function StepNumberInput<VT extends ValueType>({
    * If the min or max "push" the current value outside the valid range, readjust
    */
   useEffect(() => {
-    if (min > currentValue) setCurrentValue(min);
-    if (max < currentValue) setCurrentValue(max);
+    if (min !== undefined && min > currentValue) setCurrentValue(min);
+    if (max !== undefined && max < currentValue) setCurrentValue(max);
   }, [min, max, currentValue]);
 
   /**
@@ -67,7 +70,11 @@ export default function StepNumberInput<VT extends ValueType>({
    */
   const validateValue = useCallback(
     (oldValue: number, newValue: number) => {
-      return min <= newValue && newValue <= max ? newValue : oldValue;
+      if ((!min || min <= newValue) && (!max || newValue <= max)) {
+        return newValue;
+      } else {
+        return oldValue;
+      }
     },
     [min, max]
   );
@@ -135,14 +142,14 @@ export default function StepNumberInput<VT extends ValueType>({
   const onInputChange = useCallback(() => {
     const value = inputRef.current?.value;
     if (!value) return;
-    setCurrentValue((oldValue) => validateValue(oldValue, parseText(value)));
-  }, [validateValue]);
+    setCurrentValue((oldValue) => validateValue(oldValue, parse(value)));
+  }, [validateValue, parse]);
 
   useEffect(() => {
     if (onChange) {
-      onChange(fixType(currentValue, value));
+      onChange(format(currentValue));
     }
-  }, [onChange, currentValue, value]);
+  }, [onChange, currentValue, format]);
 
   return (
     <div className="range-step-input">
@@ -154,7 +161,10 @@ export default function StepNumberInput<VT extends ValueType>({
           onMouseDown={onSubPressed}
           onMouseUp={onReleased}
           onMouseLeave={onReleased}
-          disabled={disabled || (disableLimit && currentValue <= min)}
+          disabled={
+            disabled ||
+            (disableLimit && min !== undefined && currentValue <= min)
+          }
           tabIndex={tabbableButtons ? 0 : -1}
         >
           -
@@ -175,7 +185,10 @@ export default function StepNumberInput<VT extends ValueType>({
           onMouseDown={onAddPressed}
           onMouseUp={onReleased}
           onMouseLeave={onReleased}
-          disabled={disabled || (disableLimit && currentValue >= max)}
+          disabled={
+            disabled ||
+            (disableLimit && max !== undefined && currentValue >= max)
+          }
           tabIndex={tabbableButtons ? 0 : -1}
         >
           +
@@ -186,21 +199,4 @@ export default function StepNumberInput<VT extends ValueType>({
       )}
     </div>
   );
-}
-
-function numberToString(value: number) {
-  return `${value}`;
-}
-
-// TODO: improve/replace text=>number parser
-function parseText(text: string) {
-  return +text;
-}
-
-function fixType<VT extends ValueType>(value: number, valueType: VT) {
-  if (typeof valueType === 'string') {
-    return numberToString(value) as VT;
-  } else {
-    return value as VT;
-  }
 }
