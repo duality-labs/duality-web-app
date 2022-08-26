@@ -49,7 +49,8 @@ export default function StepNumberInput<VT extends ValueType>({
   }
   const numericValue = typeof value === 'number' ? value : parseText(value);
   const [currentValue, setCurrentValue] = useState(numericValue);
-  const [, setPressedTimeID] = useState<number>();
+  const [, setTimeoutID] = useState<number>();
+  const [, setIntervalID] = useState<number>();
   const inputRef = useRef<HTMLInputElement>(null);
 
   /**
@@ -90,19 +91,15 @@ export default function StepNumberInput<VT extends ValueType>({
    */
   const onPressed = useCallback(
     (direction: Direction) => {
-      setPressedTimeID((oldID) => {
+      setTimeoutID((oldID) => {
         if (pressedDelay === Infinity) return oldID;
-        clearInterval(oldID);
         clearTimeout(oldID);
-
         return setTimeout(startCounting as TimerHandler, pressedDelay);
       });
 
       function startCounting() {
-        setPressedTimeID((oldID) => {
+        setIntervalID((oldID) => {
           clearInterval(oldID);
-          clearTimeout(oldID);
-
           return setInterval(onTick as TimerHandler, pressedInterval);
         });
       }
@@ -118,10 +115,13 @@ export default function StepNumberInput<VT extends ValueType>({
    * To be called when the mouse gets released, so that all hold to step faster functionality ceases
    */
   const onReleased = useCallback(() => {
-    setPressedTimeID((oldID) => {
-      clearInterval(oldID);
+    setTimeoutID((oldID) => {
       clearTimeout(oldID);
-      return void 0;
+      return undefined;
+    });
+    setIntervalID((oldID) => {
+      clearInterval(oldID);
+      return undefined;
     });
   }, []);
 
