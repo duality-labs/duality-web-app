@@ -85,6 +85,7 @@ export function useDeposit(): [
                 token0: tokenA.address,
                 token1: tokenB.address,
                 receiver: web3.address,
+                // todo: replace with form input amounts
                 // fake some price points and amounts that can be tested in dev
                 price: price.toFixed(denomExponent),
                 fee: fee.toFixed(denomExponent),
