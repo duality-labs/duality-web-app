@@ -6,12 +6,6 @@ type ValueType = string | number;
 type Direction = 1 | -1;
 
 interface StepNumberInputProps<VT extends ValueType> {
-  calculateStep?: (
-    value: VT,
-    direction: Direction,
-    step: VT,
-    defaultValue: VT
-  ) => VT;
   onChange?: (value: VT) => void;
   tabbableButtons?: boolean;
   pressedInterval?: number;
@@ -29,7 +23,6 @@ interface StepNumberInputProps<VT extends ValueType> {
 }
 
 export default function StepNumberInput<VT extends ValueType>({
-  calculateStep,
   onChange,
   tabbableButtons = false,
   pressedInterval = 50,
@@ -103,21 +96,10 @@ export default function StepNumberInput<VT extends ValueType>({
   const onStep = useCallback(
     (direction: Direction) => {
       setCurrentValue((oldValue) => {
-        let tempValue = oldValue + step * direction;
-        if (calculateStep) {
-          const mixedValue = calculateStep(
-            fixType(oldValue, value),
-            direction,
-            fixType(step, value),
-            fixType(tempValue, value)
-          );
-          tempValue =
-            typeof mixedValue === 'string' ? parseText(mixedValue) : mixedValue;
-        }
-        return validateValue(oldValue, tempValue);
+        return validateValue(oldValue, oldValue + step * direction);
       });
     },
-    [step, calculateStep, validateValue, value]
+    [step, validateValue]
   );
 
   /**
