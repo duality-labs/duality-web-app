@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.18](https://github.com/duality-labz/duality-web-app/compare/v0.1.17...v0.1.18) (2022-08-26)
+
+
+### Features
+
+* 118 - Tooltip Component ([#119](https://github.com/duality-labz/duality-web-app/issues/119)) ([058225f](https://github.com/duality-labz/duality-web-app/commit/058225fed780ef453f4f750aafeed16bd31a622a))
+
 ## [0.1.17](https://github.com/duality-labz/duality-web-app/compare/v0.1.16...v0.1.17) (2022-08-26)
 
 
