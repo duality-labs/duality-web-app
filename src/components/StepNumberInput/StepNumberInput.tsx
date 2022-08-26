@@ -151,8 +151,7 @@ export default function StepNumberInput({
    */
   const onInputChange = useCallback(() => {
     const value = inputRef.current?.value;
-    if (!value) return;
-    setCurrentValue((oldValue) => validateValue(oldValue, parse(value)));
+    setCurrentValue((oldValue) => validateValue(oldValue, parse(value || '0')));
   }, [validateValue, parse]);
 
   useEffect(() => {
