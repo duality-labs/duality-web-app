@@ -3,7 +3,7 @@ import { faInfo } from '@fortawesome/free-solid-svg-icons';
 import './Tooltip.scss';
 
 interface TooltipProps {
-  children: JSX.Element | Array<JSX.Element> | string;
+  children: React.ReactNode;
 }
 
 export default function Tooltip({ children }: TooltipProps) {
