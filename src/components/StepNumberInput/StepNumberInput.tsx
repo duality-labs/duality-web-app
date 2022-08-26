@@ -84,6 +84,8 @@ export default function StepNumberInput<VT extends ValueType>({
     },
     [step, validateValue]
   );
+  const onSubStep = useCallback(() => onStep(-1), [onStep]);
+  const onAddStep = useCallback(() => onStep(+1), [onStep]);
 
   /**
    * To be called when the mouse gets released, to start the hold to step faster functionality
@@ -110,6 +112,8 @@ export default function StepNumberInput<VT extends ValueType>({
     },
     [pressedDelay, pressedInterval, onStep]
   );
+  const onSubPressed = useCallback(() => onPressed(-1), [onPressed]);
+  const onAddPressed = useCallback(() => onPressed(+1), [onPressed]);
 
   /**
    * To be called when the mouse gets released, so that all hold to step faster functionality ceases
@@ -146,8 +150,8 @@ export default function StepNumberInput<VT extends ValueType>({
       <div className="range-step-controls">
         <button
           type="button"
-          onClick={() => onStep(-1)}
-          onMouseDown={() => onPressed(-1)}
+          onClick={onSubStep}
+          onMouseDown={onSubPressed}
           onMouseUp={onReleased}
           onMouseLeave={onReleased}
           disabled={disabled || (disableLimit && currentValue <= min)}
@@ -167,8 +171,8 @@ export default function StepNumberInput<VT extends ValueType>({
         )}
         <button
           type="button"
-          onClick={() => onStep(1)}
-          onMouseDown={() => onPressed(1)}
+          onClick={onAddStep}
+          onMouseDown={onAddPressed}
           onMouseUp={onReleased}
           onMouseLeave={onReleased}
           disabled={disabled || (disableLimit && currentValue >= max)}
