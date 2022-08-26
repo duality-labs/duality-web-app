@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.16](https://github.com/duality-labz/duality-web-app/compare/v0.1.15...v0.1.16) (2022-08-26)
+
+
+### Features
+
+* connect core backend ([#102](https://github.com/duality-labz/duality-web-app/issues/102)) ([7ca9e8c](https://github.com/duality-labz/duality-web-app/commit/7ca9e8c0cd69a418be41bce81701617832533635))
+
 ## [0.1.15](https://github.com/duality-labz/duality-web-app/compare/v0.1.14...v0.1.15) (2022-08-18)
 
 
