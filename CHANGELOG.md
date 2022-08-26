@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.19](https://github.com/duality-labz/duality-web-app/compare/v0.1.18...v0.1.19) (2022-08-26)
+
+
+### Features
+
+* 116 radio input wrapper component ([#117](https://github.com/duality-labz/duality-web-app/issues/117)) ([d9bf412](https://github.com/duality-labz/duality-web-app/commit/d9bf412cf45939a330bbd85d2c78d9cd6593342f))
+
+
+### Other
+
+* apply Prettier fixes ([e96471e](https://github.com/duality-labz/duality-web-app/commit/e96471ea8506ba21a407f130ea5886536a00f244))
+
 ## [0.1.18](https://github.com/duality-labz/duality-web-app/compare/v0.1.17...v0.1.18) (2022-08-26)
 
 
