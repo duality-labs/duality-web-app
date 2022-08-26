@@ -13,10 +13,10 @@ import {
   useDotCounter,
   Token,
 } from '../../components/TokenPicker/mockHooks';
+import StepNumberInput from '../../components/StepNumberInput';
 
 import './Pool.scss';
 import { useIndexerPairData } from '../../lib/web3/indexerProvider';
-import StepNumberInput from '../../components/StepNumberInput';
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
