@@ -26,12 +26,13 @@ export interface PairResult {
   gas: string;
 }
 
-export interface RouterResult {
-  amountIn: BigNumber;
-  tokens: Array<string>;
-  prices0: Array<Array<BigNumber>>;
-  prices1: Array<Array<BigNumber>>;
-  fees: Array<Array<BigNumber>>;
-  reserves0: Array<Array<BigNumber>>;
-  reserves1: Array<Array<BigNumber>>;
+/**
+ * RouterResult is a reflection of the backend structue "MsgSwap"
+ * but utilising BigNumber type instead of BigNumberString type properties
+ */
+ export interface RouterResult {
+  tokenIn: string, // address
+  tokenOut: string, // address
+  amountIn: BigNumber,
+  amountOut: BigNumber,
 }

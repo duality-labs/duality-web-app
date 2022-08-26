@@ -1,4 +1,8 @@
-import { PairMap } from '../../../lib/web3/indexerProvider';
+import {
+  getPairID,
+  PairMap,
+  TickInfo,
+} from '../../../lib/web3/indexerProvider';
 import { RouterResult } from './index';
 import { BigNumber } from 'bignumber.js';
 
@@ -9,29 +13,28 @@ export function router(
   tokenB: string,
   value0: string
 ): RouterResult {
-  const [token0, token1] = [tokenA, tokenB].sort();
-  const exactPair = Object.values(state).find(
-    (pairInfo) => pairInfo.token0 === token0 && pairInfo.token1 === token1
-  );
+  // find pair by searching both directions in the current state
+  // the pairs are sorted by the backend not here
+  const reverse = state[getPairID(tokenA, tokenB)];
+  const forward = state[getPairID(tokenB, tokenA)];
+  const exactPair = forward || reverse;
   if (!exactPair) {
     throw new Error('There are no ticks for the supplied token pair');
   } else {
-    const sortMultiplier = token1 === tokenA ? -1 : 1;
-    const sortedTicks = Object.values(exactPair.ticks).sort(
-      (tick0, tick1) =>
-        sortMultiplier *
-        tick0.price0
-          .dividedBy(tick0.price1)
-          .comparedTo(tick1.price0.dividedBy(tick1.price1))
-    );
+    const sortedTicks = forward
+      ? exactPair.poolsZeroToOne
+      : exactPair.poolsOneToZero;
+    const amountIn = new BigNumber(value0);
     return {
-      amountIn: new BigNumber(value0),
-      tokens: [tokenA, tokenB],
-      prices0: [sortedTicks.map((tickInfo) => tickInfo.price0)], // price
-      prices1: [sortedTicks.map((tickInfo) => tickInfo.price1)],
-      fees: [sortedTicks.map((tickInfo) => tickInfo.fee)],
-      reserves0: [sortedTicks.map((tickInfo) => tickInfo.reserves0)], // reserves
-      reserves1: [sortedTicks.map((tickInfo) => tickInfo.reserves1)],
+      amountIn: amountIn,
+      tokenIn: tokenA,
+      tokenOut: tokenB,
+      amountOut: calculateOut({
+        tokenIn: tokenA,
+        tokenOut: tokenB,
+        amountIn: amountIn,
+        sortedTicks,
+      }),
     };
   }
 }
@@ -51,32 +54,35 @@ export async function routerAsync(
  * @param data the RouteInput struct
  * @returns estimated value for amountOut
  */
-export function calculateOut(data: RouterResult): BigNumber {
-  let amountLeft = data.amountIn;
+export function calculateOut({
+  tokenIn,
+  tokenOut,
+  amountIn,
+  sortedTicks,
+}: {
+  tokenIn: string; // address
+  tokenOut: string; // address
+  amountIn: BigNumber;
+  sortedTicks: Array<TickInfo>;
+}): BigNumber {
+  let amountLeft = amountIn;
   let amountOut = new BigNumber(0);
-  for (let pairIndex = 0; pairIndex < data.tokens.length - 1; pairIndex++) {
-    const tokens = [data.tokens[pairIndex], data.tokens[pairIndex + 1]].sort();
-    for (
-      let tickIndex = 0;
-      tickIndex < data.prices0[pairIndex].length;
-      tickIndex++
-    ) {
-      const isSameOrder = tokens[0] === data.tokens[pairIndex];
-      const priceIn = isSameOrder
-        ? data.prices0[pairIndex][tickIndex]
-        : data.prices1[pairIndex][tickIndex];
-      const priceOut = isSameOrder
-        ? data.prices1[pairIndex][tickIndex]
-        : data.prices0[pairIndex][tickIndex];
+  // TODO: handle more than the 1 hop path
+  const tokenPath = [tokenIn, tokenOut];
+  for (let pairIndex = 0; pairIndex < tokenPath.length - 1; pairIndex++) {
+    const tokens = [tokenPath[pairIndex], tokenPath[pairIndex + 1]].sort();
+    for (let tickIndex = 0; tickIndex < sortedTicks.length; tickIndex++) {
+      const isSameOrder = tokens[0] === tokenPath[pairIndex];
+      const price = isSameOrder
+        ? sortedTicks[tickIndex].price
+        : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price);
       const reservesOut = isSameOrder
-        ? data.reserves1[pairIndex][tickIndex]
-        : data.reserves0[pairIndex][tickIndex];
-      const maxOut = amountLeft.multipliedBy(priceIn).dividedBy(priceOut);
+        ? sortedTicks[tickIndex].reserve1
+        : sortedTicks[tickIndex].reserve0;
+      const maxOut = amountLeft.multipliedBy(price);
 
       if (reservesOut.isLessThan(maxOut)) {
-        const amountInTraded = reservesOut
-          .multipliedBy(priceOut)
-          .dividedBy(priceIn);
+        const amountInTraded = reservesOut.multipliedBy(price);
         amountLeft = amountLeft.minus(amountInTraded);
         amountOut = amountOut.plus(reservesOut);
         if (amountLeft.isEqualTo(0)) return amountOut;
@@ -94,5 +100,5 @@ export function calculateOut(data: RouterResult): BigNumber {
 
 // mock implementation of fee calculation
 export function calculateFee(data: RouterResult): BigNumber {
-  return data.fees[0][0];
+  return new BigNumber(0);
 }

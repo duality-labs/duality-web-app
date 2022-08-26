@@ -13,12 +13,15 @@ import {
 } from '../../components/TokenPicker/mockHooks';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { MsgSwapTicks } from '../../lib/web3/generated/duality/duality.duality/module/types/duality/tx';
+import { MsgSwap } from '../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import './Swap.scss';
+
+const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
+const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 
 export default function Swap() {
   const { address } = useWeb3();
@@ -45,7 +48,7 @@ export default function Swap() {
     valueB: lastUpdatedA ? undefined : valueB,
   });
   const rateData = getRouterEstimates(pairRequest, routerResult);
-  const [swapRequest, setSwapRequest] = useState<MsgSwapTicks>();
+  const [swapRequest, setSwapRequest] = useState<MsgSwap>();
   const {
     data: swapResponse,
     isValidating: isValidatingSwap,
@@ -73,24 +76,13 @@ export default function Swap() {
       if (address && routerResult) {
         // convert to swap request format
         const result = routerResult;
+        // Cosmos requires tokens in integer format of smallest denomination
         setSwapRequest({
-          amountIn: result.amountIn.toString(),
-          tokens: result.tokens,
-          prices0: JSON.stringify(
-            result.prices0.map((prices) =>
-              prices.map((price) => price.toString())
-            )
-          ),
-          prices1: JSON.stringify(
-            result.prices1.map((prices) =>
-              prices.map((price) => price.toString())
-            )
-          ),
-          fees: JSON.stringify(
-            result.fees.map((fees) => fees.map((fee) => fee.toString()))
-          ),
-          // minAmountOut: calculateOut(result).toString(),
-          // fee: calculateFee(result).toString(),
+          amountIn: result.amountIn.toFixed(denomExponent),
+          tokenIn: result.tokenIn,
+          tokenOut: result.tokenOut,
+          // TODO: add tolerance factor
+          minOut: result.amountOut.toFixed(denomExponent),
           creator: address,
         });
       }

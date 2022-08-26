@@ -5,6 +5,11 @@ import {
   MessageActionEvent,
 } from './events';
 import { BigNumber } from 'bignumber.js';
+import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
+import {
+  DexPool,
+  DexTicks,
+} from './generated/duality/nicholasdotsol.duality.dex/module/rest';
 
 const { REACT_APP__REST_API, REACT_APP__WEBSOCKET_URL } = process.env;
 
@@ -18,15 +23,34 @@ const subscriber = createSubscriptionManager(REACT_APP__WEBSOCKET_URL);
 export interface PairInfo {
   token0: string;
   token1: string;
-  ticks: { [tickID: string]: TickInfo };
+  ticks: TickMap;
+  poolsZeroToOne: Array<TickInfo>;
+  poolsOneToZero: Array<TickInfo>;
 }
 
+/**
+ * TickMap contains a mapping from tickIDs to tick indexes inside poolsZeroToOne and poolsOneToZero
+ */
+interface TickMap {
+  [tickID: string]: PoolTicks;
+}
+
+type PoolTicks = [
+  index0to1: TickInfo | undefined,
+  index1to0: TickInfo | undefined
+];
+
+/**
+ * TickInfo is a reflection of the backend structue "DexPool"
+ * but utilising BigNumber type instead of BigNumberString type properties
+ */
 export interface TickInfo {
-  price0: BigNumber;
-  price1: BigNumber;
-  reserves0: BigNumber;
-  reserves1: BigNumber;
+  // index: number; do not store index as they may change with partial updates
+  price: BigNumber; // price is a decimal (to 18 places) ratio of price1/price0
+  reserve0: BigNumber;
+  reserve1: BigNumber;
   fee: BigNumber;
+  totalShares: BigNumber;
 }
 
 export interface PairMap {
@@ -48,9 +72,18 @@ function getFullData(): Promise<PairMap> {
     if (!REACT_APP__REST_API) {
       reject(new Error('Undefined rest api base URL'));
     } else {
-      fetch(`${REACT_APP__REST_API}/duality/duality/ticks`)
-        .then((res) => res.json())
-        .then(transformData)
+      // TODO: handle pagination
+      queryClient({ addr: REACT_APP__REST_API })
+        .then((client) => client.queryTicksAll())
+        .then((res) => {
+          if (res.ok) {
+            return res.data;
+          } else {
+            // remove API error details from public view
+            throw new Error(`API error code: ${res.error.code}`);
+          }
+        })
+        .then((data) => transformData(data.ticks || []))
         .then(resolve)
         .catch(reject);
     }
@@ -63,57 +96,158 @@ function getFullData(): Promise<PairMap> {
  * @param token1 address of token 1
  * @returns pair id for tokens
  */
-function getPairID(token0: TokenAddress, token1: TokenAddress) {
+export function getPairID(token0: TokenAddress, token1: TokenAddress) {
   return `${token0}-${token1}`;
 }
 
 /**
  * Gets the tick id
- * @param price0 price of token 0
- * @param price1 price of token 1
+ * @param price price ratio of (token 1) / (token 0)
  * @param fee tick's fee
  * @returns tick id
  */
 function getTickID(
-  price0: BigNumberString,
-  price1: BigNumberString,
-  fee: BigNumberString
+  price: BigNumberString, // decimal form eg. "1.000000000000000000"
+  fee: BigNumberString // decimal form eg. "1.000000000000000000"
 ) {
-  return `${price0}-${price1}-${fee}`;
+  return `${price}-${fee}`;
 }
 
-function transformData(data: {
-  tick: Array<{
-    token0: TokenAddress;
-    token1: TokenAddress;
-    price0: string;
-    price1: string;
-    fee: string;
-    reserves0: string;
-    reserves1: string;
-  }>;
-}): PairMap {
-  return data.tick.reduce<PairMap>(function (
+function transformData(ticks: Array<DexTicks>): PairMap {
+  return ticks.reduce<PairMap>(function (
     result,
-    { token0, token1, price0, price1, fee, reserves0, reserves1 }
+    // token0 and token1 are sorted by the back end
+    { token0, token1, poolsZeroToOne = [], poolsOneToZero = [] }
   ) {
-    const pairID = getPairID(token0, token1);
-    const tickID = getTickID(price0, price1, fee);
-    result[pairID] = result[pairID] || {
-      token0: token0,
-      token1: token1,
-      ticks: {},
-    };
-    result[pairID].ticks[tickID] = {
-      price0: new BigNumber(price0),
-      price1: new BigNumber(price1),
-      reserves0: new BigNumber(reserves0),
-      reserves1: new BigNumber(reserves1),
-      fee: new BigNumber(fee),
-    };
+    if (token0 && token1) {
+      const pairID = getPairID(token0, token1);
+      const ticks: TickMap = {};
+      result[pairID] = {
+        token0: token0,
+        token1: token1,
+        ticks: ticks,
+        poolsZeroToOne: poolsZeroToOne
+          .map((dexPool) => {
+            const tickInfo = toTickInfo(dexPool);
+            const { price, fee } = dexPool;
+            // append tickInfo into tickID map before returning defined values
+            if (tickInfo && price && fee) {
+              const tickID = getTickID(price, fee);
+              ticks[tickID] = ticks[tickID] || [undefined, undefined];
+              ticks[tickID][0] = tickInfo;
+            }
+            return tickInfo;
+          })
+          .filter(Boolean) as Array<TickInfo>,
+        poolsOneToZero: poolsOneToZero
+          .map((dexPool) => {
+            const tickInfo = toTickInfo(dexPool);
+            const { price, fee } = dexPool;
+            // append tickInfo into tickID map before returning defined values
+            if (tickInfo && price && fee) {
+              const tickID = getTickID(price, fee);
+              ticks[tickID] = ticks[tickID] || [undefined, undefined];
+              ticks[tickID][1] = tickInfo;
+            }
+            return tickInfo;
+          })
+          .filter(Boolean) as Array<TickInfo>,
+      };
+    }
     return result;
-  },
-  {});
+  }, {});
+  // convert from API JSON big number strings to BigNumbers
+  function toTickInfo({
+    price,
+    reserve0,
+    reserve1,
+    fee,
+    totalShares,
+  }: DexPool): TickInfo | undefined {
+    if (price && reserve0 && reserve1 && fee && totalShares) {
+      const tickInfo = {
+        price: new BigNumber(price),
+        reserve0: new BigNumber(reserve0),
+        reserve1: new BigNumber(reserve1),
+        fee: new BigNumber(fee),
+        totalShares: new BigNumber(totalShares),
+      };
+      return tickInfo;
+    }
+  }
+}
+
+function addTickData(
+  oldData: PairMap = {},
+  {
+    Token0,
+    Token1,
+    Price,
+    Fee,
+    NewReserves0,
+    NewReserves1,
+  }: { [eventKey: string]: string }
+): PairMap {
+  const pairID = getPairID(Token0, Token1);
+  const tickID = getTickID(Price, Fee);
+  const oldPairInfo = oldData[pairID];
+  const price = new BigNumber(Price);
+  const fee = new BigNumber(Fee);
+  const reserve0 = new BigNumber(NewReserves0);
+  const reserve1 = new BigNumber(NewReserves1);
+  const newTick: TickInfo = {
+    price,
+    fee,
+    reserve0,
+    reserve1,
+    // calculate new total
+    // TODO: the back end may provide the totalShares property in the future
+    // so it should be used as the source of truth and not recalculated here
+    totalShares: reserve0.plus(reserve1.multipliedBy(price)),
+  };
+  const newPoolTicks: PoolTicks = [undefined, undefined];
+  if (reserve0.isGreaterThan(0)) {
+    newPoolTicks[0] = newTick;
+  }
+  if (reserve1.isGreaterThan(0)) {
+    newPoolTicks[1] = newTick;
+  }
+  // note: the ticks structure isn't strictly needed as the pool arrays
+  // may be calculated without it. We keep it for now for logic simplicity.
+  // The ticks structure is easier to reason about than the pool arrays.
+  // This could be refactored for computation or storage optimisation later.
+  // see: https://github.com/duality-labz/duality-web-app/pull/102#discussion_r938174401
+  const ticks = {
+    ...oldPairInfo?.ticks,
+    [tickID]: newPoolTicks,
+  };
+  return {
+    ...oldData,
+    [pairID]: {
+      ...oldPairInfo, // not needed, displayed for consistency
+      token0: Token0,
+      token1: Token1,
+      ticks,
+      // reorder pools by "real" price (the price after fees are applied)
+      poolsZeroToOne: Object.values(ticks)
+        .map((ticks) => ticks[0])
+        .filter((tick): tick is TickInfo => !!tick)
+        .sort((a, b) =>
+          getRealPrice(a, 1).minus(getRealPrice(b, 1)).toNumber()
+        ),
+      poolsOneToZero: Object.values(ticks)
+        .map((ticks) => ticks[1])
+        .filter((tick): tick is TickInfo => !!tick)
+        .sort((a, b) =>
+          getRealPrice(b, -1).minus(getRealPrice(a, -1)).toNumber()
+        ),
+    },
+  };
+  function getRealPrice(tick: TickInfo, forward: number) {
+    return forward >= 0
+      ? tick.price.plus(tick.fee)
+      : tick.price.minus(tick.fee);
+  }
 }
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
@@ -128,21 +262,12 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    const onTickChange = function (event: MessageActionEvent) {
-      const {
-        Token0,
-        Token1,
-        NewReserves0,
-        NewReserves1,
-        Price0,
-        Price1,
-        Fee,
-      } = event;
+    const onDexUpdateMessage = function (event: MessageActionEvent) {
+      const { Token0, Token1, NewReserves0, NewReserves1, Price, Fee } = event;
       if (
         !Token0 ||
         !Token1 ||
-        !Price0 ||
-        !Price1 ||
+        !Price ||
         !NewReserves0 ||
         !NewReserves1 ||
         !Fee
@@ -152,40 +277,76 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       } else {
         setError(undefined);
       }
-      const pairID = getPairID(Token0, Token1);
-      const tickID = getTickID(Price0, Price1, Fee);
-      setIndexerData((oldData = {}) => {
-        const oldPairInfo = oldData[pairID];
-        const oldTickInfo = oldPairInfo?.ticks?.[tickID];
-        return {
-          ...oldData,
-          [pairID]: {
-            ...oldPairInfo, // not needed, displayed for consistency
-            token0: Token0,
-            token1: Token1,
-            ticks: {
-              ...oldPairInfo?.ticks,
-              [tickID]: {
-                ...oldTickInfo, // not needed, displayed for consistency
-                price0: new BigNumber(Price0),
-                price1: new BigNumber(Price1),
-                fee: new BigNumber(Fee),
-                reserves0: new BigNumber(NewReserves0),
-                reserves1: new BigNumber(NewReserves1),
-              },
-            },
-          },
-        };
+      setIndexerData((oldData) => {
+        return addTickData(oldData, {
+          Token0,
+          Token1,
+          Price,
+          Fee,
+          NewReserves0,
+          NewReserves1,
+        });
       });
     };
-    subscriber.subscribeMessage(onTickChange, EventType.EventTxValue, {
+    subscriber.subscribeMessage(onDexUpdateMessage, EventType.EventTxValue, {
       messageAction: 'NewDeposit',
     });
-    subscriber.subscribeMessage(onTickChange, EventType.EventTxValue, {
+    subscriber.subscribeMessage(onDexUpdateMessage, EventType.EventTxValue, {
       messageAction: 'NewWithdraw',
     });
     return () => {
-      subscriber.unsubscribeMessage(onTickChange);
+      subscriber.unsubscribeMessage(onDexUpdateMessage);
+    };
+  }, []);
+
+  useEffect(() => {
+    const onRouterUpdateMessage = function (event: MessageActionEvent) {
+      const {
+        TokenIn,
+        TokenOut,
+        NewReserve0,
+        NewReserve1,
+        PriceOfSwap,
+        FeeOfSwap,
+      } = event;
+      // skip NewSwap events that are not about individual swaps
+      // eg. the final NewSwap event of a MsgSwap action is the "overall" swap details
+      if (!PriceOfSwap) return;
+      if (
+        !TokenIn ||
+        !TokenOut ||
+        !PriceOfSwap ||
+        !FeeOfSwap ||
+        !NewReserve0 ||
+        !NewReserve1
+      ) {
+        setError('Invalid event response from server');
+        return;
+      } else {
+        setError(undefined);
+      }
+      setIndexerData((oldData) => {
+        // NewSwap is movement of existing ticks so the pair should already exist
+        const forward = !!oldData?.[getPairID(TokenIn, TokenOut)];
+        const reverse = !!oldData?.[getPairID(TokenOut, TokenIn)];
+        if (forward || reverse) {
+          return addTickData(oldData, {
+            Token0: forward ? TokenIn : TokenOut,
+            Token1: forward ? TokenOut : TokenIn,
+            Price: PriceOfSwap,
+            Fee: FeeOfSwap,
+            NewReserves0: NewReserve0,
+            NewReserves1: NewReserve1,
+          });
+        }
+        return oldData;
+      });
+    };
+    subscriber.subscribeMessage(onRouterUpdateMessage, EventType.EventTxValue, {
+      messageAction: 'NewSwap',
+    });
+    return () => {
+      subscriber.unsubscribeMessage(onRouterUpdateMessage);
     };
   }, []);
 
@@ -226,9 +387,12 @@ export function useIndexerPairData(
 ) {
   const { data: pairs, isValidating, error } = useIndexerData();
   const [token0, token1] = [tokenA, tokenB].sort();
-  const pairID = token0 && token1 && getPairID(token0, token1);
+  const pair =
+    pairs && token0 && token1
+      ? pairs[getPairID(token0, token1)] || pairs[getPairID(token1, token0)]
+      : undefined;
   return {
-    data: pairID ? pairs?.[pairID] : undefined,
+    data: pair,
     error,
     isValidating,
   };
