@@ -54,6 +54,16 @@ export default function StepNumberInput({
   const [currentValue, setCurrentValue] = useState(numericValue);
   const [, setTimeoutID] = useState<number>();
   const [, setIntervalID] = useState<number>();
+  const clear = useCallback(() => {
+    setTimeoutID((oldID) => {
+      clearTimeout(oldID);
+      return undefined;
+    });
+    setIntervalID((oldID) => {
+      clearInterval(oldID);
+      return undefined;
+    });
+  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
 
   /**
@@ -71,18 +81,21 @@ export default function StepNumberInput({
   const validateValue = useCallback(
     (oldValue: number, newValue: number) => {
       if (min && newValue < min) {
+        clear();
         return min;
       }
       if (max && newValue > max) {
+        clear();
         return max;
       }
       if (newValue !== undefined && !isNaN(newValue)) {
         return newValue;
       } else {
+        clear();
         return oldValue;
       }
     },
-    [min, max]
+    [min, max, clear]
   );
 
   /**
@@ -131,16 +144,7 @@ export default function StepNumberInput({
   /**
    * To be called when the mouse gets released, so that all hold to step faster functionality ceases
    */
-  const onReleased = useCallback(() => {
-    setTimeoutID((oldID) => {
-      clearTimeout(oldID);
-      return undefined;
-    });
-    setIntervalID((oldID) => {
-      clearInterval(oldID);
-      return undefined;
-    });
-  }, []);
+  const onReleased = clear;
 
   /**
    * To be called when there is a change with the input
