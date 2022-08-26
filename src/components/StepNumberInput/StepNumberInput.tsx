@@ -70,7 +70,13 @@ export default function StepNumberInput({
    */
   const validateValue = useCallback(
     (oldValue: number, newValue: number) => {
-      if ((!min || min <= newValue) && (!max || newValue <= max)) {
+      if (min && newValue < min) {
+        return min;
+      }
+      if (max && newValue > max) {
+        return max;
+      }
+      if (newValue !== undefined && !isNaN(newValue)) {
         return newValue;
       } else {
         return oldValue;
