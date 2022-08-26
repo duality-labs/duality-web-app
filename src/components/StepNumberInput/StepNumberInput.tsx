@@ -50,8 +50,7 @@ export default function StepNumberInput({
       'Invalid Range, max limit cannot be smaller than the min limit'
     );
   }
-  const numericValue = typeof value === 'number' ? value : parse(value);
-  const [currentValue, setCurrentValue] = useState(numericValue);
+  const [currentValue, setCurrentValue] = useState(() => parse(value));
   const [, setTimeoutID] = useState<number>();
   const [, setIntervalID] = useState<number>();
   const clear = useCallback(() => {
