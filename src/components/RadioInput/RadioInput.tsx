@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useId, useState } from 'react';
+import { Fragment, useEffect, useId, useState } from 'react';
 import './RadioInput.scss';
 
 interface RadioInputProps<T> {
@@ -27,26 +27,14 @@ export default function RadioInput<T>({
   const groupID = useId();
   const groupName = name || groupID;
   const flexBasis = maxColumnCount ? `${100 / maxColumnCount}%` : undefined;
-  const getChild = useCallback(
-    (index: number) =>
-      renderOption(list[index], `${groupName}-${index}`, index),
-    [groupName, list, renderOption]
-  );
-  const [children, setChildren] = useState(
-    list.map((_, index) => getChild(index))
-  );
 
   useEffect(() => {
     if (onChange) onChange(list[selectedIndex], selectedIndex);
   }, [onChange, selectedIndex, list]);
 
-  useEffect(() => {
-    setChildren(list.map((_, index) => getChild(index)));
-  }, [getChild, list]);
-
   return (
     <div className="radio-input-group">
-      {children.map((child, index) => {
+      {list.map((option, index) => {
         const id = `${groupName}-${index}`;
 
         return (
@@ -63,7 +51,7 @@ export default function RadioInput<T>({
               className="button button-primary"
               style={{ flexBasis }}
             >
-              {child}
+              {renderOption(option, id, index)}
             </label>
           </Fragment>
         );
