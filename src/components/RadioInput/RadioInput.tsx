@@ -1,8 +1,13 @@
 import { Fragment, useId, useMemo } from 'react';
 import './RadioInput.scss';
 
+interface OptionProps<T> {
+  option: T;
+  id: string;
+  index: number;
+}
 interface RadioInputProps<T> {
-  renderOption: (option: T, id: string, index: number) => React.ReactNode;
+  OptionComponent?: React.ElementType<OptionProps<T>>;
   onChange?: (value: T, index: number) => void;
   list: Array<T>;
   maxColumnCount?: number;
@@ -11,8 +16,12 @@ interface RadioInputProps<T> {
   name?: string;
 }
 
+function DefaultOptionComponent<T>({ option }: OptionProps<T>) {
+  return <span>{`${option}`}</span>;
+}
+
 export default function RadioInput<T>({
-  renderOption,
+  OptionComponent = DefaultOptionComponent,
   onChange,
   list,
   maxColumnCount,
@@ -49,7 +58,7 @@ export default function RadioInput<T>({
               className="button button-primary"
               style={labelStyle}
             >
-              {renderOption(option, id, index)}
+              <OptionComponent option={option} id={id} index={index} />
             </label>
           </Fragment>
         );

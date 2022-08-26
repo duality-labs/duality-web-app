@@ -209,14 +209,12 @@ export default function Pool() {
         value={slopeType}
         onChange={setSlopeType}
         maxColumnCount={2}
-        renderOption={(option) => option}
       />
       <RadioInput
         list={slopeTypes}
         value={slopeType}
         onChange={setSlopeType}
         maxColumnCount={3}
-        renderOption={(option) => option}
       />
       <input
         type="range"
