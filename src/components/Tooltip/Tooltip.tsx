@@ -7,10 +7,10 @@ interface TooltipProps {
 }
 
 export default function Tooltip({ children }: TooltipProps) {
-  return (
+  return children ? (
     <span className="tooltip">
       <FontAwesomeIcon icon={faInfo} className="tooltip-icon"></FontAwesomeIcon>
       <div className="tooltip-content card">{children}</div>
     </span>
-  );
+  ) : null;
 }
