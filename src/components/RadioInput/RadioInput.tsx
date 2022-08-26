@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useState } from 'react';
+import { Fragment, useId } from 'react';
 import './RadioInput.scss';
 
 interface RadioInputProps<T> {
@@ -17,20 +17,12 @@ export default function RadioInput<T>({
   list,
   maxColumnCount,
   value,
-  index,
   name,
 }: RadioInputProps<T>) {
-  const valueIndex = value ? list.indexOf(value) : -1;
-  const [selectedIndex, setSelectedIndex] = useState(
-    index ?? (valueIndex === -1 ? null : valueIndex) ?? 0
-  );
+  const selectedIndex = value !== undefined ? list.indexOf(value) : -1;
   const groupID = useId();
   const groupName = name || groupID;
   const flexBasis = maxColumnCount ? `${100 / maxColumnCount}%` : undefined;
-
-  useEffect(() => {
-    if (onChange) onChange(list[selectedIndex], selectedIndex);
-  }, [onChange, selectedIndex, list]);
 
   return (
     <div className="radio-input-group">
@@ -44,7 +36,7 @@ export default function RadioInput<T>({
               name={groupName}
               id={id}
               checked={index === selectedIndex}
-              onChange={(e) => e.target.value && setSelectedIndex(index)}
+              onChange={() => onChange?.(option, index)}
             ></input>
             <label
               htmlFor={id}
