@@ -29,7 +29,7 @@ const defaultPrice = '1';
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [price, setPrice] = useState(
+  const [price, setPrice] = useState(() =>
     new BigNumber(defaultPrice).toFixed(denomExponent)
   );
   const [fee, setFee] = useState(defaultFee);
