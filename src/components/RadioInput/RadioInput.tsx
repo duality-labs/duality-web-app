@@ -1,4 +1,4 @@
-import { Fragment, useId } from 'react';
+import { Fragment, useId, useMemo } from 'react';
 import './RadioInput.scss';
 
 interface RadioInputProps<T> {
@@ -22,7 +22,13 @@ export default function RadioInput<T>({
   const selectedIndex = value !== undefined ? list.indexOf(value) : -1;
   const groupID = useId();
   const groupName = name || groupID;
-  const flexBasis = maxColumnCount ? `${100 / maxColumnCount}%` : undefined;
+  const labelStyle = useMemo(
+    () => ({
+      // set column width style
+      flexBasis: maxColumnCount ? `${100 / maxColumnCount}%` : undefined,
+    }),
+    [maxColumnCount]
+  );
 
   return (
     <div className="radio-input-group">
@@ -41,7 +47,7 @@ export default function RadioInput<T>({
             <label
               htmlFor={id}
               className="button button-primary"
-              style={{ flexBasis }}
+              style={labelStyle}
             >
               {renderOption(option, id, index)}
             </label>
