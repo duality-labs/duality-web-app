@@ -240,7 +240,8 @@ $min-body-height: 150px;
     & > .token-picker-body {
       @include margins.margin('t', 0);
       @include margins.margin('b', 2);
-      flex: 1 1 $min-body-height;
+      min-height: $min-body-height;
+      flex: 1 1 auto;
     }
   }
 
