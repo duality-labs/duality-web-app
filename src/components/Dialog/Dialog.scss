@@ -63,11 +63,14 @@
 }
 
 .dialog-scrollable {
-  .dialog-content {
-    max-height: 80vh;
-  }
+  // remove overflow from portal area and place in body
+  // note: assumes you won't make the dialog header tall enough to require scrolling
+  overflow: hidden;
   .dialog-body {
     overflow: auto;
     flex: 1;
+  }
+  .dialog-content {
+    max-height: 80vh;
   }
 }
