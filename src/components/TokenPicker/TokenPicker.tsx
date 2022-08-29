@@ -148,7 +148,7 @@ export default function TokenPicker({
     if (!parent) return;
     const siblings = [].slice
       .call(parent.children)
-      .filter((cnild) => cnild !== dom)
+      .filter((child) => child !== dom)
       .reverse() as Array<HTMLElement>;
     const list = ['User', 'All'].reverse();
     const item = siblings[list.indexOf(assetMode)];
