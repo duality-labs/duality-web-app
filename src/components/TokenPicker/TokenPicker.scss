@@ -29,6 +29,8 @@ $min-body-height: 150px;
     & {
       @include paddings.padding('y', 4);
       @include paddings.padding('x', 5);
+      // todo: put the input in the dialog body not the dialog header
+      // this workaround is unnecessarily complex
       width: calc(
         100% + #{paddings.size(4) * 2 + font-size.$text-m}
       ); // 100% + parent paddings + x
