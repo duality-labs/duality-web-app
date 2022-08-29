@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, useId } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useId,
+  useMemo,
+} from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-solid-svg-icons';
 
@@ -37,7 +44,7 @@ export default function TokenPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
-  const userList = tokenList.filter(() => false); // Todo: actually filter list to tokens in User's wallet
+  const userList = useMemo(() => tokenList.filter(() => false), [tokenList]); // Todo: actually filter list to tokens in User's wallet
   const [assetMode, setAssetMode] = useState<AssetModeType>(
     userList.length ? 'User' : 'All'
   );
