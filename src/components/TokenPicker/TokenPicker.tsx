@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useId } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBan } from '@fortawesome/free-solid-svg-icons';
+import { faCircle } from '@fortawesome/free-solid-svg-icons';
 
 import { Token } from './mockHooks';
 
@@ -177,7 +177,7 @@ export default function TokenPicker({
               />
             ) : (
               <FontAwesomeIcon
-                icon={faBan}
+                icon={faCircle}
                 size="2x"
                 className="token-image token-image-not-found"
               ></FontAwesomeIcon>
@@ -288,7 +288,7 @@ export default function TokenPicker({
               />
             ) : (
               <FontAwesomeIcon
-                icon={faBan}
+                icon={faCircle}
                 size="2x"
                 className="token-image-not-found"
               ></FontAwesomeIcon>
