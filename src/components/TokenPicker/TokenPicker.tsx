@@ -195,15 +195,13 @@ export default function TokenPicker({
             className="button button-primary pill token-moving-asset"
             ref={movingAsset}
           ></button>
-          {!!userList.length && (
-            <button
-              type="button"
-              className="button pill py-3 px-4"
-              onClick={() => setAssetMode('User')}
-            >
-              Your Assets
-            </button>
-          )}
+          <button
+            type="button"
+            className="button pill py-3 px-4"
+            onClick={() => setAssetMode('User')}
+          >
+            Your Assets
+          </button>
           <button
             type="button"
             className="button pill py-3 px-4"
@@ -213,7 +211,16 @@ export default function TokenPicker({
           </button>
         </div>
         <ul className="token-picker-body duality-scrollbar" ref={bodyRef}>
-          {filteredList.map(showListItem)}
+          {filteredList.length > 0 ? (
+            filteredList.map(showListItem)
+          ) : assetMode === 'User' ? (
+            <div>
+              <p>Your wallet contains no tradable tokens</p>
+              <p>Add tokens to your wallet to see them here</p>
+            </div>
+          ) : (
+            <div>Loading token list...</div>
+          )}
         </ul>
       </Dialog>
     </>
