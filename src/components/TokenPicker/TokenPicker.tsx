@@ -270,6 +270,7 @@ export default function TokenPicker({
         <data value={address}>
           <button
             type="button"
+            disabled={isDisabled}
             className={[
               isDisabled && 'disabled',
               index === selectedIndex && ' selected',
