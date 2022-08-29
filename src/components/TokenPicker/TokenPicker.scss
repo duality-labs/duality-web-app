@@ -3,6 +3,7 @@
 @use '../../styles/mixins-vars/margins.scss' as margins;
 @use '../../styles/font/family.scss' as font-family;
 @use '../../styles/font/size.scss' as font-size;
+@use '../../styles/font/weight.scss' as font-weight;
 
 $no-token-border-size: 2px;
 $min-body-height: 150px;
@@ -151,13 +152,15 @@ $min-body-height: 150px;
   }
 
   .token-image {
-    @include margins.margin('r', 3);
+    margin-right: 10px;
     grid-column: 1 / 2;
     grid-row: 1 / 3;
   }
 
   .token-symbol {
     font-size: font-size.$h4;
+    font-weight: font-weight.$heavy;
+    line-height: 1.4;
     grid-column: 2 / 3;
     grid-row: 1 / 2;
     align-self: end;
