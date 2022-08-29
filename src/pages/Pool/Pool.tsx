@@ -265,6 +265,8 @@ export default function Pool() {
             title="MIN PRICE"
             value={rangeMin}
             onChange={setRangeMin}
+            step={defaultRangeMin}
+            min={0}
             max={rangeMax}
             description={
               tokenA && tokenB
