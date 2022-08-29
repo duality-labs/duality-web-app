@@ -1,0 +1,44 @@
+@use 'sass:math';
+
+$scrollbar-size: 0.5rem;
+
+.duality-scrollbar {
+  & {
+    overflow: auto;
+  }
+
+  /* Set Size */
+  &::-webkit-scrollbar,
+  ::-webkit-scrollbar {
+    height: $scrollbar-size;
+    width: $scrollbar-size;
+  }
+
+  /* Track */
+  &::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-track {
+    border-radius: math.div($scrollbar-size, 2);
+    background: var(--scrollbar);
+    cursor: pointer;
+    opacity: 0.3;
+  }
+
+  /* Handle */
+  &::-webkit-scrollbar-thumb,
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-handle);
+    border-radius: math.div($scrollbar-size, 2);
+  }
+
+  /* Handle Hover */
+  &::-webkit-scrollbar-thumb:hover,
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-handle-hover);
+  }
+
+  /* Hide the buttons in the edges */
+  &::-webkit-scrollbar-button,
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+}

@@ -20,6 +20,9 @@ interface InputGroupProps {
   disabled?: boolean;
   disabledInput?: boolean;
   disabledToken?: boolean;
+  title?: string;
+  maxValue?: number;
+  relevantValue?: string;
 }
 
 export default function TokenInputGroup({
@@ -33,6 +36,9 @@ export default function TokenInputGroup({
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
+  title,
+  maxValue,
+  relevantValue,
 }: InputGroupProps) {
   const onInputChange = useCallback(
     function (event: React.ChangeEvent<HTMLInputElement>) {
@@ -52,9 +58,14 @@ export default function TokenInputGroup({
 
   return (
     <div className={`${className || ''} token-input-group`}>
+      {title && <h5 className="token-group-title">{title}</h5>}
+      {maxValue && <span className="token-group-balance">{maxValue}</span>}
+      {relevantValue && (
+        <span className="token-group-value">{relevantValue}</span>
+      )}
       <input
         type="text"
-        className="form-control"
+        className="token-group-input"
         value={value || '...'}
         onInput={onInput}
         onChange={onInputChange}
@@ -73,8 +84,7 @@ export default function TokenInputGroup({
 
 /**
  * Clear invalid characters from the input
- * @param {React.UIEvent<HTMLInputElement>} event change event
- * @returns {void}
+ * @param event change event
  */
 function onInput(event: React.UIEvent<HTMLInputElement>) {
   cleanInput(event.currentTarget);

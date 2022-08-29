@@ -71,6 +71,30 @@ $sizes: (
   }
 }
 
+@mixin gap($type, $size, $important: false) {
+  $value: map-get($sizes, #{$size});
+
+  @if not $value or $value== 'auto' {
+    @error "Invalid gap size #{$size}";
+  }
+
+  @if $type != 'x' and $type != 'y' and $type != '*' {
+    @error "Invalid gap type #{$type}.";
+  }
+
+  $property-name: if(
+    $type== 'x',
+    'column-gap',
+    if($type== 'y', 'row-gap', 'gap')
+  );
+
+  @if $important {
+    #{$property-name}: $value !important;
+  } @else {
+    #{$property-name}: $value;
+  }
+}
+
 @each $name, $size in $sizes {
   .m-#{$name} {
     @include margin('*', $name, $important: true);
@@ -98,5 +122,19 @@ $sizes: (
 
   .mt-#{$name} {
     @include margin('t', $name, $important: true);
+  }
+
+  @if ($name != 'auto') {
+    .gapx-#{$name} {
+      @include gap('x', $name, $important: true);
+    }
+
+    .gapy-#{$name} {
+      @include gap('y', $name, $important: true);
+    }
+
+    .gap-#{$name} {
+      @include gap('*', $name, $important: true);
+    }
   }
 }

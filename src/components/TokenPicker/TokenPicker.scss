@@ -1,34 +1,26 @@
-$color-primary: rgb(0, 0, 0);
-$color-secondary: rgb(177, 177, 177);
-$transition-duration: 0.25s;
-$font-size-primary: 1.2rem;
-$font-size-secondary: 1rem;
-$border-radius: 0.5rem;
+@use '../../styles/mixins-vars/animations.scss' as animations;
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/font/family.scss' as font-family;
+@use '../../styles/font/size.scss' as font-size;
+@use '../../styles/font/weight.scss' as font-weight;
 
-.token-picker-dialog {
-  & {
-    box-shadow: 0 0 1rem 0rem rgba(255, 255, 255, 0.4);
-    border-radius: $border-radius;
-    overflow: hidden;
-    height: 80vh;
-    padding: 0;
-  }
-
-  &::backdrop {
-    background-color: rgba(0, 0, 0, 0.3);
-  }
-}
+$no-token-border-size: 2px;
+$min-body-height: 150px;
 
 .token-picker-head {
   & {
-    padding: 1rem 1.5rem;
+    @include paddings.padding('y', 3);
+    @include paddings.padding('x', 4);
     position: relative;
     flex: 0 0 auto;
   }
 
   label {
-    font-size: $font-size-primary;
-    padding: 0.5rem 0rem;
+    @include paddings.padding('t', 0);
+    @include paddings.padding('x', 0);
+    @include paddings.padding('b', 4);
+    font-size: font-size.$h2;
     cursor: pointer;
     display: block;
     flex: 1 1 auto;
@@ -36,28 +28,20 @@ $border-radius: 0.5rem;
 
   input {
     & {
-      border: 1px solid rgba(0, 0, 0, 0.3);
-      border-radius: $border-radius;
-      font-size: $font-size-primary;
-      color: $color-primary;
-      padding: 0.5rem 1rem;
+      @include paddings.padding('y', 4);
+      @include paddings.padding('x', 5);
+      // todo: put the input in the dialog body not the dialog header
+      // this workaround is unnecessarily complex
+      width: calc(
+        100% + #{paddings.size(4) * 2 + font-size.$text-m}
+      ); // 100% + parent paddings + x
+      border: 1px solid var(--token-search-border);
+      background-color: var(--token-search-bg);
+      font-size: font-size.$input-small;
+      color: var(--token-search-text);
+      border-radius: paddings.size(4);
       display: block;
       outline: none;
-      width: 100%;
-    }
-
-    &:focus {
-      box-shadow: 0 0 0.5rem 0rem $color-secondary;
-    }
-
-    &::placeholder {
-      transition: opacity $transition-duration ease-in-out;
-      color: $color-primary;
-      opacity: 0.25;
-    }
-
-    &:hover::placeholder {
-      opacity: 0.6;
     }
 
     &::-webkit-search-decoration,
@@ -69,68 +53,74 @@ $border-radius: 0.5rem;
   }
 }
 
-.token-picker-body {
-  & {
-    flex: 1 1 60px;
-  }
+.token-image {
+  font-size: font-size.$token-logo-svg;
+  align-self: center;
+  text-align: center;
+}
 
+.token-picker-body {
   li {
     & {
-      height: 64px;
-      padding: 0;
+      @include paddings.padding('*', 0);
+      @include margins.margin('*', 0);
+      list-style: none;
     }
 
     a,
     button,
     label {
       & {
-        transition: background-color $transition-duration ease-in-out;
-        grid-template-columns: 3rem auto 10ch;
+        @include paddings.padding('*', 0);
+        @include margins.gap('x', 4);
+        transition: background-color animations.$short-duration
+            animations.$default-mode,
+          box-shadow animations.$short-duration animations.$default-mode;
+        box-shadow: 0 0 0 100vmax transparent; // shadow so that the background will ignore parent padding-x
+        clip-path: inset(0 -100vmax); // so the shadow only "bleeds" on the side
+        grid-template-columns: font-size.$token-logo-svg-list 1fr auto;
         background-color: transparent;
         grid-template-rows: 50% 50%;
-        padding: 0.5rem 0;
         text-align: start;
+        border-radius: 0;
         outline: none;
         display: grid;
         width: 100%;
       }
 
-      &:hover,
-      &:focus,
-      &.selected {
-        background-color: rgba($color-secondary, 0.2);
-      }
-
-      &.selected {
-        animation: item-selected-pulse 2s ease-in-out infinite;
+      &:hover:not(.disabled),
+      &:focus:not(.disabled),
+      &.selected:not(.disabled) {
+        box-shadow: 0 0 0 100vmax var(--selected-token);
+        background-color: var(--selected-token);
       }
 
       &.disabled {
-        background-color: transparent;
+        box-shadow: 0 0 0 100vmax rgba(32, 32, 32, 0.5);
+        background-color: rgba(32, 32, 32, 0.5);
+        color: var(--text-disabled);
         cursor: not-allowed;
         user-select: none;
-        opacity: 0.25;
       }
     }
 
     .token-image {
-      color: $color-secondary;
-      font-size: $font-size-primary;
-      align-self: center;
-      text-align: center;
-      grid-column: 1;
-      grid-row: 1/3;
+      font-size: font-size.$token-logo-svg-list;
+      color: var(--text-default);
+      grid-column: 1 / 2;
+      grid-row: 1 / 3;
     }
 
     .token-symbol,
     .token-symbol * {
+      color: var(--text-default);
       text-decoration: none;
       grid-column: 2;
       grid-row: 1;
     }
 
     .token-name {
-      color: $color-secondary;
+      color: var(--text-alt);
       text-overflow: ellipsis;
       overflow: hidden;
       grid-column: 2;
@@ -138,6 +128,9 @@ $border-radius: 0.5rem;
     }
 
     .token-balance {
+      font-family: font-family.$console;
+      color: var(--text-alt);
+      text-align: end;
       grid-column: 3;
       grid-row: 2;
     }
@@ -146,73 +139,119 @@ $border-radius: 0.5rem;
 
 .token-picker-toggle {
   & {
-    transition: all 0.5s ease-in-out;
-    border-radius: 0 0.5rem 0.5rem 0;
-    color: rgb(0, 0, 0);
-    padding: 0.5rem 1rem;
-    position: relative;
-    max-width: 120px;
-    font-size: 1rem;
-    flex: 0 0 100%;
-    width: 100%;
-    z-index: 1;
+    background-color: var(--token-group);
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr auto;
+    border: 0px none transparent;
+    color: var(--text-default);
+    display: grid;
   }
 
-  &:hover,
-  &:focus,
-  &.open {
-    background-color: rgba(116, 89, 220, 1);
-    color: rgb(255, 255, 255);
-    max-width: 160px;
+  &:disabled {
+    color: var(--text-disabled);
+    pointer-events: none;
+  }
+
+  .token-image {
+    margin-right: 10px;
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;
+  }
+
+  .token-symbol {
+    font-size: font-size.$h4;
+    font-weight: font-weight.$heavy;
+    line-height: 1.4;
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    align-self: end;
+  }
+
+  .token-chain {
+    white-space: nowrap;
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+  }
+
+  .no-selected-token {
+    text-align: center;
+    align-self: center;
+    grid-column: 1 / 3;
+    grid-row: 1 / 3;
   }
 }
 
-.no-token-logo {
+.token-image-not-found {
+  opacity: 0.2;
+  color: var(--text-disabled);
+}
+
+.token-picker-dialog {
   & {
-    display: inline-block;
-    position: relative;
-    height: 1em;
-    width: 1em;
+    background-color: var(--dialog-backdrop);
+    height: 100%;
   }
 
-  &::before,
-  &::after {
+  .dialog-content {
+    overflow: hidden;
+    border: paddings.size(2) solid var(--card-border);
+    background-color: var(--dialog-bg);
+  }
+
+  .dialog-header-row {
+    @include paddings.padding('b', 0);
+  }
+
+  .dialog-body {
+    & {
+      @include paddings.padding('y', 0);
+      @include paddings.padding('x', 0);
+      flex-direction: column;
+      overflow: hidden;
+      display: flex;
+    }
+
+    & > * {
+      @include paddings.padding('x', 5);
+      flex: 0 0 auto;
+    }
+
+    & > .token-picker-body {
+      @include margins.margin('t', 0);
+      @include margins.margin('b', 2);
+      min-height: $min-body-height;
+      flex: 1 1 auto;
+    }
+  }
+
+  .dialog-header-close-button {
+    @include margins.margin('l', 'auto');
+    @include margins.margin('t', 0);
+    background-color: transparent;
+    border: 0px none transparent;
+    color: var(--text-default);
+    font-size: font-size.$h2;
+    margin-bottom: auto;
+  }
+}
+
+.token-asset-selection {
+  & {
+    isolation: isolate;
+    position: relative;
+  }
+
+  .token-moving-asset {
     position: absolute;
-    display: block;
     height: 100%;
     width: 100%;
-    content: '';
+    z-index: -1;
+    left: 0;
     top: 0;
   }
 
-  &::before {
-    border: 0.1em solid currentColor;
-    border-radius: 50%;
-  }
-
-  &::after {
-    background-color: currentColor;
-    transform: rotateZ(45deg);
-    left: calc(50% - 0.025em);
-    width: 0.05em;
-  }
-}
-
-@mixin y-shadow($size, $color) {
-  box-shadow: inset 0 #{$size} #{$size} #{-$size} $color,
-    inset 0 #{-$size} #{$size} #{-$size} $color;
-}
-
-@keyframes item-selected-pulse {
-  0% {
-    @include y-shadow(0, rgba($color-primary, 0.4));
-  }
-
-  50% {
-    @include y-shadow(1rem, rgba($color-primary, 0.4));
-  }
-
-  100% {
-    @include y-shadow(0, rgba($color-primary, 0.4));
+  .transition-ready {
+    transition: left animations.$short-duration animations.$default-mode,
+      width animations.$short-duration animations.$default-mode;
   }
 }

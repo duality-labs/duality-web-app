@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useRef, useState, useId } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useId,
+  useMemo,
+} from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCircle } from '@fortawesome/free-solid-svg-icons';
 
 import { Token } from './mockHooks';
 
@@ -20,6 +30,48 @@ interface TokenPickerProps {
   disabled?: boolean;
 }
 
+type AssetModeType = 'User' | 'All';
+
+function useSelectedButtonBackgroundMove(
+  value: string
+): [
+  (ref: HTMLButtonElement | null) => void,
+  (value: string) => (ref: HTMLButtonElement | null) => void
+] {
+  const [movingButton, setMovingButton] = useState<HTMLButtonElement | null>();
+  const movingButtonRef = useCallback(
+    (ref: HTMLButtonElement | null) => setMovingButton(ref),
+    []
+  );
+
+  const [refsByValue, setRefsByValue] = useState<{
+    [value: string]: HTMLElement | null;
+  }>({});
+
+  const createRefForValue = useCallback((value: string) => {
+    return (ref: HTMLButtonElement | null) => {
+      setRefsByValue((refs) => {
+        // update element refs only if they have changed
+        if (ref && ref !== refs[value]) {
+          return { ...refs, [value]: ref };
+        }
+        return refs;
+      });
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const targetButton = refsByValue[value];
+    if (movingButton && targetButton) {
+      movingButton.style.width = `${targetButton.offsetWidth}px`;
+      movingButton.style.left = `${targetButton.offsetLeft}px`;
+      movingButton?.classList.add('transition-ready');
+    }
+  }, [value, movingButton, refsByValue]);
+
+  return [movingButtonRef, createRefForValue];
+}
+
 export default function TokenPicker({
   value,
   onChange,
@@ -33,7 +85,16 @@ export default function TokenPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
+  const userList = useMemo(() => tokenList.filter(() => false), [tokenList]); // Todo: actually filter list to tokens in User's wallet
+  const [assetMode, setAssetMode] = useState<AssetModeType>(
+    userList.length ? 'User' : 'All'
+  );
   const currentID = useId();
+
+  useEffect(() => {
+    if (!userList.length)
+      setAssetMode((oldMode) => (oldMode === 'User' ? 'All' : oldMode));
+  }, [userList.length]);
 
   const open = useCallback(() => {
     setIsOpen(true);
@@ -88,10 +149,12 @@ export default function TokenPicker({
   // update the filtered list whenever the query or the list changes
   useEffect(
     function () {
+      const list = assetMode === 'All' ? tokenList : userList;
+
       // if the query is empty return the full list
       if (!searchQuery) {
         return setFilteredList(
-          tokenList.map((token) => ({
+          list.map((token) => ({
             name: [token.name],
             symbol: [token.symbol],
             token,
@@ -107,7 +170,7 @@ export default function TokenPicker({
       const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
 
       setFilteredList(
-        tokenList
+        list
           .filter((token) =>
             [token.symbol, token.name, token.address].some((txt) =>
               regexQuery.test(txt)
@@ -123,9 +186,11 @@ export default function TokenPicker({
 
       setSelectedIndex(0);
     },
-    [tokenList, searchQuery]
+    [tokenList, userList, assetMode, searchQuery]
   );
 
+  const [movingAssetRef, createRefForValue] =
+    useSelectedButtonBackgroundMove(assetMode);
   return (
     <>
       <button
@@ -134,16 +199,69 @@ export default function TokenPicker({
         onClick={open}
         disabled={disabled}
       >
-        {value?.symbol || 'Choose Token'}
+        {value?.symbol ? (
+          <>
+            {value.logo ? (
+              <img
+                className="token-image"
+                alt={`${value.symbol} logo`}
+                src={value.logo}
+              />
+            ) : (
+              <FontAwesomeIcon
+                icon={faCircle}
+                size="2x"
+                className="token-image token-image-not-found"
+              ></FontAwesomeIcon>
+            )}
+            <span className="token-symbol">{value.symbol}</span>
+            <span className="token-chain">Duality Chain</span>
+          </>
+        ) : (
+          <span className="no-selected-token">Choose Token</span>
+        )}
       </button>
       <Dialog
         isOpen={isOpen}
         onDismiss={close}
         header={getHeader()}
         initialFocusRef={inputRef}
+        className="token-picker-dialog"
       >
-        <ul className="token-picker-body" ref={bodyRef}>
-          {filteredList.map(showListItem)}
+        <div className="card-row my-4 gapx-3 token-asset-selection">
+          <button
+            className="button button-primary pill token-moving-asset"
+            disabled
+            ref={movingAssetRef}
+          ></button>
+          <button
+            type="button"
+            className="button pill py-3 px-4"
+            ref={createRefForValue('User')}
+            onClick={() => setAssetMode('User')}
+          >
+            Your Assets
+          </button>
+          <button
+            type="button"
+            className="button pill py-3 px-4"
+            ref={createRefForValue('All')}
+            onClick={() => setAssetMode('All')}
+          >
+            All Assets
+          </button>
+        </div>
+        <ul className="token-picker-body duality-scrollbar" ref={bodyRef}>
+          {filteredList.length > 0 ? (
+            filteredList.map(showListItem)
+          ) : assetMode === 'User' ? (
+            <div>
+              <p>Your wallet contains no tradable tokens</p>
+              <p>Add tokens to your wallet to see them here</p>
+            </div>
+          ) : (
+            <div>Loading token list...</div>
+          )}
         </ul>
       </Dialog>
     </>
@@ -172,6 +290,7 @@ export default function TokenPicker({
     const symbol = token?.token?.symbol;
     const logo = token?.token?.logo;
     const isDisabled = exclusion?.address === address;
+    const balance = '0.0'; // TODO get actual balance
 
     function onClick() {
       selectToken(token?.token);
@@ -186,19 +305,30 @@ export default function TokenPicker({
         <data value={address}>
           <button
             type="button"
-            className={`${isDisabled ? 'disabled' : ''}${
-              index === selectedIndex ? ' selected' : ''
-            }`}
+            disabled={isDisabled}
+            className={[
+              isDisabled && 'disabled',
+              index === selectedIndex && ' selected',
+              'py-3',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             onClick={onClick}
             onFocus={onFocus}
           >
-            <div className="token-image">
-              {logo ? (
-                <img src={logo} alt={`${symbol || 'Token'} logo`} />
-              ) : (
-                <i className="no-token-logo"></i>
-              )}
-            </div>
+            {logo ? (
+              <img
+                src={logo}
+                alt={`${symbol || 'Token'} logo`}
+                className="token-image"
+              />
+            ) : (
+              <FontAwesomeIcon
+                icon={faCircle}
+                size="2x"
+                className="token-image-not-found"
+              ></FontAwesomeIcon>
+            )}
             <dfn className="token-symbol">
               <abbr title={address}>
                 {textListWithMark(token?.symbol || [])}
@@ -207,7 +337,7 @@ export default function TokenPicker({
             <span className="token-name">
               {textListWithMark(token?.name || [])}
             </span>
-            <span className="token-balance"></span>
+            <span className="token-balance">{balance}</span>
           </button>
         </data>
       </li>
