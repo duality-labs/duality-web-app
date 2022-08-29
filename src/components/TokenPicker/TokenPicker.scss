@@ -215,6 +215,7 @@ $min-body-height: 150px;
   }
 
   .dialog-content {
+    overflow: hidden;
     border: paddings.size(2) solid var(--card-border);
     background-color: var(--dialog-bg);
   }
