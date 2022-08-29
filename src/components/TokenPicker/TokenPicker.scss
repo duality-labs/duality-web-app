@@ -96,7 +96,8 @@ $min-body-height: 150px;
       }
 
       &.disabled {
-        background-color: transparent;
+        box-shadow: 0 0 0 100vmax rgba(32, 32, 32, 0.5);
+        background-color: rgba(32, 32, 32, 0.5);
         color: var(--text-disabled);
         cursor: not-allowed;
         user-select: none;
