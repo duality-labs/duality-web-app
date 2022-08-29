@@ -191,12 +191,13 @@ export default function Pool() {
             title="Asset 2"
           />
         </div>
+      </div>
+      <div className="chart-card page-card">
         <div>
           Ticks: {tickFetching ? 'loading...' : ''} &nbsp;
           {JSON.stringify(ticks, null, 2)}
         </div>
       </div>
-      <div className="chart-card page-card"></div>
       <div className="fee-card page-card">
         <div className="card-header">
           <h3 className="card-title">Fee Tier</h3>
