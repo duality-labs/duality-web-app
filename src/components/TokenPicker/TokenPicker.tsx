@@ -98,44 +98,47 @@ export default function TokenPicker({
   );
 
   // update the filtered list whenever the query or the list changes
-  useEffect(() => {
-    const list = assetMode === 'All' ? tokenList : userList;
+  useEffect(
+    function () {
+      const list = assetMode === 'All' ? tokenList : userList;
 
-    // if the query is empty return the full list
-    if (!searchQuery) {
-      return setFilteredList(
-        list.map((token) => ({
-          name: [token.name],
-          symbol: [token.symbol],
-          token,
-        }))
-      );
-    }
+      // if the query is empty return the full list
+      if (!searchQuery) {
+        return setFilteredList(
+          list.map((token) => ({
+            name: [token.name],
+            symbol: [token.symbol],
+            token,
+          }))
+        );
+      }
 
-    // remove invalid characters + remove space limitations (but still match any found)
-    const queryRegexText = searchQuery
-      .toLowerCase()
-      .replace(/[.*\\{}[\]+$^]/gi, (char) => `\\${char}`)
-      .replace(/\s+/g, '\\s*');
-    const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
+      // remove invalid characters + remove space limitations (but still match any found)
+      const queryRegexText = searchQuery
+        .toLowerCase()
+        .replace(/[.*\\{}[\]+$^]/gi, (char) => `\\${char}`)
+        .replace(/\s+/g, '\\s*');
+      const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
 
-    setFilteredList(
-      list
-        .filter((token) =>
-          [token.symbol, token.name, token.address].some((txt) =>
-            regexQuery.test(txt)
+      setFilteredList(
+        list
+          .filter((token) =>
+            [token.symbol, token.name, token.address].some((txt) =>
+              regexQuery.test(txt)
+            )
           )
-        )
-        .map(function (token) {
-          // Split the symbol and name using the query (and include the query in the list)
-          const symbolResult = token.symbol?.split(regexQuery) || [''];
-          const nameResult = token.name?.split(regexQuery) || [''];
-          return { name: nameResult, symbol: symbolResult, token };
-        })
-    );
+          .map(function (token) {
+            // Split the symbol and name using the query (and include the query in the list)
+            const symbolResult = token.symbol?.split(regexQuery) || [''];
+            const nameResult = token.name?.split(regexQuery) || [''];
+            return { name: nameResult, symbol: symbolResult, token };
+          })
+      );
 
-    setSelectedIndex(0);
-  }, [tokenList, userList, assetMode, searchQuery]);
+      setSelectedIndex(0);
+    },
+    [tokenList, userList, assetMode, searchQuery]
+  );
 
   useEffect(() => {
     const dom = movingAsset.current,
