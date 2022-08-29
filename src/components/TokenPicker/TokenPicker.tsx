@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useId,
@@ -30,6 +31,20 @@ interface TokenPickerProps {
 }
 
 type AssetModeType = 'User' | 'All';
+
+function transitionElementToAssetMode(
+  parent: HTMLElement,
+  element: HTMLElement,
+  assetMode: string
+) {
+  const matchingElement = parent.querySelector(
+    `[data-asset-mode=${assetMode}]`
+  ) as HTMLElement;
+  if (matchingElement) {
+    element.style.width = `${matchingElement.offsetWidth}px`;
+    element.style.left = `${matchingElement.offsetLeft}px`;
+  }
+}
 
 export default function TokenPicker({
   value,
@@ -149,22 +164,22 @@ export default function TokenPicker({
     [tokenList, userList, assetMode, searchQuery]
   );
 
-  useEffect(() => {
-    const dom = movingAsset.current,
-      parent = dom?.parentElement;
-    if (!parent) return;
-    const siblings = [].slice
-      .call(parent.children)
-      .filter((child) => child !== dom)
-      .reverse() as Array<HTMLElement>;
-    const list = ['User', 'All'].reverse();
-    const item = siblings[list.indexOf(assetMode)];
-    dom.style.width = `${item.offsetWidth}px`;
-    dom.style.left = `${item.offsetLeft}px`;
-    dom.classList.add('transition-ready');
-    // Should run every time the user button appears/disappears
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetMode, movingAsset.current, userList.length]);
+  useLayoutEffect(() => {
+    const parent = movingAsset.current?.parentElement;
+    if (parent && movingAsset.current) {
+      transitionElementToAssetMode(parent, movingAsset.current, assetMode);
+    }
+  }, [assetMode, isOpen]);
+
+  const onMovingAssetsReady = useCallback(
+    (parent: HTMLDivElement | null) => {
+      if (parent && movingAsset.current) {
+        transitionElementToAssetMode(parent, movingAsset.current, assetMode);
+      }
+      movingAsset.current?.classList.add('transition-ready');
+    },
+    [assetMode]
+  );
 
   return (
     <>
@@ -203,7 +218,10 @@ export default function TokenPicker({
         initialFocusRef={inputRef}
         className="token-picker-dialog"
       >
-        <div className="card-row my-4 gapx-3 token-asset-selection">
+        <div
+          className="card-row my-4 gapx-3 token-asset-selection"
+          ref={onMovingAssetsReady}
+        >
           <button
             className="button button-primary pill token-moving-asset"
             disabled
@@ -212,6 +230,7 @@ export default function TokenPicker({
           <button
             type="button"
             className="button pill py-3 px-4"
+            data-asset-mode="User"
             onClick={() => setAssetMode('User')}
           >
             Your Assets
@@ -219,6 +238,7 @@ export default function TokenPicker({
           <button
             type="button"
             className="button pill py-3 px-4"
+            data-asset-mode="All"
             onClick={() => setAssetMode('All')}
           >
             All Assets
