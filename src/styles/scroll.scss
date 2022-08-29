@@ -2,30 +2,6 @@
 
 $scrollbar-size: 0.5rem;
 
-.no-scroll {
-  overflow: hidden;
-}
-
-.no-scroll-y {
-  overflow-y: hidden;
-}
-
-.no-scroll-x {
-  overflow-x: hidden;
-}
-
-.auto-scroll {
-  overflow: auto;
-}
-
-.auto-scroll-y {
-  overflow-y: auto;
-}
-
-.auto-scroll-x {
-  overflow-x: auto;
-}
-
 .duality-scrollbar {
   & {
     overflow: auto;
