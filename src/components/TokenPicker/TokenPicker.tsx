@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useId } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBan } from '@fortawesome/free-solid-svg-icons';
 
 import { Token } from './mockHooks';
 
@@ -174,7 +176,11 @@ export default function TokenPicker({
                 src={value.logo}
               />
             ) : (
-              <i className="token-image no-token-logo"></i>
+              <FontAwesomeIcon
+                icon={faBan}
+                size="2x"
+                className="token-image token-image-not-found"
+              ></FontAwesomeIcon>
             )}
             <span className="token-symbol">{value.symbol}</span>
             <span className="token-chain">Duality Chain</span>
@@ -281,7 +287,11 @@ export default function TokenPicker({
                 className="token-image"
               />
             ) : (
-              <i className="token-image no-token-logo"></i>
+              <FontAwesomeIcon
+                icon={faBan}
+                size="2x"
+                className="token-image-not-found"
+              ></FontAwesomeIcon>
             )}
             <dfn className="token-symbol">
               <abbr title={address}>

@@ -177,37 +177,8 @@ $min-body-height: 150px;
   }
 }
 
-.no-token-logo {
-  & {
-    transform: rotateZ(45deg);
-    display: inline-block;
-    position: relative;
-    // 1em to set the dimensions equal to the current font size
-    height: 1em;
-    width: 1em;
-  }
-
-  &::before,
-  &::after {
-    box-sizing: border-box;
-    position: absolute;
-    display: block;
-    height: 100%;
-    width: 100%;
-    content: '';
-    top: 0;
-  }
-
-  &::before {
-    border: $no-token-border-size solid currentColor;
-    border-radius: 50%;
-  }
-
-  &::after {
-    left: calc(50% - #{$no-token-border-size});
-    background-color: currentColor;
-    width: $no-token-border-size;
-  }
+.token-image-not-found {
+  color: var(--text-disabled);
 }
 
 .token-picker-dialog {
