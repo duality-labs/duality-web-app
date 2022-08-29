@@ -73,9 +73,9 @@ $min-body-height: 150px;
       & {
         @include paddings.padding('*', 0);
         @include margins.gap('x', 4);
-        transition: background-color animations.$medium-duration
+        transition: background-color animations.$short-duration
             animations.$default-mode,
-          box-shadow animations.$medium-duration animations.$default-mode;
+          box-shadow animations.$short-duration animations.$default-mode;
         box-shadow: 0 0 0 100vmax transparent; // shadow so that the background will ignore parent padding-x
         clip-path: inset(0 -100vmax); // so the shadow only "bleeds" on the side
         grid-template-columns: font-size.$token-logo-svg-list 1fr auto;
@@ -251,7 +251,7 @@ $min-body-height: 150px;
   }
 
   .transition-ready {
-    transition: left animations.$medium-duration animations.$default-mode,
-      width animations.$medium-duration animations.$default-mode;
+    transition: left animations.$short-duration animations.$default-mode,
+      width animations.$short-duration animations.$default-mode;
   }
 }
