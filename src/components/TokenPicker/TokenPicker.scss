@@ -88,9 +88,9 @@ $min-body-height: 150px;
         width: 100%;
       }
 
-      &:hover,
-      &:focus,
-      &.selected {
+      &:hover:not(.disabled),
+      &:focus:not(.disabled),
+      &.selected:not(.disabled) {
         box-shadow: 0 0 0 100vmax var(--selected-token);
         background-color: var(--selected-token);
       }
