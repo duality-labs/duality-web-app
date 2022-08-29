@@ -32,18 +32,44 @@ interface TokenPickerProps {
 
 type AssetModeType = 'User' | 'All';
 
-function transitionElementToAssetMode(
-  parent: HTMLElement,
-  element: HTMLElement,
-  assetMode: string
-) {
-  const matchingElement = parent.querySelector(
-    `[data-asset-mode=${assetMode}]`
-  ) as HTMLElement;
-  if (matchingElement) {
-    element.style.width = `${matchingElement.offsetWidth}px`;
-    element.style.left = `${matchingElement.offsetLeft}px`;
-  }
+function useSelectedButtonBackgroundMove(
+  value: string
+): [
+  (ref: HTMLButtonElement | null) => void,
+  (value: string) => (ref: HTMLButtonElement | null) => void
+] {
+  const [movingButton, setMovingButton] = useState<HTMLButtonElement | null>();
+  const movingButtonRef = useCallback(
+    (ref: HTMLButtonElement | null) => setMovingButton(ref),
+    []
+  );
+
+  const [refsByValue, setRefsByValue] = useState<{
+    [value: string]: HTMLElement | null;
+  }>({});
+
+  const createRefForValue = useCallback((value: string) => {
+    return (ref: HTMLButtonElement | null) => {
+      setRefsByValue((refs) => {
+        // update element refs only if they have changed
+        if (ref && ref !== refs[value]) {
+          return { ...refs, [value]: ref };
+        }
+        return refs;
+      });
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const targetButton = refsByValue[value];
+    if (movingButton && targetButton) {
+      movingButton.style.width = `${targetButton.offsetWidth}px`;
+      movingButton.style.left = `${targetButton.offsetLeft}px`;
+      movingButton?.classList.add('transition-ready');
+    }
+  }, [value, movingButton, refsByValue]);
+
+  return [movingButtonRef, createRefForValue];
 }
 
 export default function TokenPicker({
@@ -63,7 +89,6 @@ export default function TokenPicker({
   const [assetMode, setAssetMode] = useState<AssetModeType>(
     userList.length ? 'User' : 'All'
   );
-  const movingAsset = useRef<HTMLButtonElement>(null);
   const currentID = useId();
 
   useEffect(() => {
@@ -164,23 +189,8 @@ export default function TokenPicker({
     [tokenList, userList, assetMode, searchQuery]
   );
 
-  useLayoutEffect(() => {
-    const parent = movingAsset.current?.parentElement;
-    if (parent && movingAsset.current) {
-      transitionElementToAssetMode(parent, movingAsset.current, assetMode);
-    }
-  }, [assetMode, isOpen]);
-
-  const onMovingAssetsReady = useCallback(
-    (parent: HTMLDivElement | null) => {
-      if (parent && movingAsset.current) {
-        transitionElementToAssetMode(parent, movingAsset.current, assetMode);
-      }
-      movingAsset.current?.classList.add('transition-ready');
-    },
-    [assetMode]
-  );
-
+  const [movingAssetRef, createRefForValue] =
+    useSelectedButtonBackgroundMove(assetMode);
   return (
     <>
       <button
@@ -218,19 +228,16 @@ export default function TokenPicker({
         initialFocusRef={inputRef}
         className="token-picker-dialog"
       >
-        <div
-          className="card-row my-4 gapx-3 token-asset-selection"
-          ref={onMovingAssetsReady}
-        >
+        <div className="card-row my-4 gapx-3 token-asset-selection">
           <button
             className="button button-primary pill token-moving-asset"
             disabled
-            ref={movingAsset}
+            ref={movingAssetRef}
           ></button>
           <button
             type="button"
             className="button pill py-3 px-4"
-            data-asset-mode="User"
+            ref={createRefForValue('User')}
             onClick={() => setAssetMode('User')}
           >
             Your Assets
@@ -238,7 +245,7 @@ export default function TokenPicker({
           <button
             type="button"
             className="button pill py-3 px-4"
-            data-asset-mode="All"
+            ref={createRefForValue('All')}
             onClick={() => setAssetMode('All')}
           >
             All Assets
