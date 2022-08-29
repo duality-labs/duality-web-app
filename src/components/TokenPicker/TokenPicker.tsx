@@ -35,7 +35,7 @@ export default function TokenPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
-  const userList = tokenList.filter((_, i) => i & 1); // Todo actually filter (every other token for now)
+  const userList = tokenList.filter(() => false); // Todo: actually filter list to tokens in User's wallet
   const [assetMode, setAssetMode] = useState<AssetModeType>(
     userList.length ? 'User' : 'All'
   );
