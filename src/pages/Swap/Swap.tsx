@@ -143,24 +143,29 @@ export default function Swap() {
           ></TokenInputGroup>
         </div>
         <div className="text-info text-row card-row">
-          <span className="text-header">Exchange Rate</span>
-          <span className="text-value">
-            {tokenA && tokenB && routerResult
-              ? `1 ${
-                  tokenA.symbol
-                } = ${
-                  routerResult.tokenIn === tokenA.address
-                ? routerResult.amountOut.dividedBy(routerResult.amountIn).toPrecision(6)
-                : routerResult.amountIn.dividedBy(routerResult.amountOut).toPrecision(6)
-              } ${tokenB.symbol}`
-              : 'No pair selected'}
-          </span>
-        </div>
-        <div className="text-info text-row card-row">
-          <span className="text-header">Price Impact</span>
-          <span className="text-value">
-            ...
-          </span>
+          {tokenA &&
+            tokenB &&
+            parseFloat(valueAConverted || '') > 0 &&
+            parseFloat(valueBConverted || '') > 0 && (
+              <div>
+                <span className="text-header">Exchange Rate:</span>
+                <span className="ml-3 text-value">
+                  {routerResult
+                    ? `1 ${tokenA.symbol} = ${
+                        routerResult.tokenIn === tokenA.address
+                          ? routerResult.amountOut
+                              .dividedBy(routerResult.amountIn)
+                              .toPrecision(6)
+                          : routerResult.amountIn
+                              .dividedBy(routerResult.amountOut)
+                              .toPrecision(6)
+                      } ${tokenB.symbol}`
+                    : isValidatingRate
+                    ? 'Finding exchange rate...'
+                    : 'No exchange information'}
+                </span>
+              </div>
+            )}
         </div>
         {swapRequest && swapError && (
           <div className="text-error card-row">{swapError}</div>
