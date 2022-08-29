@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.21](https://github.com/duality-labz/duality-web-app/compare/v0.1.20...v0.1.21) (2022-08-29)
+
+
+### Features
+
+* 57 apply designs to tokenpicker + tokeninputgroup ([#113](https://github.com/duality-labz/duality-web-app/issues/113)) ([8ed9956](https://github.com/duality-labz/duality-web-app/commit/8ed9956389e4495f812c892cc9843d77a11fbfdc))
+
 ## [0.1.20](https://github.com/duality-labz/duality-web-app/compare/v0.1.19...v0.1.20) (2022-08-26)
 
 
