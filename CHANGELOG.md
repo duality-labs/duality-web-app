@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.22](https://github.com/duality-labz/duality-web-app/compare/v0.1.21...v0.1.22) (2022-08-30)
+
+
+### Features
+
+* 58+59 apply designs to add swap and liquidity page ([#123](https://github.com/duality-labz/duality-web-app/issues/123)) ([1cc53b7](https://github.com/duality-labz/duality-web-app/commit/1cc53b7cbda701c58c65e6a1e1cee4d178aa0e04))
+
 ## [0.1.21](https://github.com/duality-labz/duality-web-app/compare/v0.1.20...v0.1.21) (2022-08-29)
 
 
