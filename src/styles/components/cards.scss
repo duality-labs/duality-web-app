@@ -17,12 +17,15 @@
 }
 
 .card {
-  @extend .card-2;
+  @extend .card-3;
 }
 
 .page-card {
+  @include card(4);
   background-color: var(--page-card);
   color: var(--text-default);
+  flex-direction: column;
+  display: flex;
 }
 
 .card-row {

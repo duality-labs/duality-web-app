@@ -1,6 +1,17 @@
+@use '../mixins-vars/paddings.scss' as paddings;
 @use '../theme/collections.scss' as colors;
+@use 'sass:map';
 
 @each $name in colors.$main {
+  .badge-#{$name} {
+    @include paddings.padding('x', 3);
+    @include paddings.padding('y', 3);
+    background-color: var(--#{$name});
+    color: var(--#{$name}-alt);
+    border: 0px none transparent;
+    border-radius: 100vmax;
+  }
+
   .text-#{$name} {
     color: var(--#{$name});
   }

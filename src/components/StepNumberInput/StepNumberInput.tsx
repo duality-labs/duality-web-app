@@ -66,6 +66,13 @@ export default function StepNumberInput({
   const inputRef = useRef<HTMLInputElement>(null);
 
   /**
+   * Update current value when unparsed value has changed
+   */
+  useEffect(() => {
+    setCurrentValue(parse(value));
+  }, [value, parse]);
+
+  /**
    * If the min or max "push" the current value outside the valid range, readjust
    */
   useEffect(() => {

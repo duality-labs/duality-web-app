@@ -11,6 +11,7 @@ header,
 .header {
   @include paddings.padding('y', 3);
   @include paddings.padding('x', 4);
+  padding: 2rem 4rem;
   box-sizing: border-box;
   text-align: start;
   width: 100%;
@@ -31,6 +32,9 @@ nav,
       gap: margins.size(2);
       position: relative;
       display: flex;
+      padding: 0.75rem 1rem;
+      margin-left: 1rem;
+      border: none;
     }
 
     &::before {
@@ -38,7 +42,7 @@ nav,
         width animations.$short-duration animations.$default-mode;
       position: absolute;
       background-color: currentColor;
-      bottom: #{math.div(paddings.size(buttons.$ghost-padding-y), 2)};
+      bottom: 0.5rem;
       height: $underline-height;
       display: block;
       content: '';

@@ -1,11 +1,23 @@
+@use '../../styles/mixins-vars/margins.scss' as margins;
+
 .swap-page {
   .page-card {
     width: 450px;
   }
 
-  .token-input-group {
-    box-sizing: border-box;
-    width: 100%;
+  .card-row {
+    & {
+      @include margins.margin('y', 2);
+    }
+
+    .token-input-group {
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+    .swap-button {
+      margin: 0 auto;
+    }
   }
 }
 

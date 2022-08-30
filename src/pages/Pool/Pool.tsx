@@ -2,18 +2,19 @@ import { useEffect, useState, useCallback, FormEvent } from 'react';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeftLong,
-  faArrowRightLong,
+  faArrowUpLong,
+  faArrowDownLong,
 } from '@fortawesome/free-solid-svg-icons';
 
 import { useIndexerPairData } from '../../lib/web3/indexerProvider';
 
-import TokenPicker from '../../components/TokenPicker';
+import RadioInput from '../../components/RadioInput';
+import StepNumberInput from '../../components/StepNumberInput';
+
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
   useTokens,
   useExchangeRate,
-  useDotCounter,
   Token,
 } from '../../components/TokenPicker/mockHooks';
 
@@ -23,35 +24,50 @@ import { useDeposit } from './useDeposit';
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 const denomRatio = new BigNumber(10).exponentiatedBy(denomExponent);
-const defaultFee = '0.30';
+const defaultFee = '0.30%';
 const defaultPrice = '1';
-const priceMin = new BigNumber(defaultPrice)
+const defaultRangeMin = new BigNumber(defaultPrice)
   .dividedBy(denomRatio)
   .toFixed(denomExponent);
-const priceMax = new BigNumber(defaultPrice)
+const defaultRangeMax = new BigNumber(defaultPrice)
   .multipliedBy(denomRatio)
   .toFixed(0);
 const defaultTokenAmount = '1000';
 
+const feeTypes: Array<{ fee: string; description: string }> = Object.entries({
+  '0.01%': 'Best for very stable pairs.',
+  '0.05%': 'Best for  stable pairs.',
+  '0.30%': 'Best for most assets.',
+  '1.00%': 'Best for exotic assets.',
+}).map(([fee, description]) => ({ fee, description }));
+
+const slopeTypes = ['UNIFORM', 'UP-SLOPE', 'BELL CURVE', 'DOWN-SLOPE'];
+
+const calculateFeeLiquidity = function (fee: string) {
+  const test: { [fee: string]: string } = {
+    '0.01%': '1% liquidity',
+    '0.05%': '9% liquidity',
+    '0.30%': '83% liquidity',
+    '1.00%': '7% liquidity',
+  };
+  return test[fee];
+};
+
+const defaultPrecision = '6';
+
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [price, setPrice] = useState(() =>
-    new BigNumber(defaultPrice).toFixed(denomExponent)
-  );
-  const [fee, setFee] = useState(defaultFee);
+  const [feeType, setFeeType] = useState<
+    { fee: string; description: string } | undefined
+  >(() => feeTypes.find(({ fee }) => fee === defaultFee));
+  const fee = feeType?.fee || defaultFee;
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
     setTokenB(tokenA);
   }, [tokenA, tokenB]);
-  const { data: rateData, isValidating: isValidatingRate } = useExchangeRate(
-    tokenA,
-    tokenB,
-    '1'
-  );
-  const { data: tokenList = [], isValidating: isValidatingTokens } =
-    useTokens();
-  const dotCount = useDotCounter(0.25e3);
+  const { data: rateData } = useExchangeRate(tokenA, tokenB, '1');
+  const { data: tokenList = [] } = useTokens();
 
   // set token A to be first token in list if not already populated
   useEffect(() => {
@@ -60,8 +76,8 @@ export default function Pool() {
     }
   }, [tokenA, tokenList]);
 
-  const [rangeMin, setRangeMin] = useState('50');
-  const [rangeMax, setRangeMax] = useState('50');
+  const [rangeMin, setRangeMin] = useState(defaultRangeMin);
+  const [rangeMax, setRangeMax] = useState(defaultRangeMax);
   const [values, setValues] = useState<[string, string]>(() => [
     new BigNumber(defaultTokenAmount)
       .dividedBy(denomRatio)
@@ -104,6 +120,14 @@ export default function Pool() {
     isValidating: tickFetching,
   } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
+  const [editingFee, setEditingFee] = useState(false);
+  const [slopeType, setSlopeType] = useState<string>();
+  const [precision, setPrecision] = useState<string>(defaultPrecision);
+
+  useEffect(() => {
+    setEditingFee(false);
+  }, [fee]);
+
   const [
     {
       data: depositResponse,
@@ -118,215 +142,186 @@ export default function Pool() {
       await sendDepositRequest(
         tokenA,
         tokenB,
-        new BigNumber(price),
+        new BigNumber(rangeMin),
         new BigNumber(fee),
         new BigNumber(values[0]),
         new BigNumber(values[0])
       );
     },
-    [tokenA, tokenB, price, fee, values, sendDepositRequest]
+    [tokenA, tokenB, rangeMin, fee, values, sendDepositRequest]
   );
 
   return (
-    <form className="pool-page card page-card my-4" onSubmit={onSubmit}>
-      <h2 className="card-header card-title">Select Pair</h2>
-      <div className="card-row">
-        <TokenPicker
-          value={tokenA}
-          onChange={setTokenA}
-          tokenList={tokenList}
-          exclusion={tokenB}
-        />
-        <button
-          type="button"
-          onClick={swapTokens}
-          className="icon-button m-auto"
-        >
-          <FontAwesomeIcon icon={faArrowLeftLong}></FontAwesomeIcon>
-          <FontAwesomeIcon icon={faArrowRightLong}></FontAwesomeIcon>
-        </button>
-        <TokenPicker
-          value={tokenB}
-          onChange={setTokenB}
-          tokenList={tokenList}
-          exclusion={tokenA}
-        />
-      </div>
-      <div>
-        Ticks: {tickFetching ? 'loading...' : ''} &nbsp;
-        {JSON.stringify(ticks, null, 2)}
-      </div>
-      {ticksError && (
-        <div>
-          TickFetch Error: <span style={{ color: 'red' }}>{ticksError}</span>
+    <form className="pool-page" onSubmit={onSubmit}>
+      <div className="assets-card page-card">
+        <h3 className="card-header card-title">Assets</h3>
+        <div className="card-row">
+          <TokenInputGroup
+            onValueChanged={(newValue) =>
+              setValues(([, valueB]) => [newValue, valueB])
+            }
+            onTokenChanged={setTokenA}
+            tokenList={tokenList}
+            token={tokenA}
+            value={`${values[0]}`}
+            exclusion={tokenB}
+            title="Asset 1"
+          />
         </div>
-      )}
-      <div className="fee-group">
-        Use fee:{' '}
-        <input
-          className="w-1/2"
-          type="number"
-          min="0.01"
-          max="1"
-          step="0.01"
-          value={fee}
-          onChange={(e) => setFee(new BigNumber(e.target.value).toFixed(2))}
-        ></input>
+        <div className="card-row">
+          <button
+            type="button"
+            onClick={swapTokens}
+            className="icon-button mx-auto"
+          >
+            <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
+            <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
+          </button>
+        </div>
+        <div className="card-row">
+          <TokenInputGroup
+            onValueChanged={(newValue) =>
+              setValues(([valueA]) => [valueA, newValue])
+            }
+            onTokenChanged={setTokenB}
+            tokenList={tokenList}
+            token={tokenB}
+            value={`${values[1]}`}
+            exclusion={tokenA}
+            title="Asset 2"
+          />
+        </div>
       </div>
-      <h2 className="card-header card-title">Set price range</h2>
-      <div className="fee-group">
-        {tokenA && tokenB ? (
-          <span>
-            Current Price: {rateData?.price || '...'} {tokenB.name} per &nbsp;
-            {tokenA.name}
-          </span>
-        ) : (
-          <span>Current Price:</span>
-        )}
-        Use price:{' '}
-        <input
-          className="w-1/2"
-          type="number"
-          min={priceMin}
-          max={priceMax}
-          value={price}
-          onChange={(e) =>
-            setPrice(new BigNumber(e.target.value).toFixed(denomExponent))
-          }
-        ></input>
+      <div className="chart-card page-card">
+        <div>
+          Ticks: {tickFetching ? 'loading...' : ''} &nbsp;
+          {JSON.stringify(ticks, null, 2)}
+        </div>
       </div>
-      <br />
-      <div>Minimum tick</div>
-      <div>Maximum tick</div>
-      <br />
-      <input
-        type="range"
-        min="0"
-        max="100"
-        value={rangeMin}
-        onChange={(e) => setRangeMin(e.target.value)}
-        step="10"
-        style={{ transform: 'rotate(180deg)' }}
-      ></input>
-      <input
-        type="range"
-        min="0"
-        max="100"
-        value={rangeMax}
-        onChange={(e) => setRangeMax(e.target.value)}
-        step="10"
-      ></input>
-      <br />
-      <input
-        min="0"
-        max="100"
-        value={`${parseInt(rangeMin, 10) > 0 ? '-' : ''}${parseFloat(
-          rangeMin
-        ).toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        })}%`}
-        onChange={(e) => setRangeMin(e.target.value.replace(/\D/g, ''))}
-        step="1"
-      ></input>
-      <input
-        min="0"
-        max="100"
-        value={`${parseFloat(rangeMax).toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        })}%`}
-        onChange={(e) => setRangeMax(e.target.value.replace(/\D/g, ''))}
-        step="1"
-      ></input>
-      <br />
-      <input
-        min="0"
-        max="100"
-        value={
-          tokenA && tokenB
-            ? `${
-                rateData?.price
-                  ? Math.round(
-                      parseFloat(rateData?.price) *
-                        (1 - parseFloat(rangeMin) / 100)
-                    )
-                  : ''
-              } ${tokenB?.symbol} per ${tokenA?.symbol}`
-            : ''
-        }
-        onChange={(e) =>
-          setRangeMin(
-            (current) =>
-              `${
-                rateData?.price
-                  ? (-parseInt(e.target.value.replace(/\D/g, ''), 10) /
-                      parseFloat(rateData?.price)) *
-                      100 +
-                    100
-                  : current
-              }`
-          )
-        }
-        step="1"
-      ></input>
-      <input
-        min="0"
-        max="100"
-        value={
-          tokenA && tokenB
-            ? `${
-                rateData?.price
-                  ? Math.round(
-                      parseFloat(rateData?.price) *
-                        (1 + parseFloat(rangeMax) / 100)
-                    )
-                  : ''
-              } ${tokenB?.symbol} per ${tokenA?.symbol}`
-            : ''
-        }
-        onChange={(e) =>
-          setRangeMax(
-            (current) =>
-              `${
-                rateData?.price
-                  ? (parseInt(e.target.value.replace(/\D/g, ''), 10) /
-                      parseFloat(rateData?.price)) *
-                      100 -
-                    100
-                  : current
-              }`
-          )
-        }
-        step="1"
-      ></input>
-      <h2 className="card-header card-title">Deposit Amounts</h2>
-      <TokenInputGroup
-        disabled
-        tokenList={tokenList}
-        token={tokenA}
-        value={values[0]}
-        onValueChanged={(valueA) => setValues(([, valueB]) => [valueA, valueB])}
-        exclusion={tokenB}
-      ></TokenInputGroup>
-      <TokenInputGroup
-        disabled
-        tokenList={tokenList}
-        token={tokenB}
-        value={values[1]}
-        onValueChanged={(valueB) => setValues(([valueA]) => [valueA, valueB])}
-        exclusion={tokenA}
-      ></TokenInputGroup>
-      {(isValidatingTokens || isValidatingRate) && (
-        <div className="text-secondary card-row">{'.'.repeat(dotCount)}</div>
-      )}
-      <input type="submit" value="Add Liquidity" />
-      <br />
-      <div className="text-red-500">{!isValidatingDeposit && depositError}</div>
-      <div className="text-sky-500">
-        {!isValidatingDeposit && depositResponse
-          ? `Deposited ${depositResponse.receivedTokenA} ${tokenA?.address} and ${depositResponse.receivedTokenB} ${tokenB?.address}`
-          : ''}
+      <div className="fee-card page-card">
+        <div className="card-header">
+          <h3 className="card-title">Fee Tier</h3>
+          <div className="badge-primary corner-border badge-large font-console ml-auto">
+            {fee}
+          </div>
+          <button
+            type="button"
+            className="button-secondary ml-2"
+            onClick={() => setEditingFee((mode) => !mode)}
+          >
+            {editingFee ? 'Hide' : 'Edit'}
+          </button>
+        </div>
+        <div className="card-row">
+          {editingFee ? (
+            <RadioInput<{ fee: string; description: string }>
+              value={feeType}
+              list={feeTypes}
+              onChange={setFeeType}
+              OptionComponent={({ option: { fee, description } }) => (
+                <div key={fee} className="badge card fee-type">
+                  <h5 className="fee-title">{fee}</h5>
+                  <span className="fee-description">{description}</span>
+                  <span className="badge fee-liquidity">
+                    {calculateFeeLiquidity(fee)}
+                  </span>
+                </div>
+              )}
+            />
+          ) : (
+            <>
+              <span className="badge-info pill ml-auto badge-large text-slim fs-s mt-auto">
+                {calculateFeeLiquidity(fee)}
+              </span>
+              <span className="badge-info pill ml-2 badge-large text-slim fs-s mt-auto">
+                {fee}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      <div className="precision-card page-card">
+        <div className="card-header">
+          <h3 className="card-title">Precision {precision}</h3>
+          <StepNumberInput
+            editable={false}
+            min={2}
+            max={10}
+            value={precision}
+            onChange={setPrecision}
+          />
+          <button
+            type="button"
+            className="button-info ml-2"
+            onClick={() => setPrecision(defaultPrecision)}
+          >
+            Auto
+          </button>
+        </div>
+      </div>
+      <div className="price-card page-card">
+        <h3 className="card-header">Price Range</h3>
+        <div className="card-row">
+          <StepNumberInput
+            title="MIN PRICE"
+            value={rangeMin}
+            onChange={setRangeMin}
+            step={defaultRangeMin}
+            min={0}
+            max={rangeMax}
+            description={
+              tokenA && tokenB
+                ? `${tokenA.symbol} per ${tokenB.symbol}`
+                : 'No Tokens'
+            }
+          />
+          <StepNumberInput
+            title="MAX PRICE"
+            value={rangeMax}
+            onChange={setRangeMax}
+            min={rangeMin}
+            description={
+              tokenA && tokenB
+                ? `${tokenA.symbol} per ${tokenB.symbol}`
+                : 'No Tokens'
+            }
+          />
+        </div>
+      </div>
+      <div className="curve-card page-card">
+        <h3 className="card-header card-title">Liquidity Curve</h3>
+        <div className="card-row">
+          <RadioInput
+            value={slopeType}
+            list={slopeTypes}
+            onChange={setSlopeType}
+            maxColumnCount={2}
+          />
+        </div>
+      </div>
+      <div className="pool-options">
+        <div className="card-row">
+          {(tickFetching || isValidatingDeposit) && (
+            <div className="text-secondary card-row">...</div>
+          )}
+          <input
+            className="pill mx-auto px-5 py-3"
+            type="submit"
+            value="Add Liquidity"
+          />
+          <br />
+          <div className="text-red-500">
+            {!isValidatingDeposit && ticksError}
+          </div>
+          <div className="text-red-500">
+            {!isValidatingDeposit && depositError}
+          </div>
+          <div className="text-sky-500">
+            {!isValidatingDeposit && depositResponse
+              ? `Deposited ${depositResponse.receivedTokenA} ${tokenA?.address} and ${depositResponse.receivedTokenB} ${tokenB?.address}`
+              : ''}
+          </div>
+        </div>
       </div>
     </form>
   );
