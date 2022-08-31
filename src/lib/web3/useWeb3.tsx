@@ -120,7 +120,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
     <Web3Context.Provider
       value={{
         provider,
-        connectWallet: () => connectWallet(provider),
+        connectWallet: () => connectWallet(window.keplr),
         wallet,
         address,
       }}
