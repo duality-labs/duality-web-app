@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.23](https://github.com/duality-labz/duality-web-app/compare/v0.1.22...v0.1.23) (2022-08-31)
+
+
+### Fixes
+
+* 59 fix apply designs to add liquidity page ([#124](https://github.com/duality-labz/duality-web-app/issues/124)) ([5f8ac97](https://github.com/duality-labz/duality-web-app/commit/5f8ac978ba07e3ecb41df036fa9066cd5ab31e93))
+
 ## [0.1.22](https://github.com/duality-labz/duality-web-app/compare/v0.1.21...v0.1.22) (2022-08-30)
 
 
