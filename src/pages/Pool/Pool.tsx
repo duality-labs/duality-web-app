@@ -143,12 +143,12 @@ export default function Pool() {
         tokenA,
         tokenB,
         new BigNumber(rangeMin),
-        new BigNumber(fee),
+        new BigNumber(feeType?.fee.replace(/%$/, '') || '').dividedBy(100), // convert fee type string to fee
         new BigNumber(values[0]),
-        new BigNumber(values[0])
+        new BigNumber(values[1])
       );
     },
-    [tokenA, tokenB, rangeMin, fee, values, sendDepositRequest]
+    [tokenA, tokenB, rangeMin, feeType, values, sendDepositRequest]
   );
 
   return (
