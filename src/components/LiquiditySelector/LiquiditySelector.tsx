@@ -50,42 +50,31 @@ export default function LiquiditySelector({
     setGraphHeight(yMax);
   }, [existingTicks]);
 
-  const [graphX0, graphX1] = useMemo(() => {
-    // define absolute value representing the edges of the SVG
-    const xMin = graphStart;
-    const xMax = graphEnd;
-    const xWidth = graphStart - graphEnd;
-    const x0 = xMin - xWidth * paddingPercent;
-    const x1 = xMax + xWidth * paddingPercent;
-    return [x0, x1];
-  }, [graphStart, graphEnd]);
-
-  const [graphY0, graphY1] = useMemo(() => {
-    // define absolute value representing the edges of the SVG
-    const yMin = 0;
-    const yMax = graphHeight;
-    const yHeight = graphHeight;
-    const y0 = yMin - yHeight * paddingPercent;
-    const y1 = yMax + yHeight * paddingPercent;
-    return [y0, y1];
-  }, [graphHeight]);
-
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
   const plotX = useCallback(
     (x: number): string => {
-      return graphX1 === graphX0
-        ? '50'
-        : ((100 * (x - graphX0)) / (graphX1 - graphX0)).toFixed(3);
+      const leftPadding = 10;
+      const rightPadding = 10;
+      const width = 100 - leftPadding - rightPadding;
+      return graphEnd === graphStart
+        ? (leftPadding + width / 2).toFixed(0)
+        : (
+            leftPadding +
+            (width * (x - graphStart)) / (graphEnd - graphStart)
+          ).toFixed(3);
     },
-    [graphX0, graphX1]
+    [graphStart, graphEnd]
   );
   const plotY = useCallback(
     (y: number): string => {
-      return graphY1 === graphY0
-        ? '-50'
-        : ((-100 * (y - graphY0)) / (graphY1 - graphY0)).toFixed(3);
+      const topPadding = 10;
+      const bottomPadding = 20;
+      const height = 100 - topPadding - bottomPadding;
+      return graphHeight === 0
+        ? (-bottomPadding - height / 2).toFixed(0)
+        : (-bottomPadding - (height * (y - 0)) / (graphHeight - 0)).toFixed(3);
     },
-    [graphY0, graphY1]
+    [graphHeight]
   );
 
   useEffect(() => {
