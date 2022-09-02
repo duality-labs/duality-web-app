@@ -32,7 +32,7 @@ export default function LiquiditySelector({
   const [graphX1, setGraphX1] = useState(0);
   const [graphY0, setGraphY0] = useState(0);
   const [graphY1, setGraphY1] = useState(0);
-  const [userTicks, setUserTicks] = useState<Array<number>>([]);
+  const [userTicks, setUserTicks] = useState<Array<[number, number]>>([]);
 
   useEffect(() => {
     const {
@@ -94,20 +94,21 @@ export default function LiquiditySelector({
         const tickStart = graphStart + range * paddingPercent;
         const tickEnd = graphEnd - range * paddingPercent;
         const tickGap = (tickEnd - tickStart) / (tickCount - 1);
-        return Array.from({ length: tickCount }).map(
-          (_, index) => tickStart + index * tickGap
-        );
+        return Array.from({ length: tickCount }).map((_, index) => [
+          tickStart + index * tickGap,
+          graphHeight,
+        ]);
       }
       // or set single center tick
       else if (tickCount === 1) {
-        return [graphStart + range / 2];
+        return [[graphStart + range / 2, graphHeight]];
       }
       // or set no ticks
       else {
         return [];
       }
     });
-  }, [tickCount, graphStart, graphEnd]);
+  }, [tickCount, graphStart, graphEnd, graphHeight]);
 
   if (!graphEnd) {
     return <div>Chart is not currently available</div>;
@@ -119,26 +120,47 @@ export default function LiquiditySelector({
       viewBox="0 -100 100 100"
       preserveAspectRatio="none"
     >
-      {existingTicks.map(([price, totalShares], index) => (
+      <TicksGroup
+        className="old-tick"
+        ticks={existingTicks}
+        plotX={plotX}
+        plotY={plotY}
+      />
+      <TicksGroup
+        className="new-tick"
+        ticks={userTicks}
+        plotX={plotX}
+        plotY={plotY}
+      />
+    </svg>
+  );
+}
+
+function TicksGroup({
+  ticks,
+  plotX,
+  plotY,
+  className,
+  ...rest
+}: {
+  ticks: Array<[number, number]>;
+  plotX: (x: number) => string;
+  plotY: (y: number) => string;
+  className?: string;
+}) {
+  return (
+    <g>
+      {ticks.map(([price, totalShares], index) => (
         <line
           key={index}
+          {...rest}
           x1={plotX(price)}
           x2={plotX(price)}
           y1={plotY(0)}
           y2={plotY(totalShares)}
-          className="tick old-tick"
+          className={['tick', className].filter(Boolean).join(' ')}
         />
       ))}
-      {userTicks.map((price) => (
-        <line
-          key={price}
-          x1={plotX(price)}
-          x2={plotX(price)}
-          y1={plotY(0)}
-          y2={plotY(graphHeight)}
-          className="tick new-tick"
-        />
-      ))}
-    </svg>
+    </g>
   );
 }
