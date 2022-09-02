@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
@@ -26,44 +26,64 @@ export default function LiquiditySelector({
   //       (if no existing ticks exist only cuurent price can indicate start and end)
   const [graphStart, setGraphStart] = useState(0);
   const [graphEnd, setGraphEnd] = useState(0);
-  const [graphHeight, setGraphHeight] = useState(100);
+  const [graphHeight, setGraphHeight] = useState(0);
+
+  const [graphX0, setGraphX0] = useState(0);
+  const [graphX1, setGraphX1] = useState(0);
+  const [graphY0, setGraphY0] = useState(0);
+  const [graphY1, setGraphY1] = useState(0);
   const [userTicks, setUserTicks] = useState<Array<number>>([]);
 
   useEffect(() => {
-    const { xMin, xMax, yMax } = existingTicks.reduce(
-      (result, [rate, value]) => {
-        if (rate < result.xMin) result.xMin = rate;
-        if (rate > result.xMax) result.xMax = rate;
-        if (value > result.yMax) result.yMax = value;
+    const {
+      xMin = 0,
+      xMax = 0,
+      yMax = 0,
+    } = existingTicks.reduce<{ [key: string]: number }>(
+      (result, [price, totalShares]) => {
+        if (price < (result.xMin ?? Infinity)) result.xMin = price;
+        if (price > (result.xMax ?? -Infinity)) result.xMax = price;
+        if (totalShares > (result.yMax ?? -Infinity)) result.yMax = totalShares;
         return result;
       },
-      { xMin: Infinity, xMax: -Infinity, yMax: -Infinity }
+      {}
     );
+    // set data min/max values
     setGraphStart(xMin);
     setGraphEnd(xMax);
     setGraphHeight(yMax);
+
+    // define absolute value representing the edges of the SVG
+    const xWidth = xMax - xMin; // default to small width if only one tick is present
+    const yMin = 0;
+    const yHeight = yMax;
+    const x0 = xMin - xWidth * paddingPercent;
+    const x1 = xMax + xWidth * paddingPercent;
+    const y0 = yMin - yHeight * paddingPercent;
+    const y1 = yMax + yHeight * paddingPercent;
+    setGraphX0(x0);
+    setGraphX1(x1);
+    setGraphY0(y0);
+    setGraphY1(y1);
   }, [existingTicks]);
 
-  const viewBox = useMemo(() => {
-    const range = graphEnd - graphStart;
-    const graphPadding = {
-      x: range * paddingPercent,
-      y: graphHeight * paddingPercent,
-    };
-    return `${
-      //left
-      graphStart - graphPadding.x
-    } ${
-      // right
-      0 - graphPadding.y
-    } ${
-      // width
-      graphEnd - graphStart + graphPadding.x
-    } ${
-      // height
-      graphHeight + 2 * graphPadding.y
-    }`;
-  }, [graphStart, graphEnd, graphHeight]);
+  // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
+  const plotX = useCallback(
+    (x: number): string => {
+      return graphX1 === graphX0
+        ? '50'
+        : ((100 * (x - graphX0)) / (graphX1 - graphX0)).toFixed(3);
+    },
+    [graphX0, graphX1]
+  );
+  const plotY = useCallback(
+    (y: number): string => {
+      return graphY1 === graphY0
+        ? '-50'
+        : ((-100 * (y - graphY0)) / (graphY1 - graphY0)).toFixed(3);
+    },
+    [graphY0, graphY1]
+  );
 
   useEffect(() => {
     setUserTicks(() => {
@@ -96,20 +116,26 @@ export default function LiquiditySelector({
   return (
     <svg
       className="chart-liquidity"
-      viewBox={viewBox}
+      viewBox="0 -100 100 100"
       preserveAspectRatio="none"
     >
-      {existingTicks.map(([rate, value]) => (
-        <path
-          key={rate}
-          d={`M ${rate}, ${graphHeight} L ${rate} ${graphHeight - value}`}
+      {existingTicks.map(([price, totalShares], index) => (
+        <line
+          key={index}
+          x1={plotX(price)}
+          x2={plotX(price)}
+          y1={plotY(0)}
+          y2={plotY(totalShares)}
           className="tick old-tick"
         />
       ))}
-      {userTicks.map((tick, index) => (
-        <path
-          key={index}
-          d={`M ${tick}, ${graphHeight} L ${tick} ${0}`}
+      {userTicks.map((price) => (
+        <line
+          key={price}
+          x1={plotX(price)}
+          x2={plotX(price)}
+          y1={plotY(0)}
+          y2={plotY(graphHeight)}
           className="tick new-tick"
         />
       ))}

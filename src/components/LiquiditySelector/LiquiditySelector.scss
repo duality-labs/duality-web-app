@@ -1,5 +1,12 @@
-.chart-liquidity {
+.chart-card {
+  overflow: auto;
+  display: flex;
   height: 50vh;
+}
+
+.chart-liquidity {
+  flex: 1;
+  min-width: 480px;
 }
 
 .tick {
