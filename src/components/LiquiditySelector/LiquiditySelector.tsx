@@ -52,27 +52,24 @@ export default function LiquiditySelector({
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
   const plotX = useCallback(
-    (x: number): string => {
+    (x: number): number => {
       const leftPadding = 10;
       const rightPadding = 10;
       const width = 100 - leftPadding - rightPadding;
       return graphEnd === graphStart
-        ? (leftPadding + width / 2).toFixed(0)
-        : (
-            leftPadding +
-            (width * (x - graphStart)) / (graphEnd - graphStart)
-          ).toFixed(3);
+        ? leftPadding + width / 2
+        : leftPadding + (width * (x - graphStart)) / (graphEnd - graphStart);
     },
     [graphStart, graphEnd]
   );
   const plotY = useCallback(
-    (y: number): string => {
+    (y: number): number => {
       const topPadding = 10;
       const bottomPadding = 20;
       const height = 100 - topPadding - bottomPadding;
       return graphHeight === 0
-        ? (-bottomPadding - height / 2).toFixed(0)
-        : (-bottomPadding - (height * (y - 0)) / (graphHeight - 0)).toFixed(3);
+        ? -bottomPadding - height / 2
+        : -bottomPadding - (height * (y - 0)) / (graphHeight - 0);
     },
     [graphHeight]
   );
@@ -135,9 +132,9 @@ function TicksGroup({
   className,
   ...rest
 }: {
-  ticks: Array<[number, number]>;
-  plotX: (x: number) => string;
-  plotY: (y: number) => string;
+  ticks: Array<[lprice: number, value: number]>;
+  plotX: (x: number) => number;
+  plotY: (y: number) => number;
   className?: string;
 }) {
   return (
@@ -146,10 +143,10 @@ function TicksGroup({
         <line
           key={index}
           {...rest}
-          x1={plotX(price)}
-          x2={plotX(price)}
-          y1={plotY(0)}
-          y2={plotY(totalShares)}
+          x1={plotX(price).toFixed(3)}
+          x2={plotX(price).toFixed(3)}
+          y1={plotY(0).toFixed(3)}
+          y2={plotY(totalShares).toFixed(3)}
           className={['tick', className].filter(Boolean).join(' ')}
         />
       ))}
