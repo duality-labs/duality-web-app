@@ -9,7 +9,8 @@
   min-width: 480px;
 }
 
-.tick {
+.tick,
+.tick-bucket {
   & {
     transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
     stroke-width: 1px;
@@ -19,6 +20,9 @@
 
   &.old-tick {
     stroke: hsl(240, 60%, 50%);
+  }
+  &.old-tick-bucket {
+    fill: hsl(240, 60%, 50%);
   }
 
   &.new-tick {

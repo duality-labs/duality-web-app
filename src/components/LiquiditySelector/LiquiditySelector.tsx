@@ -1,4 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useLayoutEffect,
+} from 'react';
 import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
@@ -9,6 +15,21 @@ interface LiquiditySelectorProps {
 }
 
 const paddingPercent = 0.2;
+const bucketWidth = 20; // bucket width in pixels
+
+function useWindowWidth() {
+  const [width, setWidth] = useState(window.innerWidth);
+
+  useLayoutEffect(() => {
+    const handleResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  return width;
+}
 
 export default function LiquiditySelector({
   tickCount,
@@ -24,31 +45,108 @@ export default function LiquiditySelector({
 
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
-  const [graphStart, setGraphStart] = useState(0);
-  const [graphEnd, setGraphEnd] = useState(0);
-  const [graphHeight, setGraphHeight] = useState(0);
 
   const [userTicks, setUserTicks] = useState<Array<[number, number]>>([]);
 
+  const [dataStart, setDataStart] = useState(0);
+  const [dataEnd, setDataEnd] = useState(0);
+
   useEffect(() => {
-    const {
-      xMin = 0,
-      xMax = 0,
-      yMax = 0,
-    } = existingTicks.reduce<{ [key: string]: number }>(
-      (result, [price, totalShares]) => {
-        if (price < (result.xMin ?? Infinity)) result.xMin = price;
-        if (price > (result.xMax ?? -Infinity)) result.xMax = price;
-        if (totalShares > (result.yMax ?? -Infinity)) result.yMax = totalShares;
-        return result;
-      },
-      {}
-    );
+    const { xMin = 0, xMax = 0 } = existingTicks.reduce<{
+      [key: string]: number;
+    }>((result, [price]) => {
+      if (price < (result.xMin ?? Infinity)) result.xMin = price;
+      if (price > (result.xMax ?? -Infinity)) result.xMax = price;
+      return result;
+    }, {});
     // set data min/max values
-    setGraphStart(xMin);
-    setGraphEnd(xMax);
-    setGraphHeight(yMax);
+    setDataStart(xMin);
+    setDataEnd(xMax);
   }, [existingTicks]);
+
+  // find container size that buckets should fit
+  const [container, setContainer] = useState<SVGSVGElement | null>(null);
+  const windowWidth = useWindowWidth();
+  const [containerWidth, setContainerWidth] = useState(0);
+  useLayoutEffect(() => {
+    setContainerWidth(container?.clientWidth ?? 0);
+  }, [container, windowWidth]);
+
+  // calculate bucket extents
+  const emptyBuckets = useMemo<
+    Array<[lowerBound: number, upperBound: number]>
+  >(() => {
+    // get bounds
+    const xMin = roundDownToPrecision(dataStart, 2);
+    const xMax = roundUpToPrecision(dataEnd, 2);
+    const xWidth = xMax - xMin;
+    // find bucket size
+    const bucketCount = Math.ceil(containerWidth / bucketWidth) ?? 1; // default to 1 bucket if none
+    const bucketSize = roundUpToPrecision(xWidth / bucketCount, 1);
+    // find bucket starting value to cover all values
+    const totalBucketSize = bucketSize * bucketCount;
+    const remainder = totalBucketSize - xWidth;
+    const xStart = xMin - remainder / 2;
+    const xStartRoundedUp = roundUpToPrecision(xStart, 1);
+    const xStartRoundedDown = roundDownToPrecision(xStart, 1);
+    // decide where to put the bucket start
+    const xStartRounded =
+      xStartRoundedUp - xStart < xStart - xStartRoundedDown
+        ? xStartRoundedUp
+        : xStartRoundedDown;
+
+    return Array.from({ length: bucketCount }).map((_, index) => {
+      return [
+        xStartRounded + bucketSize * index,
+        xStartRounded + bucketSize * (index + 1),
+      ];
+    });
+
+    function roundDownToPrecision(number: number, precision: number) {
+      if (number === 0) return 0;
+      const orderOfMagnitude = Math.floor(Math.log10(number)) - precision + 1;
+      const roundingExponent = Math.pow(10, orderOfMagnitude);
+      return Math.floor(number / roundingExponent) * roundingExponent;
+    }
+    function roundUpToPrecision(number: number, precision: number) {
+      if (number === 0) return 0;
+      const orderOfMagnitude = Math.floor(Math.log10(number)) - precision + 1;
+      const roundingExponent = Math.pow(10, orderOfMagnitude);
+      return Math.ceil(number / roundingExponent) * roundingExponent;
+    }
+  }, [containerWidth, dataStart, dataEnd]);
+
+  // calculate graph extents
+  const [graphStart, graphEnd] = useMemo(() => {
+    return [
+      emptyBuckets[0]?.[0] ?? 0, // minimum bound
+      emptyBuckets[emptyBuckets.length - 1]?.[0] ?? 0, // maximum bound
+    ];
+  }, [emptyBuckets]);
+
+  // calculate histogram values
+  const existingTickBuckets = useMemo<
+    Array<[lowerBound: number, upperBound: number, value: number]>
+  >(() => {
+    const remainingTicks = existingTicks.slice();
+    return emptyBuckets.map(([lowerBound, upperBound]) => {
+      const count = remainingTicks.reduceRight(
+        (result, [price, total], index) => {
+          if (price >= lowerBound && price <= upperBound) {
+            remainingTicks.splice(index, 1); // remove from set to minimise reduce time
+            return result + total;
+          }
+          return result;
+        },
+        0
+      );
+      return [lowerBound, upperBound, count];
+    });
+  }, [emptyBuckets, existingTicks]);
+
+  const graphHeight = useMemo(() => {
+    return existingTickBuckets.reduce((result, data) => result + data[2], 0);
+  }, [existingTickBuckets]);
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
   const plotX = useCallback(
@@ -99,19 +197,17 @@ export default function LiquiditySelector({
     });
   }, [tickCount, graphStart, graphEnd, graphHeight]);
 
-  if (!graphEnd) {
-    return <div>Chart is not currently available</div>;
-  }
-
   return (
     <svg
       className="chart-liquidity"
       viewBox="0 -100 100 100"
       preserveAspectRatio="none"
+      ref={setContainer}
     >
-      <TicksGroup
-        className="old-tick"
-        ticks={existingTicks}
+      {graphEnd === 0 && <text>Chart is not currently available</text>}
+      <TickBucketsGroup
+        className="old-tick-bucket"
+        tickBuckets={existingTickBuckets}
         plotX={plotX}
         plotY={plotY}
       />
@@ -148,6 +244,35 @@ function TicksGroup({
           y1={plotY(0).toFixed(3)}
           y2={plotY(totalShares).toFixed(3)}
           className={['tick', className].filter(Boolean).join(' ')}
+        />
+      ))}
+    </g>
+  );
+}
+
+function TickBucketsGroup({
+  tickBuckets,
+  plotX,
+  plotY,
+  className,
+  ...rest
+}: {
+  tickBuckets: Array<[lowerBound: number, upperBound: number, value: number]>;
+  plotX: (x: number) => number;
+  plotY: (y: number) => number;
+  className?: string;
+}) {
+  return (
+    <g>
+      {tickBuckets.map(([lowerBound, upperBound, totalShares], index) => (
+        <rect
+          key={index}
+          {...rest}
+          x={plotX(lowerBound).toFixed(3)}
+          width={(plotX(upperBound) - plotX(lowerBound)).toFixed(3)}
+          y={plotY(totalShares).toFixed(3)}
+          height={(plotY(0) - plotY(totalShares)).toFixed(3)}
+          className={['tick-bucket', className].filter(Boolean).join(' ')}
         />
       ))}
     </g>
