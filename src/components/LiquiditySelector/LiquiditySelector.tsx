@@ -87,13 +87,8 @@ export default function LiquiditySelector({
     const totalBucketSize = bucketSize * bucketCount;
     const remainder = totalBucketSize - xWidth;
     const xStart = xMin - remainder / 2;
-    const xStartRoundedUp = roundUpToPrecision(xStart, 1);
-    const xStartRoundedDown = roundDownToPrecision(xStart, 1);
     // decide where to put the bucket start
-    const xStartRounded =
-      xStartRoundedUp - xStart < xStart - xStartRoundedDown
-        ? xStartRoundedUp
-        : xStartRoundedDown;
+    const xStartRounded = xStart - (xStart % bucketSize);
 
     return Array.from({ length: bucketCount }).map((_, index) => {
       return [
