@@ -28,10 +28,6 @@ export default function LiquiditySelector({
   const [graphEnd, setGraphEnd] = useState(0);
   const [graphHeight, setGraphHeight] = useState(0);
 
-  const [graphX0, setGraphX0] = useState(0);
-  const [graphX1, setGraphX1] = useState(0);
-  const [graphY0, setGraphY0] = useState(0);
-  const [graphY1, setGraphY1] = useState(0);
   const [userTicks, setUserTicks] = useState<Array<[number, number]>>([]);
 
   useEffect(() => {
@@ -52,20 +48,27 @@ export default function LiquiditySelector({
     setGraphStart(xMin);
     setGraphEnd(xMax);
     setGraphHeight(yMax);
+  }, [existingTicks]);
 
+  const [graphX0, graphX1] = useMemo(() => {
     // define absolute value representing the edges of the SVG
-    const xWidth = xMax - xMin; // default to small width if only one tick is present
-    const yMin = 0;
-    const yHeight = yMax;
+    const xMin = graphStart;
+    const xMax = graphEnd;
+    const xWidth = graphStart - graphEnd;
     const x0 = xMin - xWidth * paddingPercent;
     const x1 = xMax + xWidth * paddingPercent;
+    return [x0, x1];
+  }, [graphStart, graphEnd]);
+
+  const [graphY0, graphY1] = useMemo(() => {
+    // define absolute value representing the edges of the SVG
+    const yMin = 0;
+    const yMax = graphHeight;
+    const yHeight = graphHeight;
     const y0 = yMin - yHeight * paddingPercent;
     const y1 = yMax + yHeight * paddingPercent;
-    setGraphX0(x0);
-    setGraphX1(x1);
-    setGraphY0(y0);
-    setGraphY1(y1);
-  }, [existingTicks]);
+    return [y0, y1];
+  }, [graphHeight]);
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
   const plotX = useCallback(
