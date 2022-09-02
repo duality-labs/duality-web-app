@@ -14,13 +14,12 @@ export default function LiquiditySelector({
   tickCount,
   ticks = {},
 }: LiquiditySelectorProps) {
-
   // collect tick information in a more useable form
   const existingTicks: Array<[number, number]> = useMemo(() => {
     return Object.values(ticks)
-      .map(poolTicks => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
+      .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
       .filter((tick): tick is TickInfo => !!tick) // filter to only found ticks
-      .map(tick => [tick.price.toNumber(), tick.totalShares.toNumber()]);
+      .map((tick) => [tick.price.toNumber(), tick.totalShares.toNumber()]);
   }, [ticks]);
 
   // todo: base graph start and end on existing ticks and current price
@@ -53,16 +52,16 @@ export default function LiquiditySelector({
     };
     return `${
       //left
-      Math.floor(graphStart - graphPadding.x)
+      graphStart - graphPadding.x
     } ${
       // right
-      Math.floor(0 - graphPadding.y)
+      0 - graphPadding.y
     } ${
       // width
-      Math.ceil(graphEnd - graphStart + graphPadding.x)
+      graphEnd - graphStart + graphPadding.x
     } ${
       // height
-      Math.ceil(graphHeight + 2 * graphPadding.y)
+      graphHeight + 2 * graphPadding.y
     }`;
   }, [graphStart, graphEnd, graphHeight]);
 
@@ -95,7 +94,11 @@ export default function LiquiditySelector({
   }
 
   return (
-    <svg className="chart-liquidity" viewBox={viewBox}>
+    <svg
+      className="chart-liquidity"
+      viewBox={viewBox}
+      preserveAspectRatio="none"
+    >
       {existingTicks.map(([rate, value]) => (
         <path
           key={rate}
