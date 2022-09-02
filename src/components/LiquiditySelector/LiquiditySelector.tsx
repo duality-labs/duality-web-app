@@ -95,7 +95,7 @@ export default function LiquiditySelector({
   }
 
   return (
-    <svg viewBox={viewBox}>
+    <svg className="chart-liquidity" viewBox={viewBox}>
       {existingTicks.map(([rate, value]) => (
         <path
           key={rate}

@@ -1,3 +1,8 @@
+
+.chart-liquidity {
+  max-height: 50vh;
+}
+
 .tick {
   & {
     transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
