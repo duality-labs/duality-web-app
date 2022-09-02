@@ -196,7 +196,7 @@ export default function Pool() {
       </div>
       <div className="chart-card page-card">
         <LiquiditySelector
-          tickCount={parseInt(rangeMin)}
+          tickCount={parseInt(precision) || 1}
           ticks={ticks}
         ></LiquiditySelector>
       </div>

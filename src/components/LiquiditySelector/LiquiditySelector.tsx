@@ -119,10 +119,13 @@ export default function LiquiditySelector({
   // calculate graph extents
   const [graphStart, graphEnd] = useMemo(() => {
     return [
-      emptyBuckets[0]?.[0] ?? 0, // minimum bound
-      emptyBuckets[emptyBuckets.length - 1]?.[0] ?? 0, // maximum bound
+      Math.min(userTicks[0]?.[0], emptyBuckets[0]?.[0]) || 0, // minimum bound
+      Math.max(
+        userTicks[userTicks.length - 1]?.[0],
+        emptyBuckets[emptyBuckets.length - 1]?.[0]
+      ) || 0, // maximum bound
     ];
-  }, [emptyBuckets]);
+  }, [emptyBuckets, userTicks]);
 
   // calculate histogram values
   const existingTickBuckets = useMemo<
@@ -174,12 +177,12 @@ export default function LiquiditySelector({
 
   useEffect(() => {
     setUserTicks(() => {
-      const range = graphEnd - graphStart;
+      const range = dataEnd - dataStart;
       // set multiple ticks across the range
       if (tickCount > 1) {
         // spread evenly after adding padding on each side
-        const tickStart = graphStart + range * paddingPercent;
-        const tickEnd = graphEnd - range * paddingPercent;
+        const tickStart = dataStart - range * paddingPercent;
+        const tickEnd = dataEnd + range * paddingPercent;
         const tickGap = (tickEnd - tickStart) / (tickCount - 1);
         return Array.from({ length: tickCount }).map((_, index) => [
           tickStart + index * tickGap,
@@ -188,14 +191,14 @@ export default function LiquiditySelector({
       }
       // or set single center tick
       else if (tickCount === 1) {
-        return [[graphStart + range / 2, graphHeight]];
+        return [[dataStart + range / 2, graphHeight]];
       }
       // or set no ticks
       else {
         return [];
       }
     });
-  }, [tickCount, graphStart, graphEnd, graphHeight]);
+  }, [tickCount, dataStart, dataEnd, graphHeight]);
 
   return (
     <svg
