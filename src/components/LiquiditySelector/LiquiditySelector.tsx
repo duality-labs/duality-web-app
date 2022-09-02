@@ -143,7 +143,10 @@ export default function LiquiditySelector({
   }, [emptyBuckets, existingTicks]);
 
   const graphHeight = useMemo(() => {
-    return existingTickBuckets.reduce((result, data) => result + data[2], 0);
+    return existingTickBuckets.reduce(
+      (result, data) => Math.max(result, data[2]),
+      0
+    );
   }, [existingTickBuckets]);
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
