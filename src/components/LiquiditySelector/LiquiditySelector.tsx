@@ -15,7 +15,7 @@ interface LiquiditySelectorProps {
 }
 
 const paddingPercent = 0.2;
-const bucketWidth = 20; // bucket width in pixels
+const bucketWidth = 50; // bucket width in pixels
 
 function useWindowWidth() {
   const [width, setWidth] = useState(window.innerWidth);
