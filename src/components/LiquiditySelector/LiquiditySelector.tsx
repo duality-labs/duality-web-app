@@ -15,10 +15,17 @@ interface LiquiditySelectorProps {
   feeTier: number | undefined;
 }
 
-type TickGroup = Array<[price: number, value: number]>;
+type TickGroup = Array<
+  [price: number, token0Value: number, token1Value: number]
+>;
 type TickGroupBucketsEmpty = Array<[lowerBound: number, upperBound: number]>;
 type TickGroupBucketsFilled = Array<
-  [lowerBound: number, upperBound: number, value: number]
+  [
+    lowerBound: number,
+    upperBound: number,
+    token0Value: number,
+    token1Value: number
+  ]
 >;
 
 const paddingPercent = 0.2;
@@ -48,7 +55,11 @@ export default function LiquiditySelector({
     return Object.values(ticks)
       .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
       .filter((tick): tick is TickInfo => tick?.fee.isEqualTo(feeTier) === true) // filter to only fee ticks
-      .map((tick) => [tick.price.toNumber(), tick.totalShares.toNumber()]);
+      .map((tick) => [
+        tick.price.toNumber(),
+        tick.reserve0.toNumber(),
+        tick.reserve1.toNumber(),
+      ]);
   }, [ticks, feeTier]);
 
   // todo: base graph start and end on existing ticks and current price
@@ -132,17 +143,17 @@ export default function LiquiditySelector({
   const feeTickBuckets = useMemo<TickGroupBucketsFilled>(() => {
     const remainingTicks = feeTicks.slice();
     return emptyBuckets.map(([lowerBound, upperBound]) => {
-      const count = remainingTicks.reduceRight(
-        (result, [price, total], index) => {
+      const [token0Value, token1Value] = remainingTicks.reduceRight(
+        (result, [price, token0Value, token1Value], index) => {
           if (price >= lowerBound && price <= upperBound) {
             remainingTicks.splice(index, 1); // remove from set to minimise reduce time
-            return result + total;
+            return [result[0] + token0Value, result[1] + token1Value];
           }
           return result;
         },
-        0
+        [0, 0]
       );
-      return [lowerBound, upperBound, count];
+      return [lowerBound, upperBound, token0Value, token1Value];
     });
   }, [emptyBuckets, feeTicks]);
 
@@ -177,30 +188,114 @@ export default function LiquiditySelector({
     [graphHeight]
   );
 
+  const invertTokenOrder = useMemo(() => {
+    const { token0Count, token0Value, token1Count, token1Value } =
+      feeTicks.reduce(
+        (result, [price, token0Value, token1Value]) => {
+          result.token0Value += price * token0Value;
+          result.token0Count += token0Value;
+          result.token1Value += price * token1Value;
+          result.token1Count += token1Value;
+          return result;
+        },
+        { token0Count: 0, token0Value: 0, token1Count: 0, token1Value: 0 }
+      );
+    const averageToken0Value = token0Value / token0Count;
+    const averageToken1Value = token1Value / token1Count;
+    return averageToken0Value > averageToken1Value;
+  }, [feeTicks]);
+
+  // estimate current price from ticks
+  const currentPriceFromTicks = useMemo(() => {
+    const remainingTicks = feeTicks.slice();
+    const highTokenValueIndex = invertTokenOrder ? 2 : 1;
+    const lowTokenValueIndex = invertTokenOrder ? 1 : 2;
+    let highestLowTokenTickIndex = findLastIndex(
+      remainingTicks,
+      (tick) => tick[lowTokenValueIndex] > 0
+    );
+    let lowestHighTokenTickIndex = remainingTicks.findIndex(
+      (tick) => tick[highTokenValueIndex] > 0
+    );
+    do {
+      const highestLowTokenTick = remainingTicks[highestLowTokenTickIndex];
+      const lowestHighTokenTick = remainingTicks[lowestHighTokenTickIndex];
+      if (highestLowTokenTick && lowestHighTokenTick) {
+        // check if prices are resolved and current price can be plain average of these values
+        if (lowestHighTokenTick[0] >= highestLowTokenTick[0]) {
+          return (lowestHighTokenTick[0] + highestLowTokenTick[0]) / 2;
+        } else {
+          const highestLowTokenTickValue =
+            highestLowTokenTick[lowTokenValueIndex] * highestLowTokenTick[0];
+          const lowestHighTokenTickValue =
+            lowestHighTokenTick[highTokenValueIndex] * lowestHighTokenTick[0];
+          if (highestLowTokenTickValue < lowestHighTokenTickValue) {
+            remainingTicks.splice(highestLowTokenTickIndex, 1);
+            highestLowTokenTickIndex = findLastIndex(
+              remainingTicks,
+              (tick) => tick[lowTokenValueIndex] > 0
+            ); // todo: search from last known index here
+            lowestHighTokenTickIndex = remainingTicks.indexOf(
+              lowestHighTokenTick,
+              lowestHighTokenTickIndex
+            );
+          } else {
+            remainingTicks.splice(lowestHighTokenTickIndex, 1);
+            lowestHighTokenTickIndex = remainingTicks.findIndex(
+              (tick) => tick[highTokenValueIndex] > 0
+            ); // todo: search from last known index here
+            highestLowTokenTickIndex = remainingTicks.lastIndexOf(
+              highestLowTokenTick,
+              highestLowTokenTickIndex
+            );
+          }
+        }
+      } else {
+        return undefined;
+      }
+    } while (remainingTicks.length > 0);
+  }, [feeTicks, invertTokenOrder]);
+
   useEffect(() => {
     setUserTicks(() => {
       const range = dataEnd - dataStart;
+      const midpoint = dataStart + range / 2;
       // set multiple ticks across the range
       if (tickCount > 1) {
         // spread evenly after adding padding on each side
         const tickStart = dataStart - range * paddingPercent;
         const tickEnd = dataEnd + range * paddingPercent;
         const tickGap = (tickEnd - tickStart) / (tickCount - 1);
-        return Array.from({ length: tickCount }).map((_, index) => [
-          tickStart + index * tickGap,
-          graphHeight,
-        ]);
+        const currentPrice = currentPriceFromTicks || midpoint;
+        return Array.from({ length: tickCount }).map((_, index) => {
+          const price = tickStart + index * tickGap;
+          const invertToken = invertTokenOrder
+            ? price >= currentPrice
+            : price < currentPrice;
+          return [
+            price,
+            invertToken ? graphHeight : 0,
+            invertToken ? 0 : graphHeight,
+          ];
+        });
       }
       // or set single center tick
       else if (tickCount === 1) {
-        return [[dataStart + range / 2, graphHeight]];
+        return [[midpoint, graphHeight / 2, graphHeight / 2]];
       }
       // or set no ticks
       else {
         return [];
       }
     });
-  }, [tickCount, dataStart, dataEnd, graphHeight]);
+  }, [
+    tickCount,
+    invertTokenOrder,
+    currentPriceFromTicks,
+    dataStart,
+    dataEnd,
+    graphHeight,
+  ]);
 
   return (
     <svg
@@ -240,14 +335,14 @@ function TicksGroup({
 }) {
   return (
     <g>
-      {ticks.map(([price, totalShares], index) => (
+      {ticks.map(([price, token0Value, token1Value], index) => (
         <line
           key={index}
           {...rest}
           x1={plotX(price).toFixed(3)}
           x2={plotX(price).toFixed(3)}
           y1={plotY(0).toFixed(3)}
-          y2={plotY(totalShares).toFixed(3)}
+          y2={plotY(token0Value || token1Value).toFixed(3)}
           className={['tick', className].filter(Boolean).join(' ')}
         />
       ))}
@@ -269,17 +364,52 @@ function TickBucketsGroup({
 }) {
   return (
     <g>
-      {tickBuckets.map(([lowerBound, upperBound, totalShares], index) => (
-        <rect
-          key={index}
-          {...rest}
-          x={plotX(lowerBound).toFixed(3)}
-          width={(plotX(upperBound) - plotX(lowerBound)).toFixed(3)}
-          y={plotY(totalShares).toFixed(3)}
-          height={(plotY(0) - plotY(totalShares)).toFixed(3)}
-          className={['tick-bucket', className].filter(Boolean).join(' ')}
-        />
-      ))}
+      {tickBuckets.flatMap(
+        ([lowerBound, upperBound, token0Value, token1Value], index) =>
+          [
+            token0Value && (
+              <rect
+                key={`${index}-0`}
+                {...rest}
+                x={plotX(lowerBound).toFixed(3)}
+                width={(plotX(upperBound) - plotX(lowerBound)).toFixed(3)}
+                y={plotY(token0Value).toFixed(3)}
+                height={(plotY(0) - plotY(token0Value)).toFixed(3)}
+                className={['tick-bucket', className].filter(Boolean).join(' ')}
+              />
+            ),
+            token1Value && (
+              <rect
+                key={`${index}-1`}
+                {...rest}
+                x={plotX(lowerBound).toFixed(3)}
+                width={(plotX(upperBound) - plotX(lowerBound)).toFixed(3)}
+                y={plotY(token0Value + token1Value).toFixed(3)}
+                height={(plotY(0) - plotY(token1Value)).toFixed(3)}
+                className={['tick-bucket', className].filter(Boolean).join(' ')}
+              />
+            ),
+          ].filter(Boolean)
+      )}
     </g>
   );
+}
+
+/**
+ * Returns the index of the last element in the array where predicate is true, and -1
+ * otherwise.
+ * @param array The source array to search in
+ * @param predicate find calls predicate once for each element of the array, in descending
+ * order, until it finds one where predicate returns true. If such an element is found,
+ * findLastIndex immediately returns that element index. Otherwise, findLastIndex returns -1.
+ */
+export function findLastIndex<T>(
+  array: Array<T>,
+  predicate: (value: T, index: number, obj: T[]) => boolean
+): number {
+  let l = array.length;
+  while (l--) {
+    if (predicate(array[l], l, array)) return l;
+  }
+  return -1;
 }
