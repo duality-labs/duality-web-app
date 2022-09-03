@@ -12,6 +12,7 @@ import './LiquiditySelector.scss';
 interface LiquiditySelectorProps {
   ticks: TickMap | undefined;
   tickCount: number;
+  feeTier: number | undefined;
 }
 
 const paddingPercent = 0.2;
@@ -34,14 +35,15 @@ function useWindowWidth() {
 export default function LiquiditySelector({
   tickCount,
   ticks = {},
+  feeTier = -1,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
-  const existingTicks: Array<[number, number]> = useMemo(() => {
+  const feeTicks: Array<[number, number]> = useMemo(() => {
     return Object.values(ticks)
       .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
-      .filter((tick): tick is TickInfo => !!tick) // filter to only found ticks
+      .filter((tick): tick is TickInfo => tick?.fee.isEqualTo(feeTier) === true) // filter to only fee ticks
       .map((tick) => [tick.price.toNumber(), tick.totalShares.toNumber()]);
-  }, [ticks]);
+  }, [ticks, feeTier]);
 
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
@@ -52,7 +54,7 @@ export default function LiquiditySelector({
   const [dataEnd, setDataEnd] = useState(0);
 
   useEffect(() => {
-    const { xMin = 0, xMax = 0 } = existingTicks.reduce<{
+    const { xMin = 0, xMax = 0 } = feeTicks.reduce<{
       [key: string]: number;
     }>((result, [price]) => {
       if (price < (result.xMin ?? Infinity)) result.xMin = price;
@@ -62,7 +64,7 @@ export default function LiquiditySelector({
     // set data min/max values
     setDataStart(xMin);
     setDataEnd(xMax);
-  }, [existingTicks]);
+  }, [feeTicks]);
 
   // find container size that buckets should fit
   const [container, setContainer] = useState<SVGSVGElement | null>(null);
@@ -123,10 +125,10 @@ export default function LiquiditySelector({
   }, [emptyBuckets, userTicks]);
 
   // calculate histogram values
-  const existingTickBuckets = useMemo<
+  const feeTickBuckets = useMemo<
     Array<[lowerBound: number, upperBound: number, value: number]>
   >(() => {
-    const remainingTicks = existingTicks.slice();
+    const remainingTicks = feeTicks.slice();
     return emptyBuckets.map(([lowerBound, upperBound]) => {
       const count = remainingTicks.reduceRight(
         (result, [price, total], index) => {
@@ -140,14 +142,14 @@ export default function LiquiditySelector({
       );
       return [lowerBound, upperBound, count];
     });
-  }, [emptyBuckets, existingTicks]);
+  }, [emptyBuckets, feeTicks]);
 
   const graphHeight = useMemo(() => {
-    return existingTickBuckets.reduce(
+    return feeTickBuckets.reduce(
       (result, data) => Math.max(result, data[2]),
       0
     );
-  }, [existingTickBuckets]);
+  }, [feeTickBuckets]);
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
   const plotX = useCallback(
@@ -208,7 +210,7 @@ export default function LiquiditySelector({
       {graphEnd === 0 && <text>Chart is not currently available</text>}
       <TickBucketsGroup
         className="old-tick-bucket"
-        tickBuckets={existingTickBuckets}
+        tickBuckets={feeTickBuckets}
         plotX={plotX}
         plotY={plotY}
       />

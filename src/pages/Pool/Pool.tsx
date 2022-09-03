@@ -208,6 +208,7 @@ export default function Pool() {
         <LiquiditySelector
           tickCount={parseInt(precision) || 1}
           ticks={ticks}
+          feeTier={feeType?.fee}
         ></LiquiditySelector>
       </div>
       <div className="fee-card page-card">
