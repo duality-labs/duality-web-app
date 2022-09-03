@@ -128,34 +128,40 @@ export default function LiquiditySelector({
     }
   }, [containerWidth, dataStart, dataEnd]);
 
-  // calculate graph extents
-  const [graphStart, graphEnd] = useMemo(() => {
-    return [
-      Math.min(userTicks[0]?.[0], emptyBuckets[0]?.[0]) || 0, // minimum bound
-      Math.max(
-        userTicks[userTicks.length - 1]?.[0],
-        emptyBuckets[emptyBuckets.length - 1]?.[0]
-      ) || 0, // maximum bound
-    ];
-  }, [emptyBuckets, userTicks]);
-
   // calculate histogram values
   const feeTickBuckets = useMemo<TickGroupBucketsFilled>(() => {
     const remainingTicks = feeTicks.slice();
-    return emptyBuckets.map(([lowerBound, upperBound]) => {
-      const [token0Value, token1Value] = remainingTicks.reduceRight(
-        (result, [price, token0Value, token1Value], index) => {
-          if (price >= lowerBound && price <= upperBound) {
-            remainingTicks.splice(index, 1); // remove from set to minimise reduce time
-            return [result[0] + token0Value, result[1] + token1Value];
-          }
-          return result;
-        },
-        [0, 0]
-      );
-      return [lowerBound, upperBound, token0Value, token1Value];
-    });
+    return emptyBuckets.reduce<TickGroupBucketsFilled>(
+      (result, [lowerBound, upperBound]) => {
+        const [token0Value, token1Value] = remainingTicks.reduceRight(
+          (result, [price, token0Value, token1Value], index) => {
+            if (price >= lowerBound && price <= upperBound) {
+              remainingTicks.splice(index, 1); // remove from set to minimise reduce time
+              return [result[0] + token0Value, result[1] + token1Value];
+            }
+            return result;
+          },
+          [0, 0]
+        );
+        if (token0Value || token1Value) {
+          result.push([lowerBound, upperBound, token0Value, token1Value]);
+        }
+        return result;
+      },
+      []
+    );
   }, [emptyBuckets, feeTicks]);
+
+  // calculate graph extents
+  const [graphStart, graphEnd] = useMemo(() => {
+    return [
+      Math.min(userTicks[0]?.[0], feeTickBuckets[0]?.[0]) || 0, // minimum bound
+      Math.max(
+        userTicks[userTicks.length - 1]?.[0],
+        feeTickBuckets[feeTickBuckets.length - 1]?.[0]
+      ) || 0, // maximum bound
+    ];
+  }, [feeTickBuckets, userTicks]);
 
   const graphHeight = useMemo(() => {
     return feeTickBuckets.reduce(
