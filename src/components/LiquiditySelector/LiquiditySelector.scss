@@ -21,12 +21,15 @@
   &.old-tick {
     stroke: hsl(240, 60%, 50%);
   }
-  &.old-tick-bucket {
-    fill: hsl(240, 60%, 50%);
+  &.old-tick-bucket.token-a {
+    fill: hsl(262, 85%, 10%);
+  }
+  &.old-tick-bucket.token-b {
+    fill: hsl(202, 41%, 23%);
   }
 
   &.new-tick {
-    stroke: hsl(0, 60%, 50%);
+    stroke: hsl(37, 62%, 68%);
   }
 
   &:hover {

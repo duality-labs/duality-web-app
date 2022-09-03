@@ -375,7 +375,9 @@ function TickBucketsGroup({
                 width={(plotX(upperBound) - plotX(lowerBound)).toFixed(3)}
                 y={plotY(token0Value).toFixed(3)}
                 height={(plotY(0) - plotY(token0Value)).toFixed(3)}
-                className={['tick-bucket', className].filter(Boolean).join(' ')}
+                className={['tick-bucket', 'token-a', className]
+                  .filter(Boolean)
+                  .join(' ')}
               />
             ),
             token1Value && (
@@ -386,7 +388,9 @@ function TickBucketsGroup({
                 width={(plotX(upperBound) - plotX(lowerBound)).toFixed(3)}
                 y={plotY(token0Value + token1Value).toFixed(3)}
                 height={(plotY(0) - plotY(token1Value)).toFixed(3)}
-                className={['tick-bucket', className].filter(Boolean).join(' ')}
+                className={['tick-bucket', 'token-b', className]
+                  .filter(Boolean)
+                  .join(' ')}
               />
             ),
           ].filter(Boolean)
