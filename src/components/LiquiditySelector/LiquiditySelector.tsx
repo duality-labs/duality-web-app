@@ -258,10 +258,11 @@ export default function LiquiditySelector({
 
   useEffect(() => {
     setUserTicks(() => {
-      const range = dataEnd - dataStart;
-      const midpoint = dataStart + range / 2;
       // set multiple ticks across the range
       if (tickCount > 1) {
+        const range = dataEnd - dataStart;
+        const midpoint = dataStart + range / 2;
+        const tickHeight = graphHeight * 0.7;
         // spread evenly after adding padding on each side
         const tickStart = dataStart - range * paddingPercent;
         const tickEnd = dataEnd + range * paddingPercent;
@@ -274,14 +275,10 @@ export default function LiquiditySelector({
             : price < currentPrice;
           return [
             price,
-            invertToken ? graphHeight : 0,
-            invertToken ? 0 : graphHeight,
+            invertToken ? tickHeight : 0,
+            invertToken ? 0 : tickHeight,
           ];
         });
-      }
-      // or set single center tick
-      else if (tickCount === 1) {
-        return [[midpoint, graphHeight / 2, graphHeight / 2]];
       }
       // or set no ticks
       else {

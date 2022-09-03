@@ -13,7 +13,7 @@
 .tick-bucket {
   & {
     transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
-    stroke-width: 1px;
+    stroke-width: 0.5px;
     cursor: pointer;
     opacity: 0.7;
   }
