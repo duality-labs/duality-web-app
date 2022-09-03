@@ -331,17 +331,28 @@ function TicksGroup({
   className?: string;
 }) {
   return (
-    <g>
+    <g className={className}>
       {ticks.map(([price, token0Value, token1Value], index) => (
-        <line
+        <g
           key={index}
-          {...rest}
-          x1={plotX(price).toFixed(3)}
-          x2={plotX(price).toFixed(3)}
-          y1={plotY(0).toFixed(3)}
-          y2={plotY(token0Value || token1Value).toFixed(3)}
-          className={['tick', className].filter(Boolean).join(' ')}
-        />
+          className={['tick', token0Value ? 'token-a' : 'token-b'].join(' ')}
+        >
+          <line
+            {...rest}
+            x1={plotX(price).toFixed(3)}
+            x2={plotX(price).toFixed(3)}
+            y1={plotY(0).toFixed(3)}
+            y2={plotY(token0Value || token1Value).toFixed(3)}
+            className="line"
+          />
+          <line
+            x1={plotX(price).toFixed(3)}
+            x2={plotX(price).toFixed(3)}
+            y1={plotY(0.975 * (token0Value || token1Value)).toFixed(3)}
+            y2={plotY(token0Value || token1Value).toFixed(3)}
+            className="tip"
+          />
+        </g>
       ))}
     </g>
   );

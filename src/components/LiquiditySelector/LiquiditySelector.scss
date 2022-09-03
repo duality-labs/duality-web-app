@@ -28,11 +28,17 @@
     fill: hsl(202, 41%, 23%);
   }
 
-  &.new-tick {
-    stroke: hsl(37, 62%, 68%);
-  }
-
   &:hover {
     opacity: 1;
+  }
+}
+
+.new-tick {
+  stroke: hsl(37, 62%, 68%);
+  .token-a .tip {
+    stroke: hsl(262, 41%, 50%);
+  }
+  .token-b .tip {
+    stroke: hsl(202, 41%, 36%);
   }
 }
