@@ -15,6 +15,12 @@ interface LiquiditySelectorProps {
   feeTier: number | undefined;
 }
 
+type TickGroup = Array<[price: number, value: number]>;
+type TickGroupBucketsEmpty = Array<[lowerBound: number, upperBound: number]>;
+type TickGroupBucketsFilled = Array<
+  [lowerBound: number, upperBound: number, value: number]
+>;
+
 const paddingPercent = 0.2;
 const bucketWidth = 50; // bucket width in pixels
 
@@ -38,7 +44,7 @@ export default function LiquiditySelector({
   feeTier = -1,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
-  const feeTicks: Array<[number, number]> = useMemo(() => {
+  const feeTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
       .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
       .filter((tick): tick is TickInfo => tick?.fee.isEqualTo(feeTier) === true) // filter to only fee ticks
@@ -48,7 +54,7 @@ export default function LiquiditySelector({
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
-  const [userTicks, setUserTicks] = useState<Array<[number, number]>>([]);
+  const [userTicks, setUserTicks] = useState<TickGroup>([]);
 
   const [dataStart, setDataStart] = useState(0);
   const [dataEnd, setDataEnd] = useState(0);
@@ -75,9 +81,7 @@ export default function LiquiditySelector({
   }, [container, windowWidth]);
 
   // calculate bucket extents
-  const emptyBuckets = useMemo<
-    Array<[lowerBound: number, upperBound: number]>
-  >(() => {
+  const emptyBuckets = useMemo<TickGroupBucketsEmpty>(() => {
     // get bounds
     const xMin = roundDownToPrecision(dataStart, 2);
     const xMax = roundUpToPrecision(dataEnd, 2);
@@ -125,9 +129,7 @@ export default function LiquiditySelector({
   }, [emptyBuckets, userTicks]);
 
   // calculate histogram values
-  const feeTickBuckets = useMemo<
-    Array<[lowerBound: number, upperBound: number, value: number]>
-  >(() => {
+  const feeTickBuckets = useMemo<TickGroupBucketsFilled>(() => {
     const remainingTicks = feeTicks.slice();
     return emptyBuckets.map(([lowerBound, upperBound]) => {
       const count = remainingTicks.reduceRight(
@@ -231,7 +233,7 @@ function TicksGroup({
   className,
   ...rest
 }: {
-  ticks: Array<[lprice: number, value: number]>;
+  ticks: TickGroup;
   plotX: (x: number) => number;
   plotY: (y: number) => number;
   className?: string;
@@ -260,7 +262,7 @@ function TickBucketsGroup({
   className,
   ...rest
 }: {
-  tickBuckets: Array<[lowerBound: number, upperBound: number, value: number]>;
+  tickBuckets: TickGroupBucketsFilled;
   plotX: (x: number) => number;
   plotY: (y: number) => number;
   className?: string;
