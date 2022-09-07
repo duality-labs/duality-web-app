@@ -38,6 +38,10 @@ export default function Header() {
         >
           {themeMode === 'light' ? '🌕' : '🌞'}
         </button>
+        <button className="user-profile">
+          <img src={logo} className="logo" alt="logo" />
+          <div>User</div>
+        </button>
       </nav>
     </header>
   );
