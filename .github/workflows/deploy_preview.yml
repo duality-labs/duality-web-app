@@ -33,9 +33,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Enforce development environment for deploy previews
-        run: cp -f .env.development .env.production || true
-
       - name: Build
         run: npm run build
 
