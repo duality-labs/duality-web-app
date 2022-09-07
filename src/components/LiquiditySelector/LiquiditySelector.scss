@@ -1,0 +1,41 @@
+.chart-card {
+  height: 50vh;
+}
+
+.chart-liquidity {
+  height: 100%;
+}
+
+.tick,
+.tick-bucket {
+  & {
+    transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
+    stroke-width: 0.5px;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+
+  &.old-tick {
+    stroke: hsl(240, 60%, 50%);
+  }
+  &.old-tick-bucket.token-a {
+    fill: hsl(262, 85%, 10%);
+  }
+  &.old-tick-bucket.token-b {
+    fill: hsl(202, 41%, 23%);
+  }
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.new-tick {
+  stroke: hsl(37, 62%, 68%);
+  .token-a .tip {
+    stroke: hsl(262, 41%, 50%);
+  }
+  .token-b .tip {
+    stroke: hsl(202, 41%, 36%);
+  }
+}
