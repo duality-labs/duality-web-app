@@ -19,7 +19,6 @@ export default function Header() {
     <header>
       <nav>
         <NavLink to="/">
-          <img src={logo} className="logo" alt="logo" />
           <h1>Duality</h1>
         </NavLink>
         <NavLink to="/swap">Swap</NavLink>
