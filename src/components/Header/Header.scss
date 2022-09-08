@@ -70,9 +70,20 @@ nav,
     border: 1px solid #4eb1e8;
 
     img {
-      width: 20px;
+      width: 1.25rem;
       height: auto;
-      max-height: 20px;
+      max-height: 1.25rem;
+      margin-bottom: 0.15rem;
+    }
+  }
+
+  button.connect-wallet {
+    border-radius: 0.4rem;
+    background-color: hsl(200, 77%, 60%);
+
+    &:hover,
+    :active {
+      background-color: hsl(200, 77%, 70%);
     }
   }
 }
