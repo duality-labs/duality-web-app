@@ -30,13 +30,6 @@ export default function Header() {
         <NavLink className="ghost-button" to="/pool">
           Liquidity
         </NavLink>
-        {address ? (
-          <span className="link">{address}</span>
-        ) : (
-          <button className="link" onClick={onConnectClick}>
-            Connect Wallet
-          </button>
-        )}
         <button
           className="link no-blend"
           type="button"
@@ -44,10 +37,19 @@ export default function Header() {
         >
           {themeMode === 'light' ? '🌕' : '🌞'}
         </button>
-        <button className="user-profile">
-          <img src={logo} className="logo" alt="logo" />
-          <div>User</div>
-        </button>
+        {address ? (
+          <button className="user-profile ml-auto">
+            <img src={logo} className="logo  mr-3" alt="logo" />
+            <div>Profile</div>
+          </button>
+        ) : (
+          <button
+            className="link connect-wallet ml-auto button-primary"
+            onClick={onConnectClick}
+          >
+            Connect Wallet
+          </button>
+        )}
       </nav>
     </header>
   );
