@@ -29,7 +29,7 @@ $bg: conic-gradient(
 );
 
 // color + border color in default state, background + border color in hover state
-$ghost-button: core.$light-blue;
+$ghost-button: core.$dark-white;
 
 $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
@@ -60,7 +60,6 @@ $icon-button-bg: rgba(170, 169, 169, 0.4);
 $icon-button-text: rgb(188, 188, 188);
 $submit-button-bg: rgb(78, 177, 232);
 $submit-button-text: rgb(0, 0, 0);
-$ghost-button: rgb(71, 182, 241);
 $card-border: rgb(152, 203, 231);
 $dialog-bg: rgb(227, 227, 227);
 $selected-token: rgb(218, 218, 218);
