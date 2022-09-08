@@ -100,6 +100,8 @@ export default function Pool() {
       .toFixed(denomExponent),
   ]);
 
+  const [valuesConfirmed, setValuesConfirmed] = useState(false);
+
   // update values when rates or shape changes
   useEffect(() => {
     // get pair deposit amounts
@@ -152,6 +154,11 @@ export default function Pool() {
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
+      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+      const submitValue = ((e.nativeEvent as any)?.submitter as HTMLInputElement).value;
+      if (submitValue.toLowerCase() === 'customize') {
+        return setValuesConfirmed(true);
+      }
       if (feeType?.fee)
         await sendDepositRequest(
           tokenA,
@@ -165,13 +172,100 @@ export default function Pool() {
     [tokenA, tokenB, rangeMin, feeType, values, sendDepositRequest]
   );
 
+  const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
+    'range'
+  );
+
+  if (!valuesConfirmed) {
+    return (
+      <form className="pool-page" onSubmit={onSubmit}>
+        <div className="assets-card page-card">
+          <h3 className="card-header card-title">Assets</h3>
+          <div className="card-row">
+            <TokenInputGroup
+              onValueChanged={(newValue) =>
+                setValues(([, valueB]) => [newValue, valueB])
+              }
+              onTokenChanged={setTokenA}
+              tokenList={tokenList}
+              token={tokenA}
+              value={`${values[0]}`}
+              exclusion={tokenB}
+              title="Asset 1"
+            />
+          </div>
+          <div className="card-row">
+            <button
+              type="button"
+              onClick={swapTokens}
+              className="icon-button mx-auto"
+            >
+              <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
+              <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
+            </button>
+          </div>
+          <div className="card-row">
+            <TokenInputGroup
+              onValueChanged={(newValue) =>
+                setValues(([valueA]) => [valueA, newValue])
+              }
+              onTokenChanged={setTokenB}
+              tokenList={tokenList}
+              token={tokenB}
+              value={`${values[1]}`}
+              exclusion={tokenA}
+              title="Asset 2"
+            />
+          </div>
+          <div className="card-col mt-5 mb-3">
+            {(tickFetching || isValidatingDeposit) && (
+              <div className="text-secondary card-row">...</div>
+            )}
+            <div className="mx-auto">
+              <input
+                className="pill pill-outline mx-3 px-4 py-4"
+                type="submit"
+                name="action"
+                value="Customize"
+              />
+              <input
+                className="pill mx-3 px-4 py-4"
+                type="submit"
+                name="actiona"
+                value="Add Liquidity"
+              />
+            </div>
+            {(ticksError || depositError || depositResponse) && (
+              <div className="mx-auto mt-4">
+                <div className="text-red-500">
+                  {!isValidatingDeposit && ticksError}
+                </div>
+                <div className="text-red-500">
+                  {!isValidatingDeposit && depositError}
+                </div>
+                <div className="text-sky-500">
+                  {!isValidatingDeposit && depositResponse
+                    ? `Deposited ${depositResponse.receivedTokenA} ${tokenA?.address} and ${depositResponse.receivedTokenB} ${tokenB?.address}`
+                    : ''}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </form>
+    );
+  }
+
   return (
     <>
       <div className="pool-banner">
         <div className="row">
           <div className="row col-row">
             <h2>Assets</h2>
-            <button className="button-secondary corner-border ml-1">
+            <button
+              className="button-secondary corner-border ml-1"
+              onClick={() => setValuesConfirmed(false)}
+            >
               Edit
             </button>
           </div>
@@ -233,47 +327,7 @@ export default function Pool() {
           </div>
         </div>
       </div>
-      <div className="spacer"></div>
       <form className="pool-page" onSubmit={onSubmit}>
-        <div className="assets-card page-card">
-          <h3 className="card-header card-title">Assets</h3>
-          <div className="card-row">
-            <TokenInputGroup
-              onValueChanged={(newValue) =>
-                setValues(([, valueB]) => [newValue, valueB])
-              }
-              onTokenChanged={setTokenA}
-              tokenList={tokenList}
-              token={tokenA}
-              value={`${values[0]}`}
-              exclusion={tokenB}
-              title="Asset 1"
-            />
-          </div>
-          <div className="card-row">
-            <button
-              type="button"
-              onClick={swapTokens}
-              className="icon-button mx-auto"
-            >
-              <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
-              <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
-            </button>
-          </div>
-          <div className="card-row">
-            <TokenInputGroup
-              onValueChanged={(newValue) =>
-                setValues(([valueA]) => [valueA, newValue])
-              }
-              onTokenChanged={setTokenB}
-              tokenList={tokenList}
-              token={tokenB}
-              value={`${values[1]}`}
-              exclusion={tokenA}
-              title="Asset 2"
-            />
-          </div>
-        </div>
         <div className="chart-card page-card">
           <LiquiditySelector
             tickCount={parseInt(precision) || 1}
@@ -281,106 +335,159 @@ export default function Pool() {
             feeTier={feeType?.fee}
           ></LiquiditySelector>
         </div>
-        <div className="fee-card page-card">
-          <div className="card-header">
-            <h3 className="card-title">Fee Tier</h3>
-            <div className="badge-primary corner-border badge-large font-console ml-auto">
-              {feeLabel}
+        <div className="page-card mx-auto">
+          <div className="button-switch-group mx-auto mt-2 mb-4">
+            <button
+              type="button"
+              className={[
+                'button',
+                'py-3',
+                'px-5',
+                tabSelected === 'range' && 'button-primary',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => setTabSelected('range')}
+            >
+              Price Range
+            </button>
+            <button
+              type="button"
+              className={[
+                'button',
+                'py-3',
+                'px-5',
+                tabSelected === 'fee' && 'button-primary',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => setTabSelected('fee')}
+            >
+              Fee Tier
+            </button>
+            <button
+              type="button"
+              className={[
+                'button',
+                'py-3',
+                'px-5',
+                tabSelected === 'curve' && 'button-primary',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => setTabSelected('curve')}
+            >
+              Liquidity Curve
+            </button>
+          </div>
+          {tabSelected === 'range' && (
+            <div className="price-card">
+              <div className="card-row">
+                <StepNumberInput
+                  title="MIN PRICE"
+                  value={rangeMin}
+                  onChange={setRangeMin}
+                  step={defaultRangeMin}
+                  min={0}
+                  max={rangeMax}
+                  description={
+                    tokenA && tokenB
+                      ? `${tokenA.symbol} per ${tokenB.symbol}`
+                      : 'No Tokens'
+                  }
+                />
+                <StepNumberInput
+                  title="MAX PRICE"
+                  value={rangeMax}
+                  onChange={setRangeMax}
+                  min={rangeMin}
+                  description={
+                    tokenA && tokenB
+                      ? `${tokenA.symbol} per ${tokenB.symbol}`
+                      : 'No Tokens'
+                  }
+                />
+              </div>
             </div>
-            <button
-              type="button"
-              className="button-secondary ml-2"
-              onClick={() => setEditingFee((mode) => !mode)}
-            >
-              {editingFee ? 'Hide' : 'Edit'}
-            </button>
-          </div>
-          <div className="card-row">
-            {editingFee ? (
-              <RadioInput<FeeType>
-                value={feeType}
-                list={feeTypes}
-                onChange={setFeeType}
-                OptionComponent={({ option: { fee, label, description } }) => (
-                  <div key={fee} className="badge card fee-type">
-                    <h5 className="fee-title">{label}</h5>
-                    <span className="fee-description">{description}</span>
-                    <span className="badge fee-liquidity">
-                      {calculateFeeLiquidity(label)}
-                    </span>
-                  </div>
-                )}
-              />
-            ) : (
-              <>
-                <span className="badge-info pill ml-auto badge-large text-slim fs-s mt-auto">
-                  {calculateFeeLiquidity(feeLabel)}
-                </span>
-                <span className="badge-info pill ml-2 badge-large text-slim fs-s mt-auto">
+          )}
+          {tabSelected === 'fee' && (
+            <div className="fee-card">
+              <div className="card-header">
+                <div className="badge-primary corner-border badge-large font-console ml-auto">
                   {feeLabel}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="precision-card page-card">
-          <div className="card-header">
-            <h3 className="card-title">Precision {precision}</h3>
-            <StepNumberInput
-              editable={false}
-              min={2}
-              max={10}
-              value={precision}
-              onChange={setPrecision}
-            />
-            <button
-              type="button"
-              className="button-info ml-2"
-              onClick={() => setPrecision(defaultPrecision)}
-            >
-              Auto
-            </button>
-          </div>
-        </div>
-        <div className="price-card page-card">
-          <h3 className="card-header">Price Range</h3>
-          <div className="card-row">
-            <StepNumberInput
-              title="MIN PRICE"
-              value={rangeMin}
-              onChange={setRangeMin}
-              step={defaultRangeMin}
-              min={0}
-              max={rangeMax}
-              description={
-                tokenA && tokenB
-                  ? `${tokenA.symbol} per ${tokenB.symbol}`
-                  : 'No Tokens'
-              }
-            />
-            <StepNumberInput
-              title="MAX PRICE"
-              value={rangeMax}
-              onChange={setRangeMax}
-              min={rangeMin}
-              description={
-                tokenA && tokenB
-                  ? `${tokenA.symbol} per ${tokenB.symbol}`
-                  : 'No Tokens'
-              }
-            />
-          </div>
-        </div>
-        <div className="curve-card page-card">
-          <h3 className="card-header card-title">Liquidity Curve</h3>
-          <div className="card-row">
-            <RadioInput
-              value={slopeType}
-              list={slopeTypes}
-              onChange={setSlopeType}
-              maxColumnCount={2}
-            />
-          </div>
+                </div>
+                <button
+                  type="button"
+                  className="button-secondary ml-2"
+                  onClick={() => setEditingFee((mode) => !mode)}
+                >
+                  {editingFee ? 'Hide' : 'Edit'}
+                </button>
+              </div>
+              <div className="card-row">
+                {editingFee ? (
+                  <RadioInput<FeeType>
+                    value={feeType}
+                    list={feeTypes}
+                    onChange={setFeeType}
+                    OptionComponent={({
+                      option: { fee, label, description },
+                    }) => (
+                      <div key={fee} className="badge card fee-type">
+                        <h5 className="fee-title">{label}</h5>
+                        <span className="fee-description">{description}</span>
+                        <span className="badge fee-liquidity">
+                          {calculateFeeLiquidity(label)}
+                        </span>
+                      </div>
+                    )}
+                  />
+                ) : (
+                  <>
+                    <span className="badge-info pill ml-auto badge-large text-slim fs-s mt-auto">
+                      {calculateFeeLiquidity(feeLabel)}
+                    </span>
+                    <span className="badge-info pill ml-2 badge-large text-slim fs-s mt-auto">
+                      {feeLabel}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+          {tabSelected === 'curve' && (
+            <div>
+              <div className="curve-card">
+                <div className="card-row">
+                  <RadioInput
+                    value={slopeType}
+                    list={slopeTypes}
+                    onChange={setSlopeType}
+                    maxColumnCount={2}
+                  />
+                </div>
+              </div>
+              <div className="precision-card mt-4">
+                <div className="card-header">
+                  <h3 className="card-title">Precision {precision}</h3>
+                  <StepNumberInput
+                    editable={false}
+                    min={2}
+                    max={10}
+                    value={precision}
+                    onChange={setPrecision}
+                  />
+                  <button
+                    type="button"
+                    className="button-info ml-2"
+                    onClick={() => setPrecision(defaultPrecision)}
+                  >
+                    Auto
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <div className="pool-options">
           <div className="card-row">

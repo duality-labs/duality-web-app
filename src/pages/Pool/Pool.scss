@@ -6,6 +6,19 @@
 
 $selected-fee-border-width: 1.5px;
 
+.button-switch-group {
+  border: 1px solid white;
+  border-radius: 0.75rem;
+
+  button {
+    min-width: 10rem;
+    border-radius: 0.75rem;
+  }
+  button:hover:not(.button-primary) {
+    background-color: hsl(202deg, 76%, 20%);
+  }
+}
+
 .pool-banner {
   width: 100%;
   background-color: hsla(0, 0%, 0%, 0.6);
@@ -41,16 +54,6 @@ $selected-fee-border-width: 1.5px;
 
   .button-switch-group {
     margin: 0 1rem;
-    border: 1px solid white;
-    border-radius: 0.75rem;
-
-    button {
-      min-width: 10rem;
-      border-radius: 0.75rem;
-    }
-    button:hover:not(.button-primary) {
-      background-color: hsl(202deg, 76%, 20%);
-    }
   }
 
   .icon-button {
@@ -78,11 +81,10 @@ $selected-fee-border-width: 1.5px;
 
 .pool-page {
   & {
-    @include margins.margin('y', 4);
-    grid-template-columns: 400px 492px 380px;
-    grid-template-rows: auto 1fr auto;
-    gap: margins.$m-3;
-    display: grid;
+    @include margins.margin('y', 5);
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
   }
 
   .page-card {
@@ -104,20 +106,24 @@ $selected-fee-border-width: 1.5px;
   }
 
   .assets-card {
-    & {
-      grid-column: 1 / 2;
-      grid-row: 1 / 2;
-    }
-
     .token-input-group {
       box-sizing: border-box;
       width: 100%;
     }
-  }
-
-  .chart-card {
-    grid-column: 2 / 4;
-    grid-row: 1 / 2;
+    .pill {
+      border: 3px solid transparent;
+    }
+    .pill-outline {
+      background-color: transparent;
+      border: 3px solid var(--submit-button-bg);
+      &:hover,
+      :active {
+        background-color: rgba($color: rgb(78, 177, 232), $alpha: 0.2);
+      }
+    }
+    .card-col {
+      align-items: center;
+    }
   }
 
   .fee-card {
