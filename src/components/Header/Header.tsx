@@ -18,7 +18,7 @@ export default function Header() {
   return (
     <header>
       <nav>
-        <NavLink to="/">
+        <NavLink className="logo" to="/">
           <h1>Duality</h1>
         </NavLink>
         <NavLink to="/swap">Swap</NavLink>
