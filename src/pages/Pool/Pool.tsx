@@ -18,7 +18,6 @@ import LiquiditySelector from '../../components/LiquiditySelector';
 
 import {
   useTokens,
-  useExchangeRate,
   Token,
 } from '../../components/TokenPicker/mockHooks';
 
@@ -79,7 +78,6 @@ export default function Pool() {
     setTokenA(tokenB);
     setTokenB(tokenA);
   }, [tokenA, tokenB]);
-  const { data: rateData } = useExchangeRate(tokenA, tokenB, '1');
   const { data: tokenList = [] } = useTokens();
 
   // set token A to be first token in list if not already populated
