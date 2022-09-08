@@ -46,24 +46,6 @@ nav,
       text-decoration: none;
     }
 
-    &.ghost-button::before {
-      transition: left animations.$short-duration animations.$default-mode,
-        width animations.$short-duration animations.$default-mode;
-      position: absolute;
-      background-color: currentColor;
-      bottom: 0.5rem;
-      height: $underline-height;
-      display: block;
-      content: '';
-      left: 50%;
-      width: 0%;
-    }
-
-    &.ghost-button.active::before {
-      width: calc(100% - #{paddings.size(buttons.$ghost-padding-x) * 2});
-      left: paddings.size(buttons.$ghost-padding-x);
-    }
-
     & > img,
     & > h1,
     & > .h1 {
