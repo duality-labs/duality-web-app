@@ -13,6 +13,8 @@ interface LiquiditySelectorProps {
   ticks: TickMap | undefined;
   tickCount: number;
   feeTier: number | undefined;
+  rangeMin: string | undefined;
+  rangeMax: string | undefined;
 }
 
 type TickGroup = Array<
@@ -28,7 +30,6 @@ type TickGroupBucketsFilled = Array<
   ]
 >;
 
-const paddingPercent = 0.2;
 const bucketWidth = 50; // bucket width in pixels
 
 function useWindowWidth() {
@@ -49,6 +50,8 @@ export default function LiquiditySelector({
   tickCount,
   ticks = {},
   feeTier = -1,
+  rangeMin = '0',
+  rangeMax = '1',
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
@@ -270,8 +273,8 @@ export default function LiquiditySelector({
         const midpoint = dataStart + range / 2;
         const tickHeight = graphHeight * 0.7;
         // spread evenly after adding padding on each side
-        const tickStart = dataStart - range * paddingPercent;
-        const tickEnd = dataEnd + range * paddingPercent;
+        const tickStart = Number(rangeMin);
+        const tickEnd = Number(rangeMax);
         const tickGap = (tickEnd - tickStart) / (tickCount - 1);
         const currentPrice = currentPriceFromTicks || midpoint;
         return Array.from({ length: tickCount }).map((_, index) => {
@@ -292,6 +295,8 @@ export default function LiquiditySelector({
       }
     });
   }, [
+    rangeMin,
+    rangeMax,
     tickCount,
     invertTokenOrder,
     currentPriceFromTicks,
