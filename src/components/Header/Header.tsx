@@ -18,11 +18,15 @@ export default function Header() {
   return (
     <header>
       <nav>
-        <NavLink className="logo" to="/">
+        <NavLink className="logo mr-5" to="/">
           <h1>Duality</h1>
         </NavLink>
-        <NavLink to="/swap">Swap</NavLink>
-        <NavLink to="/pool">Pool</NavLink>
+        <NavLink className="ghost-button" to="/swap">
+          Swap
+        </NavLink>
+        <NavLink className="ghost-button" to="/pool">
+          Pool
+        </NavLink>
         {address ? (
           <span className="link">{address}</span>
         ) : (
