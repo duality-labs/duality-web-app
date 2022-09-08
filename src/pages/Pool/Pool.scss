@@ -6,6 +6,76 @@
 
 $selected-fee-border-width: 1.5px;
 
+.pool-banner {
+  width: 100%;
+  background-color: hsla(0, 0%, 0%, 0.6);
+
+  & > .row {
+    padding: 0.75rem 4rem;
+  }
+
+  .row {
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+    gap: 2rem;
+
+    .col-row {
+      gap: 0.5rem;
+      background-color: transparent;
+      padding: 0;
+    }
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 500;
+  }
+
+  .token-image {
+    height: 1.2rem;
+    vertical-align: bottom;
+    padding: 0.1rem 0;
+  }
+
+  .button-switch-group {
+    margin: 0 1rem;
+    border: 1px solid white;
+    border-radius: 0.75rem;
+
+    button {
+      min-width: 10rem;
+      border-radius: 0.75rem;
+    }
+    button:hover:not(.button-primary) {
+      background-color: hsl(202deg, 76%, 20%);
+    }
+  }
+
+  .icon-button {
+    background-color: transparent;
+    font-size: 1.5em;
+    padding: 0;
+  }
+}
+
+.pool-banner::before,
+.pool-banner::after {
+  display: block;
+  content: ' ';
+  height: 8px;
+  width: 100%;
+  background: linear-gradient(90deg, #4eb1e8 0%, rgba(78, 177, 232, 0) 100%);
+}
+.pool-banner::after {
+  background: linear-gradient(90deg, rgba(78, 177, 232, 0) 0%, #4eb1e8 100%);
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
 .pool-page {
   & {
     @include margins.margin('y', 4);
