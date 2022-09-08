@@ -31,12 +31,12 @@ const denomRatio = new BigNumber(10).exponentiatedBy(denomExponent);
 const defaultFee = '0.30%';
 const defaultPrice = '1';
 const defaultRangeMin = new BigNumber(defaultPrice)
-  .dividedBy(denomRatio)
+  .dividedBy(2)
   .toFixed(denomExponent);
 const defaultRangeMax = new BigNumber(defaultPrice)
-  .multipliedBy(denomRatio)
+  .multipliedBy(2)
   .toFixed(0);
-const defaultTokenAmount = '1000';
+const defaultTokenAmount = '1';
 
 interface FeeType {
   fee: number;
@@ -93,41 +93,12 @@ export default function Pool() {
   const [rangeMax, setRangeMax] = useState(defaultRangeMax);
   const [values, setValues] = useState<[string, string]>(() => [
     new BigNumber(defaultTokenAmount)
-      .dividedBy(denomRatio)
       .toFixed(denomExponent),
     new BigNumber(defaultTokenAmount)
-      .dividedBy(denomRatio)
       .toFixed(denomExponent),
   ]);
 
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
-
-  // update values when rates or shape changes
-  useEffect(() => {
-    // get pair deposit amounts
-    setValues((values) => {
-      const rateAtoB = parseFloat(rateData?.price || defaultPrice);
-      const valueMin = new BigNumber(rangeMin);
-      const valueMax = new BigNumber(rangeMax);
-      const totalValue = new BigNumber(values[0])
-        .multipliedBy(rateAtoB)
-        .plus(values[1]);
-      if (rateAtoB > 0 && new BigNumber(totalValue).isGreaterThan(0)) {
-        const valueA = valueMin
-          .multipliedBy(totalValue)
-          .dividedBy(valueMin.plus(valueMax));
-        const valueB = valueMax
-          .multipliedBy(totalValue)
-          .dividedBy(valueMin.plus(valueMax));
-        return [
-          valueA.dividedBy(rateAtoB).toFixed(denomExponent),
-          valueB.toFixed(denomExponent),
-        ];
-      } else {
-        return ['0', '0'];
-      }
-    });
-  }, [rateData, rangeMin, rangeMax]);
 
   const {
     data: { ticks } = {},
