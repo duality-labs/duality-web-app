@@ -165,8 +165,8 @@ export default function Pool() {
           tokenB,
           new BigNumber(rangeMin),
           new BigNumber(feeType.fee),
-          new BigNumber(values[0]),
-          new BigNumber(values[1])
+          new BigNumber(values[0]).dividedBy(denomRatio),
+          new BigNumber(values[1]).dividedBy(denomRatio)
         );
     },
     [tokenA, tokenB, rangeMin, feeType, values, sendDepositRequest]
