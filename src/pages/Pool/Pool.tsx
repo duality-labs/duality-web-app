@@ -301,6 +301,8 @@ export default function Pool() {
       <form className="pool-page" onSubmit={onSubmit}>
         <div className="chart-card page-card">
           <LiquiditySelector
+            rangeMin={rangeMin}
+            rangeMax={rangeMax}
             tickCount={parseInt(precision) || 1}
             ticks={ticks}
             feeTier={feeType?.fee}
