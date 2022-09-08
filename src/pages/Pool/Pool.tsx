@@ -4,6 +4,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowUpLong,
   faArrowDownLong,
+  faSliders,
+  faCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
 import { useIndexerPairData } from '../../lib/web3/indexerProvider';
@@ -165,6 +167,73 @@ export default function Pool() {
 
   return (
     <>
+      <div className="pool-banner">
+        <div className="row">
+          <div className="row col-row">
+            <h2>Assets</h2>
+            <button className="button-secondary corner-border ml-1">
+              Edit
+            </button>
+          </div>
+          <div className="row col-row">
+            {tokenA && (
+              <button className="badge-primary corner-border badge-large font-console">
+                {new BigNumber(values[0]).toFormat()}
+                {tokenA.logo ? (
+                  <img
+                    className="ml-3 mr-1 token-image"
+                    alt={`${tokenA.symbol} logo`}
+                    src={tokenA.logo}
+                  />
+                ) : (
+                  <FontAwesomeIcon
+                    icon={faCircle}
+                    size="2x"
+                    className="ml-3 mr-1 token-image token-image-not-found"
+                  ></FontAwesomeIcon>
+                )}
+                {tokenA?.symbol}
+              </button>
+            )}
+            {tokenA && tokenB && <div>+</div>}
+            {tokenB && (
+              <button className="badge-primary corner-border badge-large font-console">
+                {new BigNumber(values[1]).toFormat()}
+                {tokenB.logo ? (
+                  <img
+                    className="ml-3 mr-1 token-image"
+                    alt={`${tokenB.symbol} logo`}
+                    src={tokenB.logo}
+                  />
+                ) : (
+                  <FontAwesomeIcon
+                    icon={faCircle}
+                    size="2x"
+                    className="ml-3 mr-1 token-image token-image-not-found"
+                  ></FontAwesomeIcon>
+                )}
+                {tokenB?.symbol}
+              </button>
+            )}
+          </div>
+          <div className="row col-row ml-auto">
+            <div className="button-switch-group">
+              <button type="button" className="button py-3 px-5 button-primary">
+                AMM
+              </button>
+              <button type="button" className="button py-3 px-5">
+                Orderbook
+              </button>
+            </div>
+          </div>
+          <div className="row col-row">
+            <button className="icon-button">
+              <FontAwesomeIcon icon={faSliders}></FontAwesomeIcon>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="spacer"></div>
       <form className="pool-page" onSubmit={onSubmit}>
         <div className="assets-card page-card">
           <h3 className="card-header card-title">Assets</h3>
@@ -338,6 +407,7 @@ export default function Pool() {
           </div>
         </div>
       </form>
+      <div className="spacer"></div>
     </>
   );
 }
