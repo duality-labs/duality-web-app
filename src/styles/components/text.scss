@@ -4,7 +4,7 @@
 
 @each $name in colors.$main {
   .badge-#{$name} {
-    @include paddings.padding('x', 3);
+    @include paddings.padding('x', 4);
     @include paddings.padding('y', 3);
     background-color: var(--#{$name});
     color: var(--#{$name}-alt);
