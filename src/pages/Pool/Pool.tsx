@@ -132,9 +132,9 @@ export default function Pool() {
           tokenB,
           new BigNumber(feeType.fee),
           userTicks.map(([price, amount0, amount1]) => [
-            new BigNumber(price).toNumber(),
-            new BigNumber(amount0).dividedBy(denomRatio).toNumber(),
-            new BigNumber(amount1).dividedBy(denomRatio).toNumber(),
+            new BigNumber(price),
+            new BigNumber(amount0).dividedBy(denomRatio),
+            new BigNumber(amount1).dividedBy(denomRatio),
           ])
         );
       }
