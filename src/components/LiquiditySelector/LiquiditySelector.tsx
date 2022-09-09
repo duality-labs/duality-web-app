@@ -73,6 +73,8 @@ export default function LiquiditySelector({
   const invertTokenOrder = currentPriceFromTicks
     ? currentPriceFromTicks < 1
     : false;
+  const initialGraphStart = 0;
+  const initialGraphEnd = currentPriceFromTicks ? currentPriceFromTicks * 2 : 0;
 
   const [userTicks, setUserTicks] = useState<TickGroup>([]);
 
@@ -86,6 +88,18 @@ export default function LiquiditySelector({
     }, {});
     return [xMin, xMax];
   }, [feeTicks]);
+
+  // set and allow ephemeral setting of graph extents
+  const [graphStart, setGraphStart] = useState(initialGraphStart);
+  const [graphEnd, setGraphEnd] = useState(initialGraphEnd);
+
+  // allow user ticks to reset the boundary of the graph
+  useEffect(() => {
+    const minUserTickPrice = userTicks[0]?.[0];
+    const maxUserTickPrice = userTicks[userTicks.length - 1]?.[0];
+    setGraphStart(Math.min(initialGraphStart, minUserTickPrice) || 0);
+    setGraphEnd(Math.max(initialGraphEnd, maxUserTickPrice) || 0);
+  }, [initialGraphStart, initialGraphEnd, userTicks]);
 
   // find container size that buckets should fit
   const [container, setContainer] = useState<SVGSVGElement | null>(null);
@@ -155,17 +169,6 @@ export default function LiquiditySelector({
       []
     );
   }, [emptyBuckets, feeTicks]);
-
-  // calculate graph extents
-  const [graphStart, graphEnd] = useMemo(() => {
-    return [
-      Math.min(userTicks[0]?.[0], feeTickBuckets[0]?.[0]) || 0, // minimum bound
-      Math.max(
-        userTicks[userTicks.length - 1]?.[0],
-        feeTickBuckets[feeTickBuckets.length - 1]?.[0]
-      ) || 0, // maximum bound
-    ];
-  }, [feeTickBuckets, userTicks]);
 
   const graphHeight = useMemo(() => {
     return feeTickBuckets.reduce(
