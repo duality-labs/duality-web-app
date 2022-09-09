@@ -4,6 +4,7 @@ import {
   useMemo,
   useCallback,
   useLayoutEffect,
+  useRef,
 } from 'react';
 import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
@@ -16,6 +17,7 @@ interface LiquiditySelectorProps {
   feeTier: number | undefined;
   rangeMin: string | undefined;
   rangeMax: string | undefined;
+  setUserTicks?: (userTicks: TickGroup) => void;
 }
 
 type TickGroup = Array<
@@ -53,6 +55,7 @@ export default function LiquiditySelector({
   feeTier = -1,
   rangeMin = '0',
   rangeMax = '1',
+  setUserTicks: setExternalUserTicks,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
@@ -81,6 +84,14 @@ export default function LiquiditySelector({
   const initialGraphEnd = currentPriceFromTicks ? currentPriceFromTicks * 2 : 0;
 
   const [userTicks, setUserTicks] = useState<TickGroup>([]);
+  // allow userTicks to be passed back up to parent component
+  const setExternalUserTicksRef = useRef(setExternalUserTicks);
+  useEffect(() => {
+    setExternalUserTicksRef.current = setExternalUserTicks;
+  }, [setExternalUserTicks]);
+  useEffect(() => {
+    setExternalUserTicksRef.current?.(userTicks);
+  }, [userTicks]);
 
   const [dataStart, dataEnd] = useMemo(() => {
     const { xMin = 0, xMax = 0 } = feeTicks.reduce<{
