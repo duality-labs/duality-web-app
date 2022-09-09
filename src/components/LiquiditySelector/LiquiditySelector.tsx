@@ -68,6 +68,74 @@ export default function LiquiditySelector({
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
+  const invertTokenOrder = useMemo(() => {
+    const { token0Count, token0Value, token1Count, token1Value } =
+      feeTicks.reduce(
+        (result, [price, token0Value, token1Value]) => {
+          result.token0Value += price * token0Value;
+          result.token0Count += token0Value;
+          result.token1Value += price * token1Value;
+          result.token1Count += token1Value;
+          return result;
+        },
+        { token0Count: 0, token0Value: 0, token1Count: 0, token1Value: 0 }
+      );
+    const averageToken0Value = token0Value / token0Count;
+    const averageToken1Value = token1Value / token1Count;
+    return averageToken0Value > averageToken1Value;
+  }, [feeTicks]);
+
+  // estimate current price from ticks
+  const currentPriceFromTicks = useMemo(() => {
+    const remainingTicks = feeTicks.slice();
+    const highTokenValueIndex = invertTokenOrder ? 2 : 1;
+    const lowTokenValueIndex = invertTokenOrder ? 1 : 2;
+    let highestLowTokenTickIndex = findLastIndex(
+      remainingTicks,
+      (tick) => tick[lowTokenValueIndex] > 0
+    );
+    let lowestHighTokenTickIndex = remainingTicks.findIndex(
+      (tick) => tick[highTokenValueIndex] > 0
+    );
+    do {
+      const highestLowTokenTick = remainingTicks[highestLowTokenTickIndex];
+      const lowestHighTokenTick = remainingTicks[lowestHighTokenTickIndex];
+      if (highestLowTokenTick && lowestHighTokenTick) {
+        // check if prices are resolved and current price can be plain average of these values
+        if (lowestHighTokenTick[0] >= highestLowTokenTick[0]) {
+          return (lowestHighTokenTick[0] + highestLowTokenTick[0]) / 2;
+        } else {
+          const highestLowTokenTickValue =
+            highestLowTokenTick[lowTokenValueIndex] * highestLowTokenTick[0];
+          const lowestHighTokenTickValue =
+            lowestHighTokenTick[highTokenValueIndex] * lowestHighTokenTick[0];
+          if (highestLowTokenTickValue < lowestHighTokenTickValue) {
+            remainingTicks.splice(highestLowTokenTickIndex, 1);
+            highestLowTokenTickIndex = findLastIndex(
+              remainingTicks,
+              (tick) => tick[lowTokenValueIndex] > 0
+            ); // todo: search from last known index here
+            lowestHighTokenTickIndex = remainingTicks.indexOf(
+              lowestHighTokenTick,
+              lowestHighTokenTickIndex
+            );
+          } else {
+            remainingTicks.splice(lowestHighTokenTickIndex, 1);
+            lowestHighTokenTickIndex = remainingTicks.findIndex(
+              (tick) => tick[highTokenValueIndex] > 0
+            ); // todo: search from last known index here
+            highestLowTokenTickIndex = remainingTicks.lastIndexOf(
+              highestLowTokenTick,
+              highestLowTokenTickIndex
+            );
+          }
+        }
+      } else {
+        return undefined;
+      }
+    } while (remainingTicks.length > 0);
+  }, [feeTicks, invertTokenOrder]);
+
   const [userTicks, setUserTicks] = useState<TickGroup>([]);
 
   const [dataStart, setDataStart] = useState(0);
@@ -196,74 +264,6 @@ export default function LiquiditySelector({
     },
     [graphHeight]
   );
-
-  const invertTokenOrder = useMemo(() => {
-    const { token0Count, token0Value, token1Count, token1Value } =
-      feeTicks.reduce(
-        (result, [price, token0Value, token1Value]) => {
-          result.token0Value += price * token0Value;
-          result.token0Count += token0Value;
-          result.token1Value += price * token1Value;
-          result.token1Count += token1Value;
-          return result;
-        },
-        { token0Count: 0, token0Value: 0, token1Count: 0, token1Value: 0 }
-      );
-    const averageToken0Value = token0Value / token0Count;
-    const averageToken1Value = token1Value / token1Count;
-    return averageToken0Value > averageToken1Value;
-  }, [feeTicks]);
-
-  // estimate current price from ticks
-  const currentPriceFromTicks = useMemo(() => {
-    const remainingTicks = feeTicks.slice();
-    const highTokenValueIndex = invertTokenOrder ? 2 : 1;
-    const lowTokenValueIndex = invertTokenOrder ? 1 : 2;
-    let highestLowTokenTickIndex = findLastIndex(
-      remainingTicks,
-      (tick) => tick[lowTokenValueIndex] > 0
-    );
-    let lowestHighTokenTickIndex = remainingTicks.findIndex(
-      (tick) => tick[highTokenValueIndex] > 0
-    );
-    do {
-      const highestLowTokenTick = remainingTicks[highestLowTokenTickIndex];
-      const lowestHighTokenTick = remainingTicks[lowestHighTokenTickIndex];
-      if (highestLowTokenTick && lowestHighTokenTick) {
-        // check if prices are resolved and current price can be plain average of these values
-        if (lowestHighTokenTick[0] >= highestLowTokenTick[0]) {
-          return (lowestHighTokenTick[0] + highestLowTokenTick[0]) / 2;
-        } else {
-          const highestLowTokenTickValue =
-            highestLowTokenTick[lowTokenValueIndex] * highestLowTokenTick[0];
-          const lowestHighTokenTickValue =
-            lowestHighTokenTick[highTokenValueIndex] * lowestHighTokenTick[0];
-          if (highestLowTokenTickValue < lowestHighTokenTickValue) {
-            remainingTicks.splice(highestLowTokenTickIndex, 1);
-            highestLowTokenTickIndex = findLastIndex(
-              remainingTicks,
-              (tick) => tick[lowTokenValueIndex] > 0
-            ); // todo: search from last known index here
-            lowestHighTokenTickIndex = remainingTicks.indexOf(
-              lowestHighTokenTick,
-              lowestHighTokenTickIndex
-            );
-          } else {
-            remainingTicks.splice(lowestHighTokenTickIndex, 1);
-            lowestHighTokenTickIndex = remainingTicks.findIndex(
-              (tick) => tick[highTokenValueIndex] > 0
-            ); // todo: search from last known index here
-            highestLowTokenTickIndex = remainingTicks.lastIndexOf(
-              highestLowTokenTick,
-              highestLowTokenTickIndex
-            );
-          }
-        }
-      } else {
-        return undefined;
-      }
-    } while (remainingTicks.length > 0);
-  }, [feeTicks, invertTokenOrder]);
 
   useEffect(() => {
     setUserTicks(() => {
