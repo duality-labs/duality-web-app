@@ -25,10 +25,8 @@ export function useDeposit(): [
   (
     tokenA: Token | undefined,
     tokenB: Token | undefined,
-    price: BigNumber | undefined,
     fee: BigNumber | undefined,
-    amount0: BigNumber | undefined,
-    amount1: BigNumber | undefined
+    userTicks: Array<[price: number, amount0: number, amount1: number]>
   ) => Promise<void>
 ] {
   const [data, setData] = useState<SendDepositResponse | undefined>(undefined);
@@ -40,10 +38,8 @@ export function useDeposit(): [
     async function (
       tokenA: Token | undefined,
       tokenB: Token | undefined,
-      price: BigNumber | undefined,
       fee: BigNumber | undefined,
-      amount0: BigNumber | undefined,
-      amount1: BigNumber | undefined
+      userTicks: Array<[price: number, amount0: number, amount1: number]>
     ) {
       return new Promise<void>(async function (resolve, reject) {
         try {
@@ -51,26 +47,25 @@ export function useDeposit(): [
           if (!web3.address || !web3.wallet) {
             throw new Error('Wallet not connected');
           }
+          const web3Address = web3.address;
           if (!tokenA || !tokenB) {
             throw new Error('Tokens not set');
-          }
-          if (!price || !price.isGreaterThan(0)) {
-            throw new Error('Price not set');
           }
           if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
             throw new Error('Fee not set');
           }
-          if (
-            !amount0 ||
-            !amount1 ||
-            amount0.isLessThan(0) ||
-            amount1.isLessThan(0)
-          ) {
-            throw new Error('Amounts not set');
-          }
-          if (!amount0.isGreaterThan(0) && !amount1.isGreaterThan(0)) {
-            throw new Error('Amounts are zero');
-          }
+          // check all user ticks and filter to non-zero ticks
+          const filteredUserTicks = userTicks.filter(
+            ([price, amount0, amount1]) => {
+              if (!price || price < 0) {
+                throw new Error('Price not set');
+              }
+              if (!amount0 || !amount1 || amount0 < 0 || amount1 < 0) {
+                throw new Error('Amounts not set');
+              }
+              return amount0 > 0 || amount1 > 0;
+            }
+          );
 
           setData(undefined);
           setIsValidating(true);
@@ -78,20 +73,20 @@ export function useDeposit(): [
 
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
-          const res = await client.signAndBroadcast([
-            client.msgSingleDeposit({
-              creator: web3.address,
-              token0: tokenA.address,
-              token1: tokenB.address,
-              receiver: web3.address,
-              // todo: replace with form input amounts
-              // fake some price points and amounts that can be tested in dev
-              price: price.toFixed(denomExponent),
-              fee: fee.toFixed(denomExponent),
-              amounts0: amount0.toFixed(denomExponent),
-              amounts1: amount1.toFixed(denomExponent),
-            }),
-          ]);
+          const res = await client.signAndBroadcast(
+            filteredUserTicks.map(([price, amount0, amount1]) =>
+              client.msgSingleDeposit({
+                creator: web3Address,
+                token0: tokenA.address,
+                token1: tokenB.address,
+                receiver: web3Address,
+                price: price.toFixed(denomExponent),
+                fee: fee.toFixed(denomExponent),
+                amounts0: amount0.toFixed(denomExponent),
+                amounts1: amount1.toFixed(denomExponent),
+              })
+            )
+          );
 
           // check for response
           if (!res) {
