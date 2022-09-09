@@ -15,6 +15,7 @@ import StepNumberInput from '../../components/StepNumberInput';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import LiquiditySelector from '../../components/LiquiditySelector';
+import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
 
 import {
   useTokens,
@@ -120,6 +121,9 @@ export default function Pool() {
     },
     sendDepositRequest,
   ] = useDeposit();
+
+  const [userTicks, setUserTicks] = useState<TickGroup>([]);
+
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
@@ -128,17 +132,20 @@ export default function Pool() {
       if (submitValue.toLowerCase() === 'customize') {
         return setValuesConfirmed(true);
       }
-      if (feeType?.fee)
+      if (feeType?.fee) {
         await sendDepositRequest(
           tokenA,
           tokenB,
-          new BigNumber(rangeMin),
           new BigNumber(feeType.fee),
-          new BigNumber(values[0]).dividedBy(denomRatio),
-          new BigNumber(values[1]).dividedBy(denomRatio)
+          userTicks.map(([price, amount0, amount1]) => [
+            new BigNumber(price).toNumber(),
+            new BigNumber(amount0).dividedBy(denomRatio).toNumber(),
+            new BigNumber(amount1).dividedBy(denomRatio).toNumber(),
+          ])
         );
+      }
     },
-    [tokenA, tokenB, rangeMin, feeType, values, sendDepositRequest]
+    [tokenA, tokenB, feeType, userTicks, sendDepositRequest]
   );
 
   const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
@@ -304,6 +311,7 @@ export default function Pool() {
             tickCount={parseInt(precision) || 1}
             ticks={ticks}
             feeTier={feeType?.fee}
+            setUserTicks={setUserTicks}
           ></LiquiditySelector>
         </div>
         <div className="page-card mx-auto">

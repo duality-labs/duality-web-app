@@ -20,7 +20,7 @@ interface LiquiditySelectorProps {
   setUserTicks?: (userTicks: TickGroup) => void;
 }
 
-type TickGroup = Array<
+export type TickGroup = Array<
   [price: number, token0Value: number, token1Value: number]
 >;
 type TickGroupBucketsEmpty = Array<[lowerBound: number, upperBound: number]>;
