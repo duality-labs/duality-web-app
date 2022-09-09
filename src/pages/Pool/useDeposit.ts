@@ -16,6 +16,11 @@ interface SendDepositResponse {
   receivedTokenB: string;
 }
 
+// todo: resolve with TickGroup in LiquiditySelector component
+type TickGroup = Array<
+  [price: BigNumber, amount0: BigNumber, amount1: BigNumber]
+>;
+
 export function useDeposit(): [
   {
     data?: SendDepositResponse;
@@ -26,7 +31,7 @@ export function useDeposit(): [
     tokenA: Token | undefined,
     tokenB: Token | undefined,
     fee: BigNumber | undefined,
-    userTicks: Array<[price: number, amount0: number, amount1: number]>
+    userTicks: TickGroup
   ) => Promise<void>
 ] {
   const [data, setData] = useState<SendDepositResponse | undefined>(undefined);
@@ -39,7 +44,7 @@ export function useDeposit(): [
       tokenA: Token | undefined,
       tokenB: Token | undefined,
       fee: BigNumber | undefined,
-      userTicks: Array<[price: number, amount0: number, amount1: number]>
+      userTicks: TickGroup
     ) {
       return new Promise<void>(async function (resolve, reject) {
         try {
@@ -57,13 +62,18 @@ export function useDeposit(): [
           // check all user ticks and filter to non-zero ticks
           const filteredUserTicks = userTicks.filter(
             ([price, amount0, amount1]) => {
-              if (!price || price < 0) {
+              if (!price || price.isLessThan(0)) {
                 throw new Error('Price not set');
               }
-              if (!amount0 || !amount1 || amount0 < 0 || amount1 < 0) {
+              if (
+                !amount0 ||
+                !amount1 ||
+                amount0.isLessThan(0) ||
+                amount1.isLessThan(0)
+              ) {
                 throw new Error('Amounts not set');
               }
-              return amount0 > 0 || amount1 > 0;
+              return amount0.isGreaterThan(0) || amount1.isGreaterThan(0);
             }
           );
 
