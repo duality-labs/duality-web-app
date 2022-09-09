@@ -69,10 +69,14 @@ export default function LiquiditySelector({
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
-  const currentPriceFromTicks = useCurrentPriceFromTicks(feeTicks);
-  const invertTokenOrder = currentPriceFromTicks
-    ? currentPriceFromTicks < 1
+  const currentPriceABFromTicks = useCurrentPriceFromTicks(feeTicks);
+  const invertTokenOrder = currentPriceABFromTicks
+    ? currentPriceABFromTicks < 1
     : false;
+  const currentPriceFromTicks =
+    invertTokenOrder && currentPriceABFromTicks
+      ? 1 / currentPriceABFromTicks
+      : currentPriceABFromTicks;
   const initialGraphStart = 0;
   const initialGraphEnd = currentPriceFromTicks ? currentPriceFromTicks * 2 : 0;
 
