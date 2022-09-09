@@ -17,10 +17,7 @@ import TokenInputGroup from '../../components/TokenInputGroup';
 import LiquiditySelector from '../../components/LiquiditySelector';
 import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
 
-import {
-  useTokens,
-  Token,
-} from '../../components/TokenPicker/mockHooks';
+import { useTokens, Token } from '../../components/TokenPicker/mockHooks';
 
 import './Pool.scss';
 import { useDeposit } from './useDeposit';
@@ -33,9 +30,7 @@ const defaultPrice = '1';
 const defaultRangeMin = new BigNumber(defaultPrice)
   .dividedBy(2)
   .toFixed(denomExponent);
-const defaultRangeMax = new BigNumber(defaultPrice)
-  .multipliedBy(2)
-  .toFixed(0);
+const defaultRangeMax = new BigNumber(defaultPrice).multipliedBy(2).toFixed(0);
 const defaultTokenAmount = '1';
 
 interface FeeType {
@@ -91,10 +86,8 @@ export default function Pool() {
   const [rangeMin, setRangeMin] = useState(defaultRangeMin);
   const [rangeMax, setRangeMax] = useState(defaultRangeMax);
   const [values, setValues] = useState<[string, string]>(() => [
-    new BigNumber(defaultTokenAmount)
-      .toFixed(denomExponent),
-    new BigNumber(defaultTokenAmount)
-      .toFixed(denomExponent),
+    new BigNumber(defaultTokenAmount).toFixed(denomExponent),
+    new BigNumber(defaultTokenAmount).toFixed(denomExponent),
   ]);
 
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
@@ -127,8 +120,9 @@ export default function Pool() {
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
-      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-      const submitValue = ((e.nativeEvent as any)?.submitter as HTMLInputElement).value;
+      const submitValue =
+        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+        ((e.nativeEvent as any)?.submitter as HTMLInputElement).value;
       if (submitValue.toLowerCase() === 'customize') {
         return setValuesConfirmed(true);
       }
