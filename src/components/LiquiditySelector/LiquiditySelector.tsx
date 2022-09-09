@@ -76,10 +76,7 @@ export default function LiquiditySelector({
 
   const [userTicks, setUserTicks] = useState<TickGroup>([]);
 
-  const [dataStart, setDataStart] = useState(0);
-  const [dataEnd, setDataEnd] = useState(0);
-
-  useEffect(() => {
+  const [dataStart, dataEnd] = useMemo(() => {
     const { xMin = 0, xMax = 0 } = feeTicks.reduce<{
       [key: string]: number;
     }>((result, [price]) => {
@@ -87,9 +84,7 @@ export default function LiquiditySelector({
       if (price > (result.xMax ?? -Infinity)) result.xMax = price;
       return result;
     }, {});
-    // set data min/max values
-    setDataStart(xMin);
-    setDataEnd(xMax);
+    return [xMin, xMax];
   }, [feeTicks]);
 
   // find container size that buckets should fit
