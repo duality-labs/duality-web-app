@@ -249,21 +249,22 @@ export default function LiquiditySelector({
   }, [feeTickBuckets]);
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
+  const xMin = graphStart.sd(2, BigNumber.ROUND_DOWN).toNumber();
+  const xMax = graphEnd.sd(2, BigNumber.ROUND_UP).toNumber();
   const plotX = useCallback(
     (x: BigNumber): number => {
       const leftPadding = 10;
       const rightPadding = 10;
       const width = 100 - leftPadding - rightPadding;
-      return graphEnd === graphStart
+      return xMin === xMax
         ? // choose midpoint
           leftPadding + width / 2
         : // interpolate coordinate to graph
           leftPadding +
-            (width *
-              (Math.log(x.toNumber()) - Math.log(graphStart.toNumber()))) /
-              (Math.log(graphEnd.toNumber()) - Math.log(graphStart.toNumber()));
+            (width * (Math.log(x.toNumber()) - Math.log(xMin))) /
+              (Math.log(xMax) - Math.log(xMin));
     },
-    [graphStart, graphEnd]
+    [xMin, xMax]
   );
   const plotY = useCallback(
     (y: BigNumber): number => {
