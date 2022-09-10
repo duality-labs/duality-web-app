@@ -45,9 +45,12 @@ export default function useCurrentPriceFromTicks(feeTicks: TickGroup) {
       const lowestHighTokenTick = remainingTicks[lowestHighTokenTickIndex];
       if (highestLowTokenTick && lowestHighTokenTick) {
         // check if prices are resolved and current price can be plain average of these values
-        if (
-          lowestHighTokenTick[0].isGreaterThanOrEqualTo(highestLowTokenTick[0])
-        ) {
+        const comparison = lowestHighTokenTick[0].comparedTo(
+          highestLowTokenTick[0]
+        );
+        if (comparison === 0) {
+          return lowestHighTokenTick[0];
+        } else if (comparison === 1) {
           return lowestHighTokenTick[0]
             .plus(highestLowTokenTick[0])
             .dividedBy(2);
