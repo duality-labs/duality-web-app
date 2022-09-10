@@ -24,7 +24,6 @@ import { useDeposit } from './useDeposit';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
-const denomRatio = new BigNumber(10).exponentiatedBy(denomExponent);
 const defaultFee = '0.30%';
 const defaultPrice = '1';
 const defaultRangeMin = new BigNumber(defaultPrice)
@@ -131,11 +130,7 @@ export default function Pool() {
           tokenA,
           tokenB,
           new BigNumber(feeType.fee),
-          userTicks.map(([price, amount0, amount1]) => [
-            price,
-            amount0.dividedBy(denomRatio),
-            amount1.dividedBy(denomRatio),
-          ])
+          userTicks
         );
       }
     },

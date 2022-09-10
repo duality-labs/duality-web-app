@@ -73,6 +73,10 @@ export function useDeposit(): [
             }
           );
 
+          if (filteredUserTicks.length === 0) {
+            throw new Error('Ticks not set');
+          }
+
           setData(undefined);
           setIsValidating(true);
           setError(undefined);
