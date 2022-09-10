@@ -246,13 +246,13 @@ export default function LiquiditySelector({
       const rightPadding = 10;
       const width = 100 - leftPadding - rightPadding;
       return graphEnd === graphStart
-        ? leftPadding + width / 2
-        : leftPadding +
-            width *
-              x
-                .minus(graphStart)
-                .dividedBy(graphEnd.minus(graphStart))
-                .toNumber();
+        ? // choose midpoint
+          leftPadding + width / 2
+        : // interpolate coordinate to graph
+          leftPadding +
+            (width *
+              (Math.log(x.toNumber()) - Math.log(graphStart.toNumber()))) /
+              (Math.log(graphEnd.toNumber()) - Math.log(graphStart.toNumber()));
     },
     [graphStart, graphEnd]
   );
