@@ -48,13 +48,19 @@ export default function useCurrentPriceFromTicks(feeTicks: TickGroup) {
         const comparison = lowestHighTokenTick[0].comparedTo(
           highestLowTokenTick[0]
         );
+        // return found middle point
         if (comparison === 0) {
           return lowestHighTokenTick[0];
-        } else if (comparison === 1) {
+        }
+        // return average between middle points
+        else if (comparison === 1) {
           return lowestHighTokenTick[0]
             .plus(highestLowTokenTick[0])
             .dividedBy(2);
-        } else {
+        }
+        // continue looping through but with one less tick:
+        // attempt to remove the most "out of place" looking tick as an outlier
+        else {
           const highestLowTokenTickValue = highestLowTokenTick[
             lowTokenValueIndex
           ].multipliedBy(highestLowTokenTick[0]);
