@@ -71,18 +71,22 @@ export default function LiquiditySelector({
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
-  const currentPriceABFromTicks = useCurrentPriceFromTicks(feeTicks);
+  const currentPriceABFromTicks =
+    useCurrentPriceFromTicks(feeTicks) || new BigNumber(1);
   const invertTokenOrder = currentPriceABFromTicks
     ? currentPriceABFromTicks.isLessThan(1)
     : false;
-  const currentPriceFromTicks =
-    invertTokenOrder && currentPriceABFromTicks
-      ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
-      : currentPriceABFromTicks;
-  const initialGraphStart = 0;
-  const initialGraphEnd = currentPriceFromTicks
-    ? currentPriceFromTicks.multipliedBy(2).toNumber()
-    : 0;
+  const currentPriceFromTicks = invertTokenOrder
+    ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
+    : currentPriceABFromTicks;
+  const initialGraphStart = useMemo(() => {
+    const graphStart = currentPriceFromTicks.dividedBy(4);
+    return graphStart.isLessThan(1 / 1.1) ? new BigNumber(1 / 1.1) : graphStart;
+  }, [currentPriceFromTicks]);
+  const initialGraphEnd = useMemo(() => {
+    const graphEnd = currentPriceFromTicks.multipliedBy(4);
+    return graphEnd.isLessThan(1.1) ? new BigNumber(1.1) : graphEnd;
+  }, [currentPriceFromTicks]);
 
   const [userTicks, setUserTicks] = useState<TickGroup>([]);
   // allow userTicks to be passed back up to parent component
@@ -118,10 +122,16 @@ export default function LiquiditySelector({
     const maxUserTickPrice = userTicks[userTicks.length - 1]?.[0];
     if (minUserTickPrice)
       setGraphStart(
-        Math.min(initialGraphStart, minUserTickPrice.toNumber()) || 0
+        minUserTickPrice.isLessThan(initialGraphStart)
+          ? minUserTickPrice
+          : initialGraphStart
       );
     if (maxUserTickPrice)
-      setGraphEnd(Math.max(initialGraphEnd, maxUserTickPrice.toNumber()) || 0);
+      setGraphEnd(
+        maxUserTickPrice.isGreaterThan(initialGraphEnd)
+          ? maxUserTickPrice
+          : initialGraphEnd
+      );
   }, [initialGraphStart, initialGraphEnd, userTicks]);
 
   // find container size that buckets should fit
@@ -132,65 +142,99 @@ export default function LiquiditySelector({
     setContainerWidth(container?.clientWidth ?? 0);
   }, [container, windowWidth]);
 
+  const bucketCount =
+    (Math.ceil(containerWidth / bucketWidth) ?? 1) + // default to 1 bucket if none
+    1; // add bucket to account for splitting bucket on current price
+  const bucketRatio = useMemo(() => {
+    // get bounds
+    const xMin = graphStart.sd(1, BigNumber.ROUND_DOWN);
+    const xMax = graphEnd.sd(1, BigNumber.ROUND_UP);
+    const xWidth = xMax.dividedBy(xMin);
+
+    /**
+     * The "width" of the buckets is a ratio that is applied bucketCount times up to the total width:
+     *   xWidth = x^bucketCountAdjusted
+     *   x^bucketCountAdjusted) = xWidth
+     *   ln(x^bucketCountAdjusted) = ln(xWidth)
+     *   ln(x)*bucketCountAdjusted = ln(xWidth)
+     *   ln(x) = ln(xWidth)/bucketCountAdjusted
+     *   x = e^(ln(xWidth)/bucketCountAdjusted)
+     */
+    return Math.exp(Math.log(xWidth.toNumber()) / bucketCount);
+    // note: BigNumber cannot handle logarithms so it cannot calculate this
+  }, [graphStart, graphEnd, bucketCount]);
+
   // calculate bucket extents
-  const emptyBuckets = useMemo<TickGroupBucketsEmpty>(() => {
+  const emptyBuckets = useMemo<
+    [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
+  >(() => {
     // get bounds
     const xMin = dataStart.sd(2, BigNumber.ROUND_DOWN).toNumber();
     const xMax = dataEnd.sd(2, BigNumber.ROUND_UP).toNumber();
-    const xWidth = xMax - xMin;
-    // find bucket size
-    const bucketCount = Math.ceil(containerWidth / bucketWidth) ?? 1; // default to 1 bucket if none
-    const bucketSize = new BigNumber(xWidth)
-      .dividedBy(bucketCount)
-      .sd(2, BigNumber.ROUND_UP)
-      .toNumber();
-    // find bucket starting value to cover all values
-    const totalBucketSize = bucketSize * bucketCount;
-    const remainder = totalBucketSize - xWidth;
-    const xStart = xMin - remainder / 2;
-    // decide where to put the bucket start
-    const xStartRounded = new BigNumber(xStart - (xStart % (bucketSize || 1)));
+    const tokenABuckets = Array.from({ length: bucketCount }).reduce<
+      [min: BigNumber, max: BigNumber][]
+    >((result) => {
+      const newValue = result[0]?.[0] ?? currentPriceFromTicks;
+      return newValue.isLessThan(xMin)
+        ? // return finished array
+          result
+        : // prepend new bucket
+          [[newValue.dividedBy(bucketRatio), newValue], ...result];
+    }, []);
+    const tokenBBuckets = Array.from({ length: bucketCount }).reduce<
+      [min: BigNumber, max: BigNumber][]
+    >((result) => {
+      const newValue = result[result.length - 1]?.[1] ?? currentPriceFromTicks;
+      return newValue.isGreaterThan(xMax)
+        ? // return finished array
+          result
+        : // append new bucket
+          [...result, [newValue, newValue.multipliedBy(bucketRatio)]];
+    }, []);
 
-    return Array.from({ length: bucketCount }).map((_, index) => {
-      return [
-        xStartRounded.plus(bucketSize * index),
-        xStartRounded.plus(bucketSize * (index + 1)),
-      ];
-    });
-  }, [containerWidth, dataStart, dataEnd]);
+    // return concantenated buckes
+    return [tokenABuckets, tokenBBuckets];
+  }, [currentPriceFromTicks, bucketRatio, bucketCount, dataStart, dataEnd]);
 
   // calculate histogram values
-  const feeTickBuckets = useMemo<TickGroupBucketsFilled>(() => {
+  const feeTickBuckets = useMemo<
+    [TickGroupBucketsFilled, TickGroupBucketsFilled]
+  >(() => {
     const remainingTicks = feeTicks.slice();
-    return emptyBuckets.reduce<TickGroupBucketsFilled>(
-      (result, [lowerBound, upperBound]) => {
-        const [token0Value, token1Value] = remainingTicks.reduceRight(
-          (result, [price, token0Value, token1Value], index) => {
-            if (
-              price.isGreaterThanOrEqualTo(lowerBound) &&
-              price.isLessThanOrEqualTo(upperBound)
-            ) {
-              remainingTicks.splice(index, 1); // remove from set to minimise reduce time
-              return [result[0].plus(token0Value), result[1].plus(token1Value)];
-            }
-            return result;
-          },
-          [new BigNumber(0), new BigNumber(0)]
-        );
-        if (token0Value || token1Value) {
-          result.push([lowerBound, upperBound, token0Value, token1Value]);
-        }
-        return result;
-      },
-      []
-    );
+    function fillBuckets(emptyBuckets: TickGroupBucketsEmpty) {
+      return emptyBuckets.reduce<TickGroupBucketsFilled>(
+        (result, [lowerBound, upperBound]) => {
+          const [token0Value, token1Value] = remainingTicks.reduceRight(
+            (result, [price, token0Value, token1Value]) => {
+              if (
+                price.isGreaterThanOrEqualTo(lowerBound) &&
+                price.isLessThanOrEqualTo(upperBound)
+              ) {
+                // TODO: remove safely used ticks from set to minimise reduce time
+                return [
+                  result[0].plus(token0Value),
+                  result[1].plus(token1Value),
+                ];
+              }
+              return result;
+            },
+            [new BigNumber(0), new BigNumber(0)]
+          );
+          if (token0Value || token1Value) {
+            result.push([lowerBound, upperBound, token0Value, token1Value]);
+          }
+          return result;
+        },
+        []
+      );
+    }
+    return [fillBuckets(emptyBuckets[0]), fillBuckets(emptyBuckets[1])];
   }, [emptyBuckets, feeTicks]);
 
   const graphHeight = useMemo(() => {
-    return feeTickBuckets.reduce(
-      (result, data) => Math.max(result, data[2].toNumber()),
-      0
-    );
+    return feeTickBuckets
+      .flat()
+      .reduce((result, data) => Math.max(result, data[2].toNumber()), 0);
   }, [feeTickBuckets]);
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
@@ -202,7 +246,11 @@ export default function LiquiditySelector({
       return graphEnd === graphStart
         ? leftPadding + width / 2
         : leftPadding +
-            (width * (x.toNumber() - graphStart)) / (graphEnd - graphStart);
+            width *
+              x
+                .minus(graphStart)
+                .dividedBy(graphEnd.minus(graphStart))
+                .toNumber();
     },
     [graphStart, graphEnd]
   );
@@ -213,7 +261,7 @@ export default function LiquiditySelector({
       const height = 100 - topPadding - bottomPadding;
       return graphHeight === 0
         ? -bottomPadding - height / 2
-        : -bottomPadding - (height * (y.toNumber() - 0)) / (graphHeight - 0);
+        : -bottomPadding - height * y.dividedBy(graphHeight).toNumber();
     },
     [graphHeight]
   );
@@ -265,10 +313,16 @@ export default function LiquiditySelector({
       preserveAspectRatio="none"
       ref={setContainer}
     >
-      {graphEnd === 0 && <text>Chart is not currently available</text>}
+      {graphEnd.isZero() && <text>Chart is not currently available</text>}
       <TickBucketsGroup
-        className="old-tick-bucket"
-        tickBuckets={feeTickBuckets}
+        className="old-tick-bucket left-ticks"
+        tickBuckets={feeTickBuckets[0]}
+        plotX={plotX}
+        plotY={plotY}
+      />
+      <TickBucketsGroup
+        className="old-tick-bucket right-ticks"
+        tickBuckets={feeTickBuckets[1]}
         plotX={plotX}
         plotY={plotY}
       />
