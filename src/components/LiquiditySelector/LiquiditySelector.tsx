@@ -73,14 +73,16 @@ export default function LiquiditySelector({
 
   const currentPriceABFromTicks = useCurrentPriceFromTicks(feeTicks);
   const invertTokenOrder = currentPriceABFromTicks
-    ? currentPriceABFromTicks < 1
+    ? currentPriceABFromTicks.isLessThan(1)
     : false;
   const currentPriceFromTicks =
     invertTokenOrder && currentPriceABFromTicks
-      ? 1 / currentPriceABFromTicks
+      ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
       : currentPriceABFromTicks;
   const initialGraphStart = 0;
-  const initialGraphEnd = currentPriceFromTicks ? currentPriceFromTicks * 2 : 0;
+  const initialGraphEnd = currentPriceFromTicks
+    ? currentPriceFromTicks.multipliedBy(2).toNumber()
+    : 0;
 
   const [userTicks, setUserTicks] = useState<TickGroup>([]);
   // allow userTicks to be passed back up to parent component

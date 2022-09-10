@@ -1,31 +1,31 @@
+import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 import { TickGroup } from './LiquiditySelector';
 
-export default function useCurrentPriceFromTicks(feeTicksBigNumber: TickGroup) {
-  const feeTicks = useMemo(
-    () =>
-      feeTicksBigNumber.map(([price, amount0, amount1]) => [
-        price.toNumber(),
-        amount0.toNumber(),
-        amount1.toNumber(),
-      ]),
-    [feeTicksBigNumber]
-  );
-
+export default function useCurrentPriceFromTicks(feeTicks: TickGroup) {
   const invertTokenOrder = useMemo(() => {
     const { token0Count, token0Value, token1Count, token1Value } =
       feeTicks.reduce(
         (result, [price, token0Value, token1Value]) => {
-          result.token0Value += price * token0Value;
-          result.token0Count += token0Value;
-          result.token1Value += price * token1Value;
-          result.token1Count += token1Value;
+          result.token0Value = result.token0Value.plus(
+            token0Value.multipliedBy(price)
+          );
+          result.token0Count = result.token0Count.plus(token0Value);
+          result.token1Value = result.token1Value.plus(
+            token1Value.multipliedBy(price)
+          );
+          result.token1Count = result.token1Count.plus(token1Value);
           return result;
         },
-        { token0Count: 0, token0Value: 0, token1Count: 0, token1Value: 0 }
+        {
+          token0Count: new BigNumber(0),
+          token0Value: new BigNumber(0),
+          token1Count: new BigNumber(0),
+          token1Value: new BigNumber(0),
+        }
       );
-    const averageToken0Value = token0Value / token0Count;
-    const averageToken1Value = token1Value / token1Count;
+    const averageToken0Value = token0Value.dividedBy(token0Count);
+    const averageToken1Value = token1Value.dividedBy(token1Count);
     return averageToken0Value > averageToken1Value;
   }, [feeTicks]);
 
@@ -34,30 +34,34 @@ export default function useCurrentPriceFromTicks(feeTicksBigNumber: TickGroup) {
     const remainingTicks = feeTicks.slice();
     const highTokenValueIndex = invertTokenOrder ? 2 : 1;
     const lowTokenValueIndex = invertTokenOrder ? 1 : 2;
-    let highestLowTokenTickIndex = findLastIndex(
-      remainingTicks,
-      (tick) => tick[lowTokenValueIndex] > 0
+    let highestLowTokenTickIndex = findLastIndex(remainingTicks, (tick) =>
+      tick[lowTokenValueIndex].isGreaterThan(0)
     );
-    let lowestHighTokenTickIndex = remainingTicks.findIndex(
-      (tick) => tick[highTokenValueIndex] > 0
+    let lowestHighTokenTickIndex = remainingTicks.findIndex((tick) =>
+      tick[highTokenValueIndex].isGreaterThan(0)
     );
     do {
       const highestLowTokenTick = remainingTicks[highestLowTokenTickIndex];
       const lowestHighTokenTick = remainingTicks[lowestHighTokenTickIndex];
       if (highestLowTokenTick && lowestHighTokenTick) {
         // check if prices are resolved and current price can be plain average of these values
-        if (lowestHighTokenTick[0] >= highestLowTokenTick[0]) {
-          return (lowestHighTokenTick[0] + highestLowTokenTick[0]) / 2;
+        if (
+          lowestHighTokenTick[0].isGreaterThanOrEqualTo(highestLowTokenTick[0])
+        ) {
+          return lowestHighTokenTick[0]
+            .plus(highestLowTokenTick[0])
+            .dividedBy(2);
         } else {
-          const highestLowTokenTickValue =
-            highestLowTokenTick[lowTokenValueIndex] * highestLowTokenTick[0];
-          const lowestHighTokenTickValue =
-            lowestHighTokenTick[highTokenValueIndex] * lowestHighTokenTick[0];
-          if (highestLowTokenTickValue < lowestHighTokenTickValue) {
+          const highestLowTokenTickValue = highestLowTokenTick[
+            lowTokenValueIndex
+          ].multipliedBy(highestLowTokenTick[0]);
+          const lowestHighTokenTickValue = lowestHighTokenTick[
+            highTokenValueIndex
+          ].multipliedBy(lowestHighTokenTick[0]);
+          if (highestLowTokenTickValue.isLessThan(lowestHighTokenTickValue)) {
             remainingTicks.splice(highestLowTokenTickIndex, 1);
-            highestLowTokenTickIndex = findLastIndex(
-              remainingTicks,
-              (tick) => tick[lowTokenValueIndex] > 0
+            highestLowTokenTickIndex = findLastIndex(remainingTicks, (tick) =>
+              tick[lowTokenValueIndex].isGreaterThan(0)
             ); // todo: search from last known index here
             lowestHighTokenTickIndex = remainingTicks.indexOf(
               lowestHighTokenTick,
@@ -65,8 +69,8 @@ export default function useCurrentPriceFromTicks(feeTicksBigNumber: TickGroup) {
             );
           } else {
             remainingTicks.splice(lowestHighTokenTickIndex, 1);
-            lowestHighTokenTickIndex = remainingTicks.findIndex(
-              (tick) => tick[highTokenValueIndex] > 0
+            lowestHighTokenTickIndex = remainingTicks.findIndex((tick) =>
+              tick[highTokenValueIndex].isGreaterThan(0)
             ); // todo: search from last known index here
             highestLowTokenTickIndex = remainingTicks.lastIndexOf(
               highestLowTokenTick,
