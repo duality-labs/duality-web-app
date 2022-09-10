@@ -118,24 +118,6 @@ export default function LiquiditySelector({
   const [graphStart, setGraphStart] = useState(initialGraphStart);
   const [graphEnd, setGraphEnd] = useState(initialGraphEnd);
 
-  // allow user ticks to reset the boundary of the graph
-  useEffect(() => {
-    const minUserTickPrice = userTicks[0]?.[0];
-    const maxUserTickPrice = userTicks[userTicks.length - 1]?.[0];
-    if (minUserTickPrice)
-      setGraphStart(
-        minUserTickPrice.isLessThan(initialGraphStart)
-          ? minUserTickPrice
-          : initialGraphStart
-      );
-    if (maxUserTickPrice)
-      setGraphEnd(
-        maxUserTickPrice.isGreaterThan(initialGraphEnd)
-          ? maxUserTickPrice
-          : initialGraphEnd
-      );
-  }, [initialGraphStart, initialGraphEnd, userTicks]);
-
   // find container size that buckets should fit
   const [container, setContainer] = useState<SVGSVGElement | null>(null);
   const windowWidth = useWindowWidth();
@@ -197,6 +179,33 @@ export default function LiquiditySelector({
     // return concantenated buckes
     return [tokenABuckets, tokenBBuckets];
   }, [currentPriceFromTicks, bucketRatio, bucketCount, dataStart, dataEnd]);
+
+  // allow user ticks to reset the boundary of the graph
+  useEffect(() => {
+    const minUserTickPrice = userTicks[0]?.[0];
+    const maxUserTickPrice = userTicks[userTicks.length - 1]?.[0];
+    const minExistingTickPrice = emptyBuckets[0]?.[0]?.[0];
+    const maxExistingTickPrice =
+      emptyBuckets[1]?.[emptyBuckets[1]?.length - 1]?.[0];
+    const minTickPrice = minUserTickPrice?.isGreaterThan(minExistingTickPrice)
+      ? minUserTickPrice
+      : minExistingTickPrice;
+    const maxTickPrice = maxUserTickPrice?.isGreaterThan(maxExistingTickPrice)
+      ? maxUserTickPrice
+      : maxExistingTickPrice;
+    if (minTickPrice)
+      setGraphStart(
+        minTickPrice.isLessThan(initialGraphStart)
+          ? minTickPrice
+          : initialGraphStart
+      );
+    if (maxTickPrice)
+      setGraphEnd(
+        maxTickPrice.isGreaterThan(initialGraphEnd)
+          ? maxTickPrice
+          : initialGraphEnd
+      );
+  }, [initialGraphStart, initialGraphEnd, userTicks, emptyBuckets]);
 
   // calculate histogram values
   const feeTickBuckets = useMemo<
