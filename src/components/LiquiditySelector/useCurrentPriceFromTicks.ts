@@ -1,10 +1,17 @@
 import { useMemo } from 'react';
+import { TickGroup } from './LiquiditySelector';
 
-type TickGroup = Array<
-  [price: number, token0Value: number, token1Value: number]
->;
+export default function useCurrentPriceFromTicks(feeTicksBigNumber: TickGroup) {
+  const feeTicks = useMemo(
+    () =>
+      feeTicksBigNumber.map(([price, amount0, amount1]) => [
+        price.toNumber(),
+        amount0.toNumber(),
+        amount1.toNumber(),
+      ]),
+    [feeTicksBigNumber]
+  );
 
-export default function useCurrentPriceFromTicks(feeTicks: TickGroup) {
   const invertTokenOrder = useMemo(() => {
     const { token0Count, token0Value, token1Count, token1Value } =
       feeTicks.reduce(

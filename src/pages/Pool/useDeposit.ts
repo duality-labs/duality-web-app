@@ -6,6 +6,7 @@ import BigNumber from 'bignumber.js';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module';
 import { Token } from '../../components/TokenPicker/mockHooks';
+import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
@@ -15,11 +16,6 @@ interface SendDepositResponse {
   receivedTokenA: string;
   receivedTokenB: string;
 }
-
-// todo: resolve with TickGroup in LiquiditySelector component
-type TickGroup = Array<
-  [price: BigNumber, amount0: BigNumber, amount1: BigNumber]
->;
 
 export function useDeposit(): [
   {
