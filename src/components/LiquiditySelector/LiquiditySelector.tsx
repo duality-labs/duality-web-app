@@ -252,7 +252,7 @@ export default function LiquiditySelector({
   const xMin = graphStart.sd(2, BigNumber.ROUND_DOWN).toNumber();
   const xMax = graphEnd.sd(2, BigNumber.ROUND_UP).toNumber();
   const plotX = useCallback(
-    (x: BigNumber): number => {
+    (x: number): number => {
       const leftPadding = 10;
       const rightPadding = 10;
       const width = 100 - leftPadding - rightPadding;
@@ -261,21 +261,29 @@ export default function LiquiditySelector({
           leftPadding + width / 2
         : // interpolate coordinate to graph
           leftPadding +
-            (width * (Math.log(x.toNumber()) - Math.log(xMin))) /
+            (width * (Math.log(x) - Math.log(xMin))) /
               (Math.log(xMax) - Math.log(xMin));
     },
     [xMin, xMax]
   );
   const plotY = useCallback(
-    (y: BigNumber): number => {
+    (y: number): number => {
       const topPadding = 10;
       const bottomPadding = 20;
       const height = 100 - topPadding - bottomPadding;
       return graphHeight === 0
         ? -bottomPadding - height / 2
-        : -bottomPadding - height * y.dividedBy(graphHeight).toNumber();
+        : -bottomPadding - (height * y) / graphHeight;
     },
     [graphHeight]
+  );
+  const plotXBigNumber = useCallback(
+    (x: BigNumber) => plotX(x.toNumber()),
+    [plotX]
+  );
+  const plotYBigNumber = useCallback(
+    (y: BigNumber) => plotY(y.toNumber()),
+    [plotY]
   );
 
   useEffect(() => {
@@ -333,20 +341,20 @@ export default function LiquiditySelector({
       <TickBucketsGroup
         className="left-ticks"
         tickBuckets={feeTickBuckets[0]}
-        plotX={plotX}
-        plotY={plotY}
+        plotX={plotXBigNumber}
+        plotY={plotYBigNumber}
       />
       <TickBucketsGroup
         className="right-ticks"
         tickBuckets={feeTickBuckets[1]}
-        plotX={plotX}
-        plotY={plotY}
+        plotX={plotXBigNumber}
+        plotY={plotYBigNumber}
       />
       <TicksGroup
         className="new-ticks"
         ticks={userTicks}
-        plotX={plotX}
-        plotY={plotY}
+        plotX={plotXBigNumber}
+        plotY={plotYBigNumber}
       />
     </svg>
   );
