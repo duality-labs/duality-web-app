@@ -103,7 +103,7 @@ export default function LiquiditySelector({
   }, [userTicks]);
 
   const [dataStart, dataEnd] = useMemo(() => {
-    const { xMin = new BigNumber(0), xMax = new BigNumber(0) } =
+    const { xMin = new BigNumber(1 / 1.1), xMax = new BigNumber(1.1) } =
       feeTicks.reduce<{
         [key: string]: BigNumber;
       }>((result, [price]) => {
@@ -146,7 +146,7 @@ export default function LiquiditySelector({
      *   ln(x) = ln(xWidth)/bucketCountAdjusted
      *   x = e^(ln(xWidth)/bucketCountAdjusted)
      */
-    return Math.exp(Math.log(xWidth.toNumber()) / bucketCount);
+    return Math.exp(Math.log(xWidth.toNumber()) / bucketCount) || 1; // set at least 1
     // note: BigNumber cannot handle logarithms so it cannot calculate this
   }, [graphStart, graphEnd, bucketCount]);
 
