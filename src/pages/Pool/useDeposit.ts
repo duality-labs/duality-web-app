@@ -8,8 +8,12 @@ import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nichol
 import { Token } from '../../components/TokenPicker/mockHooks';
 import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
 
-const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
+const {
+  REACT_APP__COIN_MIN_DENOM_EXP = '18',
+  REACT_APP__COIN_MIN_DENOM_SHIFT_EXP = '12',
+} = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
+const denomShiftExponent = parseInt(REACT_APP__COIN_MIN_DENOM_SHIFT_EXP) || 0;
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -94,8 +98,12 @@ export function useDeposit(): [
                 receiver: web3Address,
                 price: price.toFixed(denomExponent),
                 fee: fee.toFixed(denomExponent),
-                amounts0: amount0.toFixed(denomExponent),
-                amounts1: amount1.toFixed(denomExponent),
+                amounts0: amount0
+                  .shiftedBy(-denomShiftExponent)
+                  .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
+                amounts1: amount1
+                  .shiftedBy(-denomShiftExponent)
+                  .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
               })
             )
           );
