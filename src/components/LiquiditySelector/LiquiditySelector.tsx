@@ -189,7 +189,7 @@ export default function LiquiditySelector({
     const minExistingTickPrice = emptyBuckets[0]?.[0]?.[0];
     const maxExistingTickPrice =
       emptyBuckets[1]?.[emptyBuckets[1]?.length - 1]?.[0];
-    const minTickPrice = minUserTickPrice?.isGreaterThan(minExistingTickPrice)
+    const minTickPrice = minUserTickPrice?.isLessThan(minExistingTickPrice)
       ? minUserTickPrice
       : minExistingTickPrice;
     const maxTickPrice = maxUserTickPrice?.isGreaterThan(maxExistingTickPrice)
