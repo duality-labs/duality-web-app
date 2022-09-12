@@ -275,7 +275,7 @@ export default function LiquiditySelector({
       const bottomPadding = 20;
       const height = 100 - topPadding - bottomPadding;
       return graphHeight === 0
-        ? -bottomPadding - height / 2
+        ? -bottomPadding // pin to bottom
         : -bottomPadding - (height * y) / graphHeight;
     },
     [graphHeight]
