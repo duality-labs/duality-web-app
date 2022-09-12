@@ -186,9 +186,10 @@ export default function LiquiditySelector({
   useEffect(() => {
     const minUserTickPrice = userTicks[0]?.[0];
     const maxUserTickPrice = userTicks[userTicks.length - 1]?.[0];
-    const minExistingTickPrice = emptyBuckets[0]?.[0]?.[0];
-    const maxExistingTickPrice =
-      emptyBuckets[1]?.[emptyBuckets[1]?.length - 1]?.[0];
+    // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
+    // by padding dataStart and dataEnd with the needed amount of pixels
+    const minExistingTickPrice = dataStart;
+    const maxExistingTickPrice = dataEnd;
     const minTickPrice = minUserTickPrice?.isLessThan(minExistingTickPrice)
       ? minUserTickPrice
       : minExistingTickPrice;
@@ -207,7 +208,7 @@ export default function LiquiditySelector({
           ? maxTickPrice
           : initialGraphEnd
       );
-  }, [initialGraphStart, initialGraphEnd, userTicks, emptyBuckets]);
+  }, [initialGraphStart, initialGraphEnd, dataStart, dataEnd, userTicks]);
 
   // calculate histogram values
   const feeTickBuckets = useMemo<
@@ -515,7 +516,6 @@ function Axis({
   className = '',
   xMin,
   xMax,
-  plotX,
   plotY,
 }: {
   xMin: number;
@@ -528,12 +528,7 @@ function Axis({
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
-      <line
-        x1={plotX(xMin).toFixed(3)}
-        x2={plotX(xMax).toFixed(3)}
-        y1={plotY(0).toFixed(0)}
-        y2={plotY(0).toFixed(0)}
-      />
+      <line x1="0" x2="100" y1={plotY(0).toFixed(0)} y2={plotY(0).toFixed(0)} />
     </g>
   );
 }
