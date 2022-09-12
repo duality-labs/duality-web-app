@@ -291,17 +291,16 @@ export default function LiquiditySelector({
         // use Math.pow becuse BigNumber does not support logarithm calculation
         // todo: use BigNumber logarithm compatible library to more accurately calculate tick spacing,
         //       with many ticks the effect of this precision may be quite noticable
-        const tickGapRatio = Math.pow(
-          tickEnd.dividedBy(tickStart).toNumber(),
-          1 / (tickCount - 1)
+        const tickGapRatio = new BigNumber(
+          Math.pow(tickEnd.dividedBy(tickStart).toNumber(), 1 / (tickCount - 1))
         );
         return Array.from({ length: tickCount }).map((_, index) => {
-          const price = tickStart
-            .multipliedBy(Math.pow(tickGapRatio, index + 1))
-            .toNumber();
+          const price = tickStart.multipliedBy(
+            tickGapRatio.exponentiatedBy(index + 1)
+          );
           const invertToken = invertTokenOrder
-            ? price >= currentPriceFromTicks.toNumber()
-            : price < currentPriceFromTicks.toNumber();
+            ? price.isGreaterThanOrEqualTo(currentPriceFromTicks)
+            : price.isLessThan(currentPriceFromTicks);
           return [
             new BigNumber(price),
             new BigNumber(invertToken ? tickHeight : 0),
