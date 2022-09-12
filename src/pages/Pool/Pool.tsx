@@ -300,6 +300,7 @@ export default function Pool() {
             tickCount={parseInt(precision) || 1}
             ticks={ticks}
             feeTier={feeType?.fee}
+            tokenValues={values}
             setUserTicks={setUserTicks}
           ></LiquiditySelector>
         </div>
