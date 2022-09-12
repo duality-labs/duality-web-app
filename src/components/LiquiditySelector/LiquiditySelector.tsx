@@ -421,7 +421,7 @@ function TickBucketsGroup({
       {tickBuckets.flatMap(
         ([lowerBound, upperBound, token0Value, token1Value], index) =>
           [
-            token0Value && (
+            token0Value?.isGreaterThan(0) && (
               <rect
                 key={`${index}-0`}
                 {...rest}
@@ -436,7 +436,7 @@ function TickBucketsGroup({
                   .join(' ')}
               />
             ),
-            token1Value && (
+            token1Value?.isGreaterThan(0) && (
               <rect
                 key={`${index}-1`}
                 {...rest}
