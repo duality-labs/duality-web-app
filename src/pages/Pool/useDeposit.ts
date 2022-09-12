@@ -141,16 +141,18 @@ export function useDeposit(): [
                     ) {
                       // read the matching tokens into their values
                       if (attr.value.endsWith(tokenA.denom.toLowerCase())) {
-                        acc.receivedTokenA = attr.value.slice(
-                          0,
-                          0 - tokenA.denom.length
-                        );
+                        acc.receivedTokenA = new BigNumber(
+                          acc.receivedTokenA || 0
+                        )
+                          .plus(attr.value.slice(0, 0 - tokenA.denom.length))
+                          .toFixed(denomExponent);
                       }
                       if (attr.value.endsWith(tokenB.denom.toLowerCase())) {
-                        acc.receivedTokenB = attr.value.slice(
-                          0,
-                          0 - tokenB.denom.length
-                        );
+                        acc.receivedTokenB = new BigNumber(
+                          acc.receivedTokenB || 0
+                        )
+                          .plus(attr.value.slice(0, 0 - tokenB.denom.length))
+                          .toFixed(denomExponent);
                       }
                     }
                   }
