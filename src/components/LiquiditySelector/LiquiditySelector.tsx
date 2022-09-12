@@ -343,7 +343,7 @@ export default function LiquiditySelector({
         plotY={plotY}
       />
       <TicksGroup
-        className="new-tick"
+        className="new-ticks"
         ticks={userTicks}
         plotX={plotX}
         plotY={plotY}
@@ -365,7 +365,7 @@ function TicksGroup({
   className?: string;
 }) {
   return (
-    <g className={className}>
+    <g className={['ticks', className].filter(Boolean).join(' ')}>
       {ticks.map(([price, token0Value, token1Value], index) => (
         <g
           key={index}
