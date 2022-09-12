@@ -516,6 +516,7 @@ function Axis({
   className = '',
   xMin,
   xMax,
+  plotX,
   plotY,
 }: {
   xMin: number;
@@ -526,9 +527,29 @@ function Axis({
 }) {
   if (!xMin || !xMax || xMin === xMax) return null;
 
+  const tickMarks = Array.from({ length: Math.log10(xMax / xMin) }).reduce<
+    number[]
+  >(
+    (previous) => {
+      return previous.concat(previous[previous.length - 1] * 10);
+    },
+    [Math.pow(10, Math.ceil(Math.log10(xMin)))]
+  );
+
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
       <line x1="0" x2="100" y1={plotY(0).toFixed(0)} y2={plotY(0).toFixed(0)} />
+      <g className="axis-ticks">
+        {tickMarks.map((tickMark) => (
+          <line
+            key={tickMark}
+            x1={plotX(tickMark).toFixed(3)}
+            x2={plotX(tickMark).toFixed(3)}
+            y1={plotY(0)}
+            y2={plotY(0) + 2}
+          />
+        ))}
+      </g>
     </g>
   );
 }
