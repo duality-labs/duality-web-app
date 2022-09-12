@@ -356,6 +356,13 @@ export default function LiquiditySelector({
         plotX={plotXBigNumber}
         plotY={plotYBigNumber}
       />
+      <Axis
+        className="x-axis"
+        xMin={xMin}
+        xMax={xMax}
+        plotX={plotX}
+        plotY={plotY}
+      />
     </svg>
   );
 }
@@ -457,6 +464,33 @@ function TickBucketsGroup({
             ),
           ].filter(Boolean)
       )}
+    </g>
+  );
+}
+
+function Axis({
+  className = '',
+  xMin,
+  xMax,
+  plotX,
+  plotY,
+}: {
+  xMin: number;
+  xMax: number;
+  className?: string;
+  plotX: (x: number) => number;
+  plotY: (y: number) => number;
+}) {
+  if (!xMin || !xMax || xMin === xMax) return null;
+
+  return (
+    <g className={['axis', className].filter(Boolean).join(' ')}>
+      <line
+        x1={plotX(xMin).toFixed(3)}
+        x2={plotX(xMax).toFixed(3)}
+        y1={plotY(0).toFixed(0)}
+        y2={plotY(0).toFixed(0)}
+      />
     </g>
   );
 }
