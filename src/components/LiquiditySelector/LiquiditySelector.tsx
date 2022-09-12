@@ -442,11 +442,12 @@ function TicksGroup({
           <line
             x1={plotX(price).toFixed(3)}
             x2={plotX(price).toFixed(3)}
-            y1={plotY(
-              (token0Value.isGreaterThan(0)
-                ? token0Value.dividedBy(cumulativeToken0Values)
-                : token1Value.dividedBy(cumulativeToken1Values)
-              ).multipliedBy(0.975)
+            y1={(
+              plotY(
+                token0Value.isGreaterThan(0)
+                  ? token0Value.dividedBy(cumulativeToken0Values)
+                  : token1Value.dividedBy(cumulativeToken1Values)
+              ) + 1
             ).toFixed(3)}
             y2={plotY(
               token0Value.isGreaterThan(0)
