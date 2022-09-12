@@ -279,6 +279,12 @@ export default function LiquiditySelector({
     },
     [graphHeight]
   );
+  const percentY = useCallback((y: number): number => {
+    const topPadding = 10;
+    const bottomPadding = 20;
+    const height = 100 - topPadding - bottomPadding;
+    return -bottomPadding - height * y;
+  }, []);
   const plotXBigNumber = useCallback(
     (x: BigNumber) => plotX(x.toNumber()),
     [plotX]
@@ -286,6 +292,10 @@ export default function LiquiditySelector({
   const plotYBigNumber = useCallback(
     (y: BigNumber) => plotY(y.toNumber()),
     [plotY]
+  );
+  const percentYBigNumber = useCallback(
+    (y: BigNumber) => percentY(y.toNumber()),
+    [percentY]
   );
 
   useEffect(() => {
@@ -374,7 +384,7 @@ export default function LiquiditySelector({
         className="new-ticks"
         ticks={userTicks}
         plotX={plotXBigNumber}
-        plotY={plotYBigNumber}
+        plotY={percentYBigNumber}
       />
       <Axis
         className="x-axis"
@@ -399,6 +409,14 @@ function TicksGroup({
   plotY: (y: BigNumber) => number;
   className?: string;
 }) {
+  const cumulativeToken0Values = ticks.reduce(
+    (result, [price, token0Value]) => result.plus(token0Value),
+    new BigNumber(0)
+  );
+  const cumulativeToken1Values = ticks.reduce(
+    (result, [price, _, token1Value]) => result.plus(token1Value),
+    new BigNumber(0)
+  );
   return (
     <g className={['ticks', className].filter(Boolean).join(' ')}>
       {ticks.map(([price, token0Value, token1Value], index) => (
@@ -415,7 +433,9 @@ function TicksGroup({
             x2={plotX(price).toFixed(3)}
             y1={plotY(new BigNumber(0)).toFixed(3)}
             y2={plotY(
-              token0Value.isGreaterThan(0) ? token0Value : token1Value
+              token0Value.isGreaterThan(0)
+                ? token0Value.dividedBy(cumulativeToken0Values)
+                : token1Value.dividedBy(cumulativeToken1Values)
             ).toFixed(3)}
             className="line"
           />
@@ -424,12 +444,14 @@ function TicksGroup({
             x2={plotX(price).toFixed(3)}
             y1={plotY(
               (token0Value.isGreaterThan(0)
-                ? token0Value
-                : token1Value
+                ? token0Value.dividedBy(cumulativeToken0Values)
+                : token1Value.dividedBy(cumulativeToken1Values)
               ).multipliedBy(0.975)
             ).toFixed(3)}
             y2={plotY(
-              token0Value.isGreaterThan(0) ? token0Value : token1Value
+              token0Value.isGreaterThan(0)
+                ? token0Value.dividedBy(cumulativeToken0Values)
+                : token1Value.dividedBy(cumulativeToken1Values)
             ).toFixed(3)}
             className="tip"
           />
