@@ -18,6 +18,7 @@ interface LiquiditySelectorProps {
   feeTier: number | undefined;
   rangeMin: string | undefined;
   rangeMax: string | undefined;
+  tokenValues: [valueA: string, valueB: string];
   setUserTicks?: (userTicks: TickGroup) => void;
 }
 
@@ -58,6 +59,7 @@ export default function LiquiditySelector({
   feeTier = -1,
   rangeMin = '0',
   rangeMax = '1',
+  tokenValues = ['0', '0'],
   setUserTicks: setExternalUserTicks,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
@@ -290,7 +292,8 @@ export default function LiquiditySelector({
     setUserTicks(() => {
       // set multiple ticks across the range
       if (currentPriceFromTicks.isGreaterThan(0) && tickCount > 1) {
-        const tickHeight = graphHeight * 0.7;
+        const tokenAmountA = new BigNumber(tokenValues[0]);
+        const tokenAmountB = new BigNumber(tokenValues[1]);
         // spread evenly after adding padding on each side
         const tickStart = new BigNumber(rangeMin);
         const tickEnd = new BigNumber(rangeMax);
@@ -302,17 +305,33 @@ export default function LiquiditySelector({
         const tickGapRatio = new BigNumber(
           Math.pow(tickEnd.dividedBy(tickStart).toNumber(), 1 / (tickCount - 1))
         );
-        return Array.from({ length: tickCount }).map((_, index) => {
+        const tickCounts: [number, number] = [0, 0];
+        const tickPrices = Array.from({ length: tickCount }).map((_, index) => {
           const price = tickStart.multipliedBy(
             tickGapRatio.exponentiatedBy(index + 1)
           );
           const invertToken = invertTokenOrder
             ? price.isGreaterThanOrEqualTo(currentPriceFromTicks)
             : price.isLessThan(currentPriceFromTicks);
+          // add to count
+          tickCounts[invertToken ? 0 : 1] += 1;
           return [
             new BigNumber(price),
-            new BigNumber(invertToken ? tickHeight : 0),
-            new BigNumber(invertToken ? 0 : tickHeight),
+            new BigNumber(invertToken ? 1 : 0),
+            new BigNumber(invertToken ? 0 : 1),
+          ];
+        });
+        // normalise the tick amounts given
+        return tickPrices.map(([price, countA, countB]) => {
+          return [
+            price,
+            // ensure division is to µtokens amount but given in tokens
+            tickCounts[0]
+              ? tokenAmountA.multipliedBy(countA).dividedBy(tickCounts[0])
+              : new BigNumber(0),
+            tickCounts[1]
+              ? tokenAmountB.multipliedBy(countB).dividedBy(tickCounts[1])
+              : new BigNumber(0),
           ];
         });
       }
@@ -322,6 +341,7 @@ export default function LiquiditySelector({
       }
     });
   }, [
+    tokenValues,
     rangeMin,
     rangeMax,
     tickCount,
