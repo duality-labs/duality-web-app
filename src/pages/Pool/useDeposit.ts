@@ -144,14 +144,22 @@ export function useDeposit(): [
                         acc.receivedTokenA = new BigNumber(
                           acc.receivedTokenA || 0
                         )
-                          .plus(attr.value.slice(0, 0 - tokenA.denom.length))
+                          .plus(
+                            new BigNumber(
+                              attr.value.slice(0, 0 - tokenA.denom.length)
+                            ).shiftedBy(-denomExponent + denomShiftExponent)
+                          )
                           .toFixed(denomExponent);
                       }
                       if (attr.value.endsWith(tokenB.denom.toLowerCase())) {
                         acc.receivedTokenB = new BigNumber(
                           acc.receivedTokenB || 0
                         )
-                          .plus(attr.value.slice(0, 0 - tokenB.denom.length))
+                          .plus(
+                            new BigNumber(
+                              attr.value.slice(0, 0 - tokenB.denom.length)
+                            ).shiftedBy(-denomExponent + denomShiftExponent)
+                          )
                           .toFixed(denomExponent);
                       }
                     }
