@@ -64,6 +64,8 @@ export function useDeposit(): [
               if (
                 !amount0 ||
                 !amount1 ||
+                amount0.isNaN() ||
+                amount1.isNaN() ||
                 amount0.isLessThan(0) ||
                 amount1.isLessThan(0)
               ) {
