@@ -331,13 +331,13 @@ export default function LiquiditySelector({
     >
       {graphEnd.isZero() && <text>Chart is not currently available</text>}
       <TickBucketsGroup
-        className="old-tick-bucket left-ticks"
+        className="left-ticks"
         tickBuckets={feeTickBuckets[0]}
         plotX={plotX}
         plotY={plotY}
       />
       <TickBucketsGroup
-        className="old-tick-bucket right-ticks"
+        className="right-ticks"
         tickBuckets={feeTickBuckets[1]}
         plotX={plotX}
         plotY={plotY}
@@ -417,13 +417,14 @@ function TickBucketsGroup({
   className?: string;
 }) {
   return (
-    <g>
+    <g className={['tick-buckets', className].filter(Boolean).join(' ')}>
       {tickBuckets.flatMap(
         ([lowerBound, upperBound, token0Value, token1Value], index) =>
           [
             token0Value?.isGreaterThan(0) && (
               <rect
                 key={`${index}-0`}
+                className="tick-bucket token-a"
                 {...rest}
                 x={plotX(lowerBound).toFixed(3)}
                 width={(plotX(upperBound) - plotX(lowerBound)).toFixed(3)}
@@ -431,14 +432,12 @@ function TickBucketsGroup({
                 height={(plotY(new BigNumber(0)) - plotY(token0Value)).toFixed(
                   3
                 )}
-                className={['tick-bucket', 'token-a', className]
-                  .filter(Boolean)
-                  .join(' ')}
               />
             ),
             token1Value?.isGreaterThan(0) && (
               <rect
                 key={`${index}-1`}
+                className="tick-bucket token-b"
                 {...rest}
                 x={plotX(lowerBound).toFixed(3)}
                 width={(plotX(upperBound) - plotX(lowerBound)).toFixed(3)}
@@ -446,9 +445,6 @@ function TickBucketsGroup({
                 height={(plotY(new BigNumber(0)) - plotY(token1Value)).toFixed(
                   3
                 )}
-                className={['tick-bucket', 'token-b', className]
-                  .filter(Boolean)
-                  .join(' ')}
               />
             ),
           ].filter(Boolean)
