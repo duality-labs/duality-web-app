@@ -281,22 +281,29 @@ export default function LiquiditySelector({
   useEffect(() => {
     setUserTicks(() => {
       // set multiple ticks across the range
-      if (tickCount > 1) {
-        const range = dataEnd.minus(dataStart);
-        const midpoint = dataStart.plus(range.dividedBy(2));
+      if (currentPriceFromTicks.isGreaterThan(0) && tickCount > 1) {
         const tickHeight = graphHeight * 0.7;
         // spread evenly after adding padding on each side
         const tickStart = new BigNumber(rangeMin);
         const tickEnd = new BigNumber(rangeMax);
-        const tickGap = tickEnd.minus(tickStart).dividedBy(tickCount - 1);
-        const currentPrice = currentPriceFromTicks || midpoint;
+
+        // space new ticks by a multiplication ratio gap
+        // use Math.pow becuse BigNumber does not support logarithm calculation
+        // todo: use BigNumber logarithm compatible library to more accurately calculate tick spacing,
+        //       with many ticks the effect of this precision may be quite noticable
+        const tickGapRatio = Math.pow(
+          tickEnd.dividedBy(tickStart).toNumber(),
+          1 / (tickCount - 1)
+        );
         return Array.from({ length: tickCount }).map((_, index) => {
-          const price = tickStart.plus(tickGap.multipliedBy(index));
+          const price = tickStart
+            .multipliedBy(Math.pow(tickGapRatio, index + 1))
+            .toNumber();
           const invertToken = invertTokenOrder
-            ? price >= currentPrice
-            : price < currentPrice;
+            ? price >= currentPriceFromTicks.toNumber()
+            : price < currentPriceFromTicks.toNumber();
           return [
-            price,
+            new BigNumber(price),
             new BigNumber(invertToken ? tickHeight : 0),
             new BigNumber(invertToken ? 0 : tickHeight),
           ];
@@ -313,8 +320,6 @@ export default function LiquiditySelector({
     tickCount,
     invertTokenOrder,
     currentPriceFromTicks,
-    dataStart,
-    dataEnd,
     graphHeight,
   ]);
 
