@@ -38,3 +38,11 @@
   stroke-width: 0.5;
   stroke: hsl(0, 0%, 100%);
 }
+
+.chart-liquidity {
+  text {
+    stroke-width: 0;
+    fill: hsl(0, 0%, 100%);
+    font-size: 5px;
+  }
+}
