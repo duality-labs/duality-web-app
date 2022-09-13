@@ -446,6 +446,41 @@ export default function LiquiditySelector({
   );
 }
 
+function useDragMovement(
+  onMouseMove: EventListener,
+  container: Node = document
+) {
+  // set dragging state and handlers
+  const [dragging, setDragging] = useState(false);
+  const startDrag = useCallback((e: MouseEvent<Node>) => {
+    e.preventDefault();
+    setDragging(true);
+  }, []);
+  const stopDrag = useCallback((e: MouseEvent<Node>) => {
+    e.preventDefault();
+    setDragging(false);
+  }, []);
+
+  // remove dragging state on mouseup of container
+  useEffect(() => {
+    if (dragging) {
+      const onMouseUp = () => setDragging(false);
+      container.addEventListener('mouseup', onMouseUp);
+      return () => container.removeEventListener('mouseup', onMouseUp);
+    }
+  }, [container, dragging]);
+
+  // handle dragging on mousemove inside container
+  useEffect(() => {
+    if (dragging) {
+      container.addEventListener('mousemove', onMouseMove);
+      return () => container.removeEventListener('mousemove', onMouseMove);
+    }
+  }, [container, dragging, onMouseMove]);
+
+  return [startDrag, stopDrag];
+}
+
 function TicksArea({
   ticks,
   plotX,
@@ -470,37 +505,34 @@ function TicksArea({
   const bucketWidth =
     plotX(new BigNumber(bucketRatio)) - plotX(new BigNumber(1));
 
-  const [dragging, setDragging] = useState<{ x: number; y: number } | null>(
-    null
+  const [startDragMin] = useDragMovement(
+    useCallback(
+      (ev: MouseEventInit) => {
+        const x = ev.movementX;
+        if (x) {
+          setRangeMin(() => {
+            const xStart = plotX(startTickPrice);
+            return plotXinverse(xStart + x).toFixed(3);
+          });
+        }
+      },
+      [startTickPrice, plotXinverse, plotX, setRangeMin]
+    )
   );
-  const startDrag = useCallback((e: MouseEvent<SVGRectElement>) => {
-    e.preventDefault();
-    setDragging({ x: e.screenX, y: e.screenY });
-  }, []);
-  const stopDrag = useCallback(() => {
-    setDragging(null);
-  }, []);
-  const dragMin = useCallback(
-    (e: MouseEvent<SVGRectElement>) => {
-      if (dragging) {
-        setRangeMin(() => {
-          const xStart = plotX(startTickPrice);
-          return plotXinverse(xStart + e.movementX).toFixed(3);
-        });
-      }
-    },
-    [dragging, startTickPrice, plotXinverse, plotX, setRangeMin]
-  );
-  const dragMax = useCallback(
-    (e: MouseEvent<SVGRectElement>) => {
-      if (dragging) {
-        setRangeMax(() => {
-          const xStart = plotX(endTickPrice);
-          return plotXinverse(xStart + e.movementX).toFixed(3);
-        });
-      }
-    },
-    [dragging, endTickPrice, plotXinverse, plotX, setRangeMax]
+
+  const [startDragMax] = useDragMovement(
+    useCallback(
+      (ev: MouseEventInit) => {
+        const x = ev.movementX;
+        if (x) {
+          setRangeMax(() => {
+            const xStart = plotX(endTickPrice);
+            return plotXinverse(xStart + x).toFixed(3);
+          });
+        }
+      },
+      [endTickPrice, plotXinverse, plotX, setRangeMax]
+    )
   );
 
   return startTickPrice && endTickPrice ? (
@@ -526,10 +558,7 @@ function TicksArea({
           width={(0.75 * bucketWidth).toFixed(3)}
           y={plotY(new BigNumber(1)).toFixed(3)}
           height={-plotY(new BigNumber(0)).toFixed(3)}
-          onMouseDown={startDrag}
-          onMouseUp={stopDrag}
-          onMouseOut={stopDrag}
-          onMouseMove={dragMin}
+          onMouseDown={startDragMin}
         />
       </g>
       <g className="pole-b">
@@ -546,10 +575,7 @@ function TicksArea({
           width={(0.75 * bucketWidth).toFixed(3)}
           y={plotY(new BigNumber(1)).toFixed(3)}
           height={-plotY(new BigNumber(0)).toFixed(3)}
-          onMouseDown={startDrag}
-          onMouseUp={stopDrag}
-          onMouseOut={stopDrag}
-          onMouseMove={dragMax}
+          onMouseDown={startDragMax}
         />
       </g>
     </g>
