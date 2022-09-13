@@ -15,6 +15,7 @@ interface StepNumberInputProps {
   editable?: boolean;
   title?: string;
   value: string;
+  stepFunction?: (value: number, direction: number) => number;
   step?: string | number;
   max?: string | number;
   min?: string | number;
@@ -33,6 +34,7 @@ export default function StepNumberInput({
   editable = true,
   title,
   value,
+  stepFunction,
   step: rawStep,
   max: rawMax,
   min: rawMin = 0,
@@ -111,10 +113,13 @@ export default function StepNumberInput({
   const onStep = useCallback(
     (direction: Direction) => {
       setCurrentValue((oldValue) => {
-        return validateValue(oldValue, oldValue + step * direction);
+        return validateValue(
+          oldValue,
+          stepFunction?.(oldValue, direction) ?? oldValue + step * direction
+        );
       });
     },
-    [step, validateValue]
+    [step, stepFunction, validateValue]
   );
   const onSubStep = useCallback(() => onStep(-1), [onStep]);
   const onAddStep = useCallback(() => onStep(+1), [onStep]);
