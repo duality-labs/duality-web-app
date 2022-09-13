@@ -123,13 +123,16 @@ export default function LiquiditySelector({
   // find container size that buckets should fit
   const [container, setContainer] = useState<SVGSVGElement | null>(null);
   const windowWidth = useWindowWidth();
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   useLayoutEffect(() => {
-    setContainerWidth(container?.clientWidth ?? 0);
+    setContainerSize({
+      width: container?.clientWidth ?? 0,
+      height: container?.clientHeight ?? 0,
+    });
   }, [container, windowWidth]);
 
   const bucketCount =
-    (Math.ceil(containerWidth / bucketWidth) ?? 1) + // default to 1 bucket if none
+    (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
     1; // add bucket to account for splitting bucket on current price
   const bucketRatio = useMemo(() => {
     // get bounds
@@ -256,9 +259,9 @@ export default function LiquiditySelector({
   const xMax = graphEnd.sd(2, BigNumber.ROUND_UP).toNumber();
   const plotX = useCallback(
     (x: number): number => {
-      const leftPadding = 10;
-      const rightPadding = 10;
-      const width = 100 - leftPadding - rightPadding;
+      const leftPadding = containerSize.width * 0.1;
+      const rightPadding = containerSize.width * 0.1;
+      const width = containerSize.width - leftPadding - rightPadding;
       return xMin === xMax
         ? // choose midpoint
           leftPadding + width / 2
@@ -267,25 +270,28 @@ export default function LiquiditySelector({
             (width * (Math.log(x) - Math.log(xMin))) /
               (Math.log(xMax) - Math.log(xMin));
     },
-    [xMin, xMax]
+    [xMin, xMax, containerSize.width]
   );
   const plotY = useCallback(
     (y: number): number => {
-      const topPadding = 10;
-      const bottomPadding = 20;
-      const height = 100 - topPadding - bottomPadding;
+      const topPadding = containerSize.height * 0.1;
+      const bottomPadding = containerSize.height * 0.1;
+      const height = containerSize.height - topPadding - bottomPadding;
       return graphHeight === 0
         ? -bottomPadding // pin to bottom
         : -bottomPadding - (height * y) / graphHeight;
     },
-    [graphHeight]
+    [graphHeight, containerSize.height]
   );
-  const percentY = useCallback((y: number): number => {
-    const topPadding = 10;
-    const bottomPadding = 20;
-    const height = 100 - topPadding - bottomPadding;
-    return -bottomPadding - height * y;
-  }, []);
+  const percentY = useCallback(
+    (y: number): number => {
+      const topPadding = containerSize.height * 0.1;
+      const bottomPadding = containerSize.height * 0.1;
+      const height = containerSize.height - topPadding - bottomPadding;
+      return -bottomPadding - height * y;
+    },
+    [containerSize.height]
+  );
   const plotXBigNumber = useCallback(
     (x: BigNumber) => plotX(x.toNumber()),
     [plotX]
@@ -364,8 +370,7 @@ export default function LiquiditySelector({
   return (
     <svg
       className="chart-liquidity"
-      viewBox="0 -100 100 100"
-      preserveAspectRatio="none"
+      viewBox={`0 -${containerSize.height} ${containerSize.width} ${containerSize.height}`}
       ref={setContainer}
     >
       {graphEnd.isZero() && <text>Chart is not currently available</text>}
@@ -390,8 +395,8 @@ export default function LiquiditySelector({
       <Axis
         className="x-axis"
         // todo: make better (x-axis roughly adds tick marks to buckets near the extents)
-        xMin={xMin / 1.1}
-        xMax={xMax * 1.1}
+        xMin={xMin / 1.2}
+        xMax={xMax * 1.2}
         plotX={plotX}
         plotY={plotY}
       />
@@ -529,7 +534,7 @@ function Axis({
   if (!xMin || !xMax || xMin === xMax) return null;
 
   const start = Math.pow(10, Math.floor(Math.log10(xMin)));
-  const tickMarks = Array.from({ length: Math.log10(xMax / xMin) + 1 }).flatMap(
+  const tickMarks = Array.from({ length: Math.log10(xMax / xMin) + 2 }).flatMap(
     (_, index) => {
       const baseNumber = start * Math.pow(10, index);
       const possibleMultiples = [2, 5, 10];
@@ -547,7 +552,12 @@ function Axis({
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
-      <line x1="0" x2="100" y1={plotY(0).toFixed(0)} y2={plotY(0).toFixed(0)} />
+      <line
+        x1="0"
+        x2={plotX(xMax * 2)}
+        y1={plotY(0).toFixed(0)}
+        y2={plotY(0).toFixed(0)}
+      />
       <g className="axis-ticks">{tickMarks.map(mapTickMark)}</g>
     </g>
   );
@@ -560,12 +570,12 @@ function Axis({
           x1={plotX(tickMark).toFixed(3)}
           x2={plotX(tickMark).toFixed(3)}
           y1={plotY(0)}
-          y2={plotY(0) + 1}
+          y2={plotY(0) + 2}
         />
         <text
           x={plotX(tickMark).toFixed(3)}
           y={plotY(0) + 2}
-          dy="3"
+          dy="12"
           dominantBaseline="middle"
           textAnchor="middle"
         >

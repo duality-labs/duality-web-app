@@ -7,7 +7,6 @@
 .tick-buckets {
   .tick-bucket {
     transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
-    stroke-width: 0.5px;
     cursor: pointer;
     opacity: 0.7;
 
@@ -25,6 +24,7 @@
 }
 
 .new-ticks {
+  stroke-width: 2px;
   stroke: hsl(37, 62%, 68%);
   .token-a .tip {
     stroke: hsl(262, 41%, 50%);
@@ -35,7 +35,7 @@
 }
 
 .axis {
-  stroke-width: 0.5;
+  stroke-width: 1;
   stroke: hsl(0, 0%, 100%);
 }
 
@@ -43,6 +43,6 @@
   text {
     stroke-width: 0;
     fill: hsl(0, 0%, 100%);
-    font-size: 5px;
+    font-size: 12px;
   }
 }
