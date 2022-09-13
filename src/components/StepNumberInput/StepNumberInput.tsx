@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import './StepNumberInput.scss';
 
@@ -19,6 +25,7 @@ interface StepNumberInputProps {
   step?: string | number;
   max?: string | number;
   min?: string | number;
+  minSnap?: string | number;
   parse?: (value: string) => number;
   format?: (value: number) => string;
 }
@@ -38,6 +45,7 @@ export default function StepNumberInput({
   step: rawStep,
   max: rawMax,
   min: rawMin = 0,
+  minSnap: rawMinSnap = rawMin,
   parse = Number,
   format = String,
 }: StepNumberInputProps) {
@@ -47,6 +55,12 @@ export default function StepNumberInput({
     typeof rawMax === 'number' ? rawMax : rawMax ? parse(rawMax) : undefined;
   const min =
     typeof rawMin === 'number' ? rawMin : rawMin ? parse(rawMin) : undefined;
+  const minSnap =
+    typeof rawMinSnap === 'number'
+      ? rawMinSnap
+      : rawMinSnap
+      ? parse(rawMinSnap)
+      : undefined;
   if (min !== undefined && max !== undefined && max < min) {
     throw new Error(
       'Invalid Range, max limit cannot be smaller than the min limit'
@@ -77,10 +91,11 @@ export default function StepNumberInput({
   /**
    * If the min or max "push" the current value outside the valid range, readjust
    */
-  useEffect(() => {
-    if (min !== undefined && min > currentValue) setCurrentValue(min);
+  useLayoutEffect(() => {
+    if (min !== undefined && (minSnap ?? min) > currentValue)
+      setCurrentValue(min);
     if (max !== undefined && max < currentValue) setCurrentValue(max);
-  }, [min, max, currentValue]);
+  }, [minSnap, min, max, currentValue]);
 
   /**
    * Makes sure the value is valid number within the proper range

@@ -358,7 +358,8 @@ export default function Pool() {
                   value={rangeMin}
                   onChange={setRangeMin}
                   stepFunction={logarithmStep}
-                  min={denomMin}
+                  min={0}
+                  minSnap={denomMin}
                   max={rangeMax}
                   description={
                     tokenA && tokenB
@@ -372,6 +373,7 @@ export default function Pool() {
                   onChange={setRangeMax}
                   stepFunction={logarithmStep}
                   min={rangeMin}
+                  minSnap={denomMin}
                   description={
                     tokenA && tokenB
                       ? `${tokenA.symbol} per ${tokenB.symbol}`
@@ -506,9 +508,13 @@ function logarithmStep(valueString: number, direction: number): number {
       : // get significant figure
         value.toFixed(0).at(significantDigits - 1);
   return direction >= 0
-    ? value
-        .plus(new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit + 1))
-        .toNumber()
+    ? value.isGreaterThan(0)
+      ? value
+          .plus(
+            new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit + 1)
+          )
+          .toNumber()
+      : new BigNumber(10).exponentiatedBy(-denomExponent).toNumber()
     : value
         .minus(
           new BigNumber(10).exponentiatedBy(

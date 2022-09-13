@@ -314,6 +314,7 @@ export default function LiquiditySelector({
         // spread evenly after adding padding on each side
         const tickStart = new BigNumber(rangeMin);
         const tickEnd = new BigNumber(rangeMax);
+        if (tickStart.isZero() || tickEnd.isZero()) return [];
 
         // space new ticks by a multiplication ratio gap
         // use Math.pow becuse BigNumber does not support logarithm calculation
