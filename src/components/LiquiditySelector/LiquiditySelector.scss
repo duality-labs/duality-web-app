@@ -34,6 +34,19 @@
   }
 }
 
+.new-ticks-area {
+  stroke-width: 2px;
+  stroke: hsl(37, 62%, 68%);
+  .pole-flag {
+    stroke-width: 0;
+    fill: hsl(37, 62%, 68%);
+  }
+  .tick-area {
+    stroke-width: 0;
+    fill: hsla(0, 0%, 100%, 15%);
+  }
+}
+
 .axis {
   stroke-width: 1;
   stroke: hsl(0, 0%, 100%);

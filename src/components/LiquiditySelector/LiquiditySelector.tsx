@@ -20,6 +20,7 @@ interface LiquiditySelectorProps {
   rangeMax: string | undefined;
   tokenValues: [valueA: string, valueB: string];
   setUserTicks?: (userTicks: TickGroup) => void;
+  advanced?: boolean;
 }
 
 export type TickGroup = Array<
@@ -61,6 +62,7 @@ export default function LiquiditySelector({
   rangeMax = '1',
   tokenValues = ['0', '0'],
   setUserTicks: setExternalUserTicks,
+  advanced = false,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
@@ -396,12 +398,22 @@ export default function LiquiditySelector({
         plotX={plotXBigNumber}
         plotY={plotYBigNumber}
       />
-      <TicksGroup
-        className="new-ticks"
-        ticks={userTicks}
-        plotX={plotXBigNumber}
-        plotY={percentYBigNumber}
-      />
+      {advanced ? (
+        <TicksGroup
+          className="new-ticks"
+          ticks={userTicks}
+          plotX={plotXBigNumber}
+          plotY={percentYBigNumber}
+        />
+      ) : (
+        <TicksArea
+          className="new-ticks-area"
+          ticks={userTicks}
+          plotX={plotXBigNumber}
+          plotY={percentYBigNumber}
+          bucketRatio={bucketRatio}
+        />
+      )}
       <Axis
         className="x-axis"
         // todo: make better (x-axis roughly adds tick marks to buckets near the extents)
@@ -412,6 +424,68 @@ export default function LiquiditySelector({
       />
     </svg>
   );
+}
+
+function TicksArea({
+  ticks,
+  plotX,
+  plotY,
+  bucketRatio,
+  className,
+}: {
+  ticks: TickGroup;
+  plotX: (x: BigNumber) => number;
+  plotY: (y: BigNumber) => number;
+  bucketRatio: number;
+  className?: string;
+}) {
+  const startTickPrice = ticks?.[0]?.[0];
+  const endTickPrice = ticks?.[ticks.length - 1]?.[0];
+  const bucketWidth =
+    plotX(new BigNumber(bucketRatio)) - plotX(new BigNumber(1));
+  return startTickPrice && endTickPrice ? (
+    <g className={['ticks-area', className].filter(Boolean).join(' ')}>
+      <rect
+        className="tick-area"
+        x={plotX(startTickPrice).toFixed(3)}
+        width={(plotX(endTickPrice) - plotX(startTickPrice)).toFixed(3)}
+        y={plotY(new BigNumber(1)).toFixed(3)}
+        height={(plotY(new BigNumber(0)) - plotY(new BigNumber(1))).toFixed(3)}
+      />
+      <g className="pole-a">
+        <line
+          className="line pole-stick"
+          x1={plotX(startTickPrice).toFixed(3)}
+          x2={plotX(startTickPrice).toFixed(3)}
+          y1={plotY(new BigNumber(0)).toFixed(3)}
+          y2={plotY(new BigNumber(1)).toFixed(3)}
+        />
+        <rect
+          className="pole-flag"
+          x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
+          width={(0.75 * bucketWidth).toFixed(3)}
+          y={plotY(new BigNumber(1)).toFixed(3)}
+          height={-plotY(new BigNumber(0)).toFixed(3)}
+        />
+      </g>
+      <g className="pole-b">
+        <line
+          className="line pole-stick"
+          x1={plotX(endTickPrice).toFixed(3)}
+          x2={plotX(endTickPrice).toFixed(3)}
+          y1={plotY(new BigNumber(0)).toFixed(3)}
+          y2={plotY(new BigNumber(1)).toFixed(3)}
+        />
+        <rect
+          className="pole-flag"
+          x={plotX(endTickPrice).toFixed(3)}
+          width={(0.75 * bucketWidth).toFixed(3)}
+          y={plotY(new BigNumber(1)).toFixed(3)}
+          height={-plotY(new BigNumber(0)).toFixed(3)}
+        />
+      </g>
+    </g>
+  ) : null;
 }
 
 function TicksGroup({
