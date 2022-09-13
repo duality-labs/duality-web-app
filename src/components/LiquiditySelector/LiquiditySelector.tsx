@@ -323,21 +323,30 @@ export default function LiquiditySelector({
           Math.pow(tickEnd.dividedBy(tickStart).toNumber(), 1 / (tickCount - 1))
         );
         const tickCounts: [number, number] = [0, 0];
-        const tickPrices = Array.from({ length: tickCount }).map((_, index) => {
-          const price = tickStart.multipliedBy(
-            tickGapRatio.exponentiatedBy(index + 1)
-          );
+        const tickPrices = Array.from({ length: tickCount }).reduceRight<
+          [BigNumber, BigNumber, BigNumber][]
+        >((result, _, index) => {
+          const lastPrice = result[0]?.[0];
+          const price = lastPrice?.isLessThan(currentPriceFromTicks)
+            ? // calculate price from left (to have exact left value)
+              tickStart.multipliedBy(tickGapRatio.exponentiatedBy(index))
+            : // calculate price from right (to have exact right value)
+              lastPrice?.dividedBy(tickGapRatio) ?? tickEnd;
+
           const invertToken = invertTokenOrder
             ? price.isGreaterThanOrEqualTo(currentPriceFromTicks)
             : price.isLessThan(currentPriceFromTicks);
           // add to count
           tickCounts[invertToken ? 0 : 1] += 1;
           return [
-            new BigNumber(price),
-            new BigNumber(invertToken ? 1 : 0),
-            new BigNumber(invertToken ? 0 : 1),
+            [
+              new BigNumber(price),
+              new BigNumber(invertToken ? 1 : 0),
+              new BigNumber(invertToken ? 0 : 1),
+            ],
+            ...result,
           ];
-        });
+        }, []);
         // normalise the tick amounts given
         return tickPrices.map(([price, countA, countB]) => {
           return [
