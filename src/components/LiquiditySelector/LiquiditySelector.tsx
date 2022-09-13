@@ -540,15 +540,28 @@ function Axis({
     <g className={['axis', className].filter(Boolean).join(' ')}>
       <line x1="0" x2="100" y1={plotY(0).toFixed(0)} y2={plotY(0).toFixed(0)} />
       <g className="axis-ticks">
-        {tickMarks.map((tickMark) => (
-          <line
-            key={tickMark}
-            x1={plotX(tickMark).toFixed(3)}
-            x2={plotX(tickMark).toFixed(3)}
-            y1={plotY(0)}
-            y2={plotY(0) + 2}
-          />
-        ))}
+        {tickMarks.map((tickMark) => {
+          const decimalPlaces = Math.max(0, -Math.log10(tickMark));
+          return (
+            <g key={tickMark} className="axis-tick">
+              <line
+                x1={plotX(tickMark).toFixed(3)}
+                x2={plotX(tickMark).toFixed(3)}
+                y1={plotY(0)}
+                y2={plotY(0) + 1}
+              />
+              <text
+                x={plotX(tickMark).toFixed(3)}
+                y={plotY(0) + 2}
+                dy="3"
+                dominantBaseline="middle"
+                textAnchor="middle"
+              >
+                {tickMark.toFixed(decimalPlaces)}
+              </text>
+            </g>
+          );
+        })}
       </g>
     </g>
   );
