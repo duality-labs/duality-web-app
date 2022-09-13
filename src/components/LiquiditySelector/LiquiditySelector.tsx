@@ -389,8 +389,9 @@ export default function LiquiditySelector({
       />
       <Axis
         className="x-axis"
-        xMin={xMin}
-        xMax={xMax}
+        // todo: make better (x-axis roughly adds tick marks to buckets near the extents)
+        xMin={xMin / 1.1}
+        xMax={xMax * 1.1}
         plotX={plotX}
         plotY={plotY}
       />
@@ -527,42 +528,50 @@ function Axis({
 }) {
   if (!xMin || !xMax || xMin === xMax) return null;
 
-  const tickMarks = Array.from({ length: Math.log10(xMax / xMin) }).reduce<
-    number[]
-  >(
-    (previous) => {
-      return previous.concat(previous[previous.length - 1] * 10);
-    },
-    [Math.pow(10, Math.ceil(Math.log10(xMin)))]
+  const start = Math.pow(10, Math.floor(Math.log10(xMin)));
+  const tickMarks = Array.from({ length: Math.log10(xMax / xMin) + 1 }).flatMap(
+    (_, index) => {
+      const baseNumber = start * Math.pow(10, index);
+      const possibleMultiples = [2, 5, 10];
+      const possibleInclusions = possibleMultiples.map((v) => v * baseNumber);
+      return possibleInclusions
+        .map((possibleInclusion) => {
+          if (possibleInclusion >= xMin && possibleInclusion <= xMax) {
+            return possibleInclusion;
+          }
+          return 0;
+        })
+        .filter(Boolean);
+    }
   );
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
       <line x1="0" x2="100" y1={plotY(0).toFixed(0)} y2={plotY(0).toFixed(0)} />
-      <g className="axis-ticks">
-        {tickMarks.map((tickMark) => {
-          const decimalPlaces = Math.max(0, -Math.log10(tickMark));
-          return (
-            <g key={tickMark} className="axis-tick">
-              <line
-                x1={plotX(tickMark).toFixed(3)}
-                x2={plotX(tickMark).toFixed(3)}
-                y1={plotY(0)}
-                y2={plotY(0) + 1}
-              />
-              <text
-                x={plotX(tickMark).toFixed(3)}
-                y={plotY(0) + 2}
-                dy="3"
-                dominantBaseline="middle"
-                textAnchor="middle"
-              >
-                {tickMark.toFixed(decimalPlaces)}
-              </text>
-            </g>
-          );
-        })}
-      </g>
+      <g className="axis-ticks">{tickMarks.map(mapTickMark)}</g>
     </g>
   );
+
+  function mapTickMark(tickMark: number) {
+    const decimalPlaces = Math.max(0, -Math.floor(Math.log10(tickMark)));
+    return (
+      <g key={tickMark} className="axis-tick">
+        <line
+          x1={plotX(tickMark).toFixed(3)}
+          x2={plotX(tickMark).toFixed(3)}
+          y1={plotY(0)}
+          y2={plotY(0) + 1}
+        />
+        <text
+          x={plotX(tickMark).toFixed(3)}
+          y={plotY(0) + 2}
+          dy="3"
+          dominantBaseline="middle"
+          textAnchor="middle"
+        >
+          {tickMark.toFixed(decimalPlaces)}
+        </text>
+      </g>
+    );
+  }
 }
