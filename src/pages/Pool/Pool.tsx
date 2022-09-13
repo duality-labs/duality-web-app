@@ -298,6 +298,8 @@ export default function Pool() {
           <LiquiditySelector
             rangeMin={rangeMin}
             rangeMax={rangeMax}
+            setRangeMin={setRangeMin}
+            setRangeMax={setRangeMax}
             tickCount={parseInt(precision) || 1}
             ticks={ticks}
             feeTier={feeType?.fee}

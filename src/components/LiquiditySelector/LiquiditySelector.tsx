@@ -5,6 +5,7 @@ import {
   useCallback,
   useLayoutEffect,
   useRef,
+  MouseEvent,
 } from 'react';
 import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
@@ -18,6 +19,8 @@ interface LiquiditySelectorProps {
   feeTier: number | undefined;
   rangeMin: string | undefined;
   rangeMax: string | undefined;
+  setRangeMin: (callback: (rangeMin: string) => string) => void;
+  setRangeMax: (callback: (rangeMax: string) => string) => void;
   tokenValues: [valueA: string, valueB: string];
   setUserTicks?: (userTicks: TickGroup) => void;
   advanced?: boolean;
@@ -60,6 +63,8 @@ export default function LiquiditySelector({
   feeTier = -1,
   rangeMin = '0',
   rangeMax = '1',
+  setRangeMin,
+  setRangeMax,
   tokenValues = ['0', '0'],
   setUserTicks: setExternalUserTicks,
   advanced = false,
@@ -274,6 +279,18 @@ export default function LiquiditySelector({
     },
     [xMin, xMax, containerSize.width]
   );
+  const plotXinverse = useCallback(
+    (x: number): number => {
+      const leftPadding = containerSize.width * 0.1;
+      const rightPadding = containerSize.width * 0.1;
+      const width = containerSize.width - leftPadding - rightPadding;
+      return Math.exp(
+        ((x - leftPadding) * (Math.log(xMax) - Math.log(xMin))) / width +
+          Math.log(xMin)
+      );
+    },
+    [xMin, xMax, containerSize.width]
+  );
   const plotY = useCallback(
     (y: number): number => {
       const topPadding = containerSize.height * 0.1;
@@ -411,6 +428,9 @@ export default function LiquiditySelector({
           ticks={userTicks}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
+          setRangeMin={setRangeMin}
+          setRangeMax={setRangeMax}
+          plotXinverse={plotXinverse}
           bucketRatio={bucketRatio}
         />
       )}
@@ -430,12 +450,18 @@ function TicksArea({
   ticks,
   plotX,
   plotY,
+  setRangeMin,
+  setRangeMax,
+  plotXinverse,
   bucketRatio,
   className,
 }: {
   ticks: TickGroup;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
+  setRangeMin: (callback: (rangeMin: string) => string) => void;
+  setRangeMax: (callback: (rangeMax: string) => string) => void;
+  plotXinverse: (x: number) => number;
   bucketRatio: number;
   className?: string;
 }) {
@@ -443,6 +469,40 @@ function TicksArea({
   const endTickPrice = ticks?.[ticks.length - 1]?.[0];
   const bucketWidth =
     plotX(new BigNumber(bucketRatio)) - plotX(new BigNumber(1));
+
+  const [dragging, setDragging] = useState<{ x: number; y: number } | null>(
+    null
+  );
+  const startDrag = useCallback((e: MouseEvent<SVGRectElement>) => {
+    e.preventDefault();
+    setDragging({ x: e.screenX, y: e.screenY });
+  }, []);
+  const stopDrag = useCallback(() => {
+    setDragging(null);
+  }, []);
+  const dragMin = useCallback(
+    (e: MouseEvent<SVGRectElement>) => {
+      if (dragging) {
+        setRangeMin(() => {
+          const xStart = plotX(startTickPrice);
+          return plotXinverse(xStart + e.movementX).toFixed(3);
+        });
+      }
+    },
+    [dragging, startTickPrice, plotXinverse, plotX, setRangeMin]
+  );
+  const dragMax = useCallback(
+    (e: MouseEvent<SVGRectElement>) => {
+      if (dragging) {
+        setRangeMax(() => {
+          const xStart = plotX(endTickPrice);
+          return plotXinverse(xStart + e.movementX).toFixed(3);
+        });
+      }
+    },
+    [dragging, endTickPrice, plotXinverse, plotX, setRangeMax]
+  );
+
   return startTickPrice && endTickPrice ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
       <rect
@@ -466,6 +526,10 @@ function TicksArea({
           width={(0.75 * bucketWidth).toFixed(3)}
           y={plotY(new BigNumber(1)).toFixed(3)}
           height={-plotY(new BigNumber(0)).toFixed(3)}
+          onMouseDown={startDrag}
+          onMouseUp={stopDrag}
+          onMouseOut={stopDrag}
+          onMouseMove={dragMin}
         />
       </g>
       <g className="pole-b">
@@ -482,6 +546,10 @@ function TicksArea({
           width={(0.75 * bucketWidth).toFixed(3)}
           y={plotY(new BigNumber(1)).toFixed(3)}
           height={-plotY(new BigNumber(0)).toFixed(3)}
+          onMouseDown={startDrag}
+          onMouseUp={stopDrag}
+          onMouseOut={stopDrag}
+          onMouseMove={dragMax}
         />
       </g>
     </g>
