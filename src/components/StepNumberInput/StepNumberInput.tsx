@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import './StepNumberInput.scss';
 
@@ -91,7 +85,7 @@ export default function StepNumberInput({
   /**
    * If the min or max "push" the current value outside the valid range, readjust
    */
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (min !== undefined && (minSnap ?? min) > currentValue)
       setCurrentValue(min);
     if (max !== undefined && max < currentValue) setCurrentValue(max);
