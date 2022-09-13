@@ -141,6 +141,9 @@ export default function Pool() {
   const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
     'range'
   );
+  const [chartTypeSelected, setChartTypeSelected] = useState<
+    'AMM' | 'Orderbook'
+  >('AMM');
 
   if (!valuesConfirmed) {
     return (
@@ -278,10 +281,32 @@ export default function Pool() {
           </div>
           <div className="row col-row ml-auto">
             <div className="button-switch-group">
-              <button type="button" className="button py-3 px-5 button-primary">
+              <button
+                type="button"
+                className={[
+                  'button',
+                  'py-3',
+                  'px-5',
+                  chartTypeSelected === 'AMM' && 'button-primary',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => setChartTypeSelected('AMM')}
+              >
                 AMM
               </button>
-              <button type="button" className="button py-3 px-5">
+              <button
+                type="button"
+                className={[
+                  'button',
+                  'py-3',
+                  'px-5',
+                  chartTypeSelected === 'Orderbook' && 'button-primary',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => setChartTypeSelected('Orderbook')}
+              >
                 Orderbook
               </button>
             </div>
@@ -305,6 +330,7 @@ export default function Pool() {
             feeTier={feeType?.fee}
             tokenValues={values}
             setUserTicks={setUserTicks}
+            advanced={chartTypeSelected === 'Orderbook'}
           ></LiquiditySelector>
         </div>
         <div className="page-card mx-auto">
