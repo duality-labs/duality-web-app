@@ -540,7 +540,11 @@ function TicksArea({
       <rect
         className="tick-area"
         x={plotX(startTickPrice).toFixed(3)}
-        width={(plotX(endTickPrice) - plotX(startTickPrice)).toFixed(3)}
+        width={
+          endTickPrice.isGreaterThan(startTickPrice)
+            ? (plotX(endTickPrice) - plotX(startTickPrice)).toFixed(3)
+            : '0'
+        }
         y={plotY(new BigNumber(1)).toFixed(3)}
         height={(plotY(new BigNumber(0)) - plotY(new BigNumber(1))).toFixed(3)}
       />
