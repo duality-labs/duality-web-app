@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 import { TickInfo, TickMap } from '../../lib/web3/indexerProvider';
 import { TickGroup } from './LiquiditySelector';
@@ -24,38 +23,12 @@ export default function useCurrentPriceFromTicks(
       .map((tick) => [tick.virtualPrice, tick.reserve0, tick.reserve1]); // use virtual price always here
   }, [ticks, tickFilter]);
 
-  const invertTokenOrder = useMemo(() => {
-    const { token0Count, token0Value, token1Count, token1Value } =
-      feeTicks.reduce(
-        (result, [price, token0Value, token1Value]) => {
-          result.token0Value = result.token0Value.plus(
-            token0Value.multipliedBy(price)
-          );
-          result.token0Count = result.token0Count.plus(token0Value);
-          result.token1Value = result.token1Value.plus(
-            token1Value.multipliedBy(price)
-          );
-          result.token1Count = result.token1Count.plus(token1Value);
-          return result;
-        },
-        {
-          token0Count: new BigNumber(0),
-          token0Value: new BigNumber(0),
-          token1Count: new BigNumber(0),
-          token1Value: new BigNumber(0),
-        }
-      );
-    const averageToken0Value = token0Value.dividedBy(token0Count);
-    const averageToken1Value = token1Value.dividedBy(token1Count);
-    return averageToken0Value > averageToken1Value;
-  }, [feeTicks]);
-
   // estimate current price from ticks
   const currentPriceFromTicks = useMemo(() => {
     if (!feeTicks.length) return;
     const remainingTicks = feeTicks.slice();
-    const highTokenValueIndex = invertTokenOrder ? 1 : 2;
-    const lowTokenValueIndex = invertTokenOrder ? 2 : 1;
+    const highTokenValueIndex = 2;
+    const lowTokenValueIndex = 1;
     let highestLowTokenTickIndex = findLastIndex(remainingTicks, (tick) =>
       tick[lowTokenValueIndex].isGreaterThan(0)
     );
@@ -113,7 +86,7 @@ export default function useCurrentPriceFromTicks(
         return undefined;
       }
     } while (remainingTicks.length > 0);
-  }, [feeTicks, invertTokenOrder]);
+  }, [feeTicks]);
 
   return currentPriceFromTicks;
 }
