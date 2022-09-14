@@ -14,6 +14,7 @@ interface RadioInputProps<T> {
   value?: T;
   index?: number;
   name?: string;
+  className?: string;
 }
 
 function DefaultOptionComponent<T>({ option }: OptionProps<T>) {
@@ -27,6 +28,7 @@ export default function RadioInput<T>({
   maxColumnCount,
   value,
   name,
+  className,
 }: RadioInputProps<T>) {
   const selectedIndex = value !== undefined ? list.indexOf(value) : -1;
   const groupID = useId();
@@ -40,7 +42,7 @@ export default function RadioInput<T>({
   );
 
   return (
-    <div className="radio-input-group">
+    <div className={['radio-input-group', className].filter(Boolean).join(' ')}>
       {list.map((option, index) => {
         const id = `${groupName}-${index}`;
 
@@ -53,11 +55,7 @@ export default function RadioInput<T>({
               checked={index === selectedIndex}
               onChange={() => onChange?.(option, index)}
             ></input>
-            <label
-              htmlFor={id}
-              className="button button-primary"
-              style={labelStyle}
-            >
+            <label htmlFor={id} className="button" style={labelStyle}>
               <OptionComponent option={option} id={id} index={index} />
             </label>
           </Fragment>
