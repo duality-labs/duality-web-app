@@ -547,6 +547,8 @@ function TicksArea({
     )
   );
 
+  const rounding = 5;
+
   return startTickPrice && endTickPrice ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
       <rect
@@ -569,11 +571,19 @@ function TicksArea({
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
+          className="pole-to-flag"
+          x={(plotX(startTickPrice) - rounding).toFixed(3)}
+          width={rounding}
+          y={plotY(new BigNumber(1)).toFixed(3)}
+          height={-plotY(new BigNumber(0)).toFixed(3)}
+        />
+        <rect
           className="pole-flag"
           x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
           width={(0.75 * bucketWidth).toFixed(3)}
           y={plotY(new BigNumber(1)).toFixed(3)}
           height={-plotY(new BigNumber(0)).toFixed(3)}
+          rx={rounding}
           onMouseDown={startDragMin}
         />
       </g>
@@ -586,11 +596,19 @@ function TicksArea({
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
+          className="pole-to-flag"
+          x={plotX(endTickPrice).toFixed(3)}
+          width={rounding}
+          y={plotY(new BigNumber(1)).toFixed(3)}
+          height={-plotY(new BigNumber(0)).toFixed(3)}
+        />
+        <rect
           className="pole-flag"
           x={plotX(endTickPrice).toFixed(3)}
           width={(0.75 * bucketWidth).toFixed(3)}
           y={plotY(new BigNumber(1)).toFixed(3)}
           height={-plotY(new BigNumber(0)).toFixed(3)}
+          rx={rounding}
           onMouseDown={startDragMax}
         />
       </g>
