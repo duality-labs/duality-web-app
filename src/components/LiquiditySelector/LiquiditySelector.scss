@@ -5,6 +5,7 @@
 .tick-buckets {
   .tick-bucket {
     transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
+    stroke-width: 0.125;
     cursor: pointer;
     opacity: 0.7;
 
@@ -15,9 +16,11 @@
 
   .token-a {
     fill: hsl(262, 85%, 10%);
+    stroke: hsl(262, 85%, 10%);
   }
   .token-b {
     fill: hsl(202, 41%, 23%);
+    stroke: hsl(202, 41%, 23%);
   }
 }
 
