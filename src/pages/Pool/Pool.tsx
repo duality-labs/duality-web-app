@@ -170,6 +170,11 @@ export default function Pool() {
     [tokenA, tokenB, feeType, userTicks, sendDepositRequest]
   );
 
+  const [tickSelected, setTickSelected] = useState(-1);
+  useEffect(() => {
+    setTickSelected((selected) => Math.min(selected, Number(precision) - 1));
+  }, [precision]);
+
   const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
     'range'
   );
@@ -559,7 +564,43 @@ export default function Pool() {
             )}
           </div>
         ) : (
-          <div className="page-card mx-auto"></div>
+          <div className="page-card mx-auto">
+            <div className="button-switch-group mx-auto mt-2 mb-4">
+              <button
+                type="button"
+                className={[
+                  'button',
+                  'py-3',
+                  'px-5',
+                  tickSelected === -1 && 'button-primary',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => setTickSelected(-1)}
+              >
+                All
+              </button>
+              {Array.from({ length: Number(precision) }).map((_, index) => {
+                return (
+                  <button
+                    key={index}
+                    type="button"
+                    className={[
+                      'button',
+                      'py-3',
+                      'px-5',
+                      tickSelected === index && 'button-primary',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={() => setTickSelected(index)}
+                  >
+                    {index + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
         <div className="pool-options">
           <div className="card-row">

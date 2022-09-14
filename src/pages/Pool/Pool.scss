@@ -10,11 +10,18 @@
   overflow: hidden;
 
   .button {
-    min-width: 10rem;
     border-radius: 0.75rem;
   }
   .button:hover:not(.button-primary) {
     background-color: hsl(202deg, 76%, 20%);
+  }
+}
+
+.pool-banner {
+  .button-switch-group {
+    .button {
+      min-width: 10rem;
+    }
   }
 }
 
@@ -24,7 +31,6 @@
   }
   .button-switch-group {
     .button {
-      min-width: auto;
       padding: 0.625rem 1.5rem;
     }
     > input:checked + label:not(.button-primary) {
