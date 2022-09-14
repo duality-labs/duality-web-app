@@ -247,4 +247,46 @@
     justify-content: space-between;
     gap: margins.$m-4;
   }
+
+  .orderbook-card {
+    > .row {
+      gap: 3rem;
+      flex-direction: column;
+    }
+
+    > .row > .col {
+      min-width: 25rem;
+    }
+
+    > .row > .col > .row {
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    h3.card-title {
+      font-weight: 400;
+      font-size: 1.5rem;
+    }
+
+    .autobalance-card {
+      .autobalance-allocation {
+        font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+        background-color: transparent;
+        border: 0px none transparent;
+        font-size: 1.5rem;
+        text-align: center;
+        color: var(--text-default);
+        outline: none;
+      }
+    }
+  }
+}
+@media screen and (min-width: 1024px) {
+  .pool-page {
+    .orderbook-card {
+      > .row {
+        flex-direction: row;
+      }
+    }
+  }
 }

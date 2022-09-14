@@ -564,7 +564,7 @@ export default function Pool() {
             )}
           </div>
         ) : (
-          <div className="page-card mx-auto">
+          <div className="page-card orderbook-card mx-auto">
             <div className="button-switch-group mx-auto mt-2 mb-4">
               <button
                 type="button"
@@ -599,6 +599,55 @@ export default function Pool() {
                   </button>
                 );
               })}
+            </div>
+            <div className="row">
+              <div className="col">
+                <div className="row precision-card">
+                  <h3 className="card-title mr-auto">Number of Ticks</h3>
+                  <StepNumberInput
+                    editable={false}
+                    min={2}
+                    max={10}
+                    value={precision}
+                    onChange={setPrecision}
+                  />
+                  <button
+                    type="button"
+                    className="button-info ml-2"
+                    onClick={() => setPrecision(defaultPrecision)}
+                  >
+                    Auto
+                  </button>
+                </div>
+                <div className="row autobalance-card">
+                  <h3 className="card-title mr-auto">Total Allocation</h3>
+                  <span className="autobalance-allocation">100%</span>
+                  <button type="button" className="button-primary ml-2">
+                    Autobalance
+                  </button>
+                </div>
+              </div>
+              <div className="col">
+                <div className="fee-card">
+                  <h3 className="card-title mb-3">Fee Tier</h3>
+                  <RadioInput<FeeType>
+                    value={feeType}
+                    list={feeTypes}
+                    onChange={setFeeType}
+                    OptionComponent={({
+                      option: { fee, label, description },
+                    }) => (
+                      <div key={fee} className="button-primary card fee-type">
+                        <h5 className="fee-title">{label}</h5>
+                        <span className="fee-description">{description}</span>
+                        <span className="pill fee-liquidity">
+                          {calculateFeeLiquidity(label)}
+                        </span>
+                      </div>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}
