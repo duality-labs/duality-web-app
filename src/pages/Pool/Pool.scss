@@ -126,6 +126,11 @@ $selected-fee-border-width: 1.5px;
     }
   }
 
+  .chart-card {
+    min-height: 400px;
+    height: 30vh;
+  }
+
   .fee-card {
     & {
       grid-column: 1 / 2;
