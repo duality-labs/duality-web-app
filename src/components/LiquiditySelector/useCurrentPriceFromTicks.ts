@@ -1,8 +1,25 @@
 import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
+import { TickInfo, TickMap } from '../../lib/web3/indexerProvider';
 import { TickGroup } from './LiquiditySelector';
 
-export default function useCurrentPriceFromTicks(feeTicks: TickGroup) {
+function defaultTickFilter(tick: TickInfo | undefined) {
+  return !!tick;
+}
+
+export default function useCurrentPriceFromTicks(
+  ticks: TickMap = {},
+  tickFilter = defaultTickFilter
+) {
+  // collect tick information in a more useable form
+  const feeTicks: TickGroup = useMemo(() => {
+    return Object.values(ticks)
+      .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
+      .filter((tick): tick is TickInfo => tickFilter(tick)) // filter to relevant ticks
+      .sort((tick0, tick1) => tick0.price.comparedTo(tick1.price)) // sort by price
+      .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
+  }, [ticks, tickFilter]);
+
   const invertTokenOrder = useMemo(() => {
     const { token0Count, token0Value, token1Count, token1Value } =
       feeTicks.reduce(

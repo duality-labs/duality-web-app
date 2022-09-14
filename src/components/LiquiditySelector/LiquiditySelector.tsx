@@ -80,7 +80,16 @@ export default function LiquiditySelector({
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
-  const currentPriceABFromTicks = useCurrentPriceFromTicks(feeTicks);
+  const currentPriceABFromTicks = useCurrentPriceFromTicks(
+    ticks,
+    useCallback(
+      (tick: TickInfo | undefined) => {
+        return tick?.fee.isEqualTo(feeTier) === true;
+      },
+      [feeTier]
+    )
+  );
+
   const invertTokenOrder = currentPriceABFromTicks?.isLessThan(1) || false;
   const currentPriceFromTicks = useMemo(() => {
     const one = new BigNumber(1);
