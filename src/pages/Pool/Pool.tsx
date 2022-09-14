@@ -492,6 +492,10 @@ export default function Pool() {
                   }
                 />
               </div>
+              <div className="row mt-4 mb-2">
+                Your liquidity will be distributed within the minimum and
+                maximum price ranges.
+              </div>
             </div>
           )}
           {tabSelected === 'fee' && (
