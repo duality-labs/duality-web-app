@@ -258,7 +258,9 @@ export default function LiquiditySelector({
   const graphHeight = useMemo(() => {
     return feeTickBuckets
       .flat()
-      .reduce((result, data) => Math.max(result, data[2].toNumber()), 0);
+      .reduce((result, [lowerBound, upperBound, token0Value, token1Value]) => {
+        return Math.max(result, token0Value.toNumber(), token1Value.toNumber());
+      }, 0);
   }, [feeTickBuckets]);
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
