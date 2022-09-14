@@ -4,8 +4,6 @@
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:map';
 
-$selected-fee-border-width: 1.5px;
-
 .button-switch-group {
   border: 1px solid white;
   border-radius: 0.75rem;
@@ -165,38 +163,51 @@ $selected-fee-border-width: 1.5px;
     }
 
     .radio-input-group {
+      & {
+        gap: 1rem;
+        justify-content: center;
+        align-items: center;
+      }
       label {
         & {
-          flex-basis: calc(50% - #{margins.$m-3});
           background: transparent;
-          margin: margins.$m-1 auto;
+          margin: 0;
           padding: 0;
+          width: 6.5rem;
         }
 
         .fee-type {
           & {
-            margin-top: $selected-fee-border-width;
-            font-size: font-size.$text-xs;
+            font-size: font-size.$text-s;
             flex-direction: column;
-            text-align: center;
+            align-items: center;
             display: flex;
+            border: 1.5px solid transparent;
+            @include paddings.padding('x', 3);
           }
 
           .fee-title {
-            @include margins.margin('y', 3);
             font-family: font-family.$console;
             font-size: font-size.$h5;
           }
 
           .fee-description {
+            @include margins.margin('y', 3);
             text-align: start;
+            opacity: 0.7;
+          }
+
+          .fee-liquidity {
+            background-color: rgba($color: white, $alpha: 0.75);
+            color: var(--primary);
+            margin: 0.125rem -0.25rem;
+            padding: 0.25rem 0.5rem;
           }
         }
       }
 
       input:checked + label .fee-type {
-        border: $selected-fee-border-width solid var(--info);
-        margin-top: 0;
+        border-color: var(--info);
       }
     }
   }

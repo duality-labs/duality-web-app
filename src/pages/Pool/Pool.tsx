@@ -70,7 +70,6 @@ export default function Pool() {
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
   );
-  const feeLabel = feeType?.label || defaultFee;
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
     setTokenB(tokenA);
@@ -99,13 +98,8 @@ export default function Pool() {
     isValidating: tickFetching,
   } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
-  const [editingFee, setEditingFee] = useState(false);
   const [slopeType, setSlopeType] = useState<string>();
   const [precision, setPrecision] = useState<string>(defaultPrecision);
-
-  useEffect(() => {
-    setEditingFee(false);
-  }, [feeLabel]);
 
   const [
     {
@@ -501,47 +495,20 @@ export default function Pool() {
           )}
           {tabSelected === 'fee' && (
             <div className="fee-card">
-              <div className="card-header">
-                <div className="badge-primary corner-border badge-large font-console ml-auto">
-                  {feeLabel}
-                </div>
-                <button
-                  type="button"
-                  className="button-secondary ml-2"
-                  onClick={() => setEditingFee((mode) => !mode)}
-                >
-                  {editingFee ? 'Hide' : 'Edit'}
-                </button>
-              </div>
-              <div className="card-row">
-                {editingFee ? (
-                  <RadioInput<FeeType>
-                    value={feeType}
-                    list={feeTypes}
-                    onChange={setFeeType}
-                    OptionComponent={({
-                      option: { fee, label, description },
-                    }) => (
-                      <div key={fee} className="badge card fee-type">
-                        <h5 className="fee-title">{label}</h5>
-                        <span className="fee-description">{description}</span>
-                        <span className="badge fee-liquidity">
-                          {calculateFeeLiquidity(label)}
-                        </span>
-                      </div>
-                    )}
-                  />
-                ) : (
-                  <>
-                    <span className="badge-info pill ml-auto badge-large text-slim fs-s mt-auto">
-                      {calculateFeeLiquidity(feeLabel)}
+              <RadioInput<FeeType>
+                value={feeType}
+                list={feeTypes}
+                onChange={setFeeType}
+                OptionComponent={({ option: { fee, label, description } }) => (
+                  <div key={fee} className="button-primary card fee-type">
+                    <h5 className="fee-title">{label}</h5>
+                    <span className="fee-description">{description}</span>
+                    <span className="pill fee-liquidity">
+                      {calculateFeeLiquidity(label)}
                     </span>
-                    <span className="badge-info pill ml-2 badge-large text-slim fs-s mt-auto">
-                      {feeLabel}
-                    </span>
-                  </>
+                  </div>
                 )}
-              </div>
+              />
             </div>
           )}
           {tabSelected === 'curve' && (
