@@ -471,9 +471,8 @@ export default function Pool() {
                   value={rangeMin}
                   onChange={setRangeMin}
                   stepFunction={logarithmStep}
-                  min={1e-18}
+                  min={0}
                   max={rangeMax}
-                  format={formatTo6SignificantDigits}
                   description={
                     tokenA && tokenB
                       ? `${tokenA.symbol} per ${tokenB.symbol}`
@@ -486,7 +485,6 @@ export default function Pool() {
                   onChange={setRangeMax}
                   stepFunction={logarithmStep}
                   min={rangeMin}
-                  format={formatTo6SignificantDigits}
                   description={
                     tokenA && tokenB
                       ? `${tokenA.symbol} per ${tokenB.symbol}`
@@ -616,8 +614,4 @@ function logarithmStep(valueString: number, direction: number): number {
           )
         )
         .toNumber();
-}
-
-function formatTo6SignificantDigits(value: number): string {
-  return value >= 1000 ? value.toExponential(5) : value.toString();
 }
