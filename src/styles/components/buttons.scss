@@ -52,7 +52,7 @@ input[type='submit'],
   background-color: var(--submit-button-bg);
   font-size: font-size.$button-large;
   color: var(--submit-button-text);
-  border-radius: paddings.size(3);
+  border-radius: 0.6rem;
   border: 0px none transparent;
   cursor: pointer;
 }

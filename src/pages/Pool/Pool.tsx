@@ -322,31 +322,42 @@ export default function Pool() {
         </div>
       </div>
       <form className="pool-page" onSubmit={onSubmit}>
-        <div className="chart-card page-card">
-          <div className="column">
-            <div className="chart-header">
-              <h3>Liquidity Distribution</h3>
+        <div className="chart-card page-card row">
+          <div className="flex row">
+            <div className="flex col col--left">
+              <div className="chart-header row my-4">
+                <h3 className="text-normal">Liquidity Distribution</h3>
+                <span className="tokens-badge badge-primary badge-large font-console">
+                  {tokenA?.symbol}/{tokenB?.symbol}
+                </span>
+              </div>
+              <div className="flex row chart-area">
+                <LiquiditySelector
+                  rangeMin={rangeMin}
+                  rangeMax={rangeMax}
+                  setRangeMin={setRangeMin}
+                  setRangeMax={setRangeMax}
+                  tickCount={parseInt(precision) || 1}
+                  ticks={ticks}
+                  feeTier={feeType?.fee}
+                  tokenValues={values}
+                  setUserTicks={setUserTicks}
+                  advanced={chartTypeSelected === 'Orderbook'}
+                ></LiquiditySelector>
+              </div>
             </div>
-            <div className="chart-area">
-              <LiquiditySelector
-                rangeMin={rangeMin}
-                rangeMax={rangeMax}
-                setRangeMin={setRangeMin}
-                setRangeMax={setRangeMax}
-                tickCount={parseInt(precision) || 1}
-                ticks={ticks}
-                feeTier={feeType?.fee}
-                tokenValues={values}
-                setUserTicks={setUserTicks}
-                advanced={chartTypeSelected === 'Orderbook'}
-              ></LiquiditySelector>
-            </div>
-          </div>
-          <div className="column">
-            <div className="chart-price">
-              <span className="hero-text">
+            <div className="col chart-price">
+              <div className="hero-text my-4">
                 {currentPriceABFromTicks?.toFixed(5)}
-              </span>
+              </div>
+              <div>Current Price</div>
+              <div className="mt-auto mb-4">
+                <input
+                  className="mx-auto px-4 py-4"
+                  type="submit"
+                  value="Add Liquidity"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -512,11 +523,6 @@ export default function Pool() {
             {(tickFetching || isValidatingDeposit) && (
               <div className="text-secondary card-row">...</div>
             )}
-            <input
-              className="pill mx-auto px-5 py-3"
-              type="submit"
-              value="Add Liquidity"
-            />
             <br />
             <div className="text-red-500">
               {!isValidatingDeposit && ticksError}
