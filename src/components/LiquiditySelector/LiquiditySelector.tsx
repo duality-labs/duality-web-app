@@ -527,11 +527,15 @@ function TicksArea({
         if (x) {
           setRangeMax(() => {
             const xStart = plotX(endTickPrice);
-            return plotXinverse(xStart + x).toFixed(3);
+            const maxValue = new BigNumber(plotXinverse(xStart + x));
+            const newValue = startTickPrice.isGreaterThanOrEqualTo(maxValue)
+              ? startTickPrice
+              : maxValue;
+            return newValue.toFixed(3);
           });
         }
       },
-      [endTickPrice, plotXinverse, plotX, setRangeMax]
+      [startTickPrice, endTickPrice, plotXinverse, plotX, setRangeMax]
     )
   );
 
