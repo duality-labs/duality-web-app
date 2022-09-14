@@ -84,6 +84,9 @@ $selected-fee-border-width: 1.5px;
     @include margins.margin('y', 5);
     display: flex;
     flex-direction: column;
+    align-items: center;
+    width: calc(100% - paddings.$p-6);
+    max-width: 1200px;
     gap: 2rem;
   }
 
@@ -106,6 +109,9 @@ $selected-fee-border-width: 1.5px;
   }
 
   .assets-card {
+    & {
+      max-width: 800px;
+    }
     .token-input-group {
       box-sizing: border-box;
       width: 100%;
@@ -129,6 +135,7 @@ $selected-fee-border-width: 1.5px;
   .chart-card {
     min-height: 400px;
     height: 30vh;
+    align-self: stretch;
 
     > .row {
       gap: 1.5rem;
