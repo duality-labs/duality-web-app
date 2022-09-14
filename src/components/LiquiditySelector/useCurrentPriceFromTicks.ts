@@ -33,8 +33,8 @@ export default function useCurrentPriceFromTicks(feeTicks: TickGroup) {
   const currentPriceFromTicks = useMemo(() => {
     if (!feeTicks.length) return;
     const remainingTicks = feeTicks.slice();
-    const highTokenValueIndex = invertTokenOrder ? 2 : 1;
-    const lowTokenValueIndex = invertTokenOrder ? 1 : 2;
+    const highTokenValueIndex = invertTokenOrder ? 1 : 2;
+    const lowTokenValueIndex = invertTokenOrder ? 2 : 1;
     let highestLowTokenTickIndex = findLastIndex(remainingTicks, (tick) =>
       tick[lowTokenValueIndex].isGreaterThan(0)
     );
