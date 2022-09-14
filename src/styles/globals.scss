@@ -37,3 +37,18 @@ h6,
 .no-blend {
   mix-blend-mode: normal !important;
 }
+
+.row,
+.col {
+  display: flex;
+  overflow: auto;
+}
+.row {
+  flex-direction: row;
+}
+.col {
+  flex-direction: column;
+}
+.flex {
+  flex: 1 1 auto;
+}
