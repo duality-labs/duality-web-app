@@ -619,6 +619,15 @@ function TicksArea({
           onMouseDown={startDragMin}
         />
       </g>
+      <g className="flag-line">
+        <line
+          className="line flag-joiner"
+          x1={plotX(startTickPrice).toFixed(3)}
+          x2={plotX(endTickPrice).toFixed(3)}
+          y1={plotY(new BigNumber(0.7)).toFixed(3)}
+          y2={plotY(new BigNumber(0.7)).toFixed(3)}
+        />
+      </g>
       <g className="pole-b">
         <line
           className="line pole-stick"

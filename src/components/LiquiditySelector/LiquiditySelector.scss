@@ -36,9 +36,12 @@
 }
 
 .new-ticks-area {
-  .pole-stick {
-    stroke-width: 2px;
+  .line {
+    stroke-width: 1px;
     stroke: hsl(37, 62%, 68%);
+  }
+  .pole-stick {
+    stroke-width: 4px;
   }
   .pole-flag,
   .pole-to-flag {
