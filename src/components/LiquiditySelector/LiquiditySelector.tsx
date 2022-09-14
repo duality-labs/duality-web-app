@@ -516,7 +516,9 @@ function TicksArea({
             const newValue = endTickPrice.isLessThanOrEqualTo(minValue)
               ? startTickPrice
               : minValue;
-            return newValue.toFixed(3);
+            return newValue.toFixed(
+              Math.max(0, newValue.dp() - newValue.sd(true) + 3)
+            );
           });
         }
       },
@@ -535,7 +537,9 @@ function TicksArea({
             const newValue = startTickPrice.isGreaterThanOrEqualTo(maxValue)
               ? startTickPrice
               : maxValue;
-            return newValue.toFixed(3);
+            return newValue.toFixed(
+              Math.max(0, newValue.dp() - newValue.sd(true) + 3)
+            );
           });
         }
       },
