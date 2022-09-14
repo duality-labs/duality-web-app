@@ -403,6 +403,14 @@ export default function LiquiditySelector({
       ref={setContainer}
     >
       {graphEnd.isZero() && <text>Chart is not currently available</text>}
+      {!advanced && (
+        <TicksBackgroundArea
+          className="new-ticks-area"
+          ticks={userTicks}
+          plotX={plotXBigNumber}
+          plotY={percentYBigNumber}
+        />
+      )}
       <TickBucketsGroup
         className="left-ticks"
         tickBuckets={feeTickBuckets[0]}
@@ -481,6 +489,41 @@ function useDragMovement(
   return [startDrag, stopDrag];
 }
 
+function TicksBackgroundArea({
+  ticks,
+  plotX,
+  plotY,
+  className,
+}: {
+  ticks: TickGroup;
+  plotX: (x: BigNumber) => number;
+  plotY: (y: BigNumber) => number;
+  className?: string;
+}) {
+  const startTickPrice = ticks?.[0]?.[0];
+  const endTickPrice = ticks?.[ticks.length - 1]?.[0];
+
+  return startTickPrice && endTickPrice ? (
+    <g
+      className={['ticks-area__background', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <rect
+        className="tick-area"
+        x={plotX(startTickPrice).toFixed(3)}
+        width={
+          endTickPrice.isGreaterThan(startTickPrice)
+            ? (plotX(endTickPrice) - plotX(startTickPrice)).toFixed(3)
+            : '0'
+        }
+        y={plotY(new BigNumber(1)).toFixed(3)}
+        height={(plotY(new BigNumber(0)) - plotY(new BigNumber(1))).toFixed(3)}
+      />
+    </g>
+  ) : null;
+}
+
 function TicksArea({
   ticks,
   plotX,
@@ -551,17 +594,6 @@ function TicksArea({
 
   return startTickPrice && endTickPrice ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
-      <rect
-        className="tick-area"
-        x={plotX(startTickPrice).toFixed(3)}
-        width={
-          endTickPrice.isGreaterThan(startTickPrice)
-            ? (plotX(endTickPrice) - plotX(startTickPrice)).toFixed(3)
-            : '0'
-        }
-        y={plotY(new BigNumber(1)).toFixed(3)}
-        height={(plotY(new BigNumber(0)) - plotY(new BigNumber(1))).toFixed(3)}
-      />
       <g className="pole-a">
         <line
           className="line pole-stick"
