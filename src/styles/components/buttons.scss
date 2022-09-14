@@ -11,7 +11,7 @@ button,
 .button {
   @include paddings.padding('x', 3);
   @include paddings.padding('y', 2);
-  border-radius: paddings.size(2);
+  border-radius: 0.5rem;
   background-color: transparent;
   border: 0px none transparent;
   font-size: font-size.$button;
@@ -52,7 +52,7 @@ input[type='submit'],
   background-color: var(--submit-button-bg);
   font-size: font-size.$button-large;
   color: var(--submit-button-text);
-  border-radius: paddings.size(3);
+  border-radius: 0.6rem;
   border: 0px none transparent;
   cursor: pointer;
 }
