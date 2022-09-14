@@ -642,7 +642,6 @@ function TicksArea({
           y={plotY(new BigNumber(1)).toFixed(3)}
           height={-plotY(new BigNumber(0)).toFixed(3)}
           rx={rounding}
-          onMouseDown={startDragMin}
         />
         <line
           className="pole-flag-stripe"
@@ -657,6 +656,15 @@ function TicksArea({
           x2={(plotX(startTickPrice) - 0.25 * bucketWidth).toFixed(3)}
           y1={plotY(new BigNumber(0.97)).toFixed(3)}
           y2={plotY(new BigNumber(0.92)).toFixed(3)}
+        />
+        <rect
+          className="pole-flag--hit-area"
+          x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
+          width={(0.75 * bucketWidth).toFixed(3)}
+          y={plotY(new BigNumber(1)).toFixed(3)}
+          height={-plotY(new BigNumber(0)).toFixed(3)}
+          rx={rounding}
+          onMouseDown={startDragMin}
         />
       </g>
       <g className="flag-line">
@@ -690,7 +698,6 @@ function TicksArea({
           y={plotY(new BigNumber(1)).toFixed(3)}
           height={-plotY(new BigNumber(0)).toFixed(3)}
           rx={rounding}
-          onMouseDown={startDragMax}
         />
         <line
           className="pole-flag-stripe"
@@ -705,6 +712,15 @@ function TicksArea({
           x2={(plotX(endTickPrice) + 0.25 * bucketWidth).toFixed(3)}
           y1={plotY(new BigNumber(0.97)).toFixed(3)}
           y2={plotY(new BigNumber(0.92)).toFixed(3)}
+        />
+        <rect
+          className="pole-flag--hit-area"
+          x={plotX(endTickPrice).toFixed(3)}
+          width={(0.75 * bucketWidth).toFixed(3)}
+          y={plotY(new BigNumber(1)).toFixed(3)}
+          height={-plotY(new BigNumber(0)).toFixed(3)}
+          rx={rounding}
+          onMouseDown={startDragMax}
         />
       </g>
     </g>
