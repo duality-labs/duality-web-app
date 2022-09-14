@@ -304,8 +304,8 @@ export default function LiquiditySelector({
   );
   const plotY = useCallback(
     (y: number): number => {
-      const topPadding = containerSize.height * 0.1;
-      const bottomPadding = containerSize.height * 0.1;
+      const topPadding = containerSize.height * 0.05;
+      const bottomPadding = containerSize.height * 0.05;
       const height = containerSize.height - topPadding - bottomPadding;
       return graphHeight === 0
         ? -bottomPadding // pin to bottom
@@ -315,8 +315,8 @@ export default function LiquiditySelector({
   );
   const percentY = useCallback(
     (y: number): number => {
-      const topPadding = containerSize.height * 0.05;
-      const bottomPadding = containerSize.height * 0.1;
+      const topPadding = containerSize.height * 0.02;
+      const bottomPadding = containerSize.height * 0.05;
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
     },
@@ -642,14 +642,14 @@ function TicksArea({
           x={(plotX(startTickPrice) - rounding).toFixed(3)}
           width={rounding}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-plotY(new BigNumber(0)).toFixed(3)}
+          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
         />
         <rect
           className="pole-flag"
           x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
           width={(0.75 * bucketWidth).toFixed(3)}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-plotY(new BigNumber(0)).toFixed(3)}
+          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
           rx={rounding}
         />
         <line
@@ -671,7 +671,7 @@ function TicksArea({
           x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
           width={(0.75 * bucketWidth).toFixed(3)}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-plotY(new BigNumber(0)).toFixed(3)}
+          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
           rx={rounding}
           onMouseDown={startDragMin}
         />
@@ -698,14 +698,14 @@ function TicksArea({
           x={plotX(endTickPrice).toFixed(3)}
           width={rounding}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-plotY(new BigNumber(0)).toFixed(3)}
+          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
         />
         <rect
           className="pole-flag"
           x={plotX(endTickPrice).toFixed(3)}
           width={(0.75 * bucketWidth).toFixed(3)}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-plotY(new BigNumber(0)).toFixed(3)}
+          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
           rx={rounding}
         />
         <line
@@ -727,7 +727,7 @@ function TicksArea({
           x={plotX(endTickPrice).toFixed(3)}
           width={(0.75 * bucketWidth).toFixed(3)}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-plotY(new BigNumber(0)).toFixed(3)}
+          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
           rx={rounding}
           onMouseDown={startDragMax}
         />
