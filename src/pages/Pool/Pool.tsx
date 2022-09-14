@@ -28,6 +28,7 @@ const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 const defaultFee = '0.30%';
 const defaultPrice = '1';
+const defaultSlopeType = 'UNIFORM';
 const defaultRangeMin = new BigNumber(defaultPrice)
   .dividedBy(2)
   .toFixed(denomExponent);
@@ -98,7 +99,7 @@ export default function Pool() {
     isValidating: tickFetching,
   } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
-  const [slopeType, setSlopeType] = useState<string>();
+  const [slopeType, setSlopeType] = useState<string>(defaultSlopeType);
   const [precision, setPrecision] = useState<string>(defaultPrecision);
 
   const [
@@ -514,12 +515,17 @@ export default function Pool() {
           {tabSelected === 'curve' && (
             <div>
               <div className="curve-card">
-                <div className="card-row">
+                <div className="info">
+                  Your liquidity will be distributed among different price
+                  points (called ticks) in the shape of the liquidity curve.
+                  This is represented by the yellow curve above.
+                </div>
+                <div className="card-row mt-4">
                   <RadioInput
+                    className="button-switch-group"
                     value={slopeType}
                     list={slopeTypes}
                     onChange={setSlopeType}
-                    maxColumnCount={2}
                   />
                 </div>
               </div>

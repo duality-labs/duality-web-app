@@ -7,13 +7,29 @@
 .button-switch-group {
   border: 1px solid white;
   border-radius: 0.75rem;
+  overflow: hidden;
 
-  button {
+  .button {
     min-width: 10rem;
     border-radius: 0.75rem;
   }
-  button:hover:not(.button-primary) {
+  .button:hover:not(.button-primary) {
     background-color: hsl(202deg, 76%, 20%);
+  }
+}
+
+.curve-card {
+  > .card-row {
+    justify-content: center;
+  }
+  .button-switch-group {
+    .button {
+      min-width: auto;
+      padding: 0.625rem 1.5rem;
+    }
+    > input:checked + label:not(.button-primary) {
+      background-color: var(--primary);
+    }
   }
 }
 
