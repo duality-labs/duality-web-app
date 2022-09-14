@@ -512,11 +512,15 @@ function TicksArea({
         if (x) {
           setRangeMin(() => {
             const xStart = plotX(startTickPrice);
-            return plotXinverse(xStart + x).toFixed(3);
+            const minValue = new BigNumber(plotXinverse(xStart + x));
+            const newValue = endTickPrice.isLessThanOrEqualTo(minValue)
+              ? startTickPrice
+              : minValue;
+            return newValue.toFixed(3);
           });
         }
       },
-      [startTickPrice, plotXinverse, plotX, setRangeMin]
+      [startTickPrice, endTickPrice, plotXinverse, plotX, setRangeMin]
     )
   );
 
