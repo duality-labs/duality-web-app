@@ -1,14 +1,15 @@
-import { useEffect, useState, useCallback, FormEvent } from 'react';
+import { useEffect, useState, useCallback, FormEvent, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowUpLong,
   faArrowDownLong,
+  faArrowRightArrowLeft,
   faSliders,
   faCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { useIndexerPairData } from '../../lib/web3/indexerProvider';
+import { TickMap, useIndexerPairData } from '../../lib/web3/indexerProvider';
 
 import RadioInput from '../../components/RadioInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -94,7 +95,7 @@ export default function Pool() {
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
 
   const {
-    data: { ticks } = {},
+    data: { ticks: unorderedTicks } = {},
     error: ticksError,
     isValidating: tickFetching,
   } = useIndexerPairData(tokenA?.address, tokenB?.address);
@@ -118,7 +119,41 @@ export default function Pool() {
 
   const [userTicks, setUserTicks] = useState<TickGroup>([]);
 
-  const currentPriceABFromTicks = useCurrentPriceFromTicks(ticks);
+  const currentPriceABFromTicks =
+    useCurrentPriceFromTicks(unorderedTicks) || new BigNumber(1);
+
+  const [invertedTokenOrder, setInvertedTokenOrder] = useState(true);
+
+  const currentPriceFromTicks = invertedTokenOrder
+    ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
+    : currentPriceABFromTicks;
+  const ticks = useMemo(() => {
+    if (!invertedTokenOrder) return unorderedTicks;
+    if (!unorderedTicks) return unorderedTicks;
+    // invert ticks
+    const one = new BigNumber(1);
+    return Object.entries(unorderedTicks).reduce<TickMap>(
+      (result, [key, [tick0to1, tick1to0]]) => {
+        // remap tick fields and invert the price
+        result[key] = [
+          tick1to0 && {
+            ...tick1to0,
+            price: one.dividedBy(tick1to0.price),
+            reserve0: tick1to0.reserve1,
+            reserve1: tick1to0.reserve0,
+          },
+          tick0to1 && {
+            ...tick0to1,
+            price: one.dividedBy(tick0to1.price),
+            reserve0: tick0to1.reserve1,
+            reserve1: tick0to1.reserve0,
+          },
+        ];
+        return result;
+      },
+      {}
+    );
+  }, [unorderedTicks, invertedTokenOrder]);
 
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
@@ -330,6 +365,34 @@ export default function Pool() {
                 <span className="tokens-badge badge-primary badge-large font-console">
                   {tokenA?.symbol}/{tokenB?.symbol}
                 </span>
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => {
+                    setInvertedTokenOrder((order) => !order);
+                    setRangeMin(() => {
+                      const newValue = new BigNumber(1).dividedBy(
+                        new BigNumber(rangeMax)
+                      );
+                      return newValue.toFixed(
+                        Math.max(0, newValue.dp() - newValue.sd(true) + 3)
+                      );
+                    });
+                    setRangeMax(() => {
+                      const newValue = new BigNumber(1).dividedBy(
+                        new BigNumber(rangeMin)
+                      );
+                      return newValue.toFixed(
+                        Math.max(0, newValue.dp() - newValue.sd(true) + 3)
+                      );
+                    });
+                    swapTokens();
+                  }}
+                >
+                  <FontAwesomeIcon
+                    icon={faArrowRightArrowLeft}
+                  ></FontAwesomeIcon>
+                </button>
               </div>
               <div className="flex row chart-area">
                 <LiquiditySelector
@@ -348,7 +411,7 @@ export default function Pool() {
             </div>
             <div className="col chart-price">
               <div className="hero-text my-4">
-                {currentPriceABFromTicks?.toFixed(5)}
+                {currentPriceFromTicks?.toFixed(5)}
               </div>
               <div>Current Price</div>
               <div className="mt-auto mb-4">
