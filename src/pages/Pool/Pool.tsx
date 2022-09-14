@@ -571,7 +571,7 @@ export default function Pool() {
                 className={[
                   'button',
                   'py-3',
-                  'px-5',
+                  'px-3',
                   tickSelected === -1 && 'button-primary',
                 ]
                   .filter(Boolean)
@@ -588,7 +588,7 @@ export default function Pool() {
                     className={[
                       'button',
                       'py-3',
-                      'px-5',
+                      'px-3',
                       tickSelected === index && 'button-primary',
                     ]
                       .filter(Boolean)
