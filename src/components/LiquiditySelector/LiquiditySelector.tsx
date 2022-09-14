@@ -306,7 +306,7 @@ export default function LiquiditySelector({
   );
   const percentY = useCallback(
     (y: number): number => {
-      const topPadding = containerSize.height * 0.1;
+      const topPadding = containerSize.height * 0.05;
       const bottomPadding = containerSize.height * 0.1;
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
