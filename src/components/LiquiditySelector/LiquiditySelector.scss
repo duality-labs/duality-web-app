@@ -54,6 +54,8 @@
   }
   .pole-flag--hit-area {
     fill: transparent;
+    stroke: transparent;
+    stroke-width: 10px;
     cursor: pointer;
   }
 }
