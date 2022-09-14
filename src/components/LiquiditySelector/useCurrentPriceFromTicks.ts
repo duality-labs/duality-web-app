@@ -31,6 +31,7 @@ export default function useCurrentPriceFromTicks(feeTicks: TickGroup) {
 
   // estimate current price from ticks
   const currentPriceFromTicks = useMemo(() => {
+    if (!feeTicks.length) return;
     const remainingTicks = feeTicks.slice();
     const highTokenValueIndex = invertTokenOrder ? 2 : 1;
     const lowTokenValueIndex = invertTokenOrder ? 1 : 2;
