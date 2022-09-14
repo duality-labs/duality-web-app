@@ -402,6 +402,13 @@ export default function LiquiditySelector({
       viewBox={`0 -${containerSize.height} ${containerSize.width} ${containerSize.height}`}
       ref={setContainer}
     >
+      <defs>
+        <linearGradient id="white-concave-fade">
+          <stop offset="0%" stopColor="white" stopOpacity="0.6" />
+          <stop offset="50%" stopColor="white" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="white" stopOpacity="0.6" />
+        </linearGradient>
+      </defs>
       {graphEnd.isZero() && <text>Chart is not currently available</text>}
       {!advanced && (
         <TicksBackgroundArea
@@ -511,6 +518,8 @@ function TicksBackgroundArea({
     >
       <rect
         className="tick-area"
+        // fill is defined on <svg><defs><linearGradient>
+        fill="url(#white-concave-fade)"
         x={plotX(startTickPrice).toFixed(3)}
         width={
           endTickPrice.isGreaterThan(startTickPrice)
