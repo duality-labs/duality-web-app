@@ -569,7 +569,11 @@ function logarithmStep(valueString: number, direction: number): number {
     : value
         .minus(
           new BigNumber(10).exponentiatedBy(
-            orderOfMagnitudeLastDigit + (lastDigit === '1' ? 0 : +1)
+            // reduce the order of magnitude of the value if going from a singular '1'
+            // eg. 1 -> 0.9,  0.1 -> 0.09,  0.01 -> 0.009
+            // so that the user doesn't go to 0 on a logarithmic scale
+            orderOfMagnitudeLastDigit +
+              (lastDigit === '1' && value.sd(false) === 1 ? 0 : +1)
           )
         )
         .toNumber();
