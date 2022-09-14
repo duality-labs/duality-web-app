@@ -16,6 +16,7 @@ import StepNumberInput from '../../components/StepNumberInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
 import LiquiditySelector from '../../components/LiquiditySelector';
 import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
+import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 
 import { useTokens, Token } from '../../components/TokenPicker/mockHooks';
 
@@ -116,6 +117,8 @@ export default function Pool() {
   ] = useDeposit();
 
   const [userTicks, setUserTicks] = useState<TickGroup>([]);
+
+  const currentPriceABFromTicks = useCurrentPriceFromTicks(ticks);
 
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
@@ -320,18 +323,32 @@ export default function Pool() {
       </div>
       <form className="pool-page" onSubmit={onSubmit}>
         <div className="chart-card page-card">
-          <LiquiditySelector
-            rangeMin={rangeMin}
-            rangeMax={rangeMax}
-            setRangeMin={setRangeMin}
-            setRangeMax={setRangeMax}
-            tickCount={parseInt(precision) || 1}
-            ticks={ticks}
-            feeTier={feeType?.fee}
-            tokenValues={values}
-            setUserTicks={setUserTicks}
-            advanced={chartTypeSelected === 'Orderbook'}
-          ></LiquiditySelector>
+          <div className="column">
+            <div className="chart-header">
+              <h3>Liquidity Distribution</h3>
+            </div>
+            <div className="chart-area">
+              <LiquiditySelector
+                rangeMin={rangeMin}
+                rangeMax={rangeMax}
+                setRangeMin={setRangeMin}
+                setRangeMax={setRangeMax}
+                tickCount={parseInt(precision) || 1}
+                ticks={ticks}
+                feeTier={feeType?.fee}
+                tokenValues={values}
+                setUserTicks={setUserTicks}
+                advanced={chartTypeSelected === 'Orderbook'}
+              ></LiquiditySelector>
+            </div>
+          </div>
+          <div className="column">
+            <div className="chart-price">
+              <span className="hero-text">
+                {currentPriceABFromTicks?.toFixed(5)}
+              </span>
+            </div>
+          </div>
         </div>
         <div className="page-card mx-auto">
           <div className="button-switch-group mx-auto mt-2 mb-4">
