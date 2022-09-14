@@ -19,8 +19,8 @@ interface LiquiditySelectorProps {
   feeTier: number | undefined;
   rangeMin: string | undefined;
   rangeMax: string | undefined;
-  setRangeMin: (callback: (rangeMin: string) => string) => void;
-  setRangeMax: (callback: (rangeMax: string) => string) => void;
+  setRangeMin: (rangeMin: string) => void;
+  setRangeMax: (rangeMax: string) => void;
   tokenValues: [valueA: string, valueB: string];
   setUserTicks?: (userTicks: TickGroup) => void;
   advanced?: boolean;
@@ -551,8 +551,8 @@ function TicksArea({
   ticks: TickGroup;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
-  setRangeMin: (callback: (rangeMin: string) => string) => void;
-  setRangeMax: (callback: (rangeMax: string) => string) => void;
+  setRangeMin: (rangeMin: string) => void;
+  setRangeMax: (rangeMax: string) => void;
   plotXinverse: (x: number) => number;
   bucketRatio: number;
   className?: string;
@@ -567,19 +567,25 @@ function TicksArea({
       (ev: MouseEventInit) => {
         const x = ev.movementX;
         if (x) {
-          setRangeMin(() => {
-            const xStart = plotX(startTickPrice);
-            const minValue = new BigNumber(plotXinverse(xStart + x));
-            const newValue = endTickPrice.isLessThanOrEqualTo(minValue)
-              ? startTickPrice
-              : minValue;
-            return newValue.toFixed(
-              Math.max(0, newValue.dp() - newValue.sd(true) + 3)
-            );
-          });
+          const xStart = plotX(startTickPrice);
+          const newValue = new BigNumber(plotXinverse(xStart + x));
+          const newValueString = newValue.toFixed(
+            Math.max(0, newValue.dp() - newValue.sd(true) + 3)
+          );
+          setRangeMin(newValueString);
+          if (endTickPrice.isLessThanOrEqualTo(newValue)) {
+            setRangeMax(newValueString);
+          }
         }
       },
-      [startTickPrice, endTickPrice, plotXinverse, plotX, setRangeMin]
+      [
+        startTickPrice,
+        endTickPrice,
+        plotXinverse,
+        plotX,
+        setRangeMin,
+        setRangeMax,
+      ]
     )
   );
 
@@ -588,19 +594,25 @@ function TicksArea({
       (ev: MouseEventInit) => {
         const x = ev.movementX;
         if (x) {
-          setRangeMax(() => {
-            const xStart = plotX(endTickPrice);
-            const maxValue = new BigNumber(plotXinverse(xStart + x));
-            const newValue = startTickPrice.isGreaterThanOrEqualTo(maxValue)
-              ? startTickPrice
-              : maxValue;
-            return newValue.toFixed(
-              Math.max(0, newValue.dp() - newValue.sd(true) + 3)
-            );
-          });
+          const xStart = plotX(endTickPrice);
+          const newValue = new BigNumber(plotXinverse(xStart + x));
+          const newValueString = newValue.toFixed(
+            Math.max(0, newValue.dp() - newValue.sd(true) + 3)
+          );
+          setRangeMax(newValueString);
+          if (startTickPrice.isGreaterThanOrEqualTo(newValue)) {
+            setRangeMin(newValueString);
+          }
         }
       },
-      [startTickPrice, endTickPrice, plotXinverse, plotX, setRangeMax]
+      [
+        startTickPrice,
+        endTickPrice,
+        plotXinverse,
+        plotX,
+        setRangeMin,
+        setRangeMax,
+      ]
     )
   );
 
