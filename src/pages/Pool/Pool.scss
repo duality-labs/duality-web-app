@@ -240,5 +240,8 @@
   .price-card > .card-row {
     justify-content: space-between;
     gap: margins.$m-4;
+    .range-step-input {
+      max-width: 16rem;
+    }
   }
 }

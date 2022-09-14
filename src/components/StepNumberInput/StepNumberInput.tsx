@@ -185,12 +185,12 @@ export default function StepNumberInput({
         {editable || disabled ? (
           <input
             type="number"
-            value={currentValue}
+            value={format(currentValue)}
             onInput={onInputChange}
             ref={inputRef}
           />
         ) : (
-          <span>{currentValue}</span>
+          <span>{format(currentValue)}</span>
         )}
         <button
           type="button"
