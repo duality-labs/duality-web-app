@@ -48,6 +48,11 @@
     fill: hsl(37, 62%, 68%);
     cursor: pointer;
   }
+  .pole-flag-stripe {
+    fill: transparent;
+    stroke: white;
+    stroke-dasharray: 20 10;
+  }
 }
 
 .axis {
