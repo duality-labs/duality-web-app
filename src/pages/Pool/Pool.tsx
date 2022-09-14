@@ -418,143 +418,149 @@ export default function Pool() {
             </div>
           </div>
         </div>
-        <div className="page-card mx-auto">
-          <div className="button-switch-group mx-auto mt-2 mb-4">
-            <button
-              type="button"
-              className={[
-                'button',
-                'py-3',
-                'px-5',
-                tabSelected === 'range' && 'button-primary',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => setTabSelected('range')}
-            >
-              Price Range
-            </button>
-            <button
-              type="button"
-              className={[
-                'button',
-                'py-3',
-                'px-5',
-                tabSelected === 'fee' && 'button-primary',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => setTabSelected('fee')}
-            >
-              Fee Tier
-            </button>
-            <button
-              type="button"
-              className={[
-                'button',
-                'py-3',
-                'px-5',
-                tabSelected === 'curve' && 'button-primary',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => setTabSelected('curve')}
-            >
-              Liquidity Curve
-            </button>
-          </div>
-          {tabSelected === 'range' && (
-            <div className="price-card">
-              <div className="card-row">
-                <StepNumberInput
-                  title="MIN PRICE"
-                  value={rangeMin}
-                  onChange={setRangeMin}
-                  stepFunction={logarithmStep}
-                  min={0}
-                  max={rangeMax}
-                  description={
-                    tokenA && tokenB
-                      ? `${tokenA.symbol} per ${tokenB.symbol}`
-                      : 'No Tokens'
-                  }
-                />
-                <StepNumberInput
-                  title="MAX PRICE"
-                  value={rangeMax}
-                  onChange={setRangeMax}
-                  stepFunction={logarithmStep}
-                  min={rangeMin}
-                  description={
-                    tokenA && tokenB
-                      ? `${tokenA.symbol} per ${tokenB.symbol}`
-                      : 'No Tokens'
-                  }
-                />
-              </div>
-              <div className="row mt-4 mb-2">
-                Your liquidity will be distributed within the minimum and
-                maximum price ranges.
-              </div>
+        {chartTypeSelected === 'AMM' ? (
+          <div className="page-card mx-auto">
+            <div className="button-switch-group mx-auto mt-2 mb-4">
+              <button
+                type="button"
+                className={[
+                  'button',
+                  'py-3',
+                  'px-5',
+                  tabSelected === 'range' && 'button-primary',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => setTabSelected('range')}
+              >
+                Price Range
+              </button>
+              <button
+                type="button"
+                className={[
+                  'button',
+                  'py-3',
+                  'px-5',
+                  tabSelected === 'fee' && 'button-primary',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => setTabSelected('fee')}
+              >
+                Fee Tier
+              </button>
+              <button
+                type="button"
+                className={[
+                  'button',
+                  'py-3',
+                  'px-5',
+                  tabSelected === 'curve' && 'button-primary',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => setTabSelected('curve')}
+              >
+                Liquidity Curve
+              </button>
             </div>
-          )}
-          {tabSelected === 'fee' && (
-            <div className="fee-card">
-              <RadioInput<FeeType>
-                value={feeType}
-                list={feeTypes}
-                onChange={setFeeType}
-                OptionComponent={({ option: { fee, label, description } }) => (
-                  <div key={fee} className="button-primary card fee-type">
-                    <h5 className="fee-title">{label}</h5>
-                    <span className="fee-description">{description}</span>
-                    <span className="pill fee-liquidity">
-                      {calculateFeeLiquidity(label)}
-                    </span>
-                  </div>
-                )}
-              />
-            </div>
-          )}
-          {tabSelected === 'curve' && (
-            <div>
-              <div className="curve-card">
-                <div className="info">
-                  Your liquidity will be distributed among different price
-                  points (called ticks) in the shape of the liquidity curve.
-                  This is represented by the yellow curve above.
-                </div>
-                <div className="card-row mt-4">
-                  <RadioInput
-                    className="button-switch-group"
-                    value={slopeType}
-                    list={slopeTypes}
-                    onChange={setSlopeType}
-                  />
-                </div>
-              </div>
-              <div className="precision-card mt-4">
-                <div className="card-header">
-                  <h3 className="card-title">Precision {precision}</h3>
+            {tabSelected === 'range' && (
+              <div className="price-card">
+                <div className="card-row">
                   <StepNumberInput
-                    editable={false}
-                    min={2}
-                    max={10}
-                    value={precision}
-                    onChange={setPrecision}
+                    title="MIN PRICE"
+                    value={rangeMin}
+                    onChange={setRangeMin}
+                    stepFunction={logarithmStep}
+                    min={0}
+                    max={rangeMax}
+                    description={
+                      tokenA && tokenB
+                        ? `${tokenA.symbol} per ${tokenB.symbol}`
+                        : 'No Tokens'
+                    }
                   />
-                  <button
-                    type="button"
-                    className="button-info ml-2"
-                    onClick={() => setPrecision(defaultPrecision)}
-                  >
-                    Auto
-                  </button>
+                  <StepNumberInput
+                    title="MAX PRICE"
+                    value={rangeMax}
+                    onChange={setRangeMax}
+                    stepFunction={logarithmStep}
+                    min={rangeMin}
+                    description={
+                      tokenA && tokenB
+                        ? `${tokenA.symbol} per ${tokenB.symbol}`
+                        : 'No Tokens'
+                    }
+                  />
+                </div>
+                <div className="row mt-4 mb-2">
+                  Your liquidity will be distributed within the minimum and
+                  maximum price ranges.
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+            {tabSelected === 'fee' && (
+              <div className="fee-card">
+                <RadioInput<FeeType>
+                  value={feeType}
+                  list={feeTypes}
+                  onChange={setFeeType}
+                  OptionComponent={({
+                    option: { fee, label, description },
+                  }) => (
+                    <div key={fee} className="button-primary card fee-type">
+                      <h5 className="fee-title">{label}</h5>
+                      <span className="fee-description">{description}</span>
+                      <span className="pill fee-liquidity">
+                        {calculateFeeLiquidity(label)}
+                      </span>
+                    </div>
+                  )}
+                />
+              </div>
+            )}
+            {tabSelected === 'curve' && (
+              <div>
+                <div className="curve-card">
+                  <div className="info">
+                    Your liquidity will be distributed among different price
+                    points (called ticks) in the shape of the liquidity curve.
+                    This is represented by the yellow curve above.
+                  </div>
+                  <div className="card-row mt-4">
+                    <RadioInput
+                      className="button-switch-group"
+                      value={slopeType}
+                      list={slopeTypes}
+                      onChange={setSlopeType}
+                    />
+                  </div>
+                </div>
+                <div className="precision-card mt-4">
+                  <div className="card-header">
+                    <h3 className="card-title">Precision {precision}</h3>
+                    <StepNumberInput
+                      editable={false}
+                      min={2}
+                      max={10}
+                      value={precision}
+                      onChange={setPrecision}
+                    />
+                    <button
+                      type="button"
+                      className="button-info ml-2"
+                      onClick={() => setPrecision(defaultPrecision)}
+                    >
+                      Auto
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="page-card mx-auto"></div>
+        )}
         <div className="pool-options">
           <div className="card-row">
             {(tickFetching || isValidatingDeposit) && (
