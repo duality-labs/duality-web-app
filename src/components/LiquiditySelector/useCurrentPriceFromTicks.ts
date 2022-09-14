@@ -16,8 +16,12 @@ export default function useCurrentPriceFromTicks(
     return Object.values(ticks)
       .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
       .filter((tick): tick is TickInfo => tickFilter(tick)) // filter to relevant ticks
-      .sort((tick0, tick1) => tick0.price.comparedTo(tick1.price)) // sort by price
-      .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
+      .map((tick) => ({
+        ...tick,
+        virtualPrice: tick.price.multipliedBy(tick.fee.plus(1)),
+      })) // add virtual price
+      .sort((tick0, tick1) => tick0.virtualPrice.comparedTo(tick1.virtualPrice)) // sort by virtual price
+      .map((tick) => [tick.virtualPrice, tick.reserve0, tick.reserve1]); // use virtual price always here
   }, [ticks, tickFilter]);
 
   const invertTokenOrder = useMemo(() => {
