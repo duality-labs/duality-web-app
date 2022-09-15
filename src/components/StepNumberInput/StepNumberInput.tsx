@@ -92,10 +92,14 @@ export default function StepNumberInput({
             currentValue + step * direction
         );
         // restrict to certain significant digits
-        const newValueString = newValue.toFixed(
-          Math.max(0, newValue.dp() - newValue.sd(true) + 6),
-          direction ? BigNumber.ROUND_UP : BigNumber.ROUND_DOWN
-        );
+        const newValueString =
+          newValue.dp() >= 6
+            ? newValue.toFixed(
+                Math.max(0, newValue.dp() - newValue.sd(true) + 6),
+                direction > 0 ? BigNumber.ROUND_UP : BigNumber.ROUND_DOWN
+              )
+            : newValue.toFixed();
+
         maybeUpdate(newValueString);
       }
     },
