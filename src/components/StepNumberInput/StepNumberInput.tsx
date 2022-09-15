@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import useOnContinualPress from '../hooks/useOnContinualPress';
 
@@ -49,40 +50,34 @@ export default function StepNumberInput({
   const min =
     typeof rawMin === 'number' ? rawMin : rawMin ? parse(rawMin) : undefined;
 
+  const currentValue = parse(value);
   if (min !== undefined && max !== undefined && max < min) {
     throw new Error(
       'Invalid Range, max limit cannot be smaller than the min limit'
     );
   }
-  const [currentValue, setCurrentValue] = useState(() => parse(value));
   const inputRef = useRef<HTMLInputElement>(null);
-
-  /**
-   * Update current value when unparsed value has changed
-   */
-  useEffect(() => {
-    setCurrentValue(parse(value));
-  }, [value, parse]);
 
   /**
    * Makes sure the value is valid number within the proper range
    * @param newValue the proposed new value to be checked
    */
-  const validateValue = useCallback(
-    (oldValue: number, newValue: number) => {
-      if (min && newValue < min) {
-        return min;
-      }
-      if (max && newValue > max) {
-        return max;
-      }
-      if (newValue !== undefined && !isNaN(newValue)) {
-        return newValue;
-      } else {
-        return oldValue;
+  const maybeUpdate = useCallback(
+    (newValueString: string) => {
+      if (onChange) {
+        const newValue = new BigNumber(newValueString);
+        if (min !== undefined && newValue.isLessThan(min)) {
+          return onChange(new BigNumber(min).toFixed());
+        }
+        if (max !== undefined && newValue.isGreaterThan(max)) {
+          return onChange(new BigNumber(max).toFixed());
+        }
+        if (!newValue.isNaN()) {
+          return onChange(newValueString);
+        }
       }
     },
-    [min, max]
+    [min, max, onChange]
   );
 
   /**
@@ -91,14 +86,14 @@ export default function StepNumberInput({
    */
   const onStep = useCallback(
     (direction: Direction) => {
-      setCurrentValue((oldValue) => {
-        return validateValue(
-          oldValue,
-          stepFunction?.(oldValue, direction) ?? oldValue + step * direction
-        );
-      });
+      maybeUpdate?.(
+        new BigNumber(
+          stepFunction?.(currentValue, direction) ??
+            currentValue + step * direction
+        ).toFixed()
+      );
     },
-    [step, stepFunction, validateValue]
+    [step, stepFunction, maybeUpdate, currentValue]
   );
   const onSubStep = useCallback(() => onStep(-1), [onStep]);
   const onAddStep = useCallback(() => onStep(+1), [onStep]);
@@ -133,14 +128,8 @@ export default function StepNumberInput({
    */
   const onInputChange = useCallback(() => {
     const value = inputRef.current?.value;
-    setCurrentValue((oldValue) => validateValue(oldValue, parse(value || '0')));
-  }, [validateValue, parse]);
-
-  useEffect(() => {
-    if (onChange) {
-      onChange(format(currentValue));
-    }
-  }, [onChange, currentValue, format]);
+    maybeUpdate?.(value || '0');
+  }, [maybeUpdate]);
 
   useEffect(() => {
     function handleArrowKeyStep(event: KeyboardEvent) {
@@ -182,12 +171,12 @@ export default function StepNumberInput({
         {editable || disabled ? (
           <input
             type="number"
-            value={currentValue}
+            value={value}
             onInput={onInputChange}
             ref={inputRef}
           />
         ) : (
-          <span>{currentValue}</span>
+          <span>{value}</span>
         )}
         <button
           type="button"
