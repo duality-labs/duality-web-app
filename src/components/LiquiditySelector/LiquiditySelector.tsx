@@ -656,6 +656,21 @@ function TicksGroup({
             r="5"
             className="tip"
           />
+          <text
+            x={plotX(price).toFixed(3)}
+            y={(
+              plotY(
+                token0Value.isGreaterThan(0)
+                  ? token0Value.dividedBy(cumulativeToken0Values)
+                  : token1Value.dividedBy(cumulativeToken1Values)
+              ) - 28
+            ).toFixed(3)}
+            dy="12"
+            dominantBaseline="middle"
+            textAnchor="middle"
+          >
+            {index + 1}
+          </text>
         </g>
       ))}
     </g>
