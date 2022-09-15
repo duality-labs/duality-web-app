@@ -73,10 +73,6 @@ export default function Pool() {
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
   );
-  const swapTokens = useCallback(() => {
-    setTokenA(tokenB);
-    setTokenB(tokenA);
-  }, [tokenA, tokenB]);
   const { data: tokenList = [] } = useTokens();
 
   // set token A to be first token in list if not already populated
@@ -178,6 +174,27 @@ export default function Pool() {
   useEffect(() => {
     setTickSelected((selected) => Math.min(selected, Number(precision) - 1));
   }, [precision]);
+
+  const swapAll = useCallback(() => {
+    setInvertedTokenOrder((order) => !order);
+    setRangeMin(() => {
+      const newValue = new BigNumber(1).dividedBy(new BigNumber(rangeMax));
+      return newValue.toFixed(
+        Math.max(0, newValue.dp() - newValue.sd(true) + 3),
+        BigNumber.ROUND_HALF_DOWN
+      );
+    });
+    setRangeMax(() => {
+      const newValue = new BigNumber(1).dividedBy(new BigNumber(rangeMin));
+      return newValue.toFixed(
+        Math.max(0, newValue.dp() - newValue.sd(true) + 3),
+        BigNumber.ROUND_HALF_UP
+      );
+    });
+    setValues(([valueA, valueB]) => [valueB, valueA]);
+    setTokenA(tokenB);
+    setTokenB(tokenA);
+  }, [tokenA, tokenB, rangeMin, rangeMax]);
 
   const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
     'range'
@@ -299,7 +316,7 @@ export default function Pool() {
           <div className="card-row">
             <button
               type="button"
-              onClick={swapTokens}
+              onClick={swapAll}
               className="icon-button mx-auto"
             >
               <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
@@ -460,31 +477,7 @@ export default function Pool() {
                 <span className="tokens-badge badge-primary badge-large font-console">
                   {tokenB?.symbol}/{tokenA?.symbol}
                 </span>
-                <button
-                  type="button"
-                  className="icon-button"
-                  onClick={() => {
-                    setInvertedTokenOrder((order) => !order);
-                    setRangeMin(() => {
-                      const newValue = new BigNumber(1).dividedBy(
-                        new BigNumber(rangeMax)
-                      );
-                      return newValue.toFixed(
-                        Math.max(0, newValue.dp() - newValue.sd(true) + 3)
-                      );
-                    });
-                    setRangeMax(() => {
-                      const newValue = new BigNumber(1).dividedBy(
-                        new BigNumber(rangeMin)
-                      );
-                      return newValue.toFixed(
-                        Math.max(0, newValue.dp() - newValue.sd(true) + 3)
-                      );
-                    });
-                    setValues(([valueA, valueB]) => [valueB, valueA]);
-                    swapTokens();
-                  }}
-                >
+                <button type="button" className="icon-button" onClick={swapAll}>
                   <FontAwesomeIcon
                     icon={faArrowRightArrowLeft}
                   ></FontAwesomeIcon>
