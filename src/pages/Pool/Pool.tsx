@@ -603,23 +603,48 @@ export default function Pool() {
             </div>
             <div className="row">
               <div className="col">
-                <div className="row precision-card">
-                  <h3 className="card-title mr-auto">Number of Ticks</h3>
-                  <StepNumberInput
-                    editable={false}
-                    min={2}
-                    max={10}
-                    value={precision}
-                    onChange={setPrecision}
-                  />
-                  <button
-                    type="button"
-                    className="button-info ml-2"
-                    onClick={() => setPrecision(defaultPrecision)}
-                  >
-                    Auto
-                  </button>
-                </div>
+                {tickSelected < 0 ? (
+                  <div className="row precision-card">
+                    <h3 className="card-title mr-auto">Number of Ticks</h3>
+                    <StepNumberInput
+                      editable={false}
+                      min={2}
+                      max={10}
+                      value={precision}
+                      onChange={setPrecision}
+                    />
+                    <button
+                      type="button"
+                      className="button-info ml-2"
+                      onClick={() => setPrecision(defaultPrecision)}
+                    >
+                      Auto
+                    </button>
+                  </div>
+                ) : (
+                  <div className="row tick-price-card">
+                    <h3 className="card-title mr-auto">Price</h3>
+                    <StepNumberInput
+                      key={tickSelected}
+                      stepFunction={logarithmStep}
+                      value={userTicks[tickSelected][0].toFixed(denomExponent)}
+                      onChange={(value) => {
+                        setUserTicks((userTicks) => {
+                          // skip non-update
+                          const newValue = new BigNumber(value);
+                          if (userTicks[tickSelected][0].isEqualTo(newValue))
+                            return userTicks;
+                          // replace singular tick price
+                          return userTicks.map((userTick, index) => {
+                            return index === tickSelected
+                              ? [newValue, userTick[1], userTick[2]]
+                              : userTick;
+                          });
+                        });
+                      }}
+                    />
+                  </div>
+                )}
                 <div className="row autobalance-card">
                   <h3 className="card-title mr-auto">Total Allocation</h3>
                   <span className="autobalance-allocation">100%</span>
