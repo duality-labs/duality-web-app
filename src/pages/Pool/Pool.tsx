@@ -628,25 +628,6 @@ export default function Pool() {
                     />
                   </div>
                 </div>
-                <div className="precision-card mt-4">
-                  <div className="card-header">
-                    <h3 className="card-title">Precision {precision}</h3>
-                    <StepNumberInput
-                      editable={false}
-                      min={2}
-                      max={10}
-                      value={precision}
-                      onChange={setPrecision}
-                    />
-                    <button
-                      type="button"
-                      className="button-info ml-2"
-                      onClick={() => setPrecision(defaultPrecision)}
-                    >
-                      Auto
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
           </div>
