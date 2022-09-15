@@ -614,21 +614,19 @@ export default function Pool() {
               </div>
             )}
             {tabSelected === 'curve' && (
-              <div>
-                <div className="curve-card">
-                  <div className="info">
-                    Your liquidity will be distributed among different price
-                    points (called ticks) in the shape of the liquidity curve.
-                    This is represented by the yellow curve above.
-                  </div>
-                  <div className="card-row mt-4">
-                    <RadioInput
-                      className="button-switch-group"
-                      value={slopeType}
-                      list={slopeTypes}
-                      onChange={setSlopeType}
-                    />
-                  </div>
+              <div className="curve-card">
+                <div className="info">
+                  Your liquidity will be distributed among different price
+                  points (called ticks) in the shape of the liquidity curve.
+                  This is represented by the yellow curve above.
+                </div>
+                <div className="card-row mt-4">
+                  <RadioInput
+                    className="button-switch-group"
+                    value={slopeType}
+                    list={slopeTypes}
+                    onChange={setSlopeType}
+                  />
                 </div>
               </div>
             )}
