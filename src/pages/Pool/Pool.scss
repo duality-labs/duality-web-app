@@ -26,6 +26,10 @@
 }
 
 .curve-card {
+  & {
+    // "nice-fit" to curve selections
+    max-width: 40rem;
+  }
   > .card-row {
     justify-content: center;
   }
