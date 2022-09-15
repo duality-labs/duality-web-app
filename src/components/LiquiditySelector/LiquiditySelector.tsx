@@ -507,7 +507,11 @@ function useDragMovement(
     if (dragging) {
       const onMouseUp = () => setDragging(false);
       container.addEventListener('mouseup', onMouseUp);
-      return () => container.removeEventListener('mouseup', onMouseUp);
+      container.addEventListener('mouseleave', onMouseUp);
+      return () => {
+        container.removeEventListener('mouseup', onMouseUp);
+        container.removeEventListener('mouseleave', onMouseUp);
+      };
     }
   }, [container, dragging]);
 
