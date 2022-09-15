@@ -8,11 +8,11 @@ export default function useOnContinualPress(
   const [active, setActive] = useState(false);
   const stop = useCallback(() => setActive(false), []);
   const start = useCallback(() => {
-    if (delay < Infinity) {
-      const timeout = setTimeout(() => setActive(true), delay);
+    if (delay < Infinity && delay >= interval) {
+      const timeout = setTimeout(() => setActive(true), delay - interval);
       return () => clearTimeout(timeout);
     }
-  }, [delay]);
+  }, [delay, interval]);
 
   useEffect(() => {
     if (active) {
