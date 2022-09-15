@@ -50,8 +50,8 @@ export default function useOnDragMove(
         e.screenX !== undefined &&
         e.screenY !== undefined
           ? {
-              x: originalPosition.current.x - e.screenX,
-              y: originalPosition.current.y - e.screenY,
+              x: e.screenX - originalPosition.current.x,
+              y: e.screenY - originalPosition.current.y,
             }
           : undefined;
       return onMouseMove(e as Event, displacement);
