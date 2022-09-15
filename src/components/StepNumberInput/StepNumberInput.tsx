@@ -114,6 +114,20 @@ export default function StepNumberInput({
     pressedInterval
   );
 
+  const [subDisabled, setSubDisabled] = useState(() => false);
+  useEffect(() => {
+    const disabled = disableLimit && min !== undefined && currentValue <= min;
+    if (disabled) stopAutoSub();
+    setSubDisabled(disabled);
+  }, [disableLimit, currentValue, min, stopAutoSub]);
+
+  const [addDisabled, setAddDisabled] = useState(() => false);
+  useEffect(() => {
+    const disabled = disableLimit && max !== undefined && currentValue >= max;
+    if (disabled) stopAutoAdd();
+    setAddDisabled(disabled);
+  }, [disableLimit, currentValue, max, stopAutoAdd]);
+
   /**
    * To be called when there is a change with the input
    */
@@ -138,10 +152,7 @@ export default function StepNumberInput({
           onMouseDown={startAutoSub}
           onMouseUp={stopAutoSub}
           onMouseLeave={stopAutoSub}
-          disabled={
-            disabled ||
-            (disableLimit && min !== undefined && currentValue <= min)
-          }
+          disabled={disabled || subDisabled}
           tabIndex={tabbableButtons ? 0 : -1}
         >
           -
@@ -162,10 +173,7 @@ export default function StepNumberInput({
           onMouseDown={startAutoAdd}
           onMouseUp={stopAutoAdd}
           onMouseLeave={stopAutoAdd}
-          disabled={
-            disabled ||
-            (disableLimit && max !== undefined && currentValue >= max)
-          }
+          disabled={disabled || addDisabled}
           tabIndex={tabbableButtons ? 0 : -1}
         >
           +
