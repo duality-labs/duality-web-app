@@ -689,8 +689,16 @@ function TicksGroup({
               if (tickSelected === index) {
                 return [
                   tick[0],
-                  !tick[1].isZero() ? tick[1].plus(displacementValue) : tick[1],
-                  !tick[2].isZero() ? tick[2].plus(displacementValue) : tick[2],
+                  !tick[1].isZero()
+                    ? tick[1].plus(displacementValue).isGreaterThan(0)
+                      ? tick[1].plus(displacementValue)
+                      : new BigNumber(0)
+                    : tick[1],
+                  !tick[2].isZero()
+                    ? tick[2].plus(displacementValue).isGreaterThan(0)
+                      ? tick[2].plus(displacementValue)
+                      : new BigNumber(0)
+                    : tick[2],
                 ];
               } else {
                 return userTick;
