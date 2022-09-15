@@ -469,7 +469,9 @@ export default function Pool() {
         </div>
       </div>
       <form className="pool-page" onSubmit={onSubmit}>
-        <div className="chart-card page-card row">
+        <div
+          className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
+        >
           <div className="flex row">
             <div className="flex col col--left">
               <div className="chart-header row my-4">
