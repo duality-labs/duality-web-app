@@ -4,7 +4,6 @@ import {
   useMemo,
   useCallback,
   useLayoutEffect,
-  useRef,
   MouseEvent,
 } from 'react';
 import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
@@ -22,7 +21,8 @@ interface LiquiditySelectorProps {
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
   tokenValues: [valueA: string, valueB: string];
-  setUserTicks?: (userTicks: TickGroup) => void;
+  userTicks?: TickGroup;
+  setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   advanced?: boolean;
 }
 
@@ -66,7 +66,8 @@ export default function LiquiditySelector({
   setRangeMin,
   setRangeMax,
   tokenValues = ['0', '0'],
-  setUserTicks: setExternalUserTicks,
+  userTicks = [],
+  setUserTicks,
   advanced = false,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
@@ -107,16 +108,6 @@ export default function LiquiditySelector({
     const graphEnd = currentPriceFromTicks.multipliedBy(4);
     return graphEnd.isLessThan(1.1) ? new BigNumber(1.1) : graphEnd;
   }, [currentPriceFromTicks]);
-
-  const [userTicks, setUserTicks] = useState<TickGroup>([]);
-  // allow userTicks to be passed back up to parent component
-  const setExternalUserTicksRef = useRef(setExternalUserTicks);
-  useEffect(() => {
-    setExternalUserTicksRef.current = setExternalUserTicks;
-  }, [setExternalUserTicks]);
-  useEffect(() => {
-    setExternalUserTicksRef.current?.(userTicks);
-  }, [userTicks]);
 
   const [dataStart, dataEnd] = useMemo(() => {
     const { xMin = new BigNumber(1 / 1.1), xMax = new BigNumber(1.1) } =
@@ -336,7 +327,7 @@ export default function LiquiditySelector({
   );
 
   useEffect(() => {
-    setUserTicks(() => {
+    function getUserTicks(): TickGroup {
       // set multiple ticks across the range
       if (currentPriceFromTicks.isGreaterThan(0) && tickCount > 1) {
         const tokenAmountA = new BigNumber(tokenValues[0]);
@@ -396,6 +387,26 @@ export default function LiquiditySelector({
       else {
         return [];
       }
+    }
+
+    setUserTicks?.((userTicks) => {
+      const newUserTicks = getUserTicks();
+
+      // check if number of ticks are equal or value in ticks are equal
+      if (
+        userTicks.length !== newUserTicks.length ||
+        !newUserTicks.every((newUserTick, ticksIndex) => {
+          return newUserTick.every((value, valueIndex) => {
+            return value.isEqualTo(userTicks[ticksIndex][valueIndex]);
+          });
+        })
+      ) {
+        // return changed values
+        return newUserTicks;
+      } else {
+        // return same values
+        return userTicks;
+      }
     });
   }, [
     tokenValues,
@@ -405,6 +416,7 @@ export default function LiquiditySelector({
     invertTokenOrder,
     currentPriceFromTicks,
     graphHeight,
+    setUserTicks,
   ]);
 
   return (
