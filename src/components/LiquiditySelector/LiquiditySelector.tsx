@@ -1,4 +1,11 @@
-import { useState, useMemo, useCallback, useLayoutEffect } from 'react';
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useLayoutEffect,
+  MouseEvent,
+  useRef,
+} from 'react';
 import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
@@ -16,9 +23,8 @@ interface LiquiditySelectorProps {
   advanced?: boolean;
 }
 
-export type TickGroup = Array<
-  [price: BigNumber, token0Value: BigNumber, token1Value: BigNumber]
->;
+type Tick = [price: BigNumber, token0Value: BigNumber, token1Value: BigNumber];
+export type TickGroup = Array<Tick>;
 type TickGroupBucketsEmpty = Array<
   [lowerBound: BigNumber, upperBound: BigNumber]
 >;
@@ -630,24 +636,79 @@ function TicksGroup({
     new BigNumber(0)
   );
 
+  const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
+
   const [startDragTick] = useOnDragMove(
     useCallback(
-      (ev: MouseEventInit, displacement = { x: 0, y: 0 }) => {
+      (ev: Event, displacement = { x: 0, y: 0 }) => {
+        // exit if there is no tick
+        const { index: tickSelected, tick } = lastSelectedTick.current || {};
+        if (!tick || tickSelected === undefined || isNaN(tickSelected)) return;
+
         // move tick price
         if (Math.abs(displacement.x) > Math.abs(displacement.y)) {
           return setUserTicks?.((userTicks) => {
-            return userTicks;
+            const orderOfMagnitudePixels =
+              plotX(new BigNumber(10)) - plotX(new BigNumber(1));
+            const displacementRatio = Math.pow(
+              10,
+              displacement.x / orderOfMagnitudePixels
+            );
+            return userTicks.map((userTick, index) => {
+              // modify price
+              if (tickSelected === index) {
+                return [
+                  tick[0].multipliedBy(displacementRatio),
+                  tick[1],
+                  tick[2],
+                ];
+              } else {
+                return userTick;
+              }
+            });
           });
         }
         // move tick value
         else {
           return setUserTicks?.((userTicks) => {
-            return userTicks;
+            const linearPixels =
+              plotY(new BigNumber(1)) - plotY(new BigNumber(0));
+            const displacementValue = displacement.y / linearPixels;
+            return userTicks.map((userTick, index) => {
+              // modify price
+              if (tickSelected === index) {
+                return [
+                  tick[0],
+                  !tick[1].isZero() ? tick[1].plus(displacementValue) : tick[1],
+                  !tick[2].isZero() ? tick[2].plus(displacementValue) : tick[2],
+                ];
+              } else {
+                return userTick;
+              }
+            });
           });
         }
       },
-      [setUserTicks]
+      [setUserTicks, plotX, plotY]
     )
+  );
+
+  const onTickSelected = useCallback(
+    (e: MouseEvent) => {
+      // set last tick synchronously
+      const index = parseInt(
+        (e.target as HTMLElement)?.getAttribute('data-key') || ''
+      );
+      if (!isNaN(index)) {
+        lastSelectedTick.current = {
+          tick: ticks[index],
+          index,
+        };
+      }
+
+      startDragTick(e);
+    },
+    [ticks, startDragTick]
   );
 
   return (
@@ -711,6 +772,7 @@ function TicksGroup({
           </text>
           <ellipse
             className="tick--hit-area"
+            data-key={index}
             cx={plotX(price).toFixed(3)}
             cy={(
               plotY(
@@ -725,7 +787,7 @@ function TicksGroup({
             ).toFixed(3)}
             rx="12.5"
             ry="22.5"
-            onMouseDown={startDragTick}
+            onMouseDown={onTickSelected}
           />
         </g>
       ))}
