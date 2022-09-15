@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export default function useOnContinualPress(
   onTimeout: () => void,
@@ -7,10 +7,19 @@ export default function useOnContinualPress(
 ) {
   // set active state and handlers
   const [active, setActive] = useState(false);
-  const stop = useCallback(() => setActive(false), []);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout>();
+
+  const stop = useCallback(() => {
+    timeoutRef.current && clearTimeout(timeoutRef.current);
+    intervalRef.current && clearInterval(intervalRef.current);
+    setActive(false);
+  }, []);
+
   const start = useCallback(() => {
     if (delay < Infinity && delay) {
       const timeout = setTimeout(() => setActive(true), delay);
+      timeoutRef.current = timeout;
       return () => clearTimeout(timeout);
     }
   }, [delay]);
@@ -18,6 +27,7 @@ export default function useOnContinualPress(
   useEffect(() => {
     if (active) {
       const timeout = setInterval(() => onTimeout(), interval);
+      intervalRef.current = timeout;
       return () => clearInterval(timeout);
     }
   }, [active, interval, onTimeout]);
