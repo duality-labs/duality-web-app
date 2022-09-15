@@ -676,6 +676,7 @@ export default function Pool() {
                     onChange={setRangeMin}
                     stepFunction={logarithmStep}
                     pressedDelay={500}
+                    pressedInterval={100}
                     min={denomMin}
                     max={rangeMax}
                     description={
@@ -690,6 +691,7 @@ export default function Pool() {
                     onChange={setRangeMax}
                     stepFunction={logarithmStep}
                     pressedDelay={500}
+                    pressedInterval={100}
                     min={rangeMin}
                     max={denomMax}
                     description={
@@ -808,6 +810,7 @@ export default function Pool() {
                       min={denomMin}
                       max={denomMax}
                       pressedDelay={500}
+                      pressedInterval={100}
                       stepFunction={logarithmStep}
                       value={userTicks[tickSelected][0].toFixed()}
                       onChange={(value) => {
