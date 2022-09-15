@@ -26,6 +26,8 @@ import { useDeposit } from './useDeposit';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
+const denomMin = Math.pow(10, -denomExponent);
+const denomMax = Math.pow(10, +denomExponent);
 const defaultFee = '0.30%';
 const defaultPrice = '1';
 const defaultSlopeType = 'UNIFORM';
@@ -478,7 +480,7 @@ export default function Pool() {
                     value={rangeMin}
                     onChange={setRangeMin}
                     stepFunction={logarithmStep}
-                    min={0}
+                    min={denomMin}
                     max={rangeMax}
                     description={
                       tokenA && tokenB
@@ -492,6 +494,7 @@ export default function Pool() {
                     onChange={setRangeMax}
                     stepFunction={logarithmStep}
                     min={rangeMin}
+                    max={denomMax}
                     description={
                       tokenA && tokenB
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
