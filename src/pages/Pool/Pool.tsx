@@ -490,6 +490,8 @@ export default function Pool() {
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
                   ticks={ticks}
+                  tickSelected={tickSelected}
+                  setTickSelected={setTickSelected}
                   feeTier={feeType?.fee}
                   userTicks={userTicks}
                   setUserTicks={setUserTicks}
