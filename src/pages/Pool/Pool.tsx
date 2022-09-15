@@ -118,7 +118,9 @@ export default function Pool() {
   const currentPriceABFromTicks =
     useCurrentPriceFromTicks(unorderedTicks) || new BigNumber(1);
 
-  const [invertedTokenOrder, setInvertedTokenOrder] = useState(true);
+  const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
+    return currentPriceABFromTicks?.isLessThan(1);
+  });
 
   const currentPriceFromTicks = invertedTokenOrder
     ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
@@ -184,7 +186,6 @@ export default function Pool() {
     'AMM' | 'Orderbook'
   >('AMM');
 
-  const invertTokenOrder = false;
   const tokenValues = values;
   const tickCount = Number(precision || 1);
   useEffect(() => {
@@ -216,9 +217,8 @@ export default function Pool() {
             : // calculate price from right (to have exact right value)
               lastPrice?.dividedBy(tickGapRatio) ?? tickEnd;
 
-          const invertToken = invertTokenOrder
-            ? price.isGreaterThanOrEqualTo(currentPriceFromTicks)
-            : price.isLessThan(currentPriceFromTicks);
+          // choose whether token A or B should be added for the tick at this price
+          const invertToken = price.isLessThan(currentPriceFromTicks);
           // add to count
           tickCounts[invertToken ? 0 : 1] += 1;
           return [
@@ -274,7 +274,6 @@ export default function Pool() {
     rangeMin,
     rangeMax,
     tickCount,
-    invertTokenOrder,
     currentPriceFromTicks,
     setUserTicks,
   ]);
@@ -459,7 +458,7 @@ export default function Pool() {
               <div className="chart-header row my-4">
                 <h3 className="text-normal">Liquidity Distribution</h3>
                 <span className="tokens-badge badge-primary badge-large font-console">
-                  {tokenA?.symbol}/{tokenB?.symbol}
+                  {tokenB?.symbol}/{tokenA?.symbol}
                 </span>
                 <button
                   type="button"
@@ -576,7 +575,7 @@ export default function Pool() {
                     max={rangeMax}
                     description={
                       tokenA && tokenB
-                        ? `${tokenA.symbol} per ${tokenB.symbol}`
+                        ? `${tokenB.symbol} per ${tokenA.symbol}`
                         : 'No Tokens'
                     }
                   />
@@ -590,7 +589,7 @@ export default function Pool() {
                     max={denomMax}
                     description={
                       tokenA && tokenB
-                        ? `${tokenA.symbol} per ${tokenB.symbol}`
+                        ? `${tokenB.symbol} per ${tokenA.symbol}`
                         : 'No Tokens'
                     }
                   />
