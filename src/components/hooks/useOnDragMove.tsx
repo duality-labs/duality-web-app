@@ -1,17 +1,32 @@
-import { useState, useEffect, useCallback, MouseEvent } from 'react';
+import { useState, useEffect, useCallback, MouseEvent, useRef } from 'react';
+
+interface Position {
+  x: number;
+  y: number;
+}
 
 export default function useOnDragMove(
-  onMouseMove: EventListener,
+  onMouseMove: (
+    evt: Event,
+    originalScreenPosition: Position | undefined
+  ) => void,
   container: Node = document
 ) {
+  const originalPosition = useRef<Position>();
+
   // set dragging state and handlers
   const [dragging, setDragging] = useState(false);
   const startDrag = useCallback((e: MouseEvent<Node>) => {
     e.preventDefault();
+    originalPosition.current = {
+      x: e.screenX,
+      y: e.screenY,
+    };
     setDragging(true);
   }, []);
   const stopDrag = useCallback((e: MouseEvent<Node>) => {
     e.preventDefault();
+    originalPosition.current = undefined;
     setDragging(false);
   }, []);
 
@@ -28,13 +43,29 @@ export default function useOnDragMove(
     }
   }, [container, dragging]);
 
+  const listener = useCallback(
+    (e: MouseEventInit) => {
+      const displacement =
+        originalPosition.current &&
+        e.screenX !== undefined &&
+        e.screenY !== undefined
+          ? {
+              x: originalPosition.current.x - e.screenX,
+              y: originalPosition.current.y - e.screenY,
+            }
+          : undefined;
+      return onMouseMove(e as Event, displacement);
+    },
+    [onMouseMove]
+  );
+
   // handle dragging on mousemove inside container
   useEffect(() => {
     if (dragging) {
-      container.addEventListener('mousemove', onMouseMove);
-      return () => container.removeEventListener('mousemove', onMouseMove);
+      container.addEventListener('mousemove', listener);
+      return () => container.removeEventListener('mousemove', listener);
     }
-  }, [container, dragging, onMouseMove]);
+  }, [container, dragging, listener]);
 
   return [startDrag, stopDrag];
 }
