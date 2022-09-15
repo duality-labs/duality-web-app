@@ -641,8 +641,12 @@ function TicksGroup({
             y1={plotY(new BigNumber(0)).toFixed(3)}
             y2={plotY(
               token0Value.isGreaterThan(0)
-                ? token0Value.dividedBy(cumulativeToken0Values)
-                : token1Value.dividedBy(cumulativeToken1Values)
+                ? token0Value
+                    .multipliedBy(0.95)
+                    .dividedBy(cumulativeToken0Values)
+                : token1Value
+                    .multipliedBy(0.95)
+                    .dividedBy(cumulativeToken1Values)
             ).toFixed(3)}
             className="line"
           />
@@ -650,8 +654,12 @@ function TicksGroup({
             cx={plotX(price).toFixed(3)}
             cy={plotY(
               token0Value.isGreaterThan(0)
-                ? token0Value.dividedBy(cumulativeToken0Values)
-                : token1Value.dividedBy(cumulativeToken1Values)
+                ? token0Value
+                    .multipliedBy(0.95)
+                    .dividedBy(cumulativeToken0Values)
+                : token1Value
+                    .multipliedBy(0.95)
+                    .dividedBy(cumulativeToken1Values)
             ).toFixed(3)}
             r="5"
             className="tip"
@@ -661,8 +669,12 @@ function TicksGroup({
             y={(
               plotY(
                 token0Value.isGreaterThan(0)
-                  ? token0Value.dividedBy(cumulativeToken0Values)
-                  : token1Value.dividedBy(cumulativeToken1Values)
+                  ? token0Value
+                      .multipliedBy(0.95)
+                      .dividedBy(cumulativeToken0Values)
+                  : token1Value
+                      .multipliedBy(0.95)
+                      .dividedBy(cumulativeToken1Values)
               ) - 28
             ).toFixed(3)}
             dy="12"
