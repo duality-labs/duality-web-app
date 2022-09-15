@@ -295,6 +295,8 @@ export default function Pool() {
     setUserTicks,
   ]);
 
+  const [editingFee, setEditingFee] = useState(false);
+
   if (!valuesConfirmed) {
     return (
       <form className="pool-page" onSubmit={onSubmit}>
@@ -728,23 +730,56 @@ export default function Pool() {
               </div>
               <div className="col">
                 <div className="fee-card">
-                  <h3 className="card-title mb-3">Fee Tier</h3>
-                  <RadioInput<FeeType>
-                    value={feeType}
-                    list={feeTypes}
-                    onChange={setFeeType}
-                    OptionComponent={({
-                      option: { fee, label, description },
-                    }) => (
-                      <div key={fee} className="button-primary card fee-type">
-                        <h5 className="fee-title">{label}</h5>
-                        <span className="fee-description">{description}</span>
-                        <span className="pill fee-liquidity">
-                          {calculateFeeLiquidity(label)}
-                        </span>
+                  <div className="card-header">
+                    <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
+                    {!editingFee && (
+                      <div className="badge-primary corner-border badge-large font-console ml-auto">
+                        {feeType?.label}
                       </div>
                     )}
-                  />
+                    <button
+                      type="button"
+                      className="button-secondary ml-2"
+                      onClick={() => setEditingFee((mode) => !mode)}
+                    >
+                      {editingFee ? 'Hide' : 'Edit'}
+                    </button>
+                  </div>
+                  <div className="card-row">
+                    {editingFee ? (
+                      <RadioInput<FeeType>
+                        value={feeType}
+                        list={feeTypes}
+                        onChange={setFeeType}
+                        OptionComponent={({
+                          option: { fee, label, description },
+                        }) => (
+                          <div
+                            key={fee}
+                            className="button-primary card fee-type"
+                          >
+                            <h5 className="fee-title">{label}</h5>
+                            <span className="fee-description">
+                              {description}
+                            </span>
+                            <span className="pill fee-liquidity">
+                              {calculateFeeLiquidity(label)}
+                            </span>
+                          </div>
+                        )}
+                      />
+                    ) : (
+                      <>
+                        <span className="badge-info pill ml-auto badge-large text-slim fs-s mt-auto">
+                          {feeType?.label &&
+                            calculateFeeLiquidity(feeType?.label)}
+                        </span>
+                        <span className="badge-info pill ml-2 badge-large text-slim fs-s mt-auto">
+                          {feeType?.description}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
