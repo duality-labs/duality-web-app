@@ -675,6 +675,7 @@ export default function Pool() {
                     value={rangeMin}
                     onChange={setRangeMin}
                     stepFunction={logarithmStep}
+                    pressedDelay={500}
                     min={denomMin}
                     max={rangeMax}
                     description={
@@ -688,6 +689,7 @@ export default function Pool() {
                     value={rangeMax}
                     onChange={setRangeMax}
                     stepFunction={logarithmStep}
+                    pressedDelay={500}
                     min={rangeMin}
                     max={denomMax}
                     description={

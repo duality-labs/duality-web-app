@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import useOnContinualPress from '../hooks/useOnContinualPress';
 
 import './StepNumberInput.scss';
 
@@ -54,18 +55,6 @@ export default function StepNumberInput({
     );
   }
   const [currentValue, setCurrentValue] = useState(() => parse(value));
-  const [, setTimeoutID] = useState<number>();
-  const [, setIntervalID] = useState<number>();
-  const clear = useCallback(() => {
-    setTimeoutID((oldID) => {
-      clearTimeout(oldID);
-      return undefined;
-    });
-    setIntervalID((oldID) => {
-      clearInterval(oldID);
-      return undefined;
-    });
-  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
 
   /**
@@ -82,21 +71,18 @@ export default function StepNumberInput({
   const validateValue = useCallback(
     (oldValue: number, newValue: number) => {
       if (min && newValue < min) {
-        clear();
         return min;
       }
       if (max && newValue > max) {
-        clear();
         return max;
       }
       if (newValue !== undefined && !isNaN(newValue)) {
         return newValue;
       } else {
-        clear();
         return oldValue;
       }
     },
-    [min, max, clear]
+    [min, max]
   );
 
   /**
@@ -117,38 +103,16 @@ export default function StepNumberInput({
   const onSubStep = useCallback(() => onStep(-1), [onStep]);
   const onAddStep = useCallback(() => onStep(+1), [onStep]);
 
-  /**
-   * To be called when the mouse gets released, to start the hold to step faster functionality
-   * @param direction -1 to start decreasing by -step every pressedInterval and 1 to start increasing by +step every pressedInterval
-   */
-  const onPressed = useCallback(
-    (direction: Direction) => {
-      setTimeoutID((oldID) => {
-        if (pressedDelay === Infinity) return oldID;
-        clearTimeout(oldID);
-        return setTimeout(startCounting as TimerHandler, pressedDelay);
-      });
-
-      function startCounting() {
-        setIntervalID((oldID) => {
-          clearInterval(oldID);
-          return setInterval(onTick as TimerHandler, pressedInterval);
-        });
-      }
-
-      function onTick() {
-        onStep(direction);
-      }
-    },
-    [pressedDelay, pressedInterval, onStep]
+  const [startAutoSub, stopAutoSub] = useOnContinualPress(
+    onSubStep,
+    pressedDelay,
+    pressedInterval
   );
-  const onSubPressed = useCallback(() => onPressed(-1), [onPressed]);
-  const onAddPressed = useCallback(() => onPressed(+1), [onPressed]);
-
-  /**
-   * To be called when the mouse gets released, so that all hold to step faster functionality ceases
-   */
-  const onReleased = clear;
+  const [startAutoAdd, stopAutoAdd] = useOnContinualPress(
+    onAddStep,
+    pressedDelay,
+    pressedInterval
+  );
 
   /**
    * To be called when there is a change with the input
@@ -171,9 +135,9 @@ export default function StepNumberInput({
         <button
           type="button"
           onClick={onSubStep}
-          onMouseDown={onSubPressed}
-          onMouseUp={onReleased}
-          onMouseLeave={onReleased}
+          onMouseDown={startAutoSub}
+          onMouseUp={stopAutoSub}
+          onMouseLeave={stopAutoSub}
           disabled={
             disabled ||
             (disableLimit && min !== undefined && currentValue <= min)
@@ -195,9 +159,9 @@ export default function StepNumberInput({
         <button
           type="button"
           onClick={onAddStep}
-          onMouseDown={onAddPressed}
-          onMouseUp={onReleased}
-          onMouseLeave={onReleased}
+          onMouseDown={startAutoAdd}
+          onMouseUp={stopAutoAdd}
+          onMouseLeave={stopAutoAdd}
           disabled={
             disabled ||
             (disableLimit && max !== undefined && currentValue >= max)
