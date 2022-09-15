@@ -16,6 +16,8 @@ import BigNumber from 'bignumber.js';
 interface LiquiditySelectorProps {
   ticks: TickMap | undefined;
   feeTier: number | undefined;
+  tickSelected: number | undefined;
+  setTickSelected: (index: number) => void;
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
   userTicks?: TickGroup;
@@ -56,6 +58,8 @@ function useWindowWidth() {
 export default function LiquiditySelector({
   ticks = {},
   feeTier = -1,
+  tickSelected = -1,
+  setTickSelected,
   setRangeMin,
   setRangeMax,
   userTicks = [],
@@ -360,6 +364,8 @@ export default function LiquiditySelector({
           className="new-ticks"
           ticks={userTicks}
           setUserTicks={setUserTicks}
+          tickSelected={tickSelected}
+          setTickSelected={setTickSelected}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
         />
@@ -616,6 +622,8 @@ function TicksArea({
 function TicksGroup({
   ticks,
   setUserTicks,
+  tickSelected,
+  setTickSelected,
   plotX,
   plotY,
   className,
@@ -623,6 +631,8 @@ function TicksGroup({
 }: {
   ticks: TickGroup;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
+  tickSelected: number;
+  setTickSelected: (index: number) => void;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
   className?: string;
@@ -700,6 +710,7 @@ function TicksGroup({
         (e.target as HTMLElement)?.getAttribute('data-key') || ''
       );
       if (!isNaN(index)) {
+        setTickSelected(index);
         lastSelectedTick.current = {
           tick: ticks[index],
           index,
@@ -708,7 +719,7 @@ function TicksGroup({
 
       startDragTick(e);
     },
-    [ticks, startDragTick]
+    [ticks, startDragTick, setTickSelected]
   );
 
   return (
@@ -718,6 +729,7 @@ function TicksGroup({
           key={index}
           className={[
             'tick',
+            tickSelected === index && 'tick--selected',
             token0Value.isGreaterThan(0) ? 'token-a' : 'token-b',
           ].join(' ')}
         >

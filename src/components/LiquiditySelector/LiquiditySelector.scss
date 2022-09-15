@@ -44,6 +44,15 @@
     stroke: none;
     cursor: pointer;
   }
+  .tick text {
+    fill: hsl(37, 62%, 68%);
+  }
+  .tick--selected {
+    stroke: var(--submit-button-bg);
+  }
+  .tick--selected text {
+    fill: var(--submit-button-bg);
+  }
 }
 
 .new-ticks-area {
