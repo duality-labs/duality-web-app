@@ -27,11 +27,14 @@
 .new-ticks {
   stroke-width: 2px;
   stroke: hsl(37, 62%, 68%);
+  .tip {
+    stroke-width: 1px;
+  }
   .token-a .tip {
-    stroke: hsl(262, 41%, 50%);
+    fill: hsl(262, 41%, 50%);
   }
   .token-b .tip {
-    stroke: hsl(202, 41%, 36%);
+    fill: hsl(202, 41%, 36%);
   }
 }
 
