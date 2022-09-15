@@ -142,6 +142,28 @@ export default function StepNumberInput({
     }
   }, [onChange, currentValue, format]);
 
+  useEffect(() => {
+    function handleArrowKeyStep(event: KeyboardEvent) {
+      // catch arrow presses
+      switch (event.key) {
+        case 'ArrowUp':
+          event.preventDefault();
+          onAddStep();
+          break;
+        case 'ArrowDown': {
+          event.preventDefault();
+          onSubStep();
+          break;
+        }
+      }
+    }
+    const input = inputRef.current;
+    if (input) {
+      input.addEventListener('keydown', handleArrowKeyStep);
+      return () => input.removeEventListener('keydown', handleArrowKeyStep);
+    }
+  }, [onSubStep, onAddStep]);
+
   return (
     <div className="range-step-input">
       {title && <h6 className="range-step-title">{title}</h6>}
