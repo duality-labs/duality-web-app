@@ -1,10 +1,4 @@
-import {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useLayoutEffect,
-} from 'react';
+import { useState, useMemo, useCallback, useLayoutEffect } from 'react';
 import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
@@ -183,7 +177,7 @@ export default function LiquiditySelector({
   }, [currentPriceFromTicks, bucketRatio, bucketCount, dataStart, dataEnd]);
 
   // allow user ticks to reset the boundary of the graph
-  useEffect(() => {
+  useLayoutEffect(() => {
     const minUserTickPrice = userTicks[0]?.[0];
     const maxUserTickPrice = userTicks[userTicks.length - 1]?.[0];
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
