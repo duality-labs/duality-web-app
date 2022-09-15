@@ -14,15 +14,10 @@ import BigNumber from 'bignumber.js';
 
 interface LiquiditySelectorProps {
   ticks: TickMap | undefined;
-  tickCount: number;
   feeTier: number | undefined;
-  rangeMin: string | undefined;
-  rangeMax: string | undefined;
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
-  tokenValues: [valueA: string, valueB: string];
   userTicks?: TickGroup;
-  setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   advanced?: boolean;
 }
 
@@ -58,16 +53,11 @@ function useWindowWidth() {
 }
 
 export default function LiquiditySelector({
-  tickCount,
   ticks = {},
   feeTier = -1,
-  rangeMin = '0',
-  rangeMax = '1',
   setRangeMin,
   setRangeMax,
-  tokenValues = ['0', '0'],
   userTicks = [],
-  setUserTicks,
   advanced = false,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
@@ -325,99 +315,6 @@ export default function LiquiditySelector({
     (y: BigNumber) => percentY(y.toNumber()),
     [percentY]
   );
-
-  useEffect(() => {
-    function getUserTicks(): TickGroup {
-      // set multiple ticks across the range
-      if (currentPriceFromTicks.isGreaterThan(0) && tickCount > 1) {
-        const tokenAmountA = new BigNumber(tokenValues[0]);
-        const tokenAmountB = new BigNumber(tokenValues[1]);
-        // spread evenly after adding padding on each side
-        const tickStart = new BigNumber(rangeMin);
-        const tickEnd = new BigNumber(rangeMax);
-        if (tickStart.isZero() || tickEnd.isZero()) return [];
-
-        // space new ticks by a multiplication ratio gap
-        // use Math.pow becuse BigNumber does not support logarithm calculation
-        // todo: use BigNumber logarithm compatible library to more accurately calculate tick spacing,
-        //       with many ticks the effect of this precision may be quite noticable
-        const tickGapRatio = new BigNumber(
-          Math.pow(tickEnd.dividedBy(tickStart).toNumber(), 1 / (tickCount - 1))
-        );
-        const tickCounts: [number, number] = [0, 0];
-        const tickPrices = Array.from({ length: tickCount }).reduceRight<
-          [BigNumber, BigNumber, BigNumber][]
-        >((result, _, index) => {
-          const lastPrice = result[0]?.[0];
-          const price = lastPrice?.isLessThan(currentPriceFromTicks)
-            ? // calculate price from left (to have exact left value)
-              tickStart.multipliedBy(tickGapRatio.exponentiatedBy(index))
-            : // calculate price from right (to have exact right value)
-              lastPrice?.dividedBy(tickGapRatio) ?? tickEnd;
-
-          const invertToken = invertTokenOrder
-            ? price.isGreaterThanOrEqualTo(currentPriceFromTicks)
-            : price.isLessThan(currentPriceFromTicks);
-          // add to count
-          tickCounts[invertToken ? 0 : 1] += 1;
-          return [
-            [
-              new BigNumber(price),
-              new BigNumber(invertToken ? 1 : 0),
-              new BigNumber(invertToken ? 0 : 1),
-            ],
-            ...result,
-          ];
-        }, []);
-        // normalise the tick amounts given
-        return tickPrices.map(([price, countA, countB]) => {
-          return [
-            price,
-            // ensure division is to µtokens amount but given in tokens
-            tickCounts[0]
-              ? tokenAmountA.multipliedBy(countA).dividedBy(tickCounts[0])
-              : new BigNumber(0),
-            tickCounts[1]
-              ? tokenAmountB.multipliedBy(countB).dividedBy(tickCounts[1])
-              : new BigNumber(0),
-          ];
-        });
-      }
-      // or set no ticks
-      else {
-        return [];
-      }
-    }
-
-    setUserTicks?.((userTicks) => {
-      const newUserTicks = getUserTicks();
-
-      // check if number of ticks are equal or value in ticks are equal
-      if (
-        userTicks.length !== newUserTicks.length ||
-        !newUserTicks.every((newUserTick, ticksIndex) => {
-          return newUserTick.every((value, valueIndex) => {
-            return value.isEqualTo(userTicks[ticksIndex][valueIndex]);
-          });
-        })
-      ) {
-        // return changed values
-        return newUserTicks;
-      } else {
-        // return same values
-        return userTicks;
-      }
-    });
-  }, [
-    tokenValues,
-    rangeMin,
-    rangeMax,
-    tickCount,
-    invertTokenOrder,
-    currentPriceFromTicks,
-    graphHeight,
-    setUserTicks,
-  ]);
 
   return (
     <svg
