@@ -12,6 +12,7 @@ interface LiquiditySelectorProps {
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
   userTicks?: TickGroup;
+  setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   advanced?: boolean;
 }
 
@@ -52,6 +53,7 @@ export default function LiquiditySelector({
   setRangeMin,
   setRangeMax,
   userTicks = [],
+  setUserTicks,
   advanced = false,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
@@ -351,6 +353,7 @@ export default function LiquiditySelector({
         <TicksGroup
           className="new-ticks"
           ticks={userTicks}
+          setUserTicks={setUserTicks}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
         />
@@ -606,12 +609,14 @@ function TicksArea({
 
 function TicksGroup({
   ticks,
+  setUserTicks,
   plotX,
   plotY,
   className,
   ...rest
 }: {
   ticks: TickGroup;
+  setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
   className?: string;
@@ -624,6 +629,27 @@ function TicksGroup({
     (result, [price, _, token1Value]) => result.plus(token1Value),
     new BigNumber(0)
   );
+
+  const [startDragTick] = useOnDragMove(
+    useCallback(
+      (ev: MouseEventInit, displacement = { x: 0, y: 0 }) => {
+        // move tick price
+        if (Math.abs(displacement.x) > Math.abs(displacement.y)) {
+          return setUserTicks?.((userTicks) => {
+            return userTicks;
+          });
+        }
+        // move tick value
+        else {
+          return setUserTicks?.((userTicks) => {
+            return userTicks;
+          });
+        }
+      },
+      [setUserTicks]
+    )
+  );
+
   return (
     <g className={['ticks', className].filter(Boolean).join(' ')}>
       {ticks.map(([price, token0Value, token1Value], index) => (
@@ -683,6 +709,24 @@ function TicksGroup({
           >
             {index + 1}
           </text>
+          <ellipse
+            className="tick--hit-area"
+            cx={plotX(price).toFixed(3)}
+            cy={(
+              plotY(
+                token0Value.isGreaterThan(0)
+                  ? token0Value
+                      .multipliedBy(0.95)
+                      .dividedBy(cumulativeToken0Values)
+                  : token1Value
+                      .multipliedBy(0.95)
+                      .dividedBy(cumulativeToken1Values)
+              ) - 9
+            ).toFixed(3)}
+            rx="12.5"
+            ry="22.5"
+            onMouseDown={startDragTick}
+          />
         </g>
       ))}
     </g>

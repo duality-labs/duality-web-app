@@ -492,6 +492,7 @@ export default function Pool() {
                   ticks={ticks}
                   feeTier={feeType?.fee}
                   userTicks={userTicks}
+                  setUserTicks={setUserTicks}
                   advanced={chartTypeSelected === 'Orderbook'}
                 ></LiquiditySelector>
               </div>
