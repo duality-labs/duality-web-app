@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, MouseEvent, useRef } from 'react';
 
 interface Position {
+  key?: string;
   x: number;
   y: number;
 }
@@ -21,6 +22,7 @@ export default function useOnDragMove(
     originalPosition.current = {
       x: e.screenX,
       y: e.screenY,
+      key: (e.target as HTMLElement)?.getAttribute('data-key') || undefined,
     };
     setDragging(true);
   }, []);
@@ -54,7 +56,14 @@ export default function useOnDragMove(
               y: e.screenY - originalPosition.current.y,
             }
           : undefined;
-      return onMouseMove(e as Event, displacement);
+
+      return onMouseMove(
+        e as Event,
+        displacement && {
+          ...originalPosition.current,
+          ...displacement,
+        }
+      );
     },
     [onMouseMove]
   );
