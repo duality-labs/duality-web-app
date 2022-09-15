@@ -631,8 +631,11 @@ export default function Pool() {
                     <h3 className="card-title mr-auto">Price</h3>
                     <StepNumberInput
                       key={tickSelected}
+                      min={denomMin}
+                      max={denomMax}
+                      pressedDelay={500}
                       stepFunction={logarithmStep}
-                      value={userTicks[tickSelected][0].toFixed(denomExponent)}
+                      value={userTicks[tickSelected][0].toFixed()}
                       onChange={(value) => {
                         setUserTicks((userTicks) => {
                           // skip non-update
