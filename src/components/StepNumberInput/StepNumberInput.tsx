@@ -86,12 +86,18 @@ export default function StepNumberInput({
    */
   const onStep = useCallback(
     (direction: Direction) => {
-      maybeUpdate?.(
-        new BigNumber(
+      if (maybeUpdate) {
+        const newValue = new BigNumber(
           stepFunction?.(currentValue, direction) ??
             currentValue + step * direction
-        ).toFixed()
-      );
+        );
+        // restrict to certain significant digits
+        const newValueString = newValue.toFixed(
+          Math.max(0, newValue.dp() - newValue.sd(true) + 6),
+          direction ? BigNumber.ROUND_UP : BigNumber.ROUND_DOWN
+        );
+        maybeUpdate(newValueString);
+      }
     },
     [step, stepFunction, maybeUpdate, currentValue]
   );
