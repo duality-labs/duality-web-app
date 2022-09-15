@@ -190,8 +190,16 @@ export default function LiquiditySelector({
 
   // allow user ticks to reset the boundary of the graph
   useLayoutEffect(() => {
-    const minUserTickPrice = userTicks[0]?.[0];
-    const maxUserTickPrice = userTicks[userTicks.length - 1]?.[0];
+    const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
+      (result, [price]) =>
+        !result || price.isLessThan(result) ? price : result,
+      undefined
+    );
+    const maxUserTickPrice = userTicks.reduce<BigNumber | undefined>(
+      (result, [price]) =>
+        !result || price.isGreaterThan(result) ? price : result,
+      undefined
+    );
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
     // by padding dataStart and dataEnd with the needed amount of pixels
     const minExistingTickPrice = dataStart;
