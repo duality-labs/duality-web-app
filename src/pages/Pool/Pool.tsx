@@ -387,6 +387,7 @@ export default function Pool() {
                         Math.max(0, newValue.dp() - newValue.sd(true) + 3)
                       );
                     });
+                    setValues(([valueA, valueB]) => [valueB, valueA]);
                     swapTokens();
                   }}
                 >
