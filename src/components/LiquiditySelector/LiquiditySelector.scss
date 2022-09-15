@@ -6,12 +6,7 @@
   .tick-bucket {
     transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
     stroke-width: 0.125;
-    cursor: pointer;
     opacity: 0.75;
-
-    &:hover {
-      opacity: 1;
-    }
   }
 
   .token-a {
@@ -21,6 +16,14 @@
   .token-b {
     fill: hsl(202, 76%, 30%);
     stroke: hsl(202, 76%, 30%);
+  }
+}
+.chart-type--amm {
+  .tick-bucket {
+    cursor: pointer;
+    &:hover {
+      opacity: 1;
+    }
   }
 }
 
