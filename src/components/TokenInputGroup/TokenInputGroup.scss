@@ -75,6 +75,10 @@
     }
   }
 
+  .input--zero {
+    color: var(--text-alt);
+  }
+
   .token-group-balance ~ .token-group-input {
     grid-row-start: 2;
   }
