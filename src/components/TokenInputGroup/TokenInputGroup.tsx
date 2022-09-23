@@ -65,7 +65,9 @@ export default function TokenInputGroup({
       )}
       <input
         type="text"
-        className="token-group-input"
+        className={['token-group-input', !Number(value) && 'input--zero']
+          .filter(Boolean)
+          .join(' ')}
         value={value || '...'}
         onInput={onInput}
         onChange={onInputChange}
