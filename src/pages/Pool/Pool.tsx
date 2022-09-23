@@ -301,7 +301,7 @@ export default function Pool() {
     return (
       <form className="pool-page" onSubmit={onSubmit}>
         <div className="assets-card page-card">
-          <h3 className="card-header card-title">Assets</h3>
+          <h3 className="card-title mb-3">Add Liquidity</h3>
           <div className="card-row">
             <TokenInputGroup
               onValueChanged={(newValue) =>
