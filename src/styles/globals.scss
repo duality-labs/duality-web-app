@@ -30,6 +30,10 @@ h6,
   font-size: font-size.$h6;
 }
 
+p {
+  line-height: 1.2857; // 18px/14px
+}
+
 .pill {
   border-radius: 100vmax !important;
 }
