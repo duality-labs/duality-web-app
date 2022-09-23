@@ -8,7 +8,8 @@ $border-width: 2px;
 
 .range-step-input {
   & {
-    @include cards.card(4);
+    padding: paddings.$p-4 paddings.$p-5;
+    border-radius: paddings.$p-4;
     border: $border-width solid var(--card-border);
     flex-direction: column;
     overflow: hidden;

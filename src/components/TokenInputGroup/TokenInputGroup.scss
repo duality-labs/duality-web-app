@@ -1,3 +1,4 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
 @use '../../styles/mixins-vars/margins.scss' as margins;
 @use '../../styles/font/family.scss' as font-family;
 @use '../../styles/components/cards.scss' as cards;
@@ -5,7 +6,8 @@
 
 .token-input-group {
   & {
-    @include cards.card(4);
+    padding: paddings.$p-4 paddings.$p-5;
+    border-radius: paddings.$p-4;
     background-color: var(--token-group);
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr auto;

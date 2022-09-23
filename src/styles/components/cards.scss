@@ -2,26 +2,16 @@
 @use '../mixins-vars/margins.scss' as margins;
 @use '../font/size.scss' as font-size;
 
-@mixin card($index) {
-  @include paddings.padding('x', $index + 1);
-  @include paddings.padding('y', $index);
-  border-radius: paddings.size($index);
+.card {
   flex-direction: column;
   display: flex;
-}
-
-@for $index from 1 to length(paddings.$sizes) - 1 {
-  .card-#{$index} {
-    @include card($index);
-  }
-}
-
-.card {
-  @extend .card-3;
+  padding: paddings.$p-3 paddings.$p-4;
+  border-radius: paddings.$p-3;
 }
 
 .page-card {
-  @include card(4);
+  padding: paddings.$p-4 paddings.$p-5;
+  border-radius: paddings.$p-4;
   background-color: var(--page-card);
   color: var(--text-default);
   flex-direction: column;
