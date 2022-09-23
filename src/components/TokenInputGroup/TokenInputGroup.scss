@@ -6,8 +6,8 @@
 
 .token-input-group {
   & {
-    padding: paddings.$p-4 paddings.$p-5;
-    border-radius: paddings.$p-4;
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
     background-color: var(--token-group);
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr auto;
