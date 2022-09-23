@@ -24,11 +24,11 @@ export default function Header() {
         <NavLink className="ghost-button" to="/">
           Home
         </NavLink>
-        <NavLink className="ghost-button" to="/swap">
+        <NavLink className="ghost-button" to="/trade">
           Trade
         </NavLink>
-        <NavLink className="ghost-button" to="/pool">
-          Liquidity
+        <NavLink className="ghost-button" to="/add-liquidity">
+          Add Liquidity
         </NavLink>
         <button
           className="link no-blend"
