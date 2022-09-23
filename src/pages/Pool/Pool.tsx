@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, FormEvent, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -305,7 +306,7 @@ export default function Pool() {
           <div className="mb-4">
             <p>
               Add liquidity in any ratio to earn fees on other people’s trades!
-              Learn more here.
+              Learn more <Link to="/my-liquidity">here</Link>.
             </p>
           </div>
           <div className="card-row">
