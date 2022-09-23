@@ -299,7 +299,12 @@ export default function Pool() {
 
   if (!valuesConfirmed) {
     return (
-      <form className="pool-page" onSubmit={onSubmit}>
+      <form
+        className={['pool-page', isValidatingDeposit && 'disabled']
+          .filter(Boolean)
+          .join(' ')}
+        onSubmit={onSubmit}
+      >
         <div className="assets-card page-card">
           <h3 className="card-title mb-3">Add Liquidity</h3>
           <div className="mb-4">
@@ -338,9 +343,6 @@ export default function Pool() {
             />
           </div>
           <div className="card-col mt-5 mb-3">
-            {(tickFetching || isValidatingDeposit) && (
-              <div className="text-secondary card-row">...</div>
-            )}
             <div className="mx-auto">
               <input
                 className="pill pill-outline mx-3 px-4 py-4"
@@ -355,6 +357,11 @@ export default function Pool() {
                 value="Add Liquidity"
               />
             </div>
+            {(tickFetching || isValidatingDeposit) && (
+              <div className="mx-auto mt-4 text-secondary card-row">
+                Waiting for confirmation...
+              </div>
+            )}
             {(ticksError || depositError || depositResponse) && (
               <div className="mx-auto mt-4">
                 <div className="text-red-500">
@@ -377,7 +384,12 @@ export default function Pool() {
   }
 
   return (
-    <>
+    <form
+      className={['main-area', isValidatingDeposit && 'disabled']
+        .filter(Boolean)
+        .join(' ')}
+      onSubmit={onSubmit}
+    >
       <div className="pool-banner">
         <div className="row">
           <div className="row col-row">
@@ -469,7 +481,7 @@ export default function Pool() {
           </div>
         </div>
       </div>
-      <form className="pool-page" onSubmit={onSubmit}>
+      <div className="pool-page">
         <div
           className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
@@ -803,9 +815,9 @@ export default function Pool() {
             </div>
           </div>
         </div>
-      </form>
+      </div>
       <div className="spacer"></div>
-    </>
+    </form>
   );
 }
 
