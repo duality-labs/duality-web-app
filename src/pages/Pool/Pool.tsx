@@ -302,6 +302,12 @@ export default function Pool() {
       <form className="pool-page" onSubmit={onSubmit}>
         <div className="assets-card page-card">
           <h3 className="card-title mb-3">Add Liquidity</h3>
+          <div className="mb-4">
+            <p>
+              Add liquidity in any ratio to earn fees on other people’s trades!
+              Learn more here.
+            </p>
+          </div>
           <div className="card-row">
             <TokenInputGroup
               onValueChanged={(newValue) =>
