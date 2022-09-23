@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowUpLong,
-  faArrowDownLong,
+  faPlus,
   faArrowRightArrowLeft,
   faSliders,
   faCircle,
@@ -322,15 +321,8 @@ export default function Pool() {
               title="Asset 1"
             />
           </div>
-          <div className="card-row">
-            <button
-              type="button"
-              onClick={swapAll}
-              className="icon-button mx-auto"
-            >
-              <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
-              <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
-            </button>
+          <div className="plus-space mx-auto my-2">
+            <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>
           </div>
           <div className="card-row">
             <TokenInputGroup
