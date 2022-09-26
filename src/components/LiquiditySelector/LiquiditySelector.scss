@@ -50,6 +50,12 @@
   .tick--selected {
     stroke: var(--submit-button-bg);
   }
+  .tick--price-warning {
+    stroke: var(--error);
+    &.tick--selected text {
+      fill: var(--error);
+    }
+  }
   .tick--selected text {
     fill: var(--submit-button-bg);
   }
