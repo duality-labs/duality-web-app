@@ -43,6 +43,13 @@ type TickGroupBucketsFilled = Array<
   ]
 >;
 
+function formatPrice(value: BigNumber): string {
+  return value.toFixed(
+    Math.max(0, value.dp() - value.sd(true) + 3),
+    BigNumber.ROUND_HALF_UP
+  );
+}
+
 const bucketWidth = 50; // bucket width in pixels
 
 function useWindowWidth() {
@@ -474,9 +481,7 @@ function TicksArea({
         if (x) {
           const xStart = plotX(startTickPrice);
           const newValue = new BigNumber(plotXinverse(xStart + x));
-          const newValueString = newValue.toFixed(
-            Math.max(0, newValue.dp() - newValue.sd(true) + 3)
-          );
+          const newValueString = formatPrice(newValue);
           setRangeMin(newValueString);
           if (endTickPrice.isLessThanOrEqualTo(newValue)) {
             setRangeMax(newValueString);
@@ -501,9 +506,7 @@ function TicksArea({
         if (x) {
           const xStart = plotX(endTickPrice);
           const newValue = new BigNumber(plotXinverse(xStart + x));
-          const newValueString = newValue.toFixed(
-            Math.max(0, newValue.dp() - newValue.sd(true) + 3)
-          );
+          const newValueString = formatPrice(newValue);
           setRangeMax(newValueString);
           if (startTickPrice.isGreaterThanOrEqualTo(newValue)) {
             setRangeMin(newValueString);
@@ -682,11 +685,8 @@ function TicksGroup({
             return userTicks.map((userTick, index) => {
               // modify price
               if (tickSelected === index) {
-                return [
-                  tick[0].multipliedBy(displacementRatio),
-                  tick[1],
-                  tick[2],
-                ];
+                const newPrice = tick[0].multipliedBy(displacementRatio);
+                return [new BigNumber(formatPrice(newPrice)), tick[1], tick[2]];
               } else {
                 return userTick;
               }
