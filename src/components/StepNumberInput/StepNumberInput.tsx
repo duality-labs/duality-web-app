@@ -17,7 +17,7 @@ interface StepNumberInputProps<T extends number | string = string> {
   editable?: boolean;
   title?: string;
   value: T;
-  stepFunction?: (value: T, direction: number) => number;
+  stepFunction?: (value: T, direction: number) => T;
   step?: string | number;
   max?: string | number;
   min?: string | number;
