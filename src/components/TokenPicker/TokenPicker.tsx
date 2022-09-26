@@ -8,7 +8,7 @@ import {
   useMemo,
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircle } from '@fortawesome/free-solid-svg-icons';
+import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 
 import { Token } from './mockHooks';
 
@@ -209,7 +209,7 @@ export default function TokenPicker({
               />
             ) : (
               <FontAwesomeIcon
-                icon={faCircle}
+                icon={faQuestionCircle}
                 size="2x"
                 className="token-image token-image-not-found"
               ></FontAwesomeIcon>
@@ -324,7 +324,7 @@ export default function TokenPicker({
               />
             ) : (
               <FontAwesomeIcon
-                icon={faCircle}
+                icon={faQuestionCircle}
                 size="2x"
                 className="token-image-not-found"
               ></FontAwesomeIcon>
