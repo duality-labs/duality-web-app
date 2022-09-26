@@ -118,15 +118,15 @@ export default function StepNumberInput({
 
   const [startAutoSub, stopAutoSub] = useOnContinualPress(
     onSubStep,
+    subDisabled,
     pressedDelay,
-    pressedInterval,
-    subDisabled
+    pressedInterval
   );
   const [startAutoAdd, stopAutoAdd] = useOnContinualPress(
     onAddStep,
+    addDisabled,
     pressedDelay,
-    pressedInterval,
-    addDisabled
+    pressedInterval
   );
 
   /**
