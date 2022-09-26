@@ -625,6 +625,8 @@ export default function Pool() {
                         ? `${tokenB.symbol} per ${tokenA.symbol}`
                         : 'No Tokens'
                     }
+                    minSignificantDigits={8}
+                    maxSignificantDigits={denomExponent + 1}
                     format={formatStepNumberPriceInput}
                   />
                   <StepNumberInput
@@ -641,6 +643,8 @@ export default function Pool() {
                         ? `${tokenB.symbol} per ${tokenA.symbol}`
                         : 'No Tokens'
                     }
+                    minSignificantDigits={8}
+                    maxSignificantDigits={denomExponent + 1}
                     format={formatStepNumberPriceInput}
                   />
                 </div>
@@ -736,6 +740,7 @@ export default function Pool() {
                       max={10}
                       value={precision}
                       onChange={setPrecision}
+                      minSignificantDigits={2}
                     />
                     <button
                       type="button"
@@ -770,6 +775,7 @@ export default function Pool() {
                           });
                         });
                       }}
+                      maxSignificantDigits={denomExponent + 1}
                       format={formatStepNumberPriceInput}
                     />
                   </div>
