@@ -93,8 +93,8 @@ export default function Pool() {
   const [rangeMin, setRangeMin] = useState(defaultRangeMin);
   const [rangeMax, setRangeMax] = useState(defaultRangeMax);
   const [values, setValues] = useState<[string, string]>(() => [
-    new BigNumber(defaultTokenAmount).toFixed(denomExponent),
-    new BigNumber(defaultTokenAmount).toFixed(denomExponent),
+    new BigNumber(defaultTokenAmount).toFixed(),
+    new BigNumber(defaultTokenAmount).toFixed(),
   ]);
 
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
