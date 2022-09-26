@@ -108,32 +108,26 @@ export default function StepNumberInput({
   const onSubStep = useCallback(() => onStep(-1), [onStep]);
   const onAddStep = useCallback(() => onStep(+1), [onStep]);
 
-  const [startAutoSub, stopAutoSub] = useOnContinualPress(
-    onSubStep,
-    pressedDelay,
-    pressedInterval
-  );
-  const [startAutoAdd, stopAutoAdd] = useOnContinualPress(
-    onAddStep,
-    pressedDelay,
-    pressedInterval
-  );
-
   const subDisabled = useMemo(() => {
     return disableLimit && min !== undefined && currentValue <= min;
   }, [disableLimit, currentValue, min]);
-
-  useEffect(() => {
-    if (subDisabled) stopAutoSub();
-  }, [subDisabled, stopAutoSub]);
 
   const addDisabled = useMemo(() => {
     return disableLimit && max !== undefined && currentValue >= max;
   }, [disableLimit, currentValue, max]);
 
-  useEffect(() => {
-    if (addDisabled) stopAutoAdd();
-  }, [addDisabled, stopAutoAdd]);
+  const [startAutoSub, stopAutoSub] = useOnContinualPress(
+    onSubStep,
+    pressedDelay,
+    pressedInterval,
+    subDisabled
+  );
+  const [startAutoAdd, stopAutoAdd] = useOnContinualPress(
+    onAddStep,
+    pressedDelay,
+    pressedInterval,
+    addDisabled
+  );
 
   /**
    * To be called when there is a change with the input
