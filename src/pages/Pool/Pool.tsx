@@ -452,7 +452,7 @@ export default function Pool() {
                 {new BigNumber(values[0]).toFormat()}
                 {tokenA.logo ? (
                   <img
-                    className="ml-3 mr-1 token-image"
+                    className="ml-3 mr-2 token-image"
                     alt={`${tokenA.symbol} logo`}
                     src={tokenA.logo}
                   />
@@ -460,7 +460,7 @@ export default function Pool() {
                   <FontAwesomeIcon
                     icon={faCircle}
                     size="2x"
-                    className="ml-3 mr-1 token-image token-image-not-found"
+                    className="ml-3 mr-2 token-image token-image-not-found"
                   ></FontAwesomeIcon>
                 )}
                 {tokenA?.symbol}
@@ -475,7 +475,7 @@ export default function Pool() {
                 {new BigNumber(values[1]).toFormat()}
                 {tokenB.logo ? (
                   <img
-                    className="ml-3 mr-1 token-image"
+                    className="ml-3 mr-2 token-image"
                     alt={`${tokenB.symbol} logo`}
                     src={tokenB.logo}
                   />
@@ -483,7 +483,7 @@ export default function Pool() {
                   <FontAwesomeIcon
                     icon={faCircle}
                     size="2x"
-                    className="ml-3 mr-1 token-image token-image-not-found"
+                    className="ml-3 mr-2 token-image token-image-not-found"
                   ></FontAwesomeIcon>
                 )}
                 {tokenB?.symbol}
