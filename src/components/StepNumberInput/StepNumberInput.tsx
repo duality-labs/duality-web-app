@@ -6,7 +6,7 @@ import './StepNumberInput.scss';
 
 type Direction = 1 | -1;
 
-interface StepNumberInputProps {
+interface StepNumberInputProps<T extends number | string = string> {
   onChange?: (value: string) => void;
   tabbableButtons?: boolean;
   pressedInterval?: number;
@@ -16,16 +16,16 @@ interface StepNumberInputProps {
   disabled?: boolean;
   editable?: boolean;
   title?: string;
-  value: string;
-  stepFunction?: (value: number, direction: number) => number;
+  value: T;
+  stepFunction?: (value: T, direction: number) => number;
   step?: string | number;
   max?: string | number;
   min?: string | number;
-  parse?: (value: string) => number;
-  format?: (value: number) => string;
+  parse?: (value: string) => T;
+  format?: (value: T) => string;
 }
 
-export default function StepNumberInput({
+export default function StepNumberInput<T extends number | string = string>({
   onChange,
   tabbableButtons = false,
   pressedInterval = 50,
@@ -37,20 +37,17 @@ export default function StepNumberInput({
   title,
   value,
   stepFunction,
-  step: rawStep,
+  step: rawStep = 1,
   max: rawMax,
-  min: rawMin = 0,
-  parse = Number,
+  min: rawMin,
+  parse,
   format = String,
-}: StepNumberInputProps) {
-  const step =
-    typeof rawStep === 'number' ? rawStep : rawStep ? parse(rawStep) : 1;
-  const max =
-    typeof rawMax === 'number' ? rawMax : rawMax ? parse(rawMax) : undefined;
-  const min =
-    typeof rawMin === 'number' ? rawMin : rawMin ? parse(rawMin) : undefined;
+}: StepNumberInputProps<T>) {
+  const step = Number(rawStep);
+  const max = Number(rawMax);
+  const min = Number(rawMin);
 
-  const currentValue = parse(value);
+  const currentValue = format ? format(value) : `${value}`;
   if (min !== undefined && max !== undefined && max < min) {
     throw new Error(
       'Invalid Range, max limit cannot be smaller than the min limit'
@@ -87,10 +84,9 @@ export default function StepNumberInput({
   const onStep = useCallback(
     (direction: Direction) => {
       if (maybeUpdate) {
-        const newValue = new BigNumber(
-          stepFunction?.(currentValue, direction) ??
-            currentValue + step * direction
-        );
+        const newValue = stepFunction
+          ? new BigNumber(stepFunction(value, direction))
+          : new BigNumber(value).plus(step * direction);
         // restrict to certain significant digits
         const newValueString =
           newValue.dp() >= 6
@@ -103,18 +99,26 @@ export default function StepNumberInput({
         maybeUpdate(newValueString);
       }
     },
-    [step, stepFunction, maybeUpdate, currentValue]
+    [step, stepFunction, maybeUpdate, value]
   );
   const onSubStep = useCallback(() => onStep(-1), [onStep]);
   const onAddStep = useCallback(() => onStep(+1), [onStep]);
 
   const subDisabled = useMemo(() => {
-    return disableLimit && min !== undefined && currentValue <= min;
-  }, [disableLimit, currentValue, min]);
+    return (
+      disableLimit &&
+      min !== undefined &&
+      new BigNumber(value).isLessThanOrEqualTo(min)
+    );
+  }, [disableLimit, value, min]);
 
   const addDisabled = useMemo(() => {
-    return disableLimit && max !== undefined && currentValue >= max;
-  }, [disableLimit, currentValue, max]);
+    return (
+      disableLimit &&
+      max !== undefined &&
+      new BigNumber(value).isGreaterThanOrEqualTo(max)
+    );
+  }, [disableLimit, value, max]);
 
   const [startAutoSub, stopAutoSub] = useOnContinualPress(
     onSubStep,
@@ -176,12 +180,12 @@ export default function StepNumberInput({
         {editable || disabled ? (
           <input
             type="number"
-            value={value}
+            value={currentValue}
             onInput={onInputChange}
             ref={inputRef}
           />
         ) : (
-          <span>{value}</span>
+          <span>{currentValue}</span>
         )}
         <button
           type="button"
