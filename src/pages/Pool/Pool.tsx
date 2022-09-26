@@ -963,6 +963,10 @@ function logarithmStep(valueString: string, direction: number): number {
         .toNumber();
 }
 
+// note: this cause odd issues when trying to control the number via keys or StepNumberInput
+// instead of dragging (eg. select all and press 1 -> 1.00, press "1.5" -> 1.005)
+// This could be fixed by using a string for all cases of price as BigNumber
+// objects are not aware of how many significant digits they have.
 function formatStepNumberPriceInput(value: string) {
   const formatted = formatPrice(new BigNumber(value));
   return formatted.length > value.length ? formatted : value;
