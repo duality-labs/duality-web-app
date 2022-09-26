@@ -139,6 +139,7 @@ $min-body-height: 150px;
 
 .token-picker-toggle {
   & {
+    margin-left: calc(0px - paddings.$p-3); // offset button padding
     background-color: var(--token-group);
     grid-template-columns: auto 1fr;
     grid-template-rows: 1fr auto;
@@ -182,8 +183,7 @@ $min-body-height: 150px;
 }
 
 .token-image-not-found {
-  opacity: 0.2;
-  color: var(--text-disabled);
+  opacity: 0.3;
 }
 
 .token-picker-dialog {
