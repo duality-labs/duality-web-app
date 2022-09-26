@@ -36,7 +36,7 @@ const defaultPrice = '1';
 const defaultSlopeType = 'UNIFORM';
 const defaultRangeMin = new BigNumber(defaultPrice).dividedBy(2).toFixed();
 const defaultRangeMax = new BigNumber(defaultPrice).multipliedBy(2).toFixed();
-const defaultTokenAmount = '1';
+const defaultTokenAmount = '0';
 
 interface FeeType {
   fee: number;

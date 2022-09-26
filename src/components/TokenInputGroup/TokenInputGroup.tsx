@@ -28,6 +28,10 @@ interface InputGroupProps {
   relevantValue?: string;
 }
 
+function selectAll(e: React.MouseEvent<HTMLInputElement>) {
+  e.currentTarget.select();
+}
+
 export default function TokenInputGroup({
   onTokenChanged,
   onValueChanged,
@@ -78,6 +82,7 @@ export default function TokenInputGroup({
         value={value || '...'}
         onInput={onInput}
         onChange={onInputChange}
+        onClick={selectAll}
         disabled={disabledInput}
         style={
           value
