@@ -90,6 +90,9 @@ export default function Pool() {
   ]);
 
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
+  const tokenValues = values;
+  const tokenValuesValid =
+    !!tokenA && !!tokenB && tokenValues.every((v) => Number(v));
 
   const {
     data: { ticks: unorderedTicks } = {},
@@ -152,6 +155,7 @@ export default function Pool() {
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
+      if (!tokenValuesValid) return;
       const submitValue =
         // eslint-disable-next-line  @typescript-eslint/no-explicit-any
         ((e.nativeEvent as any)?.submitter as HTMLInputElement).value;
@@ -167,7 +171,7 @@ export default function Pool() {
         );
       }
     },
-    [tokenA, tokenB, feeType, userTicks, sendDepositRequest]
+    [tokenValuesValid, tokenA, tokenB, feeType, userTicks, sendDepositRequest]
   );
 
   const [tickSelected, setTickSelected] = useState(-1);
@@ -203,9 +207,6 @@ export default function Pool() {
     'AMM' | 'Orderbook'
   >('AMM');
 
-  const tokenValues = values;
-  const tokenValuesValid =
-    !!tokenA && !!tokenB && tokenValues.every((v) => Number(v));
   const tickCount = Number(precision || 1);
   useEffect(() => {
     function getUserTicks(): TickGroup {
