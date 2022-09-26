@@ -91,16 +91,7 @@ export default function StepNumberInput<T extends number | string = string>({
         const newValue = stepFunction
           ? new BigNumber(stepFunction(value, direction))
           : new BigNumber(value).plus(step * direction);
-        // restrict to certain significant digits
-        const newValueString =
-          newValue.dp() >= 6
-            ? newValue.toFixed(
-                Math.max(0, newValue.dp() - newValue.sd(true) + 6),
-                direction > 0 ? BigNumber.ROUND_UP : BigNumber.ROUND_DOWN
-              )
-            : newValue.toFixed();
-
-        maybeUpdate(newValueString);
+        maybeUpdate(newValue.toFixed());
       }
     },
     [step, stepFunction, maybeUpdate, value]
