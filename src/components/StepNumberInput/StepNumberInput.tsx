@@ -7,7 +7,7 @@ import './StepNumberInput.scss';
 type Direction = 1 | -1;
 
 interface StepNumberInputProps<T extends number | string = string> {
-  onChange?: (value: string) => void;
+  onChange?: (value: T) => void;
   tabbableButtons?: boolean;
   pressedInterval?: number;
   disableLimit?: boolean;
@@ -63,18 +63,22 @@ export default function StepNumberInput<T extends number | string = string>({
     (newValueString: string) => {
       if (onChange) {
         const newValue = new BigNumber(newValueString);
+        // note: allow unsafe parsing to deal with parsing to type T
+        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+        const safeParse = (parse || (String as any)) as (v: string) => T;
+        const onChangeSafe = (value: string) => onChange(safeParse(value));
         if (min !== undefined && newValue.isLessThan(min)) {
-          return onChange(new BigNumber(min).toFixed());
+          return onChangeSafe(new BigNumber(min).toFixed());
         }
         if (max !== undefined && newValue.isGreaterThan(max)) {
-          return onChange(new BigNumber(max).toFixed());
+          return onChangeSafe(new BigNumber(max).toFixed());
         }
         if (!newValue.isNaN()) {
-          return onChange(newValueString);
+          return onChangeSafe(newValueString);
         }
       }
     },
-    [min, max, onChange]
+    [min, max, onChange, parse]
   );
 
   /**
