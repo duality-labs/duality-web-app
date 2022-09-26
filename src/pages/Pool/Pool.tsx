@@ -68,6 +68,13 @@ const calculateFeeLiquidity = function (label: string) {
 
 const defaultPrecision = '6';
 
+function formatPrice(value: BigNumber): string {
+  return value.toFixed(
+    Math.max(0, value.dp() - value.sd(true) + 3),
+    BigNumber.ROUND_HALF_UP
+  );
+}
+
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
@@ -265,7 +272,7 @@ export default function Pool() {
           tickCounts[invertToken ? 0 : 1] += 1;
           return [
             [
-              new BigNumber(price),
+              new BigNumber(formatPrice(price)),
               new BigNumber(invertToken ? 1 : 0),
               new BigNumber(invertToken ? 0 : 1),
             ],
@@ -536,6 +543,7 @@ export default function Pool() {
                   userTicks={userTicks}
                   setUserTicks={setUserTicks}
                   advanced={chartTypeSelected === 'Orderbook'}
+                  formatPrice={formatPrice}
                 ></LiquiditySelector>
               </div>
             </div>
