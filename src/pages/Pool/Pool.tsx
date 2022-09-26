@@ -204,6 +204,8 @@ export default function Pool() {
   >('AMM');
 
   const tokenValues = values;
+  const tokenValuesValid =
+    !!tokenA && !!tokenB && tokenValues.every((v) => Number(v));
   const tickCount = Number(precision || 1);
   useEffect(() => {
     function getUserTicks(): TickGroup {
@@ -346,12 +348,14 @@ export default function Pool() {
             <div className="mx-auto">
               <input
                 className="pill pill-outline mx-3 px-4 py-4"
+                disabled={!tokenValuesValid}
                 type="submit"
                 name="action"
                 value="Customize"
               />
               <input
                 className="pill mx-3 px-4 py-4"
+                disabled={!tokenValuesValid}
                 type="submit"
                 name="actiona"
                 value="Add Liquidity"
