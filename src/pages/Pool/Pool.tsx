@@ -625,6 +625,7 @@ export default function Pool() {
                         ? `${tokenB.symbol} per ${tokenA.symbol}`
                         : 'No Tokens'
                     }
+                    format={formatStepNumberPriceInput}
                   />
                   <StepNumberInput
                     title="MAX PRICE"
@@ -640,6 +641,7 @@ export default function Pool() {
                         ? `${tokenB.symbol} per ${tokenA.symbol}`
                         : 'No Tokens'
                     }
+                    format={formatStepNumberPriceInput}
                   />
                 </div>
                 <div className="row mt-4 mb-2">
@@ -768,6 +770,7 @@ export default function Pool() {
                           });
                         });
                       }}
+                      format={formatStepNumberPriceInput}
                     />
                   </div>
                 )}
@@ -893,4 +896,9 @@ function logarithmStep(valueString: string, direction: number): number {
           )
         )
         .toNumber();
+}
+
+function formatStepNumberPriceInput(value: string) {
+  const formatted = formatPrice(new BigNumber(value));
+  return formatted.length > value.length ? formatted : value;
 }
