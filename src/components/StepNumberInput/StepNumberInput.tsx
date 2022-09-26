@@ -21,6 +21,8 @@ interface StepNumberInputProps<T extends number | string = string> {
   step?: string | number;
   max?: string | number;
   min?: string | number;
+  minSignificantDigits?: number;
+  maxSignificantDigits?: number;
   parse?: (value: string) => T;
   format?: (value: T) => string;
 }
@@ -40,6 +42,8 @@ export default function StepNumberInput<T extends number | string = string>({
   step: rawStep = 1,
   max: rawMax,
   min: rawMin,
+  minSignificantDigits = 2,
+  maxSignificantDigits = 6,
   parse,
   format = String,
 }: StepNumberInputProps<T>) {
@@ -178,6 +182,16 @@ export default function StepNumberInput<T extends number | string = string>({
             value={currentValue}
             onInput={onInputChange}
             ref={inputRef}
+            style={{
+              // set width of input based on current values but restrained to a min/max
+              minWidth: `${
+                minSignificantDigits + (currentValue.includes('.') ? 1 : 0)
+              }ch`,
+              maxWidth: `${
+                maxSignificantDigits + (currentValue.includes('.') ? 1 : 0)
+              }ch`,
+              width: `${currentValue.length}ch`,
+            }}
           />
         ) : (
           <span>{currentValue}</span>
