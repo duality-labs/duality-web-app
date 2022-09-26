@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useOnContinualPress from '../hooks/useOnContinualPress';
 
 import './StepNumberInput.scss';
@@ -119,19 +119,21 @@ export default function StepNumberInput({
     pressedInterval
   );
 
-  const [subDisabled, setSubDisabled] = useState(() => false);
-  useEffect(() => {
-    const disabled = disableLimit && min !== undefined && currentValue <= min;
-    if (disabled) stopAutoSub();
-    setSubDisabled(disabled);
-  }, [disableLimit, currentValue, min, stopAutoSub]);
+  const subDisabled = useMemo(() => {
+    return disableLimit && min !== undefined && currentValue <= min;
+  }, [disableLimit, currentValue, min]);
 
-  const [addDisabled, setAddDisabled] = useState(() => false);
   useEffect(() => {
-    const disabled = disableLimit && max !== undefined && currentValue >= max;
-    if (disabled) stopAutoAdd();
-    setAddDisabled(disabled);
-  }, [disableLimit, currentValue, max, stopAutoAdd]);
+    if (subDisabled) stopAutoSub();
+  }, [subDisabled, stopAutoSub]);
+
+  const addDisabled = useMemo(() => {
+    return disableLimit && max !== undefined && currentValue >= max;
+  }, [disableLimit, currentValue, max]);
+
+  useEffect(() => {
+    if (addDisabled) stopAutoAdd();
+  }, [addDisabled, stopAutoAdd]);
 
   /**
    * To be called when there is a change with the input
