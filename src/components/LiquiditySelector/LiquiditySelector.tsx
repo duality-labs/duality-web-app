@@ -370,6 +370,7 @@ export default function LiquiditySelector({
       {advanced ? (
         <TicksGroup
           className="new-ticks"
+          currentPrice={currentPriceFromTicks}
           ticks={userTicks}
           setUserTicks={setUserTicks}
           tickSelected={tickSelected}
@@ -628,6 +629,7 @@ function TicksArea({
 }
 
 function TicksGroup({
+  currentPrice,
   ticks,
   setUserTicks,
   tickSelected,
@@ -637,6 +639,7 @@ function TicksGroup({
   className,
   ...rest
 }: {
+  currentPrice: BigNumber;
   ticks: TickGroup;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   tickSelected: number;
@@ -747,7 +750,13 @@ function TicksGroup({
             'tick',
             tickSelected === index && 'tick--selected',
             token0Value.isGreaterThan(0) ? 'token-a' : 'token-b',
-          ].join(' ')}
+            // warn user if this seems to be a bad trade
+            token0Value.isGreaterThan(0)
+              ? price.isGreaterThan(currentPrice) && 'tick--price-warning'
+              : price.isLessThan(currentPrice) && 'tick--price-warning',
+          ]
+            .filter(Boolean)
+            .join(' ')}
         >
           <line
             {...rest}
