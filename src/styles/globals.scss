@@ -63,6 +63,10 @@ p {
   flex: 1 1 auto;
 }
 
+.hide {
+  display: none !important;
+}
+
 input[disabled],
 button[disabled],
 form.disabled input,
