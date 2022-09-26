@@ -89,6 +89,13 @@ export default function Pool() {
       setTokenA(tokenList[0]);
     }
   }, [tokenA, tokenList]);
+  // set token B to be USDC token in list if not already populated
+  useEffect(() => {
+    const USDC = tokenList?.find((token) => token.symbol === 'USDC');
+    if (USDC && !tokenB) {
+      setTokenB(USDC);
+    }
+  }, [tokenB, tokenList]);
 
   const [rangeMin, setRangeMin] = useState(defaultRangeMin);
   const [rangeMax, setRangeMax] = useState(defaultRangeMax);
