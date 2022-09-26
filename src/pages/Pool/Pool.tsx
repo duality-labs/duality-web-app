@@ -870,7 +870,7 @@ export default function Pool() {
 
 // calculates set from last siginificant digit (eg. 0.8 -> 0.9 -> 1 -> 2)
 // todo: could respect trailing zeros is strings were passed
-function logarithmStep(valueString: string, direction: number): number {
+function logarithmStep(valueString: string, direction: number): string {
   const value = new BigNumber(valueString);
   const significantDigits = value.sd(true);
   const orderOfMagnitude = Math.floor(Math.log10(value.toNumber()));
@@ -889,8 +889,8 @@ function logarithmStep(valueString: string, direction: number): number {
           .plus(
             new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit + 1)
           )
-          .toNumber()
-      : new BigNumber(10).exponentiatedBy(-denomExponent).toNumber()
+          .toFixed()
+      : new BigNumber(10).exponentiatedBy(-denomExponent).toFixed()
     : value
         .minus(
           new BigNumber(10).exponentiatedBy(
@@ -901,7 +901,7 @@ function logarithmStep(valueString: string, direction: number): number {
               (lastDigit === '1' && value.sd(false) === 1 ? 0 : +1)
           )
         )
-        .toNumber();
+        .toFixed();
 }
 
 // note: this cause odd issues when trying to control the number via keys or StepNumberInput
