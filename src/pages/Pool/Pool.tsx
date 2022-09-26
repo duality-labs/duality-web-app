@@ -739,13 +739,6 @@ export default function Pool() {
                     />
                   </div>
                 )}
-                <div className="row autobalance-card">
-                  <h3 className="card-title mr-auto">Total Allocation</h3>
-                  <span className="autobalance-allocation">100%</span>
-                  <button type="button" className="button-primary ml-2">
-                    Autobalance
-                  </button>
-                </div>
               </div>
               <div className="col">
                 <div className="fee-card">
