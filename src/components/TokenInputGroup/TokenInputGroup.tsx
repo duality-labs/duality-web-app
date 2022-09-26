@@ -8,6 +8,9 @@ import { cleanInput } from './utils';
 
 import './TokenInputGroup.scss';
 
+const minSignificantDigits = 12;
+const maxSignificantDigits = 20;
+
 interface InputGroupProps {
   onTokenChanged?: (token?: Token) => void;
   onValueChanged?: (value: string) => void;
@@ -65,13 +68,31 @@ export default function TokenInputGroup({
       )}
       <input
         type="text"
-        className={['token-group-input', !Number(value) && 'input--zero']
+        className={[
+          'token-group-input',
+          'ml-auto',
+          !Number(value) && 'input--zero',
+        ]
           .filter(Boolean)
           .join(' ')}
         value={value || '...'}
         onInput={onInput}
         onChange={onInputChange}
         disabled={disabledInput}
+        style={
+          value
+            ? {
+                // set width of input based on current values but restrained to a min/max
+                minWidth: `${
+                  minSignificantDigits + (value.includes('.') ? 1 : 0)
+                }ch`,
+                maxWidth: `${
+                  maxSignificantDigits + (value.includes('.') ? 1 : 0)
+                }ch`,
+                width: `${value?.length}ch`,
+              }
+            : undefined
+        }
       />
       <TokenPicker
         value={token}
