@@ -23,6 +23,7 @@ interface LiquiditySelectorProps {
   userTicks?: TickGroup;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   advanced?: boolean;
+  formatPrice?: (value: BigNumber) => string;
 }
 
 export type Tick = [
@@ -43,7 +44,7 @@ type TickGroupBucketsFilled = Array<
   ]
 >;
 
-function formatPrice(value: BigNumber): string {
+function defaultFormatPrice(value: BigNumber): string {
   return value.toFixed(
     Math.max(0, value.dp() - value.sd(true) + 3),
     BigNumber.ROUND_HALF_UP
@@ -76,6 +77,7 @@ export default function LiquiditySelector({
   userTicks = [],
   setUserTicks,
   advanced = false,
+  formatPrice = defaultFormatPrice,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
@@ -388,6 +390,7 @@ export default function LiquiditySelector({
           setTickSelected={setTickSelected}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
+          formatPrice={formatPrice}
         />
       ) : (
         <TicksArea
@@ -399,6 +402,7 @@ export default function LiquiditySelector({
           setRangeMax={setRangeMax}
           plotXinverse={plotXinverse}
           bucketRatio={bucketRatio}
+          formatPrice={formatPrice}
         />
       )}
       <Axis
@@ -458,6 +462,7 @@ function TicksArea({
   setRangeMax,
   plotXinverse,
   bucketRatio,
+  formatPrice,
   className,
 }: {
   ticks: TickGroup;
@@ -467,6 +472,7 @@ function TicksArea({
   setRangeMax: (rangeMax: string) => void;
   plotXinverse: (x: number) => number;
   bucketRatio: number;
+  formatPrice: (value: BigNumber) => string;
   className?: string;
 }) {
   const startTickPrice = ticks?.[0]?.[0];
@@ -495,6 +501,7 @@ function TicksArea({
         plotX,
         setRangeMin,
         setRangeMax,
+        formatPrice,
       ]
     )
   );
@@ -520,6 +527,7 @@ function TicksArea({
         plotX,
         setRangeMin,
         setRangeMax,
+        formatPrice,
       ]
     )
   );
@@ -643,6 +651,7 @@ function TicksGroup({
   setTickSelected,
   plotX,
   plotY,
+  formatPrice,
   className,
   ...rest
 }: {
@@ -653,6 +662,7 @@ function TicksGroup({
   setTickSelected: (index: number) => void;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
+  formatPrice: (value: BigNumber) => string;
   className?: string;
 }) {
   const cumulativeToken0Values = ticks.reduce(
@@ -722,7 +732,7 @@ function TicksGroup({
           });
         }
       },
-      [setUserTicks, plotX, plotY]
+      [setUserTicks, plotX, plotY, formatPrice]
     )
   );
 
