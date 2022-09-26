@@ -735,7 +735,12 @@ export default function Pool() {
                   </div>
                 )}
               </div>
-              <div className="col">
+              <div
+                className="col"
+                style={{
+                  display: tickSelected >= 0 ? 'none' : 'block',
+                }}
+              >
                 <div className="fee-card">
                   <div className="card-header">
                     <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
