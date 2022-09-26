@@ -137,8 +137,7 @@ export default function StepNumberInput({
    * To be called when there is a change with the input
    */
   const onInputChange = useCallback(() => {
-    const value = inputRef.current?.value;
-    maybeUpdate?.(value || '0');
+    maybeUpdate(inputRef.current?.value || '0');
   }, [maybeUpdate]);
 
   useEffect(() => {
