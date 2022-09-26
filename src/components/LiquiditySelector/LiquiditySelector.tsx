@@ -659,7 +659,7 @@ function TicksGroup({
 
   const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
 
-  const [startDragTick] = useOnDragMove(
+  const [startDragTick, isDragging] = useOnDragMove(
     useCallback(
       (ev: Event, displacement = { x: 0, y: 0 }) => {
         // exit if there is no tick
@@ -822,8 +822,8 @@ function TicksGroup({
                       .dividedBy(cumulativeToken1Values)
               ) - 9
             ).toFixed(3)}
-            rx="12.5"
-            ry="22.5"
+            rx={isDragging ? '1000' : '12.5'}
+            ry={isDragging ? '1000' : '22.5'}
             onMouseDown={onTickSelected}
           />
         </g>
