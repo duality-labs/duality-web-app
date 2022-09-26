@@ -341,8 +341,9 @@ export default function Pool() {
           <h3 className="card-title mb-3">Add Liquidity</h3>
           <div className="mb-4">
             <p>
-              Add liquidity in any ratio to earn fees on other people’s trades!
-              Learn more <Link to="/my-liquidity">here</Link>.
+              Add liquidity in any ratio to earn fees on
+              <br /> other people’s trades! Learn more{' '}
+              <Link to="/my-liquidity">here</Link>.
             </p>
           </div>
           <div className="card-row">
