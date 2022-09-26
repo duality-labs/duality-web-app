@@ -855,7 +855,7 @@ export default function Pool() {
 
 // calculates set from last siginificant digit (eg. 0.8 -> 0.9 -> 1 -> 2)
 // todo: could respect trailing zeros is strings were passed
-function logarithmStep(valueString: number, direction: number): number {
+function logarithmStep(valueString: string, direction: number): number {
   const value = new BigNumber(valueString);
   const significantDigits = value.sd(true);
   const orderOfMagnitude = Math.floor(Math.log10(value.toNumber()));
