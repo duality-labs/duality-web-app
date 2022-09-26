@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 export default function useOnContinualPress(
   onTimeout: () => void,
   delay = 0,
-  interval = 50
+  interval = 50,
+  disabled = false
 ) {
   // set active state and handlers
   const [active, setActive] = useState(false);
@@ -23,6 +24,10 @@ export default function useOnContinualPress(
       return () => clearTimeout(timeout);
     }
   }, [delay]);
+
+  useEffect(() => {
+    if (disabled) stop();
+  }, [disabled, stop]);
 
   useEffect(() => {
     if (active) {
