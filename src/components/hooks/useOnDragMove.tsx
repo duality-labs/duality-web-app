@@ -11,7 +11,11 @@ export default function useOnDragMove(
     originalScreenPosition: Position | undefined
   ) => void,
   container: Node = document
-) {
+): [
+  startDrag: (e: MouseEvent<Node>) => void,
+  isDragging: boolean,
+  stopDrag: (e: MouseEvent<Node>) => void
+] {
   const originalPosition = useRef<Position>();
 
   // set dragging state and handlers
@@ -68,5 +72,5 @@ export default function useOnDragMove(
     }
   }, [container, dragging, listener]);
 
-  return [startDrag, stopDrag];
+  return [startDrag, dragging, stopDrag];
 }
