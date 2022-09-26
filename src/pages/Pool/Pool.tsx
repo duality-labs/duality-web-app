@@ -445,7 +445,10 @@ export default function Pool() {
           </div>
           <div className="row col-row">
             {tokenA && (
-              <button className="badge-primary corner-border badge-large font-console">
+              <button
+                className="badge-primary corner-border badge-large font-console"
+                type="button"
+              >
                 {new BigNumber(values[0]).toFormat()}
                 {tokenA.logo ? (
                   <img
@@ -465,7 +468,10 @@ export default function Pool() {
             )}
             {tokenA && tokenB && <div>+</div>}
             {tokenB && (
-              <button className="badge-primary corner-border badge-large font-console">
+              <button
+                className="badge-primary corner-border badge-large font-console"
+                type="button"
+              >
                 {new BigNumber(values[1]).toFormat()}
                 {tokenB.logo ? (
                   <img
