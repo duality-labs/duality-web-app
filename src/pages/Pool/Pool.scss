@@ -133,6 +133,7 @@
 
   .assets-card {
     & {
+      min-width: 384px; // influenced by default selected tokens rendered text
       max-width: 800px;
     }
     .token-input-group {
