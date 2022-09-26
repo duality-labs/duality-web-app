@@ -34,10 +34,8 @@ const denomMax = Math.pow(10, +denomExponent);
 const defaultFee = '0.30%';
 const defaultPrice = '1';
 const defaultSlopeType = 'UNIFORM';
-const defaultRangeMin = new BigNumber(defaultPrice)
-  .dividedBy(2)
-  .toFixed(denomExponent);
-const defaultRangeMax = new BigNumber(defaultPrice).multipliedBy(2).toFixed(0);
+const defaultRangeMin = new BigNumber(defaultPrice).dividedBy(2).toFixed();
+const defaultRangeMax = new BigNumber(defaultPrice).multipliedBy(2).toFixed();
 const defaultTokenAmount = '1';
 
 interface FeeType {
