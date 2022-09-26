@@ -25,7 +25,11 @@ interface LiquiditySelectorProps {
   advanced?: boolean;
 }
 
-type Tick = [price: BigNumber, token0Value: BigNumber, token1Value: BigNumber];
+export type Tick = [
+  price: BigNumber,
+  token0Value: BigNumber,
+  token1Value: BigNumber
+];
 export type TickGroup = Array<Tick>;
 type TickGroupBucketsEmpty = Array<
   [lowerBound: BigNumber, upperBound: BigNumber]
