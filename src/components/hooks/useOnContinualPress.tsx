@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 export default function useOnContinualPress(
   onTimeout: () => void,
+  disabled = false,
   delay = 0,
-  interval = 50,
-  disabled = false
+  interval = 50
 ) {
   // set active state and handlers
   const [active, setActive] = useState(false);
