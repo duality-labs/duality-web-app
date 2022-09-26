@@ -54,7 +54,13 @@ const feeTypes: Array<FeeType> = Object.entries({
   description,
 }));
 
-const slopeTypes = ['UNIFORM', 'UP-SLOPE', 'BELL CURVE', 'DOWN-SLOPE'];
+type SlopeType = 'UNIFORM' | 'UP-SLOPE' | 'BELL CURVE' | 'DOWN-SLOPE';
+const slopeTypes: Array<SlopeType> = [
+  'UNIFORM',
+  'UP-SLOPE',
+  'BELL CURVE',
+  'DOWN-SLOPE',
+];
 
 const calculateFeeLiquidity = function (label: string) {
   const test: { [label: string]: string } = {
@@ -113,7 +119,7 @@ export default function Pool() {
     isValidating: tickFetching,
   } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
-  const [slopeType, setSlopeType] = useState<string>(defaultSlopeType);
+  const [slopeType, setSlopeType] = useState<SlopeType>(defaultSlopeType);
   const [precision, setPrecision] = useState<string>(defaultPrecision);
 
   const [
@@ -286,16 +292,54 @@ export default function Pool() {
             ...result,
           ];
         }, []);
+
+        const shapeFactor = (() => {
+          const values = (() => {
+            switch (slopeType) {
+              case 'UP-SLOPE':
+                return tickPrices.map((_, index, tickPrices) => {
+                  const percent = index / (tickPrices.length - 1);
+                  return 1 + percent;
+                });
+              case 'BELL CURVE':
+                return tickPrices.map((_, index, tickPrices) => {
+                  const percent = index / (tickPrices.length - 1);
+                  return (
+                    (1 / Math.sqrt(2 * Math.PI)) *
+                    Math.exp(-(1 / 2) * Math.pow((percent - 0.5) / 0.25, 2))
+                  );
+                });
+              case 'DOWN-SLOPE':
+                return tickPrices.map((_, index, tickPrices) => {
+                  const percent = 1 - index / (tickPrices.length - 1);
+                  return 1 + percent;
+                });
+              case 'UNIFORM':
+              default:
+                return tickPrices.map(() => 1);
+            }
+          })();
+          // normalise values before returning
+          const sum = values.reduce((result, value) => result + value, 0);
+          return values.map((value) => value / sum);
+        })();
+
         // normalise the tick amounts given
-        return tickPrices.map(([price, countA, countB]) => {
+        return tickPrices.map(([price, countA, countB], index) => {
           return [
             price,
             // ensure division is to µtokens amount but given in tokens
             tickCounts[0]
-              ? tokenAmountA.multipliedBy(countA).dividedBy(tickCounts[0])
+              ? tokenAmountA
+                  .multipliedBy(shapeFactor[index])
+                  .multipliedBy(countA)
+                  .dividedBy(tickCounts[0])
               : new BigNumber(0),
             tickCounts[1]
-              ? tokenAmountB.multipliedBy(countB).dividedBy(tickCounts[1])
+              ? tokenAmountB
+                  .multipliedBy(shapeFactor[index])
+                  .multipliedBy(countB)
+                  .dividedBy(tickCounts[1])
               : new BigNumber(0),
           ];
         });
@@ -327,6 +371,7 @@ export default function Pool() {
     });
   }, [
     values,
+    slopeType,
     rangeMin,
     rangeMax,
     tickCount,
