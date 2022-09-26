@@ -549,7 +549,7 @@ export default function Pool() {
                   .join(' ')}
                 onClick={() => setChartTypeSelected('AMM')}
               >
-                AMM
+                Basic
               </button>
               <button
                 type="button"
@@ -563,7 +563,7 @@ export default function Pool() {
                   .join(' ')}
                 onClick={() => setChartTypeSelected('Orderbook')}
               >
-                Orderbook
+                Pro
               </button>
             </div>
           </div>
