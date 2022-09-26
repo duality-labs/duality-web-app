@@ -195,31 +195,31 @@ export default function TokenPicker({
     <>
       <button
         type="button"
-        className={`token-picker-toggle ${isOpen ? ' open' : ''}`}
+        className={[
+          'token-picker-toggle',
+          isOpen && 'open',
+          !value?.symbol && 'no-selected-token',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         onClick={open}
         disabled={disabled}
       >
-        {value?.symbol ? (
-          <>
-            {value.logo ? (
-              <img
-                className="token-image"
-                alt={`${value.symbol} logo`}
-                src={value.logo}
-              />
-            ) : (
-              <FontAwesomeIcon
-                icon={faQuestionCircle}
-                size="2x"
-                className="token-image token-image-not-found"
-              ></FontAwesomeIcon>
-            )}
-            <span className="token-symbol">{value.symbol}</span>
-            <span className="token-chain">Duality Chain</span>
-          </>
+        {value?.logo ? (
+          <img
+            className="token-image"
+            alt={`${value.symbol} logo`}
+            src={value.logo}
+          />
         ) : (
-          <span className="no-selected-token">Choose Token</span>
+          <FontAwesomeIcon
+            icon={faQuestionCircle}
+            size="2x"
+            className="token-image token-image-not-found"
+          ></FontAwesomeIcon>
         )}
+        <span className="token-symbol">{value?.symbol ?? 'Choose...'}</span>
+        <span className="token-chain">Duality Chain</span>
       </button>
       <Dialog
         isOpen={isOpen}
