@@ -90,9 +90,7 @@ export default function Pool() {
   ]);
 
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
-  const tokenValues = values;
-  const tokenValuesValid =
-    !!tokenA && !!tokenB && tokenValues.every((v) => Number(v));
+  const valuesValid = !!tokenA && !!tokenB && values.every((v) => Number(v));
 
   const {
     data: { ticks: unorderedTicks } = {},
@@ -155,7 +153,7 @@ export default function Pool() {
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
-      if (!tokenValuesValid) return;
+      if (!valuesValid) return;
       const submitValue =
         // eslint-disable-next-line  @typescript-eslint/no-explicit-any
         ((e.nativeEvent as any)?.submitter as HTMLInputElement).value;
@@ -171,7 +169,7 @@ export default function Pool() {
         );
       }
     },
-    [tokenValuesValid, tokenA, tokenB, feeType, userTicks, sendDepositRequest]
+    [valuesValid, tokenA, tokenB, feeType, userTicks, sendDepositRequest]
   );
 
   const [tickSelected, setTickSelected] = useState(-1);
@@ -212,8 +210,8 @@ export default function Pool() {
     function getUserTicks(): TickGroup {
       // set multiple ticks across the range
       if (currentPriceFromTicks.isGreaterThan(0) && tickCount > 1) {
-        const tokenAmountA = new BigNumber(tokenValues[0]);
-        const tokenAmountB = new BigNumber(tokenValues[1]);
+        const tokenAmountA = new BigNumber(values[0]);
+        const tokenAmountB = new BigNumber(values[1]);
         // spread evenly after adding padding on each side
         const tickStart = new BigNumber(rangeMin);
         const tickEnd = new BigNumber(rangeMax);
@@ -290,7 +288,7 @@ export default function Pool() {
       }
     });
   }, [
-    tokenValues,
+    values,
     rangeMin,
     rangeMax,
     tickCount,
@@ -349,14 +347,14 @@ export default function Pool() {
             <div className="mx-auto">
               <input
                 className="pill pill-outline mx-3 px-4 py-4"
-                disabled={!tokenValuesValid}
+                disabled={!valuesValid}
                 type="submit"
                 name="action"
                 value="Customize"
               />
               <input
                 className="pill mx-3 px-4 py-4"
-                disabled={!tokenValuesValid}
+                disabled={!valuesValid}
                 type="submit"
                 name="actiona"
                 value="Add Liquidity"
