@@ -522,7 +522,7 @@ export default function Pool() {
               </button>
             </div>
           </div>
-          <div className="row col-row">
+          <div className="row col-row hide">
             <button className="icon-button" type="button">
               <FontAwesomeIcon icon={faSliders}></FontAwesomeIcon>
             </button>
