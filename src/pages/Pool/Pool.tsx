@@ -16,7 +16,10 @@ import StepNumberInput from '../../components/StepNumberInput';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import LiquiditySelector from '../../components/LiquiditySelector';
-import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
+import {
+  TickGroup,
+  Tick,
+} from '../../components/LiquiditySelector/LiquiditySelector';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 
 import { useTokens, Token } from '../../components/TokenPicker/mockHooks';
@@ -110,7 +113,30 @@ export default function Pool() {
     sendDepositRequest,
   ] = useDeposit();
 
-  const [userTicks, setUserTicks] = useState<TickGroup>([]);
+  const [userTicks, setUserTicksUnprotected] = useState<TickGroup>([]);
+  // ensure that setting of user ticks never goes outside our prescribed bounds
+  const setUserTicks = useCallback<
+    React.Dispatch<React.SetStateAction<TickGroup>>
+  >((userTicksOrCallback) => {
+    function restrictTickPrices(tick: Tick): Tick {
+      const [price, token0Value, token1Value] = tick;
+      if (price.isLessThan(denomMin)) {
+        return [new BigNumber(denomMin), token0Value, token1Value];
+      }
+      if (price.isGreaterThan(denomMax)) {
+        return [new BigNumber(denomMax), token0Value, token1Value];
+      }
+      return [price, token0Value, token1Value];
+    }
+    if (typeof userTicksOrCallback === 'function') {
+      const userTicksCallback = userTicksOrCallback;
+      return setUserTicksUnprotected((userTicks) => {
+        return userTicksCallback(userTicks).map(restrictTickPrices);
+      });
+    }
+    const userTicks = userTicksOrCallback;
+    setUserTicksUnprotected(userTicks.map(restrictTickPrices));
+  }, []);
 
   const currentPriceABFromTicks =
     useCurrentPriceFromTicks(unorderedTicks) || new BigNumber(1);
