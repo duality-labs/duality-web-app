@@ -3,6 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowUpLong,
   faArrowDownLong,
+  faBolt,
+  faFlag,
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
@@ -111,6 +113,7 @@ export default function Swap() {
                 .join(' ')}
               onClick={() => setOrderType('market')}
             >
+              <FontAwesomeIcon className="mr-3" icon={faBolt}></FontAwesomeIcon>
               Market Order
             </button>
             <button
@@ -125,6 +128,7 @@ export default function Swap() {
                 .join(' ')}
               onClick={() => setOrderType('limit')}
             >
+              <FontAwesomeIcon className="mr-3" icon={faFlag}></FontAwesomeIcon>
               Limit Order
             </button>
           </div>
