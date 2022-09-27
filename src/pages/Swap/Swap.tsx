@@ -94,7 +94,7 @@ export default function Swap() {
   return (
     <form onSubmit={onFormSubmit} className="swap-page">
       <div className="page-card">
-        <h2 className="card-title">Trade</h2>
+        <h3 className="card-title mb-3 mr-auto">Trade</h3>
         <div className="card-row">
           <TokenInputGroup
             onValueChanged={onValueAChanged}
