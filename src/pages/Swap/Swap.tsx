@@ -91,10 +91,44 @@ export default function Swap() {
     setLastUpdatedA(false);
   }, []);
 
+  const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
+
   return (
     <form onSubmit={onFormSubmit} className="swap-page">
       <div className="page-card">
         <h3 className="card-title mb-3 mr-auto">Trade</h3>
+        <div className="card-row order-type mb-5">
+          <div className="button-switch-group">
+            <button
+              type="button"
+              className={[
+                'button',
+                'py-3',
+                'px-5',
+                orderType === 'market' && 'button-primary',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => setOrderType('market')}
+            >
+              Market Order
+            </button>
+            <button
+              type="button"
+              className={[
+                'button',
+                'py-3',
+                'px-5',
+                orderType === 'limit' && 'button-primary',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => setOrderType('limit')}
+            >
+              Limit Order
+            </button>
+          </div>
+        </div>
         <div className="card-row">
           <TokenInputGroup
             onValueChanged={onValueAChanged}

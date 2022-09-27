@@ -24,6 +24,15 @@
       margin: 0 auto;
     }
   }
+
+  .order-type .button-switch-group {
+    flex: 1;
+    display: flex;
+    justify-content: stretch;
+    .button {
+      flex: 1;
+    }
+  }
 }
 
 // TODO add proper styling for both modes
