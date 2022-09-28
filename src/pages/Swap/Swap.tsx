@@ -1,8 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowUpLong,
-  faArrowDownLong,
   faBolt,
   faFlag,
   faArrowRightArrowLeft,
@@ -198,14 +196,16 @@ export default function Swap() {
             title="Available"
           ></TokenInputGroup>
         </div>
-        <div className="card-row">
+        <div className="card-row my-2">
           <button
             type="button"
             onClick={swapTokens}
             className="icon-button swap-button"
           >
-            <FontAwesomeIcon icon={faArrowUpLong}></FontAwesomeIcon>
-            <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
+            <FontAwesomeIcon
+              icon={faArrowRightArrowLeft}
+              rotation={90}
+            ></FontAwesomeIcon>
           </button>
         </div>
         <div className="card-row mb-4">
