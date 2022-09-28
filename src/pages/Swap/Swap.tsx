@@ -148,7 +148,7 @@ export default function Swap() {
                 : ''
             }
             exclusion={tokenB}
-            title="You Pay"
+            title="Available"
           ></TokenInputGroup>
         </div>
         <div className="card-row">
@@ -177,7 +177,6 @@ export default function Swap() {
             }
             exclusion={tokenA}
             disabledInput={true}
-            title="You Receive"
           ></TokenInputGroup>
         </div>
         <div className="text-info text-row card-row">
