@@ -201,6 +201,8 @@ export default function Swap() {
                     ? 'Finding exchange rate...'
                     : 'No exchange information'}
                 </span>
+                <span className="text-header">Price Impact</span>
+                <span className="text-value">0.00%</span>
               </div>
             )}
         </div>
