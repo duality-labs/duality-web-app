@@ -165,9 +165,11 @@ export default function TokenPicker({
 
       // remove invalid characters + remove space limitations (but still match any found)
       const queryRegexText = searchQuery
+        .trim()
         .toLowerCase()
         .replace(/[.*\\{}[\]+$^]/gi, (char) => `\\${char}`)
-        .replace(/\s+/g, '\\s*');
+        .replace(/\s+/g, '\\s*')
+        .replace(/^["'](.*)["']$/, '$1'); // remove quotes
       const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
 
       setFilteredList(
@@ -278,7 +280,7 @@ export default function TokenPicker({
           onInput={(e) => setSearchQuery(e.currentTarget.value)}
           onKeyDown={onKeyDown}
           value={searchQuery}
-          placeholder="Search for a token"
+          placeholder="Search name or paste address"
           autoComplete="off"
           ref={inputRef}
         />
