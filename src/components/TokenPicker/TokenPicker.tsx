@@ -19,7 +19,7 @@ import './TokenPicker.scss';
 
 interface TokenResult {
   symbol: Array<string>;
-  name: Array<string>;
+  chain: Array<string>;
   token: Token;
 }
 
@@ -156,7 +156,7 @@ export default function TokenPicker({
       if (!searchQuery) {
         return setFilteredList(
           list.map((token) => ({
-            name: [token.name],
+            chain: [token.chain.pretty_name ?? token.chain.chain_name],
             symbol: [token.symbol],
             token,
           }))
@@ -182,8 +182,9 @@ export default function TokenPicker({
           .map(function (token) {
             // Split the symbol and name using the query (and include the query in the list)
             const symbolResult = token.symbol?.split(regexQuery) || [''];
-            const nameResult = token.name?.split(regexQuery) || [''];
-            return { name: nameResult, symbol: symbolResult, token };
+            const chainName = token.chain.pretty_name ?? token.chain.chain_name;
+            const nameResult = chainName?.split(regexQuery) || [''];
+            return { chain: nameResult, symbol: symbolResult, token };
           })
       );
 
@@ -339,8 +340,8 @@ export default function TokenPicker({
                 {textListWithMark(token?.symbol || [])}
               </abbr>
             </span>
-            <span className="token-name">
-              {textListWithMark(token?.name || [])}
+            <span className="chain-name">
+              {textListWithMark(token?.chain || [])}
             </span>
             {new BigNumber(balance).isZero() ? (
               <span className="token-zero-balance">{balance}</span>
