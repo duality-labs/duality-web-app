@@ -192,10 +192,10 @@ export default function Swap() {
                         routerResult.tokenIn === tokenA.address
                           ? routerResult.amountOut
                               .dividedBy(routerResult.amountIn)
-                              .toPrecision(6)
+                              .toFixed()
                           : routerResult.amountIn
                               .dividedBy(routerResult.amountOut)
-                              .toPrecision(6)
+                              .toFixed()
                       } ${tokenB.symbol}`
                     : isValidatingRate
                     ? 'Finding exchange rate...'
