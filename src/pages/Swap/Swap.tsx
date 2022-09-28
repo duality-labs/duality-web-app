@@ -111,12 +111,8 @@ export default function Swap() {
   // set the token order for the rate
   useEffect(() => {
     if (tokenA && tokenB) {
-      // place A as stable denominator
-      if (tokenA.isStable && !tokenB.isStable) {
-        setRateTokenOrderAuto([tokenB, tokenA]);
-      }
       // place B as stable denominator
-      else if (!tokenA.isStable && tokenB.isStable) {
+      if (!tokenA.isStable && tokenB.isStable) {
         setRateTokenOrderAuto([tokenA, tokenB]);
       }
       // place in order of swap trade
