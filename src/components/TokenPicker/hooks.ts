@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { assets, chains } from 'chain-registry';
 import { Asset, Chain } from '@chain-registry/types';
 
@@ -24,15 +25,26 @@ const tokenListCache: {
 } = {};
 
 const allTokens = () => true;
-export function useTokens() {
+export function useTokens(sortFunction = defaultSort) {
   tokenListCache['allTokens'] =
     tokenListCache['allTokens'] || getTokens(allTokens);
-  return tokenListCache['allTokens'];
+  return useMemo(
+    () => tokenListCache['allTokens'].slice().sort(sortFunction),
+    [sortFunction]
+  );
 }
 
 const mainnetTokens = (chain: Chain) => chain?.network_type === 'mainnet';
-export function useMainnetTokens() {
+export function useMainnetTokens(sortFunction = defaultSort) {
   tokenListCache['mainnetTokens'] =
     tokenListCache['mainnetTokens'] || getTokens(mainnetTokens);
-  return tokenListCache['mainnetTokens'];
+  return useMemo(
+    () => tokenListCache['mainnetTokens'].slice().sort(sortFunction),
+    [sortFunction]
+  );
+}
+
+function defaultSort(a: Token, b: Token) {
+  // compare by symbol name
+  return a.symbol.localeCompare(b.symbol);
 }
