@@ -224,7 +224,9 @@ export default function TokenPicker({
           ></FontAwesomeIcon>
         )}
         <span className="token-symbol">{value?.symbol ?? 'Choose...'}</span>
-        <span className="token-chain">Duality Chain</span>
+        <span className="token-chain">
+          {value?.chain.pretty_name ?? value?.chain.chain_name}
+        </span>
       </button>
       <Dialog
         isOpen={isOpen}
