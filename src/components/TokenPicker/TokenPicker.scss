@@ -237,6 +237,11 @@ $min-body-height: 150px;
       min-height: $min-body-height;
       flex: 1 1 auto;
     }
+
+    mark {
+      color: var(--icon-button);
+      background-color: var(--icon-button-bg);
+    }
   }
 
   .dialog-header-close-button {
