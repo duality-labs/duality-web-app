@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 
 import TokenPicker from '../TokenPicker';
 
-import { Token } from '../TokenPicker/mockHooks';
+import { Token } from '../TokenPicker/hooks';
 
 import { cleanInput } from './utils';
 

@@ -10,7 +10,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 
-import { Token } from './mockHooks';
+import { Token } from './hooks';
 
 import Dialog from '../Dialog/Dialog';
 
@@ -172,8 +172,8 @@ export default function TokenPicker({
       setFilteredList(
         list
           .filter((token) =>
-            [token.symbol, token.name, token.address].some((txt) =>
-              regexQuery.test(txt)
+            [token.symbol, token.name, token.address].some(
+              (txt) => txt && regexQuery.test(txt)
             )
           )
           .map(function (token) {
@@ -205,11 +205,12 @@ export default function TokenPicker({
         onClick={open}
         disabled={disabled}
       >
-        {value?.logo ? (
+        {value?.logo_URIs ? (
           <img
             className="token-image"
             alt={`${value.symbol} logo`}
-            src={value.logo}
+            // in this context (large images) prefer SVGs over PNGs for better images
+            src={value.logo_URIs.svg || value.logo_URIs.png}
           />
         ) : (
           <FontAwesomeIcon
@@ -288,7 +289,7 @@ export default function TokenPicker({
   function showListItem(token: TokenResult | null, index: number) {
     const address = token?.token?.address;
     const symbol = token?.token?.symbol;
-    const logo = token?.token?.logo;
+    const logos = token?.token?.logo_URIs;
     const isDisabled = exclusion?.address === address;
     const balance = '0.0'; // TODO get actual balance
 
@@ -316,9 +317,11 @@ export default function TokenPicker({
             onClick={onClick}
             onFocus={onFocus}
           >
-            {logo ? (
+            {logos ? (
               <img
-                src={logo}
+                // in this context (small images) prefer PNGs over SVGs
+                // for reduced number of elements to be drawn in list
+                src={logos.png || logos.svg}
                 alt={`${symbol || 'Token'} logo`}
                 className="token-image"
               />

@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module';
-import { Token } from '../../components/TokenPicker/mockHooks';
+import { Token } from '../../components/TokenPicker/hooks';
 import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
 
 const {
@@ -140,24 +140,38 @@ export function useDeposit(): [
                       previousAttr?.value === web3.address
                     ) {
                       // read the matching tokens into their values
-                      if (attr.value.endsWith(tokenA.denom.toLowerCase())) {
+                      if (
+                        attr.value.endsWith(
+                          tokenA.denom_units[1]?.denom.toLowerCase()
+                        )
+                      ) {
                         acc.receivedTokenA = new BigNumber(
                           acc.receivedTokenA || 0
                         )
                           .plus(
                             new BigNumber(
-                              attr.value.slice(0, 0 - tokenA.denom.length)
+                              attr.value.slice(
+                                0,
+                                0 - tokenA.denom_units[1].denom.length
+                              )
                             ).shiftedBy(-denomExponent + denomShiftExponent)
                           )
                           .toFixed(denomExponent);
                       }
-                      if (attr.value.endsWith(tokenB.denom.toLowerCase())) {
+                      if (
+                        attr.value.endsWith(
+                          tokenB.denom_units[1]?.denom.toLowerCase()
+                        )
+                      ) {
                         acc.receivedTokenB = new BigNumber(
                           acc.receivedTokenB || 0
                         )
                           .plus(
                             new BigNumber(
-                              attr.value.slice(0, 0 - tokenB.denom.length)
+                              attr.value.slice(
+                                0,
+                                0 - tokenB.denom_units[1].denom.length
+                              )
                             ).shiftedBy(-denomExponent + denomShiftExponent)
                           )
                           .toFixed(denomExponent);
