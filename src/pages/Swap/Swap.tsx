@@ -96,7 +96,7 @@ export default function Swap() {
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
 
   return (
-    <form onSubmit={onFormSubmit} className="swap-page">
+    <form onSubmit={onFormSubmit} className="page swap-page">
       <div className="page-card">
         <h3 className="card-title mb-3 mr-auto">Trade</h3>
         <div className="card-row order-type mb-5">
@@ -161,7 +161,7 @@ export default function Swap() {
             <FontAwesomeIcon icon={faArrowDownLong}></FontAwesomeIcon>
           </button>
         </div>
-        <div className="card-row">
+        <div className="card-row mb-4">
           <TokenInputGroup
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}
@@ -179,14 +179,14 @@ export default function Swap() {
             disabledInput={true}
           ></TokenInputGroup>
         </div>
-        <div className="text-info text-row card-row">
+        <div className="card-row text-detail">
           {tokenA &&
             tokenB &&
             parseFloat(valueAConverted || '') > 0 &&
             parseFloat(valueBConverted || '') > 0 && (
-              <div>
-                <span className="text-header">Exchange Rate:</span>
-                <span className="ml-3 text-value">
+              <div className="text-grid my-3">
+                <span className="text-header">Exchange Rate</span>
+                <span className="text-value">
                   {routerResult
                     ? `1 ${tokenA.symbol} = ${
                         routerResult.tokenIn === tokenA.address

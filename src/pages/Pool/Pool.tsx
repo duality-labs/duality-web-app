@@ -384,7 +384,7 @@ export default function Pool() {
   if (!valuesConfirmed) {
     return (
       <form
-        className={['pool-page', isValidatingDeposit && 'disabled']
+        className={['page', 'pool-page', isValidatingDeposit && 'disabled']
           .filter(Boolean)
           .join(' ')}
         onSubmit={onSubmit}
@@ -576,7 +576,7 @@ export default function Pool() {
           </div>
         </div>
       </div>
-      <div className="pool-page">
+      <div className="page pool-page">
         <div
           className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
