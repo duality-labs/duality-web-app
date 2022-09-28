@@ -302,7 +302,7 @@ export default function TokenPicker({
     }
 
     return (
-      <li key={address}>
+      <li key={token?.token?.base}>
         <data value={address}>
           <button
             type="button"
