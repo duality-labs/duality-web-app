@@ -7,7 +7,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import { useTokens, Token } from '../../components/TokenPicker/mockHooks';
+import { useTokens, Token } from '../../components/TokenPicker/hooks';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { MsgSwap } from '../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
@@ -24,7 +24,7 @@ const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 
 export default function Swap() {
   const { address } = useWeb3();
-  const { data: tokenList = [] } = useTokens();
+  const tokenList = useTokens();
   const [tokenA, setTokenA] = useState(tokenList[0] as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
   const [valueA, setValueA] = useState<string | undefined>('0');
@@ -112,13 +112,16 @@ export default function Swap() {
   useEffect(() => {
     if (tokenA && tokenB) {
       // place B as stable denominator
-      if (!tokenA.isStable && tokenB.isStable) {
+      if (!isStablecoin(tokenA) && isStablecoin(tokenB)) {
         setRateTokenOrderAuto([tokenA, tokenB]);
       }
       // place in order of swap trade
       else {
         setRateTokenOrderAuto([tokenB, tokenA]);
       }
+    }
+    function isStablecoin(token: Token) {
+      return token.description?.toLowerCase().includes('stablecoin');
     }
   }, [tokenA, tokenB]);
 

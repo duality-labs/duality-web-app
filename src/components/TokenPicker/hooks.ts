@@ -3,7 +3,7 @@ import { assets, chains } from 'chain-registry';
 import { Asset, Chain } from '@chain-registry/types';
 
 // filter to only those with real address and chain
-interface Token extends Asset {
+export interface Token extends Asset {
   address: string;
   chain: Chain;
 }
