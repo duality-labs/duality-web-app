@@ -126,6 +126,20 @@ export default function Swap() {
     }
   }, [tokenA, tokenB]);
 
+  // if tokens change then reset the manual order setting
+  useEffect(() => {
+    if (tokenA && tokenB) {
+      setRateTokenOrderManual((tokenOrder) => {
+        // keep settings if tokens have not changed
+        if (tokenOrder?.every((token) => [tokenA, tokenB].includes(token))) {
+          return tokenOrder;
+        }
+        // remove settings if they have
+        return undefined;
+      });
+    }
+  }, [tokenA, tokenB]);
+
   return (
     <form onSubmit={onFormSubmit} className="page swap-page">
       <div className="page-card">
