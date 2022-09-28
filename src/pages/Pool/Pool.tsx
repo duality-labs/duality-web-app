@@ -22,7 +22,7 @@ import {
 } from '../../components/LiquiditySelector/LiquiditySelector';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 
-import { useTokens, Token } from '../../components/TokenPicker/mockHooks';
+import { useTokens, Token } from '../../components/TokenPicker/hooks';
 
 import './Pool.scss';
 import { useDeposit } from './useDeposit';
@@ -87,7 +87,7 @@ export default function Pool() {
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
   );
-  const { data: tokenList = [] } = useTokens();
+  const tokenList = useTokens();
 
   // set token A to be first token in list if not already populated
   useEffect(() => {
@@ -495,11 +495,12 @@ export default function Pool() {
                 type="button"
               >
                 {new BigNumber(values[0]).toFormat()}
-                {tokenA.logo ? (
+                {tokenA.logo_URIs ? (
                   <img
                     className="ml-3 mr-2 token-image"
                     alt={`${tokenA.symbol} logo`}
-                    src={tokenA.logo}
+                    // in this context (large images) prefer SVGs over PNGs for better images
+                    src={tokenA.logo_URIs.svg || tokenA.logo_URIs.png}
                   />
                 ) : (
                   <FontAwesomeIcon
@@ -518,11 +519,12 @@ export default function Pool() {
                 type="button"
               >
                 {new BigNumber(values[1]).toFormat()}
-                {tokenB.logo ? (
+                {tokenB.logo_URIs ? (
                   <img
                     className="ml-3 mr-2 token-image"
                     alt={`${tokenB.symbol} logo`}
-                    src={tokenB.logo}
+                    // in this context (large images) prefer SVGs over PNGs for better images
+                    src={tokenB.logo_URIs.svg || tokenB.logo_URIs.png}
                   />
                 ) : (
                   <FontAwesomeIcon
