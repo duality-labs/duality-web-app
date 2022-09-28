@@ -213,7 +213,7 @@ export default function Swap() {
             {tokenB?.address}
           </div>
         )}
-        <input type="submit" value="Swap" />
+        <input className="my-4" type="submit" value="Swap" />
       </div>
     </form>
   );
