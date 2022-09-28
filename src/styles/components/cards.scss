@@ -2,6 +2,10 @@
 @use '../mixins-vars/margins.scss' as margins;
 @use '../font/size.scss' as font-size;
 
+.page {
+  margin: 2rem;
+}
+
 .card {
   flex-direction: column;
   display: flex;
