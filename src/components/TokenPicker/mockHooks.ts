@@ -22,6 +22,8 @@ export interface Token {
   name: string;
   denom: string;
   udenom?: string;
+  isStable?: boolean;
+  pricePerUSDC?: number;
 }
 
 export interface SwapRequest {

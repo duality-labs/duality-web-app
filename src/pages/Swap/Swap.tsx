@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowUpLong,
   faArrowDownLong,
   faBolt,
   faFlag,
+  faArrowRightArrowLeft,
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
@@ -94,6 +95,36 @@ export default function Swap() {
   }, []);
 
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
+  const [rateTokenOrderAuto, setRateTokenOrderAuto] =
+    useState<[Token, Token]>();
+  const [rateTokenOrderManual, setRateTokenOrderManual] =
+    useState<[Token, Token]>();
+  const rateTokenOrder = rateTokenOrderManual || rateTokenOrderAuto;
+
+  const toggleRateTokenOrderManual = useCallback(() => {
+    setRateTokenOrderManual(
+      (tokens) =>
+        (tokens || rateTokenOrderAuto)?.slice().reverse() as [Token, Token]
+    );
+  }, [rateTokenOrderAuto]);
+
+  // set the token order for the rate
+  useEffect(() => {
+    if (tokenA && tokenB) {
+      // place A as stable denominator
+      if (tokenA.isStable && !tokenB.isStable) {
+        setRateTokenOrderAuto([tokenB, tokenA]);
+      }
+      // place B as stable denominator
+      else if (!tokenA.isStable && tokenB.isStable) {
+        setRateTokenOrderAuto([tokenA, tokenB]);
+      }
+      // place in order of swap trade
+      else {
+        setRateTokenOrderAuto([tokenB, tokenA]);
+      }
+    }
+  }, [tokenA, tokenB]);
 
   return (
     <form onSubmit={onFormSubmit} className="page swap-page">
@@ -187,19 +218,32 @@ export default function Swap() {
               <div className="text-grid my-3">
                 <span className="text-header">Exchange Rate</span>
                 <span className="text-value">
-                  {routerResult
-                    ? `1 ${tokenA.symbol} = ${
-                        routerResult.tokenIn === tokenA.address
-                          ? routerResult.amountOut
-                              .dividedBy(routerResult.amountIn)
-                              .toFixed()
-                          : routerResult.amountIn
-                              .dividedBy(routerResult.amountOut)
-                              .toFixed()
-                      } ${tokenB.symbol}`
-                    : isValidatingRate
-                    ? 'Finding exchange rate...'
-                    : 'No exchange information'}
+                  {routerResult && rateTokenOrder ? (
+                    <>
+                      1 {rateTokenOrder[1].symbol} ={' '}
+                      {routerResult.tokenIn === rateTokenOrder[1].address
+                        ? routerResult.amountOut
+                            .dividedBy(routerResult.amountIn)
+                            .toFixed()
+                        : routerResult.amountIn
+                            .dividedBy(routerResult.amountOut)
+                            .toFixed()}{' '}
+                      {rateTokenOrder[0].symbol}
+                      <button
+                        className="icon-button ml-3"
+                        type="button"
+                        onClick={toggleRateTokenOrderManual}
+                      >
+                        <FontAwesomeIcon
+                          icon={faArrowRightArrowLeft}
+                        ></FontAwesomeIcon>
+                      </button>
+                    </>
+                  ) : isValidatingRate ? (
+                    'Finding exchange rate...'
+                  ) : (
+                    'No exchange information'
+                  )}
                 </span>
                 <span className="text-header">Price Impact</span>
                 <span className="text-value">0.00%</span>
