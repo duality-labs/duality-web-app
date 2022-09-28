@@ -6,10 +6,6 @@
     font-size: 1.5rem;
   }
 
-  .page-card {
-    width: 450px;
-  }
-
   .card-row {
     & {
       @include margins.margin('y', 2);
