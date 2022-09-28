@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import BigNumber from 'bignumber.js';
 
 import { Token } from './hooks';
 
@@ -310,7 +311,6 @@ export default function TokenPicker({
             className={[
               isDisabled && 'disabled',
               index === selectedIndex && ' selected',
-              'py-3',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -332,15 +332,22 @@ export default function TokenPicker({
                 className="token-image-not-found"
               ></FontAwesomeIcon>
             )}
-            <dfn className="token-symbol">
+            <span className="token-symbol">
               <abbr title={address}>
                 {textListWithMark(token?.symbol || [])}
               </abbr>
-            </dfn>
+            </span>
             <span className="token-name">
               {textListWithMark(token?.name || [])}
             </span>
-            <span className="token-balance">{balance}</span>
+            {new BigNumber(balance).isZero() ? (
+              <span className="token-zero-balance">{balance}</span>
+            ) : (
+              <>
+                <span className="token-balance">{balance}</span>
+                <span className="token-value"></span>
+              </>
+            )}
           </button>
         </data>
       </li>
