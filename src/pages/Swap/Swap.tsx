@@ -17,6 +17,8 @@ import { MsgSwap } from '../../lib/web3/generated/duality/nicholasdotsol.duality
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
+import { formatPrice } from '../../lib/bignumber.utils';
+
 import './Swap.scss';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
@@ -235,13 +237,16 @@ export default function Swap() {
                   {routerResult && rateTokenOrder ? (
                     <>
                       1 {rateTokenOrder[1].symbol} ={' '}
-                      {routerResult.tokenIn === rateTokenOrder[1].address
-                        ? routerResult.amountOut
-                            .dividedBy(routerResult.amountIn)
-                            .toFixed()
-                        : routerResult.amountIn
-                            .dividedBy(routerResult.amountOut)
-                            .toFixed()}{' '}
+                      {formatPrice(
+                        routerResult.tokenIn === rateTokenOrder[1].address
+                          ? routerResult.amountOut.dividedBy(
+                              routerResult.amountIn
+                            )
+                          : routerResult.amountIn.dividedBy(
+                              routerResult.amountOut
+                            ),
+                        5
+                      )}{' '}
                       {rateTokenOrder[0].symbol}
                       <button
                         className="icon-button ml-3"
