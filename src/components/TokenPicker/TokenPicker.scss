@@ -73,8 +73,10 @@ $min-body-height: 150px;
     button,
     label {
       & {
-        @include paddings.padding('*', 0);
+        @include paddings.padding('y', 4);
+        @include paddings.padding('r', 0);
         @include margins.gap('x', 4);
+        @include margins.gap('y', 2);
         transition: background-color animations.$short-duration
             animations.$default-mode,
           box-shadow animations.$short-duration animations.$default-mode;
@@ -84,6 +86,7 @@ $min-body-height: 150px;
         background-color: transparent;
         grid-template-rows: 50% 50%;
         text-align: start;
+        align-items: flex-end;
         border-radius: 0;
         outline: none;
         display: grid;
@@ -131,12 +134,17 @@ $min-body-height: 150px;
       grid-row: 2;
     }
 
-    .token-balance {
-      font-family: font-family.$console;
+    .token-balance,
+    .token-zero-balance,
+    .token-value {
       color: var(--text-alt);
       text-align: end;
       grid-column: 3;
       grid-row: 2;
+    }
+    .token-balance {
+      color: var(--text-default);
+      grid-row: 1;
     }
   }
 }
@@ -233,7 +241,7 @@ $min-body-height: 150px;
 
   .dialog-header-close-button {
     @include margins.margin('l', 'auto');
-    @include margins.margin('t', 0);
+    @include margins.margin('t', 2);
     background-color: transparent;
     border: 0px none transparent;
     color: var(--text-default);
