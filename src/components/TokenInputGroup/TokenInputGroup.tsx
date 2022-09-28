@@ -10,6 +10,7 @@ import './TokenInputGroup.scss';
 
 const minSignificantDigits = 12;
 const maxSignificantDigits = 20;
+const placeholder = '...';
 
 interface InputGroupProps {
   onTokenChanged?: (token?: Token) => void;
@@ -79,7 +80,7 @@ export default function TokenInputGroup({
         ]
           .filter(Boolean)
           .join(' ')}
-        value={value || '...'}
+        value={value || placeholder}
         onInput={onInput}
         onChange={onInputChange}
         onClick={selectAll}
@@ -96,7 +97,7 @@ export default function TokenInputGroup({
                 }ch`,
                 width: `${value?.length}ch`,
               }
-            : undefined
+            : { width: `${placeholder.length}ch` }
         }
       />
       <TokenPicker
