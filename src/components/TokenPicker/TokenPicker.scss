@@ -54,6 +54,8 @@ $min-body-height: 150px;
 }
 
 .token-image {
+  height: font-size.$token-logo-svg;
+  width: font-size.$token-logo-svg;
   font-size: font-size.$token-logo-svg;
   align-self: center;
   text-align: center;
@@ -105,6 +107,8 @@ $min-body-height: 150px;
     }
 
     .token-image {
+      height: font-size.$token-logo-svg-list;
+      width: font-size.$token-logo-svg-list;
       font-size: font-size.$token-logo-svg-list;
       color: var(--text-default);
       grid-column: 1 / 2;
