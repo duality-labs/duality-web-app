@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { assets } from 'chain-registry';
-import { Asset } from '@chain-registry/types';
+import { assets, chains } from 'chain-registry';
+import { Asset, Chain } from '@chain-registry/types';
 
 interface Token extends Asset {
-  chain_name: string;
+  chain: Chain;
 }
 type TokenList = Array<Token>;
 
@@ -13,15 +13,11 @@ export function useTokens() {
   return useMemo(() => {
     // go through each chain
     return assets.reduce<TokenList>((result, { chain_name, assets }) => {
-      // add each asset with the parent chain name
-      return result.concat(
-        assets.map((asset) => {
-          return {
-            ...asset,
-            chain_name,
-          };
-        })
-      );
+      // add each asset with the parent chain details
+      const chain = chains.find((chain) => chain.chain_name === chain_name);
+      return chain
+        ? result.concat(assets.map((asset) => ({ ...asset, chain })))
+        : result;
     }, []);
   }, []);
 }
