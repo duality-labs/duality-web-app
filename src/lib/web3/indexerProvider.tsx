@@ -1,5 +1,6 @@
 import { useContext, createContext, useState, useEffect } from 'react';
 import { BigNumber } from 'bignumber.js';
+import { Coin } from '@cosmjs/launchpad';
 
 import { EventType, MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
@@ -52,14 +53,30 @@ export interface PairMap {
   [pairID: string]: PairInfo;
 }
 
+interface UserBankBalance {
+  balances: Array<Coin>;
+}
+
 interface IndexerContextType {
-  data?: PairMap;
-  error?: string;
-  isValidating: boolean;
+  bank: {
+    data?: UserBankBalance;
+    error?: string;
+    isValidating: boolean;
+  };
+  indexer: {
+    data?: PairMap;
+    error?: string;
+    isValidating: boolean;
+  };
 }
 
 const IndexerContext = createContext<IndexerContextType>({
-  isValidating: true,
+  bank: {
+    isValidating: true,
+  },
+  indexer: {
+    isValidating: true,
+  },
 });
 
 function getFullData(): Promise<PairMap> {
@@ -247,13 +264,21 @@ function addTickData(
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [indexerData, setIndexerData] = useState<PairMap>();
+  const [bankData] = useState<UserBankBalance>();
   const [error, setError] = useState<string>();
   // avoid sending more than once
   const [, setRequestedFlag] = useState(false);
   const [result, setResult] = useState<IndexerContextType>({
-    data: indexerData,
-    error: error,
-    isValidating: true,
+    bank: {
+      data: bankData,
+      error: error,
+      isValidating: true,
+    },
+    indexer: {
+      data: indexerData,
+      error: error,
+      isValidating: true,
+    },
   });
 
   useEffect(() => {
@@ -347,11 +372,18 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setResult({
-      data: indexerData,
-      error: error,
-      isValidating: !indexerData && !error,
+      bank: {
+        data: bankData,
+        error: error,
+        isValidating: !bankData && !error,
+      },
+      indexer: {
+        data: indexerData,
+        error: error,
+        isValidating: !indexerData && !error,
+      },
     });
-  }, [indexerData, error]);
+  }, [bankData, indexerData, error]);
 
   useEffect(() => {
     setRequestedFlag((oldValue) => {
@@ -372,8 +404,12 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function useBankData() {
+  return useContext(IndexerContext).bank;
+}
+
 export function useIndexerData() {
-  return useContext(IndexerContext);
+  return useContext(IndexerContext).indexer;
 }
 
 export function useIndexerPairData(
