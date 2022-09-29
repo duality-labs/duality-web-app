@@ -328,7 +328,7 @@ export default function TokenPicker({
               <FontAwesomeIcon
                 icon={faQuestionCircle}
                 size="2x"
-                className="token-image-not-found"
+                className="token-image token-image-not-found"
               ></FontAwesomeIcon>
             )}
             <span className="token-symbol">
