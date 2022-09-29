@@ -480,7 +480,7 @@ function TicksArea({
   const bucketWidth =
     plotX(new BigNumber(bucketRatio)) - plotX(new BigNumber(1));
 
-  const [startDragMin] = useOnDragMove(
+  const [startDragMin, isDraggingMin] = useOnDragMove(
     useCallback(
       (ev: MouseEventInit) => {
         const x = ev.movementX;
@@ -506,7 +506,7 @@ function TicksArea({
     )
   );
 
-  const [startDragMax] = useOnDragMove(
+  const [startDragMax, isDraggingMax] = useOnDragMove(
     useCallback(
       (ev: MouseEventInit) => {
         const x = ev.movementX;
@@ -573,15 +573,25 @@ function TicksArea({
           y1={plotY(new BigNumber(0.97)).toFixed(3)}
           y2={plotY(new BigNumber(0.92)).toFixed(3)}
         />
-        <rect
-          className="pole-flag--hit-area"
-          x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
-          width={(0.75 * bucketWidth).toFixed(3)}
-          y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
-          rx={rounding}
-          onMouseDown={startDragMin}
-        />
+        {isDraggingMin ? (
+          <rect
+            className="pole-flag--hit-area"
+            x="0"
+            width="100000"
+            y="-100000"
+            height="100000"
+          />
+        ) : (
+          <rect
+            className="pole-flag--hit-area"
+            x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
+            width={(0.75 * bucketWidth).toFixed(3)}
+            y={plotY(new BigNumber(1)).toFixed(3)}
+            height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+            rx={rounding}
+            onMouseDown={startDragMin}
+          />
+        )}
       </g>
       <g className="flag-line">
         <line
@@ -629,15 +639,25 @@ function TicksArea({
           y1={plotY(new BigNumber(0.97)).toFixed(3)}
           y2={plotY(new BigNumber(0.92)).toFixed(3)}
         />
-        <rect
-          className="pole-flag--hit-area"
-          x={plotX(endTickPrice).toFixed(3)}
-          width={(0.75 * bucketWidth).toFixed(3)}
-          y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
-          rx={rounding}
-          onMouseDown={startDragMax}
-        />
+        {isDraggingMax ? (
+          <rect
+            className="pole-flag--hit-area"
+            x="0"
+            width="100000"
+            y="-100000"
+            height="100000"
+          />
+        ) : (
+          <rect
+            className="pole-flag--hit-area"
+            x={plotX(endTickPrice).toFixed(3)}
+            width={(0.75 * bucketWidth).toFixed(3)}
+            y={plotY(new BigNumber(1)).toFixed(3)}
+            height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+            rx={rounding}
+            onMouseDown={startDragMax}
+          />
+        )}
       </g>
     </g>
   ) : null;
