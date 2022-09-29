@@ -498,7 +498,7 @@ export default function Pool() {
                 {tokenA.logo_URIs ? (
                   <img
                     className="ml-3 mr-2 token-image"
-                    alt={`${tokenA.symbol} logo`}
+                    alt={`${tokenA.name} logo`}
                     // in this context (large images) prefer SVGs over PNGs for better images
                     src={tokenA.logo_URIs.svg || tokenA.logo_URIs.png}
                   />
@@ -522,7 +522,7 @@ export default function Pool() {
                 {tokenB.logo_URIs ? (
                   <img
                     className="ml-3 mr-2 token-image"
-                    alt={`${tokenB.symbol} logo`}
+                    alt={`${tokenB.name} logo`}
                     // in this context (large images) prefer SVGs over PNGs for better images
                     src={tokenB.logo_URIs.svg || tokenB.logo_URIs.png}
                   />
