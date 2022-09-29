@@ -252,12 +252,7 @@ const startingReconnectInterval = 2e3,
 
 const unsubDebounceInterval = 1e3;
 
-export function createSubscriptionManager(
-  url: string,
-  onMessage?: MessageListener,
-  eventType?: EventType,
-  options?: SubscriptionOptions
-): SubscriptionManager {
+export function createSubscriptionManager(url: string): SubscriptionManager {
   let socket: WebSocket | null = null;
   const listeners: {
     [query: string]: {
@@ -281,7 +276,6 @@ export function createSubscriptionManager(
   };
   let reconnectInterval = startingReconnectInterval;
   let lastAbortTimeout = -1;
-  if (eventType && onMessage) subscribe(onMessage, eventType, options || {});
 
   const manager = {
     open,
