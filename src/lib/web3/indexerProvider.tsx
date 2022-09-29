@@ -2,7 +2,7 @@ import { useContext, createContext, useState, useEffect } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
-import { EventType, MessageActionEvent } from './events';
+import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
 
 import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
@@ -308,10 +308,10 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         });
       });
     };
-    subscriber.subscribeMessage(onDexUpdateMessage, EventType.EventTxValue, {
+    subscriber.subscribeMessage(onDexUpdateMessage, {
       messageAction: 'NewDeposit',
     });
-    subscriber.subscribeMessage(onDexUpdateMessage, EventType.EventTxValue, {
+    subscriber.subscribeMessage(onDexUpdateMessage, {
       messageAction: 'NewWithdraw',
     });
     return () => {
@@ -362,7 +362,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         return oldData;
       });
     };
-    subscriber.subscribeMessage(onRouterUpdateMessage, EventType.EventTxValue, {
+    subscriber.subscribeMessage(onRouterUpdateMessage, {
       messageAction: 'NewSwap',
     });
     return () => {

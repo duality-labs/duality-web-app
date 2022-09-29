@@ -7,7 +7,7 @@ enum QueryStatus {
   Connected,
 }
 
-export interface SubscriptionOptions {
+export interface ParamQueryMap {
   /**
    * messageAction the name of the event/message
    */
@@ -144,36 +144,37 @@ export interface SubscriptionManager {
   /**
    * Adds an event listener that only listens to message actions
    * @param onMessage the function listening for the event
+   * @param paramQueryMap ParamQueryMap
    * @param eventType the event type listening to (when/how the event will get emitted)
-   * @param options SubscriptionOptions
    */
   readonly subscribeMessage: (
     onMessage: (event: MessageActionEvent) => void,
-    eventType: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap: ParamQueryMap,
+    eventType?: EventType
   ) => void;
 
   /**
    * Removes an event listener that only listens to message actions
    * @param onMessage the function listening for the event
+   * @param paramQueryMap ParamQueryMap
    * @param eventType the event type listening to (when/how the event will get emitted)
-   * @param options SubscriptionOptions
    */
   readonly unsubscribeMessage: (
     onMessage?: (event: MessageActionEvent) => void,
-    eventType?: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap?: ParamQueryMap,
+    eventType?: EventType
   ) => void;
 
   /**
    * Adds an event listener
    * @param onMessage the function listening for the event
+   * @param paramQueryMap the subscription query as an object
    * @param eventType the event type listening to (when/how the event will get emitted)
    */
   readonly subscribe: (
     onMessage: MessageListener,
-    eventType: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap: ParamQueryMap,
+    eventType?: EventType | '*'
   ) => void;
 
   /**
@@ -181,13 +182,13 @@ export interface SubscriptionManager {
    * @param onMessage the function listening for the event,
    * if no other arguments are supplied then all instances of the function will be removed
    * if this is not defined then all of the listeners for the relevant query will be removed
+   * @param paramQueryMap the subscription query as an object
    * @param eventType the event type listening to (when/how the event will get emitted)
-   * @param options SubscriptionOptions
    */
   readonly unsubscribe: (
     onMessage?: MessageListener,
-    eventType?: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap?: ParamQueryMap,
+    eventType?: EventType
   ) => void;
 
   /**
@@ -415,42 +416,42 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
 
   function subscribeMessage(
     onMessage: (event: MessageActionEvent) => void,
-    eventType: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap: ParamQueryMap = {},
+    // default to a Tx message type
+    eventType: EventType = EventType.EventTxValue
   ) {
     abstractSubscribe(
-      { messageListener: onMessage, messageAction: options?.messageAction },
-      eventType,
-      options || {}
+      {
+        messageListener: onMessage,
+        messageAction: paramQueryMap.messageAction,
+      },
+      getParamQuery(paramQueryMap, eventType)
     );
   }
 
   function unsubscribeMessage(
     onMessage?: (event: MessageActionEvent) => void,
-    eventType?: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap?: ParamQueryMap,
+    eventType: EventType = EventType.EventTxValue
   ) {
     abstractUnsubscribe(
       { messageListener: onMessage },
-      eventType,
-      options || {}
+      getParamQuery(paramQueryMap, onMessage && paramQueryMap && eventType)
     );
   }
 
   function subscribe(
     onMessage: MessageListener,
-    eventType: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap: ParamQueryMap,
+    eventType?: EventType
   ) {
-    abstractSubscribe({ genericListener: onMessage }, eventType, options || {});
+    abstractSubscribe(
+      { genericListener: onMessage },
+      getParamQuery(paramQueryMap, eventType)
+    );
   }
 
-  function abstractSubscribe(
-    onMessage: CallBackWrapper,
-    eventType: EventType,
-    options: SubscriptionOptions
-  ) {
-    const paramQuery = getParamQuery(eventType, options);
+  function abstractSubscribe(onMessage: CallBackWrapper, paramQuery: string) {
     const listenerGroup = listeners[paramQuery] || {
       status: QueryStatus.Disconnected,
       idUnsub: createID(),
@@ -478,22 +479,19 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
 
   function unsubscribe(
     onMessage?: MessageListener,
-    eventType?: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap?: ParamQueryMap,
+    eventType?: EventType
   ) {
     abstractUnsubscribe(
       { genericListener: onMessage },
-      eventType,
-      options || {}
+      getParamQuery(paramQueryMap, eventType)
     );
   }
 
   function abstractUnsubscribe(
     onMessage: CallBackWrapper | undefined,
-    eventType: EventType | undefined,
-    options: SubscriptionOptions
+    paramQuery?: string
   ) {
-    const paramQuery = getParamQuery(eventType, options);
     const isGeneric = !paramQuery;
     const listenerGroups = isGeneric ? Object.keys(listeners) : [paramQuery];
     listenerGroups.forEach(function (query) {
@@ -508,14 +506,15 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
   }
 
   function unsubscribeAll() {
-    abstractUnsubscribe(undefined, undefined, {});
+    abstractUnsubscribe(undefined);
   }
 
   function getParamQuery(
-    eventType: EventType | undefined,
-    options: SubscriptionOptions
+    paramQueryMap: ParamQueryMap = {},
+    eventType?: EventType
   ): string {
-    const { messageAction, hashKey, blockHeight, indexingHeight } = options;
+    const { messageAction, hashKey, blockHeight, indexingHeight } =
+      paramQueryMap;
     const paramMap = {
       'tm.event': eventType,
       'message.action': messageAction,
