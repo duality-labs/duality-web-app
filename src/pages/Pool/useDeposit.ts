@@ -124,6 +124,8 @@ export function useDeposit(): [
 
           const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
           const foundEvents = foundLogs.flatMap((log) => log.events);
+          // todo: use parseCoins from '@cosmjs/launchpad' here
+          // to simplify the parsing of the response
           const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
             receivedTokenA: string;
             receivedTokenB: string;
