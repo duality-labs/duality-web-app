@@ -33,7 +33,12 @@ const dualityMainToken: Token = {
   denom_units: [
     {
       denom: 'token',
-      exponent: 18,
+      exponent: 0,
+      aliases: ['udual'],
+    },
+    {
+      denom: 'COSMOS',
+      exponent: 6,
       aliases: ['dual'],
     },
   ],
@@ -53,7 +58,12 @@ const dualityStakeToken: Token = {
   denom_units: [
     {
       denom: 'stake',
-      exponent: 18,
+      exponent: 0,
+      aliases: ['ustake'],
+    },
+    {
+      denom: 'STAKE',
+      exponent: 6,
       aliases: ['dualstake'],
     },
   ],
