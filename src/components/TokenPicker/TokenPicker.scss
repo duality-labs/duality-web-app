@@ -56,6 +56,7 @@ $min-body-height: 150px;
 .token-image {
   height: font-size.$token-logo-svg;
   width: font-size.$token-logo-svg;
+  object-fit: contain;
   font-size: font-size.$token-logo-svg;
   align-self: center;
   text-align: center;
