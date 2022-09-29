@@ -87,13 +87,20 @@ export default function TokenPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
-  const userList = useMemo(() => tokenList.filter(() => false), [tokenList]); // Todo: actually filter list to tokens in User's wallet
+  const { data: balances } = useBankBalances();
+  const userList = useMemo(() => {
+    return balances
+      ? tokenList.filter((token) =>
+          balances.find((balance) =>
+            token.denom_units.find((token) => token.denom === balance.denom)
+          )
+        )
+      : [];
+  }, [tokenList, balances]); // Todo: actually filter list to tokens in User's wallet
   const [assetMode, setAssetMode] = useState<AssetModeType>(
     userList.length ? 'User' : 'Duality'
   );
   const currentID = useId();
-
-  const { data: balances } = useBankBalances();
 
   useEffect(() => {
     if (!userList.length)
