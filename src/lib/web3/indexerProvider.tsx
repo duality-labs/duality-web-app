@@ -309,10 +309,10 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       });
     };
     subscriber.subscribeMessage(onDexUpdateMessage, {
-      messageAction: 'NewDeposit',
+      message: { action: 'NewDeposit' },
     });
     subscriber.subscribeMessage(onDexUpdateMessage, {
-      messageAction: 'NewWithdraw',
+      message: { action: 'NewWithdraw' },
     });
     return () => {
       subscriber.unsubscribeMessage(onDexUpdateMessage);
@@ -363,7 +363,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       });
     };
     subscriber.subscribeMessage(onRouterUpdateMessage, {
-      messageAction: 'NewSwap',
+      message: { action: 'NewSwap' },
     });
     return () => {
       subscriber.unsubscribeMessage(onRouterUpdateMessage);
