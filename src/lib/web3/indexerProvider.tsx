@@ -1,24 +1,19 @@
 import { useContext, createContext, useState, useEffect } from 'react';
-import {
-  EventType,
-  createSubscriptionManager,
-  MessageActionEvent,
-} from './events';
 import { BigNumber } from 'bignumber.js';
+
+import { EventType, MessageActionEvent } from './events';
+import subscriber from './subscriptionManager';
+
 import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
 import {
   DexPool,
   DexTicks,
 } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
 
-const { REACT_APP__REST_API, REACT_APP__WEBSOCKET_URL } = process.env;
+const { REACT_APP__REST_API } = process.env;
 
 type TokenAddress = string; // a valid hex address, eg. 0x01
 type BigNumberString = string; // a number in string format, eg. "1"
-
-if (!REACT_APP__WEBSOCKET_URL)
-  throw new Error('Invalid value for env variable REACT_APP__WEBSOCKET_URL');
-const subscriber = createSubscriptionManager(REACT_APP__WEBSOCKET_URL);
 
 export interface PairInfo {
   token0: string;
