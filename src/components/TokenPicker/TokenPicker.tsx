@@ -31,7 +31,7 @@ interface TokenPickerProps {
   disabled?: boolean;
 }
 
-type AssetModeType = 'User' | 'All';
+type AssetModeType = 'User' | 'All' | 'Duality';
 
 function useSelectedButtonBackgroundMove(
   value: string
@@ -88,7 +88,7 @@ export default function TokenPicker({
   const bodyRef = useRef<HTMLUListElement>(null);
   const userList = useMemo(() => tokenList.filter(() => false), [tokenList]); // Todo: actually filter list to tokens in User's wallet
   const [assetMode, setAssetMode] = useState<AssetModeType>(
-    userList.length ? 'User' : 'All'
+    userList.length ? 'User' : 'Duality'
   );
   const currentID = useId();
 
@@ -150,7 +150,18 @@ export default function TokenPicker({
   // update the filtered list whenever the query or the list changes
   useEffect(
     function () {
-      const list = assetMode === 'All' ? tokenList : userList;
+      const list = (() => {
+        switch (assetMode) {
+          case 'Duality':
+            return tokenList
+              .filter((token) => token.chain.chain_id === 'duality')
+              .reverse();
+          case 'User':
+            return userList;
+          default:
+            return tokenList;
+        }
+      })();
 
       // if the query is empty return the full list
       if (!searchQuery) {
@@ -256,6 +267,14 @@ export default function TokenPicker({
             onClick={() => setAssetMode('All')}
           >
             All Assets
+          </button>
+          <button
+            type="button"
+            className="button pill py-3 px-4"
+            ref={createRefForValue('Duality')}
+            onClick={() => setAssetMode('Duality')}
+          >
+            Duality Chain Assets
           </button>
         </div>
         <ul className="token-picker-body duality-scrollbar" ref={bodyRef}>
