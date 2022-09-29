@@ -73,6 +73,8 @@ const calculateFeeLiquidity = function (label: string) {
 };
 
 const defaultPrecision = '6';
+// set as constant to avoid unwanted hook effects
+const defaultCurrentPrice = new BigNumber(1);
 
 function formatPrice(value: BigNumber): string {
   return value.toFixed(
@@ -157,15 +159,18 @@ export default function Pool() {
   }, []);
 
   const currentPriceABFromTicks =
-    useCurrentPriceFromTicks(unorderedTicks) || new BigNumber(1);
+    useCurrentPriceFromTicks(unorderedTicks) || defaultCurrentPrice;
 
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
     return currentPriceABFromTicks?.isLessThan(1);
   });
 
-  const currentPriceFromTicks = invertedTokenOrder
-    ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
-    : currentPriceABFromTicks;
+  const currentPriceFromTicks = useMemo(() => {
+    return invertedTokenOrder
+      ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
+      : currentPriceABFromTicks;
+  }, [invertedTokenOrder, currentPriceABFromTicks]);
+
   const ticks = useMemo(() => {
     if (!invertedTokenOrder) return unorderedTicks;
     if (!unorderedTicks) return unorderedTicks;
