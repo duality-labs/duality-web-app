@@ -25,7 +25,9 @@ const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 export default function Swap() {
   const { address } = useWeb3();
   const tokenList = useTokens();
-  const [tokenA, setTokenA] = useState(tokenList[0] as Token | undefined);
+  const [tokenA, setTokenA] = useState(
+    tokenList.find((token) => token.symbol === 'TKN') as Token | undefined
+  );
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
   const [valueA, setValueA] = useState<string | undefined>('0');
   const [valueB, setValueB] = useState<string>();
