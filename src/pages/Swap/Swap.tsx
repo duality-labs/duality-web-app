@@ -10,6 +10,7 @@ import TokenInputGroup from '../../components/TokenInputGroup';
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
+import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 import { MsgSwap } from '../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
@@ -141,6 +142,8 @@ export default function Swap() {
     }
   }, [tokenA, tokenB]);
 
+  const { data: balances } = useBankBalances();
+
   return (
     <form onSubmit={onFormSubmit} className="page swap-page">
       <div className="page-card">
@@ -194,7 +197,11 @@ export default function Swap() {
                 : ''
             }
             exclusion={tokenB}
-            title="Available"
+            title={
+              tokenA
+                ? `Available ${balances ? getBalance(tokenA, balances) : 0}`
+                : ''
+            }
           ></TokenInputGroup>
         </div>
         <div className="card-row my-2">
