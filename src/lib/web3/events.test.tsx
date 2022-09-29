@@ -25,7 +25,8 @@ interface CustomEventOptions {
 function createCustomEvent(
   id: number,
   attributes: { [key: string]: string } = {},
-  options: CustomEventOptions = {}
+  options: CustomEventOptions = {},
+  eventType = 'message'
 ): WebSocketServerMessage {
   const eventData: { [key: string]: string } = {
     module: 'duality',
@@ -45,6 +46,7 @@ function createCustomEvent(
             result: {
               events: [
                 {
+                  type: eventType,
                   attributes: Object.entries(eventData).map(([key, value]) => ({
                     key: Buffer.from(key).toString('base64'),
                     value: value && Buffer.from(value).toString('base64'),
@@ -362,7 +364,7 @@ describe('The event subscription manager', function () {
         const repeatArray = Array.from({ length: 2 });
         repeatArray.forEach(() =>
           subManager.subscribe(handler, {
-            messageAction: actionName,
+            message: { action: actionName },
           })
         );
         const [id] = await resolveQueuedMessageIDs(server);
@@ -382,7 +384,7 @@ describe('The event subscription manager', function () {
 
         actionNames.forEach((actionName) =>
           subManager.subscribe(handler, {
-            messageAction: actionName,
+            message: { action: actionName },
           })
         );
         const [id] = await resolveQueuedMessageIDs(server);
@@ -402,10 +404,10 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
         const otherHandler = jest.fn();
         subManager.subscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         subManager.subscribe(otherHandler, {
-          messageAction: otherActionName,
+          message: { action: otherActionName },
         });
         const [id1, id2] = await resolveQueuedMessageIDs(server);
         const message1 = createCustomEvent(
@@ -441,11 +443,11 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
 
         subManager.subscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const [id] = await resolveQueuedMessageIDs(server);
         subManager.unsubscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
 
         const message = createCustomActionEvent(id, actionName);
@@ -457,7 +459,7 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
 
         subManager.subscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const [id] = await resolveQueuedMessageIDs(server);
         subManager.unsubscribe();
@@ -483,14 +485,14 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
 
         subManager.subscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         subManager.subscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const [id] = await resolveQueuedMessageIDs(server);
         subManager.unsubscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
 
         const message = createCustomActionEvent(id, actionName);
@@ -503,7 +505,7 @@ describe('The event subscription manager', function () {
 
         actionNames.forEach((actionName) => {
           subManager.subscribe(handler, {
-            messageAction: actionName,
+            message: { action: actionName },
           });
         });
         const messageIDs = await resolveQueuedMessageIDs(server);
@@ -521,7 +523,7 @@ describe('The event subscription manager', function () {
 
         actionNames.forEach((actionName) => {
           subManager.subscribe(handler, {
-            messageAction: actionName,
+            message: { action: actionName },
           });
         });
         const messageIDs = await resolveQueuedMessageIDs(server);
@@ -539,12 +541,12 @@ describe('The event subscription manager', function () {
 
         actionNames.forEach((actionName) => {
           subManager.subscribe(handler, {
-            messageAction: actionName,
+            message: { action: actionName },
           });
         });
         const messageIDs = await resolveQueuedMessageIDs(server);
         subManager.unsubscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
 
         const messages = actionNames.map((actionName, index) => {
@@ -566,15 +568,15 @@ describe('The event subscription manager', function () {
         const otherHandler = jest.fn();
 
         subManager.subscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         subManager.subscribe(otherHandler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         // both subscriptions use the same id
         const [id] = await resolveQueuedMessageIDs(server);
         subManager.unsubscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
 
         const message = createCustomActionEvent(id, actionName);
@@ -593,10 +595,10 @@ describe('The event subscription manager', function () {
         const otherHandler = jest.fn();
 
         subManager.subscribe(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         subManager.subscribe(otherHandler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         // both subscriptions use the same id
         const [id] = await resolveQueuedMessageIDs(server);
@@ -632,7 +634,7 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
 
         subManager.subscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
 
         const [id] = await resolveQueuedMessageIDs(server);
@@ -684,7 +686,7 @@ describe('The event subscription manager', function () {
 
         repeatArray.forEach(() =>
           subManager.subscribeMessage(handler, {
-            messageAction: actionName,
+            message: { action: actionName },
           })
         );
         const [id] = await resolveQueuedMessageIDs(server);
@@ -704,7 +706,7 @@ describe('The event subscription manager', function () {
 
         actionNames.forEach((actionName) =>
           subManager.subscribeMessage(handler, {
-            messageAction: actionName,
+            message: { action: actionName },
           })
         );
 
@@ -727,10 +729,10 @@ describe('The event subscription manager', function () {
         const otherHandler = jest.fn();
 
         subManager.subscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         subManager.subscribeMessage(otherHandler, {
-          messageAction: otherActionName,
+          message: { action: otherActionName },
         });
 
         const messageIDs = await resolveQueuedMessageIDs(server);
@@ -754,11 +756,11 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
 
         subManager.subscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const [id] = await resolveQueuedMessageIDs(server);
         subManager.unsubscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const message = createCustomActionEvent(id, actionName);
         server.send(message);
@@ -769,7 +771,7 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
 
         subManager.subscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const [id] = await resolveQueuedMessageIDs(server);
         subManager.unsubscribeMessage();
@@ -793,14 +795,14 @@ describe('The event subscription manager', function () {
         const handler = jest.fn();
 
         subManager.subscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         subManager.subscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const [id] = await resolveQueuedMessageIDs(server);
         subManager.unsubscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const message = createCustomActionEvent(id, actionName);
         server.send(message);
@@ -812,7 +814,7 @@ describe('The event subscription manager', function () {
 
         actionNames.forEach((actionName) => {
           subManager.subscribeMessage(handler, {
-            messageAction: actionName,
+            message: { action: actionName },
           });
         });
         subManager.unsubscribeMessage();
@@ -831,11 +833,11 @@ describe('The event subscription manager', function () {
 
         actionNames.forEach((actionName) => {
           subManager.subscribeMessage(handler, {
-            messageAction: actionName,
+            message: { action: actionName },
           });
         });
         subManager.unsubscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
 
         const messageIDs = await resolveQueuedMessageIDs(server);
@@ -855,14 +857,14 @@ describe('The event subscription manager', function () {
         const otherHandler = jest.fn();
 
         subManager.subscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         subManager.subscribeMessage(otherHandler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const [id] = await resolveQueuedMessageIDs(server);
         subManager.unsubscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const message = createCustomActionEvent(id, actionName);
         server.send(message);
@@ -876,10 +878,10 @@ describe('The event subscription manager', function () {
         const otherHandler = jest.fn();
 
         subManager.subscribeMessage(handler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         subManager.subscribeMessage(otherHandler, {
-          messageAction: actionName,
+          message: { action: actionName },
         });
         const [id] = await resolveQueuedMessageIDs(server);
         subManager.unsubscribeMessage(handler);
@@ -901,8 +903,8 @@ async function delay(ms: number) {
 
 function getMessageObject(actionName: string) {
   return {
-    module: 'duality',
-    action: actionName,
+    'message.module': 'duality',
+    'message.action': actionName,
   };
 }
 

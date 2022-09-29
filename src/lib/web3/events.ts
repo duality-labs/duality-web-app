@@ -8,22 +8,34 @@ enum QueryStatus {
 }
 
 export interface ParamQueryMap {
-  /**
-   * messageAction the name of the event/message
-   */
-  messageAction?: string;
-  /**
-   * hashKey hash key of transaction
-   */
-  hashKey?: string;
-  /**
-   * blockHeight height of block of transaction
-   */
-  blockHeight?: string;
-  /**
-   * indexingHeight used for indexing FinalizeBlock events (sorting rather than filtering)
-   */
-  indexingHeight?: string;
+  block?: {
+    height?: string;
+  };
+  coin_received?: {
+    amount?: string;
+    receiver?: string;
+  };
+  coin_spent?: {
+    amount?: string;
+    spender?: string;
+  };
+  message?: {
+    [key: string]: string;
+  };
+  tm?: {
+    event?: EventType;
+  };
+  transfer?: {
+    amount?: string;
+    recipient?: string;
+    sender?: string;
+  };
+  tx?: {
+    fee?: string;
+    hash?: string;
+    height?: string;
+    signature?: string;
+  };
 }
 
 export interface TendermintEvent {
@@ -86,7 +98,7 @@ interface CallBackWrapper {
   genericListener?: MessageListener;
   messageListener?: (event: MessageActionEvent) => void;
   // to compare with the action of each event and filter out those that don't match
-  messageAction?: string;
+  paramQueryMap?: ParamQueryMap;
 }
 
 export interface WebSocketClientMessage {
@@ -421,10 +433,7 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
     eventType: EventType = EventType.EventTxValue
   ) {
     abstractSubscribe(
-      {
-        messageListener: onMessage,
-        messageAction: paramQueryMap.messageAction,
-      },
+      { messageListener: onMessage, paramQueryMap },
       getParamQuery(paramQueryMap, eventType)
     );
   }
@@ -513,19 +522,29 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
     paramQueryMap: ParamQueryMap = {},
     eventType?: EventType
   ): string {
-    const { messageAction, hashKey, blockHeight, indexingHeight } =
-      paramQueryMap;
-    const paramMap = {
-      'tm.event': eventType,
-      'message.action': messageAction,
-      'tx.hash': hashKey,
-      'tx.height': blockHeight,
-      'block.height': indexingHeight,
-    };
-    return Object.entries(paramMap)
-      .map(([key, value]) => (value ? `${key}='${value}'` : null))
-      .filter(Boolean)
-      .join(' AND ');
+    return (
+      Object.entries(
+        eventType
+          ? // insert event type if given
+            {
+              ...paramQueryMap,
+              tm: {
+                ...paramQueryMap.tm,
+                event: eventType,
+              },
+            }
+          : paramQueryMap
+      )
+        // convert map-of-map to map.map notation
+        .flatMap(([section, sectionMap]) => {
+          return Object.entries(sectionMap).map(([attr, value]) => {
+            return [`${section}.${attr}`, value];
+          });
+        })
+        .map(([key, value]) => (value ? `${key}='${value}'` : null))
+        .filter(Boolean)
+        .join(' AND ')
+    );
   }
 
   function debounceUnsub() {
@@ -611,16 +630,24 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
         const event = originalEvent.attributes.reduce<{
           [key: string]: string;
         }>(function (result, { key, value }) {
-          result[Buffer.from(key, 'base64').toString()] = Buffer.from(
-            value,
-            'base64'
-          ).toString();
+          const keyParts = [
+            originalEvent.type,
+            Buffer.from(key, 'base64').toString(),
+          ];
+          result[keyParts.join('.')] = Buffer.from(value, 'base64').toString();
           return result;
         }, {});
         listenerGroup.callBacks.forEach(function (wrapper) {
           if (
             wrapper.messageListener &&
-            (wrapper.messageAction ?? event.action) === event.action
+            Object.entries(wrapper.paramQueryMap || {}).every(
+              ([section, sectionMap]) => {
+                // match all message pieces
+                return Object.entries(sectionMap).every(([attr, value]) => {
+                  return event[`${section}.${attr}`] === value;
+                });
+              }
+            )
           )
             wrapper.messageListener(event);
         });
