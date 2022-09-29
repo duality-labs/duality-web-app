@@ -9,7 +9,12 @@ import {
   faCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { TickMap, useIndexerPairData } from '../../lib/web3/indexerProvider';
+import {
+  getBalance,
+  TickMap,
+  useBankBalances,
+  useIndexerPairData,
+} from '../../lib/web3/indexerProvider';
 
 import RadioInput from '../../components/RadioInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -385,6 +390,7 @@ export default function Pool() {
   ]);
 
   const [editingFee, setEditingFee] = useState(false);
+  const { data: balances } = useBankBalances();
 
   if (!valuesConfirmed) {
     return (
@@ -413,7 +419,11 @@ export default function Pool() {
               token={tokenA}
               value={`${values[0]}`}
               exclusion={tokenB}
-              title="Asset 1"
+              title={
+                tokenA
+                  ? `Available ${balances ? getBalance(tokenA, balances) : 0}`
+                  : ''
+              }
             />
           </div>
           <div className="plus-space mx-auto my-2">
@@ -429,7 +439,11 @@ export default function Pool() {
               token={tokenB}
               value={`${values[1]}`}
               exclusion={tokenA}
-              title="Asset 2"
+              title={
+                tokenB
+                  ? `Available ${balances ? getBalance(tokenB, balances) : 0}`
+                  : ''
+              }
             />
           </div>
           <div className="card-col mt-5 mb-3">
