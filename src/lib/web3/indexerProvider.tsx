@@ -13,6 +13,7 @@ import {
   RpcStatus,
   V1Beta1PageResponse,
 } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
+import { Token } from '../../components/TokenPicker/hooks';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -503,4 +504,31 @@ export function useIndexerPairData(
     error,
     isValidating,
   };
+}
+
+export function getBalance(
+  token: Token,
+  userBalances: UserBankBalance['balances']
+) {
+  const denomUnits = token.denom_units;
+  const balanceObject = userBalances?.find((balance) => {
+    return denomUnits?.find((unit) => unit.denom === balance.denom);
+  });
+  const denomUnit =
+    balanceObject &&
+    denomUnits?.find((unit) => unit.denom === balanceObject.denom);
+  const denomUnitExponent = denomUnit?.exponent;
+  const denomUnitMaxExponent = denomUnits?.reduce(
+    (result, { exponent }) => Math.max(result, exponent),
+    0
+  );
+  return balanceObject?.amount && denomUnitMaxExponent
+    ? new BigNumber(balanceObject.amount)
+        .dividedBy(
+          new BigNumber(10).exponentiatedBy(
+            denomUnitMaxExponent - (denomUnitExponent || 0)
+          )
+        )
+        .toFixed()
+    : balanceObject?.amount || '0';
 }

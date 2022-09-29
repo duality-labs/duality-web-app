@@ -16,7 +16,7 @@ import { Token } from './hooks';
 import Dialog from '../Dialog/Dialog';
 
 import './TokenPicker.scss';
-import { useBankBalances } from '../../lib/web3/indexerProvider';
+import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 
 interface TokenResult {
   symbol: Array<string>;
@@ -318,29 +318,9 @@ export default function TokenPicker({
     const address = token?.token?.address;
     const symbol = token?.token?.symbol;
     const logos = token?.token?.logo_URIs;
-    const denomUnits = token?.token.denom_units;
     const isDisabled = exclusion?.address === address;
-    const balanceObject = balances?.find((balance) => {
-      return denomUnits?.find((unit) => unit.denom === balance.denom);
-    });
-    const denomUnit =
-      balanceObject &&
-      denomUnits?.find((unit) => unit.denom === balanceObject.denom);
-    const denomUnitExponent = denomUnit?.exponent;
-    const denomUnitMaxExponent = denomUnits?.reduce(
-      (result, { exponent }) => Math.max(result, exponent),
-      0
-    );
     const balance =
-      balanceObject?.amount && denomUnitMaxExponent
-        ? new BigNumber(balanceObject.amount)
-            .dividedBy(
-              new BigNumber(10).exponentiatedBy(
-                denomUnitMaxExponent - (denomUnitExponent || 0)
-              )
-            )
-            .toFixed()
-        : balanceObject?.amount || '0';
+      token?.token && balances ? getBalance(token.token, balances) : '0';
 
     function onClick() {
       selectToken(token?.token);
