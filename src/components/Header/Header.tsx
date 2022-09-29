@@ -3,9 +3,10 @@ import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useThemeMode } from '../../lib/themeProvider';
 
-import logo from '../../assets/logo/logo.svg';
-
 import './Header.scss';
+
+const keplrLogoURI =
+  'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
 
 export default function Header() {
   const { connectWallet, address } = useWeb3();
@@ -42,8 +43,8 @@ export default function Header() {
         </button>
         {address ? (
           <button className="user-profile ml-auto">
-            <img src={logo} className="logo  mr-3" alt="logo" />
-            <div>Profile</div>
+            <img src={keplrLogoURI} className="logo  mr-3" alt="logo" />
+            <div>{address.slice(0, 10)}...</div>
           </button>
         ) : (
           <button
