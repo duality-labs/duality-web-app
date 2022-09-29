@@ -16,6 +16,7 @@ import { Token } from './hooks';
 import Dialog from '../Dialog/Dialog';
 
 import './TokenPicker.scss';
+import { useBankBalances } from '../../lib/web3/indexerProvider';
 
 interface TokenResult {
   symbol: Array<string>;
@@ -91,6 +92,8 @@ export default function TokenPicker({
     userList.length ? 'User' : 'Duality'
   );
   const currentID = useId();
+
+  const { data: balances } = useBankBalances();
 
   useEffect(() => {
     if (!userList.length)
@@ -315,8 +318,12 @@ export default function TokenPicker({
     const address = token?.token?.address;
     const symbol = token?.token?.symbol;
     const logos = token?.token?.logo_URIs;
+    const denomUnits = token?.token.denom_units;
     const isDisabled = exclusion?.address === address;
-    const balance = '0.0'; // TODO get actual balance
+    const balance =
+      balances?.find((balance) => {
+        return denomUnits?.find((unit) => unit.denom === balance.denom);
+      })?.amount || '0';
 
     function onClick() {
       selectToken(token?.token);
