@@ -258,7 +258,7 @@ export default function TokenPicker({
       >
         <div className="card-row my-4 gapx-3 token-asset-selection">
           <button
-            className="button button-primary pill token-moving-asset"
+            className="button button-default pill token-moving-asset"
             disabled
             ref={movingAssetRef}
           ></button>

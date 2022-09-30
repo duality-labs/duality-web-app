@@ -38,7 +38,7 @@
       padding: 0.625rem 1.5rem;
     }
     > input:checked + label:not(.button-primary) {
-      background-color: var(--primary);
+      background-color: var(--default);
     }
   }
 }
@@ -231,7 +231,7 @@
 
           .fee-liquidity {
             background-color: rgba($color: white, $alpha: 0.75);
-            color: var(--primary);
+            color: var(--default);
             margin: 0.125rem -0.25rem;
             padding: 0.25rem 0.5rem;
           }

@@ -46,12 +46,11 @@ button,
 }
 
 input[type='submit'],
+button[type='submit'],
 .submit-button {
   @include paddings.padding('y', 3);
   @include paddings.padding('x', 4);
-  background-color: var(--submit-button-bg);
   font-size: font-size.$button-large;
-  color: var(--submit-button-text);
   border-radius: 0.6rem;
   border: 0px none transparent;
   cursor: pointer;
