@@ -1,0 +1,51 @@
+@use '../../styles/mixins-vars/animations.scss' as animations;
+@use '../../styles/theme/core.scss' as colors;
+
+.radio-button-group-switch {
+  & {
+    isolation: isolate;
+    position: relative;
+    flex: 1;
+    display: flex;
+    justify-content: stretch;
+    border: 1px solid colors.$light-white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+
+  button {
+    flex: 1;
+    opacity: 1;
+    border-radius: 0.75rem;
+    position: relative;
+  }
+  button:hover::before {
+    content: ' ';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 0.75rem;
+    background-color: hsl(202deg, 76%, 20%);
+    z-index: -1;
+  }
+  button + button + button {
+    margin-left: -0.75rem;
+  }
+
+  .moving-background {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    z-index: 0;
+    left: 0;
+    top: 0;
+    background-color: var(--default);
+  }
+
+  .transition-ready {
+    transition: left animations.$short-duration animations.$default-mode,
+      width animations.$short-duration animations.$default-mode;
+  }
+}
