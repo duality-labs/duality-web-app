@@ -60,14 +60,13 @@ declare global {
 
 export interface Web3ContextValue {
   provider: Provider | null;
-  connectWallet: (() => void) | null;
+  connectWallet?: () => void;
   wallet: OfflineSigner | null;
   address: string | null;
 }
 
 const Web3Context = React.createContext<Web3ContextValue>({
   provider: null,
-  connectWallet: null,
   wallet: null,
   address: null,
 });
@@ -102,7 +101,10 @@ export function Web3Provider({ children }: Web3ContextProps) {
     async function run() {
       if (window.keplr && window.getOfflineSigner) {
         const provider = window.keplr;
-        if (localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY)) {
+        if (
+          provider &&
+          localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY)
+        ) {
           try {
             await connectWallet(provider);
           } catch {
@@ -120,7 +122,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
     <Web3Context.Provider
       value={{
         provider,
-        connectWallet: () => connectWallet(window.keplr),
+        connectWallet: window.keplr && (() => connectWallet(window.keplr)),
         wallet,
         address,
       }}
