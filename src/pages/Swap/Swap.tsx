@@ -198,8 +198,8 @@ export default function Swap() {
             }
             exclusion={tokenB}
             title={
-              tokenA
-                ? `Available ${balances ? getBalance(tokenA, balances) : 0}`
+              tokenA && balances
+                ? `Available ${getBalance(tokenA, balances)}`
                 : ''
             }
           ></TokenInputGroup>
