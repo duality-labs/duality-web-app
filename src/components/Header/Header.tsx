@@ -12,10 +12,6 @@ export default function Header() {
   const { connectWallet, address } = useWeb3();
   const { themeMode, toggleThemeMode } = useThemeMode();
 
-  const onConnectClick = () => {
-    connectWallet && connectWallet();
-  };
-
   return (
     <header>
       <nav>
@@ -49,7 +45,7 @@ export default function Header() {
         ) : (
           <button
             className="link connect-wallet ml-auto button-primary"
-            onClick={onConnectClick}
+            onClick={connectWallet}
           >
             Connect Wallet
           </button>
