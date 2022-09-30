@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBolt,
@@ -67,6 +68,16 @@ export default function Swap() {
     },
     [tokenA, tokenB, valueAConverted, valueBConverted]
   );
+
+  const { data: balances } = useBankBalances();
+  const valueAConvertedNumber = new BigNumber(valueAConverted || 0);
+  const hasFormData =
+    address && tokenA && tokenB && valueAConvertedNumber.isGreaterThan(0);
+  const hasSufficientFunds =
+    (hasFormData &&
+      balances &&
+      valueAConvertedNumber.isLessThan(getBalance(tokenA, balances))) ||
+    false;
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -141,8 +152,6 @@ export default function Swap() {
       });
     }
   }, [tokenA, tokenB]);
-
-  const { data: balances } = useBankBalances();
 
   return (
     <form onSubmit={onFormSubmit} className="page swap-page">
@@ -287,9 +296,29 @@ export default function Swap() {
           </div>
         )}
         <div className="my-4">
-          <button className="submit-button" type="submit">
-            Swap
-          </button>
+          {address ? (
+            hasSufficientFunds ? (
+              <button
+                className="submit-button"
+                type="submit"
+                disabled={!new BigNumber(valueBConverted || 0).isGreaterThan(0)}
+              >
+                {orderType === 'limit' ? 'Place Limit Order' : 'Swap'}
+              </button>
+            ) : hasFormData ? (
+              <button className="submit-button button-error" type="button">
+                Insufficient funds
+              </button>
+            ) : (
+              <button className="submit-button" type="button" disabled>
+                Enter Token Amount
+              </button>
+            )
+          ) : (
+            <button className="submit-button" type="button">
+              Connect Wallet
+            </button>
+          )}
         </div>
       </div>
     </form>
