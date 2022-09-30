@@ -6,7 +6,8 @@ function useSelectedButtonBackgroundMove<T extends string>(
   value: T
 ): [
   (ref: HTMLButtonElement | null) => void,
-  (value: T) => (ref: HTMLButtonElement | null) => void
+  (value: T) => (ref: HTMLButtonElement | null) => void,
+  (value: T) => void
 ] {
   const [movingButton, setMovingButton] = useState<HTMLButtonElement | null>();
   const movingButtonRef = useCallback(
@@ -30,16 +31,28 @@ function useSelectedButtonBackgroundMove<T extends string>(
     };
   }, []);
 
-  useLayoutEffect(() => {
-    const targetButton = refsByValue[value];
-    if (movingButton && targetButton) {
-      movingButton.style.width = `${targetButton.offsetWidth}px`;
-      movingButton.style.left = `${targetButton.offsetLeft}px`;
-      movingButton?.classList.add('transition-ready');
-    }
-  }, [value, movingButton, refsByValue]);
+  const updateValue = useCallback(
+    (newValue?: T) => {
+      const targetButton = refsByValue[newValue || value];
+      if (movingButton && targetButton) {
+        movingButton.style.width = `${targetButton.offsetWidth}px`;
+        movingButton.style.left = `${targetButton.offsetLeft}px`;
+        if (newValue) {
+          movingButton.classList.add('transition-ready');
+          // note could probably do better than this
+          setTimeout(() => {
+            movingButton?.classList.remove('transition-ready');
+          }, 250);
+        }
+      }
+    },
+    [value, refsByValue, movingButton]
+  );
 
-  return [movingButtonRef, createRefForValue];
+  // update button size on *any* paint frame to catch button resizing
+  useLayoutEffect(updateValue);
+
+  return [movingButtonRef, createRefForValue, updateValue];
 }
 
 interface Props<T extends string> {
@@ -55,7 +68,7 @@ export default function RadioButtonGroupInput<T extends string>({
   value,
   onChange,
 }: Props<T>) {
-  const [movingAssetRef, createRefForValue] =
+  const [movingAssetRef, createRefForValue, updateValue] =
     useSelectedButtonBackgroundMove<T>(value);
   const entries = Array.isArray(values)
     ? values.map<[T, string]>((value) => [value, value])
@@ -80,7 +93,10 @@ export default function RadioButtonGroupInput<T extends string>({
           type="button"
           className="button py-3 px-4"
           ref={createRefForValue(entryValue)}
-          onClick={() => onChange(entryValue)}
+          onClick={() => {
+            updateValue(entryValue);
+            onChange(entryValue);
+          }}
         >
           {description}
         </button>
