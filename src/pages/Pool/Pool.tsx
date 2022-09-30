@@ -420,8 +420,8 @@ export default function Pool() {
               value={`${values[0]}`}
               exclusion={tokenB}
               title={
-                tokenA
-                  ? `Available ${balances ? getBalance(tokenA, balances) : 0}`
+                tokenA && balances
+                  ? `Available ${getBalance(tokenA, balances)}`
                   : ''
               }
             />
@@ -440,8 +440,8 @@ export default function Pool() {
               value={`${values[1]}`}
               exclusion={tokenA}
               title={
-                tokenB
-                  ? `Available ${balances ? getBalance(tokenB, balances) : 0}`
+                tokenB && balances
+                  ? `Available ${getBalance(tokenB, balances)}`
                   : ''
               }
             />
