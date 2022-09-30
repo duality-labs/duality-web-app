@@ -1,4 +1,10 @@
-import { ReactNode, useCallback, useLayoutEffect, useState } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import './RadioButtonGroupInput.scss';
 
@@ -6,8 +12,7 @@ function useSelectedButtonBackgroundMove<T extends string>(
   value: T
 ): [
   (ref: HTMLButtonElement | null) => void,
-  (value: T) => (ref: HTMLButtonElement | null) => void,
-  (value: T) => void
+  (value: T) => (ref: HTMLButtonElement | null) => void
 ] {
   const [movingButton, setMovingButton] = useState<HTMLButtonElement | null>();
   const movingButtonRef = useCallback(
@@ -39,20 +44,26 @@ function useSelectedButtonBackgroundMove<T extends string>(
         movingButton.style.left = `${targetButton.offsetLeft}px`;
         if (newValue) {
           movingButton.classList.add('transition-ready');
-          // note could probably do better than this
-          setTimeout(() => {
-            movingButton?.classList.remove('transition-ready');
-          }, 250);
+        } else {
+          movingButton?.classList.remove('transition-ready');
         }
       }
     },
     [value, refsByValue, movingButton]
   );
 
+  const lastValue = useRef<T>(value);
   // update button size on *any* paint frame to catch button resizing
-  useLayoutEffect(updateValue);
+  useLayoutEffect(() => {
+    if (lastValue.current !== value) {
+      lastValue.current = value;
+      updateValue(value);
+    } else {
+      updateValue();
+    }
+  });
 
-  return [movingButtonRef, createRefForValue, updateValue];
+  return [movingButtonRef, createRefForValue];
 }
 
 interface Props<T extends string> {
@@ -68,7 +79,7 @@ export default function RadioButtonGroupInput<T extends string>({
   value,
   onChange,
 }: Props<T>) {
-  const [movingAssetRef, createRefForValue, updateValue] =
+  const [movingAssetRef, createRefForValue] =
     useSelectedButtonBackgroundMove<T>(value);
   const entries = Array.isArray(values)
     ? values.map<[T, string]>((value) => [value, value])
@@ -93,10 +104,7 @@ export default function RadioButtonGroupInput<T extends string>({
           type="button"
           className="button py-3 px-4"
           ref={createRefForValue(entryValue)}
-          onClick={() => {
-            updateValue(entryValue);
-            onChange(entryValue);
-          }}
+          onClick={() => onChange(entryValue)}
         >
           {description}
         </button>
