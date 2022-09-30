@@ -287,7 +287,9 @@ export default function Swap() {
           </div>
         )}
         <div className="my-4">
-          <input type="submit" value="Swap" />
+          <button className="submit-button" type="submit">
+            Swap
+          </button>
         </div>
       </div>
     </form>
