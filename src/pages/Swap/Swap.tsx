@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -9,6 +9,7 @@ import {
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
+import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
@@ -20,6 +21,8 @@ import { useSwap } from './hooks/useSwap';
 import { formatPrice } from '../../lib/bignumber.utils';
 
 import './Swap.scss';
+
+type OrderType = 'market' | 'limit';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
@@ -108,7 +111,7 @@ export default function Swap() {
     setLastUpdatedA(false);
   }, []);
 
-  const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
+  const [orderType, setOrderType] = useState<OrderType>('market');
   const [rateTokenOrderAuto, setRateTokenOrderAuto] =
     useState<[Token, Token]>();
   const [rateTokenOrderManual, setRateTokenOrderManual] =
@@ -158,38 +161,34 @@ export default function Swap() {
       <div className="page-card">
         <h3 className="card-title mb-3 mr-auto">Trade</h3>
         <div className="card-row order-type mb-5">
-          <div className="button-switch-group">
-            <button
-              type="button"
-              className={[
-                'button',
-                'py-3',
-                'px-5',
-                orderType === 'market' && 'button-default',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => setOrderType('market')}
-            >
-              <FontAwesomeIcon className="mr-3" icon={faBolt}></FontAwesomeIcon>
-              Market Order
-            </button>
-            <button
-              type="button"
-              className={[
-                'button',
-                'py-3',
-                'px-5',
-                orderType === 'limit' && 'button-default',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => setOrderType('limit')}
-            >
-              <FontAwesomeIcon className="mr-3" icon={faFlag}></FontAwesomeIcon>
-              Limit Order
-            </button>
-          </div>
+          <RadioButtonGroupInput<OrderType>
+            className="order-type-input"
+            values={useMemo(
+              () => ({
+                market: (
+                  <>
+                    <FontAwesomeIcon
+                      className="mr-3"
+                      icon={faBolt}
+                    ></FontAwesomeIcon>
+                    Market Order
+                  </>
+                ),
+                limit: (
+                  <>
+                    <FontAwesomeIcon
+                      className="mr-3"
+                      icon={faFlag}
+                    ></FontAwesomeIcon>
+                    Limit Order
+                  </>
+                ),
+              }),
+              []
+            )}
+            value={orderType}
+            onChange={setOrderType}
+          />
         </div>
         <div className="card-row">
           <TokenInputGroup
