@@ -25,7 +25,7 @@ const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 
 export default function Swap() {
-  const { address } = useWeb3();
+  const { address, connectWallet } = useWeb3();
   const tokenList = useTokens();
   const [tokenA, setTokenA] = useState(
     tokenList.find((token) => token.symbol === 'TKN') as Token | undefined
@@ -315,7 +315,11 @@ export default function Swap() {
               </button>
             )
           ) : (
-            <button className="submit-button" type="button">
+            <button
+              className="submit-button"
+              type="button"
+              onClick={connectWallet}
+            >
               Connect Wallet
             </button>
           )}
