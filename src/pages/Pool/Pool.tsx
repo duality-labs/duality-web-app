@@ -449,14 +449,14 @@ export default function Pool() {
           <div className="card-col mt-5 mb-3">
             <div className="mx-auto">
               <input
-                className="pill pill-outline mx-3 px-4 py-4"
+                className="button-primary pill pill-outline mx-3 px-4 py-4"
                 disabled={!valuesValid}
                 type="submit"
                 name="action"
                 value="Customize"
               />
               <input
-                className="pill mx-3 px-4 py-4"
+                className="button-primary pill mx-3 px-4 py-4"
                 disabled={!valuesValid}
                 type="submit"
                 name="actiona"
@@ -510,7 +510,7 @@ export default function Pool() {
           <div className="row col-row">
             {tokenA && (
               <button
-                className="badge-primary corner-border badge-large font-console"
+                className="badge-default corner-border badge-large font-console"
                 type="button"
               >
                 {new BigNumber(values[0]).toFormat()}
@@ -534,7 +534,7 @@ export default function Pool() {
             {tokenA && tokenB && <div>+</div>}
             {tokenB && (
               <button
-                className="badge-primary corner-border badge-large font-console"
+                className="badge-default corner-border badge-large font-console"
                 type="button"
               >
                 {new BigNumber(values[1]).toFormat()}
@@ -564,7 +564,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-5',
-                  chartTypeSelected === 'AMM' && 'button-primary',
+                  chartTypeSelected === 'AMM' && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -578,7 +578,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-5',
-                  chartTypeSelected === 'Orderbook' && 'button-primary',
+                  chartTypeSelected === 'Orderbook' && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -603,7 +603,7 @@ export default function Pool() {
             <div className="flex col col--left">
               <div className="chart-header row my-4">
                 <h3 className="text-normal">Liquidity Distribution</h3>
-                <span className="tokens-badge badge-primary badge-large font-console">
+                <span className="tokens-badge badge-default badge-large font-console">
                   {tokenB?.symbol}/{tokenA?.symbol}
                 </span>
                 <button type="button" className="icon-button" onClick={swapAll}>
@@ -634,7 +634,7 @@ export default function Pool() {
               <div>Current Price</div>
               <div className="mt-auto mb-4">
                 <input
-                  className="mx-auto px-4 py-4"
+                  className="button-primary mx-auto px-4 py-4"
                   type="submit"
                   value="Add Liquidity"
                 />
@@ -651,7 +651,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-5',
-                  tabSelected === 'range' && 'button-primary',
+                  tabSelected === 'range' && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -665,7 +665,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-5',
-                  tabSelected === 'fee' && 'button-primary',
+                  tabSelected === 'fee' && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -679,7 +679,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-5',
-                  tabSelected === 'curve' && 'button-primary',
+                  tabSelected === 'curve' && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -743,7 +743,7 @@ export default function Pool() {
                   OptionComponent={({
                     option: { fee, label, description },
                   }) => (
-                    <div key={fee} className="button-primary card fee-type">
+                    <div key={fee} className="button-default card fee-type">
                       <h5 className="fee-title">{label}</h5>
                       <span className="fee-description">{description}</span>
                       <span className="pill fee-liquidity">
@@ -781,7 +781,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-3',
-                  tickSelected === -1 && 'button-primary',
+                  tickSelected === -1 && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -798,7 +798,7 @@ export default function Pool() {
                       'button',
                       'py-3',
                       'px-3',
-                      tickSelected === index && 'button-primary',
+                      tickSelected === index && 'button-default',
                     ]
                       .filter(Boolean)
                       .join(' ')}
@@ -871,7 +871,7 @@ export default function Pool() {
                   <div className="card-header">
                     <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
                     {!editingFee && (
-                      <div className="badge-primary corner-border badge-large font-console ml-auto">
+                      <div className="badge-default corner-border badge-large font-console ml-auto">
                         {feeType?.label}
                       </div>
                     )}
@@ -894,7 +894,7 @@ export default function Pool() {
                         }) => (
                           <div
                             key={fee}
-                            className="button-primary card fee-type"
+                            className="button-default card fee-type"
                           >
                             <h5 className="fee-title">{label}</h5>
                             <span className="fee-description">

@@ -165,7 +165,7 @@ export default function Swap() {
                 'button',
                 'py-3',
                 'px-5',
-                orderType === 'market' && 'button-primary',
+                orderType === 'market' && 'button-default',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -180,7 +180,7 @@ export default function Swap() {
                 'button',
                 'py-3',
                 'px-5',
-                orderType === 'limit' && 'button-primary',
+                orderType === 'limit' && 'button-default',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -299,7 +299,7 @@ export default function Swap() {
           {address ? (
             hasSufficientFunds ? (
               <button
-                className="submit-button"
+                className="submit-button button-primary"
                 type="submit"
                 disabled={!new BigNumber(valueBConverted || 0).isGreaterThan(0)}
               >
@@ -310,13 +310,17 @@ export default function Swap() {
                 Insufficient funds
               </button>
             ) : (
-              <button className="submit-button" type="button" disabled>
+              <button
+                className="submit-button button-primary"
+                type="button"
+                disabled
+              >
                 Enter Token Amount
               </button>
             )
           ) : (
             <button
-              className="submit-button"
+              className="submit-button button-primary"
               type="button"
               onClick={connectWallet}
             >
