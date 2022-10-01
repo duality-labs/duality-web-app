@@ -11,7 +11,7 @@ button,
 .button {
   @include paddings.padding('x', 3);
   @include paddings.padding('y', 2);
-  border-radius: paddings.size(2);
+  border-radius: paddings.size(3);
   background-color: transparent;
   border: 0px none transparent;
   font-size: font-size.$button;
@@ -59,20 +59,21 @@ input[type='submit'],
 
 .ghost-button {
   & {
-    @include paddings.padding('x', 4);
-    @include paddings.padding('y', 3);
-
     transition: color animations.$short-duration animations.$default-mode,
       background-color animations.$short-duration animations.$default-mode;
-    // border-color shouldn't be currentColor since on hover the color will be "invisible"
-    border: $ghost-border-width solid var(--ghost-button);
     background-color: transparent;
     color: var(--ghost-button);
     mix-blend-mode: screen;
     text-decoration: none;
     line-height: 1em;
-    border-radius: 0;
+    padding: 0.7rem 1rem;
+    border-radius: 0.7rem;
     cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  &.active {
+    border-color: var(--ghost-button);
   }
 
   &:hover {

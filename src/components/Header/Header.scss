@@ -22,45 +22,68 @@ nav,
   & {
     gap: margins.size(2);
     display: flex;
+    align-items: center;
+  }
+
+  .logo {
+    padding: 0;
+    margin: 0;
   }
 
   & > a,
   & > .link {
     & {
-      @extend .ghost-button;
-      font-size: font-size.$nav;
+      font-size: 1rem;
       gap: margins.size(2);
       position: relative;
-      display: flex;
       padding: 0.75rem 1rem;
       margin-left: 1rem;
       border: none;
-    }
-
-    &::before {
-      transition: left animations.$short-duration animations.$default-mode,
-        width animations.$short-duration animations.$default-mode;
-      position: absolute;
-      background-color: currentColor;
-      bottom: 0.5rem;
-      height: $underline-height;
-      display: block;
-      content: '';
-      left: 50%;
-      width: 0%;
-    }
-
-    &.active::before {
-      width: calc(100% - #{paddings.size(buttons.$ghost-padding-x) * 2});
-      left: paddings.size(buttons.$ghost-padding-x);
+      font-weight: 300;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+      text-decoration: none;
     }
 
     & > img,
     & > h1,
     & > .h1 {
-      @include margins.margin('*', 0);
-      font-size: inherit;
-      height: 1em;
+      margin: 0;
+      padding-bottom: 0.5rem;
+      font-size: 2rem;
+      height: 2rem;
+      text-transform: uppercase;
+      color: white;
+    }
+  }
+
+  button.user-profile {
+    background-color: hsla(0, 0%, 0%, 0.8);
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    align-self: center;
+    padding: 0.5rem 1rem;
+    margin-left: auto;
+    border: 1px solid #4eb1e8;
+
+    img {
+      width: 1.25rem;
+      height: auto;
+      max-height: 1.25rem;
+      margin-bottom: 0.15rem;
+    }
+  }
+
+  button.connect-wallet {
+    border-radius: 0.4rem;
+    background-color: hsl(200, 77%, 60%);
+
+    &:hover,
+    :active {
+      background-color: hsl(200, 77%, 70%);
     }
   }
 }
