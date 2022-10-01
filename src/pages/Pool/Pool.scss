@@ -38,7 +38,7 @@
       padding: 0.625rem 1.5rem;
     }
     > input:checked + label:not(.button-primary) {
-      background-color: var(--primary);
+      background-color: var(--default);
     }
   }
 }
@@ -72,8 +72,10 @@
 
   .token-image {
     height: 1.2rem;
-    vertical-align: bottom;
-    padding: 0.1rem 0;
+    width: 1.2rem;
+    // align logo to top and drop from there
+    // the button contents here are a little special as there are no descenders
+    vertical-align: top;
   }
 
   .button-switch-group {
@@ -133,6 +135,7 @@
 
   .assets-card {
     & {
+      min-width: 384px; // influenced by default selected tokens rendered text
       max-width: 800px;
     }
     .token-input-group {
@@ -228,7 +231,7 @@
 
           .fee-liquidity {
             background-color: rgba($color: white, $alpha: 0.75);
-            color: var(--primary);
+            color: var(--default);
             margin: 0.125rem -0.25rem;
             padding: 0.25rem 0.5rem;
           }

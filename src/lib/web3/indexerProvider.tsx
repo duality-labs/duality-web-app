@@ -1,25 +1,29 @@
-import { useContext, createContext, useState, useEffect } from 'react';
-import {
-  EventType,
-  createSubscriptionManager,
-  MessageActionEvent,
-} from './events';
+import { useContext, createContext, useState, useEffect, useMemo } from 'react';
 import { BigNumber } from 'bignumber.js';
+import { Coin } from '@cosmjs/launchpad';
+
+import { MessageActionEvent } from './events';
+import subscriber from './subscriptionManager';
+import { useWeb3 } from './useWeb3';
+
 import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
 import {
   DexPool,
   DexTicks,
+  RpcStatus,
+  V1Beta1PageResponse,
 } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
+import { Token } from '../../components/TokenPicker/hooks';
 
-const { REACT_APP__REST_API, REACT_APP__WEBSOCKET_URL } = process.env;
+const { REACT_APP__REST_API } = process.env;
 
 type TokenAddress = string; // a valid hex address, eg. 0x01
 type BigNumberString = string; // a number in string format, eg. "1"
 
-if (!REACT_APP__WEBSOCKET_URL)
-  throw new Error('Invalid value for env variable REACT_APP__WEBSOCKET_URL');
-const subscriber = createSubscriptionManager(REACT_APP__WEBSOCKET_URL);
-
+interface BalancesResponse {
+  balances?: Coin[];
+  pagination?: V1Beta1PageResponse;
+}
 export interface PairInfo {
   token0: string;
   token1: string;
@@ -57,14 +61,30 @@ export interface PairMap {
   [pairID: string]: PairInfo;
 }
 
+interface UserBankBalance {
+  balances: Array<Coin>;
+}
+
 interface IndexerContextType {
-  data?: PairMap;
-  error?: string;
-  isValidating: boolean;
+  bank: {
+    data?: UserBankBalance;
+    error?: string;
+    isValidating: boolean;
+  };
+  indexer: {
+    data?: PairMap;
+    error?: string;
+    isValidating: boolean;
+  };
 }
 
 const IndexerContext = createContext<IndexerContextType>({
-  isValidating: true,
+  bank: {
+    isValidating: true,
+  },
+  indexer: {
+    isValidating: true,
+  },
 });
 
 function getFullData(): Promise<PairMap> {
@@ -252,14 +272,86 @@ function addTickData(
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [indexerData, setIndexerData] = useState<PairMap>();
+  const [bankData, setBankData] = useState<UserBankBalance>();
   const [error, setError] = useState<string>();
   // avoid sending more than once
   const [, setRequestedFlag] = useState(false);
   const [result, setResult] = useState<IndexerContextType>({
-    data: indexerData,
-    error: error,
-    isValidating: true,
+    bank: {
+      data: bankData,
+      error: error,
+      isValidating: true,
+    },
+    indexer: {
+      data: indexerData,
+      error: error,
+      isValidating: true,
+    },
   });
+
+  const { address } = useWeb3();
+  const [, setFetchBankDataState] = useState({
+    fetching: false,
+    fetched: false,
+  });
+  const fetchBankData = useMemo(() => {
+    if (address) {
+      return async () => {
+        if (REACT_APP__REST_API) {
+          const client = await queryClient({ addr: REACT_APP__REST_API });
+          setFetchBankDataState(({ fetched }) => ({ fetching: true, fetched }));
+          const res = await client.request<BalancesResponse, RpcStatus>({
+            path: `/cosmos/bank/v1beta1/balances/${address}`,
+            method: 'GET',
+            format: 'json',
+          });
+          if (res.ok) {
+            setFetchBankDataState(() => ({ fetching: false, fetched: true }));
+            return res.data.balances || [];
+          } else {
+            setFetchBankDataState(({ fetched }) => ({
+              fetching: false,
+              fetched,
+            }));
+            // remove API error details from public view
+            throw new Error(`API error code: ${res.error.code}`);
+          }
+        } else {
+          throw new Error('Undefined rest api base URL');
+        }
+      };
+    }
+  }, [address]);
+
+  useEffect(() => {
+    if (fetchBankData) {
+      setFetchBankDataState((fetchState) => {
+        if (!fetchState.fetched && !fetchState.fetching) {
+          fetchBankData().then((data) => {
+            setBankData({ balances: data });
+          });
+        }
+        return fetchState;
+      });
+    }
+  }, [fetchBankData]);
+
+  useEffect(() => {
+    if (address) {
+      const onTxBalanceUpdate = function () {
+        fetchBankData?.()?.then((data) => setBankData({ balances: data }));
+      };
+      subscriber.subscribeMessage(onTxBalanceUpdate, {
+        transfer: { recipient: address },
+      });
+      subscriber.subscribeMessage(onTxBalanceUpdate, {
+        transfer: { sender: address },
+      });
+      return () => {
+        subscriber.unsubscribeMessage(onTxBalanceUpdate);
+      };
+    }
+  }, [fetchBankData, address]);
 
   useEffect(() => {
     const onDexUpdateMessage = function (event: MessageActionEvent) {
@@ -288,11 +380,11 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         });
       });
     };
-    subscriber.subscribeMessage(onDexUpdateMessage, EventType.EventTxValue, {
-      messageAction: 'NewDeposit',
+    subscriber.subscribeMessage(onDexUpdateMessage, {
+      message: { action: 'NewDeposit' },
     });
-    subscriber.subscribeMessage(onDexUpdateMessage, EventType.EventTxValue, {
-      messageAction: 'NewWithdraw',
+    subscriber.subscribeMessage(onDexUpdateMessage, {
+      message: { action: 'NewWithdraw' },
     });
     return () => {
       subscriber.unsubscribeMessage(onDexUpdateMessage);
@@ -342,8 +434,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         return oldData;
       });
     };
-    subscriber.subscribeMessage(onRouterUpdateMessage, EventType.EventTxValue, {
-      messageAction: 'NewSwap',
+    subscriber.subscribeMessage(onRouterUpdateMessage, {
+      message: { action: 'NewSwap' },
     });
     return () => {
       subscriber.unsubscribeMessage(onRouterUpdateMessage);
@@ -352,11 +444,18 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setResult({
-      data: indexerData,
-      error: error,
-      isValidating: !indexerData && !error,
+      bank: {
+        data: bankData,
+        error: error,
+        isValidating: !bankData && !error,
+      },
+      indexer: {
+        data: indexerData,
+        error: error,
+        isValidating: !indexerData && !error,
+      },
     });
-  }, [indexerData, error]);
+  }, [bankData, indexerData, error]);
 
   useEffect(() => {
     setRequestedFlag((oldValue) => {
@@ -377,8 +476,17 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function useBankData() {
+  return useContext(IndexerContext).bank;
+}
+
+export function useBankBalances() {
+  const { data, error, isValidating } = useBankData();
+  return { data: data?.balances, error, isValidating };
+}
+
 export function useIndexerData() {
-  return useContext(IndexerContext);
+  return useContext(IndexerContext).indexer;
 }
 
 export function useIndexerPairData(
@@ -396,4 +504,31 @@ export function useIndexerPairData(
     error,
     isValidating,
   };
+}
+
+export function getBalance(
+  token: Token,
+  userBalances: UserBankBalance['balances']
+) {
+  const denomUnits = token.denom_units;
+  const balanceObject = userBalances?.find((balance) => {
+    return denomUnits?.find((unit) => unit.denom === balance.denom);
+  });
+  const denomUnit =
+    balanceObject &&
+    denomUnits?.find((unit) => unit.denom === balanceObject.denom);
+  const denomUnitExponent = denomUnit?.exponent;
+  const denomUnitMaxExponent = denomUnits?.reduce(
+    (result, { exponent }) => Math.max(result, exponent),
+    0
+  );
+  return balanceObject?.amount && denomUnitMaxExponent
+    ? new BigNumber(balanceObject.amount)
+        .dividedBy(
+          new BigNumber(10).exponentiatedBy(
+            denomUnitMaxExponent - (denomUnitExponent || 0)
+          )
+        )
+        .toFixed()
+    : balanceObject?.amount || '0';
 }

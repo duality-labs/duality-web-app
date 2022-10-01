@@ -9,7 +9,12 @@ import {
   faCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { TickMap, useIndexerPairData } from '../../lib/web3/indexerProvider';
+import {
+  getBalance,
+  TickMap,
+  useBankBalances,
+  useIndexerPairData,
+} from '../../lib/web3/indexerProvider';
 
 import RadioInput from '../../components/RadioInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -22,7 +27,7 @@ import {
 } from '../../components/LiquiditySelector/LiquiditySelector';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 
-import { useTokens, Token } from '../../components/TokenPicker/mockHooks';
+import { useTokens, Token } from '../../components/TokenPicker/hooks';
 
 import './Pool.scss';
 import { useDeposit } from './useDeposit';
@@ -36,7 +41,7 @@ const defaultPrice = '1';
 const defaultSlopeType = 'UNIFORM';
 const defaultRangeMin = new BigNumber(defaultPrice).dividedBy(2).toFixed();
 const defaultRangeMax = new BigNumber(defaultPrice).multipliedBy(2).toFixed();
-const defaultTokenAmount = '1';
+const defaultTokenAmount = '0';
 
 interface FeeType {
   fee: number;
@@ -73,6 +78,8 @@ const calculateFeeLiquidity = function (label: string) {
 };
 
 const defaultPrecision = '6';
+// set as constant to avoid unwanted hook effects
+const defaultCurrentPrice = new BigNumber(1);
 
 function formatPrice(value: BigNumber): string {
   return value.toFixed(
@@ -87,12 +94,12 @@ export default function Pool() {
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
   );
-  const { data: tokenList = [] } = useTokens();
+  const tokenList = useTokens();
 
   // set token A to be first token in list if not already populated
   useEffect(() => {
     if (tokenList.length > 0 && !tokenA) {
-      setTokenA(tokenList[0]);
+      setTokenA(tokenList.find((token) => token.symbol === 'TKN'));
     }
   }, [tokenA, tokenList]);
   // set token B to be USDC token in list if not already populated
@@ -106,8 +113,8 @@ export default function Pool() {
   const [rangeMin, setRangeMin] = useState(defaultRangeMin);
   const [rangeMax, setRangeMax] = useState(defaultRangeMax);
   const [values, setValues] = useState<[string, string]>(() => [
-    new BigNumber(defaultTokenAmount).toFixed(denomExponent),
-    new BigNumber(defaultTokenAmount).toFixed(denomExponent),
+    new BigNumber(defaultTokenAmount).toFixed(),
+    new BigNumber(defaultTokenAmount).toFixed(),
   ]);
 
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
@@ -157,15 +164,18 @@ export default function Pool() {
   }, []);
 
   const currentPriceABFromTicks =
-    useCurrentPriceFromTicks(unorderedTicks) || new BigNumber(1);
+    useCurrentPriceFromTicks(unorderedTicks) || defaultCurrentPrice;
 
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
     return currentPriceABFromTicks?.isLessThan(1);
   });
 
-  const currentPriceFromTicks = invertedTokenOrder
-    ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
-    : currentPriceABFromTicks;
+  const currentPriceFromTicks = useMemo(() => {
+    return invertedTokenOrder
+      ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
+      : currentPriceABFromTicks;
+  }, [invertedTokenOrder, currentPriceABFromTicks]);
+
   const ticks = useMemo(() => {
     if (!invertedTokenOrder) return unorderedTicks;
     if (!unorderedTicks) return unorderedTicks;
@@ -380,11 +390,12 @@ export default function Pool() {
   ]);
 
   const [editingFee, setEditingFee] = useState(false);
+  const { data: balances } = useBankBalances();
 
   if (!valuesConfirmed) {
     return (
       <form
-        className={['pool-page', isValidatingDeposit && 'disabled']
+        className={['page', 'pool-page', isValidatingDeposit && 'disabled']
           .filter(Boolean)
           .join(' ')}
         onSubmit={onSubmit}
@@ -408,7 +419,11 @@ export default function Pool() {
               token={tokenA}
               value={`${values[0]}`}
               exclusion={tokenB}
-              title="Asset 1"
+              title={
+                tokenA && balances
+                  ? `Available ${getBalance(tokenA, balances)}`
+                  : ''
+              }
             />
           </div>
           <div className="plus-space mx-auto my-2">
@@ -424,20 +439,24 @@ export default function Pool() {
               token={tokenB}
               value={`${values[1]}`}
               exclusion={tokenA}
-              title="Asset 2"
+              title={
+                tokenB && balances
+                  ? `Available ${getBalance(tokenB, balances)}`
+                  : ''
+              }
             />
           </div>
           <div className="card-col mt-5 mb-3">
             <div className="mx-auto">
               <input
-                className="pill pill-outline mx-3 px-4 py-4"
+                className="button-primary pill pill-outline mx-3 px-4 py-4"
                 disabled={!valuesValid}
                 type="submit"
                 name="action"
                 value="Customize"
               />
               <input
-                className="pill mx-3 px-4 py-4"
+                className="button-primary pill mx-3 px-4 py-4"
                 disabled={!valuesValid}
                 type="submit"
                 name="actiona"
@@ -491,15 +510,16 @@ export default function Pool() {
           <div className="row col-row">
             {tokenA && (
               <button
-                className="badge-primary corner-border badge-large font-console"
+                className="badge-default corner-border badge-large font-console"
                 type="button"
               >
                 {new BigNumber(values[0]).toFormat()}
-                {tokenA.logo ? (
+                {tokenA.logo_URIs ? (
                   <img
                     className="ml-3 mr-2 token-image"
-                    alt={`${tokenA.symbol} logo`}
-                    src={tokenA.logo}
+                    alt={`${tokenA.name} logo`}
+                    // in this context (large images) prefer SVGs over PNGs for better images
+                    src={tokenA.logo_URIs.svg || tokenA.logo_URIs.png}
                   />
                 ) : (
                   <FontAwesomeIcon
@@ -514,15 +534,16 @@ export default function Pool() {
             {tokenA && tokenB && <div>+</div>}
             {tokenB && (
               <button
-                className="badge-primary corner-border badge-large font-console"
+                className="badge-default corner-border badge-large font-console"
                 type="button"
               >
                 {new BigNumber(values[1]).toFormat()}
-                {tokenB.logo ? (
+                {tokenB.logo_URIs ? (
                   <img
                     className="ml-3 mr-2 token-image"
-                    alt={`${tokenB.symbol} logo`}
-                    src={tokenB.logo}
+                    alt={`${tokenB.name} logo`}
+                    // in this context (large images) prefer SVGs over PNGs for better images
+                    src={tokenB.logo_URIs.svg || tokenB.logo_URIs.png}
                   />
                 ) : (
                   <FontAwesomeIcon
@@ -543,7 +564,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-5',
-                  chartTypeSelected === 'AMM' && 'button-primary',
+                  chartTypeSelected === 'AMM' && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -557,7 +578,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-5',
-                  chartTypeSelected === 'Orderbook' && 'button-primary',
+                  chartTypeSelected === 'Orderbook' && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -574,7 +595,7 @@ export default function Pool() {
           </div>
         </div>
       </div>
-      <div className="pool-page">
+      <div className="page pool-page">
         <div
           className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
@@ -582,7 +603,7 @@ export default function Pool() {
             <div className="flex col col--left">
               <div className="chart-header row my-4">
                 <h3 className="text-normal">Liquidity Distribution</h3>
-                <span className="tokens-badge badge-primary badge-large font-console">
+                <span className="tokens-badge badge-default badge-large font-console">
                   {tokenB?.symbol}/{tokenA?.symbol}
                 </span>
                 <button type="button" className="icon-button" onClick={swapAll}>
@@ -613,7 +634,7 @@ export default function Pool() {
               <div>Current Price</div>
               <div className="mt-auto mb-4">
                 <input
-                  className="mx-auto px-4 py-4"
+                  className="button-primary mx-auto px-4 py-4"
                   type="submit"
                   value="Add Liquidity"
                 />
@@ -630,7 +651,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-5',
-                  tabSelected === 'range' && 'button-primary',
+                  tabSelected === 'range' && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -644,7 +665,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-5',
-                  tabSelected === 'fee' && 'button-primary',
+                  tabSelected === 'fee' && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -658,7 +679,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-5',
-                  tabSelected === 'curve' && 'button-primary',
+                  tabSelected === 'curve' && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -722,7 +743,7 @@ export default function Pool() {
                   OptionComponent={({
                     option: { fee, label, description },
                   }) => (
-                    <div key={fee} className="button-primary card fee-type">
+                    <div key={fee} className="button-default card fee-type">
                       <h5 className="fee-title">{label}</h5>
                       <span className="fee-description">{description}</span>
                       <span className="pill fee-liquidity">
@@ -760,7 +781,7 @@ export default function Pool() {
                   'button',
                   'py-3',
                   'px-3',
-                  tickSelected === -1 && 'button-primary',
+                  tickSelected === -1 && 'button-default',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -777,7 +798,7 @@ export default function Pool() {
                       'button',
                       'py-3',
                       'px-3',
-                      tickSelected === index && 'button-primary',
+                      tickSelected === index && 'button-default',
                     ]
                       .filter(Boolean)
                       .join(' ')}
@@ -850,7 +871,7 @@ export default function Pool() {
                   <div className="card-header">
                     <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
                     {!editingFee && (
-                      <div className="badge-primary corner-border badge-large font-console ml-auto">
+                      <div className="badge-default corner-border badge-large font-console ml-auto">
                         {feeType?.label}
                       </div>
                     )}
@@ -873,7 +894,7 @@ export default function Pool() {
                         }) => (
                           <div
                             key={fee}
-                            className="button-primary card fee-type"
+                            className="button-default card fee-type"
                           >
                             <h5 className="fee-title">{label}</h5>
                             <span className="fee-description">

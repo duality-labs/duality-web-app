@@ -6,8 +6,8 @@
 
 .token-input-group {
   & {
-    padding: paddings.$p-4 paddings.$p-5;
-    border-radius: paddings.$p-4;
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
     background-color: var(--token-group);
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr auto;
@@ -66,13 +66,16 @@
       grid-row-end: 4;
       grid-row: 1 / 4;
       outline: none;
-      width: 100%;
     }
 
     &:disabled {
       color: var(--text-disabled);
       pointer-events: none;
     }
+  }
+
+  .input--zero {
+    color: var(--text-alt);
   }
 
   .token-group-balance ~ .token-group-input {

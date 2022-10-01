@@ -2,11 +2,15 @@ import React, { useCallback } from 'react';
 
 import TokenPicker from '../TokenPicker';
 
-import { Token } from '../TokenPicker/mockHooks';
+import { Token } from '../TokenPicker/hooks';
 
 import { cleanInput } from './utils';
 
 import './TokenInputGroup.scss';
+
+const minSignificantDigits = 12;
+const maxSignificantDigits = 20;
+const placeholder = '...';
 
 interface InputGroupProps {
   onTokenChanged?: (token?: Token) => void;
@@ -23,6 +27,10 @@ interface InputGroupProps {
   title?: string;
   maxValue?: number;
   relevantValue?: string;
+}
+
+function selectAll(e: React.MouseEvent<HTMLInputElement>) {
+  e.currentTarget.select();
 }
 
 export default function TokenInputGroup({
@@ -65,11 +73,32 @@ export default function TokenInputGroup({
       )}
       <input
         type="text"
-        className="token-group-input"
-        value={value || '...'}
+        className={[
+          'token-group-input',
+          'ml-auto',
+          !Number(value) && 'input--zero',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        value={value || placeholder}
         onInput={onInput}
         onChange={onInputChange}
+        onClick={selectAll}
         disabled={disabledInput}
+        style={
+          value
+            ? {
+                // set width of input based on current values but restrained to a min/max
+                minWidth: `${
+                  minSignificantDigits + (value.includes('.') ? 1 : 0)
+                }ch`,
+                maxWidth: `${
+                  maxSignificantDigits + (value.includes('.') ? 1 : 0)
+                }ch`,
+                width: `${value?.length}ch`,
+              }
+            : { width: `${placeholder.length}ch` }
+        }
       />
       <TokenPicker
         value={token}

@@ -1,8 +1,9 @@
 @use '../../styles/mixins-vars/margins.scss' as margins;
 
 .swap-page {
-  .page-card {
-    width: 450px;
+  h3.card-title {
+    font-weight: 400;
+    font-size: 1.5rem;
   }
 
   .card-row {
@@ -17,7 +18,36 @@
 
     .swap-button {
       margin: 0 auto;
+      height: 2.5rem;
+      width: 2.5rem;
+      font-size: 1.25rem;
+      background-color: var(--icon-button-bg);
     }
+  }
+
+  .order-type .button-switch-group {
+    flex: 1;
+    display: flex;
+    justify-content: stretch;
+    .button {
+      flex: 1;
+    }
+  }
+
+  // keep icon-button same size as text in detail section
+  .text-detail {
+    .icon-button {
+      font-size: inherit;
+    }
+  }
+
+  .submit-button {
+    width: 100%;
+    border-radius: 1rem;
+    padding-top: 1.15rem;
+    padding-bottom: 1.15rem;
+    font-size: 1.25rem;
+    font-weight: 500;
   }
 }
 

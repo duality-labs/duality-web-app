@@ -8,17 +8,19 @@ import {
   useMemo,
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircle } from '@fortawesome/free-solid-svg-icons';
+import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import BigNumber from 'bignumber.js';
 
-import { Token } from './mockHooks';
+import { Token } from './hooks';
 
 import Dialog from '../Dialog/Dialog';
 
 import './TokenPicker.scss';
+import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 
 interface TokenResult {
   symbol: Array<string>;
-  name: Array<string>;
+  chain: Array<string>;
   token: Token;
 }
 
@@ -30,7 +32,7 @@ interface TokenPickerProps {
   disabled?: boolean;
 }
 
-type AssetModeType = 'User' | 'All';
+type AssetModeType = 'User' | 'All' | 'Duality';
 
 function useSelectedButtonBackgroundMove(
   value: string
@@ -85,9 +87,18 @@ export default function TokenPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
-  const userList = useMemo(() => tokenList.filter(() => false), [tokenList]); // Todo: actually filter list to tokens in User's wallet
+  const { data: balances } = useBankBalances();
+  const userList = useMemo(() => {
+    return balances
+      ? tokenList.filter((token) =>
+          balances.find((balance) =>
+            token.denom_units.find((token) => token.denom === balance.denom)
+          )
+        )
+      : [];
+  }, [tokenList, balances]); // Todo: actually filter list to tokens in User's wallet
   const [assetMode, setAssetMode] = useState<AssetModeType>(
-    userList.length ? 'User' : 'All'
+    userList.length ? 'User' : 'Duality'
   );
   const currentID = useId();
 
@@ -149,13 +160,24 @@ export default function TokenPicker({
   // update the filtered list whenever the query or the list changes
   useEffect(
     function () {
-      const list = assetMode === 'All' ? tokenList : userList;
+      const list = (() => {
+        switch (assetMode) {
+          case 'Duality':
+            return tokenList
+              .filter((token) => token.chain.chain_id === 'duality')
+              .reverse();
+          case 'User':
+            return userList;
+          default:
+            return tokenList;
+        }
+      })();
 
       // if the query is empty return the full list
       if (!searchQuery) {
         return setFilteredList(
           list.map((token) => ({
-            name: [token.name],
+            chain: [token.chain.pretty_name ?? token.chain.chain_name],
             symbol: [token.symbol],
             token,
           }))
@@ -164,23 +186,26 @@ export default function TokenPicker({
 
       // remove invalid characters + remove space limitations (but still match any found)
       const queryRegexText = searchQuery
+        .trim()
         .toLowerCase()
         .replace(/[.*\\{}[\]+$^]/gi, (char) => `\\${char}`)
-        .replace(/\s+/g, '\\s*');
+        .replace(/\s+/g, '\\s*')
+        .replace(/^["'](.*)["']$/, '$1'); // remove quotes
       const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
 
       setFilteredList(
         list
           .filter((token) =>
-            [token.symbol, token.name, token.address].some((txt) =>
-              regexQuery.test(txt)
+            [token.symbol, token.name, token.address].some(
+              (txt) => txt && regexQuery.test(txt)
             )
           )
           .map(function (token) {
             // Split the symbol and name using the query (and include the query in the list)
             const symbolResult = token.symbol?.split(regexQuery) || [''];
-            const nameResult = token.name?.split(regexQuery) || [''];
-            return { name: nameResult, symbol: symbolResult, token };
+            const chainName = token.chain.pretty_name ?? token.chain.chain_name;
+            const nameResult = chainName?.split(regexQuery) || [''];
+            return { chain: nameResult, symbol: symbolResult, token };
           })
       );
 
@@ -195,31 +220,34 @@ export default function TokenPicker({
     <>
       <button
         type="button"
-        className={`token-picker-toggle ${isOpen ? ' open' : ''}`}
+        className={[
+          'token-picker-toggle',
+          isOpen && 'open',
+          !value?.symbol && 'no-selected-token',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         onClick={open}
         disabled={disabled}
       >
-        {value?.symbol ? (
-          <>
-            {value.logo ? (
-              <img
-                className="token-image"
-                alt={`${value.symbol} logo`}
-                src={value.logo}
-              />
-            ) : (
-              <FontAwesomeIcon
-                icon={faCircle}
-                size="2x"
-                className="token-image token-image-not-found"
-              ></FontAwesomeIcon>
-            )}
-            <span className="token-symbol">{value.symbol}</span>
-            <span className="token-chain">Duality Chain</span>
-          </>
+        {value?.logo_URIs ? (
+          <img
+            className="token-image"
+            alt={`${value.symbol} logo`}
+            // in this context (large images) prefer SVGs over PNGs for better images
+            src={value.logo_URIs.svg || value.logo_URIs.png}
+          />
         ) : (
-          <span className="no-selected-token">Choose Token</span>
+          <FontAwesomeIcon
+            icon={faQuestionCircle}
+            size="2x"
+            className="token-image token-image-not-found"
+          ></FontAwesomeIcon>
         )}
+        <span className="token-symbol">{value?.symbol ?? 'Choose...'}</span>
+        <span className="token-chain">
+          {value?.chain.pretty_name ?? value?.chain.chain_name}
+        </span>
       </button>
       <Dialog
         isOpen={isOpen}
@@ -230,7 +258,7 @@ export default function TokenPicker({
       >
         <div className="card-row my-4 gapx-3 token-asset-selection">
           <button
-            className="button button-primary pill token-moving-asset"
+            className="button button-default pill token-moving-asset"
             disabled
             ref={movingAssetRef}
           ></button>
@@ -249,6 +277,14 @@ export default function TokenPicker({
             onClick={() => setAssetMode('All')}
           >
             All Assets
+          </button>
+          <button
+            type="button"
+            className="button pill py-3 px-4"
+            ref={createRefForValue('Duality')}
+            onClick={() => setAssetMode('Duality')}
+          >
+            Duality Chain Assets
           </button>
         </div>
         <ul className="token-picker-body duality-scrollbar" ref={bodyRef}>
@@ -277,7 +313,7 @@ export default function TokenPicker({
           onInput={(e) => setSearchQuery(e.currentTarget.value)}
           onKeyDown={onKeyDown}
           value={searchQuery}
-          placeholder="Search for a token"
+          placeholder="Search name or paste address"
           autoComplete="off"
           ref={inputRef}
         />
@@ -288,9 +324,10 @@ export default function TokenPicker({
   function showListItem(token: TokenResult | null, index: number) {
     const address = token?.token?.address;
     const symbol = token?.token?.symbol;
-    const logo = token?.token?.logo;
+    const logos = token?.token?.logo_URIs;
     const isDisabled = exclusion?.address === address;
-    const balance = '0.0'; // TODO get actual balance
+    const balance =
+      token?.token && balances ? getBalance(token.token, balances) : '0';
 
     function onClick() {
       selectToken(token?.token);
@@ -301,7 +338,7 @@ export default function TokenPicker({
     }
 
     return (
-      <li key={address}>
+      <li key={token?.token?.base}>
         <data value={address}>
           <button
             type="button"
@@ -309,35 +346,43 @@ export default function TokenPicker({
             className={[
               isDisabled && 'disabled',
               index === selectedIndex && ' selected',
-              'py-3',
             ]
               .filter(Boolean)
               .join(' ')}
             onClick={onClick}
             onFocus={onFocus}
           >
-            {logo ? (
+            {logos ? (
               <img
-                src={logo}
+                // in this context (small images) prefer PNGs over SVGs
+                // for reduced number of elements to be drawn in list
+                src={logos.png || logos.svg}
                 alt={`${symbol || 'Token'} logo`}
                 className="token-image"
               />
             ) : (
               <FontAwesomeIcon
-                icon={faCircle}
+                icon={faQuestionCircle}
                 size="2x"
-                className="token-image-not-found"
+                className="token-image token-image-not-found"
               ></FontAwesomeIcon>
             )}
-            <dfn className="token-symbol">
+            <span className="token-symbol">
               <abbr title={address}>
                 {textListWithMark(token?.symbol || [])}
               </abbr>
-            </dfn>
-            <span className="token-name">
-              {textListWithMark(token?.name || [])}
             </span>
-            <span className="token-balance">{balance}</span>
+            <span className="chain-name">
+              {textListWithMark(token?.chain || [])}
+            </span>
+            {new BigNumber(balance).isZero() ? (
+              <span className="token-zero-balance">{balance}</span>
+            ) : (
+              <>
+                <span className="token-balance">{balance}</span>
+                <span className="token-value"></span>
+              </>
+            )}
           </button>
         </data>
       </li>

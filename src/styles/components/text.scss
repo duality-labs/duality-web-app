@@ -1,5 +1,6 @@
 @use '../mixins-vars/paddings.scss' as paddings;
 @use '../theme/collections.scss' as colors;
+@use '../theme/core.scss' as grays;
 @use 'sass:map';
 
 @each $name in colors.$main {
@@ -21,20 +22,22 @@
   }
 }
 
-.text-row {
+.text-grid {
   & {
-    grid-template-columns: 50% 50%;
+    grid-template-columns: auto 1fr;
     display: grid;
     width: 100%;
+    gap: 1rem;
+    font-size: 1.25rem;
   }
 
   & > .text-header {
-    grid-column: 1 / 2;
     text-align: start;
+    color: grays.$gray;
   }
 
   & > .text-value {
-    grid-column: 2 / 3;
     text-align: end;
+    color: grays.$light-gray;
   }
 }

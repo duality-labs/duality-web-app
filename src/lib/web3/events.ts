@@ -7,23 +7,35 @@ enum QueryStatus {
   Connected,
 }
 
-export interface SubscriptionOptions {
-  /**
-   * messageAction the name of the event/message
-   */
-  messageAction?: string;
-  /**
-   * hashKey hash key of transaction
-   */
-  hashKey?: string;
-  /**
-   * blockHeight height of block of transaction
-   */
-  blockHeight?: string;
-  /**
-   * indexingHeight used for indexing FinalizeBlock events (sorting rather than filtering)
-   */
-  indexingHeight?: string;
+export interface ParamQueryMap {
+  block?: {
+    height?: string;
+  };
+  coin_received?: {
+    amount?: string;
+    receiver?: string;
+  };
+  coin_spent?: {
+    amount?: string;
+    spender?: string;
+  };
+  message?: {
+    [key: string]: string;
+  };
+  tm?: {
+    event?: EventType;
+  };
+  transfer?: {
+    amount?: string;
+    recipient?: string;
+    sender?: string;
+  };
+  tx?: {
+    fee?: string;
+    hash?: string;
+    height?: string;
+    signature?: string;
+  };
 }
 
 export interface TendermintEvent {
@@ -86,7 +98,7 @@ interface CallBackWrapper {
   genericListener?: MessageListener;
   messageListener?: (event: MessageActionEvent) => void;
   // to compare with the action of each event and filter out those that don't match
-  messageAction?: string;
+  paramQueryMap?: ParamQueryMap;
 }
 
 export interface WebSocketClientMessage {
@@ -144,36 +156,37 @@ export interface SubscriptionManager {
   /**
    * Adds an event listener that only listens to message actions
    * @param onMessage the function listening for the event
+   * @param paramQueryMap ParamQueryMap
    * @param eventType the event type listening to (when/how the event will get emitted)
-   * @param options SubscriptionOptions
    */
   readonly subscribeMessage: (
     onMessage: (event: MessageActionEvent) => void,
-    eventType: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap: ParamQueryMap,
+    eventType?: EventType
   ) => void;
 
   /**
    * Removes an event listener that only listens to message actions
    * @param onMessage the function listening for the event
+   * @param paramQueryMap ParamQueryMap
    * @param eventType the event type listening to (when/how the event will get emitted)
-   * @param options SubscriptionOptions
    */
   readonly unsubscribeMessage: (
     onMessage?: (event: MessageActionEvent) => void,
-    eventType?: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap?: ParamQueryMap,
+    eventType?: EventType
   ) => void;
 
   /**
    * Adds an event listener
    * @param onMessage the function listening for the event
+   * @param paramQueryMap the subscription query as an object
    * @param eventType the event type listening to (when/how the event will get emitted)
    */
   readonly subscribe: (
     onMessage: MessageListener,
-    eventType: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap: ParamQueryMap,
+    eventType?: EventType | '*'
   ) => void;
 
   /**
@@ -181,13 +194,13 @@ export interface SubscriptionManager {
    * @param onMessage the function listening for the event,
    * if no other arguments are supplied then all instances of the function will be removed
    * if this is not defined then all of the listeners for the relevant query will be removed
+   * @param paramQueryMap the subscription query as an object
    * @param eventType the event type listening to (when/how the event will get emitted)
-   * @param options SubscriptionOptions
    */
   readonly unsubscribe: (
     onMessage?: MessageListener,
-    eventType?: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap?: ParamQueryMap,
+    eventType?: EventType
   ) => void;
 
   /**
@@ -252,12 +265,7 @@ const startingReconnectInterval = 2e3,
 
 const unsubDebounceInterval = 1e3;
 
-export function createSubscriptionManager(
-  url: string,
-  onMessage?: MessageListener,
-  eventType?: EventType,
-  options?: SubscriptionOptions
-): SubscriptionManager {
+export function createSubscriptionManager(url: string): SubscriptionManager {
   let socket: WebSocket | null = null;
   const listeners: {
     [query: string]: {
@@ -281,7 +289,6 @@ export function createSubscriptionManager(
   };
   let reconnectInterval = startingReconnectInterval;
   let lastAbortTimeout = -1;
-  if (eventType && onMessage) subscribe(onMessage, eventType, options || {});
 
   const manager = {
     open,
@@ -421,42 +428,39 @@ export function createSubscriptionManager(
 
   function subscribeMessage(
     onMessage: (event: MessageActionEvent) => void,
-    eventType: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap: ParamQueryMap = {},
+    // default to a Tx message type
+    eventType: EventType = EventType.EventTxValue
   ) {
     abstractSubscribe(
-      { messageListener: onMessage, messageAction: options?.messageAction },
-      eventType,
-      options || {}
+      { messageListener: onMessage, paramQueryMap },
+      getParamQuery(paramQueryMap, eventType)
     );
   }
 
   function unsubscribeMessage(
     onMessage?: (event: MessageActionEvent) => void,
-    eventType?: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap?: ParamQueryMap,
+    eventType: EventType = EventType.EventTxValue
   ) {
     abstractUnsubscribe(
       { messageListener: onMessage },
-      eventType,
-      options || {}
+      getParamQuery(paramQueryMap, onMessage && paramQueryMap && eventType)
     );
   }
 
   function subscribe(
     onMessage: MessageListener,
-    eventType: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap: ParamQueryMap,
+    eventType?: EventType
   ) {
-    abstractSubscribe({ genericListener: onMessage }, eventType, options || {});
+    abstractSubscribe(
+      { genericListener: onMessage },
+      getParamQuery(paramQueryMap, eventType)
+    );
   }
 
-  function abstractSubscribe(
-    onMessage: CallBackWrapper,
-    eventType: EventType,
-    options: SubscriptionOptions
-  ) {
-    const paramQuery = getParamQuery(eventType, options);
+  function abstractSubscribe(onMessage: CallBackWrapper, paramQuery: string) {
     const listenerGroup = listeners[paramQuery] || {
       status: QueryStatus.Disconnected,
       idUnsub: createID(),
@@ -484,22 +488,19 @@ export function createSubscriptionManager(
 
   function unsubscribe(
     onMessage?: MessageListener,
-    eventType?: EventType,
-    options?: SubscriptionOptions
+    paramQueryMap?: ParamQueryMap,
+    eventType?: EventType
   ) {
     abstractUnsubscribe(
       { genericListener: onMessage },
-      eventType,
-      options || {}
+      getParamQuery(paramQueryMap, eventType)
     );
   }
 
   function abstractUnsubscribe(
     onMessage: CallBackWrapper | undefined,
-    eventType: EventType | undefined,
-    options: SubscriptionOptions
+    paramQuery?: string
   ) {
-    const paramQuery = getParamQuery(eventType, options);
     const isGeneric = !paramQuery;
     const listenerGroups = isGeneric ? Object.keys(listeners) : [paramQuery];
     listenerGroups.forEach(function (query) {
@@ -514,25 +515,36 @@ export function createSubscriptionManager(
   }
 
   function unsubscribeAll() {
-    abstractUnsubscribe(undefined, undefined, {});
+    abstractUnsubscribe(undefined);
   }
 
   function getParamQuery(
-    eventType: EventType | undefined,
-    options: SubscriptionOptions
+    paramQueryMap: ParamQueryMap = {},
+    eventType?: EventType
   ): string {
-    const { messageAction, hashKey, blockHeight, indexingHeight } = options;
-    const paramMap = {
-      'tm.event': eventType,
-      'message.action': messageAction,
-      'tx.hash': hashKey,
-      'tx.height': blockHeight,
-      'block.height': indexingHeight,
-    };
-    return Object.entries(paramMap)
-      .map(([key, value]) => (value ? `${key}='${value}'` : null))
-      .filter(Boolean)
-      .join(' AND ');
+    return (
+      Object.entries(
+        eventType
+          ? // insert event type if given
+            {
+              ...paramQueryMap,
+              tm: {
+                ...paramQueryMap.tm,
+                event: eventType,
+              },
+            }
+          : paramQueryMap
+      )
+        // convert map-of-map to map.map notation
+        .flatMap(([section, sectionMap]) => {
+          return Object.entries(sectionMap).map(([attr, value]) => {
+            return [`${section}.${attr}`, value];
+          });
+        })
+        .map(([key, value]) => (value ? `${key}='${value}'` : null))
+        .filter(Boolean)
+        .join(' AND ')
+    );
   }
 
   function debounceUnsub() {
@@ -618,16 +630,24 @@ export function createSubscriptionManager(
         const event = originalEvent.attributes.reduce<{
           [key: string]: string;
         }>(function (result, { key, value }) {
-          result[Buffer.from(key, 'base64').toString()] = Buffer.from(
-            value,
-            'base64'
-          ).toString();
+          const keyParts = [
+            originalEvent.type,
+            Buffer.from(key, 'base64').toString(),
+          ];
+          result[keyParts.join('.')] = Buffer.from(value, 'base64').toString();
           return result;
         }, {});
         listenerGroup.callBacks.forEach(function (wrapper) {
           if (
             wrapper.messageListener &&
-            (wrapper.messageAction ?? event.action) === event.action
+            Object.entries(wrapper.paramQueryMap || {}).every(
+              ([section, sectionMap]) => {
+                // match all message pieces
+                return Object.entries(sectionMap).every(([attr, value]) => {
+                  return event[`${section}.${attr}`] === value;
+                });
+              }
+            )
           )
             wrapper.messageListener(event);
         });
