@@ -12,6 +12,8 @@ import RadioInput from '../../components/RadioInput';
 import StepNumberInput from '../../components/StepNumberInput';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
+import LiquiditySelector from '../../components/LiquiditySelector';
+
 import {
   useTokens,
   useExchangeRate,
@@ -34,23 +36,32 @@ const defaultRangeMax = new BigNumber(defaultPrice)
   .toFixed(0);
 const defaultTokenAmount = '1000';
 
-const feeTypes: Array<{ fee: string; description: string }> = Object.entries({
+interface FeeType {
+  fee: number;
+  label: string;
+  description: string;
+}
+const feeTypes: Array<FeeType> = Object.entries({
   '0.01%': 'Best for very stable pairs.',
   '0.05%': 'Best for  stable pairs.',
   '0.30%': 'Best for most assets.',
   '1.00%': 'Best for exotic assets.',
-}).map(([fee, description]) => ({ fee, description }));
+}).map(([label, description]) => ({
+  label,
+  fee: Number(label.replace(/%$/, '')) / 100,
+  description,
+}));
 
 const slopeTypes = ['UNIFORM', 'UP-SLOPE', 'BELL CURVE', 'DOWN-SLOPE'];
 
-const calculateFeeLiquidity = function (fee: string) {
-  const test: { [fee: string]: string } = {
+const calculateFeeLiquidity = function (label: string) {
+  const test: { [label: string]: string } = {
     '0.01%': '1% liquidity',
     '0.05%': '9% liquidity',
     '0.30%': '83% liquidity',
     '1.00%': '7% liquidity',
   };
-  return test[fee];
+  return test[label];
 };
 
 const defaultPrecision = '6';
@@ -58,10 +69,10 @@ const defaultPrecision = '6';
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [feeType, setFeeType] = useState<
-    { fee: string; description: string } | undefined
-  >(() => feeTypes.find(({ fee }) => fee === defaultFee));
-  const fee = feeType?.fee || defaultFee;
+  const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
+    feeTypes.find(({ label }) => label === defaultFee)
+  );
+  const feeLabel = feeType?.label || defaultFee;
   const swapTokens = useCallback(() => {
     setTokenA(tokenB);
     setTokenB(tokenA);
@@ -126,7 +137,7 @@ export default function Pool() {
 
   useEffect(() => {
     setEditingFee(false);
-  }, [fee]);
+  }, [feeLabel]);
 
   const [
     {
@@ -139,14 +150,15 @@ export default function Pool() {
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
-      await sendDepositRequest(
-        tokenA,
-        tokenB,
-        new BigNumber(rangeMin),
-        new BigNumber(feeType?.fee.replace(/%$/, '') || '').dividedBy(100), // convert fee type string to fee
-        new BigNumber(values[0]),
-        new BigNumber(values[1])
-      );
+      if (feeType?.fee)
+        await sendDepositRequest(
+          tokenA,
+          tokenB,
+          new BigNumber(rangeMin),
+          new BigNumber(feeType.fee),
+          new BigNumber(values[0]),
+          new BigNumber(values[1])
+        );
     },
     [tokenA, tokenB, rangeMin, feeType, values, sendDepositRequest]
   );
@@ -193,16 +205,17 @@ export default function Pool() {
         </div>
       </div>
       <div className="chart-card page-card">
-        <div>
-          Ticks: {tickFetching ? 'loading...' : ''} &nbsp;
-          {JSON.stringify(ticks, null, 2)}
-        </div>
+        <LiquiditySelector
+          tickCount={parseInt(precision) || 1}
+          ticks={ticks}
+          feeTier={feeType?.fee}
+        ></LiquiditySelector>
       </div>
       <div className="fee-card page-card">
         <div className="card-header">
           <h3 className="card-title">Fee Tier</h3>
           <div className="badge-primary corner-border badge-large font-console ml-auto">
-            {fee}
+            {feeLabel}
           </div>
           <button
             type="button"
@@ -214,16 +227,16 @@ export default function Pool() {
         </div>
         <div className="card-row">
           {editingFee ? (
-            <RadioInput<{ fee: string; description: string }>
+            <RadioInput<FeeType>
               value={feeType}
               list={feeTypes}
               onChange={setFeeType}
-              OptionComponent={({ option: { fee, description } }) => (
+              OptionComponent={({ option: { fee, label, description } }) => (
                 <div key={fee} className="badge card fee-type">
-                  <h5 className="fee-title">{fee}</h5>
+                  <h5 className="fee-title">{label}</h5>
                   <span className="fee-description">{description}</span>
                   <span className="badge fee-liquidity">
-                    {calculateFeeLiquidity(fee)}
+                    {calculateFeeLiquidity(label)}
                   </span>
                 </div>
               )}
@@ -231,10 +244,10 @@ export default function Pool() {
           ) : (
             <>
               <span className="badge-info pill ml-auto badge-large text-slim fs-s mt-auto">
-                {calculateFeeLiquidity(fee)}
+                {calculateFeeLiquidity(feeLabel)}
               </span>
               <span className="badge-info pill ml-2 badge-large text-slim fs-s mt-auto">
-                {fee}
+                {feeLabel}
               </span>
             </>
           )}
