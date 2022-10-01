@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.24](https://github.com/duality-labs/duality-web-app/compare/v0.1.23...v0.1.24) (2022-10-01)
+
+
+### Features
+
+* apply beta designs to header nav ([#137](https://github.com/duality-labs/duality-web-app/issues/137)) ([7a68846](https://github.com/duality-labs/duality-web-app/commit/7a68846e683c8a6a3d9a34e0232ce6ea9c716125))
+
+
+### Other
+
+* Add default dev env environment endpoint ([#127](https://github.com/duality-labs/duality-web-app/issues/127)) ([917db1f](https://github.com/duality-labs/duality-web-app/commit/917db1f3b90ac0659e2c36f174eac5a83d043b26))
+* update base styles to new design ([#132](https://github.com/duality-labs/duality-web-app/issues/132)) ([0ef5123](https://github.com/duality-labs/duality-web-app/commit/0ef5123c44da4adde5ab4ecc2207a431d1057050))
+
 ## [0.1.23](https://github.com/duality-labz/duality-web-app/compare/v0.1.22...v0.1.23) (2022-08-31)
 
 
