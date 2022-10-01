@@ -26,6 +26,7 @@ import {
   Tick,
 } from '../../components/LiquiditySelector/LiquiditySelector';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
+import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 
@@ -557,36 +558,15 @@ export default function Pool() {
             )}
           </div>
           <div className="row col-row ml-auto">
-            <div className="button-switch-group">
-              <button
-                type="button"
-                className={[
-                  'button',
-                  'py-3',
-                  'px-5',
-                  chartTypeSelected === 'AMM' && 'button-default',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => setChartTypeSelected('AMM')}
-              >
-                Basic
-              </button>
-              <button
-                type="button"
-                className={[
-                  'button',
-                  'py-3',
-                  'px-5',
-                  chartTypeSelected === 'Orderbook' && 'button-default',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => setChartTypeSelected('Orderbook')}
-              >
-                Pro
-              </button>
-            </div>
+            <RadioButtonGroupInput<'AMM' | 'Orderbook'>
+              className="chart-type-input"
+              values={{
+                AMM: 'Basic',
+                Orderbook: 'Pro',
+              }}
+              value={chartTypeSelected}
+              onChange={setChartTypeSelected}
+            />
           </div>
           <div className="row col-row hide">
             <button className="icon-button" type="button">
@@ -644,50 +624,16 @@ export default function Pool() {
         </div>
         {chartTypeSelected === 'AMM' ? (
           <div className="page-card mx-auto">
-            <div className="button-switch-group mx-auto mt-2 mb-4">
-              <button
-                type="button"
-                className={[
-                  'button',
-                  'py-3',
-                  'px-5',
-                  tabSelected === 'range' && 'button-default',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => setTabSelected('range')}
-              >
-                Price Range
-              </button>
-              <button
-                type="button"
-                className={[
-                  'button',
-                  'py-3',
-                  'px-5',
-                  tabSelected === 'fee' && 'button-default',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => setTabSelected('fee')}
-              >
-                Fee Tier
-              </button>
-              <button
-                type="button"
-                className={[
-                  'button',
-                  'py-3',
-                  'px-5',
-                  tabSelected === 'curve' && 'button-default',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => setTabSelected('curve')}
-              >
-                Liquidity Curve
-              </button>
-            </div>
+            <RadioButtonGroupInput<'range' | 'fee' | 'curve'>
+              className="mx-auto mt-2 mb-4"
+              values={{
+                range: <span>Price&nbsp;Range</span>,
+                fee: <span>Fee&nbsp;Tier</span>,
+                curve: <span>Liquidity&nbsp;Curve</span>,
+              }}
+              value={tabSelected}
+              onChange={setTabSelected}
+            />
             {tabSelected === 'range' && (
               <div className="price-card">
                 <div className="card-row">
@@ -762,10 +708,9 @@ export default function Pool() {
                   This is represented by the yellow curve above.
                 </div>
                 <div className="card-row mt-4">
-                  <RadioInput
-                    className="button-switch-group"
+                  <RadioButtonGroupInput<SlopeType>
+                    values={slopeTypes}
                     value={slopeType}
-                    list={slopeTypes}
                     onChange={setSlopeType}
                   />
                 </div>

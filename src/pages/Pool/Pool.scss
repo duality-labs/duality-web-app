@@ -4,7 +4,7 @@
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:map';
 
-.button-switch-group {
+.chart-type-input {
   border: 1px solid white;
   border-radius: 0.75rem;
   overflow: hidden;
@@ -18,7 +18,7 @@
 }
 
 .pool-banner {
-  .button-switch-group {
+  .chart-type-input {
     .button {
       min-width: 10rem;
     }
@@ -33,7 +33,7 @@
   > .card-row {
     justify-content: center;
   }
-  .button-switch-group {
+  .chart-type-input {
     .button {
       padding: 0.625rem 1.5rem;
     }
@@ -78,7 +78,7 @@
     vertical-align: top;
   }
 
-  .button-switch-group {
+  .chart-type-input {
     margin: 0 1rem;
   }
 }
@@ -118,6 +118,9 @@
 
   .page-card {
     @include margins.gap('*', '2');
+    > .radio-button-group-switch .button {
+      padding: 0.5rem 2rem;
+    }
   }
 
   .card-header {

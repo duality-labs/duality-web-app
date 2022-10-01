@@ -102,7 +102,7 @@ export default function RadioButtonGroupInput<T extends string>({
         <button
           key={entryValue}
           type="button"
-          className="button py-3 px-4"
+          className="button non-moving"
           ref={createRefForValue(entryValue)}
           onClick={() => onChange(entryValue)}
         >

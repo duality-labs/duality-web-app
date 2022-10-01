@@ -44,6 +44,10 @@
     background-color: var(--default);
   }
 
+  .non-moving {
+    padding: 0.5rem 1rem;
+  }
+
   .transition-ready {
     transition: left animations.$short-duration animations.$default-mode,
       width animations.$short-duration animations.$default-mode;
