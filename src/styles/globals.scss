@@ -3,31 +3,41 @@
 h1,
 .h1 {
   font-size: font-size.$h1;
+  font-weight: 500;
 }
 
 h2,
 .h2 {
   font-size: font-size.$h2;
+  font-weight: 500;
 }
 
 h3,
 .h3 {
   font-size: font-size.$h3;
+  font-weight: 500;
 }
 
 h4,
 .h4 {
   font-size: font-size.$h4;
+  font-weight: 500;
 }
 
 h5,
 .h5 {
   font-size: font-size.$h5;
+  font-weight: 500;
 }
 
 h6,
 .h6 {
   font-size: font-size.$h6;
+  font-weight: 500;
+}
+
+p {
+  line-height: 1.2857; // 18px/14px
 }
 
 .pill {
@@ -36,4 +46,28 @@ h6,
 
 .no-blend {
   mix-blend-mode: normal !important;
+}
+
+.row,
+.col {
+  display: flex;
+  overflow: auto;
+}
+.row {
+  flex-direction: row;
+}
+.col {
+  flex-direction: column;
+}
+.flex {
+  flex: 1 1 auto;
+}
+
+input[disabled],
+button[disabled],
+form.disabled input,
+form.disabled button {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  pointer-events: none;
 }
