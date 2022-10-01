@@ -18,7 +18,7 @@ export default function Header() {
         <NavLink className="logo mr-5" to="/">
           <h1>Duality</h1>
         </NavLink>
-        <NavLink className="ghost-button" to="/trade">
+        <NavLink className="ghost-button" to="/">
           Trade
         </NavLink>
         <NavLink className="ghost-button" to="/add-liquidity">

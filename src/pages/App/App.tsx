@@ -19,8 +19,7 @@ function App() {
             <Header />
             <main>
               <Routes>
-                <Route index element={<div>Coming soon</div>} />
-                <Route path="trade" element={<Swap />} />
+                <Route index element={<Swap />} />
                 <Route path="add-liquidity" element={<Pool />} />
                 <Route path="my-liquidity" element={<div>Coming soon</div>} />
                 <Route path="stake" element={<div>Coming soon</div>} />
