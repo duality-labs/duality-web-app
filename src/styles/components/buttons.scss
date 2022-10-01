@@ -11,7 +11,7 @@ button,
 .button {
   @include paddings.padding('x', 3);
   @include paddings.padding('y', 2);
-  border-radius: paddings.size(2);
+  border-radius: paddings.size(3);
   background-color: transparent;
   border: 0px none transparent;
   font-size: font-size.$button;
