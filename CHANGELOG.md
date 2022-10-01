@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.27](https://github.com/duality-labs/duality-web-app/compare/v0.1.26...v0.1.27) (2022-10-01)
+
+
+### Features
+
+* 138 improve StepNumberInput usage and formatting ([#142](https://github.com/duality-labs/duality-web-app/issues/142)) ([ef5a20c](https://github.com/duality-labs/duality-web-app/commit/ef5a20c48c7b99aa8e300f6d310ca6eb4aa87fbf))
+
 ## [0.1.26](https://github.com/duality-labs/duality-web-app/compare/v0.1.25...v0.1.26) (2022-10-01)
 
 
