@@ -675,6 +675,8 @@ export default function Pool() {
                     value={rangeMin}
                     onChange={setRangeMin}
                     stepFunction={logarithmStep}
+                    pressedDelay={500}
+                    pressedInterval={100}
                     min={denomMin}
                     max={rangeMax}
                     description={
@@ -682,12 +684,17 @@ export default function Pool() {
                         ? `${tokenB.symbol} per ${tokenA.symbol}`
                         : 'No Tokens'
                     }
+                    minSignificantDigits={8}
+                    maxSignificantDigits={denomExponent + 1}
+                    format={formatStepNumberPriceInput}
                   />
                   <StepNumberInput
                     title="MAX PRICE"
                     value={rangeMax}
                     onChange={setRangeMax}
                     stepFunction={logarithmStep}
+                    pressedDelay={500}
+                    pressedInterval={100}
                     min={rangeMin}
                     max={denomMax}
                     description={
@@ -695,6 +702,9 @@ export default function Pool() {
                         ? `${tokenB.symbol} per ${tokenA.symbol}`
                         : 'No Tokens'
                     }
+                    minSignificantDigits={8}
+                    maxSignificantDigits={denomExponent + 1}
+                    format={formatStepNumberPriceInput}
                   />
                 </div>
                 <div className="row mt-4 mb-2">
@@ -789,6 +799,7 @@ export default function Pool() {
                       max={10}
                       value={precision}
                       onChange={setPrecision}
+                      minSignificantDigits={2}
                     />
                     <button
                       type="button"
@@ -806,6 +817,7 @@ export default function Pool() {
                       min={denomMin}
                       max={denomMax}
                       pressedDelay={500}
+                      pressedInterval={100}
                       stepFunction={logarithmStep}
                       value={userTicks[tickSelected][0].toFixed()}
                       onChange={(value) => {
@@ -822,6 +834,8 @@ export default function Pool() {
                           });
                         });
                       }}
+                      maxSignificantDigits={denomExponent + 1}
+                      format={formatStepNumberPriceInput}
                     />
                   </div>
                 )}
@@ -915,7 +929,7 @@ export default function Pool() {
 
 // calculates set from last siginificant digit (eg. 0.8 -> 0.9 -> 1 -> 2)
 // todo: could respect trailing zeros is strings were passed
-function logarithmStep(valueString: number, direction: number): number {
+function logarithmStep(valueString: string, direction: number): string {
   const value = new BigNumber(valueString);
   const significantDigits = value.sd(true);
   const orderOfMagnitude = Math.floor(Math.log10(value.toNumber()));
@@ -934,8 +948,8 @@ function logarithmStep(valueString: number, direction: number): number {
           .plus(
             new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit + 1)
           )
-          .toNumber()
-      : new BigNumber(10).exponentiatedBy(-denomExponent).toNumber()
+          .toFixed()
+      : new BigNumber(10).exponentiatedBy(-denomExponent).toFixed()
     : value
         .minus(
           new BigNumber(10).exponentiatedBy(
@@ -946,5 +960,14 @@ function logarithmStep(valueString: number, direction: number): number {
               (lastDigit === '1' && value.sd(false) === 1 ? 0 : +1)
           )
         )
-        .toNumber();
+        .toFixed();
+}
+
+// note: this cause odd issues when trying to control the number via keys or StepNumberInput
+// instead of dragging (eg. select all and press 1 -> 1.00, press "1.5" -> 1.005)
+// This could be fixed by using a string for all cases of price as BigNumber
+// objects are not aware of how many significant digits they have.
+function formatStepNumberPriceInput(value: string) {
+  const formatted = formatPrice(new BigNumber(value));
+  return formatted.length > value.length ? formatted : value;
 }

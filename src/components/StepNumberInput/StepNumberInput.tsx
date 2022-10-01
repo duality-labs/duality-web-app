@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import BigNumber from 'bignumber.js';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import useOnContinualPress from '../hooks/useOnContinualPress';
 
 import './StepNumberInput.scss';
 
 type Direction = 1 | -1;
 
-interface StepNumberInputProps {
-  onChange?: (value: string) => void;
+interface StepNumberInputProps<T extends number | string = string> {
+  onChange?: (value: T) => void;
   tabbableButtons?: boolean;
   pressedInterval?: number;
   disableLimit?: boolean;
@@ -14,16 +16,18 @@ interface StepNumberInputProps {
   disabled?: boolean;
   editable?: boolean;
   title?: string;
-  value: string;
-  stepFunction?: (value: number, direction: number) => number;
+  value: T;
+  stepFunction?: (value: T, direction: number) => T;
   step?: string | number;
   max?: string | number;
   min?: string | number;
-  parse?: (value: string) => number;
-  format?: (value: number) => string;
+  minSignificantDigits?: number;
+  maxSignificantDigits?: number;
+  parse?: (value: string) => T;
+  format?: (value: T) => string;
 }
 
-export default function StepNumberInput({
+export default function StepNumberInput<T extends number | string = string>({
   onChange,
   tabbableButtons = false,
   pressedInterval = 50,
@@ -35,68 +39,50 @@ export default function StepNumberInput({
   title,
   value,
   stepFunction,
-  step: rawStep,
+  step: rawStep = 1,
   max: rawMax,
-  min: rawMin = 0,
-  parse = Number,
+  min: rawMin,
+  minSignificantDigits = 2,
+  maxSignificantDigits = 6,
+  parse,
   format = String,
-}: StepNumberInputProps) {
-  const step =
-    typeof rawStep === 'number' ? rawStep : rawStep ? parse(rawStep) : 1;
-  const max =
-    typeof rawMax === 'number' ? rawMax : rawMax ? parse(rawMax) : undefined;
-  const min =
-    typeof rawMin === 'number' ? rawMin : rawMin ? parse(rawMin) : undefined;
+}: StepNumberInputProps<T>) {
+  const step = Number(rawStep);
+  const max = Number(rawMax);
+  const min = Number(rawMin);
 
+  const currentValue = format ? format(value) : `${value}`;
   if (min !== undefined && max !== undefined && max < min) {
     throw new Error(
       'Invalid Range, max limit cannot be smaller than the min limit'
     );
   }
-  const [currentValue, setCurrentValue] = useState(() => parse(value));
-  const [, setTimeoutID] = useState<number>();
-  const [, setIntervalID] = useState<number>();
-  const clear = useCallback(() => {
-    setTimeoutID((oldID) => {
-      clearTimeout(oldID);
-      return undefined;
-    });
-    setIntervalID((oldID) => {
-      clearInterval(oldID);
-      return undefined;
-    });
-  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  /**
-   * Update current value when unparsed value has changed
-   */
-  useEffect(() => {
-    setCurrentValue(parse(value));
-  }, [value, parse]);
 
   /**
    * Makes sure the value is valid number within the proper range
    * @param newValue the proposed new value to be checked
    */
-  const validateValue = useCallback(
-    (oldValue: number, newValue: number) => {
-      if (min && newValue < min) {
-        clear();
-        return min;
-      }
-      if (max && newValue > max) {
-        clear();
-        return max;
-      }
-      if (newValue !== undefined && !isNaN(newValue)) {
-        return newValue;
-      } else {
-        clear();
-        return oldValue;
+  const maybeUpdate = useCallback(
+    (newValueString: string) => {
+      if (onChange) {
+        const newValue = new BigNumber(newValueString);
+        // note: allow unsafe parsing to deal with parsing to type T
+        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+        const safeParse = (parse || (String as any)) as (v: string) => T;
+        const onChangeSafe = (value: string) => onChange(safeParse(value));
+        if (min !== undefined && newValue.isLessThan(min)) {
+          return onChangeSafe(new BigNumber(min).toFixed());
+        }
+        if (max !== undefined && newValue.isGreaterThan(max)) {
+          return onChangeSafe(new BigNumber(max).toFixed());
+        }
+        if (!newValue.isNaN()) {
+          return onChangeSafe(newValueString);
+        }
       }
     },
-    [min, max, clear]
+    [min, max, onChange, parse]
   );
 
   /**
@@ -105,64 +91,75 @@ export default function StepNumberInput({
    */
   const onStep = useCallback(
     (direction: Direction) => {
-      setCurrentValue((oldValue) => {
-        return validateValue(
-          oldValue,
-          stepFunction?.(oldValue, direction) ?? oldValue + step * direction
-        );
-      });
+      if (maybeUpdate) {
+        const newValue = stepFunction
+          ? new BigNumber(stepFunction(value, direction))
+          : new BigNumber(value).plus(step * direction);
+        maybeUpdate(newValue.toFixed());
+      }
     },
-    [step, stepFunction, validateValue]
+    [step, stepFunction, maybeUpdate, value]
   );
   const onSubStep = useCallback(() => onStep(-1), [onStep]);
   const onAddStep = useCallback(() => onStep(+1), [onStep]);
 
-  /**
-   * To be called when the mouse gets released, to start the hold to step faster functionality
-   * @param direction -1 to start decreasing by -step every pressedInterval and 1 to start increasing by +step every pressedInterval
-   */
-  const onPressed = useCallback(
-    (direction: Direction) => {
-      setTimeoutID((oldID) => {
-        if (pressedDelay === Infinity) return oldID;
-        clearTimeout(oldID);
-        return setTimeout(startCounting as TimerHandler, pressedDelay);
-      });
+  const subDisabled = useMemo(() => {
+    return (
+      disableLimit &&
+      min !== undefined &&
+      new BigNumber(value).isLessThanOrEqualTo(min)
+    );
+  }, [disableLimit, value, min]);
 
-      function startCounting() {
-        setIntervalID((oldID) => {
-          clearInterval(oldID);
-          return setInterval(onTick as TimerHandler, pressedInterval);
-        });
-      }
+  const addDisabled = useMemo(() => {
+    return (
+      disableLimit &&
+      max !== undefined &&
+      new BigNumber(value).isGreaterThanOrEqualTo(max)
+    );
+  }, [disableLimit, value, max]);
 
-      function onTick() {
-        onStep(direction);
-      }
-    },
-    [pressedDelay, pressedInterval, onStep]
+  const [startAutoSub, stopAutoSub] = useOnContinualPress(
+    onSubStep,
+    subDisabled,
+    pressedDelay,
+    pressedInterval
   );
-  const onSubPressed = useCallback(() => onPressed(-1), [onPressed]);
-  const onAddPressed = useCallback(() => onPressed(+1), [onPressed]);
-
-  /**
-   * To be called when the mouse gets released, so that all hold to step faster functionality ceases
-   */
-  const onReleased = clear;
+  const [startAutoAdd, stopAutoAdd] = useOnContinualPress(
+    onAddStep,
+    addDisabled,
+    pressedDelay,
+    pressedInterval
+  );
 
   /**
    * To be called when there is a change with the input
    */
   const onInputChange = useCallback(() => {
-    const value = inputRef.current?.value;
-    setCurrentValue((oldValue) => validateValue(oldValue, parse(value || '0')));
-  }, [validateValue, parse]);
+    maybeUpdate(inputRef.current?.value || '0');
+  }, [maybeUpdate]);
 
   useEffect(() => {
-    if (onChange) {
-      onChange(format(currentValue));
+    function handleArrowKeyStep(event: KeyboardEvent) {
+      // catch arrow presses
+      switch (event.key) {
+        case 'ArrowUp':
+          event.preventDefault();
+          onAddStep();
+          break;
+        case 'ArrowDown': {
+          event.preventDefault();
+          onSubStep();
+          break;
+        }
+      }
     }
-  }, [onChange, currentValue, format]);
+    const input = inputRef.current;
+    if (input) {
+      input.addEventListener('keydown', handleArrowKeyStep);
+      return () => input.removeEventListener('keydown', handleArrowKeyStep);
+    }
+  }, [onSubStep, onAddStep]);
 
   return (
     <div className="range-step-input">
@@ -171,13 +168,10 @@ export default function StepNumberInput({
         <button
           type="button"
           onClick={onSubStep}
-          onMouseDown={onSubPressed}
-          onMouseUp={onReleased}
-          onMouseLeave={onReleased}
-          disabled={
-            disabled ||
-            (disableLimit && min !== undefined && currentValue <= min)
-          }
+          onMouseDown={startAutoSub}
+          onMouseUp={stopAutoSub}
+          onMouseLeave={stopAutoSub}
+          disabled={disabled || subDisabled}
           tabIndex={tabbableButtons ? 0 : -1}
         >
           -
@@ -188,6 +182,16 @@ export default function StepNumberInput({
             value={currentValue}
             onInput={onInputChange}
             ref={inputRef}
+            style={{
+              // set width of input based on current values but restrained to a min/max
+              minWidth: `${
+                minSignificantDigits + (currentValue.includes('.') ? 1 : 0)
+              }ch`,
+              maxWidth: `${
+                maxSignificantDigits + (currentValue.includes('.') ? 1 : 0)
+              }ch`,
+              width: `${currentValue.length}ch`,
+            }}
           />
         ) : (
           <span>{currentValue}</span>
@@ -195,13 +199,10 @@ export default function StepNumberInput({
         <button
           type="button"
           onClick={onAddStep}
-          onMouseDown={onAddPressed}
-          onMouseUp={onReleased}
-          onMouseLeave={onReleased}
-          disabled={
-            disabled ||
-            (disableLimit && max !== undefined && currentValue >= max)
-          }
+          onMouseDown={startAutoAdd}
+          onMouseUp={stopAutoAdd}
+          onMouseLeave={stopAutoAdd}
+          disabled={disabled || addDisabled}
           tabIndex={tabbableButtons ? 0 : -1}
         >
           +
