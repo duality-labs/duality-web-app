@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.25](https://github.com/duality-labs/duality-web-app/compare/v0.1.24...v0.1.25) (2022-10-01)
+
+
+### Features
+
+* Add Liquidity and liquidity input visual component ([#125](https://github.com/duality-labs/duality-web-app/issues/125)) ([840fca6](https://github.com/duality-labs/duality-web-app/commit/840fca6a4f5a48931632c6e7fe1614111458cc57))
+
 ## [0.1.24](https://github.com/duality-labs/duality-web-app/compare/v0.1.23...v0.1.24) (2022-10-01)
 
 
