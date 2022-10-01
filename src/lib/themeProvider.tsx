@@ -34,7 +34,8 @@ if (storedMode) {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [defaultTheme, setDefaultTheme] = useState(getDefaultBrowserTheme);
   const [savedTheme, setSavedTheme] = useState(getSavedTheme);
-  const themeMode = savedTheme ?? defaultTheme;
+  // for now, always be in dark mode
+  const themeMode = 'dark' ?? savedTheme ?? defaultTheme;
 
   const toggleThemeMode = useCallback(
     function () {
