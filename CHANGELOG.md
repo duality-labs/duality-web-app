@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.26](https://github.com/duality-labs/duality-web-app/compare/v0.1.25...v0.1.26) (2022-10-01)
+
+
+### Features
+
+* Apply beta designs to add liquidity page and liquidity selector ([#141](https://github.com/duality-labs/duality-web-app/issues/141)) ([4cd3e47](https://github.com/duality-labs/duality-web-app/commit/4cd3e479a059fa2f8d6b4f9e01c4cb9ac253d322))
+
+
+### Other
+
+* Sass improvements ([#140](https://github.com/duality-labs/duality-web-app/issues/140)) ([208d97f](https://github.com/duality-labs/duality-web-app/commit/208d97f40b373e8a03101a04f0e6989965af23e3))
+
 ## [0.1.25](https://github.com/duality-labs/duality-web-app/compare/v0.1.24...v0.1.25) (2022-10-01)
 
 
