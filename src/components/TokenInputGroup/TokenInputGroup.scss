@@ -11,7 +11,7 @@
     background-color: var(--token-group);
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr auto;
-    color: var(--text-default);
+    color: var(--default-alt);
     display: grid;
   }
 
@@ -59,7 +59,7 @@
       background-color: transparent;
       border: 0px none transparent;
       font-size: font-size.$input;
-      color: var(--text-default);
+      color: var(--default-alt);
       grid-column: 2 / 3;
       text-align: end;
       grid-row-start: 1;

@@ -44,16 +44,16 @@ $border-width: 2px;
       & {
         @include paddings.padding('*', 2);
         border-radius: paddings.$p-2;
-        background-color: var(--ghost-button);
+        background-color: var(--text-default);
+        opacity: 0.8;
         font-size: font-size.$button-large;
         font-family: font-family.$console;
         border: 0px none transparent;
         box-sizing: content-box;
-        mix-blend-mode: screen;
         line-height: 1em;
         aspect-ratio: 1;
         flex: 0 0 auto;
-        color: black;
+        color: var(--page-card);
         height: 1em;
         width: 1em;
       }
