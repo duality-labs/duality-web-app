@@ -1,14 +1,14 @@
 @use './core.scss' as core;
 
-$text-default: core.$light-white;
-$text-alt: core.$light-gray;
-$text-disabled: core.$gray;
+$text-default: core.$light-black;
+$text-alt: core.$white;
+$text-disabled: core.$dark-white;
 
 $default: core.$bg-dark;
 $default-alt: core.$light-white;
 $primary: core.$bg-light;
 $primary-alt: core.$light-white;
-$secondary: rgba(core.$light-gray, 0.8);
+$secondary: rgba(core.$dark-gray, 0.8);
 $secondary-alt: core.$light-white;
 $success: rgb(38, 128, 27);
 $success-alt: core.$light-white;
@@ -21,7 +21,7 @@ $error-alt: core.$light-white;
 $light: core.$light-blue;
 $light-alt: core.$light-white;
 $link: transparent;
-$link-alt: core.$light-white;
+$link-alt: core.$dark-gray;
 
 $bg: conic-gradient(
   from 120deg at 50% 100%,
@@ -33,6 +33,7 @@ $bg: conic-gradient(
 // color + border color in default state, background + border color in hover state
 $ghost-button: core.$dark-white;
 
+$button-group-bg: core.$light-blue;
 $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
 $submit-button-bg: core.$bg-light;
@@ -46,9 +47,9 @@ $token-group: core.$bg-dark;
 $page-card: rgba(core.$dark-black, 60%);
 $card-border: core.$bg-light;
 
-$dialog-bg: core.$black;
+$dialog-bg: core.$light-blue;
 $dialog-backdrop: rgba(core.$dark-black, 50%);
-$selected-token: core.$dark-black;
+$selected-token: core.$bg-light;
 
 $token-search-bg: transparent;
 $token-search-text: core.$dark-gray;
@@ -63,8 +64,6 @@ $icon-button-text: rgb(188, 188, 188);
 $submit-button-bg: rgb(78, 177, 232);
 $submit-button-text: rgb(0, 0, 0);
 $card-border: rgb(152, 203, 231);
-$dialog-bg: rgb(227, 227, 227);
-$selected-token: rgb(218, 218, 218);
 $badge-main-bg: rgb(18, 93, 135);
 $badge-main-text: rgb(255, 255, 255);
 $badge-secondary-bg: rgb(168, 168, 168);
@@ -114,6 +113,7 @@ $map: (
 
   'ghost-button': $ghost-button,
 
+  'button-group-bg': $button-group-bg,
   'icon-button-bg': $icon-button-bg,
   'icon-button-text': $icon-button-text,
   'submit-button-bg': $submit-button-bg,

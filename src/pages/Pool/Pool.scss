@@ -4,6 +4,7 @@
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:map';
 
+.button-switch-group,
 .chart-type-input {
   border: 1px solid white;
   border-radius: 0.75rem;
@@ -150,6 +151,7 @@
     }
     .pill-outline {
       background-color: transparent;
+      color: var(--text-default);
       border: 3px solid var(--submit-button-bg);
       &:hover,
       :active {

@@ -88,7 +88,7 @@
 
 .axis {
   stroke-width: 1;
-  stroke: hsl(0, 0%, 100%);
+  stroke: var(--text-default);
 }
 
 .chart-liquidity {
