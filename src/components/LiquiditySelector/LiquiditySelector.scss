@@ -1,41 +1,100 @@
-.chart-card {
-  height: 50vh;
+.chart-liquidity {
+  flex: 1;
+}
+
+.tick-buckets {
+  .tick-bucket {
+    transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
+    stroke-width: 0.125;
+    opacity: 0.75;
+  }
+
+  .token-a {
+    fill: hsl(262, 100%, 15%);
+    stroke: hsl(262, 100%, 15%);
+  }
+  .token-b {
+    fill: hsl(202, 76%, 30%);
+    stroke: hsl(202, 76%, 30%);
+  }
+}
+.chart-type--amm {
+  .tick-bucket {
+    cursor: pointer;
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.new-ticks {
+  stroke-width: 2px;
+  stroke: hsl(37, 62%, 68%);
+  .tip {
+    stroke-width: 1px;
+  }
+  .token-a .tip {
+    fill: hsl(262, 41%, 50%);
+  }
+  .token-b .tip {
+    fill: hsl(202, 41%, 36%);
+  }
+  .tick--hit-area {
+    fill: transparent;
+    stroke: none;
+    cursor: move;
+  }
+  .tick text {
+    fill: hsl(37, 62%, 68%);
+  }
+  .tick--selected {
+    stroke: var(--submit-button-bg);
+  }
+  .tick--price-warning {
+    stroke: var(--error);
+    &.tick--selected text {
+      fill: var(--error);
+    }
+  }
+  .tick--selected text {
+    fill: var(--submit-button-bg);
+  }
+}
+
+.new-ticks-area {
+  .line {
+    stroke-width: 1px;
+    stroke: hsl(37, 62%, 68%);
+  }
+  .pole-stick {
+    stroke-width: 4px;
+  }
+  .pole-flag,
+  .pole-to-flag {
+    fill: hsl(37, 62%, 68%);
+  }
+  .pole-flag-stripe {
+    fill: transparent;
+    stroke: white;
+    stroke-dasharray: 20 10;
+  }
+  .pole-flag--hit-area {
+    fill: transparent;
+    stroke: transparent;
+    stroke-width: 10px;
+    cursor: pointer;
+  }
+}
+
+.axis {
+  stroke-width: 1;
+  stroke: hsl(0, 0%, 100%);
 }
 
 .chart-liquidity {
-  height: 100%;
-}
-
-.tick,
-.tick-bucket {
-  & {
-    transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
-    stroke-width: 0.5px;
-    cursor: pointer;
-    opacity: 0.7;
-  }
-
-  &.old-tick {
-    stroke: hsl(240, 60%, 50%);
-  }
-  &.old-tick-bucket.token-a {
-    fill: hsl(262, 85%, 10%);
-  }
-  &.old-tick-bucket.token-b {
-    fill: hsl(202, 41%, 23%);
-  }
-
-  &:hover {
-    opacity: 1;
-  }
-}
-
-.new-tick {
-  stroke: hsl(37, 62%, 68%);
-  .token-a .tip {
-    stroke: hsl(262, 41%, 50%);
-  }
-  .token-b .tip {
-    stroke: hsl(202, 41%, 36%);
+  text {
+    stroke-width: 0;
+    fill: hsl(202, 76%, 60%);
+    font-size: 12px;
   }
 }

@@ -15,6 +15,7 @@ interface StepNumberInputProps {
   editable?: boolean;
   title?: string;
   value: string;
+  stepFunction?: (value: number, direction: number) => number;
   step?: string | number;
   max?: string | number;
   min?: string | number;
@@ -33,6 +34,7 @@ export default function StepNumberInput({
   editable = true,
   title,
   value,
+  stepFunction,
   step: rawStep,
   max: rawMax,
   min: rawMin = 0,
@@ -45,6 +47,7 @@ export default function StepNumberInput({
     typeof rawMax === 'number' ? rawMax : rawMax ? parse(rawMax) : undefined;
   const min =
     typeof rawMin === 'number' ? rawMin : rawMin ? parse(rawMin) : undefined;
+
   if (min !== undefined && max !== undefined && max < min) {
     throw new Error(
       'Invalid Range, max limit cannot be smaller than the min limit'
@@ -71,14 +74,6 @@ export default function StepNumberInput({
   useEffect(() => {
     setCurrentValue(parse(value));
   }, [value, parse]);
-
-  /**
-   * If the min or max "push" the current value outside the valid range, readjust
-   */
-  useEffect(() => {
-    if (min !== undefined && min > currentValue) setCurrentValue(min);
-    if (max !== undefined && max < currentValue) setCurrentValue(max);
-  }, [min, max, currentValue]);
 
   /**
    * Makes sure the value is valid number within the proper range
@@ -111,10 +106,13 @@ export default function StepNumberInput({
   const onStep = useCallback(
     (direction: Direction) => {
       setCurrentValue((oldValue) => {
-        return validateValue(oldValue, oldValue + step * direction);
+        return validateValue(
+          oldValue,
+          stepFunction?.(oldValue, direction) ?? oldValue + step * direction
+        );
       });
     },
-    [step, validateValue]
+    [step, stepFunction, validateValue]
   );
   const onSubStep = useCallback(() => onStep(-1), [onStep]);
   const onAddStep = useCallback(() => onStep(+1), [onStep]);

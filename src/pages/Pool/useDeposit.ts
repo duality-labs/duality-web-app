@@ -6,9 +6,14 @@ import BigNumber from 'bignumber.js';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module';
 import { Token } from '../../components/TokenPicker/mockHooks';
+import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
 
-const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
+const {
+  REACT_APP__COIN_MIN_DENOM_EXP = '18',
+  REACT_APP__COIN_MIN_DENOM_SHIFT_EXP = '12',
+} = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
+const denomShiftExponent = parseInt(REACT_APP__COIN_MIN_DENOM_SHIFT_EXP) || 0;
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -25,10 +30,8 @@ export function useDeposit(): [
   (
     tokenA: Token | undefined,
     tokenB: Token | undefined,
-    price: BigNumber | undefined,
     fee: BigNumber | undefined,
-    amount0: BigNumber | undefined,
-    amount1: BigNumber | undefined
+    userTicks: TickGroup
   ) => Promise<void>
 ] {
   const [data, setData] = useState<SendDepositResponse | undefined>(undefined);
@@ -40,10 +43,8 @@ export function useDeposit(): [
     async function (
       tokenA: Token | undefined,
       tokenB: Token | undefined,
-      price: BigNumber | undefined,
       fee: BigNumber | undefined,
-      amount0: BigNumber | undefined,
-      amount1: BigNumber | undefined
+      userTicks: TickGroup
     ) {
       return new Promise<void>(async function (resolve, reject) {
         try {
@@ -51,25 +52,35 @@ export function useDeposit(): [
           if (!web3.address || !web3.wallet) {
             throw new Error('Wallet not connected');
           }
+          const web3Address = web3.address;
           if (!tokenA || !tokenB) {
             throw new Error('Tokens not set');
-          }
-          if (!price || !price.isGreaterThan(0)) {
-            throw new Error('Price not set');
           }
           if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
             throw new Error('Fee not set');
           }
-          if (
-            !amount0 ||
-            !amount1 ||
-            amount0.isLessThan(0) ||
-            amount1.isLessThan(0)
-          ) {
-            throw new Error('Amounts not set');
-          }
-          if (!amount0.isGreaterThan(0) && !amount1.isGreaterThan(0)) {
-            throw new Error('Amounts are zero');
+          // check all user ticks and filter to non-zero ticks
+          const filteredUserTicks = userTicks.filter(
+            ([price, amount0, amount1]) => {
+              if (!price || price.isLessThan(0)) {
+                throw new Error('Price not set');
+              }
+              if (
+                !amount0 ||
+                !amount1 ||
+                amount0.isNaN() ||
+                amount1.isNaN() ||
+                amount0.isLessThan(0) ||
+                amount1.isLessThan(0)
+              ) {
+                throw new Error('Amounts not set');
+              }
+              return amount0.isGreaterThan(0) || amount1.isGreaterThan(0);
+            }
+          );
+
+          if (filteredUserTicks.length === 0) {
+            throw new Error('Ticks not set');
           }
 
           setData(undefined);
@@ -78,20 +89,24 @@ export function useDeposit(): [
 
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
-          const res = await client.signAndBroadcast([
-            client.msgSingleDeposit({
-              creator: web3.address,
-              token0: tokenA.address,
-              token1: tokenB.address,
-              receiver: web3.address,
-              // todo: replace with form input amounts
-              // fake some price points and amounts that can be tested in dev
-              price: price.toFixed(denomExponent),
-              fee: fee.toFixed(denomExponent),
-              amounts0: amount0.toFixed(denomExponent),
-              amounts1: amount1.toFixed(denomExponent),
-            }),
-          ]);
+          const res = await client.signAndBroadcast(
+            filteredUserTicks.map(([price, amount0, amount1]) =>
+              client.msgSingleDeposit({
+                creator: web3Address,
+                token0: tokenA.address,
+                token1: tokenB.address,
+                receiver: web3Address,
+                price: price.toFixed(denomExponent),
+                fee: fee.toFixed(denomExponent),
+                amounts0: amount0
+                  .shiftedBy(-denomShiftExponent)
+                  .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
+                amounts1: amount1
+                  .shiftedBy(-denomShiftExponent)
+                  .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
+              })
+            )
+          );
 
           // check for response
           if (!res) {
@@ -126,16 +141,26 @@ export function useDeposit(): [
                     ) {
                       // read the matching tokens into their values
                       if (attr.value.endsWith(tokenA.denom.toLowerCase())) {
-                        acc.receivedTokenA = attr.value.slice(
-                          0,
-                          0 - tokenA.denom.length
-                        );
+                        acc.receivedTokenA = new BigNumber(
+                          acc.receivedTokenA || 0
+                        )
+                          .plus(
+                            new BigNumber(
+                              attr.value.slice(0, 0 - tokenA.denom.length)
+                            ).shiftedBy(-denomExponent + denomShiftExponent)
+                          )
+                          .toFixed(denomExponent);
                       }
                       if (attr.value.endsWith(tokenB.denom.toLowerCase())) {
-                        acc.receivedTokenB = attr.value.slice(
-                          0,
-                          0 - tokenB.denom.length
-                        );
+                        acc.receivedTokenB = new BigNumber(
+                          acc.receivedTokenB || 0
+                        )
+                          .plus(
+                            new BigNumber(
+                              attr.value.slice(0, 0 - tokenB.denom.length)
+                            ).shiftedBy(-denomExponent + denomShiftExponent)
+                          )
+                          .toFixed(denomExponent);
                       }
                     }
                   }

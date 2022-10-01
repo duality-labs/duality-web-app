@@ -4,15 +4,114 @@
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:map';
 
-$selected-fee-border-width: 1.5px;
+.button-switch-group {
+  border: 1px solid white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+
+  .button {
+    border-radius: 0.75rem;
+  }
+  .button:hover:not(.button-primary) {
+    background-color: hsl(202deg, 76%, 20%);
+  }
+}
+
+.pool-banner {
+  .button-switch-group {
+    .button {
+      min-width: 10rem;
+    }
+  }
+}
+
+.curve-card {
+  & {
+    // "nice-fit" to curve selections
+    max-width: 40rem;
+  }
+  > .card-row {
+    justify-content: center;
+  }
+  .button-switch-group {
+    .button {
+      padding: 0.625rem 1.5rem;
+    }
+    > input:checked + label:not(.button-primary) {
+      background-color: var(--primary);
+    }
+  }
+}
+
+.pool-banner {
+  width: 100%;
+  background-color: hsla(0, 0%, 0%, 0.6);
+
+  & > .row {
+    padding: 1.125rem 4rem;
+  }
+
+  .row {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 2rem;
+
+    .col-row {
+      gap: 0.5rem;
+      background-color: transparent;
+      padding: 0;
+    }
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 500;
+  }
+
+  .token-image {
+    height: 1.2rem;
+    vertical-align: bottom;
+    padding: 0.1rem 0;
+  }
+
+  .button-switch-group {
+    margin: 0 1rem;
+  }
+}
+
+.icon-button {
+  background-color: transparent;
+  font-size: 1.5em;
+  padding: 0;
+}
+
+.pool-banner::before,
+.pool-banner::after {
+  display: block;
+  content: ' ';
+  height: 8px;
+  width: 100%;
+  background: linear-gradient(90deg, #4eb1e8 0%, rgba(78, 177, 232, 0) 100%);
+}
+.pool-banner::after {
+  background: linear-gradient(90deg, rgba(78, 177, 232, 0) 0%, #4eb1e8 100%);
+}
+
+.spacer {
+  flex-grow: 1;
+}
 
 .pool-page {
   & {
-    @include margins.margin('y', 4);
-    grid-template-columns: 400px 492px 380px;
-    grid-template-rows: auto 1fr auto;
-    gap: margins.$m-3;
-    display: grid;
+    @include margins.margin('y', 5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: calc(100% - paddings.$p-6);
+    max-width: 1200px;
+    gap: 2rem;
   }
 
   .page-card {
@@ -26,7 +125,6 @@ $selected-fee-border-width: 1.5px;
 
   .card-title {
     font-size: font-size.$h4;
-    text-align: start;
   }
 
   .card-header > .card-title {
@@ -35,72 +133,137 @@ $selected-fee-border-width: 1.5px;
 
   .assets-card {
     & {
-      grid-column: 1 / 2;
-      grid-row: 1 / 2;
+      max-width: 800px;
     }
-
     .token-input-group {
       box-sizing: border-box;
       width: 100%;
     }
+    .pill {
+      border: 3px solid transparent;
+    }
+    .pill-outline {
+      background-color: transparent;
+      border: 3px solid var(--submit-button-bg);
+      &:hover,
+      :active {
+        background-color: rgba($color: rgb(78, 177, 232), $alpha: 0.2);
+      }
+    }
+    .card-col {
+      align-items: center;
+    }
+    .plus-space .fa-plus {
+      color: rgb(78, 177, 232);
+      color: linear-gradient(135deg, rgb(78, 177, 232) 0%, #ffffff 100%);
+    }
   }
 
   .chart-card {
-    grid-column: 2 / 4;
-    grid-row: 1 / 2;
+    min-height: 400px;
+    height: 30vh;
+    align-self: stretch;
+
+    > .row {
+      gap: 1.5rem;
+    }
+
+    .chart-header {
+      align-items: center;
+      gap: 1rem;
+
+      .tokens-badge {
+        border-radius: 0.5rem;
+      }
+    }
+
+    .hero-text {
+      font-size: 2.75rem;
+    }
+
+    .chart-price {
+      align-items: flex-end;
+    }
   }
 
   .fee-card {
-    & {
-      grid-column: 1 / 2;
-      grid-row: 2 / 3;
-    }
-
     .card-row {
       flex-grow: 1;
     }
 
     .radio-input-group {
+      & {
+        gap: 1rem;
+        justify-content: center;
+        align-items: center;
+      }
       label {
         & {
-          flex-basis: calc(50% - #{margins.$m-3});
           background: transparent;
-          margin: margins.$m-1 auto;
+          margin: 0;
           padding: 0;
+          width: 6.5rem;
         }
 
         .fee-type {
           & {
-            margin-top: $selected-fee-border-width;
-            font-size: font-size.$text-xs;
+            font-size: font-size.$text-s;
             flex-direction: column;
-            text-align: center;
+            align-items: center;
             display: flex;
+            border: 1.5px solid transparent;
+            @include paddings.padding('x', 3);
           }
 
           .fee-title {
-            @include margins.margin('y', 3);
             font-family: font-family.$console;
             font-size: font-size.$h5;
           }
 
           .fee-description {
+            @include margins.margin('y', 3);
             text-align: start;
+            opacity: 0.7;
+          }
+
+          .fee-liquidity {
+            background-color: rgba($color: white, $alpha: 0.75);
+            color: var(--primary);
+            margin: 0.125rem -0.25rem;
+            padding: 0.25rem 0.5rem;
           }
         }
       }
 
       input:checked + label .fee-type {
-        border: $selected-fee-border-width solid var(--info);
-        margin-top: 0;
+        border-color: var(--info);
       }
     }
   }
 
-  .precision-card {
-    & {
-      grid-column: 1 / 2;
-      grid-row: 3 / 4;
+  .price-card > .card-row {
+    justify-content: space-between;
+    gap: margins.$m-4;
+  }
+
+  .orderbook-card {
+    > .row {
+      gap: 3rem;
+      flex-direction: column;
+    }
+
+    > .row > .col {
+      min-width: 25rem;
+    }
+
+    > .row > .col > .row {
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    h3.card-title {
+      font-weight: 400;
+      font-size: 1.5rem;
     }
 
     .range-step-input {
@@ -108,76 +271,28 @@ $selected-fee-border-width: 1.5px;
       margin-left: auto;
       border-radius: 0;
       padding: 0;
+      max-width: 12rem;
+    }
+
+    .autobalance-card {
+      .autobalance-allocation {
+        font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+        background-color: transparent;
+        border: 0px none transparent;
+        font-size: 1.5rem;
+        text-align: center;
+        color: var(--text-default);
+        outline: none;
+      }
     }
   }
-
-  .price-card {
-    grid-column: 2 / 3;
-    grid-row: 2 / 4;
-  }
-
-  .curve-card {
-    grid-column: 3 / 4;
-    grid-row: 2 / 4;
-  }
-
-  .pool-options {
-    grid-column: 1 / 4;
-    grid-row: 4 / 5;
-  }
-
-  @media screen and (max-width: 1315px) {
-    & {
-      grid-template-columns: 400px 492px;
-      grid-template-rows: auto auto auto;
+}
+@media screen and (min-width: 1024px) {
+  .pool-page {
+    .orderbook-card {
+      > .row {
+        flex-direction: row;
+      }
     }
-
-    .assets-card {
-      grid-column: 1 / 2;
-      grid-row: 1 / 2;
-    }
-
-    .chart-card {
-      grid-column: 2 / 3;
-      grid-row: 1 / 2;
-    }
-
-    .fee-card {
-      grid-column: 1 / 2;
-      grid-row: 2 / 3;
-    }
-
-    .precision-card {
-      grid-column: 1 / 2;
-      grid-row: 3 / 4;
-    }
-
-    .price-card {
-      grid-column: 2 / 3;
-      grid-row: 2 / 3;
-    }
-
-    .curve-card {
-      grid-column: 2 / 3;
-      grid-row: 3 / 4;
-    }
-
-    .pool-options {
-      grid-column: 1 / 3;
-      grid-row: 4 / 5;
-    }
-  }
-
-  @media screen and (max-width: 920px) {
-    & {
-      flex-direction: column;
-      display: flex;
-      width: 100%;
-    }
-  }
-
-  .price-card > .card-row {
-    justify-content: space-between;
-    gap: margins.$m-4;
   }
 }
