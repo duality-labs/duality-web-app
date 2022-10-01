@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.28](https://github.com/duality-labs/duality-web-app/compare/v0.1.27...v0.1.28) (2022-10-01)
+
+
+### Features
+
+* 133 apply beta designs to swap page ([#145](https://github.com/duality-labs/duality-web-app/issues/145)) ([fe89ab3](https://github.com/duality-labs/duality-web-app/commit/fe89ab3e871662a9ec79820230789f5b51fe2291))
+
 ## [0.1.27](https://github.com/duality-labs/duality-web-app/compare/v0.1.26...v0.1.27) (2022-10-01)
 
 
