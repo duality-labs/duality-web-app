@@ -77,9 +77,13 @@ export default function TokenInputGroup({
     <div className={`${className || ''} token-input-group`}>
       {title && <h5 className="token-group-title">{title}</h5>}
       {maxValue && <span className="token-group-balance">{maxValue}</span>}
-      {secondaryValue && (
-        <span className="token-group-value">{secondaryValue}</span>
-      )}
+      <TokenPicker
+        value={token}
+        onChange={onPickerChange}
+        tokenList={tokenList}
+        exclusion={exclusion}
+        disabled={disabledToken}
+      />
       <input
         type="text"
         className={[
@@ -109,13 +113,7 @@ export default function TokenInputGroup({
             : { width: `${placeholder.length}ch` }
         }
       />
-      <TokenPicker
-        value={token}
-        onChange={onPickerChange}
-        tokenList={tokenList}
-        exclusion={exclusion}
-        disabled={disabledToken}
-      />
+      <span className="token-group-value">{secondaryValue}</span>
     </div>
   );
 }
