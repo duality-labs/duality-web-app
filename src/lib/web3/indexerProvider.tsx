@@ -485,6 +485,12 @@ export function useBankBalances() {
   return { data: data?.balances, error, isValidating };
 }
 
+export function useBankBalance(token: Token | undefined) {
+  const { data: balances, error, isValidating } = useBankBalances();
+  const balance = token && balances && getBalance(token, balances);
+  return { data: balance, error, isValidating };
+}
+
 export function useIndexerData() {
   return useContext(IndexerContext).indexer;
 }
