@@ -58,16 +58,14 @@ export function useSimplePrice(
     return token?.coingecko_id;
   });
 
-  const validTokenIDs = tokenIDs.filter(Boolean) as string[];
+  const tokenIDsString = tokenIDs.filter(Boolean).join(',');
 
   const { data, error, isValidating } = useSWR<
     CoinGeckoSimplePrice,
     FetchError
   >(
-    validTokenIDs.length > 0
-      ? `/simple/price?ids=${validTokenIDs.join(
-          ','
-        )}&vs_currencies=${currencyID}`
+    tokenIDsString.length > 0
+      ? `/simple/price?ids=${tokenIDsString}&vs_currencies=${currencyID}`
       : null,
     fetcher
   );
