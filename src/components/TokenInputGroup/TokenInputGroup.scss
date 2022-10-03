@@ -27,7 +27,7 @@
     @include margins.margin('t', 0);
     @include margins.margin('b', 2);
     grid-column: 1 / 2;
-    font-size: font-size.$h5;
+    font-size: font-size.$text-m;
     text-align: start;
     grid-row: 1 / 2;
     font-weight: normal;
@@ -39,7 +39,7 @@
 
   .token-group-balance {
     font-family: font-family.$console;
-    font-size: font-size.$text-s;
+    font-size: font-size.$text-m;
     grid-column: 2 / 3;
     grid-row: 1 / 2;
     text-align: end;
@@ -47,7 +47,7 @@
 
   .token-group-value {
     font-family: font-family.$console;
-    font-size: font-size.$text-s;
+    font-size: font-size.$text-m;
     grid-column: 2 / 3;
     grid-row: 3 / 4;
     text-align: end;
