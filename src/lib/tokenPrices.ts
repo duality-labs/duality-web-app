@@ -36,14 +36,17 @@ interface CoinGeckoSimplePrice {
   };
 }
 
-export function useSimplePrice(tokens: Token[], currencyID = 'USD') {
+export function useSimplePrice(
+  tokens: (Token | undefined)[],
+  currencyID = 'USD'
+) {
   const tokenIDs = tokens.map((token) => {
     // note Coin Gecko ID warning for developers
-    if (!token.coingecko_id) {
+    if (token && !token.coingecko_id) {
       // eslint-disable-next-line no-console
       console.warn(`Token ${token.name} (${token.symbol}) has no CoinGecko ID`);
     }
-    return token.coingecko_id;
+    return token?.coingecko_id;
   });
 
   const validTokenIDs = tokenIDs.filter(Boolean) as string[];
