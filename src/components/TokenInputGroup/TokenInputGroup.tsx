@@ -1,9 +1,11 @@
 import React, { useCallback } from 'react';
+import BigNumber from 'bignumber.js';
 
 import TokenPicker from '../TokenPicker';
 
 import { Token } from '../TokenPicker/hooks';
 
+import { useSimplePrice } from '../../lib/tokenPrices';
 import { cleanInput } from './utils';
 
 import './TokenInputGroup.scss';
@@ -64,12 +66,19 @@ export default function TokenInputGroup({
     [onTokenChanged, exclusion]
   );
 
+  const { data: price } = useSimplePrice(token);
+  const secondaryValue =
+    relevantValue ||
+    (price !== undefined && value !== undefined
+      ? `$${new BigNumber(value).multipliedBy(price).toFixed(2)}`
+      : undefined);
+
   return (
     <div className={`${className || ''} token-input-group`}>
       {title && <h5 className="token-group-title">{title}</h5>}
       {maxValue && <span className="token-group-balance">{maxValue}</span>}
-      {relevantValue && (
-        <span className="token-group-value">{relevantValue}</span>
+      {secondaryValue && (
+        <span className="token-group-value">{secondaryValue}</span>
       )}
       <input
         type="text"
