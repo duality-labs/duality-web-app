@@ -1,4 +1,6 @@
 import useSWR from 'swr';
+import { useMemo } from 'react';
+
 import { Token } from '../components/TokenPicker/hooks';
 
 const baseAPI = 'https://api.coingecko.com/api/v3';
@@ -79,9 +81,14 @@ export function useSimplePrice(
 
   // return found results as numbers
   const results = tokenIDs.map((tokenID = '') => data?.[tokenID]?.[currencyID]);
+
+  // cache the found result array so it doesn't generate updates if the values are equal
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const cachedResults = useMemo(() => results, [...results]);
+
   return {
     // return array of results or singular result depending on how it was asked
-    data: Array.isArray(tokenOrTokens) ? results : results[0],
+    data: Array.isArray(tokenOrTokens) ? cachedResults : cachedResults[0],
     error,
     isValidating,
   };
