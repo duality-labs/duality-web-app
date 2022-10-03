@@ -67,7 +67,14 @@ export function useSimplePrice(
     tokenIDsString.length > 0
       ? `/simple/price?ids=${tokenIDsString}&vs_currencies=${currencyID}`
       : null,
-    fetcher
+    fetcher,
+    {
+      // refresh and refetch infrequently to stay below API limits
+      refreshInterval: 10000,
+      dedupingInterval: 10000,
+      focusThrottleInterval: 10000,
+      errorRetryInterval: 10000,
+    }
   );
 
   // return found results as numbers
