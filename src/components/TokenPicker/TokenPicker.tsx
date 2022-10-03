@@ -353,7 +353,7 @@ export default function TokenPicker({
     const balance =
       token?.token && balances ? getBalance(token.token, balances) : '0';
 
-    const price = userListPrices?.[token?.token.coingecko_id || '']['usd'];
+    const price = userListPrices?.[token?.token.coingecko_id || '']?.['usd'];
 
     function onClick() {
       selectToken(token?.token);
