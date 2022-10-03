@@ -21,6 +21,11 @@
     grid-row-start: 2;
     grid-row-end: 4;
     grid-row: 2 / 4;
+    row-gap: 2px;
+
+    .token-chain {
+      margin-bottom: -2px;
+    }
   }
 
   .token-group-title {
