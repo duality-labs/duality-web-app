@@ -12,7 +12,7 @@ import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
+import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { MsgSwap } from '../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
@@ -72,14 +72,12 @@ export default function Swap() {
     [tokenA, tokenB, valueAConverted, valueBConverted]
   );
 
-  const { data: balances } = useBankBalances();
+  const { data: balanceTokenA } = useBankBalance(tokenA);
   const valueAConvertedNumber = new BigNumber(valueAConverted || 0);
   const hasFormData =
     address && tokenA && tokenB && valueAConvertedNumber.isGreaterThan(0);
   const hasSufficientFunds =
-    (hasFormData &&
-      balances &&
-      valueAConvertedNumber.isLessThan(getBalance(tokenA, balances))) ||
+    (hasFormData && valueAConvertedNumber.isLessThan(balanceTokenA || 0)) ||
     false;
 
   const onFormSubmit = useCallback(
@@ -205,11 +203,7 @@ export default function Swap() {
                 : ''
             }
             exclusion={tokenB}
-            title={
-              tokenA && balances
-                ? `Available ${getBalance(tokenA, balances)}`
-                : ''
-            }
+            title={tokenA && balanceTokenA ? `Available ${balanceTokenA}` : ''}
           ></TokenInputGroup>
         </div>
         <div className="card-row my-2">
