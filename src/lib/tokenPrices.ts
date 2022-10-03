@@ -46,7 +46,7 @@ export function useSimplePrice(
 ): { data: number[]; error: FetchError | undefined; isValidating: boolean };
 export function useSimplePrice(
   tokenOrTokens: (Token | undefined) | (Token | undefined)[],
-  currencyID = 'USD'
+  currencyID = 'usd'
 ) {
   const tokens = Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
   const tokenIDs = tokens.map((token) => {
