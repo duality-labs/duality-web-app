@@ -377,7 +377,7 @@ export default function TokenPicker({
               <img
                 // in this context (small images) prefer PNGs over SVGs
                 // for reduced number of elements to be drawn in list
-                src={logos.png || logos.svg}
+                src={logos.svg || logos.png}
                 alt={`${symbol || 'Token'} logo`}
                 className="token-image"
               />
