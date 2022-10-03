@@ -87,24 +87,38 @@ export function useDeposit(): [
           setIsValidating(true);
           setError(undefined);
 
+          // do not make requests if they are not routable
+          if (!tokenA.address) {
+            throw new Error(
+              `Token ${tokenA.symbol} has no address on the Duality chain`
+            );
+          }
+          if (!tokenB.address) {
+            throw new Error(
+              `Token ${tokenB.symbol} has no address on the Duality chain`
+            );
+          }
+
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
           const res = await client.signAndBroadcast(
-            filteredUserTicks.map(([price, amount0, amount1]) =>
-              client.msgSingleDeposit({
-                creator: web3Address,
-                token0: tokenA.address,
-                token1: tokenB.address,
-                receiver: web3Address,
-                price: price.toFixed(denomExponent),
-                fee: fee.toFixed(denomExponent),
-                amounts0: amount0
-                  .shiftedBy(-denomShiftExponent)
-                  .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
-                amounts1: amount1
-                  .shiftedBy(-denomShiftExponent)
-                  .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
-              })
+            filteredUserTicks.flatMap(([price, amount0, amount1]) =>
+              tokenA.address && tokenB.address
+                ? client.msgSingleDeposit({
+                    creator: web3Address,
+                    token0: tokenA.address,
+                    token1: tokenB.address,
+                    receiver: web3Address,
+                    price: price.toFixed(denomExponent),
+                    fee: fee.toFixed(denomExponent),
+                    amounts0: amount0
+                      .shiftedBy(-denomShiftExponent)
+                      .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
+                    amounts1: amount1
+                      .shiftedBy(-denomShiftExponent)
+                      .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
+                  })
+                : []
             )
           );
 

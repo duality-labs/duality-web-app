@@ -325,7 +325,7 @@ export default function TokenPicker({
     const address = token?.token?.address;
     const symbol = token?.token?.symbol;
     const logos = token?.token?.logo_URIs;
-    const isDisabled = exclusion?.address === address;
+    const isDisabled = !!exclusion?.address && exclusion?.address === address;
     const balance =
       token?.token && balances ? getBalance(token.token, balances) : '0';
 
@@ -338,7 +338,7 @@ export default function TokenPicker({
     }
 
     return (
-      <li key={token?.token?.base}>
+      <li key={`${token?.token?.base}:${token?.token.chain.chain_name}`}>
         <data value={address}>
           <button
             type="button"
