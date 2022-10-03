@@ -206,9 +206,9 @@ export default function TokenPicker({
       const queryRegexText = searchQuery
         .trim()
         .toLowerCase()
-        .replace(/[.*\\{}[\]+$^]/gi, (char) => `\\${char}`)
-        .replace(/\s+/g, '\\s*')
-        .replace(/^["'](.*)["']$/, '$1'); // remove quotes
+        .replace(/\s+/g, ' ') //condense spaces
+        .replace(/^["']*(.*)["']*$/, '$1') // remove enclosing quotes
+        .replace(/[^a-z0-9 ]/gi, (char) => `\\${char}`); // whitelist ok chars
       const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
 
       setFilteredList(
