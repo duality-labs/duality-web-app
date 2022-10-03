@@ -37,9 +37,18 @@ interface CoinGeckoSimplePrice {
 }
 
 export function useSimplePrice(
+  token: Token | undefined,
+  currencyID?: string
+): { data: number; error: FetchError | undefined; isValidating: boolean };
+export function useSimplePrice(
   tokens: (Token | undefined)[],
+  currencyID?: string
+): { data: number[]; error: FetchError | undefined; isValidating: boolean };
+export function useSimplePrice(
+  tokenOrTokens: (Token | undefined) | (Token | undefined)[],
   currencyID = 'USD'
 ) {
+  const tokens = Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
   const tokenIDs = tokens.map((token) => {
     // note Coin Gecko ID warning for developers
     if (token && !token.coingecko_id) {
@@ -66,7 +75,8 @@ export function useSimplePrice(
   // return found results as numbers
   const results = tokenIDs.map((tokenID = '') => data?.[tokenID]?.[currencyID]);
   return {
-    data: results,
+    // return array of results or singular result depending on how it was asked
+    data: Array.isArray(tokenOrTokens) ? results : results[0],
     error,
     isValidating,
   };
