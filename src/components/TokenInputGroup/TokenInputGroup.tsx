@@ -5,6 +5,7 @@ import TokenPicker from '../TokenPicker';
 
 import { Token } from '../TokenPicker/hooks';
 
+import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { cleanInput } from './utils';
 
@@ -73,10 +74,25 @@ export default function TokenInputGroup({
       ? `$${new BigNumber(value).multipliedBy(price).toFixed(2)}`
       : undefined);
 
+  const { data: balance } = useBankBalance(token);
   return (
     <div className={`${className || ''} token-input-group`}>
       {title && <h5 className="token-group-title">{title}</h5>}
-      {maxValue && <span className="token-group-balance">{maxValue}</span>}
+      {!disabledInput && balance && Number(balance) > 0 && (
+        <span className="token-group-balance">
+          <button type="button" onClick={() => onValueChanged?.(balance)}>
+            MAX
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onValueChanged?.(new BigNumber(balance).dividedBy(2).toFixed())
+            }
+          >
+            HALF
+          </button>
+        </span>
+      )}
       <TokenPicker
         value={token}
         onChange={onPickerChange}

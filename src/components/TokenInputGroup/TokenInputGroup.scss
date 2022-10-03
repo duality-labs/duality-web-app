@@ -6,13 +6,14 @@
 
 .token-input-group {
   & {
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1.5rem 1rem;
     border-radius: 1rem;
     background-color: var(--token-group);
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr auto;
     color: var(--default-alt);
     display: grid;
+    row-gap: 2px;
   }
 
   .token-picker-toggle {
@@ -29,21 +30,27 @@
   }
 
   .token-group-title {
-    @include margins.margin('t', 0);
-    @include margins.margin('b', 2);
     grid-column: 1;
     font-size: font-size.$text-m;
     text-align: start;
     grid-row: 1;
     font-weight: normal;
+    align-self: center;
   }
 
   .token-group-balance {
-    font-family: font-family.$console;
     font-size: font-size.$text-m;
     grid-column: 2;
     grid-row: 1;
     text-align: end;
+    display: flex;
+    gap: paddings.$p-3;
+    margin-left: auto;
+
+    button {
+      border: 1px solid var(--default-alt);
+      padding: paddings.$p-0 paddings.$p-3 paddings.$p-0;
+    }
   }
 
   .token-group-value {
