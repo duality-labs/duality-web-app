@@ -41,11 +41,19 @@ interface CoinGeckoSimplePrice {
 export function useSimplePrice(
   token: Token | undefined,
   currencyID?: string
-): { data: number; error: FetchError | undefined; isValidating: boolean };
+): {
+  data: number | undefined;
+  error: FetchError | undefined;
+  isValidating: boolean;
+};
 export function useSimplePrice(
   tokens: (Token | undefined)[],
   currencyID?: string
-): { data: number[]; error: FetchError | undefined; isValidating: boolean };
+): {
+  data: (number | undefined)[];
+  error: FetchError | undefined;
+  isValidating: boolean;
+};
 export function useSimplePrice(
   tokenOrTokens: (Token | undefined) | (Token | undefined)[],
   currencyID = 'usd'
