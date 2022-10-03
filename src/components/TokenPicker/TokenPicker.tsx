@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import { Chain } from '@chain-registry/types';
 import BigNumber from 'bignumber.js';
 
 import { Token } from './hooks';
@@ -172,12 +173,28 @@ export default function TokenPicker({
             return tokenList;
         }
       })();
+      const chainsByPrettyName = list.reduce((result, token) => {
+        const name = token.chain.pretty_name;
+        // use set to ensure unique chains
+        const chains = result.get(name) || new Set<Chain>();
+        if (!chains.has(token.chain)) {
+          return result.set(token.chain.pretty_name, chains.add(token.chain));
+        }
+        return result;
+      }, new Map<string, Set<Chain>>());
+
+      function getChainName(token: Token) {
+        const chains = chainsByPrettyName.get(token.chain.pretty_name);
+        return (chains?.size || 0) > 1
+          ? `${token.chain.pretty_name} (${token.chain.chain_name})`
+          : token.chain.pretty_name;
+      }
 
       // if the query is empty return the full list
       if (!searchQuery) {
         return setFilteredList(
           list.map((token) => ({
-            chain: [token.chain.pretty_name ?? token.chain.chain_name],
+            chain: [getChainName(token)],
             symbol: [token.symbol],
             token,
           }))
@@ -203,7 +220,7 @@ export default function TokenPicker({
           .map(function (token) {
             // Split the symbol and name using the query (and include the query in the list)
             const symbolResult = token.symbol?.split(regexQuery) || [''];
-            const chainName = token.chain.pretty_name ?? token.chain.chain_name;
+            const chainName = getChainName(token);
             const nameResult = chainName?.split(regexQuery) || [''];
             return { chain: nameResult, symbol: symbolResult, token };
           })
