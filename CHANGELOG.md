@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.30](https://github.com/duality-labs/duality-web-app/compare/v0.1.29...v0.1.30) (2022-10-03)
+
+
+### Fixes
+
+* TokenPicker crash on bad characters by whitelisting good chars ([#150](https://github.com/duality-labs/duality-web-app/issues/150)) ([cbe1fff](https://github.com/duality-labs/duality-web-app/commit/cbe1fffb3fba6a41df0d648902c2335697766e25))
+
 ## [0.1.29](https://github.com/duality-labs/duality-web-app/compare/v0.1.28...v0.1.29) (2022-10-01)
 
 
