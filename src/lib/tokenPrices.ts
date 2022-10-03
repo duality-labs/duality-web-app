@@ -96,6 +96,7 @@ function useCombinedSimplePrices(
   );
 }
 
+const warned = new Set();
 export function useSimplePrices(
   tokens: (Token | undefined)[],
   currencyID = 'usd'
@@ -103,8 +104,14 @@ export function useSimplePrices(
   const tokenIDs = tokens.map((token) => {
     // note Coin Gecko ID warning for developers
     if (token && !token.coingecko_id) {
-      // eslint-disable-next-line no-console
-      console.warn(`Token ${token.name} (${token.symbol}) has no CoinGecko ID`);
+      const tokenID = `${token?.base}:${token?.chain.chain_name}`;
+      if (!warned.has(tokenID)) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `Token ${token.name} (${token.symbol}) has no CoinGecko ID`
+        );
+        warned.add(tokenID);
+      }
     }
     return token?.coingecko_id;
   });
