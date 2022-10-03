@@ -213,9 +213,13 @@ export default function TokenPicker({
       setFilteredList(
         list
           .filter((token) =>
-            [token.symbol, token.name, token.address].some(
-              (txt) => txt && regexQuery.test(txt)
-            )
+            [
+              token.symbol,
+              token.name,
+              token.address,
+              token.chain.pretty_name,
+              token.chain.chain_name,
+            ].some((txt) => txt && regexQuery.test(txt))
           )
           .map(function (token) {
             // Split the symbol and name using the query (and include the query in the list)
