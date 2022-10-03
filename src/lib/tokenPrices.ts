@@ -96,6 +96,22 @@ function useCombinedSimplePrices(
   );
 }
 
+export function useSimplePrices(
+  tokens: (Token | undefined)[],
+  currencyID = 'usd'
+) {
+  const tokenIDs = tokens.map((token) => {
+    // note Coin Gecko ID warning for developers
+    if (token && !token.coingecko_id) {
+      // eslint-disable-next-line no-console
+      console.warn(`Token ${token.name} (${token.symbol}) has no CoinGecko ID`);
+    }
+    return token?.coingecko_id;
+  });
+
+  return useCombinedSimplePrices(tokenIDs, currencyID);
+}
+
 export function useSimplePrice(
   token: Token | undefined,
   currencyID?: string
@@ -117,22 +133,13 @@ export function useSimplePrice(
   currencyID = 'usd'
 ) {
   const tokens = Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
-  const tokenIDs = tokens.map((token) => {
-    // note Coin Gecko ID warning for developers
-    if (token && !token.coingecko_id) {
-      // eslint-disable-next-line no-console
-      console.warn(`Token ${token.name} (${token.symbol}) has no CoinGecko ID`);
-    }
-    return token?.coingecko_id;
-  });
 
-  const { data, error, isValidating } = useCombinedSimplePrices(
-    tokenIDs,
-    currencyID
-  );
+  const { data, error, isValidating } = useSimplePrices(tokens, currencyID);
 
   // return found results as numbers
-  const results = tokenIDs.map((tokenID = '') => data?.[tokenID]?.[currencyID]);
+  const results = tokens.map(
+    (token) => data?.[token?.coingecko_id ?? '']?.[currencyID]
+  );
 
   // cache the found result array so it doesn't generate updates if the values are equal
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -13,11 +13,12 @@ import { Chain } from '@chain-registry/types';
 import BigNumber from 'bignumber.js';
 
 import { Token } from './hooks';
+import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
+import { useSimplePrices } from '../../lib/tokenPrices';
 
 import Dialog from '../Dialog/Dialog';
 
 import './TokenPicker.scss';
-import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 
 interface TokenResult {
   symbol: Array<string>;
@@ -235,6 +236,8 @@ export default function TokenPicker({
     [tokenList, userList, assetMode, searchQuery]
   );
 
+  const { data: userListPrices } = useSimplePrices(userList);
+
   const [movingAssetRef, createRefForValue] =
     useSelectedButtonBackgroundMove(assetMode);
   return (
@@ -350,6 +353,8 @@ export default function TokenPicker({
     const balance =
       token?.token && balances ? getBalance(token.token, balances) : '0';
 
+    const price = userListPrices?.[token?.token.coingecko_id || '']['usd'];
+
     function onClick() {
       selectToken(token?.token);
     }
@@ -401,7 +406,13 @@ export default function TokenPicker({
             ) : (
               <>
                 <span className="token-balance">{balance}</span>
-                <span className="token-value"></span>
+                <span className="token-value">
+                  {price
+                    ? `$${new BigNumber(price)
+                        .multipliedBy(balance)
+                        .toFixed(2)}`
+                    : null}
+                </span>
               </>
             )}
           </button>
