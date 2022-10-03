@@ -1,5 +1,5 @@
 import useSWR from 'swr';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { Token } from '../components/TokenPicker/hooks';
 
@@ -38,6 +38,64 @@ interface CoinGeckoSimplePrice {
   };
 }
 
+const currentTokenRequests: [tokenID: string, currencyID: string][][] = [];
+function useCombinedSimplePrices(
+  tokenIDs: (string | undefined)[],
+  currencyID: string
+) {
+  const tokenIDsString = tokenIDs.filter(Boolean).join(',');
+
+  // synchronize hook with global state
+  useEffect(() => {
+    if (tokenIDsString && currencyID) {
+      const request = tokenIDsString.split(',').map((tokenID) => {
+        return [tokenID, currencyID] as [tokenID: string, currencyID: string];
+      });
+      // add tokens
+      currentTokenRequests.push(request);
+      return () => {
+        // remove old tokens
+        const index = currentTokenRequests.findIndex(
+          (thisRequest) => thisRequest === request
+        );
+        currentTokenRequests.splice(index, 1);
+      };
+    }
+  }, [tokenIDsString, currencyID]);
+
+  // get all current unique request IDs
+  const currentIDs = currentTokenRequests.reduce(
+    (result, currentTokenRequest) => {
+      currentTokenRequest.forEach(([tokenID, currencyID]) => {
+        result.tokenIDs.add(tokenID);
+        result.currencyIDs.add(currencyID);
+      });
+      return result;
+    },
+    { tokenIDs: new Set(), currencyIDs: new Set() }
+  );
+  // consdense out ID values into array strings
+  const allTokenIDsString = Array.from(currentIDs.tokenIDs.values()).join(',');
+  const allCurrencyIDsString = Array.from(currentIDs.currencyIDs.values()).join(
+    ','
+  );
+
+  // create query with all current combinations
+  return useSWR<CoinGeckoSimplePrice, FetchError>(
+    allTokenIDsString.length && allCurrencyIDsString.length > 0
+      ? `/simple/price?ids=${allTokenIDsString}&vs_currencies=${allCurrencyIDsString}`
+      : null,
+    fetcher,
+    {
+      // refresh and refetch infrequently to stay below API limits
+      refreshInterval: 10000,
+      dedupingInterval: 10000,
+      focusThrottleInterval: 10000,
+      errorRetryInterval: 10000,
+    }
+  );
+}
+
 export function useSimplePrice(
   token: Token | undefined,
   currencyID?: string
@@ -68,23 +126,9 @@ export function useSimplePrice(
     return token?.coingecko_id;
   });
 
-  const tokenIDsString = tokenIDs.filter(Boolean).join(',');
-
-  const { data, error, isValidating } = useSWR<
-    CoinGeckoSimplePrice,
-    FetchError
-  >(
-    tokenIDsString.length > 0
-      ? `/simple/price?ids=${tokenIDsString}&vs_currencies=${currencyID}`
-      : null,
-    fetcher,
-    {
-      // refresh and refetch infrequently to stay below API limits
-      refreshInterval: 10000,
-      dedupingInterval: 10000,
-      focusThrottleInterval: 10000,
-      errorRetryInterval: 10000,
-    }
+  const { data, error, isValidating } = useCombinedSimplePrices(
+    tokenIDs,
+    currencyID
   );
 
   // return found results as numbers
