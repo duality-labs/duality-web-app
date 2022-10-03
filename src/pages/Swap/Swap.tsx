@@ -239,7 +239,6 @@ export default function Swap() {
                 : ''
             }
             exclusion={tokenA}
-            disabledInput={true}
           ></TokenInputGroup>
         </div>
         <div className="card-row text-detail">
