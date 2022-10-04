@@ -21,6 +21,7 @@ import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import { formatPrice } from '../../lib/bignumber.utils';
+import { cleanInput } from '../../components/TokenInputGroup/utils';
 
 import './Swap.scss';
 
@@ -366,6 +367,7 @@ export default function Swap() {
             type="text"
             className="font-console ml-auto"
             value={slippage}
+            onInput={(e) => cleanInput(e.currentTarget, '%')}
             onChange={(e) => setSlippage(e.target.value)}
           />
           <button
