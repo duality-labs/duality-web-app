@@ -23,7 +23,7 @@ $light-alt: core.$light-white;
 $link: transparent;
 $link-alt: core.$light-white;
 
-$bg: conic-gradient(
+$bg: #fff conic-gradient(
   from 120deg at 50% 100%,
   core.$bg-light 0deg,
   rgba(core.$bg-dark, 80%) 180deg,

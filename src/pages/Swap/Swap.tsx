@@ -5,6 +5,8 @@ import {
   faBolt,
   faFlag,
   faArrowRightArrowLeft,
+  faSliders,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
@@ -22,6 +24,7 @@ import { formatPrice } from '../../lib/bignumber.utils';
 
 import './Swap.scss';
 
+type CardType = 'trade' | 'settings';
 type OrderType = 'market' | 'limit';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
@@ -109,6 +112,7 @@ export default function Swap() {
     setLastUpdatedA(false);
   }, []);
 
+  const [cardType, setCardType] = useState<CardType>('trade');
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [rateTokenOrderAuto, setRateTokenOrderAuto] =
     useState<[Token, Token]>();
@@ -154,10 +158,19 @@ export default function Swap() {
     }
   }, [tokenA, tokenB]);
 
-  return (
-    <form onSubmit={onFormSubmit} className="page swap-page">
+  const tradeCard = (
+    <div className="trade-card">
       <div className="page-card">
-        <h3 className="card-title mb-3 mr-auto">Trade</h3>
+        <div className="row mb-3">
+          <h3 className="card-title">Trade</h3>
+          <button
+            className="icon-button ml-auto"
+            type="button"
+            onClick={() => setCardType('settings')}
+          >
+            <FontAwesomeIcon icon={faSliders}></FontAwesomeIcon>
+          </button>
+        </div>
         <div className="card-row order-type mb-5">
           <RadioButtonGroupInput<OrderType>
             className="order-type-input"
@@ -322,6 +335,34 @@ export default function Swap() {
           )}
         </div>
       </div>
+    </div>
+  );
+
+  const settingsCard = (
+    <div
+      className={[
+        'settings-card',
+        `settings-card--${cardType === 'settings' ? 'visible' : 'hidden'}`,
+      ].join(' ')}
+    >
+      <div className="page-card">
+        <div className="row mb-3">
+          <h3 className="card-title">Settings</h3>
+          <button
+            className="icon-button ml-auto"
+            type="button"
+            onClick={() => setCardType('trade')}
+          >
+            <FontAwesomeIcon icon={faXmark}></FontAwesomeIcon>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+  return (
+    <form onSubmit={onFormSubmit} className="page swap-page">
+      {tradeCard}
+      {settingsCard}
     </form>
   );
 }
