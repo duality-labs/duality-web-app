@@ -76,8 +76,8 @@ export function cleanInput(dom: HTMLInputElement, append = '') {
   // special case, fully empty text
   if (!value) {
     result = '0';
-    selectionStart = 0;
-    selectionEnd = 0;
+    selectionStart = 1;
+    selectionEnd = 1;
   }
 
   dom.value = `${result}${append}`;
