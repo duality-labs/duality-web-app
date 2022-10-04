@@ -1,10 +1,13 @@
 /**
  * Clear invalid characters from the input
  * @param {HTMLInputElement} dom input element
+ * @param {String} append optional string to always be appended to number
  * @returns {HTMLInputElement}
  */
-export function cleanInput(dom: HTMLInputElement) {
-  const value = dom.value;
+export function cleanInput(dom: HTMLInputElement, append = '') {
+  const value = dom.value.endsWith(append)
+    ? dom.value.slice(0, dom.value.length - append.length)
+    : dom.value;
   let selectionStart = dom.selectionStart ?? value.length;
   let selectionEnd = dom.selectionEnd ?? value.length;
   let firstDigitFound = false;
@@ -13,7 +16,7 @@ export function cleanInput(dom: HTMLInputElement) {
 
   // special case (0|0)
   if (value === '00' && selectionStart === 1 && selectionEnd === 1) {
-    dom.value = '0';
+    dom.value = `0${append}`;
     dom.selectionStart = 1;
     dom.selectionEnd = 1;
     return dom;
@@ -49,7 +52,7 @@ export function cleanInput(dom: HTMLInputElement) {
   result = result.replace(/\.$/, function (text: string, index: number) {
     if (index > selectionStart) selectionStart += 1;
     if (index > selectionEnd) selectionEnd += 1;
-    return text + '0';
+    return `${text}0`;
   });
 
   // remove leading zeros
@@ -77,7 +80,7 @@ export function cleanInput(dom: HTMLInputElement) {
     selectionEnd = 0;
   }
 
-  dom.value = result;
+  dom.value = `${result}${append}`;
   dom.selectionStart = selectionStart;
   dom.selectionEnd = selectionEnd;
   return dom;
