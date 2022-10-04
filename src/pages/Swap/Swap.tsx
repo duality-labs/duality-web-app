@@ -30,6 +30,7 @@ type OrderType = 'market' | 'limit';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
+const defaultSlippage = '0.5%';
 
 export default function Swap() {
   const { address, connectWallet } = useWeb3();
@@ -84,6 +85,8 @@ export default function Swap() {
     (hasFormData && valueAConvertedNumber.isLessThan(balanceTokenA || 0)) ||
     false;
 
+  const [slippage, setSlippage] = useState(defaultSlippage);
+
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
@@ -91,6 +94,7 @@ export default function Swap() {
         // convert to swap request format
         const result = routerResult;
         // Cosmos requires tokens in integer format of smallest denomination
+        // todo: add slippage tolerance setting into API request
         setSwapRequest({
           amountIn: result.amountIn.toFixed(denomExponent),
           tokenIn: result.tokenIn,
@@ -361,7 +365,7 @@ export default function Swap() {
       ].join(' ')}
     >
       <div className="page-card">
-        <div className="row mb-3">
+        <div className="row mb-4">
           <h3 className="card-title">Settings</h3>
           <button
             className="icon-button ml-auto"
@@ -369,6 +373,22 @@ export default function Swap() {
             onClick={() => setCardType('trade')}
           >
             <FontAwesomeIcon icon={faXmark}></FontAwesomeIcon>
+          </button>
+        </div>
+        <div className="row mb-3">
+          <h4 className="card-title">Max Slippage</h4>
+          <input
+            type="text"
+            className="font-console ml-auto"
+            value={slippage}
+            onChange={(e) => setSlippage(e.target.value)}
+          />
+          <button
+            type="button"
+            className="button-info ml-2"
+            onClick={() => setSlippage(defaultSlippage)}
+          >
+            Auto
           </button>
         </div>
       </div>
