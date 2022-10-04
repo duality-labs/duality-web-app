@@ -1,5 +1,7 @@
 @use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
 @use '../../styles/mixins-vars/animations.scss' as animations;
+@use '../../styles/theme/core.scss' as core;
 
 .swap-page {
   & {
@@ -11,6 +13,11 @@
   h3.card-title {
     font-weight: 400;
     font-size: 1.5rem;
+  }
+
+  h4.card-title {
+    font-weight: 400;
+    font-size: 1.25rem;
   }
 
   .card-row {
@@ -75,6 +82,24 @@
     }
     &.settings-card--visible {
       left: 0%;
+    }
+
+    .row + .row {
+      gap: margins.$m-2;
+
+      input {
+        color: core.$dark-gray;
+        background-color: core.$black;
+        padding: paddings.$p-2 paddings.$p-4;
+        border: none;
+        border-radius: paddings.$p-3;
+        width: 6ch;
+        text-align: center;
+      }
+
+      button {
+        padding: paddings.$p-2 paddings.$p-4;
+      }
     }
   }
 }
