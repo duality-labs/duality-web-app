@@ -86,10 +86,14 @@ export function calculateOut({
         amountLeft = amountLeft.minus(amountInTraded);
         amountOut = amountOut.plus(reservesOut);
         if (amountLeft.isEqualTo(0)) return amountOut;
-        if (amountLeft.isLessThan(0))
-          throw new Error(
-            'Error while calculating amount out (negative amount)'
-          );
+        if (amountLeft.isLessThan(0)) {
+          const error: Error & {
+            insufficientLiquidityIn?: boolean;
+            insufficientLiquidityOut?: boolean;
+          } = new Error('Error while calculating amount out (negative amount)');
+          error.insufficientLiquidityIn = true;
+          throw error;
+        }
       } else {
         return amountOut.plus(maxOut);
       }
