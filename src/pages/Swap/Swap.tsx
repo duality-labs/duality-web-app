@@ -80,7 +80,8 @@ export default function Swap() {
   const hasFormData =
     address && tokenA && tokenB && valueAConvertedNumber.isGreaterThan(0);
   const hasSufficientFunds =
-    (hasFormData && valueAConvertedNumber.isLessThan(balanceTokenA || 0)) ||
+    (hasFormData &&
+      valueAConvertedNumber.isLessThanOrEqualTo(balanceTokenA || 0)) ||
     false;
 
   const [slippage, setSlippage] = useState(defaultSlippage);
