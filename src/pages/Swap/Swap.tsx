@@ -392,7 +392,12 @@ export default function Swap() {
     </div>
   );
   return (
-    <form onSubmit={onFormSubmit} className="page swap-page">
+    <form
+      onSubmit={onFormSubmit}
+      className={['page swap-page', isValidatingSwap && 'disabled']
+        .filter(Boolean)
+        .join(' ')}
+    >
       {tradeCard}
       {settingsCard}
     </form>
