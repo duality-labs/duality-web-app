@@ -3,7 +3,7 @@ import { assertIsDeliverTxSuccess } from '@cosmjs/stargate';
 import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 import { useToast, CreateToastFnReturn } from '@chakra-ui/toast';
-import { Spinner, Text } from '@chakra-ui/react';
+import { Link, Spinner, Text } from '@chakra-ui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faXmark } from '@fortawesome/free-solid-svg-icons';
 
@@ -15,6 +15,8 @@ import {
   MsgSwap,
   MsgSwapResponse,
 } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
+
+const { REACT_APP__REST_API } = process.env;
 
 // standard error codes can be found in https://github.com/cosmos/cosmos-sdk/blob/v0.45.4/types/errors/errors.go
 // however custom modules may register additional error codes
@@ -65,7 +67,7 @@ function sendSwap(
         });
 
         assertIsDeliverTxSuccess(res);
-        const { code, gasUsed, rawLog } = res;
+        const { code, gasUsed, rawLog, transactionHash } = res;
         if (code === REQUEST_SUCCESS) {
           resolve({
             amountIn,
@@ -88,10 +90,19 @@ function sendSwap(
                   />
                 }
                 title="Transaction Successful"
+                description={
+                  <Link
+                    href={`${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`}
+                    target="_blank"
+                  >
+                    View more details
+                  </Link>
+                }
                 close={toast.close}
               />
             ),
             status: 'success',
+            duration: 15000,
             isClosable: true,
           });
         } else {
