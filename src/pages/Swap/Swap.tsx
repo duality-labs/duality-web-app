@@ -205,7 +205,9 @@ export default function Swap() {
         </div>
         <div className="card-row">
           <TokenInputGroup
-            variant={!hasSufficientFunds && 'error'}
+            variant={
+              (!hasSufficientFunds || error?.insufficientLiquidityIn) && 'error'
+            }
             onValueChanged={onValueAChanged}
             onTokenChanged={setTokenA}
             tokenList={tokenList}
@@ -236,6 +238,7 @@ export default function Swap() {
         </div>
         <div className="card-row mb-4">
           <TokenInputGroup
+            variant={error?.insufficientLiquidityOut && 'error'}
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}
             tokenList={tokenList}
