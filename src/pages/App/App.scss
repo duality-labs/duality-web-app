@@ -15,7 +15,7 @@ body,
 
 main,
 .main-area {
-  display: flex;
+  display: flex !important; // ChakraUI sets <main> display to block?
   flex-direction: column;
   align-items: center;
   justify-content: center;
