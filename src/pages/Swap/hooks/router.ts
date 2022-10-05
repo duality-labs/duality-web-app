@@ -28,25 +28,55 @@ export function router(
       return result.plus(forward ? tick.reserve0 : tick.reserve1);
     }, new BigNumber(0));
     const amountIn = new BigNumber(value0);
+
+    let error:
+      | (Error & {
+          insufficientLiquidityIn?: boolean;
+          insufficientLiquidityOut?: boolean;
+        })
+      | false = false;
+
     if (amountIn.isGreaterThan(maxIn)) {
-      const error: Error & {
-        insufficientLiquidityIn?: boolean;
-        insufficientLiquidityOut?: boolean;
-      } = new Error('Not enough tick liquidity found to match trade');
+      error = new Error('Not enough tick liquidity found to match trade');
       error.insufficientLiquidityIn = true;
-      throw error;
     }
-    return {
-      amountIn: amountIn,
-      tokenIn: tokenA,
-      tokenOut: tokenB,
-      amountOut: calculateOut({
+
+    try {
+      const amountOut = calculateOut({
         tokenIn: tokenA,
         tokenOut: tokenB,
         amountIn: amountIn,
         sortedTicks,
-      }),
-    };
+      });
+      const maxOut = sortedTicks.reduce((result, tick) => {
+        return result.plus(reverse ? tick.reserve0 : tick.reserve1);
+      }, new BigNumber(0));
+
+      if (amountOut.isGreaterThan(maxOut)) {
+        if (!error) {
+          error = new Error('Not enough tick liquidity found to match trade');
+        }
+        error.insufficientLiquidityOut = true;
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        amountIn: amountIn,
+        tokenIn: tokenA,
+        tokenOut: tokenB,
+        amountOut: calculateOut({
+          tokenIn: tokenA,
+          tokenOut: tokenB,
+          amountIn: amountIn,
+          sortedTicks,
+        }),
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 }
 
