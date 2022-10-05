@@ -115,7 +115,7 @@ export function useSwap(): [
   const [error, setError] = useState<string>();
   const web3 = useWeb3();
 
-  const toast = useToast();
+  const toast = useToast({ position: 'top-right' });
 
   const sendRequest = useCallback(
     (request: MsgSwap) => {

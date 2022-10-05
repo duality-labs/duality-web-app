@@ -22,6 +22,8 @@ function App() {
           theme={theme}
           toastOptions={{
             portalProps: { containerRef: toastPortalRef },
+            // the defaultOptions aren't actually applied
+            // open issues in https://github.com/chakra-ui/chakra-ui/issues/6370
             defaultOptions: { position: 'top-right' },
           }}
         >
