@@ -138,6 +138,30 @@ function sendSwap(
             status: 'info',
             isClosable: true,
           });
+        } else if (err?.response?.code === 11) {
+          const { gasUsed, gasWanted, transactionHash } = err?.response;
+          toast({
+            render: ({ id }) => (
+              <Toast
+                id={id}
+                icon={<Text fontSize="4xl">🚗</Text>}
+                title="Transaction Failed"
+                description={
+                  <Link
+                    href={`${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`}
+                    target="_blank"
+                  >
+                    Out of gas (used: {gasUsed.toLocaleString('en-US')} wanted:{' '}
+                    {gasWanted.toLocaleString('en-US')})
+                  </Link>
+                }
+                close={toast.close}
+              />
+            ),
+            status: 'error',
+            duration: null,
+            isClosable: true,
+          });
         } else {
           const { transactionHash } = err?.response || {};
           toast({
