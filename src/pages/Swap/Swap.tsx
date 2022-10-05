@@ -13,7 +13,7 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
-import { useSimplePrice } from '../../lib/tokenPrices';
+import { useHasPriceData } from '../../lib/tokenPrices';
 import { MsgSwap } from '../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
@@ -155,7 +155,7 @@ export default function Swap() {
     }
   }, [tokenA, tokenB]);
 
-  const hasPriceData = useSimplePrice([tokenA, tokenB]).data.some(Boolean);
+  const hasPriceData = useHasPriceData([tokenA, tokenB]);
 
   return (
     <form onSubmit={onFormSubmit} className="page swap-page">

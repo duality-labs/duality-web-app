@@ -163,3 +163,11 @@ export function useSimplePrice(
     isValidating,
   };
 }
+
+export function useHasPriceData(
+  tokens: (Token | undefined)[],
+  currencyID = 'usd'
+) {
+  const { data, isValidating } = useSimplePrice(tokens, currencyID);
+  return isValidating || data.some(Boolean);
+}

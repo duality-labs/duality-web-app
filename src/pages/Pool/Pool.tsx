@@ -15,7 +15,7 @@ import {
   useBankBalances,
   useIndexerPairData,
 } from '../../lib/web3/indexerProvider';
-import { useSimplePrice } from '../../lib/tokenPrices';
+import { useHasPriceData } from '../../lib/tokenPrices';
 
 import RadioInput from '../../components/RadioInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -391,7 +391,7 @@ export default function Pool() {
     setUserTicks,
   ]);
 
-  const hasPriceData = useSimplePrice([tokenA, tokenB]).data.some(Boolean);
+  const hasPriceData = useHasPriceData([tokenA, tokenB]);
 
   const [editingFee, setEditingFee] = useState(false);
   const { data: balances } = useBankBalances();
