@@ -9,14 +9,16 @@ import {
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import { Chain } from '@chain-registry/types';
 import BigNumber from 'bignumber.js';
 
 import { Token } from './hooks';
+import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
+import { useSimplePrices } from '../../lib/tokenPrices';
 
 import Dialog from '../Dialog/Dialog';
 
 import './TokenPicker.scss';
-import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 
 interface TokenResult {
   symbol: Array<string>;
@@ -172,12 +174,28 @@ export default function TokenPicker({
             return tokenList;
         }
       })();
+      const chainsByPrettyName = list.reduce((result, token) => {
+        const name = token.chain.pretty_name;
+        // use set to ensure unique chains
+        const chains = result.get(name) || new Set<Chain>();
+        if (!chains.has(token.chain)) {
+          return result.set(token.chain.pretty_name, chains.add(token.chain));
+        }
+        return result;
+      }, new Map<string, Set<Chain>>());
+
+      function getChainName(token: Token) {
+        const chains = chainsByPrettyName.get(token.chain.pretty_name);
+        return (chains?.size || 0) > 1
+          ? `${token.chain.pretty_name} (${token.chain.chain_name})`
+          : token.chain.pretty_name;
+      }
 
       // if the query is empty return the full list
       if (!searchQuery) {
         return setFilteredList(
           list.map((token) => ({
-            chain: [token.chain.pretty_name ?? token.chain.chain_name],
+            chain: [getChainName(token)],
             symbol: [token.symbol],
             token,
           }))
@@ -196,14 +214,18 @@ export default function TokenPicker({
       setFilteredList(
         list
           .filter((token) =>
-            [token.symbol, token.name, token.address].some(
-              (txt) => txt && regexQuery.test(txt)
-            )
+            [
+              token.symbol,
+              token.name,
+              token.address,
+              token.chain.pretty_name,
+              token.chain.chain_name,
+            ].some((txt) => txt && regexQuery.test(txt))
           )
           .map(function (token) {
             // Split the symbol and name using the query (and include the query in the list)
             const symbolResult = token.symbol?.split(regexQuery) || [''];
-            const chainName = token.chain.pretty_name ?? token.chain.chain_name;
+            const chainName = getChainName(token);
             const nameResult = chainName?.split(regexQuery) || [''];
             return { chain: nameResult, symbol: symbolResult, token };
           })
@@ -213,6 +235,8 @@ export default function TokenPicker({
     },
     [tokenList, userList, assetMode, searchQuery]
   );
+
+  const { data: userListPrices } = useSimplePrices(userList);
 
   const [movingAssetRef, createRefForValue] =
     useSelectedButtonBackgroundMove(assetMode);
@@ -325,9 +349,11 @@ export default function TokenPicker({
     const address = token?.token?.address;
     const symbol = token?.token?.symbol;
     const logos = token?.token?.logo_URIs;
-    const isDisabled = exclusion?.address === address;
+    const isDisabled = !!exclusion?.address && exclusion?.address === address;
     const balance =
       token?.token && balances ? getBalance(token.token, balances) : '0';
+
+    const price = userListPrices?.[token?.token.coingecko_id || '']?.['usd'];
 
     function onClick() {
       selectToken(token?.token);
@@ -338,7 +364,7 @@ export default function TokenPicker({
     }
 
     return (
-      <li key={token?.token?.base}>
+      <li key={`${token?.token?.base}:${token?.token.chain.chain_name}`}>
         <data value={address}>
           <button
             type="button"
@@ -356,7 +382,7 @@ export default function TokenPicker({
               <img
                 // in this context (small images) prefer PNGs over SVGs
                 // for reduced number of elements to be drawn in list
-                src={logos.png || logos.svg}
+                src={logos.svg || logos.png}
                 alt={`${symbol || 'Token'} logo`}
                 className="token-image"
               />
@@ -380,7 +406,13 @@ export default function TokenPicker({
             ) : (
               <>
                 <span className="token-balance">{balance}</span>
-                <span className="token-value"></span>
+                <span className="token-value">
+                  {price
+                    ? `$${new BigNumber(price)
+                        .multipliedBy(balance)
+                        .toFixed(2)}`
+                    : null}
+                </span>
               </>
             )}
           </button>

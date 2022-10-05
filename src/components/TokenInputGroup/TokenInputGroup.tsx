@@ -1,9 +1,12 @@
 import React, { useCallback } from 'react';
+import BigNumber from 'bignumber.js';
 
 import TokenPicker from '../TokenPicker';
 
 import { Token } from '../TokenPicker/hooks';
 
+import { useBankBalance } from '../../lib/web3/indexerProvider';
+import { useSimplePrice } from '../../lib/tokenPrices';
 import { cleanInput } from './utils';
 
 import './TokenInputGroup.scss';
@@ -64,13 +67,39 @@ export default function TokenInputGroup({
     [onTokenChanged, exclusion]
   );
 
+  const { data: price } = useSimplePrice(token);
+  const secondaryValue =
+    relevantValue ||
+    (price !== undefined && value !== undefined
+      ? `$${new BigNumber(value).multipliedBy(price).toFixed(2)}`
+      : undefined);
+
+  const { data: balance } = useBankBalance(token);
   return (
     <div className={`${className || ''} token-input-group`}>
       {title && <h5 className="token-group-title">{title}</h5>}
-      {maxValue && <span className="token-group-balance">{maxValue}</span>}
-      {relevantValue && (
-        <span className="token-group-value">{relevantValue}</span>
+      {!disabledInput && balance && Number(balance) > 0 && (
+        <span className="token-group-balance">
+          <button type="button" onClick={() => onValueChanged?.(balance)}>
+            MAX
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onValueChanged?.(new BigNumber(balance).dividedBy(2).toFixed())
+            }
+          >
+            HALF
+          </button>
+        </span>
       )}
+      <TokenPicker
+        value={token}
+        onChange={onPickerChange}
+        tokenList={tokenList}
+        exclusion={exclusion}
+        disabled={disabledToken}
+      />
       <input
         type="text"
         className={[
@@ -100,13 +129,7 @@ export default function TokenInputGroup({
             : { width: `${placeholder.length}ch` }
         }
       />
-      <TokenPicker
-        value={token}
-        onChange={onPickerChange}
-        tokenList={tokenList}
-        exclusion={exclusion}
-        disabled={disabledToken}
-      />
+      <span className="token-group-value">{secondaryValue}</span>
     </div>
   );
 }

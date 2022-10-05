@@ -20,6 +20,21 @@
   color: var(--text-default);
   flex-direction: column;
   display: flex;
+  position: relative;
+
+  .attribution {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: fit-content;
+    margin: 0 auto;
+    justify-content: center;
+    padding: paddings.$p-1 paddings.$p-4;
+    background-color: rgba(white, 0.1);
+    border-top-left-radius: paddings.$p-3;
+    border-top-right-radius: paddings.$p-3;
+  }
 }
 
 .card-row {

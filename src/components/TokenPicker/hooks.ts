@@ -12,7 +12,6 @@ const {
 
 // filter to only those with real address and chain
 export interface Token extends Asset {
-  address: string;
   chain: Chain;
 }
 type TokenList = Array<Token>;
@@ -87,15 +86,7 @@ function getTokens(condition: (chain: Chain) => boolean) {
         // add each asset with the parent chain details
         const chain = chains.find((chain) => chain.chain_name === chain_name);
         return chain && condition(chain)
-          ? result.concat(
-              assets.flatMap(
-                // ensure only existing address tokens are added
-                (asset) =>
-                  asset.address
-                    ? { ...asset, address: asset.address, chain }
-                    : []
-              )
-            )
+          ? result.concat(assets.map((asset) => ({ ...asset, chain })))
           : result;
       }, [])
       // add Duality chain tokens
