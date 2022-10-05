@@ -16,7 +16,6 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useHasPriceData } from '../../lib/tokenPrices';
-import { MsgSwap } from '../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -57,12 +56,10 @@ export default function Swap() {
       valueB: lastUpdatedA ? undefined : valueB,
     });
   const rateData = getRouterEstimates(pairRequest, routerResult);
-  const [swapRequest, setSwapRequest] = useState<MsgSwap>();
-  const {
-    data: swapResponse,
-    isValidating: isValidatingSwap,
-    error: swapError,
-  } = useSwap(swapRequest);
+  const [
+    { data: swapResponse, isValidating: isValidatingSwap, error: swapError },
+    swapRequest,
+  ] = useSwap();
 
   const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
   const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
@@ -96,7 +93,7 @@ export default function Swap() {
         const result = routerResult;
         // Cosmos requires tokens in integer format of smallest denomination
         // todo: add slippage tolerance setting into API request
-        setSwapRequest({
+        swapRequest({
           amountIn: result.amountIn.toFixed(denomExponent),
           tokenIn: result.tokenIn,
           tokenOut: result.tokenOut,
@@ -106,7 +103,7 @@ export default function Swap() {
         });
       }
     },
-    [address, routerResult]
+    [address, routerResult, swapRequest]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
@@ -300,9 +297,7 @@ export default function Swap() {
               </div>
             )}
         </div>
-        {swapRequest && swapError && (
-          <div className="text-error card-row">{swapError}</div>
-        )}
+        {swapError && <div className="text-error card-row">{swapError}</div>}
         {!isValidatingSwap && swapResponse && (
           <div className="text-secondary card-row">
             Swapped {valueAConverted} {tokenA?.address} for {valueBConverted}{' '}
