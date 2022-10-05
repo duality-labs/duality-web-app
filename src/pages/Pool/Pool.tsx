@@ -15,6 +15,7 @@ import {
   useBankBalances,
   useIndexerPairData,
 } from '../../lib/web3/indexerProvider';
+import { useSimplePrice } from '../../lib/tokenPrices';
 
 import RadioInput from '../../components/RadioInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -390,6 +391,8 @@ export default function Pool() {
     setUserTicks,
   ]);
 
+  const hasPriceData = useSimplePrice([tokenA, tokenB]).data.some(Boolean);
+
   const [editingFee, setEditingFee] = useState(false);
   const { data: balances } = useBankBalances();
 
@@ -485,6 +488,18 @@ export default function Pool() {
               </div>
             )}
           </div>
+          {hasPriceData && (
+            <div className="attribution">
+              Price data from{' '}
+              <a
+                target="_blank"
+                rel="noreferrer"
+                href="https://www.coingecko.com/"
+              >
+                CoinGecko
+              </a>
+            </div>
+          )}
         </div>
       </form>
     );
