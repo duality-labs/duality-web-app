@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { assertIsDeliverTxSuccess } from '@cosmjs/stargate';
+import { assertIsDeliverTxSuccess, DeliverTxResponse } from '@cosmjs/stargate';
 import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 import { useToast, CreateToastFnReturn } from '@chakra-ui/toast';
@@ -66,7 +66,15 @@ function sendSwap(
           isClosable: true,
         });
 
-        assertIsDeliverTxSuccess(res);
+        try {
+          assertIsDeliverTxSuccess(res);
+        } catch {
+          const error: Error & { response?: DeliverTxResponse } = new Error(
+            `Tx error: ${res.code}`
+          );
+          error.response = res;
+          return reject(error);
+        }
         const { code, gasUsed, rawLog, transactionHash } = res;
         if (code === REQUEST_SUCCESS) {
           resolve({
@@ -108,11 +116,15 @@ function sendSwap(
         } else {
           // eslint-disable-next-line
           console.warn(`Failed to send tx (code: ${code}): ${rawLog}`);
-          return reject(new Error(`Tx error: ${code}`));
+          const error: Error & { response?: DeliverTxResponse } = new Error(
+            `Tx error: ${code}`
+          );
+          error.response = res;
+          return reject(error);
         }
       })
-      .catch(function (err: Error) {
-        if (err?.message.includes('rejected')) {
+      .catch(function (err: Error & { response?: DeliverTxResponse }) {
+        if (!err.response && err?.message.includes('rejected')) {
           toast({
             render: ({ id }) => (
               <Toast
@@ -127,13 +139,25 @@ function sendSwap(
             isClosable: true,
           });
         } else {
+          const { transactionHash } = err?.response || {};
           toast({
             render: ({ id }) => (
               <Toast
                 id={id}
                 icon={<Text fontSize="4xl">🤔</Text>}
                 title="Transaction Failed"
-                description="Something went wrong, please try again"
+                description={
+                  transactionHash ? (
+                    <Link
+                      href={`${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`}
+                      target="_blank"
+                    >
+                      Something went wrong, please try again
+                    </Link>
+                  ) : (
+                    'Something went wrong, please try again'
+                  )
+                }
                 close={toast.close}
               />
             ),
