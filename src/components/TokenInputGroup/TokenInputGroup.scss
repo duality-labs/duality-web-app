@@ -16,6 +16,13 @@
     row-gap: 2px;
   }
 
+  &.token-input-group--error {
+    border: 1px solid var(--error);
+    .token-group-title {
+      color: var(--error);
+    }
+  }
+
   .token-picker-toggle {
     grid-column: 1;
     text-align: start;

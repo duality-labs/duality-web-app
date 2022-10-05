@@ -77,9 +77,7 @@ export default function Swap() {
   const hasFormData =
     address && tokenA && tokenB && valueAConvertedNumber.isGreaterThan(0);
   const hasSufficientFunds =
-    (hasFormData &&
-      valueAConvertedNumber.isLessThanOrEqualTo(balanceTokenA || 0)) ||
-    false;
+    valueAConvertedNumber.isLessThanOrEqualTo(balanceTokenA || 0) || false;
 
   const [slippage, setSlippage] = useState(defaultSlippage);
 
@@ -204,6 +202,7 @@ export default function Swap() {
         </div>
         <div className="card-row">
           <TokenInputGroup
+            variant={!hasSufficientFunds && 'error'}
             onValueChanged={onValueAChanged}
             onTokenChanged={setTokenA}
             tokenList={tokenList}
@@ -295,7 +294,7 @@ export default function Swap() {
         </div>
         <div className="my-4">
           {address ? (
-            hasSufficientFunds ? (
+            hasFormData && hasSufficientFunds ? (
               <button
                 className="submit-button button-primary"
                 type="submit"
