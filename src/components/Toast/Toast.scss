@@ -1,0 +1,32 @@
+.chakra-toast .chakra-toast__inner {
+  position: relative;
+  background-color: var(--default);
+  border-radius: 1rem;
+  padding: 0.5rem 1rem;
+
+  .icon {
+    display: flex;
+  }
+
+  .title {
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1;
+    margin: 0.3rem 0 0;
+    color: var(--text-default);
+  }
+
+  .description {
+    color: var(--text-alt);
+  }
+
+  button[aria-label='Close'] {
+    position: absolute;
+    border-radius: 100%;
+    top: 0;
+    left: 0;
+    margin: -0.5rem;
+    background-color: var(--default-alt);
+    color: var(--default);
+  }
+}

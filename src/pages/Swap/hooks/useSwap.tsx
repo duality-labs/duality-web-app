@@ -3,6 +3,11 @@ import { assertIsDeliverTxSuccess } from '@cosmjs/stargate';
 import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 import { useToast, CreateToastFnReturn } from '@chakra-ui/toast';
+import { Spinner, Text } from '@chakra-ui/react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheckCircle, faXmark } from '@fortawesome/free-solid-svg-icons';
+
+import Toast from '../../../components/Toast';
 
 import { useWeb3 } from '../../../lib/web3/useWeb3';
 import { txClient } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/index';
@@ -46,8 +51,15 @@ function sendSwap(
         if (!res) return reject('No response');
 
         toast({
-          title: 'Loading',
-          description: 'Executing your trade',
+          render: ({ id }) => (
+            <Toast
+              id={id}
+              icon={<Spinner size="lg" speed="1s" />}
+              title="Loading"
+              description="Executing your trade"
+              close={toast.close}
+            />
+          ),
           status: 'info',
           isClosable: true,
         });
@@ -65,7 +77,20 @@ function sendSwap(
           });
 
           toast({
-            title: 'Transaction Successful!',
+            render: ({ id }) => (
+              <Toast
+                id={id}
+                icon={
+                  <FontAwesomeIcon
+                    icon={faCheckCircle}
+                    color="#5bc7b7"
+                    size="2x"
+                  />
+                }
+                title="Transaction Successful"
+                close={toast.close}
+              />
+            ),
             status: 'success',
             isClosable: true,
           });
@@ -78,15 +103,29 @@ function sendSwap(
       .catch(function (err: Error) {
         if (err?.message.includes('rejected')) {
           toast({
-            title: 'Transaction Rejected',
-            description: 'You declined the transaction',
-            status: 'error',
+            render: ({ id }) => (
+              <Toast
+                id={id}
+                icon={<FontAwesomeIcon icon={faXmark} color="red" size="2x" />}
+                title="Transaction Rejected"
+                description="You declined the transaction"
+                close={toast.close}
+              />
+            ),
+            status: 'info',
             isClosable: true,
           });
         } else {
           toast({
-            title: 'Transaction Failed',
-            description: 'Something went wrong, please try again',
+            render: ({ id }) => (
+              <Toast
+                id={id}
+                icon={<Text fontSize="4xl">🤔</Text>}
+                title="Transaction Failed"
+                description="Something went wrong, please try again"
+                close={toast.close}
+              />
+            ),
             status: 'error',
             duration: null,
             isClosable: true,
