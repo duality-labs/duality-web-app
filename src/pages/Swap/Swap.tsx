@@ -7,8 +7,8 @@ import {
   faArrowRightArrowLeft,
   faSliders,
   faXmark,
-  faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
+import { Spinner } from '@chakra-ui/react';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
@@ -301,7 +301,7 @@ export default function Swap() {
                 disabled={!new BigNumber(valueBConverted || 0).isGreaterThan(0)}
               >
                 {isValidatingSwap ? (
-                  <FontAwesomeIcon icon={faSpinner} spin />
+                  <Spinner />
                 ) : orderType === 'limit' ? (
                   'Place Limit Order'
                 ) : (
