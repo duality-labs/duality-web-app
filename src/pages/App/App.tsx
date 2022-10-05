@@ -9,13 +9,14 @@ import Header from '../../components/Header';
 import Swap from '../Swap';
 import Pool from '../Pool';
 
+import theme from './theme';
 import './App.scss';
 
 function App() {
   return (
     <Web3Provider>
       <IndexerProvider>
-        <ChakraProvider>
+        <ChakraProvider theme={theme}>
           <ThemeProvider>
             <BrowserRouter>
               <Header />

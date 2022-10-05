@@ -5,6 +5,7 @@ import {
   createContext,
   useCallback,
 } from 'react';
+import { useColorMode } from '@chakra-ui/react';
 
 export type ThemeMode = 'light' | 'dark';
 export type SavedThemeMode = ThemeMode | null;
@@ -36,11 +37,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [savedTheme, setSavedTheme] = useState(getSavedTheme);
   const themeMode = savedTheme ?? defaultTheme;
 
+  const { setColorMode } = useColorMode();
+
   const toggleThemeMode = useCallback(
     function () {
-      setSavedTheme(themeMode === 'dark' ? 'light' : 'dark');
+      const newMode = themeMode === 'dark' ? 'light' : 'dark';
+      setSavedTheme(newMode);
+      setColorMode(newMode);
     },
-    [themeMode]
+    [themeMode, setColorMode]
   );
 
   // local storage change (if the theme was changed from another tab)
