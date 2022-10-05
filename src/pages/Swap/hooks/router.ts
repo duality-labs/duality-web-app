@@ -24,7 +24,18 @@ export function router(
     const sortedTicks = forward
       ? exactPair.poolsZeroToOne
       : exactPair.poolsOneToZero;
+    const maxIn = sortedTicks.reduce((result, tick) => {
+      return result.plus(forward ? tick.reserve0 : tick.reserve1);
+    }, new BigNumber(0));
     const amountIn = new BigNumber(value0);
+    if (amountIn.isGreaterThan(maxIn)) {
+      const error: Error & {
+        insufficientLiquidityIn?: boolean;
+        insufficientLiquidityOut?: boolean;
+      } = new Error('Not enough tick liquidity found to match trade');
+      error.insufficientLiquidityIn = true;
+      throw error;
+    }
     return {
       amountIn: amountIn,
       tokenIn: tokenA,
