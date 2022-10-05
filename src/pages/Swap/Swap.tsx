@@ -7,6 +7,7 @@ import {
   faArrowRightArrowLeft,
   faSliders,
   faXmark,
+  faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
@@ -55,10 +56,7 @@ export default function Swap() {
       valueB: lastUpdatedA ? undefined : valueB,
     });
   const rateData = getRouterEstimates(pairRequest, routerResult);
-  const [
-    { data: swapResponse, isValidating: isValidatingSwap, error: swapError },
-    swapRequest,
-  ] = useSwap();
+  const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap();
 
   const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
   const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
@@ -294,13 +292,6 @@ export default function Swap() {
               </div>
             )}
         </div>
-        {swapError && <div className="text-error card-row">{swapError}</div>}
-        {!isValidatingSwap && swapResponse && (
-          <div className="text-secondary card-row">
-            Swapped {valueAConverted} {tokenA?.address} for {valueBConverted}{' '}
-            {tokenB?.address}
-          </div>
-        )}
         <div className="my-4">
           {address ? (
             hasSufficientFunds ? (
@@ -309,7 +300,13 @@ export default function Swap() {
                 type="submit"
                 disabled={!new BigNumber(valueBConverted || 0).isGreaterThan(0)}
               >
-                {orderType === 'limit' ? 'Place Limit Order' : 'Swap'}
+                {isValidatingSwap ? (
+                  <FontAwesomeIcon icon={faSpinner} spin />
+                ) : orderType === 'limit' ? (
+                  'Place Limit Order'
+                ) : (
+                  'Swap'
+                )}
               </button>
             ) : hasFormData ? (
               <button className="submit-button button-error" type="button">
