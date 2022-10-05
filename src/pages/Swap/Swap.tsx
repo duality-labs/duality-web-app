@@ -16,6 +16,7 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
+import { useHasPriceData } from '../../lib/tokenPrices';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -159,6 +160,8 @@ export default function Swap() {
       });
     }
   }, [tokenA, tokenB]);
+
+  const hasPriceData = useHasPriceData([tokenA, tokenB]);
 
   const tradeCard = (
     <div className="trade-card">
@@ -345,6 +348,18 @@ export default function Swap() {
             </button>
           )}
         </div>
+        {hasPriceData && (
+          <div className="attribution">
+            Price data from{' '}
+            <a
+              target="_blank"
+              rel="noreferrer"
+              href="https://www.coingecko.com/"
+            >
+              CoinGecko
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
