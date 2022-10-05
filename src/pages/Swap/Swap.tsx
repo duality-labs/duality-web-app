@@ -48,13 +48,16 @@ export default function Swap() {
     valueA: lastUpdatedA ? valueA : undefined,
     valueB: lastUpdatedA ? undefined : valueB,
   };
-  const { data: routerResult, isValidating: isValidatingRate } =
-    useRouterResult({
-      tokenA: tokenA?.address,
-      tokenB: tokenB?.address,
-      valueA: lastUpdatedA ? valueA : undefined,
-      valueB: lastUpdatedA ? undefined : valueB,
-    });
+  const {
+    data: routerResult,
+    isValidating: isValidatingRate,
+    error,
+  } = useRouterResult({
+    tokenA: tokenA?.address,
+    tokenB: tokenB?.address,
+    valueA: lastUpdatedA ? valueA : undefined,
+    valueB: lastUpdatedA ? undefined : valueB,
+  });
   const rateData = getRouterEstimates(pairRequest, routerResult);
   const [
     { data: swapResponse, isValidating: isValidatingSwap, error: swapError },
@@ -306,13 +309,21 @@ export default function Swap() {
         )}
         <div className="my-4">
           {address ? (
-            hasFormData && hasSufficientFunds ? (
+            hasFormData &&
+            hasSufficientFunds &&
+            !error?.insufficientLiquidityIn &&
+            !error?.insufficientLiquidityOut ? (
               <button
                 className="submit-button button-primary"
                 type="submit"
                 disabled={!new BigNumber(valueBConverted || 0).isGreaterThan(0)}
               >
                 {orderType === 'limit' ? 'Place Limit Order' : 'Swap'}
+              </button>
+            ) : error?.insufficientLiquidityIn ||
+              error?.insufficientLiquidityOut ? (
+              <button className="submit-button button-error" type="button">
+                Insufficient liquidity
               </button>
             ) : hasFormData ? (
               <button className="submit-button button-error" type="button">
