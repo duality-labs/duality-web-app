@@ -26,3 +26,8 @@ main,
 body {
   background: fixed var(--bg);
 }
+
+// offset the toasts area by about the height of the Header component
+.toast-portal ul {
+  margin-top: 7rem;
+}

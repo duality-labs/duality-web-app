@@ -3,6 +3,7 @@ import { IndexerProvider } from '../../lib/web3/indexerProvider';
 import { ThemeProvider } from '../../lib/themeProvider';
 import { ChakraProvider } from '@chakra-ui/react';
 
+import { useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import Header from '../../components/Header';
@@ -13,10 +14,17 @@ import theme from './theme';
 import './App.scss';
 
 function App() {
+  const toastPortalRef = useRef(null);
   return (
     <Web3Provider>
       <IndexerProvider>
-        <ChakraProvider theme={theme}>
+        <ChakraProvider
+          theme={theme}
+          toastOptions={{
+            portalProps: { containerRef: toastPortalRef },
+            defaultOptions: { position: 'top-right' },
+          }}
+        >
           <ThemeProvider>
             <BrowserRouter>
               <Header />
@@ -28,6 +36,7 @@ function App() {
                   <Route path="stake" element={<div>Coming soon</div>} />
                   <Route path="*" element={<div>Not found</div>} />
                 </Routes>
+                <div className="toast-portal" ref={toastPortalRef}></div>
               </main>
             </BrowserRouter>
           </ThemeProvider>
