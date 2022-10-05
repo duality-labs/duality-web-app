@@ -8,6 +8,7 @@ import {
   faSliders,
   faCircle,
 } from '@fortawesome/free-solid-svg-icons';
+import { Flex } from '@chakra-ui/react';
 
 import {
   getBalance,
@@ -502,7 +503,7 @@ export default function Pool() {
           <div className="row col-row">
             <h2>Assets</h2>
             <button
-              className="button-secondary corner-border ml-1"
+              className="button button-secondary corner-border ml-1"
               onClick={() => setValuesConfirmed(false)}
             >
               Edit
@@ -510,7 +511,8 @@ export default function Pool() {
           </div>
           <div className="row col-row">
             {tokenA && (
-              <button
+              <Flex
+                as="button"
                 className="badge-default corner-border badge-large font-console"
                 type="button"
               >
@@ -530,11 +532,12 @@ export default function Pool() {
                   ></FontAwesomeIcon>
                 )}
                 {tokenA?.symbol}
-              </button>
+              </Flex>
             )}
             {tokenA && tokenB && <div>+</div>}
             {tokenB && (
-              <button
+              <Flex
+                as="button"
                 className="badge-default corner-border badge-large font-console"
                 type="button"
               >
@@ -554,7 +557,7 @@ export default function Pool() {
                   ></FontAwesomeIcon>
                 )}
                 {tokenB?.symbol}
-              </button>
+              </Flex>
             )}
           </div>
           <div className="row col-row ml-auto">
