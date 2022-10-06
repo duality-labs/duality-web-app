@@ -127,9 +127,26 @@ function PositionCard({
 
     return (
       <div className="page-card">
-        <div className="heading">
-          {token0.symbol} + {token1.symbol}
+        <div className="heading col">
+          <div className="row">
+            <div className="token-symbols col">
+              {token0.symbol} +<br /> {token1.symbol}
+            </div>
+            <div className="token-icons col ml-auto">
+              <div className="row">
+                <img
+                  src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
+                  alt={`${token0.name} logo`}
+                />
+                <img
+                  src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
+                  alt={`${token1.name} logo`}
+                />
+              </div>
+            </div>
+          </div>
         </div>
+        <div className="divider mb-4"></div>
         <div className="content">
           <div className="share-total">
             <div className="balance row">
@@ -138,13 +155,29 @@ function PositionCard({
                 {value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}
               </div>
             </div>
+            <div className="value-visual row">
+              {value0 && value1 && (
+                <div className="value-barchart">
+                  <div
+                    className="value-0"
+                    style={{
+                      width: `${value0
+                        .dividedBy(value0.plus(value1))
+                        .multipliedBy(100)
+                        .toFixed(3)}%`,
+                    }}
+                  ></div>
+                  <div className="value-1"></div>
+                </div>
+              )}
+            </div>
             <div className="value-text row">
               <div className="value-0 col">
-                {total0.toFixed()} {token0.symbol}{' '}
+                {total0.toFixed(3)} {token0.symbol}{' '}
                 {value0 && <>(${value0.toFixed(2)})</>}
               </div>
               <div className="value-1 col ml-auto">
-                {total1.toFixed()} {token1.symbol}{' '}
+                {total1.toFixed(3)} {token1.symbol}{' '}
                 {value1 && <>(${value1.toFixed(2)})</>}
               </div>
             </div>
