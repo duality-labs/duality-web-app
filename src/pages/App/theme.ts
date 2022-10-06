@@ -1,13 +1,13 @@
-import { extendTheme, ThemeConfig } from '@chakra-ui/react';
-import { GlobalStyles } from '@chakra-ui/theme-tools';
+import { extendTheme } from '@chakra-ui/react';
 import type { StyleFunctionProps } from '@chakra-ui/styled-system';
+import { Theme } from '@chakra-ui/theme';
 
-const config: ThemeConfig = {
+const config: Theme['config'] = {
   initialColorMode: 'dark',
   useSystemColorMode: true,
 };
 
-const styles: GlobalStyles = {
+const styles: Theme['styles'] = {
   global: (props: StyleFunctionProps) => ({
     body: {
       bg:
