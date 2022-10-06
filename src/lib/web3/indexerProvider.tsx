@@ -551,7 +551,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       shares: {
         data: shareData,
         error: error,
-        isValidating: !indexerData && !error,
+        isValidating: !shareData && !error,
       },
     });
   }, [bankData, indexerData, shareData, error]);
@@ -592,6 +592,11 @@ export function useBankBalance(token: Token | undefined) {
 
 export function useShareData() {
   return useContext(IndexerContext).shares;
+}
+
+export function useShares() {
+  const { data, error, isValidating } = useShareData();
+  return { data: data?.shares, error, isValidating };
 }
 
 export function useIndexerData() {
