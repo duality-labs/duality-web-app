@@ -9,6 +9,8 @@ import { useWeb3 } from './useWeb3';
 import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
 import {
   DexPool,
+  DexQueryAllShareResponse,
+  DexShare,
   DexTicks,
   RpcStatus,
   V1Beta1PageResponse,
@@ -66,9 +68,18 @@ interface UserBankBalance {
   balances: Array<Coin>;
 }
 
+interface UserShares {
+  shares: Array<DexShare>;
+}
+
 interface IndexerContextType {
   bank: {
     data?: UserBankBalance;
+    error?: string;
+    isValidating: boolean;
+  };
+  shares: {
+    data?: UserShares;
     error?: string;
     isValidating: boolean;
   };
@@ -81,6 +92,9 @@ interface IndexerContextType {
 
 const IndexerContext = createContext<IndexerContextType>({
   bank: {
+    isValidating: true,
+  },
+  shares: {
     isValidating: true,
   },
   indexer: {
@@ -274,12 +288,18 @@ function addTickData(
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [indexerData, setIndexerData] = useState<PairMap>();
   const [bankData, setBankData] = useState<UserBankBalance>();
+  const [shareData, setShareData] = useState<UserShares>();
   const [error, setError] = useState<string>();
   // avoid sending more than once
   const [, setRequestedFlag] = useState(false);
   const [result, setResult] = useState<IndexerContextType>({
     bank: {
       data: bankData,
+      error: error,
+      isValidating: true,
+    },
+    shares: {
+      data: shareData,
       error: error,
       isValidating: true,
     },
@@ -336,6 +356,79 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       });
     }
   }, [fetchBankData]);
+
+  useEffect(() => {
+    if (address) {
+      const onTxBalanceUpdate = function () {
+        fetchBankData?.()?.then((data) => setBankData({ balances: data }));
+      };
+      subscriber.subscribeMessage(onTxBalanceUpdate, {
+        transfer: { recipient: address },
+      });
+      subscriber.subscribeMessage(onTxBalanceUpdate, {
+        transfer: { sender: address },
+      });
+      return () => {
+        subscriber.unsubscribeMessage(onTxBalanceUpdate);
+      };
+    }
+  }, [fetchBankData, address]);
+
+  const [, setFetchShareDataState] = useState({
+    fetching: false,
+    fetched: false,
+  });
+  const fetchShareData = useMemo(() => {
+    if (address) {
+      return async () => {
+        if (REACT_APP__REST_API) {
+          const client = await queryClient({ addr: REACT_APP__REST_API });
+          setFetchShareDataState(({ fetched }) => ({
+            fetching: true,
+            fetched,
+          }));
+          const res = await client.request<DexQueryAllShareResponse, RpcStatus>(
+            {
+              // todo: this query should be sepcific to the user's address
+              // however that has not been implemented yet
+              // so instead we query all and then filter the results
+              path: '/NicholasDotSol/duality/dex/share',
+              method: 'GET',
+              format: 'json',
+            }
+          );
+          if (res.ok) {
+            setFetchShareDataState(() => ({ fetching: false, fetched: true }));
+            const shares = res.data.share || [];
+            // filter shares to this wallet
+            return shares.filter((share) => share.owner === address);
+          } else {
+            setFetchShareDataState(({ fetched }) => ({
+              fetching: false,
+              fetched,
+            }));
+            // remove API error details from public view
+            throw new Error(`API error code: ${res.error.code}`);
+          }
+        } else {
+          throw new Error('Undefined rest api base URL');
+        }
+      };
+    }
+  }, [address]);
+
+  useEffect(() => {
+    if (fetchShareData) {
+      setFetchShareDataState((fetchState) => {
+        if (!fetchState.fetched && !fetchState.fetching) {
+          fetchShareData().then((data) => {
+            setShareData({ shares: data });
+          });
+        }
+        return fetchState;
+      });
+    }
+  }, [fetchShareData]);
 
   useEffect(() => {
     if (address) {
@@ -455,8 +548,13 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         error: error,
         isValidating: !indexerData && !error,
       },
+      shares: {
+        data: shareData,
+        error: error,
+        isValidating: !indexerData && !error,
+      },
     });
-  }, [bankData, indexerData, error]);
+  }, [bankData, indexerData, shareData, error]);
 
   useEffect(() => {
     setRequestedFlag((oldValue) => {
@@ -490,6 +588,10 @@ export function useBankBalance(token: Token | undefined) {
   const { data: balances, error, isValidating } = useBankBalances();
   const balance = token && balances && getBalance(token, balances);
   return { data: balance, error, isValidating };
+}
+
+export function useShareData() {
+  return useContext(IndexerContext).shares;
 }
 
 export function useIndexerData() {
