@@ -118,6 +118,16 @@ export function useMainnetTokens(sortFunction = defaultSort) {
   );
 }
 
+const dualityTokens = (chain: Chain) => chain?.chain_id === 'duality';
+export function useDualityTokens(sortFunction = defaultSort) {
+  tokenListCache['dualityTokens'] =
+    tokenListCache['dualityTokens'] || getTokens(dualityTokens);
+  return useMemo(
+    () => tokenListCache['dualityTokens'].slice().sort(sortFunction).reverse(),
+    [sortFunction]
+  );
+}
+
 function defaultSort(a: Token, b: Token) {
   // compare by symbol name
   return a.symbol.localeCompare(b.symbol);
