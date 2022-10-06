@@ -10,6 +10,7 @@ import {
   TickInfo,
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
+import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token, useDualityTokens } from '../../components/TokenPicker/hooks';
 
 import './MyLiquidity.scss';
@@ -108,6 +109,9 @@ function PositionCard({
   token1: Token;
   shareValues: Array<ShareValue>;
 }) {
+  const {
+    data: [price0, price1],
+  } = useSimplePrice([token0, token1]);
   if (token0 && token1) {
     const [total0, total1] = shareValues.reduce<[BigNumber, BigNumber]>(
       ([total0, total1], shareValue) => {
@@ -118,6 +122,8 @@ function PositionCard({
       },
       [new BigNumber(0), new BigNumber(0)]
     );
+    const value0 = price0 && total0.multipliedBy(price0);
+    const value1 = price1 && total1.multipliedBy(price1);
 
     return (
       <div className="page-card">
@@ -126,12 +132,20 @@ function PositionCard({
         </div>
         <div className="content">
           <div className="share-total">
+            <div className="balance row">
+              <div className="col">Balance</div>
+              <div className="col ml-auto">
+                {value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}
+              </div>
+            </div>
             <div className="value-text row">
               <div className="value-0 col">
-                {total0.toFixed()} {token0.symbol}
+                {total0.toFixed()} {token0.symbol}{' '}
+                {value0 && <>(${value0.toFixed(2)})</>}
               </div>
               <div className="value-1 col ml-auto">
-                {total1.toFixed()} {token1.symbol}
+                {total1.toFixed()} {token1.symbol}{' '}
+                {value1 && <>(${value1.toFixed(2)})</>}
               </div>
             </div>
           </div>
