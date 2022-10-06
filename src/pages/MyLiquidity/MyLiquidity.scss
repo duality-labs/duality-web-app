@@ -2,3 +2,76 @@
   font-size: 1.5rem;
   font-weight: 600;
 }
+
+.my-liquidity-page {
+  .page-card {
+    min-height: 30rem;
+    min-width: 24rem;
+    padding: 2rem 2rem;
+  }
+
+  .heading {
+    margin: -2rem -2rem 0;
+    width: calc(100% + 4rem);
+    font-size: 2rem;
+    position: relative;
+    overflow: hidden;
+
+    > .row {
+      margin: 0.75rem 2rem;
+    }
+
+    .row,
+    .col {
+      overflow: visible;
+    }
+
+    .token-symbols {
+      line-height: 1.1;
+      font-weight: 500;
+    }
+
+    .token-icons img {
+      width: 7.5rem;
+      height: 7.5rem;
+      margin-right: -1rem;
+      object-fit: contain;
+      margin-top: -0.75rem;
+      position: absolute;
+      top: 0;
+      right: 7rem;
+      opacity: 0.6;
+    }
+    .token-icons img + img {
+      right: 2rem;
+    }
+  }
+  .divider {
+    margin: 0 -2rem;
+    height: 8px;
+    width: calc(100% + 4rem);
+    background: linear-gradient(90deg, rgba(78, 177, 232, 0) 0%, #4eb1e8 100%);
+  }
+
+  .value-barchart {
+    border-radius: 0.5rem;
+    width: 100%;
+    background-color: #8fcef0;
+    overflow: hidden;
+    margin: 0.5rem 0 0.25rem;
+
+    .value-0 {
+      height: 1em;
+      background-color: #bfa1f7;
+    }
+  }
+
+  .value-text {
+    .value-0 {
+      color: #bfa1f7;
+    }
+    .value-1 {
+      color: #8fcef0;
+    }
+  }
+}
