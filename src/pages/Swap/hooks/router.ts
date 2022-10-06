@@ -24,18 +24,59 @@ export function router(
     const sortedTicks = forward
       ? exactPair.poolsZeroToOne
       : exactPair.poolsOneToZero;
+    const maxIn = sortedTicks.reduce((result, tick) => {
+      return result.plus(forward ? tick.reserve0 : tick.reserve1);
+    }, new BigNumber(0));
     const amountIn = new BigNumber(value0);
-    return {
-      amountIn: amountIn,
-      tokenIn: tokenA,
-      tokenOut: tokenB,
-      amountOut: calculateOut({
+
+    let error:
+      | (Error & {
+          insufficientLiquidityIn?: boolean;
+          insufficientLiquidityOut?: boolean;
+        })
+      | false = false;
+
+    if (amountIn.isGreaterThan(maxIn)) {
+      error = new Error('Not enough tick liquidity found to match trade');
+      error.insufficientLiquidityIn = true;
+    }
+
+    try {
+      const amountOut = calculateOut({
         tokenIn: tokenA,
         tokenOut: tokenB,
         amountIn: amountIn,
         sortedTicks,
-      }),
-    };
+      });
+      const maxOut = sortedTicks.reduce((result, tick) => {
+        return result.plus(reverse ? tick.reserve0 : tick.reserve1);
+      }, new BigNumber(0));
+
+      if (amountOut.isGreaterThan(maxOut)) {
+        if (!error) {
+          error = new Error('Not enough tick liquidity found to match trade');
+        }
+        error.insufficientLiquidityOut = true;
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        amountIn: amountIn,
+        tokenIn: tokenA,
+        tokenOut: tokenB,
+        amountOut: calculateOut({
+          tokenIn: tokenA,
+          tokenOut: tokenB,
+          amountIn: amountIn,
+          sortedTicks,
+        }),
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 }
 
@@ -86,10 +127,14 @@ export function calculateOut({
         amountLeft = amountLeft.minus(amountInTraded);
         amountOut = amountOut.plus(reservesOut);
         if (amountLeft.isEqualTo(0)) return amountOut;
-        if (amountLeft.isLessThan(0))
-          throw new Error(
-            'Error while calculating amount out (negative amount)'
-          );
+        if (amountLeft.isLessThan(0)) {
+          const error: Error & {
+            insufficientLiquidityIn?: boolean;
+            insufficientLiquidityOut?: boolean;
+          } = new Error('Error while calculating amount out (negative amount)');
+          error.insufficientLiquidityIn = true;
+          throw error;
+        }
       } else {
         return amountOut.plus(maxOut);
       }

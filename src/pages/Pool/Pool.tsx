@@ -8,6 +8,7 @@ import {
   faSliders,
   faCircle,
 } from '@fortawesome/free-solid-svg-icons';
+import { Flex } from '@chakra-ui/react';
 
 import {
   getBalance,
@@ -395,6 +396,15 @@ export default function Pool() {
 
   const [editingFee, setEditingFee] = useState(false);
   const { data: balances } = useBankBalances();
+  const balanceTokenA =
+    tokenA && balances && new BigNumber(getBalance(tokenA, balances));
+  const balanceTokenB =
+    tokenB && balances && new BigNumber(getBalance(tokenB, balances));
+
+  const hasSufficientFundsA =
+    balanceTokenA?.isGreaterThanOrEqualTo(values[0] || 0) || false;
+  const hasSufficientFundsB =
+    balanceTokenB?.isGreaterThanOrEqualTo(values[1] || 0) || false;
 
   if (!valuesConfirmed) {
     return (
@@ -415,6 +425,7 @@ export default function Pool() {
           </div>
           <div className="card-row">
             <TokenInputGroup
+              variant={!hasSufficientFundsA && 'error'}
               onValueChanged={(newValue) =>
                 setValues(([, valueB]) => [newValue, valueB])
               }
@@ -423,11 +434,7 @@ export default function Pool() {
               token={tokenA}
               value={`${values[0]}`}
               exclusion={tokenB}
-              title={
-                tokenA && balances
-                  ? `Available ${getBalance(tokenA, balances)}`
-                  : ''
-              }
+              title={balanceTokenA ? `Available ${balanceTokenA}` : ''}
             />
           </div>
           <div className="plus-space mx-auto my-2">
@@ -435,6 +442,7 @@ export default function Pool() {
           </div>
           <div className="card-row">
             <TokenInputGroup
+              variant={!hasSufficientFundsB && 'error'}
               onValueChanged={(newValue) =>
                 setValues(([valueA]) => [valueA, newValue])
               }
@@ -443,25 +451,25 @@ export default function Pool() {
               token={tokenB}
               value={`${values[1]}`}
               exclusion={tokenA}
-              title={
-                tokenB && balances
-                  ? `Available ${getBalance(tokenB, balances)}`
-                  : ''
-              }
+              title={balanceTokenB ? `Available ${balanceTokenB}` : ''}
             />
           </div>
           <div className="card-col mt-5 mb-3">
             <div className="mx-auto">
               <input
                 className="button-primary pill pill-outline mx-3 px-4 py-4"
-                disabled={!valuesValid}
+                disabled={
+                  !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
+                }
                 type="submit"
                 name="action"
                 value="Customize"
               />
               <input
                 className="button-primary pill mx-3 px-4 py-4"
-                disabled={!valuesValid}
+                disabled={
+                  !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
+                }
                 type="submit"
                 name="actiona"
                 value="Add Liquidity"
@@ -517,7 +525,7 @@ export default function Pool() {
           <div className="row col-row">
             <h2>Assets</h2>
             <button
-              className="button-secondary corner-border ml-1"
+              className="button button-secondary corner-border ml-1"
               onClick={() => setValuesConfirmed(false)}
             >
               Edit
@@ -525,7 +533,8 @@ export default function Pool() {
           </div>
           <div className="row col-row">
             {tokenA && (
-              <button
+              <Flex
+                as="button"
                 className="badge-default corner-border badge-large font-console"
                 type="button"
               >
@@ -545,11 +554,12 @@ export default function Pool() {
                   ></FontAwesomeIcon>
                 )}
                 {tokenA?.symbol}
-              </button>
+              </Flex>
             )}
             {tokenA && tokenB && <div>+</div>}
             {tokenB && (
-              <button
+              <Flex
+                as="button"
                 className="badge-default corner-border badge-large font-console"
                 type="button"
               >
@@ -569,7 +579,7 @@ export default function Pool() {
                   ></FontAwesomeIcon>
                 )}
                 {tokenB?.symbol}
-              </button>
+              </Flex>
             )}
           </div>
           <div className="row col-row ml-auto">

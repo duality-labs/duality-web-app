@@ -5,7 +5,10 @@ import {
   faBolt,
   faFlag,
   faArrowRightArrowLeft,
+  faSliders,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
+import { Spinner } from '@chakra-ui/react';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
@@ -14,19 +17,21 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useHasPriceData } from '../../lib/tokenPrices';
-import { MsgSwap } from '../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import { formatPrice } from '../../lib/bignumber.utils';
+import { cleanInput } from '../../components/TokenInputGroup/utils';
 
 import './Swap.scss';
 
+type CardType = 'trade' | 'settings';
 type OrderType = 'market' | 'limit';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
+const defaultSlippage = '0.5%';
 
 export default function Swap() {
   const { address, connectWallet } = useWeb3();
@@ -44,20 +49,18 @@ export default function Swap() {
     valueA: lastUpdatedA ? valueA : undefined,
     valueB: lastUpdatedA ? undefined : valueB,
   };
-  const { data: routerResult, isValidating: isValidatingRate } =
-    useRouterResult({
-      tokenA: tokenA?.address,
-      tokenB: tokenB?.address,
-      valueA: lastUpdatedA ? valueA : undefined,
-      valueB: lastUpdatedA ? undefined : valueB,
-    });
-  const rateData = getRouterEstimates(pairRequest, routerResult);
-  const [swapRequest, setSwapRequest] = useState<MsgSwap>();
   const {
-    data: swapResponse,
-    isValidating: isValidatingSwap,
-    error: swapError,
-  } = useSwap(swapRequest);
+    data: routerResult,
+    isValidating: isValidatingRate,
+    error,
+  } = useRouterResult({
+    tokenA: tokenA?.address,
+    tokenB: tokenB?.address,
+    valueA: lastUpdatedA ? valueA : undefined,
+    valueB: lastUpdatedA ? undefined : valueB,
+  });
+  const rateData = getRouterEstimates(pairRequest, routerResult);
+  const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap();
 
   const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
   const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
@@ -78,8 +81,9 @@ export default function Swap() {
   const hasFormData =
     address && tokenA && tokenB && valueAConvertedNumber.isGreaterThan(0);
   const hasSufficientFunds =
-    (hasFormData && valueAConvertedNumber.isLessThan(balanceTokenA || 0)) ||
-    false;
+    valueAConvertedNumber.isLessThanOrEqualTo(balanceTokenA || 0) || false;
+
+  const [slippage, setSlippage] = useState(defaultSlippage);
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -88,7 +92,8 @@ export default function Swap() {
         // convert to swap request format
         const result = routerResult;
         // Cosmos requires tokens in integer format of smallest denomination
-        setSwapRequest({
+        // todo: add slippage tolerance setting into API request
+        swapRequest({
           amountIn: result.amountIn.toFixed(denomExponent),
           tokenIn: result.tokenIn,
           tokenOut: result.tokenOut,
@@ -98,7 +103,7 @@ export default function Swap() {
         });
       }
     },
-    [address, routerResult]
+    [address, routerResult, swapRequest]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
@@ -110,6 +115,7 @@ export default function Swap() {
     setLastUpdatedA(false);
   }, []);
 
+  const [cardType, setCardType] = useState<CardType>('trade');
   const [orderType, setOrderType] = useState<OrderType>('market');
   const [rateTokenOrderAuto, setRateTokenOrderAuto] =
     useState<[Token, Token]>();
@@ -157,10 +163,19 @@ export default function Swap() {
 
   const hasPriceData = useHasPriceData([tokenA, tokenB]);
 
-  return (
-    <form onSubmit={onFormSubmit} className="page swap-page">
+  const tradeCard = (
+    <div className="trade-card">
       <div className="page-card">
-        <h3 className="card-title mb-3 mr-auto">Trade</h3>
+        <div className="row mb-3">
+          <h3 className="card-title">Trade</h3>
+          <button
+            className="icon-button ml-auto"
+            type="button"
+            onClick={() => setCardType('settings')}
+          >
+            <FontAwesomeIcon icon={faSliders}></FontAwesomeIcon>
+          </button>
+        </div>
         <div className="card-row order-type mb-5">
           <RadioButtonGroupInput<OrderType>
             className="order-type-input"
@@ -193,6 +208,9 @@ export default function Swap() {
         </div>
         <div className="card-row">
           <TokenInputGroup
+            variant={
+              (!hasSufficientFunds || error?.insufficientLiquidityIn) && 'error'
+            }
             onValueChanged={onValueAChanged}
             onTokenChanged={setTokenA}
             tokenList={tokenList}
@@ -223,6 +241,7 @@ export default function Swap() {
         </div>
         <div className="card-row mb-4">
           <TokenInputGroup
+            variant={error?.insufficientLiquidityOut && 'error'}
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}
             tokenList={tokenList}
@@ -282,24 +301,29 @@ export default function Swap() {
               </div>
             )}
         </div>
-        {swapRequest && swapError && (
-          <div className="text-error card-row">{swapError}</div>
-        )}
-        {!isValidatingSwap && swapResponse && (
-          <div className="text-secondary card-row">
-            Swapped {valueAConverted} {tokenA?.address} for {valueBConverted}{' '}
-            {tokenB?.address}
-          </div>
-        )}
         <div className="my-4">
           {address ? (
-            hasSufficientFunds ? (
+            hasFormData &&
+            hasSufficientFunds &&
+            !error?.insufficientLiquidityIn &&
+            !error?.insufficientLiquidityOut ? (
               <button
                 className="submit-button button-primary"
                 type="submit"
                 disabled={!new BigNumber(valueBConverted || 0).isGreaterThan(0)}
               >
-                {orderType === 'limit' ? 'Place Limit Order' : 'Swap'}
+                {isValidatingSwap ? (
+                  <Spinner />
+                ) : orderType === 'limit' ? (
+                  'Place Limit Order'
+                ) : (
+                  'Swap'
+                )}
+              </button>
+            ) : error?.insufficientLiquidityIn ||
+              error?.insufficientLiquidityOut ? (
+              <button className="submit-button button-error" type="button">
+                Insufficient liquidity
               </button>
             ) : hasFormData ? (
               <button className="submit-button button-error" type="button">
@@ -337,6 +361,56 @@ export default function Swap() {
           </div>
         )}
       </div>
+    </div>
+  );
+
+  const settingsCard = (
+    <div
+      className={[
+        'settings-card',
+        `settings-card--${cardType === 'settings' ? 'visible' : 'hidden'}`,
+      ].join(' ')}
+    >
+      <div className="page-card">
+        <div className="row mb-4">
+          <h3 className="card-title">Settings</h3>
+          <button
+            className="icon-button ml-auto"
+            type="button"
+            onClick={() => setCardType('trade')}
+          >
+            <FontAwesomeIcon icon={faXmark}></FontAwesomeIcon>
+          </button>
+        </div>
+        <div className="row mb-3">
+          <h4 className="card-title">Max Slippage</h4>
+          <input
+            type="text"
+            className="font-console ml-auto"
+            value={slippage}
+            onInput={(e) => cleanInput(e.currentTarget, '%')}
+            onChange={(e) => setSlippage(e.target.value)}
+          />
+          <button
+            type="button"
+            className="button-info ml-2"
+            onClick={() => setSlippage(defaultSlippage)}
+          >
+            Auto
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+  return (
+    <form
+      onSubmit={onFormSubmit}
+      className={['page swap-page', isValidatingSwap && 'disabled']
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {tradeCard}
+      {settingsCard}
     </form>
   );
 }

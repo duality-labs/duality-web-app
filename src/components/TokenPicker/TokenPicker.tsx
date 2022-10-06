@@ -245,6 +245,7 @@ export default function TokenPicker({
       <button
         type="button"
         className={[
+          'button',
           'token-picker-toggle',
           isOpen && 'open',
           !value?.symbol && 'no-selected-token',

@@ -15,9 +15,12 @@
     "npm": "^8.5.0"
   },
   "dependencies": {
+    "@chakra-ui/react": "^2.3.5",
     "@cosmjs/launchpad": "^0.27.1",
     "@cosmjs/proto-signing": "^0.27.1",
     "@cosmjs/stargate": "^0.27.1",
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
     "@floating-ui/react-dom": "^0.6.3",
     "@fortawesome/fontawesome-svg-core": "^6.1.2",
     "@fortawesome/free-solid-svg-icons": "^6.1.2",
@@ -26,6 +29,7 @@
     "bignumber.js": "^9.0.2",
     "buffer": "^6.0.3",
     "chain-registry": "^1.0.0",
+    "framer-motion": "^7.5.2",
     "invariant": "^2.2.4",
     "react": "^18.0.0",
     "react-app-polyfill": "^3.0.0",

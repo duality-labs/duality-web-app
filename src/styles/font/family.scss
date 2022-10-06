@@ -11,3 +11,8 @@ $console: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
 .font-console {
   font-family: $console;
 }
+
+input.font-console {
+  // allow inputs to be sized by ch width
+  box-sizing: content-box;
+}

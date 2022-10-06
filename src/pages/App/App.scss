@@ -15,7 +15,7 @@ body,
 
 main,
 .main-area {
-  display: flex;
+  display: flex !important; // ChakraUI sets <main> display to block?
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -24,5 +24,10 @@ main,
 }
 
 body {
-  background: var(--bg);
+  background: fixed var(--bg);
+}
+
+// offset the toasts area by about the height of the Header component
+.toast-portal ul {
+  margin-top: 7rem;
 }
