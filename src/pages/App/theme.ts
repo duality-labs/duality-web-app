@@ -1,6 +1,7 @@
 import { extendTheme } from '@chakra-ui/react';
 import type { StyleFunctionProps } from '@chakra-ui/styled-system';
 import { Theme } from '@chakra-ui/theme';
+import { PartialDeep } from 'type-fest';
 
 const config: Theme['config'] = {
   initialColorMode: 'dark',
@@ -18,6 +19,14 @@ const styles: Theme['styles'] = {
   }),
 };
 
-const theme = extendTheme({ config, styles });
+const components: PartialDeep<Theme['components']> = {
+  Heading: {
+    baseStyle: {
+      fontWeight: 'semibold',
+    },
+  },
+};
+
+const theme = extendTheme({ config, styles, components });
 
 export default theme;
