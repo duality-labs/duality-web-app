@@ -45,26 +45,31 @@ function sendSwap(
 
     const client = await txClient(wallet);
     // send message to chain
+
+    const id = `${Date.now()}.${Math.random}`;
+
+    toast({
+      id,
+      render: ({ id }) => (
+        <Toast
+          id={id}
+          icon={<Spinner size="lg" speed="1s" />}
+          title="Loading"
+          description="Executing your trade"
+          close={toast.close}
+        />
+      ),
+      status: 'info',
+      duration: null,
+      isClosable: true,
+    });
+
     client
       .signAndBroadcast([
         client.msgSwap({ amountIn, tokenIn, tokenOut, minOut, creator }),
       ])
       .then(function (res) {
         if (!res) return reject('No response');
-
-        toast({
-          render: ({ id }) => (
-            <Toast
-              id={id}
-              icon={<Spinner size="lg" speed="1s" />}
-              title="Loading"
-              description="Executing your trade"
-              close={toast.close}
-            />
-          ),
-          status: 'info',
-          isClosable: true,
-        });
 
         try {
           assertIsDeliverTxSuccess(res);
@@ -86,7 +91,7 @@ function sendSwap(
             gas: gasUsed.toString(),
           });
 
-          toast({
+          toast.update(id, {
             render: ({ id }) => (
               <Toast
                 id={id}
@@ -125,7 +130,7 @@ function sendSwap(
       })
       .catch(function (err: Error & { response?: DeliverTxResponse }) {
         if (!err.response && err?.message.includes('rejected')) {
-          toast({
+          toast.update(id, {
             render: ({ id }) => (
               <Toast
                 id={id}
@@ -136,11 +141,12 @@ function sendSwap(
               />
             ),
             status: 'info',
+            duration: 5000,
             isClosable: true,
           });
         } else if (err?.response?.code === 11) {
           const { gasUsed, gasWanted, transactionHash } = err?.response;
-          toast({
+          toast.update(id, {
             render: ({ id }) => (
               <Toast
                 id={id}
@@ -164,7 +170,7 @@ function sendSwap(
           });
         } else {
           const { transactionHash } = err?.response || {};
-          toast({
+          toast.update(id, {
             render: ({ id }) => (
               <Toast
                 id={id}
