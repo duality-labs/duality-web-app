@@ -73,7 +73,7 @@ function sendSwap(
             `Tx error: ${res.code}`
           );
           error.response = res;
-          return reject(error);
+          throw error;
         }
         const { code, gasUsed, rawLog, transactionHash } = res;
         if (code === REQUEST_SUCCESS) {
@@ -120,7 +120,7 @@ function sendSwap(
             `Tx error: ${code}`
           );
           error.response = res;
-          return reject(error);
+          throw error;
         }
       })
       .catch(function (err: Error & { response?: DeliverTxResponse }) {
