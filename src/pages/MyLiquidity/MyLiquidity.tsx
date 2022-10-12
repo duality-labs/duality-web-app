@@ -146,7 +146,7 @@ export default function MyLiquidity() {
               </div>
             </div>
             <div className="token-icons col ml-auto">
-              <div className="row mr-6">
+              <div className="row">
                 <img
                   src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
                   alt={`${token0.name} logo`}
