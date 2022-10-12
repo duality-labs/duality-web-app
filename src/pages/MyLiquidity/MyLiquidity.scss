@@ -207,5 +207,10 @@
         font-size: 3rem;
       }
     }
+    // allow column to fill space but to a limited size
+    .token-symbols {
+      flex: 1;
+      max-width: 700px;
+    }
   }
 }
