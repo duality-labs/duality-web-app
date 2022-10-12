@@ -98,7 +98,6 @@
   .banner {
     & {
       width: 100%;
-      background: hsla(0deg, 0%, 0%, 0.6);
     }
 
     &::before,
@@ -127,17 +126,63 @@
       margin: 0;
       width: auto;
     }
+    // add faded background so token icons may fade behind rest of heading if there is not enough width
+    .token-symbols {
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+    .token-icons {
+      & {
+        position: relative;
+      }
+      &::before,
+      &::after {
+        content: ' ';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+      // one gradient below the icons
+      &::before {
+        // opacity is multiplicative each stop needs to be equal to 0.6 opacity
+        // (1-0.6)*(1-0) = 0.4
+        // (1-0.5)*(1-0.2) = 0.4
+        // (1-0.3675)*(1-0.3675) ≈ 0.4 as 0.3675 ≈ 1-√(1-0.6)
+        background: linear-gradient(
+          90deg,
+          rgba(0, 0, 0, 0) 0px,
+          rgba(0, 0, 0, 0.2) 30px,
+          rgba(0, 0, 0, 0.3675) 60px,
+          rgba(0, 0, 0, 0.5) 120px,
+          rgba(0, 0, 0, 0.6) 240px,
+          rgba(0, 0, 0, 0.6) 100%
+        );
+      }
+      // one gradient above the icons
+      &::after {
+        background: linear-gradient(
+          90deg,
+          rgba(0, 0, 0, 0.6) 0px,
+          rgba(0, 0, 0, 0.5) 30px,
+          rgba(0, 0, 0, 0.3675) 60px,
+          rgba(0, 0, 0, 0.2) 120px,
+          rgba(0, 0, 0, 0) 240px,
+          rgba(0, 0, 0, 0) 100%
+        );
+      }
+    }
     .token-symbols {
       z-index: 2;
     }
     .token-icons {
-      flex: 1 1 0%; // allow token column to shrink
+      flex: 1 0 0.01px; // allow token column to take no room but display absolutely positioned overflowing icons
 
       // make row fill token-icons column space, but not take any space itself
       position: relative;
       > .row {
         position: absolute;
-        left: 0;
+        width: 100vw;
         right: 0;
         top: 0;
         bottom: 0;
