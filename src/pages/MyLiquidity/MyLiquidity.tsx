@@ -71,6 +71,7 @@ export default function MyLiquidity() {
     }
   }, [shares, indexer, dualityTokens]);
 
+  // show connect page
   if (!wallet || (!isValidating && (!balances || balances.length === 0))) {
     return (
       <Flex
@@ -89,6 +90,7 @@ export default function MyLiquidity() {
     );
   }
 
+  // show loken list cards
   return (
     <div className="my-liquidity-page">
       {shareValueMap &&
