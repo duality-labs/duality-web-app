@@ -13,7 +13,7 @@ import useOnDragMove from '../hooks/useOnDragMove';
 import './LiquiditySelector.scss';
 import BigNumber from 'bignumber.js';
 
-interface LiquiditySelectorProps {
+export interface LiquiditySelectorProps {
   ticks: TickMap | undefined;
   feeTier: number | undefined;
   tickSelected: number | undefined;

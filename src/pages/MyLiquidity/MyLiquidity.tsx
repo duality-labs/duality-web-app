@@ -1,5 +1,5 @@
 import { Flex, Heading } from '@chakra-ui/react';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 
@@ -9,10 +9,16 @@ import {
   useIndexerData,
   useShares,
   TickInfo,
+  useIndexerPairData,
+  TickMap,
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token, useDualityTokens } from '../../components/TokenPicker/hooks';
+
+import LiquidityDistribution from '../../components/LiquidityDistribution';
+import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
+import { TickGroup } from '../../components/LiquiditySelector';
 
 import './MyLiquidity.scss';
 
@@ -165,6 +171,11 @@ export default function MyLiquidity() {
             </div>
           </div>
         </div>
+        <LiquidityDistributionCard
+          token0={token0}
+          token1={token1}
+          shares={shareValues}
+        />
       </div>
     );
   }
@@ -184,6 +195,117 @@ export default function MyLiquidity() {
             />
           );
         })}
+    </div>
+  );
+}
+
+// set as constant to avoid unwanted hook effects
+const defaultCurrentPrice = new BigNumber(1);
+const feeTier = 0.003;
+const setRangeMin = () => undefined;
+const setRangeMax = () => undefined;
+
+function LiquidityDistributionCard({
+  token0,
+  token1,
+  shares = [],
+}: {
+  token0: Token;
+  token1: Token;
+  shares: Array<ShareValue>;
+}) {
+  const precision = shares?.length || 1;
+
+  const { data: { ticks: unorderedTicks } = {} } = useIndexerPairData(
+    token0?.address,
+    token1?.address
+  );
+
+  const currentPriceABFromTicks =
+    useCurrentPriceFromTicks(unorderedTicks) || defaultCurrentPrice;
+
+  const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
+    return currentPriceABFromTicks?.isLessThan(1);
+  });
+  const swapAll = useCallback(() => {
+    setInvertedTokenOrder((order) => !order);
+  }, []);
+  const tokenA = invertedTokenOrder ? token1 : token0;
+  const tokenB = invertedTokenOrder ? token0 : token1;
+
+  const currentPriceFromTicks = useMemo(() => {
+    return invertedTokenOrder
+      ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
+      : currentPriceABFromTicks;
+  }, [invertedTokenOrder, currentPriceABFromTicks]);
+
+  const ticks = useMemo(() => {
+    if (!invertedTokenOrder) return unorderedTicks;
+    if (!unorderedTicks) return unorderedTicks;
+    // invert ticks
+    const one = new BigNumber(1);
+    return Object.entries(unorderedTicks).reduce<TickMap>(
+      (result, [key, [tick0to1, tick1to0]]) => {
+        // remap tick fields and invert the price
+        result[key] = [
+          tick1to0 && {
+            ...tick1to0,
+            price: one.dividedBy(tick1to0.price),
+            reserve0: tick1to0.reserve1,
+            reserve1: tick1to0.reserve0,
+          },
+          tick0to1 && {
+            ...tick0to1,
+            price: one.dividedBy(tick0to1.price),
+            reserve0: tick0to1.reserve1,
+            reserve1: tick0to1.reserve0,
+          },
+        ];
+        return result;
+      },
+      {}
+    );
+  }, [unorderedTicks, invertedTokenOrder]);
+
+  const [tickSelected, setTickSelected] = useState(-1);
+  useEffect(() => {
+    setTickSelected((selected) => Math.min(selected, Number(precision) - 1));
+  }, [precision]);
+
+  const userTicks = useMemo<TickGroup | undefined>(() => {
+    return shares.flatMap(({ tick, userReserves0, userReserves1 }) => {
+      if (userReserves0 && userReserves1 && tick?.fee.isEqualTo(feeTier)) {
+        return [
+          invertedTokenOrder
+            ? [
+                new BigNumber(1).dividedBy(tick?.price || new BigNumber(1)),
+                userReserves1,
+                userReserves0,
+              ]
+            : [tick?.price || new BigNumber(0), userReserves0, userReserves1],
+        ];
+      } else {
+        return [];
+      }
+    });
+  }, [shares, invertedTokenOrder]);
+
+  return (
+    <div className="pool-page">
+      <LiquidityDistribution
+        chartTypeSelected="AMM"
+        tokenA={tokenA}
+        tokenB={tokenB}
+        ticks={ticks}
+        feeTier={feeTier}
+        currentPriceFromTicks={currentPriceFromTicks}
+        tickSelected={tickSelected}
+        setTickSelected={setTickSelected}
+        userTicks={userTicks}
+        setRangeMin={setRangeMin}
+        setRangeMax={setRangeMax}
+        swapAll={swapAll}
+      />
     </div>
   );
 }
