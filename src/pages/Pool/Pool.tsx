@@ -593,7 +593,7 @@ export default function Pool() {
           <div className="flex row">
             <div className="flex col col--left">
               <div className="chart-header row my-4">
-                <h3 className="text-normal">Liquidity Distribution</h3>
+                <h3 className="h3 text-normal">Liquidity Distribution</h3>
                 <span className="tokens-badge badge-default badge-large font-console">
                   {tokenB?.symbol}/{tokenA?.symbol}
                 </span>
