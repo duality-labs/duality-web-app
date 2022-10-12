@@ -7,7 +7,8 @@
   align-items: center;
 }
 
-.my-liquidity-page {
+.my-liquidity-page,
+.my-liquidity-detail-page {
   .page-card {
     min-height: 30rem;
     min-width: 24rem;
@@ -84,6 +85,86 @@
     }
     .value-1 {
       color: #8fcef0;
+    }
+  }
+}
+
+.my-liquidity-detail-page {
+  & {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .banner {
+    & {
+      width: 100%;
+      background: hsla(0deg, 0%, 0%, 0.6);
+    }
+
+    &::before,
+    &::after {
+      display: block;
+      content: ' ';
+      height: 8px;
+      width: 100%;
+      background: linear-gradient(
+        90deg,
+        #4eb1e8 0%,
+        rgba(78, 177, 232, 0) 100%
+      );
+    }
+    &::after {
+      background: linear-gradient(
+        90deg,
+        rgba(78, 177, 232, 0) 0%,
+        #4eb1e8 100%
+      );
+    }
+  }
+
+  .heading {
+    & {
+      margin: 0;
+      width: auto;
+    }
+    .token-symbols {
+      z-index: 2;
+    }
+    .token-icons {
+      flex: 1 1 0%; // allow token column to shrink
+
+      // make row fill token-icons column space, but not take any space itself
+      position: relative;
+      > .row {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        align-items: center;
+        justify-content: flex-end;
+        img {
+          position: static;
+          margin: 0;
+          margin-left: -2rem; // add icon overlap
+          height: 120%;
+          width: auto;
+
+          // see icons even when column has shrunken below their size
+          overflow: visible;
+          object-fit: cover;
+        }
+      }
+    }
+    .token-symbols {
+      font-size: 1rem;
+      h1 {
+        font-size: 3rem;
+      }
     }
   }
 }

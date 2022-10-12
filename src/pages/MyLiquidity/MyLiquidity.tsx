@@ -72,13 +72,6 @@ export default function MyLiquidity() {
     }
   }, [shares, indexer, dualityTokens]);
 
-  // get always up to date share data
-  const tokenPairShares =
-    selectedTokens &&
-    shareValueMap?.[
-      `${selectedTokens[0].address}-${selectedTokens[1].address}`
-    ];
-
   // show connect page
   if (!wallet || (!isValidating && (!balances || balances.length === 0))) {
     return (
@@ -95,9 +88,77 @@ export default function MyLiquidity() {
 
   // show detail page
   if (selectedTokens) {
+    const [token0, token1] = selectedTokens;
+
+    // get always up to date share data
+    const shareValues =
+      shareValueMap?.[`${token0.address}-${token1.address}`] || [];
+
+    const [total0, total1] = shareValues.reduce<[BigNumber, BigNumber]>(
+      ([total0, total1], shareValue) => {
+        return [
+          total0.plus(shareValue.userReserves0 || 0),
+          total1.plus(shareValue.userReserves1 || 0),
+        ];
+      },
+      [new BigNumber(0), new BigNumber(0)]
+    );
+
     return (
       <div className="my-liquidity-detail-page">
-        {JSON.stringify(tokenPairShares, null, 2)}
+        <div className="banner">
+          <div className="heading row">
+            <div className="token-symbols col py-5 px-6">
+              <h1>
+                {token0.symbol} + {token1.symbol}
+              </h1>
+              <div className="balance row mt-4">
+                <div className="col">Balance</div>
+                <div className="col ml-auto">
+                  ${total0.plus(total1).toFixed(2)}
+                </div>
+              </div>
+              <div className="value-visual row">
+                {total0 && total1 && (
+                  <div className="value-barchart">
+                    <div
+                      className="value-0"
+                      style={{
+                        width: `${total0
+                          .dividedBy(total0.plus(total1))
+                          .multipliedBy(100)
+                          .toFixed(3)}%`,
+                      }}
+                    ></div>
+                    <div className="value-1"></div>
+                  </div>
+                )}
+              </div>
+              <div className="value-text row">
+                <div className="value-0 col mr-5">
+                  {total0.toFixed(3)} {token0.symbol}{' '}
+                  {total0 && <>(${total0.toFixed(2)})</>}
+                </div>
+                <div className="value-1 col ml-auto">
+                  {total1.toFixed(3)} {token1.symbol}{' '}
+                  {total1 && <>(${total1.toFixed(2)})</>}
+                </div>
+              </div>
+            </div>
+            <div className="token-icons col ml-auto mr-6">
+              <div className="row">
+                <img
+                  src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
+                  alt={`${token0.name} logo`}
+                />
+                <img
+                  src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
+                  alt={`${token1.name} logo`}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
