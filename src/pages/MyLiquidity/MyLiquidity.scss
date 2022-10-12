@@ -178,6 +178,7 @@
     }
     .token-symbols {
       z-index: 2;
+      padding-left: 10vw;
     }
     .token-icons {
       flex: 1 0 0.01px; // allow token column to take no room but display absolutely positioned overflowing icons
@@ -187,7 +188,7 @@
       > .row {
         position: absolute;
         width: 100vw;
-        right: 10%;
+        right: 10vw;
         top: 0;
         bottom: 0;
         align-items: center;

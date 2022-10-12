@@ -108,7 +108,7 @@ export default function MyLiquidity() {
       <div className="my-liquidity-detail-page">
         <div className="banner">
           <div className="heading row">
-            <div className="token-symbols col py-5 px-6">
+            <div className="token-symbols col py-5">
               <h1>
                 {token0.symbol} + {token1.symbol}
               </h1>
