@@ -103,8 +103,8 @@ export default function MyLiquidity() {
     const [total0, total1] = shareValues.reduce<[BigNumber, BigNumber]>(
       ([total0, total1], shareValue) => {
         return [
-          total0.plus(shareValue.userReserves0 || 0),
-          total1.plus(shareValue.userReserves1 || 0),
+          total0.plus(shareValue.userReserves0?.shiftedBy(12) || 0),
+          total1.plus(shareValue.userReserves1?.shiftedBy(12) || 0),
         ];
       },
       [new BigNumber(0), new BigNumber(0)]
@@ -324,8 +324,8 @@ function PositionCard({
     const [total0, total1] = shareValues.reduce<[BigNumber, BigNumber]>(
       ([total0, total1], shareValue) => {
         return [
-          total0.plus(shareValue.userReserves0 || 0),
-          total1.plus(shareValue.userReserves1 || 0),
+          total0.plus(shareValue.userReserves0?.shiftedBy(12) || 0),
+          total1.plus(shareValue.userReserves1?.shiftedBy(12) || 0),
         ];
       },
       [new BigNumber(0), new BigNumber(0)]
