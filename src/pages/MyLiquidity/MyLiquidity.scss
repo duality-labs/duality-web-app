@@ -10,6 +10,10 @@
     padding: 2rem 2rem;
   }
 
+  .position-card > * {
+    pointer-events: none;
+  }
+
   .heading {
     margin: -2rem -2rem 0;
     width: calc(100% + 4rem);
@@ -51,6 +55,10 @@
     height: 8px;
     width: calc(100% + 4rem);
     background: linear-gradient(90deg, rgba(78, 177, 232, 0) 0%, #4eb1e8 100%);
+  }
+
+  .content {
+    width: 100%;
   }
 
   .value-barchart {
