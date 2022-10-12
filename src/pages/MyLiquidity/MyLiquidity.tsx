@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 
@@ -35,6 +35,8 @@ export default function MyLiquidity() {
   const { data: shares } = useShares();
   const dualityTokens = useDualityTokens();
 
+  const [selectedTokens, setSelectedTokens] = useState<[Token, Token]>();
+
   const shareValueMap = useMemo(() => {
     if (shares && indexer) {
       return shares.reduce<ShareValueMap>((result, share) => {
@@ -70,6 +72,13 @@ export default function MyLiquidity() {
     }
   }, [shares, indexer, dualityTokens]);
 
+  // get always up to date share data
+  const tokenPairShares =
+    selectedTokens &&
+    shareValueMap?.[
+      `${selectedTokens[0].address}-${selectedTokens[1].address}`
+    ];
+
   // show connect page
   if (!wallet || (!isValidating && (!balances || balances.length === 0))) {
     return (
@@ -80,6 +89,15 @@ export default function MyLiquidity() {
             Add new liquidity
           </button>
         </Link>
+      </div>
+    );
+  }
+
+  // show detail page
+  if (selectedTokens) {
+    return (
+      <div className="my-liquidity-detail-page">
+        {JSON.stringify(tokenPairShares, null, 2)}
       </div>
     );
   }
@@ -95,6 +113,7 @@ export default function MyLiquidity() {
               token0={shareValues[0].token0}
               token1={shareValues[0].token1}
               shareValues={shareValues}
+              setSelectedTokens={setSelectedTokens}
             />
           );
         })}
@@ -106,10 +125,14 @@ function PositionCard({
   token0,
   token1,
   shareValues,
+  setSelectedTokens,
 }: {
   token0: Token;
   token1: Token;
   shareValues: Array<ShareValue>;
+  setSelectedTokens: React.Dispatch<
+    React.SetStateAction<[Token, Token] | undefined>
+  >;
 }) {
   const {
     data: [price0, price1],
@@ -128,7 +151,12 @@ function PositionCard({
     const value1 = price1 && total1.multipliedBy(price1);
 
     return (
-      <div className="page-card">
+      <button
+        className="position-card page-card"
+        onClick={() => {
+          setSelectedTokens([token0, token1]);
+        }}
+      >
         <div className="heading col">
           <div className="row">
             <div className="token-symbols col">
@@ -185,7 +213,7 @@ function PositionCard({
             </div>
           </div>
         </div>
-      </div>
+      </button>
     );
   }
   return null;
