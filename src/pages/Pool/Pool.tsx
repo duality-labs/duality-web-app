@@ -63,6 +63,7 @@ const slopeTypes: Array<SlopeType> = [
   'DOWN-SLOPE',
 ];
 
+// todo: replace with dynamic calculation
 const calculateFeeLiquidity = function (label: string) {
   const test: { [label: string]: string } = {
     '0.01%': '1% liquidity',
