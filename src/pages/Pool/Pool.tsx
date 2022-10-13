@@ -1,4 +1,11 @@
-import { useEffect, useState, useCallback, FormEvent, useMemo } from 'react';
+import {
+  useEffect,
+  useState,
+  useCallback,
+  FormEvent,
+  useMemo,
+  ReactNode,
+} from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -734,41 +741,22 @@ export default function Pool() {
           </div>
         ) : (
           <div className="page-card orderbook-card mx-auto">
-            <div className="button-switch-group mx-auto mt-2 mb-4">
-              <button
-                type="button"
-                className={[
-                  'button',
-                  'py-3',
-                  'px-3',
-                  tickSelected === -1 && 'button-default',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => setTickSelected(-1)}
-              >
-                All
-              </button>
-              {Array.from({ length: Number(precision) }).map((_, index) => {
-                return (
-                  <button
-                    key={index}
-                    type="button"
-                    className={[
-                      'button',
-                      'py-3',
-                      'px-3',
-                      tickSelected === index && 'button-default',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    onClick={() => setTickSelected(index)}
-                  >
-                    {index + 1}
-                  </button>
-                );
-              })}
-            </div>
+            <RadioButtonGroupInput
+              className="mx-auto mt-2 mb-4"
+              buttonClassName="py-3 px-4"
+              values={(() => {
+                const map = new Map<string, ReactNode>();
+                map.set('-1', 'All');
+                for (let index = 0; index < Number(precision); index++) {
+                  map.set(`${index}`, index + 1);
+                }
+                return map;
+              })()}
+              value={`${tickSelected}`}
+              onChange={(tickSelectedString) => {
+                setTickSelected(Number(tickSelectedString));
+              }}
+            />
             <div className="row">
               <div className="col">
                 {tickSelected < 0 ? (
