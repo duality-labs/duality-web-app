@@ -282,6 +282,27 @@ function LiquidityDistributionCard({
     if (feeTier) {
       setFeeTier(feeTier.toNumber());
     }
+    // else default to most popular fee tier
+    else if (shares && shares.length > 1) {
+      const feeTierCount = shares.reduce<{ [feeTier: string]: number }>(
+        (result, share) => {
+          const feeTier = share.tick?.fee.toFixed();
+          if (feeTier) {
+            result[feeTier] = result[feeTier] || 0;
+            result[feeTier] += 1;
+          }
+          return result;
+        },
+        {}
+      );
+      const mostPopularFeeTier: string | undefined = Object.entries(
+        feeTierCount
+      ).sort((a, b) => {
+        return b[1] - a[1]; // descending order by value
+      })[0]?.[0];
+      // set fee tier if found
+      setFeeTier(Number(mostPopularFeeTier) || defaultFeeTier);
+    }
     // else default to default fee tier
     else {
       setFeeTier(defaultFeeTier);
