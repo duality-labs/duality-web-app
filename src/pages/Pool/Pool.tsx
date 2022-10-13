@@ -782,7 +782,7 @@ export default function Pool() {
                     />
                     <button
                       type="button"
-                      className="button-info ml-2"
+                      className="button button-info ml-2"
                       onClick={() => setPrecision(defaultPrecision)}
                     >
                       Auto
