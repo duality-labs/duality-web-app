@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 
 import { DexShare } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
@@ -10,14 +12,20 @@ import {
   TickInfo,
   useIndexerPairData,
   TickMap,
+  getBalance,
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { feeTypes } from '../../lib/web3/utils/fees';
-import { useSimplePrice } from '../../lib/tokenPrices';
+import { useHasPriceData, useSimplePrice } from '../../lib/tokenPrices';
 
-import { Token, useDualityTokens } from '../../components/TokenPicker/hooks';
+import {
+  Token,
+  useDualityTokens,
+  useTokens,
+} from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import StepNumberInput from '../../components/StepNumberInput';
+import TokenInputGroup from '../../components/TokenInputGroup';
 
 import LiquidityDistribution from '../../components/LiquidityDistribution';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
@@ -38,6 +46,8 @@ interface TickShareValue extends ShareValue {
 interface TickShareValueMap {
   [pairID: string]: Array<TickShareValue>;
 }
+
+const defaultTokenAmount = '0';
 
 export default function MyLiquidity() {
   const { wallet } = useWeb3();
@@ -403,7 +413,86 @@ function LiquidityDistributionCard({
     </div>
   );
 
-  return <form className="pool-page row">{leftColumn}</form>;
+  const hasPriceData = useHasPriceData([tokenA, tokenB]);
+  const tokenList = useTokens();
+  const { data: balances } = useBankBalances();
+  const balanceTokenA =
+    tokenA && balances && new BigNumber(getBalance(tokenA, balances));
+  const balanceTokenB =
+    tokenB && balances && new BigNumber(getBalance(tokenB, balances));
+
+  const [values, setValues] = useState<[string, string]>(() => [
+    new BigNumber(defaultTokenAmount).toFixed(),
+    new BigNumber(defaultTokenAmount).toFixed(),
+  ]);
+
+  const hasSufficientFundsA =
+    balanceTokenA?.isGreaterThanOrEqualTo(values[0] || 0) || false;
+  const hasSufficientFundsB =
+    balanceTokenB?.isGreaterThanOrEqualTo(values[1] || 0) || false;
+
+  const rightColumn = (
+    <div className="col">
+      <div className="assets-card page-card">
+        <h3 className="card-title mb-3">Add Liquidity</h3>
+        <div className="mb-4">
+          <p>
+            Add liquidity in any ratio to earn fees on
+            <br /> other people’s trades! Learn more{' '}
+            <Link to="/my-liquidity">here</Link>.
+          </p>
+        </div>
+        <div className="card-row">
+          <TokenInputGroup
+            variant={!hasSufficientFundsA && 'error'}
+            tokenList={tokenList}
+            token={tokenA}
+            value={`${values[0]}`}
+            onValueChanged={(newValue) =>
+              setValues(([_, valueB]) => [newValue, valueB])
+            }
+            exclusion={tokenB}
+            title={balanceTokenA ? `Available ${balanceTokenA}` : ''}
+          />
+        </div>
+        <div className="plus-space mx-auto my-2">
+          <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>
+        </div>
+        <div className="card-row">
+          <TokenInputGroup
+            variant={!hasSufficientFundsB && 'error'}
+            tokenList={tokenList}
+            token={tokenB}
+            value={`${values[1]}`}
+            onValueChanged={(newValue) =>
+              setValues(([valueA]) => [valueA, newValue])
+            }
+            exclusion={tokenA}
+            title={balanceTokenB ? `Available ${balanceTokenB}` : ''}
+          />
+        </div>
+        {hasPriceData && (
+          <div className="attribution">
+            Price data from{' '}
+            <a
+              target="_blank"
+              rel="noreferrer"
+              href="https://www.coingecko.com/"
+            >
+              CoinGecko
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <form className="pool-page row">
+      {leftColumn}
+      {rightColumn}
+    </form>
+  );
 }
 
 function PositionCard({

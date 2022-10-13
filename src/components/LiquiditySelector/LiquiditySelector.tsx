@@ -352,7 +352,9 @@ export default function LiquiditySelector({
   return (
     <svg
       className="chart-liquidity"
-      viewBox={`0 -${containerSize.height} ${containerSize.width} ${containerSize.height}`}
+      viewBox={`0 -${containerSize.height} ${containerSize.width} ${
+        containerSize.height + 5
+      }`}
       ref={setContainer}
     >
       <defs>
