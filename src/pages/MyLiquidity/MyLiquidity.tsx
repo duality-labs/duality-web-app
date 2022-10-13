@@ -16,6 +16,7 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token, useDualityTokens } from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
+import StepNumberInput from '../../components/StepNumberInput';
 
 import LiquidityDistribution from '../../components/LiquidityDistribution';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
@@ -338,6 +339,8 @@ function LiquidityDistributionCard({
     });
   }, [sortedShares, invertedTokenOrder, feeTier]);
 
+  const currentTick = userTicks?.[tickSelected];
+
   return (
     <div className="pool-page">
       <LiquidityDistribution
@@ -371,10 +374,21 @@ function LiquidityDistributionCard({
             setTickSelected(tickSelectedString);
           }}
         />
+        <div className="row">
+          <div className="col">
+            {currentTick && (
+              <div className="row tick-price-card">
+                <h3 className="card-title mr-auto">Price</h3>
+                <StepNumberInput
+                  key={tickSelected}
+                  readOnly
+                  value={currentTick[0].toFixed()}
+                />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-      {userTicks && tickSelected >= 0 && (
-        <div>{JSON.stringify(userTicks?.[tickSelected], null, 2)}</div>
-      )}
     </div>
   );
 }
