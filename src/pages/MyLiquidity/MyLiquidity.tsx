@@ -13,7 +13,9 @@ import {
   TickMap,
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
+import { feeTypes } from '../../lib/web3/utils/fees';
 import { useSimplePrice } from '../../lib/tokenPrices';
+
 import { Token, useDualityTokens } from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -340,6 +342,9 @@ function LiquidityDistributionCard({
   }, [sortedShares, invertedTokenOrder, feeTier]);
 
   const currentTick = userTicks?.[tickSelected];
+  const currentFeeType = feeTypes.find(
+    (feeType) => feeType.fee === sortedShares[tickSelected]?.tick.fee.toNumber()
+  );
 
   return (
     <div className="pool-page">
@@ -387,6 +392,18 @@ function LiquidityDistributionCard({
               </div>
             )}
           </div>
+          {currentFeeType && (
+            <div className="col">
+              <div className="fee-card">
+                <div className="card-header">
+                  <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
+                  <div className="badge-default corner-border badge-large font-console ml-auto">
+                    {currentFeeType.label}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
