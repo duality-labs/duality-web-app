@@ -8,7 +8,7 @@ import {
 
 import './RadioButtonGroupInput.scss';
 
-function useSelectedButtonBackgroundMove<T extends string>(
+function useSelectedButtonBackgroundMove<T extends string | number>(
   value: T
 ): [
   (ref: HTMLButtonElement | null) => void,
@@ -42,7 +42,7 @@ function useSelectedButtonBackgroundMove<T extends string>(
       if (movingButton && targetButton) {
         movingButton.style.width = `${targetButton.offsetWidth}px`;
         movingButton.style.left = `${targetButton.offsetLeft}px`;
-        if (newValue) {
+        if (newValue !== undefined) {
           movingButton.classList.add('transition-ready');
         } else {
           movingButton?.classList.remove('transition-ready');
@@ -66,7 +66,7 @@ function useSelectedButtonBackgroundMove<T extends string>(
   return [movingButtonRef, createRefForValue];
 }
 
-interface Props<T extends string> {
+interface Props<T extends string | number> {
   className?: string;
   buttonClassName?: string;
   values: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
@@ -74,7 +74,7 @@ interface Props<T extends string> {
   onChange: (value: T) => void;
 }
 
-export default function RadioButtonGroupInput<T extends string>({
+export default function RadioButtonGroupInput<T extends string | number>({
   className,
   buttonClassName,
   values = [],
@@ -84,7 +84,7 @@ export default function RadioButtonGroupInput<T extends string>({
   const [movingAssetRef, createRefForValue] =
     useSelectedButtonBackgroundMove<T>(value);
   const entries = Array.isArray(values)
-    ? values.map<[T, string]>((value) => [value, value])
+    ? values.map<[T, string]>((value) => [value, `${value}`])
     : values instanceof Map
     ? Array.from(values.entries())
     : (Object.entries(values).map(([value, description]) => [

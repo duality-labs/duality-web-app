@@ -741,20 +741,20 @@ export default function Pool() {
           </div>
         ) : (
           <div className="page-card orderbook-card mx-auto">
-            <RadioButtonGroupInput
+            <RadioButtonGroupInput<number>
               className="mx-auto mt-2 mb-4"
               buttonClassName="py-3 px-4"
               values={(() => {
-                const map = new Map<string, ReactNode>();
-                map.set('-1', 'All');
+                const map = new Map<number, ReactNode>();
+                map.set(-1, 'All');
                 for (let index = 0; index < Number(precision); index++) {
-                  map.set(`${index}`, index + 1);
+                  map.set(index, index + 1);
                 }
                 return map;
               })()}
-              value={`${tickSelected}`}
+              value={tickSelected}
               onChange={(tickSelectedString) => {
-                setTickSelected(Number(tickSelectedString));
+                setTickSelected(tickSelectedString);
               }}
             />
             <div className="row">
