@@ -111,4 +111,12 @@ $border-width: 2px;
       }
     }
   }
+
+  &.range-step-input--read-only {
+    .range-step-controls {
+      span {
+        margin: 0;
+      }
+    }
+  }
 }
