@@ -340,8 +340,8 @@ function LiquidityDistributionCard({
     (feeType) => feeType.fee === sortedShares[tickSelected]?.tick.fee.toNumber()
   );
 
-  return (
-    <div className="pool-page">
+  const leftColumn = (
+    <div className="col">
       <LiquidityDistribution
         chartTypeSelected="AMM"
         tokenA={tokenA}
@@ -402,6 +402,8 @@ function LiquidityDistributionCard({
       </div>
     </div>
   );
+
+  return <form className="pool-page row">{leftColumn}</form>;
 }
 
 function PositionCard({
