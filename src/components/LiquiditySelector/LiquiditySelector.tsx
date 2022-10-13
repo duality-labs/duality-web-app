@@ -20,7 +20,7 @@ export interface LiquiditySelectorProps {
   setTickSelected: (index: number) => void;
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
-  userTicks?: TickGroup;
+  userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   advanced?: boolean;
   formatPrice?: (value: BigNumber) => string;
@@ -204,13 +204,19 @@ export default function LiquiditySelector({
   // allow user ticks to reset the boundary of the graph
   useLayoutEffect(() => {
     const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
-      (result, [price]) =>
-        !result || price.isLessThan(result) ? price : result,
+      (result, tick) => {
+        if (!tick) return result;
+        const [price] = tick;
+        return !result || price.isLessThan(result) ? price : result;
+      },
       undefined
     );
     const maxUserTickPrice = userTicks.reduce<BigNumber | undefined>(
-      (result, [price]) =>
-        !result || price.isGreaterThan(result) ? price : result,
+      (result, tick) => {
+        if (!tick) return result;
+        const [price] = tick;
+        return !result || price.isGreaterThan(result) ? price : result;
+      },
       undefined
     );
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
@@ -363,7 +369,7 @@ export default function LiquiditySelector({
       {!advanced && (
         <TicksBackgroundArea
           className="new-ticks-area"
-          ticks={userTicks}
+          ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
         />
@@ -395,7 +401,7 @@ export default function LiquiditySelector({
       ) : (
         <TicksArea
           className="new-ticks-area"
-          ticks={userTicks}
+          ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
           setRangeMin={setRangeMin}
@@ -676,7 +682,7 @@ function TicksGroup({
   ...rest
 }: {
   currentPrice: BigNumber;
-  ticks: TickGroup;
+  ticks: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   tickSelected: number;
   setTickSelected: (index: number) => void;
@@ -685,11 +691,12 @@ function TicksGroup({
   formatPrice: (value: BigNumber) => string;
   className?: string;
 }) {
-  const cumulativeToken0Values = ticks.reduce(
+  const filteredTicks = ticks.filter((tick): tick is Tick => !!tick);
+  const cumulativeToken0Values = filteredTicks.reduce(
     (result, [price, token0Value]) => result.plus(token0Value),
     new BigNumber(0)
   );
-  const cumulativeToken1Values = ticks.reduce(
+  const cumulativeToken1Values = filteredTicks.reduce(
     (result, [price, _, token1Value]) => result.plus(token1Value),
     new BigNumber(0)
   );
@@ -762,10 +769,11 @@ function TicksGroup({
       const index = parseInt(
         (e.target as HTMLElement)?.getAttribute('data-key') || ''
       );
-      if (!isNaN(index)) {
+      const tick = ticks?.[index];
+      if (!isNaN(index) && tick) {
         setTickSelected(index);
         lastSelectedTick.current = {
-          tick: ticks[index],
+          tick,
           index,
         };
       }
@@ -775,9 +783,10 @@ function TicksGroup({
     [ticks, startDragTick, setTickSelected]
   );
 
-  return (
-    <g className={['ticks', className].filter(Boolean).join(' ')}>
-      {ticks.map(([price, token0Value, token1Value], index) => (
+  const tickPart = ticks.map((tick, index) => {
+    if (tick) {
+      const [price, token0Value, token1Value] = tick;
+      return (
         <g
           key={index}
           className={[
@@ -861,8 +870,14 @@ function TicksGroup({
             onMouseDown={onTickSelected}
           />
         </g>
-      ))}
-    </g>
+      );
+    } else {
+      return null;
+    }
+  });
+
+  return (
+    <g className={['ticks', className].filter(Boolean).join(' ')}>{tickPart}</g>
   );
 }
 
