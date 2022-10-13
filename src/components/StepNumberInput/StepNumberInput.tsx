@@ -178,6 +178,7 @@ export default function StepNumberInput<T extends number | string = string>({
         </button>
         {editable || disabled ? (
           <input
+            className="font-console"
             type="number"
             value={currentValue}
             onInput={onInputChange}
@@ -194,7 +195,7 @@ export default function StepNumberInput<T extends number | string = string>({
             }}
           />
         ) : (
-          <span>{currentValue}</span>
+          <span className="font-console">{currentValue}</span>
         )}
         <button
           type="button"
