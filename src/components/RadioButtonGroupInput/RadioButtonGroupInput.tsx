@@ -68,7 +68,7 @@ function useSelectedButtonBackgroundMove<T extends string>(
 
 interface Props<T extends string> {
   className?: string;
-  values: { [value in T]: ReactNode } | T[];
+  values: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
   value: T;
   onChange: (value: T) => void;
 }
@@ -83,6 +83,8 @@ export default function RadioButtonGroupInput<T extends string>({
     useSelectedButtonBackgroundMove<T>(value);
   const entries = Array.isArray(values)
     ? values.map<[T, string]>((value) => [value, value])
+    : values instanceof Map
+    ? Array.from(values.entries())
     : (Object.entries(values).map(([value, description]) => [
         value,
         description,
