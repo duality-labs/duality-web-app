@@ -91,6 +91,9 @@ export default function RadioButtonGroupInput<T extends string | number>({
         value,
         description,
       ]) as [T, string][]);
+  const selectedIndex = entries.findIndex(
+    ([entryValue]) => entryValue === value
+  );
   return (
     <div
       className={['radio-button-group-switch', className]
@@ -104,19 +107,67 @@ export default function RadioButtonGroupInput<T extends string | number>({
         disabled
         ref={movingAssetRef}
       />
-      {entries.map(([entryValue, description]) => (
-        <button
-          key={entryValue}
-          type="button"
-          className={['button non-moving', buttonClassName]
-            .filter(Boolean)
-            .join(' ')}
-          ref={createRefForValue(entryValue)}
-          onClick={() => onChange(entryValue)}
-        >
-          {description}
-        </button>
-      ))}
+      {entries.flatMap(([entryValue, description], index, entries) => {
+        const previousIndex = includeIndex(
+          index - 1,
+          entries.length,
+          selectedIndex
+        );
+        const currentIndex = includeIndex(index, entries.length, selectedIndex);
+        const futureIndex = includeIndex(
+          index + 1,
+          entries.length,
+          selectedIndex
+        );
+        return currentIndex || (previousIndex && futureIndex) ? (
+          // include button
+          <button
+            key={entryValue}
+            type="button"
+            className={['button non-moving', buttonClassName]
+              .filter(Boolean)
+              .join(' ')}
+            ref={createRefForValue(entryValue)}
+            onClick={() => onChange(entryValue)}
+          >
+            {description}
+          </button>
+        ) : previousIndex ? (
+          // button is not included and button before this was included
+          <span key={entryValue}>...</span>
+        ) : (
+          // button is not included and button before this was also not included (ignore)
+          []
+        );
+      })}
     </div>
   );
+}
+
+function includeIndex(
+  index: number,
+  length: number,
+  selectedIndex?: number
+): boolean {
+  // if value is of first 3 values
+  if (index < 3) {
+    return true;
+  }
+  // if value is of last 3 values
+  else if (index >= length - 3) {
+    return true;
+  }
+  // if value is of middle 5 values
+  else if (
+    selectedIndex !== undefined &&
+    selectedIndex >= 0 &&
+    index >= selectedIndex - 2 &&
+    index <= selectedIndex + 2
+  ) {
+    return true;
+  }
+  // else return false
+  else {
+    return false;
+  }
 }

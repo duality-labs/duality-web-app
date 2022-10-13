@@ -15,6 +15,7 @@ import {
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token, useDualityTokens } from '../../components/TokenPicker/hooks';
+import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 
 import LiquidityDistribution from '../../components/LiquidityDistribution';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
@@ -306,6 +307,27 @@ function LiquidityDistributionCard({
         setRangeMax={setRangeMax}
         swapAll={swapAll}
       />
+      <div className="page-card orderbook-card mx-auto">
+        <RadioButtonGroupInput<number>
+          className="mx-auto mt-2 mb-4"
+          buttonClassName="py-3 px-4"
+          values={(() => {
+            const map = new Map<number, string | number>();
+            map.set(-1, 'All');
+            for (let index = 0; index < Number(precision); index++) {
+              map.set(index, index + 1);
+            }
+            return map;
+          })()}
+          value={tickSelected}
+          onChange={(tickSelectedString) => {
+            setTickSelected(tickSelectedString);
+          }}
+        />
+      </div>
+      {userTicks && tickSelected >= 0 && (
+        <div>{JSON.stringify(userTicks?.[tickSelected], null, 2)}</div>
+      )}
     </div>
   );
 }
