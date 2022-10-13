@@ -34,6 +34,12 @@
   }
   button + button + button {
     margin-left: -0.75rem;
+    &.p-3,
+    &.px-3,
+    &.p-4,
+    &.px-4 {
+      margin-left: -0.25rem;
+    }
   }
 
   .moving-background {

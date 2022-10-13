@@ -68,6 +68,7 @@ function useSelectedButtonBackgroundMove<T extends string>(
 
 interface Props<T extends string> {
   className?: string;
+  buttonClassName?: string;
   values: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
   value: T;
   onChange: (value: T) => void;
@@ -75,6 +76,7 @@ interface Props<T extends string> {
 
 export default function RadioButtonGroupInput<T extends string>({
   className,
+  buttonClassName,
   values = [],
   value,
   onChange,
@@ -96,7 +98,9 @@ export default function RadioButtonGroupInput<T extends string>({
         .join(' ')}
     >
       <button
-        className="button moving-background"
+        className={['button moving-background', buttonClassName]
+          .filter(Boolean)
+          .join(' ')}
         disabled
         ref={movingAssetRef}
       />
@@ -104,7 +108,9 @@ export default function RadioButtonGroupInput<T extends string>({
         <button
           key={entryValue}
           type="button"
-          className="button non-moving"
+          className={['button non-moving', buttonClassName]
+            .filter(Boolean)
+            .join(' ')}
           ref={createRefForValue(entryValue)}
           onClick={() => onChange(entryValue)}
         >
