@@ -2,6 +2,7 @@ import {
   ReactNode,
   useCallback,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -83,17 +84,54 @@ export default function RadioButtonGroupInput<T extends string | number>({
 }: Props<T>) {
   const [movingAssetRef, createRefForValue] =
     useSelectedButtonBackgroundMove<T>(value);
-  const entries = Array.isArray(values)
-    ? values.map<[T, string]>((value) => [value, `${value}`])
-    : values instanceof Map
-    ? Array.from(values.entries())
-    : (Object.entries(values).map(([value, description]) => [
-        value,
-        description,
-      ]) as [T, string][]);
+  const entries = useMemo(() => {
+    return Array.isArray(values)
+      ? values.map<[T, string]>((value) => [value, `${value}`])
+      : values instanceof Map
+      ? Array.from(values.entries())
+      : (Object.entries(values).map(([value, description]) => [
+          value,
+          description,
+        ]) as [T, string][]);
+  }, [values]);
   const selectedIndex = entries.findIndex(
     ([entryValue]) => entryValue === value
   );
+  const includedIndexes = useMemo(() => {
+    return (
+      entries
+        .map((_, index, entries) => {
+          // cumulate weightings
+          let result = 0;
+          // weight start of list
+          if (index < 5) {
+            result += 5 - index;
+          }
+          // weight end of list
+          if (index >= entries.length - 5) {
+            result += 5 - (entries.length - 1 - index);
+          }
+          // weight to left near selection
+          if (index >= selectedIndex - 4 && index <= selectedIndex) {
+            result += 5 - (selectedIndex - index);
+          }
+          // weight to right near selection
+          if (index >= selectedIndex && index <= selectedIndex + 4) {
+            result += 5 - (index - selectedIndex);
+          }
+          return [index, result];
+        })
+        // get most weighted indexes
+        .sort((a, b) => b[1] - a[1])
+        // truncated to top 10
+        .slice(0, 10)
+        // get just the indexes, remove the weightings
+        .map((a) => a[0])
+        // sort indexes in order
+        .sort((a, b) => a - b)
+    );
+  }, [entries, selectedIndex]);
+
   return (
     <div
       className={['radio-button-group-switch', className]
@@ -108,18 +146,15 @@ export default function RadioButtonGroupInput<T extends string | number>({
         ref={movingAssetRef}
       />
       {entries.flatMap(([entryValue, description], index, entries) => {
-        const previousIndex = includeIndex(
-          index - 1,
-          entries.length,
-          selectedIndex
+        const previousIndex = includedIndexes.includes(index - 1);
+        const currentIndex = includedIndexes.includes(index);
+        const nextIncludedIndex = includedIndexes.indexOf(index - 1) + 1;
+        const nextAverageIndex = Math.floor(
+          (includedIndexes[nextIncludedIndex] + index) / 2
         );
-        const currentIndex = includeIndex(index, entries.length, selectedIndex);
-        const futureIndex = includeIndex(
-          index + 1,
-          entries.length,
-          selectedIndex
-        );
-        return currentIndex || (previousIndex && futureIndex) ? (
+        const nextAverageKey = entries[nextAverageIndex][0];
+
+        return currentIndex ? (
           // include button
           <button
             key={entryValue}
@@ -134,7 +169,17 @@ export default function RadioButtonGroupInput<T extends string | number>({
           </button>
         ) : previousIndex ? (
           // button is not included and button before this was included
-          <span key={entryValue}>...</span>
+          <button
+            key={nextAverageKey}
+            type="button"
+            className={['button non-moving', buttonClassName]
+              .filter(Boolean)
+              .join(' ')}
+            ref={createRefForValue(nextAverageKey)}
+            onClick={() => onChange(nextAverageKey)}
+          >
+            …
+          </button>
         ) : (
           // button is not included and button before this was also not included (ignore)
           []
@@ -142,32 +187,4 @@ export default function RadioButtonGroupInput<T extends string | number>({
       })}
     </div>
   );
-}
-
-function includeIndex(
-  index: number,
-  length: number,
-  selectedIndex?: number
-): boolean {
-  // if value is of first 3 values
-  if (index < 3) {
-    return true;
-  }
-  // if value is of last 3 values
-  else if (index >= length - 3) {
-    return true;
-  }
-  // if value is of middle 5 values
-  else if (
-    selectedIndex !== undefined &&
-    selectedIndex >= 0 &&
-    index >= selectedIndex - 2 &&
-    index <= selectedIndex + 2
-  ) {
-    return true;
-  }
-  // else return false
-  else {
-    return false;
-  }
 }
