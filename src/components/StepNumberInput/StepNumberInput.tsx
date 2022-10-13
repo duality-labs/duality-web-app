@@ -161,6 +161,19 @@ export default function StepNumberInput<T extends number | string = string>({
     }
   }, [onSubStep, onAddStep]);
 
+  const dynamicInputStyle = useMemo(() => {
+    return {
+      // set width of input based on current values but restrained to a min/max
+      minWidth: `${
+        minSignificantDigits + (currentValue.includes('.') ? 1 : 0)
+      }ch`,
+      maxWidth: `${
+        maxSignificantDigits + (currentValue.includes('.') ? 1 : 0)
+      }ch`,
+      width: `${currentValue.length}ch`,
+    };
+  }, [currentValue, minSignificantDigits, maxSignificantDigits]);
+
   return (
     <div className="range-step-input">
       {title && <h6 className="range-step-title">{title}</h6>}
@@ -182,19 +195,12 @@ export default function StepNumberInput<T extends number | string = string>({
             value={currentValue}
             onInput={onInputChange}
             ref={inputRef}
-            style={{
-              // set width of input based on current values but restrained to a min/max
-              minWidth: `${
-                minSignificantDigits + (currentValue.includes('.') ? 1 : 0)
-              }ch`,
-              maxWidth: `${
-                maxSignificantDigits + (currentValue.includes('.') ? 1 : 0)
-              }ch`,
-              width: `${currentValue.length}ch`,
-            }}
+            style={dynamicInputStyle}
           />
         ) : (
-          <span>{currentValue}</span>
+          <span style={dynamicInputStyle}>
+            {currentValue}
+          </span>
         )}
         <button
           type="button"
