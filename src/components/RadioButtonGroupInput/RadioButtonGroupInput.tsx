@@ -60,7 +60,9 @@ function useSelectedButtonBackgroundMove<T extends string | number>(
       lastValue.current = value;
       updateValue(value);
     } else {
-      updateValue();
+      // todo: this has been changed to allow rerendering changed components to cause an animation
+      // this has however caused the animation to start on component creation
+      updateValue(value);
     }
   });
 
