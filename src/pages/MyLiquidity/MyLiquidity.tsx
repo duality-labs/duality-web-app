@@ -19,7 +19,7 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 
 import LiquidityDistribution from '../../components/LiquidityDistribution';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
-import { TickGroup } from '../../components/LiquiditySelector';
+import { Tick } from '../../components/LiquiditySelector';
 
 import './MyLiquidity.scss';
 
@@ -202,7 +202,7 @@ export default function MyLiquidity() {
 
 // set as constant to avoid unwanted hook effects
 const defaultCurrentPrice = new BigNumber(1);
-const feeTier = 0.003;
+const defaultFeeTier = 0.003;
 const setRangeMin = () => undefined;
 const setRangeMax = () => undefined;
 
@@ -269,27 +269,40 @@ function LiquidityDistributionCard({
   }, [unorderedTicks, invertedTokenOrder]);
 
   const [tickSelected, setTickSelected] = useState(-1);
+  // constrain the selected tick index if the index does no longer exist
   useEffect(() => {
     setTickSelected((selected) => Math.min(selected, Number(precision) - 1));
   }, [precision]);
 
-  const userTicks = useMemo<TickGroup | undefined>(() => {
-    return shares.flatMap(({ tick, userReserves0, userReserves1 }) => {
+  const [feeTier, setFeeTier] = useState(defaultFeeTier);
+  // change the liquidity view to the fee tier that the selected tick is on (so that we can see it)
+  useEffect(() => {
+    const shareValue = shares?.[tickSelected];
+    const feeTier = shareValue?.tick?.fee;
+    if (feeTier) {
+      setFeeTier(feeTier.toNumber());
+    }
+    // else default to default fee tier
+    else {
+      setFeeTier(defaultFeeTier);
+    }
+  }, [shares, tickSelected]);
+
+  const userTicks = useMemo<Array<Tick | undefined> | undefined>(() => {
+    return shares.map(({ tick, userReserves0, userReserves1 }) => {
       if (userReserves0 && userReserves1 && tick?.fee.isEqualTo(feeTier)) {
-        return [
-          invertedTokenOrder
-            ? [
-                new BigNumber(1).dividedBy(tick?.price || new BigNumber(1)),
-                userReserves1,
-                userReserves0,
-              ]
-            : [tick?.price || new BigNumber(0), userReserves0, userReserves1],
-        ];
+        return invertedTokenOrder
+          ? [
+              new BigNumber(1).dividedBy(tick?.price || new BigNumber(1)),
+              userReserves1,
+              userReserves0,
+            ]
+          : [tick?.price || new BigNumber(0), userReserves0, userReserves1];
       } else {
-        return [];
+        return undefined;
       }
     });
-  }, [shares, invertedTokenOrder]);
+  }, [shares, invertedTokenOrder, feeTier]);
 
   return (
     <div className="pool-page">
