@@ -14,6 +14,7 @@ $border-width: 2px;
     flex-direction: column;
     overflow: hidden;
     display: flex;
+    justify-content: center;
   }
 
   .range-step-title {
@@ -70,11 +71,25 @@ $border-width: 2px;
       background-color: transparent;
       border: 0px none transparent;
       font-size: font-size.$input;
+      line-height: 1em;
       text-align: center;
       color: var(--text-default);
       flex: 1 1 auto;
       outline: none;
       width: 100%;
+      overflow-wrap: normal;
+    }
+    // override styling for span as text placement inside padding border
+    span {
+      @include paddings.padding('y', 0);
+      @include paddings.padding('x', 0);
+      @include margins.margin('y', 0);
+      @include margins.margin('x', 4);
+      overflow: hidden;
+      // align height to input style
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     input[type='number'] {
