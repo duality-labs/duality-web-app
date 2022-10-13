@@ -25,12 +25,14 @@ interface ShareValue {
   share: DexShare;
   token0: Token;
   token1: Token;
-  tick?: TickInfo;
   userReserves0?: BigNumber;
   userReserves1?: BigNumber;
 }
-interface ShareValueMap {
-  [pairID: string]: Array<ShareValue>;
+interface TickShareValue extends ShareValue {
+  tick: TickInfo;
+}
+interface TickShareValueMap {
+  [pairID: string]: Array<TickShareValue>;
 }
 
 export default function MyLiquidity() {
@@ -45,7 +47,7 @@ export default function MyLiquidity() {
 
   const shareValueMap = useMemo(() => {
     if (shares && indexer) {
-      return shares.reduce<ShareValueMap>((result, share) => {
+      return shares.reduce<TickShareValueMap>((result, share) => {
         const token0 = dualityTokens.find(
           (token) => token.address === share.token0
         );
@@ -68,10 +70,10 @@ export default function MyLiquidity() {
             extendedShare.userReserves1 = shareFraction.multipliedBy(
               tick.reserve1
             );
-            extendedShare.tick = tick;
+            // add TickShareValue to TickShareValueMap
+            result[pairID] = result[pairID] || [];
+            result[pairID].push({ ...extendedShare, tick });
           }
-          result[pairID] = result[pairID] || [];
-          result[pairID].push(extendedShare);
         }
         return result;
       }, {});
@@ -206,7 +208,7 @@ function LiquidityDistributionCard({
 }: {
   token0: Token;
   token1: Token;
-  shares: Array<ShareValue>;
+  shares: Array<TickShareValue>;
 }) {
   const precision = shares?.length || 1;
 
@@ -270,8 +272,7 @@ function LiquidityDistributionCard({
   const [feeTier, setFeeTier] = useState(defaultFeeTier);
   // change the liquidity view to the fee tier that the selected tick is on (so that we can see it)
   useEffect(() => {
-    const shareValue = shares?.[tickSelected];
-    const feeTier = shareValue?.tick?.fee;
+    const feeTier = shares?.[tickSelected]?.tick.fee;
     if (feeTier) {
       setFeeTier(feeTier.toNumber());
     }
@@ -279,7 +280,7 @@ function LiquidityDistributionCard({
     else if (shares && shares.length > 1) {
       const feeTierCount = shares.reduce<{ [feeTier: string]: number }>(
         (result, share) => {
-          const feeTier = share.tick?.fee.toFixed();
+          const feeTier = share.tick.fee.toFixed();
           if (feeTier) {
             result[feeTier] = result[feeTier] || 0;
             result[feeTier] += 1;
@@ -304,14 +305,14 @@ function LiquidityDistributionCard({
 
   const userTicks = useMemo<Array<Tick | undefined> | undefined>(() => {
     return shares.map(({ tick, userReserves0, userReserves1 }) => {
-      if (userReserves0 && userReserves1 && tick?.fee.isEqualTo(feeTier)) {
+      if (userReserves0 && userReserves1 && tick.fee.isEqualTo(feeTier)) {
         return invertedTokenOrder
           ? [
-              new BigNumber(1).dividedBy(tick?.price || new BigNumber(1)),
+              new BigNumber(1).dividedBy(tick.price || new BigNumber(1)),
               userReserves1,
               userReserves0,
             ]
-          : [tick?.price || new BigNumber(0), userReserves0, userReserves1];
+          : [tick.price || new BigNumber(0), userReserves0, userReserves1];
       } else {
         return undefined;
       }
