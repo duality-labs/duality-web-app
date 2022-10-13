@@ -177,7 +177,11 @@ export default function StepNumberInput<T extends number | string = string>({
   }, [currentValue, minSignificantDigits, maxSignificantDigits]);
 
   return (
-    <div className="range-step-input">
+    <div
+      className={['range-step-input', readOnly && 'range-step-input--read-only']
+        .filter(Boolean)
+        .join(' ')}
+    >
       {title && <h6 className="range-step-title">{title}</h6>}
       <div className="range-step-controls">
         {!readOnly && (
