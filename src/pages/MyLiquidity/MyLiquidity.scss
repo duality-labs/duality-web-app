@@ -214,4 +214,10 @@
       max-width: 700px;
     }
   }
+
+  form {
+    > .col {
+      gap: 2rem;
+    }
+  }
 }
