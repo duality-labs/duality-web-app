@@ -14,6 +14,8 @@ import {
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token, useDualityTokens } from '../../components/TokenPicker/hooks';
+import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
+import StepNumberInput from '../../components/StepNumberInput';
 
 import LiquidityDistribution from '../../components/LiquidityDistribution';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
@@ -331,6 +333,8 @@ function LiquidityDistributionCard({
     });
   }, [sortedShares, invertedTokenOrder, feeTier]);
 
+  const currentTick = userTicks?.[tickSelected];
+
   return (
     <div className="pool-page">
       <LiquidityDistribution
@@ -347,6 +351,38 @@ function LiquidityDistributionCard({
         setRangeMax={setRangeMax}
         swapAll={swapAll}
       />
+      <div className="page-card orderbook-card mx-auto">
+        <RadioButtonGroupInput<number>
+          className="mx-auto mt-2 mb-4"
+          buttonClassName="py-3 px-4"
+          values={(() => {
+            const map = new Map<number, string | number>();
+            map.set(-1, 'All');
+            for (let index = 0; index < Number(precision); index++) {
+              map.set(index, index + 1);
+            }
+            return map;
+          })()}
+          value={tickSelected}
+          onChange={(tickSelectedString) => {
+            setTickSelected(tickSelectedString);
+          }}
+        />
+        <div className="row">
+          <div className="col">
+            {currentTick && (
+              <div className="row tick-price-card">
+                <h3 className="card-title mr-auto">Price</h3>
+                <StepNumberInput
+                  key={tickSelected}
+                  readOnly
+                  value={currentTick[0].toFixed()}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
