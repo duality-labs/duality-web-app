@@ -216,8 +216,25 @@
   }
 
   form {
+    & {
+      flex-direction: row;
+      align-items: flex-start;
+    }
     > .col {
       gap: 2rem;
+    }
+  }
+
+  .pool-page {
+    max-width: none;
+    .col {
+      flex: 1;
+    }
+    .col + .col {
+      flex: none;
+    }
+    .orderbook-card > .row > .col {
+      min-width: 12rem;
     }
   }
 }

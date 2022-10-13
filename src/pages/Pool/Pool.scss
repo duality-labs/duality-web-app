@@ -139,6 +139,10 @@
     .token-input-group {
       box-sizing: border-box;
       width: 100%;
+      align-items: center;
+      .token-group-input {
+        min-width: 1ch !important;
+      }
     }
     .pill {
       border: 3px solid transparent;
