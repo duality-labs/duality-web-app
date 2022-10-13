@@ -13,8 +13,9 @@ interface StepNumberInputProps<T extends number | string = string> {
   disableLimit?: boolean;
   pressedDelay?: number;
   description?: string;
-  disabled?: boolean;
-  editable?: boolean;
+  disabled?: boolean; // is the input field text and buttons disabled
+  editable?: boolean; // can the input field text be edited
+  readOnly?: boolean; // force the input to be an uneditable span instead of an input
   title?: string;
   value: T;
   stepFunction?: (value: T, direction: number) => T;
@@ -36,6 +37,7 @@ export default function StepNumberInput<T extends number | string = string>({
   description,
   disabled = false,
   editable = true,
+  readOnly = false,
   title,
   value,
   stepFunction,
@@ -178,18 +180,20 @@ export default function StepNumberInput<T extends number | string = string>({
     <div className="range-step-input">
       {title && <h6 className="range-step-title">{title}</h6>}
       <div className="range-step-controls">
-        <button
-          type="button"
-          onClick={onSubStep}
-          onMouseDown={startAutoSub}
-          onMouseUp={stopAutoSub}
-          onMouseLeave={stopAutoSub}
-          disabled={disabled || subDisabled}
-          tabIndex={tabbableButtons ? 0 : -1}
-        >
-          -
-        </button>
-        {editable || disabled ? (
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={onSubStep}
+            onMouseDown={startAutoSub}
+            onMouseUp={stopAutoSub}
+            onMouseLeave={stopAutoSub}
+            disabled={disabled || subDisabled}
+            tabIndex={tabbableButtons ? 0 : -1}
+          >
+            -
+          </button>
+        )}
+        {!readOnly && editable ? (
           <input
             className="font-console"
             type="number"
@@ -203,17 +207,19 @@ export default function StepNumberInput<T extends number | string = string>({
             {currentValue}
           </span>
         )}
-        <button
-          type="button"
-          onClick={onAddStep}
-          onMouseDown={startAutoAdd}
-          onMouseUp={stopAutoAdd}
-          onMouseLeave={stopAutoAdd}
-          disabled={disabled || addDisabled}
-          tabIndex={tabbableButtons ? 0 : -1}
-        >
-          +
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={onAddStep}
+            onMouseDown={startAutoAdd}
+            onMouseUp={stopAutoAdd}
+            onMouseLeave={stopAutoAdd}
+            disabled={disabled || addDisabled}
+            tabIndex={tabbableButtons ? 0 : -1}
+          >
+            +
+          </button>
+        )}
       </div>
       {description && (
         <span className="range-step-description">{description}</span>
