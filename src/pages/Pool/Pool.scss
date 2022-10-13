@@ -253,6 +253,7 @@
 
     > .row > .col {
       min-width: 25rem;
+      flex: 1;
     }
 
     > .row > .col > .row {
