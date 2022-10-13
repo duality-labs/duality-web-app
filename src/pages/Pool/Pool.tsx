@@ -38,6 +38,8 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 
+import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
+
 import './Pool.scss';
 import { useDeposit } from './useDeposit';
 
@@ -51,22 +53,6 @@ const defaultSlopeType = 'UNIFORM';
 const defaultRangeMin = new BigNumber(defaultPrice).dividedBy(2).toFixed();
 const defaultRangeMax = new BigNumber(defaultPrice).multipliedBy(2).toFixed();
 const defaultTokenAmount = '0';
-
-interface FeeType {
-  fee: number;
-  label: string;
-  description: string;
-}
-const feeTypes: Array<FeeType> = Object.entries({
-  '0.01%': 'Best for very stable pairs.',
-  '0.05%': 'Best for  stable pairs.',
-  '0.30%': 'Best for most assets.',
-  '1.00%': 'Best for exotic assets.',
-}).map(([label, description]) => ({
-  label,
-  fee: Number(label.replace(/%$/, '')) / 100,
-  description,
-}));
 
 type SlopeType = 'UNIFORM' | 'UP-SLOPE' | 'BELL CURVE' | 'DOWN-SLOPE';
 const slopeTypes: Array<SlopeType> = [
