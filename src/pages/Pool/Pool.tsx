@@ -847,7 +847,7 @@ export default function Pool() {
                     )}
                     <button
                       type="button"
-                      className="button-secondary ml-2"
+                      className="button button-secondary ml-2"
                       onClick={() => setEditingFee((mode) => !mode)}
                     >
                       {editingFee ? 'Hide' : 'Edit'}
