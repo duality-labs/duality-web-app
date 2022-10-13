@@ -310,8 +310,20 @@ function LiquidityDistributionCard({
     }
   }, [shares, tickSelected]);
 
+  const sortedShares = useMemo(() => {
+    return shares.sort((a, b) => {
+      // ascending by fee tier and then ascending by price
+      return (
+        a.tick.fee.comparedTo(b.tick.fee) ||
+        (invertedTokenOrder
+          ? b.tick.price.comparedTo(a.tick.price)
+          : a.tick.price.comparedTo(b.tick.price))
+      );
+    });
+  }, [shares, invertedTokenOrder]);
+
   const userTicks = useMemo<Array<Tick | undefined> | undefined>(() => {
-    return shares.map(({ tick, userReserves0, userReserves1 }) => {
+    return sortedShares.map(({ tick, userReserves0, userReserves1 }) => {
       if (userReserves0 && userReserves1 && tick.fee.isEqualTo(feeTier)) {
         return invertedTokenOrder
           ? [
@@ -324,7 +336,7 @@ function LiquidityDistributionCard({
         return undefined;
       }
     });
-  }, [shares, invertedTokenOrder, feeTier]);
+  }, [sortedShares, invertedTokenOrder, feeTier]);
 
   return (
     <div className="pool-page">
