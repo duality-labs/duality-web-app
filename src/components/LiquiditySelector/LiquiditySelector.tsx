@@ -767,22 +767,16 @@ function TicksGroup({
           return setUserTicks?.((userTicks) => {
             const linearPixels =
               plotY(new BigNumber(1)) - plotY(new BigNumber(0));
-            const displacementValue = displacement.y / linearPixels;
+            const displacementPercent = displacement.y / linearPixels;
+            const dragSpeedFactor = 5; //larger is faster
+            const adjustedMovement = 1 + dragSpeedFactor * displacementPercent;
             return userTicks?.map((userTick, index) => {
               // modify price
               if (tickSelected === index) {
                 return [
                   tick[0],
-                  !tick[1].isZero()
-                    ? tick[1].plus(displacementValue).isGreaterThan(0)
-                      ? tick[1].plus(displacementValue)
-                      : new BigNumber(0)
-                    : tick[1],
-                  !tick[2].isZero()
-                    ? tick[2].plus(displacementValue).isGreaterThan(0)
-                      ? tick[2].plus(displacementValue)
-                      : new BigNumber(0)
-                    : tick[2],
+                  tick[1].multipliedBy(adjustedMovement),
+                  tick[2].multipliedBy(adjustedMovement),
                 ];
               } else {
                 return userTick;
