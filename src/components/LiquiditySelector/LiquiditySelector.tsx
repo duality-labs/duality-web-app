@@ -860,6 +860,8 @@ function TicksGroup({
     [ticks, startDragTick, setTickSelected]
   );
 
+  // todo: sort ticks so that the selected tick always appears last (on top)
+  //       for easier user selection when many ticks are present
   const tickPart = ticks.map((tick, index) => {
     if (tick) {
       const backgroundTick = backgroundTicks[index] || tick;
