@@ -363,6 +363,12 @@ function LiquidityDistributionCard({
     'redistribute' | 'add' | 'remove'
   >('redistribute');
 
+  const [values, setValues] = useState<[string, string]>(() => [
+    new BigNumber(defaultTokenAmount).toFixed(),
+    new BigNumber(defaultTokenAmount).toFixed(),
+  ]);
+  const [tokenAValue, tokenBValue] = values;
+
   useEffect(() => {
     if (editingType === 'add') {
       setEditedUserTicks((editedUserTicks) => {
@@ -433,12 +439,54 @@ function LiquidityDistributionCard({
               if (!newEditedUserTick || !currentEditedUserTick) {
                 return currentEditedUserTicks;
               }
-              const diffAValue = newEditedUserTick[1].minus(
-                currentEditedUserTick[1]
+
+              const [tokenAValueString, tokenBValueString] = values;
+              const tokenAValue =
+                editingType !== 'redistribute'
+                  ? new BigNumber(
+                      editingType === 'remove'
+                        ? `-${tokenAValueString}`
+                        : tokenAValueString
+                    ).shiftedBy(-12)
+                  : new BigNumber(0);
+              const tokenBValue =
+                editingType !== 'redistribute'
+                  ? new BigNumber(
+                      editingType === 'remove'
+                        ? `-${tokenBValueString}`
+                        : tokenBValueString
+                    ).shiftedBy(-12)
+                  : new BigNumber(0);
+
+              // find how much correction needs to be applied to meet the current goal
+              const diffUserTicks = userTicks.map<Tick | undefined>(
+                (userTick, index) => {
+                  const editedUserTick = currentEditedUserTicks[index];
+                  // diff ticks
+                  if (editedUserTick && editedUserTick !== userTick) {
+                    // find diff
+                    const diffAValue = editedUserTick[1].minus(userTick[1]);
+                    const diffBValue = editedUserTick[2].minus(userTick[2]);
+                    return [userTick[0], diffAValue, diffBValue] as Tick;
+                    // edit all other values to ensure all diffs equal the desired value
+                  }
+                  return undefined;
+                }
               );
-              const diffBValue = newEditedUserTick[2].minus(
-                currentEditedUserTick[2]
-              );
+              const [diffAValue, diffBValue] = diffUserTicks
+                .filter((tick): tick is Tick => !!tick)
+                .reduce(
+                  ([diffAValue, diffBValue], diffTick) => {
+                    return [
+                      diffAValue.plus(diffTick[1]),
+                      diffBValue.plus(diffTick[2]),
+                    ];
+                  },
+                  [
+                    new BigNumber(0).minus(tokenAValue),
+                    new BigNumber(0).minus(tokenBValue),
+                  ]
+                );
 
               // allow the new update to be conditionally adjusted
               let newUpdate = newEditedUserTicks;
@@ -542,7 +590,7 @@ function LiquidityDistributionCard({
               }
             });
           },
-          []
+          [editingType, values, userTicks]
         )}
         setRangeMin={setRangeMin}
         setRangeMax={setRangeMax}
@@ -604,13 +652,6 @@ function LiquidityDistributionCard({
     tokenA && balances && new BigNumber(getBalance(tokenA, balances));
   const balanceTokenB =
     tokenB && balances && new BigNumber(getBalance(tokenB, balances));
-
-  const [[tokenAValue, tokenBValue], setValues] = useState<[string, string]>(
-    () => [
-      new BigNumber(defaultTokenAmount).toFixed(),
-      new BigNumber(defaultTokenAmount).toFixed(),
-    ]
-  );
 
   const hasSufficientFundsA =
     balanceTokenA?.isGreaterThanOrEqualTo(tokenAValue || 0) || false;
