@@ -363,6 +363,48 @@ function LiquidityDistributionCard({
     setEditedUserTicks(userTicks?.slice());
   }, [userTicks]);
 
+  const [editingType, setEditingType] = useState<
+    'redistribute' | 'add' | 'remove'
+  >('redistribute');
+
+  useEffect(() => {
+    if (editingType === 'add') {
+      setEditedUserTicks((editedUserTicks) => {
+        return editedUserTicks?.map((editedUserTick, index) => {
+          const userTick = userTicks?.[index];
+          return editedUserTick
+            ? [
+                editedUserTick[0],
+                userTick && editedUserTick[1].isLessThan(userTick[1])
+                  ? userTick[1]
+                  : editedUserTick[1],
+                userTick && editedUserTick[2].isLessThan(userTick[2])
+                  ? userTick[2]
+                  : editedUserTick[2],
+              ]
+            : editedUserTick;
+        });
+      });
+    } else if (editingType === 'remove') {
+      setEditedUserTicks((editedUserTicks) => {
+        return editedUserTicks?.map((editedUserTick, index) => {
+          const userTick = userTicks?.[index];
+          return editedUserTick
+            ? [
+                editedUserTick[0],
+                userTick && editedUserTick[1].isGreaterThan(userTick[1])
+                  ? userTick[1]
+                  : editedUserTick[1],
+                userTick && editedUserTick[2].isGreaterThan(userTick[2])
+                  ? userTick[2]
+                  : editedUserTick[2],
+              ]
+            : editedUserTick;
+        });
+      });
+    }
+  }, [editingType, userTicks]);
+
   const leftColumn = (
     <div className="col">
       <LiquidityDistribution
@@ -380,6 +422,8 @@ function LiquidityDistributionCard({
         setRangeMin={setRangeMin}
         setRangeMax={setRangeMax}
         swapAll={swapAll}
+        canMoveUp={['redistribute', 'add'].includes(editingType)}
+        canMoveDown={['redistribute', 'remove'].includes(editingType)}
       />
       <div className="page-card orderbook-card mx-auto">
         <RadioButtonGroupInput<number>
@@ -449,13 +493,19 @@ function LiquidityDistributionCard({
   const rightColumn = (
     <div className="col">
       <div className="assets-card page-card">
-        <h3 className="card-title mb-3">Add Liquidity</h3>
+        <h3 className="card-title mb-3">Edit Liquidity</h3>
         <div className="mb-4">
-          <p>
-            Add liquidity in any ratio to earn fees on
-            <br /> other people’s trades! Learn more{' '}
-            <Link to="/my-liquidity">here</Link>.
-          </p>
+          <RadioButtonGroupInput
+            className="mx-auto mt-2 mb-4"
+            buttonClassName="py-3 px-4"
+            values={{
+              redistribute: 'Redistribute',
+              add: 'Add Liquidity',
+              remove: 'Remove Liquidity',
+            }}
+            value={editingType}
+            onChange={setEditingType}
+          />
         </div>
         <div className="card-row">
           <TokenInputGroup
