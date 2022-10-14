@@ -24,6 +24,9 @@ export default function LiquidityDistribution({
   formatPrice,
   currentPriceFromTicks,
   submitButton,
+  canMoveUp,
+  canMoveDown,
+  canMoveX,
 }: LiquiditySelectorProps & {
   chartTypeSelected: 'Orderbook' | 'AMM';
   tokenA: Token;
@@ -60,6 +63,9 @@ export default function LiquidityDistribution({
               setUserTicks={setUserTicks}
               advanced={chartTypeSelected === 'AMM'}
               formatPrice={formatPrice}
+              canMoveUp={canMoveUp}
+              canMoveDown={canMoveDown}
+              canMoveX={canMoveX}
             ></LiquiditySelector>
           </div>
         </div>

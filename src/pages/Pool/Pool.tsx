@@ -648,6 +648,9 @@ export default function Pool() {
                   setUserTicks={setSparseUserTicks}
                   advanced={chartTypeSelected === 'Orderbook'}
                   formatPrice={formatPrice}
+                  canMoveUp
+                  canMoveDown
+                  canMoveX
                 ></LiquiditySelector>
               </div>
             </div>
