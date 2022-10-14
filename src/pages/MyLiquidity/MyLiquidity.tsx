@@ -356,6 +356,13 @@ function LiquidityDistributionCard({
     (feeType) => feeType.fee === sortedShares[tickSelected]?.tick.fee.toNumber()
   );
 
+  const [editedUserTicks, setEditedUserTicks] = useState<
+    Array<Tick | undefined> | undefined
+  >(() => userTicks?.slice());
+  useEffect(() => {
+    setEditedUserTicks(userTicks?.slice());
+  }, [userTicks]);
+
   const leftColumn = (
     <div className="col">
       <LiquidityDistribution
@@ -367,7 +374,9 @@ function LiquidityDistributionCard({
         currentPriceFromTicks={currentPriceFromTicks}
         tickSelected={tickSelected}
         setTickSelected={setTickSelected}
-        userTicks={userTicks}
+        userTicks={editedUserTicks}
+        userTicksBase={userTicks}
+        setUserTicks={setEditedUserTicks}
         setRangeMin={setRangeMin}
         setRangeMax={setRangeMax}
         swapAll={swapAll}
