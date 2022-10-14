@@ -22,9 +22,7 @@ export interface LiquiditySelectorProps {
   setRangeMax: (rangeMax: string) => void;
   userTicksBase?: Array<Tick | undefined>;
   userTicks?: Array<Tick | undefined>;
-  setUserTicks?: (
-    callback: (userTicks: SparseTickGroup) => SparseTickGroup
-  ) => void;
+  setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   advanced?: boolean;
   formatPrice?: (value: BigNumber) => string;
   canMoveUp?: boolean;
@@ -38,7 +36,6 @@ export type Tick = [
   token1Value: BigNumber
 ];
 export type TickGroup = Array<Tick>;
-export type SparseTickGroup = Array<Tick | undefined> | undefined;
 type TickGroupBucketsEmpty = Array<
   [lowerBound: BigNumber, upperBound: BigNumber]
 >;
@@ -706,10 +703,7 @@ function TicksGroup({
   ticks: Array<Tick | undefined>;
   backgroundTicks: Array<Tick | undefined>;
   setUserTicks?: (
-    callback: (
-      userTicks: SparseTickGroup,
-      meta?: { index?: number }
-    ) => SparseTickGroup
+    callback: (userTicks: TickGroup, meta?: { index?: number }) => TickGroup
   ) => void;
   tickSelected: number;
   setTickSelected: (index: number) => void;
