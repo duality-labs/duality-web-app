@@ -29,7 +29,7 @@ import TokenInputGroup from '../../components/TokenInputGroup';
 
 import LiquidityDistribution from '../../components/LiquidityDistribution';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
-import { Tick } from '../../components/LiquiditySelector';
+import { SparseTickGroup, Tick } from '../../components/LiquiditySelector';
 
 import './MyLiquidity.scss';
 
@@ -412,7 +412,47 @@ function LiquidityDistributionCard({
         setTickSelected={setTickSelected}
         userTicks={editedUserTicks}
         userTicksBase={userTicks}
-        setUserTicks={setEditedUserTicks}
+        setUserTicks={useCallback(
+          (
+            callback: (
+              userTicks: SparseTickGroup,
+              meta?: { index?: number }
+            ) => SparseTickGroup
+          ): void => {
+            setEditedUserTicks((currentEditedUserTicks) => {
+              const meta: { index?: number } = {};
+              const newEditedUserTicks = callback(currentEditedUserTicks, meta);
+              // normalise to value
+              const index = meta.index;
+              const newEditedUserTick =
+                (newEditedUserTicks &&
+                  index !== undefined &&
+                  newEditedUserTicks[index]) ||
+                undefined;
+              const currentEditedUserTick =
+                (currentEditedUserTicks &&
+                  index !== undefined &&
+                  currentEditedUserTicks[index]) ||
+                undefined;
+              const diffAValue =
+                currentEditedUserTick &&
+                newEditedUserTick &&
+                newEditedUserTick[1].minus(currentEditedUserTick[1]);
+              const diffBValue =
+                currentEditedUserTick &&
+                newEditedUserTick &&
+                newEditedUserTick[2].minus(currentEditedUserTick[2]);
+              // eslint-disable-next-line no-console
+              console.log({
+                index,
+                diffAValue: diffAValue?.toFixed(),
+                diffBValue: diffBValue?.toFixed(),
+              });
+              return newEditedUserTicks;
+            });
+          },
+          []
+        )}
         setRangeMin={setRangeMin}
         setRangeMax={setRangeMax}
         swapAll={swapAll}

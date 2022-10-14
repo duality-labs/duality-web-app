@@ -726,7 +726,10 @@ function TicksGroup({
   ticks: Array<Tick | undefined>;
   backgroundTicks: Array<Tick | undefined>;
   setUserTicks?: (
-    callback: (userTicks: SparseTickGroup) => SparseTickGroup
+    callback: (
+      userTicks: SparseTickGroup,
+      meta?: { index?: number }
+    ) => SparseTickGroup
   ) => void;
   tickSelected: number;
   setTickSelected: (index: number) => void;
@@ -779,7 +782,11 @@ function TicksGroup({
         }
         // move tick value
         else {
-          return setUserTicks?.((userTicks) => {
+          return setUserTicks?.((userTicks, meta = {}) => {
+            // append context for callers that read from this
+            // note: this is a bit of a hack to keep setUserTicks(tick => ticks)-like compatibility
+            meta.index = tickSelected;
+            // calculate position movement
             const linearPixels =
               plotY(new BigNumber(1)) - plotY(new BigNumber(0));
             // todo: attempt an algorithm that places the value at the approximate mouseover value
