@@ -29,7 +29,7 @@ import TokenInputGroup from '../../components/TokenInputGroup';
 
 import LiquidityDistribution from '../../components/LiquidityDistribution';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
-import { SparseTickGroup, Tick } from '../../components/LiquiditySelector';
+import { Tick, TickGroup } from '../../components/LiquiditySelector';
 
 import './MyLiquidity.scss';
 
@@ -329,32 +329,34 @@ function LiquidityDistributionCard({
     });
   }, [shares, invertedTokenOrder]);
 
-  const userTicks = useMemo<Array<Tick | undefined> | undefined>(() => {
-    return sortedShares.map(({ tick, userReserves0, userReserves1 }) => {
-      if (userReserves0 && userReserves1 && tick.fee.isEqualTo(feeTier)) {
-        return invertedTokenOrder
-          ? [
-              new BigNumber(1).dividedBy(tick.price || new BigNumber(1)),
-              userReserves1,
-              userReserves0,
-            ]
-          : [tick.price || new BigNumber(0), userReserves0, userReserves1];
+  const userTicks = useMemo<Array<Tick>>(() => {
+    return sortedShares.flatMap(({ tick, userReserves0, userReserves1 }) => {
+      if (userReserves0 && userReserves1) {
+        return [
+          invertedTokenOrder
+            ? [
+                new BigNumber(1).dividedBy(tick.price || new BigNumber(1)),
+                userReserves1,
+                userReserves0,
+              ]
+            : [tick.price || new BigNumber(0), userReserves0, userReserves1],
+        ];
       } else {
-        return undefined;
+        return [];
       }
     });
-  }, [sortedShares, invertedTokenOrder, feeTier]);
+  }, [sortedShares, invertedTokenOrder]);
 
-  const currentTick = userTicks?.[tickSelected];
+  const currentTick = userTicks[tickSelected];
   const currentFeeType = feeTypes.find(
     (feeType) => feeType.fee === sortedShares[tickSelected]?.tick.fee.toNumber()
   );
 
-  const [editedUserTicks, setEditedUserTicks] = useState<
-    Array<Tick | undefined> | undefined
-  >(() => userTicks?.slice());
+  const [editedUserTicks, setEditedUserTicks] = useState<Array<Tick>>(() =>
+    userTicks.slice()
+  );
   useEffect(() => {
-    setEditedUserTicks(userTicks?.slice());
+    setEditedUserTicks(userTicks.slice());
   }, [userTicks]);
 
   const [editingType, setEditingType] = useState<
@@ -364,8 +366,8 @@ function LiquidityDistributionCard({
   useEffect(() => {
     if (editingType === 'add') {
       setEditedUserTicks((editedUserTicks) => {
-        return editedUserTicks?.map((editedUserTick, index) => {
-          const userTick = userTicks?.[index];
+        return editedUserTicks.map((editedUserTick, index) => {
+          const userTick = userTicks[index];
           return editedUserTick
             ? [
                 editedUserTick[0],
@@ -381,8 +383,8 @@ function LiquidityDistributionCard({
       });
     } else if (editingType === 'remove') {
       setEditedUserTicks((editedUserTicks) => {
-        return editedUserTicks?.map((editedUserTick, index) => {
-          const userTick = userTicks?.[index];
+        return editedUserTicks.map((editedUserTick, index) => {
+          const userTick = userTicks[index];
           return editedUserTick
             ? [
                 editedUserTick[0],
@@ -415,9 +417,9 @@ function LiquidityDistributionCard({
         setUserTicks={useCallback(
           (
             callback: (
-              userTicks: SparseTickGroup,
+              userTicks: TickGroup,
               meta?: { index?: number }
-            ) => SparseTickGroup
+            ) => TickGroup
           ): void => {
             setEditedUserTicks((currentEditedUserTicks) => {
               const meta: { index?: number } = {};

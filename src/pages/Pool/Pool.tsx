@@ -33,7 +33,6 @@ import LiquiditySelector from '../../components/LiquiditySelector';
 import {
   TickGroup,
   Tick,
-  SparseTickGroup,
 } from '../../components/LiquiditySelector/LiquiditySelector';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
@@ -149,30 +148,6 @@ export default function Pool() {
     const userTicks = userTicksOrCallback;
     setUserTicksUnprotected(userTicks.map(restrictTickPrices));
   }, []);
-
-  // note: this extra callback is a kludge to interoperate between a dense userTicks array
-  //       where the base component for other components is accepting sparse userTicks arrays
-  const setSparseUserTicks = useCallback<
-    React.Dispatch<React.SetStateAction<SparseTickGroup>>
-  >(
-    (sparseUserTicksOrCallback) => {
-      if (typeof sparseUserTicksOrCallback === 'function') {
-        const sparseUserTicksCallback = sparseUserTicksOrCallback;
-        return setUserTicks((userTicks) => {
-          return (
-            sparseUserTicksCallback(userTicks)?.filter(
-              (tick): tick is Tick => !!tick
-            ) || userTicks
-          );
-        });
-      }
-      const userTicks = sparseUserTicksOrCallback;
-      setUserTicksUnprotected(
-        userTicks?.filter((tick): tick is Tick => !!tick) || []
-      );
-    },
-    [setUserTicks]
-  );
 
   const currentPriceABFromTicks =
     useCurrentPriceFromTicks(unorderedTicks) || defaultCurrentPrice;
@@ -637,7 +612,7 @@ export default function Pool() {
                   setTickSelected={setTickSelected}
                   feeTier={feeType?.fee}
                   userTicks={userTicks}
-                  setUserTicks={setSparseUserTicks}
+                  setUserTicks={setUserTicks}
                   advanced={chartTypeSelected === 'Orderbook'}
                   formatPrice={formatPrice}
                   canMoveUp
