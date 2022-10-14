@@ -19,6 +19,7 @@ export default function LiquidityDistribution({
   setTickSelected,
   feeTier,
   userTicks,
+  userTicksBase,
   setUserTicks,
   formatPrice,
   currentPriceFromTicks,
@@ -54,6 +55,7 @@ export default function LiquidityDistribution({
               tickSelected={tickSelected}
               setTickSelected={setTickSelected}
               feeTier={feeTier}
+              userTicksBase={userTicksBase}
               userTicks={userTicks}
               setUserTicks={setUserTicks}
               advanced={chartTypeSelected === 'AMM'}

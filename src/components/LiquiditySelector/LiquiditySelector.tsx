@@ -20,6 +20,7 @@ export interface LiquiditySelectorProps {
   setTickSelected: (index: number) => void;
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
+  userTicksBase?: Array<Tick | undefined>;
   userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   advanced?: boolean;
@@ -75,6 +76,7 @@ export default function LiquiditySelector({
   setRangeMin,
   setRangeMax,
   userTicks = [],
+  userTicksBase = userTicks,
   setUserTicks,
   advanced = false,
   formatPrice = defaultFormatPrice,
@@ -393,6 +395,7 @@ export default function LiquiditySelector({
           className="new-ticks"
           currentPrice={currentPriceFromTicks}
           ticks={userTicks}
+          backgroundTicks={userTicksBase}
           setUserTicks={setUserTicks}
           tickSelected={tickSelected}
           setTickSelected={setTickSelected}
@@ -674,6 +677,7 @@ function TicksArea({
 function TicksGroup({
   currentPrice,
   ticks,
+  backgroundTicks,
   setUserTicks,
   tickSelected,
   setTickSelected,
@@ -685,6 +689,7 @@ function TicksGroup({
 }: {
   currentPrice: BigNumber;
   ticks: Array<Tick | undefined>;
+  backgroundTicks: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   tickSelected: number;
   setTickSelected: (index: number) => void;
@@ -787,11 +792,30 @@ function TicksGroup({
 
   const tickPart = ticks.map((tick, index) => {
     if (tick) {
+      const backgroundTick = backgroundTicks[index] || tick;
+      const background = {
+        price: backgroundTick[0],
+        token0Value: backgroundTick[1],
+        token1Value: backgroundTick[2],
+      };
       const [price, token0Value, token1Value] = tick;
       // todo: display cumulative value of both side of ticks, not just one side
       const totalValue = token0Value.isGreaterThan(0)
         ? token0Value.multipliedBy(0.95).dividedBy(cumulativeToken0Values)
         : token1Value.multipliedBy(0.95).dividedBy(cumulativeToken1Values);
+      const backgroundValue = background.token0Value.isGreaterThan(0)
+        ? background.token0Value
+            .multipliedBy(0.95)
+            .dividedBy(cumulativeToken0Values)
+        : background.token1Value
+            .multipliedBy(0.95)
+            .dividedBy(cumulativeToken1Values);
+      const minValue = totalValue.isLessThan(backgroundValue)
+        ? totalValue
+        : backgroundValue;
+      const maxValue = totalValue.isLessThan(backgroundValue)
+        ? backgroundValue
+        : totalValue;
       return (
         <g
           key={index}
@@ -799,6 +823,10 @@ function TicksGroup({
             'tick',
             tickSelected === index && 'tick--selected',
             token0Value.isGreaterThan(0) ? 'token-a' : 'token-b',
+            !totalValue.isEqualTo(backgroundValue) &&
+              (totalValue.isLessThan(backgroundValue)
+                ? 'tick--diff-negative'
+                : 'tick--diff-positive'),
             // warn user if this seems to be a bad trade
             token0Value.isGreaterThan(0)
               ? price.isGreaterThan(currentPrice) && 'tick--price-warning'
@@ -812,18 +840,36 @@ function TicksGroup({
             x1={plotX(price).toFixed(3)}
             x2={plotX(price).toFixed(3)}
             y1={plotY(new BigNumber(0)).toFixed(3)}
-            y2={plotY(totalValue).toFixed(3)}
+            y2={plotY(minValue).toFixed(3)}
             className="line"
           />
+          {tick !== backgroundTick && (
+            <line
+              {...rest}
+              x1={plotX(price).toFixed(3)}
+              x2={plotX(price).toFixed(3)}
+              y1={plotY(minValue).toFixed(3)}
+              y2={plotY(maxValue).toFixed(3)}
+              className="line line--diff"
+            />
+          )}
           <circle
             cx={plotX(price).toFixed(3)}
-            cy={plotY(totalValue).toFixed(3)}
+            cy={plotY(backgroundValue).toFixed(3)}
             r="5"
             className="tip"
           />
+          {tick !== backgroundTick && (
+            <circle
+              cx={plotX(price).toFixed(3)}
+              cy={plotY(totalValue).toFixed(3)}
+              r="5"
+              className="tip tip--diff"
+            />
+          )}
           <text
             x={plotX(price).toFixed(3)}
-            y={(plotY(totalValue) - 28).toFixed(3)}
+            y={(plotY(maxValue) - 28).toFixed(3)}
             dy="12"
             dominantBaseline="middle"
             textAnchor="middle"
