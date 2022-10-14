@@ -50,14 +50,29 @@
   .tick--selected {
     stroke: var(--submit-button-bg);
   }
-  .tick--price-warning {
-    stroke: var(--error);
-    &.tick--selected text {
+  .tick--selected text {
+    fill: var(--submit-button-bg);
+  }
+  .line--diff {
+    stroke-dasharray: 3px;
+  }
+  .tick--diff-negative {
+    .line--diff,
+    .tip--diff {
+      stroke: var(--error);
+    }
+    .tip--diff {
       fill: var(--error);
     }
   }
-  .tick--selected text {
-    fill: var(--submit-button-bg);
+  .tick--diff-positive {
+    .line--diff,
+    .tip--diff {
+      stroke: rgb(0 200 136);
+    }
+    .tip--diff {
+      fill: rgb(0 200 136);
+    }
   }
 }
 
