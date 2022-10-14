@@ -808,6 +808,10 @@ function TicksGroup({
   const tickPart = ticks.map((tick, index) => {
     if (tick) {
       const [price, token0Value, token1Value] = tick;
+      // todo: display cumulative value of both side of ticks, not just one side
+      const totalValue = token0Value.isGreaterThan(0)
+        ? token0Value.multipliedBy(0.95).dividedBy(cumulativeToken0Values)
+        : token1Value.multipliedBy(0.95).dividedBy(cumulativeToken1Values);
       return (
         <g
           key={index}
@@ -828,45 +832,18 @@ function TicksGroup({
             x1={plotX(price).toFixed(3)}
             x2={plotX(price).toFixed(3)}
             y1={plotY(new BigNumber(0)).toFixed(3)}
-            y2={plotY(
-              // todo: display cumulative value of both side of ticks, not just one side
-              token0Value.isGreaterThan(0)
-                ? token0Value
-                    .multipliedBy(0.95)
-                    .dividedBy(cumulativeToken0Values)
-                : token1Value
-                    .multipliedBy(0.95)
-                    .dividedBy(cumulativeToken1Values)
-            ).toFixed(3)}
+            y2={plotY(totalValue).toFixed(3)}
             className="line"
           />
           <circle
             cx={plotX(price).toFixed(3)}
-            cy={plotY(
-              token0Value.isGreaterThan(0)
-                ? token0Value
-                    .multipliedBy(0.95)
-                    .dividedBy(cumulativeToken0Values)
-                : token1Value
-                    .multipliedBy(0.95)
-                    .dividedBy(cumulativeToken1Values)
-            ).toFixed(3)}
+            cy={plotY(totalValue).toFixed(3)}
             r="5"
             className="tip"
           />
           <text
             x={plotX(price).toFixed(3)}
-            y={(
-              plotY(
-                token0Value.isGreaterThan(0)
-                  ? token0Value
-                      .multipliedBy(0.95)
-                      .dividedBy(cumulativeToken0Values)
-                  : token1Value
-                      .multipliedBy(0.95)
-                      .dividedBy(cumulativeToken1Values)
-              ) - 28
-            ).toFixed(3)}
+            y={(plotY(totalValue) - 28).toFixed(3)}
             dy="12"
             dominantBaseline="middle"
             textAnchor="middle"
@@ -877,17 +854,7 @@ function TicksGroup({
             className="tick--hit-area"
             data-key={index}
             cx={plotX(price).toFixed(3)}
-            cy={(
-              plotY(
-                token0Value.isGreaterThan(0)
-                  ? token0Value
-                      .multipliedBy(0.95)
-                      .dividedBy(cumulativeToken0Values)
-                  : token1Value
-                      .multipliedBy(0.95)
-                      .dividedBy(cumulativeToken1Values)
-              ) - 9
-            ).toFixed(3)}
+            cy={(plotY(totalValue) - 9).toFixed(3)}
             rx={isDragging ? '1000' : '12.5'}
             ry={isDragging ? '1000' : '22.5'}
             onMouseDown={onTickSelected}
