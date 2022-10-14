@@ -809,6 +809,7 @@ function TicksGroup({
             x2={plotX(price).toFixed(3)}
             y1={plotY(new BigNumber(0)).toFixed(3)}
             y2={plotY(
+              // todo: display cumulative value of both side of ticks, not just one side
               token0Value.isGreaterThan(0)
                 ? token0Value
                     .multipliedBy(0.95)
