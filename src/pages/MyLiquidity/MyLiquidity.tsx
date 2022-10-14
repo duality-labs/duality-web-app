@@ -575,7 +575,7 @@ function LiquidityDistributionCard({
                         );
                         return [
                           result.concat([newTick]),
-                          remainder.plus(removedValue),
+                          remainder.minus(removedValue),
                         ];
                       }
                     },
