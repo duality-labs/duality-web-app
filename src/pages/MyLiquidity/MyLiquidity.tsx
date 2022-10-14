@@ -430,33 +430,122 @@ function LiquidityDistributionCard({
             setEditedUserTicks((currentEditedUserTicks) => {
               const meta: { index?: number } = {};
               const newEditedUserTicks = callback(currentEditedUserTicks, meta);
+              const indexSelected = meta.index !== undefined ? meta.index : -1;
               // normalise to value
-              const index = meta.index;
-              const newEditedUserTick =
-                (newEditedUserTicks &&
-                  index !== undefined &&
-                  newEditedUserTicks[index]) ||
-                undefined;
+              const newEditedUserTick = newEditedUserTicks?.[indexSelected];
               const currentEditedUserTick =
-                (currentEditedUserTicks &&
-                  index !== undefined &&
-                  currentEditedUserTicks[index]) ||
-                undefined;
-              const diffAValue =
-                currentEditedUserTick &&
-                newEditedUserTick &&
-                newEditedUserTick[1].minus(currentEditedUserTick[1]);
-              const diffBValue =
-                currentEditedUserTick &&
-                newEditedUserTick &&
-                newEditedUserTick[2].minus(currentEditedUserTick[2]);
-              // eslint-disable-next-line no-console
-              console.log({
-                index,
-                diffAValue: diffAValue?.toFixed(),
-                diffBValue: diffBValue?.toFixed(),
-              });
-              return newEditedUserTicks;
+                currentEditedUserTicks?.[indexSelected];
+              // bail if no current selection
+              if (!newEditedUserTick || !currentEditedUserTick) {
+                return currentEditedUserTicks;
+              }
+              const diffAValue = newEditedUserTick[1].minus(
+                currentEditedUserTick[1]
+              );
+              const diffBValue = newEditedUserTick[2].minus(
+                currentEditedUserTick[2]
+              );
+
+              // allow the new update to be conditionally adjusted
+              let newUpdate = newEditedUserTicks;
+
+              // modify only if difference is greater than our tolerance
+              const normalizationTolerance = 1e-18;
+              if (
+                diffAValue &&
+                diffAValue
+                  ?.absoluteValue()
+                  .isGreaterThan(normalizationTolerance)
+              ) {
+                newUpdate = applyDiffToIndex(newUpdate, diffAValue, 1);
+              }
+              if (
+                diffBValue &&
+                diffBValue
+                  ?.absoluteValue()
+                  .isGreaterThan(normalizationTolerance)
+              ) {
+                newUpdate = applyDiffToIndex(newUpdate, diffBValue, 2);
+              }
+
+              return newUpdate;
+
+              function applyDiffToIndex(
+                newEditedUserTicks: TickGroup,
+                diffValue: BigNumber,
+                tickPartIndex: number
+              ): TickGroup {
+                const [adjustedUserTicks, remainder] = newEditedUserTicks
+                  // add index onto the TickGroup making it [price, tokenAValue, tokenBValue, index]
+                  // to be able to track which tick is which, the result must be in the correct order
+                  .map((tick, index) => tick.concat(new BigNumber(index)))
+                  // sort descending order (but with selected index at start, it will absorb the remainder)
+                  .sort((a, b) => {
+                    const aIsSelected = a[3].isEqualTo(indexSelected);
+                    const bIsSelected = b[3].isEqualTo(indexSelected);
+                    return !aIsSelected && !bIsSelected
+                      ? // sort by descending value
+                        b[tickPartIndex].comparedTo(a[tickPartIndex])
+                      : // sort by selected index
+                      aIsSelected
+                      ? -1
+                      : 1;
+                  })
+                  .reduceRight(
+                    ([result, remainder], tick, index) => {
+                      const tokenValue = tick[tickPartIndex];
+                      // skip empty token ticks
+                      if (tokenValue.isZero()) {
+                        return [result.concat([tick]), remainder];
+                      }
+                      // divided by remainder of ticks that aren't selected
+                      // which would be `index + 1` but it is `index + 1 - 1`
+                      // because we sorted the selectedTick to be in index 0.
+                      // when at index 0, the selected tick, attempt to take all the remainder
+                      const adjustment = remainder
+                        .negated()
+                        .dividedBy(index || 1);
+                      const newValue = tokenValue.plus(adjustment);
+                      // apply all of calculated adjustment value
+                      if (newValue.isGreaterThan(0)) {
+                        // insert new value into tick
+                        const newTick = tick.slice() as Tick;
+                        newTick.splice(tickPartIndex, 1, newValue);
+                        return [
+                          result.concat([newTick]),
+                          remainder.plus(adjustment),
+                        ];
+                      }
+                      // apply partial adjustment value using all liquidity of current tick
+                      else {
+                        // insert new value (0) into tick
+                        const newTick = tick.slice() as Tick;
+                        const [removedValue] = newTick.splice(
+                          tickPartIndex,
+                          1,
+                          new BigNumber(0)
+                        );
+                        return [
+                          result.concat([newTick]),
+                          remainder.plus(removedValue),
+                        ];
+                      }
+                    },
+                    [[] as BigNumber[][], diffValue]
+                  );
+
+                if (remainder.isGreaterThan(normalizationTolerance)) {
+                  // eslint-disable-next-line no-console
+                  console.warn(
+                    'the correction tolerance has been exceeded, remainder: ',
+                    remainder.toNumber()
+                  );
+                }
+
+                return adjustedUserTicks
+                  .sort((a, b) => a[3].comparedTo(b[3]))
+                  .map((tickAndIndex) => tickAndIndex.slice(0, 3) as Tick);
+              }
             });
           },
           []
