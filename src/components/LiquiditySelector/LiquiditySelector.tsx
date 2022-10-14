@@ -747,6 +747,8 @@ function TicksGroup({
           return setUserTicks?.((userTicks) => {
             const linearPixels =
               plotY(new BigNumber(1)) - plotY(new BigNumber(0));
+            // todo: attempt an algorithm that places the value at the approximate mouseover value
+            // will require current max Y value to interpolate from
             const displacementPercent = displacement.y / linearPixels;
             const dragSpeedFactor = 5; //larger is faster
             const adjustedMovement = 1 + dragSpeedFactor * displacementPercent;
