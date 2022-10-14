@@ -474,15 +474,17 @@ function LiquidityDistributionCard({
   const balanceTokenB =
     tokenB && balances && new BigNumber(getBalance(tokenB, balances));
 
-  const [values, setValues] = useState<[string, string]>(() => [
-    new BigNumber(defaultTokenAmount).toFixed(),
-    new BigNumber(defaultTokenAmount).toFixed(),
-  ]);
+  const [[tokenAValue, tokenBValue], setValues] = useState<[string, string]>(
+    () => [
+      new BigNumber(defaultTokenAmount).toFixed(),
+      new BigNumber(defaultTokenAmount).toFixed(),
+    ]
+  );
 
   const hasSufficientFundsA =
-    balanceTokenA?.isGreaterThanOrEqualTo(values[0] || 0) || false;
+    balanceTokenA?.isGreaterThanOrEqualTo(tokenAValue || 0) || false;
   const hasSufficientFundsB =
-    balanceTokenB?.isGreaterThanOrEqualTo(values[1] || 0) || false;
+    balanceTokenB?.isGreaterThanOrEqualTo(tokenBValue || 0) || false;
 
   const rightColumn = (
     <div className="col">
@@ -506,7 +508,7 @@ function LiquidityDistributionCard({
             variant={!hasSufficientFundsA && 'error'}
             tokenList={tokenList}
             token={tokenA}
-            value={`${values[0]}`}
+            value={`${tokenAValue}`}
             onValueChanged={(newValue) =>
               setValues(([_, valueB]) => [newValue, valueB])
             }
@@ -522,7 +524,7 @@ function LiquidityDistributionCard({
             variant={!hasSufficientFundsB && 'error'}
             tokenList={tokenList}
             token={tokenB}
-            value={`${values[1]}`}
+            value={`${tokenBValue}`}
             onValueChanged={(newValue) =>
               setValues(([valueA]) => [valueA, newValue])
             }
