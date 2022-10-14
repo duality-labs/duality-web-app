@@ -22,7 +22,9 @@ export interface LiquiditySelectorProps {
   setRangeMax: (rangeMax: string) => void;
   userTicksBase?: Array<Tick | undefined>;
   userTicks?: Array<Tick | undefined>;
-  setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
+  setUserTicks?: (
+    callback: (userTicks: SparseTickGroup) => SparseTickGroup
+  ) => void;
   advanced?: boolean;
   formatPrice?: (value: BigNumber) => string;
 }
@@ -33,6 +35,7 @@ export type Tick = [
   token1Value: BigNumber
 ];
 export type TickGroup = Array<Tick>;
+export type SparseTickGroup = Array<Tick | undefined> | undefined;
 type TickGroupBucketsEmpty = Array<
   [lowerBound: BigNumber, upperBound: BigNumber]
 >;
@@ -710,7 +713,9 @@ function TicksGroup({
   currentPrice: BigNumber;
   ticks: Array<Tick | undefined>;
   backgroundTicks: Array<Tick | undefined>;
-  setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
+  setUserTicks?: (
+    callback: (userTicks: SparseTickGroup) => SparseTickGroup
+  ) => void;
   tickSelected: number;
   setTickSelected: (index: number) => void;
   plotX: (x: BigNumber) => number;
@@ -746,7 +751,7 @@ function TicksGroup({
               10,
               displacement.x / orderOfMagnitudePixels
             );
-            return userTicks.map((userTick, index) => {
+            return userTicks?.map((userTick, index) => {
               // modify price
               if (tickSelected === index) {
                 const newPrice = tick[0].multipliedBy(displacementRatio);
@@ -763,7 +768,7 @@ function TicksGroup({
             const linearPixels =
               plotY(new BigNumber(1)) - plotY(new BigNumber(0));
             const displacementValue = displacement.y / linearPixels;
-            return userTicks.map((userTick, index) => {
+            return userTicks?.map((userTick, index) => {
               // modify price
               if (tickSelected === index) {
                 return [
