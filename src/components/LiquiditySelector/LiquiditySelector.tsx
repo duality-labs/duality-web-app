@@ -27,6 +27,9 @@ export interface LiquiditySelectorProps {
   ) => void;
   advanced?: boolean;
   formatPrice?: (value: BigNumber) => string;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  canMoveX?: boolean;
 }
 
 export type Tick = [
@@ -83,6 +86,9 @@ export default function LiquiditySelector({
   setUserTicks,
   advanced = false,
   formatPrice = defaultFormatPrice,
+  canMoveUp,
+  canMoveDown,
+  canMoveX,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
@@ -425,6 +431,9 @@ export default function LiquiditySelector({
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
           formatPrice={formatPrice}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+          canMoveX={canMoveX}
         />
       ) : (
         <TicksArea
@@ -708,6 +717,9 @@ function TicksGroup({
   plotY,
   formatPrice,
   className,
+  canMoveUp = false,
+  canMoveDown = false,
+  canMoveX = false,
   ...rest
 }: {
   currentPrice: BigNumber;
@@ -721,6 +733,9 @@ function TicksGroup({
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
   formatPrice: (value: BigNumber) => string;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  canMoveX?: boolean;
   className?: string;
 }) {
   const filteredTicks = ticks.filter((tick): tick is Tick => !!tick);
@@ -743,7 +758,7 @@ function TicksGroup({
         if (!tick || tickSelected === undefined || isNaN(tickSelected)) return;
 
         // move tick price
-        if (Math.abs(displacement.x) > Math.abs(displacement.y)) {
+        if (canMoveX && Math.abs(displacement.x) > Math.abs(displacement.y)) {
           return setUserTicks?.((userTicks) => {
             const orderOfMagnitudePixels =
               plotX(new BigNumber(10)) - plotX(new BigNumber(1));
@@ -775,10 +790,28 @@ function TicksGroup({
             return userTicks?.map((userTick, index) => {
               // modify price
               if (tickSelected === index) {
+                const original0Value = backgroundTicks[index]?.[1];
+                const original1Value = backgroundTicks[index]?.[2];
+                const new0Value = tick[1].multipliedBy(adjustedMovement);
+                const new1Value = tick[2].multipliedBy(adjustedMovement);
                 return [
                   tick[0],
-                  tick[1].multipliedBy(adjustedMovement),
-                  tick[2].multipliedBy(adjustedMovement),
+                  (!canMoveDown &&
+                    original0Value &&
+                    new0Value.isLessThan(original0Value)) ||
+                  (!canMoveUp &&
+                    original0Value &&
+                    new0Value.isGreaterThan(original0Value))
+                    ? original0Value
+                    : new0Value,
+                  (!canMoveDown &&
+                    original1Value &&
+                    new1Value.isLessThan(original1Value)) ||
+                  (!canMoveUp &&
+                    original1Value &&
+                    new1Value.isGreaterThan(original1Value))
+                    ? original1Value
+                    : new1Value,
                 ];
               } else {
                 return userTick;
@@ -787,7 +820,16 @@ function TicksGroup({
           });
         }
       },
-      [setUserTicks, plotX, plotY, formatPrice]
+      [
+        backgroundTicks,
+        canMoveUp,
+        canMoveDown,
+        canMoveX,
+        setUserTicks,
+        plotX,
+        plotY,
+        formatPrice,
+      ]
     )
   );
 
