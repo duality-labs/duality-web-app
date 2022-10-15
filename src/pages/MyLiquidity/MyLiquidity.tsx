@@ -649,6 +649,12 @@ function LiquidityDistributionCard({
           <TokenInputGroup
             variant={!hasSufficientFundsA && 'error'}
             tokenList={tokenList}
+            maxValue={
+              editingType === 'remove'
+                ? // use share token total or default to wallet balance
+                  totalShareValues[0].toNumber()
+                : balanceTokenA?.toNumber()
+            }
             token={tokenA}
             value={`${tokenAValue}`}
             onValueChanged={(newValue) =>
@@ -664,6 +670,12 @@ function LiquidityDistributionCard({
           <TokenInputGroup
             variant={!hasSufficientFundsB && 'error'}
             tokenList={tokenList}
+            maxValue={
+              editingType === 'remove'
+                ? // use share token total or default to wallet balance
+                  totalShareValues[1].toNumber()
+                : balanceTokenB?.toNumber()
+            }
             token={tokenB}
             value={`${tokenBValue}`}
             onValueChanged={(newValue) =>
