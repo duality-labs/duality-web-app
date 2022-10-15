@@ -661,7 +661,6 @@ function LiquidityDistributionCard({
               setValues(([_, valueB]) => [newValue, valueB])
             }
             exclusion={tokenB}
-            title={balanceTokenA ? `Available ${balanceTokenA}` : ''}
           />
         </div>
         <div className="plus-space mx-auto my-2">
@@ -677,7 +676,6 @@ function LiquidityDistributionCard({
               setValues(([valueA]) => [valueA, newValue])
             }
             exclusion={tokenA}
-            title={balanceTokenB ? `Available ${balanceTokenB}` : ''}
           />
         </div>
         {hasPriceData && (
