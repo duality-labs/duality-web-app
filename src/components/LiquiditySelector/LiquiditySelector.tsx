@@ -867,15 +867,23 @@ function TicksGroup({
       const [price, token0Value, token1Value] = tick;
       // todo: display cumulative value of both side of ticks, not just one side
       const totalValue = token0Value.isGreaterThan(0)
-        ? token0Value.multipliedBy(0.9).dividedBy(cumulativeToken0Values)
-        : token1Value.multipliedBy(0.9).dividedBy(cumulativeToken1Values);
+        ? !cumulativeToken0Values.isZero()
+          ? token0Value.multipliedBy(0.9).dividedBy(cumulativeToken0Values)
+          : cumulativeToken0Values
+        : !cumulativeToken1Values.isZero()
+        ? token1Value.multipliedBy(0.9).dividedBy(cumulativeToken1Values)
+        : cumulativeToken1Values;
       const backgroundValue = background.token0Value.isGreaterThan(0)
-        ? background.token0Value
+        ? !cumulativeToken0Values.isZero()
+          ? background.token0Value
+              .multipliedBy(0.9)
+              .dividedBy(cumulativeToken0Values)
+          : cumulativeToken0Values
+        : !cumulativeToken1Values.isZero()
+        ? background.token1Value
             .multipliedBy(0.9)
-            .dividedBy(cumulativeToken0Values)
-        : background.token1Value
-            .multipliedBy(0.9)
-            .dividedBy(cumulativeToken1Values);
+            .dividedBy(cumulativeToken1Values)
+        : cumulativeToken1Values;
       const minValue = totalValue.isLessThan(backgroundValue)
         ? totalValue
         : backgroundValue;
