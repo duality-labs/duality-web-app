@@ -23,7 +23,8 @@ export default function LiquidityDistribution({
   setUserTicks,
   formatPrice,
   currentPriceFromTicks,
-  submitButton,
+  submitButtonText,
+  submitButtonVariant = 'primary',
   canMoveUp,
   canMoveDown,
   canMoveX,
@@ -33,7 +34,8 @@ export default function LiquidityDistribution({
   tokenB: Token;
   swapAll: () => void;
   currentPriceFromTicks: BigNumber;
-  submitButton?: string;
+  submitButtonText?: string;
+  submitButtonVariant?: 'primary' | 'error';
 }) {
   return (
     <div
@@ -74,12 +76,12 @@ export default function LiquidityDistribution({
             {currentPriceFromTicks?.toFixed(5)}
           </div>
           <div>Current Price</div>
-          {submitButton && (
+          {submitButtonText && (
             <div className="mt-auto mb-4">
               <input
-                className="button-primary mx-auto px-4 py-4"
+                className={`button-${submitButtonVariant} mx-auto px-4 py-4`}
                 type="submit"
-                value="Add Liquidity"
+                value={submitButtonText}
               />
             </div>
           )}
