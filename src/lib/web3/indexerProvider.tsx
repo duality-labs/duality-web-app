@@ -599,16 +599,19 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
   const { data, error, isValidating } = useShareData();
   const shares = useMemo(() => {
     // filter to specific tokens if asked for
+    const shares = data?.shares.filter(
+      (share) => Number(share.shareAmount) > 0
+    );
     if (tokens) {
       const [addressA, addressB] = tokens.map((token) => token.address);
-      return data?.shares.filter(({ token0: address0, token1: address1 }) => {
+      return shares?.filter(({ token0: address0, token1: address1 }) => {
         return (
           (addressA === address0 && addressB === address1) ||
           (addressA === address1 && addressB === address0)
         );
       });
     }
-    return data?.shares;
+    return shares;
   }, [tokens, data]);
   return { data: shares, error, isValidating };
 }
