@@ -417,7 +417,7 @@ function LiquidityDistributionCard({
 
   useLayoutEffect(() => {
     setEditedUserTicks((newEditedUserTicks) => {
-      const [diffAValue, diffBValue] = getTickDiffs(
+      const [diffAValue, diffBValue] = getTickDiffCumulativeValues(
         newEditedUserTicks,
         userTicks,
         values,
@@ -519,7 +519,7 @@ function LiquidityDistributionCard({
               }
 
               // find how much correction needs to be applied to meet the current goal
-              const [diffAValue, diffBValue] = getTickDiffs(
+              const [diffAValue, diffBValue] = getTickDiffCumulativeValues(
                 newEditedUserTicks,
                 userTicks,
                 values,
@@ -824,7 +824,24 @@ function PositionCard({
   return null;
 }
 
-function getTickDiffs(
+function getTickDiffs(newTicks: TickGroup, oldTicks: TickGroup) {
+  return oldTicks
+    .map<Tick | undefined>((userTick, index) => {
+      const editedUserTick = newTicks[index];
+      // diff ticks
+      if (editedUserTick && editedUserTick !== userTick) {
+        // find diff
+        const diffAValue = editedUserTick[1].minus(userTick[1]);
+        const diffBValue = editedUserTick[2].minus(userTick[2]);
+        return [userTick[0], diffAValue, diffBValue] as Tick;
+        // edit all other values to ensure all diffs equal the desired value
+      }
+      return undefined;
+    })
+    .filter((tick): tick is Tick => !!tick);
+}
+
+function getTickDiffCumulativeValues(
   newTicks: TickGroup,
   oldTicks: TickGroup,
   tokenValueStrings: [string, string],
@@ -844,26 +861,12 @@ function getTickDiffs(
         ).shiftedBy(-12)
       : new BigNumber(0);
 
-  return oldTicks
-    .map<Tick | undefined>((userTick, index) => {
-      const editedUserTick = newTicks[index];
-      // diff ticks
-      if (editedUserTick && editedUserTick !== userTick) {
-        // find diff
-        const diffAValue = editedUserTick[1].minus(userTick[1]);
-        const diffBValue = editedUserTick[2].minus(userTick[2]);
-        return [userTick[0], diffAValue, diffBValue] as Tick;
-        // edit all other values to ensure all diffs equal the desired value
-      }
-      return undefined;
-    })
-    .filter((tick): tick is Tick => !!tick)
-    .reduce(
-      ([diffAValue, diffBValue], diffTick) => {
-        return [diffAValue.plus(diffTick[1]), diffBValue.plus(diffTick[2])];
-      },
-      [new BigNumber(0).minus(tokenAValue), new BigNumber(0).minus(tokenBValue)]
-    );
+  return getTickDiffs(newTicks, oldTicks).reduce(
+    ([diffAValue, diffBValue], diffTick) => {
+      return [diffAValue.plus(diffTick[1]), diffBValue.plus(diffTick[2])];
+    },
+    [new BigNumber(0).minus(tokenAValue), new BigNumber(0).minus(tokenBValue)]
+  );
 }
 
 function applyDiffToIndex(
