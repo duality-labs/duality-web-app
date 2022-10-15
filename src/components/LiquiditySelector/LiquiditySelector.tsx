@@ -756,6 +756,21 @@ function TicksGroup({
     backgroundTick1Numbers.reduce((acc, v) => acc + v, 0)
   );
 
+  const max0Value = Math.max(...tick0Numbers, ...backgroundTick0Numbers);
+  const max1Value = Math.max(...tick1Numbers, ...backgroundTick1Numbers);
+  const minMaxHeight0 = getMinYHeight(backgroundTick0Numbers.length);
+  const minMaxHeight1 = getMinYHeight(backgroundTick1Numbers.length);
+
+  // add a scaling factor if the maximum tick is very short (scale up to minMaxHeight)
+  const scalingFactor0 =
+    cumulativeToken0Values && max0Value / cumulativeToken0Values > minMaxHeight0
+      ? 0.925
+      : (1 / (max0Value / cumulativeToken0Values)) * minMaxHeight0;
+  const scalingFactor1 =
+    cumulativeToken1Values && max1Value / cumulativeToken1Values > minMaxHeight1
+      ? 0.925
+      : (1 / (max1Value / cumulativeToken1Values)) * minMaxHeight1;
+
   const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
 
   const [startDragTick, isDragging] = useOnDragMove(
@@ -876,30 +891,38 @@ function TicksGroup({
         token1Value: backgroundTick[2],
       };
       const [price, token0Value, token1Value] = tick;
+      const scalingFactor = background.token0Value.isGreaterThan(0)
+        ? scalingFactor0
+        : scalingFactor1;
       // todo: display cumulative value of both side of ticks, not just one side
       const totalValue =
         (token0Value.isGreaterThan(0)
           ? cumulativeToken0Values &&
-            token0Value.multipliedBy(0.9).dividedBy(cumulativeToken0Values)
+            token0Value
+              .multipliedBy(scalingFactor)
+              .dividedBy(cumulativeToken0Values)
           : cumulativeToken1Values &&
-            token1Value.multipliedBy(0.9).dividedBy(cumulativeToken1Values)) ||
-        new BigNumber(0);
+            token1Value
+              .multipliedBy(scalingFactor)
+              .dividedBy(cumulativeToken1Values)) || new BigNumber(0);
       const backgroundValue =
         (background.token0Value.isGreaterThan(0)
           ? cumulativeToken0Values &&
             background.token0Value
-              .multipliedBy(0.9)
+              .multipliedBy(scalingFactor)
               .dividedBy(cumulativeToken0Values)
           : cumulativeToken1Values &&
             background.token1Value
-              .multipliedBy(0.9)
+              .multipliedBy(scalingFactor)
               .dividedBy(cumulativeToken1Values)) || new BigNumber(0);
+
       const minValue = totalValue.isLessThan(backgroundValue)
         ? totalValue
         : backgroundValue;
       const maxValue = totalValue.isLessThan(backgroundValue)
         ? backgroundValue
         : totalValue;
+
       return (
         <g
           key={index}
@@ -1096,4 +1119,8 @@ function Axis({
       </g>
     );
   }
+}
+
+function getMinYHeight(tickCount: number): number {
+  return 1 / ((tickCount - 2) / 3 + 2) + 0.4;
 }
