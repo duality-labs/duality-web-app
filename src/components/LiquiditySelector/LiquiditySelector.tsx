@@ -715,14 +715,20 @@ function TicksGroup({
   canMoveX?: boolean;
   className?: string;
 }) {
-  const filteredTicks = ticks.filter((tick): tick is Tick => !!tick);
-  const cumulativeToken0Values = filteredTicks.reduce(
-    (result, [price, token0Value]) => result.plus(token0Value),
-    new BigNumber(0)
+  // save Tick sum reducer to pick token values by index
+  const sumTokenIndex = (tokenIndex: number) => {
+    return (result: BigNumber, token: Tick | undefined) => {
+      return token ? result.plus(token[tokenIndex]) : result;
+    };
+  };
+  // find max cumulative value of either the current ticks or background ticks
+  const cumulativeToken0Values: number = Math.max(
+    ticks.reduce(sumTokenIndex(1), new BigNumber(0)).toNumber(),
+    backgroundTicks.reduce(sumTokenIndex(1), new BigNumber(0)).toNumber()
   );
-  const cumulativeToken1Values = filteredTicks.reduce(
-    (result, [price, _, token1Value]) => result.plus(token1Value),
-    new BigNumber(0)
+  const cumulativeToken1Values: number = Math.max(
+    ticks.reduce(sumTokenIndex(2), new BigNumber(0)).toNumber(),
+    backgroundTicks.reduce(sumTokenIndex(2), new BigNumber(0)).toNumber()
   );
 
   const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
@@ -846,24 +852,23 @@ function TicksGroup({
       };
       const [price, token0Value, token1Value] = tick;
       // todo: display cumulative value of both side of ticks, not just one side
-      const totalValue = token0Value.isGreaterThan(0)
-        ? !cumulativeToken0Values.isZero()
-          ? token0Value.multipliedBy(0.9).dividedBy(cumulativeToken0Values)
-          : cumulativeToken0Values
-        : !cumulativeToken1Values.isZero()
-        ? token1Value.multipliedBy(0.9).dividedBy(cumulativeToken1Values)
-        : cumulativeToken1Values;
-      const backgroundValue = background.token0Value.isGreaterThan(0)
-        ? !cumulativeToken0Values.isZero()
-          ? background.token0Value
+      const totalValue =
+        (token0Value.isGreaterThan(0)
+          ? cumulativeToken0Values &&
+            token0Value.multipliedBy(0.9).dividedBy(cumulativeToken0Values)
+          : cumulativeToken1Values &&
+            token1Value.multipliedBy(0.9).dividedBy(cumulativeToken1Values)) ||
+        new BigNumber(0);
+      const backgroundValue =
+        (background.token0Value.isGreaterThan(0)
+          ? cumulativeToken0Values &&
+            background.token0Value
               .multipliedBy(0.9)
               .dividedBy(cumulativeToken0Values)
-          : cumulativeToken0Values
-        : !cumulativeToken1Values.isZero()
-        ? background.token1Value
-            .multipliedBy(0.9)
-            .dividedBy(cumulativeToken1Values)
-        : cumulativeToken1Values;
+          : cumulativeToken1Values &&
+            background.token1Value
+              .multipliedBy(0.9)
+              .dividedBy(cumulativeToken1Values)) || new BigNumber(0);
       const minValue = totalValue.isLessThan(backgroundValue)
         ? totalValue
         : backgroundValue;
