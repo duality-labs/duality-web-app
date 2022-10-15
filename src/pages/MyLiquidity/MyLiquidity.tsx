@@ -774,12 +774,12 @@ function PositionCard({
 }
 
 function getTickDiffs(
-  newEditedUserTicks: TickGroup,
-  userTicks: TickGroup,
-  values: [string, string],
+  newTicks: TickGroup,
+  oldTicks: TickGroup,
+  tokenValueStrings: [string, string],
   editingType: 'redistribute' | 'add' | 'remove'
 ) {
-  const [tokenAValueString, tokenBValueString] = values;
+  const [tokenAValueString, tokenBValueString] = tokenValueStrings;
   const tokenAValue =
     editingType !== 'redistribute'
       ? new BigNumber(
@@ -793,9 +793,9 @@ function getTickDiffs(
         ).shiftedBy(-12)
       : new BigNumber(0);
 
-  return userTicks
+  return oldTicks
     .map<Tick | undefined>((userTick, index) => {
-      const editedUserTick = newEditedUserTicks[index];
+      const editedUserTick = newTicks[index];
       // diff ticks
       if (editedUserTick && editedUserTick !== userTick) {
         // find diff
@@ -816,21 +816,21 @@ function getTickDiffs(
 }
 
 function applyDiffToIndex(
-  newEditedUserTicks: TickGroup,
-  userTicks: TickGroup,
-  diffValue: BigNumber,
+  newTicks: TickGroup,
+  oldTicks: TickGroup,
+  diffCorrectionValue: BigNumber,
   tickPartIndex: number,
-  indexSelected: number,
+  tickIndexSelected: number,
   oldTickIsFloor = false
 ): TickGroup {
-  const [adjustedUserTicks, remainder] = newEditedUserTicks
+  const [adjustedUserTicks, remainder] = newTicks
     // add index onto the TickGroup making it [price, tokenAValue, tokenBValue, index]
     // to be able to track which tick is which, the result must be in the correct order
     .map((tick, index) => tick.concat(new BigNumber(index)))
     // sort descending order (but with selected index at start, it will absorb the remainder)
     .sort((a, b) => {
-      const aIsSelected = a[3].isEqualTo(indexSelected);
-      const bIsSelected = b[3].isEqualTo(indexSelected);
+      const aIsSelected = a[3].isEqualTo(tickIndexSelected);
+      const bIsSelected = b[3].isEqualTo(tickIndexSelected);
       return !aIsSelected && !bIsSelected
         ? // sort by descending value
           b[tickPartIndex].comparedTo(a[tickPartIndex])
@@ -844,8 +844,8 @@ function applyDiffToIndex(
         const tokenValue: BigNumber = tick[tickPartIndex];
         // set the floor to be non-selected 'add' ticks or zero
         const floor =
-          oldTickIsFloor && indexSelected !== tick[3].toNumber()
-            ? userTicks[tick[3].toNumber()]?.[tickPartIndex]
+          oldTickIsFloor && tickIndexSelected !== tick[3].toNumber()
+            ? oldTicks[tick[3].toNumber()]?.[tickPartIndex]
             : new BigNumber(0);
         // skip token ticks stuck to zero
         if (tokenValue.isEqualTo(0)) {
@@ -857,7 +857,7 @@ function applyDiffToIndex(
         // when at index 0, the selected tick, attempt to take all the remainder
         const adjustment = remainder.negated().dividedBy(index || 1);
         const newValue = tokenValue.plus(adjustment);
-        const oldTick = userTicks[tick[3].toNumber()];
+        const oldTick = oldTicks[tick[3].toNumber()];
         const oldValue = oldTick[tickPartIndex];
         // abort change if new value is very close to the old value
         // (like a fraction of a percent difference) to avoid useless transactions
@@ -892,7 +892,7 @@ function applyDiffToIndex(
           return [result.concat([newTick]), remainder.plus(adjustment)];
         }
       },
-      [[] as BigNumber[][], diffValue]
+      [[] as BigNumber[][], diffCorrectionValue]
     );
 
   if (remainder.isGreaterThan(normalizationTolerance)) {
