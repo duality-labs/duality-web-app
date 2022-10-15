@@ -473,8 +473,8 @@ function LiquidityDistributionCard({
                   : new BigNumber(0);
 
               // find how much correction needs to be applied to meet the current goal
-              const diffUserTicks = userTicks.map<Tick | undefined>(
-                (userTick, index) => {
+              const [diffAValue, diffBValue] = userTicks
+                .map<Tick | undefined>((userTick, index) => {
                   const editedUserTick = newEditedUserTicks[index];
                   // diff ticks
                   if (editedUserTick && editedUserTick !== userTick) {
@@ -485,10 +485,9 @@ function LiquidityDistributionCard({
                     // edit all other values to ensure all diffs equal the desired value
                   }
                   return undefined;
-                }
-              );
-              const [diffAValue, diffBValue] = diffUserTicks
+                })
                 .filter((tick): tick is Tick => !!tick)
+                // sum all differences into two values
                 .reduce(
                   ([diffAValue, diffBValue], diffTick) => {
                     return [
