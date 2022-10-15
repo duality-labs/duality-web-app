@@ -509,9 +509,15 @@ function LiquidityDistributionCard({
               // modify only if difference is greater than our tolerance
               const normalizationTolerance = 1e-18;
               if (
+                // if diff A is significant
                 diffAValue
                   ?.absoluteValue()
-                  .isGreaterThan(normalizationTolerance)
+                  .isGreaterThan(normalizationTolerance) &&
+                // if value isn't trying to go negative
+                !(
+                  newEditedUserTick[1].isNegative() &&
+                  currentEditedUserTick[1].isZero()
+                )
               ) {
                 newUpdate = applyDiffToIndex(
                   newUpdate || newEditedUserTicks,
@@ -520,9 +526,15 @@ function LiquidityDistributionCard({
                 );
               }
               if (
+                // if diff B is significant
                 diffBValue
                   ?.absoluteValue()
-                  .isGreaterThan(normalizationTolerance)
+                  .isGreaterThan(normalizationTolerance) &&
+                // if value isn't trying to go negative
+                !(
+                  newEditedUserTick[2].isNegative() &&
+                  currentEditedUserTick[2].isZero()
+                )
               ) {
                 newUpdate = applyDiffToIndex(
                   newUpdate || newEditedUserTicks,
