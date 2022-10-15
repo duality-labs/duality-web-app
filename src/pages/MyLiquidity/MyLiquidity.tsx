@@ -575,12 +575,14 @@ function LiquidityDistributionCard({
                   .reduceRight(
                     ([result, remainder], tick, index) => {
                       const tokenValue: BigNumber = tick[tickPartIndex];
+                      // set the floor to be non-selected 'add' ticks or zero
                       const floor =
-                        editingType === 'add'
+                        editingType === 'add' &&
+                        indexSelected !== tick[3].toNumber()
                           ? userTicks[tick[3].toNumber()]?.[tickPartIndex]
                           : new BigNumber(0);
-                      // skip token ticks stuck to the floor
-                      if (tokenValue.isEqualTo(floor)) {
+                      // skip token ticks stuck to zero
+                      if (tokenValue.isEqualTo(0)) {
                         return [result.concat([tick]), remainder];
                       }
                       // divided by remainder of ticks that aren't selected
@@ -658,8 +660,8 @@ function LiquidityDistributionCard({
         setRangeMin={setRangeMin}
         setRangeMax={setRangeMax}
         swapAll={swapAll}
-        canMoveUp={['redistribute', 'add'].includes(editingType)}
-        canMoveDown={['redistribute', 'remove'].includes(editingType)}
+        canMoveUp
+        canMoveDown
       />
       <div className="page-card orderbook-card mx-auto">
         <RadioButtonGroupInput<number>
