@@ -48,7 +48,7 @@ export default function TokenInputGroup({
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
-  maxValue,
+  maxValue: givenMaxValue,
   relevantValue,
 }: InputGroupProps) {
   const onInputChange = useCallback(
@@ -75,6 +75,7 @@ export default function TokenInputGroup({
       : undefined);
 
   const { data: balance } = useBankBalance(token);
+  const maxValue = givenMaxValue || balance;
   return (
     <div
       className={[
@@ -85,23 +86,23 @@ export default function TokenInputGroup({
         .filter(Boolean)
         .join(' ')}
     >
-      {balance && (
+      {maxValue && (
         <h5 className="token-group-title">
           Available{' '}
-          {Number(balance).toLocaleString('en-us', {
+          {Number(maxValue).toLocaleString('en-us', {
             maximumSignificantDigits: 9,
           })}
         </h5>
       )}
-      {!disabledInput && balance && Number(balance) > 0 && (
+      {!disabledInput && maxValue && Number(maxValue) > 0 && (
         <span className="token-group-balance">
-          <button type="button" onClick={() => onValueChanged?.(balance)}>
+          <button type="button" onClick={() => onValueChanged?.(`${maxValue}`)}>
             MAX
           </button>
           <button
             type="button"
             onClick={() =>
-              onValueChanged?.(new BigNumber(balance).dividedBy(2).toFixed())
+              onValueChanged?.(new BigNumber(maxValue).dividedBy(2).toFixed())
             }
           >
             HALF
