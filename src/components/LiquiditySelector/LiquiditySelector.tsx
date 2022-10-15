@@ -736,19 +736,24 @@ function TicksGroup({
   className?: string;
 }) {
   // save Tick sum reducer to pick token values by index
-  const sumTokenIndex = (tokenIndex: number) => {
-    return (result: BigNumber, token: Tick | undefined) => {
-      return token ? result.plus(token[tokenIndex]) : result;
+  const mapNumberByIndex = (tokenIndex: number) => {
+    return (token: Tick | undefined) => {
+      return token ? token[tokenIndex].toNumber() || [] : [];
     };
   };
+  const tick0Numbers = ticks.flatMap(mapNumberByIndex(1));
+  const tick1Numbers = ticks.flatMap(mapNumberByIndex(2));
+  const backgroundTick0Numbers = backgroundTicks.flatMap(mapNumberByIndex(1));
+  const backgroundTick1Numbers = backgroundTicks.flatMap(mapNumberByIndex(2));
+
   // find max cumulative value of either the current ticks or background ticks
   const cumulativeToken0Values: number = Math.max(
-    ticks.reduce(sumTokenIndex(1), new BigNumber(0)).toNumber(),
-    backgroundTicks.reduce(sumTokenIndex(1), new BigNumber(0)).toNumber()
+    tick0Numbers.reduce((acc, v) => acc + v, 0),
+    backgroundTick0Numbers.reduce((acc, v) => acc + v, 0)
   );
   const cumulativeToken1Values: number = Math.max(
-    ticks.reduce(sumTokenIndex(2), new BigNumber(0)).toNumber(),
-    backgroundTicks.reduce(sumTokenIndex(2), new BigNumber(0)).toNumber()
+    tick1Numbers.reduce((acc, v) => acc + v, 0),
+    backgroundTick1Numbers.reduce((acc, v) => acc + v, 0)
   );
 
   const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
