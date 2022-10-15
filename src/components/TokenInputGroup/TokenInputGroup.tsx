@@ -28,7 +28,6 @@ interface InputGroupProps {
   disabled?: boolean;
   disabledInput?: boolean;
   disabledToken?: boolean;
-  title?: string;
   maxValue?: number;
   relevantValue?: string;
 }
@@ -49,7 +48,6 @@ export default function TokenInputGroup({
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
-  title,
   maxValue,
   relevantValue,
 }: InputGroupProps) {
@@ -87,7 +85,14 @@ export default function TokenInputGroup({
         .filter(Boolean)
         .join(' ')}
     >
-      {title && <h5 className="token-group-title">{title}</h5>}
+      {balance && (
+        <h5 className="token-group-title">
+          Available{' '}
+          {Number(balance).toLocaleString('en-us', {
+            maximumSignificantDigits: 9,
+          })}
+        </h5>
+      )}
       {!disabledInput && balance && Number(balance) > 0 && (
         <span className="token-group-balance">
           <button type="button" onClick={() => onValueChanged?.(balance)}>

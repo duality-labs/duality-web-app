@@ -226,7 +226,6 @@ export default function Swap() {
                 : ''
             }
             exclusion={tokenB}
-            title={tokenA && balanceTokenA ? `Available ${balanceTokenA}` : ''}
           ></TokenInputGroup>
         </div>
         <div className="card-row my-2">

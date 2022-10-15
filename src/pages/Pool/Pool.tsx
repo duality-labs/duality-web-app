@@ -422,7 +422,6 @@ export default function Pool() {
               token={tokenA}
               value={`${values[0]}`}
               exclusion={tokenB}
-              title={balanceTokenA ? `Available ${balanceTokenA}` : ''}
             />
           </div>
           <div className="plus-space mx-auto my-2">
@@ -439,7 +438,6 @@ export default function Pool() {
               token={tokenB}
               value={`${values[1]}`}
               exclusion={tokenA}
-              title={balanceTokenB ? `Available ${balanceTokenB}` : ''}
             />
           </div>
           <div className="card-col mt-5 mb-3">
