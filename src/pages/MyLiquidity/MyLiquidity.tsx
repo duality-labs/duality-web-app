@@ -235,6 +235,18 @@ function LiquidityDistributionCard({
 }) {
   const precision = shares?.length || 1;
 
+  const totalShareValues = useMemo(() => {
+    return shares.reduce<[BigNumber, BigNumber]>(
+      ([total0, total1], shareValue) => {
+        return [
+          total0.plus(shareValue.userReserves0?.shiftedBy(12) || 0),
+          total1.plus(shareValue.userReserves1?.shiftedBy(12) || 0),
+        ];
+      },
+      [new BigNumber(0), new BigNumber(0)]
+    );
+  }, [shares]);
+
   const { data: { ticks: unorderedTicks } = {} } = useIndexerPairData(
     token0?.address,
     token1?.address
@@ -396,6 +408,17 @@ function LiquidityDistributionCard({
         editingType
       );
 
+      // constrain the diff values to the users available shares
+      const [totalAShareValue, totalBShareValue] = totalShareValues.map(
+        (value) => value.shiftedBy(-12)
+      );
+      const cappedDiffAValue = totalAShareValue.isLessThan(diffAValue)
+        ? totalAShareValue
+        : diffAValue;
+      const cappedDiffBValue = totalBShareValue.isLessThan(diffBValue)
+        ? totalBShareValue
+        : diffBValue;
+
       // allow the new update to be conditionally adjusted
       let newUpdate;
 
@@ -403,12 +426,12 @@ function LiquidityDistributionCard({
       const normalizationTolerance = 1e-18;
       if (
         // if diff A is significant
-        diffAValue?.absoluteValue().isGreaterThan(normalizationTolerance)
+        cappedDiffAValue?.absoluteValue().isGreaterThan(normalizationTolerance)
       ) {
         newUpdate = applyDiffToIndex(
           newUpdate || newEditedUserTicks,
           userTicks,
-          diffAValue,
+          cappedDiffAValue,
           1,
           -1,
           editingType === 'add'
@@ -416,12 +439,12 @@ function LiquidityDistributionCard({
       }
       if (
         // if diff B is significant
-        diffBValue?.absoluteValue().isGreaterThan(normalizationTolerance)
+        cappedDiffBValue?.absoluteValue().isGreaterThan(normalizationTolerance)
       ) {
         newUpdate = applyDiffToIndex(
           newUpdate || newEditedUserTicks,
           userTicks,
-          diffBValue,
+          cappedDiffBValue,
           2,
           -1,
           editingType === 'add'
@@ -431,7 +454,7 @@ function LiquidityDistributionCard({
       // default to no update if no normalization occurred
       return newUpdate || userTicks;
     });
-  }, [values, userTicks, editingType]);
+  }, [values, userTicks, totalShareValues, editingType]);
 
   const leftColumn = (
     <div className="col">
