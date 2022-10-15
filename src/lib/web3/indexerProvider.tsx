@@ -595,9 +595,22 @@ export function useShareData() {
   return useContext(IndexerContext).shares;
 }
 
-export function useShares() {
+export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
   const { data, error, isValidating } = useShareData();
-  return { data: data?.shares, error, isValidating };
+  const shares = useMemo(() => {
+    // filter to specific tokens if asked for
+    if (tokens) {
+      const [addressA, addressB] = tokens.map((token) => token.address);
+      return data?.shares.filter(({ token0: address0, token1: address1 }) => {
+        return (
+          (addressA === address0 && addressB === address1) ||
+          (addressA === address1 && addressB === address0)
+        );
+      });
+    }
+    return data?.shares;
+  }, [tokens, data]);
+  return { data: shares, error, isValidating };
 }
 
 export function useIndexerData() {
