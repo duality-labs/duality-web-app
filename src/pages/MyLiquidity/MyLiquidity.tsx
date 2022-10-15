@@ -567,6 +567,25 @@ function LiquidityDistributionCard({
                         .negated()
                         .dividedBy(index || 1);
                       const newValue = tokenValue.plus(adjustment);
+                      const oldTick = userTicks[tick[3].toNumber()];
+                      const oldValue = oldTick[tickPartIndex];
+                      // abort change if new value is very close to the old value
+                      // (like a fraction of a percent difference) to avoid useless transactions
+                      if (
+                        oldValue
+                          .minus(newValue)
+                          .absoluteValue()
+                          .dividedBy(oldValue)
+                          .isLessThan(1e-6)
+                      ) {
+                        // insert old value into tick
+                        const newTick = tick.slice() as Tick;
+                        newTick.splice(tickPartIndex, 1, oldValue);
+                        return [
+                          result.concat([newTick]),
+                          remainder.plus(adjustment),
+                        ];
+                      }
                       // apply partial adjustment value using all liquidity of current tick
                       if (newValue.isLessThan(floor)) {
                         // insert new value (floor) into tick
