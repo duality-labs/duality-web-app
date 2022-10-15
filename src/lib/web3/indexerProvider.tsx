@@ -585,7 +585,9 @@ export function useBankBalances() {
 
 export function useBankBalance(token: Token | undefined) {
   const { data: balances, error, isValidating } = useBankBalances();
-  const balance = token && balances && getBalance(token, balances);
+  const balance = useMemo(() => {
+    return token && balances && getBalance(token, balances);
+  }, [balances, token]);
   return { data: balance, error, isValidating };
 }
 
