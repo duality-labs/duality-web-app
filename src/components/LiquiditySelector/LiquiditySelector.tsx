@@ -765,11 +765,11 @@ function TicksGroup({
   const scalingFactor0 =
     cumulativeToken0Values && max0Value / cumulativeToken0Values > minMaxHeight0
       ? 0.925
-      : (1 / (max0Value / cumulativeToken0Values)) * minMaxHeight0;
+      : (0.925 / (max0Value / cumulativeToken0Values)) * minMaxHeight0;
   const scalingFactor1 =
     cumulativeToken1Values && max1Value / cumulativeToken1Values > minMaxHeight1
       ? 0.925
-      : (1 / (max1Value / cumulativeToken1Values)) * minMaxHeight1;
+      : (0.925 / (max1Value / cumulativeToken1Values)) * minMaxHeight1;
 
   const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
 
