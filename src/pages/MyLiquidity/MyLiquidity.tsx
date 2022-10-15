@@ -1,5 +1,6 @@
 import { Flex, Heading } from '@chakra-ui/react';
 import {
+  FormEvent,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -39,6 +40,7 @@ import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurr
 import { Tick, TickGroup } from '../../components/LiquiditySelector';
 
 import './MyLiquidity.scss';
+import { useEditLiquidity } from './useEditLiquidity';
 
 interface ShareValue {
   share: DexShare;
@@ -49,6 +51,10 @@ interface ShareValue {
 }
 interface TickShareValue extends ShareValue {
   tick: TickInfo;
+}
+interface EditedTickShareValue extends TickShareValue {
+  tickDiff0: BigNumber;
+  tickDiff1: BigNumber;
 }
 interface TickShareValueMap {
   [pairID: string]: Array<TickShareValue>;
@@ -718,8 +724,39 @@ function LiquidityDistributionCard({
     </div>
   );
 
+  const [{ isValidating }, sendEditRequest] = useEditLiquidity();
+
+  const onSubmit = useCallback(
+    async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      // get relevant tick diffs
+      const tickDiffs = getTickDiffs(editedUserTicks, userTicks);
+      const sharesDiff: Array<EditedTickShareValue> = tickDiffs
+        .map((tickDiff, index) => {
+          const share = shares[index];
+          return {
+            ...share,
+            // // realign tickDiff A/B back to original shares 0/1 order
+            tickDiff0: invertedTokenOrder ? tickDiff[2] : tickDiff[1],
+            tickDiff1: invertedTokenOrder ? tickDiff[1] : tickDiff[2],
+          };
+        })
+        .filter(
+          (share) => !share.tickDiff0.isZero() || !share.tickDiff1.isZero()
+        );
+
+      await sendEditRequest(sharesDiff);
+    },
+    [shares, invertedTokenOrder, editedUserTicks, userTicks, sendEditRequest]
+  );
+
   return (
-    <form className="pool-page row">
+    <form
+      className={['pool-page row', isValidating && 'disabled']
+        .filter(Boolean)
+        .join(' ')}
+      onSubmit={onSubmit}
+    >
       {leftColumn}
       {rightColumn}
     </form>
