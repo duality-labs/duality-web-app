@@ -375,41 +375,12 @@ function LiquidityDistributionCard({
   ]);
   const [tokenAValue, tokenBValue] = values;
 
+  // reset when switching between modes
+  // there is a lot going on, best to just remove the state
   useEffect(() => {
-    if (editingType === 'add') {
-      setEditedUserTicks((editedUserTicks) => {
-        return editedUserTicks.map((editedUserTick, index) => {
-          const userTick = userTicks[index];
-          return editedUserTick
-            ? [
-                editedUserTick[0],
-                userTick && editedUserTick[1].isLessThan(userTick[1])
-                  ? userTick[1]
-                  : editedUserTick[1],
-                userTick && editedUserTick[2].isLessThan(userTick[2])
-                  ? userTick[2]
-                  : editedUserTick[2],
-              ]
-            : editedUserTick;
-        });
-      });
-    } else if (editingType === 'remove') {
-      setEditedUserTicks((editedUserTicks) => {
-        return editedUserTicks.map((editedUserTick, index) => {
-          const userTick = userTicks[index];
-          return editedUserTick
-            ? [
-                editedUserTick[0],
-                userTick && editedUserTick[1].isGreaterThan(userTick[1])
-                  ? userTick[1]
-                  : editedUserTick[1],
-                userTick && editedUserTick[2].isGreaterThan(userTick[2])
-                  ? userTick[2]
-                  : editedUserTick[2],
-              ]
-            : editedUserTick;
-        });
-      });
+    setValues(['0', '0']);
+    if (editingType !== 'redistribute') {
+      setEditedUserTicks(userTicks);
     }
   }, [editingType, userTicks]);
 
