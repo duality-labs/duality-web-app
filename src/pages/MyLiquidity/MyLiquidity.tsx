@@ -428,6 +428,14 @@ function LiquidityDistributionCard({
             ) => TickGroup
           ): void => {
             setEditedUserTicks((currentEditedUserTicks) => {
+              // bail if bad state: the editedUserTicks and current userTicks do not match
+              if (
+                !userTicks ||
+                !currentEditedUserTicks ||
+                userTicks.length !== currentEditedUserTicks.length
+              ) {
+                return currentEditedUserTicks;
+              }
               const meta: { index?: number } = {};
               const newEditedUserTicks = callback(currentEditedUserTicks, meta);
               const indexSelected = meta.index !== undefined ? meta.index : -1;
@@ -535,9 +543,13 @@ function LiquidityDistributionCard({
                   })
                   .reduceRight(
                     ([result, remainder], tick, index) => {
-                      const tokenValue = tick[tickPartIndex];
-                      // skip empty token ticks
-                      if (tokenValue.isZero()) {
+                      const tokenValue: BigNumber = tick[tickPartIndex];
+                      const floor =
+                        editingType === 'add'
+                          ? userTicks[tick[3].toNumber()]?.[tickPartIndex]
+                          : new BigNumber(0);
+                      // skip token ticks stuck to the floor
+                      if (tokenValue.isEqualTo(floor)) {
                         return [result.concat([tick]), remainder];
                       }
                       // divided by remainder of ticks that aren't selected
@@ -548,28 +560,29 @@ function LiquidityDistributionCard({
                         .negated()
                         .dividedBy(index || 1);
                       const newValue = tokenValue.plus(adjustment);
+                      // apply partial adjustment value using all liquidity of current tick
+                      if (newValue.isLessThan(floor)) {
+                        // insert new value (floor) into tick
+                        const newTick = tick.slice() as Tick;
+                        const [removedValue] = newTick.splice(
+                          tickPartIndex,
+                          1,
+                          floor
+                        );
+                        // remove the applied adjustment from the remainder
+                        return [
+                          result.concat([newTick]),
+                          remainder.minus(removedValue.minus(floor)),
+                        ];
+                      }
                       // apply all of calculated adjustment value
-                      if (newValue.isGreaterThan(0)) {
+                      else {
                         // insert new value into tick
                         const newTick = tick.slice() as Tick;
                         newTick.splice(tickPartIndex, 1, newValue);
                         return [
                           result.concat([newTick]),
                           remainder.plus(adjustment),
-                        ];
-                      }
-                      // apply partial adjustment value using all liquidity of current tick
-                      else {
-                        // insert new value (0) into tick
-                        const newTick = tick.slice() as Tick;
-                        const [removedValue] = newTick.splice(
-                          tickPartIndex,
-                          1,
-                          new BigNumber(0)
-                        );
-                        return [
-                          result.concat([newTick]),
-                          remainder.minus(removedValue),
                         ];
                       }
                     },
