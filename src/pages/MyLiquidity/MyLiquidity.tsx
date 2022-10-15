@@ -449,8 +449,13 @@ function LiquidityDistributionCard({
               const newEditedUserTick = newEditedUserTicks?.[indexSelected];
               const currentEditedUserTick =
                 currentEditedUserTicks?.[indexSelected];
+              const oldUserTick = userTicks?.[indexSelected];
               // bail if no current selection
-              if (!newEditedUserTick || !currentEditedUserTick) {
+              if (
+                !newEditedUserTick ||
+                !currentEditedUserTick ||
+                !oldUserTick
+              ) {
                 return currentEditedUserTicks;
               }
 
