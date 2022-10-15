@@ -496,6 +496,8 @@ function LiquidityDistributionCard({
                       diffBValue.plus(diffTick[2]),
                     ];
                   },
+                  // diff means difference from target
+                  // the target value is subtracted at the start for brevity
                   [
                     new BigNumber(0).minus(tokenAValue),
                     new BigNumber(0).minus(tokenBValue),
