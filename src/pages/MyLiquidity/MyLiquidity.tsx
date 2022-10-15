@@ -894,7 +894,9 @@ function applyDiffToIndex(
         // which would be `index + 1` but it is `index + 1 - 1`
         // because we sorted the selectedTick to be in index 0.
         // when at index 0, the selected tick, attempt to take all the remainder
-        const adjustment = remainder.negated().dividedBy(index || 1);
+        const adjustment = remainder
+          .negated()
+          .dividedBy(index + 1 - (tickIndexSelected >= 0 ? 1 : 0) || 1);
         const newValue = tokenValue.plus(adjustment);
         const oldTick = oldTicks[tick[3].toNumber()];
         const oldValue = oldTick[tickPartIndex];
