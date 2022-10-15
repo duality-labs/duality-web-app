@@ -498,28 +498,35 @@ function LiquidityDistributionCard({
                 );
 
               // allow the new update to be conditionally adjusted
-              let newUpdate = newEditedUserTicks;
+              let newUpdate;
 
               // modify only if difference is greater than our tolerance
               const normalizationTolerance = 1e-18;
               if (
-                diffAValue &&
                 diffAValue
                   ?.absoluteValue()
                   .isGreaterThan(normalizationTolerance)
               ) {
-                newUpdate = applyDiffToIndex(newUpdate, diffAValue, 1);
+                newUpdate = applyDiffToIndex(
+                  newUpdate || newEditedUserTicks,
+                  diffAValue,
+                  1
+                );
               }
               if (
-                diffBValue &&
                 diffBValue
                   ?.absoluteValue()
                   .isGreaterThan(normalizationTolerance)
               ) {
-                newUpdate = applyDiffToIndex(newUpdate, diffBValue, 2);
+                newUpdate = applyDiffToIndex(
+                  newUpdate || newEditedUserTicks,
+                  diffBValue,
+                  2
+                );
               }
 
-              return newUpdate;
+              // default to no update if no normalization occurred
+              return newUpdate || currentEditedUserTicks;
 
               function applyDiffToIndex(
                 newEditedUserTicks: TickGroup,
