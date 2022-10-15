@@ -35,7 +35,7 @@ export default function LiquidityDistribution({
   swapAll: () => void;
   currentPriceFromTicks: BigNumber;
   submitButtonText?: string;
-  submitButtonVariant?: 'primary' | 'error';
+  submitButtonVariant?: 'primary' | 'error' | 'warning';
 }) {
   return (
     <div

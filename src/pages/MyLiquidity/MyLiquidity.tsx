@@ -224,6 +224,16 @@ const defaultFeeTier = 0.003;
 const setRangeMin = () => undefined;
 const setRangeMax = () => undefined;
 
+type EditingType = 'redistribute' | 'add' | 'remove';
+const submitButtonSettings: Record<
+  EditingType,
+  { text: string; variant: 'primary' | 'error' | 'warning' }
+> = {
+  add: { text: 'Add Liquidity', variant: 'primary' },
+  remove: { text: 'Remove Liquidity', variant: 'error' },
+  redistribute: { text: 'Redistribute Liquidity', variant: 'warning' },
+};
+
 function LiquidityDistributionCard({
   token0,
   token1,
@@ -567,6 +577,8 @@ function LiquidityDistributionCard({
         swapAll={swapAll}
         canMoveUp
         canMoveDown
+        submitButtonText={submitButtonSettings[editingType].text}
+        submitButtonVariant={submitButtonSettings[editingType].variant}
       />
       <div className="page-card orderbook-card mx-auto">
         <RadioButtonGroupInput<number>
