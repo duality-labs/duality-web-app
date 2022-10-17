@@ -73,7 +73,7 @@ function useWindowWidth() {
 
 export default function LiquiditySelector({
   ticks = {},
-  feeTier = -1,
+  feeTier,
   tickSelected = -1,
   setTickSelected,
   setRangeMin,
@@ -91,7 +91,10 @@ export default function LiquiditySelector({
   const feeTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
       .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
-      .filter((tick): tick is TickInfo => tick?.fee.isEqualTo(feeTier) === true) // filter to only fee ticks
+      .filter(
+        (tick): tick is TickInfo =>
+          !!tick && (!feeTier || tick.fee.isEqualTo(feeTier))
+      ) // filter to only fee tier ticks
       .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
   }, [ticks, feeTier]);
 
@@ -102,7 +105,7 @@ export default function LiquiditySelector({
     ticks,
     useCallback(
       (tick: TickInfo | undefined) => {
-        return tick?.fee.isEqualTo(feeTier) === true;
+        return !!tick && (!feeTier || tick.fee.isEqualTo(feeTier));
       },
       [feeTier]
     )
