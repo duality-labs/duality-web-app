@@ -71,6 +71,13 @@ function useWindowWidth() {
   return width;
 }
 
+function filterTicksToFeeTier(
+  tick: TickInfo | undefined,
+  feeTier: number | undefined
+) {
+  return !!tick && (!feeTier || tick.fee.isEqualTo(feeTier));
+}
+
 export default function LiquiditySelector({
   ticks = {},
   feeTier,
@@ -91,10 +98,7 @@ export default function LiquiditySelector({
   const feeTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
       .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
-      .filter(
-        (tick): tick is TickInfo =>
-          !!tick && (!feeTier || tick.fee.isEqualTo(feeTier))
-      ) // filter to only fee tier ticks
+      .filter((tick): tick is TickInfo => filterTicksToFeeTier(tick, feeTier)) // filter to only fee tier ticks
       .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
   }, [ticks, feeTier]);
 
@@ -104,8 +108,8 @@ export default function LiquiditySelector({
   const currentPriceABFromTicks = useCurrentPriceFromTicks(
     ticks,
     useCallback(
-      (tick: TickInfo | undefined) => {
-        return !!tick && (!feeTier || tick.fee.isEqualTo(feeTier));
+      (tick: TickInfo | undefined): tick is TickInfo => {
+        return filterTicksToFeeTier(tick, feeTier);
       },
       [feeTier]
     )
