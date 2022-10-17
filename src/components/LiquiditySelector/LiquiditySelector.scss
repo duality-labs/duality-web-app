@@ -74,6 +74,13 @@
       fill: rgb(0 200 136);
     }
   }
+  .tick--is-zero {
+    .tip--diff {
+      stroke: var(--error);
+      fill: var(--error);
+      opacity: 0.5;
+    }
+  }
 }
 
 .new-ticks-area {

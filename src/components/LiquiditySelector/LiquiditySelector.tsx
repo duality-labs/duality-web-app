@@ -920,6 +920,7 @@ function TicksGroup({
           key={index}
           className={[
             'tick',
+            totalValue.isZero() && 'tick--is-zero',
             tickSelected === index && 'tick--selected',
             token0Value.isGreaterThan(0) ? 'token-a' : 'token-b',
             !totalValue.isEqualTo(backgroundValue) &&
