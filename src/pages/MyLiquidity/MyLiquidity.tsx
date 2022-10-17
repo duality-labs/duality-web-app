@@ -74,6 +74,10 @@ export default function MyLiquidity() {
 
   const [selectedTokens, setSelectedTokens] = useState<[Token, Token]>();
 
+  const {
+    data: [price0, price1],
+  } = useSimplePrice(selectedTokens || []);
+
   const shareValueMap = useMemo(() => {
     if (shares && indexer) {
       return shares.reduce<TickShareValueMap>((result, share) => {
@@ -140,6 +144,8 @@ export default function MyLiquidity() {
       },
       [new BigNumber(0), new BigNumber(0)]
     );
+    const value0 = price0 && total0.multipliedBy(price0);
+    const value1 = price1 && total1.multipliedBy(price1);
 
     return (
       <div className="my-liquidity-detail-page">
@@ -149,20 +155,22 @@ export default function MyLiquidity() {
               <h1>
                 {token0.symbol} + {token1.symbol}
               </h1>
-              <div className="balance row mt-4">
-                <div className="col">Balance</div>
-                <div className="col ml-auto">
-                  ${total0.plus(total1).toFixed(2)}
+              {value0 && value1 && (
+                <div className="balance row mt-4">
+                  <div className="col">Balance</div>
+                  <div className="col ml-auto">
+                    ${value0.plus(value1).toFixed(2)}
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="value-visual row">
-                {total0 && total1 && (
+                {value0 && value1 && (
                   <div className="value-barchart">
                     <div
                       className="value-0"
                       style={{
-                        width: `${total0
-                          .dividedBy(total0.plus(total1))
+                        width: `${value0
+                          .dividedBy(value0.plus(value1))
                           .multipliedBy(100)
                           .toFixed(3)}%`,
                       }}
@@ -174,11 +182,11 @@ export default function MyLiquidity() {
               <div className="value-text row">
                 <div className="value-0 col mr-5">
                   {total0.toFixed(3)} {token0.symbol}{' '}
-                  {total0 && <>(${total0.toFixed(2)})</>}
+                  {value0 && <>(${value0.toFixed(2)})</>}
                 </div>
                 <div className="value-1 col ml-auto">
                   {total1.toFixed(3)} {token1.symbol}{' '}
-                  {total1 && <>(${total1.toFixed(2)})</>}
+                  {value1 && <>(${value1.toFixed(2)})</>}
                 </div>
               </div>
             </div>
