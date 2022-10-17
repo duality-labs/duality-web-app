@@ -562,6 +562,7 @@ function LiquidityDistributionCard({
         swapAll={swapAll}
         canMoveUp
         canMoveDown
+        viewOnlyUserTicks
         submitButtonText={submitButtonSettings[editingType].text}
         submitButtonVariant={submitButtonSettings[editingType].variant}
       />
