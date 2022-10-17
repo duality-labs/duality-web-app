@@ -976,13 +976,23 @@ function TicksGroup({
           >
             {index + 1}
           </text>
-          <ellipse
+          <rect
             className="tick--hit-area"
             data-key={index}
-            cx={plotX(price).toFixed(3)}
-            cy={(plotY(totalValue) - 9).toFixed(3)}
-            rx={isDragging ? '1000' : '12.5'}
-            ry={isDragging ? '1000' : '22.5'}
+            {...(isDragging
+              ? {
+                  x: '0',
+                  y: '-1000',
+                  width: '10000',
+                  height: '1000',
+                }
+              : {
+                  x: (plotX(price) - 7.5).toFixed(3),
+                  y: (plotY(maxValue) - 25).toFixed(3),
+                  rx: 7.5,
+                  width: 15,
+                  height: (plotY(minValue) - plotY(maxValue) + 35).toFixed(3),
+                })}
             onMouseDown={onTickSelected}
           />
         </g>
@@ -990,7 +1000,13 @@ function TicksGroup({
     });
 
   return (
-    <g className={['ticks', className].filter(Boolean).join(' ')}>{tickPart}</g>
+    <g
+      className={['ticks', isDragging && 'ticks--is-dragging', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {tickPart}
+    </g>
   );
 }
 
