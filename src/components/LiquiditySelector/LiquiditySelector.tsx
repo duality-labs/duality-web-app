@@ -880,10 +880,22 @@ function TicksGroup({
     [ticks, startDragTick, setTickSelected]
   );
 
-  // todo: sort ticks so that the selected tick always appears last (on top)
-  //       for easier user selection when many ticks are present
-  const tickPart = ticks.map((tick, index) => {
-    if (tick) {
+  const tickPart = ticks
+    .filter((tick): tick is Tick => !!tick)
+    .map<[Tick, number]>((tick, index) => [tick, index])
+    // sort by top to bottom: select ticks then shortest -> tallest ticks
+    .sort(([a, aIndex], [b, bIndex]) => {
+      // sort any selected tick to the front
+      // (so users can select it somehow else then drag it easily here)
+      const aIsSelected = aIndex === tickSelected;
+      const bIsSelected = bIndex === tickSelected;
+      return (
+        Number(aIsSelected) - Number(bIsSelected) ||
+        // sort by height so that short ticks are above tall ticks
+        b[1].plus(b[2]).comparedTo(a[1].plus(a[2]))
+      );
+    })
+    .map(([tick, index]) => {
       const backgroundTick = backgroundTicks[index] || tick;
       const background = {
         price: backgroundTick[0],
@@ -994,10 +1006,7 @@ function TicksGroup({
           />
         </g>
       );
-    } else {
-      return null;
-    }
-  });
+    });
 
   return (
     <g className={['ticks', className].filter(Boolean).join(' ')}>{tickPart}</g>
