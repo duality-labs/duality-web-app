@@ -21,6 +21,7 @@ import {
   getBalance,
   TickMap,
   useBankBalances,
+  useFeeLiquidityMap,
   useIndexerPairData,
 } from '../../lib/web3/indexerProvider';
 import { useHasPriceData } from '../../lib/tokenPrices';
@@ -62,17 +63,6 @@ const slopeTypes: Array<SlopeType> = [
   'BELL CURVE',
   'DOWN-SLOPE',
 ];
-
-// todo: replace with dynamic calculation
-const calculateFeeLiquidity = function (label: string) {
-  const test: { [label: string]: string } = {
-    '0.01%': '1% liquidity',
-    '0.05%': '9% liquidity',
-    '0.30%': '83% liquidity',
-    '1.00%': '7% liquidity',
-  };
-  return test[label];
-};
 
 const defaultPrecision = '6';
 // set as constant to avoid unwanted hook effects
@@ -400,6 +390,11 @@ export default function Pool() {
   const hasSufficientFundsB =
     balanceTokenB?.isGreaterThanOrEqualTo(values[1] || 0) || false;
 
+  const { data: feeLiquidityMap } = useFeeLiquidityMap(
+    tokenA?.address,
+    tokenB?.address
+  );
+
   if (!valuesConfirmed) {
     return (
       <form
@@ -715,9 +710,17 @@ export default function Pool() {
                     >
                       <h5 className="fee-title">{label}</h5>
                       <span className="fee-description">{description}</span>
-                      <span className="pill fee-liquidity">
-                        {calculateFeeLiquidity(label)}
-                      </span>
+                      {feeLiquidityMap?.[fee] && (
+                        <span className="pill fee-liquidity">
+                          {feeLiquidityMap[fee]
+                            .multipliedBy(100)
+                            .toNumber()
+                            .toLocaleString('en-US', {
+                              maximumFractionDigits: 1,
+                            })}
+                          % liquidity
+                        </span>
+                      )}
                     </div>
                   )}
                 />
@@ -849,18 +852,27 @@ export default function Pool() {
                             <span className="fee-description">
                               {description}
                             </span>
-                            <span className="pill fee-liquidity">
-                              {calculateFeeLiquidity(label)}
-                            </span>
+                            {feeType && feeLiquidityMap?.[feeType.fee] && (
+                              <span className="pill fee-liquidity">
+                                {feeLiquidityMap[feeType.fee]
+                                  .multipliedBy(100)
+                                  .toFixed(1)}
+                                % liquidity
+                              </span>
+                            )}
                           </div>
                         )}
                       />
                     ) : (
                       <>
-                        <span className="badge-info pill ml-auto badge-large text-slim fs-s mt-auto">
-                          {feeType?.label &&
-                            calculateFeeLiquidity(feeType?.label)}
-                        </span>
+                        {feeType && feeLiquidityMap?.[feeType.fee] && (
+                          <span className="badge-info pill ml-auto badge-large text-slim fs-s mt-auto">
+                            {feeLiquidityMap[feeType.fee]
+                              .multipliedBy(100)
+                              .toFixed(1)}
+                            % liquidity
+                          </span>
+                        )}
                         <span className="badge-info pill ml-2 badge-large text-slim fs-s mt-auto">
                           {feeType?.description}
                         </span>
