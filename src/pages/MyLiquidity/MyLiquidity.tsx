@@ -416,9 +416,9 @@ function LiquidityDistributionCard({
   }, [editingType, userTicks]);
 
   useLayoutEffect(() => {
-    setEditedUserTicks((newEditedUserTicks) => {
+    setEditedUserTicks(() => {
       const [diffAValue, diffBValue] = getTickDiffCumulativeValues(
-        newEditedUserTicks,
+        userTicks,
         userTicks,
         values,
         editingType
@@ -445,7 +445,7 @@ function LiquidityDistributionCard({
         cappedDiffAValue?.absoluteValue().isGreaterThan(normalizationTolerance)
       ) {
         newUpdate = applyDiffToIndex(
-          newUpdate || newEditedUserTicks,
+          newUpdate || userTicks,
           userTicks,
           cappedDiffAValue,
           1,
@@ -458,7 +458,7 @@ function LiquidityDistributionCard({
         cappedDiffBValue?.absoluteValue().isGreaterThan(normalizationTolerance)
       ) {
         newUpdate = applyDiffToIndex(
-          newUpdate || newEditedUserTicks,
+          newUpdate || userTicks,
           userTicks,
           cappedDiffBValue,
           2,
