@@ -28,6 +28,7 @@
 }
 
 .new-ticks {
+  pointer-events: none;
   stroke-width: 2px;
   stroke: hsl(37, 62%, 68%);
   .tip {
@@ -43,6 +44,7 @@
     fill: transparent;
     stroke: none;
     cursor: move;
+    pointer-events: visible;
   }
   .tick text {
     fill: hsl(37, 62%, 68%);
