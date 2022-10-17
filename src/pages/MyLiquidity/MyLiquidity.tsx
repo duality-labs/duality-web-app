@@ -666,6 +666,7 @@ function LiquidityDistributionCard({
         <div className="card-row">
           <TokenInputGroup
             disabledToken
+            disabledInput={editingType === 'redistribute'}
             variant={!hasSufficientFundsA && 'error'}
             tokenList={tokenList}
             maxValue={
@@ -688,6 +689,7 @@ function LiquidityDistributionCard({
         <div className="card-row">
           <TokenInputGroup
             disabledToken
+            disabledInput={editingType === 'redistribute'}
             variant={!hasSufficientFundsB && 'error'}
             tokenList={tokenList}
             maxValue={
