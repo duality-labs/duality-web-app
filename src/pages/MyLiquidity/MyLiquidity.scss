@@ -183,7 +183,7 @@
       position: relative;
       > .row {
         position: absolute;
-        width: 100vw;
+        width: max-content;
         right: 20%;
         top: 0;
         bottom: 0;
@@ -195,10 +195,6 @@
           margin-left: -2rem; // add icon overlap
           height: 120%;
           width: auto;
-
-          // see icons even when column has shrunken below their size
-          overflow: visible;
-          object-fit: cover;
         }
       }
     }
