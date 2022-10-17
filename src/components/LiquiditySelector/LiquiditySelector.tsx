@@ -28,6 +28,7 @@ export interface LiquiditySelectorProps {
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   canMoveX?: boolean;
+  viewOnlyUserTicks?: boolean;
 }
 
 export type Tick = [
@@ -93,6 +94,7 @@ export default function LiquiditySelector({
   canMoveUp,
   canMoveDown,
   canMoveX,
+  viewOnlyUserTicks = false,
 }: LiquiditySelectorProps) {
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
@@ -234,6 +236,12 @@ export default function LiquiditySelector({
       },
       undefined
     );
+    // if focusing on just the current tick price range
+    if (viewOnlyUserTicks && minUserTickPrice && maxUserTickPrice) {
+      setGraphStart(minUserTickPrice.multipliedBy(0.9));
+      setGraphEnd(maxUserTickPrice.dividedBy(0.9));
+      return;
+    }
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
     // by padding dataStart and dataEnd with the needed amount of pixels
     const minExistingTickPrice = dataStart;
@@ -256,7 +264,14 @@ export default function LiquiditySelector({
           ? maxTickPrice
           : initialGraphEnd
       );
-  }, [initialGraphStart, initialGraphEnd, dataStart, dataEnd, userTicks]);
+  }, [
+    initialGraphStart,
+    initialGraphEnd,
+    dataStart,
+    dataEnd,
+    userTicks,
+    viewOnlyUserTicks,
+  ]);
 
   // calculate histogram values
   const feeTickBuckets = useMemo<
