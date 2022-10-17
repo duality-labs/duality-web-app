@@ -232,7 +232,6 @@ export default function MyLiquidity() {
 
 // set as constant to avoid unwanted hook effects
 const defaultCurrentPrice = new BigNumber(1);
-const defaultFeeTier = 0.003;
 const setRangeMin = () => undefined;
 const setRangeMax = () => undefined;
 
@@ -326,38 +325,11 @@ function LiquidityDistributionCard({
     setTickSelected((selected) => Math.min(selected, Number(precision) - 1));
   }, [precision]);
 
-  const [feeTier, setFeeTier] = useState(defaultFeeTier);
+  const [feeTier, setFeeTier] = useState<number>();
   // change the liquidity view to the fee tier that the selected tick is on (so that we can see it)
   useEffect(() => {
     const feeTier = shares?.[tickSelected]?.tick.fee;
-    if (feeTier) {
-      setFeeTier(feeTier.toNumber());
-    }
-    // else default to most popular fee tier
-    else if (shares && shares.length > 1) {
-      const feeTierCount = shares.reduce<{ [feeTier: string]: number }>(
-        (result, share) => {
-          const feeTier = share.tick.fee.toFixed();
-          if (feeTier) {
-            result[feeTier] = result[feeTier] || 0;
-            result[feeTier] += 1;
-          }
-          return result;
-        },
-        {}
-      );
-      const mostPopularFeeTier: string | undefined = Object.entries(
-        feeTierCount
-      ).sort((a, b) => {
-        return b[1] - a[1]; // descending order by value
-      })[0]?.[0];
-      // set fee tier if found
-      setFeeTier(Number(mostPopularFeeTier) || defaultFeeTier);
-    }
-    // else default to default fee tier
-    else {
-      setFeeTier(defaultFeeTier);
-    }
+    setFeeTier(feeTier?.toNumber());
   }, [shares, tickSelected]);
 
   const sortedShares = useMemo(() => {
@@ -486,6 +458,7 @@ function LiquidityDistributionCard({
         tokenB={tokenB}
         ticks={ticks}
         feeTier={feeTier}
+        setFeeTier={setFeeTier}
         currentPriceFromTicks={currentPriceFromTicks}
         tickSelected={tickSelected}
         setTickSelected={setTickSelected}
