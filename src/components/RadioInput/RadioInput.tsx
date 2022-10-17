@@ -55,7 +55,7 @@ export default function RadioInput<T>({
               checked={index === selectedIndex}
               onChange={() => onChange?.(option, index)}
             ></input>
-            <label htmlFor={id} className="button" style={labelStyle}>
+            <label htmlFor={id} style={labelStyle}>
               <OptionComponent option={option} id={id} index={index} />
             </label>
           </Fragment>

@@ -3,6 +3,7 @@
     flex-direction: row;
     flex-wrap: wrap;
     display: flex;
+    gap: 0.5rem;
   }
 
   input[type='radio'] {
@@ -15,10 +16,12 @@
     cursor: pointer;
     display: block;
     flex: 0 0 auto;
-    margin: auto;
   }
 
-  input[type='radio']:not(:checked) + label {
-    background: transparent;
+  input[type='radio'] + label .button {
+    border: 1px solid transparent;
+  }
+  input[type='radio']:checked + label .button {
+    border-color: var(--info);
   }
 }

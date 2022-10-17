@@ -709,7 +709,10 @@ export default function Pool() {
                   OptionComponent={({
                     option: { fee, label, description },
                   }) => (
-                    <div key={fee} className="button-default card fee-type">
+                    <div
+                      key={fee}
+                      className="button button-default card fee-type"
+                    >
                       <h5 className="fee-title">{label}</h5>
                       <span className="fee-description">{description}</span>
                       <span className="pill fee-liquidity">
@@ -840,7 +843,7 @@ export default function Pool() {
                         }) => (
                           <div
                             key={fee}
-                            className="button-default card fee-type"
+                            className="button button-default card fee-type"
                           >
                             <h5 className="fee-title">{label}</h5>
                             <span className="fee-description">
