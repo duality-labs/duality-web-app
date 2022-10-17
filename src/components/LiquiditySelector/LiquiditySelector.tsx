@@ -359,7 +359,9 @@ export default function LiquiditySelector({
 
   return (
     <svg
-      className="chart-liquidity"
+      className={['chart-liquidity', advanced && 'chart-type--advanced']
+        .filter(Boolean)
+        .join(' ')}
       viewBox={`0 -${containerSize.height} ${containerSize.width} ${
         containerSize.height + 5
       }`}

@@ -2,6 +2,11 @@
   flex: 1;
 }
 
+.chart-type--advanced {
+  // restrict pointer events, only certain parts require interaction
+  pointer-events: none;
+}
+
 .tick-buckets {
   .tick-bucket {
     transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
