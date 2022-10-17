@@ -78,6 +78,7 @@ export default function LiquidityDistribution({
           </div>
           {setFeeTier && (
             <div className="row mb-4">
+              <div className="my-auto mr-3">Fee tier:</div>
               <RadioInput<FeeType | AllTiers>
                 value={feeTypesAndAll.find(({ fee }) => fee === feeTier)}
                 list={feeTypesAndAll}
