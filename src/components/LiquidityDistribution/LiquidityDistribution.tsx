@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import BigNumber from 'bignumber.js';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -5,7 +6,21 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import LiquiditySelector, {
   LiquiditySelectorProps,
 } from '../LiquiditySelector';
+import RadioInput from '../RadioInput';
+import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { Token } from '../TokenPicker/hooks';
+
+interface AllTiers {
+  label: 'All';
+  fee: undefined;
+  description: undefined;
+}
+const allTiers: AllTiers = {
+  label: 'All',
+  fee: undefined,
+  description: undefined,
+};
+const feeTypesAndAll = [allTiers, ...feeTypes];
 
 export default function LiquidityDistribution({
   chartTypeSelected = 'Orderbook',
@@ -18,6 +33,7 @@ export default function LiquidityDistribution({
   tickSelected,
   setTickSelected,
   feeTier,
+  setFeeTier,
   userTicks,
   userTicksBase,
   setUserTicks,
@@ -33,10 +49,18 @@ export default function LiquidityDistribution({
   tokenA: Token;
   tokenB: Token;
   swapAll: () => void;
+  setFeeTier?: React.Dispatch<React.SetStateAction<number | undefined>>;
   currentPriceFromTicks: BigNumber;
   submitButtonText?: string;
   submitButtonVariant?: 'primary' | 'error' | 'warning';
 }) {
+  const setFeeType = useCallback<(feeType: FeeType | AllTiers) => void>(
+    ({ fee }) => {
+      setFeeTier?.(fee);
+    },
+    [setFeeTier]
+  );
+
   return (
     <div
       className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
@@ -52,6 +76,23 @@ export default function LiquidityDistribution({
               <FontAwesomeIcon icon={faArrowRightArrowLeft}></FontAwesomeIcon>
             </button>
           </div>
+          {setFeeTier && (
+            <div className="row mb-4">
+              <RadioInput<FeeType | AllTiers>
+                value={feeTypesAndAll.find(({ fee }) => fee === feeTier)}
+                list={feeTypesAndAll}
+                onChange={setFeeType}
+                OptionComponent={({ option: { fee, label } }) => (
+                  <div
+                    key={fee}
+                    className="button button-default card fee-type"
+                  >
+                    <h5 className="fee-title">{label}</h5>
+                  </div>
+                )}
+              />
+            </div>
+          )}
           <div className="flex row chart-area">
             <LiquiditySelector
               setRangeMin={setRangeMin}
