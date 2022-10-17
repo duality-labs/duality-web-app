@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Token } from '../components/TokenPicker/hooks';
 
+const { NODE_ENV } = process.env;
+
 const baseAPI = 'https://api.coingecko.com/api/v3';
 
 class FetchError extends Error {
@@ -159,10 +161,25 @@ export function useSimplePrice(
 
   return {
     // return array of results or singular result depending on how it was asked
-    data: Array.isArray(tokenOrTokens) ? cachedResults : cachedResults[0],
+    data:
+      useDevTokenPrices(tokenOrTokens) ||
+      (Array.isArray(tokenOrTokens) ? cachedResults : cachedResults[0]),
     error,
     isValidating,
   };
+}
+
+// add dev logic for assuming dev tokens TKN and STK are worth ~USD1
+function useDevTokenPrices(
+  tokenOrTokens: (Token | undefined) | (Token | undefined)[]
+) {
+  const tokens = Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
+  // declare dev tokens for each environment
+  const devTokens =
+    NODE_ENV === 'production' ? [] : ['sdk.coin:token', 'sdk.coin:stake'];
+  if (tokens.every((token) => token && devTokens.includes(token.base))) {
+    return Array.isArray(tokenOrTokens) ? tokens.map(() => 1) : 1;
+  }
 }
 
 export function useHasPriceData(
