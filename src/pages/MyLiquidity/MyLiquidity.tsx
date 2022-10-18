@@ -74,10 +74,6 @@ export default function MyLiquidity() {
 
   const [selectedTokens, setSelectedTokens] = useState<[Token, Token]>();
 
-  const {
-    data: [price0, price1],
-  } = useSimplePrice(selectedTokens || []);
-
   const shareValueMap = useMemo(() => {
     if (shares && indexer) {
       return shares.reduce<TickShareValueMap>((result, share) => {
@@ -112,6 +108,27 @@ export default function MyLiquidity() {
       }, {});
     }
   }, [shares, indexer, dualityTokens]);
+
+  const allUserTokensList = useMemo<Token[]>(() => {
+    // collect all tokens noted in each share
+    const list = Object.values(shareValueMap || {}).reduce<Token[]>(
+      (result, shareValues) => {
+        shareValues.forEach((shareValue) => {
+          result.push(shareValue.token0, shareValue.token1);
+        });
+        return result;
+      },
+      []
+    );
+    // return unique tokens
+    return Array.from(new Set(list));
+  }, [shareValueMap]);
+
+  const { data: allUserTokenPrices } = useSimplePrice(
+    selectedTokens || allUserTokensList
+  );
+  // destructure common prices if selectedTokens was used
+  const [price0, price1] = allUserTokenPrices;
 
   // show connect page
   if (!wallet || (!isValidating && (!balances || balances.length === 0))) {
@@ -213,6 +230,32 @@ export default function MyLiquidity() {
     );
   }
 
+  const allUserTokensValue = Object.values(shareValueMap || {}).reduce(
+    (result, shareValues) => {
+      const sharePairValue = shareValues.reduce((result2, shareValue) => {
+        if (shareValue.userReserves0?.isGreaterThan(0)) {
+          const token0Index = allUserTokensList.indexOf(shareValue.token0);
+          result2 = result2.plus(
+            shareValue.userReserves0.multipliedBy(
+              allUserTokenPrices[token0Index] || 0
+            )
+          );
+        }
+        if (shareValue.userReserves1?.isGreaterThan(0)) {
+          const token1Index = allUserTokensList.indexOf(shareValue.token1);
+          result2 = result2.plus(
+            shareValue.userReserves1.multipliedBy(
+              allUserTokenPrices[token1Index] || 0
+            )
+          );
+        }
+        return result2;
+      }, new BigNumber(0));
+      return result.plus(sharePairValue);
+    },
+    new BigNumber(0)
+  );
+
   // show loken list cards
   return (
     <div className="my-liquidity-page">
@@ -232,7 +275,16 @@ export default function MyLiquidity() {
                 <h3 className="credit-card__lesser-hero-title">
                   Available Tokens
                 </h3>
-                <div className="credit-card__lesser-hero-value">$420.69</div>
+                <div className="credit-card__lesser-hero-value">
+                  $
+                  {allUserTokensValue
+                    .shiftedBy(12)
+                    .toNumber()
+                    .toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                </div>
               </div>
             </div>
             <div className="col ml-auto mt-auto">
