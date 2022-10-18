@@ -70,7 +70,7 @@ function matchTokenDenom(denom: string) {
 }
 
 export default function MyLiquidity() {
-  const { wallet } = useWeb3();
+  const { wallet, address } = useWeb3();
   const { data: balances, isValidating } = useBankBalances();
 
   const { data: indexer } = useIndexerData();
@@ -297,7 +297,7 @@ export default function MyLiquidity() {
       <div className="home-hero-section row my-6">
         <div className="credit-card m-6 py-2 px-3">
           <div className="credit-card__top-line row m-4">
-            <div className="col font-console">Ishaan</div>
+            <div className="col font-console">{address}</div>
             <div className="col ml-auto font-console">Duality</div>
           </div>
           <div className="row m-4">
