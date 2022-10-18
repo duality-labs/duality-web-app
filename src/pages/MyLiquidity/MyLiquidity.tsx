@@ -315,7 +315,7 @@ export default function MyLiquidity() {
                     })}
                 </div>
               </div>
-              <div className="mt-3 mb-4">
+              <div className="mt-3 mb-4 pb-3">
                 <h3 className="credit-card__lesser-hero-title">
                   Available Tokens
                 </h3>
