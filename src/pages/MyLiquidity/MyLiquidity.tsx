@@ -293,9 +293,9 @@ export default function MyLiquidity() {
 
   // show loken list cards
   return (
-    <div className="my-liquidity-page">
-      <div className="home-hero-section row my-6">
-        <div className="credit-card m-6 py-2 px-3">
+    <div className="my-liquidity-page py-6">
+      <div className="home-hero-section row px-6">
+        <div className="credit-card my-4 py-2 px-3">
           <div className="credit-card__top-line row m-4">
             <div className="col font-console">{address}</div>
             <div className="col ml-auto font-console">Duality</div>
@@ -336,7 +336,7 @@ export default function MyLiquidity() {
           </div>
         </div>
       </div>
-      <div className="position-cards row p-6">
+      <div className="position-cards row mt-5 px-6">
         {shareValueMap &&
           Object.entries(shareValueMap).map(([pairID, shareValues]) => {
             return (

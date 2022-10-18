@@ -68,7 +68,7 @@ export default function LiquidityDistribution({
     >
       <div className="flex row">
         <div className="flex col col--left">
-          <div className="chart-header row my-4">
+          <div className="chart-header row py-4">
             <h3 className="h3 text-normal">Liquidity Distribution</h3>
             <span className="tokens-badge badge-default badge-large font-console">
               {tokenB?.symbol}/{tokenA?.symbol}
@@ -78,7 +78,7 @@ export default function LiquidityDistribution({
             </button>
           </div>
           {setFeeTier && (
-            <div className="row mb-4">
+            <div className="row pb-4">
               <div className="my-auto mr-3">Fee tier:</div>
               <RadioInput<FeeType | AllTiers>
                 value={feeTypesAndAll.find(({ fee }) => fee === feeTier)}
