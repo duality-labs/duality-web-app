@@ -216,6 +216,33 @@ export default function MyLiquidity() {
   // show loken list cards
   return (
     <div className="my-liquidity-page">
+      <div className="row my-4">
+        <div className="credit-card m-4 py-2 px-3">
+          <div className="credit-card__top-line row m-4">
+            <div className="col font-console">Ishaan</div>
+            <div className="col ml-auto font-console">Duality</div>
+          </div>
+          <div className="row m-4">
+            <div className="col">
+              <div className="my-3">
+                <h2 className="credit-card__hero-title">Portfolio Value</h2>
+                <div className="credit-card__hero-value">$3,632.23</div>
+              </div>
+              <div className="mt-3 mb-4">
+                <h3 className="credit-card__lesser-hero-title">
+                  Available Tokens
+                </h3>
+                <div className="credit-card__lesser-hero-value">$420.69</div>
+              </div>
+            </div>
+            <div className="col ml-auto mt-auto">
+              <a href="#deposit" className="button button-default">
+                Deposit/Withdraw
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
       {shareValueMap &&
         Object.entries(shareValueMap).map(([pairID, shareValues]) => {
           return (
