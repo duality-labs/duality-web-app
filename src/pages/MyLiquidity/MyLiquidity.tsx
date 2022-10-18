@@ -64,6 +64,11 @@ const defaultTokenAmount = '0';
 // modify ticks only if difference is greater than our tolerance
 const normalizationTolerance = 1e-18;
 
+function matchTokenDenom(denom: string) {
+  return (token: Token) =>
+    !!token.denom_units.find((unit) => unit.denom === denom);
+}
+
 export default function MyLiquidity() {
   const { wallet } = useWeb3();
   const { data: balances, isValidating } = useBankBalances();
@@ -109,7 +114,7 @@ export default function MyLiquidity() {
     }
   }, [shares, indexer, dualityTokens]);
 
-  const allUserTokensList = useMemo<Token[]>(() => {
+  const allUserSharesTokensList = useMemo<Token[]>(() => {
     // collect all tokens noted in each share
     const list = Object.values(shareValueMap || {}).reduce<Token[]>(
       (result, shareValues) => {
@@ -123,6 +128,21 @@ export default function MyLiquidity() {
     // return unique tokens
     return Array.from(new Set(list));
   }, [shareValueMap]);
+
+  const allTokensList = useTokens();
+  const allUserBankTokensList = useMemo<Token[]>(() => {
+    return (balances || []).reduce<Token[]>((result, balance) => {
+      const token = allTokensList.find(matchTokenDenom(balance.denom));
+      if (token) {
+        result.push(token);
+      }
+      return result;
+    }, []);
+  }, [balances, allTokensList]);
+
+  const allUserTokensList = useMemo(() => {
+    return [...allUserSharesTokensList, ...allUserBankTokensList];
+  }, [allUserSharesTokensList, allUserBankTokensList]);
 
   const { data: allUserTokenPrices } = useSimplePrice(
     selectedTokens || allUserTokensList
@@ -230,8 +250,8 @@ export default function MyLiquidity() {
     );
   }
 
-  const allUserTokensValue = Object.values(shareValueMap || {}).reduce(
-    (result, shareValues) => {
+  const allUserSharesValue = Object.values(shareValueMap || {})
+    .reduce((result, shareValues) => {
       const sharePairValue = shareValues.reduce((result2, shareValue) => {
         if (shareValue.userReserves0?.isGreaterThan(0)) {
           const token0Index = allUserTokensList.indexOf(shareValue.token0);
@@ -252,9 +272,24 @@ export default function MyLiquidity() {
         return result2;
       }, new BigNumber(0));
       return result.plus(sharePairValue);
-    },
-    new BigNumber(0)
-  );
+    }, new BigNumber(0))
+    .shiftedBy(12);
+
+  const allUserBankValue = (balances || [])
+    .reduce((result, { amount, denom }) => {
+      const tokenIndex = allUserTokensList.findIndex(matchTokenDenom(denom));
+      const token = allUserTokensList[tokenIndex];
+      const tokenExponent = token.denom_units.find(
+        (unit) => unit.denom === denom
+      )?.exponent;
+      const tokenAmount = new BigNumber(10)
+        .exponentiatedBy(tokenExponent || 0)
+        .multipliedBy(amount);
+      const tokenPrice = allUserTokenPrices[tokenIndex];
+      const tokenValue = tokenAmount.multipliedBy(tokenPrice || 0);
+      return result.plus(tokenValue);
+    }, new BigNumber(0))
+    .shiftedBy(-6);
 
   // show loken list cards
   return (
@@ -269,7 +304,16 @@ export default function MyLiquidity() {
             <div className="col">
               <div className="my-3">
                 <h2 className="credit-card__hero-title">Portfolio Value</h2>
-                <div className="credit-card__hero-value">$3,632.23</div>
+                <div className="credit-card__hero-value">
+                  $
+                  {allUserBankValue
+                    .plus(allUserSharesValue)
+                    .toNumber()
+                    .toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                </div>
               </div>
               <div className="mt-3 mb-4">
                 <h3 className="credit-card__lesser-hero-title">
@@ -277,13 +321,10 @@ export default function MyLiquidity() {
                 </h3>
                 <div className="credit-card__lesser-hero-value">
                   $
-                  {allUserTokensValue
-                    .shiftedBy(12)
-                    .toNumber()
-                    .toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                  {allUserSharesValue.toNumber().toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </div>
               </div>
             </div>
