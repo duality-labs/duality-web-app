@@ -233,3 +233,55 @@
     }
   }
 }
+
+.credit-card {
+  min-height: 300px;
+  aspect-ratio: 1.58588;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  background: transparent
+    conic-gradient(
+      from 0deg at 100% 55%,
+      rgba(230, 230, 230, 0.2) 180deg,
+      rgba(64, 64, 64, 0.1) 254.45deg,
+      rgba(64, 64, 64, 0.9) 254.45deg,
+      rgba(110, 110, 110, 0.5) 284deg,
+      rgba(240, 240, 240, 0.25) 360deg
+    );
+  border-radius: 1rem;
+
+  font-size: 1rem;
+  text-shadow: 0 0.125em 0.25em rgba(0, 0, 0, 0.5);
+  box-shadow: 4px 4px 8px #000;
+  // allow all shadows in the credit card to overflow
+  &,
+  .row,
+  .col {
+    overflow: visible;
+  }
+
+  .credit-card__top-line {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .credit-card__hero-title {
+    margin-top: 1rem;
+  }
+  .credit-card__hero-value {
+    font-size: 2rem;
+    font-weight: 600;
+  }
+  .credit-card__lesser-hero-value {
+    font-weight: 600;
+  }
+
+  .button {
+    background: var(--page-card);
+    border-radius: 1.25rem;
+    padding: 0.75rem 1.5rem;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
+  }
+}
