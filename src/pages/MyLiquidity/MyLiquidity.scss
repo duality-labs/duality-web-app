@@ -9,8 +9,24 @@
 
 .my-liquidity-page,
 .my-liquidity-detail-page {
+  & {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100vw;
+  }
+
+  .home-hero-section,
+  .position-cards {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+  }
+
   .position-card {
-    min-height: 30rem;
+    min-height: 15rem;
     width: 24rem;
     padding: 2rem 2rem;
   }

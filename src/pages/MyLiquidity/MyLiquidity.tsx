@@ -216,8 +216,8 @@ export default function MyLiquidity() {
   // show loken list cards
   return (
     <div className="my-liquidity-page">
-      <div className="row my-4">
-        <div className="credit-card m-4 py-2 px-3">
+      <div className="home-hero-section row my-6">
+        <div className="credit-card m-6 py-2 px-3">
           <div className="credit-card__top-line row m-4">
             <div className="col font-console">Ishaan</div>
             <div className="col ml-auto font-console">Duality</div>
@@ -243,18 +243,20 @@ export default function MyLiquidity() {
           </div>
         </div>
       </div>
-      {shareValueMap &&
-        Object.entries(shareValueMap).map(([pairID, shareValues]) => {
-          return (
-            <PositionCard
-              key={pairID}
-              token0={shareValues[0].token0}
-              token1={shareValues[0].token1}
-              shareValues={shareValues}
-              setSelectedTokens={setSelectedTokens}
-            />
-          );
-        })}
+      <div className="position-cards row p-6">
+        {shareValueMap &&
+          Object.entries(shareValueMap).map(([pairID, shareValues]) => {
+            return (
+              <PositionCard
+                key={pairID}
+                token0={shareValues[0].token0}
+                token1={shareValues[0].token1}
+                shareValues={shareValues}
+                setSelectedTokens={setSelectedTokens}
+              />
+            );
+          })}
+      </div>
     </div>
   );
 }
@@ -826,7 +828,7 @@ function PositionCard({
           </div>
         </div>
         <div className="divider mb-4"></div>
-        <div className="content">
+        <div className="content mt-3">
           <div className="share-total">
             <div className="balance row">
               <div className="col">Balance</div>
