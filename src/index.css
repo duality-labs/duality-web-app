@@ -6,3 +6,14 @@
   margin: 0;
   padding: 0;
 }
+
+/* reset box model */
+/* https://css-tricks.com/box-sizing/#aa-universal-box-sizing-with-inheritance */
+html {
+  box-sizing: border-box;
+}
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
