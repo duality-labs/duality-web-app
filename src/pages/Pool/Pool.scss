@@ -14,7 +14,7 @@
     border-radius: 0.75rem;
   }
   .button:hover:not(.button-primary) {
-    background-color: hsl(202deg, 76%, 20%);
+    background-color: var(--default-shadow);
   }
 }
 

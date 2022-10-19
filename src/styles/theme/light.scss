@@ -5,6 +5,7 @@ $text-alt: core.$white;
 $text-disabled: core.$dark-white;
 
 $default: core.$bg-lighter;
+$default-shadow: core.$bg-light;
 $default-alt: core.$light-black;
 $primary: core.$bg-light;
 $primary-alt: core.$light-white;
@@ -93,6 +94,7 @@ $map: (
   'text-disabled': $text-disabled,
 
   'default': $default,
+  'default-shadow': $default-shadow,
   'default-alt': $default-alt,
   'primary': $primary,
   'primary-alt': $primary-alt,
