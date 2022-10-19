@@ -77,6 +77,9 @@ $border-width: 2px;
       flex: 1 1 auto;
       outline: none;
       width: 100%;
+      // allow inline sizing by number of characters (eg. 5ch) to work as intended
+      // sizes the width to the text input area, and padding is added to that width
+      box-sizing: content-box;
     }
 
     input[type='number'] {
