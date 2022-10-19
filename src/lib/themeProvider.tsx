@@ -55,11 +55,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // preference change (if the browser settings were changed)
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', onPreferenceChange, false);
-    return () =>
-      mediaQuery.removeEventListener('change', onPreferenceChange, false);
-
+    const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (mediaQuery) {
+      mediaQuery.addEventListener('change', onPreferenceChange, false);
+      return () =>
+        mediaQuery.removeEventListener('change', onPreferenceChange, false);
+    }
     function onPreferenceChange() {
       setDefaultTheme(getDefaultBrowserTheme());
     }
