@@ -3,6 +3,6 @@ import App from './App';
 
 test('renders learn react link', () => {
   render(<App />);
-  const page = screen.getByText(/Duality/i);
-  expect(page).toBeInTheDocument();
+  const page = screen.getAllByText(/Duality/i);
+  expect(page[0]).toBeInTheDocument();
 });
