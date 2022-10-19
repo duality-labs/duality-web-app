@@ -36,6 +36,8 @@ $ghost-button: core.$dark-white;
 $button-group-bg: core.$light-blue;
 $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
+$profile-button-bg: rgba(core.$light-gray, 40%);
+$profile-button-text: $text-default;
 $submit-button-bg: core.$bg-light;
 $submit-button-text: core.$light-white;
 
@@ -116,6 +118,8 @@ $map: (
   'button-group-bg': $button-group-bg,
   'icon-button-bg': $icon-button-bg,
   'icon-button-text': $icon-button-text,
+  'profile-button-bg': $profile-button-bg,
+  'profile-button-text': $profile-button-text,
   'submit-button-bg': $submit-button-bg,
   'submit-button-text': $submit-button-text,
 

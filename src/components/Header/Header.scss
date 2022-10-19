@@ -57,7 +57,8 @@ nav,
   }
 
   button.user-profile {
-    background-color: hsla(0, 0%, 0%, 0.8);
+    background-color: var(--profile-button-bg);
+    color: var(--profile-button-text);
     display: flex;
     flex-direction: row;
     justify-content: center;
