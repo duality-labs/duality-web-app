@@ -5,6 +5,7 @@ $text-alt: core.$light-gray;
 $text-disabled: core.$gray;
 
 $default: core.$bg-dark;
+$default-shadow: core.$bg-darker;
 $default-alt: core.$light-white;
 $primary: core.$bg-light;
 $primary-alt: core.$light-white;
@@ -36,6 +37,8 @@ $ghost-button: core.$dark-white;
 $button-group-bg: transparent;
 $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
+$profile-button-bg: rgba(core.$dark-black, 80%);
+$profile-button-text: $text-default;
 $submit-button-bg: core.$bg-light;
 $submit-button-text: core.$light-white;
 
@@ -91,6 +94,7 @@ $map: (
   'text-disabled': $text-disabled,
 
   'default': $default,
+  'default-shadow': $default-shadow,
   'default-alt': $default-alt,
   'primary': $primary,
   'primary-alt': $primary-alt,
@@ -116,6 +120,8 @@ $map: (
   'button-group-bg': $button-group-bg,
   'icon-button-bg': $icon-button-bg,
   'icon-button-text': $icon-button-text,
+  'profile-button-bg': $profile-button-bg,
+  'profile-button-text': $profile-button-text,
   'submit-button-bg': $submit-button-bg,
   'submit-button-text': $submit-button-text,
 

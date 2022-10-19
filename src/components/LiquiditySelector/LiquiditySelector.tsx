@@ -351,12 +351,32 @@ export default function LiquiditySelector({
     >
       <defs>
         <linearGradient id="white-concave-fade">
-          <stop offset="0%" stopColor="white" stopOpacity="0.6" />
-          <stop offset="20%" stopColor="white" stopOpacity="0.5" />
-          <stop offset="46%" stopColor="white" stopOpacity="0.4" />
-          <stop offset="54%" stopColor="white" stopOpacity="0.4" />
-          <stop offset="80%" stopColor="white" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="white" stopOpacity="0.6" />
+          <stop offset="0%" stopColor="var(--text-default)" stopOpacity="0.6" />
+          <stop
+            offset="20%"
+            stopColor="var(--text-default)"
+            stopOpacity="0.5"
+          />
+          <stop
+            offset="46%"
+            stopColor="var(--text-default)"
+            stopOpacity="0.4"
+          />
+          <stop
+            offset="54%"
+            stopColor="var(--text-default)"
+            stopOpacity="0.4"
+          />
+          <stop
+            offset="80%"
+            stopColor="var(--text-default)"
+            stopOpacity="0.5"
+          />
+          <stop
+            offset="100%"
+            stopColor="var(--text-default)"
+            stopOpacity="0.6"
+          />
         </linearGradient>
       </defs>
       {graphEnd.isZero() && <text>Chart is not currently available</text>}
