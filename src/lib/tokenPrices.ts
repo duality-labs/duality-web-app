@@ -143,20 +143,19 @@ export function useSimplePrice(
   tokenOrTokens: (Token | undefined) | (Token | undefined)[],
   currencyID = 'usd'
 ) {
-  const tokens = Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
+  const tokens = useMemo(() => {
+    return Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
+  }, [tokenOrTokens]);
 
   const { data, error, isValidating } = useSimplePrices(tokens, currencyID);
 
   // cache the found result array so it doesn't generate updates if the values are equal
   const cachedResults = useMemo(() => {
-    const tokens = Array.isArray(tokenOrTokens)
-      ? tokenOrTokens
-      : [tokenOrTokens];
     // return found results as numbers
     return tokens.map(
       (token) => data?.[token?.coingecko_id ?? '']?.[currencyID]
     );
-  }, [tokenOrTokens, data, currencyID]);
+  }, [tokens, data, currencyID]);
 
   return {
     // return array of results or singular result depending on how it was asked
