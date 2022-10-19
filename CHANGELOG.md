@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.34](https://github.com/duality-labs/duality-web-app/compare/v0.1.33...v0.1.34) (2022-10-19)
+
+
+### Fixes
+
+* theming tests ([#159](https://github.com/duality-labs/duality-web-app/issues/159)) ([983dfcf](https://github.com/duality-labs/duality-web-app/commit/983dfcf69a155cddeedc85e30345487ab02d2919))
+
 ## [0.1.33](https://github.com/duality-labs/duality-web-app/compare/v0.1.32...v0.1.33) (2022-10-19)
 
 
