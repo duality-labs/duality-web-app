@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.32](https://github.com/duality-labs/duality-web-app/compare/v0.1.31...v0.1.32) (2022-10-19)
+
+
+### Fixes
+
+* 148 add current token price information ([#157](https://github.com/duality-labs/duality-web-app/issues/157)) ([b122ec3](https://github.com/duality-labs/duality-web-app/commit/b122ec3b1fd01a57acbb50c802b15592b4eb8fe3))
+
 ## [0.1.31](https://github.com/duality-labs/duality-web-app/compare/v0.1.30...v0.1.31) (2022-10-05)
 
 
