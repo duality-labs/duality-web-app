@@ -17,3 +17,9 @@ html {
 *:after {
   box-sizing: inherit;
 }
+
+html {
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizelegibility;
+}
