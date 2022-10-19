@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.33](https://github.com/duality-labs/duality-web-app/compare/v0.1.32...v0.1.33) (2022-10-19)
+
+
+### Fixes
+
+* global styles of new design ([#158](https://github.com/duality-labs/duality-web-app/issues/158)) ([4017f3f](https://github.com/duality-labs/duality-web-app/commit/4017f3f33d911fd8fdc4482e907c9f7fd7906712))
+
 ## [0.1.32](https://github.com/duality-labs/duality-web-app/compare/v0.1.31...v0.1.32) (2022-10-19)
 
 
