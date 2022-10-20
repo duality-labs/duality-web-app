@@ -46,6 +46,10 @@ p {
 
 .pill {
   border-radius: 100vmax !important;
+  // pill text should never be multiline
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .no-blend {
