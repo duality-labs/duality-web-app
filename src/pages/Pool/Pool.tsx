@@ -697,7 +697,14 @@ export default function Pool() {
                       <h5 className="fee-title">{label}</h5>
                       <span className="fee-description">{description}</span>
                       {feeLiquidityMap?.[fee] && (
-                        <span className="pill fee-liquidity">
+                        <span
+                          className={[
+                            feeLiquidityMap[fee].isZero() && 'badge-muted',
+                            'pill fee-liquidity',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                        >
                           {feeLiquidityMap[fee]
                             .multipliedBy(100)
                             .toNumber()
@@ -839,7 +846,15 @@ export default function Pool() {
                               {description}
                             </span>
                             {feeLiquidityMap?.[fee] && (
-                              <span className="pill fee-liquidity">
+                              <span
+                                className={[
+                                  feeLiquidityMap[fee].isZero() &&
+                                    'badge-muted',
+                                  'pill fee-liquidity',
+                                ]
+                                  .filter(Boolean)
+                                  .join(' ')}
+                              >
                                 {feeLiquidityMap[fee]
                                   .multipliedBy(100)
                                   .toNumber()
@@ -855,7 +870,15 @@ export default function Pool() {
                     ) : (
                       <>
                         {feeType && feeLiquidityMap?.[feeType.fee] && (
-                          <span className="badge-info pill ml-auto badge-large text-slim fs-s mt-auto">
+                          <span
+                            className={[
+                              feeLiquidityMap?.[feeType.fee].isZero() &&
+                                'badge-muted',
+                              'badge-info pill ml-auto badge-large text-slim fs-s mt-auto',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                          >
                             {feeLiquidityMap[feeType.fee]
                               .multipliedBy(100)
                               .toNumber()
