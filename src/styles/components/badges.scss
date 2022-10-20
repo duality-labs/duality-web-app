@@ -34,3 +34,7 @@
   @include paddings.padding('y', 2);
   font-size: font-size.$text-m;
 }
+
+.badge-muted {
+  opacity: 0.65;
+}

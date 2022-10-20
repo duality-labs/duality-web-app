@@ -14,6 +14,7 @@ import {
   V1Beta1PageResponse,
 } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
 import { Token } from '../../components/TokenPicker/hooks';
+import { FeeType, feeTypes } from './utils/fees';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -507,6 +508,55 @@ export function useIndexerPairData(
       : undefined;
   return {
     data: pair,
+    error,
+    isValidating,
+  };
+}
+
+export function useFeeLiquidityMap(
+  tokenA?: TokenAddress,
+  tokenB?: TokenAddress
+) {
+  const {
+    data: pair,
+    isValidating,
+    error,
+  } = useIndexerPairData(tokenA, tokenB);
+  const feeLiquidityMap = useMemo(() => {
+    if (!pair) return;
+
+    const ticks = Object.values(pair.ticks);
+    // normalise the data with the sum of values
+    const totalLiquidity = ticks.reduce((result, poolTicks) => {
+      return result.plus((poolTicks[0] || poolTicks[1])?.totalShares || 0);
+    }, new BigNumber(0));
+
+    const feeTypeLiquidity = feeTypes.reduce<Record<FeeType['fee'], BigNumber>>(
+      (result, feeType) => {
+        result[feeType.fee] = new BigNumber(0);
+        return result;
+      },
+      {}
+    );
+
+    return Object.values(pair.ticks).reduce<{ [feeTier: string]: BigNumber }>(
+      (result, poolTicks) => {
+        poolTicks.forEach((poolTick) => {
+          const feeString = poolTick?.fee.toString();
+          if (feeString && poolTick?.totalShares.isGreaterThan(0)) {
+            result[feeString] = result[feeString].plus(
+              poolTick.totalShares.dividedBy(totalLiquidity)
+            );
+          }
+        });
+        return result;
+      },
+      feeTypeLiquidity
+    );
+  }, [pair]);
+
+  return {
+    data: feeLiquidityMap,
     error,
     isValidating,
   };
