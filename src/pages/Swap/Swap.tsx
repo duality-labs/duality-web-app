@@ -169,7 +169,7 @@ export default function Swap() {
     <div className="trade-card">
       <div className="page-card">
         <div className="row mb-3">
-          <h3 className="card-title">Trade</h3>
+          <h3 className="h3 card-title">Trade</h3>
           <button
             className="icon-button ml-auto"
             type="button"
@@ -376,7 +376,7 @@ export default function Swap() {
     >
       <div className="page-card">
         <div className="row mb-4">
-          <h3 className="card-title">Settings</h3>
+          <h3 className="h3 card-title">Settings</h3>
           <button
             className="icon-button ml-auto"
             type="button"
