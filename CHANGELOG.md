@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.37](https://github.com/duality-labs/duality-web-app/compare/v0.1.36...v0.1.37) (2022-10-20)
+
+
+### Features
+
+* improve trade page ([#164](https://github.com/duality-labs/duality-web-app/issues/164)) ([34a5cc8](https://github.com/duality-labs/duality-web-app/commit/34a5cc86d6116f7a8c6dbc59db83500913e81a08))
+
 ## [0.1.36](https://github.com/duality-labs/duality-web-app/compare/v0.1.35...v0.1.36) (2022-10-20)
 
 
