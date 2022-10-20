@@ -38,6 +38,10 @@ body {
   line-height: 1.5;
 }
 
+a {
+  text-decoration: none;
+}
+
 .pill {
   border-radius: 100vmax !important;
   // pill text should never be multiline
