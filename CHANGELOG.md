@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.35](https://github.com/duality-labs/duality-web-app/compare/v0.1.34...v0.1.35) (2022-10-20)
+
+
+### Features
+
+* improve radio button group input usage ([#161](https://github.com/duality-labs/duality-web-app/issues/161)) ([d4fb826](https://github.com/duality-labs/duality-web-app/commit/d4fb826207ad2b91359844c64a9c62b8f134fdc4))
+
 ## [0.1.34](https://github.com/duality-labs/duality-web-app/compare/v0.1.33...v0.1.34) (2022-10-19)
 
 
