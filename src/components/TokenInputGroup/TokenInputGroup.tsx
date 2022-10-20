@@ -16,6 +16,7 @@ const maxSignificantDigits = 20;
 const placeholder = '...';
 
 interface InputGroupProps {
+  variant?: 'success' | 'error' | false;
   onTokenChanged?: (token?: Token) => void;
   onValueChanged?: (value: string) => void;
   tokenList: Array<Token>;
@@ -37,6 +38,7 @@ function selectAll(e: React.MouseEvent<HTMLInputElement>) {
 }
 
 export default function TokenInputGroup({
+  variant,
   onTokenChanged,
   onValueChanged,
   tokenList,
@@ -76,7 +78,15 @@ export default function TokenInputGroup({
 
   const { data: balance } = useBankBalance(token);
   return (
-    <div className={`${className || ''} token-input-group`}>
+    <div
+      className={[
+        className,
+        'token-input-group',
+        variant && `token-input-group--${variant}`,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {title && <h5 className="token-group-title">{title}</h5>}
       {!disabledInput && balance && Number(balance) > 0 && (
         <span className="token-group-balance">

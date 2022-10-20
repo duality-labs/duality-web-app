@@ -379,6 +379,15 @@ export default function Pool() {
 
   const [editingFee, setEditingFee] = useState(false);
   const { data: balances } = useBankBalances();
+  const balanceTokenA =
+    tokenA && balances && new BigNumber(getBalance(tokenA, balances));
+  const balanceTokenB =
+    tokenB && balances && new BigNumber(getBalance(tokenB, balances));
+
+  const hasSufficientFundsA =
+    balanceTokenA?.isGreaterThanOrEqualTo(values[0] || 0) || false;
+  const hasSufficientFundsB =
+    balanceTokenB?.isGreaterThanOrEqualTo(values[1] || 0) || false;
 
   const { data: feeLiquidityMap } = useFeeLiquidityMap(
     tokenA?.address,
@@ -404,6 +413,7 @@ export default function Pool() {
           </div>
           <div className="card-row">
             <TokenInputGroup
+              variant={!hasSufficientFundsA && 'error'}
               onValueChanged={(newValue) =>
                 setValues(([, valueB]) => [newValue, valueB])
               }
@@ -412,11 +422,7 @@ export default function Pool() {
               token={tokenA}
               value={`${values[0]}`}
               exclusion={tokenB}
-              title={
-                tokenA && balances
-                  ? `Available ${getBalance(tokenA, balances)}`
-                  : ''
-              }
+              title={balanceTokenA ? `Available ${balanceTokenA}` : ''}
             />
           </div>
           <div className="plus-space mx-auto my-2">
@@ -424,6 +430,7 @@ export default function Pool() {
           </div>
           <div className="card-row">
             <TokenInputGroup
+              variant={!hasSufficientFundsB && 'error'}
               onValueChanged={(newValue) =>
                 setValues(([valueA]) => [valueA, newValue])
               }
@@ -432,25 +439,25 @@ export default function Pool() {
               token={tokenB}
               value={`${values[1]}`}
               exclusion={tokenA}
-              title={
-                tokenB && balances
-                  ? `Available ${getBalance(tokenB, balances)}`
-                  : ''
-              }
+              title={balanceTokenB ? `Available ${balanceTokenB}` : ''}
             />
           </div>
           <div className="card-col mt-5 mb-3">
             <div className="mx-auto">
               <input
                 className="button-primary pill pill-outline mx-3 px-4 py-4"
-                disabled={!valuesValid}
+                disabled={
+                  !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
+                }
                 type="submit"
                 name="action"
                 value="Customize"
               />
               <input
                 className="button-primary pill mx-3 px-4 py-4"
-                disabled={!valuesValid}
+                disabled={
+                  !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
+                }
                 type="submit"
                 name="actiona"
                 value="Add Liquidity"

@@ -31,11 +31,19 @@ async function getRouterResult(
 export function useRouterResult(pairRequest: PairRequest): {
   data?: RouterResult;
   isValidating: boolean;
-  error?: string;
+  error?: Error & {
+    insufficientLiquidityIn?: boolean;
+    insufficientLiquidityOut?: boolean;
+  };
 } {
   const [data, setData] = useState<RouterResult>();
   const [isValidating, setIsValidating] = useState(false);
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<
+    Error & {
+      insufficientLiquidityIn?: boolean;
+      insufficientLiquidityOut?: boolean;
+    }
+  >();
   const { data: pairs } = useIndexerData();
 
   useEffect(() => {
@@ -49,12 +57,12 @@ export function useRouterResult(pairRequest: PairRequest): {
     }
     if (pairRequest.tokenA === pairRequest.tokenB) {
       setData(undefined);
-      setError('The tokens cannot be the same');
+      setError(new Error('The tokens cannot be the same'));
       return;
     }
     if (pairRequest.valueA && pairRequest.valueB) {
       setData(undefined);
-      setError('One value must be falsy');
+      setError(new Error('One value must be falsy'));
       return;
     }
     setIsValidating(true);
@@ -81,10 +89,15 @@ export function useRouterResult(pairRequest: PairRequest): {
         setIsValidating(false);
         setData(result);
       })
-      .catch(function (err: Error) {
+      .catch(function (
+        err: Error & {
+          insufficientLiquidityIn?: boolean;
+          insufficientLiquidityOut?: boolean;
+        }
+      ) {
         if (cancelled) return;
         setIsValidating(false);
-        setError(err?.message ?? 'Unknown error');
+        setError(err);
         setData(undefined);
       });
 
@@ -172,7 +185,10 @@ export function getRouterEstimates(
 export function useRouterEstimates(pairRequest: PairRequest): {
   data?: PairResult;
   isValidating: boolean;
-  error?: string;
+  error?: Error & {
+    insufficientLiquidityIn?: boolean;
+    insufficientLiquidityOut?: boolean;
+  };
 } {
   const { data, error, isValidating } = useRouterResult(pairRequest);
   return { data: getRouterEstimates(pairRequest, data), isValidating, error };
