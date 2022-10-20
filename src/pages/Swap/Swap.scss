@@ -94,6 +94,7 @@
         border: none;
         border-radius: paddings.$p-3;
         width: 6ch;
+        box-sizing: content-box;
         text-align: center;
       }
 
