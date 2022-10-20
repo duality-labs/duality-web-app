@@ -177,9 +177,10 @@ export default function RadioButtonGroupInput<T extends string | number>({
 
         // else calculate value to use for an ellipsis (…) button
         const nextIncludedIndex = includedIndexes.indexOf(index - 1) + 1;
-        const nextAverageIndex = Math.floor(
-          (includedIndexes[nextIncludedIndex] + index) / 2
-        );
+        const nextAverageIndex =
+          nextIncludedIndex < includedIndexes.length
+            ? Math.floor((includedIndexes[nextIncludedIndex] + index) / 2)
+            : includedIndexes.length - 1; // don't look past array bounds
         const nextAverageKey = entries[nextAverageIndex][0];
 
         return (
