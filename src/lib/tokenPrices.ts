@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Token } from '../components/TokenPicker/hooks';
 
-const { NODE_ENV } = process.env;
+const { REACT_APP__DEV_TOKEN_DENOMS } = process.env;
 
 const baseAPI = 'https://api.coingecko.com/api/v3';
 
@@ -175,9 +175,14 @@ function useDevTokenPrices(
 ) {
   const tokens = Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
   // declare dev tokens for each environment
-  const devTokens =
-    NODE_ENV === 'production' ? [] : ['sdk.coin:token', 'sdk.coin:stake'];
-  if (tokens.every((token) => token && devTokens.includes(token.base))) {
+  try {
+    const devTokens = JSON.parse(
+      REACT_APP__DEV_TOKEN_DENOMS || '[]'
+    ) as string[];
+    if (tokens.every((token) => token && devTokens.includes(token.base))) {
+      return Array.isArray(tokenOrTokens) ? tokens.map(() => 1) : 1;
+    }
+  } catch {
     return Array.isArray(tokenOrTokens) ? tokens.map(() => 1) : 1;
   }
 }
