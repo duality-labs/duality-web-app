@@ -154,9 +154,11 @@ export default function RadioButtonGroupInput<T extends string | number>({
       {entries.flatMap(([entryValue, description], index, entries) => {
         const previousIndex = includedIndexes.includes(index - 1);
         const currentIndex = includedIndexes.includes(index);
+        const nextIndex = includedIndexes.includes(index + 1);
 
-        // include button
-        if (currentIndex) {
+        // include button if required or if excluding it
+        // will not reduce the number of shown buttons
+        if (currentIndex || (previousIndex && nextIndex)) {
           return (
             <button
               key={entryValue}
