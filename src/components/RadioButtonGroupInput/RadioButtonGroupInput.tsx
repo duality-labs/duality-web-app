@@ -105,21 +105,25 @@ export default function RadioButtonGroupInput<T extends string | number>({
         .map((_, index, entries) => {
           // cumulate weightings
           let result = 0;
+          // weight extents of list
+          if (index === 0 || index === entries.length - 1) {
+            result += 25;
+          }
           // weight start of list
           if (index < 5) {
-            result += 5 - index;
+            result += Math.pow(5 - index, 2);
           }
           // weight end of list
           if (index >= entries.length - 5) {
-            result += 5 - (entries.length - 1 - index);
+            result += Math.pow(5 - (entries.length - 1 - index), 2);
           }
           // weight to left near selection
           if (index >= selectedIndex - 4 && index <= selectedIndex) {
-            result += 5 - (selectedIndex - index);
+            result += Math.pow(5 - (selectedIndex - index), 2);
           }
           // weight to right near selection
           if (index >= selectedIndex && index <= selectedIndex + 4) {
-            result += 5 - (index - selectedIndex);
+            result += Math.pow(5 - (index - selectedIndex), 2);
           }
           return [index, result];
         })
