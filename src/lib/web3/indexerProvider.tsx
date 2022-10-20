@@ -543,7 +543,7 @@ export function useFeeLiquidityMap(
       (result, poolTicks) => {
         poolTicks.forEach((poolTick) => {
           const feeString = poolTick?.fee.toString();
-          if (feeString && poolTick?.totalShares) {
+          if (feeString && poolTick?.totalShares.isGreaterThan(0)) {
             result[feeString] = result[feeString].plus(
               poolTick.totalShares.dividedBy(totalLiquidity)
             );
