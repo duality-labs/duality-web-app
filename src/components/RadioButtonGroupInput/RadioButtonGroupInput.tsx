@@ -154,27 +154,35 @@ export default function RadioButtonGroupInput<T extends string | number>({
       {entries.flatMap(([entryValue, description], index, entries) => {
         const previousIndex = includedIndexes.includes(index - 1);
         const currentIndex = includedIndexes.includes(index);
+
+        // include button
+        if (currentIndex) {
+          return (
+            <button
+              key={entryValue}
+              type="button"
+              className={['button non-moving', buttonClassName]
+                .filter(Boolean)
+                .join(' ')}
+              ref={createRefForValue(entryValue)}
+              onClick={() => onChange(entryValue)}
+            >
+              {description}
+            </button>
+          );
+        }
+
+        // button is not included and button before this was also not included (ignore)
+        if (!previousIndex) return [];
+
+        // else calculate value to use for an ellipsis (…) button
         const nextIncludedIndex = includedIndexes.indexOf(index - 1) + 1;
         const nextAverageIndex = Math.floor(
           (includedIndexes[nextIncludedIndex] + index) / 2
         );
         const nextAverageKey = entries[nextAverageIndex][0];
 
-        return currentIndex ? (
-          // include button
-          <button
-            key={entryValue}
-            type="button"
-            className={['button non-moving', buttonClassName]
-              .filter(Boolean)
-              .join(' ')}
-            ref={createRefForValue(entryValue)}
-            onClick={() => onChange(entryValue)}
-          >
-            {description}
-          </button>
-        ) : previousIndex ? (
-          // button is not included and button before this was included
+        return (
           <button
             key={nextAverageKey}
             type="button"
@@ -186,9 +194,6 @@ export default function RadioButtonGroupInput<T extends string | number>({
           >
             …
           </button>
-        ) : (
-          // button is not included and button before this was also not included (ignore)
-          []
         );
       })}
     </div>
