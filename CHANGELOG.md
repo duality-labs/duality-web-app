@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.36](https://github.com/duality-labs/duality-web-app/compare/v0.1.35...v0.1.36) (2022-10-20)
+
+
+### Fixes
+
+* fee tier liquidity badges ([#163](https://github.com/duality-labs/duality-web-app/issues/163)) ([b9cdd8c](https://github.com/duality-labs/duality-web-app/commit/b9cdd8caacdca2cb86d96fbfc993298095f78f2c))
+
 ## [0.1.35](https://github.com/duality-labs/duality-web-app/compare/v0.1.34...v0.1.35) (2022-10-20)
 
 
