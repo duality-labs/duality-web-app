@@ -13,9 +13,6 @@
   .button {
     border-radius: 0.75rem;
   }
-  .button:hover:not(.button-primary) {
-    background-color: var(--default-shadow);
-  }
 }
 
 .pool-banner {
