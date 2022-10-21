@@ -131,13 +131,21 @@ export default function Pool() {
   >((userTicksOrCallback) => {
     function restrictTickPrices(tick: Tick): Tick {
       const [price, token0Value, token1Value] = tick;
+      // restrict values to equal to or greater than 0
+      const newToken0Value = token0Value.isGreaterThan(0)
+        ? token0Value
+        : new BigNumber(0);
+      const newToken1Value = token1Value.isGreaterThan(0)
+        ? token1Value
+        : new BigNumber(0);
+
       if (price.isLessThan(denomMin)) {
-        return [new BigNumber(denomMin), token0Value, token1Value];
+        return [new BigNumber(denomMin), newToken0Value, newToken1Value];
       }
       if (price.isGreaterThan(denomMax)) {
-        return [new BigNumber(denomMax), token0Value, token1Value];
+        return [new BigNumber(denomMax), newToken0Value, newToken1Value];
       }
-      return [price, token0Value, token1Value];
+      return [price, newToken0Value, newToken1Value];
     }
     if (typeof userTicksOrCallback === 'function') {
       const userTicksCallback = userTicksOrCallback;
@@ -205,7 +213,10 @@ export default function Pool() {
           tokenA,
           tokenB,
           new BigNumber(feeType.fee),
-          userTicks
+          // filter to non-zero ticks
+          userTicks.filter((userTicks) => {
+            return !userTicks[1].isZero() || !userTicks[2].isZero();
+          })
         );
       }
     },
@@ -422,7 +433,6 @@ export default function Pool() {
               token={tokenA}
               value={`${values[0]}`}
               exclusion={tokenB}
-              title={balanceTokenA ? `Available ${balanceTokenA}` : ''}
             />
           </div>
           <div className="plus-space mx-auto my-2">
@@ -439,7 +449,6 @@ export default function Pool() {
               token={tokenB}
               value={`${values[1]}`}
               exclusion={tokenA}
-              title={balanceTokenB ? `Available ${balanceTokenB}` : ''}
             />
           </div>
           <div className="card-col mt-5 mb-3">
@@ -593,7 +602,7 @@ export default function Pool() {
           <div className="flex row">
             <div className="flex col col--left">
               <div className="chart-header row my-4">
-                <h3 className="text-normal">Liquidity Distribution</h3>
+                <h3 className="h3 text-normal">Liquidity Distribution</h3>
                 <span className="tokens-badge badge-default badge-large font-console">
                   {tokenB?.symbol}/{tokenA?.symbol}
                 </span>
@@ -615,6 +624,9 @@ export default function Pool() {
                   setUserTicks={setUserTicks}
                   advanced={chartTypeSelected === 'Orderbook'}
                   formatPrice={formatPrice}
+                  canMoveUp
+                  canMoveDown
+                  canMoveX
                 ></LiquiditySelector>
               </div>
             </div>
@@ -700,7 +712,10 @@ export default function Pool() {
                   OptionComponent={({
                     option: { fee, label, description },
                   }) => (
-                    <div key={fee} className="button-default card fee-type">
+                    <div
+                      key={fee}
+                      className="button button-default card fee-type"
+                    >
                       <h5 className="fee-title">{label}</h5>
                       <span className="fee-description">{description}</span>
                       {feeLiquidityMap?.[fee] && (
@@ -846,7 +861,7 @@ export default function Pool() {
                         }) => (
                           <div
                             key={fee}
-                            className="button-default card fee-type"
+                            className="button button-default card fee-type"
                           >
                             <h5 className="fee-title">{label}</h5>
                             <span className="fee-description">

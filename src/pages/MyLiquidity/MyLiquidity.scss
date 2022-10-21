@@ -1,0 +1,316 @@
+.no-liquidity .add-liquidity {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.no-liquidity {
+  align-items: center;
+}
+
+.my-liquidity-page,
+.my-liquidity-detail-page {
+  & {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100vw;
+    justify-content: space-around;
+    gap: 4rem;
+  }
+
+  .home-hero-section,
+  .position-cards {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    flex: 1;
+    flex-flow: wrap;
+  }
+
+  .position-cards {
+    flex: 3;
+    align-items: flex-start;
+  }
+
+  .position-card {
+    min-height: 15rem;
+    width: 24rem;
+    padding: 2rem 2rem;
+  }
+
+  .position-card > * {
+    pointer-events: none;
+  }
+
+  .heading {
+    margin: -2rem -2rem 0;
+    width: calc(100% + 4rem);
+    font-size: 2rem;
+    position: relative;
+    overflow: hidden;
+
+    > .row {
+      margin: 0.75rem 2rem;
+    }
+
+    .row,
+    .col {
+      overflow: visible;
+    }
+
+    .token-symbols {
+      line-height: 1.1;
+      font-weight: 500;
+    }
+
+    .token-icons img {
+      width: 7.5rem;
+      height: 7.5rem;
+      margin-right: -1rem;
+      object-fit: contain;
+      margin-top: -0.75rem;
+      position: absolute;
+      top: 0;
+      right: 7rem;
+      opacity: 0.6;
+    }
+    .token-icons img + img {
+      right: 2rem;
+    }
+  }
+  .divider {
+    margin: 0 -2rem;
+    height: 8px;
+    width: calc(100% + 4rem);
+    background: linear-gradient(90deg, rgba(78, 177, 232, 0) 0%, #4eb1e8 100%);
+  }
+
+  .content {
+    width: 100%;
+  }
+
+  .value-barchart {
+    border-radius: 0.5rem;
+    // allow column to fill space (but to a limited size)
+    width: 100vw;
+    background-color: #8fcef0;
+    overflow: hidden;
+    margin: 0.5rem 0 0.25rem;
+
+    .value-0 {
+      height: 1em;
+      background-color: #bfa1f7;
+    }
+  }
+
+  .value-text {
+    .value-0 {
+      color: #bfa1f7;
+    }
+    .value-1 {
+      color: #8fcef0;
+    }
+  }
+}
+
+.my-liquidity-detail-page {
+  & {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .banner {
+    & {
+      width: 100%;
+    }
+
+    &::before,
+    &::after {
+      display: block;
+      content: ' ';
+      height: 8px;
+      width: 100%;
+      background: linear-gradient(
+        90deg,
+        #4eb1e8 0%,
+        rgba(78, 177, 232, 0) 100%
+      );
+    }
+    &::after {
+      background: linear-gradient(
+        90deg,
+        rgba(78, 177, 232, 0) 0%,
+        #4eb1e8 100%
+      );
+    }
+  }
+
+  .heading {
+    & {
+      margin: 0;
+      width: auto;
+    }
+    // add faded background so token icons may fade behind rest of heading if there is not enough width
+    .token-symbols {
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+    .token-icons {
+      & {
+        position: relative;
+      }
+      &::before,
+      &::after {
+        content: ' ';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+      // one gradient below the icons
+      &::before {
+        // opacity is multiplicative each stop needs to be equal to 0.6 opacity
+        // (1-0.6)*(1-0) = 0.4
+        // (1-0.5)*(1-0.2) = 0.4
+        // (1-0.3675)*(1-0.3675) ≈ 0.4 as 0.3675 ≈ 1-√(1-0.6)
+        background: linear-gradient(
+          90deg,
+          rgba(0, 0, 0, 0) 0px,
+          rgba(0, 0, 0, 0.2) 30px,
+          rgba(0, 0, 0, 0.3675) 60px,
+          rgba(0, 0, 0, 0.5) 120px,
+          rgba(0, 0, 0, 0.6) 240px,
+          rgba(0, 0, 0, 0.6) 100%
+        );
+      }
+      // one gradient above the icons
+      &::after {
+        background: linear-gradient(
+          90deg,
+          rgba(0, 0, 0, 0.6) 0px,
+          rgba(0, 0, 0, 0.5) 30px,
+          rgba(0, 0, 0, 0.3675) 60px,
+          rgba(0, 0, 0, 0.2) 120px,
+          rgba(0, 0, 0, 0) 240px,
+          rgba(0, 0, 0, 0) 100%
+        );
+      }
+    }
+    .token-symbols {
+      z-index: 2;
+      padding-left: 10%;
+    }
+    .token-icons {
+      flex: 1 0 0.01px; // allow token column to take no room but display absolutely positioned overflowing icons
+
+      // make row fill token-icons column space, but not take any space itself
+      position: relative;
+      > .row {
+        position: absolute;
+        width: max-content;
+        right: 20%;
+        top: 0;
+        bottom: 0;
+        align-items: center;
+        justify-content: flex-end;
+        img {
+          position: static;
+          margin: 0;
+          margin-left: -2rem; // add icon overlap
+          height: 120%;
+          width: auto;
+        }
+      }
+    }
+    .token-symbols {
+      font-size: 1rem;
+      h1 {
+        font-size: 3rem;
+      }
+    }
+    .token-symbols {
+      max-width: 700px;
+    }
+  }
+
+  form {
+    & {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+    > .col {
+      gap: 2rem;
+    }
+  }
+
+  .pool-page {
+    max-width: none;
+    .col {
+      flex: 1;
+    }
+    .col + .col {
+      flex: none;
+    }
+    .orderbook-card > .row > .col {
+      min-width: 12rem;
+    }
+  }
+}
+
+.credit-card {
+  min-height: 384px;
+  aspect-ratio: 1.58588;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  background: transparent
+    conic-gradient(
+      from 0deg at 100% 55%,
+      rgba(230, 230, 230, 0.2) 180deg,
+      rgba(64, 64, 64, 0.1) 254.45deg,
+      rgba(64, 64, 64, 0.9) 254.45deg,
+      rgba(110, 110, 110, 0.5) 284deg,
+      rgba(240, 240, 240, 0.25) 360deg
+    );
+  border-radius: 1rem;
+
+  font-size: 1rem;
+  text-shadow: 0 0.125em 0.25em rgba(0, 0, 0, 0.5);
+  box-shadow: 4px 4px 8px #000;
+  // allow all shadows in the credit card to overflow
+  &,
+  .row,
+  .col {
+    overflow: visible;
+  }
+
+  .credit-card__top-line {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .credit-card__hero-title {
+    margin-top: 1rem;
+  }
+  .credit-card__hero-value {
+    font-size: 2rem;
+    font-weight: 600;
+  }
+  .credit-card__lesser-hero-value {
+    font-weight: 600;
+  }
+
+  .button {
+    background: var(--page-card);
+    border-radius: 1.25rem;
+    padding: 0.75rem 1.5rem;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
+  }
+}

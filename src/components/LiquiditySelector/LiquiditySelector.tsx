@@ -13,17 +13,22 @@ import useOnDragMove from '../hooks/useOnDragMove';
 import './LiquiditySelector.scss';
 import BigNumber from 'bignumber.js';
 
-interface LiquiditySelectorProps {
+export interface LiquiditySelectorProps {
   ticks: TickMap | undefined;
   feeTier: number | undefined;
   tickSelected: number | undefined;
   setTickSelected: (index: number) => void;
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
-  userTicks?: TickGroup;
+  userTicksBase?: Array<Tick | undefined>;
+  userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   advanced?: boolean;
   formatPrice?: (value: BigNumber) => string;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  canMoveX?: boolean;
+  viewOnlyUserTicks?: boolean;
 }
 
 export type Tick = [
@@ -67,38 +72,49 @@ function useWindowWidth() {
   return width;
 }
 
+function filterTicksToFeeTier(
+  tick: TickInfo | undefined,
+  feeTier: number | undefined
+) {
+  return !!tick && (!feeTier || tick.fee.isEqualTo(feeTier));
+}
+
 export default function LiquiditySelector({
   ticks = {},
-  feeTier = -1,
+  feeTier,
   tickSelected = -1,
   setTickSelected,
   setRangeMin,
   setRangeMax,
   userTicks = [],
+  userTicksBase = userTicks,
   setUserTicks,
   advanced = false,
   formatPrice = defaultFormatPrice,
+  canMoveUp,
+  canMoveDown,
+  canMoveX,
+  viewOnlyUserTicks = false,
 }: LiquiditySelectorProps) {
+  const allTicks: TickGroup = useMemo(() => {
+    return Object.values(ticks)
+      .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
+      .filter((tick): tick is TickInfo => !!tick) // filter to only ticks
+      .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
+  }, [ticks]);
+
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
       .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
-      .filter((tick): tick is TickInfo => tick?.fee.isEqualTo(feeTier) === true) // filter to only fee ticks
+      .filter((tick): tick is TickInfo => filterTicksToFeeTier(tick, feeTier)) // filter to only fee tier ticks
       .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
   }, [ticks, feeTier]);
 
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
-  const currentPriceABFromTicks = useCurrentPriceFromTicks(
-    ticks,
-    useCallback(
-      (tick: TickInfo | undefined) => {
-        return tick?.fee.isEqualTo(feeTier) === true;
-      },
-      [feeTier]
-    )
-  );
+  const currentPriceABFromTicks = useCurrentPriceFromTicks(ticks);
 
   const invertTokenOrder = currentPriceABFromTicks?.isLessThan(1) || false;
   const currentPriceFromTicks = useMemo(() => {
@@ -120,7 +136,7 @@ export default function LiquiditySelector({
 
   const [dataStart, dataEnd] = useMemo(() => {
     const { xMin = new BigNumber(1 / 1.1), xMax = new BigNumber(1.1) } =
-      feeTicks.reduce<{
+      allTicks.reduce<{
         [key: string]: BigNumber;
       }>((result, [price]) => {
         if (result.xMin === undefined || price.isLessThan(result.xMin))
@@ -130,7 +146,7 @@ export default function LiquiditySelector({
         return result;
       }, {});
     return [xMin, xMax];
-  }, [feeTicks]);
+  }, [allTicks]);
 
   // set and allow ephemeral setting of graph extents
   const [graphStart, setGraphStart] = useState(initialGraphStart);
@@ -204,15 +220,27 @@ export default function LiquiditySelector({
   // allow user ticks to reset the boundary of the graph
   useLayoutEffect(() => {
     const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
-      (result, [price]) =>
-        !result || price.isLessThan(result) ? price : result,
+      (result, tick) => {
+        if (!tick) return result;
+        const [price] = tick;
+        return !result || price.isLessThan(result) ? price : result;
+      },
       undefined
     );
     const maxUserTickPrice = userTicks.reduce<BigNumber | undefined>(
-      (result, [price]) =>
-        !result || price.isGreaterThan(result) ? price : result,
+      (result, tick) => {
+        if (!tick) return result;
+        const [price] = tick;
+        return !result || price.isGreaterThan(result) ? price : result;
+      },
       undefined
     );
+    // if focusing on just the current tick price range
+    if (viewOnlyUserTicks && minUserTickPrice && maxUserTickPrice) {
+      setGraphStart(minUserTickPrice.multipliedBy(0.9));
+      setGraphEnd(maxUserTickPrice.dividedBy(0.9));
+      return;
+    }
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
     // by padding dataStart and dataEnd with the needed amount of pixels
     const minExistingTickPrice = dataStart;
@@ -235,50 +263,36 @@ export default function LiquiditySelector({
           ? maxTickPrice
           : initialGraphEnd
       );
-  }, [initialGraphStart, initialGraphEnd, dataStart, dataEnd, userTicks]);
+  }, [
+    initialGraphStart,
+    initialGraphEnd,
+    dataStart,
+    dataEnd,
+    userTicks,
+    viewOnlyUserTicks,
+  ]);
 
   // calculate histogram values
   const feeTickBuckets = useMemo<
     [TickGroupBucketsFilled, TickGroupBucketsFilled]
   >(() => {
-    const remainingTicks = feeTicks.slice();
-    function fillBuckets(emptyBuckets: TickGroupBucketsEmpty) {
-      return emptyBuckets.reduce<TickGroupBucketsFilled>(
-        (result, [lowerBound, upperBound]) => {
-          const [token0Value, token1Value] = remainingTicks.reduceRight(
-            (result, [price, token0Value, token1Value]) => {
-              if (
-                price.isGreaterThanOrEqualTo(lowerBound) &&
-                price.isLessThanOrEqualTo(upperBound)
-              ) {
-                // TODO: remove safely used ticks from set to minimise reduce time
-                return [
-                  result[0].plus(token0Value),
-                  result[1].plus(token1Value),
-                ];
-              }
-              return result;
-            },
-            [new BigNumber(0), new BigNumber(0)]
-          );
-          if (token0Value || token1Value) {
-            result.push([lowerBound, upperBound, token0Value, token1Value]);
-          }
-          return result;
-        },
-        []
-      );
-    }
-    return [fillBuckets(emptyBuckets[0]), fillBuckets(emptyBuckets[1])];
+    return [
+      fillBuckets(emptyBuckets[0], feeTicks),
+      fillBuckets(emptyBuckets[1], feeTicks),
+    ];
   }, [emptyBuckets, feeTicks]);
 
   const graphHeight = useMemo(() => {
-    return feeTickBuckets
+    const allFeesTickBuckets = [
+      fillBuckets(emptyBuckets[0], allTicks),
+      fillBuckets(emptyBuckets[1], allTicks),
+    ];
+    return allFeesTickBuckets
       .flat()
       .reduce((result, [lowerBound, upperBound, token0Value, token1Value]) => {
         return Math.max(result, token0Value.toNumber(), token1Value.toNumber());
       }, 0);
-  }, [feeTickBuckets]);
+  }, [emptyBuckets, allTicks]);
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
   const xMin = graphStart.sd(2, BigNumber.ROUND_DOWN).toNumber();
@@ -323,7 +337,7 @@ export default function LiquiditySelector({
   );
   const percentY = useCallback(
     (y: number): number => {
-      const topPadding = containerSize.height * 0.02;
+      const topPadding = containerSize.height * 0.05;
       const bottomPadding = containerSize.height * 0.05;
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
@@ -345,8 +359,12 @@ export default function LiquiditySelector({
 
   return (
     <svg
-      className="chart-liquidity"
-      viewBox={`0 -${containerSize.height} ${containerSize.width} ${containerSize.height}`}
+      className={['chart-liquidity', advanced && 'chart-type--advanced']
+        .filter(Boolean)
+        .join(' ')}
+      viewBox={`0 -${containerSize.height} ${containerSize.width} ${
+        containerSize.height + 5
+      }`}
       ref={setContainer}
     >
       <defs>
@@ -383,7 +401,7 @@ export default function LiquiditySelector({
       {!advanced && (
         <TicksBackgroundArea
           className="new-ticks-area"
-          ticks={userTicks}
+          ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
         />
@@ -405,17 +423,21 @@ export default function LiquiditySelector({
           className="new-ticks"
           currentPrice={currentPriceFromTicks}
           ticks={userTicks}
+          backgroundTicks={userTicksBase}
           setUserTicks={setUserTicks}
           tickSelected={tickSelected}
           setTickSelected={setTickSelected}
           plotX={plotXBigNumber}
-          plotY={percentYBigNumber}
+          percentY={percentYBigNumber}
           formatPrice={formatPrice}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+          canMoveX={canMoveX}
         />
       ) : (
         <TicksArea
           className="new-ticks-area"
-          ticks={userTicks}
+          ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
           setRangeMin={setRangeMin}
@@ -434,6 +456,31 @@ export default function LiquiditySelector({
         plotY={plotY}
       />
     </svg>
+  );
+}
+
+function fillBuckets(emptyBuckets: TickGroupBucketsEmpty, ticks: Tick[]) {
+  return emptyBuckets.reduce<TickGroupBucketsFilled>(
+    (result, [lowerBound, upperBound]) => {
+      const [token0Value, token1Value] = ticks.reduceRight(
+        (result, [price, token0Value, token1Value]) => {
+          if (
+            price.isGreaterThanOrEqualTo(lowerBound) &&
+            price.isLessThanOrEqualTo(upperBound)
+          ) {
+            // TODO: remove safely used ticks from set to minimise reduce time
+            return [result[0].plus(token0Value), result[1].plus(token1Value)];
+          }
+          return result;
+        },
+        [new BigNumber(0), new BigNumber(0)]
+      );
+      if (token0Value || token1Value) {
+        result.push([lowerBound, upperBound, token0Value, token1Value]);
+      }
+      return result;
+    },
+    []
   );
 }
 
@@ -686,33 +733,70 @@ function TicksArea({
 function TicksGroup({
   currentPrice,
   ticks,
+  backgroundTicks,
   setUserTicks,
   tickSelected,
   setTickSelected,
   plotX,
-  plotY,
+  percentY,
   formatPrice,
   className,
+  canMoveUp = false,
+  canMoveDown = false,
+  canMoveX = false,
   ...rest
 }: {
   currentPrice: BigNumber;
-  ticks: TickGroup;
-  setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
+  ticks: Array<Tick | undefined>;
+  backgroundTicks: Array<Tick | undefined>;
+  setUserTicks?: (
+    callback: (userTicks: TickGroup, meta?: { index?: number }) => TickGroup
+  ) => void;
   tickSelected: number;
   setTickSelected: (index: number) => void;
   plotX: (x: BigNumber) => number;
-  plotY: (y: BigNumber) => number;
+  percentY: (y: BigNumber) => number;
   formatPrice: (value: BigNumber) => string;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  canMoveX?: boolean;
   className?: string;
 }) {
-  const cumulativeToken0Values = ticks.reduce(
-    (result, [price, token0Value]) => result.plus(token0Value),
-    new BigNumber(0)
+  // save Tick sum reducer to pick token values by index
+  const mapNumberByIndex = (tokenIndex: number) => {
+    return (token: Tick | undefined) => {
+      return token ? token[tokenIndex].toNumber() || [] : [];
+    };
+  };
+  const tick0Numbers = ticks.flatMap(mapNumberByIndex(1));
+  const tick1Numbers = ticks.flatMap(mapNumberByIndex(2));
+  const backgroundTick0Numbers = backgroundTicks.flatMap(mapNumberByIndex(1));
+  const backgroundTick1Numbers = backgroundTicks.flatMap(mapNumberByIndex(2));
+
+  // find max cumulative value of either the current ticks or background ticks
+  const cumulativeToken0Values: number = Math.max(
+    tick0Numbers.reduce((acc, v) => acc + v, 0),
+    backgroundTick0Numbers.reduce((acc, v) => acc + v, 0)
   );
-  const cumulativeToken1Values = ticks.reduce(
-    (result, [price, _, token1Value]) => result.plus(token1Value),
-    new BigNumber(0)
+  const cumulativeToken1Values: number = Math.max(
+    tick1Numbers.reduce((acc, v) => acc + v, 0),
+    backgroundTick1Numbers.reduce((acc, v) => acc + v, 0)
   );
+
+  const max0Value = Math.max(...tick0Numbers, ...backgroundTick0Numbers);
+  const max1Value = Math.max(...tick1Numbers, ...backgroundTick1Numbers);
+  const minMaxHeight0 = getMinYHeight(backgroundTick0Numbers.length);
+  const minMaxHeight1 = getMinYHeight(backgroundTick1Numbers.length);
+
+  // add a scaling factor if the maximum tick is very short (scale up to minMaxHeight)
+  const scalingFactor0 =
+    cumulativeToken0Values && max0Value / cumulativeToken0Values > minMaxHeight0
+      ? 0.925
+      : (0.925 / (max0Value / cumulativeToken0Values)) * minMaxHeight0;
+  const scalingFactor1 =
+    cumulativeToken1Values && max1Value / cumulativeToken1Values > minMaxHeight1
+      ? 0.925
+      : (0.925 / (max1Value / cumulativeToken1Values)) * minMaxHeight1;
 
   const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
 
@@ -724,7 +808,7 @@ function TicksGroup({
         if (!tick || tickSelected === undefined || isNaN(tickSelected)) return;
 
         // move tick price
-        if (Math.abs(displacement.x) > Math.abs(displacement.y)) {
+        if (canMoveX && Math.abs(displacement.x) > Math.abs(displacement.y)) {
           return setUserTicks?.((userTicks) => {
             const orderOfMagnitudePixels =
               plotX(new BigNumber(10)) - plotX(new BigNumber(1));
@@ -732,7 +816,7 @@ function TicksGroup({
               10,
               displacement.x / orderOfMagnitudePixels
             );
-            return userTicks.map((userTick, index) => {
+            return userTicks?.map((userTick, index) => {
               // modify price
               if (tickSelected === index) {
                 const newPrice = tick[0].multipliedBy(displacementRatio);
@@ -745,25 +829,43 @@ function TicksGroup({
         }
         // move tick value
         else {
-          return setUserTicks?.((userTicks) => {
+          return setUserTicks?.((userTicks, meta = {}) => {
+            // append context for callers that read from this
+            // note: this is a bit of a hack to keep setUserTicks(tick => ticks)-like compatibility
+            meta.index = tickSelected;
+            // calculate position movement
             const linearPixels =
-              plotY(new BigNumber(1)) - plotY(new BigNumber(0));
-            const displacementValue = displacement.y / linearPixels;
-            return userTicks.map((userTick, index) => {
+              percentY(new BigNumber(1)) - percentY(new BigNumber(0));
+            // todo: attempt an algorithm that places the value at the approximate mouseover value
+            // will require current max Y value to interpolate from
+            const displacementPercent = displacement.y / linearPixels;
+            const dragSpeedFactor = 5; //larger is faster
+            const adjustedMovement = 1 + dragSpeedFactor * displacementPercent;
+            return userTicks?.map((userTick, index) => {
               // modify price
               if (tickSelected === index) {
+                const original0Value = backgroundTicks[index]?.[1];
+                const original1Value = backgroundTicks[index]?.[2];
+                const new0Value = tick[1].multipliedBy(adjustedMovement);
+                const new1Value = tick[2].multipliedBy(adjustedMovement);
                 return [
                   tick[0],
-                  !tick[1].isZero()
-                    ? tick[1].plus(displacementValue).isGreaterThan(0)
-                      ? tick[1].plus(displacementValue)
-                      : new BigNumber(0)
-                    : tick[1],
-                  !tick[2].isZero()
-                    ? tick[2].plus(displacementValue).isGreaterThan(0)
-                      ? tick[2].plus(displacementValue)
-                      : new BigNumber(0)
-                    : tick[2],
+                  (!canMoveDown &&
+                    original0Value &&
+                    new0Value.isLessThan(original0Value)) ||
+                  (!canMoveUp &&
+                    original0Value &&
+                    new0Value.isGreaterThan(original0Value))
+                    ? original0Value
+                    : new0Value,
+                  (!canMoveDown &&
+                    original1Value &&
+                    new1Value.isLessThan(original1Value)) ||
+                  (!canMoveUp &&
+                    original1Value &&
+                    new1Value.isGreaterThan(original1Value))
+                    ? original1Value
+                    : new1Value,
                 ];
               } else {
                 return userTick;
@@ -772,7 +874,16 @@ function TicksGroup({
           });
         }
       },
-      [setUserTicks, plotX, plotY, formatPrice]
+      [
+        backgroundTicks,
+        canMoveUp,
+        canMoveDown,
+        canMoveX,
+        setUserTicks,
+        plotX,
+        percentY,
+        formatPrice,
+      ]
     )
   );
 
@@ -782,10 +893,11 @@ function TicksGroup({
       const index = parseInt(
         (e.target as HTMLElement)?.getAttribute('data-key') || ''
       );
-      if (!isNaN(index)) {
+      const tick = ticks?.[index];
+      if (!isNaN(index) && tick) {
         setTickSelected(index);
         lastSelectedTick.current = {
-          tick: ticks[index],
+          tick,
           index,
         };
       }
@@ -795,15 +907,73 @@ function TicksGroup({
     [ticks, startDragTick, setTickSelected]
   );
 
-  return (
-    <g className={['ticks', className].filter(Boolean).join(' ')}>
-      {ticks.map(([price, token0Value, token1Value], index) => (
+  const tickPart = ticks
+    .filter((tick): tick is Tick => !!tick)
+    .map<[Tick, number]>((tick, index) => [tick, index])
+    // sort by top to bottom: select ticks then shortest -> tallest ticks
+    .sort(([a, aIndex], [b, bIndex]) => {
+      // sort any selected tick to the front
+      // (so users can select it somehow else then drag it easily here)
+      const aIsSelected = aIndex === tickSelected;
+      const bIsSelected = bIndex === tickSelected;
+      return (
+        Number(aIsSelected) - Number(bIsSelected) ||
+        // sort by height so that short ticks are above tall ticks
+        b[1].plus(b[2]).comparedTo(a[1].plus(a[2]))
+      );
+    })
+    .map(([tick, index]) => {
+      const backgroundTick = backgroundTicks[index] || tick;
+      const background = {
+        price: backgroundTick[0],
+        token0Value: backgroundTick[1],
+        token1Value: backgroundTick[2],
+      };
+      const [price, token0Value, token1Value] = tick;
+      const scalingFactor = background.token0Value.isGreaterThan(0)
+        ? scalingFactor0
+        : scalingFactor1;
+      // todo: display cumulative value of both side of ticks, not just one side
+      const totalValue =
+        (token0Value.isGreaterThan(0)
+          ? cumulativeToken0Values &&
+            token0Value
+              .multipliedBy(scalingFactor)
+              .dividedBy(cumulativeToken0Values)
+          : cumulativeToken1Values &&
+            token1Value
+              .multipliedBy(scalingFactor)
+              .dividedBy(cumulativeToken1Values)) || new BigNumber(0);
+      const backgroundValue =
+        (background.token0Value.isGreaterThan(0)
+          ? cumulativeToken0Values &&
+            background.token0Value
+              .multipliedBy(scalingFactor)
+              .dividedBy(cumulativeToken0Values)
+          : cumulativeToken1Values &&
+            background.token1Value
+              .multipliedBy(scalingFactor)
+              .dividedBy(cumulativeToken1Values)) || new BigNumber(0);
+
+      const minValue = totalValue.isLessThan(backgroundValue)
+        ? totalValue
+        : backgroundValue;
+      const maxValue = totalValue.isLessThan(backgroundValue)
+        ? backgroundValue
+        : totalValue;
+
+      return (
         <g
           key={index}
           className={[
             'tick',
+            totalValue.isZero() && 'tick--is-zero',
             tickSelected === index && 'tick--selected',
             token0Value.isGreaterThan(0) ? 'token-a' : 'token-b',
+            !totalValue.isEqualTo(backgroundValue) &&
+              (totalValue.isLessThan(backgroundValue)
+                ? 'tick--diff-negative'
+                : 'tick--diff-positive'),
             // warn user if this seems to be a bad trade
             token0Value.isGreaterThan(0)
               ? price.isGreaterThan(currentPrice) && 'tick--price-warning'
@@ -816,72 +986,77 @@ function TicksGroup({
             {...rest}
             x1={plotX(price).toFixed(3)}
             x2={plotX(price).toFixed(3)}
-            y1={plotY(new BigNumber(0)).toFixed(3)}
-            y2={plotY(
-              token0Value.isGreaterThan(0)
-                ? token0Value
-                    .multipliedBy(0.95)
-                    .dividedBy(cumulativeToken0Values)
-                : token1Value
-                    .multipliedBy(0.95)
-                    .dividedBy(cumulativeToken1Values)
-            ).toFixed(3)}
+            y1={percentY(new BigNumber(0)).toFixed(3)}
+            y2={percentY(minValue).toFixed(3)}
             className="line"
           />
+          {tick !== backgroundTick && (
+            <line
+              {...rest}
+              x1={plotX(price).toFixed(3)}
+              x2={plotX(price).toFixed(3)}
+              y1={percentY(minValue).toFixed(3)}
+              y2={percentY(maxValue).toFixed(3)}
+              className="line line--diff"
+            />
+          )}
           <circle
             cx={plotX(price).toFixed(3)}
-            cy={plotY(
-              token0Value.isGreaterThan(0)
-                ? token0Value
-                    .multipliedBy(0.95)
-                    .dividedBy(cumulativeToken0Values)
-                : token1Value
-                    .multipliedBy(0.95)
-                    .dividedBy(cumulativeToken1Values)
-            ).toFixed(3)}
+            cy={percentY(backgroundValue).toFixed(3)}
             r="5"
             className="tip"
           />
+          {tick !== backgroundTick && (
+            <circle
+              cx={plotX(price).toFixed(3)}
+              cy={percentY(totalValue).toFixed(3)}
+              r="5"
+              className="tip tip--diff"
+            />
+          )}
           <text
             x={plotX(price).toFixed(3)}
-            y={(
-              plotY(
-                token0Value.isGreaterThan(0)
-                  ? token0Value
-                      .multipliedBy(0.95)
-                      .dividedBy(cumulativeToken0Values)
-                  : token1Value
-                      .multipliedBy(0.95)
-                      .dividedBy(cumulativeToken1Values)
-              ) - 28
-            ).toFixed(3)}
+            y={(percentY(maxValue) - 28).toFixed(3)}
             dy="12"
             dominantBaseline="middle"
             textAnchor="middle"
           >
             {index + 1}
           </text>
-          <ellipse
+          <rect
             className="tick--hit-area"
             data-key={index}
-            cx={plotX(price).toFixed(3)}
-            cy={(
-              plotY(
-                token0Value.isGreaterThan(0)
-                  ? token0Value
-                      .multipliedBy(0.95)
-                      .dividedBy(cumulativeToken0Values)
-                  : token1Value
-                      .multipliedBy(0.95)
-                      .dividedBy(cumulativeToken1Values)
-              ) - 9
-            ).toFixed(3)}
-            rx={isDragging ? '1000' : '12.5'}
-            ry={isDragging ? '1000' : '22.5'}
+            {...(isDragging
+              ? {
+                  x: '0',
+                  y: '-1000',
+                  width: '10000',
+                  height: '1000',
+                }
+              : {
+                  x: (plotX(price) - 7.5).toFixed(3),
+                  y: (percentY(maxValue) - 25).toFixed(3),
+                  rx: 7.5,
+                  width: 15,
+                  height: (
+                    percentY(minValue) -
+                    percentY(maxValue) +
+                    35
+                  ).toFixed(3),
+                })}
             onMouseDown={onTickSelected}
           />
         </g>
-      ))}
+      );
+    });
+
+  return (
+    <g
+      className={['ticks', isDragging && 'ticks--is-dragging', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {tickPart}
     </g>
   );
 }
@@ -1001,4 +1176,8 @@ function Axis({
       </g>
     );
   }
+}
+
+function getMinYHeight(tickCount: number): number {
+  return 1 / ((tickCount - 2) / 3 + 2) + 0.4;
 }

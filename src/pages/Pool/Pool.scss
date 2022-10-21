@@ -136,6 +136,7 @@
     .token-input-group {
       box-sizing: border-box;
       width: 100%;
+      align-items: center;
     }
     .pill {
       border: 3px solid transparent;
@@ -159,8 +160,8 @@
   }
 
   .chart-card {
-    min-height: 400px;
-    height: 30vh;
+    min-height: 30vh;
+    height: 500px;
     align-self: stretch;
 
     > .row {
@@ -233,10 +234,6 @@
           }
         }
       }
-
-      input:checked + label .fee-type {
-        border-color: var(--info);
-      }
     }
   }
 
@@ -253,11 +250,11 @@
 
     > .row > .col {
       min-width: 25rem;
+      flex: 1;
     }
 
     > .row > .col > .row {
       gap: 1rem;
-      margin-bottom: 2rem;
     }
 
     h3.card-title {
@@ -267,10 +264,8 @@
 
     .range-step-input {
       border: 0px none transparent;
-      margin-left: auto;
       border-radius: 0;
       padding: 0;
-      max-width: 12rem;
     }
 
     .autobalance-card {

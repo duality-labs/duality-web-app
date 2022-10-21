@@ -30,6 +30,9 @@ jobs:
         with:
           node-version: ${{ steps.get-node-version.outputs.NODE_VERSION }}
 
+      - name: Add deployment preview specific environment variables
+        run: cp .env.deploy-previews .env.local
+
       - name: Install dependencies
         run: npm ci
 

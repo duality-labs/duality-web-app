@@ -13,8 +13,9 @@ interface StepNumberInputProps<T extends number | string = string> {
   disableLimit?: boolean;
   pressedDelay?: number;
   description?: string;
-  disabled?: boolean;
-  editable?: boolean;
+  disabled?: boolean; // is the input field text and buttons disabled
+  editable?: boolean; // can the input field text be edited
+  readOnly?: boolean; // force the input to be an uneditable span instead of an input
   title?: string;
   value: T;
   stepFunction?: (value: T, direction: number) => T;
@@ -36,6 +37,7 @@ export default function StepNumberInput<T extends number | string = string>({
   description,
   disabled = false,
   editable = true,
+  readOnly = false,
   title,
   value,
   stepFunction,
@@ -161,52 +163,66 @@ export default function StepNumberInput<T extends number | string = string>({
     }
   }, [onSubStep, onAddStep]);
 
+  const dynamicInputStyle = useMemo(() => {
+    return {
+      // set width of input based on current values but restrained to a min/max
+      minWidth: `${
+        minSignificantDigits + (currentValue.includes('.') ? 1 : 0)
+      }ch`,
+      maxWidth: `${
+        maxSignificantDigits + (currentValue.includes('.') ? 1 : 0)
+      }ch`,
+      width: `${currentValue.length}ch`,
+    };
+  }, [currentValue, minSignificantDigits, maxSignificantDigits]);
+
   return (
-    <div className="range-step-input">
+    <div
+      className={['range-step-input', readOnly && 'range-step-input--read-only']
+        .filter(Boolean)
+        .join(' ')}
+    >
       {title && <h6 className="range-step-title">{title}</h6>}
       <div className="range-step-controls">
-        <button
-          type="button"
-          onClick={onSubStep}
-          onMouseDown={startAutoSub}
-          onMouseUp={stopAutoSub}
-          onMouseLeave={stopAutoSub}
-          disabled={disabled || subDisabled}
-          tabIndex={tabbableButtons ? 0 : -1}
-        >
-          -
-        </button>
-        {editable || disabled ? (
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={onSubStep}
+            onMouseDown={startAutoSub}
+            onMouseUp={stopAutoSub}
+            onMouseLeave={stopAutoSub}
+            disabled={disabled || subDisabled}
+            tabIndex={tabbableButtons ? 0 : -1}
+          >
+            -
+          </button>
+        )}
+        {!readOnly && editable ? (
           <input
             type="number"
             value={currentValue}
             onInput={onInputChange}
             ref={inputRef}
-            style={{
-              // set width of input based on current values but restrained to a min/max
-              minWidth: `${
-                minSignificantDigits + (currentValue.includes('.') ? 1 : 0)
-              }ch`,
-              maxWidth: `${
-                maxSignificantDigits + (currentValue.includes('.') ? 1 : 0)
-              }ch`,
-              width: `${currentValue.length}ch`,
-            }}
+            style={dynamicInputStyle}
           />
         ) : (
-          <span>{currentValue}</span>
+          <span style={dynamicInputStyle}>
+            {currentValue}
+          </span>
         )}
-        <button
-          type="button"
-          onClick={onAddStep}
-          onMouseDown={startAutoAdd}
-          onMouseUp={stopAutoAdd}
-          onMouseLeave={stopAutoAdd}
-          disabled={disabled || addDisabled}
-          tabIndex={tabbableButtons ? 0 : -1}
-        >
-          +
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={onAddStep}
+            onMouseDown={startAutoAdd}
+            onMouseUp={stopAutoAdd}
+            onMouseLeave={stopAutoAdd}
+            disabled={disabled || addDisabled}
+            tabIndex={tabbableButtons ? 0 : -1}
+          >
+            +
+          </button>
+        )}
       </div>
       {description && (
         <span className="range-step-description">{description}</span>

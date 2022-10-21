@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from '../../components/Header';
 import Swap from '../Swap';
 import Pool from '../Pool';
+import MyLiquidity from '../MyLiquidity';
 
 import './App.scss';
 
@@ -21,7 +22,7 @@ function App() {
               <Routes>
                 <Route index element={<Swap />} />
                 <Route path="add-liquidity" element={<Pool />} />
-                <Route path="my-liquidity" element={<div>Coming soon</div>} />
+                <Route path="my-liquidity" element={<MyLiquidity />} />
                 <Route path="stake" element={<div>Coming soon</div>} />
                 <Route path="*" element={<div>Not found</div>} />
               </Routes>
