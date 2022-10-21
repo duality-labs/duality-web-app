@@ -328,6 +328,7 @@ export default function LiquiditySelector({
   );
   const plotY = useCallback(
     (y: number): number => {
+      if (y > 0.00001) console.log('plot', y)
       const topPadding = containerSize.height * 0.05;
       const bottomPadding = containerSize.height * 0.05;
       const height = containerSize.height - topPadding - bottomPadding;
@@ -858,6 +859,7 @@ function TicksGroup({
               // modify price
               const backgroundTick = backgroundTicks[index];
               if (tickSelected === index && backgroundTick) {
+                console.log('hit')
                 // translate current displacement into a new value using old values
                 const original0Value = backgroundTick[1];
                 const original1Value = backgroundTick[2];
@@ -878,6 +880,7 @@ function TicksGroup({
                 const new1Value = new BigNumber(
                   plotYinverse(new1Pixels.toNumber())
                 );
+                console.log('test', [new0Pixels.toNumber(), new1Pixels.toNumber()])
                 return [
                   tick[0],
                   (!canMoveDown &&
