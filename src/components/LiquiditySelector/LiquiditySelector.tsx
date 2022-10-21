@@ -269,35 +269,10 @@ export default function LiquiditySelector({
   const feeTickBuckets = useMemo<
     [TickGroupBucketsFilled, TickGroupBucketsFilled]
   >(() => {
-    const remainingTicks = feeTicks.slice();
-    function fillBuckets(emptyBuckets: TickGroupBucketsEmpty) {
-      return emptyBuckets.reduce<TickGroupBucketsFilled>(
-        (result, [lowerBound, upperBound]) => {
-          const [token0Value, token1Value] = remainingTicks.reduceRight(
-            (result, [price, token0Value, token1Value]) => {
-              if (
-                price.isGreaterThanOrEqualTo(lowerBound) &&
-                price.isLessThanOrEqualTo(upperBound)
-              ) {
-                // TODO: remove safely used ticks from set to minimise reduce time
-                return [
-                  result[0].plus(token0Value),
-                  result[1].plus(token1Value),
-                ];
-              }
-              return result;
-            },
-            [new BigNumber(0), new BigNumber(0)]
-          );
-          if (token0Value || token1Value) {
-            result.push([lowerBound, upperBound, token0Value, token1Value]);
-          }
-          return result;
-        },
-        []
-      );
-    }
-    return [fillBuckets(emptyBuckets[0]), fillBuckets(emptyBuckets[1])];
+    return [
+      fillBuckets(emptyBuckets[0], feeTicks),
+      fillBuckets(emptyBuckets[1], feeTicks),
+    ];
   }, [emptyBuckets, feeTicks]);
 
   const graphHeight = useMemo(() => {
@@ -470,6 +445,31 @@ export default function LiquiditySelector({
         plotY={plotY}
       />
     </svg>
+  );
+}
+
+function fillBuckets(emptyBuckets: TickGroupBucketsEmpty, ticks: Tick[]) {
+  return emptyBuckets.reduce<TickGroupBucketsFilled>(
+    (result, [lowerBound, upperBound]) => {
+      const [token0Value, token1Value] = ticks.reduceRight(
+        (result, [price, token0Value, token1Value]) => {
+          if (
+            price.isGreaterThanOrEqualTo(lowerBound) &&
+            price.isLessThanOrEqualTo(upperBound)
+          ) {
+            // TODO: remove safely used ticks from set to minimise reduce time
+            return [result[0].plus(token0Value), result[1].plus(token1Value)];
+          }
+          return result;
+        },
+        [new BigNumber(0), new BigNumber(0)]
+      );
+      if (token0Value || token1Value) {
+        result.push([lowerBound, upperBound, token0Value, token1Value]);
+      }
+      return result;
+    },
+    []
   );
 }
 
