@@ -131,13 +131,21 @@ export default function Pool() {
   >((userTicksOrCallback) => {
     function restrictTickPrices(tick: Tick): Tick {
       const [price, token0Value, token1Value] = tick;
+      // restrict values to equal to or greater than 0
+      const newToken0Value = token0Value.isGreaterThan(0)
+        ? token0Value
+        : new BigNumber(0);
+      const newToken1Value = token1Value.isGreaterThan(0)
+        ? token1Value
+        : new BigNumber(0);
+
       if (price.isLessThan(denomMin)) {
-        return [new BigNumber(denomMin), token0Value, token1Value];
+        return [new BigNumber(denomMin), newToken0Value, newToken1Value];
       }
       if (price.isGreaterThan(denomMax)) {
-        return [new BigNumber(denomMax), token0Value, token1Value];
+        return [new BigNumber(denomMax), newToken0Value, newToken1Value];
       }
-      return [price, token0Value, token1Value];
+      return [price, newToken0Value, newToken1Value];
     }
     if (typeof userTicksOrCallback === 'function') {
       const userTicksCallback = userTicksOrCallback;
@@ -205,7 +213,10 @@ export default function Pool() {
           tokenA,
           tokenB,
           new BigNumber(feeType.fee),
-          userTicks
+          // filter to non-zero ticks
+          userTicks.filter((userTicks) => {
+            return !userTicks[1].isZero() || !userTicks[2].isZero();
+          })
         );
       }
     },
