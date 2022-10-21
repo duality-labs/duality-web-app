@@ -10,6 +10,7 @@ export default function useOnDragMove(
     evt: Event,
     originalScreenPosition: Position | undefined
   ) => void,
+  onMouseUp?: (evt: Event) => void,
   container: Node = document
 ): [
   startDrag: (e: MouseEvent<Node>) => void,
@@ -37,15 +38,20 @@ export default function useOnDragMove(
   // remove dragging state on mouseup of container
   useEffect(() => {
     if (dragging) {
-      const onMouseUp = () => setDragging(false);
-      container.addEventListener('mouseup', onMouseUp);
-      container.addEventListener('mouseleave', onMouseUp);
+      const wrappedMouseUp = (e: MouseEventInit) => {
+        setDragging(false);
+        if (onMouseUp) {
+          onMouseUp(e as Event);
+        }
+      };
+      container.addEventListener('mouseup', wrappedMouseUp);
+      container.addEventListener('mouseleave', wrappedMouseUp);
       return () => {
-        container.removeEventListener('mouseup', onMouseUp);
-        container.removeEventListener('mouseleave', onMouseUp);
+        container.removeEventListener('mouseup', wrappedMouseUp);
+        container.removeEventListener('mouseleave', wrappedMouseUp);
       };
     }
-  }, [container, dragging]);
+  }, [container, dragging, onMouseUp]);
 
   const listener = useCallback(
     (e: MouseEventInit) => {

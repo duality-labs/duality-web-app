@@ -23,6 +23,7 @@ export interface LiquiditySelectorProps {
   userTicksBase?: Array<Tick | undefined>;
   userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
+  onTickDragStop?: (evt: Event) => void;
   advanced?: boolean;
   formatPrice?: (value: BigNumber) => string;
   canMoveUp?: boolean;
@@ -89,6 +90,7 @@ export default function LiquiditySelector({
   userTicks = [],
   userTicksBase = userTicks,
   setUserTicks,
+  onTickDragStop,
   advanced = false,
   formatPrice = defaultFormatPrice,
   canMoveUp,
@@ -427,6 +429,7 @@ export default function LiquiditySelector({
           setUserTicks={setUserTicks}
           tickSelected={tickSelected}
           setTickSelected={setTickSelected}
+          onTickDragStop={onTickDragStop}
           plotX={plotXBigNumber}
           percentY={percentYBigNumber}
           formatPrice={formatPrice}
@@ -735,6 +738,7 @@ function TicksGroup({
   ticks,
   backgroundTicks,
   setUserTicks,
+  onTickDragStop,
   tickSelected,
   setTickSelected,
   plotX,
@@ -752,6 +756,7 @@ function TicksGroup({
   setUserTicks?: (
     callback: (userTicks: TickGroup, meta?: { index?: number }) => TickGroup
   ) => void;
+  onTickDragStop?: (evt: Event) => void;
   tickSelected: number;
   setTickSelected: (index: number) => void;
   plotX: (x: BigNumber) => number;
@@ -888,7 +893,9 @@ function TicksGroup({
         percentY,
         formatPrice,
       ]
-    )
+    ),
+    // add onMouseUp callback if defined
+    onTickDragStop
   );
 
   const onTickSelected = useCallback(
