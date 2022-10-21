@@ -136,7 +136,7 @@ export default function LiquiditySelector({
 
   const [dataStart, dataEnd] = useMemo(() => {
     const { xMin = new BigNumber(1 / 1.1), xMax = new BigNumber(1.1) } =
-      feeTicks.reduce<{
+      allTicks.reduce<{
         [key: string]: BigNumber;
       }>((result, [price]) => {
         if (result.xMin === undefined || price.isLessThan(result.xMin))
@@ -146,7 +146,7 @@ export default function LiquiditySelector({
         return result;
       }, {});
     return [xMin, xMax];
-  }, [feeTicks]);
+  }, [allTicks]);
 
   // set and allow ephemeral setting of graph extents
   const [graphStart, setGraphStart] = useState(initialGraphStart);
