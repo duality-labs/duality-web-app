@@ -428,7 +428,7 @@ export default function LiquiditySelector({
           tickSelected={tickSelected}
           setTickSelected={setTickSelected}
           plotX={plotXBigNumber}
-          plotY={percentYBigNumber}
+          percentY={percentYBigNumber}
           formatPrice={formatPrice}
           canMoveUp={canMoveUp}
           canMoveDown={canMoveDown}
@@ -738,7 +738,7 @@ function TicksGroup({
   tickSelected,
   setTickSelected,
   plotX,
-  plotY,
+  percentY,
   formatPrice,
   className,
   canMoveUp = false,
@@ -755,7 +755,7 @@ function TicksGroup({
   tickSelected: number;
   setTickSelected: (index: number) => void;
   plotX: (x: BigNumber) => number;
-  plotY: (y: BigNumber) => number;
+  percentY: (y: BigNumber) => number;
   formatPrice: (value: BigNumber) => string;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
@@ -835,7 +835,7 @@ function TicksGroup({
             meta.index = tickSelected;
             // calculate position movement
             const linearPixels =
-              plotY(new BigNumber(1)) - plotY(new BigNumber(0));
+              percentY(new BigNumber(1)) - percentY(new BigNumber(0));
             // todo: attempt an algorithm that places the value at the approximate mouseover value
             // will require current max Y value to interpolate from
             const displacementPercent = displacement.y / linearPixels;
@@ -885,7 +885,7 @@ function TicksGroup({
         canMoveX,
         setUserTicks,
         plotX,
-        plotY,
+        percentY,
         formatPrice,
       ]
     )
@@ -990,8 +990,8 @@ function TicksGroup({
             {...rest}
             x1={plotX(price).toFixed(3)}
             x2={plotX(price).toFixed(3)}
-            y1={plotY(new BigNumber(0)).toFixed(3)}
-            y2={plotY(minValue).toFixed(3)}
+            y1={percentY(new BigNumber(0)).toFixed(3)}
+            y2={percentY(minValue).toFixed(3)}
             className="line"
           />
           {tick !== backgroundTick && (
@@ -999,28 +999,28 @@ function TicksGroup({
               {...rest}
               x1={plotX(price).toFixed(3)}
               x2={plotX(price).toFixed(3)}
-              y1={plotY(minValue).toFixed(3)}
-              y2={plotY(maxValue).toFixed(3)}
+              y1={percentY(minValue).toFixed(3)}
+              y2={percentY(maxValue).toFixed(3)}
               className="line line--diff"
             />
           )}
           <circle
             cx={plotX(price).toFixed(3)}
-            cy={plotY(backgroundValue).toFixed(3)}
+            cy={percentY(backgroundValue).toFixed(3)}
             r="5"
             className="tip"
           />
           {tick !== backgroundTick && (
             <circle
               cx={plotX(price).toFixed(3)}
-              cy={plotY(totalValue).toFixed(3)}
+              cy={percentY(totalValue).toFixed(3)}
               r="5"
               className="tip tip--diff"
             />
           )}
           <text
             x={plotX(price).toFixed(3)}
-            y={(plotY(maxValue) - 28).toFixed(3)}
+            y={(percentY(maxValue) - 28).toFixed(3)}
             dy="12"
             dominantBaseline="middle"
             textAnchor="middle"
@@ -1039,10 +1039,14 @@ function TicksGroup({
                 }
               : {
                   x: (plotX(price) - 7.5).toFixed(3),
-                  y: (plotY(maxValue) - 25).toFixed(3),
+                  y: (percentY(maxValue) - 25).toFixed(3),
                   rx: 7.5,
                   width: 15,
-                  height: (plotY(minValue) - plotY(maxValue) + 35).toFixed(3),
+                  height: (
+                    percentY(minValue) -
+                    percentY(maxValue) +
+                    35
+                  ).toFixed(3),
                 })}
             onMouseDown={onTickSelected}
           />
