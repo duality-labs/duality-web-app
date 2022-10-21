@@ -337,6 +337,15 @@ export default function LiquiditySelector({
     },
     [graphHeight, containerSize.height]
   );
+  const plotYinverse = useCallback(
+    (y: number): number => {
+      const topPadding = containerSize.height * 0.05;
+      const bottomPadding = containerSize.height * 0.05;
+      const height = containerSize.height - topPadding - bottomPadding;
+      return (-1 * graphHeight * (y + bottomPadding)) / height;
+    },
+    [containerSize.height, graphHeight]
+  );
   const percentY = useCallback(
     (y: number): number => {
       const topPadding = containerSize.height * 0.05;
@@ -431,6 +440,8 @@ export default function LiquiditySelector({
           setTickSelected={setTickSelected}
           onTickDragStop={onTickDragStop}
           plotX={plotXBigNumber}
+          plotY={plotYBigNumber}
+          plotYinverse={plotYinverse}
           percentY={percentYBigNumber}
           formatPrice={formatPrice}
           canMoveUp={canMoveUp}
@@ -742,6 +753,8 @@ function TicksGroup({
   tickSelected,
   setTickSelected,
   plotX,
+  plotY,
+  plotYinverse,
   percentY,
   formatPrice,
   className,
@@ -760,6 +773,8 @@ function TicksGroup({
   tickSelected: number;
   setTickSelected: (index: number) => void;
   plotX: (x: BigNumber) => number;
+  plotY: (y: BigNumber) => number;
+  plotYinverse: (y: number) => number;
   percentY: (y: BigNumber) => number;
   formatPrice: (value: BigNumber) => string;
   canMoveUp?: boolean;
@@ -839,20 +854,30 @@ function TicksGroup({
             // note: this is a bit of a hack to keep setUserTicks(tick => ticks)-like compatibility
             meta.index = tickSelected;
             // calculate position movement
-            const linearPixels =
-              percentY(new BigNumber(1)) - percentY(new BigNumber(0));
-            // todo: attempt an algorithm that places the value at the approximate mouseover value
-            // will require current max Y value to interpolate from
-            const displacementPercent = displacement.y / linearPixels;
-            const dragSpeedFactor = 5; //larger is faster
-            const adjustedMovement = 1 + dragSpeedFactor * displacementPercent;
             return userTicks?.map((userTick, index) => {
               // modify price
-              if (tickSelected === index) {
-                const original0Value = backgroundTicks[index]?.[1];
-                const original1Value = backgroundTicks[index]?.[2];
-                const new0Value = tick[1].multipliedBy(adjustedMovement);
-                const new1Value = tick[2].multipliedBy(adjustedMovement);
+              const backgroundTick = backgroundTicks[index];
+              if (tickSelected === index && backgroundTick) {
+                // translate current displacement into a new value using old values
+                const original0Value = backgroundTick[1];
+                const original1Value = backgroundTick[2];
+                const current0Pixels = plotY(tick[1]);
+                const current1Pixels = plotY(tick[2]);
+                const totalValue = original0Value.plus(original1Value);
+                const percentage0Value = original0Value.dividedBy(totalValue);
+                const percentage1Value = original1Value.dividedBy(totalValue);
+                const new0Pixels = percentage0Value
+                  .multipliedBy(displacement.y)
+                  .plus(current0Pixels);
+                const new1Pixels = percentage1Value
+                  .multipliedBy(displacement.y)
+                  .plus(current1Pixels);
+                const new0Value = new BigNumber(
+                  plotYinverse(new0Pixels.toNumber())
+                );
+                const new1Value = new BigNumber(
+                  plotYinverse(new1Pixels.toNumber())
+                );
                 return [
                   tick[0],
                   (!canMoveDown &&
@@ -890,7 +915,8 @@ function TicksGroup({
         canMoveX,
         setUserTicks,
         plotX,
-        percentY,
+        plotY,
+        plotYinverse,
         formatPrice,
       ]
     ),
