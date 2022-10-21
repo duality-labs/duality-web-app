@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.39](https://github.com/duality-labs/duality-web-app/compare/v0.1.38...v0.1.39) (2022-10-21)
+
+
+### Features
+
+* add My Liquidity page ([#166](https://github.com/duality-labs/duality-web-app/issues/166)) ([2ad8db6](https://github.com/duality-labs/duality-web-app/commit/2ad8db6249857c406854939b22a511d299b770f1))
+
 ## [0.1.38](https://github.com/duality-labs/duality-web-app/compare/v0.1.37...v0.1.38) (2022-10-20)
 
 
