@@ -857,6 +857,8 @@ function TicksGroup({
                     original0Value &&
                     new0Value.isGreaterThan(original0Value))
                     ? original0Value
+                    : new0Value?.isLessThan(0)
+                    ? new BigNumber(0)
                     : new0Value,
                   (!canMoveDown &&
                     original1Value &&
@@ -865,6 +867,8 @@ function TicksGroup({
                     original1Value &&
                     new1Value.isGreaterThan(original1Value))
                     ? original1Value
+                    : new1Value?.isLessThan(0)
+                    ? new BigNumber(0)
                     : new1Value,
                 ];
               } else {
