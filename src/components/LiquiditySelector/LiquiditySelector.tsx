@@ -96,6 +96,13 @@ export default function LiquiditySelector({
   canMoveX,
   viewOnlyUserTicks = false,
 }: LiquiditySelectorProps) {
+  const allTicks: TickGroup = useMemo(() => {
+    return Object.values(ticks)
+      .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
+      .filter((tick): tick is TickInfo => !!tick) // filter to only ticks
+      .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
+  }, [ticks]);
+
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
@@ -276,12 +283,16 @@ export default function LiquiditySelector({
   }, [emptyBuckets, feeTicks]);
 
   const graphHeight = useMemo(() => {
-    return feeTickBuckets
+    const allFeesTickBuckets = [
+      fillBuckets(emptyBuckets[0], allTicks),
+      fillBuckets(emptyBuckets[1], allTicks),
+    ];
+    return allFeesTickBuckets
       .flat()
       .reduce((result, [lowerBound, upperBound, token0Value, token1Value]) => {
         return Math.max(result, token0Value.toNumber(), token1Value.toNumber());
       }, 0);
-  }, [feeTickBuckets]);
+  }, [emptyBuckets, allTicks]);
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
   const xMin = graphStart.sd(2, BigNumber.ROUND_DOWN).toNumber();
