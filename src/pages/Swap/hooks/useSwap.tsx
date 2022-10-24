@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCheckCircle,
   faCircleNotch,
+  faGasPump,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -23,6 +24,7 @@ const { REACT_APP__REST_API } = process.env;
 // standard error codes can be found in https://github.com/cosmos/cosmos-sdk/blob/v0.45.4/types/errors/errors.go
 // however custom modules may register additional error codes
 const REQUEST_SUCCESS = 0;
+const ERROR_OUT_OF_GAS = 11;
 
 function sendSwap(
   wallet: OfflineSigner,
@@ -109,6 +111,18 @@ function sendSwap(
             description: 'You declined the transaction',
             icon: <FontAwesomeIcon icon={faXmark} color="red" />,
             duration: 5e3,
+            dismissable: true,
+          });
+        } else if (err?.response?.code === ERROR_OUT_OF_GAS) {
+          const { gasUsed, gasWanted, transactionHash } = err?.response;
+          toast.error('Transaction Failed', {
+            id,
+            description: `Out of gas (used: ${gasUsed.toLocaleString(
+              'en-US'
+            )} wanted: ${gasWanted.toLocaleString('en-US')})`,
+            descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
+            icon: <FontAwesomeIcon icon={faGasPump} color="var(--error)" />,
+            duration: Infinity,
             dismissable: true,
           });
         } else {
