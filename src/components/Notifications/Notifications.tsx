@@ -1,7 +1,6 @@
 import { ReactNode } from 'react';
 import {
   toast as baseToast,
-  ToastType,
   ToastOptions as BaseToastOptions,
   useToaster,
   Renderable,
@@ -37,41 +36,20 @@ function CustomToast({
   );
 }
 
-export function toast(
-  message: string,
-  props?: ToastOptions,
-  type: ToastType = 'blank'
-) {
-  const toastFunction = (() => {
-    switch (type) {
-      case 'loading':
-        return baseToast.loading;
-      case 'success':
-        return baseToast.success;
-      case 'error':
-        return baseToast.error;
-      case 'custom':
-        return baseToast.custom;
-      case 'blank':
-        return baseToast;
-      default:
-        return baseToast;
-    }
-  })();
-
-  return toastFunction(<CustomToast {...props} message={message} />, props);
+export function toast(message: string, opts?: ToastOptions) {
+  return baseToast(<CustomToast {...opts} message={message} />, opts);
 }
 
 toast.loading = (message: string, opts?: ToastOptions) =>
-  toast(message, opts, 'loading');
+  baseToast.loading(<CustomToast {...opts} message={message} />, opts);
 toast.success = (message: string, opts?: ToastOptions) =>
-  toast(message, opts, 'success');
+  baseToast.success(<CustomToast {...opts} message={message} />, opts);
 toast.error = (message: string, opts?: ToastOptions) =>
-  toast(message, opts, 'error');
+  baseToast.error(<CustomToast {...opts} message={message} />, opts);
 toast.custom = (message: string, opts?: ToastOptions) =>
-  toast(message, opts, 'custom');
+  baseToast.custom(<CustomToast {...opts} message={message} />, opts);
 toast.blank = (message: string, opts?: ToastOptions) =>
-  toast(message, opts, 'blank');
+  baseToast(<CustomToast {...opts} message={message} />, opts);
 
 export default function Notifications() {
   const { toasts, handlers } = useToaster();
