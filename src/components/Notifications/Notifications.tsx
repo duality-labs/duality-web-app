@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import {
   toast as baseToast,
   ToastOptions as BaseToastOptions,
@@ -11,7 +12,8 @@ import './Notifications.scss';
 
 interface ToastOptions extends BaseToastOptions {
   message?: string;
-  description?: string;
+  description?: ReactNode;
+  descriptionLink?: string;
   icon?: Renderable;
   dismissable?: boolean;
 }
@@ -21,6 +23,7 @@ function CustomToast({
   className,
   message,
   description,
+  descriptionLink,
   icon,
   dismissable,
 }: ToastOptions) {
@@ -31,7 +34,19 @@ function CustomToast({
       {icon && <div className="icon">{icon}</div>}
       <div className="content">
         {message && <div className="message">{message}</div>}
-        {description && <div className="description">{description}</div>}
+        {description &&
+          (descriptionLink ? (
+            <a
+              className="description"
+              href={descriptionLink}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {description}
+            </a>
+          ) : (
+            <div className="description">{description}</div>
+          ))}
       </div>
       {dismissable && (
         <button
