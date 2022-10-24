@@ -1,7 +1,15 @@
 import { useCallback, useState } from 'react';
-import { assertIsDeliverTxSuccess } from '@cosmjs/stargate';
+import { assertIsDeliverTxSuccess, DeliverTxResponse } from '@cosmjs/stargate';
 import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faCheckCircle,
+  faCircleNotch,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
+
+import { toast } from '../../../components/Notifications';
 
 import { useWeb3 } from '../../../lib/web3/useWeb3';
 import { txClient } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/index';
@@ -9,6 +17,8 @@ import {
   MsgSwap,
   MsgSwapResponse,
 } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
+
+const { REACT_APP__REST_API } = process.env;
 
 // standard error codes can be found in https://github.com/cosmos/cosmos-sdk/blob/v0.45.4/types/errors/errors.go
 // however custom modules may register additional error codes
@@ -36,14 +46,34 @@ function sendSwap(
 
     const client = await txClient(wallet);
     // send message to chain
+
+    const id = `${Date.now()}.${Math.random}`;
+
+    toast.loading('Loading', {
+      id,
+      description: 'Executing your trade',
+      icon: <FontAwesomeIcon icon={faCircleNotch} spin />,
+      duration: Infinity,
+      dismissable: true,
+    });
+
     client
       .signAndBroadcast([
         client.msgSwap({ amountIn, tokenIn, tokenOut, minOut, creator }),
       ])
       .then(function (res) {
         if (!res) return reject('No response');
-        assertIsDeliverTxSuccess(res);
-        const { code, gasUsed, rawLog } = res;
+
+        try {
+          assertIsDeliverTxSuccess(res);
+        } catch {
+          const error: Error & { response?: DeliverTxResponse } = new Error(
+            `Tx error: ${res.code}`
+          );
+          error.response = res;
+          throw error;
+        }
+        const { code, gasUsed, rawLog, transactionHash } = res;
         if (code === REQUEST_SUCCESS) {
           resolve({
             amountIn,
@@ -53,13 +83,45 @@ function sendSwap(
             creator,
             gas: gasUsed.toString(),
           });
+
+          toast.success('Transaction Successful', {
+            id,
+            description: 'View more details',
+            descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
+            icon: <FontAwesomeIcon icon={faCheckCircle} color="#5bc7b7" />,
+            duration: 15e3,
+            dismissable: true,
+          });
         } else {
           // eslint-disable-next-line
           console.warn(`Failed to send tx (code: ${code}): ${rawLog}`);
-          return reject(new Error(`Tx error: ${code}`));
+          const error: Error & { response?: DeliverTxResponse } = new Error(
+            `Tx error: ${code}`
+          );
+          error.response = res;
+          throw error;
         }
       })
-      .catch(function (err: Error) {
+      .catch(function (err: Error & { response?: DeliverTxResponse }) {
+        if (!err.response && err?.message.includes('rejected')) {
+          toast.error('Transaction Rejected', {
+            id,
+            description: 'You declined the transaction',
+            icon: <FontAwesomeIcon icon={faXmark} color="red" />,
+            duration: 5e3,
+            dismissable: true,
+          });
+        } else {
+          const { transactionHash } = err?.response || {};
+          toast.error('Transaction Failed', {
+            id,
+            description: 'Something went wrong, please try again',
+            descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
+            icon: '🤔',
+            duration: Infinity,
+            dismissable: true,
+          });
+        }
         reject(err);
       });
   });
