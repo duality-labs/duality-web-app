@@ -1,15 +1,17 @@
 .notifications {
   & {
     position: fixed;
-    top: 0;
-    left: 0;
+    // offset the toasts area by about the height of the Header component
+    // todo: tie this number more tightly to the Header height
+    top: 7rem;
+    right: 0;
     display: flex;
     flex-direction: column;
   }
 
   .notification {
     position: absolute;
-    left: 0;
+    right: 0;
     transition: all 0.5s ease-out;
   }
 }
