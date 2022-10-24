@@ -77,10 +77,7 @@ export default function Notifications() {
       onMouseLeave={endPause}
     >
       {toasts.map((toast) => {
-        const offset = calculateOffset(toast, {
-          reverseOrder: false,
-          gutter: 8,
-        });
+        const offset = calculateOffset(toast, { gutter: 0 });
 
         const ref = (el: HTMLLIElement) => {
           if (el && typeof toast.height !== 'number') {

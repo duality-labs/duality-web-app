@@ -13,5 +13,54 @@
     position: absolute;
     right: 0;
     transition: all 0.5s ease-out;
+    width: max-content;
+    max-width: 100vw;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+    padding: 0.5rem;
+    list-style: none;
+  }
+
+  // add our own inner toast component styling
+  .notification--inner {
+    & {
+      display: flex;
+      align-items: center;
+      gap: 1ch;
+      background-color: var(--default);
+      border-radius: 1rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .icon {
+      display: flex;
+    }
+
+    .message {
+      font-size: 1.5rem;
+      font-weight: 500;
+      line-height: 1;
+      margin: 0.3rem 0 0;
+      color: var(--text-default);
+    }
+
+    .description {
+      color: var(--text-alt);
+    }
+
+    button[aria-label='Close'] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background-color: var(--default-alt);
+      color: var(--default);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 1.5rem;
+      padding: 0;
+    }
   }
 }
