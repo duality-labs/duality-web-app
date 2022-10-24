@@ -1,10 +1,11 @@
-import { ReactNode } from 'react';
 import {
   toast as baseToast,
   ToastOptions as BaseToastOptions,
   useToaster,
   Renderable,
 } from 'react-hot-toast/headless';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faXmark } from '@fortawesome/free-solid-svg-icons';
 
 import './Notifications.scss';
 
@@ -12,15 +13,16 @@ interface ToastOptions extends BaseToastOptions {
   message?: string;
   description?: string;
   icon?: Renderable;
-  close?: React.MouseEventHandler<HTMLButtonElement>;
+  dismissable?: boolean;
 }
 
 function CustomToast({
+  id,
+  className,
   message,
   description,
   icon,
-  close,
-  className,
+  dismissable,
 }: ToastOptions) {
   return (
     <div
@@ -31,25 +33,38 @@ function CustomToast({
         {message && <div className="message">{message}</div>}
         {description && <div className="description">{description}</div>}
       </div>
-      {close && <button className="close-button" onClick={close} />}
+      {dismissable && (
+        <button
+          aria-label="Close"
+          className="close-button"
+          onClick={() => baseToast.dismiss(id)}
+        >
+          <FontAwesomeIcon icon={faXmark} />
+        </button>
+      )}
     </div>
   );
 }
 
-export function toast(message: string, opts?: ToastOptions) {
-  return baseToast(<CustomToast {...opts} message={message} />, opts);
+function createToast(message: string, opts: ToastOptions = {}) {
+  return function ToastWithId({ id }: { id: string }) {
+    return <CustomToast id={id} {...opts} message={message} />;
+  };
 }
 
+export function toast(message: string, opts?: ToastOptions) {
+  return baseToast(createToast(message, opts), opts);
+}
 toast.loading = (message: string, opts?: ToastOptions) =>
-  baseToast.loading(<CustomToast {...opts} message={message} />, opts);
+  baseToast.loading(createToast(message, opts), opts);
 toast.success = (message: string, opts?: ToastOptions) =>
-  baseToast.success(<CustomToast {...opts} message={message} />, opts);
+  baseToast.success(createToast(message, opts), opts);
 toast.error = (message: string, opts?: ToastOptions) =>
-  baseToast.error(<CustomToast {...opts} message={message} />, opts);
+  baseToast.error(createToast(message, opts), opts);
 toast.custom = (message: string, opts?: ToastOptions) =>
-  baseToast.custom(<CustomToast {...opts} message={message} />, opts);
+  baseToast.custom(createToast(message, opts), opts);
 toast.blank = (message: string, opts?: ToastOptions) =>
-  baseToast(<CustomToast {...opts} message={message} />, opts);
+  baseToast(createToast(message, opts), opts);
 
 export default function Notifications() {
   const { toasts, handlers } = useToaster();
@@ -87,7 +102,9 @@ export default function Notifications() {
             }}
             {...toast.ariaProps}
           >
-            {toast.message as ReactNode}
+            {typeof toast.message === 'function'
+              ? toast.message?.(toast)
+              : toast.message}
           </li>
         );
       })}
