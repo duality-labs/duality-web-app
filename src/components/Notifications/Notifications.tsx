@@ -8,7 +8,7 @@ export default function Notifications() {
   const { startPause, endPause, calculateOffset, updateHeight } = handlers;
 
   return (
-    <div
+    <ul
       className="notifications"
       onMouseEnter={startPause}
       onMouseLeave={endPause}
@@ -19,7 +19,7 @@ export default function Notifications() {
           gutter: 8,
         });
 
-        const ref = (el: HTMLDivElement) => {
+        const ref = (el: HTMLLIElement) => {
           if (el && typeof toast.height !== 'number') {
             const height = el.getBoundingClientRect().height;
             updateHeight(toast.id, height);
@@ -27,7 +27,7 @@ export default function Notifications() {
         };
 
         return (
-          <div
+          <li
             key={toast.id}
             ref={ref}
             className="notification"
@@ -38,9 +38,9 @@ export default function Notifications() {
             {...toast.ariaProps}
           >
             {toast.message as ReactNode}
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
