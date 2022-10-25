@@ -46,59 +46,60 @@ export function useDeposit(): [
       fee: BigNumber | undefined,
       userTicks: TickGroup
     ) {
-      return new Promise<void>(async function (resolve, reject) {
-        try {
-          // check for correct inputs
-          if (!web3.address || !web3.wallet) {
-            throw new Error('Wallet not connected');
-          }
-          const web3Address = web3.address;
-          if (!tokenA || !tokenB) {
-            throw new Error('Tokens not set');
-          }
-          if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
-            throw new Error('Fee not set');
-          }
-          // check all user ticks and filter to non-zero ticks
-          const filteredUserTicks = userTicks.filter(
-            ([price, amount0, amount1]) => {
-              if (!price || price.isLessThan(0)) {
-                throw new Error('Price not set');
-              }
-              if (
-                !amount0 ||
-                !amount1 ||
-                amount0.isNaN() ||
-                amount1.isNaN() ||
-                amount0.isLessThan(0) ||
-                amount1.isLessThan(0)
-              ) {
-                throw new Error('Amounts not set');
-              }
-              return amount0.isGreaterThan(0) || amount1.isGreaterThan(0);
+      try {
+        // check for correct inputs
+        if (!web3.address || !web3.wallet) {
+          throw new Error('Wallet not connected');
+        }
+        const web3Address = web3.address;
+        if (!tokenA || !tokenB) {
+          throw new Error('Tokens not set');
+        }
+        if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
+          throw new Error('Fee not set');
+        }
+        // check all user ticks and filter to non-zero ticks
+        const filteredUserTicks = userTicks.filter(
+          ([price, amount0, amount1]) => {
+            if (!price || price.isLessThan(0)) {
+              throw new Error('Price not set');
             }
+            if (
+              !amount0 ||
+              !amount1 ||
+              amount0.isNaN() ||
+              amount1.isNaN() ||
+              amount0.isLessThan(0) ||
+              amount1.isLessThan(0)
+            ) {
+              throw new Error('Amounts not set');
+            }
+            return amount0.isGreaterThan(0) || amount1.isGreaterThan(0);
+          }
+        );
+
+        if (filteredUserTicks.length === 0) {
+          throw new Error('Ticks not set');
+        }
+
+        setData(undefined);
+        setIsValidating(true);
+        setError(undefined);
+
+        // do not make requests if they are not routable
+        if (!tokenA.address) {
+          throw new Error(
+            `Token ${tokenA.symbol} has no address on the Duality chain`
           );
+        }
+        if (!tokenB.address) {
+          throw new Error(
+            `Token ${tokenB.symbol} has no address on the Duality chain`
+          );
+        }
 
-          if (filteredUserTicks.length === 0) {
-            throw new Error('Ticks not set');
-          }
-
-          setData(undefined);
-          setIsValidating(true);
-          setError(undefined);
-
-          // do not make requests if they are not routable
-          if (!tokenA.address) {
-            throw new Error(
-              `Token ${tokenA.symbol} has no address on the Duality chain`
-            );
-          }
-          if (!tokenB.address) {
-            throw new Error(
-              `Token ${tokenB.symbol} has no address on the Duality chain`
-            );
-          }
-
+        // wrap transaction logic
+        try {
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
           const res = await client.signAndBroadcast(
@@ -212,14 +213,15 @@ export function useDeposit(): [
             receivedTokenB,
           });
           setIsValidating(false);
-          resolve();
         } catch (e) {
-          reject(e);
+          // eslint-disable-next-line
+          console.warn('transaction failed');
+          throw e;
         }
-      }).catch((e: Error | string) => {
+      } catch (e) {
         setIsValidating(false);
         setError((e as Error)?.message || (e as string));
-      });
+      }
     },
     [web3.address, web3.wallet]
   );
