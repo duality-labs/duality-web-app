@@ -2,28 +2,22 @@ import { useCallback, useState } from 'react';
 import { assertIsDeliverTxSuccess, DeliverTxResponse } from '@cosmjs/stargate';
 import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faCheckCircle,
-  faCircleNotch,
-  faGasPump,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
-
-import { toast } from '../../../components/Notifications';
 
 import { useWeb3 } from '../../../lib/web3/useWeb3';
 import { txClient } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/index';
+
+import {
+  checkMsgErrorToast,
+  checkMsgOutOfGasToast,
+  checkMsgRejectedToast,
+  checkMsgSuccessToast,
+  createLoadingToast,
+} from '../../../components/Notifications/common';
+
 import {
   MsgSwap,
   MsgSwapResponse,
 } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
-
-const { REACT_APP__REST_API } = process.env;
-
-// standard error codes can be found in https://github.com/cosmos/cosmos-sdk/blob/v0.45.4/types/errors/errors.go
-// however custom modules may register additional error codes
-const ERROR_OUT_OF_GAS = 11;
 
 function sendSwap(
   wallet: OfflineSigner,
@@ -50,13 +44,7 @@ function sendSwap(
 
     const id = `${Date.now()}.${Math.random}`;
 
-    toast.loading('Loading', {
-      id,
-      description: 'Executing your trade',
-      icon: <FontAwesomeIcon icon={faCircleNotch} spin />,
-      duration: Infinity,
-      dismissable: true,
-    });
+    createLoadingToast({ id, description: 'Executing your trade' });
 
     client
       .signAndBroadcast([
@@ -64,18 +52,11 @@ function sendSwap(
       ])
       .then(function (res) {
         if (!res) return reject('No response');
-        const { code, gasUsed, transactionHash } = res;
+        const { code, gasUsed } = res;
 
         try {
           assertIsDeliverTxSuccess(res);
-          toast.success('Transaction Successful', {
-            id,
-            description: 'View more details',
-            descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-            icon: <FontAwesomeIcon icon={faCheckCircle} color="#5bc7b7" />,
-            duration: 15e3,
-            dismissable: true,
-          });
+          checkMsgSuccessToast(res, { id });
         } catch {
           const error: Error & { response?: DeliverTxResponse } = new Error(
             `Tx error: ${code}`
@@ -93,37 +74,12 @@ function sendSwap(
         });
       })
       .catch(function (err: Error & { response?: DeliverTxResponse }) {
-        if (!err.response && err?.message.includes('rejected')) {
-          toast.error('Transaction Rejected', {
-            id,
-            description: 'You declined the transaction',
-            icon: <FontAwesomeIcon icon={faXmark} color="red" />,
-            duration: 5e3,
-            dismissable: true,
-          });
-        } else if (err?.response?.code === ERROR_OUT_OF_GAS) {
-          const { gasUsed, gasWanted, transactionHash } = err?.response;
-          toast.error('Transaction Failed', {
-            id,
-            description: `Out of gas (used: ${gasUsed.toLocaleString(
-              'en-US'
-            )} wanted: ${gasWanted.toLocaleString('en-US')})`,
-            descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-            icon: <FontAwesomeIcon icon={faGasPump} color="var(--error)" />,
-            duration: Infinity,
-            dismissable: true,
-          });
-        } else {
-          const { transactionHash } = err?.response || {};
-          toast.error('Transaction Failed', {
-            id,
-            description: 'Something went wrong, please try again',
-            descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-            icon: '🤔',
-            duration: Infinity,
-            dismissable: true,
-          });
-        }
+        // catch transaction errors
+        // chain toast checks so only one toast may be shown
+        checkMsgRejectedToast(err, { id }) ||
+          checkMsgOutOfGasToast(err, { id }) ||
+          checkMsgErrorToast(err, { id });
+
         reject(err);
       });
   });

@@ -2,33 +2,25 @@ import { useState, useCallback } from 'react';
 import { assertIsDeliverTxSuccess, DeliverTxResponse } from '@cosmjs/stargate';
 import { Log } from '@cosmjs/stargate/build/logs';
 import BigNumber from 'bignumber.js';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faCheckCircle,
-  faCircleNotch,
-  faGasPump,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
-
-import { toast } from '../../components/Notifications';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module';
 import { Token } from '../../components/TokenPicker/hooks';
 import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
+import {
+  checkMsgErrorToast,
+  checkMsgOutOfGasToast,
+  checkMsgRejectedToast,
+  checkMsgSuccessToast,
+  createLoadingToast,
+} from '../../components/Notifications/common';
 
 const {
-  REACT_APP__REST_API,
   REACT_APP__COIN_MIN_DENOM_EXP = '18',
   REACT_APP__COIN_MIN_DENOM_SHIFT_EXP = '12',
 } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 const denomShiftExponent = parseInt(REACT_APP__COIN_MIN_DENOM_SHIFT_EXP) || 0;
-
-// standard error codes can be found in https://github.com/cosmos/cosmos-sdk/blob/v0.45.4/types/errors/errors.go
-// however custom modules may register additional error codes
-const REQUEST_SUCCESS = 0;
-const ERROR_OUT_OF_GAS = 11;
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -114,13 +106,7 @@ export function useDeposit(): [
         }
 
         const id = `${Date.now()}.${Math.random}`;
-        toast.loading('Loading', {
-          id,
-          description: 'Executing your trade',
-          icon: <FontAwesomeIcon icon={faCircleNotch} spin />,
-          duration: Infinity,
-          dismissable: true,
-        });
+        createLoadingToast({ id, description: 'Adding Liquidity...' });
 
         // wrap transaction logic
         try {
@@ -151,21 +137,12 @@ export function useDeposit(): [
           if (!res) {
             throw new Error('No response');
           }
-          const { code, gasUsed, transactionHash } = res;
+          const { code, gasUsed } = res;
 
           // check for response errors
           try {
             assertIsDeliverTxSuccess(res);
-            if (code === REQUEST_SUCCESS) {
-              toast.success('Transaction Successful', {
-                id,
-                description: 'View more details',
-                descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-                icon: <FontAwesomeIcon icon={faCheckCircle} color="#5bc7b7" />,
-                duration: 15e3,
-                dismissable: true,
-              });
-            }
+            checkMsgSuccessToast(res, { id });
           } catch {
             const error: Error & { response?: DeliverTxResponse } = new Error(
               `Tx error: ${code}`
@@ -253,38 +230,10 @@ export function useDeposit(): [
         } catch (e) {
           // catch transaction errors
           const err = e as Error & { response?: DeliverTxResponse };
-
-          if (!err.response && err?.message.includes('rejected')) {
-            toast.error('Transaction Rejected', {
-              id,
-              description: 'You declined the transaction',
-              icon: <FontAwesomeIcon icon={faXmark} color="red" />,
-              duration: 5e3,
-              dismissable: true,
-            });
-          } else if (err?.response?.code === ERROR_OUT_OF_GAS) {
-            const { gasUsed, gasWanted, transactionHash } = err?.response;
-            toast.error('Transaction Failed', {
-              id,
-              description: `Out of gas (used: ${gasUsed.toLocaleString(
-                'en-US'
-              )} wanted: ${gasWanted.toLocaleString('en-US')})`,
-              descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-              icon: <FontAwesomeIcon icon={faGasPump} color="var(--error)" />,
-              duration: Infinity,
-              dismissable: true,
-            });
-          } else {
-            const { transactionHash } = err?.response || {};
-            toast.error('Transaction Failed', {
-              id,
-              description: 'Something went wrong, please try again',
-              descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-              icon: '🤔',
-              duration: Infinity,
-              dismissable: true,
-            });
-          }
+          // chain toast checks so only one toast may be shown
+          checkMsgRejectedToast(err, { id }) ||
+            checkMsgOutOfGasToast(err, { id }) ||
+            checkMsgErrorToast(err, { id });
 
           // rethrow error to outer try block
           throw e;
