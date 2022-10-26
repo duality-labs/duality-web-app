@@ -19,67 +19,70 @@ import {
   MsgSwapResponse,
 } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
 
-function sendSwap(
+async function sendSwap(
   wallet: OfflineSigner,
   { amountIn, tokenIn, tokenOut, minOut, creator }: MsgSwap
 ): Promise<MsgSwapResponse> {
-  return new Promise(async function (resolve, reject) {
-    if (
-      !amountIn ||
-      !amountIn ||
-      !tokenIn ||
-      !tokenOut ||
-      !minOut ||
-      !creator ||
-      !creator
-    )
-      return reject(new Error('Invalid Input'));
+  if (
+    !amountIn ||
+    !amountIn ||
+    !tokenIn ||
+    !tokenOut ||
+    !minOut ||
+    !creator ||
+    !creator
+  ) {
+    throw new Error('Invalid Input');
+  }
 
-    const totalBigInt = new BigNumber(amountIn);
-    if (!totalBigInt.isGreaterThan(0))
-      return reject(new Error('Invalid Input (0 value)'));
+  const totalBigInt = new BigNumber(amountIn);
+  if (!totalBigInt.isGreaterThan(0)) {
+    throw new Error('Invalid Input (0 value)');
+  }
 
-    const client = await txClient(wallet);
-    // send message to chain
+  const client = await txClient(wallet);
+  // send message to chain
 
-    const id = `${Date.now()}.${Math.random}`;
+  const id = `${Date.now()}.${Math.random}`;
 
-    createLoadingToast({ id, description: 'Executing your trade' });
+  createLoadingToast({ id, description: 'Executing your trade' });
 
-    client
-      .signAndBroadcast([
-        client.msgSwap({ amountIn, tokenIn, tokenOut, minOut, creator }),
-      ])
-      .then(function (res) {
-        if (!res) return reject('No response');
-        const { code, gasUsed } = res;
+  return client
+    .signAndBroadcast([
+      client.msgSwap({ amountIn, tokenIn, tokenOut, minOut, creator }),
+    ])
+    .then(function (res): MsgSwapResponse {
+      if (!res) {
+        throw new Error('No response');
+      }
+      const { code, gasUsed } = res;
 
-        if (!checkMsgSuccessToast(res, { id })) {
-          const error: Error & { response?: DeliverTxResponse } = new Error(
-            `Tx error: ${code}`
-          );
-          error.response = res;
-          throw error;
-        }
-        resolve({
-          amountIn,
-          tokenIn,
-          tokenOut,
-          minOut,
-          creator,
-          gas: gasUsed.toString(),
-        });
-      })
-      .catch(function (err: Error & { response?: DeliverTxResponse }) {
-        // catch transaction errors
-        // chain toast checks so only one toast may be shown
-        checkMsgRejectedToast(err, { id }) ||
-          checkMsgOutOfGasToast(err, { id }) ||
-          checkMsgErrorToast(err, { id });
+      if (!checkMsgSuccessToast(res, { id })) {
+        const error: Error & { response?: DeliverTxResponse } = new Error(
+          `Tx error: ${code}`
+        );
+        error.response = res;
+        throw error;
+      }
+      return {
+        amountIn,
+        tokenIn,
+        tokenOut,
+        minOut,
+        creator,
+        gas: gasUsed.toString(),
+      };
+    })
+    .catch(function (err: Error & { response?: DeliverTxResponse }) {
+      // catch transaction errors
+      // chain toast checks so only one toast may be shown
+      checkMsgRejectedToast(err, { id }) ||
+        checkMsgOutOfGasToast(err, { id }) ||
+        checkMsgErrorToast(err, { id });
 
-        reject(err);
-      });
-  });
+      // rethrow error
+      throw err;
+    });
 }
 
 /**
