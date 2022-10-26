@@ -153,8 +153,8 @@ export function useDeposit(): [
           // todo: use parseCoins from '@cosmjs/launchpad' here
           // to simplify the parsing of the response
           const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
-            receivedTokenA: string;
-            receivedTokenB: string;
+            receivedTokenA: BigNumber;
+            receivedTokenB: BigNumber;
           }>(
             (acc, event) => {
               if (event.type === 'transfer') {
@@ -175,16 +175,14 @@ export function useDeposit(): [
                       ) {
                         acc.receivedTokenA = new BigNumber(
                           acc.receivedTokenA || 0
-                        )
-                          .plus(
-                            new BigNumber(
-                              attr.value.slice(
-                                0,
-                                0 - tokenA.denom_units[1].denom.length
-                              )
-                            ).shiftedBy(-denomExponent + denomShiftExponent)
-                          )
-                          .toFixed(denomExponent);
+                        ).plus(
+                          new BigNumber(
+                            attr.value.slice(
+                              0,
+                              0 - tokenA.denom_units[1].denom.length
+                            )
+                          ).shiftedBy(-denomExponent + denomShiftExponent)
+                        );
                       }
                       if (
                         attr.value.endsWith(
@@ -193,16 +191,14 @@ export function useDeposit(): [
                       ) {
                         acc.receivedTokenB = new BigNumber(
                           acc.receivedTokenB || 0
-                        )
-                          .plus(
-                            new BigNumber(
-                              attr.value.slice(
-                                0,
-                                0 - tokenB.denom_units[1].denom.length
-                              )
-                            ).shiftedBy(-denomExponent + denomShiftExponent)
-                          )
-                          .toFixed(denomExponent);
+                        ).plus(
+                          new BigNumber(
+                            attr.value.slice(
+                              0,
+                              0 - tokenB.denom_units[1].denom.length
+                            )
+                          ).shiftedBy(-denomExponent + denomShiftExponent)
+                        );
                       }
                     }
                   }
@@ -210,18 +206,30 @@ export function useDeposit(): [
               }
               return acc;
             },
-            { receivedTokenA: '0', receivedTokenB: '0' }
+            {
+              receivedTokenA: new BigNumber(0),
+              receivedTokenB: new BigNumber(0),
+            }
           );
 
-          if (!receivedTokenA && !receivedTokenB) {
-            throw new Error('No new shares received');
+          if (receivedTokenA.isZero() && receivedTokenB.isZero()) {
+            const error: Error & { response?: DeliverTxResponse } = new Error(
+              'No new shares received'
+            );
+            error.response = res;
+            checkMsgErrorToast(error, {
+              id,
+              title: 'No new shares received',
+              description:
+                'The transaction was successful but no new shares were created',
+            });
           }
 
           // set new information
           setData({
             gasUsed: gasUsed.toString(),
-            receivedTokenA,
-            receivedTokenB,
+            receivedTokenA: receivedTokenA.toFixed(),
+            receivedTokenB: receivedTokenB.toFixed(),
           });
           setIsValidating(false);
         } catch (e) {
