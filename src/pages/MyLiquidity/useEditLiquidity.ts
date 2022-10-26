@@ -49,22 +49,23 @@ export function useEditLiquidity(): [
 
   const sendEditRequest = useCallback(
     async function (sharesDiff: Array<EditedTickShareValue>) {
-      return new Promise<void>(async function (resolve, reject) {
+      try {
+        // check for correct inputs
+        if (!web3.address || !web3.wallet) {
+          throw new Error('Wallet not connected');
+        }
+        const web3Address = web3.address;
+
+        if (sharesDiff.length === 0) {
+          throw new Error('Ticks not set');
+        }
+
+        setData(undefined);
+        setIsValidating(true);
+        setError(undefined);
+
+        // wrap transaction logic
         try {
-          // check for correct inputs
-          if (!web3.address || !web3.wallet) {
-            throw new Error('Wallet not connected');
-          }
-          const web3Address = web3.address;
-
-          if (sharesDiff.length === 0) {
-            throw new Error('Ticks not set');
-          }
-
-          setData(undefined);
-          setIsValidating(true);
-          setError(undefined);
-
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
           const res = await client.signAndBroadcast(
@@ -194,14 +195,14 @@ export function useEditLiquidity(): [
             gasUsed: gasUsed.toString(),
           });
           setIsValidating(false);
-          resolve();
         } catch (e) {
-          reject(e);
+          // rethrow transaction errors
+          throw e;
         }
-      }).catch((e: Error | string) => {
+      } catch (e) {
         setIsValidating(false);
         setError((e as Error)?.message || (e as string));
-      });
+      }
     },
     [web3.address, web3.wallet]
   );
