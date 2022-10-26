@@ -151,36 +151,29 @@ export function useDeposit(): [
           if (!res) {
             throw new Error('No response');
           }
+          const { code, gasUsed, transactionHash } = res;
 
           // check for response errors
           try {
             assertIsDeliverTxSuccess(res);
+            if (code === REQUEST_SUCCESS) {
+              toast.success('Transaction Successful', {
+                id,
+                description: 'View more details',
+                descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
+                icon: <FontAwesomeIcon icon={faCheckCircle} color="#5bc7b7" />,
+                duration: 15e3,
+                dismissable: true,
+              });
+            }
           } catch {
-            const error: Error & { response?: DeliverTxResponse } = new Error(
-              `Tx error: ${res.code}`
-            );
-            error.response = res;
-            throw error;
-          }
-          const { code, gasUsed, rawLog, transactionHash } = res;
-          if (code === REQUEST_SUCCESS) {
-            toast.success('Transaction Successful', {
-              id,
-              description: 'View more details',
-              descriptionLink: `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-              icon: <FontAwesomeIcon icon={faCheckCircle} color="#5bc7b7" />,
-              duration: 15e3,
-              dismissable: true,
-            });
-          } else {
-            // eslint-disable-next-line
-            console.warn(`Failed to send tx (code: ${code}): ${rawLog}`);
             const error: Error & { response?: DeliverTxResponse } = new Error(
               `Tx error: ${code}`
             );
             error.response = res;
             throw error;
           }
+
           const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
           const foundEvents = foundLogs.flatMap((log) => log.events);
           // todo: use parseCoins from '@cosmjs/launchpad' here

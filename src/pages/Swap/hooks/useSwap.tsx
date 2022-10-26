@@ -23,7 +23,6 @@ const { REACT_APP__REST_API } = process.env;
 
 // standard error codes can be found in https://github.com/cosmos/cosmos-sdk/blob/v0.45.4/types/errors/errors.go
 // however custom modules may register additional error codes
-const REQUEST_SUCCESS = 0;
 const ERROR_OUT_OF_GAS = 11;
 
 function sendSwap(
@@ -65,27 +64,10 @@ function sendSwap(
       ])
       .then(function (res) {
         if (!res) return reject('No response');
+        const { code, gasUsed, transactionHash } = res;
 
         try {
           assertIsDeliverTxSuccess(res);
-        } catch {
-          const error: Error & { response?: DeliverTxResponse } = new Error(
-            `Tx error: ${res.code}`
-          );
-          error.response = res;
-          throw error;
-        }
-        const { code, gasUsed, rawLog, transactionHash } = res;
-        if (code === REQUEST_SUCCESS) {
-          resolve({
-            amountIn,
-            tokenIn,
-            tokenOut,
-            minOut,
-            creator,
-            gas: gasUsed.toString(),
-          });
-
           toast.success('Transaction Successful', {
             id,
             description: 'View more details',
@@ -94,15 +76,21 @@ function sendSwap(
             duration: 15e3,
             dismissable: true,
           });
-        } else {
-          // eslint-disable-next-line
-          console.warn(`Failed to send tx (code: ${code}): ${rawLog}`);
+        } catch {
           const error: Error & { response?: DeliverTxResponse } = new Error(
             `Tx error: ${code}`
           );
           error.response = res;
           throw error;
         }
+        resolve({
+          amountIn,
+          tokenIn,
+          tokenOut,
+          minOut,
+          creator,
+          gas: gasUsed.toString(),
+        });
       })
       .catch(function (err: Error & { response?: DeliverTxResponse }) {
         if (!err.response && err?.message.includes('rejected')) {
