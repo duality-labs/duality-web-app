@@ -108,10 +108,11 @@ export function useDeposit(): [
         const id = `${Date.now()}.${Math.random}`;
         createLoadingToast({ id, description: 'Adding Liquidity...' });
 
-        // add each tick message into a signed broadcast
-        const client = await dexTxClient(web3.wallet);
-        await client
-          .signAndBroadcast(
+        // wrap transaction logic
+        try {
+          // add each tick message into a signed broadcast
+          const client = await dexTxClient(web3.wallet);
+          const res = await client.signAndBroadcast(
             filteredUserTicks.flatMap(([price, amount0, amount1]) =>
               tokenA.address && tokenB.address
                 ? client.msgSingleDeposit({
@@ -130,118 +131,118 @@ export function useDeposit(): [
                   })
                 : []
             )
-          )
-          .then((res) => {
-            // check for response
-            if (!res) {
-              throw new Error('No response');
-            }
-            const { code, gasUsed } = res;
+          );
 
-            // check for response errors
-            if (!checkMsgSuccessToast(res, { id })) {
-              const error: Error & { response?: DeliverTxResponse } = new Error(
-                `Tx error: ${code}`
-              );
-              error.response = res;
-              throw error;
-            }
+          // check for response
+          if (!res) {
+            throw new Error('No response');
+          }
+          const { code, gasUsed } = res;
 
-            const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
-            const foundEvents = foundLogs.flatMap((log) => log.events);
-            // todo: use parseCoins from '@cosmjs/launchpad' here
-            // to simplify the parsing of the response
-            const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
-              receivedTokenA: BigNumber;
-              receivedTokenB: BigNumber;
-            }>(
-              (acc, event) => {
-                if (event.type === 'transfer') {
-                  event.attributes.forEach((attr, index, attrs) => {
-                    // if this attribute is the amount
-                    if (index > 0 && attr.key === 'amount') {
-                      // and the previous attribute was the sender
-                      const previousAttr = attrs[index - 1];
+          // check for response errors
+          if (!checkMsgSuccessToast(res, { id })) {
+            const error: Error & { response?: DeliverTxResponse } = new Error(
+              `Tx error: ${code}`
+            );
+            error.response = res;
+            throw error;
+          }
+
+          const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
+          const foundEvents = foundLogs.flatMap((log) => log.events);
+          // todo: use parseCoins from '@cosmjs/launchpad' here
+          // to simplify the parsing of the response
+          const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
+            receivedTokenA: BigNumber;
+            receivedTokenB: BigNumber;
+          }>(
+            (acc, event) => {
+              if (event.type === 'transfer') {
+                event.attributes.forEach((attr, index, attrs) => {
+                  // if this attribute is the amount
+                  if (index > 0 && attr.key === 'amount') {
+                    // and the previous attribute was the sender
+                    const previousAttr = attrs[index - 1];
+                    if (
+                      previousAttr?.key === 'sender' &&
+                      previousAttr?.value === web3.address
+                    ) {
+                      // read the matching tokens into their values
                       if (
-                        previousAttr?.key === 'sender' &&
-                        previousAttr?.value === web3.address
+                        attr.value.endsWith(
+                          tokenA.denom_units[1]?.denom.toLowerCase()
+                        )
                       ) {
-                        // read the matching tokens into their values
-                        if (
-                          attr.value.endsWith(
-                            tokenA.denom_units[1]?.denom.toLowerCase()
-                          )
-                        ) {
-                          acc.receivedTokenA = new BigNumber(
-                            acc.receivedTokenA || 0
-                          ).plus(
-                            new BigNumber(
-                              attr.value.slice(
-                                0,
-                                0 - tokenA.denom_units[1].denom.length
-                              )
-                            ).shiftedBy(-denomExponent + denomShiftExponent)
-                          );
-                        }
-                        if (
-                          attr.value.endsWith(
-                            tokenB.denom_units[1]?.denom.toLowerCase()
-                          )
-                        ) {
-                          acc.receivedTokenB = new BigNumber(
-                            acc.receivedTokenB || 0
-                          ).plus(
-                            new BigNumber(
-                              attr.value.slice(
-                                0,
-                                0 - tokenB.denom_units[1].denom.length
-                              )
-                            ).shiftedBy(-denomExponent + denomShiftExponent)
-                          );
-                        }
+                        acc.receivedTokenA = new BigNumber(
+                          acc.receivedTokenA || 0
+                        ).plus(
+                          new BigNumber(
+                            attr.value.slice(
+                              0,
+                              0 - tokenA.denom_units[1].denom.length
+                            )
+                          ).shiftedBy(-denomExponent + denomShiftExponent)
+                        );
+                      }
+                      if (
+                        attr.value.endsWith(
+                          tokenB.denom_units[1]?.denom.toLowerCase()
+                        )
+                      ) {
+                        acc.receivedTokenB = new BigNumber(
+                          acc.receivedTokenB || 0
+                        ).plus(
+                          new BigNumber(
+                            attr.value.slice(
+                              0,
+                              0 - tokenB.denom_units[1].denom.length
+                            )
+                          ).shiftedBy(-denomExponent + denomShiftExponent)
+                        );
                       }
                     }
-                  });
-                }
-                return acc;
-              },
-              {
-                receivedTokenA: new BigNumber(0),
-                receivedTokenB: new BigNumber(0),
+                  }
+                });
               }
-            );
-
-            if (receivedTokenA.isZero() && receivedTokenB.isZero()) {
-              const error: Error & { response?: DeliverTxResponse } = new Error(
-                'No new shares received'
-              );
-              error.response = res;
-              checkMsgErrorToast(error, {
-                id,
-                title: 'No new shares received',
-                description:
-                  'The transaction was successful but no new shares were created',
-              });
+              return acc;
+            },
+            {
+              receivedTokenA: new BigNumber(0),
+              receivedTokenB: new BigNumber(0),
             }
+          );
 
-            // set new information
-            setData({
-              gasUsed: gasUsed.toString(),
-              receivedTokenA: receivedTokenA.toFixed(),
-              receivedTokenB: receivedTokenB.toFixed(),
+          if (receivedTokenA.isZero() && receivedTokenB.isZero()) {
+            const error: Error & { response?: DeliverTxResponse } = new Error(
+              'No new shares received'
+            );
+            error.response = res;
+            checkMsgErrorToast(error, {
+              id,
+              title: 'No new shares received',
+              description:
+                'The transaction was successful but no new shares were created',
             });
-            setIsValidating(false);
-          })
-          .catch((err: Error & { response?: DeliverTxResponse }) => {
-            // catch transaction errors
-            // chain toast checks so only one toast may be shown
-            checkMsgRejectedToast(err, { id }) ||
-              checkMsgOutOfGasToast(err, { id }) ||
-              checkMsgErrorToast(err, { id });
+          }
 
-            // rethrow error to outer try block
-            throw err;
+          // set new information
+          setData({
+            gasUsed: gasUsed.toString(),
+            receivedTokenA: receivedTokenA.toFixed(),
+            receivedTokenB: receivedTokenB.toFixed(),
           });
+          setIsValidating(false);
+        } catch (e) {
+          // catch transaction errors
+          const err = e as Error & { response?: DeliverTxResponse };
+          // chain toast checks so only one toast may be shown
+          checkMsgRejectedToast(err, { id }) ||
+            checkMsgOutOfGasToast(err, { id }) ||
+            checkMsgErrorToast(err, { id });
+
+          // rethrow error to outer try block
+          throw e;
+        }
       } catch (e) {
         setIsValidating(false);
         setError((e as Error)?.message || (e as string));
