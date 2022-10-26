@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { assertIsDeliverTxSuccess, DeliverTxResponse } from '@cosmjs/stargate';
+import { DeliverTxResponse } from '@cosmjs/stargate';
 import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 
@@ -54,10 +54,7 @@ function sendSwap(
         if (!res) return reject('No response');
         const { code, gasUsed } = res;
 
-        try {
-          assertIsDeliverTxSuccess(res);
-          checkMsgSuccessToast(res, { id });
-        } catch {
+        if (!checkMsgSuccessToast(res, { id })) {
           const error: Error & { response?: DeliverTxResponse } = new Error(
             `Tx error: ${code}`
           );

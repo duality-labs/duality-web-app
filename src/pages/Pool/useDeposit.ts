@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { assertIsDeliverTxSuccess, DeliverTxResponse } from '@cosmjs/stargate';
+import { DeliverTxResponse } from '@cosmjs/stargate';
 import { Log } from '@cosmjs/stargate/build/logs';
 import BigNumber from 'bignumber.js';
 
@@ -140,10 +140,7 @@ export function useDeposit(): [
           const { code, gasUsed } = res;
 
           // check for response errors
-          try {
-            assertIsDeliverTxSuccess(res);
-            checkMsgSuccessToast(res, { id });
-          } catch {
+          if (!checkMsgSuccessToast(res, { id })) {
             const error: Error & { response?: DeliverTxResponse } = new Error(
               `Tx error: ${code}`
             );
