@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
-import { assertIsDeliverTxSuccess } from '@cosmjs/stargate';
-import { Log } from '@cosmjs/stargate/build/logs';
+import { DeliverTxResponse } from '@cosmjs/stargate';
 import BigNumber from 'bignumber.js';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
@@ -8,6 +7,13 @@ import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nichol
 import { Token } from '../../components/TokenPicker/hooks';
 import { DexShare } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
 import { TickInfo } from '../../lib/web3/indexerProvider';
+import {
+  checkMsgErrorToast,
+  checkMsgOutOfGasToast,
+  checkMsgRejectedToast,
+  checkMsgSuccessToast,
+  createLoadingToast,
+} from '../../components/Notifications/common';
 
 const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
 const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
@@ -49,22 +55,26 @@ export function useEditLiquidity(): [
 
   const sendEditRequest = useCallback(
     async function (sharesDiff: Array<EditedTickShareValue>) {
-      return new Promise<void>(async function (resolve, reject) {
+      try {
+        // check for correct inputs
+        if (!web3.address || !web3.wallet) {
+          throw new Error('Wallet not connected');
+        }
+        const web3Address = web3.address;
+
+        if (sharesDiff.length === 0) {
+          throw new Error('Ticks not set');
+        }
+
+        setData(undefined);
+        setIsValidating(true);
+        setError(undefined);
+
+        const id = `${Date.now()}.${Math.random}`;
+        createLoadingToast({ id, description: 'Editing Liquidity...' });
+
+        // wrap transaction logic
         try {
-          // check for correct inputs
-          if (!web3.address || !web3.wallet) {
-            throw new Error('Wallet not connected');
-          }
-          const web3Address = web3.address;
-
-          if (sharesDiff.length === 0) {
-            throw new Error('Ticks not set');
-          }
-
-          setData(undefined);
-          setIsValidating(true);
-          setError(undefined);
-
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
           const res = await client.signAndBroadcast(
@@ -174,34 +184,37 @@ export function useEditLiquidity(): [
           if (!res) {
             throw new Error('No response');
           }
+          const { code, gasUsed } = res;
 
           // check for response errors
-          const { code, gasUsed, rawLog } = res;
-          assertIsDeliverTxSuccess(res);
-          if (code) {
-            // eslint-disable-next-line no-console
-            console.warn(`Failed to send tx (code: ${code}): ${rawLog}`);
-            throw new Error(`Tx error: ${code}`);
+          if (!checkMsgSuccessToast(res, { id })) {
+            const error: Error & { response?: DeliverTxResponse } = new Error(
+              `Tx error: ${code}`
+            );
+            error.response = res;
+            throw error;
           }
-
-          const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
-          const foundEvents = foundLogs.flatMap((log) => log.events);
-          // eslint-disable-next-line no-console
-          console.log('foundLogs and foundEvents', foundLogs, foundEvents);
 
           // set new information
           setData({
             gasUsed: gasUsed.toString(),
           });
           setIsValidating(false);
-          resolve();
         } catch (e) {
-          reject(e);
+          // catch transaction errors
+          const err = e as Error & { response?: DeliverTxResponse };
+          // chain toast checks so only one toast may be shown
+          checkMsgRejectedToast(err, { id }) ||
+            checkMsgOutOfGasToast(err, { id }) ||
+            checkMsgErrorToast(err, { id });
+
+          // rethrow transaction errors
+          throw e;
         }
-      }).catch((e: Error | string) => {
+      } catch (e) {
         setIsValidating(false);
         setError((e as Error)?.message || (e as string));
-      });
+      }
     },
     [web3.address, web3.wallet]
   );

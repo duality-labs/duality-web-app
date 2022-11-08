@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { assertIsDeliverTxSuccess } from '@cosmjs/stargate';
+import { DeliverTxResponse } from '@cosmjs/stargate';
 import { Log } from '@cosmjs/stargate/build/logs';
 import BigNumber from 'bignumber.js';
 
@@ -7,6 +7,13 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module';
 import { Token } from '../../components/TokenPicker/hooks';
 import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
+import {
+  checkMsgErrorToast,
+  checkMsgOutOfGasToast,
+  checkMsgRejectedToast,
+  checkMsgSuccessToast,
+  createLoadingToast,
+} from '../../components/Notifications/common';
 
 const {
   REACT_APP__COIN_MIN_DENOM_EXP = '18',
@@ -46,59 +53,63 @@ export function useDeposit(): [
       fee: BigNumber | undefined,
       userTicks: TickGroup
     ) {
-      return new Promise<void>(async function (resolve, reject) {
-        try {
-          // check for correct inputs
-          if (!web3.address || !web3.wallet) {
-            throw new Error('Wallet not connected');
-          }
-          const web3Address = web3.address;
-          if (!tokenA || !tokenB) {
-            throw new Error('Tokens not set');
-          }
-          if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
-            throw new Error('Fee not set');
-          }
-          // check all user ticks and filter to non-zero ticks
-          const filteredUserTicks = userTicks.filter(
-            ([price, amount0, amount1]) => {
-              if (!price || price.isLessThan(0)) {
-                throw new Error('Price not set');
-              }
-              if (
-                !amount0 ||
-                !amount1 ||
-                amount0.isNaN() ||
-                amount1.isNaN() ||
-                amount0.isLessThan(0) ||
-                amount1.isLessThan(0)
-              ) {
-                throw new Error('Amounts not set');
-              }
-              return amount0.isGreaterThan(0) || amount1.isGreaterThan(0);
+      try {
+        // check for correct inputs
+        if (!web3.address || !web3.wallet) {
+          throw new Error('Wallet not connected');
+        }
+        const web3Address = web3.address;
+        if (!tokenA || !tokenB) {
+          throw new Error('Tokens not set');
+        }
+        if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
+          throw new Error('Fee not set');
+        }
+        // check all user ticks and filter to non-zero ticks
+        const filteredUserTicks = userTicks.filter(
+          ([price, amount0, amount1]) => {
+            if (!price || price.isLessThan(0)) {
+              throw new Error('Price not set');
             }
+            if (
+              !amount0 ||
+              !amount1 ||
+              amount0.isNaN() ||
+              amount1.isNaN() ||
+              amount0.isLessThan(0) ||
+              amount1.isLessThan(0)
+            ) {
+              throw new Error('Amounts not set');
+            }
+            return amount0.isGreaterThan(0) || amount1.isGreaterThan(0);
+          }
+        );
+
+        if (filteredUserTicks.length === 0) {
+          throw new Error('Ticks not set');
+        }
+
+        setData(undefined);
+        setIsValidating(true);
+        setError(undefined);
+
+        // do not make requests if they are not routable
+        if (!tokenA.address) {
+          throw new Error(
+            `Token ${tokenA.symbol} has no address on the Duality chain`
           );
+        }
+        if (!tokenB.address) {
+          throw new Error(
+            `Token ${tokenB.symbol} has no address on the Duality chain`
+          );
+        }
 
-          if (filteredUserTicks.length === 0) {
-            throw new Error('Ticks not set');
-          }
+        const id = `${Date.now()}.${Math.random}`;
+        createLoadingToast({ id, description: 'Adding Liquidity...' });
 
-          setData(undefined);
-          setIsValidating(true);
-          setError(undefined);
-
-          // do not make requests if they are not routable
-          if (!tokenA.address) {
-            throw new Error(
-              `Token ${tokenA.symbol} has no address on the Duality chain`
-            );
-          }
-          if (!tokenB.address) {
-            throw new Error(
-              `Token ${tokenB.symbol} has no address on the Duality chain`
-            );
-          }
-
+        // wrap transaction logic
+        try {
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
           const res = await client.signAndBroadcast(
@@ -126,14 +137,15 @@ export function useDeposit(): [
           if (!res) {
             throw new Error('No response');
           }
+          const { code, gasUsed } = res;
 
           // check for response errors
-          const { code, gasUsed, rawLog } = res;
-          assertIsDeliverTxSuccess(res);
-          if (code) {
-            // eslint-disable-next-line
-            console.warn(`Failed to send tx (code: ${code}): ${rawLog}`);
-            throw new Error(`Tx error: ${code}`);
+          if (!checkMsgSuccessToast(res, { id })) {
+            const error: Error & { response?: DeliverTxResponse } = new Error(
+              `Tx error: ${code}`
+            );
+            error.response = res;
+            throw error;
           }
 
           const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
@@ -141,8 +153,8 @@ export function useDeposit(): [
           // todo: use parseCoins from '@cosmjs/launchpad' here
           // to simplify the parsing of the response
           const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
-            receivedTokenA: string;
-            receivedTokenB: string;
+            receivedTokenA: BigNumber;
+            receivedTokenB: BigNumber;
           }>(
             (acc, event) => {
               if (event.type === 'transfer') {
@@ -163,16 +175,14 @@ export function useDeposit(): [
                       ) {
                         acc.receivedTokenA = new BigNumber(
                           acc.receivedTokenA || 0
-                        )
-                          .plus(
-                            new BigNumber(
-                              attr.value.slice(
-                                0,
-                                0 - tokenA.denom_units[1].denom.length
-                              )
-                            ).shiftedBy(-denomExponent + denomShiftExponent)
-                          )
-                          .toFixed(denomExponent);
+                        ).plus(
+                          new BigNumber(
+                            attr.value.slice(
+                              0,
+                              0 - tokenA.denom_units[1].denom.length
+                            )
+                          ).shiftedBy(-denomExponent + denomShiftExponent)
+                        );
                       }
                       if (
                         attr.value.endsWith(
@@ -181,16 +191,14 @@ export function useDeposit(): [
                       ) {
                         acc.receivedTokenB = new BigNumber(
                           acc.receivedTokenB || 0
-                        )
-                          .plus(
-                            new BigNumber(
-                              attr.value.slice(
-                                0,
-                                0 - tokenB.denom_units[1].denom.length
-                              )
-                            ).shiftedBy(-denomExponent + denomShiftExponent)
-                          )
-                          .toFixed(denomExponent);
+                        ).plus(
+                          new BigNumber(
+                            attr.value.slice(
+                              0,
+                              0 - tokenB.denom_units[1].denom.length
+                            )
+                          ).shiftedBy(-denomExponent + denomShiftExponent)
+                        );
                       }
                     }
                   }
@@ -198,28 +206,47 @@ export function useDeposit(): [
               }
               return acc;
             },
-            { receivedTokenA: '0', receivedTokenB: '0' }
+            {
+              receivedTokenA: new BigNumber(0),
+              receivedTokenB: new BigNumber(0),
+            }
           );
 
-          if (!receivedTokenA && !receivedTokenB) {
-            throw new Error('No new shares received');
+          if (receivedTokenA.isZero() && receivedTokenB.isZero()) {
+            const error: Error & { response?: DeliverTxResponse } = new Error(
+              'No new shares received'
+            );
+            error.response = res;
+            checkMsgErrorToast(error, {
+              id,
+              title: 'No new shares received',
+              description:
+                'The transaction was successful but no new shares were created',
+            });
           }
 
           // set new information
           setData({
             gasUsed: gasUsed.toString(),
-            receivedTokenA,
-            receivedTokenB,
+            receivedTokenA: receivedTokenA.toFixed(),
+            receivedTokenB: receivedTokenB.toFixed(),
           });
           setIsValidating(false);
-          resolve();
         } catch (e) {
-          reject(e);
+          // catch transaction errors
+          const err = e as Error & { response?: DeliverTxResponse };
+          // chain toast checks so only one toast may be shown
+          checkMsgRejectedToast(err, { id }) ||
+            checkMsgOutOfGasToast(err, { id }) ||
+            checkMsgErrorToast(err, { id });
+
+          // rethrow error to outer try block
+          throw e;
         }
-      }).catch((e: Error | string) => {
+      } catch (e) {
         setIsValidating(false);
         setError((e as Error)?.message || (e as string));
-      });
+      }
     },
     [web3.address, web3.wallet]
   );

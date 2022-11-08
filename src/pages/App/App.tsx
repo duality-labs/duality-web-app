@@ -5,6 +5,8 @@ import { ThemeProvider } from '../../lib/themeProvider';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import Header from '../../components/Header';
+import Notifications from '../../components/Notifications';
+
 import Swap from '../Swap';
 import Pool from '../Pool';
 import MyLiquidity from '../MyLiquidity';
@@ -26,6 +28,7 @@ function App() {
                 <Route path="stake" element={<div>Coming soon</div>} />
                 <Route path="*" element={<div>Not found</div>} />
               </Routes>
+              <Notifications />
             </main>
           </BrowserRouter>
         </ThemeProvider>
