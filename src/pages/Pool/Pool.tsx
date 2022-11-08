@@ -106,23 +106,16 @@ export default function Pool() {
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
   const valuesValid = !!tokenA && !!tokenB && values.every((v) => Number(v));
 
-  const {
-    data: { ticks: unorderedTicks } = {},
-    error: ticksError,
-    isValidating: tickFetching,
-  } = useIndexerPairData(tokenA?.address, tokenB?.address);
+  const { data: { ticks: unorderedTicks } = {} } = useIndexerPairData(
+    tokenA?.address,
+    tokenB?.address
+  );
 
   const [slopeType, setSlopeType] = useState<SlopeType>(defaultSlopeType);
   const [precision, setPrecision] = useState<string>(defaultPrecision);
 
-  const [
-    {
-      data: depositResponse,
-      isValidating: isValidatingDeposit,
-      error: depositError,
-    },
-    sendDepositRequest,
-  ] = useDeposit();
+  const [{ isValidating: isValidatingDeposit }, sendDepositRequest] =
+    useDeposit();
 
   const [userTicks, setUserTicksUnprotected] = useState<TickGroup>([]);
   // ensure that setting of user ticks never goes outside our prescribed bounds
@@ -472,26 +465,6 @@ export default function Pool() {
                 value="Add Liquidity"
               />
             </div>
-            {(tickFetching || isValidatingDeposit) && (
-              <div className="mx-auto mt-4 text-secondary card-row">
-                Waiting for confirmation...
-              </div>
-            )}
-            {(ticksError || depositError || depositResponse) && (
-              <div className="mx-auto mt-4">
-                <div className="text-red-500">
-                  {!isValidatingDeposit && ticksError}
-                </div>
-                <div className="text-red-500">
-                  {!isValidatingDeposit && depositError}
-                </div>
-                <div className="text-sky-500">
-                  {!isValidatingDeposit && depositResponse
-                    ? `Deposited ${depositResponse.receivedTokenA} ${tokenA?.address} and ${depositResponse.receivedTokenB} ${tokenB?.address}`
-                    : ''}
-                </div>
-              </div>
-            )}
           </div>
           {hasPriceData && (
             <div className="attribution">
@@ -921,25 +894,6 @@ export default function Pool() {
             </div>
           </div>
         )}
-        <div className="pool-options">
-          <div className="card-row">
-            {(tickFetching || isValidatingDeposit) && (
-              <div className="text-secondary card-row">...</div>
-            )}
-            <br />
-            <div className="text-red-500">
-              {!isValidatingDeposit && ticksError}
-            </div>
-            <div className="text-red-500">
-              {!isValidatingDeposit && depositError}
-            </div>
-            <div className="text-sky-500">
-              {!isValidatingDeposit && depositResponse
-                ? `Deposited ${depositResponse.receivedTokenA} ${tokenA?.address} and ${depositResponse.receivedTokenB} ${tokenB?.address}`
-                : ''}
-            </div>
-          </div>
-        </div>
       </div>
       <div className="spacer"></div>
     </form>
