@@ -122,12 +122,8 @@ export function useDeposit(): [
                     receiver: web3Address,
                     price: price.toFixed(denomExponent),
                     fee: fee.toFixed(denomExponent),
-                    amounts0: amount0
-                      .shiftedBy(-denomShiftExponent)
-                      .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
-                    amounts1: amount1
-                      .shiftedBy(-denomShiftExponent)
-                      .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
+                    amounts0: amount0.shiftedBy(denomExponent).toFixed(0, BigNumber.ROUND_HALF_UP),
+                    amounts1: amount1.shiftedBy(denomExponent).toFixed(0, BigNumber.ROUND_HALF_UP),
                   })
                 : []
             )
