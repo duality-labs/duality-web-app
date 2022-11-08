@@ -393,7 +393,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
               // todo: this query should be sepcific to the user's address
               // however that has not been implemented yet
               // so instead we query all and then filter the results
-              path: '/NicholasDotSol/duality/dex/share',
+              path: '/NicholasDotSol/duality/dex/shares',
               method: 'GET',
               format: 'json',
             }
