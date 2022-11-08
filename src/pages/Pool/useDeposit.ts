@@ -15,9 +15,7 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
-
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
-const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
+import { feeTypes } from '../../lib/web3/utils/fees';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -107,32 +105,44 @@ export function useDeposit(): [
 
         // wrap transaction logic
         try {
+          const feeIndex = feeTypes.findIndex((feeType) =>
+            fee.isEqualTo(feeType.fee)
+          );
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
           const res = await client.signAndBroadcast(
             filteredUserTicks.flatMap(([price, amount0, amount1]) =>
               tokenA.address && tokenB.address
-                ? client.msgSingleDeposit({
+                ? client.msgDeposit({
                     creator: web3Address,
-                    token0: tokenA.address,
-                    token1: tokenB.address,
+                    tokenA: tokenA.address,
+                    tokenB: tokenB.address,
                     receiver: web3Address,
-                    price: price.toFixed(maxFractionDigits),
-                    fee: fee.toFixed(maxFractionDigits),
-                    amounts0:
+                    tickIndexes: [
+                      Math.round(
+                        Math.pow(
+                          1.0001,
+                          new BigNumber(1).dividedBy(price).toNumber()
+                        )
+                      ),
+                    ],
+                    feeIndexes: [feeIndex],
+                    amountsA: [
                       getAmountInDenom(
                         tokenA,
                         amount0,
                         tokenA.display,
                         tokenA.display
                       ) || '0',
-                    amounts1:
+                    ],
+                    amountsB: [
                       getAmountInDenom(
                         tokenB,
                         amount1,
                         tokenB.display,
                         tokenB.display
                       ) || '0',
+                    ],
                   })
                 : []
             )
