@@ -73,6 +73,16 @@ files
     fs.writeFileSync(file, replaced);
   });
 
+// fix odd generated comparisons
+files
+  .filter((file) => file.endsWith('.ts'))
+  .forEach((file) => {
+    const replaced = fs
+      .readFileSync(file, { encoding: 'utf8' })
+      .replace('(util.Long !== Long)', '(true)');
+    fs.writeFileSync(file, replaced);
+  });
+
 // remove non-module index files (eg. vuex index.ts files)
 files
   .filter(

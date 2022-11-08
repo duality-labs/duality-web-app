@@ -135,7 +135,7 @@ function longToNumber(long: Long): number {
   return long.toNumber();
 }
 
-if (util.Long !== Long) {
+if (true) {
   util.Long = Long as any;
   configure();
 }

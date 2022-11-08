@@ -2,6 +2,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /* tslint:disable */
+/* eslint-disable */
+/* tslint:disable */
 // THIS FILE IS GENERATED AUTOMATICALLY. DO NOT MODIFY.
 
 import { StdFee } from "@cosmjs/launchpad";
