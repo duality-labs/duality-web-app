@@ -119,12 +119,7 @@ export function useDeposit(): [
                     tokenB: tokenB.address,
                     receiver: web3Address,
                     tickIndexes: [
-                      Math.round(
-                        Math.pow(
-                          1.0001,
-                          new BigNumber(1).dividedBy(price).toNumber()
-                        )
-                      ),
+                      Math.round(Math.log(price.toNumber()) / Math.log(1.0001)),
                     ],
                     feeIndexes: [feeIndex],
                     amountsA: [
