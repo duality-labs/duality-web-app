@@ -8,10 +8,9 @@ import { useWeb3 } from './useWeb3';
 
 import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
 import {
-  DexPool,
-  DexQueryAllShareResponse,
-  DexShare,
-  DexTicks,
+  DexQueryAllSharesResponse,
+  DexShares,
+  DexTickMap,
   RpcStatus,
   V1Beta1PageResponse,
 } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
@@ -31,9 +30,7 @@ interface BalancesResponse {
 export interface PairInfo {
   token0: string;
   token1: string;
-  ticks: TickMap;
-  poolsZeroToOne: Array<TickInfo>;
-  poolsOneToZero: Array<TickInfo>;
+  ticks: TickInfo[];
 }
 
 /**
@@ -53,12 +50,13 @@ type PoolTicks = [
  * but utilising BigNumber type instead of BigNumberString type properties
  */
 export interface TickInfo {
-  // index: number; do not store index as they may change with partial updates
-  price: BigNumber; // price is a decimal (to 18 places) ratio of price1/price0
   reserve0: BigNumber;
   reserve1: BigNumber;
-  fee: BigNumber;
   totalShares: BigNumber;
+  fee: BigNumber;
+  feeIndex: BigNumber; // feeIndex is the index of a certain predefined fee
+  tickIndex: BigNumber; // tickIndex is the exact price ratio in the form: 1.0001^[tickIndex]
+  price: BigNumber; // price is an approximate decimal (to 18 places) ratio of price1/price0
 }
 
 export interface PairMap {
@@ -70,7 +68,7 @@ interface UserBankBalance {
 }
 
 interface UserShares {
-  shares: Array<DexShare>;
+  shares: Array<DexShares>;
 }
 
 interface IndexerContextType {
@@ -110,7 +108,7 @@ function getFullData(): Promise<PairMap> {
     } else {
       // TODO: handle pagination
       queryClient({ addr: REACT_APP__REST_API })
-        .then((client) => client.queryTicksAll())
+        .then((client) => client.queryTickMapAll())
         .then((res) => {
           if (res.ok) {
             return res.data;
@@ -119,7 +117,7 @@ function getFullData(): Promise<PairMap> {
             throw new Error(`API error code: ${res.error.code}`);
           }
         })
-        .then((data) => transformData(data.ticks || []))
+        .then((data) => transformData(data.tickMap || []))
         .then(resolve)
         .catch(reject);
     }
@@ -149,68 +147,39 @@ function getTickID(
   return `${price}-${fee}`;
 }
 
-function transformData(ticks: Array<DexTicks>): PairMap {
+function transformData(ticks: Array<DexTickMap>): PairMap {
   return ticks.reduce<PairMap>(function (
     result,
-    // token0 and token1 are sorted by the back end
-    { token0, token1, poolsZeroToOne = [], poolsOneToZero = [] }
+    { pairId = '', tickIndex, tickData }
   ) {
-    if (token0 && token1) {
-      const pairID = getPairID(token0, token1);
-      const ticks: TickMap = {};
-      result[pairID] = {
+    // token0 and token1 are sorted by the back end
+    const [token0, token1] = pairId.split('/');
+    if (token0 && token1 && tickData) {
+      result[pairId] = result[pairId] || {
         token0: token0,
         token1: token1,
-        ticks: ticks,
-        poolsZeroToOne: poolsZeroToOne
-          .map((dexPool) => {
-            const tickInfo = toTickInfo(dexPool);
-            const { price, fee } = dexPool;
-            // append tickInfo into tickID map before returning defined values
-            if (tickInfo && price && fee) {
-              const tickID = getTickID(price, fee);
-              ticks[tickID] = ticks[tickID] || [undefined, undefined];
-              ticks[tickID][0] = tickInfo;
-            }
-            return tickInfo;
-          })
-          .filter(Boolean) as Array<TickInfo>,
-        poolsOneToZero: poolsOneToZero
-          .map((dexPool) => {
-            const tickInfo = toTickInfo(dexPool);
-            const { price, fee } = dexPool;
-            // append tickInfo into tickID map before returning defined values
-            if (tickInfo && price && fee) {
-              const tickID = getTickID(price, fee);
-              ticks[tickID] = ticks[tickID] || [undefined, undefined];
-              ticks[tickID][1] = tickInfo;
-            }
-            return tickInfo;
-          })
-          .filter(Boolean) as Array<TickInfo>,
+        ticks: [],
       };
+
+      feeTypes.forEach(({ fee }, feeIndex) => {
+        result[pairId].ticks.push({
+          tickIndex: new BigNumber(tickIndex || 0),
+          price: new BigNumber(1.0001).pow(tickIndex || 0),
+          feeIndex: new BigNumber(feeIndex),
+          fee: new BigNumber(fee || 0),
+          totalShares: new BigNumber(
+            tickData.reserve0AndShares?.[feeIndex].totalShares || 0
+          ),
+          reserve0: new BigNumber(
+            tickData.reserve0AndShares?.[feeIndex].reserve0 || 0
+          ),
+          reserve1: new BigNumber(tickData.reserve1?.[feeIndex] || 0),
+        });
+      });
     }
     return result;
-  }, {});
-  // convert from API JSON big number strings to BigNumbers
-  function toTickInfo({
-    price,
-    reserve0,
-    reserve1,
-    fee,
-    totalShares,
-  }: DexPool): TickInfo | undefined {
-    if (price && reserve0 && reserve1 && fee && totalShares) {
-      const tickInfo = {
-        price: new BigNumber(price),
-        reserve0: new BigNumber(reserve0),
-        reserve1: new BigNumber(reserve1),
-        fee: new BigNumber(fee),
-        totalShares: new BigNumber(totalShares),
-      };
-      return tickInfo;
-    }
-  }
+  },
+  {});
 }
 
 function addTickData(
@@ -233,7 +202,9 @@ function addTickData(
   const reserve1 = new BigNumber(NewReserves1);
   const newTick: TickInfo = {
     price,
+    tickIndex: new BigNumber(0),
     fee,
+    feeIndex: new BigNumber(0),
     reserve0,
     reserve1,
     // calculate new total
@@ -264,26 +235,8 @@ function addTickData(
       token0: Token0,
       token1: Token1,
       ticks,
-      // reorder pools by "real" price (the price after fees are applied)
-      poolsZeroToOne: Object.values(ticks)
-        .map((ticks) => ticks[0])
-        .filter((tick): tick is TickInfo => !!tick)
-        .sort((a, b) =>
-          getRealPrice(a, 1).minus(getRealPrice(b, 1)).toNumber()
-        ),
-      poolsOneToZero: Object.values(ticks)
-        .map((ticks) => ticks[1])
-        .filter((tick): tick is TickInfo => !!tick)
-        .sort((a, b) =>
-          getRealPrice(b, -1).minus(getRealPrice(a, -1)).toNumber()
-        ),
     },
   };
-  function getRealPrice(tick: TickInfo, forward: number) {
-    return forward >= 0
-      ? tick.price.plus(tick.fee)
-      : tick.price.minus(tick.fee);
-  }
 }
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
@@ -388,21 +341,22 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             fetching: true,
             fetched,
           }));
-          const res = await client.request<DexQueryAllShareResponse, RpcStatus>(
-            {
-              // todo: this query should be sepcific to the user's address
-              // however that has not been implemented yet
-              // so instead we query all and then filter the results
-              path: '/NicholasDotSol/duality/dex/shares',
-              method: 'GET',
-              format: 'json',
-            }
-          );
+          const res = await client.request<
+            DexQueryAllSharesResponse,
+            RpcStatus
+          >({
+            // todo: this query should be sepcific to the user's address
+            // however that has not been implemented yet
+            // so instead we query all and then filter the results
+            path: '/NicholasDotSol/duality/dex/shares',
+            method: 'GET',
+            format: 'json',
+          });
           if (res.ok) {
             setFetchShareDataState(() => ({ fetching: false, fetched: true }));
-            const shares = res.data.share || [];
+            const shares = res.data.shares || [];
             // filter shares to this wallet
-            return shares.filter((share) => share.owner === address);
+            return shares.filter((share) => share.address === address);
           } else {
             setFetchShareDataState(({ fetched }) => ({
               fetching: false,
@@ -602,11 +556,12 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
   const shares = useMemo(() => {
     // filter to specific tokens if asked for
     const shares = data?.shares.filter(
-      (share) => Number(share.shareAmount) > 0
+      (share) => Number(share.sharesOwned) > 0
     );
     if (tokens) {
       const [addressA, addressB] = tokens.map((token) => token.address);
-      return shares?.filter(({ token0: address0, token1: address1 }) => {
+      return shares?.filter(({ pairId = '' }) => {
+        const [address0, address1] = pairId.split('/');
         return (
           (addressA === address0 && addressB === address1) ||
           (addressA === address1 && addressB === address0)
@@ -653,8 +608,8 @@ export function useFeeLiquidityMap(
 
     const ticks = Object.values(pair.ticks);
     // normalise the data with the sum of values
-    const totalLiquidity = ticks.reduce((result, poolTicks) => {
-      return result.plus((poolTicks[0] || poolTicks[1])?.totalShares || 0);
+    const totalLiquidity = ticks.reduce((result, tickData) => {
+      return result.plus(tickData.totalShares || 0);
     }, new BigNumber(0));
 
     const feeTypeLiquidity = feeTypes.reduce<Record<FeeType['fee'], BigNumber>>(
@@ -665,16 +620,14 @@ export function useFeeLiquidityMap(
       {}
     );
 
-    return Object.values(pair.ticks).reduce<{ [feeTier: string]: BigNumber }>(
-      (result, poolTicks) => {
-        poolTicks.forEach((poolTick) => {
-          const feeString = poolTick?.fee.toString();
-          if (feeString && poolTick?.totalShares.isGreaterThan(0)) {
-            result[feeString] = result[feeString].plus(
-              poolTick.totalShares.dividedBy(totalLiquidity)
-            );
-          }
-        });
+    return ticks.reduce<{ [feeTier: string]: BigNumber }>(
+      (result, { fee, totalShares }) => {
+        if (totalShares.isGreaterThan(0)) {
+          const feeString = fee.toFixed();
+          result[feeString] = result[feeString].plus(
+            totalShares.dividedBy(totalLiquidity)
+          );
+        }
         return result;
       },
       feeTypeLiquidity
