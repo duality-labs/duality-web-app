@@ -18,7 +18,7 @@ import {
 
 import {
   getBalance,
-  TickMap,
+  TickInfo,
   useBankBalances,
   useFeeLiquidityMap,
   useIndexerPairData,
@@ -205,27 +205,13 @@ export default function Pool() {
     if (!unorderedTicks) return unorderedTicks;
     // invert ticks
     const one = new BigNumber(1);
-    return Object.entries(unorderedTicks).reduce<TickMap>(
-      (result, [key, [tick0to1, tick1to0]]) => {
-        // remap tick fields and invert the price
-        result[key] = [
-          tick1to0 && {
-            ...tick1to0,
-            price: one.dividedBy(tick1to0.price),
-            reserve0: tick1to0.reserve1,
-            reserve1: tick1to0.reserve0,
-          },
-          tick0to1 && {
-            ...tick0to1,
-            price: one.dividedBy(tick0to1.price),
-            reserve0: tick0to1.reserve1,
-            reserve1: tick0to1.reserve0,
-          },
-        ];
-        return result;
-      },
-      {}
-    );
+    return unorderedTicks.map<TickInfo>((tickInfo) => {
+      // remap tick fields and invert the price
+      return {
+        ...tickInfo,
+        price: one.dividedBy(tickInfo.price),
+      };
+    });
   }, [unorderedTicks, invertedTokenOrder]);
 
   const onSubmit = useCallback(
