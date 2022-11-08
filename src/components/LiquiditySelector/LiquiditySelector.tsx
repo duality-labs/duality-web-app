@@ -9,15 +9,16 @@ import {
 } from 'react';
 
 import { formatPrice } from '../../lib/utils/number';
-import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 import { Token } from '../TokenPicker/hooks';
 
+import { TickInfo } from '../../lib/web3/indexerProvider';
+
 import './LiquiditySelector.scss';
 
 export interface LiquiditySelectorProps {
-  ticks: TickMap | undefined;
+  ticks: TickInfo[] | undefined;
   tokenA: Token;
   tokenB: Token;
   feeTier: number | undefined;
@@ -83,7 +84,7 @@ const defaultStartValue = new BigNumber(1 / 1.1);
 const defaultEndValue = new BigNumber(1.1);
 
 export default function LiquiditySelector({
-  ticks = {},
+  ticks = [],
   tokenA,
   tokenB,
   feeTier,
@@ -105,7 +106,6 @@ export default function LiquiditySelector({
 }: LiquiditySelectorProps) {
   const allTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
-      .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
       .filter((tick): tick is TickInfo => !!tick) // filter to only ticks
       .sort((a, b) => a.price.comparedTo(b.price))
       .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
@@ -117,7 +117,6 @@ export default function LiquiditySelector({
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
-      .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
       .filter((tick): tick is TickInfo => filterTicksToFeeTier(tick, feeTier)) // filter to only fee tier ticks
       .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
   }, [ticks, feeTier]);
