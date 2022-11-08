@@ -18,7 +18,6 @@ import {
   useShares,
   TickInfo,
   useIndexerPairData,
-  TickMap,
   getBalance,
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
@@ -425,26 +424,16 @@ function LiquidityDistributionCard({
     if (!unorderedTicks) return unorderedTicks;
     // invert ticks
     const one = new BigNumber(1);
-    return Object.entries(unorderedTicks).reduce<TickMap>(
-      (result, [key, [tick0to1, tick1to0]]) => {
+    return Object.entries(unorderedTicks).reduce<TickInfo[]>(
+      (result, [key, tick], index) => {
         // remap tick fields and invert the price
-        result[key] = [
-          tick1to0 && {
-            ...tick1to0,
-            price: one.dividedBy(tick1to0.price),
-            reserve0: tick1to0.reserve1,
-            reserve1: tick1to0.reserve0,
-          },
-          tick0to1 && {
-            ...tick0to1,
-            price: one.dividedBy(tick0to1.price),
-            reserve0: tick0to1.reserve1,
-            reserve1: tick0to1.reserve0,
-          },
-        ];
+        result[index] = {
+          ...tick,
+          price: one.dividedBy(tick.price),
+        };
         return result;
       },
-      {}
+      []
     );
   }, [unorderedTicks, invertedTokenOrder]);
 
