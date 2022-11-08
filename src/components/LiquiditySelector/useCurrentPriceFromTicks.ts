@@ -20,7 +20,6 @@ export default function useCurrentPriceFromTicks(
   // collect tick information in a more useable form
   const sortedTicks: TickGroup = useMemo(() => {
     return Object.values(ticks || [])
-      .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
       .filter((tick): tick is TickInfo => !!tick) // filter to relevant ticks
       .map((tick) => ({
         ...tick,

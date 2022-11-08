@@ -11,7 +11,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 
-import { DexShare } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
+import { DexShares } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
 import {
   useBankBalances,
   useIndexerData,
@@ -46,7 +46,7 @@ const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
 interface ShareValue {
-  share: DexShare;
+  share: DexShares;
   token0: Token;
   token1: Token;
   userReserves0?: BigNumber;
@@ -86,21 +86,22 @@ export default function MyLiquidity() {
   const shareValueMap = useMemo(() => {
     if (shares && indexer) {
       return shares.reduce<TickShareValueMap>((result, share) => {
+        const { pairId = '', tickIndex } = share;
+        const [shareToken0, shareToken1] = pairId.split('/');
         const token0 = dualityTokens.find(
-          (token) => token.address === share.token0
+          (token) => token.address === shareToken0
         );
         const token1 = dualityTokens.find(
-          (token) => token.address === share.token1
+          (token) => token.address === shareToken1
         );
         if (token0 && token1) {
           const extendedShare: ShareValue = { share, token0, token1 };
-          const pairID = `${share.token0}-${share.token1}`;
-          const tickID = `${share.price}-${share.fee}`;
-          const tick = indexer[pairID]?.ticks?.[tickID]?.find(Boolean);
+          const pairID = `${shareToken0}/${shareToken1}`;
+          const tick = indexer[pairID]?.ticks?.[Number(tickIndex)] || undefined;
           // add optional tick data from indexer
           if (tick && tick.totalShares.isGreaterThan(0)) {
             const shareFraction = new BigNumber(
-              share.shareAmount ?? 0
+              share.sharesOwned ?? 0
             ).dividedBy(tick.totalShares);
             extendedShare.userReserves0 = shareFraction.multipliedBy(
               tick.reserve0
