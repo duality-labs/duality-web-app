@@ -12,7 +12,7 @@ import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import { Chain } from '@chain-registry/types';
 import BigNumber from 'bignumber.js';
 
-import { Token } from './hooks';
+import { Token, useDualityTokens } from './hooks';
 import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 import { useSimplePrices } from '../../lib/tokenPrices';
 
@@ -159,15 +159,15 @@ export default function TokenPicker({
     [filteredList, close, exclusion?.address, selectToken]
   );
 
+  const dualityTokensList = useDualityTokens();
+
   // update the filtered list whenever the query or the list changes
   useEffect(
     function () {
       const list = (() => {
         switch (assetMode) {
           case 'Duality':
-            return tokenList
-              .filter((token) => token.chain.chain_id === 'duality')
-              .reverse();
+            return dualityTokensList;
           case 'User':
             return userList;
           default:
@@ -233,7 +233,7 @@ export default function TokenPicker({
 
       setSelectedIndex(0);
     },
-    [tokenList, userList, assetMode, searchQuery]
+    [tokenList, userList, dualityTokensList, assetMode, searchQuery]
   );
 
   const { data: userListPrices } = useSimplePrices(userList);
