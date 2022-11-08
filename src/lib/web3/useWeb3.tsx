@@ -11,8 +11,6 @@ const {
   REACT_APP__CHAIN_NAME,
   REACT_APP__RPC_API,
   REACT_APP__REST_API,
-  REACT_APP__COIN_DENOM,
-  REACT_APP__COIN_MIN_DENOM,
   REACT_APP__BECH_PREFIX,
 } = process.env;
 
@@ -20,15 +18,17 @@ export const chainId = REACT_APP__CHAIN_ID || '';
 const chainName = REACT_APP__CHAIN_NAME || '';
 export const rpcEndpoint = REACT_APP__RPC_API || '';
 const restEndpoint = REACT_APP__REST_API || '';
-const coinDenom = REACT_APP__COIN_DENOM || '';
-const coinMinimalDenom =
-  REACT_APP__COIN_MIN_DENOM || `u${coinDenom.toLowerCase()}`;
-const bech32Prefix = REACT_APP__BECH_PREFIX || coinDenom.toLowerCase();
+const bech32Prefix = REACT_APP__BECH_PREFIX || 'cosmos';
 
-export const currency = {
-  coinDenom,
-  coinMinimalDenom,
-  coinDecimals: 6,
+const token = {
+  coinDenom: 'DUAL',
+  coinMinimalDenom: 'token',
+  coinDecimals: 18,
+};
+const stake = {
+  coinDenom: 'D',
+  coinMinimalDenom: 'stake',
+  coinDecimals: 18,
 };
 
 const chainInfo: ChainInfo = {
@@ -36,9 +36,9 @@ const chainInfo: ChainInfo = {
   chainName,
   rpc: rpcEndpoint,
   rest: restEndpoint,
-  currencies: [currency],
-  stakeCurrency: currency,
-  feeCurrencies: [currency],
+  currencies: [token, stake],
+  stakeCurrency: stake,
+  feeCurrencies: [token],
   bip44: {
     coinType: 118,
   },
