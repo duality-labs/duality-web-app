@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module';
 import { Token } from '../../components/TokenPicker/hooks';
-import { DexShare } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
+import { DexShares } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
 import { TickInfo } from '../../lib/web3/indexerProvider';
 import {
   checkMsgErrorToast,
@@ -17,7 +17,7 @@ import {
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 export interface ShareValue {
-  share: DexShare;
+  share: DexShares;
   token0: Token;
   token1: Token;
   userReserves0?: BigNumber;
@@ -86,9 +86,9 @@ export function useEditLiquidity(): [
                 userReserves0,
                 userReserves1,
               }) => {
-                return share.price &&
-                  share.fee &&
-                  share.shareAmount &&
+                return share.tickIndex &&
+                  share.feeIndex &&
+                  share.sharesOwned &&
                   token0.address &&
                   token1.address &&
                   userReserves0 &&
@@ -97,84 +97,84 @@ export function useEditLiquidity(): [
                       ...(!tickDiff0.isZero()
                         ? [
                             tickDiff0.isGreaterThan(0)
-                              ? client.msgSingleDeposit({
+                              ? client.msgDeposit({
                                   creator: web3Address,
-                                  token0: token0.address,
-                                  token1: token1.address,
+                                  tokenA: token0.address,
+                                  tokenB: token1.address,
                                   receiver: web3Address,
-                                  price: share.price,
-                                  fee: share.fee,
-                                  amounts0:
+                                  tickIndexes: [Number(share.tickIndex)],
+                                  feeIndexes: [Number(share.feeIndex)],
+                                  amountsA: [
                                     getAmountInDenom(
                                       token0,
                                       tickDiff0,
-                                      token0.display,
                                       token0.display
                                     ) || '0',
-                                  amounts1: '0',
+                                  ],
+                                  amountsB: ['0'],
                                 })
-                              : client.msgSingleWithdraw({
+                              : client.msgWithdrawl({
                                   creator: web3Address,
-                                  token0: token0.address,
-                                  token1: token1.address,
+                                  tokenA: token0.address,
+                                  tokenB: token1.address,
                                   receiver: web3Address,
-                                  price: share.price,
-                                  fee: share.fee,
+                                  tickIndexes: [Number(share.tickIndex)],
+                                  feeIndexes: [Number(share.feeIndex)],
                                   // approximate removal using percentages
                                   // todo: this probably has a bug when withdrawing from a tick
                                   // that has both token0 and token1 as this only takes into account one side
-                                  sharesRemoving:
+                                  sharesToRemove: [
                                     getAmountInDenom(
                                       token0,
                                       tickDiff0
                                         .negated()
                                         .dividedBy(userReserves0)
-                                        .multipliedBy(share.shareAmount),
-                                      token0.display,
+                                        .multipliedBy(share.sharesOwned),
                                       token0.display
                                     ) || '0',
+                                  ],
                                 }),
                           ]
                         : []),
                       ...(!tickDiff1.isZero()
                         ? [
                             tickDiff1.isGreaterThan(0)
-                              ? client.msgSingleDeposit({
+                              ? client.msgDeposit({
                                   creator: web3Address,
-                                  token0: token0.address,
-                                  token1: token1.address,
+                                  tokenA: token0.address,
+                                  tokenB: token1.address,
                                   receiver: web3Address,
-                                  price: share.price,
-                                  fee: share.fee,
-                                  amounts0: '0',
-                                  amounts1:
+                                  tickIndexes: [Number(share.tickIndex)],
+                                  feeIndexes: [Number(share.feeIndex)],
+                                  amountsA: ['0'],
+                                  amountsB: [
                                     getAmountInDenom(
                                       token1,
                                       tickDiff1,
-                                      token1.display,
                                       token1.display
                                     ) || '0',
+                                  ],
                                 })
-                              : client.msgSingleWithdraw({
+                              : client.msgWithdrawl({
                                   creator: web3Address,
-                                  token0: token0.address,
-                                  token1: token1.address,
+                                  tokenA: token0.address,
+                                  tokenB: token1.address,
                                   receiver: web3Address,
-                                  price: share.price,
-                                  fee: share.fee,
+                                  tickIndexes: [Number(share.tickIndex)],
+                                  feeIndexes: [Number(share.feeIndex)],
                                   // approximate removal using percentages
                                   // todo: this probably has a bug when withdrawing from a tick
                                   // that has both token0 and token1 as this only takes into account one side
-                                  sharesRemoving:
+                                  sharesToRemove: [
                                     getAmountInDenom(
                                       token1,
                                       tickDiff1
                                         .negated()
                                         .dividedBy(userReserves1)
-                                        .multipliedBy(share.shareAmount),
-                                      token1.display,
+                                        .multipliedBy(share.sharesOwned),
                                       token1.display
                                     ) || '0',
+                                  ],
                                 }),
                           ]
                         : []),
