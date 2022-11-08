@@ -23,7 +23,6 @@ import { getAmountInDenom } from './utils/tokens';
 const { REACT_APP__REST_API } = process.env;
 
 type TokenAddress = string; // a valid hex address, eg. 0x01
-type BigNumberString = string; // a number in string format, eg. "1"
 
 interface BalancesResponse {
   balances?: Coin[];
@@ -149,20 +148,7 @@ function getFullData(): Promise<PairMap> {
  * @returns pair id for tokens
  */
 export function getPairID(token0: TokenAddress, token1: TokenAddress) {
-  return `${token0}-${token1}`;
-}
-
-/**
- * Gets the tick id
- * @param price price ratio of (token 1) / (token 0)
- * @param fee tick's fee
- * @returns tick id
- */
-function getTickID(
-  price: BigNumberString, // decimal form eg. "1.000000000000000000"
-  fee: BigNumberString // decimal form eg. "1.000000000000000000"
-) {
-  return `${price}-${fee}`;
+  return `${token0}/${token1}`;
 }
 
 function transformData(ticks: Array<DexTickMap>): PairMap {
@@ -212,17 +198,21 @@ function addTickData(
   }: { [eventKey: string]: string }
 ): PairMap {
   const pairID = getPairID(Token0, Token1);
-  const tickID = getTickID(Price, Fee);
   const oldPairInfo = oldData[pairID];
   const price = new BigNumber(Price);
+  const tickIndex = Math.round(
+    Math.pow(1.0001, new BigNumber(1).dividedBy(price).toNumber())
+  );
+  const feeIndex = feeTypes.findIndex((feeType) => fee.isEqualTo(feeType.fee));
+
   const fee = new BigNumber(Fee);
   const reserve0 = new BigNumber(NewReserves0);
   const reserve1 = new BigNumber(NewReserves1);
   const newTick: TickInfo = {
     price,
-    tickIndex: new BigNumber(0),
+    tickIndex: new BigNumber(tickIndex),
     fee,
-    feeIndex: new BigNumber(0),
+    feeIndex: new BigNumber(feeIndex),
     reserve0,
     reserve1,
     // calculate new total
@@ -230,22 +220,13 @@ function addTickData(
     // so it should be used as the source of truth and not recalculated here
     totalShares: reserve0.plus(reserve1.multipliedBy(price)),
   };
-  const newPoolTicks: PoolTicks = [undefined, undefined];
-  if (reserve0.isGreaterThan(0)) {
-    newPoolTicks[0] = newTick;
-  }
-  if (reserve1.isGreaterThan(0)) {
-    newPoolTicks[1] = newTick;
-  }
+
   // note: the ticks structure isn't strictly needed as the pool arrays
   // may be calculated without it. We keep it for now for logic simplicity.
   // The ticks structure is easier to reason about than the pool arrays.
   // This could be refactored for computation or storage optimisation later.
   // see: https://github.com/duality-labz/duality-web-app/pull/102#discussion_r938174401
-  const ticks = {
-    ...oldPairInfo?.ticks,
-    [tickID]: newPoolTicks,
-  };
+  const ticks = [...oldPairInfo?.ticks, newTick];
   return {
     ...oldData,
     [pairID]: {
