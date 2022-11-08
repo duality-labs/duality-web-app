@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TickInfo, TickMap } from '../../lib/web3/indexerProvider';
+import { TickInfo } from '../../lib/web3/indexerProvider';
 import { TickGroup } from './LiquiditySelector';
 
 function defaultTickFilter(tick: TickInfo | undefined) {
@@ -7,13 +7,12 @@ function defaultTickFilter(tick: TickInfo | undefined) {
 }
 
 export default function useCurrentPriceFromTicks(
-  ticks: TickMap = {},
+  ticks: TickInfo[] = [],
   tickFilter = defaultTickFilter
 ) {
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
-      .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
       .filter((tick): tick is TickInfo => tickFilter(tick)) // filter to relevant ticks
       .map((tick) => ({
         ...tick,
