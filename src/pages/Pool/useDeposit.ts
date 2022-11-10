@@ -158,62 +158,63 @@ export function useDeposit(): [
             throw error;
           }
 
+          // calculate received tokens
           const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
           const foundEvents = foundLogs.flatMap((log) => log.events);
-          // todo: use parseCoins from '@cosmjs/launchpad' here
-          // to simplify the parsing of the response
           const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
             receivedTokenA: BigNumber;
             receivedTokenB: BigNumber;
           }>(
             (acc, event) => {
-              if (event.type === 'transfer') {
-                event.attributes.forEach((attr, index, attrs) => {
-                  // if this attribute is the amount
-                  if (index > 0 && attr.key === 'amount') {
-                    // and the previous attribute was the sender
-                    const previousAttr = attrs[index - 1];
-                    if (
-                      previousAttr?.key === 'sender' &&
-                      previousAttr?.value === web3.address
-                    ) {
-                      // read the matching tokens into their values
-                      const attrDenom = attr.value.replace(/[\d.]+/g, '');
-                      const isDenomA = !!tokenA.denom_units.find(
-                        ({ denom = '', aliases = [] }) =>
-                          [denom, ...aliases].includes(attrDenom)
-                      );
-                      if (isDenomA) {
-                        acc.receivedTokenA = new BigNumber(
-                          acc.receivedTokenA || 0
-                        ).plus(
-                          getAmountInDenom(
-                            tokenA,
-                            parseFloat(attr.value.replace(attrDenom, '')),
-                            attrDenom,
-                            tokenA.display
-                          ) || '0'
-                        );
-                      }
-                      const isDenomB = !!tokenB.denom_units.find(
-                        ({ denom = '', aliases = [] }) =>
-                          [denom, ...aliases].includes(attrDenom)
-                      );
-                      if (isDenomB) {
-                        acc.receivedTokenB = new BigNumber(
-                          acc.receivedTokenB || 0
-                        ).plus(
-                          getAmountInDenom(
-                            tokenB,
-                            parseFloat(attr.value.replace(attrDenom, '')),
-                            attrDenom,
-                            tokenB.display
-                          ) || '0'
-                        );
-                      }
-                    }
-                  }
-                });
+              // find and process each dex NewDeposit message created by this user
+              if (
+                event.type === 'message' &&
+                event.attributes.find(
+                  ({ key, value }) => key === 'module' && value === 'dex'
+                ) &&
+                event.attributes.find(
+                  ({ key, value }) => key === 'action' && value === 'NewDeposit'
+                ) &&
+                event.attributes.find(
+                  ({ key, value }) => key === 'sender' && value === web3.address
+                )
+              ) {
+                // collect into more usable format for parsing
+                const attributes = event.attributes.reduce(
+                  (acc, { key, value }) => ({ ...acc, [key]: value }),
+                  {}
+                ) as {
+                  TickIndex: string;
+                  FeeIndex: string;
+                  Token0: string;
+                  Token1: string;
+                  OldReserves0: string;
+                  OldReserves1: string;
+                  NewReserves0: string;
+                  NewReserves1: string;
+                };
+
+                // accumulate share values
+                // ('NewReserves' is the difference between previous and next share value)
+                const shareIncrease0 = new BigNumber(
+                  attributes['NewReserves0']
+                );
+                const shareIncrease1 = new BigNumber(
+                  attributes['NewReserves1']
+                );
+                if (
+                  tokenA.address === attributes['Token0'] &&
+                  tokenB.address === attributes['Token1']
+                ) {
+                  acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease0);
+                  acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease1);
+                } else if (
+                  tokenA.address === attributes['Token1'] &&
+                  tokenB.address === attributes['Token0']
+                ) {
+                  acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease1);
+                  acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease0);
+                }
               }
               return acc;
             },
