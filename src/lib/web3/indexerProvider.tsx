@@ -166,21 +166,26 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
       };
 
       feeTypes.forEach(({ fee }, feeIndex) => {
-        result[pairId].ticks.push({
-          tickIndex: new BigNumber(tickIndex || 0),
-          // do no use BigNumber.pow here, it is slow enough to make the browser
-          // unresponsive for a minute on first page load.
-          price: new BigNumber(Math.pow(1.0001, Number(tickIndex) || 0)),
-          feeIndex: new BigNumber(feeIndex),
-          fee: new BigNumber(fee || 0),
-          totalShares: new BigNumber(
-            tickData.reserve0AndShares?.[feeIndex].totalShares || 0
-          ),
-          reserve0: new BigNumber(
-            tickData.reserve0AndShares?.[feeIndex].reserve0 || 0
-          ),
-          reserve1: new BigNumber(tickData.reserve1?.[feeIndex] || 0),
-        });
+        // add non-zero reserves to saved tick map state
+        // note: this makes empty but initialized pools invisible to the front end
+        // we may want to use these in the future to help users find cheaper ticks
+        if (Number(tickData.reserve0AndShares?.[feeIndex].totalShares)) {
+          result[pairId].ticks.push({
+            tickIndex: new BigNumber(tickIndex || 0),
+            // do no use BigNumber.pow here, it is slow enough to make the browser
+            // unresponsive for a minute on first page load.
+            price: new BigNumber(Math.pow(1.0001, Number(tickIndex) || 0)),
+            feeIndex: new BigNumber(feeIndex),
+            fee: new BigNumber(fee || 0),
+            totalShares: new BigNumber(
+              tickData.reserve0AndShares?.[feeIndex].totalShares || 0
+            ),
+            reserve0: new BigNumber(
+              tickData.reserve0AndShares?.[feeIndex].reserve0 || 0
+            ),
+            reserve1: new BigNumber(tickData.reserve1?.[feeIndex] || 0),
+          });
+        }
       });
     }
     return result;
