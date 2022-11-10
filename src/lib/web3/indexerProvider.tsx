@@ -150,7 +150,9 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
       feeTypes.forEach(({ fee }, feeIndex) => {
         result[pairId].ticks.push({
           tickIndex: new BigNumber(tickIndex || 0),
-          price: new BigNumber(1.0001).pow(tickIndex || 0),
+          // do no use BigNumber.pow here, it is slow enough to make the browser
+          // unresponsive for a minute on first page load.
+          price: new BigNumber(Math.pow(1.0001, Number(tickIndex) || 0)),
           feeIndex: new BigNumber(feeIndex),
           fee: new BigNumber(fee || 0),
           totalShares: new BigNumber(
