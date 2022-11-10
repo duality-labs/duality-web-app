@@ -224,6 +224,7 @@ export function useDeposit(): [
             }
           );
 
+          // check no shares exception
           if (receivedTokenA.isZero() && receivedTokenB.isZero()) {
             const error: Error & { response?: DeliverTxResponse } = new Error(
               'No new shares received'
@@ -236,13 +237,32 @@ export function useDeposit(): [
                 'The transaction was successful but no new shares were created',
             });
           }
+          // set success
+          else if (
+            receivedTokenA.isGreaterThanOrEqualTo(0) &&
+            receivedTokenB.isGreaterThanOrEqualTo(0)
+          ) {
+            // set new information
+            setData({
+              gasUsed: gasUsed.toString(),
+              receivedTokenA: receivedTokenA.toFixed(),
+              receivedTokenB: receivedTokenB.toFixed(),
+            });
+          }
+          // catch other exceptions
+          else {
+            const error: Error & { response?: DeliverTxResponse } = new Error(
+              'Deposit issue'
+            );
+            error.response = res;
+            checkMsgErrorToast(error, {
+              id,
+              title: 'An unexpected error occured',
+              description:
+                'The transaction was successful but we could not determine the number of new shares created',
+            });
+          }
 
-          // set new information
-          setData({
-            gasUsed: gasUsed.toString(),
-            receivedTokenA: receivedTokenA.toFixed(),
-            receivedTokenB: receivedTokenB.toFixed(),
-          });
           setIsValidating(false);
         } catch (e) {
           // catch transaction errors
