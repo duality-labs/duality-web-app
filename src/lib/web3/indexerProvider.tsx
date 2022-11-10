@@ -410,23 +410,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   }, [fetchShareData]);
 
   useEffect(() => {
-    if (address) {
-      const onTxBalanceUpdate = function () {
-        fetchBankData?.()?.then((data) => setBankData({ balances: data }));
-      };
-      subscriber.subscribeMessage(onTxBalanceUpdate, {
-        transfer: { recipient: address },
-      });
-      subscriber.subscribeMessage(onTxBalanceUpdate, {
-        transfer: { sender: address },
-      });
-      return () => {
-        subscriber.unsubscribeMessage(onTxBalanceUpdate);
-      };
-    }
-  }, [fetchBankData, address]);
-
-  useEffect(() => {
     const onDexUpdateMessage = function (event: MessageActionEvent) {
       const { Token0, Token1, NewReserves0, NewReserves1, Price, Fee } = event;
       if (
