@@ -388,6 +388,7 @@ export default function Pool() {
     rangeMax,
     tickCount,
     currentPriceFromTicks,
+    invertedTokenOrder,
     setUserTicks,
   ]);
 
@@ -601,6 +602,7 @@ export default function Pool() {
                 <LiquiditySelector
                   tokenA={tokenA}
                   tokenB={tokenB}
+                  invertedTokenOrder={invertedTokenOrder}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
                   ticks={ticks}
