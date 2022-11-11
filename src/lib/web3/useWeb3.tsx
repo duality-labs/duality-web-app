@@ -21,12 +21,12 @@ const restEndpoint = REACT_APP__REST_API || '';
 const bech32Prefix = REACT_APP__BECH_PREFIX || 'cosmos';
 
 const token = {
-  coinDenom: 'DUAL',
+  coinDenom: 'TOKEN',
   coinMinimalDenom: 'token',
   coinDecimals: 18,
 };
 const stake = {
-  coinDenom: 'D',
+  coinDenom: 'STAKE',
   coinMinimalDenom: 'stake',
   coinDecimals: 18,
 };
