@@ -21,6 +21,7 @@ export interface LiquiditySelectorProps {
   ticks: TickInfo[] | undefined;
   tokenA: Token;
   tokenB: Token;
+  invertedTokenOrder?: boolean;
   feeTier: number | undefined;
   tickSelected: number | undefined;
   setTickSelected: (index: number) => void;
@@ -87,6 +88,7 @@ export default function LiquiditySelector({
   ticks = [],
   tokenA,
   tokenB,
+  invertedTokenOrder = false,
   feeTier,
   tickSelected = -1,
   setTickSelected,
@@ -118,8 +120,12 @@ export default function LiquiditySelector({
   const feeTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
       .filter((tick): tick is TickInfo => filterTicksToFeeTier(tick, feeTier)) // filter to only fee tier ticks
-      .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
-  }, [ticks, feeTier]);
+      .map((tick) =>
+        !invertedTokenOrder
+          ? [tick.price, tick.reserve1, tick.reserve0]
+          : [tick.price, tick.reserve0, tick.reserve1]
+      );
+  }, [ticks, feeTier, invertedTokenOrder]);
 
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)

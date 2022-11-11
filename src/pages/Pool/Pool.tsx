@@ -532,6 +532,7 @@ export default function Pool() {
     rangeMax,
     tickCount,
     edgePrice,
+    invertedTokenOrder,
     setUserTicks,
   ]);
 
@@ -753,6 +754,7 @@ export default function Pool() {
                   tokenB={tokenB}
                   rangeMin={rangeMin}
                   rangeMax={rangeMax}
+                  invertedTokenOrder={invertedTokenOrder}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
                   ticks={ticks}
