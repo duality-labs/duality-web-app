@@ -18,7 +18,7 @@ export function router(
   state: PairMap,
   tokenA: string,
   tokenB: string,
-  value0: string
+  valueA: string
 ): RouterResult {
   let error: SwapError | false = false;
 
@@ -37,7 +37,7 @@ export function router(
     const sortedTicks = forward
       ? exactPair.ticks
       : exactPair.ticks.slice().reverse();
-    const amountIn = new BigNumber(value0);
+    const amountIn = new BigNumber(valueA);
 
     try {
       const amountOut = calculateOut({
@@ -81,11 +81,11 @@ export function router(
 
 export async function routerAsync(
   state: PairMap,
-  token0: string,
-  token1: string,
-  value0: string
+  tokenA: string,
+  tokenB: string,
+  valueA: string
 ): Promise<RouterResult> {
-  return await router(state, token0, token1, value0);
+  return await router(state, tokenA, tokenB, valueA);
 }
 
 /**
