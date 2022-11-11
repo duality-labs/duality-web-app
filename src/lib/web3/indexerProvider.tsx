@@ -599,10 +599,9 @@ export function useIndexerPairData(
   tokenB?: TokenAddress
 ) {
   const { data: pairs, isValidating, error } = useIndexerData();
-  const [token0, token1] = [tokenA, tokenB].sort();
   const pair =
-    pairs && token0 && token1
-      ? pairs[getPairID(token0, token1)] || pairs[getPairID(token1, token0)]
+    pairs && tokenA && tokenB
+      ? pairs[getPairID(tokenA, tokenB)] || pairs[getPairID(tokenB, tokenA)]
       : undefined;
   return {
     data: pair,
