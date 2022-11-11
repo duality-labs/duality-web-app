@@ -40,6 +40,7 @@ import { Tick, TickGroup } from '../../components/LiquiditySelector';
 
 import './MyLiquidity.scss';
 import { useEditLiquidity } from './useEditLiquidity';
+import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 interface ShareValue {
   share: DexShare;
@@ -175,8 +176,8 @@ export default function MyLiquidity() {
     const [total0, total1] = shareValues.reduce<[BigNumber, BigNumber]>(
       ([total0, total1], shareValue) => {
         return [
-          total0.plus(shareValue.userReserves0?.shiftedBy(12) || 0),
-          total1.plus(shareValue.userReserves1?.shiftedBy(12) || 0),
+          total0.plus(shareValue.userReserves0 || 0),
+          total1.plus(shareValue.userReserves1 || 0),
         ];
       },
       [new BigNumber(0), new BigNumber(0)]
@@ -250,8 +251,8 @@ export default function MyLiquidity() {
     );
   }
 
-  const allUserSharesValue = Object.values(shareValueMap || {})
-    .reduce((result, shareValues) => {
+  const allUserSharesValue = Object.values(shareValueMap || {}).reduce(
+    (result, shareValues) => {
       const sharePairValue = shareValues.reduce((result2, shareValue) => {
         if (shareValue.userReserves0?.isGreaterThan(0)) {
           const token0Index = allUserTokensList.indexOf(shareValue.token0);
@@ -272,24 +273,24 @@ export default function MyLiquidity() {
         return result2;
       }, new BigNumber(0));
       return result.plus(sharePairValue);
-    }, new BigNumber(0))
-    .shiftedBy(12);
+    },
+    new BigNumber(0)
+  );
 
-  const allUserBankValue = (balances || [])
-    .reduce((result, { amount, denom }) => {
+  const allUserBankValue = (balances || []).reduce(
+    (result, { amount, denom }) => {
       const tokenIndex = allUserTokensList.findIndex(matchTokenDenom(denom));
       const token = allUserTokensList[tokenIndex];
-      const tokenExponent = token.denom_units.find(
-        (unit) => unit.denom === denom
-      )?.exponent;
-      const tokenAmount = new BigNumber(10)
-        .exponentiatedBy(tokenExponent || 0)
-        .multipliedBy(amount);
+      const tokenAmount =
+        getAmountInDenom(token, amount, denom, token.display) || '0';
       const tokenPrice = allUserTokenPrices[tokenIndex];
-      const tokenValue = tokenAmount.multipliedBy(tokenPrice || 0);
+      const tokenValue = new BigNumber(tokenAmount).multipliedBy(
+        tokenPrice || 0
+      );
       return result.plus(tokenValue);
-    }, new BigNumber(0))
-    .shiftedBy(-6);
+    },
+    new BigNumber(0)
+  );
 
   // show loken list cards
   return (
@@ -384,8 +385,8 @@ function LiquidityDistributionCard({
     return shares.reduce<[BigNumber, BigNumber]>(
       ([total0, total1], shareValue) => {
         return [
-          total0.plus(shareValue.userReserves0?.shiftedBy(12) || 0),
-          total1.plus(shareValue.userReserves1?.shiftedBy(12) || 0),
+          total0.plus(shareValue.userReserves0 || 0),
+          total1.plus(shareValue.userReserves1 || 0),
         ];
       },
       [new BigNumber(0), new BigNumber(0)]
@@ -522,9 +523,7 @@ function LiquidityDistributionCard({
       );
 
       // constrain the diff values to the users available shares
-      const [totalAShareValue, totalBShareValue] = totalShareValues.map(
-        (value) => value.shiftedBy(-12)
-      );
+      const [totalAShareValue, totalBShareValue] = totalShareValues;
       const cappedDiffAValue = totalAShareValue.isLessThan(diffAValue)
         ? totalAShareValue
         : diffAValue;
@@ -880,8 +879,8 @@ function PositionCard({
     const [total0, total1] = shareValues.reduce<[BigNumber, BigNumber]>(
       ([total0, total1], shareValue) => {
         return [
-          total0.plus(shareValue.userReserves0?.shiftedBy(12) || 0),
-          total1.plus(shareValue.userReserves1?.shiftedBy(12) || 0),
+          total0.plus(shareValue.userReserves0 || 0),
+          total1.plus(shareValue.userReserves1 || 0),
         ];
       },
       [new BigNumber(0), new BigNumber(0)]
@@ -986,13 +985,13 @@ function getTickDiffCumulativeValues(
     editingType !== 'redistribute'
       ? new BigNumber(
           editingType === 'remove' ? `-${tokenAValueString}` : tokenAValueString
-        ).shiftedBy(-12)
+        )
       : new BigNumber(0);
   const tokenBValue =
     editingType !== 'redistribute'
       ? new BigNumber(
           editingType === 'remove' ? `-${tokenBValueString}` : tokenBValueString
-        ).shiftedBy(-12)
+        )
       : new BigNumber(0);
 
   return getTickDiffs(newTicks, oldTicks).reduce(
