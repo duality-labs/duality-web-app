@@ -1,5 +1,6 @@
 import {
   getPairID,
+  hasMatchingPairOfOrder,
   PairMap,
   TickInfo,
 } from '../../../lib/web3/indexerProvider';
@@ -23,17 +24,19 @@ export function router(
 
   // find pair by searching both directions in the current state
   // the pairs are sorted by the backend not here
-  const reverse = state[getPairID(tokenA, tokenB)];
-  const forward = state[getPairID(tokenB, tokenA)];
-  const exactPair = forward || reverse;
-  if (!exactPair) {
+  const [forward, reverse] = hasMatchingPairOfOrder(state, tokenA, tokenB);
+
+  if (!forward && !reverse) {
     error = new Error('There are no ticks for the supplied token pair');
     error.insufficientLiquidity = true;
     throw error;
   } else {
+    const exactPair = forward
+      ? state[getPairID(tokenA, tokenB)]
+      : state[getPairID(tokenB, tokenA)];
     const sortedTicks = forward
-      ? forward.ticks
-      : reverse.ticks.slice().reverse();
+      ? exactPair.ticks
+      : exactPair.ticks.slice().reverse();
     const amountIn = new BigNumber(value0);
 
     try {
