@@ -151,7 +151,10 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
         // add non-zero reserves to saved tick map state
         // note: this makes empty but initialized pools invisible to the front end
         // we may want to use these in the future to help users find cheaper ticks
-        if (Number(tickData.reserve0AndShares?.[feeIndex].totalShares)) {
+        if (
+          Number(tickData.reserve0AndShares?.[feeIndex].reserve0) ||
+          Number(tickData.reserve1?.[feeIndex])
+        ) {
           result[pairId].ticks.push({
             tickIndex: new BigNumber(tickIndex || 0),
             // do no use BigNumber.pow here, it is slow enough to make the browser
@@ -159,6 +162,8 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
             price: new BigNumber(Math.pow(1.0001, Number(tickIndex) || 0)),
             feeIndex: new BigNumber(feeIndex),
             fee: new BigNumber(fee || 0),
+            // todo: don't read total shares here, it makes little sense
+            // possibly we should precompute these values into cumulative values
             totalShares: new BigNumber(
               tickData.reserve0AndShares?.[feeIndex].totalShares || 0
             ),
