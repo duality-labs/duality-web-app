@@ -62,21 +62,21 @@ export function useDeposit(): [
         }
         // check all user ticks and filter to non-zero ticks
         const filteredUserTicks = userTicks.filter(
-          ([price, amount0, amount1]) => {
+          ([price, amountA, amountB]) => {
             if (!price || price.isLessThan(0)) {
               throw new Error('Price not set');
             }
             if (
-              !amount0 ||
-              !amount1 ||
-              amount0.isNaN() ||
-              amount1.isNaN() ||
-              amount0.isLessThan(0) ||
-              amount1.isLessThan(0)
+              !amountA ||
+              !amountB ||
+              amountA.isNaN() ||
+              amountB.isNaN() ||
+              amountA.isLessThan(0) ||
+              amountB.isLessThan(0)
             ) {
               throw new Error('Amounts not set');
             }
-            return amount0.isGreaterThan(0) || amount1.isGreaterThan(0);
+            return amountA.isGreaterThan(0) || amountB.isGreaterThan(0);
           }
         );
 
@@ -111,7 +111,7 @@ export function useDeposit(): [
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
           const res = await client.signAndBroadcast(
-            filteredUserTicks.flatMap(([price, amount0, amount1]) =>
+            filteredUserTicks.flatMap(([price, amountA, amountB]) =>
               tokenA.address && tokenB.address
                 ? client.msgDeposit({
                     creator: web3Address,
@@ -125,7 +125,7 @@ export function useDeposit(): [
                     amountsA: [
                       getAmountInDenom(
                         tokenA,
-                        amount0,
+                        amountA,
                         tokenA.display,
                         tokenA.display
                       ) || '0',
@@ -133,7 +133,7 @@ export function useDeposit(): [
                     amountsB: [
                       getAmountInDenom(
                         tokenB,
-                        amount1,
+                        amountB,
                         tokenB.display,
                         tokenB.display
                       ) || '0',

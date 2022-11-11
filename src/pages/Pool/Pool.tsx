@@ -160,22 +160,22 @@ export default function Pool() {
     React.Dispatch<React.SetStateAction<TickGroup>>
   >((userTicksOrCallback) => {
     function restrictTickPrices(tick: Tick): Tick {
-      const [price, token0Value, token1Value] = tick;
+      const [price, tokenAValue, tokenBValue] = tick;
       // restrict values to equal to or greater than 0
-      const newToken0Value = token0Value.isGreaterThan(0)
-        ? token0Value
+      const newTokenAValue = tokenAValue.isGreaterThan(0)
+        ? tokenAValue
         : new BigNumber(0);
-      const newToken1Value = token1Value.isGreaterThan(0)
-        ? token1Value
+      const newTokenBValue = tokenBValue.isGreaterThan(0)
+        ? tokenBValue
         : new BigNumber(0);
 
       if (price.isLessThan(priceMin)) {
-        return [new BigNumber(priceMin), newToken0Value, newToken1Value];
+        return [new BigNumber(priceMin), newTokenAValue, newTokenBValue];
       }
       if (price.isGreaterThan(priceMax)) {
-        return [new BigNumber(priceMax), newToken0Value, newToken1Value];
+        return [new BigNumber(priceMax), newTokenAValue, newTokenBValue];
       }
-      return [price, newToken0Value, newToken1Value];
+      return [price, newTokenAValue, newTokenBValue];
     }
     if (typeof userTicksOrCallback === 'function') {
       const userTicksCallback = userTicksOrCallback;
