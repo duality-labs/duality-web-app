@@ -393,6 +393,7 @@ export default function Pool() {
     rangeMax,
     tickCount,
     currentPriceFromTicks,
+    invertedTokenOrder,
     setUserTicks,
   ]);
 
@@ -604,6 +605,7 @@ export default function Pool() {
               </div>
               <div className="flex row chart-area">
                 <LiquiditySelector
+                  invertedTokenOrder={invertedTokenOrder}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
                   ticks={ticks}
