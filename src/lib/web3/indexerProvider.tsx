@@ -166,6 +166,24 @@ export function hasInvertedOrder(
   return getPairID(tokenA, tokenB) !== pairID;
 }
 
+/**
+ * Checks given token pair against stored data to determine
+ * if the current TokenA/TokenB pair exists and is in the same order as Token0/1
+ * @param pairMap pair map of stored tokens
+ * @param tokenA address of token A
+ * @param tokenB address of token B
+ * @returns [isSorted, isInverseSorted] array for determining sort order (both may be `false` if pair is not found)
+ */
+export function hasMatchingPairOfOrder(
+  pairMap: PairMap,
+  tokenA: string,
+  tokenB: string
+): [boolean, boolean] {
+  const forward = !!pairMap?.[getPairID(tokenA, tokenB)];
+  const reverse = !!pairMap?.[getPairID(tokenB, tokenA)];
+  return [forward, reverse];
+}
+
 function transformData(ticks: Array<DexTickMap>): PairMap {
   return ticks.reduce<PairMap>(function (
     result,
@@ -495,10 +513,13 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       } else {
         setError(undefined);
       }
-      setIndexerData((oldData) => {
+      setIndexerData((oldData = {}) => {
         // NewSwap is movement of existing ticks so the pair should already exist
-        const forward = !!oldData?.[getPairID(TokenIn, TokenOut)];
-        const reverse = !!oldData?.[getPairID(TokenOut, TokenIn)];
+        const [forward, reverse] = hasMatchingPairOfOrder(
+          oldData,
+          TokenIn,
+          TokenOut
+        );
         if (forward || reverse) {
           return addTickData(oldData, {
             Token0: forward ? TokenIn : TokenOut,
