@@ -112,42 +112,40 @@ export function useDeposit(): [
           );
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
-          const res = await client.signAndBroadcast(
-            filteredUserTicks.flatMap(([price, amountA, amountB]) =>
-              tokenA.address && tokenB.address
-                ? client.msgDeposit({
-                    creator: web3Address,
-                    tokenA: tokenA.address,
-                    tokenB: tokenB.address,
-                    receiver: web3Address,
-                    // tick indexes must be in the form of "token0/1 index"
-                    // not "tokenA/B" index, so inverted order indexes should be reversed
-                    tickIndexes: [
-                      Math.round(
-                        Math.log(price.toNumber()) / Math.log(1.0001)
-                      ) * (invertedOrder ? -1 : 1),
-                    ],
-                    feeIndexes: [feeIndex],
-                    amountsA: [
-                      getAmountInDenom(
-                        tokenA,
-                        amountA,
-                        tokenA.display,
-                        tokenA.display
-                      ) || '0',
-                    ],
-                    amountsB: [
-                      getAmountInDenom(
-                        tokenB,
-                        amountB,
-                        tokenB.display,
-                        tokenB.display
-                      ) || '0',
-                    ],
-                  })
-                : []
-            )
-          );
+          const res = await client.signAndBroadcast([
+            client.msgDeposit({
+              creator: web3Address,
+              tokenA: tokenA.address,
+              tokenB: tokenB.address,
+              receiver: web3Address,
+              // tick indexes must be in the form of "token0/1 index"
+              // not "tokenA/B" index, so inverted order indexes should be reversed
+              tickIndexes: filteredUserTicks.map(
+                ([price]) =>
+                  Math.round(Math.log(price.toNumber()) / Math.log(1.0001)) *
+                  (invertedOrder ? -1 : 1)
+              ),
+              feeIndexes: filteredUserTicks.map(() => feeIndex),
+              amountsA: filteredUserTicks.map(
+                ([, amountA]) =>
+                  getAmountInDenom(
+                    tokenA,
+                    amountA,
+                    tokenA.display,
+                    tokenA.display
+                  ) || '0'
+              ),
+              amountsB: filteredUserTicks.map(
+                ([, , amountB]) =>
+                  getAmountInDenom(
+                    tokenB,
+                    amountB,
+                    tokenB.display,
+                    tokenB.display
+                  ) || '0'
+              ),
+            }),
+          ]);
 
           // check for response
           if (!res) {
