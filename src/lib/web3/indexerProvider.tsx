@@ -198,34 +198,27 @@ function addTickData(
   {
     Token0,
     Token1,
-    Price,
-    Fee,
+    TickIndex,
+    FeeIndex,
+    SharesMinted,
     NewReserves0,
     NewReserves1,
   }: { [eventKey: string]: string }
 ): PairMap {
   const pairID = getPairID(Token0, Token1);
   const oldPairInfo = oldData[pairID];
-  const price = new BigNumber(Price);
-  const tickIndex = Math.round(
-    Math.pow(1.0001, new BigNumber(1).dividedBy(price).toNumber())
-  );
-  const feeIndex = feeTypes.findIndex((feeType) => fee.isEqualTo(feeType.fee));
-
-  const fee = new BigNumber(Fee);
-  const reserve0 = new BigNumber(NewReserves0);
-  const reserve1 = new BigNumber(NewReserves1);
   const newTick: TickInfo = {
-    price,
-    tickIndex: new BigNumber(tickIndex),
-    fee,
-    feeIndex: new BigNumber(feeIndex),
-    reserve0,
-    reserve1,
-    // calculate new total
-    // TODO: the back end may provide the totalShares property in the future
-    // so it should be used as the source of truth and not recalculated here
-    totalShares: reserve0.plus(reserve1.multipliedBy(price)),
+    tickIndex: new BigNumber(TickIndex),
+    // compute price from TickIndex
+    price: new BigNumber(Math.pow(1.0001, Number(TickIndex))),
+    feeIndex: new BigNumber(FeeIndex),
+    // compute fee from FeeIndex
+    fee: new BigNumber(feeTypes[Number(FeeIndex)].fee),
+    reserve0: new BigNumber(NewReserves0),
+    reserve1: new BigNumber(NewReserves1),
+    totalShares: new BigNumber(SharesMinted),
+    // todo: if the tick already exists then this data should be combined,
+    // instead of creating a new tick
   };
 
   // note: the ticks structure isn't strictly needed as the pool arrays
@@ -233,7 +226,7 @@ function addTickData(
   // The ticks structure is easier to reason about than the pool arrays.
   // This could be refactored for computation or storage optimisation later.
   // see: https://github.com/duality-labz/duality-web-app/pull/102#discussion_r938174401
-  const ticks = [...oldPairInfo?.ticks, newTick];
+  const ticks = [...(oldPairInfo?.ticks || []), newTick];
   return {
     ...oldData,
     [pairID]: {
@@ -411,14 +404,22 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const onDexUpdateMessage = function (event: MessageActionEvent) {
-      const { Token0, Token1, NewReserves0, NewReserves1, Price, Fee } = event;
+      const Token0 = event['message.Token0'];
+      const Token1 = event['message.Token1'];
+      const TickIndex = event['message.TickIndex'];
+      const FeeIndex = event['message.FeeIndex'];
+      const NewReserves0 = event['message.NewReserves0'];
+      const NewReserves1 = event['message.NewReserves1'];
+      const SharesMinted = event['message.SharesMinted'];
+
       if (
         !Token0 ||
         !Token1 ||
-        !Price ||
+        !TickIndex ||
+        !FeeIndex ||
         !NewReserves0 ||
         !NewReserves1 ||
-        !Fee
+        !SharesMinted
       ) {
         setError('Invalid event response from server');
         return;
@@ -429,8 +430,9 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         return addTickData(oldData, {
           Token0,
           Token1,
-          Price,
-          Fee,
+          TickIndex,
+          FeeIndex,
+          SharesMinted,
           NewReserves0,
           NewReserves1,
         });
