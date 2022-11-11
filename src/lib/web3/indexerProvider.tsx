@@ -493,6 +493,9 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             NewReserves0: NewReserve0,
             NewReserves1: NewReserve1,
           });
+        } else {
+          // there is no existing pair for these tokens
+          // the app state is either out-of-date or this is the start of a new pair
         }
         return oldData;
       });
