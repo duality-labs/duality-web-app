@@ -33,7 +33,8 @@ export function useDeposit(): [
     tokenA: Token | undefined,
     tokenB: Token | undefined,
     fee: BigNumber | undefined,
-    userTicks: TickGroup
+    userTicks: TickGroup,
+    invertedOrder?: boolean
   ) => Promise<void>
 ] {
   const [data, setData] = useState<SendDepositResponse | undefined>(undefined);
@@ -46,7 +47,8 @@ export function useDeposit(): [
       tokenA: Token | undefined,
       tokenB: Token | undefined,
       fee: BigNumber | undefined,
-      userTicks: TickGroup
+      userTicks: TickGroup,
+      invertedOrder = false
     ) {
       try {
         // check for correct inputs
@@ -118,8 +120,12 @@ export function useDeposit(): [
                     tokenA: tokenA.address,
                     tokenB: tokenB.address,
                     receiver: web3Address,
+                    // tick indexes must be in the form of "token0/1 index"
+                    // not "tokenA/B" index, so inverted order indexes should be reversed
                     tickIndexes: [
-                      Math.round(Math.log(price.toNumber()) / Math.log(1.0001)),
+                      Math.round(
+                        Math.log(price.toNumber()) / Math.log(1.0001)
+                      ) * (invertedOrder ? -1 : 1),
                     ],
                     feeIndexes: [feeIndex],
                     amountsA: [

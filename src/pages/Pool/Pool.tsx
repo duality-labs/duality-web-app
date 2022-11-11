@@ -232,11 +232,20 @@ export default function Pool() {
           // filter to non-zero ticks
           userTicks.filter((userTicks) => {
             return !userTicks[1].isZero() || !userTicks[2].isZero();
-          })
+          }),
+          invertedTokenOrder
         );
       }
     },
-    [valuesValid, tokenA, tokenB, feeType, userTicks, sendDepositRequest]
+    [
+      valuesValid,
+      tokenA,
+      tokenB,
+      feeType,
+      userTicks,
+      sendDepositRequest,
+      invertedTokenOrder,
+    ]
   );
 
   const [tickSelected, setTickSelected] = useState(-1);
