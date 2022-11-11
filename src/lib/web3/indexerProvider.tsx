@@ -133,6 +133,21 @@ export function getPairID(token0: TokenAddress, token1: TokenAddress) {
   return `${token0}/${token1}`;
 }
 
+/**
+ * Check if the current TokenA/TokenB pair is in the same order as Token0/1
+ * @param pairID pair id for tokens
+ * @param tokenA address of token A
+ * @param tokenB address of token B
+ * @returns bool for inverted order
+ */
+export function hasInvertedOrder(
+  pairID: string,
+  tokenA: string,
+  tokenB: string
+): boolean {
+  return getPairID(tokenA, tokenB) !== pairID;
+}
+
 function transformData(ticks: Array<DexTickMap>): PairMap {
   return ticks.reduce<PairMap>(function (
     result,
