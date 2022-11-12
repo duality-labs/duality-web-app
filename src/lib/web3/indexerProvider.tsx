@@ -435,6 +435,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   }, [fetchShareData]);
 
   useEffect(() => {
+    let lastRequested = 0;
     const onDexUpdateMessage = function (event: MessageActionEvent) {
       const Token0 = event['message.Token0'];
       const Token1 = event['message.Token1'];
@@ -458,17 +459,30 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       } else {
         setError(undefined);
       }
-      setIndexerData((oldData) => {
-        return addTickData(oldData, {
-          Token0,
-          Token1,
-          TickIndex,
-          FeeIndex,
-          SharesMinted,
-          NewReserves0,
-          NewReserves1,
-        });
-      });
+      // update the indexer data (not a high priority, each block that contains changes to listened pairs should update the indexer state)
+      const now = Date.now();
+      if (now - lastRequested > 1000) {
+        lastRequested = Date.now();
+        getFullData()
+          .then(function (res) {
+            setIndexerData(res);
+          })
+          .catch(function (err: Error) {
+            setError(err?.message ?? 'Unknown Error');
+          });
+      }
+      // todo: do a partial update of indexer data
+      // setIndexerData((oldData) => {
+      //   return addTickData(oldData, {
+      //     Token0,
+      //     Token1,
+      //     TickIndex,
+      //     FeeIndex,
+      //     SharesMinted,
+      //     NewReserves0,
+      //     NewReserves1,
+      //   });
+      // });
     };
     subscriber.subscribeMessage(onDexUpdateMessage, {
       message: { action: 'NewDeposit' },
