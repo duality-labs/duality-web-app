@@ -401,6 +401,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let lastRequested = 0;
     const onDexUpdateMessage = function (event: MessageActionEvent) {
+      const Creator = event['message.Creator'];
       const Token0 = event['message.Token0'];
       const Token1 = event['message.Token1'];
       const TickIndex = event['message.TickIndex'];
@@ -408,21 +409,54 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       const NewReserves0 = event['message.NewReserves0'];
       const NewReserves1 = event['message.NewReserves1'];
       const SharesMinted = event['message.SharesMinted'];
+      const SharesRemoved = event['message.SharesRemoved'];
 
       if (
+        !Creator ||
         !Token0 ||
         !Token1 ||
         !TickIndex ||
         !FeeIndex ||
         !NewReserves0 ||
-        !NewReserves1 ||
-        !SharesMinted
+        !NewReserves1
       ) {
         setError('Invalid event response from server');
         return;
       } else {
         setError(undefined);
       }
+      // update user's share state
+      setShareData((state) => {
+        if (!state) return state;
+        const { shares = [] } = state || {};
+        // upsert shares
+        const data = shares.slice();
+        const shareFoundIndex = shares.findIndex(
+          (share) =>
+            share.tickIndex === TickIndex && share.feeIndex === FeeIndex
+        );
+        const shareFound = shares[shareFoundIndex];
+        const newShare = {
+          ...shareFound,
+          address: Creator,
+          feeIndex: FeeIndex,
+          pairId: getPairID(Token0, Token1),
+          tickIndex: TickIndex,
+          sharesOwned: new BigNumber(shareFound?.sharesOwned || '0')
+            .plus(SharesMinted || '0')
+            .minus(SharesRemoved || '0')
+            .toFixed(),
+        };
+        if (shareFound) {
+          // update share
+          data.splice(shareFoundIndex, 1, newShare);
+        } else {
+          // add share
+          data.push(newShare);
+        }
+        return { shares: data };
+      });
+
       // update the indexer data (not a high priority, each block that contains changes to listened pairs should update the indexer state)
       const now = Date.now();
       if (now - lastRequested > 1000) {
