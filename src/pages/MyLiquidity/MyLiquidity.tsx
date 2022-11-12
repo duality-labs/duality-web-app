@@ -19,9 +19,10 @@ import {
   TickInfo,
   useIndexerPairData,
   getBalance,
+  getPairID,
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { feeTypes } from '../../lib/web3/utils/fees';
+import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { useHasPriceData, useSimplePrice } from '../../lib/tokenPrices';
 
 import {
@@ -52,7 +53,9 @@ interface ShareValue {
   userReserves1?: BigNumber;
 }
 interface TickShareValue extends ShareValue {
-  tick: TickInfo;
+  feeIndex: number;
+  tick0: TickInfo;
+  tick1: TickInfo;
 }
 interface EditedTickShareValue extends TickShareValue {
   tickDiff0: BigNumber;
@@ -72,6 +75,20 @@ function matchTokenDenom(denom: string) {
     !!token.denom_units.find((unit) => unit.denom === denom);
 }
 
+// this is a function that exists in the backend
+// but is not easily queried from here
+// perhaps the backend could return these values on each Share object
+function getVirtualTickIndexes(
+  tickIndex: string | undefined,
+  feeIndex: string | undefined
+): [number, number] | [] {
+  const feePoints = feeTypes[Number(feeIndex)].fee * 10000;
+  const middleIndex = Number(tickIndex);
+  return feePoints && !isNaN(middleIndex)
+    ? [middleIndex + feePoints, middleIndex - feePoints]
+    : [];
+}
+
 export default function MyLiquidity() {
   const { wallet, address } = useWeb3();
   const { data: balances, isValidating } = useBankBalances();
@@ -85,7 +102,9 @@ export default function MyLiquidity() {
   const shareValueMap = useMemo(() => {
     if (shares && indexer) {
       return shares.reduce<TickShareValueMap>((result, share) => {
-        const { pairId = '', tickIndex } = share;
+        const { pairId = '', tickIndex, feeIndex, sharesOwned } = share;
+        // skip this share object if there are no shares owned
+        if (feeIndex === undefined || !(Number(sharesOwned) > 0)) return result;
         const [shareToken0, shareToken1] = pairId.split('/');
         const token0 = dualityTokens.find(
           (token) => token.address === shareToken0
@@ -93,24 +112,47 @@ export default function MyLiquidity() {
         const token1 = dualityTokens.find(
           (token) => token.address === shareToken1
         );
-        if (token0 && token1) {
+        const fee = feeTypes[Number(feeIndex)].fee;
+        if (token0 && token1 && fee) {
           const extendedShare: ShareValue = { share, token0, token1 };
-          const pairID = `${shareToken0}/${shareToken1}`;
-          const tick = indexer[pairID]?.ticks?.[Number(tickIndex)] || undefined;
+          const ticks = indexer[pairId]?.ticks || [];
+          const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
+            tickIndex,
+            feeIndex
+          );
+          if (tickIndex0 === undefined || tickIndex1 === undefined) {
+            return result;
+          }
+          const tick0 = ticks.find(
+            (tick) =>
+              tick.feeIndex.isEqualTo(feeIndex) &&
+              tick.tickIndex.isEqualTo(tickIndex0)
+          );
+          const tick1 = ticks.find(
+            (tick) =>
+              tick.feeIndex.isEqualTo(feeIndex) &&
+              tick.tickIndex.isEqualTo(tickIndex1)
+          );
+          const totalShares = tick0?.totalShares;
           // add optional tick data from indexer
-          if (tick && tick.totalShares.isGreaterThan(0)) {
-            const shareFraction = new BigNumber(
-              share.sharesOwned ?? 0
-            ).dividedBy(tick.totalShares);
+          if (tick0 && tick1 && totalShares) {
+            const shareFraction = new BigNumber(sharesOwned ?? 0).dividedBy(
+              totalShares
+            );
             extendedShare.userReserves0 = shareFraction.multipliedBy(
-              tick.reserve0
+              tick0.reserve0
             );
             extendedShare.userReserves1 = shareFraction.multipliedBy(
-              tick.reserve1
+              tick1.reserve1
             );
             // add TickShareValue to TickShareValueMap
-            result[pairID] = result[pairID] || [];
-            result[pairID].push({ ...extendedShare, tick });
+            result[pairId] = result[pairId] || [];
+            result[pairId].push({
+              ...extendedShare,
+              tick0,
+              tick1,
+              feeIndex: Number(feeIndex),
+            });
           }
         }
         return result;
@@ -169,12 +211,11 @@ export default function MyLiquidity() {
   }
 
   // show detail page
-  if (selectedTokens) {
-    const [token0, token1] = selectedTokens;
-
+  const [token0, token1] = selectedTokens || [];
+  if (token0 && token0.address && token1 && token1.address) {
     // get always up to date share data
     const shareValues =
-      shareValueMap?.[`${token0.address}-${token1.address}`] || [];
+      shareValueMap?.[getPairID(token0.address, token1.address)] || [];
 
     const [total0, total1] = shareValues.reduce<[BigNumber, BigNumber]>(
       ([total0, total1], shareValue) => {
@@ -449,25 +490,26 @@ function LiquidityDistributionCard({
     return shares.sort((a, b) => {
       // ascending by fee tier and then ascending by price
       return (
-        a.tick.fee.comparedTo(b.tick.fee) ||
+        a.feeIndex - b.feeIndex ||
         (invertedTokenOrder
-          ? b.tick.price.comparedTo(a.tick.price)
-          : a.tick.price.comparedTo(b.tick.price))
+          ? b.tick1.price.comparedTo(a.tick1.price)
+          : a.tick0.price.comparedTo(b.tick0.price))
       );
     });
   }, [shares, invertedTokenOrder]);
 
   const userTicks = useMemo<Array<Tick>>(() => {
-    return sortedShares.flatMap(({ tick, userReserves0, userReserves1 }) => {
+    return sortedShares.flatMap((share) => {
+      const { tick0, tick1, userReserves0, userReserves1 } = share;
       if (userReserves0 && userReserves1) {
         return [
           invertedTokenOrder
             ? [
-                new BigNumber(1).dividedBy(tick.price || new BigNumber(1)),
+                new BigNumber(1).dividedBy(tick1.price || new BigNumber(1)),
                 userReserves1,
                 userReserves0,
               ]
-            : [tick.price || new BigNumber(0), userReserves0, userReserves1],
+            : [tick0.price || new BigNumber(0), userReserves0, userReserves1],
         ];
       } else {
         return [];
@@ -475,10 +517,9 @@ function LiquidityDistributionCard({
     });
   }, [sortedShares, invertedTokenOrder]);
 
-  const currentTick = userTicks[tickSelected];
-  const currentFeeType = feeTypes.find(
-    (feeType) => feeType.fee === sortedShares[tickSelected]?.tick.fee.toNumber()
-  );
+  const currentTick: Tick | undefined = userTicks[tickSelected];
+  const currentFeeType: FeeType | undefined =
+    feeTypes[sortedShares[tickSelected]?.feeIndex];
 
   const [editedUserTicks, setEditedUserTicks] = useState<Array<Tick>>(() =>
     userTicks.slice()
