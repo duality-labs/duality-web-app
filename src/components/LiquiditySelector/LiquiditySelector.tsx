@@ -908,7 +908,9 @@ function TicksGroup({
   );
 
   const tickPart = ticks
-    .filter((tick): tick is Tick => !!tick)
+    .filter(
+      (tick): tick is Tick => !!tick && !tick[1].isNaN() && !tick[2].isNaN()
+    )
     .map<[Tick, number]>((tick, index) => [tick, index])
     // sort by top to bottom: select ticks then shortest -> tallest ticks
     .sort(([a, aIndex], [b, bIndex]) => {
