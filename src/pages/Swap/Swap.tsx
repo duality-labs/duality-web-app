@@ -20,6 +20,7 @@ import { useHasPriceData } from '../../lib/tokenPrices';
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
+import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 import { cleanInput } from '../../components/TokenInputGroup/utils';
 
@@ -28,8 +29,6 @@ import './Swap.scss';
 type CardType = 'trade' | 'settings';
 type OrderType = 'market' | 'limit';
 
-const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
-const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
 const defaultSlippage = '0.5%';
 
 export default function Swap() {
@@ -87,22 +86,24 @@ export default function Swap() {
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
-      if (address && routerResult) {
+      if (address && routerResult && tokenA && tokenB) {
         // convert to swap request format
         const result = routerResult;
         // Cosmos requires tokens in integer format of smallest denomination
         // todo: add slippage tolerance setting into API request
         swapRequest({
-          amountIn: result.amountIn.toFixed(denomExponent),
+          amountIn:
+            getAmountInDenom(tokenA, result.amountIn, tokenA?.display, tokenA?.display) || '0',
           tokenIn: result.tokenIn,
           tokenOut: result.tokenOut,
           // TODO: add tolerance factor
-          minOut: result.amountOut.toFixed(denomExponent),
+          minOut:
+            getAmountInDenom(tokenB, result.amountOut, tokenB?.display, tokenB?.display) || '0',
           creator: address,
         });
       }
     },
-    [address, routerResult, swapRequest]
+    [address, routerResult, tokenA, tokenB, swapRequest]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
