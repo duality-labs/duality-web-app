@@ -386,10 +386,22 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     fetching: false,
     fetched: false,
   });
-  const fetchShareData = useMemo(() => {
-    if (address) {
-      return async () => {
-        if (REACT_APP__REST_API) {
+
+  // fetch new share data if we aren't already fetching
+  const updateShareData = useCallback(
+    (fetchStateCheck?: (fetchstate: FetchState) => boolean) => {
+      setFetchShareDataState((fetchState) => {
+        // check if already fetching (and other other passed in check)
+        if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
+          fetchShareData().then((data) => {
+            setShareData({ shares: data });
+          });
+        }
+        return fetchState;
+      });
+
+      async function fetchShareData() {
+        if (address && REACT_APP__REST_API) {
           const client = await queryClient({ addr: REACT_APP__REST_API });
           setFetchShareDataState(({ fetched }) => ({
             fetching: true,
@@ -429,26 +441,9 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         } else {
           throw new Error('Undefined rest api base URL');
         }
-      };
-    }
-  }, [address]);
-
-  // fetch new share data if we aren't already fetching
-  const updateShareData = useCallback(
-    (fetchStateCheck?: (fetchstate: FetchState) => boolean) => {
-      if (fetchShareData) {
-        setFetchShareDataState((fetchState) => {
-          // check if already fetching (and other other passed in check)
-          if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
-            fetchShareData().then((data) => {
-              setShareData({ shares: data });
-            });
-          }
-          return fetchState;
-        });
       }
     },
-    [fetchShareData]
+    [address]
   );
 
   // on start, update share data if it has not been fetched yet
