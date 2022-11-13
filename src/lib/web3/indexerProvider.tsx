@@ -220,51 +220,6 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
   {});
 }
 
-function addTickData(
-  oldData: PairMap = {},
-  {
-    Token0,
-    Token1,
-    TickIndex,
-    FeeIndex,
-    SharesMinted,
-    NewReserves0,
-    NewReserves1,
-  }: { [eventKey: string]: string }
-): PairMap {
-  const pairID = getPairID(Token0, Token1);
-  const oldPairInfo = oldData[pairID];
-  const newTick: TickInfo = {
-    tickIndex: new BigNumber(TickIndex),
-    // compute price from TickIndex
-    price: new BigNumber(Math.pow(1.0001, Number(TickIndex))),
-    feeIndex: new BigNumber(FeeIndex),
-    // compute fee from FeeIndex
-    fee: new BigNumber(feeTypes[Number(FeeIndex)].fee),
-    reserve0: new BigNumber(NewReserves0),
-    reserve1: new BigNumber(NewReserves1),
-    totalShares: new BigNumber(SharesMinted),
-    // todo: if the tick already exists then this data should be combined,
-    // instead of creating a new tick
-  };
-
-  // note: the ticks structure isn't strictly needed as the pool arrays
-  // may be calculated without it. We keep it for now for logic simplicity.
-  // The ticks structure is easier to reason about than the pool arrays.
-  // This could be refactored for computation or storage optimisation later.
-  // see: https://github.com/duality-labz/duality-web-app/pull/102#discussion_r938174401
-  const ticks = [...(oldPairInfo?.ticks || []), newTick];
-  return {
-    ...oldData,
-    [pairID]: {
-      ...oldPairInfo, // not needed, displayed for consistency
-      token0: Token0,
-      token1: Token1,
-      ticks,
-    },
-  };
-}
-
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [indexerData, setIndexerData] = useState<PairMap>();
   const [bankData, setBankData] = useState<UserBankBalance>();
@@ -505,18 +460,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             setError(err?.message ?? 'Unknown Error');
           });
       }
-      // todo: do a partial update of indexer data
-      // setIndexerData((oldData) => {
-      //   return addTickData(oldData, {
-      //     Token0,
-      //     Token1,
-      //     TickIndex,
-      //     FeeIndex,
-      //     SharesMinted,
-      //     NewReserves0,
-      //     NewReserves1,
-      //   });
-      // });
+      // todo: do a partial update of indexer data?
+      // see this commit for previous work done on this
     };
     subscriber.subscribeMessage(onDexUpdateMessage, {
       message: { action: 'NewDeposit' },
@@ -531,52 +476,48 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const onRouterUpdateMessage = function (event: MessageActionEvent) {
-      const {
-        TokenIn,
-        TokenOut,
-        NewReserve0,
-        NewReserve1,
-        PriceOfSwap,
-        FeeOfSwap,
-      } = event;
-      // skip NewSwap events that are not about individual swaps
-      // eg. the final NewSwap event of a MsgSwap action is the "overall" swap details
-      if (!PriceOfSwap) return;
+      const Creator = event['message.Creator'];
+      const Token0 = event['message.Token0'];
+      const Token1 = event['message.Token1'];
+      const TokenIn = event['message.TokenIn'];
+      const AmountIn = event['message.AmountIn'];
+      const AmountOut = event['message.AmountOut'];
+      const MinOut = event['message.MinOut'];
       if (
+        !Creator ||
         !TokenIn ||
-        !TokenOut ||
-        !PriceOfSwap ||
-        !FeeOfSwap ||
-        !NewReserve0 ||
-        !NewReserve1
+        !Token0 ||
+        !Token1 ||
+        !AmountIn ||
+        !AmountOut ||
+        !MinOut
       ) {
         setError('Invalid event response from server');
         return;
       } else {
         setError(undefined);
       }
-      setIndexerData((oldData = {}) => {
-        // NewSwap is movement of existing ticks so the pair should already exist
-        const [forward, reverse] = hasMatchingPairOfOrder(
-          oldData,
-          TokenIn,
-          TokenOut
-        );
-        if (forward || reverse) {
-          return addTickData(oldData, {
-            Token0: forward ? TokenIn : TokenOut,
-            Token1: forward ? TokenOut : TokenIn,
-            Price: PriceOfSwap,
-            Fee: FeeOfSwap,
-            NewReserves0: NewReserve0,
-            NewReserves1: NewReserve1,
-          });
-        } else {
-          // there is no existing pair for these tokens
-          // the app state is either out-of-date or this is the start of a new pair
-        }
-        return oldData;
-      });
+
+      const forward = TokenIn === Token0;
+      const reverse = TokenIn === Token1;
+      if (!forward && !reverse) {
+        setError('Unknown error occurred. Incorrect tokens');
+        return;
+      }
+
+      // todo: update something without refetching?
+      // may not be possible or helpful
+      // bank balance update will be caught already by the bank event watcher
+      // it's too complicated to update indexer state with the event detail's
+
+      // fetch new indexer data as the trade would have caused changes in ticks
+      getFullData()
+        .then(function (res) {
+          setIndexerData(res);
+        })
+        .catch(function (err: Error) {
+          setError(err?.message ?? 'Unknown Error');
+        });
     };
     subscriber.subscribeMessage(onRouterUpdateMessage, {
       message: { action: 'NewSwap' },
