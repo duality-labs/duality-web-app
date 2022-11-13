@@ -8,7 +8,11 @@ import { Token } from '../TokenPicker/hooks';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { cleanInput } from './utils';
-import { formatCurrency, formatLongPrice } from '../../lib/utils/number';
+import {
+  formatAmount,
+  formatCurrency,
+  formatLongPrice,
+} from '../../lib/utils/number';
 
 import './TokenInputGroup.scss';
 
@@ -89,10 +93,7 @@ export default function TokenInputGroup({
     >
       {maxValue && (
         <h5 className="token-group-title">
-          Available{' '}
-          {Number(maxValue).toLocaleString('en-us', {
-            maximumSignificantDigits: 9,
-          })}
+          Available {formatAmount(maxValue, { maximumSignificantDigits: 9 })}
         </h5>
       )}
       {!disabledInput && maxValue && Number(maxValue) > 0 && (
