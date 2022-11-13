@@ -8,6 +8,7 @@ import { Token } from '../TokenPicker/hooks';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { cleanInput } from './utils';
+import { formatCurrency } from '../../lib/utils/number';
 
 import './TokenInputGroup.scss';
 
@@ -71,7 +72,7 @@ export default function TokenInputGroup({
   const secondaryValue =
     relevantValue ||
     (price !== undefined && value !== undefined
-      ? `$${new BigNumber(value).multipliedBy(price).toFixed(2)}`
+      ? `${formatCurrency(new BigNumber(value).multipliedBy(price).toFixed(2))}`
       : undefined);
 
   const { data: balance } = useBankBalance(token);
