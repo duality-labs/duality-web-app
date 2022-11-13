@@ -20,7 +20,7 @@ import { useHasPriceData } from '../../lib/tokenPrices';
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
-import { formatPrice } from '../../lib/bignumber.utils';
+import { formatLongPrice } from '../../lib/utils/number';
 import { cleanInput } from '../../components/TokenInputGroup/utils';
 
 import './Swap.scss';
@@ -267,15 +267,14 @@ export default function Swap() {
                   {routerResult && rateTokenOrder ? (
                     <>
                       1 {rateTokenOrder[1].symbol} ={' '}
-                      {formatPrice(
+                      {formatLongPrice(
                         routerResult.tokenIn === rateTokenOrder[1].address
-                          ? routerResult.amountOut.dividedBy(
-                              routerResult.amountIn
-                            )
-                          : routerResult.amountIn.dividedBy(
-                              routerResult.amountOut
-                            ),
-                        5
+                          ? routerResult.amountOut
+                              .dividedBy(routerResult.amountIn)
+                              .toFixed()
+                          : routerResult.amountIn
+                              .dividedBy(routerResult.amountOut)
+                              .toFixed()
                       )}{' '}
                       {rateTokenOrder[0].symbol}
                       <button

@@ -7,13 +7,33 @@ export function formatAmount(
   opts: Intl.NumberFormatOptions = {}
 ) {
   const numericAmount = Number(amount);
+  const givenSD = opts.maximumSignificantDigits ?? 6;
   return !isNaN(numericAmount)
     ? numericAmount.toLocaleString('en-US', {
-        maximumSignificantDigits: 6,
-        minimumFractionDigits: 0,
         ...opts,
+        ...(numericAmount < Math.pow(10, givenSD) && {
+          maximumSignificantDigits: givenSD,
+        }),
       })
     : '-';
+}
+
+export function formatPrice(
+  amount: number | string,
+  opts: Intl.NumberFormatOptions = {}
+) {
+  return formatAmount(amount, {
+    maximumSignificantDigits: 3,
+    useGrouping: false,
+    ...opts,
+  });
+}
+
+export function formatLongPrice(
+  amount: number | string,
+  opts: Intl.NumberFormatOptions = {}
+) {
+  return formatPrice(amount, { maximumSignificantDigits: 6, ...opts });
 }
 
 // format to a visually pleasing output of currency

@@ -8,7 +8,7 @@ import { Token } from '../TokenPicker/hooks';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { cleanInput } from './utils';
-import { formatCurrency } from '../../lib/utils/number';
+import { formatCurrency, formatLongPrice } from '../../lib/utils/number';
 
 import './TokenInputGroup.scss';
 
@@ -126,7 +126,7 @@ export default function TokenInputGroup({
         ]
           .filter(Boolean)
           .join(' ')}
-        value={value || placeholder}
+        value={value ? formatLongPrice(value) : placeholder}
         onInput={onInput}
         onChange={onInputChange}
         onClick={selectAll}
