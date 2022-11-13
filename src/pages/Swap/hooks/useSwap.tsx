@@ -5,7 +5,7 @@ import { BigNumber } from 'bignumber.js';
 
 import { formatAmount } from '../../../lib/utils/number';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
-import { txClient } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/index';
+import { txClient } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/index';
 
 import {
   checkMsgErrorToast,
@@ -18,17 +18,20 @@ import {
 import {
   MsgSwap,
   MsgSwapResponse,
-} from '../../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/types/router/tx';
+} from '../../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/types/dex/tx';
+import { getTokens } from '../../../components/TokenPicker/hooks';
+import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 
 async function sendSwap(
   wallet: OfflineSigner,
-  { amountIn, tokenIn, tokenOut, minOut, creator }: MsgSwap
+  { amountIn, tokenIn, tokenA, tokenB, minOut, creator, receiver }: MsgSwap
 ): Promise<MsgSwapResponse> {
   if (
     !amountIn ||
     !amountIn ||
     !tokenIn ||
-    !tokenOut ||
+    !tokenA ||
+    !tokenB ||
     !minOut ||
     !creator ||
     !creator
@@ -41,6 +44,13 @@ async function sendSwap(
     throw new Error('Invalid Input (0 value)');
   }
 
+  const tokenOut = tokenIn === tokenA ? tokenB : tokenA;
+  const tokenList = getTokens(() => true);
+  const tokenOutToken = tokenList.find((token) => token.address === tokenOut);
+  if (!tokenOutToken) {
+    throw new Error('Invalid Output (token address not found)');
+  }
+
   const client = await txClient(wallet);
   // send message to chain
 
@@ -50,13 +60,21 @@ async function sendSwap(
 
   return client
     .signAndBroadcast([
-      client.msgSwap({ amountIn, tokenIn, tokenOut, minOut, creator }),
+      client.msgSwap({
+        amountIn,
+        tokenIn,
+        tokenA,
+        tokenB,
+        minOut,
+        creator,
+        receiver,
+      }),
     ])
     .then(function (res): MsgSwapResponse {
       if (!res) {
         throw new Error('No response');
       }
-      const { code, gasUsed } = res;
+      const { code } = res;
 
       const amountOut = JSON.parse(res.rawLog || '[]')?.[0]
         ?.events?.find(({ type }: { type: string }) => type === 'message')
@@ -86,13 +104,15 @@ async function sendSwap(
         throw error;
       }
       return {
-        amountIn,
-        amountOut: amountOut?.toFixed(),
-        tokenIn,
-        tokenOut,
-        minOut,
-        creator,
-        gas: gasUsed.toString(),
+        coinOut: {
+          amount:
+            getAmountInDenom(
+              tokenOutToken,
+              amountOut?.toFixed() || '0',
+              tokenOutToken.display
+            ) || '0',
+          denom: tokenOutToken.display,
+        },
       };
     })
     .catch(function (err: Error & { response?: DeliverTxResponse }) {
@@ -129,8 +149,17 @@ export function useSwap(): [
     (request: MsgSwap) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
-      const { amountIn, tokenIn, tokenOut, minOut, creator } = request;
-      if (!amountIn || !tokenIn || !tokenOut || !minOut || !creator)
+      const { amountIn, tokenIn, tokenA, tokenB, minOut, creator, receiver } =
+        request;
+      if (
+        !amountIn ||
+        !tokenIn ||
+        !tokenA ||
+        !tokenB ||
+        !minOut ||
+        !creator ||
+        !receiver
+      )
         return onError('Invalid input');
       setValidating(true);
       setError(undefined);
