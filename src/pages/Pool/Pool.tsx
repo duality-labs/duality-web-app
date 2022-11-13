@@ -192,7 +192,7 @@ export default function Pool() {
     defaultCurrentPrice;
 
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
-    return currentPriceFromTicks.isLessThan(1);
+    return currentPriceFromTicks < 1;
   });
 
   const ticks = useMemo(() => {
@@ -274,7 +274,7 @@ export default function Pool() {
   useEffect(() => {
     function getUserTicks(): TickGroup {
       // set multiple ticks across the range
-      if (currentPriceFromTicks.isGreaterThan(0) && tickCount > 1) {
+      if (currentPriceFromTicks > 0 && tickCount > 1) {
         const tokenAmountA = new BigNumber(values[0]);
         const tokenAmountB = new BigNumber(values[1]);
         // spread evenly after adding padding on each side

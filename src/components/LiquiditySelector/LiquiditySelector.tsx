@@ -11,8 +11,8 @@ import {
 import { formatPrice } from '../../lib/utils/number';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
-import { Token } from '../TokenPicker/hooks';
 
+import { Token } from '../TokenPicker/hooks';
 import { TickInfo } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
@@ -117,23 +117,15 @@ export default function LiquiditySelector({
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
-  const maybeCurrentPriceFromTicks = useCurrentPriceFromTicks(
-    tokenA.address,
-    tokenB.address
-  );
-
-  const maybeCurrentPriceFromTicksString =
-    maybeCurrentPriceFromTicks?.toFixed();
-  const currentPriceFromTicks = useMemo(() => {
-    return new BigNumber(maybeCurrentPriceFromTicksString ?? 1);
-  }, [maybeCurrentPriceFromTicksString]);
+  const currentPriceFromTicks =
+    useCurrentPriceFromTicks(tokenA.address, tokenB.address) || 1;
 
   const initialGraphStart = useMemo(() => {
-    const graphStart = currentPriceFromTicks.dividedBy(4);
+    const graphStart = new BigNumber(currentPriceFromTicks).dividedBy(4);
     return graphStart.isLessThan(1 / 1.1) ? new BigNumber(1 / 1.1) : graphStart;
   }, [currentPriceFromTicks]);
   const initialGraphEnd = useMemo(() => {
-    const graphEnd = currentPriceFromTicks.multipliedBy(4);
+    const graphEnd = new BigNumber(currentPriceFromTicks).multipliedBy(4);
     return graphEnd.isLessThan(1.1) ? new BigNumber(1.1) : graphEnd;
   }, [currentPriceFromTicks]);
 
@@ -198,7 +190,7 @@ export default function LiquiditySelector({
     const tokenABuckets = Array.from({ length: bucketCount }).reduce<
       [min: BigNumber, max: BigNumber][]
     >((result) => {
-      const newValue = result[0]?.[0] ?? currentPriceFromTicks;
+      const newValue = result[0]?.[0] ?? new BigNumber(currentPriceFromTicks);
       return newValue.isLessThan(xMin)
         ? // return finished array
           result
@@ -208,7 +200,8 @@ export default function LiquiditySelector({
     const tokenBBuckets = Array.from({ length: bucketCount }).reduce<
       [min: BigNumber, max: BigNumber][]
     >((result) => {
-      const newValue = result[result.length - 1]?.[1] ?? currentPriceFromTicks;
+      const newValue =
+        result[result.length - 1]?.[1] ?? new BigNumber(currentPriceFromTicks);
       return newValue.isGreaterThan(xMax)
         ? // return finished array
           result
@@ -742,7 +735,7 @@ function TicksGroup({
   canMoveX = false,
   ...rest
 }: {
-  currentPrice: BigNumber;
+  currentPrice: number;
   ticks: Array<Tick | undefined>;
   backgroundTicks: Array<Tick | undefined>;
   setUserTicks?: (

@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import BigNumber from 'bignumber.js';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -50,7 +49,7 @@ export default function LiquidityDistribution({
   tokenB: Token;
   swapAll: () => void;
   setFeeTier?: React.Dispatch<React.SetStateAction<number | undefined>>;
-  currentPriceFromTicks: BigNumber;
+  currentPriceFromTicks: number;
   submitButtonText?: string;
   submitButtonVariant?: 'primary' | 'error' | 'warning';
 }) {
