@@ -15,6 +15,7 @@ import BigNumber from 'bignumber.js';
 import { Token, useDualityTokens } from './hooks';
 import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 import { useSimplePrices } from '../../lib/tokenPrices';
+import { formatAmount } from '../../lib/utils/number';
 
 import Dialog from '../Dialog/Dialog';
 
@@ -402,10 +403,12 @@ export default function TokenPicker({
               {textListWithMark(token?.chain || [])}
             </span>
             {new BigNumber(balance).isZero() ? (
-              <span className="token-zero-balance">{balance}</span>
+              <span className="token-zero-balance">
+                {formatAmount(balance)}
+              </span>
             ) : (
               <>
-                <span className="token-balance">{balance}</span>
+                <span className="token-balance">{formatAmount(balance)}</span>
                 <span className="token-value">
                   {price
                     ? `$${new BigNumber(price)
