@@ -467,6 +467,7 @@ function LiquidityDistributionCard({
         // remap tick fields and invert the price
         result[index] = {
           ...tick,
+          tickIndex: tick.tickIndex.negated(),
           price: one.dividedBy(tick.price),
         };
         return result;

@@ -11,8 +11,8 @@ import {
 import { formatPrice } from '../../lib/utils/number';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
-import { Token } from '../TokenPicker/hooks';
 
+import { Token } from '../TokenPicker/hooks';
 import { TickInfo } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
@@ -130,18 +130,10 @@ export default function LiquiditySelector({
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
-  const maybeCurrentPriceFromTicks = useCurrentPriceFromTicks(
+  const currentPriceFromTicks = useCurrentPriceFromTicks(
     tokenA.address,
     tokenB.address
   );
-
-  const maybeCurrentPriceFromTicksString =
-    maybeCurrentPriceFromTicks?.toFixed();
-  const currentPriceFromTicks = useMemo<BigNumber | undefined>(() => {
-    return maybeCurrentPriceFromTicksString
-      ? new BigNumber(maybeCurrentPriceFromTicksString)
-      : undefined;
-  }, [maybeCurrentPriceFromTicksString]);
 
   const isUserTicksAZero =
     oneSidedLiquidity && userTicks.every((tick) => tick?.[1].isZero() ?? true);
@@ -194,13 +186,13 @@ export default function LiquiditySelector({
     warningPriceSingleSidedLiquidity || warningPriceDoubleSidedLiquidity;
 
   const initialGraphStart = useMemo(() => {
-    const graphStart = currentPriceFromTicks?.dividedBy(4) || defaultStartValue;
+    const graphStart = currentPriceFromTicks?.dividedBy(4) ?? defaultStartValue;
     return graphStart.isLessThan(defaultStartValue)
       ? defaultStartValue
       : graphStart;
   }, [currentPriceFromTicks]);
   const initialGraphEnd = useMemo(() => {
-    const graphEnd = currentPriceFromTicks?.multipliedBy(4) || defaultEndValue;
+    const graphEnd = currentPriceFromTicks?.multipliedBy(4) ?? defaultEndValue;
     return graphEnd.isLessThan(defaultEndValue) ? defaultEndValue : graphEnd;
   }, [currentPriceFromTicks]);
 
