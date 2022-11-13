@@ -78,7 +78,7 @@ const dualityStakeToken: Token = {
 
 // transform AssetList into TokenList
 // for easier filtering/ordering by token attributes
-function getTokens(condition: (chain: Chain) => boolean) {
+export function getTokens(condition: (chain: Chain) => boolean) {
   // go through each chain
   return (
     assets
