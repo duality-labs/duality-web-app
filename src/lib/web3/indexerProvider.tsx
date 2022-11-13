@@ -291,14 +291,31 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   });
 
   const { address } = useWeb3();
-  const [, setFetchBankDataState] = useState({
+  const [, setFetchBankDataState] = useState<FetchState>({
     fetching: false,
     fetched: false,
   });
-  const fetchBankData = useMemo(() => {
-    if (address) {
-      return async () => {
-        if (REACT_APP__REST_API) {
+  const updateBankData = useCallback(
+    (fetchStateCheck?: (fetchstate: FetchState) => boolean) => {
+      setFetchShareDataState((fetchState) => {
+        // check if already fetching (and other other passed in check)
+        if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
+          fetchBankData()
+            .then((data = []) => {
+              setBankData({ balances: data });
+            })
+            .catch((e) => {
+              setFetchBankDataState((state) => ({
+                ...state,
+                error: e as Error,
+              }));
+            });
+        }
+        return fetchState;
+      });
+
+      async function fetchBankData() {
+        if (address && REACT_APP__REST_API) {
           const client = await queryClient({ addr: REACT_APP__REST_API });
           setFetchBankDataState(({ fetched }) => ({ fetching: true, fetched }));
           const res = await client.request<BalancesResponse, RpcStatus>({
@@ -317,30 +334,24 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             // remove API error details from public view
             throw new Error(`API error code: ${res.error.code}`);
           }
-        } else {
+        } else if (!REACT_APP__REST_API) {
           throw new Error('Undefined rest api base URL');
         }
-      };
-    }
-  }, [address]);
+      }
+    },
+    [address]
+  );
 
+  // update bank data whenever wallet address is updated
   useEffect(() => {
-    if (fetchBankData) {
-      setFetchBankDataState((fetchState) => {
-        if (!fetchState.fetched && !fetchState.fetching) {
-          fetchBankData().then((data) => {
-            setBankData({ balances: data });
-          });
-        }
-        return fetchState;
-      });
-    }
-  }, [fetchBankData]);
+    updateBankData();
+  }, [updateBankData, address]);
 
+  // update bank balance whenever bank transfers are detected
   useEffect(() => {
     if (address) {
-      const onTxBalanceUpdate = function () {
-        fetchBankData?.()?.then((data) => setBankData({ balances: data }));
+      const onTxBalanceUpdate = () => {
+        updateBankData();
       };
       subscriber.subscribeMessage(onTxBalanceUpdate, {
         transfer: { recipient: address },
@@ -352,7 +363,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         subscriber.unsubscribeMessage(onTxBalanceUpdate);
       };
     }
-  }, [fetchBankData, address]);
+  }, [updateBankData, address]);
 
   const [, setFetchShareDataState] = useState<FetchState>({
     fetching: false,
