@@ -6,11 +6,14 @@ export function formatAmount(
   amount: number | string,
   opts: Intl.NumberFormatOptions = {}
 ) {
-  return Number(amount).toLocaleString('en-US', {
-    maximumSignificantDigits: 6,
-    minimumFractionDigits: 0,
-    ...opts,
-  });
+  const numericAmount = Number(amount);
+  return !isNaN(numericAmount)
+    ? numericAmount.toLocaleString('en-US', {
+        maximumSignificantDigits: 6,
+        minimumFractionDigits: 0,
+        ...opts,
+      })
+    : '-';
 }
 
 // format to a visually pleasing output of currency
@@ -25,4 +28,3 @@ export function formatCurrency(amount: number | string, currency = 'USD') {
     style: 'currency',
   });
 }
-  
