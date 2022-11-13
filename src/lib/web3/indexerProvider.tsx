@@ -98,6 +98,7 @@ interface IndexerContextType {
 interface FetchState {
   fetching: boolean;
   fetched: boolean;
+  error?: Error;
 }
 
 const IndexerContext = createContext<IndexerContextType>({
@@ -364,9 +365,16 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       setFetchShareDataState((fetchState) => {
         // check if already fetching (and other other passed in check)
         if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
-          fetchShareData().then((data) => {
-            setShareData({ shares: data });
-          });
+          fetchShareData()
+            .then((data = []) => {
+              setShareData({ shares: data });
+            })
+            .catch((e) => {
+              setFetchShareDataState((state) => ({
+                ...state,
+                error: e as Error,
+              }));
+            });
         }
         return fetchState;
       });
@@ -402,7 +410,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             // remove API error details from public view
             throw new Error(`API error code: ${res.error.code}`);
           }
-        } else {
+        } else if (!REACT_APP__REST_API) {
           throw new Error('Undefined rest api base URL');
         }
       }
