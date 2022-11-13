@@ -429,10 +429,10 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     [address]
   );
 
-  // on start, update share data if it has not been fetched yet
+  // update share data when the address changes
   useEffect(() => {
-    updateShareData(({ fetched }) => !fetched);
-  }, [updateShareData]);
+    updateShareData();
+  }, [updateShareData, address]);
 
   useEffect(() => {
     let lastRequested = 0;
