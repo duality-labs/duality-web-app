@@ -400,7 +400,7 @@ export default function MyLiquidity() {
 }
 
 // set as constant to avoid unwanted hook effects
-const defaultCurrentPrice = new BigNumber(1);
+const defaultCurrentPrice = 1;
 const setRangeMin = () => undefined;
 const setRangeMax = () => undefined;
 
@@ -442,23 +442,18 @@ function LiquidityDistributionCard({
     token1?.address
   );
 
-  const currentPriceABFromTicks =
-    useCurrentPriceFromTicks(unorderedTicks) || defaultCurrentPrice;
+  const currentPriceFromTicks =
+    useCurrentPriceFromTicks(token0.address, token1.address) ||
+    defaultCurrentPrice;
 
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
-    return currentPriceABFromTicks?.isLessThan(1);
+    return currentPriceFromTicks < 1;
   });
   const swapAll = useCallback(() => {
     setInvertedTokenOrder((order) => !order);
   }, []);
   const tokenA = invertedTokenOrder ? token1 : token0;
   const tokenB = invertedTokenOrder ? token0 : token1;
-
-  const currentPriceFromTicks = useMemo(() => {
-    return invertedTokenOrder
-      ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
-      : currentPriceABFromTicks;
-  }, [invertedTokenOrder, currentPriceABFromTicks]);
 
   const ticks = useMemo(() => {
     if (!invertedTokenOrder) return unorderedTicks;
@@ -470,6 +465,7 @@ function LiquidityDistributionCard({
         // remap tick fields and invert the price
         result[index] = {
           ...tick,
+          tickIndex: tick.tickIndex.negated(),
           price: one.dividedBy(tick.price),
         };
         return result;
