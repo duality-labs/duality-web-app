@@ -1,4 +1,11 @@
-import { useContext, createContext, useState, useEffect, useMemo } from 'react';
+import {
+  useContext,
+  createContext,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 import { BigNumber } from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
@@ -86,6 +93,11 @@ interface IndexerContextType {
     error?: string;
     isValidating: boolean;
   };
+}
+
+interface FetchState {
+  fetching: boolean;
+  fetched: boolean;
 }
 
 const IndexerContext = createContext<IndexerContextType>({
@@ -341,7 +353,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchBankData, address]);
 
-  const [, setFetchShareDataState] = useState({
+  const [, setFetchShareDataState] = useState<FetchState>({
     fetching: false,
     fetched: false,
   });
@@ -385,18 +397,28 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [address]);
 
+  // fetch new share data if we aren't already fetching
+  const updateShareData = useCallback(
+    (fetchStateCheck?: (fetchstate: FetchState) => boolean) => {
+      if (fetchShareData) {
+        setFetchShareDataState((fetchState) => {
+          // check if already fetching (and other other passed in check)
+          if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
+            fetchShareData().then((data) => {
+              setShareData({ shares: data });
+            });
+          }
+          return fetchState;
+        });
+      }
+    },
+    [fetchShareData]
+  );
+
+  // on start, update share data if it has not been fetched yet
   useEffect(() => {
-    if (fetchShareData) {
-      setFetchShareDataState((fetchState) => {
-        if (!fetchState.fetched && !fetchState.fetching) {
-          fetchShareData().then((data) => {
-            setShareData({ shares: data });
-          });
-        }
-        return fetchState;
-      });
-    }
-  }, [fetchShareData]);
+    updateShareData(({ fetched }) => !fetched);
+  }, [updateShareData]);
 
   useEffect(() => {
     let lastRequested = 0;
