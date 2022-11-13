@@ -303,6 +303,7 @@ export default function Swap() {
           {address ? (
             hasFormData &&
             hasSufficientFunds &&
+            !error?.insufficientLiquidity &&
             !error?.insufficientLiquidityIn &&
             !error?.insufficientLiquidityOut ? (
               <button
@@ -312,8 +313,7 @@ export default function Swap() {
               >
                 {orderType === 'limit' ? 'Place Limit Order' : 'Swap'}
               </button>
-            ) : error?.insufficientLiquidityIn ||
-              error?.insufficientLiquidityOut ? (
+            ) : error?.insufficientLiquidity ? (
               <button className="submit-button button-error" type="button">
                 Insufficient liquidity
               </button>

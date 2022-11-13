@@ -32,6 +32,7 @@ export function useRouterResult(pairRequest: PairRequest): {
   data?: RouterResult;
   isValidating: boolean;
   error?: Error & {
+    insufficientLiquidity?: boolean;
     insufficientLiquidityIn?: boolean;
     insufficientLiquidityOut?: boolean;
   };
@@ -40,6 +41,7 @@ export function useRouterResult(pairRequest: PairRequest): {
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<
     Error & {
+      insufficientLiquidity?: boolean;
       insufficientLiquidityIn?: boolean;
       insufficientLiquidityOut?: boolean;
     }
