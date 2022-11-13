@@ -102,7 +102,8 @@ export default function Swap() {
               tokenA?.display
             ) || '0',
           tokenIn: result.tokenIn,
-          tokenOut: result.tokenOut,
+          tokenA: result.tokenIn,
+          tokenB: result.tokenOut,
           minOut:
             getAmountInDenom(
               tokenB,
@@ -111,6 +112,7 @@ export default function Swap() {
               tokenB?.display
             ) || '0',
           creator: address,
+          receiver: address,
         });
       }
     },
