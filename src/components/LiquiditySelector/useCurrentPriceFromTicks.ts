@@ -86,9 +86,10 @@ function useMidTickIndexFromTicks(
       .filter((tick) => tick.tickIndex.isEqualTo(lowestTick0.tickIndex))
       .reduce((result, tick) => {
         return result.plus(tick.reserve0);
-      }, new BigNumber(0));
+      }, new BigNumber(0))
+      .multipliedBy(Math.pow(1.0001, lowestTick0.tickIndex.toNumber()));
     // calculate the mid point
-    const linearPercentage = highestTick1Value.dividedBy(
+    const linearPercentage = lowestTick0Value.dividedBy(
       highestTick1Value.plus(lowestTick0Value)
     );
     return highestTick1.tickIndex.plus(
