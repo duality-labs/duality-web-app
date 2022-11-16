@@ -76,6 +76,10 @@ function useMidTickIndexFromTicks(
     highestTick1: TickInfo,
     lowestTick0: TickInfo
   ): BigNumber {
+    // if they are the same tick, no need to interpolate
+    if (highestTick1.tickIndex === lowestTick0.tickIndex) {
+      return highestTick1.tickIndex;
+    }
     // linearly interpolate an answer
     // get weights of each side in terms of token0 units
     const highestTick1Reserves = sortedTicks
