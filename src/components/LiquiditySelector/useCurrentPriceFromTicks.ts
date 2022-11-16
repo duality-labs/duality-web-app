@@ -76,20 +76,20 @@ function useMidTickIndexFromTicks(
     }
     // linearly interpolate an answer
     // get weights of each side in terms of token0 units
-    const highestTick1Reserves = sortedTicks
+    const highestTick1Value = sortedTicks
       .filter((tick) => tick.tickIndex.isEqualTo(highestTick1.tickIndex))
       .reduce((result, tick) => {
         return result.plus(tick.reserve1);
       }, new BigNumber(0))
       .dividedBy(Math.pow(1.0001, highestTick1.tickIndex.toNumber()));
-    const lowestTick0Reserves = sortedTicks
+    const lowestTick0Value = sortedTicks
       .filter((tick) => tick.tickIndex.isEqualTo(lowestTick0.tickIndex))
       .reduce((result, tick) => {
         return result.plus(tick.reserve0);
       }, new BigNumber(0));
     // calculate the mid point
-    const linearPercentage = highestTick1Reserves.dividedBy(
-      highestTick1Reserves.plus(lowestTick0Reserves)
+    const linearPercentage = highestTick1Value.dividedBy(
+      highestTick1Value.plus(lowestTick0Value)
     );
     return highestTick1.tickIndex.plus(
       linearPercentage.multipliedBy(
