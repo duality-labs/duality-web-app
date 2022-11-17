@@ -23,8 +23,8 @@ export interface LiquiditySelectorProps {
   tokenB: Token;
   invertedTokenOrder?: boolean;
   feeTier: number | undefined;
-  tickSelected: number | undefined;
-  setTickSelected: (index: number) => void;
+  userTickSelected: number | undefined;
+  setUserTickSelected: (index: number) => void;
   rangeMin: string;
   rangeMax: string;
   setRangeMin: (rangeMin: string) => void;
@@ -90,8 +90,8 @@ export default function LiquiditySelector({
   tokenB,
   invertedTokenOrder = false,
   feeTier,
-  tickSelected = -1,
-  setTickSelected,
+  userTickSelected = -1,
+  setUserTickSelected,
   rangeMin,
   rangeMax,
   setRangeMin,
@@ -495,11 +495,11 @@ export default function LiquiditySelector({
         <TicksGroup
           className="new-ticks"
           currentPrice={warningPrice || currentPriceFromTicks}
-          ticks={userTicks}
+          userTicks={userTicks}
           backgroundTicks={userTicksBase}
           setUserTicks={setUserTicks}
-          tickSelected={tickSelected}
-          setTickSelected={setTickSelected}
+          userTickSelected={userTickSelected}
+          setUserTickSelected={setUserTickSelected}
           plotX={plotXBigNumber}
           percentY={percentYBigNumber}
           canMoveUp={canMoveUp}
@@ -889,11 +889,11 @@ function TicksArea({
 
 function TicksGroup({
   currentPrice,
-  ticks,
+  userTicks,
   backgroundTicks,
   setUserTicks,
-  tickSelected,
-  setTickSelected,
+  userTickSelected,
+  setUserTickSelected,
   plotX,
   percentY,
   className,
@@ -903,13 +903,13 @@ function TicksGroup({
   ...rest
 }: {
   currentPrice: BigNumber | undefined;
-  ticks: Array<Tick | undefined>;
+  userTicks: Array<Tick | undefined>;
   backgroundTicks: Array<Tick | undefined>;
   setUserTicks?: (
     callback: (userTicks: TickGroup, meta?: { index?: number }) => TickGroup
   ) => void;
-  tickSelected: number;
-  setTickSelected: (index: number) => void;
+  userTickSelected: number;
+  setUserTickSelected: (index: number) => void;
   plotX: (x: BigNumber) => number;
   percentY: (y: BigNumber) => number;
   canMoveUp?: boolean;
@@ -923,8 +923,8 @@ function TicksGroup({
       return token ? token[tokenIndex].toNumber() || [] : [];
     };
   };
-  const tick0Numbers = ticks.flatMap(mapNumberByIndex(1));
-  const tick1Numbers = ticks.flatMap(mapNumberByIndex(2));
+  const tick0Numbers = userTicks.flatMap(mapNumberByIndex(1));
+  const tick1Numbers = userTicks.flatMap(mapNumberByIndex(2));
   const backgroundTick0Numbers = backgroundTicks.flatMap(mapNumberByIndex(1));
   const backgroundTick1Numbers = backgroundTicks.flatMap(mapNumberByIndex(2));
 
@@ -959,8 +959,10 @@ function TicksGroup({
     useCallback(
       (ev: Event, displacement = { x: 0, y: 0 }) => {
         // exit if there is no tick
-        const { index: tickSelected, tick } = lastSelectedTick.current || {};
-        if (!tick || tickSelected === undefined || isNaN(tickSelected)) return;
+        const { index: userTickSelected, tick } =
+          lastSelectedTick.current || {};
+        if (!tick || userTickSelected === undefined || isNaN(userTickSelected))
+          return;
 
         // move tick price
         if (canMoveX && Math.abs(displacement.x) > Math.abs(displacement.y)) {
@@ -973,7 +975,7 @@ function TicksGroup({
             );
             return userTicks?.map((userTick, index) => {
               // modify price
-              if (tickSelected === index) {
+              if (userTickSelected === index) {
                 const newPrice = tick[0].multipliedBy(displacementRatio);
                 return [
                   new BigNumber(formatPrice(newPrice.toFixed())),
@@ -991,7 +993,7 @@ function TicksGroup({
           return setUserTicks?.((userTicks, meta = {}) => {
             // append context for callers that read from this
             // note: this is a bit of a hack to keep setUserTicks(tick => ticks)-like compatibility
-            meta.index = tickSelected;
+            meta.index = userTickSelected;
             // calculate position movement
             const linearPixels =
               percentY(new BigNumber(1)) - percentY(new BigNumber(0));
@@ -1002,7 +1004,7 @@ function TicksGroup({
             const adjustedMovement = 1 + dragSpeedFactor * displacementPercent;
             return userTicks?.map((userTick, index) => {
               // modify price
-              if (tickSelected === index) {
+              if (userTickSelected === index) {
                 const originalAValue = backgroundTicks[index]?.[1];
                 const originalBValue = backgroundTicks[index]?.[2];
                 const newAValue = tick[1].multipliedBy(adjustedMovement);
@@ -1051,9 +1053,9 @@ function TicksGroup({
       const index = parseInt(
         (e.target as HTMLElement)?.getAttribute('data-key') || ''
       );
-      const tick = ticks?.[index];
+      const tick = userTicks?.[index];
       if (!isNaN(index) && tick) {
-        setTickSelected(index);
+        setUserTickSelected(index);
         lastSelectedTick.current = {
           tick,
           index,
@@ -1062,10 +1064,10 @@ function TicksGroup({
 
       startDragTick(e);
     },
-    [ticks, startDragTick, setTickSelected]
+    [userTicks, startDragTick, setUserTickSelected]
   );
 
-  const tickPart = ticks
+  const tickPart = userTicks
     .filter(
       (tick): tick is Tick => !!tick && !tick[1].isNaN() && !tick[2].isNaN()
     )
@@ -1074,8 +1076,8 @@ function TicksGroup({
     .sort(([a, aIndex], [b, bIndex]) => {
       // sort any selected tick to the front
       // (so users can select it somehow else then drag it easily here)
-      const aIsSelected = aIndex === tickSelected;
-      const bIsSelected = bIndex === tickSelected;
+      const aIsSelected = aIndex === userTickSelected;
+      const bIsSelected = bIndex === userTickSelected;
       return (
         Number(aIsSelected) - Number(bIsSelected) ||
         // sort by height so that short ticks are above tall ticks
@@ -1128,7 +1130,7 @@ function TicksGroup({
           className={[
             'tick',
             totalValue.isZero() && 'tick--is-zero',
-            tickSelected === index && 'tick--selected',
+            userTickSelected === index && 'tick--selected',
             tokenAValue.isGreaterThan(0) ? 'token-a' : 'token-b',
             !totalValue.isEqualTo(backgroundValue) &&
               (totalValue.isLessThan(backgroundValue)
