@@ -222,85 +222,14 @@ export default function MyLiquidity() {
   // show detail page
   const [token0, token1] = selectedTokens || [];
   if (token0 && token0.address && token1 && token1.address) {
-    // get always up to date share data
-    const shareValues =
-      shareValueMap?.[getPairID(token0.address, token1.address)] || [];
-
-    const [total0, total1] = shareValues.reduce<[BigNumber, BigNumber]>(
-      ([total0, total1], shareValue) => {
-        return [
-          total0.plus(shareValue.userReserves0 || 0),
-          total1.plus(shareValue.userReserves1 || 0),
-        ];
-      },
-      [new BigNumber(0), new BigNumber(0)]
-    );
-    const value0 = price0 && total0.multipliedBy(price0);
-    const value1 = price1 && total1.multipliedBy(price1);
-
     return (
-      <div className="my-liquidity-detail-page">
-        <div className="banner">
-          <div className="heading row">
-            <div className="token-symbols col py-5">
-              <h1>
-                {token0.symbol} + {token1.symbol}
-              </h1>
-              {value0 && value1 && (
-                <div className="balance row mt-4">
-                  <div className="col">Balance</div>
-                  <div className="col ml-auto">
-                    ${value0.plus(value1).toFixed(2)}
-                  </div>
-                </div>
-              )}
-              <div className="value-visual row">
-                {value0 && value1 && (
-                  <div className="value-barchart">
-                    <div
-                      className="value-0"
-                      style={{
-                        width: `${value0
-                          .dividedBy(value0.plus(value1))
-                          .multipliedBy(100)
-                          .toFixed(3)}%`,
-                      }}
-                    ></div>
-                    <div className="value-1"></div>
-                  </div>
-                )}
-              </div>
-              <div className="value-text row">
-                <div className="value-0 col mr-5">
-                  {total0.toFixed(3)} {token0.symbol}{' '}
-                  {value0 && <>(${value0.toFixed(2)})</>}
-                </div>
-                <div className="value-1 col ml-auto">
-                  {total1.toFixed(3)} {token1.symbol}{' '}
-                  {value1 && <>(${value1.toFixed(2)})</>}
-                </div>
-              </div>
-            </div>
-            <div className="token-icons col ml-auto">
-              <div className="row">
-                <img
-                  src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
-                  alt={`${token0.name} logo`}
-                />
-                <img
-                  src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
-                  alt={`${token1.name} logo`}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <LiquidityDistributionCard
-          token0={token0}
-          token1={token1}
-          shares={shareValues}
-        />
-      </div>
+      <LiquidityDetailPage
+        token0={token0}
+        token1={token1}
+        price0={price0}
+        price1={price1}
+        shares={shareValueMap?.[getPairID(token0.address, token1.address)]}
+      />
     );
   }
 
@@ -424,14 +353,18 @@ const submitButtonSettings: Record<
   redistribute: { text: 'Redistribute Liquidity', variant: 'warning' },
 };
 
-function LiquidityDistributionCard({
+function LiquidityDetailPage({
   token0,
   token1,
+  price0,
+  price1,
   shares = [],
 }: {
   token0: Token;
   token1: Token;
-  shares: Array<TickShareValue>;
+  price0?: number;
+  price1?: number;
+  shares?: TickShareValue[];
 }) {
   const precision = shares?.length || 1;
 
@@ -439,6 +372,19 @@ function LiquidityDistributionCard({
     token0?.address,
     token1?.address
   );
+
+  const [total0, total1] = shares.reduce<[BigNumber, BigNumber]>(
+    ([total0, total1], shareValue) => {
+      return [
+        total0.plus(shareValue.userReserves0 || 0),
+        total1.plus(shareValue.userReserves1 || 0),
+      ];
+    },
+    [new BigNumber(0), new BigNumber(0)]
+  );
+
+  const value0 = price0 && total0.multipliedBy(price0);
+  const value1 = price1 && total1.multipliedBy(price1);
 
   const currentPriceFromTicks0to1 = useCurrentPriceFromTicks(
     token0.address,
@@ -946,15 +892,72 @@ function LiquidityDistributionCard({
   );
 
   return (
-    <form
-      className={['pool-page row', isValidating && 'disabled']
-        .filter(Boolean)
-        .join(' ')}
-      onSubmit={onSubmit}
-    >
-      {leftColumn}
-      {rightColumn}
-    </form>
+    <div className="my-liquidity-detail-page">
+      <div className="banner">
+        <div className="heading row">
+          <div className="token-symbols col py-5">
+            <h1>
+              {token0.symbol} + {token1.symbol}
+            </h1>
+            {value0 && value1 && (
+              <div className="balance row mt-4">
+                <div className="col">Balance</div>
+                <div className="col ml-auto">
+                  ${value0.plus(value1).toFixed(2)}
+                </div>
+              </div>
+            )}
+            <div className="value-visual row">
+              {value0 && value1 && (
+                <div className="value-barchart">
+                  <div
+                    className="value-0"
+                    style={{
+                      width: `${value0
+                        .dividedBy(value0.plus(value1))
+                        .multipliedBy(100)
+                        .toFixed(3)}%`,
+                    }}
+                  ></div>
+                  <div className="value-1"></div>
+                </div>
+              )}
+            </div>
+            <div className="value-text row">
+              <div className="value-0 col mr-5">
+                {total0.toFixed(3)} {token0.symbol}{' '}
+                {value0 && <>(${value0.toFixed(2)})</>}
+              </div>
+              <div className="value-1 col ml-auto">
+                {total1.toFixed(3)} {token1.symbol}{' '}
+                {value1 && <>(${value1.toFixed(2)})</>}
+              </div>
+            </div>
+          </div>
+          <div className="token-icons col ml-auto">
+            <div className="row">
+              <img
+                src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
+                alt={`${token0.name} logo`}
+              />
+              <img
+                src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
+                alt={`${token1.name} logo`}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <form
+        className={['pool-page row', isValidating && 'disabled']
+          .filter(Boolean)
+          .join(' ')}
+        onSubmit={onSubmit}
+      >
+        {leftColumn}
+        {rightColumn}
+      </form>
+    </div>
   );
 }
 
