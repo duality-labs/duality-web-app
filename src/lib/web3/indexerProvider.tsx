@@ -21,7 +21,10 @@ import {
   RpcStatus,
   V1Beta1PageResponse,
 } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
-import { Token } from '../../components/TokenPicker/hooks';
+import {
+  addressableTokenMap as tokenMap,
+  Token,
+} from '../../components/TokenPicker/hooks';
 import { FeeType, feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
 
@@ -56,6 +59,8 @@ type PoolTicks = [
  * but utilising BigNumber type instead of BigNumberString type properties
  */
 export interface TickInfo {
+  token0: Token;
+  token1: Token;
   reserve0: BigNumber;
   reserve1: BigNumber;
   totalShares: BigNumber;
@@ -186,7 +191,7 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
   ) {
     // token0 and token1 are sorted by the back end
     const [token0, token1] = pairId.split('/');
-    if (token0 && token1 && tickData) {
+    if (token0 && token1 && tokenMap[token0] && tokenMap[token1] && tickData) {
       result[pairId] = result[pairId] || {
         token0: token0,
         token1: token1,
@@ -198,6 +203,8 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
           Number(tickData.reserve0AndShares?.[feeIndex].totalShares) ?? -1;
         if (!isNaN(parseInt(tickIndex || '')) && totalShares >= 0) {
           result[pairId].ticks.push({
+            token0: tokenMap[token0],
+            token1: tokenMap[token1],
             tickIndex: new BigNumber(tickIndex || 0),
             // do no use BigNumber.pow here, it is slow enough to make the browser
             // unresponsive for a minute on first page load.

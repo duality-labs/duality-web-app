@@ -765,7 +765,6 @@ export default function Pool() {
                   tokenB={tokenB}
                   rangeMin={rangeMin}
                   rangeMax={rangeMax}
-                  invertedTokenOrder={invertedTokenOrder}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
                   ticks={ticks}
