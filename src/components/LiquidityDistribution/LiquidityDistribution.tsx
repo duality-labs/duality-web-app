@@ -69,7 +69,9 @@ export default function LiquidityDistribution({
           <div className="chart-header row py-4">
             <h3 className="h3 text-normal">Liquidity Distribution</h3>
             <span className="tokens-badge badge-default badge-large font-console">
-              {tokenB?.symbol}/{tokenA?.symbol}
+              {tokenA?.symbol}
+              <span className="mx-2">-</span>
+              {tokenB?.symbol}
             </span>
             <button type="button" className="icon-button" onClick={swapAll}>
               <FontAwesomeIcon icon={faArrowRightArrowLeft}></FontAwesomeIcon>
