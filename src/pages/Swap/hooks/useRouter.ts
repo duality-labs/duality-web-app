@@ -71,6 +71,8 @@ export function useRouterResult(pairRequest: PairRequest): {
     }
     let cancelled = false;
 
+    // this could be useRouterResult for much better usage
+    // replacing the above useEffect with probably a useMemo
     getRouterResult(
       pairs,
       pairRequest.tokenA,
