@@ -21,7 +21,6 @@ export interface LiquiditySelectorProps {
   ticks: TickInfo[] | undefined;
   tokenA: Token;
   tokenB: Token;
-  invertedTokenOrder?: boolean;
   feeTier: number | undefined;
   userTickSelected: number | undefined;
   setUserTickSelected: (index: number) => void;
@@ -88,7 +87,6 @@ export default function LiquiditySelector({
   ticks = [],
   tokenA,
   tokenB,
-  invertedTokenOrder = false,
   feeTier,
   userTickSelected = -1,
   setUserTickSelected,
@@ -106,26 +104,46 @@ export default function LiquiditySelector({
   viewOnlyUserTicks = false,
   oneSidedLiquidity = false,
 }: LiquiditySelectorProps) {
+  // translate ticks from token0/1 to tokenA/B
   const allTicks: TickGroup = useMemo(() => {
-    return Object.values(ticks)
-      .filter((tick): tick is TickInfo => !!tick) // filter to only ticks
-      .sort((a, b) => a.price.comparedTo(b.price))
-      .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
-  }, [ticks]);
+    return (
+      ticks
+        // filter to only ticks that match our token set
+        .filter(
+          ({ token0, token1 }) =>
+            (token0 === tokenA && token1 === tokenB) ||
+            (token1 === tokenA && token0 === tokenB)
+        )
+        .sort((a, b) => a.price.comparedTo(b.price))
+        .map(({ token0, reserve0, reserve1, price }) => {
+          return token0 === tokenA
+            ? [price, reserve0, reserve1]
+            : [new BigNumber(1).dividedBy(price), reserve1, reserve0];
+        })
+    );
+  }, [ticks, tokenA, tokenB]);
 
   const isReserveAZero = allTicks.every(([, reserveA]) => reserveA.isZero());
   const isReserveBZero = allTicks.every(([, , reserveB]) => reserveB.isZero());
 
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
-    return Object.values(ticks)
-      .filter((tick): tick is TickInfo => filterTicksToFeeTier(tick, feeTier)) // filter to only fee tier ticks
-      .map((tick) =>
-        !invertedTokenOrder
-          ? [tick.price, tick.reserve1, tick.reserve0]
-          : [tick.price, tick.reserve0, tick.reserve1]
-      );
-  }, [ticks, feeTier, invertedTokenOrder]);
+    return (
+      ticks
+        .filter((tick): tick is TickInfo => filterTicksToFeeTier(tick, feeTier)) // filter to only fee tier ticks
+        // filter to only ticks that match our token set
+        .filter(
+          ({ token0, token1 }) =>
+            (token0 === tokenA && token1 === tokenB) ||
+            (token1 === tokenA && token0 === tokenB)
+        )
+        .map(({ token0, reserve0, reserve1, price }) => {
+          return token0 === tokenA
+            ? [price, reserve0, reserve1]
+            : [new BigNumber(1).dividedBy(price), reserve1, reserve0];
+        })
+    );
+  }, [ticks, tokenA, tokenB, feeTier]);
 
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
