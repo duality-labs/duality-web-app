@@ -3,8 +3,8 @@ import {
   useState,
   useCallback,
   FormEvent,
-  useMemo,
   ReactNode,
+  useMemo,
 } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
@@ -41,6 +41,7 @@ import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import { useDeposit } from './useDeposit';
 
 import { formatPrice } from '../../lib/utils/number';
+import { priceToTickIndex } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 
 import './Pool.scss';
@@ -143,7 +144,7 @@ export default function Pool() {
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
   const valuesValid = !!tokenA && !!tokenB && values.some((v) => Number(v));
 
-  const { data: { ticks: unorderedTicks } = {} } = useIndexerPairData(
+  const { data: { ticks } = {} } = useIndexerPairData(
     tokenA?.address,
     tokenB?.address
   );
@@ -167,22 +168,40 @@ export default function Pool() {
     React.Dispatch<React.SetStateAction<TickGroup>>
   >((userTicksOrCallback) => {
     function restrictTickPrices(tick: Tick): Tick {
-      const [price, tokenAValue, tokenBValue] = tick;
+      const { reserveA, reserveB, price } = tick;
       // restrict values to equal to or greater than 0
-      const newTokenAValue = tokenAValue.isGreaterThan(0)
-        ? tokenAValue
+      const newReserveA = reserveA.isGreaterThan(0)
+        ? reserveA
         : new BigNumber(0);
-      const newTokenBValue = tokenBValue.isGreaterThan(0)
-        ? tokenBValue
+      const newReserveB = reserveB.isGreaterThan(0)
+        ? reserveB
         : new BigNumber(0);
 
       if (price.isLessThan(priceMin)) {
-        return [new BigNumber(priceMin), newTokenAValue, newTokenBValue];
+        const newPrice = new BigNumber(priceMin);
+        return {
+          ...tick,
+          reserveA: newReserveA,
+          reserveB: newReserveB,
+          price: new BigNumber(priceMin),
+          tickIndex: priceToTickIndex(newPrice).toNumber(),
+        };
       }
       if (price.isGreaterThan(priceMax)) {
-        return [new BigNumber(priceMax), newTokenAValue, newTokenBValue];
+        const newPrice = new BigNumber(priceMax);
+        return {
+          ...tick,
+          reserveA: newReserveA,
+          reserveB: newReserveB,
+          price: new BigNumber(priceMax),
+          tickIndex: priceToTickIndex(newPrice).toNumber(),
+        };
       }
-      return [price, newTokenAValue, newTokenBValue];
+      return {
+        ...tick,
+        reserveA: newReserveA,
+        reserveB: newReserveB,
+      };
     }
     if (typeof userTicksOrCallback === 'function') {
       const userTicksCallback = userTicksOrCallback;
@@ -207,8 +226,7 @@ export default function Pool() {
   // for one-sided liquidity this is the extent of data to one side
   const edgePrice =
     useMemo(() => {
-      const allTicks: TickGroup = Object.values(unorderedTicks || {})
-        .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
+      const allTicks = (ticks || [])
         .filter((tick): tick is TickInfo => !!tick) // filter to only ticks
         .sort((a, b) => a.price.comparedTo(b.price))
         .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
@@ -230,7 +248,7 @@ export default function Pool() {
         edgePrice &&
         (invertedTokenOrder ? new BigNumber(1).dividedBy(edgePrice) : edgePrice)
       );
-    }, [unorderedTicks, invertedTokenOrder]) || currentPriceFromTicks;
+    }, [ticks, invertedTokenOrder]) || currentPriceFromTicks;
 
   const [, setFirstCurrentPrice] = useState<{
     tokenA?: Token;
@@ -313,20 +331,6 @@ export default function Pool() {
     setRangeMax,
   ]);
 
-  const ticks = useMemo(() => {
-    if (!invertedTokenOrder) return unorderedTicks;
-    if (!unorderedTicks) return unorderedTicks;
-    // invert ticks
-    const one = new BigNumber(1);
-    return unorderedTicks.map<TickInfo>((tickInfo) => {
-      // remap tick fields and invert the price
-      return {
-        ...tickInfo,
-        price: one.dividedBy(tickInfo.price),
-      };
-    });
-  }, [unorderedTicks, invertedTokenOrder]);
-
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
@@ -344,7 +348,7 @@ export default function Pool() {
           new BigNumber(feeType.fee),
           // filter to non-zero ticks
           userTicks.filter((userTicks) => {
-            return !userTicks[1].isZero() || !userTicks[2].isZero();
+            return !userTicks.reserveA.isZero() || !userTicks.reserveB.isZero();
           }),
           invertedTokenOrder
         );
@@ -396,7 +400,15 @@ export default function Pool() {
       const tickStart = new BigNumber(rangeMin);
       const tickEnd = new BigNumber(rangeMax);
       // set multiple ticks across the range
-      if (tickCount > 1 && tickEnd.isGreaterThan(tickStart)) {
+      const feeIndex = feeType && feeTypes.indexOf(feeType);
+      if (
+        tokenA &&
+        tokenB &&
+        tickCount > 1 &&
+        tickEnd.isGreaterThan(tickStart) &&
+        feeIndex &&
+        feeIndex >= 0
+      ) {
         const tokenAmountA = new BigNumber(values[0]);
         const tokenAmountB = new BigNumber(values[1]);
         // spread evenly after adding padding on each side
@@ -411,9 +423,9 @@ export default function Pool() {
         );
         const tickCounts: [number, number] = [0, 0];
         const tickPrices = Array.from({ length: tickCount }).reduceRight<
-          [BigNumber, BigNumber, BigNumber][]
+          Tick[]
         >((result, _, index, tickPrices) => {
-          const lastPrice = result[0]?.[0];
+          const lastPrice: BigNumber | undefined = result[0]?.price;
           const price = lastPrice?.isLessThan(edgePrice || 0)
             ? // calculate price from left (to have exact left value)
               tickStart.multipliedBy(tickGapRatio.exponentiatedBy(index))
@@ -433,12 +445,18 @@ export default function Pool() {
                 index < tickPrices.length / 2;
           // add to count
           tickCounts[invertToken ? 0 : 1] += 1;
+          const roundedPrice = new BigNumber(formatPrice(price.toFixed()));
           return [
-            [
-              new BigNumber(formatPrice(price.toFixed())),
-              new BigNumber(invertToken ? 1 : 0),
-              new BigNumber(invertToken ? 0 : 1),
-            ],
+            {
+              reserveA: new BigNumber(invertToken ? 1 : 0),
+              reserveB: new BigNumber(invertToken ? 0 : 1),
+              price: roundedPrice,
+              tickIndex: priceToTickIndex(roundedPrice).toNumber(),
+              fee: new BigNumber(feeType.fee),
+              feeIndex: feeIndex,
+              tokenA: tokenA,
+              tokenB: tokenB,
+            },
             ...result,
           ];
         }, []);
@@ -475,38 +493,50 @@ export default function Pool() {
         })();
 
         // normalise the tick amounts given
-        return tickPrices.map(([price, countA, countB], index) => {
-          return [
-            price,
-            // ensure division is to µtokens amount but given in tokens
-            tickCounts[0]
+        return tickPrices.map((tick, index) => {
+          return {
+            ...tick,
+            reserveA: tickCounts[0]
               ? tokenAmountA
                   .multipliedBy(shapeFactor[index])
-                  .multipliedBy(countA)
+                  .multipliedBy(tick.reserveA)
                   .dividedBy(tickCounts[0])
               : new BigNumber(0),
-            tickCounts[1]
+            reserveB: tickCounts[1]
               ? tokenAmountB
                   .multipliedBy(shapeFactor[index])
-                  .multipliedBy(countB)
+                  .multipliedBy(tick.reserveB)
                   .dividedBy(tickCounts[1])
               : new BigNumber(0),
-          ];
+          };
         });
       }
       // set 1 tick in the middle of the range given
-      else if (tickCount === 1 || tickStart.isEqualTo(tickEnd)) {
+      else if (
+        tokenA &&
+        tokenB &&
+        (tickCount === 1 || tickStart.isEqualTo(tickEnd)) &&
+        feeType &&
+        feeIndex &&
+        feeIndex >= 0
+      ) {
         const price = tickStart.plus(tickEnd).dividedBy(2);
+        const roundedPrice = new BigNumber(formatPrice(price.toFixed()));
         const isValueA =
           !isValueAZero && !isValueBZero
             ? edgePrice?.isGreaterThan(price) || isValueAZero
             : !isValueAZero;
         return [
-          [
-            new BigNumber(formatPrice(price.toFixed())),
-            new BigNumber(isValueA ? 1 : 0),
-            new BigNumber(isValueA ? 0 : 1),
-          ],
+          {
+            reserveA: new BigNumber(isValueA ? 1 : 0),
+            reserveB: new BigNumber(isValueA ? 0 : 1),
+            price: roundedPrice,
+            tickIndex: priceToTickIndex(roundedPrice).toNumber(),
+            fee: new BigNumber(feeType.fee),
+            feeIndex: feeIndex,
+            tokenA: tokenA,
+            tokenB: tokenB,
+          },
         ];
       }
       // or set no ticks
@@ -522,9 +552,13 @@ export default function Pool() {
       if (
         userTicks.length !== newUserTicks.length ||
         !newUserTicks.every((newUserTick, ticksIndex) => {
-          return newUserTick.every((value, valueIndex) => {
-            return value.isEqualTo(userTicks[ticksIndex][valueIndex]);
-          });
+          const userTick = userTicks[ticksIndex];
+          return (
+            newUserTick.feeIndex === userTick.feeIndex &&
+            newUserTick.tickIndex === userTick.tickIndex &&
+            newUserTick.reserveA.isEqualTo(userTick.reserveA) &&
+            newUserTick.reserveB.isEqualTo(userTick.reserveB)
+          );
         })
       ) {
         // return changed values
@@ -538,6 +572,9 @@ export default function Pool() {
     values,
     isValueAZero,
     isValueBZero,
+    feeType,
+    tokenA,
+    tokenB,
     slopeType,
     rangeMin,
     rangeMax,
@@ -968,19 +1005,26 @@ export default function Pool() {
                       pressedDelay={500}
                       pressedInterval={100}
                       stepFunction={logarithmStep}
-                      value={userTicks[userTickSelected][0].toFixed()}
+                      value={userTicks[userTickSelected].price.toFixed()}
                       onChange={(value) => {
                         setUserTicks((userTicks) => {
                           // skip non-update
                           const newValue = new BigNumber(value);
                           if (
-                            userTicks[userTickSelected][0].isEqualTo(newValue)
+                            userTicks[userTickSelected].price.isEqualTo(
+                              newValue
+                            )
                           )
                             return userTicks;
                           // replace singular tick price
                           return userTicks.map((userTick, index) => {
                             return index === userTickSelected
-                              ? [newValue, userTick[1], userTick[2]]
+                              ? {
+                                  ...userTick,
+                                  price: newValue,
+                                  tickIndex:
+                                    priceToTickIndex(newValue).toNumber(),
+                                }
                               : userTick;
                           });
                         });

@@ -24,7 +24,6 @@ export interface ShareValue {
   userReserves1?: BigNumber;
 }
 export interface TickShareValue extends ShareValue {
-  feeIndex: number;
   tick0: TickInfo;
   tick1: TickInfo;
 }
