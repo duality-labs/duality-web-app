@@ -37,7 +37,7 @@ export function router(
       : state[getPairID(tokenB, tokenA)];
     // note: sorting can be done earlier check this commit description
     const sortedTicks = exactPair.ticks
-      .slice()
+      .filter((tick) => !tick.reserve0.isZero() || !tick.reserve1.isZero())
       .sort(
         forward
           ? (a, b) => Number(a.tickIndex) - Number(b.tickIndex)
@@ -78,15 +78,10 @@ export function router(
       }
 
       return {
-        amountIn: amountIn,
+        amountIn,
         tokenIn: tokenA,
         tokenOut: tokenB,
-        amountOut: calculateOut({
-          tokenIn: tokenA,
-          tokenOut: tokenB,
-          amountIn: amountIn,
-          sortedTicks,
-        }),
+        amountOut,
       };
     } catch (err) {
       throw err;
