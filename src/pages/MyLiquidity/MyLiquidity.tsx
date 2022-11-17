@@ -20,6 +20,7 @@ import {
   useIndexerPairData,
   getBalance,
   getPairID,
+  hasInvertedOrder,
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
@@ -105,15 +106,23 @@ export default function MyLiquidity() {
         const { pairId = '', tickIndex, feeIndex, sharesOwned } = share;
         // skip this share object if there are no shares owned
         if (feeIndex === undefined || !(Number(sharesOwned) > 0)) return result;
-        const [shareToken0, shareToken1] = pairId.split('/');
-        const token0 = dualityTokens.find(
-          (token) => token.address === shareToken0
-        );
-        const token1 = dualityTokens.find(
-          (token) => token.address === shareToken1
-        );
+        const [tokenA, tokenB] = dualityTokens;
         const fee = feeTypes[Number(feeIndex)].fee;
-        if (token0 && token1 && fee) {
+        if (
+          tokenA &&
+          tokenA.address &&
+          tokenB &&
+          tokenB.address &&
+          fee !== undefined
+        ) {
+          const inverted = hasInvertedOrder(
+            pairId,
+            tokenA.address,
+            tokenB.address
+          );
+          const [token0, token1] = inverted
+            ? [tokenB, tokenA]
+            : [tokenA, tokenB];
           const extendedShare: ShareValue = { share, token0, token1 };
           const ticks = indexer[pairId]?.ticks || [];
           const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
