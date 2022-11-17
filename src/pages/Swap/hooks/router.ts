@@ -4,6 +4,7 @@ import {
   PairMap,
   TickInfo,
 } from '../../../lib/web3/indexerProvider';
+import { tickIndexToPrice } from '../../../lib/web3/utils/ticks';
 import { RouterResult } from './index';
 import { BigNumber } from 'bignumber.js';
 
@@ -41,7 +42,16 @@ export function router(
         forward
           ? (a, b) => Number(a.tickIndex) - Number(b.tickIndex)
           : (a, b) => Number(b.tickIndex) - Number(a.tickIndex)
-      );
+      )
+      .map((tick) => {
+        const tickIndex = tick.tickIndex.negated();
+        const price = tickIndexToPrice(tickIndex);
+        return {
+          ...tick,
+          price,
+          tickIndex,
+        };
+      });
     const amountIn = new BigNumber(valueA);
 
     try {
