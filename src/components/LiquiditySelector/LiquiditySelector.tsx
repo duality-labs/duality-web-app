@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { formatPrice } from '../../lib/utils/number';
+import { feeTypes } from '../../lib/web3/utils/fees';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
@@ -39,11 +40,16 @@ export interface LiquiditySelectorProps {
   oneSidedLiquidity?: boolean;
 }
 
-export type Tick = [
-  price: BigNumber,
-  tokenAValue: BigNumber,
-  tokenBValue: BigNumber
-];
+export interface Tick {
+  reserveA: BigNumber;
+  reserveB: BigNumber;
+  tickIndex: number;
+  price: BigNumber;
+  fee: BigNumber;
+  feeIndex: number;
+  tokenA: Token;
+  tokenB: Token;
+}
 export type TickGroup = Array<Tick>;
 type TickGroupBucketsEmpty = Array<
   [lowerBound: BigNumber, upperBound: BigNumber]
@@ -52,8 +58,8 @@ type TickGroupBucketsFilled = Array<
   [
     lowerBound: BigNumber,
     upperBound: BigNumber,
-    tokenAValue: BigNumber,
-    tokenBValue: BigNumber
+    reserveA: BigNumber,
+    reserveB: BigNumber
   ]
 >;
 
@@ -71,13 +77,6 @@ function useWindowWidth() {
   }, []);
 
   return width;
-}
-
-function filterTicksToFeeTier(
-  tick: TickInfo | undefined,
-  feeTier: number | undefined
-) {
-  return !!tick && (!feeTier || tick.fee.isEqualTo(feeTier));
 }
 
 const defaultStartValue = new BigNumber(1 / 1.1);
@@ -110,40 +109,52 @@ export default function LiquiditySelector({
       ticks
         // filter to only ticks that match our token set
         .filter(
-          ({ token0, token1 }) =>
-            (token0 === tokenA && token1 === tokenB) ||
-            (token1 === tokenA && token0 === tokenB)
+          ({ token0, token1, reserve0, reserve1 }) =>
+            // check that there are reserves in this tick
+            (!reserve0.isZero() || !reserve1.isZero()) &&
+            // check the direction is either forward or reverse
+            ((token0 === tokenA && token1 === tokenB) ||
+              (token1 === tokenA && token0 === tokenB))
+        )
+        .map(
+          ({
+            token0,
+            token1,
+            reserve0,
+            reserve1,
+            tickIndex,
+            price,
+            fee,
+            feeIndex,
+          }) => {
+            const forward = token0 === tokenA;
+            return {
+              tokenA: forward ? token0 : token1,
+              tokenB: forward ? token1 : token0,
+              reserveA: forward ? reserve0 : reserve1,
+              reserveB: forward ? reserve1 : reserve0,
+              tickIndex: (forward ? tickIndex : tickIndex.negated()).toNumber(),
+              price: forward ? price : new BigNumber(1).dividedBy(price),
+              fee,
+              feeIndex: feeIndex.toNumber(),
+            };
+          }
         )
         .sort((a, b) => a.price.comparedTo(b.price))
-        .map(({ token0, reserve0, reserve1, price }) => {
-          return token0 === tokenA
-            ? [price, reserve0, reserve1]
-            : [new BigNumber(1).dividedBy(price), reserve1, reserve0];
-        })
     );
   }, [ticks, tokenA, tokenB]);
 
-  const isReserveAZero = allTicks.every(([, reserveA]) => reserveA.isZero());
-  const isReserveBZero = allTicks.every(([, , reserveB]) => reserveB.isZero());
+  const isReserveAZero = allTicks.every(({ reserveA }) => reserveA.isZero());
+  const isReserveBZero = allTicks.every(({ reserveB }) => reserveB.isZero());
 
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
-    return (
-      ticks
-        .filter((tick): tick is TickInfo => filterTicksToFeeTier(tick, feeTier)) // filter to only fee tier ticks
-        // filter to only ticks that match our token set
-        .filter(
-          ({ token0, token1 }) =>
-            (token0 === tokenA && token1 === tokenB) ||
-            (token1 === tokenA && token0 === tokenB)
-        )
-        .map(({ token0, reserve0, reserve1, price }) => {
-          return token0 === tokenA
-            ? [price, reserve0, reserve1]
-            : [new BigNumber(1).dividedBy(price), reserve1, reserve0];
-        })
-    );
-  }, [ticks, tokenA, tokenB, feeTier]);
+    return !feeTier
+      ? allTicks
+      : allTicks
+          // filter to only fee tier ticks
+          .filter((tick) => feeTypes[tick.feeIndex]?.fee === feeTier);
+  }, [allTicks, feeTier]);
 
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
@@ -154,17 +165,19 @@ export default function LiquiditySelector({
   );
 
   const isUserTicksAZero =
-    oneSidedLiquidity && userTicks.every((tick) => tick?.[1].isZero() ?? true);
+    oneSidedLiquidity &&
+    userTicks.every((tick) => tick?.reserveA.isZero() ?? true);
   const isUserTicksBZero =
-    oneSidedLiquidity && userTicks.every((tick) => tick?.[2].isZero() ?? true);
+    oneSidedLiquidity &&
+    userTicks.every((tick) => tick?.reserveB.isZero() ?? true);
 
   // note edge price, the price of the edge of one-sided liquidity
   const edgePrice = useMemo(() => {
     const startTick = allTicks[0];
     const endTick = allTicks[allTicks.length - 1];
     return (
-      (isReserveAZero && startTick?.[0]) ||
-      (isReserveBZero && endTick?.[0]) ||
+      (isReserveAZero && startTick?.price) ||
+      (isReserveBZero && endTick?.price) ||
       undefined
     );
   }, [isReserveAZero, isReserveBZero, allTicks]);
@@ -176,8 +189,8 @@ export default function LiquiditySelector({
     const endTick = allTicks[allTicks.length - 1];
     return (
       (oneSidedLiquidity &&
-        ((isReserveAZero && !isUserTicksAZero && startTick?.[0]) ||
-          (isReserveBZero && !isUserTicksBZero && endTick?.[0]))) ||
+        ((isReserveAZero && !isUserTicksAZero && startTick?.price) ||
+          (isReserveBZero && !isUserTicksBZero && endTick?.price))) ||
       undefined
     );
   }, [
@@ -217,7 +230,7 @@ export default function LiquiditySelector({
   const [dataStart, dataEnd] = useMemo(() => {
     const { xMin, xMax } = allTicks.reduce<{
       [key: string]: BigNumber | undefined;
-    }>((result, [price]) => {
+    }>((result, { price }) => {
       if (result.xMin === undefined || price.isLessThan(result.xMin))
         result.xMin = price;
       if (result.xMax === undefined || price.isGreaterThan(result.xMax))
@@ -318,7 +331,7 @@ export default function LiquiditySelector({
     const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
       (result, tick) => {
         if (!tick) return result;
-        const [price] = tick;
+        const { price } = tick;
         return !result || price.isLessThan(result) ? price : result;
       },
       undefined
@@ -326,7 +339,7 @@ export default function LiquiditySelector({
     const maxUserTickPrice = userTicks.reduce<BigNumber | undefined>(
       (result, tick) => {
         if (!tick) return result;
-        const [price] = tick;
+        const { price } = tick;
         return !result || price.isGreaterThan(result) ? price : result;
       },
       undefined
@@ -557,13 +570,12 @@ function fillBuckets(
   originalTicks: Tick[]
 ) {
   const ticks = originalTicks.filter(
-    ([, tokenAValue, tokenBValue]) =>
-      !tokenAValue.isZero() || !tokenBValue.isZero()
+    ({ reserveA, reserveB }) => !reserveA.isZero() || !reserveB.isZero()
   );
   return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
     (result, [lowerBound, upperBound]) => {
-      const [tokenAValue, tokenBValue] = ticks.reduceRight(
-        (result, [price, tokenAValue, tokenBValue], index, ticks) => {
+      const [reserveA, reserveB] = ticks.reduceRight(
+        (result, { price, reserveA, reserveB }, index, ticks) => {
           // match tokens unevenly (token0 "left-aligned" / token1 "right-aligned")
           // as we bucket ticks away from the central x-axis point
           const matchToken1 =
@@ -573,9 +585,9 @@ function fillBuckets(
             price.isGreaterThan(lowerBound) &&
             price.isLessThanOrEqualTo(upperBound);
           const addToken0 =
-            matchToken0 && !tokenAValue.isZero() ? tokenAValue : undefined;
+            matchToken0 && !reserveA.isZero() ? reserveA : undefined;
           const addToken1 =
-            matchToken1 && !tokenBValue.isZero() ? tokenBValue : undefined;
+            matchToken1 && !reserveB.isZero() ? reserveB : undefined;
           // remove tick so it doesn't need to be iterated on again in next bucket
           if (matchToken0) {
             ticks.splice(index, 1);
@@ -588,8 +600,8 @@ function fillBuckets(
         },
         [new BigNumber(0), new BigNumber(0)]
       );
-      if (tokenAValue || tokenBValue) {
-        result.push([lowerBound, upperBound, tokenAValue, tokenBValue]);
+      if (reserveA || reserveB) {
+        result.push([lowerBound, upperBound, reserveA, reserveB]);
       }
       return result;
     },
@@ -723,12 +735,12 @@ function TicksArea({
   const rounding = 5;
   const hasPriceWarning =
     currentPrice &&
-    (([price, valueA, valueB]: Tick) => {
+    (({ price, reserveA, reserveB }: Tick) => {
       return (
         // if tick is tokenA: warn if price is higher than current price
-        (!valueA?.isZero() && price.isGreaterThan(currentPrice)) ||
+        (!reserveA?.isZero() && price.isGreaterThan(currentPrice)) ||
         // if tick is tokenB: warn if price is lower than current price
-        (!valueB?.isZero() && price.isLessThan(currentPrice))
+        (!reserveB?.isZero() && price.isLessThan(currentPrice))
       );
     });
   const startTickHasPriceWarning = !!(
@@ -935,31 +947,33 @@ function TicksGroup({
   canMoveX?: boolean;
   className?: string;
 }) {
-  // save Tick sum reducer to pick token values by index
-  const mapNumberByIndex = (tokenIndex: number) => {
-    return (token: Tick | undefined) => {
-      return token ? token[tokenIndex].toNumber() || [] : [];
-    };
-  };
-  const tick0Numbers = userTicks.flatMap(mapNumberByIndex(1));
-  const tick1Numbers = userTicks.flatMap(mapNumberByIndex(2));
-  const backgroundTick0Numbers = backgroundTicks.flatMap(mapNumberByIndex(1));
-  const backgroundTick1Numbers = backgroundTicks.flatMap(mapNumberByIndex(2));
+  const tickANumbers = userTicks.flatMap(
+    (tick) => tick?.reserveA.toNumber() || []
+  );
+  const tickBNumbers = userTicks.flatMap(
+    (tick) => tick?.reserveB.toNumber() || []
+  );
+  const backgroundTickANumbers = backgroundTicks.flatMap(
+    (tick) => tick?.reserveA.toNumber() || []
+  );
+  const backgroundTickBNumbers = backgroundTicks.flatMap(
+    (tick) => tick?.reserveB.toNumber() || []
+  );
 
   // find max cumulative value of either the current ticks or background ticks
   const cumulativeTokenAValues: number = Math.max(
-    tick0Numbers.reduce((acc, v) => acc + v, 0),
-    backgroundTick0Numbers.reduce((acc, v) => acc + v, 0)
+    tickANumbers.reduce((acc, v) => acc + v, 0),
+    backgroundTickANumbers.reduce((acc, v) => acc + v, 0)
   );
   const cumulativeTokenBValues: number = Math.max(
-    tick1Numbers.reduce((acc, v) => acc + v, 0),
-    backgroundTick1Numbers.reduce((acc, v) => acc + v, 0)
+    tickBNumbers.reduce((acc, v) => acc + v, 0),
+    backgroundTickBNumbers.reduce((acc, v) => acc + v, 0)
   );
 
-  const maxAValue = Math.max(...tick0Numbers, ...backgroundTick0Numbers);
-  const maxBValue = Math.max(...tick1Numbers, ...backgroundTick1Numbers);
-  const minMaxHeight0 = getMinYHeight(backgroundTick0Numbers.length);
-  const minMaxHeight1 = getMinYHeight(backgroundTick1Numbers.length);
+  const maxAValue = Math.max(...tickANumbers, ...backgroundTickANumbers);
+  const maxBValue = Math.max(...tickBNumbers, ...backgroundTickBNumbers);
+  const minMaxHeight0 = getMinYHeight(backgroundTickANumbers.length);
+  const minMaxHeight1 = getMinYHeight(backgroundTickBNumbers.length);
 
   // add a scaling factor if the maximum tick is very short (scale up to minMaxHeight)
   const scalingFactorA =
@@ -994,12 +1008,11 @@ function TicksGroup({
             return userTicks?.map((userTick, index) => {
               // modify price
               if (userTickSelected === index) {
-                const newPrice = tick[0].multipliedBy(displacementRatio);
-                return [
-                  new BigNumber(formatPrice(newPrice.toFixed())),
-                  tick[1],
-                  tick[2],
-                ];
+                const newPrice = tick.price.multipliedBy(displacementRatio);
+                return {
+                  ...userTick,
+                  price: new BigNumber(formatPrice(newPrice.toFixed())),
+                };
               } else {
                 return userTick;
               }
@@ -1023,29 +1036,31 @@ function TicksGroup({
             return userTicks?.map((userTick, index) => {
               // modify price
               if (userTickSelected === index) {
-                const originalAValue = backgroundTicks[index]?.[1];
-                const originalBValue = backgroundTicks[index]?.[2];
-                const newAValue = tick[1].multipliedBy(adjustedMovement);
-                const newBValue = tick[2].multipliedBy(adjustedMovement);
-                return [
-                  tick[0],
-                  (!canMoveDown &&
-                    originalAValue &&
-                    newAValue.isLessThan(originalAValue)) ||
-                  (!canMoveUp &&
-                    originalAValue &&
-                    newAValue.isGreaterThan(originalAValue))
-                    ? originalAValue
-                    : newAValue,
-                  (!canMoveDown &&
-                    originalBValue &&
-                    newBValue.isLessThan(originalBValue)) ||
-                  (!canMoveUp &&
-                    originalBValue &&
-                    newBValue.isGreaterThan(originalBValue))
-                    ? originalBValue
-                    : newBValue,
-                ];
+                const originalAValue = backgroundTicks[index]?.reserveA;
+                const originalBValue = backgroundTicks[index]?.reserveB;
+                const newAValue = tick.reserveA.multipliedBy(adjustedMovement);
+                const newBValue = tick.reserveB.multipliedBy(adjustedMovement);
+                return {
+                  ...userTick,
+                  reserveA:
+                    (!canMoveDown &&
+                      originalAValue &&
+                      newAValue.isLessThan(originalAValue)) ||
+                    (!canMoveUp &&
+                      originalAValue &&
+                      newAValue.isGreaterThan(originalAValue))
+                      ? originalAValue
+                      : newAValue,
+                  reserveB:
+                    (!canMoveDown &&
+                      originalBValue &&
+                      newBValue.isLessThan(originalBValue)) ||
+                    (!canMoveUp &&
+                      originalBValue &&
+                      newBValue.isGreaterThan(originalBValue))
+                      ? originalBValue
+                      : newBValue,
+                };
               } else {
                 return userTick;
               }
@@ -1087,7 +1102,8 @@ function TicksGroup({
 
   const tickPart = userTicks
     .filter(
-      (tick): tick is Tick => !!tick && !tick[1].isNaN() && !tick[2].isNaN()
+      (tick): tick is Tick =>
+        !!tick && !tick.reserveA.isNaN() && !tick.reserveB.isNaN()
     )
     .map<[Tick, number]>((tick, index) => [tick, index])
     // sort by top to bottom: select ticks then shortest -> tallest ticks
@@ -1099,39 +1115,39 @@ function TicksGroup({
       return (
         Number(aIsSelected) - Number(bIsSelected) ||
         // sort by height so that short ticks are above tall ticks
-        b[1].plus(b[2]).comparedTo(a[1].plus(a[2]))
+        b.reserveA.plus(b.reserveB).comparedTo(a.reserveA.plus(a.reserveB))
       );
     })
     .map(([tick, index]) => {
       const backgroundTick = backgroundTicks[index] || tick;
       const background = {
-        price: backgroundTick[0],
-        tokenAValue: backgroundTick[1],
-        tokenBValue: backgroundTick[2],
+        price: backgroundTick.price,
+        reserveA: backgroundTick.reserveA,
+        reserveB: backgroundTick.reserveB,
       };
-      const [price, tokenAValue, tokenBValue] = tick;
-      const scalingFactor = background.tokenAValue.isGreaterThan(0)
+      const { price, reserveA, reserveB } = tick;
+      const scalingFactor = background.reserveA.isGreaterThan(0)
         ? scalingFactorA
         : scalingFactorB;
       // todo: display cumulative value of both side of ticks, not just one side
       const totalValue =
-        (tokenAValue.isGreaterThan(0)
+        (reserveA.isGreaterThan(0)
           ? cumulativeTokenAValues &&
-            tokenAValue
+            reserveA
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenAValues)
           : cumulativeTokenBValues &&
-            tokenBValue
+            reserveB
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenBValues)) || new BigNumber(0);
       const backgroundValue =
-        (background.tokenAValue.isGreaterThan(0)
+        (background.reserveA.isGreaterThan(0)
           ? cumulativeTokenAValues &&
-            background.tokenAValue
+            background.reserveA
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenAValues)
           : cumulativeTokenBValues &&
-            background.tokenBValue
+            background.reserveB
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenBValues)) || new BigNumber(0);
 
@@ -1149,14 +1165,14 @@ function TicksGroup({
             'tick',
             totalValue.isZero() && 'tick--is-zero',
             userTickSelected === index && 'tick--selected',
-            tokenAValue.isGreaterThan(0) ? 'token-a' : 'token-b',
+            reserveA.isGreaterThan(0) ? 'token-a' : 'token-b',
             !totalValue.isEqualTo(backgroundValue) &&
               (totalValue.isLessThan(backgroundValue)
                 ? 'tick--diff-negative'
                 : 'tick--diff-positive'),
             // warn user if this seems to be a bad trade
             currentPrice &&
-              (tokenAValue.isGreaterThan(0)
+              (reserveA.isGreaterThan(0)
                 ? price.isGreaterThan(currentPrice) && 'tick--price-warning'
                 : price.isLessThan(currentPrice) && 'tick--price-warning'),
           ]

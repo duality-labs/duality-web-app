@@ -435,7 +435,7 @@ function LiquidityDistributionCard({
 }) {
   const precision = shares?.length || 1;
 
-  const { data: { ticks: unorderedTicks } = {} } = useIndexerPairData(
+  const { data: { ticks } = {} } = useIndexerPairData(
     token0?.address,
     token1?.address
   );
@@ -461,25 +461,6 @@ function LiquidityDistributionCard({
   }, []);
   const tokenA = invertedTokenOrder ? token1 : token0;
   const tokenB = invertedTokenOrder ? token0 : token1;
-
-  const ticks = useMemo(() => {
-    if (!invertedTokenOrder) return unorderedTicks;
-    if (!unorderedTicks) return unorderedTicks;
-    // invert ticks
-    const one = new BigNumber(1);
-    return Object.entries(unorderedTicks).reduce<TickInfo[]>(
-      (result, [key, tick], index) => {
-        // remap tick fields and invert the price
-        result[index] = {
-          ...tick,
-          tickIndex: tick.tickIndex.negated(),
-          price: one.dividedBy(tick.price),
-        };
-        return result;
-      },
-      []
-    );
-  }, [unorderedTicks, invertedTokenOrder]);
 
   const [totalAShareValue, totalBShareValue] = useMemo(() => {
     return shares.reduce<[BigNumber, BigNumber]>(
@@ -521,18 +502,77 @@ function LiquidityDistributionCard({
   }, [shares, invertedTokenOrder]);
 
   const userTicks = useMemo<Array<Tick>>(() => {
-    return sortedShares.flatMap((share) => {
+    const forward = !invertedTokenOrder;
+    return sortedShares.flatMap<Tick>((share) => {
       const { tick0, tick1, userReserves0, userReserves1 } = share;
       if (userReserves0 && userReserves1) {
-        return [
-          invertedTokenOrder
-            ? [
-                new BigNumber(1).dividedBy(tick1.price || new BigNumber(1)),
-                userReserves1,
-                userReserves0,
-              ]
-            : [tick0.price || new BigNumber(0), userReserves0, userReserves1],
-        ];
+        return forward
+          ? [
+              // add reserves0 as a tickA
+              ...(userReserves0.isGreaterThan(0)
+                ? [
+                    {
+                      reserveA: userReserves0,
+                      reserveB: new BigNumber(0),
+                      tickIndex: tick0.tickIndex.toNumber(),
+                      price: tick0.price,
+                      fee: tick0.fee,
+                      feeIndex: tick0.feeIndex.toNumber(),
+                      tokenA: tick0.token0,
+                      tokenB: tick0.token1,
+                    },
+                  ]
+                : []),
+              // add reserves1 as a tickB
+              ...(userReserves1.isGreaterThan(0)
+                ? [
+                    {
+                      ...tick1,
+                      reserveA: new BigNumber(0),
+                      reserveB: userReserves1,
+                      tickIndex: tick1.tickIndex.toNumber(),
+                      price: tick1.price,
+                      fee: tick1.fee,
+                      feeIndex: tick1.feeIndex.toNumber(),
+                      tokenA: tick1.token0,
+                      tokenB: tick1.token1,
+                    },
+                  ]
+                : []),
+            ]
+          : [
+              // add reserves0 as a tickB
+              ...(userReserves0.isGreaterThan(0)
+                ? [
+                    {
+                      reserveA: new BigNumber(0),
+                      reserveB: userReserves0,
+                      tickIndex: tick0.tickIndex.negated().toNumber(),
+                      price: new BigNumber(1).dividedBy(tick0.price),
+                      fee: tick0.fee,
+                      feeIndex: tick0.feeIndex.toNumber(),
+                      tokenA: tick0.token1,
+                      tokenB: tick0.token0,
+                    },
+                  ]
+                : []),
+              // add reserves1 as a tickA
+              ...(userReserves1.isGreaterThan(0)
+                ? [
+                    {
+                      ...tick1,
+                      reserveA: userReserves1,
+                      reserveB: new BigNumber(0),
+                      tickIndex: tick1.tickIndex.negated().toNumber(),
+                      price: new BigNumber(1).dividedBy(tick1.price),
+                      fee: tick1.fee,
+                      feeIndex: tick1.feeIndex.toNumber(),
+                      tokenA: tick1.token1,
+                      tokenB: tick1.token0,
+                    },
+                  ]
+                : []),
+            ];
       } else {
         return [];
       }
@@ -598,7 +638,7 @@ function LiquidityDistributionCard({
           newUpdate || userTicks,
           userTicks,
           cappedDiffAValue,
-          1,
+          'reserveA',
           -1,
           editingType === 'add'
         );
@@ -611,7 +651,7 @@ function LiquidityDistributionCard({
           newUpdate || userTicks,
           userTicks,
           cappedDiffBValue,
-          2,
+          'reserveB',
           -1,
           editingType === 'add'
         );
@@ -688,15 +728,15 @@ function LiquidityDistributionCard({
                   .isGreaterThan(normalizationTolerance) &&
                 // if value isn't trying to go negative
                 !(
-                  newEditedUserTick[1].isNegative() &&
-                  currentEditedUserTick[1].isZero()
+                  newEditedUserTick.reserveA.isNegative() &&
+                  currentEditedUserTick.reserveA.isZero()
                 )
               ) {
                 newUpdate = applyDiffToIndex(
                   newUpdate || newEditedUserTicks,
                   userTicks,
                   diffAValue,
-                  1,
+                  'reserveA',
                   indexSelected,
                   editingType === 'add'
                 );
@@ -708,15 +748,15 @@ function LiquidityDistributionCard({
                   .isGreaterThan(normalizationTolerance) &&
                 // if value isn't trying to go negative
                 !(
-                  newEditedUserTick[2].isNegative() &&
-                  currentEditedUserTick[2].isZero()
+                  newEditedUserTick.reserveB.isNegative() &&
+                  currentEditedUserTick.reserveB.isZero()
                 )
               ) {
                 newUpdate = applyDiffToIndex(
                   newUpdate || newEditedUserTicks,
                   userTicks,
                   diffBValue,
-                  2,
+                  'reserveB',
                   indexSelected,
                   editingType === 'add'
                 );
@@ -764,7 +804,7 @@ function LiquidityDistributionCard({
                 <StepNumberInput
                   key={userTickSelected}
                   readOnly
-                  value={currentTick[0].toFixed()}
+                  value={currentTick.price.toFixed()}
                 />
               </div>
             )}
@@ -888,8 +928,12 @@ function LiquidityDistributionCard({
           return {
             ...share,
             // // realign tickDiff A/B back to original shares 0/1 order
-            tickDiff0: invertedTokenOrder ? tickDiff[2] : tickDiff[1],
-            tickDiff1: invertedTokenOrder ? tickDiff[1] : tickDiff[2],
+            tickDiff0: invertedTokenOrder
+              ? tickDiff.reserveB
+              : tickDiff.reserveA,
+            tickDiff1: invertedTokenOrder
+              ? tickDiff.reserveA
+              : tickDiff.reserveB,
           };
         })
         .filter(
@@ -1018,10 +1062,11 @@ function getTickDiffs(newTicks: TickGroup, oldTicks: TickGroup) {
       const editedUserTick = newTicks[index];
       // diff ticks
       if (editedUserTick && editedUserTick !== userTick) {
-        // find diff
-        const diffAValue = editedUserTick[1].minus(userTick[1]);
-        const diffBValue = editedUserTick[2].minus(userTick[2]);
-        return [userTick[0], diffAValue, diffBValue] as Tick;
+        return {
+          ...userTick,
+          reserveA: editedUserTick.reserveA.minus(userTick.reserveA),
+          reserveB: editedUserTick.reserveB.minus(userTick.reserveB),
+        };
         // edit all other values to ensure all diffs equal the desired value
       }
       return undefined;
@@ -1051,7 +1096,10 @@ function getTickDiffCumulativeValues(
 
   return getTickDiffs(newTicks, oldTicks).reduce(
     ([diffAValue, diffBValue], diffTick) => {
-      return [diffAValue.plus(diffTick[1]), diffBValue.plus(diffTick[2])];
+      return [
+        diffAValue.plus(diffTick.reserveA),
+        diffBValue.plus(diffTick.reserveB),
+      ];
     },
     [new BigNumber(0).minus(tokenAValue), new BigNumber(0).minus(tokenBValue)]
   );
@@ -1061,37 +1109,37 @@ function applyDiffToIndex(
   newTicks: TickGroup,
   oldTicks: TickGroup,
   diffCorrectionValue: BigNumber,
-  tickPartIndex: number,
+  tickProperty: 'reserveA' | 'reserveB',
   tickIndexSelected: number,
   oldTickIsFloor = false
 ): TickGroup {
   const [adjustedUserTicks, remainder] = newTicks
-    // add index onto the TickGroup making it [price, tokenAValue, tokenBValue, index]
-    // to be able to track which tick is which, the result must be in the correct order
-    .map((tick, index) => tick.concat(new BigNumber(index)))
+    // add index onto the TickGroup to track tick order,
+    // the result must be in the correct order
+    .map<[Tick, number]>((tick, index) => [tick, index])
     // sort descending order (but with selected index at start, it will absorb the remainder)
-    .sort((a, b) => {
-      const aIsSelected = a[3].isEqualTo(tickIndexSelected);
-      const bIsSelected = b[3].isEqualTo(tickIndexSelected);
+    .sort(([a, aIndex], [b, bIndex]) => {
+      const aIsSelected = aIndex === tickIndexSelected;
+      const bIsSelected = bIndex === tickIndexSelected;
       return !aIsSelected && !bIsSelected
         ? // sort by descending value
-          b[tickPartIndex].comparedTo(a[tickPartIndex])
+          b[tickProperty].comparedTo(a[tickProperty])
         : // sort by selected index
         aIsSelected
         ? -1
         : 1;
     })
     .reduceRight(
-      ([result, remainder], tick, index) => {
-        const tokenValue: BigNumber = tick[tickPartIndex];
+      ([result, remainder], [tick, tickIndex], index) => {
+        const tokenValue: BigNumber = tick[tickProperty];
         // set the floor to be non-selected 'add' ticks or zero
         const floor =
-          oldTickIsFloor && tickIndexSelected !== tick[3].toNumber()
-            ? oldTicks[tick[3].toNumber()]?.[tickPartIndex]
+          oldTickIsFloor && tickIndexSelected !== tickIndex
+            ? oldTicks[tickIndex]?.[tickProperty]
             : new BigNumber(0);
         // skip token ticks stuck to zero
         if (tokenValue.isEqualTo(0)) {
-          return [result.concat([tick]), remainder];
+          return [result.concat([[tick, tickIndex]]), remainder];
         }
         // divided by remainder of ticks that aren't selected
         // which would be `index + 1` but it is `index + 1 - 1`
@@ -1101,8 +1149,8 @@ function applyDiffToIndex(
           .negated()
           .dividedBy(index + 1 - (tickIndexSelected >= 0 ? 1 : 0) || 1);
         const newValue = tokenValue.plus(adjustment);
-        const oldTick = oldTicks[tick[3].toNumber()];
-        const oldValue = oldTick[tickPartIndex];
+        const oldTick = oldTicks[tickIndex];
+        const oldValue = oldTick[tickProperty];
         // abort change if new value is very close to the old value
         // (like a fraction of a percent difference) to avoid useless transactions
         if (
@@ -1113,30 +1161,34 @@ function applyDiffToIndex(
             .isLessThan(1e-6)
         ) {
           // insert old value into tick
-          const newTick = tick.slice() as Tick;
-          newTick.splice(tickPartIndex, 1, oldValue);
-          return [result.concat([newTick]), remainder.plus(adjustment)];
+          const newTick = { ...tick, [tickProperty]: oldValue };
+          return [
+            result.concat([[newTick, tickIndex]]),
+            remainder.plus(adjustment),
+          ];
         }
         // apply partial adjustment value using all liquidity of current tick
         if (newValue.isLessThan(floor)) {
           // insert new value (floor) into tick
-          const newTick = tick.slice() as Tick;
-          const [removedValue] = newTick.splice(tickPartIndex, 1, floor);
+          const currentValue = tick[tickProperty];
+          const newTick = { ...tick, [tickProperty]: floor };
           // remove the applied adjustment from the remainder
           return [
-            result.concat([newTick]),
-            remainder.minus(removedValue.minus(floor)),
+            result.concat([[newTick, tickIndex]]),
+            remainder.minus(currentValue.minus(floor)),
           ];
         }
         // apply all of calculated adjustment value
         else {
           // insert new value into tick
-          const newTick = tick.slice() as Tick;
-          newTick.splice(tickPartIndex, 1, newValue);
-          return [result.concat([newTick]), remainder.plus(adjustment)];
+          const newTick = { ...tick, [tickProperty]: newValue };
+          return [
+            result.concat([[newTick, tickIndex]]),
+            remainder.plus(adjustment),
+          ];
         }
       },
-      [[] as BigNumber[][], diffCorrectionValue]
+      [[] as [Tick, number][], diffCorrectionValue]
     );
 
   if (remainder.isGreaterThan(normalizationTolerance)) {
@@ -1148,6 +1200,6 @@ function applyDiffToIndex(
   }
 
   return adjustedUserTicks
-    .sort((a, b) => a[3].comparedTo(b[3]))
-    .map((tickAndIndex) => tickAndIndex.slice(0, 3) as Tick);
+    .sort(([, aIndex], [, bIndex]) => aIndex - bIndex)
+    .map(([tick]) => tick);
 }
