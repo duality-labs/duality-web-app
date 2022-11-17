@@ -125,7 +125,7 @@ export default function MyLiquidity() {
             : [tokenA, tokenB];
           const extendedShare: ShareValue = { share, token0, token1 };
           const ticks = indexer[pairId]?.ticks || [];
-          const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
+          const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
             tickIndex,
             feeIndex
           );
