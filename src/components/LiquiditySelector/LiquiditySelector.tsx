@@ -22,7 +22,6 @@ export interface LiquiditySelectorProps {
   tokenA: Token;
   tokenB: Token;
   feeTier: number | undefined;
-  invertedTokenOrder?: boolean;
   userTickSelected: number | undefined;
   setUserTickSelected: (index: number) => void;
   setRangeMin: (rangeMin: string) => void;
@@ -82,7 +81,6 @@ export default function LiquiditySelector({
   ticks = [],
   tokenA,
   tokenB,
-  invertedTokenOrder = false,
   feeTier,
   userTickSelected = -1,
   setUserTickSelected,
@@ -97,22 +95,42 @@ export default function LiquiditySelector({
   canMoveX,
   viewOnlyUserTicks = false,
 }: LiquiditySelectorProps) {
+  // translate ticks from token0/1 to tokenA/B
   const allTicks: TickGroup = useMemo(() => {
-    return Object.values(ticks)
-      .filter((tick): tick is TickInfo => !!tick) // filter to only ticks
-      .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
-  }, [ticks]);
+    return (
+      ticks
+        // filter to only ticks that match our token set
+        .filter(
+          ({ token0, token1 }) =>
+            (token0 === tokenA && token1 === tokenB) ||
+            (token1 === tokenA && token0 === tokenB)
+        )
+        .map(({ token0, reserve0, reserve1, price }) => {
+          return token0 === tokenA
+            ? [price, reserve0, reserve1]
+            : [new BigNumber(1).dividedBy(price), reserve1, reserve0];
+        })
+    );
+  }, [ticks, tokenA, tokenB]);
 
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
-    return Object.values(ticks)
-      .filter((tick): tick is TickInfo => filterTicksToFeeTier(tick, feeTier)) // filter to only fee tier ticks
-      .map((tick) =>
-        !invertedTokenOrder
-          ? [tick.price, tick.reserve1, tick.reserve0]
-          : [tick.price, tick.reserve0, tick.reserve1]
-      );
-  }, [ticks, feeTier, invertedTokenOrder]);
+    return (
+      ticks
+        .filter((tick): tick is TickInfo => filterTicksToFeeTier(tick, feeTier)) // filter to only fee tier ticks
+        // filter to only ticks that match our token set
+        .filter(
+          ({ token0, token1 }) =>
+            (token0 === tokenA && token1 === tokenB) ||
+            (token1 === tokenA && token0 === tokenB)
+        )
+        .map(({ token0, reserve0, reserve1, price }) => {
+          return token0 === tokenA
+            ? [price, reserve0, reserve1]
+            : [new BigNumber(1).dividedBy(price), reserve1, reserve0];
+        })
+    );
+  }, [ticks, tokenA, tokenB, feeTier]);
 
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
