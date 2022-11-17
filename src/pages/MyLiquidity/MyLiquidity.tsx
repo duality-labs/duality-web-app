@@ -434,18 +434,6 @@ function LiquidityDistributionCard({
 }) {
   const precision = shares?.length || 1;
 
-  const totalShareValues = useMemo(() => {
-    return shares.reduce<[BigNumber, BigNumber]>(
-      ([total0, total1], shareValue) => {
-        return [
-          total0.plus(shareValue.userReserves0 || 0),
-          total1.plus(shareValue.userReserves1 || 0),
-        ];
-      },
-      [new BigNumber(0), new BigNumber(0)]
-    );
-  }, [shares]);
-
   const { data: { ticks: unorderedTicks } = {} } = useIndexerPairData(
     token0?.address,
     token1?.address
@@ -485,6 +473,23 @@ function LiquidityDistributionCard({
       []
     );
   }, [unorderedTicks, invertedTokenOrder]);
+
+  const [totalAShareValue, totalBShareValue] = useMemo(() => {
+    return shares.reduce<[BigNumber, BigNumber]>(
+      ([totalA, totalB], shareValue) => {
+        return invertedTokenOrder
+          ? [
+              totalA.plus(shareValue.userReserves1 || 0),
+              totalB.plus(shareValue.userReserves0 || 0),
+            ]
+          : [
+              totalA.plus(shareValue.userReserves0 || 0),
+              totalB.plus(shareValue.userReserves1 || 0),
+            ];
+      },
+      [new BigNumber(0), new BigNumber(0)]
+    );
+  }, [shares, invertedTokenOrder]);
 
   const [tickSelected, setTickSelected] = useState(-1);
   // constrain the selected tick index if the index does no longer exist
@@ -565,7 +570,6 @@ function LiquidityDistributionCard({
       );
 
       // constrain the diff values to the users available shares
-      const [totalAShareValue, totalBShareValue] = totalShareValues;
       const cappedDiffAValue = totalAShareValue.isLessThan(diffAValue)
         ? totalAShareValue
         : diffAValue;
@@ -607,7 +611,7 @@ function LiquidityDistributionCard({
       // default to no update if no normalization occurred
       return newUpdate || userTicks;
     });
-  }, [values, userTicks, totalShareValues, editingType]);
+  }, [values, userTicks, totalAShareValue, totalBShareValue, editingType]);
 
   const leftColumn = (
     <div className="col">
@@ -810,7 +814,7 @@ function LiquidityDistributionCard({
             maxValue={
               editingType === 'remove'
                 ? // use share token total or default to wallet balance
-                  totalShareValues[0].toNumber()
+                  totalAShareValue.toNumber()
                 : balanceTokenA?.toNumber()
             }
             token={tokenA}
@@ -833,7 +837,7 @@ function LiquidityDistributionCard({
             maxValue={
               editingType === 'remove'
                 ? // use share token total or default to wallet balance
-                  totalShareValues[1].toNumber()
+                  totalBShareValue.toNumber()
                 : balanceTokenB?.toNumber()
             }
             token={tokenB}
