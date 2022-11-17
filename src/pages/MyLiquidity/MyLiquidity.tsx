@@ -449,7 +449,13 @@ function LiquidityDetailPage({
   const userTicks = useMemo<Array<Tick>>(() => {
     const forward = !invertedTokenOrder;
     return sortedShares.flatMap<Tick>((share) => {
-      const { tick0, tick1, userReserves0, userReserves1 } = share;
+      const {
+        tick0,
+        tick1,
+        userReserves0,
+        userReserves1,
+        share: { tickIndex = '', feeIndex = '' },
+      } = share;
       if (userReserves0 && userReserves1) {
         return forward
           ? [
@@ -459,10 +465,10 @@ function LiquidityDetailPage({
                     {
                       reserveA: userReserves0,
                       reserveB: new BigNumber(0),
-                      tickIndex: tick0.tickIndex.toNumber(),
+                      tickIndex: Number(tickIndex),
                       price: tick0.price,
                       fee: tick0.fee,
-                      feeIndex: tick0.feeIndex.toNumber(),
+                      feeIndex: Number(feeIndex),
                       tokenA: tick0.token0,
                       tokenB: tick0.token1,
                     },
@@ -475,10 +481,10 @@ function LiquidityDetailPage({
                       ...tick1,
                       reserveA: new BigNumber(0),
                       reserveB: userReserves1,
-                      tickIndex: tick1.tickIndex.toNumber(),
+                      tickIndex: Number(tickIndex),
                       price: tick1.price,
                       fee: tick1.fee,
-                      feeIndex: tick1.feeIndex.toNumber(),
+                      feeIndex: Number(feeIndex),
                       tokenA: tick1.token0,
                       tokenB: tick1.token1,
                     },
@@ -492,10 +498,10 @@ function LiquidityDetailPage({
                     {
                       reserveA: new BigNumber(0),
                       reserveB: userReserves0,
-                      tickIndex: tick0.tickIndex.negated().toNumber(),
+                      tickIndex: -1 * Number(tickIndex),
                       price: new BigNumber(1).dividedBy(tick0.price),
                       fee: tick0.fee,
-                      feeIndex: tick0.feeIndex.toNumber(),
+                      feeIndex: Number(feeIndex),
                       tokenA: tick0.token1,
                       tokenB: tick0.token0,
                     },
@@ -508,10 +514,10 @@ function LiquidityDetailPage({
                       ...tick1,
                       reserveA: userReserves1,
                       reserveB: new BigNumber(0),
-                      tickIndex: tick1.tickIndex.negated().toNumber(),
+                      tickIndex: -1 * Number(tickIndex),
                       price: new BigNumber(1).dividedBy(tick1.price),
                       fee: tick1.fee,
-                      feeIndex: tick1.feeIndex.toNumber(),
+                      feeIndex: Number(feeIndex),
                       tokenA: tick1.token1,
                       tokenB: tick1.token0,
                     },
@@ -868,8 +874,16 @@ function LiquidityDetailPage({
       // get relevant tick diffs
       const tickDiffs = getTickDiffs(editedUserTicks, userTicks);
       const sharesDiff: Array<EditedTickShareValue> = tickDiffs
-        .map((tickDiff, index) => {
-          const share = shares[index];
+        .flatMap((tickDiff) => {
+          const tickIndex = invertedTokenOrder
+            ? tickDiff.tickIndex * -1
+            : tickDiff.tickIndex;
+          const share = shares.find((share) => {
+            return share.share.tickIndex === `${tickIndex}`;
+          });
+          if (!share) {
+            return [];
+          }
           return {
             ...share,
             // // realign tickDiff A/B back to original shares 0/1 order
