@@ -361,9 +361,11 @@ export default function Pool() {
     ]
   );
 
-  const [tickSelected, setTickSelected] = useState(-1);
+  const [userTickSelected, setUserTickSelected] = useState(-1);
   useEffect(() => {
-    setTickSelected((selected) => Math.min(selected, Number(precision) - 1));
+    setUserTickSelected((selected) =>
+      Math.min(selected, Number(precision) - 1)
+    );
   }, [precision]);
 
   const swapAll = useCallback(() => {
@@ -767,8 +769,8 @@ export default function Pool() {
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
                   ticks={ticks}
-                  tickSelected={tickSelected}
-                  setTickSelected={setTickSelected}
+                  userTickSelected={userTickSelected}
+                  setUserTickSelected={setUserTickSelected}
                   feeTier={feeType?.fee}
                   userTicks={userTicks}
                   setUserTicks={setUserTicks}
@@ -925,14 +927,14 @@ export default function Pool() {
                 }
                 return map;
               })()}
-              value={tickSelected}
+              value={userTickSelected}
               onChange={(tickSelectedString) => {
-                setTickSelected(tickSelectedString);
+                setUserTickSelected(tickSelectedString);
               }}
             />
             <div className="row">
               <div className="col">
-                {tickSelected < 0 ? (
+                {userTickSelected < 0 ? (
                   <div className="row precision-card">
                     <h3 className="card-title mr-auto">Number of Ticks</h3>
                     <StepNumberInput
@@ -961,22 +963,24 @@ export default function Pool() {
                   <div className="row tick-price-card">
                     <h3 className="card-title mr-auto">Price</h3>
                     <StepNumberInput
-                      key={tickSelected}
+                      key={userTickSelected}
                       min={priceMin}
                       max={priceMax}
                       pressedDelay={500}
                       pressedInterval={100}
                       stepFunction={logarithmStep}
-                      value={userTicks[tickSelected][0].toFixed()}
+                      value={userTicks[userTickSelected][0].toFixed()}
                       onChange={(value) => {
                         setUserTicks((userTicks) => {
                           // skip non-update
                           const newValue = new BigNumber(value);
-                          if (userTicks[tickSelected][0].isEqualTo(newValue))
+                          if (
+                            userTicks[userTickSelected][0].isEqualTo(newValue)
+                          )
                             return userTicks;
                           // replace singular tick price
                           return userTicks.map((userTick, index) => {
-                            return index === tickSelected
+                            return index === userTickSelected
                               ? [newValue, userTick[1], userTick[2]]
                               : userTick;
                           });
@@ -991,7 +995,7 @@ export default function Pool() {
               <div
                 className="col"
                 style={{
-                  display: tickSelected >= 0 ? 'none' : 'block',
+                  display: userTickSelected >= 0 ? 'none' : 'block',
                 }}
               >
                 <div className="fee-card">

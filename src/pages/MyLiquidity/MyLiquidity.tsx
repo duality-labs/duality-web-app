@@ -498,10 +498,12 @@ function LiquidityDistributionCard({
     );
   }, [shares, invertedTokenOrder]);
 
-  const [tickSelected, setTickSelected] = useState(-1);
+  const [userTickSelected, setUserTickSelected] = useState(-1);
   // constrain the selected tick index if the index does no longer exist
   useEffect(() => {
-    setTickSelected((selected) => Math.min(selected, Number(precision) - 1));
+    setUserTickSelected((selected) =>
+      Math.min(selected, Number(precision) - 1)
+    );
   }, [precision]);
 
   const [feeTier, setFeeTier] = useState<number>();
@@ -537,9 +539,9 @@ function LiquidityDistributionCard({
     });
   }, [sortedShares, invertedTokenOrder]);
 
-  const currentTick: Tick | undefined = userTicks[tickSelected];
+  const currentTick: Tick | undefined = userTicks[userTickSelected];
   const currentFeeType: FeeType | undefined =
-    feeTypes[sortedShares[tickSelected]?.feeIndex];
+    feeTypes[sortedShares[userTickSelected]?.feeIndex];
 
   const [editedUserTicks, setEditedUserTicks] = useState<Array<Tick>>(() =>
     userTicks.slice()
@@ -630,8 +632,8 @@ function LiquidityDistributionCard({
         feeTier={feeTier}
         setFeeTier={setFeeTier}
         currentPriceFromTicks={currentPriceFromTicks}
-        tickSelected={tickSelected}
-        setTickSelected={setTickSelected}
+        userTickSelected={userTickSelected}
+        setUserTickSelected={setUserTickSelected}
         userTicks={editedUserTicks}
         userTicksBase={userTicks}
         setUserTicks={useCallback(
@@ -749,9 +751,9 @@ function LiquidityDistributionCard({
             }
             return map;
           })()}
-          value={tickSelected}
+          value={userTickSelected}
           onChange={(tickSelectedString) => {
-            setTickSelected(tickSelectedString);
+            setUserTickSelected(tickSelectedString);
           }}
         />
         <div className="row">
@@ -760,7 +762,7 @@ function LiquidityDistributionCard({
               <div className="row tick-price-card">
                 <h3 className="card-title mr-auto">Price</h3>
                 <StepNumberInput
-                  key={tickSelected}
+                  key={userTickSelected}
                   readOnly
                   value={currentTick[0].toFixed()}
                 />
