@@ -372,19 +372,6 @@ function LiquidityDetailPage({
     token1?.address
   );
 
-  const [total0, total1] = shares.reduce<[BigNumber, BigNumber]>(
-    ([total0, total1], shareValue) => {
-      return [
-        total0.plus(shareValue.userReserves0 || 0),
-        total1.plus(shareValue.userReserves1 || 0),
-      ];
-    },
-    [new BigNumber(0), new BigNumber(0)]
-  );
-
-  const value0 = price0 && total0.multipliedBy(price0);
-  const value1 = price1 && total1.multipliedBy(price1);
-
   const currentPriceFromTicks0to1 =
     useCurrentPriceFromTicks(token0.address, token1.address) ||
     defaultCurrentPrice;
@@ -401,7 +388,7 @@ function LiquidityDetailPage({
   const tokenA = invertedTokenOrder ? token1 : token0;
   const tokenB = invertedTokenOrder ? token0 : token1;
 
-  const [totalAShareValue, totalBShareValue] = useMemo(() => {
+  const [totalA, totalB] = useMemo(() => {
     return shares.reduce<[BigNumber, BigNumber]>(
       ([totalA, totalB], shareValue) => {
         return invertedTokenOrder
@@ -417,6 +404,18 @@ function LiquidityDetailPage({
       [new BigNumber(0), new BigNumber(0)]
     );
   }, [shares, invertedTokenOrder]);
+
+  const [valueA, valueB] = useMemo(() => {
+    return invertedTokenOrder
+      ? [
+          price1 ? totalA.multipliedBy(price1) : new BigNumber(0),
+          price0 ? totalB.multipliedBy(price0) : new BigNumber(0),
+        ]
+      : [
+          price0 ? totalA.multipliedBy(price0) : new BigNumber(0),
+          price1 ? totalB.multipliedBy(price1) : new BigNumber(0),
+        ];
+  }, [totalA, totalB, invertedTokenOrder, price0, price1]);
 
   const [userTickSelected, setUserTickSelected] = useState(-1);
   // constrain the selected tick index if the index does no longer exist
@@ -558,11 +557,11 @@ function LiquidityDetailPage({
       );
 
       // constrain the diff values to the users available shares
-      const cappedDiffAValue = totalAShareValue.isLessThan(diffAValue)
-        ? totalAShareValue
+      const cappedDiffAValue = valueA.isLessThan(diffAValue)
+        ? valueA
         : diffAValue;
-      const cappedDiffBValue = totalBShareValue.isLessThan(diffBValue)
-        ? totalBShareValue
+      const cappedDiffBValue = valueB.isLessThan(diffBValue)
+        ? valueB
         : diffBValue;
 
       // allow the new update to be conditionally adjusted
@@ -599,7 +598,7 @@ function LiquidityDetailPage({
       // default to no update if no normalization occurred
       return newUpdate || userTicks;
     });
-  }, [values, userTicks, totalAShareValue, totalBShareValue, editingType]);
+  }, [values, userTicks, valueA, valueB, editingType]);
 
   const leftColumn = (
     <div className="col">
@@ -802,7 +801,7 @@ function LiquidityDetailPage({
             maxValue={
               editingType === 'remove'
                 ? // use share token total or default to wallet balance
-                  totalAShareValue.toNumber()
+                  valueA.toNumber()
                 : balanceTokenA?.toNumber()
             }
             token={tokenA}
@@ -825,7 +824,7 @@ function LiquidityDetailPage({
             maxValue={
               editingType === 'remove'
                 ? // use share token total or default to wallet balance
-                  totalBShareValue.toNumber()
+                  valueB.toNumber()
                 : balanceTokenB?.toNumber()
             }
             token={tokenB}
@@ -888,52 +887,52 @@ function LiquidityDetailPage({
         <div className="heading row">
           <div className="token-symbols col py-5">
             <h1>
-              {token0.symbol} + {token1.symbol}
+              {tokenA.symbol} + {tokenB.symbol}
             </h1>
-            {value0 && value1 && (
+            {valueA && valueB && (
               <div className="balance row mt-4">
                 <div className="col">Balance</div>
                 <div className="col ml-auto">
-                  ${value0.plus(value1).toFixed(2)}
+                  ${valueA.plus(valueB).toFixed(2)}
                 </div>
               </div>
             )}
             <div className="value-visual row">
-              {value0 && value1 && (
+              {valueA && valueB && (
                 <div className="value-barchart">
                   <div
-                    className="value-0"
+                    className="value-A"
                     style={{
-                      width: `${value0
-                        .dividedBy(value0.plus(value1))
+                      width: `${valueA
+                        .dividedBy(valueA.plus(valueB))
                         .multipliedBy(100)
                         .toFixed(3)}%`,
                     }}
                   ></div>
-                  <div className="value-1"></div>
+                  <div className="value-B"></div>
                 </div>
               )}
             </div>
             <div className="value-text row">
-              <div className="value-0 col mr-5">
-                {total0.toFixed(3)} {token0.symbol}{' '}
-                {value0 && <>(${value0.toFixed(2)})</>}
+              <div className="value-A col mr-5">
+                {totalA.toFixed(3)} {tokenA.symbol}{' '}
+                {valueA && <>(${valueA.toFixed(2)})</>}
               </div>
-              <div className="value-1 col ml-auto">
-                {total1.toFixed(3)} {token1.symbol}{' '}
-                {value1 && <>(${value1.toFixed(2)})</>}
+              <div className="value-B col ml-auto">
+                {totalB.toFixed(3)} {tokenB.symbol}{' '}
+                {valueB && <>(${valueB.toFixed(2)})</>}
               </div>
             </div>
           </div>
           <div className="token-icons col ml-auto">
             <div className="row">
               <img
-                src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
-                alt={`${token0.name} logo`}
+                src={tokenA.logo_URIs?.svg || tokenA.logo_URIs?.png || ''}
+                alt={`${tokenA.name} logo`}
               />
               <img
-                src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
-                alt={`${token1.name} logo`}
+                src={tokenB.logo_URIs?.svg || tokenB.logo_URIs?.png || ''}
+                alt={`${tokenB.name} logo`}
               />
             </div>
           </div>
@@ -1020,7 +1019,7 @@ function PositionCard({
               {value0 && value1 && (
                 <div className="value-barchart">
                   <div
-                    className="value-0"
+                    className="value-A"
                     style={{
                       width: `${value0
                         .dividedBy(value0.plus(value1))
@@ -1028,16 +1027,16 @@ function PositionCard({
                         .toFixed(3)}%`,
                     }}
                   ></div>
-                  <div className="value-1"></div>
+                  <div className="value-B"></div>
                 </div>
               )}
             </div>
             <div className="value-text row">
-              <div className="value-0 col">
+              <div className="value-A col">
                 {total0.toFixed(3)} {token0.symbol}{' '}
                 {value0 && <>(${value0.toFixed(2)})</>}
               </div>
-              <div className="value-1 col ml-auto">
+              <div className="value-B col ml-auto">
                 {total1.toFixed(3)} {token1.symbol}{' '}
                 {value1 && <>(${value1.toFixed(2)})</>}
               </div>
