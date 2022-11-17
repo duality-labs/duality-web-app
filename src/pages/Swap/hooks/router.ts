@@ -34,9 +34,14 @@ export function router(
     const exactPair = forward
       ? state[getPairID(tokenA, tokenB)]
       : state[getPairID(tokenB, tokenA)];
-    const sortedTicks = forward
-      ? exactPair.ticks
-      : exactPair.ticks.slice().reverse();
+    // note: sorting can be done earlier check this commit description
+    const sortedTicks = exactPair.ticks
+      .slice()
+      .sort(
+        forward
+          ? (a, b) => Number(a.tickIndex) - Number(b.tickIndex)
+          : (a, b) => Number(b.tickIndex) - Number(a.tickIndex)
+      );
     const amountIn = new BigNumber(valueA);
 
     try {
