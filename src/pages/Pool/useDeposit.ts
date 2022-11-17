@@ -15,7 +15,6 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
-import { feeTypes } from '../../lib/web3/utils/fees';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -64,21 +63,21 @@ export function useDeposit(): [
         }
         // check all user ticks and filter to non-zero ticks
         const filteredUserTicks = userTicks.filter(
-          ([price, amountA, amountB]) => {
+          ({ price, reserveA, reserveB }) => {
             if (!price || price.isLessThan(0)) {
               throw new Error('Price not set');
             }
             if (
-              !amountA ||
-              !amountB ||
-              amountA.isNaN() ||
-              amountB.isNaN() ||
-              amountA.isLessThan(0) ||
-              amountB.isLessThan(0)
+              !reserveA ||
+              !reserveB ||
+              reserveA.isNaN() ||
+              reserveB.isNaN() ||
+              reserveA.isLessThan(0) ||
+              reserveB.isLessThan(0)
             ) {
               throw new Error('Amounts not set');
             }
-            return amountA.isGreaterThan(0) || amountB.isGreaterThan(0);
+            return reserveA.isGreaterThan(0) || reserveB.isGreaterThan(0);
           }
         );
 
@@ -107,9 +106,6 @@ export function useDeposit(): [
 
         // wrap transaction logic
         try {
-          const feeIndex = feeTypes.findIndex((feeType) =>
-            fee.isEqualTo(feeType.fee)
-          );
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
           const res = await client.signAndBroadcast([
@@ -121,28 +117,16 @@ export function useDeposit(): [
               // tick indexes must be in the form of "token0/1 index"
               // not "tokenA/B" index, so inverted order indexes should be reversed
               tickIndexes: filteredUserTicks.map(
-                ([price]) =>
-                  Math.round(Math.log(price.toNumber()) / Math.log(1.0001)) *
-                  (invertedOrder ? -1 : 1)
+                (tick) => tick.tickIndex * (!invertedOrder ? -1 : 1)
               ),
-              feeIndexes: filteredUserTicks.map(() => feeIndex),
+              feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
               amountsA: filteredUserTicks.map(
-                ([, amountA]) =>
-                  getAmountInDenom(
-                    tokenA,
-                    amountA,
-                    tokenA.display,
-                    tokenA.display
-                  ) || '0'
+                ({ reserveA }) =>
+                  getAmountInDenom(tokenA, reserveA, tokenA.display) || '0'
               ),
               amountsB: filteredUserTicks.map(
-                ([, , amountB]) =>
-                  getAmountInDenom(
-                    tokenB,
-                    amountB,
-                    tokenB.display,
-                    tokenB.display
-                  ) || '0'
+                ({ reserveB }) =>
+                  getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
               ),
             }),
           ]);
