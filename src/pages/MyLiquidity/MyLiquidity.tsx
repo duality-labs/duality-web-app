@@ -170,6 +170,54 @@ export default function MyLiquidity() {
     }
   }, [shares, indexer, dualityTokens]);
 
+  // show connect page
+  if (!wallet || (!isValidating && (!balances || balances.length === 0))) {
+    return (
+      <div className="no-liquidity col">
+        <h3 className="h2 mb-4 text-center"> No liquidity positions found</h3>
+        <Link to="/add-liquidity">
+          <button className="button button-info add-liquidity p-3 px-4">
+            Add new liquidity
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  // show detail page
+  const [token0, token1] = selectedTokens || [];
+  if (token0 && token0.address && token1 && token1.address) {
+    return (
+      <LiquidityDetailPage
+        token0={token0}
+        token1={token1}
+        shares={shareValueMap?.[getPairID(token0.address, token1.address)]}
+      />
+    );
+  }
+
+  return (
+    <ShareValuesPage
+      shareValueMap={shareValueMap}
+      balances={balances}
+      setSelectedTokens={setSelectedTokens}
+    />
+  );
+}
+
+function ShareValuesPage({
+  shareValueMap,
+  balances,
+  setSelectedTokens,
+}: {
+  shareValueMap?: TickShareValueMap;
+  balances?: Coin[];
+  setSelectedTokens: React.Dispatch<
+    React.SetStateAction<[Token, Token] | undefined>
+  >;
+}) {
+  const { address } = useWeb3();
+
   const allUserSharesTokensList = useMemo<Token[]>(() => {
     // collect all tokens noted in each share
     const list = Object.values(shareValueMap || {}).reduce<Token[]>(
@@ -200,67 +248,7 @@ export default function MyLiquidity() {
     return [...allUserSharesTokensList, ...allUserBankTokensList];
   }, [allUserSharesTokensList, allUserBankTokensList]);
 
-  const { data: allUserTokenPrices } = useSimplePrice(
-    selectedTokens || allUserTokensList
-  );
-  // destructure common prices if selectedTokens was used
-  const [price0, price1] = allUserTokenPrices;
-
-  // show connect page
-  if (!wallet || (!isValidating && (!balances || balances.length === 0))) {
-    return (
-      <div className="no-liquidity col">
-        <h3 className="h2 mb-4 text-center"> No liquidity positions found</h3>
-        <Link to="/add-liquidity">
-          <button className="button button-info add-liquidity p-3 px-4">
-            Add new liquidity
-          </button>
-        </Link>
-      </div>
-    );
-  }
-
-  // show detail page
-  const [token0, token1] = selectedTokens || [];
-  if (token0 && token0.address && token1 && token1.address) {
-    return (
-      <LiquidityDetailPage
-        token0={token0}
-        token1={token1}
-        price0={price0}
-        price1={price1}
-        shares={shareValueMap?.[getPairID(token0.address, token1.address)]}
-      />
-    );
-  }
-
-  return (
-    <ShareValuesPage
-      shareValueMap={shareValueMap}
-      allUserTokensList={allUserTokensList}
-      allUserTokenPrices={allUserTokenPrices}
-      balances={balances}
-      setSelectedTokens={setSelectedTokens}
-    />
-  );
-}
-
-function ShareValuesPage({
-  shareValueMap,
-  allUserTokensList,
-  allUserTokenPrices,
-  balances,
-  setSelectedTokens,
-}: {
-  shareValueMap?: TickShareValueMap;
-  allUserTokensList: Token[];
-  allUserTokenPrices: Array<number | undefined>;
-  balances?: Coin[];
-  setSelectedTokens: React.Dispatch<
-    React.SetStateAction<[Token, Token] | undefined>
-  >;
-}) {
-  const { address } = useWeb3();
+  const { data: allUserTokenPrices } = useSimplePrice(allUserTokensList);
 
   const allUserSharesValue = Object.values(shareValueMap || {}).reduce(
     (result, shareValues) => {
@@ -385,17 +373,18 @@ const submitButtonSettings: Record<
 function LiquidityDetailPage({
   token0,
   token1,
-  price0,
-  price1,
   shares = [],
 }: {
   token0: Token;
   token1: Token;
-  price0?: number;
-  price1?: number;
   shares?: TickShareValue[];
 }) {
   const precision = shares?.length || 1;
+
+  const selectedTokens = useMemo(() => [token0, token1], [token0, token1]);
+  const {
+    data: [price0, price1],
+  } = useSimplePrice(selectedTokens);
 
   const { data: { ticks } = {} } = useIndexerPairData(
     token0?.address,
