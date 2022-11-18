@@ -185,7 +185,7 @@ export function hasMatchingPairOfOrder(
 }
 
 function transformData(ticks: Array<DexTickMap>): PairMap {
-  return ticks.reduce<PairMap>(function (
+  const intermediate = ticks.reduce<PairMap>(function (
     result,
     { pairId = '', tickIndex, tickData }
   ) {
@@ -225,6 +225,25 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
     return result;
   },
   {});
+
+  // sort all ticks
+  return Object.entries(intermediate).reduce<PairMap>(
+    (result, [pairId, pairInfo]) => {
+      result[pairId] = {
+        ...pairInfo,
+        // sort each pair's ticks
+        ticks: pairInfo.ticks.sort((a, b) => {
+          // sort by tickIndex (price) then feeIndex
+          return (
+            a.tickIndex.comparedTo(b.tickIndex) ||
+            a.feeIndex.comparedTo(b.feeIndex)
+          );
+        }),
+      };
+      return result;
+    },
+    {}
+  );
 }
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
