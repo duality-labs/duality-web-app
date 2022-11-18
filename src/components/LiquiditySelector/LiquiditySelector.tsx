@@ -10,6 +10,7 @@ import {
 
 import { formatPrice } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
+import { priceToTickIndex } from '../../lib/web3/utils/ticks';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
@@ -1009,9 +1010,13 @@ function TicksGroup({
               // modify price
               if (userTickSelected === index) {
                 const newPrice = tick.price.multipliedBy(displacementRatio);
+                const roundedPrice = new BigNumber(
+                  formatPrice(newPrice.toFixed())
+                );
                 return {
                   ...userTick,
-                  price: new BigNumber(formatPrice(newPrice.toFixed())),
+                  price: roundedPrice,
+                  tickIndex: priceToTickIndex(roundedPrice).toNumber(),
                 };
               } else {
                 return userTick;
