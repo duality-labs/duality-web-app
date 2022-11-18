@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
+import { Coin } from '@cosmjs/launchpad';
 
 import { DexShares } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
 import {
@@ -91,7 +92,7 @@ function getVirtualTickIndexes(
 }
 
 export default function MyLiquidity() {
-  const { wallet, address } = useWeb3();
+  const { wallet } = useWeb3();
   const { data: balances, isValidating } = useBankBalances();
 
   const { data: indexer } = useIndexerData();
@@ -232,6 +233,34 @@ export default function MyLiquidity() {
       />
     );
   }
+
+  return (
+    <ShareValuesPage
+      shareValueMap={shareValueMap}
+      allUserTokensList={allUserTokensList}
+      allUserTokenPrices={allUserTokenPrices}
+      balances={balances}
+      setSelectedTokens={setSelectedTokens}
+    />
+  );
+}
+
+function ShareValuesPage({
+  shareValueMap,
+  allUserTokensList,
+  allUserTokenPrices,
+  balances,
+  setSelectedTokens,
+}: {
+  shareValueMap?: TickShareValueMap;
+  allUserTokensList: Token[];
+  allUserTokenPrices: Array<number | undefined>;
+  balances?: Coin[];
+  setSelectedTokens: React.Dispatch<
+    React.SetStateAction<[Token, Token] | undefined>
+  >;
+}) {
+  const { address } = useWeb3();
 
   const allUserSharesValue = Object.values(shareValueMap || {}).reduce(
     (result, shareValues) => {
