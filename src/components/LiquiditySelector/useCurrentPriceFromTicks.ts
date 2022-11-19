@@ -39,7 +39,11 @@ function useMidTickIndexFromTicks(
     return;
   }
 
-  const sortedTicks = ticks.sort((a, b) => a.tickIndex.comparedTo(b.tickIndex));
+  const sortedTicks = ticks
+    // ignore irrelevant ticks
+    .filter((tick) => !tick.reserve0.isZero() || !tick.reserve1.isZero())
+    // ensure ticks are sorted
+    .sort((a, b) => a.tickIndex.comparedTo(b.tickIndex));
 
   const highestTick1 = sortedTicks.reduceRight<TickInfo | undefined>(
     (result, tick) => {
