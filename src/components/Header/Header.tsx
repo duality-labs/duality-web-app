@@ -31,7 +31,7 @@ export default function Header() {
           Stake
         </NavLink>
         <button
-          className="link no-blend"
+          className="link no-blend hide"
           type="button"
           onClick={toggleThemeMode}
         >
