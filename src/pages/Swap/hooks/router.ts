@@ -132,6 +132,15 @@ export function calculateOut({
       }
     }
   }
+  // if there is still tokens left to be traded the liquidity must have been exhausted
+  if (amountLeft.isGreaterThan(0)) {
+    const error: Error & {
+      insufficientLiquidityIn?: boolean;
+      insufficientLiquidityOut?: boolean;
+    } = new Error('Could not swap all tokens given');
+    error.insufficientLiquidityOut = true;
+    throw error;
+  }
   return amountOut;
 }
 
