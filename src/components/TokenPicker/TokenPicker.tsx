@@ -296,7 +296,7 @@ export default function TokenPicker({
           </button>
           <button
             type="button"
-            className="button pill py-3 px-4"
+            className="button pill py-3 px-4 hide"
             ref={createRefForValue('All')}
             onClick={() => setAssetMode('All')}
           >
