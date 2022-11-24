@@ -530,7 +530,10 @@ export default function Pool() {
           <div className="row col-row">
             {tokenA && (
               <button
-                className="badge-default corner-border badge-large font-console"
+                className={[
+                  'badge-default corner-border badge-large font-console',
+                  new BigNumber(values[0]).isZero() && 'badge-muted',
+                ].join(' ')}
                 type="button"
               >
                 {new BigNumber(values[0]).toFormat()}
@@ -554,7 +557,10 @@ export default function Pool() {
             {tokenA && tokenB && <div>+</div>}
             {tokenB && (
               <button
-                className="badge-default corner-border badge-large font-console"
+                className={[
+                  'badge-default corner-border badge-large font-console',
+                  new BigNumber(values[1]).isZero() && 'badge-muted',
+                ].join(' ')}
                 type="button"
               >
                 {new BigNumber(values[1]).toFormat()}
