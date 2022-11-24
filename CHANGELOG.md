@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.44](https://github.com/duality-labs/duality-web-app/compare/v0.1.43...v0.1.44) (2022-11-24)
+
+
+### Fixes
+
+* remove light mode ([#192](https://github.com/duality-labs/duality-web-app/issues/192)) ([bd8783d](https://github.com/duality-labs/duality-web-app/commit/bd8783dbe162ae7fa54af34a7db42b86a7490049))
+
 ## [0.1.43](https://github.com/duality-labs/duality-web-app/compare/v0.1.42...v0.1.43) (2022-11-24)
 
 
