@@ -141,7 +141,7 @@ export default function Pool() {
   ]);
 
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
-  const valuesValid = !!tokenA && !!tokenB && values.every((v) => Number(v));
+  const valuesValid = !!tokenA && !!tokenB && values.some((v) => Number(v));
 
   const { data: { ticks: unorderedTicks } = {} } = useIndexerPairData(
     tokenA?.address,
