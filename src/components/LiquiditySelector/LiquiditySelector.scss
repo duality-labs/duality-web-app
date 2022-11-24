@@ -45,6 +45,12 @@
   .token-b .tip {
     fill: hsl(202, 41%, 36%);
   }
+  .tick--price-warning {
+    .tip,
+    .line {
+      stroke: var(--error);
+    }
+  }
   .tick--hit-area {
     fill: transparent;
     stroke: none;
