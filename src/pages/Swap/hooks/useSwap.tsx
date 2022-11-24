@@ -74,7 +74,10 @@ async function sendSwap(
       const description = amountOut
         ? `Received ${amountOut
             .shiftedBy(12)
-            .toFixed(3)}${tokenOut} (click for more details)`
+            .toNumber()
+            .toLocaleString('en-US', {
+              maximumSignificantDigits: 6,
+            })} ${tokenOut} (click for more details)`
         : undefined;
 
       if (!checkMsgSuccessToast(res, { id, description })) {
