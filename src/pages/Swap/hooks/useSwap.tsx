@@ -57,7 +57,27 @@ async function sendSwap(
       }
       const { code, gasUsed } = res;
 
-      if (!checkMsgSuccessToast(res, { id })) {
+      const amountOut = JSON.parse(res.rawLog || '[]')?.[0]
+        ?.events?.find(({ type }: { type: string }) => type === 'message')
+        ?.attributes?.reduce(
+          (
+            result: BigNumber,
+            { key, value }: { key: string; value: string }
+          ) => {
+            if (key === 'AmountOut') {
+              return result.plus(value);
+            }
+            return result;
+          },
+          new BigNumber(0)
+        ) as BigNumber | undefined;
+      const description = amountOut
+        ? `Received ${amountOut
+            .shiftedBy(12)
+            .toFixed(3)}${tokenOut} (click for more details)`
+        : undefined;
+
+      if (!checkMsgSuccessToast(res, { id, description })) {
         const error: Error & { response?: DeliverTxResponse } = new Error(
           `Tx error: ${code}`
         );
@@ -66,6 +86,7 @@ async function sendSwap(
       }
       return {
         amountIn,
+        amountOut: amountOut?.toFixed(),
         tokenIn,
         tokenOut,
         minOut,
