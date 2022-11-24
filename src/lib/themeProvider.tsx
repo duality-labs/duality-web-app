@@ -90,7 +90,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider
-      value={{ themeMode, setThemeMode: setSavedTheme, toggleThemeMode }}
+      value={{
+        themeMode: 'dark',
+        setThemeMode: setSavedTheme,
+        toggleThemeMode,
+      }}
     >
       {children}
     </ThemeContext.Provider>
@@ -102,7 +106,7 @@ export function useThemeMode() {
 }
 
 function getSavedTheme(): SavedThemeMode {
-  return localStorage.getItem(storageName) as SavedThemeMode;
+  return 'dark' || (localStorage.getItem(storageName) as SavedThemeMode);
 }
 
 export function getTheme(): ThemeMode {
