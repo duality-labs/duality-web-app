@@ -296,7 +296,7 @@ export default function TokenPicker({
           </button>
           <button
             type="button"
-            className="button pill py-3 px-4"
+            className="button pill py-3 px-4 hide"
             ref={createRefForValue('All')}
             onClick={() => setAssetMode('All')}
           >
@@ -320,7 +320,7 @@ export default function TokenPicker({
               <p>Add tokens to your wallet to see them here</p>
             </div>
           ) : (
-            <div>Loading token list...</div>
+            <div>No match found</div>
           )}
         </ul>
       </Dialog>
