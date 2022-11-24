@@ -140,6 +140,9 @@ export default function Pool() {
     new BigNumber(defaultTokenAmount).toFixed(),
   ]);
 
+  const isValueAZero = new BigNumber(values[0]).isZero();
+  const isValueBZero = new BigNumber(values[1]).isZero();
+
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
   const valuesValid = !!tokenA && !!tokenB && values.some((v) => Number(v));
 
@@ -532,7 +535,7 @@ export default function Pool() {
               <button
                 className={[
                   'badge-default corner-border badge-large font-console',
-                  new BigNumber(values[0]).isZero() && 'badge-muted',
+                  isValueAZero && 'badge-muted',
                 ].join(' ')}
                 type="button"
               >
@@ -559,7 +562,7 @@ export default function Pool() {
               <button
                 className={[
                   'badge-default corner-border badge-large font-console',
-                  new BigNumber(values[1]).isZero() && 'badge-muted',
+                  isValueBZero && 'badge-muted',
                 ].join(' ')}
                 type="button"
               >
