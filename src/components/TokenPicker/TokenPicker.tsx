@@ -320,7 +320,7 @@ export default function TokenPicker({
               <p>Add tokens to your wallet to see them here</p>
             </div>
           ) : (
-            <div>Loading token list...</div>
+            <div>No match found</div>
           )}
         </ul>
       </Dialog>
