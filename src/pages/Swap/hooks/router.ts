@@ -24,9 +24,6 @@ export function router(
     const sortedTicks = forward
       ? exactPair.poolsZeroToOne
       : exactPair.poolsOneToZero;
-    const maxIn = sortedTicks.reduce((result, tick) => {
-      return result.plus(forward ? tick.reserve0 : tick.reserve1);
-    }, new BigNumber(0));
     const amountIn = new BigNumber(value0);
 
     let error:
@@ -35,11 +32,6 @@ export function router(
           insufficientLiquidityOut?: boolean;
         })
       | false = false;
-
-    if (amountIn.isGreaterThan(maxIn)) {
-      error = new Error('Not enough tick liquidity found to match trade');
-      error.insufficientLiquidityIn = true;
-    }
 
     try {
       const amountOut = calculateOut({
