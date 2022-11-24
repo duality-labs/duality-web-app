@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.42](https://github.com/duality-labs/duality-web-app/compare/v0.1.41...v0.1.42) (2022-11-24)
+
+
+### Features
+
+* Add swap amountOut result to toast notifications ([#189](https://github.com/duality-labs/duality-web-app/issues/189)) ([10519bd](https://github.com/duality-labs/duality-web-app/commit/10519bd972ae796393b9639b384c28c2990434ed))
+
 ## [0.1.41](https://github.com/duality-labs/duality-web-app/compare/v0.1.40...v0.1.41) (2022-11-24)
 
 
