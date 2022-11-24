@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.41](https://github.com/duality-labs/duality-web-app/compare/v0.1.40...v0.1.41) (2022-11-24)
+
+
+### Fixes
+
+* ticks should be red if they are beyond their token price range ([#188](https://github.com/duality-labs/duality-web-app/issues/188)) ([5672089](https://github.com/duality-labs/duality-web-app/commit/56720899406652dc32a0342f064ef2179f4f4de7))
+
 ## [0.1.40](https://github.com/duality-labs/duality-web-app/compare/v0.1.39...v0.1.40) (2022-11-08)
 
 
