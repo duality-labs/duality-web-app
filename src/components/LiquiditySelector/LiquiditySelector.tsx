@@ -597,21 +597,21 @@ function TicksArea({
   );
 
   const rounding = 5;
+  const hasPriceWarning = ([price, valueA, valueB]: Tick) => {
+    return (
+      // if tick is tokenA: warn if price is higher than current price
+      (!valueA?.isZero() && price.isGreaterThan(currentPrice)) ||
+      // if tick is tokenB: warn if price is lower than current price
+      (!valueB?.isZero() && price.isLessThan(currentPrice))
+    );
+  };
+  const startTickHasPriceWarning = !!startTick && hasPriceWarning(startTick);
+  const endTickHasPriceWarning = !!endTick && hasPriceWarning(endTick);
 
   return startTickPrice && endTickPrice ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
       <g
-        className={[
-          'pole-a',
-          startTick && hasPriceWarning(startTick) && 'pole--price-warning',
-          !startTick?.[1]?.isZero() &&
-            startTickPrice.isGreaterThan(currentPrice) &&
-            'pole--price-warning',
-          // if tick is tokenB: warn if price is lower than current price
-          !startTick?.[2]?.isZero() &&
-            startTickPrice.isLessThan(currentPrice) &&
-            'pole--price-warning',
-        ]
+        className={['pole-a', startTickHasPriceWarning && 'pole--price-warning']
           .filter(Boolean)
           .join(' ')}
       >
@@ -681,17 +681,7 @@ function TicksArea({
         />
       </g>
       <g
-        className={[
-          'pole-b',
-          // if tick is tokenA: warn if price is higher than current price
-          !endTick?.[1]?.isZero() &&
-            endTickPrice.isGreaterThan(currentPrice) &&
-            'pole--price-warning',
-          // if tick is tokenB: warn if price is lower than current price
-          !endTick?.[2]?.isZero() &&
-            endTickPrice.isLessThan(currentPrice) &&
-            'pole--price-warning',
-        ]
+        className={['pole-b', endTickHasPriceWarning && 'pole--price-warning']
           .filter(Boolean)
           .join(' ')}
       >
