@@ -330,19 +330,18 @@ export default function Pool() {
   }, [precision]);
 
   const swapAll = useCallback(() => {
+    const flipAroundCurrentPriceSwap = (value: string) => {
+      const newValue = new BigNumber(1)
+        // divide by ratio of value to current price
+        .dividedBy(new BigNumber(value).dividedBy(currentPriceFromTicks))
+        // multiply by new current price (swapped token direction of current price)
+        .multipliedBy(new BigNumber(1).dividedBy(currentPriceFromTicks));
+      // round number to formatted string
+      return newValue.toFixed();
+    };
     setInvertedTokenOrder((order) => !order);
-    setRangeMin(() => {
-      const newValue = new BigNumber(1)
-        .dividedBy(new BigNumber(rangeMax).dividedBy(currentPriceFromTicks))
-        .multipliedBy(new BigNumber(1).dividedBy(currentPriceFromTicks));
-      return newValue.toFixed();
-    });
-    setRangeMax(() => {
-      const newValue = new BigNumber(1)
-        .dividedBy(new BigNumber(rangeMin).dividedBy(currentPriceFromTicks))
-        .multipliedBy(new BigNumber(1).dividedBy(currentPriceFromTicks));
-      return newValue.toFixed();
-    });
+    setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
+    setRangeMax(() => flipAroundCurrentPriceSwap(rangeMin));
     setValues(([valueA, valueB]) => [valueB, valueA]);
     setTokenA(tokenB);
     setTokenB(tokenA);
