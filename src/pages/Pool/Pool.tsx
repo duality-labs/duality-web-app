@@ -332,17 +332,29 @@ export default function Pool() {
   const swapAll = useCallback(() => {
     setInvertedTokenOrder((order) => !order);
     setRangeMin(() => {
-      const newValue = new BigNumber(1).dividedBy(new BigNumber(rangeMax));
+      const newValue = new BigNumber(1)
+        .dividedBy(new BigNumber(rangeMax).dividedBy(currentPriceFromTicks))
+        .multipliedBy(new BigNumber(1).dividedBy(currentPriceFromTicks));
       return newValue.toFixed();
     });
     setRangeMax(() => {
-      const newValue = new BigNumber(1).dividedBy(new BigNumber(rangeMin));
+      const newValue = new BigNumber(1)
+        .dividedBy(new BigNumber(rangeMin).dividedBy(currentPriceFromTicks))
+        .multipliedBy(new BigNumber(1).dividedBy(currentPriceFromTicks));
       return newValue.toFixed();
     });
     setValues(([valueA, valueB]) => [valueB, valueA]);
     setTokenA(tokenB);
     setTokenB(tokenA);
-  }, [tokenA, tokenB, rangeMin, rangeMax, setRangeMin, setRangeMax]);
+  }, [
+    tokenA,
+    tokenB,
+    rangeMin,
+    rangeMax,
+    currentPriceFromTicks,
+    setRangeMin,
+    setRangeMax,
+  ]);
 
   const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
     'range'
