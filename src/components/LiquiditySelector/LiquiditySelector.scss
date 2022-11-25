@@ -119,6 +119,14 @@
     stroke-width: 10px;
     cursor: pointer;
   }
+  .pole--price-warning {
+    .pole-stick,
+    .pole-to-flag,
+    .pole-flag {
+      fill: var(--error);
+      stroke: var(--error);
+    }
+  }
 }
 
 .axis {

@@ -434,6 +434,7 @@ export default function LiquiditySelector({
       ) : (
         <TicksArea
           className="new-ticks-area"
+          currentPrice={currentPriceFromTicks}
           ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
@@ -518,6 +519,7 @@ function TicksBackgroundArea({
 }
 
 function TicksArea({
+  currentPrice,
   ticks,
   plotX,
   plotY,
@@ -527,6 +529,7 @@ function TicksArea({
   bucketRatio,
   className,
 }: {
+  currentPrice: BigNumber;
   ticks: TickGroup;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
@@ -536,8 +539,10 @@ function TicksArea({
   bucketRatio: number;
   className?: string;
 }) {
-  const startTickPrice = ticks?.[0]?.[0];
-  const endTickPrice = ticks?.[ticks.length - 1]?.[0];
+  const startTick = ticks?.[0];
+  const endTick = ticks?.[ticks.length - 1];
+  const startTickPrice = startTick?.[0];
+  const endTickPrice = endTick?.[0];
   const bucketWidth =
     plotX(new BigNumber(bucketRatio)) - plotX(new BigNumber(1));
 
@@ -595,7 +600,21 @@ function TicksArea({
 
   return startTickPrice && endTickPrice ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
-      <g className="pole-a">
+      <g
+        className={[
+          'pole-a',
+          startTick && hasPriceWarning(startTick) && 'pole--price-warning',
+          !startTick?.[1]?.isZero() &&
+            startTickPrice.isGreaterThan(currentPrice) &&
+            'pole--price-warning',
+          // if tick is tokenB: warn if price is lower than current price
+          !startTick?.[2]?.isZero() &&
+            startTickPrice.isLessThan(currentPrice) &&
+            'pole--price-warning',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <line
           className="line pole-stick"
           x1={plotX(startTickPrice).toFixed(3)}
@@ -661,7 +680,21 @@ function TicksArea({
           y2={plotY(new BigNumber(0.7)).toFixed(3)}
         />
       </g>
-      <g className="pole-b">
+      <g
+        className={[
+          'pole-b',
+          // if tick is tokenA: warn if price is higher than current price
+          !endTick?.[1]?.isZero() &&
+            endTickPrice.isGreaterThan(currentPrice) &&
+            'pole--price-warning',
+          // if tick is tokenB: warn if price is lower than current price
+          !endTick?.[2]?.isZero() &&
+            endTickPrice.isLessThan(currentPrice) &&
+            'pole--price-warning',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <line
           className="line pole-stick"
           x1={plotX(endTickPrice).toFixed(3)}
