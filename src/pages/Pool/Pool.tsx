@@ -51,10 +51,7 @@ const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 const priceMin = Math.pow(10, -maxFractionDigits);
 const priceMax = Math.pow(10, +maxFractionDigits);
 const defaultFee = '0.30%';
-const defaultPrice = '1';
 const defaultSlopeType = 'UNIFORM';
-const defaultRangeMin = new BigNumber(defaultPrice).dividedBy(2).toFixed();
-const defaultRangeMax = new BigNumber(defaultPrice).multipliedBy(2).toFixed();
 const defaultTokenAmount = '0';
 
 type SlopeType = 'UNIFORM' | 'UP-SLOPE' | 'BELL CURVE' | 'DOWN-SLOPE';
@@ -105,8 +102,10 @@ export default function Pool() {
     }
   }, [tokenB, tokenList]);
 
-  const [rangeMin, setRangeMinUnprotected] = useState(defaultRangeMin);
-  const [rangeMax, setRangeMaxUnprotected] = useState(defaultRangeMax);
+  // start with a default range of nothing, but is should be quickly set
+  // after price information becomes available
+  const [rangeMin, setRangeMinUnprotected] = useState('1');
+  const [rangeMax, setRangeMaxUnprotected] = useState('1');
   // protect price range extents
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
@@ -197,6 +196,80 @@ export default function Pool() {
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
     return currentPriceFromTicks.isLessThan(1);
   });
+
+  const [, setFirstCurrentPrice] = useState<{
+    tokenA?: Token;
+    tokenB?: Token;
+    price?: number | BigNumber;
+    isValueAZero?: boolean;
+    isValueBZero?: boolean;
+  }>({ tokenA, tokenB });
+  // remove price on token change
+  useEffect(() => {
+    const setRangeForNewPriceData = (price: number | BigNumber) => {
+      setRangeMin(
+        isValueAZero
+          ? new BigNumber(price).multipliedBy(1.1).toFixed()
+          : new BigNumber(price).multipliedBy(0.5).toFixed()
+      );
+      setRangeMax(
+        isValueBZero
+          ? new BigNumber(price).multipliedBy(0.9).toFixed()
+          : new BigNumber(price).multipliedBy(2).toFixed()
+      );
+    };
+    setFirstCurrentPrice((state) => {
+      // current tokens with maybe new price
+      if (state.tokenA === tokenA && state.tokenB === tokenB) {
+        // set range on first price after switching tokens
+        if (
+          (!state.price && currentPriceFromTicks) ||
+          state.isValueAZero !== isValueAZero ||
+          state.isValueBZero !== isValueBZero
+        ) {
+          setRangeForNewPriceData(currentPriceFromTicks);
+        }
+        return {
+          price: currentPriceFromTicks,
+          ...state,
+          isValueAZero,
+          isValueBZero,
+        };
+      }
+      // reverse of current tokens
+      else if (state.tokenA === tokenB && state.tokenB === tokenA) {
+        return {
+          tokenA,
+          tokenB,
+          isValueAZero,
+          isValueBZero,
+          price: new BigNumber(1).dividedBy(currentPriceFromTicks),
+        };
+      }
+      // new pair
+      else {
+        // set range on immediately known current price
+        if (currentPriceFromTicks) {
+          setRangeForNewPriceData(currentPriceFromTicks);
+        }
+        return {
+          tokenA,
+          tokenB,
+          isValueAZero,
+          isValueBZero,
+          price: currentPriceFromTicks,
+        };
+      }
+    });
+  }, [
+    tokenA,
+    tokenB,
+    isValueAZero,
+    isValueBZero,
+    currentPriceFromTicks,
+    setRangeMin,
+    setRangeMax,
+  ]);
 
   const ticks = useMemo(() => {
     if (!invertedTokenOrder) return unorderedTicks;
