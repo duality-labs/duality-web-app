@@ -679,6 +679,30 @@ function TicksArea({
           y1={plotY(new BigNumber(0.7)).toFixed(3)}
           y2={plotY(new BigNumber(0.7)).toFixed(3)}
         />
+        <line
+          className={[
+            'line flag-joiner flag-joiner--price-warning',
+            !startTickHasPriceWarning && 'hide',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          x1={plotX(currentPrice).toFixed(3)}
+          x2={plotX(startTickPrice).toFixed(3)}
+          y1={plotY(new BigNumber(0.7)).toFixed(3)}
+          y2={plotY(new BigNumber(0.7)).toFixed(3)}
+        />
+        <line
+          className={[
+            'line flag-joiner flag-joiner--price-warning',
+            !endTickHasPriceWarning && 'hide',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          x1={plotX(endTickPrice).toFixed(3)}
+          x2={plotX(currentPrice).toFixed(3)}
+          y1={plotY(new BigNumber(0.7)).toFixed(3)}
+          y2={plotY(new BigNumber(0.7)).toFixed(3)}
+        />
       </g>
       <g
         className={['pole-b', endTickHasPriceWarning && 'pole--price-warning']

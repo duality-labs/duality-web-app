@@ -101,6 +101,9 @@
     stroke-width: 1px;
     stroke: hsl(37, 62%, 68%);
   }
+  .flag-joiner--price-warning {
+    stroke: var(--error);
+  }
   .pole-stick {
     stroke-width: 4px;
   }
