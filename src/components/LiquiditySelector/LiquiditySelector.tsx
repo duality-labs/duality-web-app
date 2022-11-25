@@ -33,6 +33,7 @@ export interface LiquiditySelectorProps {
   canMoveDown?: boolean;
   canMoveX?: boolean;
   viewOnlyUserTicks?: boolean;
+  oneSidedLiquidity?: boolean;
 }
 
 export type Tick = [
@@ -93,6 +94,7 @@ export default function LiquiditySelector({
   canMoveDown,
   canMoveX,
   viewOnlyUserTicks = false,
+  oneSidedLiquidity = false,
 }: LiquiditySelectorProps) {
   const allTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
@@ -435,6 +437,7 @@ export default function LiquiditySelector({
         <TicksArea
           className="new-ticks-area"
           currentPrice={currentPriceFromTicks}
+          oneSidedLiquidity={oneSidedLiquidity}
           ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
@@ -520,6 +523,7 @@ function TicksBackgroundArea({
 
 function TicksArea({
   currentPrice,
+  oneSidedLiquidity,
   ticks,
   plotX,
   plotY,
@@ -530,6 +534,7 @@ function TicksArea({
   className,
 }: {
   currentPrice: BigNumber;
+  oneSidedLiquidity: boolean;
   ticks: TickGroup;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
@@ -682,7 +687,9 @@ function TicksArea({
         <line
           className={[
             'line flag-joiner flag-joiner--price-warning',
-            !startTickHasPriceWarning && 'hide',
+            !(oneSidedLiquidity
+              ? startTickHasPriceWarning
+              : startTickPrice.isGreaterThan(currentPrice)) && 'hide',
           ]
             .filter(Boolean)
             .join(' ')}
@@ -694,7 +701,9 @@ function TicksArea({
         <line
           className={[
             'line flag-joiner flag-joiner--price-warning',
-            !endTickHasPriceWarning && 'hide',
+            !(oneSidedLiquidity
+              ? endTickHasPriceWarning
+              : endTickPrice.isLessThan(currentPrice)) && 'hide',
           ]
             .filter(Boolean)
             .join(' ')}

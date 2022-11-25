@@ -726,6 +726,7 @@ export default function Pool() {
                   canMoveUp
                   canMoveDown
                   canMoveX
+                  oneSidedLiquidity={isValueAZero || isValueBZero}
                 ></LiquiditySelector>
               </div>
             </div>
