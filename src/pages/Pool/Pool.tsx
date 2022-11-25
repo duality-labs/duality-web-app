@@ -393,7 +393,11 @@ export default function Pool() {
               lastPrice?.dividedBy(tickGapRatio) ?? tickEnd;
 
           // choose whether token A or B should be added for the tick at this price
-          const invertToken = price.isLessThan(currentPriceFromTicks);
+          const invertToken = isValueAZero
+            ? false
+            : isValueBZero
+            ? true
+            : price.isLessThan(currentPriceFromTicks);
           // add to count
           tickCounts[invertToken ? 0 : 1] += 1;
           return [
@@ -484,6 +488,8 @@ export default function Pool() {
     });
   }, [
     values,
+    isValueAZero,
+    isValueBZero,
     slopeType,
     rangeMin,
     rangeMax,
