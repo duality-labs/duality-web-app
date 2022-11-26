@@ -273,13 +273,13 @@ export default function Pool() {
   useEffect(() => {
     function getUserTicks(): TickGroup {
       // set multiple ticks across the range
-      const feeIndex = feeType && feeTypes.indexOf(feeType);
+      const feeIndex = feeType ? feeTypes.indexOf(feeType) : -1;
       if (
         tokenA &&
         tokenB &&
         currentPriceFromTicks > 0 &&
         tickCount > 1 &&
-        feeIndex &&
+        feeType &&
         feeIndex >= 0
       ) {
         const tokenAmountA = new BigNumber(values[0]);
