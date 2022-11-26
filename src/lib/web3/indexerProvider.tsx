@@ -723,13 +723,13 @@ export function useFeeLiquidityMap(
 export function getBalance(
   token: Token,
   userBalances: UserBankBalance['balances']
-) {
+): string {
   const denomUnits = token.denom_units;
   const balanceObject = userBalances?.find((balance) => {
     return denomUnits?.find((unit) => unit.denom === balance.denom);
   });
   return (
-    (balanceObject &&
+    (!!balanceObject &&
       Number(balanceObject.amount) > 0 &&
       getAmountInDenom(
         token,
