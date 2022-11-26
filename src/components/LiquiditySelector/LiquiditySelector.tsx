@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import {
   useState,
   useMemo,
@@ -13,7 +14,6 @@ import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
 import './LiquiditySelector.scss';
-import BigNumber from 'bignumber.js';
 
 export interface LiquiditySelectorProps {
   ticks: TickMap | undefined;

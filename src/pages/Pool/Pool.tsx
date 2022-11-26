@@ -38,12 +38,12 @@ import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurr
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
+import { useDeposit } from './useDeposit';
 
 import { formatPrice } from '../../lib/utils/number';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 
 import './Pool.scss';
-import { useDeposit } from './useDeposit';
 
 // the default resolution for a number in 18 decimal places
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
