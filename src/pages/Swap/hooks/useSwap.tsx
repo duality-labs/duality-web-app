@@ -19,7 +19,7 @@ import {
   MsgSwap,
   MsgSwapResponse,
 } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/types/dex/tx';
-import { getTokens } from '../../../components/TokenPicker/hooks';
+import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 
 async function sendSwap(
@@ -45,8 +45,7 @@ async function sendSwap(
   }
 
   const tokenOut = tokenIn === tokenA ? tokenB : tokenA;
-  const tokenList = getTokens(() => true);
-  const tokenOutToken = tokenList.find((token) => token.address === tokenOut);
+  const tokenOutToken = addressableTokenMap[tokenOut];
   if (!tokenOutToken) {
     throw new Error('Invalid Output (token address not found)');
   }
