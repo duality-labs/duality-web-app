@@ -47,7 +47,7 @@ export function formatLongPrice(
 export function formatCurrency(amount: number | string, currency = 'USD') {
   return formatAmount(amount, {
     currency,
-    maximumSignificantDigits: 2,
+    maximumFractionDigits: 2,
     currencyDisplay: 'symbol',
     style: 'currency',
   });
