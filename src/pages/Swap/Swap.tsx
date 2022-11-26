@@ -175,9 +175,9 @@ export default function Swap() {
             <FontAwesomeIcon icon={faSliders}></FontAwesomeIcon>
           </button>
         </div>
-        <div className="card-row order-type mb-5">
+        <div className="card-row order-type mb-4">
           <RadioButtonGroupInput<OrderType>
-            className="order-type-input"
+            className="order-type-input mb-4 hide"
             values={useMemo(
               () => ({
                 market: (

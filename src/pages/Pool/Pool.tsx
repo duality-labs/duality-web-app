@@ -90,7 +90,7 @@ export default function Pool() {
   }, [tokenA, tokenList]);
   // set token B to be USDC token in list if not already populated
   useEffect(() => {
-    const USDC = tokenList?.find((token) => token.symbol === 'USDC');
+    const USDC = tokenList?.find((token) => token.symbol === 'STK');
     if (USDC && !tokenB) {
       setTokenB(USDC);
     }

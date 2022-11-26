@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.1.45](https://github.com/duality-labs/duality-web-app/compare/v0.1.44...v0.1.45) (2022-11-26)
+
+
+### Fixes
+
+* remove buttons that do not do anything yet (part 2) ([#193](https://github.com/duality-labs/duality-web-app/issues/193)) ([e9e7730](https://github.com/duality-labs/duality-web-app/commit/e9e7730022878fcbdfdc243537594951bb8de53b))
+
+## [0.1.44](https://github.com/duality-labs/duality-web-app/compare/v0.1.43...v0.1.44) (2022-11-24)
+
+
+### Fixes
+
+* remove light mode ([#192](https://github.com/duality-labs/duality-web-app/issues/192)) ([bd8783d](https://github.com/duality-labs/duality-web-app/commit/bd8783dbe162ae7fa54af34a7db42b86a7490049))
+
+## [0.1.43](https://github.com/duality-labs/duality-web-app/compare/v0.1.42...v0.1.43) (2022-11-24)
+
+
+### Fixes
+
+* remove buttons that do not do anything yet ([#191](https://github.com/duality-labs/duality-web-app/issues/191)) ([21be60f](https://github.com/duality-labs/duality-web-app/commit/21be60fd4da2fa03404ca696ed0f41df3e3c41f5))
+
+## [0.1.42](https://github.com/duality-labs/duality-web-app/compare/v0.1.41...v0.1.42) (2022-11-24)
+
+
+### Features
+
+* Add swap amountOut result to toast notifications ([#189](https://github.com/duality-labs/duality-web-app/issues/189)) ([10519bd](https://github.com/duality-labs/duality-web-app/commit/10519bd972ae796393b9639b384c28c2990434ed))
+
 ## [0.1.41](https://github.com/duality-labs/duality-web-app/compare/v0.1.40...v0.1.41) (2022-11-24)
 
 

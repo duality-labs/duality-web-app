@@ -329,7 +329,7 @@ export default function MyLiquidity() {
               </div>
             </div>
             <div className="col ml-auto mt-auto">
-              <a href="#deposit" className="button button-default">
+              <a href="#deposit" className="button button-default hide">
                 Deposit/Withdraw
               </a>
             </div>
