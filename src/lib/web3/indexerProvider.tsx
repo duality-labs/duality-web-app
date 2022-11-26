@@ -618,38 +618,6 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
   return { data: shares, error, isValidating };
 }
 
-export function useShareTotal(tokens: [tokenA: Token, tokenB: Token]) {
-  const { data: shares, error, isValidating } = useShares(tokens);
-  const shareTotal = useMemo(() => {
-    return shares && getShareTotal(shares, tokens);
-  }, [shares, tokens]);
-  return { data: shareTotal, error, isValidating };
-}
-
-function getShareTotal(
-  shares: DexShare[],
-  tokens: [tokenA: Token, tokenB: Token]
-): [BigNumber, BigNumber] {
-  const [addressA] = tokens.map((token) => token.address);
-  const unorderedShares = shares
-    .reduce<[BigNumber, BigNumber]>(
-      ([total0, total1], share) => {
-        return [
-          // todo: current tick data is required to split shareAmount into tokenAmount0 and tokenAmount1
-          share.shareAmount ? total0.plus(share.shareAmount) : total0,
-          share.shareAmount ? total1.plus(share.shareAmount) : total1,
-        ];
-      },
-      [new BigNumber(0), new BigNumber(0)]
-    )
-    .map((total) => total.shiftedBy(12));
-
-  // sort result
-  return addressA !== shares[0].token0
-    ? [unorderedShares[1], unorderedShares[0]]
-    : [unorderedShares[0], unorderedShares[1]];
-}
-
 export function useIndexerData() {
   return useContext(IndexerContext).indexer;
 }
