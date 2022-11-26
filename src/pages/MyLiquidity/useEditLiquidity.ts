@@ -104,7 +104,7 @@ export function useEditLiquidity(): [
                                   receiver: web3Address,
                                   price: share.price,
                                   fee: share.fee,
-                                  amounts0: 
+                                  amounts0:
                                     getAmountInDenom(
                                       token0,
                                       tickDiff0,
@@ -123,15 +123,16 @@ export function useEditLiquidity(): [
                                   // approximate removal using percentages
                                   // todo: this probably has a bug when withdrawing from a tick
                                   // that has both token0 and token1 as this only takes into account one side
-                                  sharesRemoving: getAmountInDenom(
-                                    token0,
-                                    tickDiff0
-                                      .negated()
-                                      .dividedBy(userReserves0)
-                                      .multipliedBy(share.shareAmount),
-                                    token0.display,
-                                    token0.display
-                                  ) || '0',
+                                  sharesRemoving:
+                                    getAmountInDenom(
+                                      token0,
+                                      tickDiff0
+                                        .negated()
+                                        .dividedBy(userReserves0)
+                                        .multipliedBy(share.shareAmount),
+                                      token0.display,
+                                      token0.display
+                                    ) || '0',
                                 }),
                           ]
                         : []),
@@ -164,15 +165,16 @@ export function useEditLiquidity(): [
                                   // approximate removal using percentages
                                   // todo: this probably has a bug when withdrawing from a tick
                                   // that has both token0 and token1 as this only takes into account one side
-                                  sharesRemoving: getAmountInDenom(
-                                    token1,
-                                    tickDiff1
-                                      .negated()
-                                      .dividedBy(userReserves1)
-                                      .multipliedBy(share.shareAmount),
-                                    token1.display,
-                                    token1.display
-                                  ) || '0',
+                                  sharesRemoving:
+                                    getAmountInDenom(
+                                      token1,
+                                      tickDiff1
+                                        .negated()
+                                        .dividedBy(userReserves1)
+                                        .multipliedBy(share.shareAmount),
+                                      token1.display,
+                                      token1.display
+                                    ) || '0',
                                 }),
                           ]
                         : []),

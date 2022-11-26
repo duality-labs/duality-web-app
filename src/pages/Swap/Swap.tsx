@@ -93,12 +93,22 @@ export default function Swap() {
         // todo: add slippage tolerance setting into API request
         swapRequest({
           amountIn:
-            getAmountInDenom(tokenA, result.amountIn, tokenA?.display, tokenA?.display) || '0',
+            getAmountInDenom(
+              tokenA,
+              result.amountIn,
+              tokenA?.display,
+              tokenA?.display
+            ) || '0',
           tokenIn: result.tokenIn,
           tokenOut: result.tokenOut,
           // TODO: add tolerance factor
           minOut:
-            getAmountInDenom(tokenB, result.amountOut, tokenB?.display, tokenB?.display) || '0',
+            getAmountInDenom(
+              tokenB,
+              result.amountOut,
+              tokenB?.display,
+              tokenB?.display
+            ) || '0',
           creator: address,
         });
       }

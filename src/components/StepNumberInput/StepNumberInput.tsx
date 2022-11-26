@@ -206,9 +206,7 @@ export default function StepNumberInput<T extends number | string = string>({
             style={dynamicInputStyle}
           />
         ) : (
-          <span style={dynamicInputStyle}>
-            {currentValue}
-          </span>
+          <span style={dynamicInputStyle}>{currentValue}</span>
         )}
         {!readOnly && (
           <button
