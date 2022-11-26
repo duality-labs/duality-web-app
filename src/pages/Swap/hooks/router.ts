@@ -6,6 +6,12 @@ import {
 import { RouterResult } from './index';
 import { BigNumber } from 'bignumber.js';
 
+export type SwapError = Error & {
+  insufficientLiquidity?: boolean;
+  insufficientLiquidityIn?: boolean;
+  insufficientLiquidityOut?: boolean;
+};
+
 // mock implementation of router (no hop)
 export function router(
   state: PairMap,
@@ -13,33 +19,22 @@ export function router(
   tokenB: string,
   value0: string
 ): RouterResult {
+  let error: SwapError | false = false;
+
   // find pair by searching both directions in the current state
   // the pairs are sorted by the backend not here
   const reverse = state[getPairID(tokenA, tokenB)];
   const forward = state[getPairID(tokenB, tokenA)];
   const exactPair = forward || reverse;
   if (!exactPair) {
-    throw new Error('There are no ticks for the supplied token pair');
+    error = new Error('There are no ticks for the supplied token pair');
+    error.insufficientLiquidity = true;
+    throw error;
   } else {
     const sortedTicks = forward
       ? exactPair.poolsZeroToOne
       : exactPair.poolsOneToZero;
-    const maxIn = sortedTicks.reduce((result, tick) => {
-      return result.plus(forward ? tick.reserve0 : tick.reserve1);
-    }, new BigNumber(0));
     const amountIn = new BigNumber(value0);
-
-    let error:
-      | (Error & {
-          insufficientLiquidityIn?: boolean;
-          insufficientLiquidityOut?: boolean;
-        })
-      | false = false;
-
-    if (amountIn.isGreaterThan(maxIn)) {
-      error = new Error('Not enough tick liquidity found to match trade');
-      error.insufficientLiquidityIn = true;
-    }
 
     try {
       const amountOut = calculateOut({
@@ -56,6 +51,7 @@ export function router(
         if (!error) {
           error = new Error('Not enough tick liquidity found to match trade');
         }
+        error.insufficientLiquidity = true;
         error.insufficientLiquidityOut = true;
       }
 
@@ -128,10 +124,10 @@ export function calculateOut({
         amountOut = amountOut.plus(reservesOut);
         if (amountLeft.isEqualTo(0)) return amountOut;
         if (amountLeft.isLessThan(0)) {
-          const error: Error & {
-            insufficientLiquidityIn?: boolean;
-            insufficientLiquidityOut?: boolean;
-          } = new Error('Error while calculating amount out (negative amount)');
+          const error: SwapError = new Error(
+            'Error while calculating amount out (negative amount)'
+          );
+          error.insufficientLiquidity = true;
           error.insufficientLiquidityIn = true;
           throw error;
         }
@@ -139,6 +135,13 @@ export function calculateOut({
         return amountOut.plus(maxOut);
       }
     }
+  }
+  // if there is still tokens left to be traded the liquidity must have been exhausted
+  if (amountLeft.isGreaterThan(0)) {
+    const error: SwapError = new Error('Could not swap all tokens given');
+    error.insufficientLiquidity = true;
+    error.insufficientLiquidityOut = true;
+    throw error;
   }
   return amountOut;
 }

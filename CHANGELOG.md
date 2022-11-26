@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.46](https://github.com/duality-labs/duality-web-app/compare/v0.1.45...v0.1.46) (2022-11-26)
+
+
+### Fixes
+
+* insufficient liquidity checks ([#190](https://github.com/duality-labs/duality-web-app/issues/190)) ([0f4682d](https://github.com/duality-labs/duality-web-app/commit/0f4682dd8ab7b1d816f6d344a1a4523a737bb4b2))
+
 ## [0.1.45](https://github.com/duality-labs/duality-web-app/compare/v0.1.44...v0.1.45) (2022-11-26)
 
 
