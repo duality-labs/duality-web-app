@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.47](https://github.com/duality-labs/duality-web-app/compare/v0.1.46...v0.1.47) (2022-11-26)
+
+
+### Fixes
+
+* coin denomination bugs ([#194](https://github.com/duality-labs/duality-web-app/issues/194)) ([cb85206](https://github.com/duality-labs/duality-web-app/commit/cb8520632d3d575520c9af84d3a915930d005b01))
+
 ## [0.1.46](https://github.com/duality-labs/duality-web-app/compare/v0.1.45...v0.1.46) (2022-11-26)
 
 
