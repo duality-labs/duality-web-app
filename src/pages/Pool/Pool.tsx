@@ -75,6 +75,20 @@ function formatPrice(value: BigNumber): string {
   );
 }
 
+const restrictPriceRangeValues = (valueString: string) => {
+  const value = new BigNumber(valueString);
+  if (value.isLessThan(priceMin)) {
+    return formatPrice(new BigNumber(priceMin));
+  }
+  if (value.isGreaterThan(priceMax)) {
+    return formatPrice(new BigNumber(priceMax));
+  }
+  if (!value.isNaN()) {
+    return formatPrice(value);
+  }
+  return formatPrice(new BigNumber(1));
+};
+
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
@@ -97,8 +111,36 @@ export default function Pool() {
     }
   }, [tokenB, tokenList]);
 
-  const [rangeMin, setRangeMin] = useState(defaultRangeMin);
-  const [rangeMax, setRangeMax] = useState(defaultRangeMax);
+  const [rangeMin, setRangeMinUnprotected] = useState(defaultRangeMin);
+  const [rangeMax, setRangeMaxUnprotected] = useState(defaultRangeMax);
+  // protect price range extents
+  const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
+    (valueOrCallback) => {
+      if (typeof valueOrCallback === 'function') {
+        const callback = valueOrCallback;
+        return setRangeMinUnprotected((value) => {
+          return restrictPriceRangeValues(callback(value));
+        });
+      }
+      const value = valueOrCallback;
+      setRangeMinUnprotected(restrictPriceRangeValues(value));
+    },
+    []
+  );
+  const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
+    (valueOrCallback) => {
+      if (typeof valueOrCallback === 'function') {
+        const callback = valueOrCallback;
+        return setRangeMaxUnprotected((value) => {
+          return restrictPriceRangeValues(callback(value));
+        });
+      }
+      const value = valueOrCallback;
+      setRangeMaxUnprotected(restrictPriceRangeValues(value));
+    },
+    []
+  );
+
   const [values, setValues] = useState<[string, string]>(() => [
     new BigNumber(defaultTokenAmount).toFixed(),
     new BigNumber(defaultTokenAmount).toFixed(),
@@ -241,7 +283,7 @@ export default function Pool() {
     setValues(([valueA, valueB]) => [valueB, valueA]);
     setTokenA(tokenB);
     setTokenB(tokenA);
-  }, [tokenA, tokenB, rangeMin, rangeMax]);
+  }, [tokenA, tokenB, rangeMin, rangeMax, setRangeMin, setRangeMax]);
 
   const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
     'range'
