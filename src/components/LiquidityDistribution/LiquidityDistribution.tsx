@@ -37,7 +37,6 @@ export default function LiquidityDistribution({
   userTicks,
   userTicksBase,
   setUserTicks,
-  formatPrice,
   currentPriceFromTicks,
   submitButtonText,
   submitButtonVariant = 'primary',
@@ -107,7 +106,6 @@ export default function LiquidityDistribution({
               userTicks={userTicks}
               setUserTicks={setUserTicks}
               advanced={chartTypeSelected === 'AMM'}
-              formatPrice={formatPrice}
               canMoveUp={canMoveUp}
               canMoveDown={canMoveDown}
               canMoveX={canMoveX}

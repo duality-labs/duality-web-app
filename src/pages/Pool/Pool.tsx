@@ -39,6 +39,7 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 
+import { formatPrice } from '../../lib/utils/number';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 
 import './Pool.scss';
@@ -68,25 +69,18 @@ const defaultPrecision = '6';
 // set as constant to avoid unwanted hook effects
 const defaultCurrentPrice = new BigNumber(1);
 
-function formatPrice(value: BigNumber): string {
-  return value.toFixed(
-    Math.max(0, value.dp() - value.sd(true) + 3),
-    BigNumber.ROUND_HALF_UP
-  );
-}
-
 const restrictPriceRangeValues = (valueString: string) => {
   const value = new BigNumber(valueString);
   if (value.isLessThan(priceMin)) {
-    return formatPrice(new BigNumber(priceMin));
+    return formatPrice(priceMin);
   }
   if (value.isGreaterThan(priceMax)) {
-    return formatPrice(new BigNumber(priceMax));
+    return formatPrice(priceMax);
   }
   if (!value.isNaN()) {
-    return formatPrice(value);
+    return formatPrice(value.toFixed(), { minimumSignificantDigits: 3 });
   }
-  return formatPrice(new BigNumber(1));
+  return formatPrice(1);
 };
 
 export default function Pool() {
@@ -322,7 +316,7 @@ export default function Pool() {
           tickCounts[invertToken ? 0 : 1] += 1;
           return [
             [
-              new BigNumber(formatPrice(price)),
+              new BigNumber(formatPrice(price.toFixed())),
               new BigNumber(invertToken ? 1 : 0),
               new BigNumber(invertToken ? 0 : 1),
             ],
@@ -633,7 +627,6 @@ export default function Pool() {
                   userTicks={userTicks}
                   setUserTicks={setUserTicks}
                   advanced={chartTypeSelected === 'Orderbook'}
-                  formatPrice={formatPrice}
                   canMoveUp
                   canMoveDown
                   canMoveX
@@ -978,6 +971,6 @@ function logarithmStep(valueString: string, direction: number): string {
 // This could be fixed by using a string for all cases of price as BigNumber
 // objects are not aware of how many significant digits they have.
 function formatStepNumberPriceInput(value: string) {
-  const formatted = formatPrice(new BigNumber(value));
+  const formatted = formatPrice(value, { minimumSignificantDigits: 3 });
   return formatted.length > value.length ? formatted : value;
 }
