@@ -44,10 +44,12 @@ import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import './Pool.scss';
 import { useDeposit } from './useDeposit';
 
-const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
-const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
-const denomMin = Math.pow(10, -denomExponent);
-const denomMax = Math.pow(10, +denomExponent);
+// the default resolution for a number in 18 decimal places
+const { REACT_APP__PRICE_MIN_RESOLUTION_EXP = '18' } = process.env;
+const priceResolutionExponent =
+  parseInt(REACT_APP__PRICE_MIN_RESOLUTION_EXP) || 0;
+const priceMin = Math.pow(10, -priceResolutionExponent);
+const priceMax = Math.pow(10, +priceResolutionExponent);
 const defaultFee = '0.30%';
 const defaultPrice = '1';
 const defaultSlopeType = 'UNIFORM';
@@ -132,11 +134,11 @@ export default function Pool() {
         ? token1Value
         : new BigNumber(0);
 
-      if (price.isLessThan(denomMin)) {
-        return [new BigNumber(denomMin), newToken0Value, newToken1Value];
+      if (price.isLessThan(priceMin)) {
+        return [new BigNumber(priceMin), newToken0Value, newToken1Value];
       }
-      if (price.isGreaterThan(denomMax)) {
-        return [new BigNumber(denomMax), newToken0Value, newToken1Value];
+      if (price.isGreaterThan(priceMax)) {
+        return [new BigNumber(priceMax), newToken0Value, newToken1Value];
       }
       return [price, newToken0Value, newToken1Value];
     }
@@ -640,7 +642,7 @@ export default function Pool() {
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
-                    min={denomMin}
+                    min={priceMin}
                     max={rangeMax}
                     description={
                       tokenA && tokenB
@@ -648,7 +650,7 @@ export default function Pool() {
                         : 'No Tokens'
                     }
                     minSignificantDigits={8}
-                    maxSignificantDigits={denomExponent + 1}
+                    maxSignificantDigits={priceResolutionExponent + 1}
                     format={formatStepNumberPriceInput}
                   />
                   <StepNumberInput
@@ -659,14 +661,14 @@ export default function Pool() {
                     pressedDelay={500}
                     pressedInterval={100}
                     min={rangeMin}
-                    max={denomMax}
+                    max={priceMax}
                     description={
                       tokenA && tokenB
                         ? `${tokenB.symbol} per ${tokenA.symbol}`
                         : 'No Tokens'
                     }
                     minSignificantDigits={8}
-                    maxSignificantDigits={denomExponent + 1}
+                    maxSignificantDigits={priceResolutionExponent + 1}
                     format={formatStepNumberPriceInput}
                   />
                 </div>
@@ -775,8 +777,8 @@ export default function Pool() {
                     <h3 className="card-title mr-auto">Price</h3>
                     <StepNumberInput
                       key={tickSelected}
-                      min={denomMin}
-                      max={denomMax}
+                      min={priceMin}
+                      max={priceMax}
                       pressedDelay={500}
                       pressedInterval={100}
                       stepFunction={logarithmStep}
@@ -795,7 +797,7 @@ export default function Pool() {
                           });
                         });
                       }}
-                      maxSignificantDigits={denomExponent + 1}
+                      maxSignificantDigits={priceResolutionExponent + 1}
                       format={formatStepNumberPriceInput}
                     />
                   </div>
@@ -922,7 +924,7 @@ function logarithmStep(valueString: string, direction: number): string {
             new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit + 1)
           )
           .toFixed()
-      : new BigNumber(10).exponentiatedBy(-denomExponent).toFixed()
+      : new BigNumber(10).exponentiatedBy(-priceResolutionExponent).toFixed()
     : value
         .minus(
           new BigNumber(10).exponentiatedBy(
