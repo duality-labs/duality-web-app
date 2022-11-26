@@ -400,13 +400,13 @@ export default function Pool() {
       const tickStart = new BigNumber(rangeMin);
       const tickEnd = new BigNumber(rangeMax);
       // set multiple ticks across the range
-      const feeIndex = feeType && feeTypes.indexOf(feeType);
+      const feeIndex = feeType ? feeTypes.indexOf(feeType) : -1;
       if (
         tokenA &&
         tokenB &&
         tickCount > 1 &&
         tickEnd.isGreaterThan(tickStart) &&
-        feeIndex &&
+        feeType &&
         feeIndex >= 0
       ) {
         const tokenAmountA = new BigNumber(values[0]);
