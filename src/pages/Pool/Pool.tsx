@@ -795,7 +795,7 @@ export default function Pool() {
             />
             <div className="row">
               <div className="col">
-                {userTickSelected < 0 ? (
+                {!userTicks[userTickSelected] ? (
                   <div className="row precision-card">
                     <h3 className="card-title mr-auto">Number of Ticks</h3>
                     <StepNumberInput
