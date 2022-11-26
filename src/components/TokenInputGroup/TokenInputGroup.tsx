@@ -16,6 +16,9 @@ import {
 
 import './TokenInputGroup.scss';
 
+const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
+
 const minSignificantDigits = 12;
 const maxSignificantDigits = 20;
 const placeholder = '...';
@@ -102,7 +105,11 @@ export default function TokenInputGroup({
             type="button"
             onClick={() =>
               onValueChanged?.(
-                formatLongPrice(maxValue, { maximumSignificantDigits: 21 })
+                // allow max value be as long as it needs to be to perfectly fit user's balance
+                new BigNumber(maxValue).toFixed(
+                  maxFractionDigits,
+                  BigNumber.ROUND_DOWN
+                )
               )
             }
           >
@@ -111,6 +118,7 @@ export default function TokenInputGroup({
           <button
             type="button"
             onClick={() =>
+              // allow rounding on half of balance because we don't need an exact target
               onValueChanged?.(formatLongPrice(Number(maxValue) / 2))
             }
           >
