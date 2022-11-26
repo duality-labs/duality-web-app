@@ -59,12 +59,12 @@ async function sendSwap(
 
       const amountOut = JSON.parse(res.rawLog || '[]')?.[0]
         ?.events?.find(({ type }: { type: string }) => type === 'message')
-        ?.attributes?.reduce(
+        ?.attributes?.reduceRight(
           (
             result: BigNumber,
             { key, value }: { key: string; value: string }
           ) => {
-            if (key === 'AmountOut') {
+            if (result.isZero() && key === 'AmountOut') {
               return result.plus(value);
             }
             return result;
@@ -72,12 +72,9 @@ async function sendSwap(
           new BigNumber(0)
         ) as BigNumber | undefined;
       const description = amountOut
-        ? `Received ${amountOut
-            .shiftedBy(12)
-            .toNumber()
-            .toLocaleString('en-US', {
-              maximumSignificantDigits: 6,
-            })} ${tokenOut} (click for more details)`
+        ? `Received ${amountOut.toNumber().toLocaleString('en-US', {
+            maximumSignificantDigits: 6,
+          })} ${tokenOut} (click for more details)`
         : undefined;
 
       if (!checkMsgSuccessToast(res, { id, description })) {
