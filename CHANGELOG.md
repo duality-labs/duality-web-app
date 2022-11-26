@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.48](https://github.com/duality-labs/duality-web-app/compare/v0.1.47...v0.1.48) (2022-11-26)
+
+
+### Fixes
+
+* SVG drawing of NaN heights ([#197](https://github.com/duality-labs/duality-web-app/issues/197)) ([dc05c4c](https://github.com/duality-labs/duality-web-app/commit/dc05c4c4de7d5a907f65705b48555f2e7d7d5ded))
+
 ## [0.1.47](https://github.com/duality-labs/duality-web-app/compare/v0.1.46...v0.1.47) (2022-11-26)
 
 
