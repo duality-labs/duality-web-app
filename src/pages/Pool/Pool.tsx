@@ -45,11 +45,10 @@ import './Pool.scss';
 import { useDeposit } from './useDeposit';
 
 // the default resolution for a number in 18 decimal places
-const { REACT_APP__PRICE_MIN_RESOLUTION_EXP = '18' } = process.env;
-const priceResolutionExponent =
-  parseInt(REACT_APP__PRICE_MIN_RESOLUTION_EXP) || 0;
-const priceMin = Math.pow(10, -priceResolutionExponent);
-const priceMax = Math.pow(10, +priceResolutionExponent);
+const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
+const priceMin = Math.pow(10, -maxFractionDigits);
+const priceMax = Math.pow(10, +maxFractionDigits);
 const defaultFee = '0.30%';
 const defaultPrice = '1';
 const defaultSlopeType = 'UNIFORM';
@@ -650,7 +649,7 @@ export default function Pool() {
                         : 'No Tokens'
                     }
                     minSignificantDigits={8}
-                    maxSignificantDigits={priceResolutionExponent + 1}
+                    maxSignificantDigits={maxFractionDigits + 1}
                     format={formatStepNumberPriceInput}
                   />
                   <StepNumberInput
@@ -668,7 +667,7 @@ export default function Pool() {
                         : 'No Tokens'
                     }
                     minSignificantDigits={8}
-                    maxSignificantDigits={priceResolutionExponent + 1}
+                    maxSignificantDigits={maxFractionDigits + 1}
                     format={formatStepNumberPriceInput}
                   />
                 </div>
@@ -797,7 +796,7 @@ export default function Pool() {
                           });
                         });
                       }}
-                      maxSignificantDigits={priceResolutionExponent + 1}
+                      maxSignificantDigits={maxFractionDigits + 1}
                       format={formatStepNumberPriceInput}
                     />
                   </div>
@@ -924,7 +923,7 @@ function logarithmStep(valueString: string, direction: number): string {
             new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit + 1)
           )
           .toFixed()
-      : new BigNumber(10).exponentiatedBy(-priceResolutionExponent).toFixed()
+      : new BigNumber(10).exponentiatedBy(-maxFractionDigits).toFixed()
     : value
         .minus(
           new BigNumber(10).exponentiatedBy(

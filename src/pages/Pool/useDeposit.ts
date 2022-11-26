@@ -16,6 +16,9 @@ import {
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 
+const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
+
 interface SendDepositResponse {
   gasUsed: string;
   receivedTokenA: string;
@@ -114,12 +117,22 @@ export function useDeposit(): [
                     token0: tokenA.address,
                     token1: tokenB.address,
                     receiver: web3Address,
-                    price: price.toFixed(18),
-                    fee: fee.toFixed(18),
+                    price: price.toFixed(maxFractionDigits),
+                    fee: fee.toFixed(maxFractionDigits),
                     amounts0:
-                      getAmountInDenom(tokenA, amount0, tokenA.display, tokenA.display) || '0',
+                      getAmountInDenom(
+                        tokenA,
+                        amount0,
+                        tokenA.display,
+                        tokenA.display
+                      ) || '0',
                     amounts1:
-                      getAmountInDenom(tokenB, amount1, tokenB.display, tokenB.display) || '0',
+                      getAmountInDenom(
+                        tokenB,
+                        amount1,
+                        tokenB.display,
+                        tokenB.display
+                      ) || '0',
                   })
                 : []
             )
@@ -161,7 +174,10 @@ export function useDeposit(): [
                     ) {
                       // read the matching tokens into their values
                       const attrDenom = attr.value.replace(/[\d.]+/g, '');
-                      const isDenomA = !!tokenA.denom_units.find(({ denom='', aliases=[] }) => [denom, ...aliases].includes(attrDenom));
+                      const isDenomA = !!tokenA.denom_units.find(
+                        ({ denom = '', aliases = [] }) =>
+                          [denom, ...aliases].includes(attrDenom)
+                      );
                       if (isDenomA) {
                         acc.receivedTokenA = new BigNumber(
                           acc.receivedTokenA || 0
@@ -174,7 +190,10 @@ export function useDeposit(): [
                           ) || '0'
                         );
                       }
-                      const isDenomB = !!tokenB.denom_units.find(({ denom='', aliases=[] }) => [denom, ...aliases].includes(attrDenom));
+                      const isDenomB = !!tokenB.denom_units.find(
+                        ({ denom = '', aliases = [] }) =>
+                          [denom, ...aliases].includes(attrDenom)
+                      );
                       if (isDenomB) {
                         acc.receivedTokenB = new BigNumber(
                           acc.receivedTokenB || 0

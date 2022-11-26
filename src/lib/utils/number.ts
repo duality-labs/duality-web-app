@@ -1,3 +1,6 @@
+const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
+
 // format to a visually pleasing output
 // should never be passed on to further calculations due to rounding
 // it is intended that the amount passed here has no more decimal places
@@ -10,6 +13,7 @@ export function formatAmount(
   const givenSD = opts.maximumSignificantDigits ?? 6;
   return !isNaN(numericAmount)
     ? numericAmount.toLocaleString('en-US', {
+        maximumFractionDigits: maxFractionDigits,
         ...opts,
         ...(numericAmount < Math.pow(10, givenSD) && {
           maximumSignificantDigits: givenSD,

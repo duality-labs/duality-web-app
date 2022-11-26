@@ -42,6 +42,9 @@ import './MyLiquidity.scss';
 import { useEditLiquidity } from './useEditLiquidity';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 
+const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
+
 interface ShareValue {
   share: DexShare;
   token0: Token;
@@ -63,7 +66,7 @@ interface TickShareValueMap {
 const defaultTokenAmount = '0';
 
 // modify ticks only if difference is greater than our tolerance
-const normalizationTolerance = 1e-18;
+const normalizationTolerance = Math.pow(10, -maxFractionDigits);
 
 function matchTokenDenom(denom: string) {
   return (token: Token) =>
@@ -535,7 +538,6 @@ function LiquidityDistributionCard({
       let newUpdate;
 
       // modify only if difference is greater than our tolerance
-      const normalizationTolerance = 1e-18;
       if (
         // if diff A is significant
         cappedDiffAValue?.absoluteValue().isGreaterThan(normalizationTolerance)
@@ -627,7 +629,6 @@ function LiquidityDistributionCard({
               let newUpdate;
 
               // modify only if difference is greater than our tolerance
-              const normalizationTolerance = 1e-18;
               if (
                 // if diff A is significant
                 diffAValue
