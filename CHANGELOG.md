@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.50](https://github.com/duality-labs/duality-web-app/compare/v0.1.49...v0.1.50) (2022-11-26)
+
+
+### Fixes
+
+* linting issues from previous commits ([#199](https://github.com/duality-labs/duality-web-app/issues/199)) ([c199de6](https://github.com/duality-labs/duality-web-app/commit/c199de65b635c120517688cdb2727dae05e636bf))
+
 ## [0.1.49](https://github.com/duality-labs/duality-web-app/compare/v0.1.48...v0.1.49) (2022-11-26)
 
 
