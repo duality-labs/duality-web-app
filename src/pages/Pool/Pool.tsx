@@ -268,17 +268,11 @@ export default function Pool() {
     setInvertedTokenOrder((order) => !order);
     setRangeMin(() => {
       const newValue = new BigNumber(1).dividedBy(new BigNumber(rangeMax));
-      return newValue.toFixed(
-        Math.max(0, newValue.dp() - newValue.sd(true) + 3),
-        BigNumber.ROUND_HALF_DOWN
-      );
+      return newValue.toFixed();
     });
     setRangeMax(() => {
       const newValue = new BigNumber(1).dividedBy(new BigNumber(rangeMin));
-      return newValue.toFixed(
-        Math.max(0, newValue.dp() - newValue.sd(true) + 3),
-        BigNumber.ROUND_HALF_UP
-      );
+      return newValue.toFixed();
     });
     setValues(([valueA, valueB]) => [valueB, valueA]);
     setTokenA(tokenB);
