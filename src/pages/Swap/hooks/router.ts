@@ -6,6 +6,12 @@ import {
 import { RouterResult } from './index';
 import { BigNumber } from 'bignumber.js';
 
+export type SwapError = Error & {
+  insufficientLiquidity?: boolean;
+  insufficientLiquidityIn?: boolean;
+  insufficientLiquidityOut?: boolean;
+};
+
 // mock implementation of router (no hop)
 export function router(
   state: PairMap,
@@ -13,13 +19,7 @@ export function router(
   tokenB: string,
   value0: string
 ): RouterResult {
-  let error:
-    | (Error & {
-        insufficientLiquidity?: boolean;
-        insufficientLiquidityIn?: boolean;
-        insufficientLiquidityOut?: boolean;
-      })
-    | false = false;
+  let error: SwapError | false = false;
 
   // find pair by searching both directions in the current state
   // the pairs are sorted by the backend not here
@@ -124,11 +124,9 @@ export function calculateOut({
         amountOut = amountOut.plus(reservesOut);
         if (amountLeft.isEqualTo(0)) return amountOut;
         if (amountLeft.isLessThan(0)) {
-          const error: Error & {
-            insufficientLiquidity?: boolean;
-            insufficientLiquidityIn?: boolean;
-            insufficientLiquidityOut?: boolean;
-          } = new Error('Error while calculating amount out (negative amount)');
+          const error: SwapError = new Error(
+            'Error while calculating amount out (negative amount)'
+          );
           error.insufficientLiquidity = true;
           error.insufficientLiquidityIn = true;
           throw error;
@@ -140,11 +138,7 @@ export function calculateOut({
   }
   // if there is still tokens left to be traded the liquidity must have been exhausted
   if (amountLeft.isGreaterThan(0)) {
-    const error: Error & {
-      insufficientLiquidity?: boolean;
-      insufficientLiquidityIn?: boolean;
-      insufficientLiquidityOut?: boolean;
-    } = new Error('Could not swap all tokens given');
+    const error: SwapError = new Error('Could not swap all tokens given');
     error.insufficientLiquidity = true;
     error.insufficientLiquidityOut = true;
     throw error;

@@ -1,7 +1,7 @@
 import { useIndexerData, PairMap } from '../../../lib/web3/indexerProvider';
 import { useEffect, useState } from 'react';
 import { PairRequest, PairResult, RouterResult } from './index';
-import { routerAsync, calculateFee } from './router';
+import { routerAsync, calculateFee, SwapError } from './router';
 import BigNumber from 'bignumber.js';
 
 const cachedRequests: {
@@ -31,21 +31,11 @@ async function getRouterResult(
 export function useRouterResult(pairRequest: PairRequest): {
   data?: RouterResult;
   isValidating: boolean;
-  error?: Error & {
-    insufficientLiquidity?: boolean;
-    insufficientLiquidityIn?: boolean;
-    insufficientLiquidityOut?: boolean;
-  };
+  error?: SwapError;
 } {
   const [data, setData] = useState<RouterResult>();
   const [isValidating, setIsValidating] = useState(false);
-  const [error, setError] = useState<
-    Error & {
-      insufficientLiquidity?: boolean;
-      insufficientLiquidityIn?: boolean;
-      insufficientLiquidityOut?: boolean;
-    }
-  >();
+  const [error, setError] = useState<SwapError>();
   const { data: pairs } = useIndexerData();
 
   useEffect(() => {
@@ -91,12 +81,7 @@ export function useRouterResult(pairRequest: PairRequest): {
         setIsValidating(false);
         setData(result);
       })
-      .catch(function (
-        err: Error & {
-          insufficientLiquidityIn?: boolean;
-          insufficientLiquidityOut?: boolean;
-        }
-      ) {
+      .catch(function (err: SwapError) {
         if (cancelled) return;
         setIsValidating(false);
         setError(err);
@@ -187,10 +172,7 @@ export function getRouterEstimates(
 export function useRouterEstimates(pairRequest: PairRequest): {
   data?: PairResult;
   isValidating: boolean;
-  error?: Error & {
-    insufficientLiquidityIn?: boolean;
-    insufficientLiquidityOut?: boolean;
-  };
+  error?: SwapError;
 } {
   const { data, error, isValidating } = useRouterResult(pairRequest);
   return { data: getRouterEstimates(pairRequest, data), isValidating, error };
