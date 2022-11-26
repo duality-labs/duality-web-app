@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.45](https://github.com/duality-labs/duality-web-app/compare/v0.1.44...v0.1.45) (2022-11-26)
+
+
+### Fixes
+
+* remove buttons that do not do anything yet (part 2) ([#193](https://github.com/duality-labs/duality-web-app/issues/193)) ([e9e7730](https://github.com/duality-labs/duality-web-app/commit/e9e7730022878fcbdfdc243537594951bb8de53b))
+
 ## [0.1.44](https://github.com/duality-labs/duality-web-app/compare/v0.1.43...v0.1.44) (2022-11-24)
 
 
