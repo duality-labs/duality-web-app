@@ -97,13 +97,20 @@ export default function TokenInputGroup({
       )}
       {!disabledInput && maxValue && Number(maxValue) > 0 && (
         <span className="token-group-balance">
-          <button type="button" onClick={() => onValueChanged?.(`${maxValue}`)}>
+          <button
+            type="button"
+            onClick={() =>
+              onValueChanged?.(
+                formatLongPrice(maxValue, { maximumSignificantDigits: 21 })
+              )
+            }
+          >
             MAX
           </button>
           <button
             type="button"
             onClick={() =>
-              onValueChanged?.(new BigNumber(maxValue).dividedBy(2).toFixed())
+              onValueChanged?.(formatLongPrice(Number(maxValue) / 2))
             }
           >
             HALF
@@ -126,7 +133,7 @@ export default function TokenInputGroup({
         ]
           .filter(Boolean)
           .join(' ')}
-        value={value ? formatLongPrice(value) : placeholder}
+        value={value || placeholder}
         onInput={onInput}
         onChange={onInputChange}
         onClick={selectAll}
