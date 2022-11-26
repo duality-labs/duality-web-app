@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.49](https://github.com/duality-labs/duality-web-app/compare/v0.1.48...v0.1.49) (2022-11-26)
+
+
+### Fixes
+
+* add toasts for swap and liquidity pages ([#198](https://github.com/duality-labs/duality-web-app/issues/198)) ([fe82d19](https://github.com/duality-labs/duality-web-app/commit/fe82d196b29d6d95eebc0e5222646206ae50364b))
+
 ## [0.1.48](https://github.com/duality-labs/duality-web-app/compare/v0.1.47...v0.1.48) (2022-11-26)
 
 
