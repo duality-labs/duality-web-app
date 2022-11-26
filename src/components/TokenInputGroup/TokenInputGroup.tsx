@@ -8,6 +8,11 @@ import { Token } from '../TokenPicker/hooks';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { cleanInput } from './utils';
+import {
+  formatAmount,
+  formatCurrency,
+  formatLongPrice,
+} from '../../lib/utils/number';
 
 import './TokenInputGroup.scss';
 
@@ -71,7 +76,7 @@ export default function TokenInputGroup({
   const secondaryValue =
     relevantValue ||
     (price !== undefined && value !== undefined
-      ? `$${new BigNumber(value).multipliedBy(price).toFixed(2)}`
+      ? `${formatCurrency(new BigNumber(value).multipliedBy(price).toFixed(2))}`
       : undefined);
 
   const { data: balance } = useBankBalance(token);
@@ -88,21 +93,25 @@ export default function TokenInputGroup({
     >
       {maxValue && (
         <h5 className="token-group-title">
-          Available{' '}
-          {Number(maxValue).toLocaleString('en-us', {
-            maximumSignificantDigits: 9,
-          })}
+          Available {formatAmount(maxValue, { maximumSignificantDigits: 9 })}
         </h5>
       )}
       {!disabledInput && maxValue && Number(maxValue) > 0 && (
         <span className="token-group-balance">
-          <button type="button" onClick={() => onValueChanged?.(`${maxValue}`)}>
+          <button
+            type="button"
+            onClick={() =>
+              onValueChanged?.(
+                formatLongPrice(maxValue, { maximumSignificantDigits: 21 })
+              )
+            }
+          >
             MAX
           </button>
           <button
             type="button"
             onClick={() =>
-              onValueChanged?.(new BigNumber(maxValue).dividedBy(2).toFixed())
+              onValueChanged?.(formatLongPrice(Number(maxValue) / 2))
             }
           >
             HALF

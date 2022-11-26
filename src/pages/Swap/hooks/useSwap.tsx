@@ -3,6 +3,7 @@ import { DeliverTxResponse } from '@cosmjs/stargate';
 import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 
+import { formatAmount } from '../../../lib/utils/number';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
 import { txClient } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.router/module/index';
 
@@ -59,12 +60,12 @@ async function sendSwap(
 
       const amountOut = JSON.parse(res.rawLog || '[]')?.[0]
         ?.events?.find(({ type }: { type: string }) => type === 'message')
-        ?.attributes?.reduce(
+        ?.attributes?.reduceRight(
           (
             result: BigNumber,
             { key, value }: { key: string; value: string }
           ) => {
-            if (key === 'AmountOut') {
+            if (result.isZero() && key === 'AmountOut') {
               return result.plus(value);
             }
             return result;
@@ -72,12 +73,9 @@ async function sendSwap(
           new BigNumber(0)
         ) as BigNumber | undefined;
       const description = amountOut
-        ? `Received ${amountOut
-            .shiftedBy(12)
-            .toNumber()
-            .toLocaleString('en-US', {
-              maximumSignificantDigits: 6,
-            })} ${tokenOut} (click for more details)`
+        ? `Received ${formatAmount(
+            amountOut.toFixed()
+          )} ${tokenOut} (click for more details)`
         : undefined;
 
       if (!checkMsgSuccessToast(res, { id, description })) {

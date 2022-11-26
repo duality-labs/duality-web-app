@@ -17,6 +17,7 @@ import {
 } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
 import { Token } from '../../components/TokenPicker/hooks';
 import { FeeType, feeTypes } from './utils/fees';
+import { getAmountInDenom } from './utils/tokens';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -617,38 +618,6 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
   return { data: shares, error, isValidating };
 }
 
-export function useShareTotal(tokens: [tokenA: Token, tokenB: Token]) {
-  const { data: shares, error, isValidating } = useShares(tokens);
-  const shareTotal = useMemo(() => {
-    return shares && getShareTotal(shares, tokens);
-  }, [shares, tokens]);
-  return { data: shareTotal, error, isValidating };
-}
-
-function getShareTotal(
-  shares: DexShare[],
-  tokens: [tokenA: Token, tokenB: Token]
-): [BigNumber, BigNumber] {
-  const [addressA] = tokens.map((token) => token.address);
-  const unorderedShares = shares
-    .reduce<[BigNumber, BigNumber]>(
-      ([total0, total1], share) => {
-        return [
-          // todo: current tick data is required to split shareAmount into tokenAmount0 and tokenAmount1
-          share.shareAmount ? total0.plus(share.shareAmount) : total0,
-          share.shareAmount ? total1.plus(share.shareAmount) : total1,
-        ];
-      },
-      [new BigNumber(0), new BigNumber(0)]
-    )
-    .map((total) => total.shiftedBy(12));
-
-  // sort result
-  return addressA !== shares[0].token0
-    ? [unorderedShares[1], unorderedShares[0]]
-    : [unorderedShares[0], unorderedShares[1]];
-}
-
 export function useIndexerData() {
   return useContext(IndexerContext).indexer;
 }
@@ -722,26 +691,20 @@ export function useFeeLiquidityMap(
 export function getBalance(
   token: Token,
   userBalances: UserBankBalance['balances']
-) {
+): string {
   const denomUnits = token.denom_units;
   const balanceObject = userBalances?.find((balance) => {
     return denomUnits?.find((unit) => unit.denom === balance.denom);
   });
-  const denomUnit =
-    balanceObject &&
-    denomUnits?.find((unit) => unit.denom === balanceObject.denom);
-  const denomUnitExponent = denomUnit?.exponent;
-  const denomUnitMaxExponent = denomUnits?.reduce(
-    (result, { exponent }) => Math.max(result, exponent),
-    0
+  return (
+    (!!balanceObject &&
+      Number(balanceObject.amount) > 0 &&
+      getAmountInDenom(
+        token,
+        balanceObject.amount,
+        balanceObject.denom,
+        token.display
+      )) ||
+    '0'
   );
-  return balanceObject?.amount && denomUnitMaxExponent
-    ? new BigNumber(balanceObject.amount)
-        .dividedBy(
-          new BigNumber(10).exponentiatedBy(
-            denomUnitMaxExponent - (denomUnitExponent || 0)
-          )
-        )
-        .toFixed()
-    : balanceObject?.amount || '0';
 }

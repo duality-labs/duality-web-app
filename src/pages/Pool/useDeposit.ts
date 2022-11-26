@@ -14,13 +14,10 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
+import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 
-const {
-  REACT_APP__COIN_MIN_DENOM_EXP = '18',
-  REACT_APP__COIN_MIN_DENOM_SHIFT_EXP = '12',
-} = process.env;
-const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
-const denomShiftExponent = parseInt(REACT_APP__COIN_MIN_DENOM_SHIFT_EXP) || 0;
+const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -120,14 +117,22 @@ export function useDeposit(): [
                     token0: tokenA.address,
                     token1: tokenB.address,
                     receiver: web3Address,
-                    price: price.toFixed(denomExponent),
-                    fee: fee.toFixed(denomExponent),
-                    amounts0: amount0
-                      .shiftedBy(-denomShiftExponent)
-                      .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
-                    amounts1: amount1
-                      .shiftedBy(-denomShiftExponent)
-                      .toFixed(denomExponent, BigNumber.ROUND_HALF_UP),
+                    price: price.toFixed(maxFractionDigits),
+                    fee: fee.toFixed(maxFractionDigits),
+                    amounts0:
+                      getAmountInDenom(
+                        tokenA,
+                        amount0,
+                        tokenA.display,
+                        tokenA.display
+                      ) || '0',
+                    amounts1:
+                      getAmountInDenom(
+                        tokenB,
+                        amount1,
+                        tokenB.display,
+                        tokenB.display
+                      ) || '0',
                   })
                 : []
             )
@@ -168,36 +173,37 @@ export function useDeposit(): [
                       previousAttr?.value === web3.address
                     ) {
                       // read the matching tokens into their values
-                      if (
-                        attr.value.endsWith(
-                          tokenA.denom_units[1]?.denom.toLowerCase()
-                        )
-                      ) {
+                      const attrDenom = attr.value.replace(/[\d.]+/g, '');
+                      const isDenomA = !!tokenA.denom_units.find(
+                        ({ denom = '', aliases = [] }) =>
+                          [denom, ...aliases].includes(attrDenom)
+                      );
+                      if (isDenomA) {
                         acc.receivedTokenA = new BigNumber(
                           acc.receivedTokenA || 0
                         ).plus(
-                          new BigNumber(
-                            attr.value.slice(
-                              0,
-                              0 - tokenA.denom_units[1].denom.length
-                            )
-                          ).shiftedBy(-denomExponent + denomShiftExponent)
+                          getAmountInDenom(
+                            tokenA,
+                            parseFloat(attr.value.replace(attrDenom, '')),
+                            attrDenom,
+                            tokenA.display
+                          ) || '0'
                         );
                       }
-                      if (
-                        attr.value.endsWith(
-                          tokenB.denom_units[1]?.denom.toLowerCase()
-                        )
-                      ) {
+                      const isDenomB = !!tokenB.denom_units.find(
+                        ({ denom = '', aliases = [] }) =>
+                          [denom, ...aliases].includes(attrDenom)
+                      );
+                      if (isDenomB) {
                         acc.receivedTokenB = new BigNumber(
                           acc.receivedTokenB || 0
                         ).plus(
-                          new BigNumber(
-                            attr.value.slice(
-                              0,
-                              0 - tokenB.denom_units[1].denom.length
-                            )
-                          ).shiftedBy(-denomExponent + denomShiftExponent)
+                          getAmountInDenom(
+                            tokenB,
+                            parseFloat(attr.value.replace(attrDenom, '')),
+                            attrDenom,
+                            tokenB.display
+                          ) || '0'
                         );
                       }
                     }

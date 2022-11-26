@@ -14,9 +14,7 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
-
-const { REACT_APP__COIN_MIN_DENOM_EXP = '18' } = process.env;
-const denomExponent = parseInt(REACT_APP__COIN_MIN_DENOM_EXP) || 0;
+import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 export interface ShareValue {
   share: DexShare;
@@ -106,12 +104,13 @@ export function useEditLiquidity(): [
                                   receiver: web3Address,
                                   price: share.price,
                                   fee: share.fee,
-                                  amounts0: tickDiff0
-                                    // .shiftedBy(-denomShiftExponent)
-                                    .toFixed(
-                                      denomExponent,
-                                      BigNumber.ROUND_HALF_UP
-                                    ),
+                                  amounts0: 
+                                    getAmountInDenom(
+                                      token0,
+                                      tickDiff0,
+                                      token0.display,
+                                      token0.display
+                                    ) || '0',
                                   amounts1: '0',
                                 })
                               : client.msgSingleWithdraw({
@@ -124,14 +123,15 @@ export function useEditLiquidity(): [
                                   // approximate removal using percentages
                                   // todo: this probably has a bug when withdrawing from a tick
                                   // that has both token0 and token1 as this only takes into account one side
-                                  sharesRemoving: tickDiff0
-                                    .negated()
-                                    .dividedBy(userReserves0)
-                                    .multipliedBy(share.shareAmount)
-                                    .toFixed(
-                                      denomExponent,
-                                      BigNumber.ROUND_HALF_UP
-                                    ),
+                                  sharesRemoving: getAmountInDenom(
+                                    token0,
+                                    tickDiff0
+                                      .negated()
+                                      .dividedBy(userReserves0)
+                                      .multipliedBy(share.shareAmount),
+                                    token0.display,
+                                    token0.display
+                                  ) || '0',
                                 }),
                           ]
                         : []),
@@ -146,12 +146,13 @@ export function useEditLiquidity(): [
                                   price: share.price,
                                   fee: share.fee,
                                   amounts0: '0',
-                                  amounts1: tickDiff1
-                                    // .shiftedBy(-denomShiftExponent)
-                                    .toFixed(
-                                      denomExponent,
-                                      BigNumber.ROUND_HALF_UP
-                                    ),
+                                  amounts1:
+                                    getAmountInDenom(
+                                      token1,
+                                      tickDiff1,
+                                      token1.display,
+                                      token1.display
+                                    ) || '0',
                                 })
                               : client.msgSingleWithdraw({
                                   creator: web3Address,
@@ -163,14 +164,15 @@ export function useEditLiquidity(): [
                                   // approximate removal using percentages
                                   // todo: this probably has a bug when withdrawing from a tick
                                   // that has both token0 and token1 as this only takes into account one side
-                                  sharesRemoving: tickDiff1
-                                    .negated()
-                                    .dividedBy(userReserves1)
-                                    .multipliedBy(share.shareAmount)
-                                    .toFixed(
-                                      denomExponent,
-                                      BigNumber.ROUND_HALF_UP
-                                    ),
+                                  sharesRemoving: getAmountInDenom(
+                                    token1,
+                                    tickDiff1
+                                      .negated()
+                                      .dividedBy(userReserves1)
+                                      .multipliedBy(share.shareAmount),
+                                    token1.display,
+                                    token1.display
+                                  ) || '0',
                                 }),
                           ]
                         : []),
