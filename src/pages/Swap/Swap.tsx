@@ -13,6 +13,7 @@ import TokenInputGroup from '../../components/TokenInputGroup';
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 
+import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useHasPriceData } from '../../lib/tokenPrices';
@@ -20,6 +21,7 @@ import { useHasPriceData } from '../../lib/tokenPrices';
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
+import { formatAmount } from '../../lib/utils/number';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 import { cleanInput } from '../../components/TokenInputGroup/utils';
@@ -174,6 +176,24 @@ export default function Swap() {
 
   const hasPriceData = useHasPriceData([tokenA, tokenB]);
 
+  const exchangeRate = useCurrentPriceFromTicks(
+    tokenA?.address,
+    tokenB?.address
+  );
+
+  const expectedB =
+    valueAConverted && exchangeRate
+      ? new BigNumber(valueAConverted).multipliedBy(exchangeRate)
+      : undefined;
+
+  const priceImpact =
+    valueBConverted && expectedB
+      ? new BigNumber(valueBConverted)
+          .dividedBy(expectedB)
+          .multipliedBy(100)
+          .minus(100)
+      : undefined;
+
   const tradeCard = (
     <div className="trade-card">
       <div className="page-card">
@@ -306,7 +326,11 @@ export default function Swap() {
                   )}
                 </span>
                 <span className="text-header">Price Impact</span>
-                <span className="text-value">0.00%</span>
+                <span className="text-value">
+                  {priceImpact !== undefined
+                    ? `${formatAmount(priceImpact.toFixed())}%`
+                    : ''}
+                </span>
               </div>
             )}
         </div>
