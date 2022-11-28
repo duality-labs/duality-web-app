@@ -31,9 +31,13 @@ export function router(
     error.insufficientLiquidity = true;
     throw error;
   } else {
-    const sortedTicks = forward
-      ? exactPair.poolsZeroToOne
-      : exactPair.poolsOneToZero;
+    const sortedTicks = (
+      forward ? exactPair.poolsZeroToOne : exactPair.poolsOneToZero
+    ).sort(
+      forward
+        ? (a, b) => a.price.comparedTo(b.price)
+        : (a, b) => b.price.comparedTo(a.price)
+    );
     const amountIn = new BigNumber(value0);
 
     try {
