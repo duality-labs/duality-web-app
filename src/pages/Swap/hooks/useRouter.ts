@@ -2,6 +2,8 @@ import { useIndexerData, PairMap } from '../../../lib/web3/indexerProvider';
 import { useEffect, useState } from 'react';
 import { PairRequest, PairResult, RouterResult } from './index';
 import { routerAsync, calculateFee, SwapError } from './router';
+import { formatAmount } from '../../../lib/utils/number';
+
 import BigNumber from 'bignumber.js';
 
 const cachedRequests: {
@@ -122,8 +124,8 @@ export function getRouterEstimates(
         tokenA: routerResult.tokenIn,
         tokenB: routerResult.tokenOut,
         rate: rate.toString(),
-        valueA: routerResult.amountIn.toString(),
-        valueB: routerResult.amountOut.toString(),
+        valueA: formatAmount(routerResult.amountIn.toFixed()),
+        valueB: formatAmount(routerResult.amountOut.toFixed()),
         gas: extraFee.toString(),
       };
       cachedRequests[token0] = cachedRequests[token0] || {};
