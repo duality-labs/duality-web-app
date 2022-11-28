@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import {
   useState,
   useMemo,
@@ -6,12 +7,13 @@ import {
   MouseEvent,
   useRef,
 } from 'react';
+
+import { formatPrice } from '../../lib/utils/number';
 import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
 import './LiquiditySelector.scss';
-import BigNumber from 'bignumber.js';
 
 export interface LiquiditySelectorProps {
   ticks: TickMap | undefined;
@@ -24,7 +26,6 @@ export interface LiquiditySelectorProps {
   userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
   advanced?: boolean;
-  formatPrice?: (value: BigNumber) => string;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   canMoveX?: boolean;
@@ -48,13 +49,6 @@ type TickGroupBucketsFilled = Array<
     token1Value: BigNumber
   ]
 >;
-
-function defaultFormatPrice(value: BigNumber): string {
-  return value.toFixed(
-    Math.max(0, value.dp() - value.sd(true) + 3),
-    BigNumber.ROUND_HALF_UP
-  );
-}
 
 const bucketWidth = 50; // bucket width in pixels
 
@@ -90,7 +84,6 @@ export default function LiquiditySelector({
   userTicksBase = userTicks,
   setUserTicks,
   advanced = false,
-  formatPrice = defaultFormatPrice,
   canMoveUp,
   canMoveDown,
   canMoveX,
@@ -429,7 +422,6 @@ export default function LiquiditySelector({
           setTickSelected={setTickSelected}
           plotX={plotXBigNumber}
           percentY={percentYBigNumber}
-          formatPrice={formatPrice}
           canMoveUp={canMoveUp}
           canMoveDown={canMoveDown}
           canMoveX={canMoveX}
@@ -444,7 +436,6 @@ export default function LiquiditySelector({
           setRangeMax={setRangeMax}
           plotXinverse={plotXinverse}
           bucketRatio={bucketRatio}
-          formatPrice={formatPrice}
         />
       )}
       <Axis
@@ -529,7 +520,6 @@ function TicksArea({
   setRangeMax,
   plotXinverse,
   bucketRatio,
-  formatPrice,
   className,
 }: {
   ticks: TickGroup;
@@ -539,7 +529,6 @@ function TicksArea({
   setRangeMax: (rangeMax: string) => void;
   plotXinverse: (x: number) => number;
   bucketRatio: number;
-  formatPrice: (value: BigNumber) => string;
   className?: string;
 }) {
   const startTickPrice = ticks?.[0]?.[0];
@@ -554,7 +543,7 @@ function TicksArea({
         if (x) {
           const xStart = plotX(startTickPrice);
           const newValue = new BigNumber(plotXinverse(xStart + x));
-          const newValueString = formatPrice(newValue);
+          const newValueString = formatPrice(newValue.toFixed());
           setRangeMin(newValueString);
           if (endTickPrice.isLessThanOrEqualTo(newValue)) {
             setRangeMax(newValueString);
@@ -568,7 +557,6 @@ function TicksArea({
         plotX,
         setRangeMin,
         setRangeMax,
-        formatPrice,
       ]
     )
   );
@@ -580,7 +568,7 @@ function TicksArea({
         if (x) {
           const xStart = plotX(endTickPrice);
           const newValue = new BigNumber(plotXinverse(xStart + x));
-          const newValueString = formatPrice(newValue);
+          const newValueString = formatPrice(newValue.toFixed());
           setRangeMax(newValueString);
           if (startTickPrice.isGreaterThanOrEqualTo(newValue)) {
             setRangeMin(newValueString);
@@ -594,7 +582,6 @@ function TicksArea({
         plotX,
         setRangeMin,
         setRangeMax,
-        formatPrice,
       ]
     )
   );
@@ -739,7 +726,6 @@ function TicksGroup({
   setTickSelected,
   plotX,
   percentY,
-  formatPrice,
   className,
   canMoveUp = false,
   canMoveDown = false,
@@ -756,7 +742,6 @@ function TicksGroup({
   setTickSelected: (index: number) => void;
   plotX: (x: BigNumber) => number;
   percentY: (y: BigNumber) => number;
-  formatPrice: (value: BigNumber) => string;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   canMoveX?: boolean;
@@ -820,7 +805,11 @@ function TicksGroup({
               // modify price
               if (tickSelected === index) {
                 const newPrice = tick[0].multipliedBy(displacementRatio);
-                return [new BigNumber(formatPrice(newPrice)), tick[1], tick[2]];
+                return [
+                  new BigNumber(formatPrice(newPrice.toFixed())),
+                  tick[1],
+                  tick[2],
+                ];
               } else {
                 return userTick;
               }
@@ -882,7 +871,6 @@ function TicksGroup({
         setUserTicks,
         plotX,
         percentY,
-        formatPrice,
       ]
     )
   );

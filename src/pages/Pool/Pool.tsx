@@ -38,11 +38,12 @@ import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurr
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
+import { useDeposit } from './useDeposit';
 
+import { formatPrice } from '../../lib/utils/number';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 
 import './Pool.scss';
-import { useDeposit } from './useDeposit';
 
 // the default resolution for a number in 18 decimal places
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
@@ -68,12 +69,19 @@ const defaultPrecision = '6';
 // set as constant to avoid unwanted hook effects
 const defaultCurrentPrice = new BigNumber(1);
 
-function formatPrice(value: BigNumber): string {
-  return value.toFixed(
-    Math.max(0, value.dp() - value.sd(true) + 3),
-    BigNumber.ROUND_HALF_UP
-  );
-}
+const restrictPriceRangeValues = (valueString: string) => {
+  const value = new BigNumber(valueString);
+  if (value.isLessThan(priceMin)) {
+    return formatPrice(priceMin);
+  }
+  if (value.isGreaterThan(priceMax)) {
+    return formatPrice(priceMax);
+  }
+  if (!value.isNaN()) {
+    return formatPrice(value.toFixed(), { minimumSignificantDigits: 3 });
+  }
+  return formatPrice(1);
+};
 
 export default function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
@@ -97,8 +105,36 @@ export default function Pool() {
     }
   }, [tokenB, tokenList]);
 
-  const [rangeMin, setRangeMin] = useState(defaultRangeMin);
-  const [rangeMax, setRangeMax] = useState(defaultRangeMax);
+  const [rangeMin, setRangeMinUnprotected] = useState(defaultRangeMin);
+  const [rangeMax, setRangeMaxUnprotected] = useState(defaultRangeMax);
+  // protect price range extents
+  const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
+    (valueOrCallback) => {
+      if (typeof valueOrCallback === 'function') {
+        const callback = valueOrCallback;
+        return setRangeMinUnprotected((value) => {
+          return restrictPriceRangeValues(callback(value));
+        });
+      }
+      const value = valueOrCallback;
+      setRangeMinUnprotected(restrictPriceRangeValues(value));
+    },
+    []
+  );
+  const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
+    (valueOrCallback) => {
+      if (typeof valueOrCallback === 'function') {
+        const callback = valueOrCallback;
+        return setRangeMaxUnprotected((value) => {
+          return restrictPriceRangeValues(callback(value));
+        });
+      }
+      const value = valueOrCallback;
+      setRangeMaxUnprotected(restrictPriceRangeValues(value));
+    },
+    []
+  );
+
   const [values, setValues] = useState<[string, string]>(() => [
     new BigNumber(defaultTokenAmount).toFixed(),
     new BigNumber(defaultTokenAmount).toFixed(),
@@ -226,22 +262,16 @@ export default function Pool() {
     setInvertedTokenOrder((order) => !order);
     setRangeMin(() => {
       const newValue = new BigNumber(1).dividedBy(new BigNumber(rangeMax));
-      return newValue.toFixed(
-        Math.max(0, newValue.dp() - newValue.sd(true) + 3),
-        BigNumber.ROUND_HALF_DOWN
-      );
+      return newValue.toFixed();
     });
     setRangeMax(() => {
       const newValue = new BigNumber(1).dividedBy(new BigNumber(rangeMin));
-      return newValue.toFixed(
-        Math.max(0, newValue.dp() - newValue.sd(true) + 3),
-        BigNumber.ROUND_HALF_UP
-      );
+      return newValue.toFixed();
     });
     setValues(([valueA, valueB]) => [valueB, valueA]);
     setTokenA(tokenB);
     setTokenB(tokenA);
-  }, [tokenA, tokenB, rangeMin, rangeMax]);
+  }, [tokenA, tokenB, rangeMin, rangeMax, setRangeMin, setRangeMax]);
 
   const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
     'range'
@@ -286,7 +316,7 @@ export default function Pool() {
           tickCounts[invertToken ? 0 : 1] += 1;
           return [
             [
-              new BigNumber(formatPrice(price)),
+              new BigNumber(formatPrice(price.toFixed())),
               new BigNumber(invertToken ? 1 : 0),
               new BigNumber(invertToken ? 0 : 1),
             ],
@@ -597,7 +627,6 @@ export default function Pool() {
                   userTicks={userTicks}
                   setUserTicks={setUserTicks}
                   advanced={chartTypeSelected === 'Orderbook'}
-                  formatPrice={formatPrice}
                   canMoveUp
                   canMoveDown
                   canMoveX
@@ -942,6 +971,6 @@ function logarithmStep(valueString: string, direction: number): string {
 // This could be fixed by using a string for all cases of price as BigNumber
 // objects are not aware of how many significant digits they have.
 function formatStepNumberPriceInput(value: string) {
-  const formatted = formatPrice(new BigNumber(value));
+  const formatted = formatPrice(value, { minimumSignificantDigits: 3 });
   return formatted.length > value.length ? formatted : value;
 }
