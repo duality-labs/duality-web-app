@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.52](https://github.com/duality-labs/duality-web-app/compare/v0.1.51...v0.1.52) (2022-11-28)
+
+
+### Fixes
+
+* price range extent restrictions ([#203](https://github.com/duality-labs/duality-web-app/issues/203)) ([0be9542](https://github.com/duality-labs/duality-web-app/commit/0be95427a7f14369b977044bf85af704e93f72b1))
+
 ## [0.1.51](https://github.com/duality-labs/duality-web-app/compare/v0.1.50...v0.1.51) (2022-11-28)
 
 
