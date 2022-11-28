@@ -187,18 +187,13 @@ export default function Pool() {
     setUserTicksUnprotected(userTicks.map(restrictTickPrices));
   }, []);
 
-  const currentPriceABFromTicks =
-    useCurrentPriceFromTicks(unorderedTicks) || defaultCurrentPrice;
+  const currentPriceFromTicks =
+    useCurrentPriceFromTicks(tokenA?.address, tokenB?.address) ||
+    defaultCurrentPrice;
 
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
-    return currentPriceABFromTicks?.isLessThan(1);
+    return currentPriceFromTicks.isLessThan(1);
   });
-
-  const currentPriceFromTicks = useMemo(() => {
-    return invertedTokenOrder
-      ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
-      : currentPriceABFromTicks;
-  }, [invertedTokenOrder, currentPriceABFromTicks]);
 
   const ticks = useMemo(() => {
     if (!invertedTokenOrder) return unorderedTicks;
@@ -429,7 +424,7 @@ export default function Pool() {
     tokenB?.address
   );
 
-  if (!valuesConfirmed) {
+  if (!tokenA || !tokenB || !valuesConfirmed) {
     return (
       <form
         className={['page', 'pool-page', isValidatingDeposit && 'disabled']
@@ -618,6 +613,8 @@ export default function Pool() {
               </div>
               <div className="flex row chart-area">
                 <LiquiditySelector
+                  tokenA={tokenA}
+                  tokenB={tokenB}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
                   ticks={ticks}
