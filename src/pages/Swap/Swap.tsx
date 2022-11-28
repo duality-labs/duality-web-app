@@ -86,11 +86,13 @@ export default function Swap() {
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
-      if (address && routerResult && tokenA && tokenB) {
+      const tolerance = parseFloat(slippage) / 100;
+      if (address && routerResult && tokenA && tokenB && !isNaN(tolerance)) {
         // convert to swap request format
         const result = routerResult;
         // Cosmos requires tokens in integer format of smallest denomination
-        // todo: add slippage tolerance setting into API request
+        // add slippage tolerance
+        const minOut = result.amountOut.multipliedBy(1 - tolerance);
         swapRequest({
           amountIn:
             getAmountInDenom(
@@ -101,11 +103,10 @@ export default function Swap() {
             ) || '0',
           tokenIn: result.tokenIn,
           tokenOut: result.tokenOut,
-          // TODO: add tolerance factor
           minOut:
             getAmountInDenom(
               tokenB,
-              result.amountOut,
+              minOut,
               tokenB?.display,
               tokenB?.display
             ) || '0',
@@ -113,7 +114,7 @@ export default function Swap() {
         });
       }
     },
-    [address, routerResult, tokenA, tokenB, swapRequest]
+    [address, routerResult, tokenA, tokenB, slippage, swapRequest]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
