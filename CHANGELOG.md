@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.51](https://github.com/duality-labs/duality-web-app/compare/v0.1.50...v0.1.51) (2022-11-28)
+
+
+### Fixes
+
+* depositing max balance rounding error ([#201](https://github.com/duality-labs/duality-web-app/issues/201)) ([09ea89f](https://github.com/duality-labs/duality-web-app/commit/09ea89f9d36965ade1d491ec8da206725d2f78c5))
+
 ## [0.1.50](https://github.com/duality-labs/duality-web-app/compare/v0.1.49...v0.1.50) (2022-11-26)
 
 
