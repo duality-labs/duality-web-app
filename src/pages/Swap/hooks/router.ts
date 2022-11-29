@@ -101,13 +101,11 @@ export function calculateOut({
   tokenOut: string; // address
   amountIn: BigNumber;
   sortedTicks: Array<TickInfo>;
-}): { amountOut: BigNumber; priceOut: BigNumber | undefined } {
+}): { amountOut: BigNumber; priceOut?: BigNumber } {
   // amountLeft is the amount of tokenIn left to be swapped
   let amountLeft = amountIn;
   // amountOut is the amount of tokenOut accumulated by the swap
   let amountOut = new BigNumber(0);
-  // priceOut will be the last liquidity price touched by the swap
-  let priceOut: BigNumber | undefined;
   // tokenPath is the route used to swap as an array
   // eg. tokenIn -> something -> something else -> tokenOut
   // as: [tokenIn, something, somethingElse, tokenOut]
@@ -123,7 +121,6 @@ export function calculateOut({
       const price = isSameOrder
         ? sortedTicks[tickIndex].price
         : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price);
-      priceOut = price;
       // the reserves of tokenOut available at this tick
       const reservesOut = isSameOrder
         ? sortedTicks[tickIndex].reserve1
@@ -145,7 +142,7 @@ export function calculateOut({
       }
       // if amount in has all been swapped, the exit successfully
       if (amountLeft.isZero()) {
-        return { amountOut, priceOut };
+        return { amountOut, priceOut: price };
       }
       // if somehow the amount left to take out is over-satisfied the error
       else if (amountLeft.isLessThan(0)) {
@@ -169,7 +166,7 @@ export function calculateOut({
   // somehow we have looped through all ticks and exactly satisfied the needed swap
   // yet did not match the positive exiting condition
   // this can happen if the amountIn is zero and there are no ticks in the pair
-  return { amountOut, priceOut };
+  return { amountOut };
 }
 
 // mock implementation of fee calculation
