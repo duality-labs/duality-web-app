@@ -101,27 +101,46 @@ export function calculateOut({
   amountIn: BigNumber;
   sortedTicks: Array<TickInfo>;
 }): BigNumber {
+  // amountLeft is the amount of tokenIn left to be swapped
   let amountLeft = amountIn;
+  // amountOut is the amount of tokenOut accumulated by the swap
   let amountOut = new BigNumber(0);
+  // tokenPath is the route used to swap as an array
+  // eg. tokenIn -> something -> something else -> tokenOut
+  // as: [tokenIn, something, somethingElse, tokenOut]
   // TODO: handle more than the 1 hop path
   const tokenPath = [tokenIn, tokenOut];
+  // loop through token path pairs
   for (let pairIndex = 0; pairIndex < tokenPath.length - 1; pairIndex++) {
     const tokens = [tokenPath[pairIndex], tokenPath[pairIndex + 1]].sort();
+    // loop through the ticks of the current token pair
     for (let tickIndex = 0; tickIndex < sortedTicks.length; tickIndex++) {
+      // find price in the right direction
       const isSameOrder = tokens[0] === tokenPath[pairIndex];
       const price = isSameOrder
         ? sortedTicks[tickIndex].price
         : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price);
+      // the reserves of tokenOut available at this tick
       const reservesOut = isSameOrder
         ? sortedTicks[tickIndex].reserve1
         : sortedTicks[tickIndex].reserve0;
+      // the reserves of tokenOut available at this tick
       const maxOut = amountLeft.multipliedBy(price);
 
-      if (reservesOut.isLessThan(maxOut)) {
+      // if there is enough liquidity in this tick, then exit with this amount
+      if (reservesOut.isGreaterThanOrEqualTo(maxOut)) {
+        return amountOut.plus(maxOut);
+      }
+      // if not keep looping
+      else {
+        // calculate how much amountOut can be found in this tick
+        // and add it to the current total
         const amountInTraded = reservesOut.multipliedBy(price);
         amountLeft = amountLeft.minus(amountInTraded);
         amountOut = amountOut.plus(reservesOut);
+        // if somehow the amount left to take out is satisfied then exit here
         if (amountLeft.isEqualTo(0)) return amountOut;
+        // if somehow the amount left to take out is over-satisfied the error
         if (amountLeft.isLessThan(0)) {
           const error: SwapError = new Error(
             'Error while calculating amount out (negative amount)'
@@ -130,8 +149,6 @@ export function calculateOut({
           error.insufficientLiquidityIn = true;
           throw error;
         }
-      } else {
-        return amountOut.plus(maxOut);
       }
     }
   }
@@ -142,6 +159,8 @@ export function calculateOut({
     error.insufficientLiquidityOut = true;
     throw error;
   }
+  // somehow we have looped through all ticks and exactly satisfied the needed swap
+  // yet curiously did not match the positive exiting condition
   return amountOut;
 }
 
