@@ -175,6 +175,17 @@ export default function Swap() {
 
   const hasPriceData = useHasPriceData([tokenA, tokenB]);
 
+  const priceImpact =
+    routerResult &&
+    routerResult.priceIn?.isGreaterThan(0) &&
+    routerResult.priceOut?.isGreaterThan(0)
+      ? new BigNumber(100).minus(
+          new BigNumber(routerResult.priceOut)
+            .dividedBy(new BigNumber(routerResult.priceIn))
+            .multipliedBy(100)
+        )
+      : undefined;
+
   const tradeCard = (
     <div className="trade-card">
       <div className="page-card">
@@ -307,25 +318,34 @@ export default function Swap() {
                   )}
                 </span>
                 <span className="text-header">Price Impact</span>
-                <span className="text-value">
-                  {routerResult &&
-                  routerResult.priceIn?.isGreaterThan(0) &&
-                  routerResult.priceOut?.isGreaterThan(0)
-                    ? `${formatAmount(
-                        new BigNumber(100)
-                          .minus(
-                            new BigNumber(routerResult.priceOut)
-                              .dividedBy(new BigNumber(routerResult.priceIn))
-                              .multipliedBy(100)
-                          )
-                          .toFixed(),
-                        {
+                {priceImpact && (
+                  <span
+                    className={[
+                      'text-value',
+                      (() => {
+                        switch (true) {
+                          case priceImpact.isGreaterThan(0):
+                            return 'text-success';
+                          case priceImpact.isGreaterThan(-1):
+                            return 'text-value';
+                          case priceImpact.isGreaterThan(-5):
+                            return 'text';
+                          default:
+                            return 'text-error';
+                        }
+                      })(),
+                    ].join(' ')}
+                  >
+                    {routerResult &&
+                    routerResult.priceIn?.isGreaterThan(0) &&
+                    routerResult.priceOut?.isGreaterThan(0)
+                      ? `${formatAmount(priceImpact.toFixed(), {
                           maximumSignificantDigits: 4,
                           minimumSignificantDigits: 4,
-                        }
-                      )}%`
-                    : ''}
-                </span>
+                        })}%`
+                      : ''}
+                  </span>
+                )}
               </div>
             )}
         </div>
