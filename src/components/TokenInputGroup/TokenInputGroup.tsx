@@ -96,7 +96,11 @@ export default function TokenInputGroup({
     >
       {maxValue && (
         <h5 className="token-group-title">
-          Available {formatAmount(maxValue, { maximumSignificantDigits: 9 })}
+          Available{' '}
+          {formatAmount(maxValue, {
+            maximumSignificantDigits: 9,
+            useGrouping: true,
+          })}
         </h5>
       )}
       {!disabledInput && maxValue && Number(maxValue) > 0 && (
