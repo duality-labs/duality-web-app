@@ -13,7 +13,6 @@ import TokenInputGroup from '../../components/TokenInputGroup';
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 
-import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useHasPriceData } from '../../lib/tokenPrices';
@@ -176,24 +175,6 @@ export default function Swap() {
 
   const hasPriceData = useHasPriceData([tokenA, tokenB]);
 
-  const exchangeRate = useCurrentPriceFromTicks(
-    tokenA?.address,
-    tokenB?.address
-  );
-
-  const expectedB =
-    valueAConverted && exchangeRate
-      ? new BigNumber(valueAConverted).multipliedBy(exchangeRate)
-      : undefined;
-
-  const priceImpact =
-    valueBConverted && expectedB
-      ? new BigNumber(valueBConverted)
-          .dividedBy(expectedB)
-          .multipliedBy(100)
-          .minus(100)
-      : undefined;
-
   const tradeCard = (
     <div className="trade-card">
       <div className="page-card">
@@ -327,8 +308,18 @@ export default function Swap() {
                 </span>
                 <span className="text-header">Price Impact</span>
                 <span className="text-value">
-                  {priceImpact !== undefined
-                    ? `${formatAmount(priceImpact.toFixed())}%`
+                  {routerResult &&
+                  routerResult.priceIn?.isGreaterThan(0) &&
+                  routerResult.priceOut?.isGreaterThan(0)
+                    ? `${formatAmount(
+                        new BigNumber(100)
+                          .minus(
+                            new BigNumber(routerResult.priceOut)
+                              .dividedBy(new BigNumber(routerResult.priceIn))
+                              .multipliedBy(100)
+                          )
+                          .toFixed()
+                      )}%`
                     : ''}
                 </span>
               </div>
