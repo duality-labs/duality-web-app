@@ -324,7 +324,7 @@ export default function Swap() {
                       'text-value',
                       (() => {
                         switch (true) {
-                          case priceImpact.isGreaterThan(0):
+                          case priceImpact.isGreaterThanOrEqualTo(0):
                             return 'text-success';
                           case priceImpact.isGreaterThan(-1):
                             return 'text-value';
