@@ -41,7 +41,7 @@ export function router(
     const amountIn = new BigNumber(value0);
 
     try {
-      const amountOut = calculateOut({
+      const { amountOut, priceIn, priceOut } = calculateOut({
         tokenIn: tokenA,
         tokenOut: tokenB,
         amountIn: amountIn,
@@ -67,12 +67,9 @@ export function router(
         amountIn: amountIn,
         tokenIn: tokenA,
         tokenOut: tokenB,
-        amountOut: calculateOut({
-          tokenIn: tokenA,
-          tokenOut: tokenB,
-          amountIn: amountIn,
-          sortedTicks,
-        }),
+        amountOut,
+        priceIn,
+        priceOut,
       };
     } catch (err) {
       throw err;
@@ -105,39 +102,69 @@ export function calculateOut({
   tokenOut: string; // address
   amountIn: BigNumber;
   sortedTicks: Array<TickInfo>;
-}): BigNumber {
+}): {
+  amountOut: BigNumber;
+  priceIn: BigNumber | undefined;
+  priceOut: BigNumber | undefined;
+} {
+  // amountLeft is the amount of tokenIn left to be swapped
   let amountLeft = amountIn;
+  // amountOut is the amount of tokenOut accumulated by the swap
   let amountOut = new BigNumber(0);
+  // priceOut will be the first liquidity price touched by the swap
+  let priceIn: BigNumber | undefined;
+  // priceOut will be the last liquidity price touched by the swap
+  let priceOut: BigNumber | undefined;
+  // tokenPath is the route used to swap as an array
+  // eg. tokenIn -> something -> something else -> tokenOut
+  // as: [tokenIn, something, somethingElse, tokenOut]
   // TODO: handle more than the 1 hop path
   const tokenPath = [tokenIn, tokenOut];
+  // loop through token path pairs
   for (let pairIndex = 0; pairIndex < tokenPath.length - 1; pairIndex++) {
     const tokens = [tokenPath[pairIndex], tokenPath[pairIndex + 1]].sort();
+    // loop through the ticks of the current token pair
     for (let tickIndex = 0; tickIndex < sortedTicks.length; tickIndex++) {
+      // find price in the right direction
       const isSameOrder = tokens[0] === tokenPath[pairIndex];
       const price = isSameOrder
         ? sortedTicks[tickIndex].price
         : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price);
+      priceIn = priceIn || price;
+      priceOut = price;
+      // the reserves of tokenOut available at this tick
       const reservesOut = isSameOrder
         ? sortedTicks[tickIndex].reserve1
         : sortedTicks[tickIndex].reserve0;
+      // the reserves of tokenOut available at this tick
       const maxOut = amountLeft.multipliedBy(price);
 
-      if (reservesOut.isLessThan(maxOut)) {
+      // if there is enough liquidity in this tick, then exit with this amount
+      if (reservesOut.isGreaterThanOrEqualTo(maxOut)) {
+        amountOut = amountOut.plus(maxOut);
+        amountLeft = new BigNumber(0);
+      }
+      // if not add what is available
+      else {
+        amountOut = amountOut.plus(reservesOut);
+        // calculate how much amountIn is still needed to be satisfied
         const amountInTraded = reservesOut.multipliedBy(price);
         amountLeft = amountLeft.minus(amountInTraded);
-        amountOut = amountOut.plus(reservesOut);
-        if (amountLeft.isEqualTo(0)) return amountOut;
-        if (amountLeft.isLessThan(0)) {
-          const error: SwapError = new Error(
-            'Error while calculating amount out (negative amount)'
-          );
-          error.insufficientLiquidity = true;
-          error.insufficientLiquidityIn = true;
-          throw error;
-        }
-      } else {
-        return amountOut.plus(maxOut);
       }
+      // if amount in has all been swapped, the exit successfully
+      if (amountLeft.isZero()) {
+        return { amountOut, priceIn, priceOut };
+      }
+      // if somehow the amount left to take out is over-satisfied the error
+      else if (amountLeft.isLessThan(0)) {
+        const error: SwapError = new Error(
+          'Error while calculating amount out (negative amount)'
+        );
+        error.insufficientLiquidity = true;
+        error.insufficientLiquidityIn = true;
+        throw error;
+      }
+      // if amountLeft is greater that zero then proceed to next tick
     }
   }
   // if there is still tokens left to be traded the liquidity must have been exhausted
@@ -147,7 +174,10 @@ export function calculateOut({
     error.insufficientLiquidityOut = true;
     throw error;
   }
-  return amountOut;
+  // somehow we have looped through all ticks and exactly satisfied the needed swap
+  // yet did not match the positive exiting condition
+  // this can happen if the amountIn is zero and there are no ticks in the pair
+  return { amountOut, priceIn, priceOut };
 }
 
 // mock implementation of fee calculation

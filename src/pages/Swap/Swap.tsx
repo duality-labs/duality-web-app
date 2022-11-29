@@ -20,6 +20,7 @@ import { useHasPriceData } from '../../lib/tokenPrices';
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
+import { formatAmount } from '../../lib/utils/number';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 import { cleanInput } from '../../components/TokenInputGroup/utils';
@@ -174,6 +175,17 @@ export default function Swap() {
 
   const hasPriceData = useHasPriceData([tokenA, tokenB]);
 
+  const priceImpact =
+    routerResult &&
+    routerResult.priceIn?.isGreaterThan(0) &&
+    routerResult.priceOut?.isGreaterThan(0)
+      ? new BigNumber(100).minus(
+          new BigNumber(routerResult.priceOut)
+            .dividedBy(new BigNumber(routerResult.priceIn))
+            .multipliedBy(100)
+        )
+      : undefined;
+
   const tradeCard = (
     <div className="trade-card">
       <div className="page-card">
@@ -306,7 +318,31 @@ export default function Swap() {
                   )}
                 </span>
                 <span className="text-header">Price Impact</span>
-                <span className="text-value">0.00%</span>
+                {priceImpact && (
+                  <span
+                    className={[
+                      'text-value',
+                      (() => {
+                        switch (true) {
+                          case priceImpact.isGreaterThanOrEqualTo(0):
+                            return 'text-success';
+                          case priceImpact.isGreaterThan(-1):
+                            return 'text-value';
+                          case priceImpact.isGreaterThan(-5):
+                            return 'text';
+                          default:
+                            return 'text-error';
+                        }
+                      })(),
+                    ].join(' ')}
+                  >
+                    {formatAmount(priceImpact.toFixed(), {
+                      maximumSignificantDigits: 4,
+                      minimumSignificantDigits: 4,
+                    })}
+                    %
+                  </span>
+                )}
               </div>
             )}
         </div>
