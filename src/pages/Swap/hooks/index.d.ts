@@ -35,5 +35,6 @@ export interface RouterResult {
   tokenOut: string; // address
   amountIn: BigNumber;
   amountOut: BigNumber;
+  priceIn: BigNumber | undefined;
   priceOut: BigNumber | undefined;
 }
