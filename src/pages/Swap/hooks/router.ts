@@ -67,12 +67,7 @@ export function router(
         amountIn: amountIn,
         tokenIn: tokenA,
         tokenOut: tokenB,
-        amountOut: calculateOut({
-          tokenIn: tokenA,
-          tokenOut: tokenB,
-          amountIn: amountIn,
-          sortedTicks,
-        }),
+        amountOut,
       };
     } catch (err) {
       throw err;
