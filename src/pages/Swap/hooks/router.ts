@@ -134,27 +134,29 @@ export function calculateOut({
       // if there is enough liquidity in this tick, then exit with this amount
       if (reservesOut.isGreaterThanOrEqualTo(maxOut)) {
         amountOut = amountOut.plus(maxOut);
-        return { amountOut, priceOut };
+        amountLeft = new BigNumber(0);
       }
-      // if not keep looping
+      // if not add what is available
       else {
-        // calculate how much amountOut can be found in this tick
-        // and add it to the current total
+        amountOut = amountOut.plus(reservesOut);
+        // calculate how much amountIn is still needed to be satisfied
         const amountInTraded = reservesOut.multipliedBy(price);
         amountLeft = amountLeft.minus(amountInTraded);
-        amountOut = amountOut.plus(reservesOut);
-        // if somehow the amount left to take out is satisfied then exit here
-        if (amountLeft.isEqualTo(0)) return { amountOut, priceOut };
-        // if somehow the amount left to take out is over-satisfied the error
-        if (amountLeft.isLessThan(0)) {
-          const error: SwapError = new Error(
-            'Error while calculating amount out (negative amount)'
-          );
-          error.insufficientLiquidity = true;
-          error.insufficientLiquidityIn = true;
-          throw error;
-        }
       }
+      // if amount in has all been swapped, the exit successfully
+      if (amountLeft.isZero()) {
+        return { amountOut, priceOut };
+      }
+      // if somehow the amount left to take out is over-satisfied the error
+      else if (amountLeft.isLessThan(0)) {
+        const error: SwapError = new Error(
+          'Error while calculating amount out (negative amount)'
+        );
+        error.insufficientLiquidity = true;
+        error.insufficientLiquidityIn = true;
+        throw error;
+      }
+      // if amountLeft is greater that zero then proceed to next tick
     }
   }
   // if there is still tokens left to be traded the liquidity must have been exhausted
