@@ -318,7 +318,11 @@ export default function Swap() {
                               .dividedBy(new BigNumber(routerResult.priceIn))
                               .multipliedBy(100)
                           )
-                          .toFixed()
+                          .toFixed(),
+                        {
+                          maximumSignificantDigits: 4,
+                          minimumSignificantDigits: 4,
+                        }
                       )}%`
                     : ''}
                 </span>
