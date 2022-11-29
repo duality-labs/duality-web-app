@@ -100,8 +100,7 @@ export default function Swap() {
           tokenIn: result.tokenIn,
           tokenA: result.tokenIn,
           tokenB: result.tokenOut,
-          minOut:
-            getAmountInDenom(tokenB, minOut, tokenB?.display) || '0',
+          minOut: getAmountInDenom(tokenB, minOut, tokenB?.display) || '0',
           creator: address,
           receiver: address,
         });
@@ -171,11 +170,11 @@ export default function Swap() {
     routerResult &&
     routerResult.priceIn?.isGreaterThan(0) &&
     routerResult.priceOut?.isGreaterThan(0)
-      ? new BigNumber(100).minus(
+      ? new BigNumber(
           new BigNumber(routerResult.priceOut)
             .dividedBy(new BigNumber(routerResult.priceIn))
             .multipliedBy(100)
-        )
+        ).minus(100)
       : undefined;
 
   const tradeCard = (

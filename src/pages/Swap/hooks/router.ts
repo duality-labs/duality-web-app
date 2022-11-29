@@ -144,12 +144,14 @@ export function calculateOut({
       const price = isSameOrder
         ? sortedTicks[tickIndex].price
         : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price);
-      priceIn = priceIn || price;
-      priceOut = price;
       // the reserves of tokenOut available at this tick
       const reservesOut = isSameOrder
         ? sortedTicks[tickIndex].reserve1
         : sortedTicks[tickIndex].reserve0;
+      if (reservesOut.isGreaterThan(0)) {
+        priceIn = priceIn || price;
+        priceOut = price;
+      }
       // the reserves of tokenOut available at this tick
       const maxOut = amountLeft.multipliedBy(price);
 
