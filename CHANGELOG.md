@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.53](https://github.com/duality-labs/duality-web-app/compare/v0.1.52...v0.1.53) (2022-11-29)
+
+
+### Features
+
+* swap slippage tolerance ([#205](https://github.com/duality-labs/duality-web-app/issues/205)) ([fce86e9](https://github.com/duality-labs/duality-web-app/commit/fce86e9651c2c28b63eb600a2c95792f33514dd5))
+
 ## [0.1.52](https://github.com/duality-labs/duality-web-app/compare/v0.1.51...v0.1.52) (2022-11-28)
 
 
