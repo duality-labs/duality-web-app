@@ -123,10 +123,10 @@ export function getRouterEstimates(
       const estimate = {
         tokenA: routerResult.tokenIn,
         tokenB: routerResult.tokenOut,
-        rate: rate.toString(),
+        rate: rate.toFixed(),
         valueA: formatAmount(routerResult.amountIn.toFixed()),
         valueB: formatAmount(routerResult.amountOut.toFixed()),
-        gas: extraFee.toString(),
+        gas: extraFee.toFixed(),
       };
       cachedRequests[token0] = cachedRequests[token0] || {};
       cachedRequests[token0][token1] = estimate;
@@ -150,13 +150,13 @@ export function getRouterEstimates(
           pairRequest.tokenA === cachedPairInfo.tokenA
             ? new BigNumber(rate)
             : new BigNumber(1).dividedBy(rate);
-        const roughEstimate = new BigNumber(alteredValue)
-          .multipliedBy(convertedRate)
-          .toString();
+        const roughEstimate = formatAmount(
+          new BigNumber(alteredValue).multipliedBy(convertedRate).toFixed()
+        );
         return {
           tokenA: pairRequest.tokenA,
           tokenB: pairRequest.tokenB,
-          rate: convertedRate.toString(),
+          rate: formatAmount(convertedRate.toFixed()),
           valueA: reverseSwap ? roughEstimate : alteredValue,
           valueB: reverseSwap ? alteredValue : roughEstimate,
           gas,
