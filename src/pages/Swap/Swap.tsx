@@ -336,14 +336,11 @@ export default function Swap() {
                       })(),
                     ].join(' ')}
                   >
-                    {routerResult &&
-                    routerResult.priceIn?.isGreaterThan(0) &&
-                    routerResult.priceOut?.isGreaterThan(0)
-                      ? `${formatAmount(priceImpact.toFixed(), {
-                          maximumSignificantDigits: 4,
-                          minimumSignificantDigits: 4,
-                        })}%`
-                      : ''}
+                    {formatAmount(priceImpact.toFixed(), {
+                      maximumSignificantDigits: 4,
+                      minimumSignificantDigits: 4,
+                    })}
+                    %
                   </span>
                 )}
               </div>
