@@ -14,6 +14,7 @@ export function formatAmount(
     ? numericAmount.toLocaleString('en-US', {
         maximumFractionDigits: maxFractionDigits,
         maximumSignificantDigits: 6,
+        useGrouping: false,
         ...opts,
       })
     : '-';
@@ -25,7 +26,6 @@ export function formatPrice(
 ) {
   return formatAmount(amount, {
     maximumSignificantDigits: 3,
-    useGrouping: false,
     ...opts,
   });
 }
