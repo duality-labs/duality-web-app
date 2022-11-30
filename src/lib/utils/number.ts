@@ -10,14 +10,11 @@ export function formatAmount(
   opts: Intl.NumberFormatOptions = {}
 ) {
   const numericAmount = Number(amount);
-  const givenSD = opts.maximumSignificantDigits ?? 6;
   return !isNaN(numericAmount)
     ? numericAmount.toLocaleString('en-US', {
         maximumFractionDigits: maxFractionDigits,
+        maximumSignificantDigits: 6,
         ...opts,
-        ...(numericAmount < Math.pow(10, givenSD) && {
-          maximumSignificantDigits: givenSD,
-        }),
       })
     : '-';
 }
@@ -45,8 +42,9 @@ export function formatLongPrice(
 // it is intended that the amount passed here has no more decimal places
 // than its denom exponent (eg. it has come from `getAmountInDenom()`)
 export function formatCurrency(amount: number | string, currency = 'USD') {
-  return formatAmount(amount, {
+  return Number(amount).toLocaleString('en-US', {
     currency,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     currencyDisplay: 'symbol',
     style: 'currency',

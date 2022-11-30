@@ -40,4 +40,14 @@
     text-align: end;
     color: grays.$light-gray;
   }
+
+  // allow other colors inside text grids
+  @each $name in colors.$main {
+    & > .text-#{$name} {
+      color: var(--#{$name});
+    }
+    & > .text-#{$name}-inverse {
+      color: var(--#{$name}-alt);
+    }
+  }
 }

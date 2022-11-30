@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.54](https://github.com/duality-labs/duality-web-app/compare/v0.1.53...v0.1.54) (2022-11-29)
+
+
+### Features
+
+* Swap price impact ([#207](https://github.com/duality-labs/duality-web-app/issues/207)) ([80ed478](https://github.com/duality-labs/duality-web-app/commit/80ed478afbbc01e16f07f0fe646cad23b645d430))
+
+## [0.1.53](https://github.com/duality-labs/duality-web-app/compare/v0.1.52...v0.1.53) (2022-11-29)
+
+
+### Features
+
+* swap slippage tolerance ([#205](https://github.com/duality-labs/duality-web-app/issues/205)) ([fce86e9](https://github.com/duality-labs/duality-web-app/commit/fce86e9651c2c28b63eb600a2c95792f33514dd5))
+
 ## [0.1.52](https://github.com/duality-labs/duality-web-app/compare/v0.1.51...v0.1.52) (2022-11-28)
 
 
