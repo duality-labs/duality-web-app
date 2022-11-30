@@ -227,6 +227,9 @@ export default function Pool() {
     setFirstCurrentPrice((state) => {
       // if there is no currentPriceFromTicks yet, then wait until there is
       if (!currentPriceFromTicks) {
+        // set decent looking example range for an unknown price
+        setRangeMin('0.01');
+        setRangeMax('100');
         return state;
       }
       // current tokens with maybe new price
