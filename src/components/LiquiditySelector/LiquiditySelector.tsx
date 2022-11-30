@@ -12,11 +12,14 @@ import { formatPrice } from '../../lib/utils/number';
 import { TickMap, TickInfo } from '../../lib/web3/indexerProvider';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
+import { Token } from '../TokenPicker/hooks';
 
 import './LiquiditySelector.scss';
 
 export interface LiquiditySelectorProps {
   ticks: TickMap | undefined;
+  tokenA: Token;
+  tokenB: Token;
   feeTier: number | undefined;
   tickSelected: number | undefined;
   setTickSelected: (index: number) => void;
@@ -75,6 +78,8 @@ function filterTicksToFeeTier(
 
 export default function LiquiditySelector({
   ticks = {},
+  tokenA,
+  tokenB,
   feeTier,
   tickSelected = -1,
   setTickSelected,
@@ -107,17 +112,17 @@ export default function LiquiditySelector({
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
-  const currentPriceABFromTicks = useCurrentPriceFromTicks(ticks);
+  const maybeCurrentPriceFromTicks = useCurrentPriceFromTicks(
+    tokenA.address,
+    tokenB.address
+  );
 
-  const invertTokenOrder = currentPriceABFromTicks?.isLessThan(1) || false;
+  const maybeCurrentPriceFromTicksString =
+    maybeCurrentPriceFromTicks?.toFixed();
   const currentPriceFromTicks = useMemo(() => {
-    const one = new BigNumber(1);
-    return currentPriceABFromTicks
-      ? invertTokenOrder
-        ? one.dividedBy(currentPriceABFromTicks)
-        : currentPriceABFromTicks
-      : one;
-  }, [currentPriceABFromTicks, invertTokenOrder]);
+    return new BigNumber(maybeCurrentPriceFromTicksString ?? 1);
+  }, [maybeCurrentPriceFromTicksString]);
+
   const initialGraphStart = useMemo(() => {
     const graphStart = currentPriceFromTicks.dividedBy(4);
     return graphStart.isLessThan(1 / 1.1) ? new BigNumber(1 / 1.1) : graphStart;

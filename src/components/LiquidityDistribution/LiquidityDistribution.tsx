@@ -96,6 +96,8 @@ export default function LiquidityDistribution({
           )}
           <div className="flex row chart-area">
             <LiquiditySelector
+              tokenA={tokenA}
+              tokenB={tokenB}
               setRangeMin={setRangeMin}
               setRangeMax={setRangeMax}
               ticks={ticks}

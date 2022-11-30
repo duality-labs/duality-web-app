@@ -401,23 +401,18 @@ function LiquidityDistributionCard({
     token1?.address
   );
 
-  const currentPriceABFromTicks =
-    useCurrentPriceFromTicks(unorderedTicks) || defaultCurrentPrice;
+  const currentPriceFromTicks =
+    useCurrentPriceFromTicks(token0.address, token1.address) ||
+    defaultCurrentPrice;
 
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
-    return currentPriceABFromTicks?.isLessThan(1);
+    return currentPriceFromTicks.isLessThan(1);
   });
   const swapAll = useCallback(() => {
     setInvertedTokenOrder((order) => !order);
   }, []);
   const tokenA = invertedTokenOrder ? token1 : token0;
   const tokenB = invertedTokenOrder ? token0 : token1;
-
-  const currentPriceFromTicks = useMemo(() => {
-    return invertedTokenOrder
-      ? new BigNumber(1).dividedBy(currentPriceABFromTicks)
-      : currentPriceABFromTicks;
-  }, [invertedTokenOrder, currentPriceABFromTicks]);
 
   const ticks = useMemo(() => {
     if (!invertedTokenOrder) return unorderedTicks;

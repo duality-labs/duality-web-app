@@ -1,32 +1,39 @@
+import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
-import { TickInfo, TickMap } from '../../lib/web3/indexerProvider';
+import { TickInfo, useIndexerPairData } from '../../lib/web3/indexerProvider';
 import { TickGroup } from './LiquiditySelector';
 
-function defaultTickFilter(tick: TickInfo | undefined) {
-  return !!tick;
-}
-
+// current price of A to B is given in price B/A
+// eg. price of ATOM in USDC is given in USDC/ATOM units
 export default function useCurrentPriceFromTicks(
-  ticks: TickMap = {},
-  tickFilter = defaultTickFilter
-) {
+  tokenA?: string,
+  tokenB?: string
+): BigNumber | undefined {
+  const { data: { ticks, token0, token1 } = {} } = useIndexerPairData(
+    tokenA,
+    tokenB
+  );
+
+  const forward = tokenA === token0 && tokenB === token1;
+  const reverse = tokenA === token1 && tokenB === token0;
+
   // collect tick information in a more useable form
-  const feeTicks: TickGroup = useMemo(() => {
-    return Object.values(ticks)
+  const sortedTicks: TickGroup = useMemo(() => {
+    return Object.values(ticks || [])
       .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
-      .filter((tick): tick is TickInfo => tickFilter(tick)) // filter to relevant ticks
+      .filter((tick): tick is TickInfo => !!tick) // filter to relevant ticks
       .map((tick) => ({
         ...tick,
         virtualPrice: tick.price.multipliedBy(tick.fee.plus(1)),
       })) // add virtual price
       .sort((tick0, tick1) => tick0.virtualPrice.comparedTo(tick1.virtualPrice)) // sort by virtual price
       .map((tick) => [tick.virtualPrice, tick.reserve0, tick.reserve1]); // use virtual price always here
-  }, [ticks, tickFilter]);
+  }, [ticks]);
 
   // estimate current price from ticks
   const currentPriceFromTicks = useMemo(() => {
-    if (!feeTicks.length) return;
-    const remainingTicks = feeTicks.slice();
+    if (!sortedTicks.length) return;
+    const remainingTicks = sortedTicks.slice();
     const highTokenValueIndex = 2;
     const lowTokenValueIndex = 1;
     let highestLowTokenTickIndex = findLastIndex(remainingTicks, (tick) =>
@@ -86,9 +93,18 @@ export default function useCurrentPriceFromTicks(
         return undefined;
       }
     } while (remainingTicks.length > 0);
-  }, [feeTicks]);
+  }, [sortedTicks]);
 
-  return currentPriceFromTicks;
+  // don't know how you got here
+  if (!forward && !reverse) {
+    return;
+  }
+
+  return currentPriceFromTicks
+    ? forward
+      ? currentPriceFromTicks
+      : new BigNumber(1).dividedBy(currentPriceFromTicks)
+    : undefined;
 }
 
 /**
