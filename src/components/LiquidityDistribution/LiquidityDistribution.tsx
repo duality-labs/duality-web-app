@@ -50,7 +50,7 @@ export default function LiquidityDistribution({
   tokenB: Token;
   swapAll: () => void;
   setFeeTier?: React.Dispatch<React.SetStateAction<number | undefined>>;
-  currentPriceFromTicks: BigNumber;
+  currentPriceFromTicks: BigNumber | undefined;
   submitButtonText?: string;
   submitButtonVariant?: 'primary' | 'error' | 'warning';
 }) {
@@ -117,7 +117,7 @@ export default function LiquidityDistribution({
         </div>
         <div className="col chart-price">
           <div className="hero-text my-4">
-            {currentPriceFromTicks?.toFixed(5)}
+            {currentPriceFromTicks?.toFixed(5) ?? '-'}
           </div>
           <div>Current Price</div>
           {submitButtonText && (

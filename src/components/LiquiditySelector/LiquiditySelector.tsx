@@ -124,18 +124,20 @@ export default function LiquiditySelector({
 
   const maybeCurrentPriceFromTicksString =
     maybeCurrentPriceFromTicks?.toFixed();
-  const currentPriceFromTicks = useMemo(() => {
-    return new BigNumber(maybeCurrentPriceFromTicksString ?? 1);
+  const currentPriceFromTicks = useMemo<BigNumber | undefined>(() => {
+    return maybeCurrentPriceFromTicksString
+      ? new BigNumber(maybeCurrentPriceFromTicksString)
+      : undefined;
   }, [maybeCurrentPriceFromTicksString]);
 
   const initialGraphStart = useMemo(() => {
-    const graphStart = currentPriceFromTicks.dividedBy(4);
+    const graphStart = currentPriceFromTicks?.dividedBy(4) || defaultStartValue;
     return graphStart.isLessThan(defaultStartValue)
       ? defaultStartValue
       : graphStart;
   }, [currentPriceFromTicks]);
   const initialGraphEnd = useMemo(() => {
-    const graphEnd = currentPriceFromTicks.multipliedBy(4);
+    const graphEnd = currentPriceFromTicks?.multipliedBy(4) || defaultEndValue;
     return graphEnd.isLessThan(defaultEndValue) ? defaultEndValue : graphEnd;
   }, [currentPriceFromTicks]);
 
@@ -194,6 +196,9 @@ export default function LiquiditySelector({
   const emptyBuckets = useMemo<
     [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
   >(() => {
+    if (!currentPriceFromTicks) {
+      return [[], []];
+    }
     // get bounds
     const xMin = dataStart.sd(2, BigNumber.ROUND_DOWN).toNumber();
     const xMax = dataEnd.sd(2, BigNumber.ROUND_UP).toNumber();
@@ -538,7 +543,7 @@ function TicksArea({
   bucketRatio,
   className,
 }: {
-  currentPrice: BigNumber;
+  currentPrice: BigNumber | undefined;
   oneSidedLiquidity: boolean;
   ticks: TickGroup;
   plotX: (x: BigNumber) => number;
@@ -607,16 +612,20 @@ function TicksArea({
   );
 
   const rounding = 5;
-  const hasPriceWarning = ([price, valueA, valueB]: Tick) => {
-    return (
-      // if tick is tokenA: warn if price is higher than current price
-      (!valueA?.isZero() && price.isGreaterThan(currentPrice)) ||
-      // if tick is tokenB: warn if price is lower than current price
-      (!valueB?.isZero() && price.isLessThan(currentPrice))
-    );
-  };
-  const startTickHasPriceWarning = !!startTick && hasPriceWarning(startTick);
-  const endTickHasPriceWarning = !!endTick && hasPriceWarning(endTick);
+  const hasPriceWarning =
+    currentPrice &&
+    (([price, valueA, valueB]: Tick) => {
+      return (
+        // if tick is tokenA: warn if price is higher than current price
+        (!valueA?.isZero() && price.isGreaterThan(currentPrice)) ||
+        // if tick is tokenB: warn if price is lower than current price
+        (!valueB?.isZero() && price.isLessThan(currentPrice))
+      );
+    });
+  const startTickHasPriceWarning = !!(
+    startTick && hasPriceWarning?.(startTick)
+  );
+  const endTickHasPriceWarning = !!(endTick && hasPriceWarning?.(endTick));
 
   return startTickPrice && endTickPrice ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
@@ -689,34 +698,38 @@ function TicksArea({
           y1={plotY(new BigNumber(0.7)).toFixed(3)}
           y2={plotY(new BigNumber(0.7)).toFixed(3)}
         />
-        <line
-          className={[
-            'line flag-joiner flag-joiner--price-warning',
-            !(oneSidedLiquidity
-              ? startTickHasPriceWarning
-              : startTickPrice.isGreaterThan(currentPrice)) && 'hide',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          x1={plotX(currentPrice).toFixed(3)}
-          x2={plotX(startTickPrice).toFixed(3)}
-          y1={plotY(new BigNumber(0.7)).toFixed(3)}
-          y2={plotY(new BigNumber(0.7)).toFixed(3)}
-        />
-        <line
-          className={[
-            'line flag-joiner flag-joiner--price-warning',
-            !(oneSidedLiquidity
-              ? endTickHasPriceWarning
-              : endTickPrice.isLessThan(currentPrice)) && 'hide',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          x1={plotX(endTickPrice).toFixed(3)}
-          x2={plotX(currentPrice).toFixed(3)}
-          y1={plotY(new BigNumber(0.7)).toFixed(3)}
-          y2={plotY(new BigNumber(0.7)).toFixed(3)}
-        />
+        {currentPrice && (
+          <line
+            className={[
+              'line flag-joiner flag-joiner--price-warning',
+              !(oneSidedLiquidity
+                ? startTickHasPriceWarning
+                : startTickPrice.isGreaterThan(currentPrice)) && 'hide',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            x1={plotX(currentPrice).toFixed(3)}
+            x2={plotX(startTickPrice).toFixed(3)}
+            y1={plotY(new BigNumber(0.7)).toFixed(3)}
+            y2={plotY(new BigNumber(0.7)).toFixed(3)}
+          />
+        )}
+        {currentPrice && (
+          <line
+            className={[
+              'line flag-joiner flag-joiner--price-warning',
+              !(oneSidedLiquidity
+                ? endTickHasPriceWarning
+                : endTickPrice.isLessThan(currentPrice)) && 'hide',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            x1={plotX(endTickPrice).toFixed(3)}
+            x2={plotX(currentPrice).toFixed(3)}
+            y1={plotY(new BigNumber(0.7)).toFixed(3)}
+            y2={plotY(new BigNumber(0.7)).toFixed(3)}
+          />
+        )}
       </g>
       <g
         className={['pole-b', endTickHasPriceWarning && 'pole--price-warning']
@@ -798,7 +811,7 @@ function TicksGroup({
   canMoveX = false,
   ...rest
 }: {
-  currentPrice: BigNumber;
+  currentPrice: BigNumber | undefined;
   ticks: Array<Tick | undefined>;
   backgroundTicks: Array<Tick | undefined>;
   setUserTicks?: (
@@ -1031,9 +1044,10 @@ function TicksGroup({
                 ? 'tick--diff-negative'
                 : 'tick--diff-positive'),
             // warn user if this seems to be a bad trade
-            token0Value.isGreaterThan(0)
-              ? price.isGreaterThan(currentPrice) && 'tick--price-warning'
-              : price.isLessThan(currentPrice) && 'tick--price-warning',
+            currentPrice &&
+              (token0Value.isGreaterThan(0)
+                ? price.isGreaterThan(currentPrice) && 'tick--price-warning'
+                : price.isLessThan(currentPrice) && 'tick--price-warning'),
           ]
             .filter(Boolean)
             .join(' ')}

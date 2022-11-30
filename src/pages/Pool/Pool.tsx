@@ -63,8 +63,6 @@ const slopeTypes: Array<SlopeType> = [
 ];
 
 const defaultPrecision = '6';
-// set as constant to avoid unwanted hook effects
-const defaultCurrentPrice = new BigNumber(1);
 
 const restrictPriceRangeValues = (valueString: string) => {
   const value = new BigNumber(valueString);
@@ -189,12 +187,13 @@ export default function Pool() {
     setUserTicksUnprotected(userTicks.map(restrictTickPrices));
   }, []);
 
-  const currentPriceFromTicks =
-    useCurrentPriceFromTicks(tokenA?.address, tokenB?.address) ||
-    defaultCurrentPrice;
+  const currentPriceFromTicks = useCurrentPriceFromTicks(
+    tokenA?.address,
+    tokenB?.address
+  );
 
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
-    return currentPriceFromTicks.isLessThan(1);
+    return currentPriceFromTicks?.isLessThan(1) || false;
   });
 
   const [, setFirstCurrentPrice] = useState<{
@@ -219,11 +218,15 @@ export default function Pool() {
       );
     };
     setFirstCurrentPrice((state) => {
+      // if there is no currentPriceFromTicks yet, then wait until there is
+      if (!currentPriceFromTicks) {
+        return state;
+      }
       // current tokens with maybe new price
-      if (state.tokenA === tokenA && state.tokenB === tokenB) {
+      else if (state.tokenA === tokenA && state.tokenB === tokenB) {
         // set range on first price after switching tokens
         if (
-          (!state.price && currentPriceFromTicks) ||
+          !state.price ||
           state.isValueAZero !== isValueAZero ||
           state.isValueBZero !== isValueBZero
         ) {
@@ -355,7 +358,7 @@ export default function Pool() {
   useEffect(() => {
     function getUserTicks(): TickGroup {
       // set multiple ticks across the range
-      if (currentPriceFromTicks.isGreaterThan(0) && tickCount > 1) {
+      if (tickCount > 1) {
         const tokenAmountA = new BigNumber(values[0]);
         const tokenAmountB = new BigNumber(values[1]);
         // spread evenly after adding padding on each side
@@ -373,20 +376,25 @@ export default function Pool() {
         const tickCounts: [number, number] = [0, 0];
         const tickPrices = Array.from({ length: tickCount }).reduceRight<
           [BigNumber, BigNumber, BigNumber][]
-        >((result, _, index) => {
+        >((result, _, index, tickPrices) => {
           const lastPrice = result[0]?.[0];
-          const price = lastPrice?.isLessThan(currentPriceFromTicks)
+          const price = lastPrice?.isLessThan(currentPriceFromTicks || 0)
             ? // calculate price from left (to have exact left value)
               tickStart.multipliedBy(tickGapRatio.exponentiatedBy(index))
             : // calculate price from right (to have exact right value)
               lastPrice?.dividedBy(tickGapRatio) ?? tickEnd;
 
           // choose whether token A or B should be added for the tick at this price
-          const invertToken = isValueAZero
-            ? false
-            : isValueBZero
-            ? true
-            : price.isLessThan(currentPriceFromTicks);
+          const invertToken =
+            isValueAZero || isValueBZero
+              ? // enforce singe-sided liquidity has single ticks
+                isValueBZero
+              : // for double-sided liquidity split the ticks somewhere
+              currentPriceFromTicks
+              ? // split the ticks at the current price if it exists
+                price.isLessThan(currentPriceFromTicks)
+              : // split the ticks by index if no price exists yet
+                index < tickPrices.length / 2;
           // add to count
           tickCounts[invertToken ? 0 : 1] += 1;
           return [
@@ -721,7 +729,7 @@ export default function Pool() {
             </div>
             <div className="col chart-price">
               <div className="hero-text my-4">
-                {currentPriceFromTicks?.toFixed(5)}
+                {currentPriceFromTicks?.toFixed(5) ?? '-'}
               </div>
               <div>Current Price</div>
               <div className="mt-auto mb-4">
