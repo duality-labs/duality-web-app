@@ -18,6 +18,7 @@ import {
 
 import {
   getBalance,
+  TickInfo,
   TickMap,
   useBankBalances,
   useFeeLiquidityMap,
@@ -202,6 +203,32 @@ export default function Pool() {
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
     return currentPriceFromTicks?.isLessThan(1) || false;
   });
+
+  // note warning price, the price at which warning states should be shown
+  // for one-sided liquidity this is the extent of data to one side
+  const extentPrice =
+    useMemo(() => {
+      const allTicks: TickGroup = Object.values(unorderedTicks || {})
+        .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
+        .filter((tick): tick is TickInfo => !!tick) // filter to only ticks
+        .sort((a, b) => a.price.comparedTo(b.price))
+        .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
+
+      const isReserveAZero = allTicks.every(([, reserveA]) =>
+        reserveA.isZero()
+      );
+      const isReserveBZero = allTicks.every(([, , reserveB]) =>
+        reserveB.isZero()
+      );
+
+      const startTick = allTicks[0];
+      const endTick = allTicks[allTicks.length - 1];
+      return (
+        (isReserveAZero && !isValueAZero && startTick?.[0]) ||
+        (isReserveBZero && !isValueBZero && endTick?.[0]) ||
+        undefined
+      );
+    }, [isValueAZero, isValueBZero, unorderedTicks]) || currentPriceFromTicks;
 
   const [, setFirstCurrentPrice] = useState<{
     tokenA?: Token;
@@ -388,7 +415,7 @@ export default function Pool() {
           [BigNumber, BigNumber, BigNumber][]
         >((result, _, index, tickPrices) => {
           const lastPrice = result[0]?.[0];
-          const price = lastPrice?.isLessThan(currentPriceFromTicks || 0)
+          const price = lastPrice?.isLessThan(extentPrice || 0)
             ? // calculate price from left (to have exact left value)
               tickStart.multipliedBy(tickGapRatio.exponentiatedBy(index))
             : // calculate price from right (to have exact right value)
@@ -400,9 +427,9 @@ export default function Pool() {
               ? // enforce singe-sided liquidity has single ticks
                 isValueBZero
               : // for double-sided liquidity split the ticks somewhere
-              currentPriceFromTicks
+              extentPrice
               ? // split the ticks at the current price if it exists
-                price.isLessThan(currentPriceFromTicks)
+                price.isLessThan(extentPrice)
               : // split the ticks by index if no price exists yet
                 index < tickPrices.length / 2;
           // add to count
@@ -513,7 +540,7 @@ export default function Pool() {
     rangeMin,
     rangeMax,
     tickCount,
-    currentPriceFromTicks,
+    extentPrice,
     setUserTicks,
   ]);
 

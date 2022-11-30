@@ -107,6 +107,7 @@ export default function LiquiditySelector({
     return Object.values(ticks)
       .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
       .filter((tick): tick is TickInfo => !!tick) // filter to only ticks
+      .sort((a, b) => a.price.comparedTo(b.price))
       .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
   }, [ticks]);
 
@@ -136,6 +137,31 @@ export default function LiquiditySelector({
       ? new BigNumber(maybeCurrentPriceFromTicksString)
       : undefined;
   }, [maybeCurrentPriceFromTicksString]);
+
+  const isUserTicksAZero = userTicks.every(
+    (tick) => tick?.[1].isZero() ?? true
+  );
+  const isUserTicksBZero = userTicks.every(
+    (tick) => tick?.[2].isZero() ?? true
+  );
+
+  // note warning price, the price at which warning states should be shown
+  // for one-sided liquidity this is the extent of data to one side
+  const warningPrice = useMemo(() => {
+    const startTick = allTicks[0];
+    const endTick = allTicks[allTicks.length - 1];
+    return (
+      (isReserveAZero && !isUserTicksAZero && startTick?.[0]) ||
+      (isReserveBZero && !isUserTicksBZero && endTick?.[0]) ||
+      undefined
+    );
+  }, [
+    isReserveAZero,
+    isReserveBZero,
+    isUserTicksAZero,
+    isUserTicksBZero,
+    allTicks,
+  ]);
 
   const initialGraphStart = useMemo(() => {
     const graphStart = currentPriceFromTicks?.dividedBy(4) || defaultStartValue;
@@ -210,10 +236,7 @@ export default function LiquiditySelector({
     const xMin = dataStart.sd(2, BigNumber.ROUND_DOWN);
     const xMax = dataEnd.sd(2, BigNumber.ROUND_UP);
     // get middle 'break' point which will separate bucket sections
-    const breakPoint =
-      currentPriceFromTicks ||
-      (isReserveAZero && xMax) ||
-      (isReserveBZero && xMin);
+    const breakPoint = warningPrice || currentPriceFromTicks;
     // skip if there is no breakpoint
     if (!breakPoint) {
       return [[], []];
@@ -222,7 +245,7 @@ export default function LiquiditySelector({
       [min: BigNumber, max: BigNumber][]
     >((result) => {
       const newValue = result[0]?.[0] ?? breakPoint;
-      return newValue.isLessThan(xMin)
+      return newValue.isLessThanOrEqualTo(xMin)
         ? // return finished array
           result
         : // prepend new bucket
@@ -232,7 +255,7 @@ export default function LiquiditySelector({
       [min: BigNumber, max: BigNumber][]
     >((result) => {
       const newValue = result[result.length - 1]?.[1] ?? breakPoint;
-      return newValue.isGreaterThan(xMax)
+      return newValue.isGreaterThanOrEqualTo(xMax)
         ? // return finished array
           result
         : // append new bucket
@@ -242,13 +265,12 @@ export default function LiquiditySelector({
     // return concantenated buckes
     return [tokenABuckets, tokenBBuckets];
   }, [
+    warningPrice,
     currentPriceFromTicks,
     bucketRatio,
     bucketCount,
     dataStart,
     dataEnd,
-    isReserveAZero,
-    isReserveBZero,
   ]);
 
   // allow user ticks to reset the boundary of the graph
@@ -450,7 +472,7 @@ export default function LiquiditySelector({
       {advanced ? (
         <TicksGroup
           className="new-ticks"
-          currentPrice={currentPriceFromTicks}
+          currentPrice={warningPrice || currentPriceFromTicks}
           ticks={userTicks}
           backgroundTicks={userTicksBase}
           setUserTicks={setUserTicks}
@@ -465,7 +487,7 @@ export default function LiquiditySelector({
       ) : (
         <TicksArea
           className="new-ticks-area"
-          currentPrice={currentPriceFromTicks}
+          currentPrice={warningPrice || currentPriceFromTicks}
           oneSidedLiquidity={oneSidedLiquidity}
           ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
