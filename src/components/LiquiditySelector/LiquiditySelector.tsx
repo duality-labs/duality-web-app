@@ -77,6 +77,9 @@ function filterTicksToFeeTier(
   return !!tick && (!feeTier || tick.fee.isEqualTo(feeTier));
 }
 
+const defaultStartValue = new BigNumber(1 / 1.1);
+const defaultEndValue = new BigNumber(1.1);
+
 export default function LiquiditySelector({
   ticks = {},
   tokenA,
@@ -127,15 +130,17 @@ export default function LiquiditySelector({
 
   const initialGraphStart = useMemo(() => {
     const graphStart = currentPriceFromTicks.dividedBy(4);
-    return graphStart.isLessThan(1 / 1.1) ? new BigNumber(1 / 1.1) : graphStart;
+    return graphStart.isLessThan(defaultStartValue)
+      ? defaultStartValue
+      : graphStart;
   }, [currentPriceFromTicks]);
   const initialGraphEnd = useMemo(() => {
     const graphEnd = currentPriceFromTicks.multipliedBy(4);
-    return graphEnd.isLessThan(1.1) ? new BigNumber(1.1) : graphEnd;
+    return graphEnd.isLessThan(defaultEndValue) ? defaultEndValue : graphEnd;
   }, [currentPriceFromTicks]);
 
   const [dataStart, dataEnd] = useMemo(() => {
-    const { xMin = new BigNumber(1 / 1.1), xMax = new BigNumber(1.1) } =
+    const { xMin = defaultStartValue, xMax = defaultEndValue } =
       allTicks.reduce<{
         [key: string]: BigNumber;
       }>((result, [price]) => {
