@@ -146,16 +146,15 @@ export default function LiquiditySelector({
   }, [currentPriceFromTicks]);
 
   const [dataStart, dataEnd] = useMemo(() => {
-    const { xMin = defaultStartValue, xMax = defaultEndValue } =
-      allTicks.reduce<{
-        [key: string]: BigNumber;
-      }>((result, [price]) => {
-        if (result.xMin === undefined || price.isLessThan(result.xMin))
-          result.xMin = price;
-        if (result.xMax === undefined || price.isGreaterThan(result.xMax))
-          result.xMax = price;
-        return result;
-      }, {});
+    const { xMin, xMax } = allTicks.reduce<{
+      [key: string]: BigNumber | undefined;
+    }>((result, [price]) => {
+      if (result.xMin === undefined || price.isLessThan(result.xMin))
+        result.xMin = price;
+      if (result.xMax === undefined || price.isGreaterThan(result.xMax))
+        result.xMax = price;
+      return result;
+    }, {});
     return [xMin, xMax];
   }, [allTicks]);
 
@@ -200,7 +199,8 @@ export default function LiquiditySelector({
   const emptyBuckets = useMemo<
     [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
   >(() => {
-    if (!currentPriceFromTicks) {
+    // skip unknown bucket placements
+    if (!currentPriceFromTicks || !dataStart || !dataEnd) {
       return [[], []];
     }
     // get bounds
@@ -258,8 +258,8 @@ export default function LiquiditySelector({
     const allValues = [
       Number(rangeMin),
       Number(rangeMax),
-      dataStart.toNumber(),
-      dataEnd.toNumber(),
+      dataStart?.toNumber() || 0,
+      dataEnd?.toNumber() || 0,
       minUserTickPrice?.toNumber() || 0,
       maxUserTickPrice?.toNumber() || 0,
     ].filter((v) => v && !isNaN(v));
