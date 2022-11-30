@@ -110,6 +110,9 @@ export default function LiquiditySelector({
       .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
   }, [ticks]);
 
+  const isReserveAZero = allTicks.every(([, reserveA]) => reserveA.isZero());
+  const isReserveBZero = allTicks.every(([, , reserveB]) => reserveB.isZero());
+
   // collect tick information in a more useable form
   const feeTicks: TickGroup = useMemo(() => {
     return Object.values(ticks)
@@ -200,16 +203,25 @@ export default function LiquiditySelector({
     [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
   >(() => {
     // skip unknown bucket placements
-    if (!currentPriceFromTicks || !dataStart || !dataEnd) {
+    if (!dataStart || !dataEnd) {
       return [[], []];
     }
     // get bounds
-    const xMin = dataStart.sd(2, BigNumber.ROUND_DOWN).toNumber();
-    const xMax = dataEnd.sd(2, BigNumber.ROUND_UP).toNumber();
+    const xMin = dataStart.sd(2, BigNumber.ROUND_DOWN);
+    const xMax = dataEnd.sd(2, BigNumber.ROUND_UP);
+    // get middle 'break' point which will separate bucket sections
+    const breakPoint =
+      currentPriceFromTicks ||
+      (isReserveAZero && xMax) ||
+      (isReserveBZero && xMin);
+    // skip if there is no breakpoint
+    if (!breakPoint) {
+      return [[], []];
+    }
     const tokenABuckets = Array.from({ length: bucketCount }).reduce<
       [min: BigNumber, max: BigNumber][]
     >((result) => {
-      const newValue = result[0]?.[0] ?? currentPriceFromTicks;
+      const newValue = result[0]?.[0] ?? breakPoint;
       return newValue.isLessThan(xMin)
         ? // return finished array
           result
@@ -219,7 +231,7 @@ export default function LiquiditySelector({
     const tokenBBuckets = Array.from({ length: bucketCount }).reduce<
       [min: BigNumber, max: BigNumber][]
     >((result) => {
-      const newValue = result[result.length - 1]?.[1] ?? currentPriceFromTicks;
+      const newValue = result[result.length - 1]?.[1] ?? breakPoint;
       return newValue.isGreaterThan(xMax)
         ? // return finished array
           result
@@ -229,7 +241,15 @@ export default function LiquiditySelector({
 
     // return concantenated buckes
     return [tokenABuckets, tokenBBuckets];
-  }, [currentPriceFromTicks, bucketRatio, bucketCount, dataStart, dataEnd]);
+  }, [
+    currentPriceFromTicks,
+    bucketRatio,
+    bucketCount,
+    dataStart,
+    dataEnd,
+    isReserveAZero,
+    isReserveBZero,
+  ]);
 
   // allow user ticks to reset the boundary of the graph
   useLayoutEffect(() => {
