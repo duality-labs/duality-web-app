@@ -357,13 +357,13 @@ export default function Pool() {
   const tickCount = Number(precision || 1);
   useEffect(() => {
     function getUserTicks(): TickGroup {
+      const tickStart = new BigNumber(rangeMin);
+      const tickEnd = new BigNumber(rangeMax);
       // set multiple ticks across the range
-      if (tickCount > 1) {
+      if (tickCount > 1 && tickEnd.isGreaterThan(tickStart)) {
         const tokenAmountA = new BigNumber(values[0]);
         const tokenAmountB = new BigNumber(values[1]);
         // spread evenly after adding padding on each side
-        const tickStart = new BigNumber(rangeMin);
-        const tickEnd = new BigNumber(rangeMax);
         if (tickStart.isZero() || tickEnd.isZero()) return [];
 
         // space new ticks by a multiplication ratio gap
@@ -457,6 +457,18 @@ export default function Pool() {
               : new BigNumber(0),
           ];
         });
+      }
+      // set 1 tick in the middle of the range given
+      else if (tickCount === 1 || tickStart.isEqualTo(tickEnd)) {
+        return [
+          [
+            new BigNumber(
+              formatPrice(tickStart.plus(tickEnd).dividedBy(2).toFixed())
+            ),
+            new BigNumber(isValueAZero ? 0 : 1),
+            new BigNumber(isValueAZero ? 1 : 0),
+          ],
+        ];
       }
       // or set no ticks
       else {
@@ -880,7 +892,7 @@ export default function Pool() {
                     <h3 className="card-title mr-auto">Number of Ticks</h3>
                     <StepNumberInput
                       editable={false}
-                      min={2}
+                      min={!isValueAZero && !isValueBZero ? 2 : 1}
                       max={10}
                       value={precision}
                       onChange={setPrecision}
