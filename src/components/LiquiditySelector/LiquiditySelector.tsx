@@ -23,6 +23,8 @@ export interface LiquiditySelectorProps {
   feeTier: number | undefined;
   tickSelected: number | undefined;
   setTickSelected: (index: number) => void;
+  rangeMin: string;
+  rangeMax: string;
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
   userTicksBase?: Array<Tick | undefined>;
@@ -87,6 +89,8 @@ export default function LiquiditySelector({
   feeTier,
   tickSelected = -1,
   setTickSelected,
+  rangeMin,
+  rangeMax,
   setRangeMin,
   setRangeMax,
   userTicks = [],
@@ -251,33 +255,27 @@ export default function LiquiditySelector({
       setGraphEnd(maxUserTickPrice.dividedBy(0.9));
       return;
     }
+    const allValues = [
+      Number(rangeMin),
+      Number(rangeMax),
+      dataStart.toNumber(),
+      dataEnd.toNumber(),
+      minUserTickPrice?.toNumber() || 0,
+      maxUserTickPrice?.toNumber() || 0,
+    ].filter((v) => v && !isNaN(v));
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
     // by padding dataStart and dataEnd with the needed amount of pixels
-    const minExistingTickPrice = dataStart;
-    const maxExistingTickPrice = dataEnd;
-    const minTickPrice = minUserTickPrice?.isLessThan(minExistingTickPrice)
-      ? minUserTickPrice
-      : minExistingTickPrice;
-    const maxTickPrice = maxUserTickPrice?.isGreaterThan(maxExistingTickPrice)
-      ? maxUserTickPrice
-      : maxExistingTickPrice;
-    if (minTickPrice)
-      setGraphStart(
-        minTickPrice.isLessThan(initialGraphStart)
-          ? minTickPrice
-          : initialGraphStart
-      );
-    if (maxTickPrice)
-      setGraphEnd(
-        maxTickPrice.isGreaterThan(initialGraphEnd)
-          ? maxTickPrice
-          : initialGraphEnd
-      );
+    if (allValues.length > 0) {
+      setGraphStart(new BigNumber(Math.min(...allValues)));
+      setGraphEnd(new BigNumber(Math.max(...allValues)));
+    }
   }, [
     initialGraphStart,
     initialGraphEnd,
     dataStart,
     dataEnd,
+    rangeMin,
+    rangeMax,
     userTicks,
     viewOnlyUserTicks,
   ]);
@@ -411,7 +409,8 @@ export default function LiquiditySelector({
       {!advanced && (
         <TicksBackgroundArea
           className="new-ticks-area"
-          ticks={userTicks.filter((tick): tick is Tick => !!tick)}
+          rangeMin={rangeMin}
+          rangeMax={rangeMax}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
         />
@@ -451,6 +450,8 @@ export default function LiquiditySelector({
           ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
+          rangeMin={rangeMin}
+          rangeMax={rangeMax}
           setRangeMin={setRangeMin}
           setRangeMax={setRangeMax}
           plotXinverse={plotXinverse}
@@ -495,18 +496,20 @@ function fillBuckets(emptyBuckets: TickGroupBucketsEmpty, ticks: Tick[]) {
 }
 
 function TicksBackgroundArea({
-  ticks,
+  rangeMin,
+  rangeMax,
   plotX,
   plotY,
   className,
 }: {
-  ticks: TickGroup;
+  rangeMin: string;
+  rangeMax: string;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
   className?: string;
 }) {
-  const startTickPrice = ticks?.[0]?.[0];
-  const endTickPrice = ticks?.[ticks.length - 1]?.[0];
+  const startTickPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
+  const endTickPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
 
   return startTickPrice && endTickPrice ? (
     <g
@@ -537,6 +540,8 @@ function TicksArea({
   ticks,
   plotX,
   plotY,
+  rangeMin,
+  rangeMax,
   setRangeMin,
   setRangeMax,
   plotXinverse,
@@ -548,6 +553,8 @@ function TicksArea({
   ticks: TickGroup;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
+  rangeMin: string;
+  rangeMax: string;
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
   plotXinverse: (x: number) => number;
@@ -556,8 +563,8 @@ function TicksArea({
 }) {
   const startTick = ticks?.[0];
   const endTick = ticks?.[ticks.length - 1];
-  const startTickPrice = startTick?.[0];
-  const endTickPrice = endTick?.[0];
+  const startTickPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
+  const endTickPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
   const bucketWidth =
     plotX(new BigNumber(bucketRatio)) - plotX(new BigNumber(1));
 

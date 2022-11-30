@@ -27,6 +27,8 @@ export default function LiquidityDistribution({
   tokenA,
   tokenB,
   swapAll,
+  rangeMin,
+  rangeMax,
   setRangeMin,
   setRangeMax,
   ticks,
@@ -98,6 +100,8 @@ export default function LiquidityDistribution({
             <LiquiditySelector
               tokenA={tokenA}
               tokenB={tokenB}
+              rangeMin={rangeMin}
+              rangeMax={rangeMax}
               setRangeMin={setRangeMin}
               setRangeMax={setRangeMax}
               ticks={ticks}

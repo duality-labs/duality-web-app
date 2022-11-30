@@ -359,6 +359,8 @@ export default function MyLiquidity() {
 }
 
 // set as constant to avoid unwanted hook effects
+const rangeMin = '';
+const rangeMax = '';
 const setRangeMin = () => undefined;
 const setRangeMax = () => undefined;
 
@@ -671,6 +673,8 @@ function LiquidityDistributionCard({
           },
           [editingType, values, userTicks]
         )}
+        rangeMin={rangeMin}
+        rangeMax={rangeMax}
         setRangeMin={setRangeMin}
         setRangeMax={setRangeMax}
         swapAll={swapAll}

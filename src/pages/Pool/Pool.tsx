@@ -723,6 +723,8 @@ export default function Pool() {
                 <LiquiditySelector
                   tokenA={tokenA}
                   tokenB={tokenB}
+                  rangeMin={rangeMin}
+                  rangeMax={rangeMax}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
                   ticks={ticks}
