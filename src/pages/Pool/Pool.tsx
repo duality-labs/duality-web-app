@@ -150,6 +150,13 @@ export default function Pool() {
 
   const [slopeType, setSlopeType] = useState<SlopeType>(defaultSlopeType);
   const [precision, setPrecision] = useState<string>(defaultPrecision);
+  // restrict precision to 2 ticks on double-sided liquidity mode
+  useEffect(() => {
+    setPrecision((precision) => {
+      const precisionMin = !isValueAZero && !isValueBZero ? 2 : 1;
+      return Number(precision) >= precisionMin ? precision : `${precisionMin}`;
+    });
+  }, [isValueAZero, isValueBZero]);
 
   const [{ isValidating: isValidatingDeposit }, sendDepositRequest] =
     useDeposit();
