@@ -331,11 +331,8 @@ export default function Pool() {
 
   const swapAll = useCallback(() => {
     const flipAroundCurrentPriceSwap = (value: string) => {
-      const newValue = new BigNumber(1)
-        // divide by ratio of value to current price
-        .dividedBy(new BigNumber(value).dividedBy(currentPriceFromTicks))
-        // multiply by new current price (swapped token direction of current price)
-        .multipliedBy(new BigNumber(1).dividedBy(currentPriceFromTicks));
+      // invert price
+      const newValue = new BigNumber(1).dividedBy(new BigNumber(value));
       // round number to formatted string
       return newValue.toFixed();
     };
@@ -345,15 +342,7 @@ export default function Pool() {
     setValues(([valueA, valueB]) => [valueB, valueA]);
     setTokenA(tokenB);
     setTokenB(tokenA);
-  }, [
-    tokenA,
-    tokenB,
-    rangeMin,
-    rangeMax,
-    currentPriceFromTicks,
-    setRangeMin,
-    setRangeMax,
-  ]);
+  }, [tokenA, tokenB, rangeMin, rangeMax, setRangeMin, setRangeMax]);
 
   const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
     'range'
