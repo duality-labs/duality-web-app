@@ -500,13 +500,16 @@ export default function Pool() {
       }
       // set 1 tick in the middle of the range given
       else if (tickCount === 1 || tickStart.isEqualTo(tickEnd)) {
+        const price = tickStart.plus(tickEnd).dividedBy(2);
+        const isValueA =
+          !isValueAZero && !isValueBZero
+            ? edgePrice?.isGreaterThan(price) || isValueAZero
+            : !isValueAZero;
         return [
           [
-            new BigNumber(
-              formatPrice(tickStart.plus(tickEnd).dividedBy(2).toFixed())
-            ),
-            new BigNumber(isValueAZero ? 0 : 1),
-            new BigNumber(isValueAZero ? 1 : 0),
+            new BigNumber(formatPrice(price.toFixed())),
+            new BigNumber(isValueA ? 1 : 0),
+            new BigNumber(isValueA ? 0 : 1),
           ],
         ];
       }
