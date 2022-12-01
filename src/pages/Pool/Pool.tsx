@@ -206,7 +206,7 @@ export default function Pool() {
 
   // note warning price, the price at which warning states should be shown
   // for one-sided liquidity this is the extent of data to one side
-  const extentPrice =
+  const edgePrice =
     useMemo(() => {
       const allTicks: TickGroup = Object.values(unorderedTicks || {})
         .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
@@ -224,11 +224,11 @@ export default function Pool() {
       const startTick = allTicks[0];
       const endTick = allTicks[allTicks.length - 1];
       return (
-        (isReserveAZero && !isValueAZero && startTick?.[0]) ||
-        (isReserveBZero && !isValueBZero && endTick?.[0]) ||
+        (isReserveAZero && startTick?.[0]) ||
+        (isReserveBZero && endTick?.[0]) ||
         undefined
       );
-    }, [isValueAZero, isValueBZero, unorderedTicks]) || currentPriceFromTicks;
+    }, [unorderedTicks]) || currentPriceFromTicks;
 
   const [, setFirstCurrentPrice] = useState<{
     tokenA?: Token;
@@ -415,7 +415,7 @@ export default function Pool() {
           [BigNumber, BigNumber, BigNumber][]
         >((result, _, index, tickPrices) => {
           const lastPrice = result[0]?.[0];
-          const price = lastPrice?.isLessThan(extentPrice || 0)
+          const price = lastPrice?.isLessThan(edgePrice || 0)
             ? // calculate price from left (to have exact left value)
               tickStart.multipliedBy(tickGapRatio.exponentiatedBy(index))
             : // calculate price from right (to have exact right value)
@@ -427,9 +427,9 @@ export default function Pool() {
               ? // enforce singe-sided liquidity has single ticks
                 isValueBZero
               : // for double-sided liquidity split the ticks somewhere
-              extentPrice
+              edgePrice
               ? // split the ticks at the current price if it exists
-                price.isLessThan(extentPrice)
+                price.isLessThan(edgePrice)
               : // split the ticks by index if no price exists yet
                 index < tickPrices.length / 2;
           // add to count
@@ -540,7 +540,7 @@ export default function Pool() {
     rangeMin,
     rangeMax,
     tickCount,
-    extentPrice,
+    edgePrice,
     setUserTicks,
   ]);
 
