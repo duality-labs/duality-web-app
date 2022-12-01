@@ -253,7 +253,7 @@ export default function Pool() {
     };
     setFirstCurrentPrice((state) => {
       // if there is no currentPriceFromTicks yet, then wait until there is
-      if (!currentPriceFromTicks) {
+      if (!edgePrice) {
         // set decent looking example range for an unknown price
         setRangeMin('0.01');
         setRangeMax('100');
@@ -267,10 +267,10 @@ export default function Pool() {
           state.isValueAZero !== isValueAZero ||
           state.isValueBZero !== isValueBZero
         ) {
-          setRangeForNewPriceData(currentPriceFromTicks);
+          setRangeForNewPriceData(edgePrice);
         }
         return {
-          price: currentPriceFromTicks,
+          price: edgePrice,
           ...state,
           isValueAZero,
           isValueBZero,
@@ -283,21 +283,21 @@ export default function Pool() {
           tokenB,
           isValueAZero,
           isValueBZero,
-          price: new BigNumber(1).dividedBy(currentPriceFromTicks),
+          price: new BigNumber(1).dividedBy(edgePrice),
         };
       }
       // new pair
       else {
         // set range on immediately known current price
-        if (currentPriceFromTicks) {
-          setRangeForNewPriceData(currentPriceFromTicks);
+        if (edgePrice) {
+          setRangeForNewPriceData(edgePrice);
         }
         return {
           tokenA,
           tokenB,
           isValueAZero,
           isValueBZero,
-          price: currentPriceFromTicks,
+          price: edgePrice,
         };
       }
     });
@@ -306,7 +306,7 @@ export default function Pool() {
     tokenB,
     isValueAZero,
     isValueBZero,
-    currentPriceFromTicks,
+    edgePrice,
     setRangeMin,
     setRangeMax,
   ]);
