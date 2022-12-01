@@ -917,6 +917,10 @@ export default function Pool() {
               values={(() => {
                 const map = new Map<number, ReactNode>();
                 map.set(-1, 'All');
+                if (rangeMin === rangeMax) {
+                  map.set(0, 1);
+                  return map;
+                }
                 for (let index = 0; index < Number(precision); index++) {
                   map.set(index, index + 1);
                 }
@@ -934,9 +938,15 @@ export default function Pool() {
                     <h3 className="card-title mr-auto">Number of Ticks</h3>
                     <StepNumberInput
                       editable={false}
-                      min={!isValueAZero && !isValueBZero ? 2 : 1}
-                      max={10}
-                      value={precision}
+                      min={
+                        rangeMin === rangeMax
+                          ? 1
+                          : !isValueAZero && !isValueBZero
+                          ? 2
+                          : 1
+                      }
+                      max={rangeMin === rangeMax ? 1 : 10}
+                      value={rangeMin === rangeMax ? '1' : precision}
                       onChange={setPrecision}
                       minSignificantDigits={2}
                     />
