@@ -223,12 +223,15 @@ export default function Pool() {
 
       const startTick = allTicks[0];
       const endTick = allTicks[allTicks.length - 1];
-      return (
+      const edgePrice =
         (isReserveAZero && startTick?.[0]) ||
         (isReserveBZero && endTick?.[0]) ||
-        undefined
+        undefined;
+      return (
+        edgePrice &&
+        (invertedTokenOrder ? new BigNumber(1).dividedBy(edgePrice) : edgePrice)
       );
-    }, [unorderedTicks]) || currentPriceFromTicks;
+    }, [unorderedTicks, invertedTokenOrder]) || currentPriceFromTicks;
 
   const [, setFirstCurrentPrice] = useState<{
     tokenA?: Token;
