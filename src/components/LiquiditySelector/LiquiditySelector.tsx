@@ -138,12 +138,10 @@ export default function LiquiditySelector({
       : undefined;
   }, [maybeCurrentPriceFromTicksString]);
 
-  const isUserTicksAZero = userTicks.every(
-    (tick) => tick?.[1].isZero() ?? true
-  );
-  const isUserTicksBZero = userTicks.every(
-    (tick) => tick?.[2].isZero() ?? true
-  );
+  const isUserTicksAZero =
+    oneSidedLiquidity && userTicks.every((tick) => tick?.[1].isZero() ?? true);
+  const isUserTicksBZero =
+    oneSidedLiquidity && userTicks.every((tick) => tick?.[2].isZero() ?? true);
 
   // note edge price, the price of the edge of one-sided liquidity
   const edgePrice = useMemo(() => {
@@ -162,11 +160,13 @@ export default function LiquiditySelector({
     const startTick = allTicks[0];
     const endTick = allTicks[allTicks.length - 1];
     return (
-      (isReserveAZero && !isUserTicksAZero && startTick?.[0]) ||
-      (isReserveBZero && !isUserTicksBZero && endTick?.[0]) ||
+      (oneSidedLiquidity &&
+        ((isReserveAZero && !isUserTicksAZero && startTick?.[0]) ||
+          (isReserveBZero && !isUserTicksBZero && endTick?.[0]))) ||
       undefined
     );
   }, [
+    oneSidedLiquidity,
     isReserveAZero,
     isReserveBZero,
     isUserTicksAZero,
