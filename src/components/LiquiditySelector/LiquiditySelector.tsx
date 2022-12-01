@@ -512,19 +512,39 @@ export default function LiquiditySelector({
   );
 }
 
-function fillBuckets(emptyBuckets: TickGroupBucketsEmpty, ticks: Tick[]) {
-  return emptyBuckets.reduce<TickGroupBucketsFilled>(
+function fillBuckets(
+  emptyBuckets: TickGroupBucketsEmpty,
+  originalTicks: Tick[]
+) {
+  const ticks = originalTicks.filter(
+    ([, token0Value, token1Value]) =>
+      !token0Value.isZero() || !token1Value.isZero()
+  );
+  return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
     (result, [lowerBound, upperBound]) => {
       const [token0Value, token1Value] = ticks.reduceRight(
-        (result, [price, token0Value, token1Value]) => {
-          if (
+        (result, [price, token0Value, token1Value], index, ticks) => {
+          // match tokens unevenly (token0 "left-aligned" / token1 "right-aligned")
+          // as we bucket ticks away from the central x-axis point
+          const matchToken1 =
             price.isGreaterThanOrEqualTo(lowerBound) &&
-            price.isLessThanOrEqualTo(upperBound)
-          ) {
-            // TODO: remove safely used ticks from set to minimise reduce time
-            return [result[0].plus(token0Value), result[1].plus(token1Value)];
+            price.isLessThan(upperBound);
+          const matchToken0 =
+            price.isGreaterThan(lowerBound) &&
+            price.isLessThanOrEqualTo(upperBound);
+          const addToken0 =
+            matchToken0 && !token0Value.isZero() ? token0Value : undefined;
+          const addToken1 =
+            matchToken1 && !token1Value.isZero() ? token1Value : undefined;
+          // remove tick so it doesn't need to be iterated on again in next bucket
+          if (matchToken0) {
+            ticks.splice(index, 1);
           }
-          return result;
+          const [sum0Value, sum1Value] = result;
+          return [
+            addToken0 ? sum0Value.plus(addToken0) : sum0Value,
+            addToken1 ? sum1Value.plus(addToken1) : sum1Value,
+          ];
         },
         [new BigNumber(0), new BigNumber(0)]
       );
