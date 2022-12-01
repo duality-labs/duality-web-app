@@ -156,7 +156,7 @@ export default function LiquiditySelector({
 
   // note warning price, the price at which warning states should be shown
   // for one-sided liquidity this is the extent of data to one side
-  const warningPrice = useMemo(() => {
+  const warningPriceSingleSidedLiquidity = useMemo(() => {
     const startTick = allTicks[0];
     const endTick = allTicks[allTicks.length - 1];
     return (
@@ -173,6 +173,20 @@ export default function LiquiditySelector({
     isUserTicksBZero,
     allTicks,
   ]);
+
+  const warningPriceDoubleSidedLiquidity = useMemo(() => {
+    const warningPrice = edgePrice || currentPriceFromTicks;
+    return (
+      (!oneSidedLiquidity &&
+        (warningPrice?.isLessThan(rangeMin) ||
+          warningPrice?.isGreaterThan(rangeMax)) &&
+        warningPrice) ||
+      undefined
+    );
+  }, [oneSidedLiquidity, rangeMin, rangeMax, edgePrice, currentPriceFromTicks]);
+
+  const warningPrice =
+    warningPriceSingleSidedLiquidity || warningPriceDoubleSidedLiquidity;
 
   const initialGraphStart = useMemo(() => {
     const graphStart = currentPriceFromTicks?.dividedBy(4) || defaultStartValue;
