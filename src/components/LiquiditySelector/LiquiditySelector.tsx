@@ -145,6 +145,17 @@ export default function LiquiditySelector({
     (tick) => tick?.[2].isZero() ?? true
   );
 
+  // note edge price, the price of the edge of one-sided liquidity
+  const edgePrice = useMemo(() => {
+    const startTick = allTicks[0];
+    const endTick = allTicks[allTicks.length - 1];
+    return (
+      (isReserveAZero && startTick?.[0]) ||
+      (isReserveBZero && endTick?.[0]) ||
+      undefined
+    );
+  }, [isReserveAZero, isReserveBZero, allTicks]);
+
   // note warning price, the price at which warning states should be shown
   // for one-sided liquidity this is the extent of data to one side
   const warningPrice = useMemo(() => {
@@ -236,7 +247,7 @@ export default function LiquiditySelector({
     const xMin = dataStart.sd(2, BigNumber.ROUND_DOWN);
     const xMax = dataEnd.sd(2, BigNumber.ROUND_UP);
     // get middle 'break' point which will separate bucket sections
-    const breakPoint = warningPrice || currentPriceFromTicks;
+    const breakPoint = edgePrice || currentPriceFromTicks;
     // skip if there is no breakpoint
     if (!breakPoint) {
       return [[], []];
@@ -265,7 +276,7 @@ export default function LiquiditySelector({
     // return concantenated buckes
     return [tokenABuckets, tokenBBuckets];
   }, [
-    warningPrice,
+    edgePrice,
     currentPriceFromTicks,
     bucketRatio,
     bucketCount,
