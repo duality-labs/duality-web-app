@@ -18,6 +18,7 @@ import {
 
 import {
   getBalance,
+  TickInfo,
   TickMap,
   useBankBalances,
   useFeeLiquidityMap,
@@ -51,10 +52,7 @@ const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 const priceMin = Math.pow(10, -maxFractionDigits);
 const priceMax = Math.pow(10, +maxFractionDigits);
 const defaultFee = '0.30%';
-const defaultPrice = '1';
 const defaultSlopeType = 'UNIFORM';
-const defaultRangeMin = new BigNumber(defaultPrice).dividedBy(2).toFixed();
-const defaultRangeMax = new BigNumber(defaultPrice).multipliedBy(2).toFixed();
 const defaultTokenAmount = '0';
 
 type SlopeType = 'UNIFORM' | 'UP-SLOPE' | 'BELL CURVE' | 'DOWN-SLOPE';
@@ -66,8 +64,6 @@ const slopeTypes: Array<SlopeType> = [
 ];
 
 const defaultPrecision = '6';
-// set as constant to avoid unwanted hook effects
-const defaultCurrentPrice = new BigNumber(1);
 
 const restrictPriceRangeValues = (valueString: string) => {
   const value = new BigNumber(valueString);
@@ -105,8 +101,10 @@ export default function Pool() {
     }
   }, [tokenB, tokenList]);
 
-  const [rangeMin, setRangeMinUnprotected] = useState(defaultRangeMin);
-  const [rangeMax, setRangeMaxUnprotected] = useState(defaultRangeMax);
+  // start with a default range of nothing, but is should be quickly set
+  // after price information becomes available
+  const [rangeMin, setRangeMinUnprotected] = useState('1');
+  const [rangeMax, setRangeMaxUnprotected] = useState('1');
   // protect price range extents
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
@@ -140,8 +138,11 @@ export default function Pool() {
     new BigNumber(defaultTokenAmount).toFixed(),
   ]);
 
+  const isValueAZero = new BigNumber(values[0]).isZero();
+  const isValueBZero = new BigNumber(values[1]).isZero();
+
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
-  const valuesValid = !!tokenA && !!tokenB && values.every((v) => Number(v));
+  const valuesValid = !!tokenA && !!tokenB && values.some((v) => Number(v));
 
   const { data: { ticks: unorderedTicks } = {} } = useIndexerPairData(
     tokenA?.address,
@@ -150,6 +151,13 @@ export default function Pool() {
 
   const [slopeType, setSlopeType] = useState<SlopeType>(defaultSlopeType);
   const [precision, setPrecision] = useState<string>(defaultPrecision);
+  // restrict precision to 2 ticks on double-sided liquidity mode
+  useEffect(() => {
+    setPrecision((precision) => {
+      const precisionMin = !isValueAZero && !isValueBZero ? 2 : 1;
+      return Number(precision) >= precisionMin ? precision : `${precisionMin}`;
+    });
+  }, [isValueAZero, isValueBZero]);
 
   const [{ isValidating: isValidatingDeposit }, sendDepositRequest] =
     useDeposit();
@@ -187,13 +195,124 @@ export default function Pool() {
     setUserTicksUnprotected(userTicks.map(restrictTickPrices));
   }, []);
 
-  const currentPriceFromTicks =
-    useCurrentPriceFromTicks(tokenA?.address, tokenB?.address) ||
-    defaultCurrentPrice;
+  const currentPriceFromTicks = useCurrentPriceFromTicks(
+    tokenA?.address,
+    tokenB?.address
+  );
 
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
-    return currentPriceFromTicks.isLessThan(1);
+    return currentPriceFromTicks?.isLessThan(1) || false;
   });
+
+  // note warning price, the price at which warning states should be shown
+  // for one-sided liquidity this is the extent of data to one side
+  const edgePrice =
+    useMemo(() => {
+      const allTicks: TickGroup = Object.values(unorderedTicks || {})
+        .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
+        .filter((tick): tick is TickInfo => !!tick) // filter to only ticks
+        .sort((a, b) => a.price.comparedTo(b.price))
+        .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
+
+      const isReserveAZero = allTicks.every(([, reserveA]) =>
+        reserveA.isZero()
+      );
+      const isReserveBZero = allTicks.every(([, , reserveB]) =>
+        reserveB.isZero()
+      );
+
+      const startTick = allTicks[0];
+      const endTick = allTicks[allTicks.length - 1];
+      const edgePrice =
+        (isReserveAZero && startTick?.[0]) ||
+        (isReserveBZero && endTick?.[0]) ||
+        undefined;
+      return (
+        edgePrice &&
+        (invertedTokenOrder ? new BigNumber(1).dividedBy(edgePrice) : edgePrice)
+      );
+    }, [unorderedTicks, invertedTokenOrder]) || currentPriceFromTicks;
+
+  const [, setFirstCurrentPrice] = useState<{
+    tokenA?: Token;
+    tokenB?: Token;
+    price?: number | BigNumber;
+    isValueAZero?: boolean;
+    isValueBZero?: boolean;
+  }>({ tokenA, tokenB });
+  // remove price on token change
+  useEffect(() => {
+    const setRangeForNewPriceData = (price: number | BigNumber) => {
+      setRangeMin(
+        isValueAZero
+          ? new BigNumber(price).multipliedBy(1.1).toFixed()
+          : new BigNumber(price).multipliedBy(0.5).toFixed()
+      );
+      setRangeMax(
+        isValueBZero
+          ? new BigNumber(price).multipliedBy(0.9).toFixed()
+          : new BigNumber(price).multipliedBy(2).toFixed()
+      );
+    };
+    setFirstCurrentPrice((state) => {
+      // if there is no currentPriceFromTicks yet, then wait until there is
+      if (!edgePrice) {
+        // set decent looking example range for an unknown price
+        setRangeMin('0.01');
+        setRangeMax('100');
+        return state;
+      }
+      // current tokens with maybe new price
+      else if (state.tokenA === tokenA && state.tokenB === tokenB) {
+        // set range on first price after switching tokens
+        if (
+          !state.price ||
+          state.isValueAZero !== isValueAZero ||
+          state.isValueBZero !== isValueBZero
+        ) {
+          setRangeForNewPriceData(edgePrice);
+        }
+        return {
+          price: edgePrice,
+          ...state,
+          isValueAZero,
+          isValueBZero,
+        };
+      }
+      // reverse of current tokens
+      else if (state.tokenA === tokenB && state.tokenB === tokenA) {
+        return {
+          tokenA,
+          tokenB,
+          isValueAZero,
+          isValueBZero,
+          price: new BigNumber(1).dividedBy(edgePrice),
+        };
+      }
+      // new pair
+      else {
+        // set range on immediately known current price
+        if (edgePrice) {
+          setRangeForNewPriceData(edgePrice);
+        }
+        return {
+          tokenA,
+          tokenB,
+          isValueAZero,
+          isValueBZero,
+          price: edgePrice,
+        };
+      }
+    });
+  }, [
+    tokenA,
+    tokenB,
+    isValueAZero,
+    isValueBZero,
+    edgePrice,
+    setRangeMin,
+    setRangeMax,
+  ]);
 
   const ticks = useMemo(() => {
     if (!invertedTokenOrder) return unorderedTicks;
@@ -254,15 +373,15 @@ export default function Pool() {
   }, [precision]);
 
   const swapAll = useCallback(() => {
+    const flipAroundCurrentPriceSwap = (value: string) => {
+      // invert price
+      const newValue = new BigNumber(1).dividedBy(new BigNumber(value));
+      // round number to formatted string
+      return newValue.toFixed();
+    };
     setInvertedTokenOrder((order) => !order);
-    setRangeMin(() => {
-      const newValue = new BigNumber(1).dividedBy(new BigNumber(rangeMax));
-      return newValue.toFixed();
-    });
-    setRangeMax(() => {
-      const newValue = new BigNumber(1).dividedBy(new BigNumber(rangeMin));
-      return newValue.toFixed();
-    });
+    setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
+    setRangeMax(() => flipAroundCurrentPriceSwap(rangeMin));
     setValues(([valueA, valueB]) => [valueB, valueA]);
     setTokenA(tokenB);
     setTokenB(tokenA);
@@ -278,13 +397,13 @@ export default function Pool() {
   const tickCount = Number(precision || 1);
   useEffect(() => {
     function getUserTicks(): TickGroup {
+      const tickStart = new BigNumber(rangeMin);
+      const tickEnd = new BigNumber(rangeMax);
       // set multiple ticks across the range
-      if (currentPriceFromTicks.isGreaterThan(0) && tickCount > 1) {
+      if (tickCount > 1 && tickEnd.isGreaterThan(tickStart)) {
         const tokenAmountA = new BigNumber(values[0]);
         const tokenAmountB = new BigNumber(values[1]);
         // spread evenly after adding padding on each side
-        const tickStart = new BigNumber(rangeMin);
-        const tickEnd = new BigNumber(rangeMax);
         if (tickStart.isZero() || tickEnd.isZero()) return [];
 
         // space new ticks by a multiplication ratio gap
@@ -297,16 +416,25 @@ export default function Pool() {
         const tickCounts: [number, number] = [0, 0];
         const tickPrices = Array.from({ length: tickCount }).reduceRight<
           [BigNumber, BigNumber, BigNumber][]
-        >((result, _, index) => {
+        >((result, _, index, tickPrices) => {
           const lastPrice = result[0]?.[0];
-          const price = lastPrice?.isLessThan(currentPriceFromTicks)
+          const price = lastPrice?.isLessThan(edgePrice || 0)
             ? // calculate price from left (to have exact left value)
               tickStart.multipliedBy(tickGapRatio.exponentiatedBy(index))
             : // calculate price from right (to have exact right value)
               lastPrice?.dividedBy(tickGapRatio) ?? tickEnd;
 
           // choose whether token A or B should be added for the tick at this price
-          const invertToken = price.isLessThan(currentPriceFromTicks);
+          const invertToken =
+            isValueAZero || isValueBZero
+              ? // enforce singe-sided liquidity has single ticks
+                isValueBZero
+              : // for double-sided liquidity split the ticks somewhere
+              edgePrice
+              ? // split the ticks at the current price if it exists
+                price.isLessThan(edgePrice)
+              : // split the ticks by index if no price exists yet
+                index < tickPrices.length / 2;
           // add to count
           tickCounts[invertToken ? 0 : 1] += 1;
           return [
@@ -370,6 +498,21 @@ export default function Pool() {
           ];
         });
       }
+      // set 1 tick in the middle of the range given
+      else if (tickCount === 1 || tickStart.isEqualTo(tickEnd)) {
+        const price = tickStart.plus(tickEnd).dividedBy(2);
+        const isValueA =
+          !isValueAZero && !isValueBZero
+            ? edgePrice?.isGreaterThan(price) || isValueAZero
+            : !isValueAZero;
+        return [
+          [
+            new BigNumber(formatPrice(price.toFixed())),
+            new BigNumber(isValueA ? 1 : 0),
+            new BigNumber(isValueA ? 0 : 1),
+          ],
+        ];
+      }
       // or set no ticks
       else {
         return [];
@@ -397,11 +540,13 @@ export default function Pool() {
     });
   }, [
     values,
+    isValueAZero,
+    isValueBZero,
     slopeType,
     rangeMin,
     rangeMax,
     tickCount,
-    currentPriceFromTicks,
+    edgePrice,
     setUserTicks,
   ]);
 
@@ -530,7 +675,10 @@ export default function Pool() {
           <div className="row col-row">
             {tokenA && (
               <button
-                className="badge-default corner-border badge-large font-console"
+                className={[
+                  'badge-default corner-border badge-large font-console',
+                  isValueAZero && 'badge-muted',
+                ].join(' ')}
                 type="button"
               >
                 {new BigNumber(values[0]).toFormat()}
@@ -554,7 +702,10 @@ export default function Pool() {
             {tokenA && tokenB && <div>+</div>}
             {tokenB && (
               <button
-                className="badge-default corner-border badge-large font-console"
+                className={[
+                  'badge-default corner-border badge-large font-console',
+                  isValueBZero && 'badge-muted',
+                ].join(' ')}
                 type="button"
               >
                 {new BigNumber(values[1]).toFormat()}
@@ -615,6 +766,8 @@ export default function Pool() {
                 <LiquiditySelector
                   tokenA={tokenA}
                   tokenB={tokenB}
+                  rangeMin={rangeMin}
+                  rangeMax={rangeMax}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
                   ticks={ticks}
@@ -627,12 +780,13 @@ export default function Pool() {
                   canMoveUp
                   canMoveDown
                   canMoveX
+                  oneSidedLiquidity={isValueAZero || isValueBZero}
                 ></LiquiditySelector>
               </div>
             </div>
             <div className="col chart-price">
               <div className="hero-text my-4">
-                {currentPriceFromTicks?.toFixed(5)}
+                {currentPriceFromTicks?.toFixed(5) ?? '-'}
               </div>
               <div>Current Price</div>
               <div className="mt-auto mb-4">
@@ -766,6 +920,10 @@ export default function Pool() {
               values={(() => {
                 const map = new Map<number, ReactNode>();
                 map.set(-1, 'All');
+                if (rangeMin === rangeMax) {
+                  map.set(0, 1);
+                  return map;
+                }
                 for (let index = 0; index < Number(precision); index++) {
                   map.set(index, index + 1);
                 }
@@ -783,9 +941,15 @@ export default function Pool() {
                     <h3 className="card-title mr-auto">Number of Ticks</h3>
                     <StepNumberInput
                       editable={false}
-                      min={2}
-                      max={10}
-                      value={precision}
+                      min={
+                        rangeMin === rangeMax
+                          ? 1
+                          : !isValueAZero && !isValueBZero
+                          ? 2
+                          : 1
+                      }
+                      max={rangeMin === rangeMax ? 1 : 10}
+                      value={rangeMin === rangeMax ? '1' : precision}
                       onChange={setPrecision}
                       minSignificantDigits={2}
                     />

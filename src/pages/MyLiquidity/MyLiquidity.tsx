@@ -359,7 +359,8 @@ export default function MyLiquidity() {
 }
 
 // set as constant to avoid unwanted hook effects
-const defaultCurrentPrice = new BigNumber(1);
+const rangeMin = '';
+const rangeMax = '';
 const setRangeMin = () => undefined;
 const setRangeMax = () => undefined;
 
@@ -401,12 +402,13 @@ function LiquidityDistributionCard({
     token1?.address
   );
 
-  const currentPriceFromTicks =
-    useCurrentPriceFromTicks(token0.address, token1.address) ||
-    defaultCurrentPrice;
+  const currentPriceFromTicks = useCurrentPriceFromTicks(
+    token0.address,
+    token1.address
+  );
 
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
-    return currentPriceFromTicks.isLessThan(1);
+    return currentPriceFromTicks?.isLessThan(1) ?? false;
   });
   const swapAll = useCallback(() => {
     setInvertedTokenOrder((order) => !order);
@@ -671,6 +673,8 @@ function LiquidityDistributionCard({
           },
           [editingType, values, userTicks]
         )}
+        rangeMin={rangeMin}
+        rangeMax={rangeMax}
         setRangeMin={setRangeMin}
         setRangeMax={setRangeMax}
         swapAll={swapAll}
