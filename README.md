@@ -55,6 +55,18 @@ should be defined in the file:
 [src/lib/web3/generated/readme.md](https://github.com/duality-labs/duality-web-app/tree/main/src/lib/web3/generated/readme.md),
 which describes the state at which the generated API files were made.
 
+## Generated API types
+
+The frontend connects to the backend through the backend API.
+We use `$ ignite generate` (also called in `$ ignite chain serve`)
+in the [Ignite CLI](https://docs.ignite.com/cli#ignite-generate)
+in the backend to auto-generate TypeScript types that help define the shape
+of the API for the frontend code base. These files exist at
+[src/lib/web3/generated](https://github.com/duality-labs/duality-web-app/tree/main/src/lib/web3/generated/)
+
+Instructions on how to update these generated types should exist at
+[src/lib/web3/generated/readme.md](https://github.com/duality-labs/duality-web-app/tree/main/src/lib/web3/generated/readme.md)
+
 ## Deployed At
 
 Current build preview should be available at https://graceful-palmier-ff28ba.netlify.app/
