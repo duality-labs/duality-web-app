@@ -21,7 +21,14 @@ export default function useCurrentPriceFromTicks(
   const sortedTicks: TickGroup = useMemo(() => {
     return Object.values(ticks || [])
       .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
-      .filter((tick): tick is TickInfo => !!tick) // filter to relevant ticks
+      .filter((tick): tick is TickInfo => {
+        // ensure ticks contain liquidity (ignore drained pools)
+        return (
+          tick?.reserve0.isGreaterThan(0) ||
+          tick?.reserve1.isGreaterThan(0) ||
+          false
+        );
+      }) // filter to relevant ticks
       .map((tick) => ({
         ...tick,
         virtualPrice: tick.price.multipliedBy(tick.fee.plus(1)),
