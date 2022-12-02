@@ -89,7 +89,17 @@ export default function useCurrentPriceFromTicks(
             );
           }
         }
-      } else {
+      }
+      // check for single-sided liquidity state
+      else if (highestLowTokenTick) {
+        return highestLowTokenTick[0];
+      }
+      // check for single-sided liquidity state
+      else if (lowestHighTokenTick) {
+        return lowestHighTokenTick[0];
+      }
+      // else there is no liquidity
+      else {
         return undefined;
       }
     } while (remainingTicks.length > 0);
