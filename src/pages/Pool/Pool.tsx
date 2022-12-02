@@ -226,7 +226,10 @@ export default function Pool() {
   const edgePrice =
     useMemo(() => {
       const allTicks = (ticks || [])
-        .filter((tick): tick is TickInfo => !!tick) // filter to only ticks
+        .filter(
+          (tick): tick is TickInfo =>
+            tick?.reserve0.isGreaterThan(0) || tick?.reserve1.isGreaterThan(0)
+        ) // filter to only ticks
         .sort((a, b) => a.price.comparedTo(b.price))
         .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
 
