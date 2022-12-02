@@ -10,8 +10,10 @@ import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/modu
 import {
   DexPool,
   DexQueryAllShareResponse,
+  DexQueryAllTicksResponse,
   DexShare,
   DexTicks,
+  HttpResponse,
   RpcStatus,
   V1Beta1PageResponse,
 } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
@@ -108,16 +110,25 @@ function getFullData(): Promise<PairMap> {
     if (!REACT_APP__REST_API) {
       reject(new Error('Undefined rest api base URL'));
     } else {
-      // TODO: handle pagination
       queryClient({ addr: REACT_APP__REST_API })
-        .then((client) => client.queryTicksAll())
-        .then((res) => {
-          if (res.ok) {
-            return res.data;
-          } else {
-            // remove API error details from public view
-            throw new Error(`API error code: ${res.error.code}`);
-          }
+        .then(async (client) => {
+          let nextKey: string | undefined;
+          let tickMap: Array<DexTicks> = [];
+          let res: HttpResponse<DexQueryAllTicksResponse, RpcStatus>;
+          do {
+            res = await client.queryTicksAll({ 'pagination.key': nextKey });
+            if (res.ok && res.data.ticks) {
+              tickMap = tickMap.concat(res.data.ticks);
+            } else {
+              // remove API error details from public view
+              throw new Error(`API error code: ${res.error.code}`);
+            }
+            nextKey = res.data.pagination?.next_key;
+          } while (nextKey);
+          return {
+            ...res.data,
+            tickMap: tickMap,
+          };
         })
         .then((data) => transformData(data.ticks || []))
         .then(resolve)
