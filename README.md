@@ -44,6 +44,10 @@ You can merge these changes into main locally to use them
 
    or similar (each node runs in a Docker container with its own unique ports)
 
+   You can also use one of the MNENOMIC env vars in the Docker Compose file
+   to add a new Keplr account (select "Import existing account") for local
+   development
+
 4. Start/restart your development server to use these new ENV vars:
 
    - `npm start`
