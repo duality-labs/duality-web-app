@@ -20,6 +20,10 @@ To set up the front end locally, connected to the current online testnet:
 
 ### Connecting to a local backend with Docker Compose
 
+Note: the Docker Compose setup files for this setup process exist in PR
+https://github.com/duality-labs/duality/pull/53 and may not yet be merged in.
+You can merge these changes into main locally to use them
+
 1. Clone the Duality Cosmos repository: https://github.com/duality-labs/duality
    alongside this repository: (eg. to ../duality)
 2. Use Docker Compose to run a local testnet
