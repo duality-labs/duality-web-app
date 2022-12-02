@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.55](https://github.com/duality-labs/duality-web-app/compare/v0.1.54...v0.1.55) (2022-12-02)
+
+
+### Features
+
+* allow single sided deposits ([#202](https://github.com/duality-labs/duality-web-app/issues/202)) ([6964fde](https://github.com/duality-labs/duality-web-app/commit/6964fde33b8fd4e9f54744903a736fa4cb98b0ee))
+
+
+### Other
+
+* add references to backend repo commits ([#210](https://github.com/duality-labs/duality-web-app/issues/210)) ([596f797](https://github.com/duality-labs/duality-web-app/commit/596f797ba01e02c6f5b51daeb92478fb93b0f456))
+* change useCurrentPrice to use calculate ordered price for a given pair ([#208](https://github.com/duality-labs/duality-web-app/issues/208)) ([bfa11d8](https://github.com/duality-labs/duality-web-app/commit/bfa11d88b5f586670407bcc15dfe890130101bcd))
+
 ## [0.1.54](https://github.com/duality-labs/duality-web-app/compare/v0.1.53...v0.1.54) (2022-11-29)
 
 
