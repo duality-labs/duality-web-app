@@ -144,10 +144,13 @@ export default function Pool() {
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
   const valuesValid = !!tokenA && !!tokenB && values.some((v) => Number(v));
 
-  const { data: { ticks } = {} } = useIndexerPairData(
+  const { data: { ticks = [], token0, token1 } = {} } = useIndexerPairData(
     tokenA?.address,
     tokenB?.address
   );
+
+  const invertedTokenOrder =
+    tokenA?.address === token1 && tokenB?.address === token0;
 
   const [slopeType, setSlopeType] = useState<SlopeType>(defaultSlopeType);
   const [precision, setPrecision] = useState<string>(defaultPrecision);
@@ -218,10 +221,6 @@ export default function Pool() {
     tokenB?.address
   );
 
-  const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
-    return currentPriceFromTicks?.isLessThan(1) || false;
-  });
-
   // note warning price, the price at which warning states should be shown
   // for one-sided liquidity this is the extent of data to one side
   const edgePrice =
@@ -249,6 +248,10 @@ export default function Pool() {
         (invertedTokenOrder ? new BigNumber(1).dividedBy(edgePrice) : edgePrice)
       );
     }, [ticks, invertedTokenOrder]) || currentPriceFromTicks;
+
+  const [invertTokenOrder, setInvertTokenOrder] = useState<boolean>(() => {
+    return edgePrice?.isLessThan(1) || false;
+  });
 
   const [, setFirstCurrentPrice] = useState<{
     tokenA?: Token;
@@ -350,7 +353,7 @@ export default function Pool() {
           userTicks.filter((userTicks) => {
             return !userTicks.reserveA.isZero() || !userTicks.reserveB.isZero();
           }),
-          invertedTokenOrder
+          invertTokenOrder
         );
       }
     },
@@ -361,7 +364,7 @@ export default function Pool() {
       feeType,
       userTicks,
       sendDepositRequest,
-      invertedTokenOrder,
+      invertTokenOrder,
     ]
   );
 
@@ -379,7 +382,7 @@ export default function Pool() {
       // round number to formatted string
       return newValue.toFixed();
     };
-    setInvertedTokenOrder((order) => !order);
+    setInvertTokenOrder((order) => !order);
     setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
     setRangeMax(() => flipAroundCurrentPriceSwap(rangeMin));
     setValues(([valueA, valueB]) => [valueB, valueA]);
@@ -580,7 +583,7 @@ export default function Pool() {
     rangeMax,
     tickCount,
     edgePrice,
-    invertedTokenOrder,
+    invertTokenOrder,
     setUserTicks,
   ]);
 
