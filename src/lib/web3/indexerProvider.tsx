@@ -105,6 +105,10 @@ const IndexerContext = createContext<IndexerContextType>({
   },
 });
 
+const defaultFetchParams = {
+  'pagination.limit': '1000',
+};
+
 function getFullData(): Promise<PairMap> {
   return new Promise(function (resolve, reject) {
     if (!REACT_APP__REST_API) {
@@ -116,7 +120,10 @@ function getFullData(): Promise<PairMap> {
           let tickMap: Array<DexTicks> = [];
           let res: HttpResponse<DexQueryAllTicksResponse, RpcStatus>;
           do {
-            res = await client.queryTicksAll({ 'pagination.key': nextKey });
+            res = await client.queryTicksAll({
+              ...defaultFetchParams,
+              'pagination.key': nextKey,
+            });
             if (res.ok && res.data.ticks) {
               tickMap = tickMap.concat(res.data.ticks);
             } else {
