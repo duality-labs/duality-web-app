@@ -50,6 +50,11 @@ You can merge these changes into main locally to use them
 
    your development should now be making requests to your local backend
 
+The current backend repository commit to use for any branch in the frontend
+should be defined in the file:
+[src/lib/web3/generated/readme.md](https://github.com/duality-labs/duality-web-app/tree/main/src/lib/web3/generated/readme.md),
+which describes the state at which the generated API files were made.
+
 ## Deployed At
 
 Current build preview should be available at https://graceful-palmier-ff28ba.netlify.app/
