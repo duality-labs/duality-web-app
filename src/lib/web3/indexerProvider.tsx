@@ -340,22 +340,33 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         if (REACT_APP__REST_API) {
           const client = await queryClient({ addr: REACT_APP__REST_API });
           setFetchBankDataState(({ fetched }) => ({ fetching: true, fetched }));
-          const res = await client.request<BalancesResponse, RpcStatus>({
-            path: `/cosmos/bank/v1beta1/balances/${address}`,
-            method: 'GET',
-            format: 'json',
-          });
-          if (res.ok) {
-            setFetchBankDataState(() => ({ fetching: false, fetched: true }));
-            return res.data.balances || [];
-          } else {
-            setFetchBankDataState(({ fetched }) => ({
-              fetching: false,
-              fetched,
-            }));
-            // remove API error details from public view
-            throw new Error(`API error code: ${res.error.code}`);
-          }
+          let nextKey: string | undefined;
+          let balances: Array<Coin> = [];
+          let res: HttpResponse<BalancesResponse, RpcStatus>;
+          do {
+            res = await client.request<BalancesResponse, RpcStatus>({
+              path: `/cosmos/bank/v1beta1/balances/${address}`,
+              method: 'GET',
+              format: 'json',
+              query: {
+                ...defaultFetchParams,
+                'pagination.key': nextKey,
+              },
+            });
+            if (res.ok && res.data.balances) {
+              balances = balances.concat(res.data.balances);
+            } else {
+              setFetchBankDataState(({ fetched }) => ({
+                fetching: false,
+                fetched,
+              }));
+              // remove API error details from public view
+              throw new Error(`API error code: ${res.error.code}`);
+            }
+            nextKey = res.data.pagination?.next_key;
+          } while (nextKey);
+          setFetchBankDataState(() => ({ fetching: false, fetched: true }));
+          return balances || [];
         } else {
           throw new Error('Undefined rest api base URL');
         }
@@ -406,29 +417,36 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             fetching: true,
             fetched,
           }));
-          const res = await client.request<DexQueryAllShareResponse, RpcStatus>(
-            {
+          let nextKey: string | undefined;
+          let shares: Array<DexShare> = [];
+          let res: HttpResponse<DexQueryAllShareResponse, RpcStatus>;
+          do {
+            res = await client.request<DexQueryAllShareResponse, RpcStatus>({
               // todo: this query should be sepcific to the user's address
               // however that has not been implemented yet
               // so instead we query all and then filter the results
               path: '/NicholasDotSol/duality/dex/share',
               method: 'GET',
               format: 'json',
+              query: {
+                ...defaultFetchParams,
+                'pagination.key': nextKey,
+              },
+            });
+            if (res.ok && res.data.share) {
+              shares = shares.concat(res.data.share);
+            } else {
+              setFetchShareDataState(({ fetched }) => ({
+                fetching: false,
+                fetched,
+              }));
+              // remove API error details from public view
+              throw new Error(`API error code: ${res.error.code}`);
             }
-          );
-          if (res.ok) {
-            setFetchShareDataState(() => ({ fetching: false, fetched: true }));
-            const shares = res.data.share || [];
-            // filter shares to this wallet
-            return shares.filter((share) => share.owner === address);
-          } else {
-            setFetchShareDataState(({ fetched }) => ({
-              fetching: false,
-              fetched,
-            }));
-            // remove API error details from public view
-            throw new Error(`API error code: ${res.error.code}`);
-          }
+            nextKey = res.data.pagination?.next_key;
+          } while (nextKey);
+          setFetchShareDataState(() => ({ fetching: false, fetched: true }));
+          return shares || [];
         } else {
           throw new Error('Undefined rest api base URL');
         }
