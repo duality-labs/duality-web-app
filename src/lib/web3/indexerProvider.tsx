@@ -124,8 +124,8 @@ function getFullData(): Promise<PairMap> {
               ...defaultFetchParams,
               'pagination.key': nextKey,
             });
-            if (res.ok && res.data.ticks) {
-              tickMap = tickMap.concat(res.data.ticks);
+            if (res.ok) {
+              tickMap = tickMap.concat(res.data.ticks || []);
             } else {
               // remove API error details from public view
               throw new Error(`API error code: ${res.error.code}`);
@@ -353,8 +353,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 'pagination.key': nextKey,
               },
             });
-            if (res.ok && res.data.balances) {
-              balances = balances.concat(res.data.balances);
+            if (res.ok) {
+              balances = balances.concat(res.data.balances || []);
             } else {
               setFetchBankDataState(({ fetched }) => ({
                 fetching: false,
@@ -433,8 +433,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 'pagination.key': nextKey,
               },
             });
-            if (res.ok && res.data.share) {
-              shares = shares.concat(res.data.share);
+            if (res.ok) {
+              shares = shares.concat(res.data.share || []);
             } else {
               setFetchShareDataState(({ fetched }) => ({
                 fetching: false,
