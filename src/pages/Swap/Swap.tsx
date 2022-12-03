@@ -96,11 +96,20 @@ export default function Swap() {
         const minOut = result.amountOut.multipliedBy(1 - tolerance);
         swapRequest({
           amountIn:
-            getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
+            getAmountInDenom(
+              tokenA,
+              getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
+              tokenA?.display
+            ) || '0',
           tokenIn: result.tokenIn,
           tokenA: result.tokenIn,
           tokenB: result.tokenOut,
-          minOut: getAmountInDenom(tokenB, minOut, tokenB?.display) || '0',
+          minOut:
+            getAmountInDenom(
+              tokenB,
+              getAmountInDenom(tokenB, minOut, tokenB?.display) || '0',
+              tokenB?.display
+            ) || '0',
           creator: address,
           receiver: address,
         });

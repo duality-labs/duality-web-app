@@ -122,11 +122,21 @@ export function useDeposit(): [
               feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
               amountsA: filteredUserTicks.map(
                 ({ reserveA }) =>
-                  getAmountInDenom(tokenA, reserveA, tokenA.display) || '0'
+                  // hack: double convert token denom
+                  getAmountInDenom(
+                    tokenA,
+                    getAmountInDenom(tokenA, reserveA, tokenA.display) || '0',
+                    tokenA.display
+                  ) || '0'
               ),
               amountsB: filteredUserTicks.map(
                 ({ reserveB }) =>
-                  getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
+                  // hack: double convert token denom
+                  getAmountInDenom(
+                    tokenB,
+                    getAmountInDenom(tokenB, reserveB, tokenB.display) || '0',
+                    tokenB.display
+                  ) || '0'
               ),
             }),
           ]);

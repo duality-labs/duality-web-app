@@ -150,10 +150,22 @@ export default function MyLiquidity() {
               totalShares
             );
             extendedShare.userReserves0 = shareFraction.multipliedBy(
-              tick0.reserve0
+              // convert to big tokens
+              getAmountInDenom(
+                tick0.token0,
+                tick0.reserve0,
+                tick0.token0.address,
+                tick0.token0.display
+              ) || '0'
             );
             extendedShare.userReserves1 = shareFraction.multipliedBy(
-              tick1.reserve1
+              // convert to big tokens
+              getAmountInDenom(
+                tick1.token1,
+                tick1.reserve1,
+                tick1.token1.address,
+                tick1.token1.display
+              ) || '0'
             );
             // add TickShareValue to TickShareValueMap
             result[pairId] = result[pairId] || [];

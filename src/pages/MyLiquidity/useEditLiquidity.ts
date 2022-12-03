@@ -108,7 +108,11 @@ export function useEditLiquidity(): [
                                   amountsA: [
                                     getAmountInDenom(
                                       token0,
-                                      tickDiff0,
+                                      getAmountInDenom(
+                                        token0,
+                                        tickDiff0,
+                                        token0.display
+                                      ) || '0',
                                       token0.display
                                     ) || '0',
                                   ],
@@ -151,7 +155,11 @@ export function useEditLiquidity(): [
                                   amountsB: [
                                     getAmountInDenom(
                                       token1,
-                                      tickDiff1,
+                                      getAmountInDenom(
+                                        token1,
+                                        tickDiff1,
+                                        token1.display
+                                      ) || '0',
                                       token1.display
                                     ) || '0',
                                   ],
