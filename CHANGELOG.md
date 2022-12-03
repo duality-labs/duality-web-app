@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.56](https://github.com/duality-labs/duality-web-app/compare/v0.1.55...v0.1.56) (2022-12-03)
+
+
+### Features
+
+* add paginated fetching ([#212](https://github.com/duality-labs/duality-web-app/issues/212)) ([51ddf2d](https://github.com/duality-labs/duality-web-app/commit/51ddf2d2101e6a18a62d6e6b8c8369c0a785bcb4))
+
 ## [0.1.55](https://github.com/duality-labs/duality-web-app/compare/v0.1.54...v0.1.55) (2022-12-02)
 
 
