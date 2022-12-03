@@ -166,7 +166,7 @@ function getFullData(): Promise<PairMap> {
  * @returns pair id for tokens
  */
 export function getPairID(token0: TokenAddress, token1: TokenAddress) {
-  return `${token0}/${token1}`;
+  return `${token0}<>${token1}`;
 }
 
 /**
@@ -208,7 +208,7 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
     { pairId = '', tickIndex, tickData }
   ) {
     // token0 and token1 are sorted by the back end
-    const [token0, token1] = pairId.split('/');
+    const [token0, token1] = pairId.split('<>');
     if (token0 && token1 && tokenMap[token0] && tokenMap[token1] && tickData) {
       result[pairId] = result[pairId] || {
         token0: token0,
