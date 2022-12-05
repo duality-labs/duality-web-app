@@ -62,8 +62,9 @@ export function useDeposit(): [
           throw new Error('Fee not set');
         }
         // check all user ticks and filter to non-zero ticks
-        const filteredUserTicks = userTicks.filter(
-          ({ price, reserveA, reserveB }) => {
+        // also compbine any equivalent deposits into the same Msg
+        const filteredUserTicks = userTicks
+          .filter(({ price, reserveA, reserveB }) => {
             if (!price || price.isLessThan(0)) {
               throw new Error('Price not set');
             }
@@ -78,8 +79,34 @@ export function useDeposit(): [
               throw new Error('Amounts not set');
             }
             return reserveA.isGreaterThan(0) || reserveB.isGreaterThan(0);
-          }
-        );
+          })
+          .reduce<TickGroup>((ticks, tick) => {
+            // find equivalent tick
+            const foundTickIndex = ticks.findIndex((searchTick) => {
+              return (
+                searchTick.tickIndex === tick.tickIndex &&
+                searchTick.feeIndex === tick.feeIndex &&
+                searchTick.tokenA === tick.tokenA &&
+                searchTick.tokenB === tick.tokenB
+              );
+            });
+
+            // add new tick data into found tick data
+            if (foundTickIndex >= 0) {
+              const foundTick = ticks[foundTickIndex];
+              ticks.splice(foundTickIndex, 1, {
+                ...foundTick,
+                reserveA: foundTick.reserveA.plus(tick.reserveA),
+                reserveB: foundTick.reserveB.plus(tick.reserveB),
+              });
+            }
+            // else append new tick
+            else {
+              ticks.push(tick);
+            }
+
+            return ticks;
+          }, []);
 
         if (filteredUserTicks.length === 0) {
           throw new Error('Ticks not set');
