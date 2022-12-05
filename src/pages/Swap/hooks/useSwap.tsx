@@ -21,6 +21,7 @@ import {
 } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/types/dex/tx';
 import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
+import { readEvents } from '../../../lib/web3/utils/txs';
 
 async function sendSwap(
   wallet: OfflineSigner,
@@ -75,8 +76,8 @@ async function sendSwap(
       }
       const { code } = res;
 
-      const amountOut = JSON.parse(res.rawLog || '[]')?.[0]
-        ?.events?.find(({ type }: { type: string }) => type === 'message')
+      const amountOut = readEvents(res.rawLog)
+        ?.find(({ type }: { type: string }) => type === 'message')
         ?.attributes?.reduceRight(
           (
             result: BigNumber,

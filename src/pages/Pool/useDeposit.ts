@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
-import { Log } from '@cosmjs/stargate/build/logs';
 import BigNumber from 'bignumber.js';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
@@ -15,6 +14,7 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { readEvents } from '../../lib/web3/utils/txs';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -147,8 +147,7 @@ export function useDeposit(): [
           }
 
           // calculate received tokens
-          const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
-          const foundEvents = foundLogs.flatMap((log) => log.events);
+          const foundEvents = readEvents(res.rawLog) || [];
           const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
             receivedTokenA: BigNumber;
             receivedTokenB: BigNumber;
