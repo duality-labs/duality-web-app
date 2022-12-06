@@ -7,8 +7,6 @@ import {
 import { tickIndexToPrice } from '../../../lib/web3/utils/ticks';
 import { RouterResult } from './index';
 import { BigNumber } from 'bignumber.js';
-import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
 
 export type SwapError = Error & {
   insufficientLiquidity?: boolean;
@@ -63,17 +61,9 @@ export function router(
         amountIn: amountIn,
         sortedTicks,
       });
-      // convert into big token for comparison
-      const tokenOut = addressableTokenMap[tokenB];
-      const maxOut =
-        getAmountInDenom(
-          tokenOut,
-          sortedTicks.reduce((result, tick) => {
-            return result.plus(reverse ? tick.reserve0 : tick.reserve1);
-          }, new BigNumber(0)),
-          tokenOut.address,
-          tokenOut.display
-        ) || '0';
+      const maxOut = sortedTicks.reduce((result, tick) => {
+        return result.plus(reverse ? tick.reserve0 : tick.reserve1);
+      }, new BigNumber(0));
 
       if (amountOut.isGreaterThan(maxOut)) {
         if (!error) {
@@ -124,7 +114,7 @@ export function calculateOut({
 }: {
   tokenIn: string; // address
   tokenOut: string; // address
-  amountIn: BigNumber;
+  amountIn: BigNumber; // amount in (in minimum denom)
   sortedTicks: Array<TickInfo>;
 }): {
   amountOut: BigNumber;

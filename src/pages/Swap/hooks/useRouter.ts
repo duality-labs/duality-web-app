@@ -5,6 +5,8 @@ import { routerAsync, calculateFee, SwapError } from './router';
 import { formatAmount } from '../../../lib/utils/number';
 
 import BigNumber from 'bignumber.js';
+import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
+import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
 
 const cachedRequests: {
   [token0: string]: { [token1: string]: PairResult };
@@ -62,7 +64,14 @@ export function useRouterResult(pairRequest: PairRequest): {
     setIsValidating(true);
     setData(undefined);
     setError(undefined);
-    const alteredValue = pairRequest.valueA ?? pairRequest.valueB;
+    const tokenA = addressableTokenMap[pairRequest.tokenA];
+    const tokenB = addressableTokenMap[pairRequest.tokenB];
+    // convert token request down into base denom
+    const alteredValue = getAmountInDenom(
+      tokenA,
+      pairRequest.valueA || 0,
+      tokenA.display
+    );
     const reverseSwap = !!pairRequest.valueB;
     if (!alteredValue || alteredValue === '0') {
       setIsValidating(false);
@@ -83,7 +92,19 @@ export function useRouterResult(pairRequest: PairRequest): {
       .then(function (result) {
         if (cancelled) return;
         setIsValidating(false);
-        setData(result);
+        // convert token result back into display denom
+        setData({
+          ...result,
+          amountIn: new BigNumber(pairRequest.valueA || 0),
+          amountOut: new BigNumber(
+            getAmountInDenom(
+              tokenB,
+              result.amountOut.decimalPlaces(0, BigNumber.ROUND_DOWN),
+              tokenB.address,
+              tokenB.display
+            ) || 0
+          ),
+        });
       })
       .catch(function (err: SwapError) {
         if (cancelled) return;
