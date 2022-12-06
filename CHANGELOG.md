@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.57](https://github.com/duality-labs/duality-web-app/compare/v0.1.56...v0.1.57) (2022-12-06)
+
+
+### Fixes
+
+* minOut calculation is incorrect across multiple liquidity pools ([#215](https://github.com/duality-labs/duality-web-app/issues/215)) ([5126342](https://github.com/duality-labs/duality-web-app/commit/512634229f0d057c7885dfc40674dcd002601a27))
+
 ## [0.1.56](https://github.com/duality-labs/duality-web-app/compare/v0.1.55...v0.1.56) (2022-12-03)
 
 

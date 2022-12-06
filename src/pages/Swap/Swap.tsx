@@ -87,7 +87,10 @@ export default function Swap() {
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
-      const tolerance = parseFloat(slippage) / 100;
+      // calculate tolerance from user slippage settings
+      // set tiny minimum of tolerance as the frontend calculations
+      // don't always exactly align with the backend calculations
+      const tolerance = Math.max(1e-12, parseFloat(slippage) / 100);
       if (address && routerResult && tokenA && tokenB && !isNaN(tolerance)) {
         // convert to swap request format
         const result = routerResult;
