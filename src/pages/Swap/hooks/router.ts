@@ -148,7 +148,7 @@ export function calculateOut({
       else {
         amountOut = amountOut.plus(reservesOut);
         // calculate how much amountIn is still needed to be satisfied
-        const amountInTraded = reservesOut.multipliedBy(price);
+        const amountInTraded = reservesOut.dividedBy(price);
         amountLeft = amountLeft.minus(amountInTraded);
       }
       // if amount in has all been swapped, the exit successfully
