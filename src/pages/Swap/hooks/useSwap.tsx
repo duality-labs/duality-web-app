@@ -92,7 +92,12 @@ async function sendSwap(
         ) as BigNumber | undefined;
       const description = amountOut
         ? `Received ${formatAmount(
-            amountOut.toFixed()
+            getAmountInDenom(
+              tokenOutToken,
+              amountOut?.toFixed() || '0',
+              tokenOutToken.address,
+              tokenOutToken.display
+            ) || '0'
           )} ${tokenOut} (click for more details)`
         : undefined;
 
@@ -109,6 +114,7 @@ async function sendSwap(
             getAmountInDenom(
               tokenOutToken,
               amountOut?.toFixed() || '0',
+              tokenOutToken.address,
               tokenOutToken.display
             ) || '0',
           denom: tokenOutToken.display,
