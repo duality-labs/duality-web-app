@@ -122,11 +122,21 @@ export function useDeposit(): [
               feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
               amountsA: filteredUserTicks.map(
                 ({ reserveA }) =>
-                  getAmountInDenom(tokenA, reserveA, tokenA.display) || '0'
+                  getAmountInDenom(
+                    tokenA,
+                    // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                    reserveA.shiftedBy(18),
+                    tokenA.display
+                  ) || '0'
               ),
               amountsB: filteredUserTicks.map(
                 ({ reserveB }) =>
-                  getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
+                  getAmountInDenom(
+                    tokenB,
+                    // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                    reserveB.shiftedBy(18),
+                    tokenB.display
+                  ) || '0'
               ),
             }),
           ]);

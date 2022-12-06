@@ -96,11 +96,22 @@ export default function Swap() {
         const minOut = result.amountOut.multipliedBy(1 - tolerance);
         swapRequest({
           amountIn:
-            getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
+            getAmountInDenom(
+              tokenA,
+              // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+              result.amountIn.shiftedBy(18),
+              tokenA?.display
+            ) || '0',
           tokenIn: result.tokenIn,
           tokenA: result.tokenIn,
           tokenB: result.tokenOut,
-          minOut: getAmountInDenom(tokenB, minOut, tokenB?.display) || '0',
+          minOut:
+            getAmountInDenom(
+              tokenB,
+              // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+              minOut.shiftedBy(18),
+              tokenB?.display
+            ) || '0',
           creator: address,
           receiver: address,
         });
