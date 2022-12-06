@@ -468,7 +468,7 @@ export default function Pool() {
         }, []);
 
         const shapeFactor = (() => {
-          const values = (() => {
+          return (() => {
             switch (slopeType) {
               case 'UP-SLOPE':
                 return tickPrices.map((_, index, tickPrices) => {
@@ -493,9 +493,6 @@ export default function Pool() {
                 return tickPrices.map(() => 1);
             }
           })();
-          // normalise values before returning
-          const sum = values.reduce((result, value) => result + value, 0);
-          return values.map((value) => value / sum);
         })();
 
         // normalise the tick amounts given
