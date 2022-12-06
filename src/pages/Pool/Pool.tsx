@@ -347,20 +347,45 @@ export default function Pool() {
       if (submitValue.toLowerCase() === 'customize') {
         return setValuesConfirmed(true);
       }
+
+      // normalize tick reserve to the values asked for
+      const { reserveATotal, reserveBTotal } = userTicks.reduce(
+        ({ reserveATotal, reserveBTotal }, { reserveA, reserveB }) => {
+          return {
+            reserveATotal: reserveATotal.plus(reserveA),
+            reserveBTotal: reserveBTotal.plus(reserveB),
+          };
+        },
+        { reserveATotal: new BigNumber(0), reserveBTotal: new BigNumber(0) }
+      );
+      const normalizedTicks = userTicks.map((tick) => {
+        return {
+          ...tick,
+          ...(reserveATotal.isGreaterThan(0) && {
+            reserveA: tick.reserveA
+              .multipliedBy(values[0])
+              .dividedBy(reserveATotal),
+          }),
+          ...(reserveBTotal.isGreaterThan(0) && {
+            reserveB: tick.reserveB
+              .multipliedBy(values[1])
+              .dividedBy(reserveBTotal),
+          }),
+        };
+      });
+
       if (feeType?.fee) {
         await sendDepositRequest(
           tokenA,
           tokenB,
           new BigNumber(feeType.fee),
-          // filter to non-zero ticks
-          userTicks.filter((userTicks) => {
-            return !userTicks.reserveA.isZero() || !userTicks.reserveB.isZero();
-          }),
+          normalizedTicks,
           invertTokenOrder
         );
       }
     },
     [
+      values,
       valuesValid,
       tokenA,
       tokenB,
