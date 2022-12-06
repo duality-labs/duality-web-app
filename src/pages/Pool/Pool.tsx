@@ -528,13 +528,11 @@ export default function Pool() {
               ? tokenAmountA
                   .multipliedBy(shapeFactor[index])
                   .multipliedBy(tick.reserveA)
-                  .dividedBy(tickCounts[0])
               : new BigNumber(0),
             reserveB: tickCounts[1]
               ? tokenAmountB
                   .multipliedBy(shapeFactor[index])
                   .multipliedBy(tick.reserveB)
-                  .dividedBy(tickCounts[1])
               : new BigNumber(0),
           };
         });
