@@ -137,7 +137,9 @@ export function calculateOut({
         ? sortedTicks[tickIndex].reserve1
         : sortedTicks[tickIndex].reserve0;
       // the reserves of tokenOut available at this tick
-      const maxOut = amountLeft.multipliedBy(price);
+      const maxOut = amountLeft
+        .multipliedBy(price)
+        .decimalPlaces(0, BigNumber.ROUND_DOWN);
 
       // if there is enough liquidity in this tick, then exit with this amount
       if (reservesOut.isGreaterThanOrEqualTo(maxOut)) {
@@ -148,7 +150,9 @@ export function calculateOut({
       else {
         amountOut = amountOut.plus(reservesOut);
         // calculate how much amountIn is still needed to be satisfied
-        const amountInTraded = reservesOut.multipliedBy(price);
+        const amountInTraded = reservesOut
+          .dividedBy(price)
+          .decimalPlaces(0, BigNumber.ROUND_UP);
         amountLeft = amountLeft.minus(amountInTraded);
       }
       // if amount in has all been swapped, the exit successfully
