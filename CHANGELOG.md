@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.66](https://github.com/duality-labs/duality-web-app/compare/v0.1.65...v0.1.66) (2022-12-07)
+
+
+### Fixes
+
+* add testnet deployment specific build options ([#224](https://github.com/duality-labs/duality-web-app/issues/224)) ([0f82d57](https://github.com/duality-labs/duality-web-app/commit/0f82d5730a3d5e435eab917f55ef891ea558e9d8))
+
 ## [0.1.65](https://github.com/duality-labs/duality-web-app/compare/v0.1.64...v0.1.65) (2022-12-07)
 
 
