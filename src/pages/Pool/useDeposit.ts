@@ -135,7 +135,7 @@ export function useDeposit(): [
         }
         const forward = pairs?.[getPairID(tokenA.address, tokenB.address)];
         const reverse = pairs?.[getPairID(tokenB.address, tokenA.address)];
-        const pairTicks = (forward || reverse)?.ticks || [];
+        const pairTicks = (forward || reverse)?.ticks;
         const gasEstimate = filteredUserTicks.reduce((gasEstimate, tick) => {
           const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
             tick.tickIndex,
@@ -143,7 +143,7 @@ export function useDeposit(): [
           );
           const existingTick =
             tickIndex0 && tickIndex1
-              ? pairTicks.find((pairTick) => {
+              ? pairTicks?.find((pairTick) => {
                   return (
                     pairTick.tickIndex.isEqualTo(tickIndex0) ||
                     pairTick.tickIndex.isEqualTo(tickIndex1)
@@ -154,7 +154,8 @@ export function useDeposit(): [
           // add 35000 more for initializing a new tick
           return gasEstimate + (existingTick ? 35000 : 70000);
           // add 80000 base gas
-        }, 80000);
+          // add 50000 for initilizing a new tick pair
+        }, 80000 + (!pairTicks ? 50000 : 0));
 
         const id = `${Date.now()}.${Math.random}`;
         createLoadingToast({ id, description: 'Adding Liquidity...' });
