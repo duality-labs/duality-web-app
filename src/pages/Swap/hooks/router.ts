@@ -55,12 +55,13 @@ export function router(
     const amountIn = new BigNumber(valueA);
 
     try {
-      const { amountOut, priceIn, priceOut } = calculateOut({
-        tokenIn: tokenA,
-        tokenOut: tokenB,
-        amountIn: amountIn,
-        sortedTicks,
-      });
+      const { amountOut, priceIn, priceOut, tickIndexIn, tickIndexOut } =
+        calculateOut({
+          tokenIn: tokenA,
+          tokenOut: tokenB,
+          amountIn: amountIn,
+          sortedTicks,
+        });
       const maxOut = sortedTicks.reduce((result, tick) => {
         return result.plus(reverse ? tick.reserve0 : tick.reserve1);
       }, new BigNumber(0));
@@ -84,6 +85,8 @@ export function router(
         amountOut,
         priceIn,
         priceOut,
+        tickIndexIn,
+        tickIndexOut,
       };
     } catch (err) {
       throw err;
@@ -120,6 +123,8 @@ export function calculateOut({
   amountOut: BigNumber;
   priceIn: BigNumber | undefined;
   priceOut: BigNumber | undefined;
+  tickIndexIn: BigNumber | undefined;
+  tickIndexOut: BigNumber | undefined;
 } {
   // amountLeft is the amount of tokenIn left to be swapped
   let amountLeft = amountIn;
@@ -129,6 +134,10 @@ export function calculateOut({
   let priceIn: BigNumber | undefined;
   // priceOut will be the last liquidity price touched by the swap
   let priceOut: BigNumber | undefined;
+  // tickIndexIn will be the first liquidity index touched by the swap
+  let tickIndexIn: BigNumber | undefined;
+  // tickIndexOut will be the last liquidity index touched by the swap
+  let tickIndexOut: BigNumber | undefined;
   // tokenPath is the route used to swap as an array
   // eg. tokenIn -> something -> something else -> tokenOut
   // as: [tokenIn, something, somethingElse, tokenOut]
@@ -151,6 +160,8 @@ export function calculateOut({
       if (reservesOut.isGreaterThan(0)) {
         priceIn = priceIn || price;
         priceOut = price;
+        tickIndexIn = tickIndexIn || sortedTicks[tickIndex].tickIndex;
+        tickIndexOut = sortedTicks[tickIndex].tickIndex;
       }
       // the reserves of tokenOut available at this tick
       const maxOut = amountLeft
@@ -173,7 +184,7 @@ export function calculateOut({
       }
       // if amount in has all been swapped, the exit successfully
       if (amountLeft.isZero()) {
-        return { amountOut, priceIn, priceOut };
+        return { amountOut, priceIn, priceOut, tickIndexIn, tickIndexOut };
       }
       // if somehow the amount left to take out is over-satisfied the error
       else if (amountLeft.isLessThan(0)) {
@@ -197,7 +208,7 @@ export function calculateOut({
   // somehow we have looped through all ticks and exactly satisfied the needed swap
   // yet did not match the positive exiting condition
   // this can happen if the amountIn is zero and there are no ticks in the pair
-  return { amountOut, priceIn, priceOut };
+  return { amountOut, priceIn, priceOut, tickIndexIn, tickIndexOut };
 }
 
 // mock implementation of fee calculation

@@ -37,4 +37,6 @@ export interface RouterResult {
   amountOut: BigNumber;
   priceIn: BigNumber | undefined;
   priceOut: BigNumber | undefined;
+  tickIndexIn: BigNumber | undefined;
+  tickIndexOut: BigNumber | undefined;
 }

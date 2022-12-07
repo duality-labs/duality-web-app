@@ -25,7 +25,8 @@ import { readEvents } from '../../../lib/web3/utils/txs';
 
 async function sendSwap(
   wallet: OfflineSigner,
-  { amountIn, tokenIn, tokenA, tokenB, minOut, creator, receiver }: MsgSwap
+  { amountIn, tokenIn, tokenA, tokenB, minOut, creator, receiver }: MsgSwap,
+  gasEstimate: number
 ): Promise<MsgSwapResponse> {
   if (
     !amountIn ||
@@ -59,17 +60,27 @@ async function sendSwap(
   createLoadingToast({ id, description: 'Executing your trade' });
 
   return client
-    .signAndBroadcast([
-      client.msgSwap({
-        amountIn,
-        tokenIn,
-        tokenA,
-        tokenB,
-        minOut,
-        creator,
-        receiver,
-      }),
-    ])
+    .signAndBroadcast(
+      [
+        client.msgSwap({
+          amountIn,
+          tokenIn,
+          tokenA,
+          tokenB,
+          minOut,
+          creator,
+          receiver,
+        }),
+      ],
+      {
+        fee: {
+          gas: gasEstimate.toFixed(0),
+          amount: [
+            { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
+          ],
+        },
+      }
+    )
     .then(function (res): MsgSwapResponse {
       if (!res) {
         throw new Error('No response');
@@ -144,7 +155,7 @@ export function useSwap(): [
     isValidating: boolean;
     error?: string;
   },
-  (request: MsgSwap) => void
+  (request: MsgSwap, gasEstimate: number) => void
 ] {
   const [data, setData] = useState<MsgSwapResponse>();
   const [validating, setValidating] = useState(false);
@@ -152,7 +163,7 @@ export function useSwap(): [
   const web3 = useWeb3();
 
   const sendRequest = useCallback(
-    (request: MsgSwap) => {
+    (request: MsgSwap, gasEstimate: number) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
       const { amountIn, tokenIn, tokenA, tokenB, minOut, creator, receiver } =
@@ -174,7 +185,7 @@ export function useSwap(): [
       const { wallet } = web3;
       if (!wallet) return onError('Client has no wallet');
 
-      sendSwap(wallet, request)
+      sendSwap(wallet, request, gasEstimate)
         .then(function (result: MsgSwapResponse) {
           setValidating(false);
           setData(result);
