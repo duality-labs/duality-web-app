@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.63](https://github.com/duality-labs/duality-web-app/compare/v0.1.62...v0.1.63) (2022-12-07)
+
+
+### Features
+
+* Add event listener to track Keplr account changes ([#221](https://github.com/duality-labs/duality-web-app/issues/221)) ([2c2fc6c](https://github.com/duality-labs/duality-web-app/commit/2c2fc6c0bb438a2cc4f8fdfb6ca7f357c6ed1c9c))
+
 ## [0.1.62](https://github.com/duality-labs/duality-web-app/compare/v0.1.61...v0.1.62) (2022-12-07)
 
 
