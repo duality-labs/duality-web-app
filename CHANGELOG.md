@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.60](https://github.com/duality-labs/duality-web-app/compare/v0.1.59...v0.1.60) (2022-12-07)
+
+
+### Fixes
+
+* deposit amount normalization ([#217](https://github.com/duality-labs/duality-web-app/issues/217)) ([07e7bc3](https://github.com/duality-labs/duality-web-app/commit/07e7bc354a7ffbf311709153d2794858d79f01a9))
+
 ## [0.1.59](https://github.com/duality-labs/duality-web-app/compare/v0.1.58...v0.1.59) (2022-12-07)
 
 
