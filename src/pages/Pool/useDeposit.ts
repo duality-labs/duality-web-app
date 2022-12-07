@@ -150,12 +150,12 @@ export function useDeposit(): [
                   );
                 })
               : undefined;
-          // add 35000 for existing ticks
-          // add 35000 more for initializing a new tick
-          return gasEstimate + (existingTick ? 35000 : 70000);
+          // add 40000 for existing ticks
+          // add 40000 more for initializing a new tick
+          return gasEstimate + (existingTick ? 40000 : 80000);
           // add 80000 base gas
-          // add 50000 for initilizing a new tick pair
-        }, 80000 + (!pairTicks ? 50000 : 0));
+          // add 60000 for initilizing a new tick pair
+        }, 80000 + (!pairTicks ? 60000 : 0));
 
         const id = `${Date.now()}.${Math.random}`;
         createLoadingToast({ id, description: 'Adding Liquidity...' });
