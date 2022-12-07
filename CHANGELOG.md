@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.64](https://github.com/duality-labs/duality-web-app/compare/v0.1.63...v0.1.64) (2022-12-07)
+
+
+### Features
+
+* add better base gas suggestions for msgs ([#219](https://github.com/duality-labs/duality-web-app/issues/219)) ([74fd299](https://github.com/duality-labs/duality-web-app/commit/74fd2995957f403575f6e8ce1c2e4e24a3d5586c))
+
 ## [0.1.63](https://github.com/duality-labs/duality-web-app/compare/v0.1.62...v0.1.63) (2022-12-07)
 
 
