@@ -528,6 +528,8 @@ export default function Pool() {
               ? tokenAmountA
                   .multipliedBy(shapeFactor[index])
                   .multipliedBy(tick.reserveA)
+                  // normalize ticks to market value
+                  .multipliedBy(edgePrice || 1)
               : new BigNumber(0),
             reserveB: tickCounts[1]
               ? tokenAmountB
