@@ -45,7 +45,6 @@ export default function LiquidityDistribution({
   canMoveUp,
   canMoveDown,
   canMoveX,
-  viewOnlyUserTicks,
 }: LiquiditySelectorProps & {
   chartTypeSelected: 'Orderbook' | 'AMM';
   tokenA: Token;
@@ -117,7 +116,6 @@ export default function LiquidityDistribution({
               canMoveUp={canMoveUp}
               canMoveDown={canMoveDown}
               canMoveX={canMoveX}
-              viewOnlyUserTicks={viewOnlyUserTicks}
             ></LiquiditySelector>
           </div>
         </div>

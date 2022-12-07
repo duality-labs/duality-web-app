@@ -367,8 +367,6 @@ function ShareValuesPage({
 }
 
 // set as constant to avoid unwanted hook effects
-const rangeMin = '';
-const rangeMax = '';
 const setRangeMin = () => undefined;
 const setRangeMax = () => undefined;
 
@@ -411,6 +409,40 @@ function LiquidityDetailPage({
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
     return currentPriceFromTicks0to1?.isLessThan(1) ?? false;
   });
+
+  // calculate the graph extent based on the unfiltered lowest and highest tick prices
+  const [minPrice0to1, maxPrice0to1] = useMemo<
+    [BigNumber | undefined, BigNumber | undefined]
+  >(() => {
+    if (ticks) {
+      const [minPrice0to1, maxPrice0to1] = ticks.reduce<
+        [BigNumber | undefined, BigNumber | undefined]
+      >(
+        ([min, max], tick) => {
+          return [
+            !min || tick.price.isLessThan(min) ? tick.price : min,
+            !max || tick.price.isGreaterThan(max) ? tick.price : max,
+          ];
+        },
+        [undefined, undefined]
+      );
+      return [minPrice0to1, maxPrice0to1];
+    }
+    return [undefined, undefined];
+  }, [ticks]);
+
+  const [minPrice, maxPrice] = useMemo<[BigNumber, BigNumber] | []>(() => {
+    return minPrice0to1 && maxPrice0to1
+      ? [
+          invertedTokenOrder
+            ? new BigNumber(1).dividedBy(maxPrice0to1)
+            : minPrice0to1,
+          invertedTokenOrder
+            ? new BigNumber(1).dividedBy(minPrice0to1)
+            : maxPrice0to1,
+        ]
+      : [];
+  }, [minPrice0to1, maxPrice0to1, invertedTokenOrder]);
 
   const currentPriceFromTicks = useMemo(() => {
     return invertedTokenOrder
@@ -764,14 +796,13 @@ function LiquidityDetailPage({
           },
           [editingType, values, userTicks]
         )}
-        rangeMin={rangeMin}
-        rangeMax={rangeMax}
+        rangeMin={minPrice?.toFixed() || ''}
+        rangeMax={maxPrice?.toFixed() || ''}
         setRangeMin={setRangeMin}
         setRangeMax={setRangeMax}
         swapAll={swapAll}
         canMoveUp
         canMoveDown
-        viewOnlyUserTicks
         submitButtonText={submitButtonSettings[editingType].text}
         submitButtonVariant={submitButtonSettings[editingType].variant}
       />
