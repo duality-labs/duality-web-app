@@ -113,6 +113,18 @@ export function Web3Provider({ children }: Web3ContextProps) {
           }
         }
         setProvider(provider);
+        // add listener for Keplr state changes
+        window.addEventListener('keplr_keystorechange', async () => {
+          const offlineSigner = window.keplr.getOfflineSigner(chainId);
+          const accounts = await offlineSigner?.getAccounts();
+          setAddress((address) => {
+            // switch address or remove if already connected
+            if (address) {
+              return accounts[0]?.address || null;
+            }
+            return null;
+          });
+        });
       }
     }
     run();
