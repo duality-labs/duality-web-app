@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.58](https://github.com/duality-labs/duality-web-app/compare/v0.1.57...v0.1.58) (2022-12-07)
+
+
+### Features
+
+* update web app to use new v3 backend ([#173](https://github.com/duality-labs/duality-web-app/issues/173)) ([e2482fb](https://github.com/duality-labs/duality-web-app/commit/e2482fbe5fda744b576d0915fcb1f915b1d554a5))
+
 ## [0.1.57](https://github.com/duality-labs/duality-web-app/compare/v0.1.56...v0.1.57) (2022-12-06)
 
 
