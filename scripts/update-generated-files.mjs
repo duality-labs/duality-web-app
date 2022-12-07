@@ -23,6 +23,15 @@ const files = getDirFilenames('./src/lib/web3/generated', { recursive: true });
 // fix ESLint and TypeScript warnings
 files
   .filter((file) => file.endsWith('/index.ts'))
+  .map((file) => {
+    const replaced = fs
+      .readFileSync(file, { encoding: 'utf8' })
+      .replace('/* eslint-disable */', '')
+      .replace('/* tslint:disable */', '')
+      .trimStart();
+    fs.writeFileSync(file, replaced);
+    return file;
+  })
   .forEach((file) => {
     const data = fs.readFileSync(file, { encoding: 'utf8' });
     fs.writeFileSync(
@@ -70,6 +79,16 @@ files
         '"http://localhost:1317"',
         'process.env.REACT_APP__REST_API || ""'
       );
+    fs.writeFileSync(file, replaced);
+  });
+
+// fix odd generated comparisons
+files
+  .filter((file) => file.endsWith('.ts'))
+  .forEach((file) => {
+    const replaced = fs
+      .readFileSync(file, { encoding: 'utf8' })
+      .replace('(util.Long !== Long)', '(true)');
     fs.writeFileSync(file, replaced);
   });
 

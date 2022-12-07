@@ -10,19 +10,21 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
+import { Coin } from '@cosmjs/launchpad';
 
-import { DexShare } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
+import { DexShares } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
 import {
   useBankBalances,
   useIndexerData,
   useShares,
   TickInfo,
   useIndexerPairData,
-  TickMap,
   getBalance,
+  getPairID,
+  hasInvertedOrder,
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { feeTypes } from '../../lib/web3/utils/fees';
+import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { useHasPriceData, useSimplePrice } from '../../lib/tokenPrices';
 
 import {
@@ -46,14 +48,16 @@ const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
 interface ShareValue {
-  share: DexShare;
+  share: DexShares;
   token0: Token;
   token1: Token;
   userReserves0?: BigNumber;
   userReserves1?: BigNumber;
 }
 interface TickShareValue extends ShareValue {
-  tick: TickInfo;
+  feeIndex: number;
+  tick0: TickInfo;
+  tick1: TickInfo;
 }
 interface EditedTickShareValue extends TickShareValue {
   tickDiff0: BigNumber;
@@ -73,8 +77,22 @@ function matchTokenDenom(denom: string) {
     !!token.denom_units.find((unit) => unit.denom === denom);
 }
 
+// this is a function that exists in the backend
+// but is not easily queried from here
+// perhaps the backend could return these values on each Share object
+function getVirtualTickIndexes(
+  tickIndex: string | undefined,
+  feeIndex: string | undefined
+): [number, number] | [] {
+  const feePoints = feeTypes[Number(feeIndex)].fee * 10000;
+  const middleIndex = Number(tickIndex);
+  return feePoints && !isNaN(middleIndex)
+    ? [middleIndex + feePoints, middleIndex - feePoints]
+    : [];
+}
+
 export default function MyLiquidity() {
-  const { wallet, address } = useWeb3();
+  const { wallet } = useWeb3();
   const { data: balances, isValidating } = useBankBalances();
 
   const { data: indexer } = useIndexerData();
@@ -86,37 +104,131 @@ export default function MyLiquidity() {
   const shareValueMap = useMemo(() => {
     if (shares && indexer) {
       return shares.reduce<TickShareValueMap>((result, share) => {
-        const token0 = dualityTokens.find(
-          (token) => token.address === share.token0
-        );
-        const token1 = dualityTokens.find(
-          (token) => token.address === share.token1
-        );
-        if (token0 && token1) {
+        const { pairId = '', tickIndex, feeIndex, sharesOwned } = share;
+        // skip this share object if there are no shares owned
+        if (feeIndex === undefined || !(Number(sharesOwned) > 0)) return result;
+        const [tokenA, tokenB] = dualityTokens;
+        const fee = feeTypes[Number(feeIndex)].fee;
+        if (
+          tokenA &&
+          tokenA.address &&
+          tokenB &&
+          tokenB.address &&
+          fee !== undefined
+        ) {
+          const inverted = hasInvertedOrder(
+            pairId,
+            tokenA.address,
+            tokenB.address
+          );
+          const [token0, token1] = inverted
+            ? [tokenB, tokenA]
+            : [tokenA, tokenB];
           const extendedShare: ShareValue = { share, token0, token1 };
-          const pairID = `${share.token0}-${share.token1}`;
-          const tickID = `${share.price}-${share.fee}`;
-          const tick = indexer[pairID]?.ticks?.[tickID]?.find(Boolean);
+          const ticks = indexer[pairId]?.ticks || [];
+          const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
+            tickIndex,
+            feeIndex
+          );
+          if (tickIndex0 === undefined || tickIndex1 === undefined) {
+            return result;
+          }
+          const tick0 = ticks.find(
+            (tick) =>
+              tick.feeIndex.isEqualTo(feeIndex) &&
+              tick.tickIndex.isEqualTo(tickIndex0)
+          );
+          const tick1 = ticks.find(
+            (tick) =>
+              tick.feeIndex.isEqualTo(feeIndex) &&
+              tick.tickIndex.isEqualTo(tickIndex1)
+          );
+          const totalShares = tick0?.totalShares;
           // add optional tick data from indexer
-          if (tick && tick.totalShares.isGreaterThan(0)) {
-            const shareFraction = new BigNumber(
-              share.shareAmount ?? 0
-            ).dividedBy(tick.totalShares);
+          if (tick0 && tick1 && totalShares) {
+            const shareFraction = new BigNumber(sharesOwned ?? 0).dividedBy(
+              totalShares
+            );
             extendedShare.userReserves0 = shareFraction.multipliedBy(
-              tick.reserve0
+              // convert to big tokens
+              getAmountInDenom(
+                tick0.token0,
+                tick0.reserve0,
+                tick0.token0.address,
+                tick0.token0.display
+              ) || '0'
             );
             extendedShare.userReserves1 = shareFraction.multipliedBy(
-              tick.reserve1
+              // convert to big tokens
+              getAmountInDenom(
+                tick1.token1,
+                tick1.reserve1,
+                tick1.token1.address,
+                tick1.token1.display
+              ) || '0'
             );
             // add TickShareValue to TickShareValueMap
-            result[pairID] = result[pairID] || [];
-            result[pairID].push({ ...extendedShare, tick });
+            result[pairId] = result[pairId] || [];
+            result[pairId].push({
+              ...extendedShare,
+              tick0,
+              tick1,
+              feeIndex: Number(feeIndex),
+            });
           }
         }
         return result;
       }, {});
     }
   }, [shares, indexer, dualityTokens]);
+
+  // show connect page
+  if (!wallet || (!isValidating && (!balances || balances.length === 0))) {
+    return (
+      <div className="no-liquidity col">
+        <h3 className="h2 mb-4 text-center"> No liquidity positions found</h3>
+        <Link to="/add-liquidity">
+          <button className="button button-info add-liquidity p-3 px-4">
+            Add new liquidity
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  // show detail page
+  const [token0, token1] = selectedTokens || [];
+  if (token0 && token0.address && token1 && token1.address) {
+    return (
+      <LiquidityDetailPage
+        token0={token0}
+        token1={token1}
+        shares={shareValueMap?.[getPairID(token0.address, token1.address)]}
+      />
+    );
+  }
+
+  return (
+    <ShareValuesPage
+      shareValueMap={shareValueMap}
+      balances={balances}
+      setSelectedTokens={setSelectedTokens}
+    />
+  );
+}
+
+function ShareValuesPage({
+  shareValueMap,
+  balances,
+  setSelectedTokens,
+}: {
+  shareValueMap?: TickShareValueMap;
+  balances?: Coin[];
+  setSelectedTokens: React.Dispatch<
+    React.SetStateAction<[Token, Token] | undefined>
+  >;
+}) {
+  const { address } = useWeb3();
 
   const allUserSharesTokensList = useMemo<Token[]>(() => {
     // collect all tokens noted in each share
@@ -148,111 +260,7 @@ export default function MyLiquidity() {
     return [...allUserSharesTokensList, ...allUserBankTokensList];
   }, [allUserSharesTokensList, allUserBankTokensList]);
 
-  const { data: allUserTokenPrices } = useSimplePrice(
-    selectedTokens || allUserTokensList
-  );
-  // destructure common prices if selectedTokens was used
-  const [price0, price1] = allUserTokenPrices;
-
-  // show connect page
-  if (!wallet || (!isValidating && (!balances || balances.length === 0))) {
-    return (
-      <div className="no-liquidity col">
-        <h3 className="h2 mb-4 text-center"> No liquidity positions found</h3>
-        <Link to="/add-liquidity">
-          <button className="button button-info add-liquidity p-3 px-4">
-            Add new liquidity
-          </button>
-        </Link>
-      </div>
-    );
-  }
-
-  // show detail page
-  if (selectedTokens) {
-    const [token0, token1] = selectedTokens;
-
-    // get always up to date share data
-    const shareValues =
-      shareValueMap?.[`${token0.address}-${token1.address}`] || [];
-
-    const [total0, total1] = shareValues.reduce<[BigNumber, BigNumber]>(
-      ([total0, total1], shareValue) => {
-        return [
-          total0.plus(shareValue.userReserves0 || 0),
-          total1.plus(shareValue.userReserves1 || 0),
-        ];
-      },
-      [new BigNumber(0), new BigNumber(0)]
-    );
-    const value0 = price0 && total0.multipliedBy(price0);
-    const value1 = price1 && total1.multipliedBy(price1);
-
-    return (
-      <div className="my-liquidity-detail-page">
-        <div className="banner">
-          <div className="heading row">
-            <div className="token-symbols col py-5">
-              <h1>
-                {token0.symbol} + {token1.symbol}
-              </h1>
-              {value0 && value1 && (
-                <div className="balance row mt-4">
-                  <div className="col">Balance</div>
-                  <div className="col ml-auto">
-                    ${value0.plus(value1).toFixed(2)}
-                  </div>
-                </div>
-              )}
-              <div className="value-visual row">
-                {value0 && value1 && (
-                  <div className="value-barchart">
-                    <div
-                      className="value-0"
-                      style={{
-                        width: `${value0
-                          .dividedBy(value0.plus(value1))
-                          .multipliedBy(100)
-                          .toFixed(3)}%`,
-                      }}
-                    ></div>
-                    <div className="value-1"></div>
-                  </div>
-                )}
-              </div>
-              <div className="value-text row">
-                <div className="value-0 col mr-5">
-                  {total0.toFixed(3)} {token0.symbol}{' '}
-                  {value0 && <>(${value0.toFixed(2)})</>}
-                </div>
-                <div className="value-1 col ml-auto">
-                  {total1.toFixed(3)} {token1.symbol}{' '}
-                  {value1 && <>(${value1.toFixed(2)})</>}
-                </div>
-              </div>
-            </div>
-            <div className="token-icons col ml-auto">
-              <div className="row">
-                <img
-                  src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
-                  alt={`${token0.name} logo`}
-                />
-                <img
-                  src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
-                  alt={`${token1.name} logo`}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <LiquidityDistributionCard
-          token0={token0}
-          token1={token1}
-          shares={shareValues}
-        />
-      </div>
-    );
-  }
+  const { data: allUserTokenPrices } = useSimplePrice(allUserTokensList);
 
   const allUserSharesValue = Object.values(shareValueMap || {}).reduce(
     (result, shareValues) => {
@@ -374,80 +382,84 @@ const submitButtonSettings: Record<
   redistribute: { text: 'Redistribute Liquidity', variant: 'warning' },
 };
 
-function LiquidityDistributionCard({
+function LiquidityDetailPage({
   token0,
   token1,
   shares = [],
 }: {
   token0: Token;
   token1: Token;
-  shares: Array<TickShareValue>;
+  shares?: TickShareValue[];
 }) {
   const precision = shares?.length || 1;
 
-  const totalShareValues = useMemo(() => {
-    return shares.reduce<[BigNumber, BigNumber]>(
-      ([total0, total1], shareValue) => {
-        return [
-          total0.plus(shareValue.userReserves0 || 0),
-          total1.plus(shareValue.userReserves1 || 0),
-        ];
-      },
-      [new BigNumber(0), new BigNumber(0)]
-    );
-  }, [shares]);
+  const selectedTokens = useMemo(() => [token0, token1], [token0, token1]);
+  const {
+    data: [price0, price1],
+  } = useSimplePrice(selectedTokens);
 
-  const { data: { ticks: unorderedTicks } = {} } = useIndexerPairData(
+  const { data: { ticks } = {} } = useIndexerPairData(
     token0?.address,
     token1?.address
   );
 
-  const currentPriceFromTicks = useCurrentPriceFromTicks(
+  const currentPriceFromTicks0to1 = useCurrentPriceFromTicks(
     token0.address,
     token1.address
   );
 
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
-    return currentPriceFromTicks?.isLessThan(1) ?? false;
+    return currentPriceFromTicks0to1?.isLessThan(1) ?? false;
   });
+
+  const currentPriceFromTicks = useMemo(() => {
+    return invertedTokenOrder
+      ? currentPriceFromTicks0to1 &&
+          new BigNumber(1).dividedBy(currentPriceFromTicks0to1)
+      : currentPriceFromTicks0to1;
+  }, [invertedTokenOrder, currentPriceFromTicks0to1]);
+
   const swapAll = useCallback(() => {
     setInvertedTokenOrder((order) => !order);
   }, []);
   const tokenA = invertedTokenOrder ? token1 : token0;
   const tokenB = invertedTokenOrder ? token0 : token1;
 
-  const ticks = useMemo(() => {
-    if (!invertedTokenOrder) return unorderedTicks;
-    if (!unorderedTicks) return unorderedTicks;
-    // invert ticks
-    const one = new BigNumber(1);
-    return Object.entries(unorderedTicks).reduce<TickMap>(
-      (result, [key, [tick0to1, tick1to0]]) => {
-        // remap tick fields and invert the price
-        result[key] = [
-          tick1to0 && {
-            ...tick1to0,
-            price: one.dividedBy(tick1to0.price),
-            reserve0: tick1to0.reserve1,
-            reserve1: tick1to0.reserve0,
-          },
-          tick0to1 && {
-            ...tick0to1,
-            price: one.dividedBy(tick0to1.price),
-            reserve0: tick0to1.reserve1,
-            reserve1: tick0to1.reserve0,
-          },
-        ];
-        return result;
+  const [totalA, totalB] = useMemo(() => {
+    return shares.reduce<[BigNumber, BigNumber]>(
+      ([totalA, totalB], shareValue) => {
+        return invertedTokenOrder
+          ? [
+              totalA.plus(shareValue.userReserves1 || 0),
+              totalB.plus(shareValue.userReserves0 || 0),
+            ]
+          : [
+              totalA.plus(shareValue.userReserves0 || 0),
+              totalB.plus(shareValue.userReserves1 || 0),
+            ];
       },
-      {}
+      [new BigNumber(0), new BigNumber(0)]
     );
-  }, [unorderedTicks, invertedTokenOrder]);
+  }, [shares, invertedTokenOrder]);
 
-  const [tickSelected, setTickSelected] = useState(-1);
+  const [valueA, valueB] = useMemo(() => {
+    return invertedTokenOrder
+      ? [
+          price1 ? totalA.multipliedBy(price1) : new BigNumber(0),
+          price0 ? totalB.multipliedBy(price0) : new BigNumber(0),
+        ]
+      : [
+          price0 ? totalA.multipliedBy(price0) : new BigNumber(0),
+          price1 ? totalB.multipliedBy(price1) : new BigNumber(0),
+        ];
+  }, [totalA, totalB, invertedTokenOrder, price0, price1]);
+
+  const [userTickSelected, setUserTickSelected] = useState(-1);
   // constrain the selected tick index if the index does no longer exist
   useEffect(() => {
-    setTickSelected((selected) => Math.min(selected, Number(precision) - 1));
+    setUserTickSelected((selected) =>
+      Math.min(selected, Number(precision) - 1)
+    );
   }, [precision]);
 
   const [feeTier, setFeeTier] = useState<number>();
@@ -456,36 +468,101 @@ function LiquidityDistributionCard({
     return shares.sort((a, b) => {
       // ascending by fee tier and then ascending by price
       return (
-        a.tick.fee.comparedTo(b.tick.fee) ||
+        a.feeIndex - b.feeIndex ||
         (invertedTokenOrder
-          ? b.tick.price.comparedTo(a.tick.price)
-          : a.tick.price.comparedTo(b.tick.price))
+          ? b.tick1.price.comparedTo(a.tick1.price)
+          : a.tick0.price.comparedTo(b.tick0.price))
       );
     });
   }, [shares, invertedTokenOrder]);
 
   const userTicks = useMemo<Array<Tick>>(() => {
-    return sortedShares.flatMap(({ tick, userReserves0, userReserves1 }) => {
+    const forward = !invertedTokenOrder;
+    return sortedShares.flatMap<Tick>((share) => {
+      const {
+        tick0,
+        tick1,
+        userReserves0,
+        userReserves1,
+        share: { tickIndex = '', feeIndex = '' },
+      } = share;
       if (userReserves0 && userReserves1) {
-        return [
-          invertedTokenOrder
-            ? [
-                new BigNumber(1).dividedBy(tick.price || new BigNumber(1)),
-                userReserves1,
-                userReserves0,
-              ]
-            : [tick.price || new BigNumber(0), userReserves0, userReserves1],
-        ];
+        return forward
+          ? [
+              // add reserves0 as a tickA
+              ...(userReserves0.isGreaterThan(0)
+                ? [
+                    {
+                      reserveA: userReserves0,
+                      reserveB: new BigNumber(0),
+                      tickIndex: Number(tickIndex),
+                      price: tick0.price,
+                      fee: tick0.fee,
+                      feeIndex: Number(feeIndex),
+                      tokenA: tick0.token0,
+                      tokenB: tick0.token1,
+                    },
+                  ]
+                : []),
+              // add reserves1 as a tickB
+              ...(userReserves1.isGreaterThan(0)
+                ? [
+                    {
+                      ...tick1,
+                      reserveA: new BigNumber(0),
+                      reserveB: userReserves1,
+                      tickIndex: Number(tickIndex),
+                      price: tick1.price,
+                      fee: tick1.fee,
+                      feeIndex: Number(feeIndex),
+                      tokenA: tick1.token0,
+                      tokenB: tick1.token1,
+                    },
+                  ]
+                : []),
+            ]
+          : [
+              // add reserves0 as a tickB
+              ...(userReserves0.isGreaterThan(0)
+                ? [
+                    {
+                      reserveA: new BigNumber(0),
+                      reserveB: userReserves0,
+                      tickIndex: -1 * Number(tickIndex),
+                      price: new BigNumber(1).dividedBy(tick0.price),
+                      fee: tick0.fee,
+                      feeIndex: Number(feeIndex),
+                      tokenA: tick0.token1,
+                      tokenB: tick0.token0,
+                    },
+                  ]
+                : []),
+              // add reserves1 as a tickA
+              ...(userReserves1.isGreaterThan(0)
+                ? [
+                    {
+                      ...tick1,
+                      reserveA: userReserves1,
+                      reserveB: new BigNumber(0),
+                      tickIndex: -1 * Number(tickIndex),
+                      price: new BigNumber(1).dividedBy(tick1.price),
+                      fee: tick1.fee,
+                      feeIndex: Number(feeIndex),
+                      tokenA: tick1.token1,
+                      tokenB: tick1.token0,
+                    },
+                  ]
+                : []),
+            ];
       } else {
         return [];
       }
     });
   }, [sortedShares, invertedTokenOrder]);
 
-  const currentTick = userTicks[tickSelected];
-  const currentFeeType = feeTypes.find(
-    (feeType) => feeType.fee === sortedShares[tickSelected]?.tick.fee.toNumber()
-  );
+  const currentTick: Tick | undefined = userTicks[userTickSelected];
+  const currentFeeType: FeeType | undefined =
+    feeTypes[sortedShares[userTickSelected]?.feeIndex];
 
   const [editedUserTicks, setEditedUserTicks] = useState<Array<Tick>>(() =>
     userTicks.slice()
@@ -523,12 +600,11 @@ function LiquidityDistributionCard({
       );
 
       // constrain the diff values to the users available shares
-      const [totalAShareValue, totalBShareValue] = totalShareValues;
-      const cappedDiffAValue = totalAShareValue.isLessThan(diffAValue)
-        ? totalAShareValue
+      const cappedDiffAValue = valueA.isLessThan(diffAValue)
+        ? valueA
         : diffAValue;
-      const cappedDiffBValue = totalBShareValue.isLessThan(diffBValue)
-        ? totalBShareValue
+      const cappedDiffBValue = valueB.isLessThan(diffBValue)
+        ? valueB
         : diffBValue;
 
       // allow the new update to be conditionally adjusted
@@ -543,7 +619,7 @@ function LiquidityDistributionCard({
           newUpdate || userTicks,
           userTicks,
           cappedDiffAValue,
-          1,
+          'reserveA',
           -1,
           editingType === 'add'
         );
@@ -556,7 +632,7 @@ function LiquidityDistributionCard({
           newUpdate || userTicks,
           userTicks,
           cappedDiffBValue,
-          2,
+          'reserveB',
           -1,
           editingType === 'add'
         );
@@ -565,7 +641,7 @@ function LiquidityDistributionCard({
       // default to no update if no normalization occurred
       return newUpdate || userTicks;
     });
-  }, [values, userTicks, totalShareValues, editingType]);
+  }, [values, userTicks, valueA, valueB, editingType]);
 
   const leftColumn = (
     <div className="col">
@@ -577,8 +653,8 @@ function LiquidityDistributionCard({
         feeTier={feeTier}
         setFeeTier={setFeeTier}
         currentPriceFromTicks={currentPriceFromTicks}
-        tickSelected={tickSelected}
-        setTickSelected={setTickSelected}
+        userTickSelected={userTickSelected}
+        setUserTickSelected={setUserTickSelected}
         userTicks={editedUserTicks}
         userTicksBase={userTicks}
         setUserTicks={useCallback(
@@ -633,15 +709,15 @@ function LiquidityDistributionCard({
                   .isGreaterThan(normalizationTolerance) &&
                 // if value isn't trying to go negative
                 !(
-                  newEditedUserTick[1].isNegative() &&
-                  currentEditedUserTick[1].isZero()
+                  newEditedUserTick.reserveA.isNegative() &&
+                  currentEditedUserTick.reserveA.isZero()
                 )
               ) {
                 newUpdate = applyDiffToIndex(
                   newUpdate || newEditedUserTicks,
                   userTicks,
                   diffAValue,
-                  1,
+                  'reserveA',
                   indexSelected,
                   editingType === 'add'
                 );
@@ -653,15 +729,15 @@ function LiquidityDistributionCard({
                   .isGreaterThan(normalizationTolerance) &&
                 // if value isn't trying to go negative
                 !(
-                  newEditedUserTick[2].isNegative() &&
-                  currentEditedUserTick[2].isZero()
+                  newEditedUserTick.reserveB.isNegative() &&
+                  currentEditedUserTick.reserveB.isZero()
                 )
               ) {
                 newUpdate = applyDiffToIndex(
                   newUpdate || newEditedUserTicks,
                   userTicks,
                   diffBValue,
-                  2,
+                  'reserveB',
                   indexSelected,
                   editingType === 'add'
                 );
@@ -696,9 +772,9 @@ function LiquidityDistributionCard({
             }
             return map;
           })()}
-          value={tickSelected}
+          value={userTickSelected}
           onChange={(tickSelectedString) => {
-            setTickSelected(tickSelectedString);
+            setUserTickSelected(tickSelectedString);
           }}
         />
         <div className="row">
@@ -707,9 +783,9 @@ function LiquidityDistributionCard({
               <div className="row tick-price-card">
                 <h3 className="card-title mr-auto">Price</h3>
                 <StepNumberInput
-                  key={tickSelected}
+                  key={userTickSelected}
                   readOnly
-                  value={currentTick[0].toFixed()}
+                  value={currentTick.price.toFixed()}
                 />
               </div>
             )}
@@ -770,7 +846,7 @@ function LiquidityDistributionCard({
             maxValue={
               editingType === 'remove'
                 ? // use share token total or default to wallet balance
-                  totalShareValues[0].toNumber()
+                  valueA.toNumber()
                 : balanceTokenA?.toNumber()
             }
             token={tokenA}
@@ -793,7 +869,7 @@ function LiquidityDistributionCard({
             maxValue={
               editingType === 'remove'
                 ? // use share token total or default to wallet balance
-                  totalShareValues[1].toNumber()
+                  valueB.toNumber()
                 : balanceTokenB?.toNumber()
             }
             token={tokenB}
@@ -828,13 +904,25 @@ function LiquidityDistributionCard({
       // get relevant tick diffs
       const tickDiffs = getTickDiffs(editedUserTicks, userTicks);
       const sharesDiff: Array<EditedTickShareValue> = tickDiffs
-        .map((tickDiff, index) => {
-          const share = shares[index];
+        .flatMap((tickDiff) => {
+          const tickIndex = invertedTokenOrder
+            ? tickDiff.tickIndex * -1
+            : tickDiff.tickIndex;
+          const share = shares.find((share) => {
+            return share.share.tickIndex === `${tickIndex}`;
+          });
+          if (!share) {
+            return [];
+          }
           return {
             ...share,
             // // realign tickDiff A/B back to original shares 0/1 order
-            tickDiff0: invertedTokenOrder ? tickDiff[2] : tickDiff[1],
-            tickDiff1: invertedTokenOrder ? tickDiff[1] : tickDiff[2],
+            tickDiff0: invertedTokenOrder
+              ? tickDiff.reserveB
+              : tickDiff.reserveA,
+            tickDiff1: invertedTokenOrder
+              ? tickDiff.reserveA
+              : tickDiff.reserveB,
           };
         })
         .filter(
@@ -847,15 +935,72 @@ function LiquidityDistributionCard({
   );
 
   return (
-    <form
-      className={['pool-page row', isValidating && 'disabled']
-        .filter(Boolean)
-        .join(' ')}
-      onSubmit={onSubmit}
-    >
-      {leftColumn}
-      {rightColumn}
-    </form>
+    <div className="my-liquidity-detail-page">
+      <div className="banner">
+        <div className="heading row">
+          <div className="token-symbols col py-5">
+            <h1>
+              {tokenA.symbol} + {tokenB.symbol}
+            </h1>
+            {valueA && valueB && (
+              <div className="balance row mt-4">
+                <div className="col">Balance</div>
+                <div className="col ml-auto">
+                  ${valueA.plus(valueB).toFixed(2)}
+                </div>
+              </div>
+            )}
+            <div className="value-visual row">
+              {valueA && valueB && (
+                <div className="value-barchart">
+                  <div
+                    className="value-A"
+                    style={{
+                      width: `${valueA
+                        .dividedBy(valueA.plus(valueB))
+                        .multipliedBy(100)
+                        .toFixed(3)}%`,
+                    }}
+                  ></div>
+                  <div className="value-B"></div>
+                </div>
+              )}
+            </div>
+            <div className="value-text row">
+              <div className="value-A col mr-5">
+                {totalA.toFixed(3)} {tokenA.symbol}{' '}
+                {valueA && <>(${valueA.toFixed(2)})</>}
+              </div>
+              <div className="value-B col ml-auto">
+                {totalB.toFixed(3)} {tokenB.symbol}{' '}
+                {valueB && <>(${valueB.toFixed(2)})</>}
+              </div>
+            </div>
+          </div>
+          <div className="token-icons col ml-auto">
+            <div className="row">
+              <img
+                src={tokenA.logo_URIs?.svg || tokenA.logo_URIs?.png || ''}
+                alt={`${tokenA.name} logo`}
+              />
+              <img
+                src={tokenB.logo_URIs?.svg || tokenB.logo_URIs?.png || ''}
+                alt={`${tokenB.name} logo`}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <form
+        className={['pool-page row', isValidating && 'disabled']
+          .filter(Boolean)
+          .join(' ')}
+        onSubmit={onSubmit}
+      >
+        {leftColumn}
+        {rightColumn}
+      </form>
+    </div>
   );
 }
 
@@ -927,7 +1072,7 @@ function PositionCard({
               {value0 && value1 && (
                 <div className="value-barchart">
                   <div
-                    className="value-0"
+                    className="value-A"
                     style={{
                       width: `${value0
                         .dividedBy(value0.plus(value1))
@@ -935,16 +1080,16 @@ function PositionCard({
                         .toFixed(3)}%`,
                     }}
                   ></div>
-                  <div className="value-1"></div>
+                  <div className="value-B"></div>
                 </div>
               )}
             </div>
             <div className="value-text row">
-              <div className="value-0 col">
+              <div className="value-A col">
                 {total0.toFixed(3)} {token0.symbol}{' '}
                 {value0 && <>(${value0.toFixed(2)})</>}
               </div>
-              <div className="value-1 col ml-auto">
+              <div className="value-B col ml-auto">
                 {total1.toFixed(3)} {token1.symbol}{' '}
                 {value1 && <>(${value1.toFixed(2)})</>}
               </div>
@@ -963,10 +1108,11 @@ function getTickDiffs(newTicks: TickGroup, oldTicks: TickGroup) {
       const editedUserTick = newTicks[index];
       // diff ticks
       if (editedUserTick && editedUserTick !== userTick) {
-        // find diff
-        const diffAValue = editedUserTick[1].minus(userTick[1]);
-        const diffBValue = editedUserTick[2].minus(userTick[2]);
-        return [userTick[0], diffAValue, diffBValue] as Tick;
+        return {
+          ...userTick,
+          reserveA: editedUserTick.reserveA.minus(userTick.reserveA),
+          reserveB: editedUserTick.reserveB.minus(userTick.reserveB),
+        };
         // edit all other values to ensure all diffs equal the desired value
       }
       return undefined;
@@ -996,7 +1142,10 @@ function getTickDiffCumulativeValues(
 
   return getTickDiffs(newTicks, oldTicks).reduce(
     ([diffAValue, diffBValue], diffTick) => {
-      return [diffAValue.plus(diffTick[1]), diffBValue.plus(diffTick[2])];
+      return [
+        diffAValue.plus(diffTick.reserveA),
+        diffBValue.plus(diffTick.reserveB),
+      ];
     },
     [new BigNumber(0).minus(tokenAValue), new BigNumber(0).minus(tokenBValue)]
   );
@@ -1006,37 +1155,37 @@ function applyDiffToIndex(
   newTicks: TickGroup,
   oldTicks: TickGroup,
   diffCorrectionValue: BigNumber,
-  tickPartIndex: number,
+  tickProperty: 'reserveA' | 'reserveB',
   tickIndexSelected: number,
   oldTickIsFloor = false
 ): TickGroup {
   const [adjustedUserTicks, remainder] = newTicks
-    // add index onto the TickGroup making it [price, tokenAValue, tokenBValue, index]
-    // to be able to track which tick is which, the result must be in the correct order
-    .map((tick, index) => tick.concat(new BigNumber(index)))
+    // add index onto the TickGroup to track tick order,
+    // the result must be in the correct order
+    .map<[Tick, number]>((tick, index) => [tick, index])
     // sort descending order (but with selected index at start, it will absorb the remainder)
-    .sort((a, b) => {
-      const aIsSelected = a[3].isEqualTo(tickIndexSelected);
-      const bIsSelected = b[3].isEqualTo(tickIndexSelected);
+    .sort(([a, aIndex], [b, bIndex]) => {
+      const aIsSelected = aIndex === tickIndexSelected;
+      const bIsSelected = bIndex === tickIndexSelected;
       return !aIsSelected && !bIsSelected
         ? // sort by descending value
-          b[tickPartIndex].comparedTo(a[tickPartIndex])
+          b[tickProperty].comparedTo(a[tickProperty])
         : // sort by selected index
         aIsSelected
         ? -1
         : 1;
     })
     .reduceRight(
-      ([result, remainder], tick, index) => {
-        const tokenValue: BigNumber = tick[tickPartIndex];
+      ([result, remainder], [tick, tickIndex], index) => {
+        const tokenValue: BigNumber = tick[tickProperty];
         // set the floor to be non-selected 'add' ticks or zero
         const floor =
-          oldTickIsFloor && tickIndexSelected !== tick[3].toNumber()
-            ? oldTicks[tick[3].toNumber()]?.[tickPartIndex]
+          oldTickIsFloor && tickIndexSelected !== tickIndex
+            ? oldTicks[tickIndex]?.[tickProperty]
             : new BigNumber(0);
         // skip token ticks stuck to zero
         if (tokenValue.isEqualTo(0)) {
-          return [result.concat([tick]), remainder];
+          return [result.concat([[tick, tickIndex]]), remainder];
         }
         // divided by remainder of ticks that aren't selected
         // which would be `index + 1` but it is `index + 1 - 1`
@@ -1046,8 +1195,8 @@ function applyDiffToIndex(
           .negated()
           .dividedBy(index + 1 - (tickIndexSelected >= 0 ? 1 : 0) || 1);
         const newValue = tokenValue.plus(adjustment);
-        const oldTick = oldTicks[tick[3].toNumber()];
-        const oldValue = oldTick[tickPartIndex];
+        const oldTick = oldTicks[tickIndex];
+        const oldValue = oldTick[tickProperty];
         // abort change if new value is very close to the old value
         // (like a fraction of a percent difference) to avoid useless transactions
         if (
@@ -1058,30 +1207,34 @@ function applyDiffToIndex(
             .isLessThan(1e-6)
         ) {
           // insert old value into tick
-          const newTick = tick.slice() as Tick;
-          newTick.splice(tickPartIndex, 1, oldValue);
-          return [result.concat([newTick]), remainder.plus(adjustment)];
+          const newTick = { ...tick, [tickProperty]: oldValue };
+          return [
+            result.concat([[newTick, tickIndex]]),
+            remainder.plus(adjustment),
+          ];
         }
         // apply partial adjustment value using all liquidity of current tick
         if (newValue.isLessThan(floor)) {
           // insert new value (floor) into tick
-          const newTick = tick.slice() as Tick;
-          const [removedValue] = newTick.splice(tickPartIndex, 1, floor);
+          const currentValue = tick[tickProperty];
+          const newTick = { ...tick, [tickProperty]: floor };
           // remove the applied adjustment from the remainder
           return [
-            result.concat([newTick]),
-            remainder.minus(removedValue.minus(floor)),
+            result.concat([[newTick, tickIndex]]),
+            remainder.minus(currentValue.minus(floor)),
           ];
         }
         // apply all of calculated adjustment value
         else {
           // insert new value into tick
-          const newTick = tick.slice() as Tick;
-          newTick.splice(tickPartIndex, 1, newValue);
-          return [result.concat([newTick]), remainder.plus(adjustment)];
+          const newTick = { ...tick, [tickProperty]: newValue };
+          return [
+            result.concat([[newTick, tickIndex]]),
+            remainder.plus(adjustment),
+          ];
         }
       },
-      [[] as BigNumber[][], diffCorrectionValue]
+      [[] as [Tick, number][], diffCorrectionValue]
     );
 
   if (remainder.isGreaterThan(normalizationTolerance)) {
@@ -1093,6 +1246,6 @@ function applyDiffToIndex(
   }
 
   return adjustedUserTicks
-    .sort((a, b) => a[3].comparedTo(b[3]))
-    .map((tickAndIndex) => tickAndIndex.slice(0, 3) as Tick);
+    .sort(([, aIndex], [, bIndex]) => aIndex - bIndex)
+    .map(([tick]) => tick);
 }

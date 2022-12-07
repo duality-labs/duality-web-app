@@ -1,8 +1,10 @@
 import {
   getPairID,
+  hasMatchingPairOfOrder,
   PairMap,
   TickInfo,
 } from '../../../lib/web3/indexerProvider';
+import { tickIndexToPrice } from '../../../lib/web3/utils/ticks';
 import { RouterResult } from './index';
 import { BigNumber } from 'bignumber.js';
 
@@ -17,28 +19,40 @@ export function router(
   state: PairMap,
   tokenA: string,
   tokenB: string,
-  value0: string
+  valueA: string
 ): RouterResult {
   let error: SwapError | false = false;
 
   // find pair by searching both directions in the current state
   // the pairs are sorted by the backend not here
-  const reverse = state[getPairID(tokenA, tokenB)];
-  const forward = state[getPairID(tokenB, tokenA)];
-  const exactPair = forward || reverse;
-  if (!exactPair) {
+  const [forward, reverse] = hasMatchingPairOfOrder(state, tokenA, tokenB);
+
+  if (!forward && !reverse) {
     error = new Error('There are no ticks for the supplied token pair');
     error.insufficientLiquidity = true;
     throw error;
   } else {
-    const sortedTicks = (
-      forward ? exactPair.poolsZeroToOne : exactPair.poolsOneToZero
-    ).sort(
-      forward
-        ? (a, b) => a.price.comparedTo(b.price)
-        : (a, b) => b.price.comparedTo(a.price)
-    );
-    const amountIn = new BigNumber(value0);
+    const exactPair = forward
+      ? state[getPairID(tokenA, tokenB)]
+      : state[getPairID(tokenB, tokenA)];
+    // note: sorting can be done earlier check this commit description
+    const sortedTicks = exactPair.ticks
+      .filter((tick) => !tick.reserve0.isZero() || !tick.reserve1.isZero())
+      .sort(
+        forward
+          ? (a, b) => Number(a.tickIndex) - Number(b.tickIndex)
+          : (a, b) => Number(b.tickIndex) - Number(a.tickIndex)
+      )
+      .map((tick) => {
+        const tickIndex = tick.tickIndex.negated();
+        const price = tickIndexToPrice(tickIndex);
+        return {
+          ...tick,
+          price,
+          tickIndex,
+        };
+      });
+    const amountIn = new BigNumber(valueA);
 
     try {
       const { amountOut, priceIn, priceOut } = calculateOut({
@@ -64,7 +78,7 @@ export function router(
       }
 
       return {
-        amountIn: amountIn,
+        amountIn,
         tokenIn: tokenA,
         tokenOut: tokenB,
         amountOut,
@@ -79,11 +93,11 @@ export function router(
 
 export async function routerAsync(
   state: PairMap,
-  token0: string,
-  token1: string,
-  value0: string
+  tokenA: string,
+  tokenB: string,
+  valueA: string
 ): Promise<RouterResult> {
-  return await router(state, token0, token1, value0);
+  return await router(state, tokenA, tokenB, valueA);
 }
 
 /**
@@ -100,7 +114,7 @@ export function calculateOut({
 }: {
   tokenIn: string; // address
   tokenOut: string; // address
-  amountIn: BigNumber;
+  amountIn: BigNumber; // amount in (in minimum denom)
   sortedTicks: Array<TickInfo>;
 }): {
   amountOut: BigNumber;
@@ -130,12 +144,14 @@ export function calculateOut({
       const price = isSameOrder
         ? sortedTicks[tickIndex].price
         : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price);
-      priceIn = priceIn || price;
-      priceOut = price;
       // the reserves of tokenOut available at this tick
       const reservesOut = isSameOrder
         ? sortedTicks[tickIndex].reserve1
         : sortedTicks[tickIndex].reserve0;
+      if (reservesOut.isGreaterThan(0)) {
+        priceIn = priceIn || price;
+        priceOut = price;
+      }
       // the reserves of tokenOut available at this tick
       const maxOut = amountLeft
         .multipliedBy(price)

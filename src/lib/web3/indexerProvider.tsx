@@ -1,4 +1,11 @@
-import { useContext, createContext, useState, useEffect, useMemo } from 'react';
+import {
+  useContext,
+  createContext,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 import { BigNumber } from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
@@ -8,23 +15,24 @@ import { useWeb3 } from './useWeb3';
 
 import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
 import {
-  DexPool,
-  DexQueryAllShareResponse,
-  DexQueryAllTicksResponse,
-  DexShare,
-  DexTicks,
+  DexQueryAllTickMapResponse,
+  DexQueryAllSharesResponse,
+  DexShares,
+  DexTickMap,
   HttpResponse,
   RpcStatus,
   V1Beta1PageResponse,
 } from './generated/duality/nicholasdotsol.duality.dex/module/rest';
-import { Token } from '../../components/TokenPicker/hooks';
+import {
+  addressableTokenMap as tokenMap,
+  Token,
+} from '../../components/TokenPicker/hooks';
 import { FeeType, feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
 
 const { REACT_APP__REST_API } = process.env;
 
 type TokenAddress = string; // a valid hex address, eg. 0x01
-type BigNumberString = string; // a number in string format, eg. "1"
 
 interface BalancesResponse {
   balances?: Coin[];
@@ -33,9 +41,7 @@ interface BalancesResponse {
 export interface PairInfo {
   token0: string;
   token1: string;
-  ticks: TickMap;
-  poolsZeroToOne: Array<TickInfo>;
-  poolsOneToZero: Array<TickInfo>;
+  ticks: TickInfo[];
 }
 
 /**
@@ -55,12 +61,15 @@ type PoolTicks = [
  * but utilising BigNumber type instead of BigNumberString type properties
  */
 export interface TickInfo {
-  // index: number; do not store index as they may change with partial updates
-  price: BigNumber; // price is a decimal (to 18 places) ratio of price1/price0
+  token0: Token;
+  token1: Token;
   reserve0: BigNumber;
   reserve1: BigNumber;
-  fee: BigNumber;
   totalShares: BigNumber;
+  fee: BigNumber;
+  feeIndex: BigNumber; // feeIndex is the index of a certain predefined fee
+  tickIndex: BigNumber; // tickIndex is the exact price ratio in the form: 1.0001^[tickIndex]
+  price: BigNumber; // price is an approximate decimal (to 18 places) ratio of price1/price0
 }
 
 export interface PairMap {
@@ -72,7 +81,7 @@ interface UserBankBalance {
 }
 
 interface UserShares {
-  shares: Array<DexShare>;
+  shares: Array<DexShares>;
 }
 
 interface IndexerContextType {
@@ -91,6 +100,12 @@ interface IndexerContextType {
     error?: string;
     isValidating: boolean;
   };
+}
+
+interface FetchState {
+  fetching: boolean;
+  fetched: boolean;
+  error?: Error;
 }
 
 const IndexerContext = createContext<IndexerContextType>({
@@ -117,15 +132,15 @@ function getFullData(): Promise<PairMap> {
       queryClient({ addr: REACT_APP__REST_API })
         .then(async (client) => {
           let nextKey: string | undefined;
-          let tickMap: Array<DexTicks> = [];
-          let res: HttpResponse<DexQueryAllTicksResponse, RpcStatus>;
+          let tickMap: Array<DexTickMap> = [];
+          let res: HttpResponse<DexQueryAllTickMapResponse, RpcStatus>;
           do {
-            res = await client.queryTicksAll({
+            res = await client.queryTickMapAll({
               ...defaultFetchParams,
               'pagination.key': nextKey,
             });
             if (res.ok) {
-              tickMap = tickMap.concat(res.data.ticks || []);
+              tickMap = tickMap.concat(res.data.tickMap || []);
             } else {
               // remove API error details from public view
               throw new Error(`API error code: ${res.error.code}`);
@@ -137,7 +152,7 @@ function getFullData(): Promise<PairMap> {
             tickMap: tickMap,
           };
         })
-        .then((data) => transformData(data.ticks || []))
+        .then((data) => transformData(data.tickMap || []))
         .then(resolve)
         .catch(reject);
     }
@@ -151,157 +166,102 @@ function getFullData(): Promise<PairMap> {
  * @returns pair id for tokens
  */
 export function getPairID(token0: TokenAddress, token1: TokenAddress) {
-  return `${token0}-${token1}`;
+  return `${token0}<>${token1}`;
 }
 
 /**
- * Gets the tick id
- * @param price price ratio of (token 1) / (token 0)
- * @param fee tick's fee
- * @returns tick id
+ * Check if the current TokenA/TokenB pair is in the same order as Token0/1
+ * @param pairID pair id for tokens
+ * @param tokenA address of token A
+ * @param tokenB address of token B
+ * @returns bool for inverted order
  */
-function getTickID(
-  price: BigNumberString, // decimal form eg. "1.000000000000000000"
-  fee: BigNumberString // decimal form eg. "1.000000000000000000"
-) {
-  return `${price}-${fee}`;
+export function hasInvertedOrder(
+  pairID: string,
+  tokenA: string,
+  tokenB: string
+): boolean {
+  return getPairID(tokenA, tokenB) !== pairID;
 }
 
-function transformData(ticks: Array<DexTicks>): PairMap {
-  return ticks.reduce<PairMap>(function (
+/**
+ * Checks given token pair against stored data to determine
+ * if the current TokenA/TokenB pair exists and is in the same order as Token0/1
+ * @param pairMap pair map of stored tokens
+ * @param tokenA address of token A
+ * @param tokenB address of token B
+ * @returns [isSorted, isInverseSorted] array for determining sort order (both may be `false` if pair is not found)
+ */
+export function hasMatchingPairOfOrder(
+  pairMap: PairMap,
+  tokenA: string,
+  tokenB: string
+): [boolean, boolean] {
+  const forward = !!pairMap?.[getPairID(tokenA, tokenB)];
+  const reverse = !!pairMap?.[getPairID(tokenB, tokenA)];
+  return [forward, reverse];
+}
+
+function transformData(ticks: Array<DexTickMap>): PairMap {
+  const intermediate = ticks.reduce<PairMap>(function (
     result,
-    // token0 and token1 are sorted by the back end
-    { token0, token1, poolsZeroToOne = [], poolsOneToZero = [] }
+    { pairId = '', tickIndex, tickData }
   ) {
-    if (token0 && token1) {
-      const pairID = getPairID(token0, token1);
-      const ticks: TickMap = {};
-      result[pairID] = {
+    // token0 and token1 are sorted by the back end
+    const [token0, token1] = pairId.split('<>');
+    if (token0 && token1 && tokenMap[token0] && tokenMap[token1] && tickData) {
+      result[pairId] = result[pairId] || {
         token0: token0,
         token1: token1,
-        ticks: ticks,
-        poolsZeroToOne: poolsZeroToOne
-          .map((dexPool) => {
-            const tickInfo = toTickInfo(dexPool);
-            const { price, fee } = dexPool;
-            // append tickInfo into tickID map before returning defined values
-            if (tickInfo && price && fee) {
-              const tickID = getTickID(price, fee);
-              ticks[tickID] = ticks[tickID] || [undefined, undefined];
-              ticks[tickID][0] = tickInfo;
-            }
-            return tickInfo;
-          })
-          .filter(Boolean) as Array<TickInfo>,
-        poolsOneToZero: poolsOneToZero
-          .map((dexPool) => {
-            const tickInfo = toTickInfo(dexPool);
-            const { price, fee } = dexPool;
-            // append tickInfo into tickID map before returning defined values
-            if (tickInfo && price && fee) {
-              const tickID = getTickID(price, fee);
-              ticks[tickID] = ticks[tickID] || [undefined, undefined];
-              ticks[tickID][1] = tickInfo;
-            }
-            return tickInfo;
-          })
-          .filter(Boolean) as Array<TickInfo>,
+        ticks: [],
       };
+
+      feeTypes.forEach(({ fee }, feeIndex) => {
+        const totalShares =
+          Number(tickData.reserve0AndShares?.[feeIndex].totalShares) ?? -1;
+        if (!isNaN(parseInt(tickIndex || '')) && totalShares >= 0) {
+          result[pairId].ticks.push({
+            token0: tokenMap[token0],
+            token1: tokenMap[token1],
+            tickIndex: new BigNumber(tickIndex || 0),
+            // do no use BigNumber.pow here, it is slow enough to make the browser
+            // unresponsive for a minute on first page load.
+            price: new BigNumber(Math.pow(1.0001, Number(tickIndex) || 0)),
+            feeIndex: new BigNumber(feeIndex),
+            fee: new BigNumber(fee || 0),
+            // todo: don't read total shares here, it makes little sense
+            // possibly we should precompute these values into cumulative values
+            totalShares: new BigNumber(totalShares),
+            reserve0: new BigNumber(
+              tickData.reserve0AndShares?.[feeIndex].reserve0 || 0
+            ),
+            reserve1: new BigNumber(tickData.reserve1?.[feeIndex] || 0),
+          });
+        }
+      });
     }
     return result;
-  }, {});
-  // convert from API JSON big number strings to BigNumbers
-  function toTickInfo({
-    price,
-    reserve0,
-    reserve1,
-    fee,
-    totalShares,
-  }: DexPool): TickInfo | undefined {
-    if (price && reserve0 && reserve1 && fee && totalShares) {
-      const tickInfo = {
-        price: new BigNumber(price),
-        reserve0: new BigNumber(reserve0),
-        reserve1: new BigNumber(reserve1),
-        fee: new BigNumber(fee),
-        totalShares: new BigNumber(totalShares),
-      };
-      return tickInfo;
-    }
-  }
-}
+  },
+  {});
 
-function addTickData(
-  oldData: PairMap = {},
-  {
-    Token0,
-    Token1,
-    Price,
-    Fee,
-    NewReserves0,
-    NewReserves1,
-  }: { [eventKey: string]: string }
-): PairMap {
-  const pairID = getPairID(Token0, Token1);
-  const tickID = getTickID(Price, Fee);
-  const oldPairInfo = oldData[pairID];
-  const price = new BigNumber(Price);
-  const fee = new BigNumber(Fee);
-  const reserve0 = new BigNumber(NewReserves0);
-  const reserve1 = new BigNumber(NewReserves1);
-  const newTick: TickInfo = {
-    price,
-    fee,
-    reserve0,
-    reserve1,
-    // calculate new total
-    // TODO: the back end may provide the totalShares property in the future
-    // so it should be used as the source of truth and not recalculated here
-    totalShares: reserve0.plus(reserve1.multipliedBy(price)),
-  };
-  const newPoolTicks: PoolTicks = [undefined, undefined];
-  if (reserve0.isGreaterThan(0)) {
-    newPoolTicks[0] = newTick;
-  }
-  if (reserve1.isGreaterThan(0)) {
-    newPoolTicks[1] = newTick;
-  }
-  // note: the ticks structure isn't strictly needed as the pool arrays
-  // may be calculated without it. We keep it for now for logic simplicity.
-  // The ticks structure is easier to reason about than the pool arrays.
-  // This could be refactored for computation or storage optimisation later.
-  // see: https://github.com/duality-labz/duality-web-app/pull/102#discussion_r938174401
-  const ticks = {
-    ...oldPairInfo?.ticks,
-    [tickID]: newPoolTicks,
-  };
-  return {
-    ...oldData,
-    [pairID]: {
-      ...oldPairInfo, // not needed, displayed for consistency
-      token0: Token0,
-      token1: Token1,
-      ticks,
-      // reorder pools by "real" price (the price after fees are applied)
-      poolsZeroToOne: Object.values(ticks)
-        .map((ticks) => ticks[0])
-        .filter((tick): tick is TickInfo => !!tick)
-        .sort((a, b) =>
-          getRealPrice(a, 1).minus(getRealPrice(b, 1)).toNumber()
-        ),
-      poolsOneToZero: Object.values(ticks)
-        .map((ticks) => ticks[1])
-        .filter((tick): tick is TickInfo => !!tick)
-        .sort((a, b) =>
-          getRealPrice(b, -1).minus(getRealPrice(a, -1)).toNumber()
-        ),
+  // sort all ticks
+  return Object.entries(intermediate).reduce<PairMap>(
+    (result, [pairId, pairInfo]) => {
+      result[pairId] = {
+        ...pairInfo,
+        // sort each pair's ticks
+        ticks: pairInfo.ticks.sort((a, b) => {
+          // sort by tickIndex (price) then feeIndex
+          return (
+            a.tickIndex.comparedTo(b.tickIndex) ||
+            a.feeIndex.comparedTo(b.feeIndex)
+          );
+        }),
+      };
+      return result;
     },
-  };
-  function getRealPrice(tick: TickInfo, forward: number) {
-    return forward >= 0
-      ? tick.price.plus(tick.fee)
-      : tick.price.minus(tick.fee);
-  }
+    {}
+  );
 }
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
@@ -330,14 +290,31 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   });
 
   const { address } = useWeb3();
-  const [, setFetchBankDataState] = useState({
+  const [, setFetchBankDataState] = useState<FetchState>({
     fetching: false,
     fetched: false,
   });
-  const fetchBankData = useMemo(() => {
-    if (address) {
-      return async () => {
-        if (REACT_APP__REST_API) {
+  const updateBankData = useCallback(
+    (fetchStateCheck?: (fetchstate: FetchState) => boolean) => {
+      setFetchShareDataState((fetchState) => {
+        // check if already fetching (and other other passed in check)
+        if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
+          fetchBankData()
+            .then((data = []) => {
+              setBankData({ balances: data });
+            })
+            .catch((e) => {
+              setFetchBankDataState((state) => ({
+                ...state,
+                error: e as Error,
+              }));
+            });
+        }
+        return fetchState;
+      });
+
+      async function fetchBankData() {
+        if (address && REACT_APP__REST_API) {
           const client = await queryClient({ addr: REACT_APP__REST_API });
           setFetchBankDataState(({ fetched }) => ({ fetching: true, fetched }));
           let nextKey: string | undefined;
@@ -367,30 +344,24 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           } while (nextKey);
           setFetchBankDataState(() => ({ fetching: false, fetched: true }));
           return balances || [];
-        } else {
+        } else if (!REACT_APP__REST_API) {
           throw new Error('Undefined rest api base URL');
         }
-      };
-    }
-  }, [address]);
+      }
+    },
+    [address]
+  );
 
+  // update bank data whenever wallet address is updated
   useEffect(() => {
-    if (fetchBankData) {
-      setFetchBankDataState((fetchState) => {
-        if (!fetchState.fetched && !fetchState.fetching) {
-          fetchBankData().then((data) => {
-            setBankData({ balances: data });
-          });
-        }
-        return fetchState;
-      });
-    }
-  }, [fetchBankData]);
+    updateBankData();
+  }, [updateBankData, address]);
 
+  // update bank balance whenever bank transfers are detected
   useEffect(() => {
     if (address) {
-      const onTxBalanceUpdate = function () {
-        fetchBankData?.()?.then((data) => setBankData({ balances: data }));
+      const onTxBalanceUpdate = () => {
+        updateBankData();
       };
       subscriber.subscribeMessage(onTxBalanceUpdate, {
         transfer: { recipient: address },
@@ -402,30 +373,49 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         subscriber.unsubscribeMessage(onTxBalanceUpdate);
       };
     }
-  }, [fetchBankData, address]);
+  }, [updateBankData, address]);
 
-  const [, setFetchShareDataState] = useState({
+  const [, setFetchShareDataState] = useState<FetchState>({
     fetching: false,
     fetched: false,
   });
-  const fetchShareData = useMemo(() => {
-    if (address) {
-      return async () => {
-        if (REACT_APP__REST_API) {
+
+  // fetch new share data if we aren't already fetching
+  const updateShareData = useCallback(
+    (fetchStateCheck?: (fetchstate: FetchState) => boolean) => {
+      setFetchShareDataState((fetchState) => {
+        // check if already fetching (and other other passed in check)
+        if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
+          fetchShareData()
+            .then((data = []) => {
+              setShareData({ shares: data });
+            })
+            .catch((e) => {
+              setFetchShareDataState((state) => ({
+                ...state,
+                error: e as Error,
+              }));
+            });
+        }
+        return fetchState;
+      });
+
+      async function fetchShareData() {
+        if (address && REACT_APP__REST_API) {
           const client = await queryClient({ addr: REACT_APP__REST_API });
           setFetchShareDataState(({ fetched }) => ({
             fetching: true,
             fetched,
           }));
           let nextKey: string | undefined;
-          let shares: Array<DexShare> = [];
-          let res: HttpResponse<DexQueryAllShareResponse, RpcStatus>;
+          let shares: Array<DexShares> = [];
+          let res: HttpResponse<DexQueryAllSharesResponse, RpcStatus>;
           do {
-            res = await client.request<DexQueryAllShareResponse, RpcStatus>({
+            res = await client.request<DexQueryAllSharesResponse, RpcStatus>({
               // todo: this query should be sepcific to the user's address
               // however that has not been implemented yet
               // so instead we query all and then filter the results
-              path: '/NicholasDotSol/duality/dex/share',
+              path: '/NicholasDotSol/duality/dex/shares',
               method: 'GET',
               format: 'json',
               query: {
@@ -434,7 +424,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
               },
             });
             if (res.ok) {
-              shares = shares.concat(res.data.share || []);
+              shares = shares.concat(res.data.shares || []);
             } else {
               setFetchShareDataState(({ fetched }) => ({
                 fetching: false,
@@ -446,70 +436,94 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             nextKey = res.data.pagination?.next_key;
           } while (nextKey);
           setFetchShareDataState(() => ({ fetching: false, fetched: true }));
-          return shares || [];
-        } else {
+          // filter shares to this wallet
+          return shares.filter((share) => share.address === address);
+        } else if (!REACT_APP__REST_API) {
           throw new Error('Undefined rest api base URL');
         }
-      };
-    }
-  }, [address]);
+      }
+    },
+    [address]
+  );
+
+  // update share data when the address changes
+  useEffect(() => {
+    updateShareData();
+  }, [updateShareData, address]);
 
   useEffect(() => {
-    if (fetchShareData) {
-      setFetchShareDataState((fetchState) => {
-        if (!fetchState.fetched && !fetchState.fetching) {
-          fetchShareData().then((data) => {
-            setShareData({ shares: data });
-          });
-        }
-        return fetchState;
-      });
-    }
-  }, [fetchShareData]);
-
-  useEffect(() => {
-    if (address) {
-      const onTxBalanceUpdate = function () {
-        fetchBankData?.()?.then((data) => setBankData({ balances: data }));
-      };
-      subscriber.subscribeMessage(onTxBalanceUpdate, {
-        transfer: { recipient: address },
-      });
-      subscriber.subscribeMessage(onTxBalanceUpdate, {
-        transfer: { sender: address },
-      });
-      return () => {
-        subscriber.unsubscribeMessage(onTxBalanceUpdate);
-      };
-    }
-  }, [fetchBankData, address]);
-
-  useEffect(() => {
+    let lastRequested = 0;
     const onDexUpdateMessage = function (event: MessageActionEvent) {
-      const { Token0, Token1, NewReserves0, NewReserves1, Price, Fee } = event;
+      const Creator = event['message.Creator'];
+      const Token0 = event['message.Token0'];
+      const Token1 = event['message.Token1'];
+      const TickIndex = event['message.TickIndex'];
+      const FeeIndex = event['message.FeeIndex'];
+      const NewReserves0 = event['message.NewReserves0'];
+      const NewReserves1 = event['message.NewReserves1'];
+      const SharesMinted = event['message.SharesMinted'];
+      const SharesRemoved = event['message.SharesRemoved'];
+
       if (
+        !Creator ||
         !Token0 ||
         !Token1 ||
-        !Price ||
+        !TickIndex ||
+        !FeeIndex ||
         !NewReserves0 ||
-        !NewReserves1 ||
-        !Fee
+        !NewReserves1
       ) {
         setError('Invalid event response from server');
         return;
       } else {
         setError(undefined);
       }
-      setIndexerData((oldData) => {
-        return addTickData(oldData, {
-          Token0,
-          Token1,
-          Price,
-          Fee,
-          NewReserves0,
-          NewReserves1,
-        });
+      // update user's share state
+      setShareData((state) => {
+        if (!state) return state;
+        const { shares = [] } = state || {};
+        // upsert shares
+        const data = shares.slice();
+        const shareFoundIndex = shares.findIndex(
+          (share) =>
+            share.tickIndex === TickIndex && share.feeIndex === FeeIndex
+        );
+        const shareFound = shares[shareFoundIndex];
+        const newShare = {
+          ...shareFound,
+          address: Creator,
+          feeIndex: FeeIndex,
+          pairId: getPairID(Token0, Token1),
+          tickIndex: TickIndex,
+          sharesOwned: new BigNumber(shareFound?.sharesOwned || '0')
+            .plus(SharesMinted || '0')
+            .minus(SharesRemoved || '0')
+            .toFixed(),
+        };
+        if (shareFound) {
+          // update share
+          data.splice(shareFoundIndex, 1, newShare);
+        } else {
+          // add share
+          data.push(newShare);
+        }
+        return { shares: data };
       });
+
+      // update the indexer data (not a high priority, each block that contains changes to listened pairs should update the indexer state)
+      const now = Date.now();
+      if (now - lastRequested > 1000) {
+        lastRequested = Date.now();
+        getFullData()
+          .then(function (res) {
+            setIndexerData(res);
+          })
+          .catch(function (err: Error) {
+            setError(err?.message ?? 'Unknown Error');
+          });
+      }
+      // todo: do a partial update of indexer data?
+      // see this commit for previous work done on this
     };
     subscriber.subscribeMessage(onDexUpdateMessage, {
       message: { action: 'NewDeposit' },
@@ -524,46 +538,48 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const onRouterUpdateMessage = function (event: MessageActionEvent) {
-      const {
-        TokenIn,
-        TokenOut,
-        NewReserve0,
-        NewReserve1,
-        PriceOfSwap,
-        FeeOfSwap,
-      } = event;
-      // skip NewSwap events that are not about individual swaps
-      // eg. the final NewSwap event of a MsgSwap action is the "overall" swap details
-      if (!PriceOfSwap) return;
+      const Creator = event['message.Creator'];
+      const Token0 = event['message.Token0'];
+      const Token1 = event['message.Token1'];
+      const TokenIn = event['message.TokenIn'];
+      const AmountIn = event['message.AmountIn'];
+      const AmountOut = event['message.AmountOut'];
+      const MinOut = event['message.MinOut'];
       if (
+        !Creator ||
         !TokenIn ||
-        !TokenOut ||
-        !PriceOfSwap ||
-        !FeeOfSwap ||
-        !NewReserve0 ||
-        !NewReserve1
+        !Token0 ||
+        !Token1 ||
+        !AmountIn ||
+        !AmountOut ||
+        !MinOut
       ) {
         setError('Invalid event response from server');
         return;
       } else {
         setError(undefined);
       }
-      setIndexerData((oldData) => {
-        // NewSwap is movement of existing ticks so the pair should already exist
-        const forward = !!oldData?.[getPairID(TokenIn, TokenOut)];
-        const reverse = !!oldData?.[getPairID(TokenOut, TokenIn)];
-        if (forward || reverse) {
-          return addTickData(oldData, {
-            Token0: forward ? TokenIn : TokenOut,
-            Token1: forward ? TokenOut : TokenIn,
-            Price: PriceOfSwap,
-            Fee: FeeOfSwap,
-            NewReserves0: NewReserve0,
-            NewReserves1: NewReserve1,
-          });
-        }
-        return oldData;
-      });
+
+      const forward = TokenIn === Token0;
+      const reverse = TokenIn === Token1;
+      if (!forward && !reverse) {
+        setError('Unknown error occurred. Incorrect tokens');
+        return;
+      }
+
+      // todo: update something without refetching?
+      // may not be possible or helpful
+      // bank balance update will be caught already by the bank event watcher
+      // it's too complicated to update indexer state with the event detail's
+
+      // fetch new indexer data as the trade would have caused changes in ticks
+      getFullData()
+        .then(function (res) {
+          setIndexerData(res);
+        })
+        .catch(function (err: Error) {
+          setError(err?.message ?? 'Unknown Error');
+        });
     };
     subscriber.subscribeMessage(onRouterUpdateMessage, {
       message: { action: 'NewSwap' },
@@ -638,11 +654,12 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
   const shares = useMemo(() => {
     // filter to specific tokens if asked for
     const shares = data?.shares.filter(
-      (share) => Number(share.shareAmount) > 0
+      (share) => Number(share.sharesOwned) > 0
     );
     if (tokens) {
       const [addressA, addressB] = tokens.map((token) => token.address);
-      return shares?.filter(({ token0: address0, token1: address1 }) => {
+      return shares?.filter(({ pairId = '' }) => {
+        const [address0, address1] = pairId.split('/');
         return (
           (addressA === address0 && addressB === address1) ||
           (addressA === address1 && addressB === address0)
@@ -663,10 +680,9 @@ export function useIndexerPairData(
   tokenB?: TokenAddress
 ) {
   const { data: pairs, isValidating, error } = useIndexerData();
-  const [token0, token1] = [tokenA, tokenB].sort();
   const pair =
-    pairs && token0 && token1
-      ? pairs[getPairID(token0, token1)] || pairs[getPairID(token1, token0)]
+    pairs && tokenA && tokenB
+      ? pairs[getPairID(tokenA, tokenB)] || pairs[getPairID(tokenB, tokenA)]
       : undefined;
   return {
     data: pair,
@@ -689,8 +705,8 @@ export function useFeeLiquidityMap(
 
     const ticks = Object.values(pair.ticks);
     // normalise the data with the sum of values
-    const totalLiquidity = ticks.reduce((result, poolTicks) => {
-      return result.plus((poolTicks[0] || poolTicks[1])?.totalShares || 0);
+    const totalLiquidity = ticks.reduce((result, tickData) => {
+      return result.plus(tickData.totalShares || 0);
     }, new BigNumber(0));
 
     const feeTypeLiquidity = feeTypes.reduce<Record<FeeType['fee'], BigNumber>>(
@@ -701,16 +717,14 @@ export function useFeeLiquidityMap(
       {}
     );
 
-    return Object.values(pair.ticks).reduce<{ [feeTier: string]: BigNumber }>(
-      (result, poolTicks) => {
-        poolTicks.forEach((poolTick) => {
-          const feeString = poolTick?.fee.toString();
-          if (feeString && poolTick?.totalShares.isGreaterThan(0)) {
-            result[feeString] = result[feeString].plus(
-              poolTick.totalShares.dividedBy(totalLiquidity)
-            );
-          }
-        });
+    return ticks.reduce<{ [feeTier: string]: BigNumber }>(
+      (result, { fee, totalShares }) => {
+        if (totalShares.isGreaterThan(0)) {
+          const feeString = fee.toFixed();
+          result[feeString] = result[feeString].plus(
+            totalShares.dividedBy(totalLiquidity)
+          );
+        }
         return result;
       },
       feeTypeLiquidity

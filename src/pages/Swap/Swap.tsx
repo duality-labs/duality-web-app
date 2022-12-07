@@ -101,20 +101,22 @@ export default function Swap() {
           amountIn:
             getAmountInDenom(
               tokenA,
-              result.amountIn,
-              tokenA?.display,
+              // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+              result.amountIn.shiftedBy(18),
               tokenA?.display
             ) || '0',
           tokenIn: result.tokenIn,
-          tokenOut: result.tokenOut,
+          tokenA: result.tokenIn,
+          tokenB: result.tokenOut,
           minOut:
             getAmountInDenom(
               tokenB,
-              minOut,
-              tokenB?.display,
+              // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+              minOut.shiftedBy(18),
               tokenB?.display
             ) || '0',
           creator: address,
+          receiver: address,
         });
       }
     },
@@ -182,11 +184,11 @@ export default function Swap() {
     routerResult &&
     routerResult.priceIn?.isGreaterThan(0) &&
     routerResult.priceOut?.isGreaterThan(0)
-      ? new BigNumber(100).minus(
+      ? new BigNumber(
           new BigNumber(routerResult.priceOut)
             .dividedBy(new BigNumber(routerResult.priceIn))
             .multipliedBy(100)
-        )
+        ).minus(100)
       : undefined;
 
   const tradeCard = (

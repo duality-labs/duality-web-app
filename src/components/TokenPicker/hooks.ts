@@ -14,6 +14,11 @@ const {
 export interface Token extends Asset {
   chain: Chain;
 }
+
+interface AddressableToken extends Token {
+  address: string; // only accept routeable tokens in lists
+}
+
 type TokenList = Array<Token>;
 
 const dualityChain = {
@@ -93,6 +98,15 @@ function getTokens(condition: (chain: Chain) => boolean) {
       .concat([dualityMainToken, dualityStakeToken])
   );
 }
+
+export const addressableTokenMap = getTokens(Boolean).reduce<{
+  [tickAddress: string]: AddressableToken;
+}>((result, asset) => {
+  if (asset.address) {
+    result[asset.address] = asset as AddressableToken;
+  }
+  return result;
+}, {});
 
 const tokenListCache: {
   [key: string]: TokenList;

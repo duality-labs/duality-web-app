@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
-import { Log } from '@cosmjs/stargate/build/logs';
 import BigNumber from 'bignumber.js';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
@@ -15,9 +14,7 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
-
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
-const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
+import { readEvents } from '../../lib/web3/utils/txs';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -35,7 +32,8 @@ export function useDeposit(): [
     tokenA: Token | undefined,
     tokenB: Token | undefined,
     fee: BigNumber | undefined,
-    userTicks: TickGroup
+    userTicks: TickGroup,
+    invertedOrder?: boolean
   ) => Promise<void>
 ] {
   const [data, setData] = useState<SendDepositResponse | undefined>(undefined);
@@ -48,7 +46,8 @@ export function useDeposit(): [
       tokenA: Token | undefined,
       tokenB: Token | undefined,
       fee: BigNumber | undefined,
-      userTicks: TickGroup
+      userTicks: TickGroup,
+      invertedOrder = false
     ) {
       try {
         // check for correct inputs
@@ -64,21 +63,21 @@ export function useDeposit(): [
         }
         // check all user ticks and filter to non-zero ticks
         const filteredUserTicks = userTicks.filter(
-          ([price, amount0, amount1]) => {
+          ({ price, reserveA, reserveB }) => {
             if (!price || price.isLessThan(0)) {
               throw new Error('Price not set');
             }
             if (
-              !amount0 ||
-              !amount1 ||
-              amount0.isNaN() ||
-              amount1.isNaN() ||
-              amount0.isLessThan(0) ||
-              amount1.isLessThan(0)
+              !reserveA ||
+              !reserveB ||
+              reserveA.isNaN() ||
+              reserveB.isNaN() ||
+              reserveA.isLessThan(0) ||
+              reserveB.isLessThan(0)
             ) {
               throw new Error('Amounts not set');
             }
-            return amount0.isGreaterThan(0) || amount1.isGreaterThan(0);
+            return reserveA.isGreaterThan(0) || reserveB.isGreaterThan(0);
           }
         );
 
@@ -109,34 +108,38 @@ export function useDeposit(): [
         try {
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
-          const res = await client.signAndBroadcast(
-            filteredUserTicks.flatMap(([price, amount0, amount1]) =>
-              tokenA.address && tokenB.address
-                ? client.msgSingleDeposit({
-                    creator: web3Address,
-                    token0: tokenA.address,
-                    token1: tokenB.address,
-                    receiver: web3Address,
-                    price: price.toFixed(maxFractionDigits),
-                    fee: fee.toFixed(maxFractionDigits),
-                    amounts0:
-                      getAmountInDenom(
-                        tokenA,
-                        amount0,
-                        tokenA.display,
-                        tokenA.display
-                      ) || '0',
-                    amounts1:
-                      getAmountInDenom(
-                        tokenB,
-                        amount1,
-                        tokenB.display,
-                        tokenB.display
-                      ) || '0',
-                  })
-                : []
-            )
-          );
+          const res = await client.signAndBroadcast([
+            client.msgDeposit({
+              creator: web3Address,
+              tokenA: tokenA.address,
+              tokenB: tokenB.address,
+              receiver: web3Address,
+              // tick indexes must be in the form of "token0/1 index"
+              // not "tokenA/B" index, so inverted order indexes should be reversed
+              tickIndexes: filteredUserTicks.map(
+                (tick) => tick.tickIndex * (!invertedOrder ? -1 : 1)
+              ),
+              feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
+              amountsA: filteredUserTicks.map(
+                ({ reserveA }) =>
+                  getAmountInDenom(
+                    tokenA,
+                    // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                    reserveA.shiftedBy(18),
+                    tokenA.display
+                  ) || '0'
+              ),
+              amountsB: filteredUserTicks.map(
+                ({ reserveB }) =>
+                  getAmountInDenom(
+                    tokenB,
+                    // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                    reserveB.shiftedBy(18),
+                    tokenB.display
+                  ) || '0'
+              ),
+            }),
+          ]);
 
           // check for response
           if (!res) {
@@ -153,62 +156,62 @@ export function useDeposit(): [
             throw error;
           }
 
-          const foundLogs: Log[] = JSON.parse(res.rawLog || '[]');
-          const foundEvents = foundLogs.flatMap((log) => log.events);
-          // todo: use parseCoins from '@cosmjs/launchpad' here
-          // to simplify the parsing of the response
+          // calculate received tokens
+          const foundEvents = readEvents(res.rawLog) || [];
           const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
             receivedTokenA: BigNumber;
             receivedTokenB: BigNumber;
           }>(
             (acc, event) => {
-              if (event.type === 'transfer') {
-                event.attributes.forEach((attr, index, attrs) => {
-                  // if this attribute is the amount
-                  if (index > 0 && attr.key === 'amount') {
-                    // and the previous attribute was the sender
-                    const previousAttr = attrs[index - 1];
-                    if (
-                      previousAttr?.key === 'sender' &&
-                      previousAttr?.value === web3.address
-                    ) {
-                      // read the matching tokens into their values
-                      const attrDenom = attr.value.replace(/[\d.]+/g, '');
-                      const isDenomA = !!tokenA.denom_units.find(
-                        ({ denom = '', aliases = [] }) =>
-                          [denom, ...aliases].includes(attrDenom)
-                      );
-                      if (isDenomA) {
-                        acc.receivedTokenA = new BigNumber(
-                          acc.receivedTokenA || 0
-                        ).plus(
-                          getAmountInDenom(
-                            tokenA,
-                            parseFloat(attr.value.replace(attrDenom, '')),
-                            attrDenom,
-                            tokenA.display
-                          ) || '0'
-                        );
-                      }
-                      const isDenomB = !!tokenB.denom_units.find(
-                        ({ denom = '', aliases = [] }) =>
-                          [denom, ...aliases].includes(attrDenom)
-                      );
-                      if (isDenomB) {
-                        acc.receivedTokenB = new BigNumber(
-                          acc.receivedTokenB || 0
-                        ).plus(
-                          getAmountInDenom(
-                            tokenB,
-                            parseFloat(attr.value.replace(attrDenom, '')),
-                            attrDenom,
-                            tokenB.display
-                          ) || '0'
-                        );
-                      }
-                    }
-                  }
-                });
+              // find and process each dex NewDeposit message created by this user
+              if (
+                event.type === 'message' &&
+                event.attributes.find(
+                  ({ key, value }) => key === 'module' && value === 'dex'
+                ) &&
+                event.attributes.find(
+                  ({ key, value }) => key === 'action' && value === 'NewDeposit'
+                ) &&
+                event.attributes.find(
+                  ({ key, value }) => key === 'sender' && value === web3.address
+                )
+              ) {
+                // collect into more usable format for parsing
+                const attributes = event.attributes.reduce(
+                  (acc, { key, value }) => ({ ...acc, [key]: value }),
+                  {}
+                ) as {
+                  TickIndex: string;
+                  FeeIndex: string;
+                  Token0: string;
+                  Token1: string;
+                  OldReserves0: string;
+                  OldReserves1: string;
+                  NewReserves0: string;
+                  NewReserves1: string;
+                };
+
+                // accumulate share values
+                // ('NewReserves' is the difference between previous and next share value)
+                const shareIncrease0 = new BigNumber(
+                  attributes['NewReserves0']
+                );
+                const shareIncrease1 = new BigNumber(
+                  attributes['NewReserves1']
+                );
+                if (
+                  tokenA.address === attributes['Token0'] &&
+                  tokenB.address === attributes['Token1']
+                ) {
+                  acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease0);
+                  acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease1);
+                } else if (
+                  tokenA.address === attributes['Token1'] &&
+                  tokenB.address === attributes['Token0']
+                ) {
+                  acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease1);
+                  acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease0);
+                }
               }
               return acc;
             },
@@ -218,6 +221,7 @@ export function useDeposit(): [
             }
           );
 
+          // check no shares exception
           if (receivedTokenA.isZero() && receivedTokenB.isZero()) {
             const error: Error & { response?: DeliverTxResponse } = new Error(
               'No new shares received'
@@ -230,13 +234,32 @@ export function useDeposit(): [
                 'The transaction was successful but no new shares were created',
             });
           }
+          // set success
+          else if (
+            receivedTokenA.isGreaterThanOrEqualTo(0) &&
+            receivedTokenB.isGreaterThanOrEqualTo(0)
+          ) {
+            // set new information
+            setData({
+              gasUsed: gasUsed.toString(),
+              receivedTokenA: receivedTokenA.toFixed(),
+              receivedTokenB: receivedTokenB.toFixed(),
+            });
+          }
+          // catch other exceptions
+          else {
+            const error: Error & { response?: DeliverTxResponse } = new Error(
+              'Deposit issue'
+            );
+            error.response = res;
+            checkMsgErrorToast(error, {
+              id,
+              title: 'An unexpected error occured',
+              description:
+                'The transaction was successful but we could not determine the number of new shares created',
+            });
+          }
 
-          // set new information
-          setData({
-            gasUsed: gasUsed.toString(),
-            receivedTokenA: receivedTokenA.toFixed(),
-            receivedTokenB: receivedTokenB.toFixed(),
-          });
           setIsValidating(false);
         } catch (e) {
           // catch transaction errors

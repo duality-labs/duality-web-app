@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
+
 import { TickInfo, useIndexerPairData } from '../../lib/web3/indexerProvider';
-import { TickGroup } from './LiquiditySelector';
+import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 // current price of A to B is given in price B/A
 // eg. price of ATOM in USDC is given in USDC/ATOM units
@@ -9,136 +10,101 @@ export default function useCurrentPriceFromTicks(
   tokenA?: string,
   tokenB?: string
 ): BigNumber | undefined {
-  const { data: { ticks, token0, token1 } = {} } = useIndexerPairData(
+  const midIndex = useMidTickIndexFromTicks(tokenA, tokenB);
+  return useMemo(() => {
+    return midIndex !== undefined
+      ? tickIndexToPrice(new BigNumber(midIndex))
+      : undefined;
+  }, [midIndex]);
+}
+
+function useMidTickIndexFromTicks(
+  tokenA?: string,
+  tokenB?: string
+): number | undefined {
+  const { data: { ticks = [], token0, token1 } = {} } = useIndexerPairData(
     tokenA,
     tokenB
   );
 
+  // skip if there are no ticks to gain insight from
+  if (!ticks.length) {
+    return;
+  }
+
   const forward = tokenA === token0 && tokenB === token1;
   const reverse = tokenA === token1 && tokenB === token0;
-
-  // collect tick information in a more useable form
-  const sortedTicks: TickGroup = useMemo(() => {
-    return Object.values(ticks || [])
-      .map((poolTicks) => poolTicks[0] || poolTicks[1]) // read tick if it exists on either pool queue side
-      .filter((tick): tick is TickInfo => {
-        // ensure ticks contain liquidity (ignore drained pools)
-        return (
-          tick?.reserve0.isGreaterThan(0) ||
-          tick?.reserve1.isGreaterThan(0) ||
-          false
-        );
-      }) // filter to relevant ticks
-      .map((tick) => ({
-        ...tick,
-        virtualPrice: tick.price.multipliedBy(tick.fee.plus(1)),
-      })) // add virtual price
-      .sort((tick0, tick1) => tick0.virtualPrice.comparedTo(tick1.virtualPrice)) // sort by virtual price
-      .map((tick) => [tick.virtualPrice, tick.reserve0, tick.reserve1]); // use virtual price always here
-  }, [ticks]);
-
-  // estimate current price from ticks
-  const currentPriceFromTicks = useMemo(() => {
-    if (!sortedTicks.length) return;
-    const remainingTicks = sortedTicks.slice();
-    const highTokenValueIndex = 2;
-    const lowTokenValueIndex = 1;
-    let highestLowTokenTickIndex = findLastIndex(remainingTicks, (tick) =>
-      tick[lowTokenValueIndex].isGreaterThan(0)
-    );
-    let lowestHighTokenTickIndex = remainingTicks.findIndex((tick) =>
-      tick[highTokenValueIndex].isGreaterThan(0)
-    );
-    do {
-      const highestLowTokenTick = remainingTicks[highestLowTokenTickIndex];
-      const lowestHighTokenTick = remainingTicks[lowestHighTokenTickIndex];
-      if (highestLowTokenTick && lowestHighTokenTick) {
-        // check if prices are resolved and current price can be plain average of these values
-        const comparison = lowestHighTokenTick[0].comparedTo(
-          highestLowTokenTick[0]
-        );
-        // return found middle point
-        if (comparison === 0) {
-          return lowestHighTokenTick[0];
-        }
-        // return average between middle points
-        else if (comparison === 1) {
-          return lowestHighTokenTick[0]
-            .plus(highestLowTokenTick[0])
-            .dividedBy(2);
-        }
-        // continue looping through but with one less tick:
-        // attempt to remove the most "out of place" looking tick as an outlier
-        else {
-          const highestLowTokenTickValue = highestLowTokenTick[
-            lowTokenValueIndex
-          ].multipliedBy(highestLowTokenTick[0]);
-          const lowestHighTokenTickValue = lowestHighTokenTick[
-            highTokenValueIndex
-          ].multipliedBy(lowestHighTokenTick[0]);
-          if (highestLowTokenTickValue.isLessThan(lowestHighTokenTickValue)) {
-            remainingTicks.splice(highestLowTokenTickIndex, 1);
-            highestLowTokenTickIndex = findLastIndex(remainingTicks, (tick) =>
-              tick[lowTokenValueIndex].isGreaterThan(0)
-            ); // todo: search from last known index here
-            lowestHighTokenTickIndex = remainingTicks.indexOf(
-              lowestHighTokenTick,
-              lowestHighTokenTickIndex
-            );
-          } else {
-            remainingTicks.splice(lowestHighTokenTickIndex, 1);
-            lowestHighTokenTickIndex = remainingTicks.findIndex((tick) =>
-              tick[highTokenValueIndex].isGreaterThan(0)
-            ); // todo: search from last known index here
-            highestLowTokenTickIndex = remainingTicks.lastIndexOf(
-              highestLowTokenTick,
-              highestLowTokenTickIndex
-            );
-          }
-        }
-      }
-      // check for single-sided liquidity state
-      else if (highestLowTokenTick) {
-        return highestLowTokenTick[0];
-      }
-      // check for single-sided liquidity state
-      else if (lowestHighTokenTick) {
-        return lowestHighTokenTick[0];
-      }
-      // else there is no liquidity
-      else {
-        return undefined;
-      }
-    } while (remainingTicks.length > 0);
-  }, [sortedTicks]);
 
   // don't know how you got here
   if (!forward && !reverse) {
     return;
   }
 
-  return currentPriceFromTicks
-    ? forward
-      ? currentPriceFromTicks
-      : new BigNumber(1).dividedBy(currentPriceFromTicks)
-    : undefined;
-}
+  const sortedTicks = ticks
+    // ignore irrelevant ticks
+    .filter((tick) => !tick.reserve0.isZero() || !tick.reserve1.isZero())
+    // ensure ticks are sorted
+    .sort((a, b) => a.tickIndex.comparedTo(b.tickIndex));
 
-/**
- * Returns the index of the last element in the array where predicate is true, and -1
- * otherwise.
- * @param array The source array to search in
- * @param predicate find calls predicate once for each element of the array, in descending
- * order, until it finds one where predicate returns true. If such an element is found,
- * findLastIndex immediately returns that element index. Otherwise, findLastIndex returns -1.
- */
-export function findLastIndex<T>(
-  array: Array<T>,
-  predicate: (value: T, index: number, obj: T[]) => boolean
-): number {
-  let l = array.length;
-  while (l--) {
-    if (predicate(array[l], l, array)) return l;
+  const highestTick0 = sortedTicks.reduceRight<TickInfo | undefined>(
+    (result, tick) => {
+      if (result === undefined && tick.reserve0.isGreaterThan(0)) {
+        return tick;
+      }
+      return result;
+    },
+    undefined
+  );
+
+  const lowestTick1 = sortedTicks.reduce<TickInfo | undefined>(
+    (result, tick) => {
+      if (result === undefined && tick.reserve1.isGreaterThan(0)) {
+        return tick;
+      }
+      return result;
+    },
+    undefined
+  );
+
+  const midTickIndex =
+    highestTick0 && lowestTick1
+      ? // calculate mid point
+        getMidIndex(highestTick0, lowestTick1)
+      : // or return only found side of liquidity
+        highestTick0?.tickIndex ?? lowestTick1?.tickIndex;
+
+  return (reverse ? midTickIndex?.negated() : midTickIndex)?.toNumber();
+
+  function getMidIndex(
+    highestTick0: TickInfo,
+    lowestTick1: TickInfo
+  ): BigNumber {
+    // if they are the same tick, no need to interpolate
+    if (highestTick0.tickIndex === lowestTick1.tickIndex) {
+      return highestTick0.tickIndex;
+    }
+    // linearly interpolate an answer
+    // get weights of each side in terms of token0 units
+    const highestTick0Value = sortedTicks
+      .filter((tick) => tick.tickIndex.isEqualTo(highestTick0.tickIndex))
+      .reduce((result, tick) => {
+        return result.plus(tick.reserve0);
+      }, new BigNumber(0))
+      .dividedBy(Math.pow(1.0001, highestTick0.tickIndex.toNumber()));
+    const lowestTick1Value = sortedTicks
+      .filter((tick) => tick.tickIndex.isEqualTo(lowestTick1.tickIndex))
+      .reduce((result, tick) => {
+        return result.plus(tick.reserve1);
+      }, new BigNumber(0))
+      .multipliedBy(Math.pow(1.0001, lowestTick1.tickIndex.toNumber()));
+    // calculate the mid point
+    const linearPercentage = lowestTick1Value.dividedBy(
+      highestTick0Value.plus(lowestTick1Value)
+    );
+    return highestTick0.tickIndex.plus(
+      linearPercentage.multipliedBy(
+        lowestTick1.tickIndex.minus(highestTick0.tickIndex)
+      )
+    );
   }
-  return -1;
 }
