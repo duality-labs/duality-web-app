@@ -103,12 +103,17 @@ export function checkMsgErrorToast(
   { id, title, description, descriptionLink }: ToastOptions = {}
 ) {
   const { transactionHash } = err?.response || {};
+  const transactionLink = `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`;
+  // eslint-disable-next-line no-console
+  console.error(
+    err,
+    err?.response?.rawLog || '[no raw log]',
+    `See transaction: ${transactionLink}`
+  );
   return toast.error(title || 'Transaction Failed', {
     id,
     description: description || 'Something went wrong, please try again',
-    descriptionLink:
-      descriptionLink ||
-      `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
+    descriptionLink: descriptionLink || transactionLink,
     icon: '🤔',
     duration: Infinity,
     dismissable: true,
