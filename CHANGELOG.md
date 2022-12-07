@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.61](https://github.com/duality-labs/duality-web-app/compare/v0.1.60...v0.1.61) (2022-12-07)
+
+
+### Features
+
+* filter MyLiquidity ticks to each fee tier ([#218](https://github.com/duality-labs/duality-web-app/issues/218)) ([8311dc1](https://github.com/duality-labs/duality-web-app/commit/8311dc18d36ee48d2c721cf3e8c9e8ccfc55dac7))
+
 ## [0.1.60](https://github.com/duality-labs/duality-web-app/compare/v0.1.59...v0.1.60) (2022-12-07)
 
 
