@@ -367,8 +367,6 @@ function ShareValuesPage({
 }
 
 // set as constant to avoid unwanted hook effects
-const rangeMin = '';
-const rangeMax = '';
 const setRangeMin = () => undefined;
 const setRangeMax = () => undefined;
 
@@ -411,6 +409,40 @@ function LiquidityDetailPage({
   const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
     return currentPriceFromTicks0to1?.isLessThan(1) ?? false;
   });
+
+  // calculate the graph extent based on the unfiltered lowest and highest tick prices
+  const [minPrice0to1, maxPrice0to1] = useMemo<
+    [BigNumber | undefined, BigNumber | undefined]
+  >(() => {
+    if (ticks) {
+      const [minPrice0to1, maxPrice0to1] = ticks.reduce<
+        [BigNumber | undefined, BigNumber | undefined]
+      >(
+        ([min, max], tick) => {
+          return [
+            !min || tick.price.isLessThan(min) ? tick.price : min,
+            !max || tick.price.isGreaterThan(max) ? tick.price : max,
+          ];
+        },
+        [undefined, undefined]
+      );
+      return [minPrice0to1, maxPrice0to1];
+    }
+    return [undefined, undefined];
+  }, [ticks]);
+
+  const [minPrice, maxPrice] = useMemo<[BigNumber, BigNumber] | []>(() => {
+    return minPrice0to1 && maxPrice0to1
+      ? [
+          invertedTokenOrder
+            ? new BigNumber(1).dividedBy(maxPrice0to1)
+            : minPrice0to1,
+          invertedTokenOrder
+            ? new BigNumber(1).dividedBy(minPrice0to1)
+            : maxPrice0to1,
+        ]
+      : [];
+  }, [minPrice0to1, maxPrice0to1, invertedTokenOrder]);
 
   const currentPriceFromTicks = useMemo(() => {
     return invertedTokenOrder
@@ -464,8 +496,23 @@ function LiquidityDetailPage({
 
   const [feeTier, setFeeTier] = useState<number>();
 
+  const filteredShares = useMemo(() => {
+    if (feeTier) {
+      const feeIndex = feeTypes.findIndex((feeType) => feeType.fee === feeTier);
+      return feeIndex >= 0
+        ? shares.filter(
+            (share): share is TickShareValue => share.feeIndex === feeIndex
+          )
+        : [];
+    }
+    // don't filter shares if no fee tier was defined
+    else {
+      return shares;
+    }
+  }, [shares, feeTier]);
+
   const sortedShares = useMemo(() => {
-    return shares.sort((a, b) => {
+    return filteredShares.sort((a, b) => {
       // ascending by fee tier and then ascending by price
       return (
         a.feeIndex - b.feeIndex ||
@@ -474,7 +521,7 @@ function LiquidityDetailPage({
           : a.tick0.price.comparedTo(b.tick0.price))
       );
     });
-  }, [shares, invertedTokenOrder]);
+  }, [filteredShares, invertedTokenOrder]);
 
   const userTicks = useMemo<Array<Tick>>(() => {
     const forward = !invertedTokenOrder;
@@ -749,14 +796,13 @@ function LiquidityDetailPage({
           },
           [editingType, values, userTicks]
         )}
-        rangeMin={rangeMin}
-        rangeMax={rangeMax}
+        rangeMin={minPrice?.toFixed() || ''}
+        rangeMax={maxPrice?.toFixed() || ''}
         setRangeMin={setRangeMin}
         setRangeMax={setRangeMax}
         swapAll={swapAll}
         canMoveUp
         canMoveDown
-        viewOnlyUserTicks
         submitButtonText={submitButtonSettings[editingType].text}
         submitButtonVariant={submitButtonSettings[editingType].variant}
       />
@@ -908,7 +954,7 @@ function LiquidityDetailPage({
           const tickIndex = invertedTokenOrder
             ? tickDiff.tickIndex * -1
             : tickDiff.tickIndex;
-          const share = shares.find((share) => {
+          const share = filteredShares.find((share) => {
             return share.share.tickIndex === `${tickIndex}`;
           });
           if (!share) {
@@ -931,7 +977,13 @@ function LiquidityDetailPage({
 
       await sendEditRequest(sharesDiff);
     },
-    [shares, invertedTokenOrder, editedUserTicks, userTicks, sendEditRequest]
+    [
+      filteredShares,
+      invertedTokenOrder,
+      editedUserTicks,
+      userTicks,
+      sendEditRequest,
+    ]
   );
 
   return (

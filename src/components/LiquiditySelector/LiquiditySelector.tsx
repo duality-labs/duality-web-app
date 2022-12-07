@@ -37,7 +37,6 @@ export interface LiquiditySelectorProps {
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   canMoveX?: boolean;
-  viewOnlyUserTicks?: boolean;
   oneSidedLiquidity?: boolean;
 }
 
@@ -101,7 +100,6 @@ export default function LiquiditySelector({
   canMoveUp,
   canMoveDown,
   canMoveX,
-  viewOnlyUserTicks = false,
   oneSidedLiquidity = false,
 }: LiquiditySelectorProps) {
   // translate ticks from token0/1 to tokenA/B
@@ -345,12 +343,6 @@ export default function LiquiditySelector({
       },
       undefined
     );
-    // if focusing on just the current tick price range
-    if (viewOnlyUserTicks && minUserTickPrice && maxUserTickPrice) {
-      setGraphStart(minUserTickPrice.multipliedBy(0.9));
-      setGraphEnd(maxUserTickPrice.dividedBy(0.9));
-      return;
-    }
     const allValues = [
       Number(rangeMin),
       Number(rangeMax),
@@ -373,7 +365,6 @@ export default function LiquiditySelector({
     rangeMin,
     rangeMax,
     userTicks,
-    viewOnlyUserTicks,
   ]);
 
   // calculate histogram values
