@@ -464,8 +464,23 @@ function LiquidityDetailPage({
 
   const [feeTier, setFeeTier] = useState<number>();
 
+  const filteredShares = useMemo(() => {
+    if (feeTier) {
+      const feeIndex = feeTypes.findIndex((feeType) => feeType.fee === feeTier);
+      return feeIndex >= 0
+        ? shares.filter(
+            (share): share is TickShareValue => share.feeIndex === feeIndex
+          )
+        : [];
+    }
+    // don't filter shares if no fee tier was defined
+    else {
+      return shares;
+    }
+  }, [shares, feeTier]);
+
   const sortedShares = useMemo(() => {
-    return shares.sort((a, b) => {
+    return filteredShares.sort((a, b) => {
       // ascending by fee tier and then ascending by price
       return (
         a.feeIndex - b.feeIndex ||
@@ -474,7 +489,7 @@ function LiquidityDetailPage({
           : a.tick0.price.comparedTo(b.tick0.price))
       );
     });
-  }, [shares, invertedTokenOrder]);
+  }, [filteredShares, invertedTokenOrder]);
 
   const userTicks = useMemo<Array<Tick>>(() => {
     const forward = !invertedTokenOrder;
@@ -908,7 +923,7 @@ function LiquidityDetailPage({
           const tickIndex = invertedTokenOrder
             ? tickDiff.tickIndex * -1
             : tickDiff.tickIndex;
-          const share = shares.find((share) => {
+          const share = filteredShares.find((share) => {
             return share.share.tickIndex === `${tickIndex}`;
           });
           if (!share) {
@@ -931,7 +946,13 @@ function LiquidityDetailPage({
 
       await sendEditRequest(sharesDiff);
     },
-    [shares, invertedTokenOrder, editedUserTicks, userTicks, sendEditRequest]
+    [
+      filteredShares,
+      invertedTokenOrder,
+      editedUserTicks,
+      userTicks,
+      sendEditRequest,
+    ]
   );
 
   return (
