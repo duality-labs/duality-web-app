@@ -1,6 +1,6 @@
 {
   "name": "duality-webapp",
-  "version": "0.1.64",
+  "version": "0.1.65",
   "private": true,
   "scripts": {
     "start": "react-scripts start",

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.65](https://github.com/duality-labs/duality-web-app/compare/v0.1.64...v0.1.65) (2022-12-07)
+
+
+### Features
+
+* Add Tx errors to console for dev debugging help ([#222](https://github.com/duality-labs/duality-web-app/issues/222)) ([e344cdf](https://github.com/duality-labs/duality-web-app/commit/e344cdf95985bab125647e6af7e6e5c9c17d2d8e))
+
 ## [0.1.64](https://github.com/duality-labs/duality-web-app/compare/v0.1.63...v0.1.64) (2022-12-07)
 
 
