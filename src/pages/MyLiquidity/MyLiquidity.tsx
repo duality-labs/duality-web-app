@@ -80,9 +80,9 @@ function matchTokenDenom(denom: string) {
 // this is a function that exists in the backend
 // but is not easily queried from here
 // perhaps the backend could return these values on each Share object
-function getVirtualTickIndexes(
-  tickIndex: string | undefined,
-  feeIndex: string | undefined
+export function getVirtualTickIndexes(
+  tickIndex: number | string | undefined,
+  feeIndex: number | string | undefined
 ): [number, number] | [] {
   const feePoints = feeTypes[Number(feeIndex)].fee * 10000;
   const middleIndex = Number(tickIndex);

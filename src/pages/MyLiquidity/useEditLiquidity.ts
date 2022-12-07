@@ -72,6 +72,25 @@ export function useEditLiquidity(): [
         const id = `${Date.now()}.${Math.random}`;
         createLoadingToast({ id, description: 'Editing Liquidity...' });
 
+        const [depositCount, withdrawCount] = sharesDiff.reduce<
+          [number, number]
+        >(
+          ([depositCount, withdrawCount], shareDiff) => {
+            return [
+              depositCount +
+                (shareDiff.tickDiff0.isGreaterThan(0) ? 1 : 0) +
+                (shareDiff.tickDiff1.isGreaterThan(0) ? 1 : 0),
+              withdrawCount +
+                (shareDiff.tickDiff0.isLessThan(0) ? 1 : 0) +
+                (shareDiff.tickDiff1.isLessThan(0) ? 1 : 0),
+            ];
+          },
+          [0, 0]
+        );
+
+        const gasEstimate =
+          40000 + depositCount * 80000 + withdrawCount * 80000;
+
         // wrap transaction logic
         try {
           // add each tick message into a signed broadcast
@@ -184,7 +203,15 @@ export function useEditLiquidity(): [
                     ]
                   : [];
               }
-            )
+            ),
+            {
+              fee: {
+                gas: gasEstimate.toFixed(0),
+                amount: [
+                  { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
+                ],
+              },
+            }
           );
 
           // check for response

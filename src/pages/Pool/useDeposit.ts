@@ -15,6 +15,8 @@ import {
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { readEvents } from '../../lib/web3/utils/txs';
+import { getPairID, useIndexerData } from '../../lib/web3/indexerProvider';
+import { getVirtualTickIndexes } from '../MyLiquidity/MyLiquidity';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -36,6 +38,9 @@ export function useDeposit(): [
     invertedOrder?: boolean
   ) => Promise<void>
 ] {
+  // get previous ticks context
+  const { data: pairs } = useIndexerData();
+
   const [data, setData] = useState<SendDepositResponse | undefined>(undefined);
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string>();
@@ -61,6 +66,7 @@ export function useDeposit(): [
         if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
           throw new Error('Fee not set');
         }
+
         // check all user ticks and filter to non-zero ticks
         // also compbine any equivalent deposits into the same Msg
         const filteredUserTicks = userTicks
@@ -127,6 +133,29 @@ export function useDeposit(): [
             `Token ${tokenB.symbol} has no address on the Duality chain`
           );
         }
+        const forward = pairs?.[getPairID(tokenA.address, tokenB.address)];
+        const reverse = pairs?.[getPairID(tokenB.address, tokenA.address)];
+        const pairTicks = (forward || reverse)?.ticks;
+        const gasEstimate = filteredUserTicks.reduce((gasEstimate, tick) => {
+          const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
+            tick.tickIndex,
+            tick.feeIndex
+          );
+          const existingTick =
+            tickIndex0 && tickIndex1
+              ? pairTicks?.find((pairTick) => {
+                  return (
+                    pairTick.tickIndex.isEqualTo(tickIndex0) ||
+                    pairTick.tickIndex.isEqualTo(tickIndex1)
+                  );
+                })
+              : undefined;
+          // add 40000 for existing ticks
+          // add 40000 more for initializing a new tick
+          return gasEstimate + (existingTick ? 40000 : 80000);
+          // add 80000 base gas
+          // add 60000 for initilizing a new tick pair
+        }, 80000 + (!pairTicks ? 60000 : 0));
 
         const id = `${Date.now()}.${Math.random}`;
         createLoadingToast({ id, description: 'Adding Liquidity...' });
@@ -135,38 +164,48 @@ export function useDeposit(): [
         try {
           // add each tick message into a signed broadcast
           const client = await dexTxClient(web3.wallet);
-          const res = await client.signAndBroadcast([
-            client.msgDeposit({
-              creator: web3Address,
-              tokenA: tokenA.address,
-              tokenB: tokenB.address,
-              receiver: web3Address,
-              // tick indexes must be in the form of "token0/1 index"
-              // not "tokenA/B" index, so inverted order indexes should be reversed
-              tickIndexes: filteredUserTicks.map(
-                (tick) => tick.tickIndex * (!invertedOrder ? -1 : 1)
-              ),
-              feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
-              amountsA: filteredUserTicks.map(
-                ({ reserveA }) =>
-                  getAmountInDenom(
-                    tokenA,
-                    // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                    reserveA.shiftedBy(18),
-                    tokenA.display
-                  ) || '0'
-              ),
-              amountsB: filteredUserTicks.map(
-                ({ reserveB }) =>
-                  getAmountInDenom(
-                    tokenB,
-                    // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                    reserveB.shiftedBy(18),
-                    tokenB.display
-                  ) || '0'
-              ),
-            }),
-          ]);
+          const res = await client.signAndBroadcast(
+            [
+              client.msgDeposit({
+                creator: web3Address,
+                tokenA: tokenA.address,
+                tokenB: tokenB.address,
+                receiver: web3Address,
+                // tick indexes must be in the form of "token0/1 index"
+                // not "tokenA/B" index, so inverted order indexes should be reversed
+                tickIndexes: filteredUserTicks.map(
+                  (tick) => tick.tickIndex * (!invertedOrder ? -1 : 1)
+                ),
+                feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
+                amountsA: filteredUserTicks.map(
+                  ({ reserveA }) =>
+                    getAmountInDenom(
+                      tokenA,
+                      // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                      reserveA.shiftedBy(18),
+                      tokenA.display
+                    ) || '0'
+                ),
+                amountsB: filteredUserTicks.map(
+                  ({ reserveB }) =>
+                    getAmountInDenom(
+                      tokenB,
+                      // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                      reserveB.shiftedBy(18),
+                      tokenB.display
+                    ) || '0'
+                ),
+              }),
+            ],
+            {
+              fee: {
+                gas: gasEstimate.toFixed(0),
+                amount: [
+                  { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
+                ],
+              },
+            }
+          );
 
           // check for response
           if (!res) {
@@ -304,7 +343,7 @@ export function useDeposit(): [
         setError((e as Error)?.message || (e as string));
       }
     },
-    [web3.address, web3.wallet]
+    [web3.address, web3.wallet, pairs]
   );
 
   return [{ data, isValidating, error }, sendDepositRequest];

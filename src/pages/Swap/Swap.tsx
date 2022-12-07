@@ -14,7 +14,10 @@ import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { useBankBalance } from '../../lib/web3/indexerProvider';
+import {
+  useBankBalance,
+  useIndexerPairData,
+} from '../../lib/web3/indexerProvider';
 import { useHasPriceData } from '../../lib/tokenPrices';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
@@ -84,6 +87,8 @@ export default function Swap() {
 
   const [slippage, setSlippage] = useState(defaultSlippage);
 
+  const { data: pair } = useIndexerPairData(tokenA?.address, tokenB?.address);
+
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
@@ -97,30 +102,83 @@ export default function Swap() {
         // Cosmos requires tokens in integer format of smallest denomination
         // add slippage tolerance
         const minOut = result.amountOut.multipliedBy(1 - tolerance);
-        swapRequest({
-          amountIn:
-            getAmountInDenom(
-              tokenA,
-              // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-              result.amountIn.shiftedBy(18),
-              tokenA?.display
-            ) || '0',
-          tokenIn: result.tokenIn,
-          tokenA: result.tokenIn,
-          tokenB: result.tokenOut,
-          minOut:
-            getAmountInDenom(
-              tokenB,
-              // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-              minOut.shiftedBy(18),
-              tokenB?.display
-            ) || '0',
-          creator: address,
-          receiver: address,
-        });
+        // calculate gas estimate
+        const tickMin =
+          routerResult.tickIndexIn &&
+          routerResult.tickIndexOut &&
+          Math.min(
+            routerResult.tickIndexIn.negated().toNumber(),
+            routerResult.tickIndexOut.negated().toNumber()
+          );
+        const tickMax =
+          routerResult.tickIndexIn &&
+          routerResult.tickIndexOut &&
+          Math.max(
+            routerResult.tickIndexIn.negated().toNumber(),
+            routerResult.tickIndexOut.negated().toNumber()
+          );
+        const { ticks, token0 } = pair || {};
+        const ticksPassed =
+          (tickMin !== undefined &&
+            tickMax !== undefined &&
+            ticks?.filter((tick) => {
+              return (
+                tick.tickIndex.isGreaterThanOrEqualTo(tickMin) &&
+                tick.tickIndex.isLessThanOrEqualTo(tickMax)
+              );
+            })) ||
+          [];
+        const forward = result.tokenIn === token0;
+        const ticksUsed =
+          ticksPassed?.filter(
+            forward
+              ? (tick) => !tick.reserve1.isZero()
+              : (tick) => !tick.reserve0.isZero()
+          ).length || 0;
+        const ticksUnused =
+          new Set<number>([
+            ...(ticksPassed?.map((tick) => tick.tickIndex.toNumber()) || []),
+          ]).size - ticksUsed;
+        const gasEstimate = ticksUsed
+          ? // 120000 base
+            120000 +
+            // add 80000 if multiple ticks need to be traversed
+            (ticksUsed > 1 ? 80000 : 0) +
+            // add 700000 for each tick that we need to remove liquidity from
+            700000 * (ticksUsed - 1) +
+            // add 400000 for each tick we pass without drawing liquidity from
+            400000 * ticksUnused +
+            // add another 400000 for each reverse tick we pass without drawing liquidity from
+            (forward ? 0 : 400000 * ticksUnused)
+          : 0;
+
+        swapRequest(
+          {
+            amountIn:
+              getAmountInDenom(
+                tokenA,
+                // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                result.amountIn.shiftedBy(18),
+                tokenA?.display
+              ) || '0',
+            tokenIn: result.tokenIn,
+            tokenA: result.tokenIn,
+            tokenB: result.tokenOut,
+            minOut:
+              getAmountInDenom(
+                tokenB,
+                // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                minOut.shiftedBy(18),
+                tokenB?.display
+              ) || '0',
+            creator: address,
+            receiver: address,
+          },
+          gasEstimate
+        );
       }
     },
-    [address, routerResult, tokenA, tokenB, slippage, swapRequest]
+    [address, routerResult, pair, tokenA, tokenB, slippage, swapRequest]
   );
 
   const onValueAChanged = useCallback((newValue: string) => {
