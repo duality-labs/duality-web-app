@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.59](https://github.com/duality-labs/duality-web-app/compare/v0.1.58...v0.1.59) (2022-12-07)
+
+
+### Features
+
+* Group equivalent deposit ticks together in txs ([#213](https://github.com/duality-labs/duality-web-app/issues/213)) ([5ef711c](https://github.com/duality-labs/duality-web-app/commit/5ef711c0990148c009a9685b6b27af3ca2629e6b))
+
 ## [0.1.58](https://github.com/duality-labs/duality-web-app/compare/v0.1.57...v0.1.58) (2022-12-07)
 
 
