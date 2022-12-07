@@ -948,43 +948,32 @@ function TicksGroup({
   canMoveX?: boolean;
   className?: string;
 }) {
-  const tickANumbers = userTicks.flatMap(
-    (tick) => tick?.reserveA.toNumber() || []
+  // collect reserve height to calculate stats to use
+  const tickNumbers = userTicks.flatMap((tick) =>
+    [tick?.reserveA.toNumber(), tick?.reserveB.toNumber()].filter(
+      (reserve): reserve is number => Boolean(reserve)
+    )
   );
-  const tickBNumbers = userTicks.flatMap(
-    (tick) => tick?.reserveB.toNumber() || []
-  );
-  const backgroundTickANumbers = backgroundTicks.flatMap(
-    (tick) => tick?.reserveA.toNumber() || []
-  );
-  const backgroundTickBNumbers = backgroundTicks.flatMap(
-    (tick) => tick?.reserveB.toNumber() || []
+  const backgroundTickNumbers = backgroundTicks.flatMap((tick) =>
+    [tick?.reserveA.toNumber(), tick?.reserveB.toNumber()].filter(
+      (reserve): reserve is number => Boolean(reserve)
+    )
   );
 
   // find max cumulative value of either the current ticks or background ticks
-  const cumulativeTokenAValues: number = Math.max(
-    tickANumbers.reduce((acc, v) => acc + v, 0),
-    backgroundTickANumbers.reduce((acc, v) => acc + v, 0)
-  );
-  const cumulativeTokenBValues: number = Math.max(
-    tickBNumbers.reduce((acc, v) => acc + v, 0),
-    backgroundTickBNumbers.reduce((acc, v) => acc + v, 0)
+  const cumulativeTokenValues: number = Math.max(
+    tickNumbers.reduce((acc, v) => acc + v, 0),
+    backgroundTickNumbers.reduce((acc, v) => acc + v, 0)
   );
 
-  const maxAValue = Math.max(...tickANumbers, ...backgroundTickANumbers);
-  const maxBValue = Math.max(...tickBNumbers, ...backgroundTickBNumbers);
-  const minMaxHeight0 = getMinYHeight(backgroundTickANumbers.length);
-  const minMaxHeight1 = getMinYHeight(backgroundTickBNumbers.length);
+  const maxValue = Math.max(...tickNumbers, ...backgroundTickNumbers);
+  const minMaxHeight = getMinYHeight(backgroundTickNumbers.length);
 
   // add a scaling factor if the maximum tick is very short (scale up to minMaxHeight)
-  const scalingFactorA =
-    cumulativeTokenAValues && maxAValue / cumulativeTokenAValues > minMaxHeight0
+  const scalingFactor =
+    cumulativeTokenValues && maxValue / cumulativeTokenValues > minMaxHeight
       ? 0.925
-      : (0.925 / (maxAValue / cumulativeTokenAValues)) * minMaxHeight0;
-  const scalingFactorB =
-    cumulativeTokenBValues && maxBValue / cumulativeTokenBValues > minMaxHeight1
-      ? 0.925
-      : (0.925 / (maxBValue / cumulativeTokenBValues)) * minMaxHeight1;
+      : (0.925 / (maxValue / cumulativeTokenValues)) * minMaxHeight;
 
   const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
 
@@ -1131,30 +1120,27 @@ function TicksGroup({
         reserveB: backgroundTick.reserveB,
       };
       const { price, reserveA, reserveB } = tick;
-      const scalingFactor = background.reserveA.isGreaterThan(0)
-        ? scalingFactorA
-        : scalingFactorB;
       // todo: display cumulative value of both side of ticks, not just one side
       const totalValue =
         (reserveA.isGreaterThan(0)
-          ? cumulativeTokenAValues &&
+          ? cumulativeTokenValues &&
             reserveA
               .multipliedBy(scalingFactor)
-              .dividedBy(cumulativeTokenAValues)
-          : cumulativeTokenBValues &&
+              .dividedBy(cumulativeTokenValues)
+          : cumulativeTokenValues &&
             reserveB
               .multipliedBy(scalingFactor)
-              .dividedBy(cumulativeTokenBValues)) || new BigNumber(0);
+              .dividedBy(cumulativeTokenValues)) || new BigNumber(0);
       const backgroundValue =
         (background.reserveA.isGreaterThan(0)
-          ? cumulativeTokenAValues &&
+          ? cumulativeTokenValues &&
             background.reserveA
               .multipliedBy(scalingFactor)
-              .dividedBy(cumulativeTokenAValues)
-          : cumulativeTokenBValues &&
+              .dividedBy(cumulativeTokenValues)
+          : cumulativeTokenValues &&
             background.reserveB
               .multipliedBy(scalingFactor)
-              .dividedBy(cumulativeTokenBValues)) || new BigNumber(0);
+              .dividedBy(cumulativeTokenValues)) || new BigNumber(0);
 
       const minValue = totalValue.isLessThan(backgroundValue)
         ? totalValue
@@ -1381,5 +1367,5 @@ function Axis({
 }
 
 function getMinYHeight(tickCount: number): number {
-  return 1 / ((tickCount - 2) / 3 + 2) + 0.4;
+  return 1 / ((tickCount - 2) / 6 + 2) + 0.4;
 }
