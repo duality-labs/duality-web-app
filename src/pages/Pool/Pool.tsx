@@ -849,8 +849,13 @@ export default function Pool() {
               </div>
             </div>
             <div className="col chart-price">
-              <div className="hero-text my-4">
+              <div className="hero-text mt-4">
                 {currentPriceFromTicks?.toFixed(5) ?? '-'}
+              </div>
+              <div className="hero-texts mb-4">
+                {currentPriceFromTicks
+                  ? `${tokenB.display.toUpperCase()}/${tokenA.display.toUpperCase()}`
+                  : '-'}
               </div>
               <div>Current Price</div>
               <div className="mt-auto mb-4">
