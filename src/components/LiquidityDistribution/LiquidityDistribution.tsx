@@ -72,7 +72,7 @@ export default function LiquidityDistribution({
             <h3 className="h3 text-normal">Liquidity Distribution</h3>
             <span className="tokens-badge badge-default badge-large font-console">
               {tokenA?.symbol}
-              <span className="mx-2">-</span>
+              <span className="mx-2">/</span>
               {tokenB?.symbol}
             </span>
             <button type="button" className="icon-button" onClick={swapAll}>
@@ -125,7 +125,7 @@ export default function LiquidityDistribution({
           </div>
           <div className="hero-texts mb-4">
             {currentPriceFromTicks
-              ? `${tokenB.display.toUpperCase()}/${tokenA.display.toUpperCase()}`
+              ? `${tokenA.display.toUpperCase()}/${tokenB.display.toUpperCase()}`
               : '-'}
           </div>
           <div>Current Price</div>
