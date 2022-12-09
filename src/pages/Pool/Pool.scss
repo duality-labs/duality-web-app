@@ -270,7 +270,7 @@
 
     .autobalance-card {
       .autobalance-allocation {
-        font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+        font-family: font-family.$console;
         background-color: transparent;
         border: 0px none transparent;
         font-size: 1.5rem;

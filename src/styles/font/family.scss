@@ -2,7 +2,7 @@
 
 $default: 'DM Sans', 'Segoe UI', Helvetica, 'Droid Sans', Tahoma, Geneva,
   sans-serif;
-$console: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+$console: $default;
 
 * {
   font-family: $default;
