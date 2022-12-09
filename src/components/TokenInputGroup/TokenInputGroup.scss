@@ -71,6 +71,7 @@
   .token-group-input {
     & {
       font-family: font-family.$console;
+      font-weight: bold;
       background-color: transparent;
       border: 0px none transparent;
       font-size: font-size.$input;
