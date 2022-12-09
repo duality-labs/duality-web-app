@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.68](https://github.com/duality-labs/duality-web-app/compare/v0.1.67...v0.1.68) (2022-12-09)
+
+
+### Features
+
+* add google tag manager to support analytics scripts ([#234](https://github.com/duality-labs/duality-web-app/issues/234)) ([6aebaa1](https://github.com/duality-labs/duality-web-app/commit/6aebaa1fe818c667fbf00980ba8c562afee98f18))
+
 ## [0.1.67](https://github.com/duality-labs/duality-web-app/compare/v0.1.66...v0.1.67) (2022-12-09)
 
 
