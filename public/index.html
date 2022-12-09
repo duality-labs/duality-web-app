@@ -59,7 +59,13 @@
         j.async = true;
         j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
         f.parentNode.insertBefore(j, f);
-      })(window, document, 'script', 'dataLayer', 'GTM-MXJ2ZKP');
+      })(
+        window,
+        document,
+        'script',
+        'dataLayer',
+        '%REACT_APP__GOOGLE_TAG_MANAGER_ID%'
+      );
     </script>
     <!-- End Google Tag Manager -->
   </head>
@@ -69,7 +75,7 @@
     <!-- Google Tag Manager (noscript) -->
     <noscript>
       <iframe
-        src="https://www.googletagmanager.com/ns.html?id=GTM-MXJ2ZKP"
+        src="https://www.googletagmanager.com/ns.html?id=%REACT_APP__GOOGLE_TAG_MANAGER_ID%"
         height="0"
         width="0"
         style="display: none; visibility: hidden"
