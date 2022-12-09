@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.67](https://github.com/duality-labs/duality-web-app/compare/v0.1.66...v0.1.67) (2022-12-09)
+
+
+### Fixes
+
+* Make which token is which more obvious (part 2) ([#233](https://github.com/duality-labs/duality-web-app/issues/233)) ([bf1d322](https://github.com/duality-labs/duality-web-app/commit/bf1d322f419a93f8c9c67695d92502d6ae91c3b2))
+
 ## [0.1.66](https://github.com/duality-labs/duality-web-app/compare/v0.1.65...v0.1.66) (2022-12-07)
 
 
