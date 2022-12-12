@@ -1018,7 +1018,7 @@ export default function Pool() {
                       max={rangeMin === rangeMax ? 1 : 10}
                       value={rangeMin === rangeMax ? '1' : precision}
                       onChange={setPrecision}
-                      minSignificantDigits={2}
+                      minSignificantDigits={1}
                     />
                     <button
                       type="button"

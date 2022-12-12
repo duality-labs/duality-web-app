@@ -43,6 +43,7 @@ import { Tick, TickGroup } from '../../components/LiquiditySelector';
 import './MyLiquidity.scss';
 import { useEditLiquidity } from './useEditLiquidity';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { formatLongPrice } from '../../lib/utils/number';
 
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
@@ -831,7 +832,7 @@ function LiquidityDetailPage({
                 <StepNumberInput
                   key={userTickSelected}
                   readOnly
-                  value={currentTick.price.toFixed()}
+                  value={formatLongPrice(currentTick.price.toFixed())}
                 />
               </div>
             )}
