@@ -892,7 +892,7 @@ export default function Pool() {
                     max={rangeMax}
                     description={
                       tokenA && tokenB
-                        ? `${tokenB.symbol} per ${tokenA.symbol}`
+                        ? `${tokenA.symbol} per ${tokenB.symbol}`
                         : 'No Tokens'
                     }
                     minSignificantDigits={8}
@@ -910,7 +910,7 @@ export default function Pool() {
                     max={priceMax}
                     description={
                       tokenA && tokenB
-                        ? `${tokenB.symbol} per ${tokenA.symbol}`
+                        ? `${tokenA.symbol} per ${tokenB.symbol}`
                         : 'No Tokens'
                     }
                     minSignificantDigits={8}
