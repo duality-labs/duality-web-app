@@ -64,6 +64,8 @@ $border-width: 2px;
 
     input,
     span {
+      display: inline-block;
+      text-align: center;
       @include paddings.padding('y', 0);
       @include paddings.padding('x', 3);
       font-family: font-family.$console;
@@ -88,10 +90,6 @@ $border-width: 2px;
       @include margins.margin('y', 0);
       @include margins.margin('x', 3);
       overflow: hidden;
-      // align height to input style
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
     }
 
     input[type='number'] {

@@ -243,6 +243,10 @@
     gap: margins.$m-4;
   }
 
+  .tick-price-card {
+    align-items: center;
+  }
+
   .orderbook-card {
     > .row {
       gap: 3rem;
