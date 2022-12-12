@@ -816,9 +816,7 @@ export default function Pool() {
               <div className="chart-header row my-4">
                 <h3 className="h3 text-normal">Liquidity Distribution</h3>
                 <span className="tokens-badge badge-default badge-large font-console">
-                  {tokenA?.symbol}
-                  <span className="mx-2">/</span>
-                  {tokenB?.symbol}
+                  {tokenA?.symbol}/{tokenB?.symbol}
                 </span>
                 <button type="button" className="icon-button" onClick={swapAll}>
                   <FontAwesomeIcon
