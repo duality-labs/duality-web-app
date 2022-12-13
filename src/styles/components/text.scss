@@ -5,6 +5,8 @@
 
 @each $name in colors.$main {
   .badge-#{$name} {
+    display: flex;
+    align-items: center;
     @include paddings.padding('x', 4);
     @include paddings.padding('y', 3);
     background-color: var(--#{$name});

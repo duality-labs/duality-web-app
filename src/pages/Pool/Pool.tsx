@@ -1076,9 +1076,9 @@ export default function Pool() {
               >
                 <div className="fee-card">
                   <div className="card-header">
-                    <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
+                    <h3 className="card-title mr-auto">Fee Tier</h3>
                     {!editingFee && (
-                      <div className="badge-default corner-border badge-large ml-auto">
+                      <div className="badge-default corner-border badge-large ml-auto py-0">
                         {feeType?.label}
                       </div>
                     )}

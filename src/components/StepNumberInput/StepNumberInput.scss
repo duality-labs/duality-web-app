@@ -2,6 +2,7 @@
 @use '../../styles/mixins-vars/margins.scss' as margins;
 @use '../../styles/components/cards.scss' as cards;
 @use '../../styles/font/size.scss' as font-size;
+@use '../../styles/font/weight.scss' as font-weight;
 
 $border-width: 2px;
 
@@ -69,6 +70,7 @@ $border-width: 2px;
       background-color: transparent;
       border: 0px none transparent;
       font-size: 1.75rem;
+      font-weight: font-weight.$medium;
       line-height: 1em;
       text-align: center;
       color: var(--text-default);
