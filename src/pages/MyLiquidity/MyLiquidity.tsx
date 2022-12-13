@@ -43,6 +43,7 @@ import { Tick, TickGroup } from '../../components/LiquiditySelector';
 import './MyLiquidity.scss';
 import { useEditLiquidity } from './useEditLiquidity';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { formatLongPrice } from '../../lib/utils/number';
 
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
@@ -309,8 +310,8 @@ function ShareValuesPage({
       <div className="home-hero-section row px-6">
         <div className="credit-card my-4 py-2 px-3">
           <div className="credit-card__top-line row m-4">
-            <div className="col font-console">{address}</div>
-            <div className="col ml-auto font-console">Duality</div>
+            <div className="col font-brand">{address}</div>
+            <div className="col ml-auto font-brand">Duality</div>
           </div>
           <div className="row m-4">
             <div className="col">
@@ -831,7 +832,7 @@ function LiquidityDetailPage({
                 <StepNumberInput
                   key={userTickSelected}
                   readOnly
-                  value={currentTick.price.toFixed()}
+                  value={formatLongPrice(currentTick.price.toFixed())}
                 />
               </div>
             )}
@@ -841,7 +842,7 @@ function LiquidityDetailPage({
               <div className="fee-card">
                 <div className="card-header">
                   <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
-                  <div className="badge-default corner-border badge-large font-console ml-auto">
+                  <div className="badge-default corner-border badge-large ml-auto">
                     {currentFeeType.label}
                   </div>
                 </div>

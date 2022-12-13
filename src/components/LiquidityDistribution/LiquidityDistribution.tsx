@@ -69,8 +69,8 @@ export default function LiquidityDistribution({
       <div className="flex row">
         <div className="flex col col--left">
           <div className="chart-header row py-4">
-            <h3 className="h3 text-normal">Liquidity Distribution</h3>
-            <span className="tokens-badge badge-default badge-large font-console">
+            <h3 className="h3">Liquidity Distribution</h3>
+            <span className="tokens-badge badge-default badge-large">
               {tokenA?.symbol}/{tokenB?.symbol}
             </span>
             <button type="button" className="icon-button" onClick={swapAll}>
@@ -130,7 +130,7 @@ export default function LiquidityDistribution({
           {submitButtonText && (
             <div className="mt-auto mb-4">
               <input
-                className={`button-${submitButtonVariant} mx-auto px-4 py-4`}
+                className={`button-${submitButtonVariant} text-medium mx-auto px-4 py-4`}
                 type="submit"
                 value={submitButtonText}
               />

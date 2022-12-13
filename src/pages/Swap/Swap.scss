@@ -2,6 +2,7 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
 @use '../../styles/mixins-vars/animations.scss' as animations;
 @use '../../styles/theme/core.scss' as core;
+@use '../../styles/font/weight.scss' as font-weight;
 
 .swap-page {
   & {
@@ -61,7 +62,7 @@
     padding-top: 1.15rem;
     padding-bottom: 1.15rem;
     font-size: 1.25rem;
-    font-weight: 500;
+    font-weight: font-weight.$medium;
   }
 
   .settings-card {

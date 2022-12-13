@@ -1,6 +1,5 @@
 @use '../../styles/mixins-vars/margins.scss' as margins;
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
-@use '../../styles/font/family.scss' as font-family;
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:map';
 
@@ -65,7 +64,6 @@
 
   h2 {
     font-size: 1.25rem;
-    font-weight: 500;
   }
 
   .token-image {
@@ -179,6 +177,7 @@
 
     .hero-text {
       font-size: 2.75rem;
+      font-weight: bold;
     }
 
     .chart-price {
@@ -216,7 +215,6 @@
           }
 
           .fee-title {
-            font-family: font-family.$console;
             font-size: font-size.$h5;
           }
 
@@ -240,6 +238,10 @@
   .price-card > .card-row {
     justify-content: space-between;
     gap: margins.$m-4;
+  }
+
+  .tick-price-card {
+    align-items: center;
   }
 
   .orderbook-card {
@@ -270,7 +272,6 @@
 
     .autobalance-card {
       .autobalance-allocation {
-        font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
         background-color: transparent;
         border: 0px none transparent;
         font-size: 1.5rem;

@@ -1,13 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Rubik:wght@500');
 
-$default: 'DM Sans', 'Segoe UI', Helvetica, 'Droid Sans', Tahoma, Geneva,
-  sans-serif;
-$console: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+$default: 'DM Sans', sans-serif;
+$brand: 'Rubik', 'DM Sans', sans-serif;
 
 * {
   font-family: $default;
 }
 
-.font-console {
-  font-family: $console;
+.font-brand {
+  font-family: $brand;
+  font-weight: 500;
 }

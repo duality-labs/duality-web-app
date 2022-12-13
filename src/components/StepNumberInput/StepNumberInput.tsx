@@ -166,9 +166,7 @@ export default function StepNumberInput<T extends number | string = string>({
   const dynamicInputStyle = useMemo(() => {
     return {
       // set width of input based on current values but restrained to a min/max
-      minWidth: `${
-        minSignificantDigits + (currentValue.includes('.') ? 1 : 0)
-      }ch`,
+      minWidth: `${minSignificantDigits}ch`,
       maxWidth: `${
         maxSignificantDigits + (currentValue.includes('.') ? 1 : 0)
       }ch`,

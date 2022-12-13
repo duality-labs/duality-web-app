@@ -680,7 +680,7 @@ export default function Pool() {
           <div className="card-col mt-5 mb-3">
             <div className="mx-auto">
               <input
-                className="button-primary pill pill-outline mx-3 px-4 py-4"
+                className="button-primary text-medium pill pill-outline mx-3 px-4 py-4"
                 disabled={
                   !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
                 }
@@ -689,7 +689,7 @@ export default function Pool() {
                 value="Customize"
               />
               <input
-                className="button-primary pill mx-3 px-4 py-4"
+                className="button-primary text-medium pill mx-3 px-4 py-4"
                 disabled={
                   !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
                 }
@@ -738,7 +738,7 @@ export default function Pool() {
             {tokenA && (
               <button
                 className={[
-                  'badge-default corner-border badge-large font-console',
+                  'badge-default corner-border badge-large',
                   isValueAZero && 'badge-muted',
                 ].join(' ')}
                 type="button"
@@ -765,7 +765,7 @@ export default function Pool() {
             {tokenB && (
               <button
                 className={[
-                  'badge-default corner-border badge-large font-console',
+                  'badge-default corner-border badge-large',
                   isValueBZero && 'badge-muted',
                 ].join(' ')}
                 type="button"
@@ -814,8 +814,8 @@ export default function Pool() {
           <div className="flex row">
             <div className="flex col col--left">
               <div className="chart-header row my-4">
-                <h3 className="h3 text-normal">Liquidity Distribution</h3>
-                <span className="tokens-badge badge-default badge-large font-console">
+                <h3 className="h3">Liquidity Distribution</h3>
+                <span className="tokens-badge badge-default badge-large">
                   {tokenA?.symbol}/{tokenB?.symbol}
                 </span>
                 <button type="button" className="icon-button" onClick={swapAll}>
@@ -858,7 +858,7 @@ export default function Pool() {
               <div>Current Price</div>
               <div className="mt-auto mb-4">
                 <input
-                  className="button-primary mx-auto px-4 py-4"
+                  className="button-primary text-medium mx-auto px-4 py-4"
                   type="submit"
                   value="Add Liquidity"
                 />
@@ -896,7 +896,7 @@ export default function Pool() {
                         : 'No Tokens'
                     }
                     minSignificantDigits={8}
-                    maxSignificantDigits={maxFractionDigits + 1}
+                    maxSignificantDigits={maxFractionDigits + 2}
                     format={formatStepNumberPriceInput}
                   />
                   <StepNumberInput
@@ -914,7 +914,7 @@ export default function Pool() {
                         : 'No Tokens'
                     }
                     minSignificantDigits={8}
-                    maxSignificantDigits={maxFractionDigits + 1}
+                    maxSignificantDigits={maxFractionDigits + 2}
                     format={formatStepNumberPriceInput}
                   />
                 </div>
@@ -1018,7 +1018,7 @@ export default function Pool() {
                       max={rangeMin === rangeMax ? 1 : 10}
                       value={rangeMin === rangeMax ? '1' : precision}
                       onChange={setPrecision}
-                      minSignificantDigits={2}
+                      minSignificantDigits={1}
                     />
                     <button
                       type="button"
@@ -1078,7 +1078,7 @@ export default function Pool() {
                   <div className="card-header">
                     <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
                     {!editingFee && (
-                      <div className="badge-default corner-border badge-large font-console ml-auto">
+                      <div className="badge-default corner-border badge-large ml-auto">
                         {feeType?.label}
                       </div>
                     )}
@@ -1136,7 +1136,7 @@ export default function Pool() {
                             className={[
                               feeLiquidityMap?.[feeType.fee].isZero() &&
                                 'badge-muted',
-                              'badge-info pill ml-auto badge-large text-slim fs-s mt-auto',
+                              'badge-info pill ml-auto badge-large fs-s mt-auto',
                             ]
                               .filter(Boolean)
                               .join(' ')}
@@ -1150,7 +1150,7 @@ export default function Pool() {
                             % liquidity
                           </span>
                         )}
-                        <span className="badge-info pill ml-2 badge-large text-slim fs-s mt-auto">
+                        <span className="badge-info pill ml-2 badge-large fs-s mt-auto">
                           {feeType?.description}
                         </span>
                       </>

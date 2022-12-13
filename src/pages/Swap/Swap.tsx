@@ -488,7 +488,7 @@ export default function Swap() {
           <h4 className="card-title">Max Slippage</h4>
           <input
             type="text"
-            className="font-console ml-auto"
+            className="ml-auto"
             value={slippage}
             onInput={(e) => cleanInput(e.currentTarget, '%')}
             onChange={(e) => setSlippage(e.target.value)}

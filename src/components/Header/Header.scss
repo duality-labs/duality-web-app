@@ -50,9 +50,16 @@ nav,
     & > h1,
     & > .h1 {
       margin: 0;
-      font-size: 2rem;
-      text-transform: uppercase;
+      font-size: 1.75rem;
       color: white;
+      height: 48px;
+      display: flex;
+      align-items: center;
+
+      img {
+        height: 48px;
+        width: auto;
+      }
     }
   }
 
