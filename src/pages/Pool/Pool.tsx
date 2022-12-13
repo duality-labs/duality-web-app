@@ -1136,7 +1136,7 @@ export default function Pool() {
                             className={[
                               feeLiquidityMap?.[feeType.fee].isZero() &&
                                 'badge-muted',
-                              'badge-info pill ml-auto badge-large text-slim fs-s mt-auto',
+                              'badge-info pill ml-auto badge-large fs-s mt-auto',
                             ]
                               .filter(Boolean)
                               .join(' ')}
@@ -1150,7 +1150,7 @@ export default function Pool() {
                             % liquidity
                           </span>
                         )}
-                        <span className="badge-info pill ml-2 badge-large text-slim fs-s mt-auto">
+                        <span className="badge-info pill ml-2 badge-large fs-s mt-auto">
                           {feeType?.description}
                         </span>
                       </>
