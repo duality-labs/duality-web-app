@@ -841,8 +841,8 @@ function LiquidityDetailPage({
             <div className="col">
               <div className="fee-card">
                 <div className="card-header">
-                  <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
-                  <div className="badge-default corner-border badge-large ml-auto">
+                  <h3 className="card-title mr-auto">Fee Tier</h3>
+                  <div className="badge-default corner-border badge-large ml-auto py-0">
                     {currentFeeType.label}
                   </div>
                 </div>
