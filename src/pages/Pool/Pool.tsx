@@ -680,7 +680,7 @@ export default function Pool() {
           <div className="card-col mt-5 mb-3">
             <div className="mx-auto">
               <input
-                className="button-primary pill pill-outline mx-3 px-4 py-4"
+                className="button-primary text-bold pill pill-outline mx-3 px-4 py-4"
                 disabled={
                   !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
                 }
@@ -689,7 +689,7 @@ export default function Pool() {
                 value="Customize"
               />
               <input
-                className="button-primary pill mx-3 px-4 py-4"
+                className="button-primary text-bold pill mx-3 px-4 py-4"
                 disabled={
                   !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
                 }
@@ -858,7 +858,7 @@ export default function Pool() {
               <div>Current Price</div>
               <div className="mt-auto mb-4">
                 <input
-                  className="button-primary mx-auto px-4 py-4"
+                  className="button-primary text-bold mx-auto px-4 py-4"
                   type="submit"
                   value="Add Liquidity"
                 />
