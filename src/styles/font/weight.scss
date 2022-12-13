@@ -1,15 +1,15 @@
-$slim: 300;
-$normal: 500;
-$heavy: 700;
+$regular: 400;
+$medium: 500;
+$bold: 600;
 
-.text-slim {
-  font-weight: $slim !important;
+.text-regular {
+  font-weight: $regular !important;
 }
 
-.text-normal {
-  font-weight: $normal !important;
+.text-medium {
+  font-weight: $medium !important;
 }
 
-.text-heavy {
-  font-weight: $heavy !important;
+.text-bold {
+  font-weight: $bold !important;
 }
