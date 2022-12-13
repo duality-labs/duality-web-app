@@ -1,6 +1,8 @@
+@use '../../styles/font/weight.scss' as font-weight;
+
 .no-liquidity .add-liquidity {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: font-weight.$medium;
 }
 
 .no-liquidity {
