@@ -738,7 +738,7 @@ export default function Pool() {
             {tokenA && (
               <button
                 className={[
-                  'badge-default corner-border badge-large font-console',
+                  'badge-default corner-border badge-large',
                   isValueAZero && 'badge-muted',
                 ].join(' ')}
                 type="button"
@@ -765,7 +765,7 @@ export default function Pool() {
             {tokenB && (
               <button
                 className={[
-                  'badge-default corner-border badge-large font-console',
+                  'badge-default corner-border badge-large',
                   isValueBZero && 'badge-muted',
                 ].join(' ')}
                 type="button"
@@ -815,7 +815,7 @@ export default function Pool() {
             <div className="flex col col--left">
               <div className="chart-header row my-4">
                 <h3 className="h3">Liquidity Distribution</h3>
-                <span className="tokens-badge badge-default badge-large font-console">
+                <span className="tokens-badge badge-default badge-large">
                   {tokenA?.symbol}/{tokenB?.symbol}
                 </span>
                 <button type="button" className="icon-button" onClick={swapAll}>
@@ -1078,7 +1078,7 @@ export default function Pool() {
                   <div className="card-header">
                     <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
                     {!editingFee && (
-                      <div className="badge-default corner-border badge-large font-console ml-auto">
+                      <div className="badge-default corner-border badge-large ml-auto">
                         {feeType?.label}
                       </div>
                     )}

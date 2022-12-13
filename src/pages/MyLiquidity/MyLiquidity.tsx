@@ -310,8 +310,8 @@ function ShareValuesPage({
       <div className="home-hero-section row px-6">
         <div className="credit-card my-4 py-2 px-3">
           <div className="credit-card__top-line row m-4">
-            <div className="col font-console">{address}</div>
-            <div className="col ml-auto font-console">Duality</div>
+            <div className="col">{address}</div>
+            <div className="col ml-auto">Duality</div>
           </div>
           <div className="row m-4">
             <div className="col">
@@ -842,7 +842,7 @@ function LiquidityDetailPage({
               <div className="fee-card">
                 <div className="card-header">
                   <h3 className="card-title mb-3 mr-auto">Fee Tier</h3>
-                  <div className="badge-default corner-border badge-large font-console ml-auto">
+                  <div className="badge-default corner-border badge-large ml-auto">
                     {currentFeeType.label}
                   </div>
                 </div>

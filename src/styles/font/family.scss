@@ -1,12 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600');
 
 $default: 'DM Sans', sans-serif;
-$console: $default;
 
 * {
   font-family: $default;
-}
-
-.font-console {
-  font-family: $console;
 }

@@ -1,6 +1,5 @@
 @use '../../styles/mixins-vars/margins.scss' as margins;
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
-@use '../../styles/font/family.scss' as font-family;
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:map';
 
@@ -221,7 +220,6 @@
           }
 
           .fee-title {
-            font-family: font-family.$console;
             font-size: font-size.$h5;
           }
 
@@ -279,7 +277,6 @@
 
     .autobalance-card {
       .autobalance-allocation {
-        font-family: font-family.$console;
         background-color: transparent;
         border: 0px none transparent;
         font-size: 1.5rem;

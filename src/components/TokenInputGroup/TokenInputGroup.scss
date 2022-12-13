@@ -1,6 +1,5 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
 @use '../../styles/mixins-vars/margins.scss' as margins;
-@use '../../styles/font/family.scss' as font-family;
 @use '../../styles/components/cards.scss' as cards;
 @use '../../styles/font/size.scss' as font-size;
 
@@ -61,7 +60,6 @@
   }
 
   .token-group-value {
-    font-family: font-family.$console;
     font-size: font-size.$text-m;
     grid-column: 2;
     grid-row: 3;
@@ -70,7 +68,6 @@
 
   .token-group-input {
     & {
-      font-family: font-family.$console;
       font-weight: bold;
       background-color: transparent;
       border: 0px none transparent;
