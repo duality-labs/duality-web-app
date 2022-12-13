@@ -310,8 +310,8 @@ function ShareValuesPage({
       <div className="home-hero-section row px-6">
         <div className="credit-card my-4 py-2 px-3">
           <div className="credit-card__top-line row m-4">
-            <div className="col">{address}</div>
-            <div className="col ml-auto">Duality</div>
+            <div className="col font-brand">{address}</div>
+            <div className="col ml-auto font-brand">Duality</div>
           </div>
           <div className="row m-4">
             <div className="col">
