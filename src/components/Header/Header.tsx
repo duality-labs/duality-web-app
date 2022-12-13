@@ -3,6 +3,7 @@ import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useThemeMode } from '../../lib/themeProvider';
 
+import logoWithText from '../../assets/logo/logo-with-text-white.svg';
 import './Header.scss';
 
 const keplrLogoURI =
@@ -16,7 +17,9 @@ export default function Header() {
     <header>
       <nav>
         <NavLink className="logo mr-5" to="/">
-          <h1 className="font-brand">Duality</h1>
+          <h1 className="font-brand">
+            <img src={logoWithText} alt="Duality"></img>
+          </h1>
         </NavLink>
         <NavLink className="ghost-button" to="/">
           Trade
