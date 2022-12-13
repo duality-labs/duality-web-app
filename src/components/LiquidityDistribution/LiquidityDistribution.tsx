@@ -130,7 +130,7 @@ export default function LiquidityDistribution({
           {submitButtonText && (
             <div className="mt-auto mb-4">
               <input
-                className={`button-${submitButtonVariant} text-bold mx-auto px-4 py-4`}
+                className={`button-${submitButtonVariant} text-medium mx-auto px-4 py-4`}
                 type="submit"
                 value={submitButtonText}
               />
