@@ -18,7 +18,13 @@ export default function Header() {
       <nav>
         <NavLink className="logo mr-5" to="/">
           <h1 className="font-brand">
-            <img src={logoWithText} alt="Duality"></img>
+            <img
+              src={logoWithText}
+              alt="Duality"
+              onError={({ currentTarget }) => {
+                currentTarget.outerHTML = 'Duality';
+              }}
+            ></img>
           </h1>
         </NavLink>
         <NavLink className="ghost-button" to="/">
