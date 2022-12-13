@@ -295,17 +295,17 @@
 
   .credit-card__top-line {
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: font-weight.$bold;
   }
   .credit-card__hero-title {
     margin-top: 1rem;
   }
   .credit-card__hero-value {
     font-size: 2rem;
-    font-weight: 600;
+    font-weight: font-weight.$bold;
   }
   .credit-card__lesser-hero-value {
-    font-weight: 600;
+    font-weight: font-weight.$bold;
   }
 
   .button {
