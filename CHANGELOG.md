@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.71](https://github.com/duality-labs/duality-web-app/compare/v0.1.70...v0.1.71) (2022-12-13)
+
+
+### Fixes
+
+* update fonts to design spec (part 2) ([#237](https://github.com/duality-labs/duality-web-app/issues/237)) ([6fae319](https://github.com/duality-labs/duality-web-app/commit/6fae3190344ec97bfc15e3a28917cbd7dcff4715))
+
 ## [0.1.70](https://github.com/duality-labs/duality-web-app/compare/v0.1.69...v0.1.70) (2022-12-13)
 
 
