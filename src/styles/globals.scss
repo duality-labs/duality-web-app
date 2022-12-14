@@ -80,6 +80,46 @@ a {
   flex: 1 1 auto;
 }
 
+// dynamic displays based on viewport size
+.col-sm,
+.col-md,
+.col-lg,
+.col-xl {
+  display: none;
+}
+@media (min-width: 576px) {
+  .col-sm-hide {
+    display: none;
+  }
+  .col-sm {
+    display: flex;
+  }
+}
+@media (min-width: 768px) {
+  .col-md-hide {
+    display: none;
+  }
+  .col-md {
+    display: flex;
+  }
+}
+@media (min-width: 992px) {
+  .col-lg-hide {
+    display: none;
+  }
+  .col-lg {
+    display: flex;
+  }
+}
+@media (min-width: 1200px) {
+  .col-xl-hide {
+    display: none;
+  }
+  .col-xl {
+    display: flex;
+  }
+}
+
 .hide {
   display: none !important;
 }
