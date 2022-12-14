@@ -9,6 +9,13 @@ import './Header.scss';
 const keplrLogoURI =
   'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
 
+const pageLinkMap = {
+  '/': 'Trade',
+  '/add-liquidity': 'Add Liquidity',
+  '/my-liquidity': 'My Liquidity',
+  '/stake': 'Stake',
+};
+
 export default function Header() {
   const { connectWallet, address } = useWeb3();
   const { themeMode, toggleThemeMode } = useThemeMode();
@@ -31,26 +38,13 @@ export default function Header() {
         </div>
         <div className="col">
           <div className="row">
-            <div className="col">
-              <NavLink className="ghost-button" to="/">
-                Trade
-              </NavLink>
-            </div>
-            <div className="col">
-              <NavLink className="ghost-button" to="/add-liquidity">
-                Add Liquidity
-              </NavLink>
-            </div>
-            <div className="col">
-              <NavLink className="ghost-button" to="/my-liquidity">
-                My Liquidity
-              </NavLink>
-            </div>
-            <div className="col">
-              <NavLink className="ghost-button" to="/stake">
-                Stake
-              </NavLink>
-            </div>
+            {Object.entries(pageLinkMap).map(([link, description]) => (
+              <div className="col" key={link}>
+                <NavLink className="ghost-button" to={link}>
+                  {description}
+                </NavLink>
+              </div>
+            ))}
           </div>
         </div>
         <div className="col ml-auto">
