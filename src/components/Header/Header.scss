@@ -5,15 +5,9 @@
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:math';
 
-$underline-height: 1px;
-
 header,
 .header {
-  @include paddings.padding('y', 3);
-  @include paddings.padding('x', 4);
   padding: 2rem 4rem;
-  box-sizing: border-box;
-  text-align: start;
   width: 100%;
 }
 
@@ -36,8 +30,6 @@ nav,
 
   // style logo image
   .logo {
-    padding: 0;
-    margin: 0;
     img {
       display: block;
       height: 48px;
