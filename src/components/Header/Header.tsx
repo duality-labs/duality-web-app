@@ -1,5 +1,11 @@
-import { useCallback, useState } from 'react';
-import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  Link,
+  LinkProps,
+  useResolvedPath,
+  useLocation,
+  useMatch,
+} from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
 
@@ -28,6 +34,12 @@ export default function Header() {
     () => setMenuIsOpen((menuIsOpen) => !menuIsOpen),
     []
   );
+
+  // close menu whenever a new page has been navigated to
+  const location = useLocation();
+  useEffect(() => {
+    setMenuIsOpen(false);
+  }, [location.pathname]);
 
   return (
     <header className="container">
