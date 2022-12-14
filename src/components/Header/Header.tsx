@@ -14,7 +14,7 @@ export default function Header() {
   const { themeMode, toggleThemeMode } = useThemeMode();
 
   return (
-    <header>
+    <header className="container">
       <nav className="row">
         <div className="col">
           <NavLink className="logo mr-5" to="/">
