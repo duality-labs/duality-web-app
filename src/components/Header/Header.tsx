@@ -80,7 +80,12 @@ export default function Header() {
               </button>
             </div>
             <div className="col col-lg-hide ml-auto">
-              <button className="ghost-button" onClick={toggleMenuIsOpen}>
+              <button
+                className={['ghost-button', menuIsOpen && 'focused']
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={toggleMenuIsOpen}
+              >
                 <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
               </button>
             </div>
