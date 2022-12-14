@@ -16,6 +16,12 @@ header,
     right: 0;
     z-index: 2;
     background: fixed var(--bg);
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0);
+    transition: box-shadow 0.25s;
+  }
+
+  &.scrolled > .container {
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
   }
 }
 

@@ -41,8 +41,22 @@ export default function Header() {
     setMenuIsOpen(false);
   }, [location.pathname]);
 
+  // add extra style is page has been scrolled
+  const [pageIsScrolled, setPageIsScrolled] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setPageIsScrolled(!!window.pageYOffset);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
-    <header>
+    <header
+      className={[pageIsScrolled && 'scrolled'].filter(Boolean).join(' ')}
+    >
       <div className="container py-5">
         <nav className="row">
           <div className="col">
