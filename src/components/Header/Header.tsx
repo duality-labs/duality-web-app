@@ -51,6 +51,10 @@ export default function Header() {
                 Stake
               </NavLink>
             </div>
+          </div>
+        </div>
+        <div className="col ml-auto">
+          <div className="row">
             <div className="col hide">
               <button
                 className="link no-blend"
@@ -60,10 +64,6 @@ export default function Header() {
                 {themeMode === 'light' ? '🌕' : '🌞'}
               </button>
             </div>
-          </div>
-        </div>
-        <div className="col ml-auto">
-          <div className="row">
             <div className="col ml-auto">
               {address ? (
                 <button className="user-profile ml-auto">
