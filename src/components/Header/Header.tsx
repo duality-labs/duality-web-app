@@ -30,48 +30,56 @@ export default function Header() {
           </NavLink>
         </div>
         <div className="col">
-          <NavLink className="ghost-button" to="/">
-            Trade
-          </NavLink>
-        </div>
-        <div className="col">
-          <NavLink className="ghost-button" to="/add-liquidity">
-            Add Liquidity
-          </NavLink>
-        </div>
-        <div className="col">
-          <NavLink className="ghost-button" to="/my-liquidity">
-            My Liquidity
-          </NavLink>
-        </div>
-        <div className="col">
-          <NavLink className="ghost-button" to="/stake">
-            Stake
-          </NavLink>
-        </div>
-        <div className="col hide">
-          <button
-            className="link no-blend"
-            type="button"
-            onClick={toggleThemeMode}
-          >
-            {themeMode === 'light' ? '🌕' : '🌞'}
-          </button>
+          <div className="row">
+            <div className="col">
+              <NavLink className="ghost-button" to="/">
+                Trade
+              </NavLink>
+            </div>
+            <div className="col">
+              <NavLink className="ghost-button" to="/add-liquidity">
+                Add Liquidity
+              </NavLink>
+            </div>
+            <div className="col">
+              <NavLink className="ghost-button" to="/my-liquidity">
+                My Liquidity
+              </NavLink>
+            </div>
+            <div className="col">
+              <NavLink className="ghost-button" to="/stake">
+                Stake
+              </NavLink>
+            </div>
+            <div className="col hide">
+              <button
+                className="link no-blend"
+                type="button"
+                onClick={toggleThemeMode}
+              >
+                {themeMode === 'light' ? '🌕' : '🌞'}
+              </button>
+            </div>
+          </div>
         </div>
         <div className="col ml-auto">
-          {address ? (
-            <button className="user-profile ml-auto">
-              <img src={keplrLogoURI} className="logo  mr-3" alt="logo" />
-              <div className="text-truncate">{address}</div>
-            </button>
-          ) : (
-            <button
-              className="link connect-wallet ml-auto button-primary"
-              onClick={connectWallet}
-            >
-              Connect Wallet
-            </button>
-          )}
+          <div className="row">
+            <div className="col ml-auto">
+              {address ? (
+                <button className="user-profile ml-auto">
+                  <img src={keplrLogoURI} className="logo  mr-3" alt="logo" />
+                  <div className="text-truncate">{address}</div>
+                </button>
+              ) : (
+                <button
+                  className="link connect-wallet ml-auto button-primary"
+                  onClick={connectWallet}
+                >
+                  Connect Wallet
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </nav>
     </header>

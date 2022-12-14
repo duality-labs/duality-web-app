@@ -13,12 +13,14 @@ header,
 
 nav,
 .nav {
-  & {
+  &.row,
+  .row {
     gap: margins.size(4);
   }
 
   // set single row height without overflow
-  &.row {
+  &.row,
+  .row {
     height: 48px;
     flex-flow: nowrap;
     & > .col {
