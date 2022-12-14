@@ -1,4 +1,7 @@
+import { useCallback, useState } from 'react';
 import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBars } from '@fortawesome/free-solid-svg-icons';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useThemeMode } from '../../lib/themeProvider';
@@ -20,6 +23,12 @@ export default function Header() {
   const { connectWallet, address } = useWeb3();
   const { themeMode, toggleThemeMode } = useThemeMode();
 
+  const [menuIsOpen, setMenuIsOpen] = useState(false);
+  const toggleMenuIsOpen = useCallback(
+    () => setMenuIsOpen((menuIsOpen) => !menuIsOpen),
+    []
+  );
+
   return (
     <header className="container">
       <nav className="row">
@@ -36,7 +45,7 @@ export default function Header() {
             </h1>
           </NavLink>
         </div>
-        <div className="col">
+        <div className="col col-lg">
           <div className="row">
             {Object.entries(pageLinkMap).map(([link, description]) => (
               <div className="col" key={link}>
@@ -58,6 +67,11 @@ export default function Header() {
                 {themeMode === 'light' ? '🌕' : '🌞'}
               </button>
             </div>
+            <div className="col col-lg-hide ml-auto">
+              <button className="ghost-button" onClick={toggleMenuIsOpen}>
+                <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
+              </button>
+            </div>
             <div className="col ml-auto">
               {address ? (
                 <button className="user-profile ml-auto">
@@ -74,6 +88,21 @@ export default function Header() {
               )}
             </div>
           </div>
+        </div>
+      </nav>
+      <nav
+        className={['mobile-nav col col-lg-hide', !menuIsOpen && 'hide']
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <div className="container py-4">
+          {Object.entries(pageLinkMap).map(([link, description]) => (
+            <div className="col" key={link}>
+              <NavLink className="ghost-button" to={link}>
+                {description}
+              </NavLink>
+            </div>
+          ))}
         </div>
       </nav>
     </header>
