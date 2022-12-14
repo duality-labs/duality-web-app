@@ -49,7 +49,7 @@ export default function Header() {
         {address ? (
           <button className="user-profile ml-auto">
             <img src={keplrLogoURI} className="logo  mr-3" alt="logo" />
-            <div>{address.slice(0, 10)}...</div>
+            <div className="text-truncate">{address}</div>
           </button>
         ) : (
           <button
