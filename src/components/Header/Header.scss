@@ -14,7 +14,7 @@ header,
 nav,
 .nav {
   & {
-    gap: margins.size(2);
+    gap: margins.size(4);
   }
 
   // set single row height without overflow
@@ -35,12 +35,6 @@ nav,
       height: 48px;
       width: auto;
     }
-  }
-
-  // add more spacing on links
-  a,
-  .link {
-    margin-left: 1rem;
   }
 
   button.user-profile {
