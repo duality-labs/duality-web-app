@@ -79,6 +79,10 @@ a {
 .flex {
   flex: 1 1 auto;
 }
+.flex-centered {
+  align-items: center;
+  justify-content: center;
+}
 
 // dynamic displays based on viewport size
 .col-sm,

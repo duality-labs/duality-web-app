@@ -677,8 +677,8 @@ export default function Pool() {
               exclusion={tokenA}
             />
           </div>
-          <div className="card-col mt-5 mb-3">
-            <div className="mx-auto">
+          <div className="row flex-centered mt-5 mb-3">
+            <div className="col">
               <input
                 className="button-primary text-medium pill pill-outline mx-3 px-4 py-4"
                 disabled={
@@ -688,6 +688,8 @@ export default function Pool() {
                 name="action"
                 value="Customize"
               />
+            </div>
+            <div className="col">
               <input
                 className="button-primary text-medium pill mx-3 px-4 py-4"
                 disabled={
