@@ -42,23 +42,82 @@ export default function Header() {
   }, [location.pathname]);
 
   return (
-    <header className="container">
-      <nav className="row">
-        <div className="col">
-          <NavLink className="logo" to="/">
-            <h1 className="font-brand">
-              <img
-                src={logoWithText}
-                alt="Duality"
-                onError={({ currentTarget }) => {
-                  currentTarget.outerHTML = 'Duality';
-                }}
-              ></img>
-            </h1>
-          </NavLink>
-        </div>
-        <div className="col col-lg">
-          <div className="row ml-5">
+    <header>
+      <div className="container py-5">
+        <nav className="row">
+          <div className="col">
+            <NavLink className="logo" to="/">
+              <h1 className="font-brand">
+                <img
+                  src={logoWithText}
+                  alt="Duality"
+                  onError={({ currentTarget }) => {
+                    currentTarget.outerHTML = 'Duality';
+                  }}
+                ></img>
+              </h1>
+            </NavLink>
+          </div>
+          <div className="col col-lg">
+            <div className="row ml-5">
+              {Object.entries(pageLinkMap).map(([link, description]) => (
+                <div className="col" key={link}>
+                  <NavLink className="ghost-button" to={link}>
+                    {description}
+                  </NavLink>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="col ml-auto">
+            <div className="row">
+              <div className="col hide">
+                <button
+                  className="link no-blend"
+                  type="button"
+                  onClick={toggleThemeMode}
+                >
+                  {themeMode === 'light' ? '🌕' : '🌞'}
+                </button>
+              </div>
+              <div className="col col-lg-hide ml-auto">
+                <button
+                  className={[
+                    'more-button',
+                    'ghost-button',
+                    menuIsOpen && 'focused',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={toggleMenuIsOpen}
+                >
+                  <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
+                </button>
+              </div>
+              <div className="col ml-auto">
+                {address ? (
+                  <button className="user-profile ml-auto">
+                    <img src={keplrLogoURI} className="logo mr-3" alt="logo" />
+                    <div className="text-truncate">{address}</div>
+                  </button>
+                ) : (
+                  <button
+                    className="link connect-wallet ml-auto button-primary"
+                    onClick={connectWallet}
+                  >
+                    Connect Wallet
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </nav>
+        <nav
+          className={['mobile-nav col col-lg-hide', !menuIsOpen && 'hide']
+            .filter(Boolean)
+            .join(' ')}
+        >
+          <div className="container py-4">
             {Object.entries(pageLinkMap).map(([link, description]) => (
               <div className="col" key={link}>
                 <NavLink className="ghost-button" to={link}>
@@ -67,65 +126,8 @@ export default function Header() {
               </div>
             ))}
           </div>
-        </div>
-        <div className="col ml-auto">
-          <div className="row">
-            <div className="col hide">
-              <button
-                className="link no-blend"
-                type="button"
-                onClick={toggleThemeMode}
-              >
-                {themeMode === 'light' ? '🌕' : '🌞'}
-              </button>
-            </div>
-            <div className="col col-lg-hide ml-auto">
-              <button
-                className={[
-                  'more-button',
-                  'ghost-button',
-                  menuIsOpen && 'focused',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={toggleMenuIsOpen}
-              >
-                <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
-              </button>
-            </div>
-            <div className="col ml-auto">
-              {address ? (
-                <button className="user-profile ml-auto">
-                  <img src={keplrLogoURI} className="logo  mr-3" alt="logo" />
-                  <div className="text-truncate">{address}</div>
-                </button>
-              ) : (
-                <button
-                  className="link connect-wallet ml-auto button-primary"
-                  onClick={connectWallet}
-                >
-                  Connect Wallet
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
-      <nav
-        className={['mobile-nav col col-lg-hide', !menuIsOpen && 'hide']
-          .filter(Boolean)
-          .join(' ')}
-      >
-        <div className="container py-4">
-          {Object.entries(pageLinkMap).map(([link, description]) => (
-            <div className="col" key={link}>
-              <NavLink className="ghost-button" to={link}>
-                {description}
-              </NavLink>
-            </div>
-          ))}
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
   );
 }

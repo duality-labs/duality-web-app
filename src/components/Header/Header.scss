@@ -7,8 +7,16 @@
 
 header,
 .header {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+  width: 100%;
+  height: 112px;
+  > .container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    background: fixed var(--bg);
+  }
 }
 
 nav,
@@ -34,7 +42,6 @@ nav,
     position: absolute;
     left: 0;
     right: 0;
-    z-index: 2;
     background: fixed var(--bg);
     box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
   }
