@@ -39,12 +39,17 @@ nav,
     box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
   }
 
+  // allow logo to shrink faster than other columns
+  .col:has(> .more-button) {
+    flex-shrink: 0;
+  }
+
   // style logo image
   .logo {
     img {
       display: block;
-      height: 48px;
-      width: auto;
+      max-height: 48px;
+      width: 100%;
     }
   }
 

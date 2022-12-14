@@ -45,7 +45,7 @@ export default function Header() {
     <header className="container">
       <nav className="row">
         <div className="col">
-          <NavLink className="logo mr-5" to="/">
+          <NavLink className="logo" to="/">
             <h1 className="font-brand">
               <img
                 src={logoWithText}
@@ -58,7 +58,7 @@ export default function Header() {
           </NavLink>
         </div>
         <div className="col col-lg">
-          <div className="row">
+          <div className="row ml-5">
             {Object.entries(pageLinkMap).map(([link, description]) => (
               <div className="col" key={link}>
                 <NavLink className="ghost-button" to={link}>
@@ -81,7 +81,11 @@ export default function Header() {
             </div>
             <div className="col col-lg-hide ml-auto">
               <button
-                className={['ghost-button', menuIsOpen && 'focused']
+                className={[
+                  'more-button',
+                  'ghost-button',
+                  menuIsOpen && 'focused',
+                ]
                   .filter(Boolean)
                   .join(' ')}
                 onClick={toggleMenuIsOpen}
