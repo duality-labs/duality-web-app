@@ -1,7 +1,3 @@
-html {
-  background-color: white;
-}
-
 html,
 body,
 #root {
@@ -26,6 +22,11 @@ main,
   min-width: 100%;
 }
 
+html {
+  // use ~ average background color as background for HTML
+  // is seen in eg. macOS if user tries to scroll past the end of the document
+  background-color: #4a6980;
+}
 body {
   background: fixed var(--bg);
 }
