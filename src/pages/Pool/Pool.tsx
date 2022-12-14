@@ -696,7 +696,7 @@ export default function Pool() {
                   !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
                 }
                 type="submit"
-                name="actiona"
+                name="action"
                 value="Add Liquidity"
               />
             </div>
