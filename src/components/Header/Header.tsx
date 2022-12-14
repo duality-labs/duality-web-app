@@ -15,50 +15,64 @@ export default function Header() {
 
   return (
     <header>
-      <nav>
-        <NavLink className="logo mr-5" to="/">
-          <h1 className="font-brand">
-            <img
-              src={logoWithText}
-              alt="Duality"
-              onError={({ currentTarget }) => {
-                currentTarget.outerHTML = 'Duality';
-              }}
-            ></img>
-          </h1>
-        </NavLink>
-        <NavLink className="ghost-button" to="/">
-          Trade
-        </NavLink>
-        <NavLink className="ghost-button" to="/add-liquidity">
-          Add Liquidity
-        </NavLink>
-        <NavLink className="ghost-button" to="/my-liquidity">
-          My Liquidity
-        </NavLink>
-        <NavLink className="ghost-button" to="/stake">
-          Stake
-        </NavLink>
-        <button
-          className="link no-blend hide"
-          type="button"
-          onClick={toggleThemeMode}
-        >
-          {themeMode === 'light' ? '🌕' : '🌞'}
-        </button>
-        {address ? (
-          <button className="user-profile ml-auto">
-            <img src={keplrLogoURI} className="logo  mr-3" alt="logo" />
-            <div className="text-truncate">{address}</div>
-          </button>
-        ) : (
+      <nav className="row">
+        <div className="col">
+          <NavLink className="logo mr-5" to="/">
+            <h1 className="font-brand">
+              <img
+                src={logoWithText}
+                alt="Duality"
+                onError={({ currentTarget }) => {
+                  currentTarget.outerHTML = 'Duality';
+                }}
+              ></img>
+            </h1>
+          </NavLink>
+        </div>
+        <div className="col">
+          <NavLink className="ghost-button" to="/">
+            Trade
+          </NavLink>
+        </div>
+        <div className="col">
+          <NavLink className="ghost-button" to="/add-liquidity">
+            Add Liquidity
+          </NavLink>
+        </div>
+        <div className="col">
+          <NavLink className="ghost-button" to="/my-liquidity">
+            My Liquidity
+          </NavLink>
+        </div>
+        <div className="col">
+          <NavLink className="ghost-button" to="/stake">
+            Stake
+          </NavLink>
+        </div>
+        <div className="col hide">
           <button
-            className="link connect-wallet ml-auto button-primary"
-            onClick={connectWallet}
+            className="link no-blend"
+            type="button"
+            onClick={toggleThemeMode}
           >
-            Connect Wallet
+            {themeMode === 'light' ? '🌕' : '🌞'}
           </button>
-        )}
+        </div>
+        <div className="col ml-auto">
+          {address ? (
+            <button className="user-profile ml-auto">
+              <img src={keplrLogoURI} className="logo  mr-3" alt="logo" />
+              <div className="text-truncate">{address}</div>
+            </button>
+          ) : (
+            <button
+              className="link connect-wallet ml-auto button-primary"
+              onClick={connectWallet}
+            >
+              Connect Wallet
+            </button>
+          )}
+        </div>
       </nav>
     </header>
   );
