@@ -677,10 +677,10 @@ export default function Pool() {
               exclusion={tokenA}
             />
           </div>
-          <div className="row flex-centered mt-5 mb-3">
+          <div className="row flex-centered mt-5 mb-3 gapx-4">
             <div className="col">
               <input
-                className="button-primary text-medium pill pill-outline mx-3 px-4 py-4"
+                className="button-primary text-medium pill pill-outline px-4 py-4"
                 disabled={
                   !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
                 }
@@ -691,7 +691,7 @@ export default function Pool() {
             </div>
             <div className="col">
               <input
-                className="button-primary text-medium pill mx-3 px-4 py-4"
+                className="button-primary text-medium pill px-4 py-4"
                 disabled={
                   !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
                 }
