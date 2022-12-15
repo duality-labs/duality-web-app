@@ -32,6 +32,11 @@ export default function Header() {
 
   const closeMenuAndScrollToTop = useCallback(() => {
     setMenuIsOpen(false);
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth',
+    });
   }, []);
 
   // add extra style is page has been scrolled
@@ -71,7 +76,11 @@ export default function Header() {
             <div className="row ml-5">
               {Object.entries(pageLinkMap).map(([link, description]) => (
                 <div className="col" key={link}>
-                  <NavLink className="ghost-button" to={link}>
+                  <NavLink
+                    className="ghost-button"
+                    to={link}
+                    onClick={closeMenuAndScrollToTop}
+                  >
                     {description}
                   </NavLink>
                 </div>
