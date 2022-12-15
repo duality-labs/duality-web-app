@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  Link,
-  LinkProps,
-  useResolvedPath,
-  useLocation,
-  useMatch,
-} from 'react-router-dom';
+import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
 
@@ -36,11 +30,9 @@ export default function Header() {
     []
   );
 
-  // close menu whenever a new page has been navigated to
-  const location = useLocation();
-  useEffect(() => {
+  const closeMenuAndScrollToTop = useCallback(() => {
     setMenuIsOpen(false);
-  }, [location.pathname]);
+  }, []);
 
   // add extra style is page has been scrolled
   const [pageIsScrolled, setPageIsScrolled] = useState(false);
@@ -63,7 +55,7 @@ export default function Header() {
       <div className="container py-5">
         <nav className="row">
           <div className="col">
-            <NavLink className="logo" to="/">
+            <NavLink className="logo" to="/" onClick={closeMenuAndScrollToTop}>
               <h1 className="font-brand">
                 <img
                   src={logoWithText}
@@ -133,7 +125,11 @@ export default function Header() {
           <Drawer className="pt-4" expanded={menuIsOpen}>
             {Object.entries(pageLinkMap).map(([link, description]) => (
               <div className="col" key={link}>
-                <NavLink className="ghost-button" to={link}>
+                <NavLink
+                  className="ghost-button"
+                  to={link}
+                  onClick={closeMenuAndScrollToTop}
+                >
                   {description}
                 </NavLink>
               </div>
