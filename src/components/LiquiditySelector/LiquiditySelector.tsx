@@ -409,8 +409,8 @@ export default function LiquiditySelector({
   );
   const plotXinverse = useCallback(
     (x: number): number => {
-      const leftPadding = containerSize.width * 0.1;
-      const rightPadding = containerSize.width * 0.1;
+      const leftPadding = 0;
+      const rightPadding = 0;
       const width = containerSize.width - leftPadding - rightPadding;
       return Math.exp(
         ((x - leftPadding) * (Math.log(xMax) - Math.log(xMin))) / width +
@@ -421,8 +421,8 @@ export default function LiquiditySelector({
   );
   const plotY = useCallback(
     (y: number): number => {
-      const topPadding = containerSize.height * 0.05;
-      const bottomPadding = containerSize.height * 0.05;
+      const topPadding = 0;
+      const bottomPadding = 21; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return graphHeight === 0
         ? -bottomPadding // pin to bottom
@@ -432,8 +432,8 @@ export default function LiquiditySelector({
   );
   const percentY = useCallback(
     (y: number): number => {
-      const topPadding = containerSize.height * 0.05;
-      const bottomPadding = containerSize.height * 0.05;
+      const topPadding = 0;
+      const bottomPadding = 21; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
     },
@@ -457,9 +457,7 @@ export default function LiquiditySelector({
       className={['chart-liquidity', advanced && 'chart-type--advanced']
         .filter(Boolean)
         .join(' ')}
-      viewBox={`0 -${containerSize.height} ${containerSize.width} ${
-        containerSize.height + 5
-      }`}
+      viewBox={`0 -${containerSize.height} ${containerSize.width} ${containerSize.height}`}
     >
       <defs>
         <linearGradient id="white-concave-fade">
