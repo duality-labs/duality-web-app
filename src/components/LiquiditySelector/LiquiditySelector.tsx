@@ -1350,10 +1350,10 @@ function Axis({
         />
         <text
           x={plotX(tickMark).toFixed(3)}
-          y={plotY(0) + 2}
-          dy="12"
+          y={plotY(0) + 5}
           dominantBaseline="middle"
           textAnchor="middle"
+          alignmentBaseline="text-before-edge"
         >
           {tickMark.toFixed(decimalPlaces)}
         </text>
