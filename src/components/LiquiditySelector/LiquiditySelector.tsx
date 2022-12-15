@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   MouseEvent,
   useRef,
+  useEffect,
 } from 'react';
 
 import { formatPrice } from '../../lib/utils/number';
@@ -677,13 +678,20 @@ function TicksArea({
   const bucketWidth =
     plotX(new BigNumber(bucketRatio)) - plotX(new BigNumber(1));
 
+  const lastMinTickPrice = useRef<BigNumber>();
   const [startDragMin, isDraggingMin] = useOnDragMove(
     useCallback(
-      (ev: MouseEventInit) => {
-        const x = ev.movementX;
-        if (x) {
-          const xStart = plotX(startTickPrice);
-          const newValue = new BigNumber(plotXinverse(xStart + x));
+      (ev: Event, displacement = { x: 0, y: 0 }) => {
+        const x = displacement.x;
+        if (x && lastMinTickPrice.current) {
+          const orderOfMagnitudePixels =
+            plotX(new BigNumber(10)) - plotX(new BigNumber(1));
+          const displacementRatio = Math.pow(
+            10,
+            displacement.x / orderOfMagnitudePixels
+          );
+          const newValue =
+            lastMinTickPrice.current.multipliedBy(displacementRatio);
           const newValueString = formatPrice(newValue.toFixed());
           setRangeMin(newValueString);
           if (endTickPrice.isLessThanOrEqualTo(newValue)) {
@@ -691,24 +699,29 @@ function TicksArea({
           }
         }
       },
-      [
-        startTickPrice,
-        endTickPrice,
-        plotXinverse,
-        plotX,
-        setRangeMin,
-        setRangeMax,
-      ]
+      [lastMinTickPrice, endTickPrice, plotX, setRangeMin, setRangeMax]
     )
   );
+  useEffect(() => {
+    if (!isDraggingMin) {
+      lastMinTickPrice.current = startTickPrice;
+    }
+  }, [startTickPrice, isDraggingMin]);
 
+  const lastMaxTickPrice = useRef<BigNumber>();
   const [startDragMax, isDraggingMax] = useOnDragMove(
     useCallback(
-      (ev: MouseEventInit) => {
-        const x = ev.movementX;
-        if (x) {
-          const xStart = plotX(endTickPrice);
-          const newValue = new BigNumber(plotXinverse(xStart + x));
+      (ev: Event, displacement = { x: 0, y: 0 }) => {
+        const x = displacement.x;
+        if (x && lastMaxTickPrice.current) {
+          const orderOfMagnitudePixels =
+            plotX(new BigNumber(10)) - plotX(new BigNumber(1));
+          const displacementRatio = Math.pow(
+            10,
+            displacement.x / orderOfMagnitudePixels
+          );
+          const newValue =
+            lastMaxTickPrice.current.multipliedBy(displacementRatio);
           const newValueString = formatPrice(newValue.toFixed());
           setRangeMax(newValueString);
           if (startTickPrice.isGreaterThanOrEqualTo(newValue)) {
@@ -716,16 +729,14 @@ function TicksArea({
           }
         }
       },
-      [
-        startTickPrice,
-        endTickPrice,
-        plotXinverse,
-        plotX,
-        setRangeMin,
-        setRangeMax,
-      ]
+      [startTickPrice, plotX, setRangeMin, setRangeMax]
     )
   );
+  useEffect(() => {
+    if (!isDraggingMax) {
+      lastMaxTickPrice.current = endTickPrice;
+    }
+  }, [endTickPrice, isDraggingMax]);
 
   const rounding = 5;
   const hasPriceWarning =
