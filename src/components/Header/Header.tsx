@@ -12,6 +12,7 @@ import { faBars } from '@fortawesome/free-solid-svg-icons';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useThemeMode } from '../../lib/themeProvider';
 
+import Drawer from '../Drawer';
 import logoWithText from '../../assets/logo/logo-with-text-white.svg';
 import './Header.scss';
 
@@ -55,7 +56,9 @@ export default function Header() {
 
   return (
     <header
-      className={[pageIsScrolled && 'scrolled'].filter(Boolean).join(' ')}
+      className={[(pageIsScrolled || menuIsOpen) && 'scrolled']
+        .filter(Boolean)
+        .join(' ')}
     >
       <div className="container py-5">
         <nav className="row">
@@ -126,12 +129,8 @@ export default function Header() {
             </div>
           </div>
         </nav>
-        <nav
-          className={['mobile-nav col col-lg-hide', !menuIsOpen && 'hide']
-            .filter(Boolean)
-            .join(' ')}
-        >
-          <div className="container py-4">
+        <nav className="col col-lg-hide">
+          <Drawer className="pt-4" expanded={menuIsOpen}>
             {Object.entries(pageLinkMap).map(([link, description]) => (
               <div className="col" key={link}>
                 <NavLink className="ghost-button" to={link}>
@@ -139,7 +138,7 @@ export default function Header() {
                 </NavLink>
               </div>
             ))}
-          </div>
+          </Drawer>
         </nav>
       </div>
     </header>
