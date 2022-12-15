@@ -19,6 +19,7 @@
   background-color: var(--page-card);
   color: var(--text-default);
   flex-direction: column;
+  overflow: auto;
   display: flex;
   position: relative;
 
