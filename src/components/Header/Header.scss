@@ -5,65 +5,62 @@
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:math';
 
-$underline-height: 1px;
-
 header,
 .header {
-  @include paddings.padding('y', 3);
-  @include paddings.padding('x', 4);
-  padding: 2rem 4rem;
-  box-sizing: border-box;
-  text-align: start;
   width: 100%;
+  height: 112px;
+  > .container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    background: fixed var(--bg);
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0);
+    transition: box-shadow 0.25s;
+  }
+
+  &.scrolled > .container {
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
+  }
 }
 
 nav,
 .nav {
-  & {
-    gap: margins.size(2);
-    display: flex;
-    align-items: center;
+  &.row,
+  .row {
+    gap: margins.size(4);
   }
 
-  .logo {
-    padding: 0;
-    margin: 0;
-  }
-
-  & > a,
-  & > .link {
-    & {
-      font-size: 1rem;
-      gap: margins.size(2);
-      position: relative;
-      padding: 0.75rem 1rem;
-      margin-left: 1rem;
-      border: none;
-      font-weight: 300;
-      border: none;
-      border-radius: 0;
-      cursor: pointer;
-      text-decoration: none;
+  // set single row height without overflow
+  &.row,
+  .row {
+    height: 48px;
+    flex-flow: nowrap;
+    & > .col {
+      height: 100%;
+      overflow: hidden;
+      justify-content: center;
     }
+  }
 
-    & > img,
-    & > h1,
-    & > .h1 {
-      margin: 0;
-      font-size: 1.75rem;
-      color: white;
-      height: 48px;
-      display: flex;
-      align-items: center;
+  // allow logo to shrink faster than other columns
+  .col:has(> .more-button) {
+    flex-shrink: 0;
+  }
 
-      img {
-        height: 48px;
-        width: auto;
-      }
+  // style logo image
+  .logo {
+    img {
+      display: block;
+      max-height: 48px;
+      width: 100%;
     }
   }
 
   button.user-profile {
+    width: 100%;
+    max-width: 10em;
     background-color: var(--profile-button-bg);
     color: var(--profile-button-text);
     display: flex;
@@ -91,5 +88,10 @@ nav,
     :active {
       background-color: hsl(200, 77%, 70%);
     }
+  }
+
+  .text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }

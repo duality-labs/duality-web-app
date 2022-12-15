@@ -82,7 +82,8 @@ button[type='submit'],
     border-color: var(--ghost-button);
   }
 
-  &:hover {
+  &:hover,
+  &.focused {
     background-color: var(--ghost-button);
     color: black; // black = delete background color
   }
