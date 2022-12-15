@@ -47,6 +47,11 @@ button,
   padding: 0;
 }
 
+input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
 input[type='submit'],
 button[type='submit'],
 .submit-button {
