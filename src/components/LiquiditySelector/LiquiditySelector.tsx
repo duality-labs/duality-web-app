@@ -244,7 +244,7 @@ export default function LiquiditySelector({
   const [graphEnd, setGraphEnd] = useState(initialGraphEnd);
 
   // find container size that buckets should fit
-  const [container, setContainer] = useState<SVGSVGElement | null>(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const windowWidth = useWindowWidth();
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   useLayoutEffect(() => {
@@ -452,7 +452,7 @@ export default function LiquiditySelector({
     [percentY]
   );
 
-  return (
+  const svg = (
     <svg
       className={['chart-liquidity', advanced && 'chart-type--advanced']
         .filter(Boolean)
@@ -460,7 +460,6 @@ export default function LiquiditySelector({
       viewBox={`0 -${containerSize.height} ${containerSize.width} ${
         containerSize.height + 5
       }`}
-      ref={setContainer}
     >
       <defs>
         <linearGradient id="white-concave-fade">
@@ -554,6 +553,12 @@ export default function LiquiditySelector({
         plotY={plotY}
       />
     </svg>
+  );
+
+  return (
+    <div className="svg-container" ref={setContainer}>
+      {svg}
+    </div>
   );
 }
 

@@ -64,7 +64,7 @@ export default function LiquidityDistribution({
 
   return (
     <div
-      className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
+      className={`chart-card page-card chart-type--${chartTypeSelected.toLowerCase()}`}
     >
       <div className="flex row">
         <div className="flex col col--left">
