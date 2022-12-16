@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.75](https://github.com/duality-labs/duality-web-app/compare/v0.1.74...v0.1.75) (2022-12-16)
+
+
+### Fixes
+
+* graph bounds layout issues ([#242](https://github.com/duality-labs/duality-web-app/issues/242)) ([d606724](https://github.com/duality-labs/duality-web-app/commit/d6067248dc4cd73afc99df169e3f9ae58a62e99c))
+
 ## [0.1.74](https://github.com/duality-labs/duality-web-app/compare/v0.1.73...v0.1.74) (2022-12-16)
 
 
