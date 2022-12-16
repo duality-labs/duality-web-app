@@ -3,10 +3,6 @@
 @use '../theme/collections.scss' as colors;
 @use '../font/size.scss' as font-size;
 
-$ghost-border-width: 1px;
-$ghost-padding-x: 4;
-$ghost-padding-y: 3;
-
 button,
 .button {
   @include paddings.padding('x', 3);
