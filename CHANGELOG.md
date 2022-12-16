@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.73](https://github.com/duality-labs/duality-web-app/compare/v0.1.72...v0.1.73) (2022-12-15)
+
+
+### Fixes
+
+* improve viewing for users with small screen widths ([#238](https://github.com/duality-labs/duality-web-app/issues/238)) ([2063810](https://github.com/duality-labs/duality-web-app/commit/2063810ae2419300971d6b4a94c00a9c445b616c))
+
 ## [0.1.72](https://github.com/duality-labs/duality-web-app/compare/v0.1.71...v0.1.72) (2022-12-15)
 
 

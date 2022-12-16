@@ -55,6 +55,16 @@ a {
   mix-blend-mode: normal !important;
 }
 
+.container {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 5vw;
+  padding-right: 5vw;
+  width: 100%;
+  max-width: calc(1440px + 10vw);
+}
+
 .row,
 .col {
   display: flex;
@@ -67,6 +77,50 @@ a {
 }
 .flex {
   flex: 1 1 auto;
+}
+.flex-centered {
+  align-items: center;
+  justify-content: center;
+}
+
+// dynamic displays based on viewport size
+.col-sm,
+.col-md,
+.col-lg,
+.col-xl {
+  display: none;
+}
+@media (min-width: 576px) {
+  .col-sm-hide {
+    display: none;
+  }
+  .col-sm {
+    display: flex;
+  }
+}
+@media (min-width: 768px) {
+  .col-md-hide {
+    display: none;
+  }
+  .col-md {
+    display: flex;
+  }
+}
+@media (min-width: 992px) {
+  .col-lg-hide {
+    display: none;
+  }
+  .col-lg {
+    display: flex;
+  }
+}
+@media (min-width: 1200px) {
+  .col-xl-hide {
+    display: none;
+  }
+  .col-xl {
+    display: flex;
+  }
 }
 
 .hide {
