@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.74](https://github.com/duality-labs/duality-web-app/compare/v0.1.73...v0.1.74) (2022-12-16)
+
+
+### Fixes
+
+* input button styles on mobile (part 2) ([#244](https://github.com/duality-labs/duality-web-app/issues/244)) ([b682028](https://github.com/duality-labs/duality-web-app/commit/b682028f1f828e8bf4964e453b5e60c52ecafa75))
+
 ## [0.1.73](https://github.com/duality-labs/duality-web-app/compare/v0.1.72...v0.1.73) (2022-12-15)
 
 
