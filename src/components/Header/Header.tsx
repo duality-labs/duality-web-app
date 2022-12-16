@@ -58,7 +58,7 @@ export default function Header() {
         .join(' ')}
     >
       <div className="container py-5">
-        <nav className="row">
+        <nav className="row gap-4">
           <div className="col">
             <NavLink className="logo" to="/" onClick={closeMenuAndScrollToTop}>
               <h1 className="font-brand">
@@ -73,7 +73,7 @@ export default function Header() {
             </NavLink>
           </div>
           <div className="col col-lg">
-            <div className="row ml-5">
+            <div className="row gap-4 ml-5">
               {Object.entries(pageLinkMap).map(([link, description]) => (
                 <div className="col" key={link}>
                   <NavLink
@@ -88,7 +88,7 @@ export default function Header() {
             </div>
           </div>
           <div className="col ml-auto">
-            <div className="row">
+            <div className="row gap-4">
               <div className="col hide">
                 <button
                   className="link no-blend"
