@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
@@ -39,6 +39,26 @@ export default function Header() {
     });
   }, []);
 
+  // close the secondary menu if a click is from outside of the header
+  const headerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClick(event: Event) {
+      if (event.target && !headerRef.current?.contains(event.target as Node)) {
+        setMenuIsOpen(false);
+      }
+    }
+    // Bind the event listener to document
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keyup', handleClick);
+    document.addEventListener('touchstart', handleClick);
+    return () => {
+      // Unbind the event listener on clean up
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keyup', handleClick);
+      document.removeEventListener('touchstart', handleClick);
+    };
+  }, []);
+
   // add extra style is page has been scrolled
   const [pageIsScrolled, setPageIsScrolled] = useState(false);
   useEffect(() => {
@@ -53,12 +73,13 @@ export default function Header() {
 
   return (
     <header
+      ref={headerRef}
       className={[(pageIsScrolled || menuIsOpen) && 'scrolled']
         .filter(Boolean)
         .join(' ')}
     >
       <div className="container py-5">
-        <nav className="row">
+        <nav className="row gap-4">
           <div className="col">
             <NavLink className="logo" to="/" onClick={closeMenuAndScrollToTop}>
               <h1 className="font-brand">
@@ -73,11 +94,11 @@ export default function Header() {
             </NavLink>
           </div>
           <div className="col col-lg">
-            <div className="row ml-5">
+            <div className="row gap-4 ml-5">
               {Object.entries(pageLinkMap).map(([link, description]) => (
                 <div className="col" key={link}>
                   <NavLink
-                    className="ghost-button"
+                    className="button ghost-button"
                     to={link}
                     onClick={closeMenuAndScrollToTop}
                   >
@@ -88,7 +109,7 @@ export default function Header() {
             </div>
           </div>
           <div className="col ml-auto">
-            <div className="row">
+            <div className="row gap-4">
               <div className="col hide">
                 <button
                   className="link no-blend"
@@ -101,6 +122,7 @@ export default function Header() {
               <div className="col col-lg-hide ml-auto">
                 <button
                   className={[
+                    'button',
                     'more-button',
                     'ghost-button',
                     menuIsOpen && 'focused',
@@ -114,13 +136,13 @@ export default function Header() {
               </div>
               <div className="col ml-auto">
                 {address ? (
-                  <button className="user-profile ml-auto">
+                  <button className="user-profile">
                     <img src={keplrLogoURI} className="logo mr-3" alt="logo" />
                     <div className="text-truncate">{address}</div>
                   </button>
                 ) : (
                   <button
-                    className="link connect-wallet ml-auto button-primary"
+                    className="connect-wallet button-primary"
                     onClick={connectWallet}
                   >
                     Connect Wallet
@@ -135,7 +157,7 @@ export default function Header() {
             {Object.entries(pageLinkMap).map(([link, description]) => (
               <div className="col" key={link}>
                 <NavLink
-                  className="ghost-button"
+                  className="button ghost-button"
                   to={link}
                   onClick={closeMenuAndScrollToTop}
                 >
