@@ -115,13 +115,13 @@ export default function Header() {
               </div>
               <div className="col ml-auto">
                 {address ? (
-                  <button className="user-profile ml-auto">
+                  <button className="user-profile">
                     <img src={keplrLogoURI} className="logo mr-3" alt="logo" />
                     <div className="text-truncate">{address}</div>
                   </button>
                 ) : (
                   <button
-                    className="connect-wallet ml-auto button-primary"
+                    className="connect-wallet button-primary"
                     onClick={connectWallet}
                   >
                     Connect Wallet
