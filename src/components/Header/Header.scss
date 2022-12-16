@@ -23,17 +23,12 @@ header,
   &.scrolled > .container {
     box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
   }
-}
 
-nav,
-.nav {
-  &.row,
   .row {
     gap: margins.size(4);
   }
 
   // set single row height without overflow
-  &.row,
   .row {
     height: 48px;
     flex-flow: nowrap;
