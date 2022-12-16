@@ -49,6 +49,13 @@ header,
     }
   }
 
+  button,
+  .button {
+    line-height: 1em;
+    padding: 0.7rem 1rem;
+    border-radius: 0.7rem;
+  }
+
   button.user-profile {
     width: 100%;
     max-width: 10em;

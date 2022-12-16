@@ -77,7 +77,7 @@ export default function Header() {
               {Object.entries(pageLinkMap).map(([link, description]) => (
                 <div className="col" key={link}>
                   <NavLink
-                    className="ghost-button"
+                    className="button ghost-button"
                     to={link}
                     onClick={closeMenuAndScrollToTop}
                   >
@@ -101,6 +101,7 @@ export default function Header() {
               <div className="col col-lg-hide ml-auto">
                 <button
                   className={[
+                    'button',
                     'more-button',
                     'ghost-button',
                     menuIsOpen && 'focused',
@@ -135,7 +136,7 @@ export default function Header() {
             {Object.entries(pageLinkMap).map(([link, description]) => (
               <div className="col" key={link}>
                 <NavLink
-                  className="ghost-button"
+                  className="button ghost-button"
                   to={link}
                   onClick={closeMenuAndScrollToTop}
                 >
