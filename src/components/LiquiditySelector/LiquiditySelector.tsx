@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   MouseEvent,
   useRef,
+  useEffect,
 } from 'react';
 
 import { formatPrice } from '../../lib/utils/number';
@@ -244,7 +245,7 @@ export default function LiquiditySelector({
   const [graphEnd, setGraphEnd] = useState(initialGraphEnd);
 
   // find container size that buckets should fit
-  const [container, setContainer] = useState<SVGSVGElement | null>(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const windowWidth = useWindowWidth();
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   useLayoutEffect(() => {
@@ -409,8 +410,8 @@ export default function LiquiditySelector({
   );
   const plotXinverse = useCallback(
     (x: number): number => {
-      const leftPadding = containerSize.width * 0.1;
-      const rightPadding = containerSize.width * 0.1;
+      const leftPadding = 0;
+      const rightPadding = 0;
       const width = containerSize.width - leftPadding - rightPadding;
       return Math.exp(
         ((x - leftPadding) * (Math.log(xMax) - Math.log(xMin))) / width +
@@ -421,8 +422,8 @@ export default function LiquiditySelector({
   );
   const plotY = useCallback(
     (y: number): number => {
-      const topPadding = containerSize.height * 0.05;
-      const bottomPadding = containerSize.height * 0.05;
+      const topPadding = 0;
+      const bottomPadding = 21; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return graphHeight === 0
         ? -bottomPadding // pin to bottom
@@ -432,8 +433,8 @@ export default function LiquiditySelector({
   );
   const percentY = useCallback(
     (y: number): number => {
-      const topPadding = containerSize.height * 0.05;
-      const bottomPadding = containerSize.height * 0.05;
+      const topPadding = 0;
+      const bottomPadding = 21; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
     },
@@ -452,15 +453,12 @@ export default function LiquiditySelector({
     [percentY]
   );
 
-  return (
+  const svg = (
     <svg
       className={['chart-liquidity', advanced && 'chart-type--advanced']
         .filter(Boolean)
         .join(' ')}
-      viewBox={`0 -${containerSize.height} ${containerSize.width} ${
-        containerSize.height + 5
-      }`}
-      ref={setContainer}
+      viewBox={`0 -${containerSize.height} ${containerSize.width} ${containerSize.height}`}
     >
       <defs>
         <linearGradient id="white-concave-fade">
@@ -554,6 +552,12 @@ export default function LiquiditySelector({
         plotY={plotY}
       />
     </svg>
+  );
+
+  return (
+    <div className="svg-container" ref={setContainer}>
+      {svg}
+    </div>
   );
 }
 
@@ -674,13 +678,20 @@ function TicksArea({
   const bucketWidth =
     plotX(new BigNumber(bucketRatio)) - plotX(new BigNumber(1));
 
+  const lastMinTickPrice = useRef<BigNumber>();
   const [startDragMin, isDraggingMin] = useOnDragMove(
     useCallback(
-      (ev: MouseEventInit) => {
-        const x = ev.movementX;
-        if (x) {
-          const xStart = plotX(startTickPrice);
-          const newValue = new BigNumber(plotXinverse(xStart + x));
+      (ev: Event, displacement = { x: 0, y: 0 }) => {
+        const x = displacement.x;
+        if (x && lastMinTickPrice.current) {
+          const orderOfMagnitudePixels =
+            plotX(new BigNumber(10)) - plotX(new BigNumber(1));
+          const displacementRatio = Math.pow(
+            10,
+            displacement.x / orderOfMagnitudePixels
+          );
+          const newValue =
+            lastMinTickPrice.current.multipliedBy(displacementRatio);
           const newValueString = formatPrice(newValue.toFixed());
           setRangeMin(newValueString);
           if (endTickPrice.isLessThanOrEqualTo(newValue)) {
@@ -688,24 +699,29 @@ function TicksArea({
           }
         }
       },
-      [
-        startTickPrice,
-        endTickPrice,
-        plotXinverse,
-        plotX,
-        setRangeMin,
-        setRangeMax,
-      ]
+      [lastMinTickPrice, endTickPrice, plotX, setRangeMin, setRangeMax]
     )
   );
+  useEffect(() => {
+    if (!isDraggingMin) {
+      lastMinTickPrice.current = startTickPrice;
+    }
+  }, [startTickPrice, isDraggingMin]);
 
+  const lastMaxTickPrice = useRef<BigNumber>();
   const [startDragMax, isDraggingMax] = useOnDragMove(
     useCallback(
-      (ev: MouseEventInit) => {
-        const x = ev.movementX;
-        if (x) {
-          const xStart = plotX(endTickPrice);
-          const newValue = new BigNumber(plotXinverse(xStart + x));
+      (ev: Event, displacement = { x: 0, y: 0 }) => {
+        const x = displacement.x;
+        if (x && lastMaxTickPrice.current) {
+          const orderOfMagnitudePixels =
+            plotX(new BigNumber(10)) - plotX(new BigNumber(1));
+          const displacementRatio = Math.pow(
+            10,
+            displacement.x / orderOfMagnitudePixels
+          );
+          const newValue =
+            lastMaxTickPrice.current.multipliedBy(displacementRatio);
           const newValueString = formatPrice(newValue.toFixed());
           setRangeMax(newValueString);
           if (startTickPrice.isGreaterThanOrEqualTo(newValue)) {
@@ -713,16 +729,14 @@ function TicksArea({
           }
         }
       },
-      [
-        startTickPrice,
-        endTickPrice,
-        plotXinverse,
-        plotX,
-        setRangeMin,
-        setRangeMax,
-      ]
+      [startTickPrice, plotX, setRangeMin, setRangeMax]
     )
   );
+  useEffect(() => {
+    if (!isDraggingMax) {
+      lastMaxTickPrice.current = endTickPrice;
+    }
+  }, [endTickPrice, isDraggingMax]);
 
   const rounding = 5;
   const hasPriceWarning =
@@ -1345,10 +1359,10 @@ function Axis({
         />
         <text
           x={plotX(tickMark).toFixed(3)}
-          y={plotY(0) + 2}
-          dy="12"
+          y={plotY(0) + 5}
           dominantBaseline="middle"
           textAnchor="middle"
+          alignmentBaseline="text-before-edge"
         >
           {tickMark.toFixed(decimalPlaces)}
         </text>
