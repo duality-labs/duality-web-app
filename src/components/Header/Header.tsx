@@ -121,7 +121,7 @@ export default function Header() {
                   </button>
                 ) : (
                   <button
-                    className="link connect-wallet ml-auto button-primary"
+                    className="connect-wallet ml-auto button-primary"
                     onClick={connectWallet}
                   >
                     Connect Wallet
