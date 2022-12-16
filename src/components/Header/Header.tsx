@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
@@ -39,6 +39,26 @@ export default function Header() {
     });
   }, []);
 
+  // close the secondary menu if a click is from outside of the header
+  const headerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClick(event: Event) {
+      if (event.target && !headerRef.current?.contains(event.target as Node)) {
+        setMenuIsOpen(false);
+      }
+    }
+    // Bind the event listener to document
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keyup', handleClick);
+    document.addEventListener('touchstart', handleClick);
+    return () => {
+      // Unbind the event listener on clean up
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keyup', handleClick);
+      document.removeEventListener('touchstart', handleClick);
+    };
+  }, []);
+
   // add extra style is page has been scrolled
   const [pageIsScrolled, setPageIsScrolled] = useState(false);
   useEffect(() => {
@@ -53,6 +73,7 @@ export default function Header() {
 
   return (
     <header
+      ref={headerRef}
       className={[(pageIsScrolled || menuIsOpen) && 'scrolled']
         .filter(Boolean)
         .join(' ')}
