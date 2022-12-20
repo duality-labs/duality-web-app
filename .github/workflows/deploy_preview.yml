@@ -37,7 +37,7 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: PUBLIC_URL=https://${{ github.event.pull_request.head.sha }}--graceful-palmier-ff28ba.netlify.app npm run build
 
       - name: Deploy preview to Netlify
         id: netlify_deploy
@@ -49,6 +49,7 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NETLIFY_DEPLOY_MESSAGE: Preview deploy ${{ github.ref }} # github.ref looks like `refs/pull/[PR#]/merge`
           NETLIFY_DEPLOY_TO_PROD: false
+          deploy_alias: ${{ github.event.pull_request.head.sha }}
           build_directory: build
           # we skip the build steps in this custom step because if we allow the project to build inside this step
           # and specify the node version for that, this action will first download the latest node version,
