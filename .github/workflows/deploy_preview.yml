@@ -17,6 +17,15 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Set Deploy Preview alias name (combine short SHA and files hash) (deploy alias max length is 37)
+        run: |
+          SHORT_SHA=$(node -p "'${{ github.event.pull_request.head.sha }}'.slice(0,8)")
+          SHORT_HASH=$(node -p "'${{ env.all-files-hash }}'.slice(0,8)")
+          echo "::set-output name=DEPLOY_PREVIEW_ALIAS::$SHORT_SHA-$SHORT_HASH"
+        env:
+          all-files-hash: ${{ hashFiles('**/*') }}
+        id: get-deploy-alias
+
       - name: Set Node version
         # use basic regex (first found digits and dots) to get Node engine version from package.json
         # will fail if not correctly specified
@@ -37,7 +46,9 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: PUBLIC_URL=https://${{ github.event.pull_request.head.sha }}--graceful-palmier-ff28ba.netlify.app npm run build
+        run: PUBLIC_URL=https://${{ env.deploy-alias }}--graceful-palmier-ff28ba.netlify.app npm run build
+        env:
+          deploy-alias: ${{ steps.get-deploy-alias.outputs.DEPLOY_PREVIEW_ALIAS }}
 
       - name: Deploy preview to Netlify
         id: netlify_deploy
@@ -49,7 +60,7 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NETLIFY_DEPLOY_MESSAGE: Preview deploy ${{ github.ref }} # github.ref looks like `refs/pull/[PR#]/merge`
           NETLIFY_DEPLOY_TO_PROD: false
-          deploy_alias: ${{ github.event.pull_request.head.sha }}
+          deploy_alias: ${{ steps.get-deploy-alias.outputs.DEPLOY_PREVIEW_ALIAS }}
           build_directory: build
           # we skip the build steps in this custom step because if we allow the project to build inside this step
           # and specify the node version for that, this action will first download the latest node version,
