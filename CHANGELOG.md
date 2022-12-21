@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.77](https://github.com/duality-labs/duality-web-app/compare/v0.1.76...v0.1.77) (2022-12-21)
+
+
+### Fixes
+
+* update browser preview descriptions (part 2) ([#249](https://github.com/duality-labs/duality-web-app/issues/249)) ([b5f8b6a](https://github.com/duality-labs/duality-web-app/commit/b5f8b6a3491563c21ef6119c0e17e66c52c85afa))
+
 ## [0.1.76](https://github.com/duality-labs/duality-web-app/compare/v0.1.75...v0.1.76) (2022-12-20)
 
 
