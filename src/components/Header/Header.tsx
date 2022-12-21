@@ -86,6 +86,8 @@ export default function Header() {
                 <img
                   src={logoWithText}
                   alt="Duality"
+                  width="198"
+                  height="63"
                   onError={({ currentTarget }) => {
                     currentTarget.outerHTML = 'Duality';
                   }}
