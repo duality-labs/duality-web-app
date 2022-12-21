@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.79](https://github.com/duality-labs/duality-web-app/compare/v0.1.78...v0.1.79) (2022-12-21)
+
+
+### Fixes
+
+* update browser tab icon favicon (part 2) ([#251](https://github.com/duality-labs/duality-web-app/issues/251)) ([9de2eda](https://github.com/duality-labs/duality-web-app/commit/9de2eda309030d4a727c6ea829e8e66b24be90c3))
+
 ## [0.1.78](https://github.com/duality-labs/duality-web-app/compare/v0.1.77...v0.1.78) (2022-12-21)
 
 
