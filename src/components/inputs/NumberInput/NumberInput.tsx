@@ -15,6 +15,11 @@ interface NumberInputProps
   value: string | undefined;
 }
 
+const numberRegExp = /^\d*\.?\d*$/;
+const checkIsValid = (value: string) => {
+  return value.length === 0 || numberRegExp.test(value);
+};
+
 export default function NumberInput({
   className,
   placeholder = '0',
@@ -32,13 +37,19 @@ export default function NumberInput({
       value={value}
       onInput={useCallback<FormEventHandler<HTMLInputElement>>(
         (e) => {
-          onInput?.(e.currentTarget.value);
+          const value = e.currentTarget.value;
+          if (onInput && checkIsValid(value)) {
+            onInput(value);
+          }
         },
         [onInput]
       )}
       onChange={useCallback<ChangeEventHandler<HTMLInputElement>>(
         (e) => {
-          onChange?.(e.target.value);
+          const value = e.target.value;
+          if (onChange && checkIsValid(value)) {
+            onChange(value);
+          }
         },
         [onChange]
       )}
