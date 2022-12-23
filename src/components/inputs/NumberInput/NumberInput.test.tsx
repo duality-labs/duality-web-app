@@ -46,6 +46,7 @@ test.concurrent.each([
   ['|4', '-', '|4'],
   ['4|1', 'e', '4|1'],
   ['4|', '%', '4|'],
+  ['4|1', '{Delete}', '4|'],
   ['1|23|4', 'e', '1|23|4'],
   // Trailing 0s tests
   ['0.00000122000|', '0', '0.000001220000|'],
@@ -61,6 +62,7 @@ test.concurrent.each([
   ['|000.0', '0', '0|000.0'],
   // Appended string tests
   ['|%', '4', '4|%', '%'],
+  ['|%', '{Delete}', '%|', '%'],
   ['|4%', '-', '|4%', '%'],
 ])(
   'Takes input of "%s" and after typing "%s" receives output of "%s"',
