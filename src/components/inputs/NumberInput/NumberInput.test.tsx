@@ -61,9 +61,9 @@ test.concurrent.each([
   ['0000|0', '.', '0000.|0'],
   ['|000.0', '0', '0|000.0'],
   // Appended string tests
-  ['|%', '4', '4|%', '%'],
-  ['|%', '{Delete}', '%|', '%'],
-  ['|4%', '-', '|4%', '%'],
+  ['|', '4', '4|%', '%'],
+  ['|', '{Delete}', '%|', '%'],
+  ['|4', '-', '|4%', '%'],
 ])(
   'Takes input of "%s" and after typing "%s" receives output of "%s"',
   async function (

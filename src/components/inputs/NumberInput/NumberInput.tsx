@@ -42,11 +42,11 @@ export default function NumberInput({
       className={['number-input', className].filter(Boolean).join(' ')}
       type="text"
       placeholder={placeholder}
-      value={`${value}${!value.endsWith(appendString) ? appendString : ''}`}
+      value={`${value}${appendString}`}
       onInput={useCallback<FormEventHandler<HTMLInputElement>>(
         (e) => {
-          const value = e.currentTarget.value;
-          if (onInput && checkIsValid(parseValue(value, appendString))) {
+          const value = parseValue(e.currentTarget.value, appendString);
+          if (onInput && checkIsValid(value)) {
             onInput(value);
           }
         },
@@ -62,8 +62,8 @@ export default function NumberInput({
       }, [])}
       onChange={useCallback<ChangeEventHandler<HTMLInputElement>>(
         (e) => {
-          const value = e.target.value;
-          if (onChange && checkIsValid(parseValue(value, appendString))) {
+          const value = parseValue(e.target.value, appendString);
+          if (onChange && checkIsValid(value)) {
             onChange(value);
           }
         },

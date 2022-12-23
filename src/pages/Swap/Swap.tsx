@@ -33,7 +33,7 @@ import './Swap.scss';
 type CardType = 'trade' | 'settings';
 type OrderType = 'market' | 'limit';
 
-const defaultSlippage = '0.5%';
+const defaultSlippage = '0.5';
 
 export default function Swap() {
   const { address, connectWallet } = useWeb3();
