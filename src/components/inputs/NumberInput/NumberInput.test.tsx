@@ -11,12 +11,23 @@ interface InputProperties {
   inputtedValue: string;
 }
 
-function TestNumberInput({ initialValue = '' }: { initialValue: string }) {
+function TestNumberInput({
+  initialValue = '',
+  appendString = '',
+}: {
+  initialValue: string;
+  appendString: string;
+}) {
   const [value, setValue] = useState(initialValue);
   return (
     <>
       <label htmlFor="test-input">Test</label>
-      <NumberInput id="test-input" value={value} onChange={setValue} />
+      <NumberInput
+        id="test-input"
+        value={value}
+        onChange={setValue}
+        appendString={appendString}
+      />
     </>
   );
 }
@@ -47,29 +58,37 @@ test.concurrent.each([
   ['0000.0|', '0000.0|'],
   ['0000.|0', '0000.|0'],
   ['0|000.0', '0|000.0'],
-])('converts "%s" to "%s"', async function (originalValue, expectedValue) {
-  const { value, inputtedValue, selectionStart, selectionEnd } = parseValue(
-    originalValue,
-    { extractInputtedValue: true }
-  );
-  render(<TestNumberInput initialValue={value} />);
+  // Appended string tests
+  ['4|%', '4|%', '%'],
+  ['-|4%', '|4%', '%'],
+])(
+  'converts "%s" to "%s"',
+  async function (originalValue, expectedValue, appendString = '') {
+    const { value, inputtedValue, selectionStart, selectionEnd } = parseValue(
+      originalValue,
+      { extractInputtedValue: true }
+    );
+    render(
+      <TestNumberInput initialValue={value} appendString={appendString} />
+    );
 
-  // get input
-  const input = await screen.findByLabelText<HTMLInputElement>('Test');
-  input.focus();
-  input.selectionStart = selectionStart;
-  input.selectionEnd = selectionEnd;
+    // get input
+    const input = await screen.findByLabelText<HTMLInputElement>('Test');
+    input.focus();
+    input.selectionStart = selectionStart;
+    input.selectionEnd = selectionEnd;
 
-  // simulateuser typing
-  // cannot use userEvent.type here as that can reset the selection cursor to the end
-  userEvent.keyboard(inputtedValue);
+    // simulateuser typing
+    // cannot use userEvent.type here as that can reset the selection cursor to the end
+    userEvent.keyboard(inputtedValue);
 
-  const expected = parseValue(expectedValue);
+    const expected = parseValue(expectedValue);
 
-  expect(input.value).toBe(expected.value);
-  expect(input.selectionStart).toBe(expected.selectionStart);
-  expect(input.selectionEnd).toBe(expected.selectionEnd);
-});
+    expect(input.value).toBe(expected.value);
+    expect(input.selectionStart).toBe(expected.selectionStart);
+    expect(input.selectionEnd).toBe(expected.selectionEnd);
+  }
+);
 
 function parseValue(
   futureText: string,
