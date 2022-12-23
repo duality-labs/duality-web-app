@@ -2,8 +2,9 @@ import {
   ChangeEventHandler,
   FormEventHandler,
   InputHTMLAttributes,
+  KeyboardEvent,
   KeyboardEventHandler,
-  MouseEventHandler,
+  MouseEvent,
   useCallback,
 } from 'react';
 
@@ -38,9 +39,10 @@ export default function NumberInput({
   ...inputProps
 }: NumberInputProps) {
   const moveSelectionBeforeAppendedString = useCallback(
-    (input: HTMLInputElement) => {
+    (e: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLInputElement>) => {
       // after an input change, ensure selection is never behind the appended text
       if (appendString) {
+        const input = e.currentTarget;
         const appendStringIndex = input.value.lastIndexOf(appendString);
         if ((input.selectionEnd || 0) > appendStringIndex) {
           input.selectionEnd = appendStringIndex;
@@ -76,18 +78,8 @@ export default function NumberInput({
           e.preventDefault();
         }
       }, [])}
-      onKeyUp={useCallback<KeyboardEventHandler<HTMLInputElement>>(
-        (e) => {
-          moveSelectionBeforeAppendedString(e.currentTarget);
-        },
-        [moveSelectionBeforeAppendedString]
-      )}
-      onClick={useCallback<MouseEventHandler<HTMLInputElement>>(
-        (e) => {
-          moveSelectionBeforeAppendedString(e.currentTarget);
-        },
-        [moveSelectionBeforeAppendedString]
-      )}
+      onKeyUp={moveSelectionBeforeAppendedString}
+      onClick={moveSelectionBeforeAppendedString}
       onChange={useCallback<ChangeEventHandler<HTMLInputElement>>(
         (e) => {
           const value = parseValue(e.target.value, appendString);
