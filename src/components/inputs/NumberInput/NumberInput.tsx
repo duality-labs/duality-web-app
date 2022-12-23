@@ -35,6 +35,10 @@ export default function NumberInput({
   appendString = '',
   onInput,
   onChange,
+  // other input props
+  onClick,
+  onKeyDown,
+  onKeyUp,
   ...inputProps
 }: NumberInputProps) {
   const moveSelectionBeforeAppendedString = useCallback(
@@ -68,25 +72,32 @@ export default function NumberInput({
         },
         [onInput, appendString]
       )}
-      onKeyDown={useCallback<KeyboardEventHandler<HTMLInputElement>>((e) => {
-        // check single character inputs that should be ignored (eg. `-` `,` `e`)
-        const inputString =
-          (!e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey && e.key) || '';
-        if (inputString.length === 1 && !checkIsValid(inputString)) {
-          e.preventDefault();
-        }
-      }, [])}
+      onKeyDown={useCallback<KeyboardEventHandler<HTMLInputElement>>(
+        (e) => {
+          onKeyDown?.(e);
+          // check single character inputs that should be ignored (eg. `-` `,` `e`)
+          const inputString =
+            (!e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey && e.key) ||
+            '';
+          if (inputString.length === 1 && !checkIsValid(inputString)) {
+            e.preventDefault();
+          }
+        },
+        [onKeyDown]
+      )}
       onKeyUp={useCallback<KeyboardEventHandler<HTMLInputElement>>(
         (e) => {
+          onKeyUp?.(e);
           moveSelectionBeforeAppendedString(e.currentTarget);
         },
-        [moveSelectionBeforeAppendedString]
+        [moveSelectionBeforeAppendedString, onKeyUp]
       )}
       onClick={useCallback<MouseEventHandler<HTMLInputElement>>(
         (e) => {
+          onClick?.(e);
           moveSelectionBeforeAppendedString(e.currentTarget);
         },
-        [moveSelectionBeforeAppendedString]
+        [moveSelectionBeforeAppendedString, onClick]
       )}
       onChange={useCallback<ChangeEventHandler<HTMLInputElement>>(
         (e) => {
