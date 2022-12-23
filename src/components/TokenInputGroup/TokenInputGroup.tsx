@@ -21,7 +21,7 @@ const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
 const minSignificantDigits = 8;
 const maxSignificantDigits = 20;
-const placeholder = '...';
+const placeholder = '0';
 
 interface InputGroupProps {
   variant?: 'success' | 'error' | false;
@@ -146,7 +146,8 @@ export default function TokenInputGroup({
         ]
           .filter(Boolean)
           .join(' ')}
-        value={value || placeholder}
+        value={value}
+        placeholder={placeholder}
         onInput={onInput}
         onChange={onInputChange}
         onClick={selectAll}
