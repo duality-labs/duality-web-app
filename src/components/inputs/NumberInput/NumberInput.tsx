@@ -2,6 +2,7 @@ import {
   ChangeEventHandler,
   FormEventHandler,
   InputHTMLAttributes,
+  KeyboardEventHandler,
   useCallback,
 } from 'react';
 
@@ -51,6 +52,14 @@ export default function NumberInput({
         },
         [onInput, appendString]
       )}
+      onKeyDown={useCallback<KeyboardEventHandler<HTMLInputElement>>((e) => {
+        // check single character inputs that should be ignored (eg. `-` `,` `e`)
+        const inputString =
+          (!e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey && e.key) || '';
+        if (inputString.length === 1 && !checkIsValid(inputString)) {
+          e.preventDefault();
+        }
+      }, [])}
       onChange={useCallback<ChangeEventHandler<HTMLInputElement>>(
         (e) => {
           const value = e.target.value;
