@@ -41,7 +41,7 @@ export default function NumberInput({
       className={['number-input', className].filter(Boolean).join(' ')}
       type="text"
       placeholder={placeholder}
-      value={value}
+      value={`${value}${!value.endsWith(appendString) ? appendString : ''}`}
       onInput={useCallback<FormEventHandler<HTMLInputElement>>(
         (e) => {
           const value = e.currentTarget.value;
