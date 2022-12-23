@@ -8,7 +8,6 @@ interface InputProperties {
   selectionStart: number;
   selectionEnd: number;
   value: string;
-  inputtedValue: string;
 }
 
 function TestNumberInput({
@@ -37,37 +36,39 @@ function TestNumberInput({
 // If no '|' are found then it defaults to right after the last character
 test.concurrent.each([
   // 0 and . tests
-  ['0|', '0|'],
-  ['.|', '.|'],
-  ['.0|', '.0|'],
-  ['0.|', '0.|'],
-  ['00.|', '00.|'],
+  ['|', '0', '0|'],
+  ['|', '.', '.|'],
+  ['.|', '0', '.0|'],
+  ['0|', '.', '0.|'],
+  ['00|', '.', '00.|'],
   // Invalid character tests
-  ['-|4', '|4'],
-  ['4e|1', '4|1'],
-  ['4%|', '4|'],
+  ['|4', '-', '|4'],
+  ['4|1', 'e', '4|1'],
+  ['4|', '%', '4|'],
   // Trailing 0s tests
-  ['0.000001220000|', '0.000001220000|'],
-  ['0.00000|1220000', '0.00000|1220000'],
-  ['0.00000122|0000', '0.00000122|0000'],
-  ['0.0000012200|00', '0.0000012200|00'],
+  ['0.00000122000|', '0', '0.000001220000|'],
+  ['0.0000|1220000', '0', '0.00000|1220000'],
+  ['0.0000012|0000', '2', '0.00000122|0000'],
+  ['0.000001220|00', '0', '0.0000012200|00'],
   // Leading 0s tests
-  ['000|', '000|'],
-  ['00|0', '00|0'],
-  ['0000.|', '0000.|'],
-  ['0000.0|', '0000.0|'],
-  ['0000.|0', '0000.|0'],
-  ['0|000.0', '0|000.0'],
+  ['00|', '0', '000|'],
+  ['0|0', '0', '00|0'],
+  ['0000|', '.', '0000.|'],
+  ['0000.|', '0', '0000.0|'],
+  ['0000|0', '.', '0000.|0'],
+  ['|000.0', '0', '0|000.0'],
   // Appended string tests
-  ['4|%', '4|%', '%'],
-  ['-|4%', '|4%', '%'],
+  ['|%', '4', '4|%', '%'],
+  ['|4%', '-', '|4%', '%'],
 ])(
-  'converts "%s" to "%s"',
-  async function (originalValue, expectedValue, appendString = '') {
-    const { value, inputtedValue, selectionStart, selectionEnd } = parseValue(
-      originalValue,
-      { extractInputtedValue: true }
-    );
+  'Takes input of "%s" and after typing "%s" receives output of "%s"',
+  async function (
+    originalValue,
+    inputtedValue,
+    expectedValue,
+    appendString = ''
+  ) {
+    const { value, selectionStart, selectionEnd } = parseValue(originalValue);
     render(
       <TestNumberInput initialValue={value} appendString={appendString} />
     );
@@ -90,22 +91,12 @@ test.concurrent.each([
   }
 );
 
-function parseValue(
-  futureText: string,
-  { extractInputtedValue = false } = {}
-): InputProperties {
-  const inputtedValueIndex = futureText.lastIndexOf('|') - 1;
-  const textArray = futureText.split('');
-  const inputtedValue = extractInputtedValue
-    ? textArray.splice(inputtedValueIndex, 1).join('')
-    : '';
-  const text = textArray.join('');
+function parseValue(text: string): InputProperties {
   const start = text.indexOf('|');
   const end = text.lastIndexOf('|');
   return {
     value: text.replace(/\|/g, ''),
     selectionStart: start === -1 ? text.length : start,
     selectionEnd: start === -1 ? text.length : start === end ? start : end - 1,
-    inputtedValue,
   };
 }
