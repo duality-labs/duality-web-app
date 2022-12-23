@@ -3,6 +3,7 @@ import {
   FormEventHandler,
   InputHTMLAttributes,
   KeyboardEventHandler,
+  MouseEventHandler,
   useCallback,
 } from 'react';
 
@@ -36,6 +37,21 @@ export default function NumberInput({
   onChange,
   ...inputProps
 }: NumberInputProps) {
+  const moveSelectionBeforeAppendedString = useCallback(
+    (input: HTMLInputElement) => {
+      // after an input change, ensure selection is never behind the appended text
+      if (appendString) {
+        const appendStringIndex = input.value.lastIndexOf(appendString);
+        if ((input.selectionEnd || 0) > appendStringIndex) {
+          input.selectionEnd = appendStringIndex;
+        }
+        if ((input.selectionStart || 0) > appendStringIndex) {
+          input.selectionStart = appendStringIndex;
+        }
+      }
+    },
+    [appendString]
+  );
   return (
     <input
       {...inputProps}
@@ -62,19 +78,15 @@ export default function NumberInput({
       }, [])}
       onKeyUp={useCallback<KeyboardEventHandler<HTMLInputElement>>(
         (e) => {
-          // after an input change, ensure selection is never behind the appended text
-          if (appendString) {
-            const input = e.currentTarget;
-            const appendStringIndex = input.value.lastIndexOf(appendString);
-            if ((input.selectionEnd || 0) > appendStringIndex) {
-              input.selectionEnd = appendStringIndex;
-            }
-            if ((input.selectionStart || 0) > appendStringIndex) {
-              input.selectionStart = appendStringIndex;
-            }
-          }
+          moveSelectionBeforeAppendedString(e.currentTarget);
         },
-        [appendString]
+        [moveSelectionBeforeAppendedString]
+      )}
+      onClick={useCallback<MouseEventHandler<HTMLInputElement>>(
+        (e) => {
+          moveSelectionBeforeAppendedString(e.currentTarget);
+        },
+        [moveSelectionBeforeAppendedString]
       )}
       onChange={useCallback<ChangeEventHandler<HTMLInputElement>>(
         (e) => {
