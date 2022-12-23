@@ -5,9 +5,9 @@ import TokenPicker from '../TokenPicker';
 
 import { Token } from '../TokenPicker/hooks';
 
+import NumberInput from '../inputs/NumberInput';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { cleanInput } from './utils';
 import {
   formatAmount,
   formatCurrency,
@@ -59,14 +59,6 @@ export default function TokenInputGroup({
   maxValue: givenMaxValue,
   relevantValue,
 }: InputGroupProps) {
-  const onInputChange = useCallback(
-    function (event: React.ChangeEvent<HTMLInputElement>) {
-      if (typeof onValueChanged === 'function')
-        onValueChanged(event.currentTarget.value);
-    },
-    [onValueChanged]
-  );
-
   const onPickerChange = useCallback(
     function (newToken: Token | undefined) {
       if (newToken === exclusion) return;
@@ -137,7 +129,7 @@ export default function TokenInputGroup({
         exclusion={exclusion}
         disabled={disabledToken}
       />
-      <input
+      <NumberInput
         type="text"
         className={[
           'token-group-input',
@@ -148,8 +140,7 @@ export default function TokenInputGroup({
           .join(' ')}
         value={value}
         placeholder={placeholder}
-        onInput={onInput}
-        onChange={onInputChange}
+        onChange={onValueChanged}
         onClick={selectAll}
         disabled={disabledInput}
         style={
@@ -170,12 +161,4 @@ export default function TokenInputGroup({
       <span className="token-group-value">{secondaryValue}</span>
     </div>
   );
-}
-
-/**
- * Clear invalid characters from the input
- * @param event change event
- */
-function onInput(event: React.UIEvent<HTMLInputElement>) {
-  cleanInput(event.currentTarget);
 }

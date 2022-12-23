@@ -12,6 +12,7 @@ import {
 import TokenInputGroup from '../../components/TokenInputGroup';
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
+import NumberInput from '../../components/inputs/NumberInput';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import {
@@ -26,7 +27,6 @@ import { useSwap } from './hooks/useSwap';
 import { formatAmount } from '../../lib/utils/number';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
-import { cleanInput } from '../../components/TokenInputGroup/utils';
 
 import './Swap.scss';
 
@@ -486,12 +486,12 @@ export default function Swap() {
         </div>
         <div className="row mb-3">
           <h4 className="card-title">Max Slippage</h4>
-          <input
+          <NumberInput
             type="text"
             className="ml-auto"
             value={slippage}
-            onInput={(e) => cleanInput(e.currentTarget, '%')}
-            onChange={(e) => setSlippage(e.target.value)}
+            appendString="%"
+            onChange={setSlippage}
           />
           <button
             type="button"
