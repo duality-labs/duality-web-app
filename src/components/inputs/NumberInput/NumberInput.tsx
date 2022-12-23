@@ -13,17 +13,24 @@ interface NumberInputProps
   onInput?: (value: string) => void;
   onChange?: (value: string) => void;
   value: string | undefined;
+  appendString?: string;
 }
 
 const numberRegExp = /^\d*\.?\d*$/;
 const checkIsValid = (value: string) => {
   return value.length === 0 || numberRegExp.test(value);
 };
+const parseValue = (value: string, appendString = '') => {
+  return appendString && value.endsWith(appendString)
+    ? value.slice(0, value.length - appendString.length)
+    : value;
+};
 
 export default function NumberInput({
   className,
   placeholder = '0',
   value = '',
+  appendString = '',
   onInput,
   onChange,
   ...inputProps
@@ -38,20 +45,20 @@ export default function NumberInput({
       onInput={useCallback<FormEventHandler<HTMLInputElement>>(
         (e) => {
           const value = e.currentTarget.value;
-          if (onInput && checkIsValid(value)) {
+          if (onInput && checkIsValid(parseValue(value, appendString))) {
             onInput(value);
           }
         },
-        [onInput]
+        [onInput, appendString]
       )}
       onChange={useCallback<ChangeEventHandler<HTMLInputElement>>(
         (e) => {
           const value = e.target.value;
-          if (onChange && checkIsValid(value)) {
+          if (onChange && checkIsValid(parseValue(value, appendString))) {
             onChange(value);
           }
         },
-        [onChange]
+        [onChange, appendString]
       )}
     />
   );
