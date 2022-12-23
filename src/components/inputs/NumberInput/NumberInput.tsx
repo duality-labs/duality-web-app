@@ -60,6 +60,22 @@ export default function NumberInput({
           e.preventDefault();
         }
       }, [])}
+      onKeyUp={useCallback<KeyboardEventHandler<HTMLInputElement>>(
+        (e) => {
+          // after an input change, ensure selection is never behind the appended text
+          if (appendString) {
+            const input = e.currentTarget;
+            const appendStringIndex = input.value.lastIndexOf(appendString);
+            if ((input.selectionEnd || 0) > appendStringIndex) {
+              input.selectionEnd = appendStringIndex;
+            }
+            if ((input.selectionStart || 0) > appendStringIndex) {
+              input.selectionStart = appendStringIndex;
+            }
+          }
+        },
+        [appendString]
+      )}
       onChange={useCallback<ChangeEventHandler<HTMLInputElement>>(
         (e) => {
           const value = parseValue(e.target.value, appendString);
