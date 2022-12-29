@@ -62,6 +62,7 @@ export default function NumberInput({
       className={['number-input', className].filter(Boolean).join(' ')}
       type="text"
       placeholder={placeholder}
+      pattern="^[0-9]*[.,]?[0-9]*$"
       value={`${value}${appendString}`}
       onInput={useCallback<FormEventHandler<HTMLInputElement>>(
         (e) => {
