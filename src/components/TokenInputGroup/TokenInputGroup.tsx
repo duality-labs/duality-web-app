@@ -37,7 +37,6 @@ interface InputGroupProps {
   disabledInput?: boolean;
   disabledToken?: boolean;
   maxValue?: number;
-  relevantValue?: string;
 }
 
 function selectAll(e: React.MouseEvent<HTMLInputElement>) {
@@ -57,7 +56,6 @@ export default function TokenInputGroup({
   disabledInput = disabled,
   disabledToken = disabled,
   maxValue: givenMaxValue,
-  relevantValue,
 }: InputGroupProps) {
   const onPickerChange = useCallback(
     function (newToken: Token | undefined) {
@@ -69,10 +67,9 @@ export default function TokenInputGroup({
 
   const { data: price } = useSimplePrice(token);
   const secondaryValue =
-    relevantValue ||
-    (price !== undefined && value !== undefined
+    price !== undefined && value !== undefined
       ? `${formatCurrency(new BigNumber(value).multipliedBy(price).toFixed(2))}`
-      : undefined);
+      : undefined;
 
   const { data: balance } = useBankBalance(token);
   const maxValue = givenMaxValue || balance;
