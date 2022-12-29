@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import TokenPicker from '../TokenPicker';
@@ -66,10 +66,16 @@ export default function TokenInputGroup({
   );
 
   const { data: price } = useSimplePrice(token);
-  const secondaryValue =
-    price !== undefined && value !== undefined
-      ? `${formatCurrency(new BigNumber(value).multipliedBy(price).toFixed(2))}`
-      : undefined;
+  // render a valid currency value as the secondary value (or nothing at all)
+  const secondaryValue = useMemo(() => {
+    if (price !== undefined && value !== undefined) {
+      const currencyValue = new BigNumber(value).multipliedBy(price);
+      if (!currencyValue.isNaN()) {
+        return formatCurrency(currencyValue.toFixed(2));
+      }
+    }
+    return '';
+  }, [value, price]);
 
   const { data: balance } = useBankBalance(token);
   const maxValue = givenMaxValue || balance;
