@@ -136,7 +136,7 @@ export default function TokenInputGroup({
     </div>
   );
   const tokenValueColumn = (
-    <div className="flex col">
+    <div className="flex flex-centered col">
       <NumberInput
         type="text"
         className={['token-group-input', !Number(value) && 'input--zero']
@@ -158,7 +158,7 @@ export default function TokenInputGroup({
           };
         }, [value])}
       />
-      <span className="token-group-value">{secondaryValue}</span>
+      <span className="token-group-value ml-auto">{secondaryValue}</span>
     </div>
   );
   return (
