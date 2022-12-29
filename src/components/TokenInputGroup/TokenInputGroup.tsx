@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import TokenPicker from '../TokenPicker';
@@ -151,20 +151,18 @@ export default function TokenInputGroup({
         onChange={onInputChange}
         onClick={selectAll}
         disabled={disabledInput}
-        style={
-          value
-            ? {
-                // set width of input based on current values but restrained to a min/max
-                minWidth: `${
-                  minSignificantDigits + (value.includes('.') ? 1 : 0)
-                }ch`,
-                maxWidth: `${
-                  maxSignificantDigits + (value.includes('.') ? 1 : 0)
-                }ch`,
-                width: `${value?.length}ch`,
-              }
-            : { width: `${placeholder.length}ch` }
-        }
+        style={useMemo(() => {
+          return {
+            // set width of input based on current values but restrained to a min/max
+            minWidth: `${
+              minSignificantDigits + (value?.includes('.') ? 1 : 0)
+            }ch`,
+            maxWidth: `${
+              maxSignificantDigits + (value?.includes('.') ? 1 : 0)
+            }ch`,
+            width: `${(value || placeholder).length}ch`,
+          };
+        }, [value])}
       />
       <span className="token-group-value">{secondaryValue}</span>
     </div>
