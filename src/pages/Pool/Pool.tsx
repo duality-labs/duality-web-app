@@ -53,7 +53,6 @@ const priceMin = Math.pow(10, -maxFractionDigits);
 const priceMax = Math.pow(10, +maxFractionDigits);
 const defaultFee = '0.30%';
 const defaultSlopeType = 'UNIFORM';
-const defaultTokenAmount = '0';
 
 type SlopeType = 'UNIFORM' | 'UP-SLOPE' | 'BELL CURVE' | 'DOWN-SLOPE';
 const slopeTypes: Array<SlopeType> = [
@@ -133,10 +132,7 @@ export default function Pool() {
     []
   );
 
-  const [values, setValues] = useState<[string, string]>(() => [
-    new BigNumber(defaultTokenAmount).toFixed(),
-    new BigNumber(defaultTokenAmount).toFixed(),
-  ]);
+  const [values, setValues] = useState<[string, string]>(() => ['', '']);
 
   const isValueAZero = new BigNumber(values[0]).isZero();
   const isValueBZero = new BigNumber(values[1]).isZero();

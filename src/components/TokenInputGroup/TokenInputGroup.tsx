@@ -5,9 +5,9 @@ import TokenPicker from '../TokenPicker';
 
 import { Token } from '../TokenPicker/hooks';
 
+import NumberInput from '../inputs/NumberInput';
 import { useBankBalance } from '../../lib/web3/indexerProvider';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { cleanInput } from './utils';
 import {
   formatAmount,
   formatCurrency,
@@ -20,7 +20,7 @@ const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
 const maxSignificantDigits = 20;
-const placeholder = '...';
+const placeholder = '0';
 
 interface InputGroupProps {
   variant?: 'success' | 'error' | false;
@@ -36,7 +36,6 @@ interface InputGroupProps {
   disabledInput?: boolean;
   disabledToken?: boolean;
   maxValue?: number;
-  relevantValue?: string;
 }
 
 function selectAll(e: React.MouseEvent<HTMLInputElement>) {
@@ -56,16 +55,7 @@ export default function TokenInputGroup({
   disabledInput = disabled,
   disabledToken = disabled,
   maxValue: givenMaxValue,
-  relevantValue,
 }: InputGroupProps) {
-  const onInputChange = useCallback(
-    function (event: React.ChangeEvent<HTMLInputElement>) {
-      if (typeof onValueChanged === 'function')
-        onValueChanged(event.currentTarget.value);
-    },
-    [onValueChanged]
-  );
-
   const onPickerChange = useCallback(
     function (newToken: Token | undefined) {
       if (newToken === exclusion) return;
@@ -75,11 +65,16 @@ export default function TokenInputGroup({
   );
 
   const { data: price } = useSimplePrice(token);
-  const secondaryValue =
-    relevantValue ||
-    (price !== undefined && value !== undefined
-      ? `${formatCurrency(new BigNumber(value).multipliedBy(price).toFixed(2))}`
-      : undefined);
+  // render a valid currency value as the secondary value (or nothing at all)
+  const secondaryValue = useMemo(() => {
+    if (price !== undefined && value !== undefined) {
+      const currencyValue = new BigNumber(value).multipliedBy(price);
+      if (!currencyValue.isNaN()) {
+        return formatCurrency(currencyValue.toFixed(2));
+      }
+    }
+    return '';
+  }, [value, price]);
 
   const { data: balance } = useBankBalance(token);
   const maxValue = givenMaxValue || balance;
@@ -138,14 +133,14 @@ export default function TokenInputGroup({
         exclusion={exclusion}
         disabled={disabledToken}
       />
-      <input
+      <NumberInput
         type="text"
         className={['token-group-input', !Number(value) && 'input--zero']
           .filter(Boolean)
           .join(' ')}
-        value={value || placeholder}
-        onInput={onInput}
-        onChange={onInputChange}
+        value={value}
+        placeholder={placeholder}
+        onChange={onValueChanged}
         onClick={selectAll}
         disabled={disabledInput}
         style={useMemo(() => {
@@ -162,12 +157,4 @@ export default function TokenInputGroup({
       <span className="token-group-value">{secondaryValue}</span>
     </div>
   );
-}
-
-/**
- * Clear invalid characters from the input
- * @param event change event
- */
-function onInput(event: React.UIEvent<HTMLInputElement>) {
-  cleanInput(event.currentTarget);
 }

@@ -12,6 +12,7 @@ import {
 import TokenInputGroup from '../../components/TokenInputGroup';
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
+import NumberInput from '../../components/inputs/NumberInput';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import {
@@ -26,14 +27,13 @@ import { useSwap } from './hooks/useSwap';
 import { formatAmount } from '../../lib/utils/number';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
-import { cleanInput } from '../../components/TokenInputGroup/utils';
 
 import './Swap.scss';
 
 type CardType = 'trade' | 'settings';
 type OrderType = 'market' | 'limit';
 
-const defaultSlippage = '0.5%';
+const defaultSlippage = '0.5';
 
 export default function Swap() {
   const { address, connectWallet } = useWeb3();
@@ -42,7 +42,7 @@ export default function Swap() {
     tokenList.find((token) => token.symbol === 'TKN') as Token | undefined
   );
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [valueA, setValueA] = useState<string | undefined>('0');
+  const [valueA, setValueA] = useState<string | undefined>('');
   const [valueB, setValueB] = useState<string>();
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
   const pairRequest = {
@@ -486,12 +486,12 @@ export default function Swap() {
         </div>
         <div className="row mb-3">
           <h4 className="card-title">Max Slippage</h4>
-          <input
+          <NumberInput
             type="text"
             className="ml-auto"
             value={slippage}
-            onInput={(e) => cleanInput(e.currentTarget, '%')}
-            onChange={(e) => setSlippage(e.target.value)}
+            appendString="%"
+            onChange={setSlippage}
           />
           <button
             type="button"
