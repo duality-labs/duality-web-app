@@ -19,7 +19,6 @@ import './TokenInputGroup.scss';
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
-const minSignificantDigits = 8;
 const maxSignificantDigits = 20;
 const placeholder = '0';
 
@@ -105,10 +104,12 @@ export default function TokenInputGroup({
             onClick={() =>
               onValueChanged?.(
                 // allow max value be as long as it needs to be to perfectly fit user's balance
-                new BigNumber(maxValue).toFixed(
-                  maxFractionDigits,
-                  BigNumber.ROUND_DOWN
-                )
+                new BigNumber(maxValue)
+                  .toFixed(maxFractionDigits, BigNumber.ROUND_DOWN)
+                  // replace trailing zeros
+                  .replace(/\.([0-9]*[1-9])?0+$/, '.$1')
+                  // remove trailing decimal point
+                  .replace(/\.$/, '')
               )
             }
           >
@@ -134,11 +135,7 @@ export default function TokenInputGroup({
       />
       <NumberInput
         type="text"
-        className={[
-          'token-group-input',
-          'ml-auto',
-          !Number(value) && 'input--zero',
-        ]
+        className={['token-group-input', !Number(value) && 'input--zero']
           .filter(Boolean)
           .join(' ')}
         value={value}
@@ -146,20 +143,16 @@ export default function TokenInputGroup({
         onChange={onValueChanged}
         onClick={selectAll}
         disabled={disabledInput}
-        style={
-          value
-            ? {
-                // set width of input based on current values but restrained to a min/max
-                minWidth: `${
-                  minSignificantDigits + (value.includes('.') ? 1 : 0)
-                }ch`,
-                maxWidth: `${
-                  maxSignificantDigits + (value.includes('.') ? 1 : 0)
-                }ch`,
-                width: `${value?.length}ch`,
-              }
-            : { width: `${placeholder.length}ch` }
-        }
+        style={useMemo(() => {
+          return {
+            // set width of input based on current values but restrained to max characters
+            minWidth: '100%',
+            maxWidth: `${
+              maxSignificantDigits + (value?.includes('.') ? 1 : 0)
+            }ch`,
+            width: `${(value || placeholder).length}ch`,
+          };
+        }, [value])}
       />
       <span className="token-group-value">{secondaryValue}</span>
     </div>
