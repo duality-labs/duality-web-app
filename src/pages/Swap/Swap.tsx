@@ -42,7 +42,7 @@ export default function Swap() {
     tokenList.find((token) => token.symbol === 'TKN') as Token | undefined
   );
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [valueA, setValueA] = useState<string | undefined>('0');
+  const [valueA, setValueA] = useState<string | undefined>('');
   const [valueB, setValueB] = useState<string>();
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
   const pairRequest = {
