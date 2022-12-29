@@ -64,6 +64,9 @@ export default function NumberInput({
       placeholder={placeholder}
       pattern="^[0-9]*[.,]?[0-9]*$"
       value={`${value}${appendString}`}
+      // global HTML element attribute options
+      inputMode="decimal"
+      spellCheck="false"
       onInput={useCallback<FormEventHandler<HTMLInputElement>>(
         (e) => {
           const value = parseValue(e.currentTarget.value, appendString);
