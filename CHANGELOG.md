@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.80](https://github.com/duality-labs/duality-web-app/compare/v0.1.79...v0.1.80) (2022-12-29)
+
+
+### Other
+
+* improve token input styling ([#255](https://github.com/duality-labs/duality-web-app/issues/255)) ([1d43e32](https://github.com/duality-labs/duality-web-app/commit/1d43e327ca1faa87afbc3da2c6465d691d427b8f))
+* improve token input styling part 2 ([#256](https://github.com/duality-labs/duality-web-app/issues/256)) ([8e0a259](https://github.com/duality-labs/duality-web-app/commit/8e0a259818896a24df86d1499b1e288b392f7766))
+* improve token input styling part 3 ([#257](https://github.com/duality-labs/duality-web-app/issues/257)) ([c8fb667](https://github.com/duality-labs/duality-web-app/commit/c8fb667932256701062cfbfd157b8563b1bc9cb8))
+
+
+### Fixes
+
+* make number input controls more standard ([#253](https://github.com/duality-labs/duality-web-app/issues/253)) ([0e01cd9](https://github.com/duality-labs/duality-web-app/commit/0e01cd9af3dbb920994aedade5fadc3b40a112bc))
+
 ## [0.1.79](https://github.com/duality-labs/duality-web-app/compare/v0.1.78...v0.1.79) (2022-12-21)
 
 
