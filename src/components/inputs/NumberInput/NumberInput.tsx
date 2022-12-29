@@ -69,6 +69,8 @@ export default function NumberInput({
       spellCheck="false"
       // input element attribute options
       autoComplete="off"
+      // non-standard input element attributes
+      autoCorrect="off"
       onInput={useCallback<FormEventHandler<HTMLInputElement>>(
         (e) => {
           const value = parseValue(e.currentTarget.value, appendString);
