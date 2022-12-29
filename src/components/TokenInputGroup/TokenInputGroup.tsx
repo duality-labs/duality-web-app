@@ -78,16 +78,8 @@ export default function TokenInputGroup({
 
   const { data: balance } = useBankBalance(token);
   const maxValue = givenMaxValue || balance;
-  return (
-    <div
-      className={[
-        className,
-        'token-input-group',
-        variant && `token-input-group--${variant}`,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
+  const headerTitleColumn = (
+    <div className="col">
       {maxValue && (
         <h5 className="token-group-title">
           Available{' '}
@@ -97,6 +89,10 @@ export default function TokenInputGroup({
           })}
         </h5>
       )}
+    </div>
+  );
+  const headerShortcutButtonsColumn = (
+    <div className="col ml-auto">
       {!disabledInput && maxValue && Number(maxValue) > 0 && (
         <span className="token-group-balance">
           <button
@@ -126,6 +122,10 @@ export default function TokenInputGroup({
           </button>
         </span>
       )}
+    </div>
+  );
+  const tokenPickerColumn = (
+    <div className="col">
       <TokenPicker
         value={token}
         onChange={onPickerChange}
@@ -133,6 +133,10 @@ export default function TokenInputGroup({
         exclusion={exclusion}
         disabled={disabledToken}
       />
+    </div>
+  );
+  const tokenValueColumn = (
+    <div className="flex col">
       <NumberInput
         type="text"
         className={['token-group-input', !Number(value) && 'input--zero']
@@ -155,6 +159,29 @@ export default function TokenInputGroup({
         }, [value])}
       />
       <span className="token-group-value">{secondaryValue}</span>
+    </div>
+  );
+  return (
+    <div
+      className={[
+        className,
+        'row',
+        'token-input-group',
+        variant && `token-input-group--${variant}`,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div className="flex col">
+        <div className="row">
+          {headerTitleColumn}
+          {headerShortcutButtonsColumn}
+        </div>
+        <div className="row">
+          {tokenPickerColumn}
+          {tokenValueColumn}
+        </div>
+      </div>
     </div>
   );
 }
