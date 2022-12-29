@@ -110,10 +110,12 @@ export default function TokenInputGroup({
             onClick={() =>
               onValueChanged?.(
                 // allow max value be as long as it needs to be to perfectly fit user's balance
-                new BigNumber(maxValue).toFixed(
-                  maxFractionDigits,
-                  BigNumber.ROUND_DOWN
-                )
+                new BigNumber(maxValue)
+                  .toFixed(maxFractionDigits, BigNumber.ROUND_DOWN)
+                  // replace trailing zeros
+                  .replace(/\.([0-9]*[1-9])?0+$/, '.$1')
+                  // remove trailing decimal point
+                  .replace(/\.$/, '')
               )
             }
           >
