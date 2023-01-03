@@ -139,7 +139,7 @@ export default function TokenInputGroup({
     <div className="flex flex-centered col">
       <NumberInput
         type="text"
-        className={['token-group-input', !Number(value) && 'input--zero']
+        className={['flex token-group-input', !Number(value) && 'input--zero']
           .filter(Boolean)
           .join(' ')}
         value={value}
