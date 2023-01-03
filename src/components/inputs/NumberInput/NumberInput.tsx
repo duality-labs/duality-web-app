@@ -18,9 +18,10 @@ interface NumberInputProps
   appendString?: string;
 }
 
-const numberRegExp = /^\d*\.?\d*$/;
-const checkIsValid = (value: string) => {
-  return value.length === 0 || numberRegExp.test(value);
+// restrict inputs to digits with or out without one decimal place and '', '.'
+const inputRegExp = /^\d*\.?\d*$/;
+const checkIsValidInput = (value: string) => {
+  return value.length === 0 || inputRegExp.test(value);
 };
 const parseValue = (value: string, appendString = '') => {
   return appendString && value.endsWith(appendString)
@@ -75,7 +76,7 @@ export default function NumberInput({
       onInput={useCallback<FormEventHandler<HTMLInputElement>>(
         (e) => {
           const value = parseValue(e.currentTarget.value, appendString);
-          if (onInput && checkIsValid(value)) {
+          if (onInput && checkIsValidInput(value)) {
             onInput(value);
           }
         },
@@ -88,7 +89,7 @@ export default function NumberInput({
           const inputString =
             (!e.altKey && !e.ctrlKey && !e.shiftKey && !e.metaKey && e.key) ||
             '';
-          if (inputString.length === 1 && !checkIsValid(inputString)) {
+          if (inputString.length === 1 && !checkIsValidInput(inputString)) {
             e.preventDefault();
           }
         },
@@ -111,7 +112,7 @@ export default function NumberInput({
       onChange={useCallback<ChangeEventHandler<HTMLInputElement>>(
         (e) => {
           const value = parseValue(e.target.value, appendString);
-          if (onChange && checkIsValid(value)) {
+          if (onChange && checkIsValidInput(value)) {
             onChange(value);
           }
         },
