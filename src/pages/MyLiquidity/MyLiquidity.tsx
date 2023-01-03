@@ -898,7 +898,7 @@ function LiquidityDetailPage({
             }
             token={tokenA}
             value={`${tokenAValue}`}
-            onValueChanged={(newValue = '') =>
+            onValueChanged={(newValue) =>
               setValues(([_, valueB]) => [newValue, valueB])
             }
             exclusion={tokenB}
@@ -921,7 +921,7 @@ function LiquidityDetailPage({
             }
             token={tokenB}
             value={`${tokenBValue}`}
-            onValueChanged={(newValue = '') =>
+            onValueChanged={(newValue) =>
               setValues(([valueA]) => [valueA, newValue])
             }
             exclusion={tokenA}

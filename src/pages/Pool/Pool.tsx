@@ -647,7 +647,7 @@ export default function Pool() {
           <div className="card-row">
             <TokenInputGroup
               variant={!hasSufficientFundsA && 'error'}
-              onValueChanged={(newValue = '') =>
+              onValueChanged={(newValue) =>
                 setValues(([, valueB]) => [newValue, valueB])
               }
               onTokenChanged={setTokenA}
@@ -663,7 +663,7 @@ export default function Pool() {
           <div className="card-row">
             <TokenInputGroup
               variant={!hasSufficientFundsB && 'error'}
-              onValueChanged={(newValue = '') =>
+              onValueChanged={(newValue) =>
                 setValues(([valueA]) => [valueA, newValue])
               }
               onTokenChanged={setTokenB}

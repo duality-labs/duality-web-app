@@ -25,7 +25,7 @@ const placeholder = '0';
 interface InputGroupProps {
   variant?: 'success' | 'error' | false;
   onTokenChanged?: (token?: Token) => void;
-  onValueChanged?: (value: string | undefined) => void;
+  onValueChanged?: (value: string) => void;
   tokenList: Array<Token>;
   className?: string;
   exclusion?: Token;
