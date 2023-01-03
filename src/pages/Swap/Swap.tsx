@@ -12,7 +12,9 @@ import {
 import TokenInputGroup from '../../components/TokenInputGroup';
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
-import NumberInput from '../../components/inputs/NumberInput';
+import NumberInput, {
+  useNumericInputState,
+} from '../../components/inputs/NumberInput';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import {
@@ -42,8 +44,8 @@ export default function Swap() {
     tokenList.find((token) => token.symbol === 'TKN') as Token | undefined
   );
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [valueA, setValueA] = useState<string | undefined>('');
-  const [valueB, setValueB] = useState<string>();
+  const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
+  const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
   const pairRequest = {
     tokenA: tokenA?.address,
@@ -64,22 +66,31 @@ export default function Swap() {
   const rateData = getRouterEstimates(pairRequest, routerResult);
   const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap();
 
-  const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
-  const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
+  const valueAConverted = lastUpdatedA ? inputValueA : rateData?.valueA;
+  const valueBConverted = lastUpdatedA ? rateData?.valueB : inputValueB;
 
   const swapTokens = useCallback(
     function () {
       setTokenA(tokenB);
       setTokenB(tokenA);
-      setValueA(valueBConverted);
-      setValueB(valueAConverted);
+      setInputValueA(valueBConverted || '');
+      setInputValueB(valueAConverted || '');
       setLastUpdatedA((flag) => !flag);
     },
-    [tokenA, tokenB, valueAConverted, valueBConverted]
+    [
+      tokenA,
+      tokenB,
+      valueAConverted,
+      valueBConverted,
+      setInputValueA,
+      setInputValueB,
+    ]
   );
 
   const { data: balanceTokenA } = useBankBalance(tokenA);
-  const valueAConvertedNumber = new BigNumber(valueAConverted || 0);
+  const valueAConvertedNumber = new BigNumber(
+    (lastUpdatedA ? valueA : rateData?.valueA) || 0
+  );
   const hasFormData =
     address && tokenA && tokenB && valueAConvertedNumber.isGreaterThan(0);
   const hasSufficientFunds =
@@ -181,14 +192,20 @@ export default function Swap() {
     [address, routerResult, pair, tokenA, tokenB, slippage, swapRequest]
   );
 
-  const onValueAChanged = useCallback((newValue: string) => {
-    setValueA(newValue);
-    setLastUpdatedA(true);
-  }, []);
-  const onValueBChanged = useCallback((newValue: string) => {
-    setValueB(newValue);
-    setLastUpdatedA(false);
-  }, []);
+  const onValueAChanged = useCallback(
+    (newInputValue = '') => {
+      setInputValueA(newInputValue);
+      setLastUpdatedA(true);
+    },
+    [setInputValueA]
+  );
+  const onValueBChanged = useCallback(
+    (newInputValue = '') => {
+      setInputValueB(newInputValue);
+      setLastUpdatedA(false);
+    },
+    [setInputValueB]
+  );
 
   const [cardType, setCardType] = useState<CardType>('trade');
   const [orderType, setOrderType] = useState<OrderType>('market');
@@ -491,7 +508,7 @@ export default function Swap() {
             className="ml-auto"
             value={slippage}
             appendString="%"
-            onChange={setSlippage}
+            onChange={(value = '0') => setSlippage(value)}
           />
           <button
             type="button"

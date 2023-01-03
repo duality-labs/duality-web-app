@@ -1,13 +1,21 @@
 import {
   ChangeEventHandler,
+  Dispatch,
   FormEventHandler,
   InputHTMLAttributes,
   KeyboardEventHandler,
   MouseEventHandler,
+  SetStateAction,
   useCallback,
+  useState,
 } from 'react';
 
 import './NumberInput.scss';
+
+// ValidNumericString should always be a valid Number if defined as a string
+// if the numeric value would have been NaN then undefined is used in its place
+// so each components may use an appropriate default value for the string value
+export type ValidNumericString = string | undefined;
 
 interface NumberInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onInput' | 'onChange'> {
@@ -28,6 +36,20 @@ const parseValue = (value: string, appendString = '') => {
     ? value.slice(0, value.length - appendString.length)
     : value;
 };
+// restrict output values to valid numbers as string
+// invalid inputs such as '' or '.' are returned as empty strings: ''
+const formatValue = (value: string) => {
+  return value.length > 0 && !isNaN(Number(value)) ? value : undefined;
+};
+
+export function useNumericInputState(
+  defaultValue: string | (() => string) = ''
+): [string, Dispatch<SetStateAction<string>>, string | undefined] {
+  const [inputStringValue, setInputStringValue] =
+    useState<string>(defaultValue);
+  // return input string state with extra formatted value
+  return [inputStringValue, setInputStringValue, formatValue(inputStringValue)];
+}
 
 export default function NumberInput({
   className,
