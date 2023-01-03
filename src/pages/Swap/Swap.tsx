@@ -94,7 +94,8 @@ export default function Swap() {
   const hasSufficientFunds =
     valueAConvertedNumber.isLessThanOrEqualTo(balanceTokenA || 0) || false;
 
-  const [slippage, setSlippage] = useState(defaultSlippage);
+  const [inputSlippage, setInputSlippage, slippage = '0'] =
+    useNumericInputState(defaultSlippage);
 
   const { data: pair } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
@@ -504,14 +505,14 @@ export default function Swap() {
           <NumberInput
             type="text"
             className="ml-auto"
-            value={slippage}
+            value={inputSlippage}
             appendString="%"
-            onChange={setSlippage}
+            onChange={setInputSlippage}
           />
           <button
             type="button"
             className="button-info ml-2"
-            onClick={() => setSlippage(defaultSlippage)}
+            onClick={() => setInputSlippage(defaultSlippage)}
           >
             Auto
           </button>
