@@ -181,11 +181,11 @@ export default function Swap() {
     [address, routerResult, pair, tokenA, tokenB, slippage, swapRequest]
   );
 
-  const onValueAChanged = useCallback((newValue: string) => {
+  const onValueAChanged = useCallback((newValue = '') => {
     setValueA(newValue);
     setLastUpdatedA(true);
   }, []);
-  const onValueBChanged = useCallback((newValue: string) => {
+  const onValueBChanged = useCallback((newValue = '') => {
     setValueB(newValue);
     setLastUpdatedA(false);
   }, []);
@@ -491,7 +491,7 @@ export default function Swap() {
             className="ml-auto"
             value={slippage}
             appendString="%"
-            onChange={setSlippage}
+            onChange={(value = '0') => setSlippage(value)}
           />
           <button
             type="button"

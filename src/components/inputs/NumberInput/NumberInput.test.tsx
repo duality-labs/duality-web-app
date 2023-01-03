@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -24,7 +24,7 @@ function TestNumberInput({
       <NumberInput
         id="test-input"
         value={value}
-        onChange={setValue}
+        onChange={useCallback((newValue = '') => setValue(newValue), [])}
         appendString={appendString}
       />
     </>

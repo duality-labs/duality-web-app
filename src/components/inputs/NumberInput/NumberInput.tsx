@@ -13,8 +13,8 @@ import './NumberInput.scss';
 interface NumberInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onInput' | 'onChange'> {
   // restrict value type to only strings for easier handling
-  onInput?: (value: string) => void;
-  onChange?: (value: string) => void;
+  onInput?: (value: string | undefined) => void;
+  onChange?: (value: string | undefined) => void;
   value: string | undefined;
   appendString?: string;
 }
@@ -30,9 +30,10 @@ const parseValue = (value: string, appendString = '') => {
     : value;
 };
 // restrict output values to valid numbers as string
-// invalid inputs such as '' or '.' are returned as empty strings: ''
+// invalid inputs such as '' or '.' are returned as undefined so
+// defaults may be set in parent/ancestor components
 const formatValue = (value: string) => {
-  return value.length > 0 && !isNaN(Number(value)) ? value : '';
+  return value.length > 0 && !isNaN(Number(value)) ? value : undefined;
 };
 
 export default function NumberInput({
