@@ -12,7 +12,9 @@ import {
 import TokenInputGroup from '../../components/TokenInputGroup';
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
-import NumberInput from '../../components/inputs/NumberInput';
+import NumberInput, {
+  useNumericInputState,
+} from '../../components/inputs/NumberInput';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import {
@@ -42,8 +44,8 @@ export default function Swap() {
     tokenList.find((token) => token.symbol === 'TKN') as Token | undefined
   );
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
-  const [valueA, setValueA] = useState<string | undefined>('');
-  const [valueB, setValueB] = useState<string>();
+  const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
+  const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
   const pairRequest = {
     tokenA: tokenA?.address,
@@ -71,11 +73,18 @@ export default function Swap() {
     function () {
       setTokenA(tokenB);
       setTokenB(tokenA);
-      setValueA(valueBConverted);
-      setValueB(valueAConverted);
+      setInputValueA(valueBConverted || '');
+      setInputValueB(valueAConverted || '');
       setLastUpdatedA((flag) => !flag);
     },
-    [tokenA, tokenB, valueAConverted, valueBConverted]
+    [
+      tokenA,
+      tokenB,
+      valueAConverted,
+      valueBConverted,
+      setInputValueA,
+      setInputValueB,
+    ]
   );
 
   const { data: balanceTokenA } = useBankBalance(tokenA);
@@ -181,14 +190,20 @@ export default function Swap() {
     [address, routerResult, pair, tokenA, tokenB, slippage, swapRequest]
   );
 
-  const onValueAChanged = useCallback((newValue: string) => {
-    setValueA(newValue);
-    setLastUpdatedA(true);
-  }, []);
-  const onValueBChanged = useCallback((newValue: string) => {
-    setValueB(newValue);
-    setLastUpdatedA(false);
-  }, []);
+  const onValueAChanged = useCallback(
+    (newInputValue = '') => {
+      setInputValueA(newInputValue);
+      setLastUpdatedA(true);
+    },
+    [setInputValueA]
+  );
+  const onValueBChanged = useCallback(
+    (newInputValue = '') => {
+      setInputValueB(newInputValue);
+      setLastUpdatedA(false);
+    },
+    [setInputValueB]
+  );
 
   const [cardType, setCardType] = useState<CardType>('trade');
   const [orderType, setOrderType] = useState<OrderType>('market');
@@ -301,7 +316,7 @@ export default function Swap() {
             onTokenChanged={setTokenA}
             tokenList={tokenList}
             token={tokenA}
-            value={valueAConverted}
+            value={lastUpdatedA ? inputValueA : valueAConverted}
             className={
               isValidatingRate && !lastUpdatedA
                 ? valueAConverted
@@ -331,7 +346,7 @@ export default function Swap() {
             onTokenChanged={setTokenB}
             tokenList={tokenList}
             token={tokenB}
-            value={valueBConverted}
+            value={lastUpdatedA ? valueBConverted : inputValueB}
             className={
               isValidatingRate && lastUpdatedA
                 ? valueBConverted
