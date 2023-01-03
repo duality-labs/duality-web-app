@@ -5,6 +5,7 @@ import {
   KeyboardEventHandler,
   MouseEventHandler,
   useCallback,
+  useState,
 } from 'react';
 
 import './NumberInput.scss';
@@ -28,6 +29,11 @@ const parseValue = (value: string, appendString = '') => {
     ? value.slice(0, value.length - appendString.length)
     : value;
 };
+// restrict output values to valid numbers as string
+// invalid inputs such as '' or '.' are returned as empty strings: ''
+const formatValue = (value: string) => {
+  return value.length > 0 && !isNaN(Number(value)) ? value : '';
+};
 
 export default function NumberInput({
   className,
@@ -42,6 +48,7 @@ export default function NumberInput({
   onKeyUp,
   ...inputProps
 }: NumberInputProps) {
+  const [innerValue, setInnerValue] = useState(value);
   const moveSelectionBeforeAppendedString = useCallback(
     (input: HTMLInputElement) => {
       // after an input change, ensure selection is never behind the appended text
@@ -64,7 +71,8 @@ export default function NumberInput({
       type="text"
       placeholder={placeholder}
       pattern="^[0-9]*[.,]?[0-9]*$"
-      value={`${value}${appendString}`}
+      // allow value to be set from valid upstream values or local input value
+      value={`${formatValue(value) || innerValue}${appendString}`}
       // global HTML element attribute options
       inputMode="decimal"
       spellCheck="false"
@@ -77,7 +85,9 @@ export default function NumberInput({
         (e) => {
           const value = parseValue(e.currentTarget.value, appendString);
           if (onInput && checkIsValidInput(value)) {
-            onInput(value);
+            // set inner and outer (parent component) values
+            setInnerValue(value);
+            onInput(formatValue(value));
           }
         },
         [onInput, appendString]
@@ -113,7 +123,9 @@ export default function NumberInput({
         (e) => {
           const value = parseValue(e.target.value, appendString);
           if (onChange && checkIsValidInput(value)) {
-            onChange(value);
+            // set inner and outer (parent component) values
+            setInnerValue(value);
+            onChange(formatValue(value));
           }
         },
         [onChange, appendString]
