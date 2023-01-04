@@ -67,7 +67,7 @@ export default function TokenInputGroup({
   const { data: price } = useSimplePrice(token);
   // render a valid currency value as the secondary value (or nothing at all)
   const secondaryValue = useMemo(() => {
-    if (price !== undefined && value !== undefined) {
+    if (price !== undefined && value !== undefined && value !== '') {
       const currencyValue = new BigNumber(value).multipliedBy(price);
       if (!currencyValue.isNaN()) {
         return formatCurrency(currencyValue.toFixed(2));

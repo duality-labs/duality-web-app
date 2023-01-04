@@ -35,6 +35,7 @@ import {
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import StepNumberInput from '../../components/StepNumberInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
+import { useNumericInputState } from '../../components/inputs/NumberInput';
 
 import LiquidityDistribution from '../../components/LiquidityDistribution';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
@@ -67,8 +68,6 @@ interface EditedTickShareValue extends TickShareValue {
 interface TickShareValueMap {
   [pairID: string]: Array<TickShareValue>;
 }
-
-const defaultTokenAmount = '0';
 
 // modify ticks only if difference is greater than our tolerance
 const normalizationTolerance = Math.pow(10, -maxFractionDigits);
@@ -623,20 +622,24 @@ function LiquidityDetailPage({
     'redistribute' | 'add' | 'remove'
   >('redistribute');
 
-  const [values, setValues] = useState<[string, string]>(() => [
-    new BigNumber(defaultTokenAmount).toFixed(),
-    new BigNumber(defaultTokenAmount).toFixed(),
-  ]);
-  const [tokenAValue, tokenBValue] = values;
+  const [inputValueA, setInputValueA, tokenAValue = '0'] =
+    useNumericInputState();
+  const [inputValueB, setInputValueB, tokenBValue = '0'] =
+    useNumericInputState();
+  const values = useMemo(
+    (): [string, string] => [tokenAValue, tokenBValue],
+    [tokenAValue, tokenBValue]
+  );
 
   // reset when switching between modes
   // there is a lot going on, best to just remove the state
   useEffect(() => {
-    setValues(['0', '0']);
+    setInputValueA('');
+    setInputValueB('');
     if (editingType !== 'redistribute') {
       setEditedUserTicks(userTicks);
     }
-  }, [editingType, userTicks]);
+  }, [editingType, userTicks, setInputValueA, setInputValueB]);
 
   useLayoutEffect(() => {
     setEditedUserTicks(() => {
@@ -897,10 +900,8 @@ function LiquidityDetailPage({
                 : balanceTokenA?.toNumber()
             }
             token={tokenA}
-            value={`${tokenAValue}`}
-            onValueChanged={(newValue) =>
-              setValues(([_, valueB]) => [newValue, valueB])
-            }
+            value={inputValueA}
+            onValueChanged={setInputValueA}
             exclusion={tokenB}
           />
         </div>
@@ -920,10 +921,8 @@ function LiquidityDetailPage({
                 : balanceTokenB?.toNumber()
             }
             token={tokenB}
-            value={`${tokenBValue}`}
-            onValueChanged={(newValue) =>
-              setValues(([valueA]) => [valueA, newValue])
-            }
+            value={inputValueB}
+            onValueChanged={setInputValueB}
             exclusion={tokenA}
           />
         </div>

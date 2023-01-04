@@ -27,7 +27,7 @@ import { useHasPriceData } from '../../lib/tokenPrices';
 
 import RadioInput from '../../components/RadioInput';
 import StepNumberInput from '../../components/StepNumberInput';
-
+import { useNumericInputState } from '../../components/inputs/NumberInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
 import LiquiditySelector from '../../components/LiquiditySelector';
 import {
@@ -132,10 +132,15 @@ export default function Pool() {
     []
   );
 
-  const [values, setValues] = useState<[string, string]>(() => ['', '']);
+  const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
+  const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
+  const values = useMemo(
+    (): [string, string] => [valueA, valueB],
+    [valueA, valueB]
+  );
 
-  const isValueAZero = new BigNumber(values[0]).isZero();
-  const isValueBZero = new BigNumber(values[1]).isZero();
+  const isValueAZero = new BigNumber(valueA).isZero();
+  const isValueBZero = new BigNumber(valueB).isZero();
 
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
   const valuesValid = !!tokenA && !!tokenB && values.some((v) => Number(v));
@@ -409,10 +414,22 @@ export default function Pool() {
     setInvertTokenOrder((order) => !order);
     setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
     setRangeMax(() => flipAroundCurrentPriceSwap(rangeMin));
-    setValues(([valueA, valueB]) => [valueB, valueA]);
+    setInputValueA(inputValueB);
+    setInputValueB(inputValueA);
     setTokenA(tokenB);
     setTokenB(tokenA);
-  }, [tokenA, tokenB, rangeMin, rangeMax, setRangeMin, setRangeMax]);
+  }, [
+    tokenA,
+    tokenB,
+    rangeMin,
+    rangeMax,
+    setRangeMin,
+    setRangeMax,
+    inputValueA,
+    inputValueB,
+    setInputValueA,
+    setInputValueB,
+  ]);
 
   const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
     'range'
@@ -647,13 +664,11 @@ export default function Pool() {
           <div className="card-row">
             <TokenInputGroup
               variant={!hasSufficientFundsA && 'error'}
-              onValueChanged={(newValue) =>
-                setValues(([, valueB]) => [newValue, valueB])
-              }
+              onValueChanged={setInputValueA}
               onTokenChanged={setTokenA}
               tokenList={tokenList}
               token={tokenA}
-              value={`${values[0]}`}
+              value={inputValueA}
               exclusion={tokenB}
             />
           </div>
@@ -663,13 +678,11 @@ export default function Pool() {
           <div className="card-row">
             <TokenInputGroup
               variant={!hasSufficientFundsB && 'error'}
-              onValueChanged={(newValue) =>
-                setValues(([valueA]) => [valueA, newValue])
-              }
+              onValueChanged={setInputValueB}
               onTokenChanged={setTokenB}
               tokenList={tokenList}
               token={tokenB}
-              value={`${values[1]}`}
+              value={inputValueB}
               exclusion={tokenA}
             />
           </div>
