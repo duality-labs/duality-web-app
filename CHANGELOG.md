@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.81](https://github.com/duality-labs/duality-web-app/compare/v0.1.80...v0.1.81) (2023-01-04)
+
+
+### Fixes
+
+* make numeric inputs easier to use ([#261](https://github.com/duality-labs/duality-web-app/issues/261)) ([4b8845a](https://github.com/duality-labs/duality-web-app/commit/4b8845acf0b29d590f7c1f11cad67a3d046d7a5b))
+
 ## [0.1.80](https://github.com/duality-labs/duality-web-app/compare/v0.1.79...v0.1.80) (2022-12-29)
 
 
