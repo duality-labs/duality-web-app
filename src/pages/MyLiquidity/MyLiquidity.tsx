@@ -12,7 +12,6 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
-import { DexShares } from '../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/rest';
 import {
   useBankBalances,
   useIndexerData,
@@ -46,6 +45,7 @@ import { useEditLiquidity } from './useEditLiquidity';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 import { calculateShares } from '../../lib/web3/utils/ticks';
+import { DexShares } from '../../lib/web3/utils/shares';
 
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
@@ -303,7 +303,8 @@ function ShareValuesPage({
   const allUserBankValue = (balances || []).reduce(
     (result, { amount, denom }) => {
       const tokenIndex = allUserTokensList.findIndex(matchTokenDenom(denom));
-      const token = allUserTokensList[tokenIndex];
+      const token = allUserTokensList[tokenIndex] as Token | undefined;
+      if (!token) return result;
       const tokenAmount =
         getAmountInDenom(token, amount, denom, token.display) || '0';
       const tokenPrice = allUserTokenPrices[tokenIndex];
