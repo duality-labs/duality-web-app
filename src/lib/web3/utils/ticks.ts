@@ -15,6 +15,6 @@ export function calculateShares({
   reserve0,
   reserve1,
   price,
-}: TickInfo): BigNumber {
+}: Pick<TickInfo, 'reserve0' | 'reserve1' | 'price'>): BigNumber {
   return reserve0.plus(reserve1.dividedBy(price));
 }
