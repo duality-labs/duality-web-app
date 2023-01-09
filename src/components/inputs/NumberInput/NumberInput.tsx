@@ -29,6 +29,11 @@ const parseValue = (value: string, appendString = '') => {
     : value;
 };
 
+function sanitizeInputRegex(string: string) {
+  // see https://github.com/sindresorhus/escape-string-regexp/blob/v5.0.0/index.js#L8-L10
+  return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
+}
+
 export default function NumberInput({
   className,
   placeholder = '0',
@@ -63,7 +68,7 @@ export default function NumberInput({
       className={['number-input', className].filter(Boolean).join(' ')}
       type="text"
       placeholder={placeholder}
-      pattern="^[0-9]*[.,]?[0-9]*$"
+      pattern={`^[0-9]*[.,]?[0-9]*${sanitizeInputRegex(appendString)}$`}
       value={`${value}${appendString}`}
       // global HTML element attribute options
       inputMode="decimal"
