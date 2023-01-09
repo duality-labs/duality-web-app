@@ -30,7 +30,7 @@ const parseValue = (value: string, appendString = '') => {
 };
 
 function sanitizeInputRegex(string: string) {
-  // see https://github.com/sindresorhus/escape-string-regexp/blob/ba9a4473850cb367936417e97f1f2191b7cc67dd/index.js#L8-L10
+  // see https://github.com/sindresorhus/escape-string-regexp/blob/v5.0.0/index.js#L8-L10
   return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
 }
 
