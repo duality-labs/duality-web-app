@@ -146,7 +146,15 @@ export default function MyLiquidity() {
           );
           const totalShares =
             tick0 && tick1
-              ? calculateShares(tick0).plus(calculateShares(tick1))
+              ? calculateShares({
+                  price: tick0.price,
+                  reserve0: tick0.reserve0,
+                }).plus(
+                  calculateShares({
+                    price: tick1.price,
+                    reserve1: tick1.reserve1,
+                  })
+                )
               : new BigNumber(0);
           // add optional tick data from indexer
           if (tick0 && tick1 && totalShares) {
