@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.82](https://github.com/duality-labs/duality-web-app/compare/v0.1.81...v0.1.82) (2023-01-09)
+
+
+### Fixes
+
+* make number input controls more standard (part 2) ([#272](https://github.com/duality-labs/duality-web-app/issues/272)) ([b497fad](https://github.com/duality-labs/duality-web-app/commit/b497fadc1bc7f0354b17d9f555b11aa9ef5635b6))
+
 ## [0.1.81](https://github.com/duality-labs/duality-web-app/compare/v0.1.80...v0.1.81) (2023-01-04)
 
 
