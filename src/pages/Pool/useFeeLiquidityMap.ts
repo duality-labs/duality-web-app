@@ -31,10 +31,10 @@ export default function useFeeLiquidityMap(
 
     const feeSharesMap = ticks.reduce<{ [feeTier: string]: BigNumber }>(
       (result, { fee, price, reserve0, reserve1 }) => {
-        const totalShares = calculateShares({ price, reserve0, reserve1 });
-        if (totalShares.isGreaterThan(0)) {
+        const shares = calculateShares({ price, reserve0, reserve1 });
+        if (shares.isGreaterThan(0)) {
           const feeString = fee.toFixed();
-          result[feeString] = result[feeString].plus(totalShares);
+          result[feeString] = result[feeString].plus(shares);
         }
         return result;
       },
