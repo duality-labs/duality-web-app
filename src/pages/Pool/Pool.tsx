@@ -20,7 +20,6 @@ import {
   getBalance,
   TickInfo,
   useBankBalances,
-  useFeeLiquidityMap,
   useIndexerPairData,
 } from '../../lib/web3/indexerProvider';
 import { useHasPriceData } from '../../lib/tokenPrices';
@@ -39,6 +38,7 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import { useDeposit } from './useDeposit';
+import useFeeLiquidityMap from './useFeeLiquidityMap';
 
 import { formatPrice } from '../../lib/utils/number';
 import { priceToTickIndex } from '../../lib/web3/utils/ticks';
