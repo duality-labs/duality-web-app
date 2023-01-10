@@ -2,6 +2,10 @@
 
 The code for the Duality front-end web app.
 
+This version of the front end is intended to work with this release of the backend:
+
+- https://github.com/duality-labs/duality/releases/tag/v0.1.0
+
 ## Setting up the dev environment
 
 To set up the front end locally, connected to the current online testnet:
