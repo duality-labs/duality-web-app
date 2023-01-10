@@ -704,11 +704,6 @@ export function useFeeLiquidityMap(
     if (!pair) return;
 
     const ticks = Object.values(pair.ticks);
-    // normalise the data with the sum of values
-    const totalLiquidity = ticks.reduce((result, tickData) => {
-      return result.plus(tickData.totalShares || 0);
-    }, new BigNumber(0));
-
     const feeTypeLiquidity = feeTypes.reduce<Record<FeeType['fee'], BigNumber>>(
       (result, feeType) => {
         result[feeType.fee] = new BigNumber(0);
@@ -717,18 +712,31 @@ export function useFeeLiquidityMap(
       {}
     );
 
-    return ticks.reduce<{ [feeTier: string]: BigNumber }>(
+    const feeSharesMap = ticks.reduce<{ [feeTier: string]: BigNumber }>(
       (result, { fee, totalShares }) => {
         if (totalShares.isGreaterThan(0)) {
           const feeString = fee.toFixed();
-          result[feeString] = result[feeString].plus(
-            totalShares.dividedBy(totalLiquidity)
-          );
+          result[feeString] = result[feeString].plus(totalShares);
         }
         return result;
       },
       feeTypeLiquidity
     );
+
+    const totalLiquidity = Object.values(feeSharesMap).reduce<BigNumber>(
+      (total, shares) => {
+        return total.plus(shares);
+      },
+      new BigNumber(0)
+    );
+
+    // normalize shares to a percentage
+    return Object.entries(feeSharesMap).reduce<{
+      [feeTier: string]: BigNumber;
+    }>((result, [feeString, shares]) => {
+      result[feeString] = shares.dividedBy(totalLiquidity);
+      return result;
+    }, feeTypeLiquidity);
   }, [pair]);
 
   return {
