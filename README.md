@@ -5,6 +5,11 @@ The code for the Duality front-end web app.
 This version of the front end is intended to work with this release of the backend:
 
 - https://github.com/duality-labs/duality/releases/tag/v0.1.0
+- run with Docker:
+  - checkout [35cdba3](https://github.com/duality-labs/duality/commit/35cdba33e71742d213c3f873a08fe5e46b5ec493) (tag [v0.1.0](https://github.com/duality-labs/duality/releases/tag/v0.1.0))
+  - cherry-pick [c0a4196](https://github.com/duality-labs/duality/commit/c0a419600d5920c58f68822f932afb5857ebe45f) Dockerized Setup
+- run with Docker Compose:
+  - checkout [cee44d7](https://github.com/duality-labs/duality/commit/cee44d7cf9d079ad2302d2ffb6a9a67847aa0e10) part of Docker Compose setup
 
 ## Setting up the dev environment
 
@@ -35,7 +40,12 @@ You can merge these changes into main locally to use them
    - `$ docker-compose up --build` (for 1 leader, 4 follower and 1 test nodes) or
    - `$ docker-compose up --build dualityleader` (to start only the lead node) or
    - `$ docker-compose up --build dualityleader dualitynode0` (for 2 nodes) or
-   - `$ docker-compose up --build --scale dualitytester=0` (for 5 nodes)
+   - `$ docker-compose up --build --scale dualitytester=0` (for no test node)
+
+   for a simple create and remove Docker container action you can combine the
+   `--abort-on-container-exit` flag with any of the above, eg:
+
+   - `$ docker-compose up --build --abort-on-container-exit dualityleader dualitynode0 || true && docker-compose down`
 
    the local testnet should be accessible at the ports specified in the
    docker-compose.yml file (eg. http://localhost:26657)
