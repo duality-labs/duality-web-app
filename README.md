@@ -2,7 +2,7 @@
 
 The code for the Duality front-end web app.
 
-This version of the front end is intended to work with release v0.1.0 of the backend:
+This version of the front end is intended to work with this release of the backend:
 
 - https://github.com/duality-labs/duality/releases/tag/v0.1.0
 
