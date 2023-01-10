@@ -13,13 +13,13 @@ export function priceToTickIndex(price: BigNumber): BigNumber {
 
 const bigZero = new BigNumber(0);
 export function calculateShares({
+  price,
   reserve0 = bigZero,
   reserve1 = bigZero,
-  price,
 }: {
+  price: TickInfo['price'];
   reserve0?: TickInfo['reserve0'];
   reserve1?: TickInfo['reserve1'];
-  price: TickInfo['price'];
 }): BigNumber {
   return reserve0.plus(reserve1.dividedBy(price));
 }
