@@ -42,6 +42,11 @@ You can merge these changes into main locally to use them
    - `$ docker-compose up --build dualityleader dualitynode0` (for 2 nodes) or
    - `$ docker-compose up --build --scale dualitytester=0` (for no test node)
 
+   for a simple create and remove Docker container action you can combine the
+   `--abort-on-container-exit` flag with any of the above, eg:
+
+   - `$ docker-compose up --build --abort-on-container-exit dualityleader dualitynode0 || true && docker-compose down`
+
    the local testnet should be accessible at the ports specified in the
    docker-compose.yml file (eg. http://localhost:26657)
 
