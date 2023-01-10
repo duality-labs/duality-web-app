@@ -6,6 +6,7 @@ import {
   useIndexerPairData,
 } from '../../lib/web3/indexerProvider';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
+import { calculateShares } from '../../lib/web3/utils/ticks';
 
 export default function useFeeLiquidityMap(
   tokenA?: TokenAddress,
@@ -29,10 +30,11 @@ export default function useFeeLiquidityMap(
     );
 
     const feeSharesMap = ticks.reduce<{ [feeTier: string]: BigNumber }>(
-      (result, { fee, totalShares }) => {
-        if (totalShares.isGreaterThan(0)) {
+      (result, { fee, price, reserve0, reserve1 }) => {
+        const shares = calculateShares({ price, reserve0, reserve1 });
+        if (shares.isGreaterThan(0)) {
           const feeString = fee.toFixed();
-          result[feeString] = result[feeString].plus(totalShares);
+          result[feeString] = result[feeString].plus(shares);
         }
         return result;
       },

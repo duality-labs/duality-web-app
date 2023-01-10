@@ -45,6 +45,7 @@ import './MyLiquidity.scss';
 import { useEditLiquidity } from './useEditLiquidity';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
+import { calculateShares } from '../../lib/web3/utils/ticks';
 
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
@@ -143,7 +144,18 @@ export default function MyLiquidity() {
               tick.feeIndex.isEqualTo(feeIndex) &&
               tick.tickIndex.isEqualTo(tickIndex1)
           );
-          const totalShares = tick0?.totalShares;
+          const totalShares =
+            tick0 && tick1
+              ? calculateShares({
+                  price: tick0.price,
+                  reserve0: tick0.reserve0,
+                }).plus(
+                  calculateShares({
+                    price: tick1.price,
+                    reserve1: tick1.reserve1,
+                  })
+                )
+              : new BigNumber(0);
           // add optional tick data from indexer
           if (tick0 && tick1 && totalShares) {
             const shareFraction = new BigNumber(sharesOwned ?? 0).dividedBy(

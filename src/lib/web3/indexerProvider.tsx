@@ -65,7 +65,6 @@ export interface TickInfo {
   token1: Token;
   reserve0: BigNumber;
   reserve1: BigNumber;
-  totalShares: BigNumber;
   fee: BigNumber;
   feeIndex: BigNumber; // feeIndex is the index of a certain predefined fee
   tickIndex: BigNumber; // tickIndex is the exact price ratio in the form: 1.0001^[tickIndex]
@@ -217,9 +216,7 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
       };
 
       feeTypes.forEach(({ fee }, feeIndex) => {
-        const totalShares =
-          Number(tickData.reserve0AndShares?.[feeIndex].totalShares) ?? -1;
-        if (!isNaN(parseInt(tickIndex || '')) && totalShares >= 0) {
+        if (!isNaN(parseInt(tickIndex || ''))) {
           result[pairId].ticks.push({
             token0: tokenMap[token0],
             token1: tokenMap[token1],
@@ -229,9 +226,6 @@ function transformData(ticks: Array<DexTickMap>): PairMap {
             price: new BigNumber(Math.pow(1.0001, Number(tickIndex) || 0)),
             feeIndex: new BigNumber(feeIndex),
             fee: new BigNumber(fee || 0),
-            // todo: don't read total shares here, it makes little sense
-            // possibly we should precompute these values into cumulative values
-            totalShares: new BigNumber(totalShares),
             reserve0: new BigNumber(
               tickData.reserve0AndShares?.[feeIndex].reserve0 || 0
             ),
