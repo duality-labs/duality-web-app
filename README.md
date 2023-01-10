@@ -40,7 +40,7 @@ You can merge these changes into main locally to use them
    - `$ docker-compose up --build` (for 1 leader, 4 follower and 1 test nodes) or
    - `$ docker-compose up --build dualityleader` (to start only the lead node) or
    - `$ docker-compose up --build dualityleader dualitynode0` (for 2 nodes) or
-   - `$ docker-compose up --build --scale dualitytester=0` (for 5 nodes)
+   - `$ docker-compose up --build --scale dualitytester=0` (for no test node)
 
    the local testnet should be accessible at the ports specified in the
    docker-compose.yml file (eg. http://localhost:26657)
