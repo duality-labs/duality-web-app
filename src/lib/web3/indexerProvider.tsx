@@ -27,12 +27,12 @@ import {
   addressableTokenMap as tokenMap,
   Token,
 } from '../../components/TokenPicker/hooks';
-import { FeeType, feeTypes } from './utils/fees';
+import { feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
 
 const { REACT_APP__REST_API } = process.env;
 
-type TokenAddress = string; // a valid hex address, eg. 0x01
+export type TokenAddress = string; // a valid hex address, eg. 0x01
 
 interface BalancesResponse {
   balances?: Coin[];
@@ -686,53 +686,6 @@ export function useIndexerPairData(
       : undefined;
   return {
     data: pair,
-    error,
-    isValidating,
-  };
-}
-
-export function useFeeLiquidityMap(
-  tokenA?: TokenAddress,
-  tokenB?: TokenAddress
-) {
-  const {
-    data: pair,
-    isValidating,
-    error,
-  } = useIndexerPairData(tokenA, tokenB);
-  const feeLiquidityMap = useMemo(() => {
-    if (!pair) return;
-
-    const ticks = Object.values(pair.ticks);
-    // normalise the data with the sum of values
-    const totalLiquidity = ticks.reduce((result, tickData) => {
-      return result.plus(tickData.totalShares || 0);
-    }, new BigNumber(0));
-
-    const feeTypeLiquidity = feeTypes.reduce<Record<FeeType['fee'], BigNumber>>(
-      (result, feeType) => {
-        result[feeType.fee] = new BigNumber(0);
-        return result;
-      },
-      {}
-    );
-
-    return ticks.reduce<{ [feeTier: string]: BigNumber }>(
-      (result, { fee, totalShares }) => {
-        if (totalShares.isGreaterThan(0)) {
-          const feeString = fee.toFixed();
-          result[feeString] = result[feeString].plus(
-            totalShares.dividedBy(totalLiquidity)
-          );
-        }
-        return result;
-      },
-      feeTypeLiquidity
-    );
-  }, [pair]);
-
-  return {
-    data: feeLiquidityMap,
     error,
     isValidating,
   };
