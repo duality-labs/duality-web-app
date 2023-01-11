@@ -13,7 +13,7 @@ import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
-import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
+import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/index';
 import {
   DexQueryAllTickMapResponse,
   DexQueryAllSharesResponse,
@@ -22,7 +22,7 @@ import {
   HttpResponse,
   RpcStatus,
   V1Beta1PageResponse,
-} from './generated/duality/nicholasdotsol.duality.dex/module/rest';
+} from './generated/ts-client/nicholasdotsol.duality.dex/rest';
 import {
   addressableTokenMap as tokenMap,
   Token,

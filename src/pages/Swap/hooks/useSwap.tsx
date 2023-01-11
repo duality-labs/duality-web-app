@@ -5,7 +5,7 @@ import { BigNumber } from 'bignumber.js';
 
 import { formatAmount } from '../../../lib/utils/number';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
-import { txClient } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/index';
+import { txClient } from '../../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/index';
 
 import {
   checkMsgErrorToast,
@@ -18,7 +18,7 @@ import {
 import {
   MsgSwap,
   MsgSwapResponse,
-} from '../../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/types/dex/tx';
+} from '../../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/types/dex/tx';
 import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 import { readEvents } from '../../../lib/web3/utils/txs';
