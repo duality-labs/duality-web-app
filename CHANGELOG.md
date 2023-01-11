@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.83](https://github.com/duality-labs/duality-web-app/compare/v0.1.82...v0.1.83) (2023-01-11)
+
+
+### Other
+
+* add current version of the backend into the ReadMe file ([#276](https://github.com/duality-labs/duality-web-app/issues/276)) ([1c6e55f](https://github.com/duality-labs/duality-web-app/commit/1c6e55fb815ed19c56c0038238b8877401dd8ab2))
+* Improve Docker and Docker Compose setup notes ([#277](https://github.com/duality-labs/duality-web-app/issues/277)) ([61da90b](https://github.com/duality-labs/duality-web-app/commit/61da90b61b3967ba3412075d0f7be5e16ec1a39c))
+* optimize liquidity map calculation ([#274](https://github.com/duality-labs/duality-web-app/issues/274)) ([8586d14](https://github.com/duality-labs/duality-web-app/commit/8586d14824c347b3690ac9202836f44b62a24028))
+* remove dependence on totalShares from tick endpoint ([#275](https://github.com/duality-labs/duality-web-app/issues/275)) ([478288c](https://github.com/duality-labs/duality-web-app/commit/478288c00335354b835b4a715f9ae0e02d0db62f))
+
+
+### Fixes
+
+* Update generated API types for v0.1.0 backend ([#278](https://github.com/duality-labs/duality-web-app/issues/278)) ([d4fbecb](https://github.com/duality-labs/duality-web-app/commit/d4fbecb293adf70bf0815da8df9aede210d831dc))
+
 ## [0.1.82](https://github.com/duality-labs/duality-web-app/compare/v0.1.81...v0.1.82) (2023-01-09)
 
 
