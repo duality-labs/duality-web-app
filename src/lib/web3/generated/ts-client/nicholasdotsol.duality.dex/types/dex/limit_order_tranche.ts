@@ -1,6 +1,7 @@
 /* eslint-disable */
-import * as Long from "long";
-import { util, configure, Writer, Reader } from "protobufjs/minimal";
+/* tslint:disable */
+import Long from "long";
+import _m0 from "protobufjs/minimal";
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
@@ -15,19 +16,21 @@ export interface LimitOrderTranche {
   totalTokenOut: string;
 }
 
-const baseLimitOrderTranche: object = {
-  pairId: "",
-  tokenIn: "",
-  tickIndex: 0,
-  trancheIndex: 0,
-  reservesTokenIn: "",
-  reservesTokenOut: "",
-  totalTokenIn: "",
-  totalTokenOut: "",
-};
+function createBaseLimitOrderTranche(): LimitOrderTranche {
+  return {
+    pairId: "",
+    tokenIn: "",
+    tickIndex: 0,
+    trancheIndex: 0,
+    reservesTokenIn: "",
+    reservesTokenOut: "",
+    totalTokenIn: "",
+    totalTokenOut: "",
+  };
+}
 
 export const LimitOrderTranche = {
-  encode(message: LimitOrderTranche, writer: Writer = Writer.create()): Writer {
+  encode(message: LimitOrderTranche, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.pairId !== "") {
       writer.uint32(10).string(message.pairId);
     }
@@ -55,10 +58,10 @@ export const LimitOrderTranche = {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): LimitOrderTranche {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): LimitOrderTranche {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseLimitOrderTranche } as LimitOrderTranche;
+    const message = createBaseLimitOrderTranche();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -95,146 +98,74 @@ export const LimitOrderTranche = {
   },
 
   fromJSON(object: any): LimitOrderTranche {
-    const message = { ...baseLimitOrderTranche } as LimitOrderTranche;
-    if (object.pairId !== undefined && object.pairId !== null) {
-      message.pairId = String(object.pairId);
-    } else {
-      message.pairId = "";
-    }
-    if (object.tokenIn !== undefined && object.tokenIn !== null) {
-      message.tokenIn = String(object.tokenIn);
-    } else {
-      message.tokenIn = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = Number(object.tickIndex);
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.trancheIndex !== undefined && object.trancheIndex !== null) {
-      message.trancheIndex = Number(object.trancheIndex);
-    } else {
-      message.trancheIndex = 0;
-    }
-    if (
-      object.reservesTokenIn !== undefined &&
-      object.reservesTokenIn !== null
-    ) {
-      message.reservesTokenIn = String(object.reservesTokenIn);
-    } else {
-      message.reservesTokenIn = "";
-    }
-    if (
-      object.reservesTokenOut !== undefined &&
-      object.reservesTokenOut !== null
-    ) {
-      message.reservesTokenOut = String(object.reservesTokenOut);
-    } else {
-      message.reservesTokenOut = "";
-    }
-    if (object.totalTokenIn !== undefined && object.totalTokenIn !== null) {
-      message.totalTokenIn = String(object.totalTokenIn);
-    } else {
-      message.totalTokenIn = "";
-    }
-    if (object.totalTokenOut !== undefined && object.totalTokenOut !== null) {
-      message.totalTokenOut = String(object.totalTokenOut);
-    } else {
-      message.totalTokenOut = "";
-    }
-    return message;
+    return {
+      pairId: isSet(object.pairId) ? String(object.pairId) : "",
+      tokenIn: isSet(object.tokenIn) ? String(object.tokenIn) : "",
+      tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0,
+      trancheIndex: isSet(object.trancheIndex) ? Number(object.trancheIndex) : 0,
+      reservesTokenIn: isSet(object.reservesTokenIn) ? String(object.reservesTokenIn) : "",
+      reservesTokenOut: isSet(object.reservesTokenOut) ? String(object.reservesTokenOut) : "",
+      totalTokenIn: isSet(object.totalTokenIn) ? String(object.totalTokenIn) : "",
+      totalTokenOut: isSet(object.totalTokenOut) ? String(object.totalTokenOut) : "",
+    };
   },
 
   toJSON(message: LimitOrderTranche): unknown {
     const obj: any = {};
     message.pairId !== undefined && (obj.pairId = message.pairId);
     message.tokenIn !== undefined && (obj.tokenIn = message.tokenIn);
-    message.tickIndex !== undefined && (obj.tickIndex = message.tickIndex);
-    message.trancheIndex !== undefined &&
-      (obj.trancheIndex = message.trancheIndex);
-    message.reservesTokenIn !== undefined &&
-      (obj.reservesTokenIn = message.reservesTokenIn);
-    message.reservesTokenOut !== undefined &&
-      (obj.reservesTokenOut = message.reservesTokenOut);
-    message.totalTokenIn !== undefined &&
-      (obj.totalTokenIn = message.totalTokenIn);
-    message.totalTokenOut !== undefined &&
-      (obj.totalTokenOut = message.totalTokenOut);
+    message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
+    message.trancheIndex !== undefined && (obj.trancheIndex = Math.round(message.trancheIndex));
+    message.reservesTokenIn !== undefined && (obj.reservesTokenIn = message.reservesTokenIn);
+    message.reservesTokenOut !== undefined && (obj.reservesTokenOut = message.reservesTokenOut);
+    message.totalTokenIn !== undefined && (obj.totalTokenIn = message.totalTokenIn);
+    message.totalTokenOut !== undefined && (obj.totalTokenOut = message.totalTokenOut);
     return obj;
   },
 
-  fromPartial(object: DeepPartial<LimitOrderTranche>): LimitOrderTranche {
-    const message = { ...baseLimitOrderTranche } as LimitOrderTranche;
-    if (object.pairId !== undefined && object.pairId !== null) {
-      message.pairId = object.pairId;
-    } else {
-      message.pairId = "";
-    }
-    if (object.tokenIn !== undefined && object.tokenIn !== null) {
-      message.tokenIn = object.tokenIn;
-    } else {
-      message.tokenIn = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = object.tickIndex;
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.trancheIndex !== undefined && object.trancheIndex !== null) {
-      message.trancheIndex = object.trancheIndex;
-    } else {
-      message.trancheIndex = 0;
-    }
-    if (
-      object.reservesTokenIn !== undefined &&
-      object.reservesTokenIn !== null
-    ) {
-      message.reservesTokenIn = object.reservesTokenIn;
-    } else {
-      message.reservesTokenIn = "";
-    }
-    if (
-      object.reservesTokenOut !== undefined &&
-      object.reservesTokenOut !== null
-    ) {
-      message.reservesTokenOut = object.reservesTokenOut;
-    } else {
-      message.reservesTokenOut = "";
-    }
-    if (object.totalTokenIn !== undefined && object.totalTokenIn !== null) {
-      message.totalTokenIn = object.totalTokenIn;
-    } else {
-      message.totalTokenIn = "";
-    }
-    if (object.totalTokenOut !== undefined && object.totalTokenOut !== null) {
-      message.totalTokenOut = object.totalTokenOut;
-    } else {
-      message.totalTokenOut = "";
-    }
+  fromPartial<I extends Exact<DeepPartial<LimitOrderTranche>, I>>(object: I): LimitOrderTranche {
+    const message = createBaseLimitOrderTranche();
+    message.pairId = object.pairId ?? "";
+    message.tokenIn = object.tokenIn ?? "";
+    message.tickIndex = object.tickIndex ?? 0;
+    message.trancheIndex = object.trancheIndex ?? 0;
+    message.reservesTokenIn = object.reservesTokenIn ?? "";
+    message.reservesTokenOut = object.reservesTokenOut ?? "";
+    message.totalTokenIn = object.totalTokenIn ?? "";
+    message.totalTokenOut = object.totalTokenOut ?? "";
     return message;
   },
 };
 
 declare var self: any | undefined;
 declare var window: any | undefined;
+declare var global: any | undefined;
 var globalThis: any = (() => {
-  if (typeof globalThis !== "undefined") return globalThis;
-  if (typeof self !== "undefined") return self;
-  if (typeof window !== "undefined") return window;
-  if (typeof global !== "undefined") return global;
+  if (typeof globalThis !== "undefined") {
+    return globalThis;
+  }
+  if (typeof self !== "undefined") {
+    return self;
+  }
+  if (typeof window !== "undefined") {
+    return window;
+  }
+  if (typeof global !== "undefined") {
+    return global;
+  }
   throw "Unable to locate global object";
 })();
 
-type Builtin = Date | Function | Uint8Array | string | number | undefined;
-export type DeepPartial<T> = T extends Builtin
-  ? T
-  : T extends Array<infer U>
-  ? Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U>
-  ? ReadonlyArray<DeepPartial<U>>
-  : T extends {}
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToNumber(long: Long): number {
   if (long.gt(Number.MAX_SAFE_INTEGER)) {
@@ -243,7 +174,11 @@ function longToNumber(long: Long): number {
   return long.toNumber();
 }
 
-if (true) {
-  util.Long = Long as any;
-  configure();
+if (_m0.util.Long !== Long) {
+  _m0.util.Long = Long as any;
+  _m0.configure();
+}
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
 }

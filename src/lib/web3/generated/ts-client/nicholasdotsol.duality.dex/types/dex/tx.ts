@@ -1,6 +1,7 @@
 /* eslint-disable */
-import { Reader, util, configure, Writer } from "protobufjs/minimal";
-import * as Long from "long";
+/* tslint:disable */
+import Long from "long";
+import _m0 from "protobufjs/minimal";
 import { Coin } from "../cosmos/base/v1beta1/coin";
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
@@ -31,7 +32,8 @@ export interface MsgWithdrawl {
   feeIndexes: number[];
 }
 
-export interface MsgWithdrawlResponse {}
+export interface MsgWithdrawlResponse {
+}
 
 export interface MsgSwap {
   creator: string;
@@ -57,7 +59,8 @@ export interface MsgPlaceLimitOrder {
   amountIn: string;
 }
 
-export interface MsgPlaceLimitOrderResponse {}
+export interface MsgPlaceLimitOrderResponse {
+}
 
 export interface MsgWithdrawFilledLimitOrder {
   creator: string;
@@ -69,7 +72,8 @@ export interface MsgWithdrawFilledLimitOrder {
   key: number;
 }
 
-export interface MsgWithdrawFilledLimitOrderResponse {}
+export interface MsgWithdrawFilledLimitOrderResponse {
+}
 
 export interface MsgCancelLimitOrder {
   creator: string;
@@ -82,21 +86,24 @@ export interface MsgCancelLimitOrder {
   sharesOut: string;
 }
 
-export interface MsgCancelLimitOrderResponse {}
+export interface MsgCancelLimitOrderResponse {
+}
 
-const baseMsgDeposit: object = {
-  creator: "",
-  receiver: "",
-  tokenA: "",
-  tokenB: "",
-  amountsA: "",
-  amountsB: "",
-  tickIndexes: 0,
-  feeIndexes: 0,
-};
+function createBaseMsgDeposit(): MsgDeposit {
+  return {
+    creator: "",
+    receiver: "",
+    tokenA: "",
+    tokenB: "",
+    amountsA: [],
+    amountsB: [],
+    tickIndexes: [],
+    feeIndexes: [],
+  };
+}
 
 export const MsgDeposit = {
-  encode(message: MsgDeposit, writer: Writer = Writer.create()): Writer {
+  encode(message: MsgDeposit, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.creator !== "") {
       writer.uint32(10).string(message.creator);
     }
@@ -128,14 +135,10 @@ export const MsgDeposit = {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): MsgDeposit {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgDeposit {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseMsgDeposit } as MsgDeposit;
-    message.amountsA = [];
-    message.amountsB = [];
-    message.tickIndexes = [];
-    message.feeIndexes = [];
+    const message = createBaseMsgDeposit();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -186,52 +189,16 @@ export const MsgDeposit = {
   },
 
   fromJSON(object: any): MsgDeposit {
-    const message = { ...baseMsgDeposit } as MsgDeposit;
-    message.amountsA = [];
-    message.amountsB = [];
-    message.tickIndexes = [];
-    message.feeIndexes = [];
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = String(object.creator);
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = String(object.receiver);
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = String(object.tokenA);
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = String(object.tokenB);
-    } else {
-      message.tokenB = "";
-    }
-    if (object.amountsA !== undefined && object.amountsA !== null) {
-      for (const e of object.amountsA) {
-        message.amountsA.push(String(e));
-      }
-    }
-    if (object.amountsB !== undefined && object.amountsB !== null) {
-      for (const e of object.amountsB) {
-        message.amountsB.push(String(e));
-      }
-    }
-    if (object.tickIndexes !== undefined && object.tickIndexes !== null) {
-      for (const e of object.tickIndexes) {
-        message.tickIndexes.push(Number(e));
-      }
-    }
-    if (object.feeIndexes !== undefined && object.feeIndexes !== null) {
-      for (const e of object.feeIndexes) {
-        message.feeIndexes.push(Number(e));
-      }
-    }
-    return message;
+    return {
+      creator: isSet(object.creator) ? String(object.creator) : "",
+      receiver: isSet(object.receiver) ? String(object.receiver) : "",
+      tokenA: isSet(object.tokenA) ? String(object.tokenA) : "",
+      tokenB: isSet(object.tokenB) ? String(object.tokenB) : "",
+      amountsA: Array.isArray(object?.amountsA) ? object.amountsA.map((e: any) => String(e)) : [],
+      amountsB: Array.isArray(object?.amountsB) ? object.amountsB.map((e: any) => String(e)) : [],
+      tickIndexes: Array.isArray(object?.tickIndexes) ? object.tickIndexes.map((e: any) => Number(e)) : [],
+      feeIndexes: Array.isArray(object?.feeIndexes) ? object.feeIndexes.map((e: any) => Number(e)) : [],
+    };
   },
 
   toJSON(message: MsgDeposit): unknown {
@@ -251,78 +218,38 @@ export const MsgDeposit = {
       obj.amountsB = [];
     }
     if (message.tickIndexes) {
-      obj.tickIndexes = message.tickIndexes.map((e) => e);
+      obj.tickIndexes = message.tickIndexes.map((e) => Math.round(e));
     } else {
       obj.tickIndexes = [];
     }
     if (message.feeIndexes) {
-      obj.feeIndexes = message.feeIndexes.map((e) => e);
+      obj.feeIndexes = message.feeIndexes.map((e) => Math.round(e));
     } else {
       obj.feeIndexes = [];
     }
     return obj;
   },
 
-  fromPartial(object: DeepPartial<MsgDeposit>): MsgDeposit {
-    const message = { ...baseMsgDeposit } as MsgDeposit;
-    message.amountsA = [];
-    message.amountsB = [];
-    message.tickIndexes = [];
-    message.feeIndexes = [];
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = object.creator;
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = object.receiver;
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = object.tokenA;
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = object.tokenB;
-    } else {
-      message.tokenB = "";
-    }
-    if (object.amountsA !== undefined && object.amountsA !== null) {
-      for (const e of object.amountsA) {
-        message.amountsA.push(e);
-      }
-    }
-    if (object.amountsB !== undefined && object.amountsB !== null) {
-      for (const e of object.amountsB) {
-        message.amountsB.push(e);
-      }
-    }
-    if (object.tickIndexes !== undefined && object.tickIndexes !== null) {
-      for (const e of object.tickIndexes) {
-        message.tickIndexes.push(e);
-      }
-    }
-    if (object.feeIndexes !== undefined && object.feeIndexes !== null) {
-      for (const e of object.feeIndexes) {
-        message.feeIndexes.push(e);
-      }
-    }
+  fromPartial<I extends Exact<DeepPartial<MsgDeposit>, I>>(object: I): MsgDeposit {
+    const message = createBaseMsgDeposit();
+    message.creator = object.creator ?? "";
+    message.receiver = object.receiver ?? "";
+    message.tokenA = object.tokenA ?? "";
+    message.tokenB = object.tokenB ?? "";
+    message.amountsA = object.amountsA?.map((e) => e) || [];
+    message.amountsB = object.amountsB?.map((e) => e) || [];
+    message.tickIndexes = object.tickIndexes?.map((e) => e) || [];
+    message.feeIndexes = object.feeIndexes?.map((e) => e) || [];
     return message;
   },
 };
 
-const baseMsgDepositResponse: object = {
-  Reserve0Deposited: "",
-  Reserve1Deposited: "",
-};
+function createBaseMsgDepositResponse(): MsgDepositResponse {
+  return { Reserve0Deposited: [], Reserve1Deposited: [] };
+}
 
 export const MsgDepositResponse = {
-  encode(
-    message: MsgDepositResponse,
-    writer: Writer = Writer.create()
-  ): Writer {
+  encode(message: MsgDepositResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     for (const v of message.Reserve0Deposited) {
       writer.uint32(10).string(v!);
     }
@@ -332,12 +259,10 @@ export const MsgDepositResponse = {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): MsgDepositResponse {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgDepositResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseMsgDepositResponse } as MsgDepositResponse;
-    message.Reserve0Deposited = [];
-    message.Reserve1Deposited = [];
+    const message = createBaseMsgDepositResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -356,26 +281,14 @@ export const MsgDepositResponse = {
   },
 
   fromJSON(object: any): MsgDepositResponse {
-    const message = { ...baseMsgDepositResponse } as MsgDepositResponse;
-    message.Reserve0Deposited = [];
-    message.Reserve1Deposited = [];
-    if (
-      object.Reserve0Deposited !== undefined &&
-      object.Reserve0Deposited !== null
-    ) {
-      for (const e of object.Reserve0Deposited) {
-        message.Reserve0Deposited.push(String(e));
-      }
-    }
-    if (
-      object.Reserve1Deposited !== undefined &&
-      object.Reserve1Deposited !== null
-    ) {
-      for (const e of object.Reserve1Deposited) {
-        message.Reserve1Deposited.push(String(e));
-      }
-    }
-    return message;
+    return {
+      Reserve0Deposited: Array.isArray(object?.Reserve0Deposited)
+        ? object.Reserve0Deposited.map((e: any) => String(e))
+        : [],
+      Reserve1Deposited: Array.isArray(object?.Reserve1Deposited)
+        ? object.Reserve1Deposited.map((e: any) => String(e))
+        : [],
+    };
   },
 
   toJSON(message: MsgDepositResponse): unknown {
@@ -393,42 +306,20 @@ export const MsgDepositResponse = {
     return obj;
   },
 
-  fromPartial(object: DeepPartial<MsgDepositResponse>): MsgDepositResponse {
-    const message = { ...baseMsgDepositResponse } as MsgDepositResponse;
-    message.Reserve0Deposited = [];
-    message.Reserve1Deposited = [];
-    if (
-      object.Reserve0Deposited !== undefined &&
-      object.Reserve0Deposited !== null
-    ) {
-      for (const e of object.Reserve0Deposited) {
-        message.Reserve0Deposited.push(e);
-      }
-    }
-    if (
-      object.Reserve1Deposited !== undefined &&
-      object.Reserve1Deposited !== null
-    ) {
-      for (const e of object.Reserve1Deposited) {
-        message.Reserve1Deposited.push(e);
-      }
-    }
+  fromPartial<I extends Exact<DeepPartial<MsgDepositResponse>, I>>(object: I): MsgDepositResponse {
+    const message = createBaseMsgDepositResponse();
+    message.Reserve0Deposited = object.Reserve0Deposited?.map((e) => e) || [];
+    message.Reserve1Deposited = object.Reserve1Deposited?.map((e) => e) || [];
     return message;
   },
 };
 
-const baseMsgWithdrawl: object = {
-  creator: "",
-  receiver: "",
-  tokenA: "",
-  tokenB: "",
-  sharesToRemove: "",
-  tickIndexes: 0,
-  feeIndexes: 0,
-};
+function createBaseMsgWithdrawl(): MsgWithdrawl {
+  return { creator: "", receiver: "", tokenA: "", tokenB: "", sharesToRemove: [], tickIndexes: [], feeIndexes: [] };
+}
 
 export const MsgWithdrawl = {
-  encode(message: MsgWithdrawl, writer: Writer = Writer.create()): Writer {
+  encode(message: MsgWithdrawl, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.creator !== "") {
       writer.uint32(10).string(message.creator);
     }
@@ -457,13 +348,10 @@ export const MsgWithdrawl = {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): MsgWithdrawl {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgWithdrawl {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseMsgWithdrawl } as MsgWithdrawl;
-    message.sharesToRemove = [];
-    message.tickIndexes = [];
-    message.feeIndexes = [];
+    const message = createBaseMsgWithdrawl();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -511,46 +399,15 @@ export const MsgWithdrawl = {
   },
 
   fromJSON(object: any): MsgWithdrawl {
-    const message = { ...baseMsgWithdrawl } as MsgWithdrawl;
-    message.sharesToRemove = [];
-    message.tickIndexes = [];
-    message.feeIndexes = [];
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = String(object.creator);
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = String(object.receiver);
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = String(object.tokenA);
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = String(object.tokenB);
-    } else {
-      message.tokenB = "";
-    }
-    if (object.sharesToRemove !== undefined && object.sharesToRemove !== null) {
-      for (const e of object.sharesToRemove) {
-        message.sharesToRemove.push(String(e));
-      }
-    }
-    if (object.tickIndexes !== undefined && object.tickIndexes !== null) {
-      for (const e of object.tickIndexes) {
-        message.tickIndexes.push(Number(e));
-      }
-    }
-    if (object.feeIndexes !== undefined && object.feeIndexes !== null) {
-      for (const e of object.feeIndexes) {
-        message.feeIndexes.push(Number(e));
-      }
-    }
-    return message;
+    return {
+      creator: isSet(object.creator) ? String(object.creator) : "",
+      receiver: isSet(object.receiver) ? String(object.receiver) : "",
+      tokenA: isSet(object.tokenA) ? String(object.tokenA) : "",
+      tokenB: isSet(object.tokenB) ? String(object.tokenB) : "",
+      sharesToRemove: Array.isArray(object?.sharesToRemove) ? object.sharesToRemove.map((e: any) => String(e)) : [],
+      tickIndexes: Array.isArray(object?.tickIndexes) ? object.tickIndexes.map((e: any) => Number(e)) : [],
+      feeIndexes: Array.isArray(object?.feeIndexes) ? object.feeIndexes.map((e: any) => Number(e)) : [],
+    };
   },
 
   toJSON(message: MsgWithdrawl): unknown {
@@ -565,73 +422,44 @@ export const MsgWithdrawl = {
       obj.sharesToRemove = [];
     }
     if (message.tickIndexes) {
-      obj.tickIndexes = message.tickIndexes.map((e) => e);
+      obj.tickIndexes = message.tickIndexes.map((e) => Math.round(e));
     } else {
       obj.tickIndexes = [];
     }
     if (message.feeIndexes) {
-      obj.feeIndexes = message.feeIndexes.map((e) => e);
+      obj.feeIndexes = message.feeIndexes.map((e) => Math.round(e));
     } else {
       obj.feeIndexes = [];
     }
     return obj;
   },
 
-  fromPartial(object: DeepPartial<MsgWithdrawl>): MsgWithdrawl {
-    const message = { ...baseMsgWithdrawl } as MsgWithdrawl;
-    message.sharesToRemove = [];
-    message.tickIndexes = [];
-    message.feeIndexes = [];
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = object.creator;
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = object.receiver;
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = object.tokenA;
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = object.tokenB;
-    } else {
-      message.tokenB = "";
-    }
-    if (object.sharesToRemove !== undefined && object.sharesToRemove !== null) {
-      for (const e of object.sharesToRemove) {
-        message.sharesToRemove.push(e);
-      }
-    }
-    if (object.tickIndexes !== undefined && object.tickIndexes !== null) {
-      for (const e of object.tickIndexes) {
-        message.tickIndexes.push(e);
-      }
-    }
-    if (object.feeIndexes !== undefined && object.feeIndexes !== null) {
-      for (const e of object.feeIndexes) {
-        message.feeIndexes.push(e);
-      }
-    }
+  fromPartial<I extends Exact<DeepPartial<MsgWithdrawl>, I>>(object: I): MsgWithdrawl {
+    const message = createBaseMsgWithdrawl();
+    message.creator = object.creator ?? "";
+    message.receiver = object.receiver ?? "";
+    message.tokenA = object.tokenA ?? "";
+    message.tokenB = object.tokenB ?? "";
+    message.sharesToRemove = object.sharesToRemove?.map((e) => e) || [];
+    message.tickIndexes = object.tickIndexes?.map((e) => e) || [];
+    message.feeIndexes = object.feeIndexes?.map((e) => e) || [];
     return message;
   },
 };
 
-const baseMsgWithdrawlResponse: object = {};
+function createBaseMsgWithdrawlResponse(): MsgWithdrawlResponse {
+  return {};
+}
 
 export const MsgWithdrawlResponse = {
-  encode(_: MsgWithdrawlResponse, writer: Writer = Writer.create()): Writer {
+  encode(_: MsgWithdrawlResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): MsgWithdrawlResponse {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgWithdrawlResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseMsgWithdrawlResponse } as MsgWithdrawlResponse;
+    const message = createBaseMsgWithdrawlResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -644,8 +472,7 @@ export const MsgWithdrawlResponse = {
   },
 
   fromJSON(_: any): MsgWithdrawlResponse {
-    const message = { ...baseMsgWithdrawlResponse } as MsgWithdrawlResponse;
-    return message;
+    return {};
   },
 
   toJSON(_: MsgWithdrawlResponse): unknown {
@@ -653,24 +480,18 @@ export const MsgWithdrawlResponse = {
     return obj;
   },
 
-  fromPartial(_: DeepPartial<MsgWithdrawlResponse>): MsgWithdrawlResponse {
-    const message = { ...baseMsgWithdrawlResponse } as MsgWithdrawlResponse;
+  fromPartial<I extends Exact<DeepPartial<MsgWithdrawlResponse>, I>>(_: I): MsgWithdrawlResponse {
+    const message = createBaseMsgWithdrawlResponse();
     return message;
   },
 };
 
-const baseMsgSwap: object = {
-  creator: "",
-  receiver: "",
-  tokenA: "",
-  tokenB: "",
-  amountIn: "",
-  tokenIn: "",
-  minOut: "",
-};
+function createBaseMsgSwap(): MsgSwap {
+  return { creator: "", receiver: "", tokenA: "", tokenB: "", amountIn: "", tokenIn: "", minOut: "" };
+}
 
 export const MsgSwap = {
-  encode(message: MsgSwap, writer: Writer = Writer.create()): Writer {
+  encode(message: MsgSwap, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.creator !== "") {
       writer.uint32(10).string(message.creator);
     }
@@ -695,10 +516,10 @@ export const MsgSwap = {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): MsgSwap {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgSwap {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseMsgSwap } as MsgSwap;
+    const message = createBaseMsgSwap();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -732,43 +553,15 @@ export const MsgSwap = {
   },
 
   fromJSON(object: any): MsgSwap {
-    const message = { ...baseMsgSwap } as MsgSwap;
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = String(object.creator);
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = String(object.receiver);
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = String(object.tokenA);
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = String(object.tokenB);
-    } else {
-      message.tokenB = "";
-    }
-    if (object.amountIn !== undefined && object.amountIn !== null) {
-      message.amountIn = String(object.amountIn);
-    } else {
-      message.amountIn = "";
-    }
-    if (object.tokenIn !== undefined && object.tokenIn !== null) {
-      message.tokenIn = String(object.tokenIn);
-    } else {
-      message.tokenIn = "";
-    }
-    if (object.minOut !== undefined && object.minOut !== null) {
-      message.minOut = String(object.minOut);
-    } else {
-      message.minOut = "";
-    }
-    return message;
+    return {
+      creator: isSet(object.creator) ? String(object.creator) : "",
+      receiver: isSet(object.receiver) ? String(object.receiver) : "",
+      tokenA: isSet(object.tokenA) ? String(object.tokenA) : "",
+      tokenB: isSet(object.tokenB) ? String(object.tokenB) : "",
+      amountIn: isSet(object.amountIn) ? String(object.amountIn) : "",
+      tokenIn: isSet(object.tokenIn) ? String(object.tokenIn) : "",
+      minOut: isSet(object.minOut) ? String(object.minOut) : "",
+    };
   },
 
   toJSON(message: MsgSwap): unknown {
@@ -783,61 +576,35 @@ export const MsgSwap = {
     return obj;
   },
 
-  fromPartial(object: DeepPartial<MsgSwap>): MsgSwap {
-    const message = { ...baseMsgSwap } as MsgSwap;
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = object.creator;
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = object.receiver;
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = object.tokenA;
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = object.tokenB;
-    } else {
-      message.tokenB = "";
-    }
-    if (object.amountIn !== undefined && object.amountIn !== null) {
-      message.amountIn = object.amountIn;
-    } else {
-      message.amountIn = "";
-    }
-    if (object.tokenIn !== undefined && object.tokenIn !== null) {
-      message.tokenIn = object.tokenIn;
-    } else {
-      message.tokenIn = "";
-    }
-    if (object.minOut !== undefined && object.minOut !== null) {
-      message.minOut = object.minOut;
-    } else {
-      message.minOut = "";
-    }
+  fromPartial<I extends Exact<DeepPartial<MsgSwap>, I>>(object: I): MsgSwap {
+    const message = createBaseMsgSwap();
+    message.creator = object.creator ?? "";
+    message.receiver = object.receiver ?? "";
+    message.tokenA = object.tokenA ?? "";
+    message.tokenB = object.tokenB ?? "";
+    message.amountIn = object.amountIn ?? "";
+    message.tokenIn = object.tokenIn ?? "";
+    message.minOut = object.minOut ?? "";
     return message;
   },
 };
 
-const baseMsgSwapResponse: object = {};
+function createBaseMsgSwapResponse(): MsgSwapResponse {
+  return { coinOut: undefined };
+}
 
 export const MsgSwapResponse = {
-  encode(message: MsgSwapResponse, writer: Writer = Writer.create()): Writer {
+  encode(message: MsgSwapResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.coinOut !== undefined) {
       Coin.encode(message.coinOut, writer.uint32(10).fork()).ldelim();
     }
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): MsgSwapResponse {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgSwapResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseMsgSwapResponse } as MsgSwapResponse;
+    const message = createBaseMsgSwapResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -853,50 +620,30 @@ export const MsgSwapResponse = {
   },
 
   fromJSON(object: any): MsgSwapResponse {
-    const message = { ...baseMsgSwapResponse } as MsgSwapResponse;
-    if (object.coinOut !== undefined && object.coinOut !== null) {
-      message.coinOut = Coin.fromJSON(object.coinOut);
-    } else {
-      message.coinOut = undefined;
-    }
-    return message;
+    return { coinOut: isSet(object.coinOut) ? Coin.fromJSON(object.coinOut) : undefined };
   },
 
   toJSON(message: MsgSwapResponse): unknown {
     const obj: any = {};
-    message.coinOut !== undefined &&
-      (obj.coinOut = message.coinOut
-        ? Coin.toJSON(message.coinOut)
-        : undefined);
+    message.coinOut !== undefined && (obj.coinOut = message.coinOut ? Coin.toJSON(message.coinOut) : undefined);
     return obj;
   },
 
-  fromPartial(object: DeepPartial<MsgSwapResponse>): MsgSwapResponse {
-    const message = { ...baseMsgSwapResponse } as MsgSwapResponse;
-    if (object.coinOut !== undefined && object.coinOut !== null) {
-      message.coinOut = Coin.fromPartial(object.coinOut);
-    } else {
-      message.coinOut = undefined;
-    }
+  fromPartial<I extends Exact<DeepPartial<MsgSwapResponse>, I>>(object: I): MsgSwapResponse {
+    const message = createBaseMsgSwapResponse();
+    message.coinOut = (object.coinOut !== undefined && object.coinOut !== null)
+      ? Coin.fromPartial(object.coinOut)
+      : undefined;
     return message;
   },
 };
 
-const baseMsgPlaceLimitOrder: object = {
-  creator: "",
-  receiver: "",
-  tokenA: "",
-  tokenB: "",
-  tickIndex: 0,
-  tokenIn: "",
-  amountIn: "",
-};
+function createBaseMsgPlaceLimitOrder(): MsgPlaceLimitOrder {
+  return { creator: "", receiver: "", tokenA: "", tokenB: "", tickIndex: 0, tokenIn: "", amountIn: "" };
+}
 
 export const MsgPlaceLimitOrder = {
-  encode(
-    message: MsgPlaceLimitOrder,
-    writer: Writer = Writer.create()
-  ): Writer {
+  encode(message: MsgPlaceLimitOrder, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.creator !== "") {
       writer.uint32(10).string(message.creator);
     }
@@ -921,10 +668,10 @@ export const MsgPlaceLimitOrder = {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): MsgPlaceLimitOrder {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgPlaceLimitOrder {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseMsgPlaceLimitOrder } as MsgPlaceLimitOrder;
+    const message = createBaseMsgPlaceLimitOrder();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -958,43 +705,15 @@ export const MsgPlaceLimitOrder = {
   },
 
   fromJSON(object: any): MsgPlaceLimitOrder {
-    const message = { ...baseMsgPlaceLimitOrder } as MsgPlaceLimitOrder;
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = String(object.creator);
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = String(object.receiver);
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = String(object.tokenA);
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = String(object.tokenB);
-    } else {
-      message.tokenB = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = Number(object.tickIndex);
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.tokenIn !== undefined && object.tokenIn !== null) {
-      message.tokenIn = String(object.tokenIn);
-    } else {
-      message.tokenIn = "";
-    }
-    if (object.amountIn !== undefined && object.amountIn !== null) {
-      message.amountIn = String(object.amountIn);
-    } else {
-      message.amountIn = "";
-    }
-    return message;
+    return {
+      creator: isSet(object.creator) ? String(object.creator) : "",
+      receiver: isSet(object.receiver) ? String(object.receiver) : "",
+      tokenA: isSet(object.tokenA) ? String(object.tokenA) : "",
+      tokenB: isSet(object.tokenB) ? String(object.tokenB) : "",
+      tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0,
+      tokenIn: isSet(object.tokenIn) ? String(object.tokenIn) : "",
+      amountIn: isSet(object.amountIn) ? String(object.amountIn) : "",
+    };
   },
 
   toJSON(message: MsgPlaceLimitOrder): unknown {
@@ -1003,72 +722,38 @@ export const MsgPlaceLimitOrder = {
     message.receiver !== undefined && (obj.receiver = message.receiver);
     message.tokenA !== undefined && (obj.tokenA = message.tokenA);
     message.tokenB !== undefined && (obj.tokenB = message.tokenB);
-    message.tickIndex !== undefined && (obj.tickIndex = message.tickIndex);
+    message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
     message.tokenIn !== undefined && (obj.tokenIn = message.tokenIn);
     message.amountIn !== undefined && (obj.amountIn = message.amountIn);
     return obj;
   },
 
-  fromPartial(object: DeepPartial<MsgPlaceLimitOrder>): MsgPlaceLimitOrder {
-    const message = { ...baseMsgPlaceLimitOrder } as MsgPlaceLimitOrder;
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = object.creator;
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = object.receiver;
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = object.tokenA;
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = object.tokenB;
-    } else {
-      message.tokenB = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = object.tickIndex;
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.tokenIn !== undefined && object.tokenIn !== null) {
-      message.tokenIn = object.tokenIn;
-    } else {
-      message.tokenIn = "";
-    }
-    if (object.amountIn !== undefined && object.amountIn !== null) {
-      message.amountIn = object.amountIn;
-    } else {
-      message.amountIn = "";
-    }
+  fromPartial<I extends Exact<DeepPartial<MsgPlaceLimitOrder>, I>>(object: I): MsgPlaceLimitOrder {
+    const message = createBaseMsgPlaceLimitOrder();
+    message.creator = object.creator ?? "";
+    message.receiver = object.receiver ?? "";
+    message.tokenA = object.tokenA ?? "";
+    message.tokenB = object.tokenB ?? "";
+    message.tickIndex = object.tickIndex ?? 0;
+    message.tokenIn = object.tokenIn ?? "";
+    message.amountIn = object.amountIn ?? "";
     return message;
   },
 };
 
-const baseMsgPlaceLimitOrderResponse: object = {};
+function createBaseMsgPlaceLimitOrderResponse(): MsgPlaceLimitOrderResponse {
+  return {};
+}
 
 export const MsgPlaceLimitOrderResponse = {
-  encode(
-    _: MsgPlaceLimitOrderResponse,
-    writer: Writer = Writer.create()
-  ): Writer {
+  encode(_: MsgPlaceLimitOrderResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     return writer;
   },
 
-  decode(
-    input: Reader | Uint8Array,
-    length?: number
-  ): MsgPlaceLimitOrderResponse {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgPlaceLimitOrderResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseMsgPlaceLimitOrderResponse,
-    } as MsgPlaceLimitOrderResponse;
+    const message = createBaseMsgPlaceLimitOrderResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -1081,10 +766,7 @@ export const MsgPlaceLimitOrderResponse = {
   },
 
   fromJSON(_: any): MsgPlaceLimitOrderResponse {
-    const message = {
-      ...baseMsgPlaceLimitOrderResponse,
-    } as MsgPlaceLimitOrderResponse;
-    return message;
+    return {};
   },
 
   toJSON(_: MsgPlaceLimitOrderResponse): unknown {
@@ -1092,31 +774,18 @@ export const MsgPlaceLimitOrderResponse = {
     return obj;
   },
 
-  fromPartial(
-    _: DeepPartial<MsgPlaceLimitOrderResponse>
-  ): MsgPlaceLimitOrderResponse {
-    const message = {
-      ...baseMsgPlaceLimitOrderResponse,
-    } as MsgPlaceLimitOrderResponse;
+  fromPartial<I extends Exact<DeepPartial<MsgPlaceLimitOrderResponse>, I>>(_: I): MsgPlaceLimitOrderResponse {
+    const message = createBaseMsgPlaceLimitOrderResponse();
     return message;
   },
 };
 
-const baseMsgWithdrawFilledLimitOrder: object = {
-  creator: "",
-  receiver: "",
-  tokenA: "",
-  tokenB: "",
-  tickIndex: 0,
-  keyToken: "",
-  key: 0,
-};
+function createBaseMsgWithdrawFilledLimitOrder(): MsgWithdrawFilledLimitOrder {
+  return { creator: "", receiver: "", tokenA: "", tokenB: "", tickIndex: 0, keyToken: "", key: 0 };
+}
 
 export const MsgWithdrawFilledLimitOrder = {
-  encode(
-    message: MsgWithdrawFilledLimitOrder,
-    writer: Writer = Writer.create()
-  ): Writer {
+  encode(message: MsgWithdrawFilledLimitOrder, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.creator !== "") {
       writer.uint32(10).string(message.creator);
     }
@@ -1141,15 +810,10 @@ export const MsgWithdrawFilledLimitOrder = {
     return writer;
   },
 
-  decode(
-    input: Reader | Uint8Array,
-    length?: number
-  ): MsgWithdrawFilledLimitOrder {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgWithdrawFilledLimitOrder {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseMsgWithdrawFilledLimitOrder,
-    } as MsgWithdrawFilledLimitOrder;
+    const message = createBaseMsgWithdrawFilledLimitOrder();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -1183,45 +847,15 @@ export const MsgWithdrawFilledLimitOrder = {
   },
 
   fromJSON(object: any): MsgWithdrawFilledLimitOrder {
-    const message = {
-      ...baseMsgWithdrawFilledLimitOrder,
-    } as MsgWithdrawFilledLimitOrder;
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = String(object.creator);
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = String(object.receiver);
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = String(object.tokenA);
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = String(object.tokenB);
-    } else {
-      message.tokenB = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = Number(object.tickIndex);
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.keyToken !== undefined && object.keyToken !== null) {
-      message.keyToken = String(object.keyToken);
-    } else {
-      message.keyToken = "";
-    }
-    if (object.key !== undefined && object.key !== null) {
-      message.key = Number(object.key);
-    } else {
-      message.key = 0;
-    }
-    return message;
+    return {
+      creator: isSet(object.creator) ? String(object.creator) : "",
+      receiver: isSet(object.receiver) ? String(object.receiver) : "",
+      tokenA: isSet(object.tokenA) ? String(object.tokenA) : "",
+      tokenB: isSet(object.tokenB) ? String(object.tokenB) : "",
+      tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0,
+      keyToken: isSet(object.keyToken) ? String(object.keyToken) : "",
+      key: isSet(object.key) ? Number(object.key) : 0,
+    };
   },
 
   toJSON(message: MsgWithdrawFilledLimitOrder): unknown {
@@ -1230,76 +864,38 @@ export const MsgWithdrawFilledLimitOrder = {
     message.receiver !== undefined && (obj.receiver = message.receiver);
     message.tokenA !== undefined && (obj.tokenA = message.tokenA);
     message.tokenB !== undefined && (obj.tokenB = message.tokenB);
-    message.tickIndex !== undefined && (obj.tickIndex = message.tickIndex);
+    message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
     message.keyToken !== undefined && (obj.keyToken = message.keyToken);
-    message.key !== undefined && (obj.key = message.key);
+    message.key !== undefined && (obj.key = Math.round(message.key));
     return obj;
   },
 
-  fromPartial(
-    object: DeepPartial<MsgWithdrawFilledLimitOrder>
-  ): MsgWithdrawFilledLimitOrder {
-    const message = {
-      ...baseMsgWithdrawFilledLimitOrder,
-    } as MsgWithdrawFilledLimitOrder;
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = object.creator;
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = object.receiver;
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = object.tokenA;
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = object.tokenB;
-    } else {
-      message.tokenB = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = object.tickIndex;
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.keyToken !== undefined && object.keyToken !== null) {
-      message.keyToken = object.keyToken;
-    } else {
-      message.keyToken = "";
-    }
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    } else {
-      message.key = 0;
-    }
+  fromPartial<I extends Exact<DeepPartial<MsgWithdrawFilledLimitOrder>, I>>(object: I): MsgWithdrawFilledLimitOrder {
+    const message = createBaseMsgWithdrawFilledLimitOrder();
+    message.creator = object.creator ?? "";
+    message.receiver = object.receiver ?? "";
+    message.tokenA = object.tokenA ?? "";
+    message.tokenB = object.tokenB ?? "";
+    message.tickIndex = object.tickIndex ?? 0;
+    message.keyToken = object.keyToken ?? "";
+    message.key = object.key ?? 0;
     return message;
   },
 };
 
-const baseMsgWithdrawFilledLimitOrderResponse: object = {};
+function createBaseMsgWithdrawFilledLimitOrderResponse(): MsgWithdrawFilledLimitOrderResponse {
+  return {};
+}
 
 export const MsgWithdrawFilledLimitOrderResponse = {
-  encode(
-    _: MsgWithdrawFilledLimitOrderResponse,
-    writer: Writer = Writer.create()
-  ): Writer {
+  encode(_: MsgWithdrawFilledLimitOrderResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     return writer;
   },
 
-  decode(
-    input: Reader | Uint8Array,
-    length?: number
-  ): MsgWithdrawFilledLimitOrderResponse {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgWithdrawFilledLimitOrderResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseMsgWithdrawFilledLimitOrderResponse,
-    } as MsgWithdrawFilledLimitOrderResponse;
+    const message = createBaseMsgWithdrawFilledLimitOrderResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -1312,10 +908,7 @@ export const MsgWithdrawFilledLimitOrderResponse = {
   },
 
   fromJSON(_: any): MsgWithdrawFilledLimitOrderResponse {
-    const message = {
-      ...baseMsgWithdrawFilledLimitOrderResponse,
-    } as MsgWithdrawFilledLimitOrderResponse;
-    return message;
+    return {};
   },
 
   toJSON(_: MsgWithdrawFilledLimitOrderResponse): unknown {
@@ -1323,32 +916,20 @@ export const MsgWithdrawFilledLimitOrderResponse = {
     return obj;
   },
 
-  fromPartial(
-    _: DeepPartial<MsgWithdrawFilledLimitOrderResponse>
+  fromPartial<I extends Exact<DeepPartial<MsgWithdrawFilledLimitOrderResponse>, I>>(
+    _: I,
   ): MsgWithdrawFilledLimitOrderResponse {
-    const message = {
-      ...baseMsgWithdrawFilledLimitOrderResponse,
-    } as MsgWithdrawFilledLimitOrderResponse;
+    const message = createBaseMsgWithdrawFilledLimitOrderResponse();
     return message;
   },
 };
 
-const baseMsgCancelLimitOrder: object = {
-  creator: "",
-  receiver: "",
-  tokenA: "",
-  tokenB: "",
-  tickIndex: 0,
-  keyToken: "",
-  key: 0,
-  sharesOut: "",
-};
+function createBaseMsgCancelLimitOrder(): MsgCancelLimitOrder {
+  return { creator: "", receiver: "", tokenA: "", tokenB: "", tickIndex: 0, keyToken: "", key: 0, sharesOut: "" };
+}
 
 export const MsgCancelLimitOrder = {
-  encode(
-    message: MsgCancelLimitOrder,
-    writer: Writer = Writer.create()
-  ): Writer {
+  encode(message: MsgCancelLimitOrder, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.creator !== "") {
       writer.uint32(10).string(message.creator);
     }
@@ -1376,10 +957,10 @@ export const MsgCancelLimitOrder = {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): MsgCancelLimitOrder {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgCancelLimitOrder {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseMsgCancelLimitOrder } as MsgCancelLimitOrder;
+    const message = createBaseMsgCancelLimitOrder();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -1416,48 +997,16 @@ export const MsgCancelLimitOrder = {
   },
 
   fromJSON(object: any): MsgCancelLimitOrder {
-    const message = { ...baseMsgCancelLimitOrder } as MsgCancelLimitOrder;
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = String(object.creator);
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = String(object.receiver);
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = String(object.tokenA);
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = String(object.tokenB);
-    } else {
-      message.tokenB = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = Number(object.tickIndex);
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.keyToken !== undefined && object.keyToken !== null) {
-      message.keyToken = String(object.keyToken);
-    } else {
-      message.keyToken = "";
-    }
-    if (object.key !== undefined && object.key !== null) {
-      message.key = Number(object.key);
-    } else {
-      message.key = 0;
-    }
-    if (object.sharesOut !== undefined && object.sharesOut !== null) {
-      message.sharesOut = String(object.sharesOut);
-    } else {
-      message.sharesOut = "";
-    }
-    return message;
+    return {
+      creator: isSet(object.creator) ? String(object.creator) : "",
+      receiver: isSet(object.receiver) ? String(object.receiver) : "",
+      tokenA: isSet(object.tokenA) ? String(object.tokenA) : "",
+      tokenB: isSet(object.tokenB) ? String(object.tokenB) : "",
+      tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0,
+      keyToken: isSet(object.keyToken) ? String(object.keyToken) : "",
+      key: isSet(object.key) ? Number(object.key) : 0,
+      sharesOut: isSet(object.sharesOut) ? String(object.sharesOut) : "",
+    };
   },
 
   toJSON(message: MsgCancelLimitOrder): unknown {
@@ -1466,78 +1015,40 @@ export const MsgCancelLimitOrder = {
     message.receiver !== undefined && (obj.receiver = message.receiver);
     message.tokenA !== undefined && (obj.tokenA = message.tokenA);
     message.tokenB !== undefined && (obj.tokenB = message.tokenB);
-    message.tickIndex !== undefined && (obj.tickIndex = message.tickIndex);
+    message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
     message.keyToken !== undefined && (obj.keyToken = message.keyToken);
-    message.key !== undefined && (obj.key = message.key);
+    message.key !== undefined && (obj.key = Math.round(message.key));
     message.sharesOut !== undefined && (obj.sharesOut = message.sharesOut);
     return obj;
   },
 
-  fromPartial(object: DeepPartial<MsgCancelLimitOrder>): MsgCancelLimitOrder {
-    const message = { ...baseMsgCancelLimitOrder } as MsgCancelLimitOrder;
-    if (object.creator !== undefined && object.creator !== null) {
-      message.creator = object.creator;
-    } else {
-      message.creator = "";
-    }
-    if (object.receiver !== undefined && object.receiver !== null) {
-      message.receiver = object.receiver;
-    } else {
-      message.receiver = "";
-    }
-    if (object.tokenA !== undefined && object.tokenA !== null) {
-      message.tokenA = object.tokenA;
-    } else {
-      message.tokenA = "";
-    }
-    if (object.tokenB !== undefined && object.tokenB !== null) {
-      message.tokenB = object.tokenB;
-    } else {
-      message.tokenB = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = object.tickIndex;
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.keyToken !== undefined && object.keyToken !== null) {
-      message.keyToken = object.keyToken;
-    } else {
-      message.keyToken = "";
-    }
-    if (object.key !== undefined && object.key !== null) {
-      message.key = object.key;
-    } else {
-      message.key = 0;
-    }
-    if (object.sharesOut !== undefined && object.sharesOut !== null) {
-      message.sharesOut = object.sharesOut;
-    } else {
-      message.sharesOut = "";
-    }
+  fromPartial<I extends Exact<DeepPartial<MsgCancelLimitOrder>, I>>(object: I): MsgCancelLimitOrder {
+    const message = createBaseMsgCancelLimitOrder();
+    message.creator = object.creator ?? "";
+    message.receiver = object.receiver ?? "";
+    message.tokenA = object.tokenA ?? "";
+    message.tokenB = object.tokenB ?? "";
+    message.tickIndex = object.tickIndex ?? 0;
+    message.keyToken = object.keyToken ?? "";
+    message.key = object.key ?? 0;
+    message.sharesOut = object.sharesOut ?? "";
     return message;
   },
 };
 
-const baseMsgCancelLimitOrderResponse: object = {};
+function createBaseMsgCancelLimitOrderResponse(): MsgCancelLimitOrderResponse {
+  return {};
+}
 
 export const MsgCancelLimitOrderResponse = {
-  encode(
-    _: MsgCancelLimitOrderResponse,
-    writer: Writer = Writer.create()
-  ): Writer {
+  encode(_: MsgCancelLimitOrderResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     return writer;
   },
 
-  decode(
-    input: Reader | Uint8Array,
-    length?: number
-  ): MsgCancelLimitOrderResponse {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): MsgCancelLimitOrderResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = {
-      ...baseMsgCancelLimitOrderResponse,
-    } as MsgCancelLimitOrderResponse;
+    const message = createBaseMsgCancelLimitOrderResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -1550,10 +1061,7 @@ export const MsgCancelLimitOrderResponse = {
   },
 
   fromJSON(_: any): MsgCancelLimitOrderResponse {
-    const message = {
-      ...baseMsgCancelLimitOrderResponse,
-    } as MsgCancelLimitOrderResponse;
-    return message;
+    return {};
   },
 
   toJSON(_: MsgCancelLimitOrderResponse): unknown {
@@ -1561,12 +1069,8 @@ export const MsgCancelLimitOrderResponse = {
     return obj;
   },
 
-  fromPartial(
-    _: DeepPartial<MsgCancelLimitOrderResponse>
-  ): MsgCancelLimitOrderResponse {
-    const message = {
-      ...baseMsgCancelLimitOrderResponse,
-    } as MsgCancelLimitOrderResponse;
+  fromPartial<I extends Exact<DeepPartial<MsgCancelLimitOrderResponse>, I>>(_: I): MsgCancelLimitOrderResponse {
+    const message = createBaseMsgCancelLimitOrderResponse();
     return message;
   },
 };
@@ -1576,126 +1080,93 @@ export interface Msg {
   Deposit(request: MsgDeposit): Promise<MsgDepositResponse>;
   Withdrawl(request: MsgWithdrawl): Promise<MsgWithdrawlResponse>;
   Swap(request: MsgSwap): Promise<MsgSwapResponse>;
-  PlaceLimitOrder(
-    request: MsgPlaceLimitOrder
-  ): Promise<MsgPlaceLimitOrderResponse>;
-  WithdrawFilledLimitOrder(
-    request: MsgWithdrawFilledLimitOrder
-  ): Promise<MsgWithdrawFilledLimitOrderResponse>;
+  PlaceLimitOrder(request: MsgPlaceLimitOrder): Promise<MsgPlaceLimitOrderResponse>;
+  WithdrawFilledLimitOrder(request: MsgWithdrawFilledLimitOrder): Promise<MsgWithdrawFilledLimitOrderResponse>;
   /** this line is used by starport scaffolding # proto/tx/rpc */
-  CancelLimitOrder(
-    request: MsgCancelLimitOrder
-  ): Promise<MsgCancelLimitOrderResponse>;
+  CancelLimitOrder(request: MsgCancelLimitOrder): Promise<MsgCancelLimitOrderResponse>;
 }
 
 export class MsgClientImpl implements Msg {
   private readonly rpc: Rpc;
   constructor(rpc: Rpc) {
     this.rpc = rpc;
+    this.Deposit = this.Deposit.bind(this);
+    this.Withdrawl = this.Withdrawl.bind(this);
+    this.Swap = this.Swap.bind(this);
+    this.PlaceLimitOrder = this.PlaceLimitOrder.bind(this);
+    this.WithdrawFilledLimitOrder = this.WithdrawFilledLimitOrder.bind(this);
+    this.CancelLimitOrder = this.CancelLimitOrder.bind(this);
   }
   Deposit(request: MsgDeposit): Promise<MsgDepositResponse> {
     const data = MsgDeposit.encode(request).finish();
-    const promise = this.rpc.request(
-      "nicholasdotsol.duality.dex.Msg",
-      "Deposit",
-      data
-    );
-    return promise.then((data) => MsgDepositResponse.decode(new Reader(data)));
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Msg", "Deposit", data);
+    return promise.then((data) => MsgDepositResponse.decode(new _m0.Reader(data)));
   }
 
   Withdrawl(request: MsgWithdrawl): Promise<MsgWithdrawlResponse> {
     const data = MsgWithdrawl.encode(request).finish();
-    const promise = this.rpc.request(
-      "nicholasdotsol.duality.dex.Msg",
-      "Withdrawl",
-      data
-    );
-    return promise.then((data) =>
-      MsgWithdrawlResponse.decode(new Reader(data))
-    );
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Msg", "Withdrawl", data);
+    return promise.then((data) => MsgWithdrawlResponse.decode(new _m0.Reader(data)));
   }
 
   Swap(request: MsgSwap): Promise<MsgSwapResponse> {
     const data = MsgSwap.encode(request).finish();
-    const promise = this.rpc.request(
-      "nicholasdotsol.duality.dex.Msg",
-      "Swap",
-      data
-    );
-    return promise.then((data) => MsgSwapResponse.decode(new Reader(data)));
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Msg", "Swap", data);
+    return promise.then((data) => MsgSwapResponse.decode(new _m0.Reader(data)));
   }
 
-  PlaceLimitOrder(
-    request: MsgPlaceLimitOrder
-  ): Promise<MsgPlaceLimitOrderResponse> {
+  PlaceLimitOrder(request: MsgPlaceLimitOrder): Promise<MsgPlaceLimitOrderResponse> {
     const data = MsgPlaceLimitOrder.encode(request).finish();
-    const promise = this.rpc.request(
-      "nicholasdotsol.duality.dex.Msg",
-      "PlaceLimitOrder",
-      data
-    );
-    return promise.then((data) =>
-      MsgPlaceLimitOrderResponse.decode(new Reader(data))
-    );
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Msg", "PlaceLimitOrder", data);
+    return promise.then((data) => MsgPlaceLimitOrderResponse.decode(new _m0.Reader(data)));
   }
 
-  WithdrawFilledLimitOrder(
-    request: MsgWithdrawFilledLimitOrder
-  ): Promise<MsgWithdrawFilledLimitOrderResponse> {
+  WithdrawFilledLimitOrder(request: MsgWithdrawFilledLimitOrder): Promise<MsgWithdrawFilledLimitOrderResponse> {
     const data = MsgWithdrawFilledLimitOrder.encode(request).finish();
-    const promise = this.rpc.request(
-      "nicholasdotsol.duality.dex.Msg",
-      "WithdrawFilledLimitOrder",
-      data
-    );
-    return promise.then((data) =>
-      MsgWithdrawFilledLimitOrderResponse.decode(new Reader(data))
-    );
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Msg", "WithdrawFilledLimitOrder", data);
+    return promise.then((data) => MsgWithdrawFilledLimitOrderResponse.decode(new _m0.Reader(data)));
   }
 
-  CancelLimitOrder(
-    request: MsgCancelLimitOrder
-  ): Promise<MsgCancelLimitOrderResponse> {
+  CancelLimitOrder(request: MsgCancelLimitOrder): Promise<MsgCancelLimitOrderResponse> {
     const data = MsgCancelLimitOrder.encode(request).finish();
-    const promise = this.rpc.request(
-      "nicholasdotsol.duality.dex.Msg",
-      "CancelLimitOrder",
-      data
-    );
-    return promise.then((data) =>
-      MsgCancelLimitOrderResponse.decode(new Reader(data))
-    );
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Msg", "CancelLimitOrder", data);
+    return promise.then((data) => MsgCancelLimitOrderResponse.decode(new _m0.Reader(data)));
   }
 }
 
 interface Rpc {
-  request(
-    service: string,
-    method: string,
-    data: Uint8Array
-  ): Promise<Uint8Array>;
+  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
 }
 
 declare var self: any | undefined;
 declare var window: any | undefined;
+declare var global: any | undefined;
 var globalThis: any = (() => {
-  if (typeof globalThis !== "undefined") return globalThis;
-  if (typeof self !== "undefined") return self;
-  if (typeof window !== "undefined") return window;
-  if (typeof global !== "undefined") return global;
+  if (typeof globalThis !== "undefined") {
+    return globalThis;
+  }
+  if (typeof self !== "undefined") {
+    return self;
+  }
+  if (typeof window !== "undefined") {
+    return window;
+  }
+  if (typeof global !== "undefined") {
+    return global;
+  }
   throw "Unable to locate global object";
 })();
 
-type Builtin = Date | Function | Uint8Array | string | number | undefined;
-export type DeepPartial<T> = T extends Builtin
-  ? T
-  : T extends Array<infer U>
-  ? Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U>
-  ? ReadonlyArray<DeepPartial<U>>
-  : T extends {}
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToNumber(long: Long): number {
   if (long.gt(Number.MAX_SAFE_INTEGER)) {
@@ -1704,7 +1175,11 @@ function longToNumber(long: Long): number {
   return long.toNumber();
 }
 
-if (true) {
-  util.Long = Long as any;
-  configure();
+if (_m0.util.Long !== Long) {
+  _m0.util.Long = Long as any;
+  _m0.configure();
+}
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
 }

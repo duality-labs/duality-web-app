@@ -1,8 +1,9 @@
 /* eslint-disable */
-import * as Long from "long";
-import { util, configure, Writer, Reader } from "protobufjs/minimal";
-import { TickDataType } from "../dex/tick_data_type";
-import { LimitOrderTrancheTrancheIndexes } from "../dex/limit_order_pool_tranche_indexes";
+/* tslint:disable */
+import Long from "long";
+import _m0 from "protobufjs/minimal";
+import { LimitOrderTrancheTrancheIndexes } from "./limit_order_pool_tranche_indexes";
+import { TickDataType } from "./tick_data_type";
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
@@ -14,10 +15,18 @@ export interface TickMap {
   LimitOrderTranche1to0: LimitOrderTrancheTrancheIndexes | undefined;
 }
 
-const baseTickMap: object = { pairId: "", tickIndex: 0 };
+function createBaseTickMap(): TickMap {
+  return {
+    pairId: "",
+    tickIndex: 0,
+    tickData: undefined,
+    LimitOrderTranche0to1: undefined,
+    LimitOrderTranche1to0: undefined,
+  };
+}
 
 export const TickMap = {
-  encode(message: TickMap, writer: Writer = Writer.create()): Writer {
+  encode(message: TickMap, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.pairId !== "") {
       writer.uint32(10).string(message.pairId);
     }
@@ -28,24 +37,18 @@ export const TickMap = {
       TickDataType.encode(message.tickData, writer.uint32(26).fork()).ldelim();
     }
     if (message.LimitOrderTranche0to1 !== undefined) {
-      LimitOrderTrancheTrancheIndexes.encode(
-        message.LimitOrderTranche0to1,
-        writer.uint32(34).fork()
-      ).ldelim();
+      LimitOrderTrancheTrancheIndexes.encode(message.LimitOrderTranche0to1, writer.uint32(34).fork()).ldelim();
     }
     if (message.LimitOrderTranche1to0 !== undefined) {
-      LimitOrderTrancheTrancheIndexes.encode(
-        message.LimitOrderTranche1to0,
-        writer.uint32(42).fork()
-      ).ldelim();
+      LimitOrderTrancheTrancheIndexes.encode(message.LimitOrderTranche1to0, writer.uint32(42).fork()).ldelim();
     }
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): TickMap {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): TickMap {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseTickMap } as TickMap;
+    const message = createBaseTickMap();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -59,16 +62,10 @@ export const TickMap = {
           message.tickData = TickDataType.decode(reader, reader.uint32());
           break;
         case 4:
-          message.LimitOrderTranche0to1 = LimitOrderTrancheTrancheIndexes.decode(
-            reader,
-            reader.uint32()
-          );
+          message.LimitOrderTranche0to1 = LimitOrderTrancheTrancheIndexes.decode(reader, reader.uint32());
           break;
         case 5:
-          message.LimitOrderTranche1to0 = LimitOrderTrancheTrancheIndexes.decode(
-            reader,
-            reader.uint32()
-          );
+          message.LimitOrderTranche1to0 = LimitOrderTrancheTrancheIndexes.decode(reader, reader.uint32());
           break;
         default:
           reader.skipType(tag & 7);
@@ -79,125 +76,82 @@ export const TickMap = {
   },
 
   fromJSON(object: any): TickMap {
-    const message = { ...baseTickMap } as TickMap;
-    if (object.pairId !== undefined && object.pairId !== null) {
-      message.pairId = String(object.pairId);
-    } else {
-      message.pairId = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = Number(object.tickIndex);
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.tickData !== undefined && object.tickData !== null) {
-      message.tickData = TickDataType.fromJSON(object.tickData);
-    } else {
-      message.tickData = undefined;
-    }
-    if (
-      object.LimitOrderTranche0to1 !== undefined &&
-      object.LimitOrderTranche0to1 !== null
-    ) {
-      message.LimitOrderTranche0to1 = LimitOrderTrancheTrancheIndexes.fromJSON(
-        object.LimitOrderTranche0to1
-      );
-    } else {
-      message.LimitOrderTranche0to1 = undefined;
-    }
-    if (
-      object.LimitOrderTranche1to0 !== undefined &&
-      object.LimitOrderTranche1to0 !== null
-    ) {
-      message.LimitOrderTranche1to0 = LimitOrderTrancheTrancheIndexes.fromJSON(
-        object.LimitOrderTranche1to0
-      );
-    } else {
-      message.LimitOrderTranche1to0 = undefined;
-    }
-    return message;
+    return {
+      pairId: isSet(object.pairId) ? String(object.pairId) : "",
+      tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0,
+      tickData: isSet(object.tickData) ? TickDataType.fromJSON(object.tickData) : undefined,
+      LimitOrderTranche0to1: isSet(object.LimitOrderTranche0to1)
+        ? LimitOrderTrancheTrancheIndexes.fromJSON(object.LimitOrderTranche0to1)
+        : undefined,
+      LimitOrderTranche1to0: isSet(object.LimitOrderTranche1to0)
+        ? LimitOrderTrancheTrancheIndexes.fromJSON(object.LimitOrderTranche1to0)
+        : undefined,
+    };
   },
 
   toJSON(message: TickMap): unknown {
     const obj: any = {};
     message.pairId !== undefined && (obj.pairId = message.pairId);
-    message.tickIndex !== undefined && (obj.tickIndex = message.tickIndex);
-    message.tickData !== undefined &&
-      (obj.tickData = message.tickData
-        ? TickDataType.toJSON(message.tickData)
-        : undefined);
-    message.LimitOrderTranche0to1 !== undefined &&
-      (obj.LimitOrderTranche0to1 = message.LimitOrderTranche0to1
-        ? LimitOrderTrancheTrancheIndexes.toJSON(message.LimitOrderTranche0to1)
-        : undefined);
-    message.LimitOrderTranche1to0 !== undefined &&
-      (obj.LimitOrderTranche1to0 = message.LimitOrderTranche1to0
-        ? LimitOrderTrancheTrancheIndexes.toJSON(message.LimitOrderTranche1to0)
-        : undefined);
+    message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
+    message.tickData !== undefined
+      && (obj.tickData = message.tickData ? TickDataType.toJSON(message.tickData) : undefined);
+    message.LimitOrderTranche0to1 !== undefined && (obj.LimitOrderTranche0to1 = message.LimitOrderTranche0to1
+      ? LimitOrderTrancheTrancheIndexes.toJSON(message.LimitOrderTranche0to1)
+      : undefined);
+    message.LimitOrderTranche1to0 !== undefined && (obj.LimitOrderTranche1to0 = message.LimitOrderTranche1to0
+      ? LimitOrderTrancheTrancheIndexes.toJSON(message.LimitOrderTranche1to0)
+      : undefined);
     return obj;
   },
 
-  fromPartial(object: DeepPartial<TickMap>): TickMap {
-    const message = { ...baseTickMap } as TickMap;
-    if (object.pairId !== undefined && object.pairId !== null) {
-      message.pairId = object.pairId;
-    } else {
-      message.pairId = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = object.tickIndex;
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.tickData !== undefined && object.tickData !== null) {
-      message.tickData = TickDataType.fromPartial(object.tickData);
-    } else {
-      message.tickData = undefined;
-    }
-    if (
-      object.LimitOrderTranche0to1 !== undefined &&
-      object.LimitOrderTranche0to1 !== null
-    ) {
-      message.LimitOrderTranche0to1 = LimitOrderTrancheTrancheIndexes.fromPartial(
-        object.LimitOrderTranche0to1
-      );
-    } else {
-      message.LimitOrderTranche0to1 = undefined;
-    }
-    if (
-      object.LimitOrderTranche1to0 !== undefined &&
-      object.LimitOrderTranche1to0 !== null
-    ) {
-      message.LimitOrderTranche1to0 = LimitOrderTrancheTrancheIndexes.fromPartial(
-        object.LimitOrderTranche1to0
-      );
-    } else {
-      message.LimitOrderTranche1to0 = undefined;
-    }
+  fromPartial<I extends Exact<DeepPartial<TickMap>, I>>(object: I): TickMap {
+    const message = createBaseTickMap();
+    message.pairId = object.pairId ?? "";
+    message.tickIndex = object.tickIndex ?? 0;
+    message.tickData = (object.tickData !== undefined && object.tickData !== null)
+      ? TickDataType.fromPartial(object.tickData)
+      : undefined;
+    message.LimitOrderTranche0to1 =
+      (object.LimitOrderTranche0to1 !== undefined && object.LimitOrderTranche0to1 !== null)
+        ? LimitOrderTrancheTrancheIndexes.fromPartial(object.LimitOrderTranche0to1)
+        : undefined;
+    message.LimitOrderTranche1to0 =
+      (object.LimitOrderTranche1to0 !== undefined && object.LimitOrderTranche1to0 !== null)
+        ? LimitOrderTrancheTrancheIndexes.fromPartial(object.LimitOrderTranche1to0)
+        : undefined;
     return message;
   },
 };
 
 declare var self: any | undefined;
 declare var window: any | undefined;
+declare var global: any | undefined;
 var globalThis: any = (() => {
-  if (typeof globalThis !== "undefined") return globalThis;
-  if (typeof self !== "undefined") return self;
-  if (typeof window !== "undefined") return window;
-  if (typeof global !== "undefined") return global;
+  if (typeof globalThis !== "undefined") {
+    return globalThis;
+  }
+  if (typeof self !== "undefined") {
+    return self;
+  }
+  if (typeof window !== "undefined") {
+    return window;
+  }
+  if (typeof global !== "undefined") {
+    return global;
+  }
   throw "Unable to locate global object";
 })();
 
-type Builtin = Date | Function | Uint8Array | string | number | undefined;
-export type DeepPartial<T> = T extends Builtin
-  ? T
-  : T extends Array<infer U>
-  ? Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U>
-  ? ReadonlyArray<DeepPartial<U>>
-  : T extends {}
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToNumber(long: Long): number {
   if (long.gt(Number.MAX_SAFE_INTEGER)) {
@@ -206,7 +160,11 @@ function longToNumber(long: Long): number {
   return long.toNumber();
 }
 
-if (true) {
-  util.Long = Long as any;
-  configure();
+if (_m0.util.Long !== Long) {
+  _m0.util.Long = Long as any;
+  _m0.configure();
+}
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
 }

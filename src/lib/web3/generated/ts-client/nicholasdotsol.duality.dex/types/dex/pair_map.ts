@@ -1,7 +1,8 @@
 /* eslint-disable */
-import * as Long from "long";
-import { util, configure, Writer, Reader } from "protobufjs/minimal";
-import { TokenPairType } from "../dex/token_pair_type";
+/* tslint:disable */
+import Long from "long";
+import _m0 from "protobufjs/minimal";
+import { TokenPairType } from "./token_pair_type";
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
@@ -12,18 +13,17 @@ export interface PairMap {
   minTick: number;
 }
 
-const basePairMap: object = { pairId: "", maxTick: 0, minTick: 0 };
+function createBasePairMap(): PairMap {
+  return { pairId: "", tokenPair: undefined, maxTick: 0, minTick: 0 };
+}
 
 export const PairMap = {
-  encode(message: PairMap, writer: Writer = Writer.create()): Writer {
+  encode(message: PairMap, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.pairId !== "") {
       writer.uint32(10).string(message.pairId);
     }
     if (message.tokenPair !== undefined) {
-      TokenPairType.encode(
-        message.tokenPair,
-        writer.uint32(18).fork()
-      ).ldelim();
+      TokenPairType.encode(message.tokenPair, writer.uint32(18).fork()).ldelim();
     }
     if (message.maxTick !== 0) {
       writer.uint32(24).int64(message.maxTick);
@@ -34,10 +34,10 @@ export const PairMap = {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): PairMap {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): PairMap {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...basePairMap } as PairMap;
+    const message = createBasePairMap();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -62,88 +62,65 @@ export const PairMap = {
   },
 
   fromJSON(object: any): PairMap {
-    const message = { ...basePairMap } as PairMap;
-    if (object.pairId !== undefined && object.pairId !== null) {
-      message.pairId = String(object.pairId);
-    } else {
-      message.pairId = "";
-    }
-    if (object.tokenPair !== undefined && object.tokenPair !== null) {
-      message.tokenPair = TokenPairType.fromJSON(object.tokenPair);
-    } else {
-      message.tokenPair = undefined;
-    }
-    if (object.maxTick !== undefined && object.maxTick !== null) {
-      message.maxTick = Number(object.maxTick);
-    } else {
-      message.maxTick = 0;
-    }
-    if (object.minTick !== undefined && object.minTick !== null) {
-      message.minTick = Number(object.minTick);
-    } else {
-      message.minTick = 0;
-    }
-    return message;
+    return {
+      pairId: isSet(object.pairId) ? String(object.pairId) : "",
+      tokenPair: isSet(object.tokenPair) ? TokenPairType.fromJSON(object.tokenPair) : undefined,
+      maxTick: isSet(object.maxTick) ? Number(object.maxTick) : 0,
+      minTick: isSet(object.minTick) ? Number(object.minTick) : 0,
+    };
   },
 
   toJSON(message: PairMap): unknown {
     const obj: any = {};
     message.pairId !== undefined && (obj.pairId = message.pairId);
-    message.tokenPair !== undefined &&
-      (obj.tokenPair = message.tokenPair
-        ? TokenPairType.toJSON(message.tokenPair)
-        : undefined);
-    message.maxTick !== undefined && (obj.maxTick = message.maxTick);
-    message.minTick !== undefined && (obj.minTick = message.minTick);
+    message.tokenPair !== undefined
+      && (obj.tokenPair = message.tokenPair ? TokenPairType.toJSON(message.tokenPair) : undefined);
+    message.maxTick !== undefined && (obj.maxTick = Math.round(message.maxTick));
+    message.minTick !== undefined && (obj.minTick = Math.round(message.minTick));
     return obj;
   },
 
-  fromPartial(object: DeepPartial<PairMap>): PairMap {
-    const message = { ...basePairMap } as PairMap;
-    if (object.pairId !== undefined && object.pairId !== null) {
-      message.pairId = object.pairId;
-    } else {
-      message.pairId = "";
-    }
-    if (object.tokenPair !== undefined && object.tokenPair !== null) {
-      message.tokenPair = TokenPairType.fromPartial(object.tokenPair);
-    } else {
-      message.tokenPair = undefined;
-    }
-    if (object.maxTick !== undefined && object.maxTick !== null) {
-      message.maxTick = object.maxTick;
-    } else {
-      message.maxTick = 0;
-    }
-    if (object.minTick !== undefined && object.minTick !== null) {
-      message.minTick = object.minTick;
-    } else {
-      message.minTick = 0;
-    }
+  fromPartial<I extends Exact<DeepPartial<PairMap>, I>>(object: I): PairMap {
+    const message = createBasePairMap();
+    message.pairId = object.pairId ?? "";
+    message.tokenPair = (object.tokenPair !== undefined && object.tokenPair !== null)
+      ? TokenPairType.fromPartial(object.tokenPair)
+      : undefined;
+    message.maxTick = object.maxTick ?? 0;
+    message.minTick = object.minTick ?? 0;
     return message;
   },
 };
 
 declare var self: any | undefined;
 declare var window: any | undefined;
+declare var global: any | undefined;
 var globalThis: any = (() => {
-  if (typeof globalThis !== "undefined") return globalThis;
-  if (typeof self !== "undefined") return self;
-  if (typeof window !== "undefined") return window;
-  if (typeof global !== "undefined") return global;
+  if (typeof globalThis !== "undefined") {
+    return globalThis;
+  }
+  if (typeof self !== "undefined") {
+    return self;
+  }
+  if (typeof window !== "undefined") {
+    return window;
+  }
+  if (typeof global !== "undefined") {
+    return global;
+  }
   throw "Unable to locate global object";
 })();
 
-type Builtin = Date | Function | Uint8Array | string | number | undefined;
-export type DeepPartial<T> = T extends Builtin
-  ? T
-  : T extends Array<infer U>
-  ? Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U>
-  ? ReadonlyArray<DeepPartial<U>>
-  : T extends {}
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToNumber(long: Long): number {
   if (long.gt(Number.MAX_SAFE_INTEGER)) {
@@ -152,7 +129,11 @@ function longToNumber(long: Long): number {
   return long.toNumber();
 }
 
-if (true) {
-  util.Long = Long as any;
-  configure();
+if (_m0.util.Long !== Long) {
+  _m0.util.Long = Long as any;
+  _m0.configure();
+}
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
 }

@@ -1,6 +1,7 @@
 /* eslint-disable */
-import * as Long from "long";
-import { util, configure, Writer, Reader } from "protobufjs/minimal";
+/* tslint:disable */
+import Long from "long";
+import _m0 from "protobufjs/minimal";
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
@@ -12,16 +13,12 @@ export interface Shares {
   sharesOwned: string;
 }
 
-const baseShares: object = {
-  address: "",
-  pairId: "",
-  tickIndex: 0,
-  feeIndex: 0,
-  sharesOwned: "",
-};
+function createBaseShares(): Shares {
+  return { address: "", pairId: "", tickIndex: 0, feeIndex: 0, sharesOwned: "" };
+}
 
 export const Shares = {
-  encode(message: Shares, writer: Writer = Writer.create()): Writer {
+  encode(message: Shares, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.address !== "") {
       writer.uint32(10).string(message.address);
     }
@@ -40,10 +37,10 @@ export const Shares = {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): Shares {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): Shares {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseShares } as Shares;
+    const message = createBaseShares();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -71,97 +68,65 @@ export const Shares = {
   },
 
   fromJSON(object: any): Shares {
-    const message = { ...baseShares } as Shares;
-    if (object.address !== undefined && object.address !== null) {
-      message.address = String(object.address);
-    } else {
-      message.address = "";
-    }
-    if (object.pairId !== undefined && object.pairId !== null) {
-      message.pairId = String(object.pairId);
-    } else {
-      message.pairId = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = Number(object.tickIndex);
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.feeIndex !== undefined && object.feeIndex !== null) {
-      message.feeIndex = Number(object.feeIndex);
-    } else {
-      message.feeIndex = 0;
-    }
-    if (object.sharesOwned !== undefined && object.sharesOwned !== null) {
-      message.sharesOwned = String(object.sharesOwned);
-    } else {
-      message.sharesOwned = "";
-    }
-    return message;
+    return {
+      address: isSet(object.address) ? String(object.address) : "",
+      pairId: isSet(object.pairId) ? String(object.pairId) : "",
+      tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0,
+      feeIndex: isSet(object.feeIndex) ? Number(object.feeIndex) : 0,
+      sharesOwned: isSet(object.sharesOwned) ? String(object.sharesOwned) : "",
+    };
   },
 
   toJSON(message: Shares): unknown {
     const obj: any = {};
     message.address !== undefined && (obj.address = message.address);
     message.pairId !== undefined && (obj.pairId = message.pairId);
-    message.tickIndex !== undefined && (obj.tickIndex = message.tickIndex);
-    message.feeIndex !== undefined && (obj.feeIndex = message.feeIndex);
-    message.sharesOwned !== undefined &&
-      (obj.sharesOwned = message.sharesOwned);
+    message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
+    message.feeIndex !== undefined && (obj.feeIndex = Math.round(message.feeIndex));
+    message.sharesOwned !== undefined && (obj.sharesOwned = message.sharesOwned);
     return obj;
   },
 
-  fromPartial(object: DeepPartial<Shares>): Shares {
-    const message = { ...baseShares } as Shares;
-    if (object.address !== undefined && object.address !== null) {
-      message.address = object.address;
-    } else {
-      message.address = "";
-    }
-    if (object.pairId !== undefined && object.pairId !== null) {
-      message.pairId = object.pairId;
-    } else {
-      message.pairId = "";
-    }
-    if (object.tickIndex !== undefined && object.tickIndex !== null) {
-      message.tickIndex = object.tickIndex;
-    } else {
-      message.tickIndex = 0;
-    }
-    if (object.feeIndex !== undefined && object.feeIndex !== null) {
-      message.feeIndex = object.feeIndex;
-    } else {
-      message.feeIndex = 0;
-    }
-    if (object.sharesOwned !== undefined && object.sharesOwned !== null) {
-      message.sharesOwned = object.sharesOwned;
-    } else {
-      message.sharesOwned = "";
-    }
+  fromPartial<I extends Exact<DeepPartial<Shares>, I>>(object: I): Shares {
+    const message = createBaseShares();
+    message.address = object.address ?? "";
+    message.pairId = object.pairId ?? "";
+    message.tickIndex = object.tickIndex ?? 0;
+    message.feeIndex = object.feeIndex ?? 0;
+    message.sharesOwned = object.sharesOwned ?? "";
     return message;
   },
 };
 
 declare var self: any | undefined;
 declare var window: any | undefined;
+declare var global: any | undefined;
 var globalThis: any = (() => {
-  if (typeof globalThis !== "undefined") return globalThis;
-  if (typeof self !== "undefined") return self;
-  if (typeof window !== "undefined") return window;
-  if (typeof global !== "undefined") return global;
+  if (typeof globalThis !== "undefined") {
+    return globalThis;
+  }
+  if (typeof self !== "undefined") {
+    return self;
+  }
+  if (typeof window !== "undefined") {
+    return window;
+  }
+  if (typeof global !== "undefined") {
+    return global;
+  }
   throw "Unable to locate global object";
 })();
 
-type Builtin = Date | Function | Uint8Array | string | number | undefined;
-export type DeepPartial<T> = T extends Builtin
-  ? T
-  : T extends Array<infer U>
-  ? Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U>
-  ? ReadonlyArray<DeepPartial<U>>
-  : T extends {}
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToNumber(long: Long): number {
   if (long.gt(Number.MAX_SAFE_INTEGER)) {
@@ -170,7 +135,11 @@ function longToNumber(long: Long): number {
   return long.toNumber();
 }
 
-if (true) {
-  util.Long = Long as any;
-  configure();
+if (_m0.util.Long !== Long) {
+  _m0.util.Long = Long as any;
+  _m0.configure();
+}
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
 }

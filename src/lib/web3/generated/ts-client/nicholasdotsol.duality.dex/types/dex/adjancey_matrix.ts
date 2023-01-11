@@ -1,7 +1,8 @@
 /* eslint-disable */
-import * as Long from "long";
-import { util, configure, Writer, Reader } from "protobufjs/minimal";
-import { EdgeRow } from "../dex/edge_row";
+/* tslint:disable */
+import Long from "long";
+import _m0 from "protobufjs/minimal";
+import { EdgeRow } from "./edge_row";
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
@@ -10,10 +11,12 @@ export interface AdjanceyMatrix {
   edgeRow: EdgeRow | undefined;
 }
 
-const baseAdjanceyMatrix: object = { id: 0 };
+function createBaseAdjanceyMatrix(): AdjanceyMatrix {
+  return { id: 0, edgeRow: undefined };
+}
 
 export const AdjanceyMatrix = {
-  encode(message: AdjanceyMatrix, writer: Writer = Writer.create()): Writer {
+  encode(message: AdjanceyMatrix, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.id !== 0) {
       writer.uint32(8).uint64(message.id);
     }
@@ -23,10 +26,10 @@ export const AdjanceyMatrix = {
     return writer;
   },
 
-  decode(input: Reader | Uint8Array, length?: number): AdjanceyMatrix {
-    const reader = input instanceof Uint8Array ? new Reader(input) : input;
+  decode(input: _m0.Reader | Uint8Array, length?: number): AdjanceyMatrix {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = { ...baseAdjanceyMatrix } as AdjanceyMatrix;
+    const message = createBaseAdjanceyMatrix();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -45,66 +48,58 @@ export const AdjanceyMatrix = {
   },
 
   fromJSON(object: any): AdjanceyMatrix {
-    const message = { ...baseAdjanceyMatrix } as AdjanceyMatrix;
-    if (object.id !== undefined && object.id !== null) {
-      message.id = Number(object.id);
-    } else {
-      message.id = 0;
-    }
-    if (object.edgeRow !== undefined && object.edgeRow !== null) {
-      message.edgeRow = EdgeRow.fromJSON(object.edgeRow);
-    } else {
-      message.edgeRow = undefined;
-    }
-    return message;
+    return {
+      id: isSet(object.id) ? Number(object.id) : 0,
+      edgeRow: isSet(object.edgeRow) ? EdgeRow.fromJSON(object.edgeRow) : undefined,
+    };
   },
 
   toJSON(message: AdjanceyMatrix): unknown {
     const obj: any = {};
-    message.id !== undefined && (obj.id = message.id);
-    message.edgeRow !== undefined &&
-      (obj.edgeRow = message.edgeRow
-        ? EdgeRow.toJSON(message.edgeRow)
-        : undefined);
+    message.id !== undefined && (obj.id = Math.round(message.id));
+    message.edgeRow !== undefined && (obj.edgeRow = message.edgeRow ? EdgeRow.toJSON(message.edgeRow) : undefined);
     return obj;
   },
 
-  fromPartial(object: DeepPartial<AdjanceyMatrix>): AdjanceyMatrix {
-    const message = { ...baseAdjanceyMatrix } as AdjanceyMatrix;
-    if (object.id !== undefined && object.id !== null) {
-      message.id = object.id;
-    } else {
-      message.id = 0;
-    }
-    if (object.edgeRow !== undefined && object.edgeRow !== null) {
-      message.edgeRow = EdgeRow.fromPartial(object.edgeRow);
-    } else {
-      message.edgeRow = undefined;
-    }
+  fromPartial<I extends Exact<DeepPartial<AdjanceyMatrix>, I>>(object: I): AdjanceyMatrix {
+    const message = createBaseAdjanceyMatrix();
+    message.id = object.id ?? 0;
+    message.edgeRow = (object.edgeRow !== undefined && object.edgeRow !== null)
+      ? EdgeRow.fromPartial(object.edgeRow)
+      : undefined;
     return message;
   },
 };
 
 declare var self: any | undefined;
 declare var window: any | undefined;
+declare var global: any | undefined;
 var globalThis: any = (() => {
-  if (typeof globalThis !== "undefined") return globalThis;
-  if (typeof self !== "undefined") return self;
-  if (typeof window !== "undefined") return window;
-  if (typeof global !== "undefined") return global;
+  if (typeof globalThis !== "undefined") {
+    return globalThis;
+  }
+  if (typeof self !== "undefined") {
+    return self;
+  }
+  if (typeof window !== "undefined") {
+    return window;
+  }
+  if (typeof global !== "undefined") {
+    return global;
+  }
   throw "Unable to locate global object";
 })();
 
-type Builtin = Date | Function | Uint8Array | string | number | undefined;
-export type DeepPartial<T> = T extends Builtin
-  ? T
-  : T extends Array<infer U>
-  ? Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U>
-  ? ReadonlyArray<DeepPartial<U>>
-  : T extends {}
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function longToNumber(long: Long): number {
   if (long.gt(Number.MAX_SAFE_INTEGER)) {
@@ -113,7 +108,11 @@ function longToNumber(long: Long): number {
   return long.toNumber();
 }
 
-if (true) {
-  util.Long = Long as any;
-  configure();
+if (_m0.util.Long !== Long) {
+  _m0.util.Long = Long as any;
+  _m0.configure();
+}
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
 }
