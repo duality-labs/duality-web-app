@@ -5,7 +5,7 @@ import { BigNumber } from 'bignumber.js';
 
 import { formatAmount } from '../../../lib/utils/number';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
-import { txClient } from '../../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/index';
+import { txClient } from '../../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/module';
 
 import {
   checkMsgErrorToast,

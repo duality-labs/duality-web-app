@@ -3,7 +3,7 @@ import { DeliverTxResponse } from '@cosmjs/stargate';
 import BigNumber from 'bignumber.js';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { txClient as dexTxClient } from '../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex';
+import { txClient as dexTxClient } from '../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/module';
 import { Token } from '../../components/TokenPicker/hooks';
 import { DexShares } from '../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/rest';
 import { TickInfo } from '../../lib/web3/indexerProvider';

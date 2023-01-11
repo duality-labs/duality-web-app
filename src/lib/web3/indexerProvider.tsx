@@ -13,7 +13,7 @@ import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
-import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/index';
+import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/module';
 import {
   DexQueryAllTickMapResponse,
   DexQueryAllSharesResponse,
