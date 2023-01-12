@@ -5,7 +5,7 @@ import { BigNumber } from 'bignumber.js';
 
 import { formatAmount } from '../../../lib/utils/number';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
-import { txClient } from '../../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/module';
+import apiClient from '../../../lib/web3/apiClient';
 
 import {
   checkMsgErrorToast,
@@ -52,7 +52,7 @@ async function sendSwap(
     throw new Error('Invalid Output (token address not found)');
   }
 
-  const client = await txClient(wallet);
+  const client = apiClient(wallet);
   // send message to chain
 
   const id = `${Date.now()}.${Math.random}`;
@@ -62,24 +62,23 @@ async function sendSwap(
   return client
     .signAndBroadcast(
       [
-        client.msgSwap({
-          amountIn,
-          tokenIn,
-          tokenA,
-          tokenB,
-          minOut,
-          creator,
-          receiver,
+        client.NicholasdotsolDualityDex.tx.msgSwap({
+          value: {
+            amountIn,
+            tokenIn,
+            tokenA,
+            tokenB,
+            minOut,
+            creator,
+            receiver,
+          },
         }),
       ],
       {
-        fee: {
-          gas: gasEstimate.toFixed(0),
-          amount: [
-            { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
-          ],
-        },
-      }
+        gas: gasEstimate.toFixed(0),
+        amount: [{ amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' }],
+      },
+      ''
     )
     .then(function (res): MsgSwapResponse {
       if (!res) {

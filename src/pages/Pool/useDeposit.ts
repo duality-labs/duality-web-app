@@ -3,7 +3,7 @@ import { DeliverTxResponse } from '@cosmjs/stargate';
 import BigNumber from 'bignumber.js';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { txClient as dexTxClient } from '../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/module';
+import apiClient from '../../lib/web3/apiClient';
 import { Token } from '../../components/TokenPicker/hooks';
 import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
 import {
@@ -163,48 +163,49 @@ export function useDeposit(): [
         // wrap transaction logic
         try {
           // add each tick message into a signed broadcast
-          const client = await dexTxClient(web3.wallet);
+          const client = apiClient(web3.wallet);
           const res = await client.signAndBroadcast(
             [
-              client.msgDeposit({
-                creator: web3Address,
-                tokenA: tokenA.address,
-                tokenB: tokenB.address,
-                receiver: web3Address,
-                // tick indexes must be in the form of "token0/1 index"
-                // not "tokenA/B" index, so inverted order indexes should be reversed
-                tickIndexes: filteredUserTicks.map(
-                  (tick) => tick.tickIndex * (!invertedOrder ? -1 : 1)
-                ),
-                feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
-                amountsA: filteredUserTicks.map(
-                  ({ reserveA }) =>
-                    getAmountInDenom(
-                      tokenA,
-                      // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                      reserveA.shiftedBy(18),
-                      tokenA.display
-                    ) || '0'
-                ),
-                amountsB: filteredUserTicks.map(
-                  ({ reserveB }) =>
-                    getAmountInDenom(
-                      tokenB,
-                      // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                      reserveB.shiftedBy(18),
-                      tokenB.display
-                    ) || '0'
-                ),
+              client.NicholasdotsolDualityDex.tx.msgDeposit({
+                value: {
+                  creator: web3Address,
+                  tokenA: tokenA.address,
+                  tokenB: tokenB.address,
+                  receiver: web3Address,
+                  // tick indexes must be in the form of "token0/1 index"
+                  // not "tokenA/B" index, so inverted order indexes should be reversed
+                  tickIndexes: filteredUserTicks.map(
+                    (tick) => tick.tickIndex * (!invertedOrder ? -1 : 1)
+                  ),
+                  feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
+                  amountsA: filteredUserTicks.map(
+                    ({ reserveA }) =>
+                      getAmountInDenom(
+                        tokenA,
+                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                        reserveA.shiftedBy(18),
+                        tokenA.display
+                      ) || '0'
+                  ),
+                  amountsB: filteredUserTicks.map(
+                    ({ reserveB }) =>
+                      getAmountInDenom(
+                        tokenB,
+                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                        reserveB.shiftedBy(18),
+                        tokenB.display
+                      ) || '0'
+                  ),
+                },
               }),
             ],
             {
-              fee: {
-                gas: gasEstimate.toFixed(0),
-                amount: [
-                  { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
-                ],
-              },
-            }
+              gas: gasEstimate.toFixed(0),
+              amount: [
+                { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
+              ],
+            },
+            ''
           );
 
           // check for response
