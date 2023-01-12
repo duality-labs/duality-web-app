@@ -18,7 +18,24 @@ function getDirFilenames(directory, opts = {}) {
     }, []);
 }
 
-const files = getDirFilenames('./src/lib/web3/generated', { recursive: true });
+let files = getDirFilenames('./src/lib/web3/generated', { recursive: true });
+
+// remove unused module type generations (reduce git line changes)
+files
+  .filter((file) => file.match(/\/ts-client\/(\w+\.)+\w+\//))
+  .filter(
+    (file) =>
+      !(
+        file.includes('/ts-client/cosmos.bank.v1beta1/') ||
+        file.includes('/ts-client/nicholasdotsol.duality.dex/')
+      )
+  )
+  .forEach((file) => {
+    fs.rmSync(file);
+  });
+
+// recheck file list
+files = getDirFilenames('./src/lib/web3/generated', { recursive: true });
 
 // fix ESLint and TypeScript warnings
 files
