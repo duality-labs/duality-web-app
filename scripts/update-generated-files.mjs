@@ -1,4 +1,5 @@
 import fs from 'fs';
+import morphTS from './generated-files-morph.mjs';
 
 /**
  * @param {string} directory
@@ -90,6 +91,9 @@ files
       .replace('signer?: OfflineSigner', 'signer: OfflineSigner');
     fs.writeFileSync(file, replaced);
   });
+
+// do TypeScript AST manipulations
+await morphTS();
 
 // fix other "compiled with problems" errors
 files
