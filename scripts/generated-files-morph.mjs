@@ -43,7 +43,7 @@ export default async function main() {
   );
 
   // loop through each generated file
-  sourceFiles.forEach((sourceFile) => {
+  sourceFiles.forEach((sourceFile, index, sourceFiles) => {
     // order code statements with attached comments into top and bottom sections
     sourceFile
       .getStatementsWithComments()
@@ -201,6 +201,27 @@ export default async function main() {
       0,
       '/* eslint-disable */\n/* tslint:disable */\n'
     );
+
+    // log the progress
+    const previousProgress = Math.round(
+      (100 * index) / sourceFiles.length
+    ).toFixed(0);
+    const currentProgress = Math.round(
+      (100 * (index + 1)) / sourceFiles.length
+    ).toFixed(0);
+    // show only changes for each 10% (compare second last digit)
+    if (previousProgress.slice(-3, -1) !== currentProgress.slice(-3, -1)) {
+      // eslint-disable-next-line
+      console.log(
+        `progress: ${
+          // create progress bar of 10 sections, eg. ====------
+          Array.from({ length: currentProgress.slice(-3, -1) })
+            .map(() => '=')
+            .join('')
+            .padEnd(10, '-')
+        }`
+      );
+    }
   });
 
   function orderStatementsLexically(statements, predicateFilter) {
