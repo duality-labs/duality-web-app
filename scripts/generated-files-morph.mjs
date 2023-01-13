@@ -195,6 +195,12 @@ export default async function main() {
           .replace(/\n+/g, '\n')
       );
     }
+
+    // disable linting for these files
+    sourceFile.insertStatements(
+      0,
+      '/* eslint-disable */\n/* tslint:disable */\n'
+    );
   });
 
   function orderStatementsLexically(statements, predicateFilter) {
