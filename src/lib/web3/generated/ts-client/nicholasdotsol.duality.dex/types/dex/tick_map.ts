@@ -1,12 +1,18 @@
 /* eslint-disable */
 /* tslint:disable */
+/* eslint-disable */
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { LimitOrderTrancheTrancheIndexes } from "./limit_order_pool_tranche_indexes";
 import { TickDataType } from "./tick_data_type";
-
-export const protobufPackage = "nicholasdotsol.duality.dex";
-
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : Partial<T>;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type KeysOfUnion<T> = T extends T ? keyof T : never;
 export interface TickMap {
   pairId: string;
   tickIndex: number;
@@ -15,35 +21,20 @@ export interface TickMap {
   LimitOrderTranche1to0: LimitOrderTrancheTrancheIndexes | undefined;
 }
 
+export const protobufPackage = "nicholasdotsol.duality.dex";
+
 function createBaseTickMap(): TickMap {
   return {
-    pairId: "",
-    tickIndex: 0,
-    tickData: undefined,
-    LimitOrderTranche0to1: undefined,
-    LimitOrderTranche1to0: undefined,
-  };
+
+      LimitOrderTranche0to1: undefined,
+      LimitOrderTranche1to0: undefined,
+      pairId: "",
+      tickData: undefined,
+      tickIndex: 0
+    };
 }
 
 export const TickMap = {
-  encode(message: TickMap, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.pairId !== "") {
-      writer.uint32(10).string(message.pairId);
-    }
-    if (message.tickIndex !== 0) {
-      writer.uint32(16).int64(message.tickIndex);
-    }
-    if (message.tickData !== undefined) {
-      TickDataType.encode(message.tickData, writer.uint32(26).fork()).ldelim();
-    }
-    if (message.LimitOrderTranche0to1 !== undefined) {
-      LimitOrderTrancheTrancheIndexes.encode(message.LimitOrderTranche0to1, writer.uint32(34).fork()).ldelim();
-    }
-    if (message.LimitOrderTranche1to0 !== undefined) {
-      LimitOrderTrancheTrancheIndexes.encode(message.LimitOrderTranche1to0, writer.uint32(42).fork()).ldelim();
-    }
-    return writer;
-  },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): TickMap {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
@@ -74,34 +65,38 @@ export const TickMap = {
     }
     return message;
   },
+  encode(message: TickMap, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.pairId !== "") {
+      writer.uint32(10).string(message.pairId);
+    }
+    if (message.tickIndex !== 0) {
+      writer.uint32(16).int64(message.tickIndex);
+    }
+    if (message.tickData !== undefined) {
+      TickDataType.encode(message.tickData, writer.uint32(26).fork()).ldelim();
+    }
+    if (message.LimitOrderTranche0to1 !== undefined) {
+      LimitOrderTrancheTrancheIndexes.encode(message.LimitOrderTranche0to1, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.LimitOrderTranche1to0 !== undefined) {
+      LimitOrderTrancheTrancheIndexes.encode(message.LimitOrderTranche1to0, writer.uint32(42).fork()).ldelim();
+    }
+    return writer;
+  },
 
   fromJSON(object: any): TickMap {
     return {
-      pairId: isSet(object.pairId) ? String(object.pairId) : "",
-      tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0,
-      tickData: isSet(object.tickData) ? TickDataType.fromJSON(object.tickData) : undefined,
-      LimitOrderTranche0to1: isSet(object.LimitOrderTranche0to1)
-        ? LimitOrderTrancheTrancheIndexes.fromJSON(object.LimitOrderTranche0to1)
-        : undefined,
-      LimitOrderTranche1to0: isSet(object.LimitOrderTranche1to0)
-        ? LimitOrderTrancheTrancheIndexes.fromJSON(object.LimitOrderTranche1to0)
-        : undefined,
-    };
-  },
 
-  toJSON(message: TickMap): unknown {
-    const obj: any = {};
-    message.pairId !== undefined && (obj.pairId = message.pairId);
-    message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
-    message.tickData !== undefined
-      && (obj.tickData = message.tickData ? TickDataType.toJSON(message.tickData) : undefined);
-    message.LimitOrderTranche0to1 !== undefined && (obj.LimitOrderTranche0to1 = message.LimitOrderTranche0to1
-      ? LimitOrderTrancheTrancheIndexes.toJSON(message.LimitOrderTranche0to1)
-      : undefined);
-    message.LimitOrderTranche1to0 !== undefined && (obj.LimitOrderTranche1to0 = message.LimitOrderTranche1to0
-      ? LimitOrderTrancheTrancheIndexes.toJSON(message.LimitOrderTranche1to0)
-      : undefined);
-    return obj;
+          LimitOrderTranche0to1: isSet(object.LimitOrderTranche0to1)
+            ? LimitOrderTrancheTrancheIndexes.fromJSON(object.LimitOrderTranche0to1)
+            : undefined,
+          LimitOrderTranche1to0: isSet(object.LimitOrderTranche1to0)
+            ? LimitOrderTrancheTrancheIndexes.fromJSON(object.LimitOrderTranche1to0)
+            : undefined,
+          pairId: isSet(object.pairId) ? String(object.pairId) : "",
+          tickData: isSet(object.tickData) ? TickDataType.fromJSON(object.tickData) : undefined,
+          tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0
+        };
   },
 
   fromPartial<I extends Exact<DeepPartial<TickMap>, I>>(object: I): TickMap {
@@ -121,6 +116,21 @@ export const TickMap = {
         : undefined;
     return message;
   },
+
+  toJSON(message: TickMap): unknown {
+    const obj: any = {};
+    message.pairId !== undefined && (obj.pairId = message.pairId);
+    message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
+    message.tickData !== undefined
+      && (obj.tickData = message.tickData ? TickDataType.toJSON(message.tickData) : undefined);
+    message.LimitOrderTranche0to1 !== undefined && (obj.LimitOrderTranche0to1 = message.LimitOrderTranche0to1
+      ? LimitOrderTrancheTrancheIndexes.toJSON(message.LimitOrderTranche0to1)
+      : undefined);
+    message.LimitOrderTranche1to0 !== undefined && (obj.LimitOrderTranche1to0 = message.LimitOrderTranche1to0
+      ? LimitOrderTrancheTrancheIndexes.toJSON(message.LimitOrderTranche1to0)
+      : undefined);
+    return obj;
+  }
 };
 
 declare var self: any | undefined;
@@ -141,18 +151,6 @@ var globalThis: any = (() => {
   }
   throw "Unable to locate global object";
 })();
-
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
-
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
 function longToNumber(long: Long): number {
   if (long.gt(Number.MAX_SAFE_INTEGER)) {
     throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");

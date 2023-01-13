@@ -1,7 +1,6 @@
 /* eslint-disable */
 /* tslint:disable */
-import { IgniteClient } from "./client";
 import { GeneratedType } from "@cosmjs/proto-signing";
-
-export type ModuleInterface = { [key: string]: any }
+import { IgniteClient } from "./client";
 export type Module = (instance: IgniteClient) => { module: ModuleInterface, registry: [string, GeneratedType][] }
+export type ModuleInterface = { [key: string]: any }

@@ -1,10 +1,16 @@
 /* eslint-disable */
 /* tslint:disable */
+/* eslint-disable */
 import Long from "long";
 import _m0 from "protobufjs/minimal";
-
-export const protobufPackage = "nicholasdotsol.duality.dex";
-
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : Partial<T>;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type KeysOfUnion<T> = T extends T ? keyof T : never;
 export interface LimitOrderTrancheUser {
   pairId: string;
   token: string;
@@ -16,47 +22,23 @@ export interface LimitOrderTrancheUser {
   sharesCancelled: string;
 }
 
+export const protobufPackage = "nicholasdotsol.duality.dex";
+
 function createBaseLimitOrderTrancheUser(): LimitOrderTrancheUser {
   return {
-    pairId: "",
-    token: "",
-    tickIndex: 0,
-    count: 0,
-    address: "",
-    sharesOwned: "",
-    sharesWithdrawn: "",
-    sharesCancelled: "",
-  };
+
+      address: "",
+      count: 0,
+      pairId: "",
+      sharesCancelled: "",
+      sharesOwned: "",
+      sharesWithdrawn: "",
+      tickIndex: 0,
+      token: ""
+    };
 }
 
 export const LimitOrderTrancheUser = {
-  encode(message: LimitOrderTrancheUser, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.pairId !== "") {
-      writer.uint32(10).string(message.pairId);
-    }
-    if (message.token !== "") {
-      writer.uint32(18).string(message.token);
-    }
-    if (message.tickIndex !== 0) {
-      writer.uint32(24).int64(message.tickIndex);
-    }
-    if (message.count !== 0) {
-      writer.uint32(32).uint64(message.count);
-    }
-    if (message.address !== "") {
-      writer.uint32(42).string(message.address);
-    }
-    if (message.sharesOwned !== "") {
-      writer.uint32(50).string(message.sharesOwned);
-    }
-    if (message.sharesWithdrawn !== "") {
-      writer.uint32(58).string(message.sharesWithdrawn);
-    }
-    if (message.sharesCancelled !== "") {
-      writer.uint32(66).string(message.sharesCancelled);
-    }
-    return writer;
-  },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): LimitOrderTrancheUser {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
@@ -96,31 +78,46 @@ export const LimitOrderTrancheUser = {
     }
     return message;
   },
+  encode(message: LimitOrderTrancheUser, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.pairId !== "") {
+      writer.uint32(10).string(message.pairId);
+    }
+    if (message.token !== "") {
+      writer.uint32(18).string(message.token);
+    }
+    if (message.tickIndex !== 0) {
+      writer.uint32(24).int64(message.tickIndex);
+    }
+    if (message.count !== 0) {
+      writer.uint32(32).uint64(message.count);
+    }
+    if (message.address !== "") {
+      writer.uint32(42).string(message.address);
+    }
+    if (message.sharesOwned !== "") {
+      writer.uint32(50).string(message.sharesOwned);
+    }
+    if (message.sharesWithdrawn !== "") {
+      writer.uint32(58).string(message.sharesWithdrawn);
+    }
+    if (message.sharesCancelled !== "") {
+      writer.uint32(66).string(message.sharesCancelled);
+    }
+    return writer;
+  },
 
   fromJSON(object: any): LimitOrderTrancheUser {
     return {
-      pairId: isSet(object.pairId) ? String(object.pairId) : "",
-      token: isSet(object.token) ? String(object.token) : "",
-      tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0,
-      count: isSet(object.count) ? Number(object.count) : 0,
-      address: isSet(object.address) ? String(object.address) : "",
-      sharesOwned: isSet(object.sharesOwned) ? String(object.sharesOwned) : "",
-      sharesWithdrawn: isSet(object.sharesWithdrawn) ? String(object.sharesWithdrawn) : "",
-      sharesCancelled: isSet(object.sharesCancelled) ? String(object.sharesCancelled) : "",
-    };
-  },
 
-  toJSON(message: LimitOrderTrancheUser): unknown {
-    const obj: any = {};
-    message.pairId !== undefined && (obj.pairId = message.pairId);
-    message.token !== undefined && (obj.token = message.token);
-    message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
-    message.count !== undefined && (obj.count = Math.round(message.count));
-    message.address !== undefined && (obj.address = message.address);
-    message.sharesOwned !== undefined && (obj.sharesOwned = message.sharesOwned);
-    message.sharesWithdrawn !== undefined && (obj.sharesWithdrawn = message.sharesWithdrawn);
-    message.sharesCancelled !== undefined && (obj.sharesCancelled = message.sharesCancelled);
-    return obj;
+          address: isSet(object.address) ? String(object.address) : "",
+          count: isSet(object.count) ? Number(object.count) : 0,
+          pairId: isSet(object.pairId) ? String(object.pairId) : "",
+          sharesCancelled: isSet(object.sharesCancelled) ? String(object.sharesCancelled) : "",
+          sharesOwned: isSet(object.sharesOwned) ? String(object.sharesOwned) : "",
+          sharesWithdrawn: isSet(object.sharesWithdrawn) ? String(object.sharesWithdrawn) : "",
+          tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0,
+          token: isSet(object.token) ? String(object.token) : ""
+        };
   },
 
   fromPartial<I extends Exact<DeepPartial<LimitOrderTrancheUser>, I>>(object: I): LimitOrderTrancheUser {
@@ -135,6 +132,19 @@ export const LimitOrderTrancheUser = {
     message.sharesCancelled = object.sharesCancelled ?? "";
     return message;
   },
+
+  toJSON(message: LimitOrderTrancheUser): unknown {
+    const obj: any = {};
+    message.pairId !== undefined && (obj.pairId = message.pairId);
+    message.token !== undefined && (obj.token = message.token);
+    message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
+    message.count !== undefined && (obj.count = Math.round(message.count));
+    message.address !== undefined && (obj.address = message.address);
+    message.sharesOwned !== undefined && (obj.sharesOwned = message.sharesOwned);
+    message.sharesWithdrawn !== undefined && (obj.sharesWithdrawn = message.sharesWithdrawn);
+    message.sharesCancelled !== undefined && (obj.sharesCancelled = message.sharesCancelled);
+    return obj;
+  }
 };
 
 declare var self: any | undefined;
@@ -155,18 +165,6 @@ var globalThis: any = (() => {
   }
   throw "Unable to locate global object";
 })();
-
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
-
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
 function longToNumber(long: Long): number {
   if (long.gt(Number.MAX_SAFE_INTEGER)) {
     throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");

@@ -1,47 +1,16 @@
 /* eslint-disable */
 /* tslint:disable */
+/* eslint-disable */
 import _m0 from "protobufjs/minimal";
 import { Coin } from "../../base/v1beta1/coin";
-
-export const protobufPackage = "cosmos.bank.v1beta1";
-
-/** Params defines the parameters for the bank module. */
-export interface Params {
-  sendEnabled: SendEnabled[];
-  defaultSendEnabled: boolean;
-}
-
-/**
- * SendEnabled maps coin denom to a send_enabled status (whether a denom is
- * sendable).
- */
-export interface SendEnabled {
-  denom: string;
-  enabled: boolean;
-}
-
-/** Input models transaction input. */
-export interface Input {
-  address: string;
-  coins: Coin[];
-}
-
-/** Output models transaction outputs. */
-export interface Output {
-  address: string;
-  coins: Coin[];
-}
-
-/**
- * Supply represents a struct that passively keeps track of the total supply
- * amounts in the network.
- * This message is deprecated now that supply is indexed by denom.
- *
- * @deprecated
- */
-export interface Supply {
-  total: Coin[];
-}
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : Partial<T>;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type KeysOfUnion<T> = T extends T ? keyof T : never;
 
 /**
  * DenomUnit represents a struct that describes a given
@@ -60,6 +29,12 @@ export interface DenomUnit {
   exponent: number;
   /** aliases is a list of string aliases for the given denom */
   aliases: string[];
+}
+
+/** Input models transaction input. */
+export interface Input {
+  address: string;
+  coins: Coin[];
 }
 
 /**
@@ -92,20 +67,45 @@ export interface Metadata {
   symbol: string;
 }
 
+/** Output models transaction outputs. */
+export interface Output {
+  address: string;
+  coins: Coin[];
+}
+
+/** Params defines the parameters for the bank module. */
+export interface Params {
+  sendEnabled: SendEnabled[];
+  defaultSendEnabled: boolean;
+}
+
+/**
+ * SendEnabled maps coin denom to a send_enabled status (whether a denom is
+ * sendable).
+ */
+export interface SendEnabled {
+  denom: string;
+  enabled: boolean;
+}
+
+/**
+ * Supply represents a struct that passively keeps track of the total supply
+ * amounts in the network.
+ * This message is deprecated now that supply is indexed by denom.
+ *
+ * @deprecated
+ */
+export interface Supply {
+  total: Coin[];
+}
+
+export const protobufPackage = "cosmos.bank.v1beta1";
+
 function createBaseParams(): Params {
-  return { sendEnabled: [], defaultSendEnabled: false };
+  return { defaultSendEnabled: false, sendEnabled: [] };
 }
 
 export const Params = {
-  encode(message: Params, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    for (const v of message.sendEnabled) {
-      SendEnabled.encode(v!, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.defaultSendEnabled === true) {
-      writer.uint32(16).bool(message.defaultSendEnabled);
-    }
-    return writer;
-  },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): Params {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
@@ -127,14 +127,31 @@ export const Params = {
     }
     return message;
   },
+  encode(message: Params, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.sendEnabled) {
+      SendEnabled.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.defaultSendEnabled === true) {
+      writer.uint32(16).bool(message.defaultSendEnabled);
+    }
+    return writer;
+  },
 
   fromJSON(object: any): Params {
     return {
-      sendEnabled: Array.isArray(object?.sendEnabled)
-        ? object.sendEnabled.map((e: any) => SendEnabled.fromJSON(e))
-        : [],
-      defaultSendEnabled: isSet(object.defaultSendEnabled) ? Boolean(object.defaultSendEnabled) : false,
-    };
+
+          defaultSendEnabled: isSet(object.defaultSendEnabled) ? Boolean(object.defaultSendEnabled) : false,
+          sendEnabled: Array.isArray(object?.sendEnabled)
+            ? object.sendEnabled.map((e: any) => SendEnabled.fromJSON(e))
+            : []
+        };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<Params>, I>>(object: I): Params {
+    const message = createBaseParams();
+    message.sendEnabled = object.sendEnabled?.map((e) => SendEnabled.fromPartial(e)) || [];
+    message.defaultSendEnabled = object.defaultSendEnabled ?? false;
+    return message;
   },
 
   toJSON(message: Params): unknown {
@@ -146,14 +163,7 @@ export const Params = {
     }
     message.defaultSendEnabled !== undefined && (obj.defaultSendEnabled = message.defaultSendEnabled);
     return obj;
-  },
-
-  fromPartial<I extends Exact<DeepPartial<Params>, I>>(object: I): Params {
-    const message = createBaseParams();
-    message.sendEnabled = object.sendEnabled?.map((e) => SendEnabled.fromPartial(e)) || [];
-    message.defaultSendEnabled = object.defaultSendEnabled ?? false;
-    return message;
-  },
+  }
 };
 
 function createBaseSendEnabled(): SendEnabled {
@@ -161,15 +171,6 @@ function createBaseSendEnabled(): SendEnabled {
 }
 
 export const SendEnabled = {
-  encode(message: SendEnabled, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.denom !== "") {
-      writer.uint32(10).string(message.denom);
-    }
-    if (message.enabled === true) {
-      writer.uint32(16).bool(message.enabled);
-    }
-    return writer;
-  },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): SendEnabled {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
@@ -191,19 +192,22 @@ export const SendEnabled = {
     }
     return message;
   },
+  encode(message: SendEnabled, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.denom !== "") {
+      writer.uint32(10).string(message.denom);
+    }
+    if (message.enabled === true) {
+      writer.uint32(16).bool(message.enabled);
+    }
+    return writer;
+  },
 
   fromJSON(object: any): SendEnabled {
     return {
-      denom: isSet(object.denom) ? String(object.denom) : "",
-      enabled: isSet(object.enabled) ? Boolean(object.enabled) : false,
-    };
-  },
 
-  toJSON(message: SendEnabled): unknown {
-    const obj: any = {};
-    message.denom !== undefined && (obj.denom = message.denom);
-    message.enabled !== undefined && (obj.enabled = message.enabled);
-    return obj;
+          denom: isSet(object.denom) ? String(object.denom) : "",
+          enabled: isSet(object.enabled) ? Boolean(object.enabled) : false
+        };
   },
 
   fromPartial<I extends Exact<DeepPartial<SendEnabled>, I>>(object: I): SendEnabled {
@@ -212,6 +216,13 @@ export const SendEnabled = {
     message.enabled = object.enabled ?? false;
     return message;
   },
+
+  toJSON(message: SendEnabled): unknown {
+    const obj: any = {};
+    message.denom !== undefined && (obj.denom = message.denom);
+    message.enabled !== undefined && (obj.enabled = message.enabled);
+    return obj;
+  }
 };
 
 function createBaseInput(): Input {
@@ -219,15 +230,6 @@ function createBaseInput(): Input {
 }
 
 export const Input = {
-  encode(message: Input, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.address !== "") {
-      writer.uint32(10).string(message.address);
-    }
-    for (const v of message.coins) {
-      Coin.encode(v!, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): Input {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
@@ -249,12 +251,29 @@ export const Input = {
     }
     return message;
   },
+  encode(message: Input, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.address !== "") {
+      writer.uint32(10).string(message.address);
+    }
+    for (const v of message.coins) {
+      Coin.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
 
   fromJSON(object: any): Input {
     return {
-      address: isSet(object.address) ? String(object.address) : "",
-      coins: Array.isArray(object?.coins) ? object.coins.map((e: any) => Coin.fromJSON(e)) : [],
-    };
+
+          address: isSet(object.address) ? String(object.address) : "",
+          coins: Array.isArray(object?.coins) ? object.coins.map((e: any) => Coin.fromJSON(e)) : []
+        };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<Input>, I>>(object: I): Input {
+    const message = createBaseInput();
+    message.address = object.address ?? "";
+    message.coins = object.coins?.map((e) => Coin.fromPartial(e)) || [];
+    return message;
   },
 
   toJSON(message: Input): unknown {
@@ -266,14 +285,7 @@ export const Input = {
       obj.coins = [];
     }
     return obj;
-  },
-
-  fromPartial<I extends Exact<DeepPartial<Input>, I>>(object: I): Input {
-    const message = createBaseInput();
-    message.address = object.address ?? "";
-    message.coins = object.coins?.map((e) => Coin.fromPartial(e)) || [];
-    return message;
-  },
+  }
 };
 
 function createBaseOutput(): Output {
@@ -281,15 +293,6 @@ function createBaseOutput(): Output {
 }
 
 export const Output = {
-  encode(message: Output, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.address !== "") {
-      writer.uint32(10).string(message.address);
-    }
-    for (const v of message.coins) {
-      Coin.encode(v!, writer.uint32(18).fork()).ldelim();
-    }
-    return writer;
-  },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): Output {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
@@ -311,12 +314,29 @@ export const Output = {
     }
     return message;
   },
+  encode(message: Output, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.address !== "") {
+      writer.uint32(10).string(message.address);
+    }
+    for (const v of message.coins) {
+      Coin.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
 
   fromJSON(object: any): Output {
     return {
-      address: isSet(object.address) ? String(object.address) : "",
-      coins: Array.isArray(object?.coins) ? object.coins.map((e: any) => Coin.fromJSON(e)) : [],
-    };
+
+          address: isSet(object.address) ? String(object.address) : "",
+          coins: Array.isArray(object?.coins) ? object.coins.map((e: any) => Coin.fromJSON(e)) : []
+        };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<Output>, I>>(object: I): Output {
+    const message = createBaseOutput();
+    message.address = object.address ?? "";
+    message.coins = object.coins?.map((e) => Coin.fromPartial(e)) || [];
+    return message;
   },
 
   toJSON(message: Output): unknown {
@@ -328,14 +348,7 @@ export const Output = {
       obj.coins = [];
     }
     return obj;
-  },
-
-  fromPartial<I extends Exact<DeepPartial<Output>, I>>(object: I): Output {
-    const message = createBaseOutput();
-    message.address = object.address ?? "";
-    message.coins = object.coins?.map((e) => Coin.fromPartial(e)) || [];
-    return message;
-  },
+  }
 };
 
 function createBaseSupply(): Supply {
@@ -343,12 +356,6 @@ function createBaseSupply(): Supply {
 }
 
 export const Supply = {
-  encode(message: Supply, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    for (const v of message.total) {
-      Coin.encode(v!, writer.uint32(10).fork()).ldelim();
-    }
-    return writer;
-  },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): Supply {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
@@ -367,9 +374,21 @@ export const Supply = {
     }
     return message;
   },
+  encode(message: Supply, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.total) {
+      Coin.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
 
   fromJSON(object: any): Supply {
     return { total: Array.isArray(object?.total) ? object.total.map((e: any) => Coin.fromJSON(e)) : [] };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<Supply>, I>>(object: I): Supply {
+    const message = createBaseSupply();
+    message.total = object.total?.map((e) => Coin.fromPartial(e)) || [];
+    return message;
   },
 
   toJSON(message: Supply): unknown {
@@ -380,32 +399,14 @@ export const Supply = {
       obj.total = [];
     }
     return obj;
-  },
-
-  fromPartial<I extends Exact<DeepPartial<Supply>, I>>(object: I): Supply {
-    const message = createBaseSupply();
-    message.total = object.total?.map((e) => Coin.fromPartial(e)) || [];
-    return message;
-  },
+  }
 };
 
 function createBaseDenomUnit(): DenomUnit {
-  return { denom: "", exponent: 0, aliases: [] };
+  return { aliases: [], denom: "", exponent: 0 };
 }
 
 export const DenomUnit = {
-  encode(message: DenomUnit, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.denom !== "") {
-      writer.uint32(10).string(message.denom);
-    }
-    if (message.exponent !== 0) {
-      writer.uint32(16).uint32(message.exponent);
-    }
-    for (const v of message.aliases) {
-      writer.uint32(26).string(v!);
-    }
-    return writer;
-  },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): DenomUnit {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
@@ -430,13 +431,34 @@ export const DenomUnit = {
     }
     return message;
   },
+  encode(message: DenomUnit, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.denom !== "") {
+      writer.uint32(10).string(message.denom);
+    }
+    if (message.exponent !== 0) {
+      writer.uint32(16).uint32(message.exponent);
+    }
+    for (const v of message.aliases) {
+      writer.uint32(26).string(v!);
+    }
+    return writer;
+  },
 
   fromJSON(object: any): DenomUnit {
     return {
-      denom: isSet(object.denom) ? String(object.denom) : "",
-      exponent: isSet(object.exponent) ? Number(object.exponent) : 0,
-      aliases: Array.isArray(object?.aliases) ? object.aliases.map((e: any) => String(e)) : [],
-    };
+
+          aliases: Array.isArray(object?.aliases) ? object.aliases.map((e: any) => String(e)) : [],
+          denom: isSet(object.denom) ? String(object.denom) : "",
+          exponent: isSet(object.exponent) ? Number(object.exponent) : 0
+        };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<DenomUnit>, I>>(object: I): DenomUnit {
+    const message = createBaseDenomUnit();
+    message.denom = object.denom ?? "";
+    message.exponent = object.exponent ?? 0;
+    message.aliases = object.aliases?.map((e) => e) || [];
+    return message;
   },
 
   toJSON(message: DenomUnit): unknown {
@@ -449,43 +471,14 @@ export const DenomUnit = {
       obj.aliases = [];
     }
     return obj;
-  },
-
-  fromPartial<I extends Exact<DeepPartial<DenomUnit>, I>>(object: I): DenomUnit {
-    const message = createBaseDenomUnit();
-    message.denom = object.denom ?? "";
-    message.exponent = object.exponent ?? 0;
-    message.aliases = object.aliases?.map((e) => e) || [];
-    return message;
-  },
+  }
 };
 
 function createBaseMetadata(): Metadata {
-  return { description: "", denomUnits: [], base: "", display: "", name: "", symbol: "" };
+  return { base: "", denomUnits: [], description: "", display: "", name: "", symbol: "" };
 }
 
 export const Metadata = {
-  encode(message: Metadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.description !== "") {
-      writer.uint32(10).string(message.description);
-    }
-    for (const v of message.denomUnits) {
-      DenomUnit.encode(v!, writer.uint32(18).fork()).ldelim();
-    }
-    if (message.base !== "") {
-      writer.uint32(26).string(message.base);
-    }
-    if (message.display !== "") {
-      writer.uint32(34).string(message.display);
-    }
-    if (message.name !== "") {
-      writer.uint32(42).string(message.name);
-    }
-    if (message.symbol !== "") {
-      writer.uint32(50).string(message.symbol);
-    }
-    return writer;
-  },
 
   decode(input: _m0.Reader | Uint8Array, length?: number): Metadata {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
@@ -519,16 +512,49 @@ export const Metadata = {
     }
     return message;
   },
+  encode(message: Metadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.description !== "") {
+      writer.uint32(10).string(message.description);
+    }
+    for (const v of message.denomUnits) {
+      DenomUnit.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.base !== "") {
+      writer.uint32(26).string(message.base);
+    }
+    if (message.display !== "") {
+      writer.uint32(34).string(message.display);
+    }
+    if (message.name !== "") {
+      writer.uint32(42).string(message.name);
+    }
+    if (message.symbol !== "") {
+      writer.uint32(50).string(message.symbol);
+    }
+    return writer;
+  },
 
   fromJSON(object: any): Metadata {
     return {
-      description: isSet(object.description) ? String(object.description) : "",
-      denomUnits: Array.isArray(object?.denomUnits) ? object.denomUnits.map((e: any) => DenomUnit.fromJSON(e)) : [],
-      base: isSet(object.base) ? String(object.base) : "",
-      display: isSet(object.display) ? String(object.display) : "",
-      name: isSet(object.name) ? String(object.name) : "",
-      symbol: isSet(object.symbol) ? String(object.symbol) : "",
-    };
+
+          base: isSet(object.base) ? String(object.base) : "",
+          denomUnits: Array.isArray(object?.denomUnits) ? object.denomUnits.map((e: any) => DenomUnit.fromJSON(e)) : [],
+          description: isSet(object.description) ? String(object.description) : "",
+          display: isSet(object.display) ? String(object.display) : "",
+          name: isSet(object.name) ? String(object.name) : "",
+          symbol: isSet(object.symbol) ? String(object.symbol) : ""
+        };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<Metadata>, I>>(object: I): Metadata {
+    const message = createBaseMetadata();
+    message.description = object.description ?? "";
+    message.denomUnits = object.denomUnits?.map((e) => DenomUnit.fromPartial(e)) || [];
+    message.base = object.base ?? "";
+    message.display = object.display ?? "";
+    message.name = object.name ?? "";
+    message.symbol = object.symbol ?? "";
+    return message;
   },
 
   toJSON(message: Metadata): unknown {
@@ -544,30 +570,8 @@ export const Metadata = {
     message.name !== undefined && (obj.name = message.name);
     message.symbol !== undefined && (obj.symbol = message.symbol);
     return obj;
-  },
-
-  fromPartial<I extends Exact<DeepPartial<Metadata>, I>>(object: I): Metadata {
-    const message = createBaseMetadata();
-    message.description = object.description ?? "";
-    message.denomUnits = object.denomUnits?.map((e) => DenomUnit.fromPartial(e)) || [];
-    message.base = object.base ?? "";
-    message.display = object.display ?? "";
-    message.name = object.name ?? "";
-    message.symbol = object.symbol ?? "";
-    return message;
-  },
+  }
 };
-
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
-
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

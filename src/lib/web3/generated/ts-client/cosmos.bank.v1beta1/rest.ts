@@ -1,5 +1,42 @@
 /* eslint-disable */
 /* tslint:disable */
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, ResponseType } from "axios";
+export type QueryParamsType = Record<string | number, any>;
+export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" | "path">;
+/**
+ * MsgMultiSendResponse defines the Msg/MultiSend response type.
+ */
+export type V1Beta1MsgMultiSendResponse = object;
+/**
+ * MsgSendResponse defines the Msg/Send response type.
+ */
+export type V1Beta1MsgSendResponse = object;
+
+export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
+  securityWorker?: (
+    securityData: SecurityDataType | null,
+  ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
+  secure?: boolean;
+  format?: ResponseType;
+}
+
+export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
+  /** set parameter to `true` for call `securityWorker` for this request */
+  secure?: boolean;
+  /** request path */
+  path: string;
+  /** content type of request body */
+  type?: ContentType;
+  /** query params */
+  query?: QueryParamsType;
+  /** format of response (i.e. response.json() -> format: "json") */
+  format?: ResponseType;
+  /** request body */
+  body?: unknown;
+}
+
+/* eslint-disable */
+/* tslint:disable */
 /*
  * ---------------------------------------------------------------
  * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
@@ -94,16 +131,6 @@ export interface V1Beta1Metadata {
    */
   symbol?: string;
 }
-
-/**
- * MsgMultiSendResponse defines the Msg/MultiSend response type.
- */
-export type V1Beta1MsgMultiSendResponse = object;
-
-/**
- * MsgSendResponse defines the Msg/Send response type.
- */
-export type V1Beta1MsgSendResponse = object;
 
 /**
  * Output models transaction outputs.
@@ -282,35 +309,6 @@ export interface V1Beta1SendEnabled {
   enabled?: boolean;
 }
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, ResponseType } from "axios";
-
-export type QueryParamsType = Record<string | number, any>;
-
-export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
-  /** set parameter to `true` for call `securityWorker` for this request */
-  secure?: boolean;
-  /** request path */
-  path: string;
-  /** content type of request body */
-  type?: ContentType;
-  /** query params */
-  query?: QueryParamsType;
-  /** format of response (i.e. response.json() -> format: "json") */
-  format?: ResponseType;
-  /** request body */
-  body?: unknown;
-}
-
-export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" | "path">;
-
-export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
-  securityWorker?: (
-    securityData: SecurityDataType | null,
-  ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
-  secure?: boolean;
-  format?: ResponseType;
-}
-
 export enum ContentType {
   Json = "application/json",
   FormData = "multipart/form-data",
@@ -337,15 +335,17 @@ export class HttpClient<SecurityDataType = unknown> {
 
   private mergeRequestParams(params1: AxiosRequestConfig, params2?: AxiosRequestConfig): AxiosRequestConfig {
     return {
-      ...this.instance.defaults,
-      ...params1,
-      ...(params2 || {}),
-      headers: {
-        ...(this.instance.defaults.headers || {}),
-        ...(params1.headers || {}),
-        ...((params2 && params2.headers) || {}),
-      },
-    };
+
+          ...this.instance.defaults,
+          ...params1,
+          ...(params2 || {}),
+          headers: {
+
+                  ...(this.instance.defaults.headers || {}),
+                  ...(params1.headers || {}),
+                  ...((params2 && params2.headers) || {})
+                }
+        };
   }
 
   private createFormData(input: Record<string, unknown>): FormData {
@@ -389,16 +389,18 @@ export class HttpClient<SecurityDataType = unknown> {
     }
 
     return this.instance.request({
-      ...requestParams,
-      headers: {
-        ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
-        ...(requestParams.headers || {}),
-      },
-      params: query,
-      responseType: responseFormat,
-      data: body,
-      url: path,
-    });
+
+          ...requestParams,
+          data: body,
+          headers: {
+
+                  ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
+                  ...(requestParams.headers || {})
+                },
+          params: query,
+          responseType: responseFormat,
+          url: path
+        });
   };
 }
 
@@ -427,12 +429,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     params: RequestParams = {},
   ) =>
     this.request<V1Beta1QueryAllBalancesResponse, RpcStatus>({
-      path: `/cosmos/bank/v1beta1/balances/${address}`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/cosmos/bank/v1beta1/balances/${address}`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -444,12 +447,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryBalance = (address: string, query?: { denom?: string }, params: RequestParams = {}) =>
     this.request<V1Beta1QueryBalanceResponse, RpcStatus>({
-      path: `/cosmos/bank/v1beta1/balances/${address}/by_denom`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/cosmos/bank/v1beta1/balances/${address}/by_denom`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -470,12 +474,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     params: RequestParams = {},
   ) =>
     this.request<V1Beta1QueryDenomsMetadataResponse, RpcStatus>({
-      path: `/cosmos/bank/v1beta1/denoms_metadata`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/cosmos/bank/v1beta1/denoms_metadata`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -487,11 +492,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryDenomMetadata = (denom: string, params: RequestParams = {}) =>
     this.request<V1Beta1QueryDenomMetadataResponse, RpcStatus>({
-      path: `/cosmos/bank/v1beta1/denoms_metadata/${denom}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/cosmos/bank/v1beta1/denoms_metadata/${denom}`,
+          ...params
+        });
 
   /**
    * No description
@@ -503,11 +509,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryParams = (params: RequestParams = {}) =>
     this.request<V1Beta1QueryParamsResponse, RpcStatus>({
-      path: `/cosmos/bank/v1beta1/params`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/cosmos/bank/v1beta1/params`,
+          ...params
+        });
 
   /**
  * No description
@@ -530,12 +537,13 @@ account.
     params: RequestParams = {},
   ) =>
     this.request<V1Beta1QuerySpendableBalancesResponse, RpcStatus>({
-      path: `/cosmos/bank/v1beta1/spendable_balances/${address}`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/cosmos/bank/v1beta1/spendable_balances/${address}`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -556,12 +564,13 @@ account.
     params: RequestParams = {},
   ) =>
     this.request<V1Beta1QueryTotalSupplyResponse, RpcStatus>({
-      path: `/cosmos/bank/v1beta1/supply`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/cosmos/bank/v1beta1/supply`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -573,9 +582,10 @@ account.
    */
   querySupplyOf = (denom: string, params: RequestParams = {}) =>
     this.request<V1Beta1QuerySupplyOfResponse, RpcStatus>({
-      path: `/cosmos/bank/v1beta1/supply/${denom}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/cosmos/bank/v1beta1/supply/${denom}`,
+          ...params
+        });
 }

@@ -1,22 +1,21 @@
 /* eslint-disable */
 /* tslint:disable */
-import {
-  GeneratedType,
-  OfflineSigner,
-  EncodeObject,
-  Registry,
-} from "@cosmjs/proto-signing";
 import { StdFee } from "@cosmjs/launchpad";
+import {
+    EncodeObject, GeneratedType,
+    OfflineSigner, Registry
+} from "@cosmjs/proto-signing";
 import { SigningStargateClient } from "@cosmjs/stargate";
-import { Env } from "./env";
-import { UnionToIntersection, Return, Constructor } from "./helpers";
-import { Module } from "./modules";
-import { EventEmitter } from "events";
 import { ChainInfo } from "@keplr-wallet/types";
+import { EventEmitter } from "events";
+import { Env } from "./env";
+import { Constructor, Return, UnionToIntersection } from "./helpers";
+import { Module } from "./modules";
 
 const defaultFee = {
+
   amount: [],
-  gas: "200000",
+  gas: "200000"
 };
 
 export class IgniteClient extends EventEmitter {
@@ -43,7 +42,7 @@ export class IgniteClient extends EventEmitter {
   async signAndBroadcast(msgs: EncodeObject[], fee: StdFee, memo: string) {
     if (this.signer) {
       const { address } = (await this.signer.getAccounts())[0];
-      const signingClient = await SigningStargateClient.connectWithSigner(this.env.rpcURL, this.signer, { registry: new Registry(this.registry), prefix: this.env.prefix });
+      const signingClient = await SigningStargateClient.connectWithSigner(this.env.rpcURL, this.signer, { prefix: this.env.prefix, registry: new Registry(this.registry) });
       return await signingClient.signAndBroadcast(address, msgs, fee ? fee : defaultFee, memo)
     } else {
       throw new Error(" Signer is not present.");

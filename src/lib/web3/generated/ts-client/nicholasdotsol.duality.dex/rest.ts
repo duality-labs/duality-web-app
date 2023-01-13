@@ -1,5 +1,27 @@
 /* eslint-disable */
 /* tslint:disable */
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, ResponseType } from "axios";
+export type DexMsgCancelLimitOrderResponse = object;
+export type DexMsgPlaceLimitOrderResponse = object;
+export type DexMsgWithdrawFilledLimitOrderResponse = object;
+export type DexMsgWithdrawlResponse = object;
+/**
+ * Params defines the parameters for the module.
+ */
+export type DexParams = object;
+export type QueryParamsType = Record<string | number, any>;
+export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" | "path">;
+
+export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
+  securityWorker?: (
+    securityData: SecurityDataType | null,
+  ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
+  secure?: boolean;
+  format?: ResponseType;
+}
+
+/* eslint-disable */
+/* tslint:disable */
 /*
  * ---------------------------------------------------------------
  * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
@@ -67,14 +89,10 @@ export interface DexLimitOrderTrancheUser {
   sharesCancelled?: string;
 }
 
-export type DexMsgCancelLimitOrderResponse = object;
-
 export interface DexMsgDepositResponse {
   Reserve0Deposited?: string[];
   Reserve1Deposited?: string[];
 }
-
-export type DexMsgPlaceLimitOrderResponse = object;
 
 export interface DexMsgSwapResponse {
   /**
@@ -86,10 +104,6 @@ export interface DexMsgSwapResponse {
   coinOut?: V1Beta1Coin;
 }
 
-export type DexMsgWithdrawFilledLimitOrderResponse = object;
-
-export type DexMsgWithdrawlResponse = object;
-
 export interface DexPairMap {
   pairId?: string;
   tokenPair?: DexTokenPairType;
@@ -100,11 +114,6 @@ export interface DexPairMap {
   /** @format int64 */
   minTick?: string;
 }
-
-/**
- * Params defines the parameters for the module.
- */
-export type DexParams = object;
 
 export interface DexQueryAllAdjanceyMatrixResponse {
   AdjanceyMatrix?: DexAdjanceyMatrix[];
@@ -357,6 +366,21 @@ export interface DexTokens {
   address?: string;
 }
 
+export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
+  /** set parameter to `true` for call `securityWorker` for this request */
+  secure?: boolean;
+  /** request path */
+  path: string;
+  /** content type of request body */
+  type?: ContentType;
+  /** query params */
+  query?: QueryParamsType;
+  /** format of response (i.e. response.json() -> format: "json") */
+  format?: ResponseType;
+  /** request body */
+  body?: unknown;
+}
+
 export interface ProtobufAny {
   "@type"?: string;
 }
@@ -416,6 +440,13 @@ export interface V1Beta1PageRequest {
    * is set.
    */
   count_total?: boolean;
+
+  /**
+   * reverse is set to true if results are to be returned in the descending order.
+   *
+   * Since: cosmos-sdk 0.43
+   */
+  reverse?: boolean;
 }
 
 /**
@@ -441,35 +472,6 @@ export interface V1Beta1PageResponse {
    * @format uint64
    */
   total?: string;
-}
-
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, ResponseType } from "axios";
-
-export type QueryParamsType = Record<string | number, any>;
-
-export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
-  /** set parameter to `true` for call `securityWorker` for this request */
-  secure?: boolean;
-  /** request path */
-  path: string;
-  /** content type of request body */
-  type?: ContentType;
-  /** query params */
-  query?: QueryParamsType;
-  /** format of response (i.e. response.json() -> format: "json") */
-  format?: ResponseType;
-  /** request body */
-  body?: unknown;
-}
-
-export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" | "path">;
-
-export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
-  securityWorker?: (
-    securityData: SecurityDataType | null,
-  ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
-  secure?: boolean;
-  format?: ResponseType;
 }
 
 export enum ContentType {
@@ -498,15 +500,17 @@ export class HttpClient<SecurityDataType = unknown> {
 
   private mergeRequestParams(params1: AxiosRequestConfig, params2?: AxiosRequestConfig): AxiosRequestConfig {
     return {
-      ...this.instance.defaults,
-      ...params1,
-      ...(params2 || {}),
-      headers: {
-        ...(this.instance.defaults.headers || {}),
-        ...(params1.headers || {}),
-        ...((params2 && params2.headers) || {}),
-      },
-    };
+
+          ...this.instance.defaults,
+          ...params1,
+          ...(params2 || {}),
+          headers: {
+
+                  ...(this.instance.defaults.headers || {}),
+                  ...(params1.headers || {}),
+                  ...((params2 && params2.headers) || {})
+                }
+        };
   }
 
   private createFormData(input: Record<string, unknown>): FormData {
@@ -550,16 +554,18 @@ export class HttpClient<SecurityDataType = unknown> {
     }
 
     return this.instance.request({
-      ...requestParams,
-      headers: {
-        ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
-        ...(requestParams.headers || {}),
-      },
-      params: query,
-      responseType: responseFormat,
-      data: body,
-      url: path,
-    });
+
+          ...requestParams,
+          data: body,
+          headers: {
+
+                  ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
+                  ...(requestParams.headers || {})
+                },
+          params: query,
+          responseType: responseFormat,
+          url: path
+        });
   };
 }
 
@@ -582,16 +588,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       "pagination.offset"?: string;
       "pagination.limit"?: string;
       "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
     },
     params: RequestParams = {},
   ) =>
     this.request<DexQueryAllAdjanceyMatrixResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/adjancey_matrix`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/adjancey_matrix`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -603,11 +611,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryAdjanceyMatrix = (id: string, params: RequestParams = {}) =>
     this.request<DexQueryGetAdjanceyMatrixResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/adjancey_matrix/${id}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/adjancey_matrix/${id}`,
+          ...params
+        });
 
   /**
    * No description
@@ -623,16 +632,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       "pagination.offset"?: string;
       "pagination.limit"?: string;
       "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
     },
     params: RequestParams = {},
   ) =>
     this.request<DexQueryAllEdgeRowResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/edge_row`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/edge_row`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -644,11 +655,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryEdgeRow = (id: string, params: RequestParams = {}) =>
     this.request<DexQueryGetEdgeRowResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/edge_row/${id}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/edge_row/${id}`,
+          ...params
+        });
 
   /**
    * No description
@@ -664,16 +676,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       "pagination.offset"?: string;
       "pagination.limit"?: string;
       "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
     },
     params: RequestParams = {},
   ) =>
     this.request<DexQueryAllFeeListResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/fee_list`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/fee_list`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -685,11 +699,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryFeeList = (id: string, params: RequestParams = {}) =>
     this.request<DexQueryGetFeeListResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/fee_list/${id}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/fee_list/${id}`,
+          ...params
+        });
 
   /**
    * No description
@@ -705,16 +720,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       "pagination.offset"?: string;
       "pagination.limit"?: string;
       "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
     },
     params: RequestParams = {},
   ) =>
     this.request<DexQueryAllLimitOrderTrancheResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/limit_order_tranche`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/limit_order_tranche`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -732,11 +749,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     params: RequestParams = {},
   ) =>
     this.request<DexQueryGetLimitOrderTrancheResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/limit_order_tranche/${pairId}/${token}/${tickIndex}/${trancheIndex}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/limit_order_tranche/${pairId}/${token}/${tickIndex}/${trancheIndex}`,
+          ...params
+        });
 
   /**
    * No description
@@ -752,16 +770,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       "pagination.offset"?: string;
       "pagination.limit"?: string;
       "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
     },
     params: RequestParams = {},
   ) =>
     this.request<DexQueryAllLimitOrderTrancheUserResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/limit_order_tranche_user`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/limit_order_tranche_user`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -780,11 +800,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     params: RequestParams = {},
   ) =>
     this.request<DexQueryGetLimitOrderTrancheUserResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/limit_order_tranche_user/${pairId}/${token}/${tickIndex}/${count}/${address}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/limit_order_tranche_user/${pairId}/${token}/${tickIndex}/${count}/${address}`,
+          ...params
+        });
 
   /**
    * No description
@@ -800,16 +821,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       "pagination.offset"?: string;
       "pagination.limit"?: string;
       "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
     },
     params: RequestParams = {},
   ) =>
     this.request<DexQueryAllPairMapResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/pair_map`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/pair_map`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -821,11 +844,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryPairMap = (pairId: string, params: RequestParams = {}) =>
     this.request<DexQueryGetPairMapResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/pair_map/${pairId}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/pair_map/${pairId}`,
+          ...params
+        });
 
   /**
    * No description
@@ -837,11 +861,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryParams = (params: RequestParams = {}) =>
     this.request<DexQueryParamsResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/params`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/params`,
+          ...params
+        });
 
   /**
    * No description
@@ -857,16 +882,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       "pagination.offset"?: string;
       "pagination.limit"?: string;
       "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
     },
     params: RequestParams = {},
   ) =>
     this.request<DexQueryAllSharesResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/shares`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/shares`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -878,11 +905,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryShares = (address: string, pairId: string, tickIndex: string, fee: string, params: RequestParams = {}) =>
     this.request<DexQueryGetSharesResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/shares/${address}/${pairId}/${tickIndex}/${fee}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/shares/${address}/${pairId}/${tickIndex}/${fee}`,
+          ...params
+        });
 
   /**
    * No description
@@ -898,16 +926,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       "pagination.offset"?: string;
       "pagination.limit"?: string;
       "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
     },
     params: RequestParams = {},
   ) =>
     this.request<DexQueryAllTickMapResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/tick_map`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/tick_map`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -919,11 +949,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryTickMap = (pairId: string, tickIndex: string, params: RequestParams = {}) =>
     this.request<DexQueryGetTickMapResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/tick_map/${pairId}/${tickIndex}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/tick_map/${pairId}/${tickIndex}`,
+          ...params
+        });
 
   /**
    * No description
@@ -939,16 +970,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       "pagination.offset"?: string;
       "pagination.limit"?: string;
       "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
     },
     params: RequestParams = {},
   ) =>
     this.request<DexQueryAllTokenMapResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/token_map`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/token_map`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -960,11 +993,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryTokenMap = (address: string, params: RequestParams = {}) =>
     this.request<DexQueryGetTokenMapResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/token_map/${address}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/token_map/${address}`,
+          ...params
+        });
 
   /**
    * No description
@@ -980,16 +1014,18 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       "pagination.offset"?: string;
       "pagination.limit"?: string;
       "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
     },
     params: RequestParams = {},
   ) =>
     this.request<DexQueryAllTokensResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/tokens`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/tokens`,
+          query: query,
+          ...params
+        });
 
   /**
    * No description
@@ -1001,9 +1037,10 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    */
   queryTokens = (id: string, params: RequestParams = {}) =>
     this.request<DexQueryGetTokensResponse, RpcStatus>({
-      path: `/NicholasDotSol/duality/dex/tokens/${id}`,
-      method: "GET",
-      format: "json",
-      ...params,
-    });
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/tokens/${id}`,
+          ...params
+        });
 }

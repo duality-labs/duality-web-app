@@ -12,17 +12,18 @@ import { Reserve0AndSharesType } from "./types/dex/reserve_0_and_shares_type"
 import { Shares } from "./types/dex/shares"
 import { TickDataType } from "./types/dex/tick_data_type"
 import { TickMap } from "./types/dex/tick_map"
+import { Tokens } from "./types/dex/tokens"
 import { TokenMap } from "./types/dex/token_map"
 import { TokenPairType } from "./types/dex/token_pair_type"
-import { Tokens } from "./types/dex/tokens"
 
 
-export {     
+export {
+
     AdjanceyMatrix,
     EdgeRow,
     FeeList,
-    LimitOrderTrancheTrancheIndexes,
     LimitOrderTranche,
+    LimitOrderTrancheTrancheIndexes,
     LimitOrderTrancheUser,
     PairMap,
     Params,
@@ -32,6 +33,6 @@ export {
     TickMap,
     TokenMap,
     TokenPairType,
-    Tokens,
-    
- }
+    Tokens
+
+}

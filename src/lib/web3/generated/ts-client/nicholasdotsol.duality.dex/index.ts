@@ -1,8 +1,7 @@
 /* eslint-disable */
 /* tslint:disable */
-import Module from './module';
-import { txClient, queryClient, registry } from './module';
+import Module, { queryClient, registry, txClient } from './module';
 import { msgTypes } from './registry';
 
 export * from "./types";
-export { Module, msgTypes, txClient, queryClient, registry };
+export { Module, msgTypes, queryClient, registry, txClient }
