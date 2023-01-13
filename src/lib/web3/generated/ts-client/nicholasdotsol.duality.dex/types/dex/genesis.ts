@@ -5,7 +5,7 @@ import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { AdjanceyMatrix } from "./adjancey_matrix";
 import { EdgeRow } from "./edge_row";
-import { FeeList } from "./fee_list";
+import { FeeTier } from "./fee_tier";
 import { LimitOrderTranche } from "./limit_order_tranche";
 import { LimitOrderTrancheUser } from "./limit_order_tranche_user";
 import { PairMap } from "./pair_map";
@@ -31,8 +31,8 @@ export interface GenesisState {
   tokensCount: number;
   tokenMapList: TokenMap[];
   sharesList: Shares[];
-  feeListList: FeeList[];
-  feeListCount: number;
+  FeeTierList: FeeTier[];
+  FeeTierCount: number;
   edgeRowList: EdgeRow[];
   edgeRowCount: number;
   adjanceyMatrixList: AdjanceyMatrix[];
@@ -51,8 +51,8 @@ function createBaseGenesisState(): GenesisState {
       adjanceyMatrixList: [],
       edgeRowCount: 0,
       edgeRowList: [],
-      feeListCount: 0,
-      feeListList: [],
+      FeeTierCount: 0,
+      FeeTierList: [],
       LimitOrderTrancheList: [],
       LimitOrderTrancheUserList: [],
       pairMapList: [],
@@ -96,10 +96,10 @@ export const GenesisState = {
           message.sharesList.push(Shares.decode(reader, reader.uint32()));
           break;
         case 8:
-          message.feeListList.push(FeeList.decode(reader, reader.uint32()));
+          message.FeeTierList.push(FeeTier.decode(reader, reader.uint32()));
           break;
         case 9:
-          message.feeListCount = longToNumber(reader.uint64() as Long);
+          message.FeeTierCount = longToNumber(reader.uint64() as Long);
           break;
         case 10:
           message.edgeRowList.push(EdgeRow.decode(reader, reader.uint32()));
@@ -148,11 +148,11 @@ export const GenesisState = {
     for (const v of message.sharesList) {
       Shares.encode(v!, writer.uint32(58).fork()).ldelim();
     }
-    for (const v of message.feeListList) {
-      FeeList.encode(v!, writer.uint32(66).fork()).ldelim();
+    for (const v of message.FeeTierList) {
+      FeeTier.encode(v!, writer.uint32(66).fork()).ldelim();
     }
-    if (message.feeListCount !== 0) {
-      writer.uint32(72).uint64(message.feeListCount);
+    if (message.FeeTierCount !== 0) {
+      writer.uint32(72).uint64(message.FeeTierCount);
     }
     for (const v of message.edgeRowList) {
       EdgeRow.encode(v!, writer.uint32(82).fork()).ldelim();
@@ -184,8 +184,8 @@ export const GenesisState = {
             : [],
           edgeRowCount: isSet(object.edgeRowCount) ? Number(object.edgeRowCount) : 0,
           edgeRowList: Array.isArray(object?.edgeRowList) ? object.edgeRowList.map((e: any) => EdgeRow.fromJSON(e)) : [],
-          feeListCount: isSet(object.feeListCount) ? Number(object.feeListCount) : 0,
-          feeListList: Array.isArray(object?.feeListList) ? object.feeListList.map((e: any) => FeeList.fromJSON(e)) : [],
+          FeeTierCount: isSet(object.FeeTierCount) ? Number(object.FeeTierCount) : 0,
+          FeeTierList: Array.isArray(object?.FeeTierList) ? object.FeeTierList.map((e: any) => FeeTier.fromJSON(e)) : [],
           LimitOrderTrancheList: Array.isArray(object?.LimitOrderTrancheList)
             ? object.LimitOrderTrancheList.map((e: any) => LimitOrderTranche.fromJSON(e))
             : [],
@@ -215,8 +215,8 @@ export const GenesisState = {
     message.tokensCount = object.tokensCount ?? 0;
     message.tokenMapList = object.tokenMapList?.map((e) => TokenMap.fromPartial(e)) || [];
     message.sharesList = object.sharesList?.map((e) => Shares.fromPartial(e)) || [];
-    message.feeListList = object.feeListList?.map((e) => FeeList.fromPartial(e)) || [];
-    message.feeListCount = object.feeListCount ?? 0;
+    message.FeeTierList = object.FeeTierList?.map((e) => FeeTier.fromPartial(e)) || [];
+    message.FeeTierCount = object.FeeTierCount ?? 0;
     message.edgeRowList = object.edgeRowList?.map((e) => EdgeRow.fromPartial(e)) || [];
     message.edgeRowCount = object.edgeRowCount ?? 0;
     message.adjanceyMatrixList = object.adjanceyMatrixList?.map((e) => AdjanceyMatrix.fromPartial(e)) || [];
@@ -256,12 +256,12 @@ export const GenesisState = {
     } else {
       obj.sharesList = [];
     }
-    if (message.feeListList) {
-      obj.feeListList = message.feeListList.map((e) => e ? FeeList.toJSON(e) : undefined);
+    if (message.FeeTierList) {
+      obj.FeeTierList = message.FeeTierList.map((e) => e ? FeeTier.toJSON(e) : undefined);
     } else {
-      obj.feeListList = [];
+      obj.FeeTierList = [];
     }
-    message.feeListCount !== undefined && (obj.feeListCount = Math.round(message.feeListCount));
+    message.FeeTierCount !== undefined && (obj.FeeTierCount = Math.round(message.FeeTierCount));
     if (message.edgeRowList) {
       obj.edgeRowList = message.edgeRowList.map((e) => e ? EdgeRow.toJSON(e) : undefined);
     } else {

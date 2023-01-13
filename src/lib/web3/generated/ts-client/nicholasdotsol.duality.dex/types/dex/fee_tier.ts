@@ -11,23 +11,23 @@ export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export interface FeeList {
+export interface FeeTier {
   id: number;
   fee: number;
 }
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
-function createBaseFeeList(): FeeList {
+function createBaseFeeTier(): FeeTier {
   return { fee: 0, id: 0 };
 }
 
-export const FeeList = {
+export const FeeTier = {
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): FeeList {
+  decode(input: _m0.Reader | Uint8Array, length?: number): FeeTier {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseFeeList();
+    const message = createBaseFeeTier();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -44,7 +44,7 @@ export const FeeList = {
     }
     return message;
   },
-  encode(message: FeeList, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: FeeTier, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.id !== 0) {
       writer.uint32(8).uint64(message.id);
     }
@@ -54,18 +54,18 @@ export const FeeList = {
     return writer;
   },
 
-  fromJSON(object: any): FeeList {
+  fromJSON(object: any): FeeTier {
     return { fee: isSet(object.fee) ? Number(object.fee) : 0, id: isSet(object.id) ? Number(object.id) : 0 };
   },
 
-  fromPartial<I extends Exact<DeepPartial<FeeList>, I>>(object: I): FeeList {
-    const message = createBaseFeeList();
+  fromPartial<I extends Exact<DeepPartial<FeeTier>, I>>(object: I): FeeTier {
+    const message = createBaseFeeTier();
     message.id = object.id ?? 0;
     message.fee = object.fee ?? 0;
     return message;
   },
 
-  toJSON(message: FeeList): unknown {
+  toJSON(message: FeeTier): unknown {
     const obj: any = {};
     message.id !== undefined && (obj.id = Math.round(message.id));
     message.fee !== undefined && (obj.fee = Math.round(message.fee));

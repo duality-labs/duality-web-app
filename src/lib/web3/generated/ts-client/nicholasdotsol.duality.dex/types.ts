@@ -2,7 +2,7 @@
 /* tslint:disable */
 import { AdjanceyMatrix } from "./types/dex/adjancey_matrix"
 import { EdgeRow } from "./types/dex/edge_row"
-import { FeeList } from "./types/dex/fee_list"
+import { FeeTier } from "./types/dex/fee_tier"
 import { LimitOrderTrancheTrancheIndexes } from "./types/dex/limit_order_pool_tranche_indexes"
 import { LimitOrderTranche } from "./types/dex/limit_order_tranche"
 import { LimitOrderTrancheUser } from "./types/dex/limit_order_tranche_user"
@@ -21,7 +21,7 @@ export {
 
     AdjanceyMatrix,
     EdgeRow,
-    FeeList,
+    FeeTier,
     LimitOrderTranche,
     LimitOrderTrancheTrancheIndexes,
     LimitOrderTrancheUser,
