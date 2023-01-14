@@ -12,7 +12,7 @@ export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export interface PairMap {
+export interface TradingPair {
   pairId: string;
   tokenPair: TokenPairType | undefined;
   maxTick: number;
@@ -21,16 +21,16 @@ export interface PairMap {
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
-function createBasePairMap(): PairMap {
+function createBaseTradingPair(): TradingPair {
   return { maxTick: 0, minTick: 0, pairId: "", tokenPair: undefined };
 }
 
-export const PairMap = {
+export const TradingPair = {
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): PairMap {
+  decode(input: _m0.Reader | Uint8Array, length?: number): TradingPair {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePairMap();
+    const message = createBaseTradingPair();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -53,7 +53,7 @@ export const PairMap = {
     }
     return message;
   },
-  encode(message: PairMap, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: TradingPair, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.pairId !== "") {
       writer.uint32(10).string(message.pairId);
     }
@@ -69,7 +69,7 @@ export const PairMap = {
     return writer;
   },
 
-  fromJSON(object: any): PairMap {
+  fromJSON(object: any): TradingPair {
     return {
 
           maxTick: isSet(object.maxTick) ? Number(object.maxTick) : 0,
@@ -79,8 +79,8 @@ export const PairMap = {
         };
   },
 
-  fromPartial<I extends Exact<DeepPartial<PairMap>, I>>(object: I): PairMap {
-    const message = createBasePairMap();
+  fromPartial<I extends Exact<DeepPartial<TradingPair>, I>>(object: I): TradingPair {
+    const message = createBaseTradingPair();
     message.pairId = object.pairId ?? "";
     message.tokenPair = (object.tokenPair !== undefined && object.tokenPair !== null)
       ? TokenPairType.fromPartial(object.tokenPair)
@@ -90,7 +90,7 @@ export const PairMap = {
     return message;
   },
 
-  toJSON(message: PairMap): unknown {
+  toJSON(message: TradingPair): unknown {
     const obj: any = {};
     message.pairId !== undefined && (obj.pairId = message.pairId);
     message.tokenPair !== undefined

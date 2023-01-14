@@ -104,17 +104,6 @@ export interface DexMsgSwapResponse {
   coinOut?: V1Beta1Coin;
 }
 
-export interface DexPairMap {
-  pairId?: string;
-  tokenPair?: DexTokenPairType;
-
-  /** @format int64 */
-  maxTick?: string;
-
-  /** @format int64 */
-  minTick?: string;
-}
-
 export interface DexQueryAllAdjanceyMatrixResponse {
   AdjanceyMatrix?: DexAdjanceyMatrix[];
 
@@ -190,21 +179,6 @@ export interface DexQueryAllLimitOrderTrancheUserResponse {
   pagination?: V1Beta1PageResponse;
 }
 
-export interface DexQueryAllPairMapResponse {
-  pairMap?: DexPairMap[];
-
-  /**
-   * PageResponse is to be embedded in gRPC response messages where the
-   * corresponding request message has used PageRequest.
-   *
-   *  message SomeResponse {
-   *          repeated Bar results = 1;
-   *          PageResponse page = 2;
-   *  }
-   */
-  pagination?: V1Beta1PageResponse;
-}
-
 export interface DexQueryAllSharesResponse {
   shares?: DexShares[];
 
@@ -265,6 +239,21 @@ export interface DexQueryAllTokensResponse {
   pagination?: V1Beta1PageResponse;
 }
 
+export interface DexQueryAllTradingPairResponse {
+  TradingPair?: DexTradingPair[];
+
+  /**
+   * PageResponse is to be embedded in gRPC response messages where the
+   * corresponding request message has used PageRequest.
+   *
+   *  message SomeResponse {
+   *          repeated Bar results = 1;
+   *          PageResponse page = 2;
+   *  }
+   */
+  pagination?: V1Beta1PageResponse;
+}
+
 export interface DexQueryGetAdjanceyMatrixResponse {
   AdjanceyMatrix?: DexAdjanceyMatrix;
 }
@@ -285,10 +274,6 @@ export interface DexQueryGetLimitOrderTrancheUserResponse {
   LimitOrderTrancheUser?: DexLimitOrderTrancheUser;
 }
 
-export interface DexQueryGetPairMapResponse {
-  pairMap?: DexPairMap;
-}
-
 export interface DexQueryGetSharesResponse {
   shares?: DexShares;
 }
@@ -303,6 +288,10 @@ export interface DexQueryGetTokenMapResponse {
 
 export interface DexQueryGetTokensResponse {
   Tokens?: DexTokens;
+}
+
+export interface DexQueryGetTradingPairResponse {
+  TradingPair?: DexTradingPair;
 }
 
 /**
@@ -364,6 +353,17 @@ export interface DexTokens {
   /** @format uint64 */
   id?: string;
   address?: string;
+}
+
+export interface DexTradingPair {
+  pairId?: string;
+  tokenPair?: DexTokenPairType;
+
+  /** @format int64 */
+  maxTick?: string;
+
+  /** @format int64 */
+  minTick?: string;
 }
 
 export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
@@ -811,50 +811,6 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * No description
    *
    * @tags Query
-   * @name QueryPairMapAll
-   * @summary Queries a list of PairMap items.
-   * @request GET:/NicholasDotSol/duality/dex/pair_map
-   */
-  queryPairMapAll = (
-    query?: {
-      "pagination.key"?: string;
-      "pagination.offset"?: string;
-      "pagination.limit"?: string;
-      "pagination.count_total"?: boolean;
-      "pagination.reverse"?: boolean;
-    },
-    params: RequestParams = {},
-  ) =>
-    this.request<DexQueryAllPairMapResponse, RpcStatus>({
-
-          format: "json",
-          method: "GET",
-          path: `/NicholasDotSol/duality/dex/pair_map`,
-          query: query,
-          ...params
-        });
-
-  /**
-   * No description
-   *
-   * @tags Query
-   * @name QueryPairMap
-   * @summary Queries a PairMap by index.
-   * @request GET:/NicholasDotSol/duality/dex/pair_map/{pairId}
-   */
-  queryPairMap = (pairId: string, params: RequestParams = {}) =>
-    this.request<DexQueryGetPairMapResponse, RpcStatus>({
-
-          format: "json",
-          method: "GET",
-          path: `/NicholasDotSol/duality/dex/pair_map/${pairId}`,
-          ...params
-        });
-
-  /**
-   * No description
-   *
-   * @tags Query
    * @name QueryParams
    * @summary Parameters queries the parameters of the module.
    * @request GET:/NicholasDotSol/duality/dex/params
@@ -1041,6 +997,50 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
           format: "json",
           method: "GET",
           path: `/NicholasDotSol/duality/dex/tokens/${id}`,
+          ...params
+        });
+
+  /**
+   * No description
+   *
+   * @tags Query
+   * @name QueryTradingPairAll
+   * @summary Queries a list of TradingPair items.
+   * @request GET:/NicholasDotSol/duality/dex/trading_pair
+   */
+  queryTradingPairAll = (
+    query?: {
+      "pagination.key"?: string;
+      "pagination.offset"?: string;
+      "pagination.limit"?: string;
+      "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<DexQueryAllTradingPairResponse, RpcStatus>({
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/trading_pair`,
+          query: query,
+          ...params
+        });
+
+  /**
+   * No description
+   *
+   * @tags Query
+   * @name QueryTradingPair
+   * @summary Queries a TradingPair by index.
+   * @request GET:/NicholasDotSol/duality/dex/trading_pair/{pairId}
+   */
+  queryTradingPair = (pairId: string, params: RequestParams = {}) =>
+    this.request<DexQueryGetTradingPairResponse, RpcStatus>({
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/trading_pair/${pairId}`,
           ...params
         });
 }
