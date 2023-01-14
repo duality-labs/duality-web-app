@@ -11,7 +11,7 @@ import { LimitOrderTranche } from "./limit_order_tranche";
 import { LimitOrderTrancheUser } from "./limit_order_tranche_user";
 import { Params } from "./params";
 import { Shares } from "./shares";
-import { TickMap } from "./tick_map";
+import { Tick } from "./tick";
 import { Tokens } from "./tokens";
 import { TokenMap } from "./token_map";
 import { TradingPair } from "./trading_pair";
@@ -28,10 +28,10 @@ type KeysOfUnion<T> = T extends T ? keyof T : never;
 export interface Query {
   /** Parameters queries the parameters of the module. */
   Params(request: QueryParamsRequest): Promise<QueryParamsResponse>;
-  /** Queries a TickMap by index. */
-  TickMap(request: QueryGetTickMapRequest): Promise<QueryGetTickMapResponse>;
-  /** Queries a list of TickMap items. */
-  TickMapAll(request: QueryAllTickMapRequest): Promise<QueryAllTickMapResponse>;
+  /** Queries a Tick by index. */
+  Tick(request: QueryGetTickRequest): Promise<QueryGetTickResponse>;
+  /** Queries a list of Tick items. */
+  TickAll(request: QueryAllTickRequest): Promise<QueryAllTickResponse>;
   /** Queries a TradingPair by index. */
   TradingPair(request: QueryGetTradingPairRequest): Promise<QueryGetTradingPairResponse>;
   /** Queries a list of TradingPair items. */
@@ -126,12 +126,12 @@ export interface QueryAllSharesResponse {
   pagination: PageResponse | undefined;
 }
 
-export interface QueryAllTickMapRequest {
+export interface QueryAllTickRequest {
   pagination: PageRequest | undefined;
 }
 
-export interface QueryAllTickMapResponse {
-  tickMap: TickMap[];
+export interface QueryAllTickResponse {
+  Tick: Tick[];
   pagination: PageResponse | undefined;
 }
 
@@ -220,13 +220,13 @@ export interface QueryGetSharesResponse {
   shares: Shares | undefined;
 }
 
-export interface QueryGetTickMapRequest {
+export interface QueryGetTickRequest {
   tickIndex: number;
   pairId: string;
 }
 
-export interface QueryGetTickMapResponse {
-  tickMap: TickMap | undefined;
+export interface QueryGetTickResponse {
+  Tick: Tick | undefined;
 }
 
 export interface QueryGetTokenMapRequest {
@@ -357,16 +357,16 @@ export const QueryParamsResponse = {
   }
 };
 
-function createBaseQueryGetTickMapRequest(): QueryGetTickMapRequest {
+function createBaseQueryGetTickRequest(): QueryGetTickRequest {
   return { pairId: "", tickIndex: 0 };
 }
 
-export const QueryGetTickMapRequest = {
+export const QueryGetTickRequest = {
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): QueryGetTickMapRequest {
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryGetTickRequest {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryGetTickMapRequest();
+    const message = createBaseQueryGetTickRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -383,7 +383,7 @@ export const QueryGetTickMapRequest = {
     }
     return message;
   },
-  encode(message: QueryGetTickMapRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: QueryGetTickRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.tickIndex !== 0) {
       writer.uint32(8).int64(message.tickIndex);
     }
@@ -393,7 +393,7 @@ export const QueryGetTickMapRequest = {
     return writer;
   },
 
-  fromJSON(object: any): QueryGetTickMapRequest {
+  fromJSON(object: any): QueryGetTickRequest {
     return {
 
           pairId: isSet(object.pairId) ? String(object.pairId) : "",
@@ -401,14 +401,14 @@ export const QueryGetTickMapRequest = {
         };
   },
 
-  fromPartial<I extends Exact<DeepPartial<QueryGetTickMapRequest>, I>>(object: I): QueryGetTickMapRequest {
-    const message = createBaseQueryGetTickMapRequest();
+  fromPartial<I extends Exact<DeepPartial<QueryGetTickRequest>, I>>(object: I): QueryGetTickRequest {
+    const message = createBaseQueryGetTickRequest();
     message.tickIndex = object.tickIndex ?? 0;
     message.pairId = object.pairId ?? "";
     return message;
   },
 
-  toJSON(message: QueryGetTickMapRequest): unknown {
+  toJSON(message: QueryGetTickRequest): unknown {
     const obj: any = {};
     message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
     message.pairId !== undefined && (obj.pairId = message.pairId);
@@ -416,21 +416,21 @@ export const QueryGetTickMapRequest = {
   }
 };
 
-function createBaseQueryGetTickMapResponse(): QueryGetTickMapResponse {
-  return { tickMap: undefined };
+function createBaseQueryGetTickResponse(): QueryGetTickResponse {
+  return { Tick: undefined };
 }
 
-export const QueryGetTickMapResponse = {
+export const QueryGetTickResponse = {
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): QueryGetTickMapResponse {
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryGetTickResponse {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryGetTickMapResponse();
+    const message = createBaseQueryGetTickResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.tickMap = TickMap.decode(reader, reader.uint32());
+          message.Tick = Tick.decode(reader, reader.uint32());
           break;
         default:
           reader.skipType(tag & 7);
@@ -439,42 +439,40 @@ export const QueryGetTickMapResponse = {
     }
     return message;
   },
-  encode(message: QueryGetTickMapResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.tickMap !== undefined) {
-      TickMap.encode(message.tickMap, writer.uint32(10).fork()).ldelim();
+  encode(message: QueryGetTickResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.Tick !== undefined) {
+      Tick.encode(message.Tick, writer.uint32(10).fork()).ldelim();
     }
     return writer;
   },
 
-  fromJSON(object: any): QueryGetTickMapResponse {
-    return { tickMap: isSet(object.tickMap) ? TickMap.fromJSON(object.tickMap) : undefined };
+  fromJSON(object: any): QueryGetTickResponse {
+    return { Tick: isSet(object.Tick) ? Tick.fromJSON(object.Tick) : undefined };
   },
 
-  fromPartial<I extends Exact<DeepPartial<QueryGetTickMapResponse>, I>>(object: I): QueryGetTickMapResponse {
-    const message = createBaseQueryGetTickMapResponse();
-    message.tickMap = (object.tickMap !== undefined && object.tickMap !== null)
-      ? TickMap.fromPartial(object.tickMap)
-      : undefined;
+  fromPartial<I extends Exact<DeepPartial<QueryGetTickResponse>, I>>(object: I): QueryGetTickResponse {
+    const message = createBaseQueryGetTickResponse();
+    message.Tick = (object.Tick !== undefined && object.Tick !== null) ? Tick.fromPartial(object.Tick) : undefined;
     return message;
   },
 
-  toJSON(message: QueryGetTickMapResponse): unknown {
+  toJSON(message: QueryGetTickResponse): unknown {
     const obj: any = {};
-    message.tickMap !== undefined && (obj.tickMap = message.tickMap ? TickMap.toJSON(message.tickMap) : undefined);
+    message.Tick !== undefined && (obj.Tick = message.Tick ? Tick.toJSON(message.Tick) : undefined);
     return obj;
   }
 };
 
-function createBaseQueryAllTickMapRequest(): QueryAllTickMapRequest {
+function createBaseQueryAllTickRequest(): QueryAllTickRequest {
   return { pagination: undefined };
 }
 
-export const QueryAllTickMapRequest = {
+export const QueryAllTickRequest = {
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): QueryAllTickMapRequest {
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryAllTickRequest {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryAllTickMapRequest();
+    const message = createBaseQueryAllTickRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -488,26 +486,26 @@ export const QueryAllTickMapRequest = {
     }
     return message;
   },
-  encode(message: QueryAllTickMapRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: QueryAllTickRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.pagination !== undefined) {
       PageRequest.encode(message.pagination, writer.uint32(10).fork()).ldelim();
     }
     return writer;
   },
 
-  fromJSON(object: any): QueryAllTickMapRequest {
+  fromJSON(object: any): QueryAllTickRequest {
     return { pagination: isSet(object.pagination) ? PageRequest.fromJSON(object.pagination) : undefined };
   },
 
-  fromPartial<I extends Exact<DeepPartial<QueryAllTickMapRequest>, I>>(object: I): QueryAllTickMapRequest {
-    const message = createBaseQueryAllTickMapRequest();
+  fromPartial<I extends Exact<DeepPartial<QueryAllTickRequest>, I>>(object: I): QueryAllTickRequest {
+    const message = createBaseQueryAllTickRequest();
     message.pagination = (object.pagination !== undefined && object.pagination !== null)
       ? PageRequest.fromPartial(object.pagination)
       : undefined;
     return message;
   },
 
-  toJSON(message: QueryAllTickMapRequest): unknown {
+  toJSON(message: QueryAllTickRequest): unknown {
     const obj: any = {};
     message.pagination !== undefined
       && (obj.pagination = message.pagination ? PageRequest.toJSON(message.pagination) : undefined);
@@ -515,21 +513,21 @@ export const QueryAllTickMapRequest = {
   }
 };
 
-function createBaseQueryAllTickMapResponse(): QueryAllTickMapResponse {
-  return { pagination: undefined, tickMap: [] };
+function createBaseQueryAllTickResponse(): QueryAllTickResponse {
+  return { pagination: undefined, Tick: [] };
 }
 
-export const QueryAllTickMapResponse = {
+export const QueryAllTickResponse = {
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): QueryAllTickMapResponse {
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryAllTickResponse {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryAllTickMapResponse();
+    const message = createBaseQueryAllTickResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.tickMap.push(TickMap.decode(reader, reader.uint32()));
+          message.Tick.push(Tick.decode(reader, reader.uint32()));
           break;
         case 2:
           message.pagination = PageResponse.decode(reader, reader.uint32());
@@ -541,9 +539,9 @@ export const QueryAllTickMapResponse = {
     }
     return message;
   },
-  encode(message: QueryAllTickMapResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    for (const v of message.tickMap) {
-      TickMap.encode(v!, writer.uint32(10).fork()).ldelim();
+  encode(message: QueryAllTickResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.Tick) {
+      Tick.encode(v!, writer.uint32(10).fork()).ldelim();
     }
     if (message.pagination !== undefined) {
       PageResponse.encode(message.pagination, writer.uint32(18).fork()).ldelim();
@@ -551,29 +549,29 @@ export const QueryAllTickMapResponse = {
     return writer;
   },
 
-  fromJSON(object: any): QueryAllTickMapResponse {
+  fromJSON(object: any): QueryAllTickResponse {
     return {
 
           pagination: isSet(object.pagination) ? PageResponse.fromJSON(object.pagination) : undefined,
-          tickMap: Array.isArray(object?.tickMap) ? object.tickMap.map((e: any) => TickMap.fromJSON(e)) : []
+          Tick: Array.isArray(object?.Tick) ? object.Tick.map((e: any) => Tick.fromJSON(e)) : []
         };
   },
 
-  fromPartial<I extends Exact<DeepPartial<QueryAllTickMapResponse>, I>>(object: I): QueryAllTickMapResponse {
-    const message = createBaseQueryAllTickMapResponse();
-    message.tickMap = object.tickMap?.map((e) => TickMap.fromPartial(e)) || [];
+  fromPartial<I extends Exact<DeepPartial<QueryAllTickResponse>, I>>(object: I): QueryAllTickResponse {
+    const message = createBaseQueryAllTickResponse();
+    message.Tick = object.Tick?.map((e) => Tick.fromPartial(e)) || [];
     message.pagination = (object.pagination !== undefined && object.pagination !== null)
       ? PageResponse.fromPartial(object.pagination)
       : undefined;
     return message;
   },
 
-  toJSON(message: QueryAllTickMapResponse): unknown {
+  toJSON(message: QueryAllTickResponse): unknown {
     const obj: any = {};
-    if (message.tickMap) {
-      obj.tickMap = message.tickMap.map((e) => e ? TickMap.toJSON(e) : undefined);
+    if (message.Tick) {
+      obj.Tick = message.Tick.map((e) => e ? Tick.toJSON(e) : undefined);
     } else {
-      obj.tickMap = [];
+      obj.Tick = [];
     }
     message.pagination !== undefined
       && (obj.pagination = message.pagination ? PageResponse.toJSON(message.pagination) : undefined);
@@ -2648,8 +2646,8 @@ export class QueryClientImpl implements Query {
   constructor(rpc: Rpc) {
     this.rpc = rpc;
     this.Params = this.Params.bind(this);
-    this.TickMap = this.TickMap.bind(this);
-    this.TickMapAll = this.TickMapAll.bind(this);
+    this.Tick = this.Tick.bind(this);
+    this.TickAll = this.TickAll.bind(this);
     this.TradingPair = this.TradingPair.bind(this);
     this.TradingPairAll = this.TradingPairAll.bind(this);
     this.Tokens = this.Tokens.bind(this);
@@ -2675,16 +2673,16 @@ export class QueryClientImpl implements Query {
     return promise.then((data) => QueryParamsResponse.decode(new _m0.Reader(data)));
   }
 
-  TickMap(request: QueryGetTickMapRequest): Promise<QueryGetTickMapResponse> {
-    const data = QueryGetTickMapRequest.encode(request).finish();
-    const promise = this.rpc.request("nicholasdotsol.duality.dex.Query", "TickMap", data);
-    return promise.then((data) => QueryGetTickMapResponse.decode(new _m0.Reader(data)));
+  Tick(request: QueryGetTickRequest): Promise<QueryGetTickResponse> {
+    const data = QueryGetTickRequest.encode(request).finish();
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Query", "Tick", data);
+    return promise.then((data) => QueryGetTickResponse.decode(new _m0.Reader(data)));
   }
 
-  TickMapAll(request: QueryAllTickMapRequest): Promise<QueryAllTickMapResponse> {
-    const data = QueryAllTickMapRequest.encode(request).finish();
-    const promise = this.rpc.request("nicholasdotsol.duality.dex.Query", "TickMapAll", data);
-    return promise.then((data) => QueryAllTickMapResponse.decode(new _m0.Reader(data)));
+  TickAll(request: QueryAllTickRequest): Promise<QueryAllTickResponse> {
+    const data = QueryAllTickRequest.encode(request).finish();
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Query", "TickAll", data);
+    return promise.then((data) => QueryAllTickResponse.decode(new _m0.Reader(data)));
   }
 
   TradingPair(request: QueryGetTradingPairRequest): Promise<QueryGetTradingPairResponse> {

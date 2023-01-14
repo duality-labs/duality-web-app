@@ -194,8 +194,8 @@ export interface DexQueryAllSharesResponse {
   pagination?: V1Beta1PageResponse;
 }
 
-export interface DexQueryAllTickMapResponse {
-  tickMap?: DexTickMap[];
+export interface DexQueryAllTickResponse {
+  Tick?: DexTick[];
 
   /**
    * PageResponse is to be embedded in gRPC response messages where the
@@ -278,8 +278,8 @@ export interface DexQueryGetSharesResponse {
   shares?: DexShares;
 }
 
-export interface DexQueryGetTickMapResponse {
-  tickMap?: DexTickMap;
+export interface DexQueryGetTickResponse {
+  Tick?: DexTick;
 }
 
 export interface DexQueryGetTokenMapResponse {
@@ -319,12 +319,7 @@ export interface DexShares {
   sharesOwned?: string;
 }
 
-export interface DexTickDataType {
-  reserve0AndShares?: DexReserve0AndSharesType[];
-  reserve1?: string[];
-}
-
-export interface DexTickMap {
+export interface DexTick {
   pairId?: string;
 
   /** @format int64 */
@@ -332,6 +327,11 @@ export interface DexTickMap {
   tickData?: DexTickDataType;
   LimitOrderTranche0to1?: DexLimitTrancheIndexes;
   LimitOrderTranche1to0?: DexLimitTrancheIndexes;
+}
+
+export interface DexTickDataType {
+  reserve0AndShares?: DexReserve0AndSharesType[];
+  reserve1?: string[];
 }
 
 export interface DexTokenMap {
@@ -872,11 +872,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * No description
    *
    * @tags Query
-   * @name QueryTickMapAll
-   * @summary Queries a list of TickMap items.
-   * @request GET:/NicholasDotSol/duality/dex/tick_map
+   * @name QueryTickAll
+   * @summary Queries a list of Tick items.
+   * @request GET:/NicholasDotSol/duality/dex/tick
    */
-  queryTickMapAll = (
+  queryTickAll = (
     query?: {
       "pagination.key"?: string;
       "pagination.offset"?: string;
@@ -886,11 +886,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     },
     params: RequestParams = {},
   ) =>
-    this.request<DexQueryAllTickMapResponse, RpcStatus>({
+    this.request<DexQueryAllTickResponse, RpcStatus>({
 
           format: "json",
           method: "GET",
-          path: `/NicholasDotSol/duality/dex/tick_map`,
+          path: `/NicholasDotSol/duality/dex/tick`,
           query: query,
           ...params
         });
@@ -899,16 +899,16 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * No description
    *
    * @tags Query
-   * @name QueryTickMap
-   * @summary Queries a TickMap by index.
-   * @request GET:/NicholasDotSol/duality/dex/tick_map/{pairId}/{tickIndex}
+   * @name QueryTick
+   * @summary Queries a Tick by index.
+   * @request GET:/NicholasDotSol/duality/dex/tick/{pairId}/{tickIndex}
    */
-  queryTickMap = (pairId: string, tickIndex: string, params: RequestParams = {}) =>
-    this.request<DexQueryGetTickMapResponse, RpcStatus>({
+  queryTick = (pairId: string, tickIndex: string, params: RequestParams = {}) =>
+    this.request<DexQueryGetTickResponse, RpcStatus>({
 
           format: "json",
           method: "GET",
-          path: `/NicholasDotSol/duality/dex/tick_map/${pairId}/${tickIndex}`,
+          path: `/NicholasDotSol/duality/dex/tick/${pairId}/${tickIndex}`,
           ...params
         });
 

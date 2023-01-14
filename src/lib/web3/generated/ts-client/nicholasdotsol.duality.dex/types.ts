@@ -9,8 +9,8 @@ import { LimitTrancheIndexes } from "./types/dex/limit_tranche_indexes"
 import { Params } from "./types/dex/params"
 import { Reserve0AndSharesType } from "./types/dex/reserve_0_and_shares_type"
 import { Shares } from "./types/dex/shares"
+import { Tick } from "./types/dex/tick"
 import { TickDataType } from "./types/dex/tick_data_type"
-import { TickMap } from "./types/dex/tick_map"
 import { Tokens } from "./types/dex/tokens"
 import { TokenMap } from "./types/dex/token_map"
 import { TokenPairType } from "./types/dex/token_pair_type"
@@ -28,8 +28,8 @@ export {
     Params,
     Reserve0AndSharesType,
     Shares,
+    Tick,
     TickDataType,
-    TickMap,
     TokenMap,
     TokenPairType,
     Tokens,
