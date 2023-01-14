@@ -240,7 +240,7 @@ class SDKModule {
 	
     this.tx = methods;
     for (let m in methods) {
-        // @ts-ignore:next-line
+        // @ts-expect-error:next-line
         this.tx[m] = methods[m].bind(this.tx);
     }
 	}
