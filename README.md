@@ -76,10 +76,9 @@ which describes the state at which the generated API files were made.
 ## Generated API types
 
 The frontend connects to the backend through the backend API.
-We use `$ ignite generate` (also called in `$ ignite chain serve`)
-in the [Ignite CLI](https://docs.ignite.com/cli#ignite-generate)
-in the backend to auto-generate TypeScript types that help define the shape
-of the API for the frontend code base. These files exist at
+We use TypeScript types and API client code generated from the backend repo
+using [Ignite CLI](https://docs.ignite.com/cli#ignite-generate) to help define
+the shape of the API for the frontend code base. These files exist at
 [src/lib/web3/generated](https://github.com/duality-labs/duality-web-app/tree/main/src/lib/web3/generated/)
 
 Instructions on how to update these generated types should exist at
