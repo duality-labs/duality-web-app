@@ -128,8 +128,7 @@ export function useEditLiquidity(): [
                                     amountsA: [
                                       getAmountInDenom(
                                         token0,
-                                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                                        tickDiff0.shiftedBy(18),
+                                        tickDiff0,
                                         token0.display
                                       ) || '0',
                                     ],
@@ -178,8 +177,7 @@ export function useEditLiquidity(): [
                                     amountsB: [
                                       getAmountInDenom(
                                         token1,
-                                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                                        tickDiff1.shiftedBy(18),
+                                        tickDiff1,
                                         token1.display
                                       ) || '0',
                                     ],
