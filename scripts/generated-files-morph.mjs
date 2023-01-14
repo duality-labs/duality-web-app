@@ -212,7 +212,7 @@ export default async function main() {
         .getParentIfKind(SyntaxKind.Block)
         ?.insertStatements(
           anyToAnyBindStatement.getChildIndex(),
-          '// @ts-ignore:next-line'
+          '// @ts-expect-error:next-line'
         );
     }
 
