@@ -80,19 +80,13 @@ await morphTS();
 files
   .filter((file) => file.endsWith('/module.ts'))
   .forEach((file) => {
-    const original = fs.readFileSync(file, { encoding: 'utf8' });
-    // find an Api method to use as a definite type instead of an "implcit any"
-    const firstApiMethod =
-      original.match(
-        /const txClient .*? return {\s+(?:async )?(\w+)\(/s
-      )?.[1] || '';
-    const replaced = original
+    const replaced = fs
+      .readFileSync(file, { encoding: 'utf8' })
       // Property 'tx' has no initializer and is not definitely assigned in the constructor.
       .replace(
         'public tx: ReturnType<typeof txClient>',
         'public tx!: ReturnType<typeof txClient>'
-      )
-      .replace(/\[m\]/g, `[m as '${firstApiMethod}']`);
+      );
     fs.writeFileSync(file, replaced);
   });
 

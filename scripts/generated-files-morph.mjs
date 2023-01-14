@@ -196,6 +196,26 @@ export default async function main() {
       );
     }
 
+    // fix the most awkward TypeScript error (hard to fix)
+    if (sourceFile.getFilePath().endsWith('/module.ts')) {
+      // this statement is hard to fix as it doesn't fit an object map
+      // eg. for interface { a: A; b: B }, this statement cannot guarantee
+      // the we are not trying to update the object with a type { a: B }
+      const anyToAnyBindStatement = sourceFile.getFirstDescendant((node) => {
+        return (
+          node.isKind(SyntaxKind.ExpressionStatement) &&
+          node.getText().includes('this.tx[m] = methods[m].bind(this.tx);')
+        );
+      });
+      // inset ignore comment above this line
+      anyToAnyBindStatement
+        .getParentIfKind(SyntaxKind.Block)
+        ?.insertStatements(
+          anyToAnyBindStatement.getChildIndex(),
+          '// @ts-ignore:next-line'
+        );
+    }
+
     // disable linting for these files
     sourceFile.insertStatements(
       0,

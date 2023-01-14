@@ -120,7 +120,8 @@ class SDKModule {
 	
     this.tx = methods;
     for (let m in methods) {
-        this.tx[m as 'msgMultiSend'] = methods[m as 'msgMultiSend'].bind(this.tx);
+        // @ts-ignore:next-line
+        this.tx[m] = methods[m].bind(this.tx);
     }
 	}
 }
