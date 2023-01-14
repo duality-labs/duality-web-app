@@ -66,14 +66,6 @@ export interface DexLimitOrderTranche {
   totalTokenOut?: string;
 }
 
-export interface DexLimitOrderTrancheTrancheIndexes {
-  /** @format uint64 */
-  fillTrancheIndex?: string;
-
-  /** @format uint64 */
-  placeTrancheIndex?: string;
-}
-
 export interface DexLimitOrderTrancheUser {
   pairId?: string;
   token?: string;
@@ -87,6 +79,14 @@ export interface DexLimitOrderTrancheUser {
   sharesOwned?: string;
   sharesWithdrawn?: string;
   sharesCancelled?: string;
+}
+
+export interface DexLimitTrancheIndexes {
+  /** @format uint64 */
+  fillTrancheIndex?: string;
+
+  /** @format uint64 */
+  placeTrancheIndex?: string;
 }
 
 export interface DexMsgDepositResponse {
@@ -330,8 +330,8 @@ export interface DexTickMap {
   /** @format int64 */
   tickIndex?: string;
   tickData?: DexTickDataType;
-  LimitOrderTranche0to1?: DexLimitOrderTrancheTrancheIndexes;
-  LimitOrderTranche1to0?: DexLimitOrderTrancheTrancheIndexes;
+  LimitOrderTranche0to1?: DexLimitTrancheIndexes;
+  LimitOrderTranche1to0?: DexLimitTrancheIndexes;
 }
 
 export interface DexTokenMap {
