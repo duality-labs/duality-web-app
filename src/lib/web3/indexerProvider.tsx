@@ -13,16 +13,14 @@ import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
-import { queryClient } from './generated/duality/nicholasdotsol.duality.dex/module/index';
+import { queryClient as bankClient } from './generated/ts-client/cosmos.bank.v1beta1/module';
+import { Api as BankApi } from './generated/ts-client/cosmos.bank.v1beta1/rest';
+import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/module';
 import {
-  DexQueryAllTickMapResponse,
-  DexQueryAllSharesResponse,
   DexShares,
   DexTickMap,
-  HttpResponse,
-  RpcStatus,
-  V1Beta1PageResponse,
-} from './generated/duality/nicholasdotsol.duality.dex/module/rest';
+  Api,
+} from './generated/ts-client/nicholasdotsol.duality.dex/rest';
 import {
   addressableTokenMap as tokenMap,
   Token,
@@ -34,10 +32,6 @@ const { REACT_APP__REST_API } = process.env;
 
 export type TokenAddress = string; // a valid hex address, eg. 0x01
 
-interface BalancesResponse {
-  balances?: Coin[];
-  pagination?: V1Beta1PageResponse;
-}
 export interface PairInfo {
   token0: string;
   token1: string;
@@ -128,21 +122,25 @@ function getFullData(): Promise<PairMap> {
     if (!REACT_APP__REST_API) {
       reject(new Error('Undefined rest api base URL'));
     } else {
-      queryClient({ addr: REACT_APP__REST_API })
+      new Promise<Api<unknown>>((resolve) =>
+        resolve(queryClient({ addr: REACT_APP__REST_API }))
+      )
         .then(async (client) => {
           let nextKey: string | undefined;
           let tickMap: Array<DexTickMap> = [];
-          let res: HttpResponse<DexQueryAllTickMapResponse, RpcStatus>;
+          let res: Awaited<ReturnType<Api<unknown>['queryTickMapAll']>>;
           do {
             res = await client.queryTickMapAll({
               ...defaultFetchParams,
               'pagination.key': nextKey,
             });
-            if (res.ok) {
+            if (res.status === 200) {
               tickMap = tickMap.concat(res.data.tickMap || []);
             } else {
               // remove API error details from public view
-              throw new Error(`API error code: ${res.error.code}`);
+              throw new Error(
+                `API error code: ${res.status} ${res.statusText}`
+              );
             }
             nextKey = res.data.pagination?.next_key;
           } while (nextKey);
@@ -309,30 +307,31 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
       async function fetchBankData() {
         if (address && REACT_APP__REST_API) {
-          const client = await queryClient({ addr: REACT_APP__REST_API });
+          const client = bankClient({ addr: REACT_APP__REST_API });
           setFetchBankDataState(({ fetched }) => ({ fetching: true, fetched }));
           let nextKey: string | undefined;
           let balances: Array<Coin> = [];
-          let res: HttpResponse<BalancesResponse, RpcStatus>;
+          let res: Awaited<ReturnType<BankApi<unknown>['queryAllBalances']>>;
+          // let res: HttpResponse<BalancesResponse, RpcStatus>;
           do {
-            res = await client.request<BalancesResponse, RpcStatus>({
-              path: `/cosmos/bank/v1beta1/balances/${address}`,
-              method: 'GET',
-              format: 'json',
-              query: {
-                ...defaultFetchParams,
-                'pagination.key': nextKey,
-              },
+            res = await client.queryAllBalances(address, {
+              ...defaultFetchParams,
+              'pagination.key': nextKey,
             });
-            if (res.ok) {
-              balances = balances.concat(res.data.balances || []);
+            if (res.status === 200) {
+              const nonZeroBalances = res.data.balances?.filter(
+                (balance): balance is Coin => balance.amount !== undefined
+              );
+              balances = balances.concat(nonZeroBalances || []);
             } else {
               setFetchBankDataState(({ fetched }) => ({
                 fetching: false,
                 fetched,
               }));
               // remove API error details from public view
-              throw new Error(`API error code: ${res.error.code}`);
+              throw new Error(
+                `API error code: ${res.status} ${res.statusText}`
+              );
             }
             nextKey = res.data.pagination?.next_key;
           } while (nextKey);
@@ -396,28 +395,20 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
       async function fetchShareData() {
         if (address && REACT_APP__REST_API) {
-          const client = await queryClient({ addr: REACT_APP__REST_API });
+          const client = queryClient({ addr: REACT_APP__REST_API });
           setFetchShareDataState(({ fetched }) => ({
             fetching: true,
             fetched,
           }));
           let nextKey: string | undefined;
           let shares: Array<DexShares> = [];
-          let res: HttpResponse<DexQueryAllSharesResponse, RpcStatus>;
+          let res: Awaited<ReturnType<Api<unknown>['querySharesAll']>>;
           do {
-            res = await client.request<DexQueryAllSharesResponse, RpcStatus>({
-              // todo: this query should be sepcific to the user's address
-              // however that has not been implemented yet
-              // so instead we query all and then filter the results
-              path: '/NicholasDotSol/duality/dex/shares',
-              method: 'GET',
-              format: 'json',
-              query: {
-                ...defaultFetchParams,
-                'pagination.key': nextKey,
-              },
+            res = await client.querySharesAll({
+              ...defaultFetchParams,
+              'pagination.key': nextKey,
             });
-            if (res.ok) {
+            if (res.status === 200) {
               shares = shares.concat(res.data.shares || []);
             } else {
               setFetchShareDataState(({ fetched }) => ({
@@ -425,7 +416,9 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 fetched,
               }));
               // remove API error details from public view
-              throw new Error(`API error code: ${res.error.code}`);
+              throw new Error(
+                `API error code: ${res.status} ${res.statusText}`
+              );
             }
             nextKey = res.data.pagination?.next_key;
           } while (nextKey);
@@ -695,6 +688,7 @@ export function getBalance(
   });
   return (
     (!!balanceObject &&
+      balanceObject.amount &&
       Number(balanceObject.amount) > 0 &&
       getAmountInDenom(
         token,

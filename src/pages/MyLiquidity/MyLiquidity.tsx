@@ -12,7 +12,7 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
-import { DexShares } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
+import { DexShares } from '../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/rest';
 import {
   useBankBalances,
   useIndexerData,
