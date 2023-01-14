@@ -23,7 +23,11 @@ let files = getDirFilenames('./src/lib/web3/generated', { recursive: true });
 
 // remove unused module type generations (reduce git line changes)
 files
-  .filter((file) => file.match(/\/ts-client\/(\w+\.)+\w+\//))
+  .filter(
+    (file) =>
+      file.match(/\/ts-client\/(\w+\.)+\w+\//) ||
+      file.endsWith('/ts-client/index.ts')
+  )
   .filter(
     (file) =>
       !(
