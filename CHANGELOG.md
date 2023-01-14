@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.84](https://github.com/duality-labs/duality-web-app/compare/v0.1.83...v0.1.84) (2023-01-14)
+
+
+### Fixes
+
+* shares from reserves calculation ([#284](https://github.com/duality-labs/duality-web-app/issues/284)) ([44fec1f](https://github.com/duality-labs/duality-web-app/commit/44fec1f314c7c6122b9fd31e3fa8f99b675cdfe6))
+
 ## [0.1.83](https://github.com/duality-labs/duality-web-app/compare/v0.1.82...v0.1.83) (2023-01-11)
 
 
