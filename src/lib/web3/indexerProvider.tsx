@@ -18,7 +18,7 @@ import { Api as BankApi } from './generated/ts-client/cosmos.bank.v1beta1/rest';
 import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/module';
 import {
   DexShares,
-  DexTickMap,
+  DexTick,
   Api,
 } from './generated/ts-client/nicholasdotsol.duality.dex/rest';
 import {
@@ -128,15 +128,15 @@ function getFullData(): Promise<PairMap> {
       )
         .then(async (client) => {
           let nextKey: string | undefined;
-          let tickMap: Array<DexTickMap> = [];
-          let res: Awaited<ReturnType<Api<unknown>['queryTickMapAll']>>;
+          let tickMap: Array<DexTick> = [];
+          let res: Awaited<ReturnType<Api<unknown>['queryTickAll']>>;
           do {
-            res = await client.queryTickMapAll({
+            res = await client.queryTickAll({
               ...defaultFetchParams,
               'pagination.key': nextKey,
             });
             if (res.status === 200) {
-              tickMap = tickMap.concat(res.data.tickMap || []);
+              tickMap = tickMap.concat(res.data.Tick || []);
             } else {
               // remove API error details from public view
               throw new Error(
@@ -200,7 +200,7 @@ export function hasMatchingPairOfOrder(
   return [forward, reverse];
 }
 
-function transformData(ticks: Array<DexTickMap>): PairMap {
+function transformData(ticks: Array<DexTick>): PairMap {
   const intermediate = ticks.reduce<PairMap>(function (
     result,
     { pairId = '', tickIndex, tickData }
