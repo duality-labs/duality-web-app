@@ -21,5 +21,5 @@ export function calculateShares({
   reserve0?: TickInfo['reserve0'];
   reserve1?: TickInfo['reserve1'];
 }): BigNumber {
-  return reserve0.plus(reserve1.dividedBy(price));
+  return reserve0.plus(reserve1.multipliedBy(price));
 }
