@@ -13,7 +13,7 @@ export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export interface TickMap {
+export interface Tick {
   pairId: string;
   tickIndex: number;
   tickData: TickDataType | undefined;
@@ -23,7 +23,7 @@ export interface TickMap {
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
-function createBaseTickMap(): TickMap {
+function createBaseTick(): Tick {
   return {
 
       LimitOrderTranche0to1: undefined,
@@ -34,12 +34,12 @@ function createBaseTickMap(): TickMap {
     };
 }
 
-export const TickMap = {
+export const Tick = {
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): TickMap {
+  decode(input: _m0.Reader | Uint8Array, length?: number): Tick {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTickMap();
+    const message = createBaseTick();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -65,7 +65,7 @@ export const TickMap = {
     }
     return message;
   },
-  encode(message: TickMap, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: Tick, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.pairId !== "") {
       writer.uint32(10).string(message.pairId);
     }
@@ -84,7 +84,7 @@ export const TickMap = {
     return writer;
   },
 
-  fromJSON(object: any): TickMap {
+  fromJSON(object: any): Tick {
     return {
 
           LimitOrderTranche0to1: isSet(object.LimitOrderTranche0to1)
@@ -99,8 +99,8 @@ export const TickMap = {
         };
   },
 
-  fromPartial<I extends Exact<DeepPartial<TickMap>, I>>(object: I): TickMap {
-    const message = createBaseTickMap();
+  fromPartial<I extends Exact<DeepPartial<Tick>, I>>(object: I): Tick {
+    const message = createBaseTick();
     message.pairId = object.pairId ?? "";
     message.tickIndex = object.tickIndex ?? 0;
     message.tickData = (object.tickData !== undefined && object.tickData !== null)
@@ -117,7 +117,7 @@ export const TickMap = {
     return message;
   },
 
-  toJSON(message: TickMap): unknown {
+  toJSON(message: Tick): unknown {
     const obj: any = {};
     message.pairId !== undefined && (obj.pairId = message.pairId);
     message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));

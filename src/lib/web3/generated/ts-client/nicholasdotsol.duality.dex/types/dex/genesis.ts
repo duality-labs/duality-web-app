@@ -10,7 +10,7 @@ import { LimitOrderTranche } from "./limit_order_tranche";
 import { LimitOrderTrancheUser } from "./limit_order_tranche_user";
 import { Params } from "./params";
 import { Shares } from "./shares";
-import { TickMap } from "./tick_map";
+import { Tick } from "./tick";
 import { Tokens } from "./tokens";
 import { TokenMap } from "./token_map";
 import { TradingPair } from "./trading_pair";
@@ -25,7 +25,7 @@ type KeysOfUnion<T> = T extends T ? keyof T : never;
 /** GenesisState defines the dex module's genesis state. */
 export interface GenesisState {
   params: Params | undefined;
-  tickMapList: TickMap[];
+  TickList: Tick[];
   TradingPairList: TradingPair[];
   tokensList: Tokens[];
   tokensCount: number;
@@ -57,7 +57,7 @@ function createBaseGenesisState(): GenesisState {
       LimitOrderTrancheUserList: [],
       params: undefined,
       sharesList: [],
-      tickMapList: [],
+      TickList: [],
       tokenMapList: [],
       tokensCount: 0,
       tokensList: [],
@@ -78,7 +78,7 @@ export const GenesisState = {
           message.params = Params.decode(reader, reader.uint32());
           break;
         case 2:
-          message.tickMapList.push(TickMap.decode(reader, reader.uint32()));
+          message.TickList.push(Tick.decode(reader, reader.uint32()));
           break;
         case 3:
           message.TradingPairList.push(TradingPair.decode(reader, reader.uint32()));
@@ -130,8 +130,8 @@ export const GenesisState = {
     if (message.params !== undefined) {
       Params.encode(message.params, writer.uint32(10).fork()).ldelim();
     }
-    for (const v of message.tickMapList) {
-      TickMap.encode(v!, writer.uint32(18).fork()).ldelim();
+    for (const v of message.TickList) {
+      Tick.encode(v!, writer.uint32(18).fork()).ldelim();
     }
     for (const v of message.TradingPairList) {
       TradingPair.encode(v!, writer.uint32(26).fork()).ldelim();
@@ -194,7 +194,7 @@ export const GenesisState = {
             : [],
           params: isSet(object.params) ? Params.fromJSON(object.params) : undefined,
           sharesList: Array.isArray(object?.sharesList) ? object.sharesList.map((e: any) => Shares.fromJSON(e)) : [],
-          tickMapList: Array.isArray(object?.tickMapList) ? object.tickMapList.map((e: any) => TickMap.fromJSON(e)) : [],
+          TickList: Array.isArray(object?.TickList) ? object.TickList.map((e: any) => Tick.fromJSON(e)) : [],
           tokenMapList: Array.isArray(object?.tokenMapList)
             ? object.tokenMapList.map((e: any) => TokenMap.fromJSON(e))
             : [],
@@ -211,7 +211,7 @@ export const GenesisState = {
     message.params = (object.params !== undefined && object.params !== null)
       ? Params.fromPartial(object.params)
       : undefined;
-    message.tickMapList = object.tickMapList?.map((e) => TickMap.fromPartial(e)) || [];
+    message.TickList = object.TickList?.map((e) => Tick.fromPartial(e)) || [];
     message.TradingPairList = object.TradingPairList?.map((e) => TradingPair.fromPartial(e)) || [];
     message.tokensList = object.tokensList?.map((e) => Tokens.fromPartial(e)) || [];
     message.tokensCount = object.tokensCount ?? 0;
@@ -232,10 +232,10 @@ export const GenesisState = {
   toJSON(message: GenesisState): unknown {
     const obj: any = {};
     message.params !== undefined && (obj.params = message.params ? Params.toJSON(message.params) : undefined);
-    if (message.tickMapList) {
-      obj.tickMapList = message.tickMapList.map((e) => e ? TickMap.toJSON(e) : undefined);
+    if (message.TickList) {
+      obj.TickList = message.TickList.map((e) => e ? Tick.toJSON(e) : undefined);
     } else {
-      obj.tickMapList = [];
+      obj.TickList = [];
     }
     if (message.TradingPairList) {
       obj.TradingPairList = message.TradingPairList.map((e) => e ? TradingPair.toJSON(e) : undefined);
