@@ -3,8 +3,6 @@
 /* eslint-disable */
 import Long from "long";
 import _m0 from "protobufjs/minimal";
-import { AdjanceyMatrix } from "./adjancey_matrix";
-import { EdgeRow } from "./edge_row";
 import { FeeTier } from "./fee_tier";
 import { LimitOrderTranche } from "./limit_order_tranche";
 import { LimitOrderTrancheUser } from "./limit_order_tranche_user";
@@ -33,10 +31,6 @@ export interface GenesisState {
   sharesList: Shares[];
   FeeTierList: FeeTier[];
   FeeTierCount: number;
-  edgeRowList: EdgeRow[];
-  edgeRowCount: number;
-  adjanceyMatrixList: AdjanceyMatrix[];
-  adjanceyMatrixCount: number;
   LimitOrderTrancheUserList: LimitOrderTrancheUser[];
   /** this line is used by starport scaffolding # genesis/proto/state */
   LimitOrderTrancheList: LimitOrderTranche[];
@@ -47,10 +41,6 @@ export const protobufPackage = "nicholasdotsol.duality.dex";
 function createBaseGenesisState(): GenesisState {
   return {
 
-      adjanceyMatrixCount: 0,
-      adjanceyMatrixList: [],
-      edgeRowCount: 0,
-      edgeRowList: [],
       FeeTierCount: 0,
       FeeTierList: [],
       LimitOrderTrancheList: [],
@@ -101,18 +91,6 @@ export const GenesisState = {
         case 9:
           message.FeeTierCount = longToNumber(reader.uint64() as Long);
           break;
-        case 10:
-          message.edgeRowList.push(EdgeRow.decode(reader, reader.uint32()));
-          break;
-        case 11:
-          message.edgeRowCount = longToNumber(reader.uint64() as Long);
-          break;
-        case 12:
-          message.adjanceyMatrixList.push(AdjanceyMatrix.decode(reader, reader.uint32()));
-          break;
-        case 13:
-          message.adjanceyMatrixCount = longToNumber(reader.uint64() as Long);
-          break;
         case 14:
           message.LimitOrderTrancheUserList.push(LimitOrderTrancheUser.decode(reader, reader.uint32()));
           break;
@@ -154,18 +132,6 @@ export const GenesisState = {
     if (message.FeeTierCount !== 0) {
       writer.uint32(72).uint64(message.FeeTierCount);
     }
-    for (const v of message.edgeRowList) {
-      EdgeRow.encode(v!, writer.uint32(82).fork()).ldelim();
-    }
-    if (message.edgeRowCount !== 0) {
-      writer.uint32(88).uint64(message.edgeRowCount);
-    }
-    for (const v of message.adjanceyMatrixList) {
-      AdjanceyMatrix.encode(v!, writer.uint32(98).fork()).ldelim();
-    }
-    if (message.adjanceyMatrixCount !== 0) {
-      writer.uint32(104).uint64(message.adjanceyMatrixCount);
-    }
     for (const v of message.LimitOrderTrancheUserList) {
       LimitOrderTrancheUser.encode(v!, writer.uint32(114).fork()).ldelim();
     }
@@ -178,12 +144,6 @@ export const GenesisState = {
   fromJSON(object: any): GenesisState {
     return {
 
-          adjanceyMatrixCount: isSet(object.adjanceyMatrixCount) ? Number(object.adjanceyMatrixCount) : 0,
-          adjanceyMatrixList: Array.isArray(object?.adjanceyMatrixList)
-            ? object.adjanceyMatrixList.map((e: any) => AdjanceyMatrix.fromJSON(e))
-            : [],
-          edgeRowCount: isSet(object.edgeRowCount) ? Number(object.edgeRowCount) : 0,
-          edgeRowList: Array.isArray(object?.edgeRowList) ? object.edgeRowList.map((e: any) => EdgeRow.fromJSON(e)) : [],
           FeeTierCount: isSet(object.FeeTierCount) ? Number(object.FeeTierCount) : 0,
           FeeTierList: Array.isArray(object?.FeeTierList) ? object.FeeTierList.map((e: any) => FeeTier.fromJSON(e)) : [],
           LimitOrderTrancheList: Array.isArray(object?.LimitOrderTrancheList)
@@ -219,10 +179,6 @@ export const GenesisState = {
     message.sharesList = object.sharesList?.map((e) => Shares.fromPartial(e)) || [];
     message.FeeTierList = object.FeeTierList?.map((e) => FeeTier.fromPartial(e)) || [];
     message.FeeTierCount = object.FeeTierCount ?? 0;
-    message.edgeRowList = object.edgeRowList?.map((e) => EdgeRow.fromPartial(e)) || [];
-    message.edgeRowCount = object.edgeRowCount ?? 0;
-    message.adjanceyMatrixList = object.adjanceyMatrixList?.map((e) => AdjanceyMatrix.fromPartial(e)) || [];
-    message.adjanceyMatrixCount = object.adjanceyMatrixCount ?? 0;
     message.LimitOrderTrancheUserList =
       object.LimitOrderTrancheUserList?.map((e) => LimitOrderTrancheUser.fromPartial(e)) || [];
     message.LimitOrderTrancheList = object.LimitOrderTrancheList?.map((e) => LimitOrderTranche.fromPartial(e)) || [];
@@ -264,18 +220,6 @@ export const GenesisState = {
       obj.FeeTierList = [];
     }
     message.FeeTierCount !== undefined && (obj.FeeTierCount = Math.round(message.FeeTierCount));
-    if (message.edgeRowList) {
-      obj.edgeRowList = message.edgeRowList.map((e) => e ? EdgeRow.toJSON(e) : undefined);
-    } else {
-      obj.edgeRowList = [];
-    }
-    message.edgeRowCount !== undefined && (obj.edgeRowCount = Math.round(message.edgeRowCount));
-    if (message.adjanceyMatrixList) {
-      obj.adjanceyMatrixList = message.adjanceyMatrixList.map((e) => e ? AdjanceyMatrix.toJSON(e) : undefined);
-    } else {
-      obj.adjanceyMatrixList = [];
-    }
-    message.adjanceyMatrixCount !== undefined && (obj.adjanceyMatrixCount = Math.round(message.adjanceyMatrixCount));
     if (message.LimitOrderTrancheUserList) {
       obj.LimitOrderTrancheUserList = message.LimitOrderTrancheUserList.map((e) =>
         e ? LimitOrderTrancheUser.toJSON(e) : undefined
