@@ -1,7 +1,5 @@
 /* eslint-disable */
 /* tslint:disable */
-import { AdjanceyMatrix } from "./types/dex/adjancey_matrix"
-import { EdgeRow } from "./types/dex/edge_row"
 import { FeeTier } from "./types/dex/fee_tier"
 import { LimitOrderTranche } from "./types/dex/limit_order_tranche"
 import { LimitOrderTrancheUser } from "./types/dex/limit_order_tranche_user"
@@ -18,8 +16,6 @@ import { TradingPair } from "./types/dex/trading_pair"
 
 export {
 
-    AdjanceyMatrix,
-    EdgeRow,
     FeeTier,
     LimitOrderTranche,
     LimitOrderTrancheUser,
