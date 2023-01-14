@@ -32,7 +32,6 @@ export interface MsgCancelLimitOrder {
   tickIndex: number;
   keyToken: string;
   key: number;
-  sharesOut: string;
 }
 
 export interface MsgCancelLimitOrderResponse {
@@ -956,7 +955,7 @@ export const MsgWithdrawFilledLimitOrderResponse = {
 };
 
 function createBaseMsgCancelLimitOrder(): MsgCancelLimitOrder {
-  return { creator: "", key: 0, keyToken: "", receiver: "", sharesOut: "", tickIndex: 0, tokenA: "", tokenB: "" };
+  return { creator: "", key: 0, keyToken: "", receiver: "", tickIndex: 0, tokenA: "", tokenB: "" };
 }
 
 export const MsgCancelLimitOrder = {
@@ -989,9 +988,6 @@ export const MsgCancelLimitOrder = {
         case 7:
           message.key = longToNumber(reader.uint64() as Long);
           break;
-        case 8:
-          message.sharesOut = reader.string();
-          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -1021,9 +1017,6 @@ export const MsgCancelLimitOrder = {
     if (message.key !== 0) {
       writer.uint32(56).uint64(message.key);
     }
-    if (message.sharesOut !== "") {
-      writer.uint32(66).string(message.sharesOut);
-    }
     return writer;
   },
 
@@ -1034,7 +1027,6 @@ export const MsgCancelLimitOrder = {
           key: isSet(object.key) ? Number(object.key) : 0,
           keyToken: isSet(object.keyToken) ? String(object.keyToken) : "",
           receiver: isSet(object.receiver) ? String(object.receiver) : "",
-          sharesOut: isSet(object.sharesOut) ? String(object.sharesOut) : "",
           tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0,
           tokenA: isSet(object.tokenA) ? String(object.tokenA) : "",
           tokenB: isSet(object.tokenB) ? String(object.tokenB) : ""
@@ -1050,7 +1042,6 @@ export const MsgCancelLimitOrder = {
     message.tickIndex = object.tickIndex ?? 0;
     message.keyToken = object.keyToken ?? "";
     message.key = object.key ?? 0;
-    message.sharesOut = object.sharesOut ?? "";
     return message;
   },
 
@@ -1063,7 +1054,6 @@ export const MsgCancelLimitOrder = {
     message.tickIndex !== undefined && (obj.tickIndex = Math.round(message.tickIndex));
     message.keyToken !== undefined && (obj.keyToken = message.keyToken);
     message.key !== undefined && (obj.key = Math.round(message.key));
-    message.sharesOut !== undefined && (obj.sharesOut = message.sharesOut);
     return obj;
   }
 };
