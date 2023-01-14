@@ -241,6 +241,7 @@ export interface DexTick {
   tickData?: DexTickDataType;
   LimitOrderTranche0to1?: DexLimitTrancheIndexes;
   LimitOrderTranche1to0?: DexLimitTrancheIndexes;
+  price0To1?: string;
 }
 
 export interface DexTickDataType {

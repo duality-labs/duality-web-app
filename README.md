@@ -4,14 +4,14 @@ The code for the Duality front-end web app.
 
 This version of the front end is intended to work with this release of the backend:
 
-- https://github.com/duality-labs/duality/pull/255
+- https://github.com/duality-labs/duality/pull/256
 - run with Docker:
-  - checkout [03eb2f3](https://github.com/duality-labs/duality/commit/03eb2f3fe624a0a97163df268fed6df6dd88b8f1) (PR [#255](https://github.com/duality-labs/duality/pull/255))
+  - checkout [b783cc6](https://github.com/duality-labs/duality/commit/b783cc66986432a68aac0d1b5a69f176cc44a0c5) (PR [#256](https://github.com/duality-labs/duality/pull/256))
   - cherry-pick [ec25137](https://github.com/duality-labs/duality/commit/ec251371d382332c37006693fd5f835b1a6fbe26) FeeTier naming fix
 - run with Docker Compose:
   - checkout [374eec4](https://github.com/duality-labs/duality/commit/374eec40948564930c22f3f867be12a3b3168f02) part of Docker Compose setup
   - cherry-pick [2f92a20..1d3680f](https://github.com/duality-labs/duality/compare/2f92a208459b2729694e8d3a6a19d349b85f4368..1d3680f2ee6b31351dc7769b376454c246d84c1d)
-  - cherry-pick [c0a4196..03eb2f3](https://github.com/duality-labs/duality/compare/c0a419600d5920c58f68822f932afb5857ebe45f..03eb2f3fe624a0a97163df268fed6df6dd88b8f1)
+  - cherry-pick [c0a4196..b783cc6](https://github.com/duality-labs/duality/compare/c0a419600d5920c58f68822f932afb5857ebe45f..b783cc66986432a68aac0d1b5a69f176cc44a0c5)
 
 ## Setting up the dev environment
 
