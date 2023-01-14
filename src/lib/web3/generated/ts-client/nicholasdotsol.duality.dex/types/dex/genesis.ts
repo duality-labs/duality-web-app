@@ -7,7 +7,6 @@ import { FeeTier } from "./fee_tier";
 import { LimitOrderTranche } from "./limit_order_tranche";
 import { LimitOrderTrancheUser } from "./limit_order_tranche_user";
 import { Params } from "./params";
-import { Shares } from "./shares";
 import { Tick } from "./tick";
 import { Tokens } from "./tokens";
 import { TokenMap } from "./token_map";
@@ -28,7 +27,6 @@ export interface GenesisState {
   tokensList: Tokens[];
   tokensCount: number;
   tokenMapList: TokenMap[];
-  sharesList: Shares[];
   FeeTierList: FeeTier[];
   FeeTierCount: number;
   LimitOrderTrancheUserList: LimitOrderTrancheUser[];
@@ -46,7 +44,6 @@ function createBaseGenesisState(): GenesisState {
       LimitOrderTrancheList: [],
       LimitOrderTrancheUserList: [],
       params: undefined,
-      sharesList: [],
       TickList: [],
       tokenMapList: [],
       tokensCount: 0,
@@ -81,9 +78,6 @@ export const GenesisState = {
           break;
         case 6:
           message.tokenMapList.push(TokenMap.decode(reader, reader.uint32()));
-          break;
-        case 7:
-          message.sharesList.push(Shares.decode(reader, reader.uint32()));
           break;
         case 8:
           message.FeeTierList.push(FeeTier.decode(reader, reader.uint32()));
@@ -123,9 +117,6 @@ export const GenesisState = {
     for (const v of message.tokenMapList) {
       TokenMap.encode(v!, writer.uint32(50).fork()).ldelim();
     }
-    for (const v of message.sharesList) {
-      Shares.encode(v!, writer.uint32(58).fork()).ldelim();
-    }
     for (const v of message.FeeTierList) {
       FeeTier.encode(v!, writer.uint32(66).fork()).ldelim();
     }
@@ -153,7 +144,6 @@ export const GenesisState = {
             ? object.LimitOrderTrancheUserList.map((e: any) => LimitOrderTrancheUser.fromJSON(e))
             : [],
           params: isSet(object.params) ? Params.fromJSON(object.params) : undefined,
-          sharesList: Array.isArray(object?.sharesList) ? object.sharesList.map((e: any) => Shares.fromJSON(e)) : [],
           TickList: Array.isArray(object?.TickList) ? object.TickList.map((e: any) => Tick.fromJSON(e)) : [],
           tokenMapList: Array.isArray(object?.tokenMapList)
             ? object.tokenMapList.map((e: any) => TokenMap.fromJSON(e))
@@ -176,7 +166,6 @@ export const GenesisState = {
     message.tokensList = object.tokensList?.map((e) => Tokens.fromPartial(e)) || [];
     message.tokensCount = object.tokensCount ?? 0;
     message.tokenMapList = object.tokenMapList?.map((e) => TokenMap.fromPartial(e)) || [];
-    message.sharesList = object.sharesList?.map((e) => Shares.fromPartial(e)) || [];
     message.FeeTierList = object.FeeTierList?.map((e) => FeeTier.fromPartial(e)) || [];
     message.FeeTierCount = object.FeeTierCount ?? 0;
     message.LimitOrderTrancheUserList =
@@ -208,11 +197,6 @@ export const GenesisState = {
       obj.tokenMapList = message.tokenMapList.map((e) => e ? TokenMap.toJSON(e) : undefined);
     } else {
       obj.tokenMapList = [];
-    }
-    if (message.sharesList) {
-      obj.sharesList = message.sharesList.map((e) => e ? Shares.toJSON(e) : undefined);
-    } else {
-      obj.sharesList = [];
     }
     if (message.FeeTierList) {
       obj.FeeTierList = message.FeeTierList.map((e) => e ? FeeTier.toJSON(e) : undefined);
