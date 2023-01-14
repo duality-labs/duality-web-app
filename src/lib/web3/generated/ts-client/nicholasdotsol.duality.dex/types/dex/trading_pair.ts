@@ -3,7 +3,6 @@
 /* eslint-disable */
 import Long from "long";
 import _m0 from "protobufjs/minimal";
-import { TokenPairType } from "./token_pair_type";
 export type DeepPartial<T> = T extends Builtin ? T
   : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
@@ -14,7 +13,8 @@ type Builtin = Date | Function | Uint8Array | string | number | boolean | undefi
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export interface TradingPair {
   pairId: string;
-  tokenPair: TokenPairType | undefined;
+  currentTick0To1: number;
+  currentTick1To0: number;
   maxTick: number;
   minTick: number;
 }
@@ -22,7 +22,7 @@ export interface TradingPair {
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
 function createBaseTradingPair(): TradingPair {
-  return { maxTick: 0, minTick: 0, pairId: "", tokenPair: undefined };
+  return { currentTick0To1: 0, currentTick1To0: 0, maxTick: 0, minTick: 0, pairId: "" };
 }
 
 export const TradingPair = {
@@ -38,12 +38,15 @@ export const TradingPair = {
           message.pairId = reader.string();
           break;
         case 2:
-          message.tokenPair = TokenPairType.decode(reader, reader.uint32());
+          message.currentTick0To1 = longToNumber(reader.int64() as Long);
           break;
         case 3:
-          message.maxTick = longToNumber(reader.int64() as Long);
+          message.currentTick1To0 = longToNumber(reader.int64() as Long);
           break;
         case 4:
+          message.maxTick = longToNumber(reader.int64() as Long);
+          break;
+        case 5:
           message.minTick = longToNumber(reader.int64() as Long);
           break;
         default:
@@ -57,14 +60,17 @@ export const TradingPair = {
     if (message.pairId !== "") {
       writer.uint32(10).string(message.pairId);
     }
-    if (message.tokenPair !== undefined) {
-      TokenPairType.encode(message.tokenPair, writer.uint32(18).fork()).ldelim();
+    if (message.currentTick0To1 !== 0) {
+      writer.uint32(16).int64(message.currentTick0To1);
+    }
+    if (message.currentTick1To0 !== 0) {
+      writer.uint32(24).int64(message.currentTick1To0);
     }
     if (message.maxTick !== 0) {
-      writer.uint32(24).int64(message.maxTick);
+      writer.uint32(32).int64(message.maxTick);
     }
     if (message.minTick !== 0) {
-      writer.uint32(32).int64(message.minTick);
+      writer.uint32(40).int64(message.minTick);
     }
     return writer;
   },
@@ -72,19 +78,19 @@ export const TradingPair = {
   fromJSON(object: any): TradingPair {
     return {
 
+          currentTick0To1: isSet(object.currentTick0To1) ? Number(object.currentTick0To1) : 0,
+          currentTick1To0: isSet(object.currentTick1To0) ? Number(object.currentTick1To0) : 0,
           maxTick: isSet(object.maxTick) ? Number(object.maxTick) : 0,
           minTick: isSet(object.minTick) ? Number(object.minTick) : 0,
-          pairId: isSet(object.pairId) ? String(object.pairId) : "",
-          tokenPair: isSet(object.tokenPair) ? TokenPairType.fromJSON(object.tokenPair) : undefined
+          pairId: isSet(object.pairId) ? String(object.pairId) : ""
         };
   },
 
   fromPartial<I extends Exact<DeepPartial<TradingPair>, I>>(object: I): TradingPair {
     const message = createBaseTradingPair();
     message.pairId = object.pairId ?? "";
-    message.tokenPair = (object.tokenPair !== undefined && object.tokenPair !== null)
-      ? TokenPairType.fromPartial(object.tokenPair)
-      : undefined;
+    message.currentTick0To1 = object.currentTick0To1 ?? 0;
+    message.currentTick1To0 = object.currentTick1To0 ?? 0;
     message.maxTick = object.maxTick ?? 0;
     message.minTick = object.minTick ?? 0;
     return message;
@@ -93,8 +99,8 @@ export const TradingPair = {
   toJSON(message: TradingPair): unknown {
     const obj: any = {};
     message.pairId !== undefined && (obj.pairId = message.pairId);
-    message.tokenPair !== undefined
-      && (obj.tokenPair = message.tokenPair ? TokenPairType.toJSON(message.tokenPair) : undefined);
+    message.currentTick0To1 !== undefined && (obj.currentTick0To1 = Math.round(message.currentTick0To1));
+    message.currentTick1To0 !== undefined && (obj.currentTick1To0 = Math.round(message.currentTick1To0));
     message.maxTick !== undefined && (obj.maxTick = Math.round(message.maxTick));
     message.minTick !== undefined && (obj.minTick = Math.round(message.minTick));
     return obj;

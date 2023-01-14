@@ -341,14 +341,6 @@ export interface DexTokenMap {
   index?: string;
 }
 
-export interface DexTokenPairType {
-  /** @format int64 */
-  currentTick0To1?: string;
-
-  /** @format int64 */
-  currentTick1To0?: string;
-}
-
 export interface DexTokens {
   /** @format uint64 */
   id?: string;
@@ -357,7 +349,12 @@ export interface DexTokens {
 
 export interface DexTradingPair {
   pairId?: string;
-  tokenPair?: DexTokenPairType;
+
+  /** @format int64 */
+  currentTick0To1?: string;
+
+  /** @format int64 */
+  currentTick1To0?: string;
 
   /** @format int64 */
   maxTick?: string;

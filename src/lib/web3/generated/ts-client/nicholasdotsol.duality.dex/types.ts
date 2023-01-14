@@ -13,7 +13,6 @@ import { Tick } from "./types/dex/tick"
 import { TickDataType } from "./types/dex/tick_data_type"
 import { Tokens } from "./types/dex/tokens"
 import { TokenMap } from "./types/dex/token_map"
-import { TokenPairType } from "./types/dex/token_pair_type"
 import { TradingPair } from "./types/dex/trading_pair"
 
 
@@ -31,7 +30,6 @@ export {
     Tick,
     TickDataType,
     TokenMap,
-    TokenPairType,
     Tokens,
     TradingPair
 
