@@ -25,3 +25,5 @@ git add .
 git commit -m "Add new backend changes for commit ${SHORT_SHA}:
 
     - see: https://github.com/duality-labs/duality/commit/${SHA}"
+
+npm start
