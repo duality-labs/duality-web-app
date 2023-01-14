@@ -4,10 +4,9 @@ The code for the Duality front-end web app.
 
 This version of the front end is intended to work with this release of the backend:
 
-- https://github.com/duality-labs/duality/pull/224
+- https://github.com/duality-labs/duality/pull/62
 - run with Docker:
-  - checkout [1d3680f](https://github.com/duality-labs/duality/commit/1d3680f2ee6b31351dc7769b376454c246d84c1d) (PR [#224](https://github.com/duality-labs/duality/pull/224))
-  - cherry-pick [c0a4196](https://github.com/duality-labs/duality/commit/c0a419600d5920c58f68822f932afb5857ebe45f) Dockerized Setup
+  - checkout [c0a4196](https://github.com/duality-labs/duality/commit/c0a419600d5920c58f68822f932afb5857ebe45f) (PR [#62](https://github.com/duality-labs/duality/pull/62))
   - cherry-pick [ec25137](https://github.com/duality-labs/duality/commit/ec251371d382332c37006693fd5f835b1a6fbe26) FeeTier naming fix
 - run with Docker Compose:
   - checkout [374eec4](https://github.com/duality-labs/duality/commit/374eec40948564930c22f3f867be12a3b3168f02) part of Docker Compose setup
