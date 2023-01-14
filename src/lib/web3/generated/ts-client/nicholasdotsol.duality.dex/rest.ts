@@ -482,7 +482,7 @@ export class HttpClient<SecurityDataType = unknown> {
 }
 
 /**
- * @title dex/fee_tier.proto
+ * @title duality/dex/fee_tier.proto
  * @version version not set
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
