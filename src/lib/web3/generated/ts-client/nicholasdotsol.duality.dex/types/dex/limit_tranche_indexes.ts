@@ -11,23 +11,23 @@ export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export interface LimitOrderTrancheTrancheIndexes {
+export interface LimitTrancheIndexes {
   fillTrancheIndex: number;
   placeTrancheIndex: number;
 }
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
-function createBaseLimitOrderTrancheTrancheIndexes(): LimitOrderTrancheTrancheIndexes {
+function createBaseLimitTrancheIndexes(): LimitTrancheIndexes {
   return { fillTrancheIndex: 0, placeTrancheIndex: 0 };
 }
 
-export const LimitOrderTrancheTrancheIndexes = {
+export const LimitTrancheIndexes = {
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): LimitOrderTrancheTrancheIndexes {
+  decode(input: _m0.Reader | Uint8Array, length?: number): LimitTrancheIndexes {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseLimitOrderTrancheTrancheIndexes();
+    const message = createBaseLimitTrancheIndexes();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -44,7 +44,7 @@ export const LimitOrderTrancheTrancheIndexes = {
     }
     return message;
   },
-  encode(message: LimitOrderTrancheTrancheIndexes, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: LimitTrancheIndexes, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.fillTrancheIndex !== 0) {
       writer.uint32(8).uint64(message.fillTrancheIndex);
     }
@@ -54,7 +54,7 @@ export const LimitOrderTrancheTrancheIndexes = {
     return writer;
   },
 
-  fromJSON(object: any): LimitOrderTrancheTrancheIndexes {
+  fromJSON(object: any): LimitTrancheIndexes {
     return {
 
           fillTrancheIndex: isSet(object.fillTrancheIndex) ? Number(object.fillTrancheIndex) : 0,
@@ -62,16 +62,14 @@ export const LimitOrderTrancheTrancheIndexes = {
         };
   },
 
-  fromPartial<I extends Exact<DeepPartial<LimitOrderTrancheTrancheIndexes>, I>>(
-    object: I,
-  ): LimitOrderTrancheTrancheIndexes {
-    const message = createBaseLimitOrderTrancheTrancheIndexes();
+  fromPartial<I extends Exact<DeepPartial<LimitTrancheIndexes>, I>>(object: I): LimitTrancheIndexes {
+    const message = createBaseLimitTrancheIndexes();
     message.fillTrancheIndex = object.fillTrancheIndex ?? 0;
     message.placeTrancheIndex = object.placeTrancheIndex ?? 0;
     return message;
   },
 
-  toJSON(message: LimitOrderTrancheTrancheIndexes): unknown {
+  toJSON(message: LimitTrancheIndexes): unknown {
     const obj: any = {};
     message.fillTrancheIndex !== undefined && (obj.fillTrancheIndex = Math.round(message.fillTrancheIndex));
     message.placeTrancheIndex !== undefined && (obj.placeTrancheIndex = Math.round(message.placeTrancheIndex));

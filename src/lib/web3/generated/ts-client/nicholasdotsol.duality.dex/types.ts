@@ -3,9 +3,9 @@
 import { AdjanceyMatrix } from "./types/dex/adjancey_matrix"
 import { EdgeRow } from "./types/dex/edge_row"
 import { FeeTier } from "./types/dex/fee_tier"
-import { LimitOrderTrancheTrancheIndexes } from "./types/dex/limit_order_pool_tranche_indexes"
 import { LimitOrderTranche } from "./types/dex/limit_order_tranche"
 import { LimitOrderTrancheUser } from "./types/dex/limit_order_tranche_user"
+import { LimitTrancheIndexes } from "./types/dex/limit_tranche_indexes"
 import { Params } from "./types/dex/params"
 import { Reserve0AndSharesType } from "./types/dex/reserve_0_and_shares_type"
 import { Shares } from "./types/dex/shares"
@@ -23,8 +23,8 @@ export {
     EdgeRow,
     FeeTier,
     LimitOrderTranche,
-    LimitOrderTrancheTrancheIndexes,
     LimitOrderTrancheUser,
+    LimitTrancheIndexes,
     Params,
     Reserve0AndSharesType,
     Shares,
