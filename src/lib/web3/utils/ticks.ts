@@ -17,19 +17,16 @@ export function calculateShares({
   tickIndex,
   reserve0 = bigZero,
   reserve1 = bigZero,
-}: (
-  | {
-      price: TickInfo['price'];
-      tickIndex?: undefined;
-    }
-  | {
-      price?: undefined;
-      tickIndex: TickInfo['tickIndex'];
-    }
-) & {
-  reserve0?: TickInfo['reserve0'];
-  reserve1?: TickInfo['reserve1'];
-}): BigNumber {
+}: Partial<TickInfo> &
+  // must include either price or tickIndex
+  (| {
+        price: TickInfo['price'];
+      }
+    | {
+        price?: undefined;
+        tickIndex: TickInfo['tickIndex'];
+      }
+  )): BigNumber {
   return reserve0.plus(
     reserve1.multipliedBy(price || tickIndexToPrice(tickIndex))
   );
