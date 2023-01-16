@@ -27,6 +27,7 @@ import {
 } from '../../components/TokenPicker/hooks';
 import { feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
+import { calculateShares } from './utils/ticks';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -441,18 +442,16 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let lastRequested = 0;
     const onDexUpdateMessage = function (event: MessageActionEvent) {
-      const Creator = event['message.Creator'];
+      const Receiver = event['message.Receiver'];
       const Token0 = event['message.Token0'];
       const Token1 = event['message.Token1'];
       const TickIndex = event['message.TickIndex'];
       const FeeIndex = event['message.FeeIndex'];
       const NewReserves0 = event['message.NewReserves0'];
       const NewReserves1 = event['message.NewReserves1'];
-      const SharesMinted = event['message.SharesMinted'];
-      const SharesRemoved = event['message.SharesRemoved'];
 
       if (
-        !Creator ||
+        Receiver !== address ||
         !Token0 ||
         !Token1 ||
         !TickIndex ||
@@ -468,31 +467,43 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       // update user's share state
       setShareData((state) => {
         if (!state) return state;
+        // find matched data
         const { shares = [] } = state || {};
-        // upsert shares
         const data = shares.slice();
+        const pairId = getPairID(Token0, Token1);
         const shareFoundIndex = shares.findIndex(
           (share) =>
-            share.tickIndex === TickIndex && share.feeIndex === FeeIndex
+            share.pairId === pairId &&
+            share.tickIndex === TickIndex &&
+            share.feeIndex === FeeIndex
         );
-        const shareFound = shares[shareFoundIndex];
-        const newShare = {
-          ...shareFound,
-          address: Creator,
-          feeIndex: FeeIndex,
-          pairId: getPairID(Token0, Token1),
-          tickIndex: TickIndex,
-          sharesOwned: new BigNumber(shareFound?.sharesOwned || '0')
-            .plus(SharesMinted || '0')
-            .minus(SharesRemoved || '0')
-            .toFixed(),
-        };
-        if (shareFound) {
-          // update share
-          data.splice(shareFoundIndex, 1, newShare);
-        } else {
-          // add share
-          data.push(newShare);
+        const sharesOwned = calculateShares({
+          tickIndex: new BigNumber(TickIndex),
+          reserve0: new BigNumber(NewReserves0),
+          reserve1: new BigNumber(NewReserves1),
+        });
+        // upsert new share
+        if (sharesOwned.isGreaterThan(0)) {
+          const newShare = {
+            pairId,
+            address,
+            feeIndex: FeeIndex,
+            tickIndex: TickIndex,
+            sharesOwned: sharesOwned.toFixed(),
+          };
+          if (shareFoundIndex >= 0) {
+            // update share
+            data.splice(shareFoundIndex, 1, newShare);
+          } else {
+            // add share
+            data.push(newShare);
+          }
+        }
+        // else remove share
+        else {
+          if (shareFoundIndex >= 0) {
+            data.splice(shareFoundIndex, 1);
+          }
         }
         return { shares: data };
       });
@@ -512,16 +523,19 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       // todo: do a partial update of indexer data?
       // see this commit for previous work done on this
     };
-    subscriber.subscribeMessage(onDexUpdateMessage, {
-      message: { action: 'NewDeposit' },
-    });
-    subscriber.subscribeMessage(onDexUpdateMessage, {
-      message: { action: 'NewWithdraw' },
-    });
-    return () => {
-      subscriber.unsubscribeMessage(onDexUpdateMessage);
-    };
-  }, []);
+    // subscribe to messages for this address only
+    if (address) {
+      subscriber.subscribeMessage(onDexUpdateMessage, {
+        message: { action: 'NewDeposit', Receiver: address },
+      });
+      subscriber.subscribeMessage(onDexUpdateMessage, {
+        message: { action: 'NewWithdraw', Receiver: address },
+      });
+      return () => {
+        subscriber.unsubscribeMessage(onDexUpdateMessage);
+      };
+    }
+  }, [address]);
 
   useEffect(() => {
     const onRouterUpdateMessage = function (event: MessageActionEvent) {
