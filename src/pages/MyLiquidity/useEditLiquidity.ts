@@ -5,7 +5,6 @@ import BigNumber from 'bignumber.js';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import apiClient from '../../lib/web3/apiClient';
 import { Token } from '../../components/TokenPicker/hooks';
-import { DexShares } from '../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/rest';
 import { TickInfo } from '../../lib/web3/indexerProvider';
 import {
   checkMsgErrorToast,
@@ -15,9 +14,10 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { IndexedShare } from '../../lib/web3/utils/shares';
 
 export interface ShareValue {
-  share: DexShares;
+  share: IndexedShare;
   token0: Token;
   token1: Token;
   userReserves0?: BigNumber;

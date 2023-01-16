@@ -17,7 +17,6 @@ import { queryClient as bankClient } from './generated/ts-client/cosmos.bank.v1b
 import { Api as BankApi } from './generated/ts-client/cosmos.bank.v1beta1/rest';
 import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/module';
 import {
-  DexShares,
   DexTick,
   Api,
 } from './generated/ts-client/nicholasdotsol.duality.dex/rest';
@@ -28,6 +27,7 @@ import {
 import { feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
 import { calculateShares } from './utils/ticks';
+import { IndexedShare } from './utils/shares';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -75,7 +75,7 @@ interface UserBankBalance {
 }
 
 interface UserShares {
-  shares: Array<DexShares>;
+  shares: Array<IndexedShare>;
 }
 
 interface IndexerContextType {
@@ -225,9 +225,7 @@ function transformData(ticks: Array<DexTick>): PairMap {
             price: new BigNumber(Math.pow(1.0001, Number(tickIndex) || 0)),
             feeIndex: new BigNumber(feeIndex),
             fee: new BigNumber(fee || 0),
-            reserve0: new BigNumber(
-              tickData.reserve0AndShares?.[feeIndex].reserve0 || 0
-            ),
+            reserve0: new BigNumber(tickData.reserve0?.[feeIndex] || 0),
             reserve1: new BigNumber(tickData.reserve1?.[feeIndex] || 0),
           });
         }
@@ -289,12 +287,58 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   });
   const updateBankData = useCallback(
     (fetchStateCheck?: (fetchstate: FetchState) => boolean) => {
-      setFetchShareDataState((fetchState) => {
+      setFetchBankDataState((fetchState) => {
         // check if already fetching (and other other passed in check)
         if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
+          // todo: clean up this effect when address has changed
+          // see: https://github.com/duality-labs/duality-web-app/issues/290
           fetchBankData()
             .then((data = []) => {
-              setBankData({ balances: data });
+              // separate out 'normal' and 'share' tokens from the bank balance
+              const [tokens, tokenizedShares] = data.reduce<
+                [Array<Coin>, Array<IndexedShare>]
+              >(
+                ([tokens, tokenizedShares], coin) => {
+                  const [, token0, token1, tickIndex, feeTier] =
+                    coin.denom.match(/^([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/) || [];
+                  // transform tokenized shares into shares
+                  if (token0 && token1 && tickIndex && feeTier) {
+                    // calculate tokenized shares here
+                    const feeIndex = feeTypes.findIndex(
+                      ({ fee }) => fee === Number(feeTier) / 10000
+                    );
+                    // add tokenized share if everything is fine
+                    if (address && feeIndex >= 0) {
+                      const tokenizedShare = {
+                        address,
+                        pairId: getPairID(token0, token1),
+                        tickIndex,
+                        feeIndex: `${feeIndex}`,
+                        sharesOwned: coin.amount,
+                      };
+                      return [tokens, [...tokenizedShares, tokenizedShare]];
+                    }
+                    // drop unknown (to front end) share
+                    else {
+                      // eslint-disable-next-line no-console
+                      console.warn(
+                        `Received unknown denomination in tokenized shares: ${coin.denom}`,
+                        {
+                          feeTypes,
+                          feeIndex,
+                          address,
+                        }
+                      );
+                      return [tokens, tokenizedShares];
+                    }
+                  } else {
+                    return [[...tokens, coin], tokenizedShares];
+                  }
+                },
+                [[], []]
+              );
+              setBankData({ balances: tokens });
+              setShareData({ shares: tokenizedShares });
             })
             .catch((e) => {
               setFetchBankDataState((state) => ({
@@ -368,76 +412,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       };
     }
   }, [updateBankData, address]);
-
-  const [, setFetchShareDataState] = useState<FetchState>({
-    fetching: false,
-    fetched: false,
-  });
-
-  // fetch new share data if we aren't already fetching
-  const updateShareData = useCallback(
-    (fetchStateCheck?: (fetchstate: FetchState) => boolean) => {
-      setFetchShareDataState((fetchState) => {
-        // check if already fetching (and other other passed in check)
-        if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
-          fetchShareData()
-            .then((data = []) => {
-              setShareData({ shares: data });
-            })
-            .catch((e) => {
-              setFetchShareDataState((state) => ({
-                ...state,
-                error: e as Error,
-              }));
-            });
-        }
-        return fetchState;
-      });
-
-      async function fetchShareData() {
-        if (address && REACT_APP__REST_API) {
-          const client = queryClient({ addr: REACT_APP__REST_API });
-          setFetchShareDataState(({ fetched }) => ({
-            fetching: true,
-            fetched,
-          }));
-          let nextKey: string | undefined;
-          let shares: Array<DexShares> = [];
-          let res: Awaited<ReturnType<Api<unknown>['querySharesAll']>>;
-          do {
-            res = await client.querySharesAll({
-              ...defaultFetchParams,
-              'pagination.key': nextKey,
-            });
-            if (res.status === 200) {
-              shares = shares.concat(res.data.shares || []);
-            } else {
-              setFetchShareDataState(({ fetched }) => ({
-                fetching: false,
-                fetched,
-              }));
-              // remove API error details from public view
-              throw new Error(
-                `API error code: ${res.status} ${res.statusText}`
-              );
-            }
-            nextKey = res.data.pagination?.next_key;
-          } while (nextKey);
-          setFetchShareDataState(() => ({ fetching: false, fetched: true }));
-          // filter shares to this wallet
-          return shares.filter((share) => share.address === address);
-        } else if (!REACT_APP__REST_API) {
-          throw new Error('Undefined rest api base URL');
-        }
-      }
-    },
-    [address]
-  );
-
-  // update share data when the address changes
-  useEffect(() => {
-    updateShareData();
-  }, [updateShareData, address]);
 
   useEffect(() => {
     let lastRequested = 0;
