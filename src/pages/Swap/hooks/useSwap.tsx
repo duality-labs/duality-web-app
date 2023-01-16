@@ -5,7 +5,7 @@ import { BigNumber } from 'bignumber.js';
 
 import { formatAmount } from '../../../lib/utils/number';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
-import { txClient } from '../../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/index';
+import apiClient from '../../../lib/web3/apiClient';
 
 import {
   checkMsgErrorToast,
@@ -18,7 +18,7 @@ import {
 import {
   MsgSwap,
   MsgSwapResponse,
-} from '../../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/types/dex/tx';
+} from '../../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/types/dex/tx';
 import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 import { readEvents } from '../../../lib/web3/utils/txs';
@@ -52,7 +52,7 @@ async function sendSwap(
     throw new Error('Invalid Output (token address not found)');
   }
 
-  const client = await txClient(wallet);
+  const client = apiClient(wallet);
   // send message to chain
 
   const id = `${Date.now()}.${Math.random}`;
@@ -62,24 +62,23 @@ async function sendSwap(
   return client
     .signAndBroadcast(
       [
-        client.msgSwap({
-          amountIn,
-          tokenIn,
-          tokenA,
-          tokenB,
-          minOut,
-          creator,
-          receiver,
+        client.NicholasdotsolDualityDex.tx.msgSwap({
+          value: {
+            amountIn,
+            tokenIn,
+            tokenA,
+            tokenB,
+            minOut,
+            creator,
+            receiver,
+          },
         }),
       ],
       {
-        fee: {
-          gas: gasEstimate.toFixed(0),
-          amount: [
-            { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
-          ],
-        },
-      }
+        gas: gasEstimate.toFixed(0),
+        amount: [{ amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' }],
+      },
+      ''
     )
     .then(function (res): MsgSwapResponse {
       if (!res) {

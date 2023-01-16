@@ -3,9 +3,9 @@ import { DeliverTxResponse } from '@cosmjs/stargate';
 import BigNumber from 'bignumber.js';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { txClient as dexTxClient } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module';
+import apiClient from '../../lib/web3/apiClient';
 import { Token } from '../../components/TokenPicker/hooks';
-import { DexShares } from '../../lib/web3/generated/duality/nicholasdotsol.duality.dex/module/rest';
+import { DexShares } from '../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/rest';
 import { TickInfo } from '../../lib/web3/indexerProvider';
 import {
   checkMsgErrorToast,
@@ -94,7 +94,7 @@ export function useEditLiquidity(): [
         // wrap transaction logic
         try {
           // add each tick message into a signed broadcast
-          const client = await dexTxClient(web3.wallet);
+          const client = apiClient(web3.wallet);
           const res = await client.signAndBroadcast(
             sharesDiff.flatMap(
               ({
@@ -117,87 +117,99 @@ export function useEditLiquidity(): [
                       ...(!tickDiff0.isZero()
                         ? [
                             tickDiff0.isGreaterThan(0)
-                              ? client.msgDeposit({
-                                  creator: web3Address,
-                                  tokenA: token0.address,
-                                  tokenB: token1.address,
-                                  receiver: web3Address,
-                                  tickIndexes: [Number(share.tickIndex)],
-                                  feeIndexes: [Number(share.feeIndex)],
-                                  amountsA: [
-                                    getAmountInDenom(
-                                      token0,
-                                      // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                                      tickDiff0.shiftedBy(18),
-                                      token0.display
-                                    ) || '0',
-                                  ],
-                                  amountsB: ['0'],
+                              ? client.NicholasdotsolDualityDex.tx.msgDeposit({
+                                  value: {
+                                    creator: web3Address,
+                                    tokenA: token0.address,
+                                    tokenB: token1.address,
+                                    receiver: web3Address,
+                                    tickIndexes: [Number(share.tickIndex)],
+                                    feeIndexes: [Number(share.feeIndex)],
+                                    amountsA: [
+                                      getAmountInDenom(
+                                        token0,
+                                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                                        tickDiff0.shiftedBy(18),
+                                        token0.display
+                                      ) || '0',
+                                    ],
+                                    amountsB: ['0'],
+                                  },
                                 })
-                              : client.msgWithdrawl({
-                                  creator: web3Address,
-                                  tokenA: token0.address,
-                                  tokenB: token1.address,
-                                  receiver: web3Address,
-                                  tickIndexes: [Number(share.tickIndex)],
-                                  feeIndexes: [Number(share.feeIndex)],
-                                  // approximate removal using percentages
-                                  // todo: this probably has a bug when withdrawing from a tick
-                                  // that has both token0 and token1 as this only takes into account one side
-                                  sharesToRemove: [
-                                    getAmountInDenom(
-                                      token0,
-                                      tickDiff0
-                                        .negated()
-                                        .dividedBy(userReserves0)
-                                        .multipliedBy(share.sharesOwned),
-                                      token0.display
-                                    ) || '0',
-                                  ],
-                                }),
+                              : client.NicholasdotsolDualityDex.tx.msgWithdrawl(
+                                  {
+                                    value: {
+                                      creator: web3Address,
+                                      tokenA: token0.address,
+                                      tokenB: token1.address,
+                                      receiver: web3Address,
+                                      tickIndexes: [Number(share.tickIndex)],
+                                      feeIndexes: [Number(share.feeIndex)],
+                                      // approximate removal using percentages
+                                      // todo: this probably has a bug when withdrawing from a tick
+                                      // that has both token0 and token1 as this only takes into account one side
+                                      sharesToRemove: [
+                                        getAmountInDenom(
+                                          token0,
+                                          tickDiff0
+                                            .negated()
+                                            .dividedBy(userReserves0)
+                                            .multipliedBy(share.sharesOwned),
+                                          token0.display
+                                        ) || '0',
+                                      ],
+                                    },
+                                  }
+                                ),
                           ]
                         : []),
                       ...(!tickDiff1.isZero()
                         ? [
                             tickDiff1.isGreaterThan(0)
-                              ? client.msgDeposit({
-                                  creator: web3Address,
-                                  tokenA: token0.address,
-                                  tokenB: token1.address,
-                                  receiver: web3Address,
-                                  tickIndexes: [Number(share.tickIndex)],
-                                  feeIndexes: [Number(share.feeIndex)],
-                                  amountsA: ['0'],
-                                  amountsB: [
-                                    getAmountInDenom(
-                                      token1,
-                                      // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                                      tickDiff1.shiftedBy(18),
-                                      token1.display
-                                    ) || '0',
-                                  ],
+                              ? client.NicholasdotsolDualityDex.tx.msgDeposit({
+                                  value: {
+                                    creator: web3Address,
+                                    tokenA: token0.address,
+                                    tokenB: token1.address,
+                                    receiver: web3Address,
+                                    tickIndexes: [Number(share.tickIndex)],
+                                    feeIndexes: [Number(share.feeIndex)],
+                                    amountsA: ['0'],
+                                    amountsB: [
+                                      getAmountInDenom(
+                                        token1,
+                                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
+                                        tickDiff1.shiftedBy(18),
+                                        token1.display
+                                      ) || '0',
+                                    ],
+                                  },
                                 })
-                              : client.msgWithdrawl({
-                                  creator: web3Address,
-                                  tokenA: token0.address,
-                                  tokenB: token1.address,
-                                  receiver: web3Address,
-                                  tickIndexes: [Number(share.tickIndex)],
-                                  feeIndexes: [Number(share.feeIndex)],
-                                  // approximate removal using percentages
-                                  // todo: this probably has a bug when withdrawing from a tick
-                                  // that has both token0 and token1 as this only takes into account one side
-                                  sharesToRemove: [
-                                    getAmountInDenom(
-                                      token1,
-                                      tickDiff1
-                                        .negated()
-                                        .dividedBy(userReserves1)
-                                        .multipliedBy(share.sharesOwned),
-                                      token1.display
-                                    ) || '0',
-                                  ],
-                                }),
+                              : client.NicholasdotsolDualityDex.tx.msgWithdrawl(
+                                  {
+                                    value: {
+                                      creator: web3Address,
+                                      tokenA: token0.address,
+                                      tokenB: token1.address,
+                                      receiver: web3Address,
+                                      tickIndexes: [Number(share.tickIndex)],
+                                      feeIndexes: [Number(share.feeIndex)],
+                                      // approximate removal using percentages
+                                      // todo: this probably has a bug when withdrawing from a tick
+                                      // that has both token0 and token1 as this only takes into account one side
+                                      sharesToRemove: [
+                                        getAmountInDenom(
+                                          token1,
+                                          tickDiff1
+                                            .negated()
+                                            .dividedBy(userReserves1)
+                                            .multipliedBy(share.sharesOwned),
+                                          token1.display
+                                        ) || '0',
+                                      ],
+                                    },
+                                  }
+                                ),
                           ]
                         : []),
                     ]
@@ -205,13 +217,12 @@ export function useEditLiquidity(): [
               }
             ),
             {
-              fee: {
-                gas: gasEstimate.toFixed(0),
-                amount: [
-                  { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
-                ],
-              },
-            }
+              gas: gasEstimate.toFixed(0),
+              amount: [
+                { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
+              ],
+            },
+            ''
           );
 
           // check for response
