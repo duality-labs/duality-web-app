@@ -15,6 +15,7 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { calculateShares } from '../../lib/web3/utils/ticks';
 
 export interface ShareValue {
   share: DexShares;
@@ -147,10 +148,12 @@ export function useEditLiquidity(): [
                                   sharesToRemove: [
                                     getAmountInDenom(
                                       token0,
-                                      tickDiff0
-                                        .negated()
-                                        .dividedBy(userReserves0)
-                                        .multipliedBy(share.sharesOwned),
+                                      calculateShares({
+                                        tickIndex: new BigNumber(
+                                          share.tickIndex
+                                        ),
+                                        reserve0: tickDiff0.negated(),
+                                      }),
                                       token0.display
                                     ) || '0',
                                   ],
@@ -190,10 +193,12 @@ export function useEditLiquidity(): [
                                   sharesToRemove: [
                                     getAmountInDenom(
                                       token1,
-                                      tickDiff1
-                                        .negated()
-                                        .dividedBy(userReserves1)
-                                        .multipliedBy(share.sharesOwned),
+                                      calculateShares({
+                                        tickIndex: new BigNumber(
+                                          share.tickIndex
+                                        ),
+                                        reserve1: tickDiff1.negated(),
+                                      }),
                                       token1.display
                                     ) || '0',
                                   ],
