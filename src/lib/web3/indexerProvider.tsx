@@ -203,7 +203,7 @@ export function hasMatchingPairOfOrder(
 function transformData(ticks: Array<DexTick>): PairMap {
   const intermediate = ticks.reduce<PairMap>(function (
     result,
-    { pairId = '', tickIndex, tickData }
+    { pairId = '', tickIndex, price0To1, tickData }
   ) {
     // token0 and token1 are sorted by the back end
     const [token0, token1] = pairId.split('<>');
@@ -215,14 +215,15 @@ function transformData(ticks: Array<DexTick>): PairMap {
       };
 
       feeTypes.forEach(({ fee }, feeIndex) => {
-        if (!isNaN(parseInt(tickIndex || ''))) {
+        if (
+          !isNaN(parseInt(tickIndex || '')) &&
+          parseFloat(price0To1 || '') > 0
+        ) {
           result[pairId].ticks.push({
             token0: tokenMap[token0],
             token1: tokenMap[token1],
             tickIndex: new BigNumber(tickIndex || 0),
-            // do no use BigNumber.pow here, it is slow enough to make the browser
-            // unresponsive for a minute on first page load.
-            price: new BigNumber(Math.pow(1.0001, Number(tickIndex) || 0)),
+            price: new BigNumber(1).dividedBy(price0To1 || 0),
             feeIndex: new BigNumber(feeIndex),
             fee: new BigNumber(fee || 0),
             reserve0: new BigNumber(tickData.reserve0?.[feeIndex] || 0),
