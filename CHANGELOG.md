@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.85](https://github.com/duality-labs/duality-web-app/compare/v0.1.84...v0.1.85) (2023-01-16)
+
+
+### Fixes
+
+* new share upsert matching on NewDeposit or NewWithdraw Msgs ([#292](https://github.com/duality-labs/duality-web-app/issues/292)) ([a32cf1a](https://github.com/duality-labs/duality-web-app/commit/a32cf1aaf5f09047ffcf6f3cde06ff6cfff6d8f8))
+
 ## [0.1.84](https://github.com/duality-labs/duality-web-app/compare/v0.1.83...v0.1.84) (2023-01-14)
 
 
