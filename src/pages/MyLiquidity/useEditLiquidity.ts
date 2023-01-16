@@ -146,16 +146,16 @@ export function useEditLiquidity(): [
                                   // todo: this probably has a bug when withdrawing from a tick
                                   // that has both token0 and token1 as this only takes into account one side
                                   sharesToRemove: [
-                                    getAmountInDenom(
-                                      token0,
-                                      calculateShares({
-                                        tickIndex: new BigNumber(
-                                          share.tickIndex
-                                        ),
-                                        reserve0: tickDiff0.negated(),
-                                      }),
-                                      token0.display
-                                    ) || '0',
+                                    calculateShares({
+                                      tickIndex: new BigNumber(share.tickIndex),
+                                      reserve0: new BigNumber(
+                                        getAmountInDenom(
+                                          token0,
+                                          tickDiff0.negated(),
+                                          token0.display
+                                        ) || '0'
+                                      ),
+                                    }).toFixed(0), // rounding may cause dust issues here
                                   ],
                                 }),
                           ]
@@ -191,16 +191,16 @@ export function useEditLiquidity(): [
                                   // todo: this probably has a bug when withdrawing from a tick
                                   // that has both token0 and token1 as this only takes into account one side
                                   sharesToRemove: [
-                                    getAmountInDenom(
-                                      token1,
-                                      calculateShares({
-                                        tickIndex: new BigNumber(
-                                          share.tickIndex
-                                        ),
-                                        reserve1: tickDiff1.negated(),
-                                      }),
-                                      token1.display
-                                    ) || '0',
+                                    calculateShares({
+                                      tickIndex: new BigNumber(share.tickIndex),
+                                      reserve1: new BigNumber(
+                                        getAmountInDenom(
+                                          token1,
+                                          tickDiff1.negated(),
+                                          token1.display
+                                        ) || '0'
+                                      ),
+                                    }).toFixed(0), // rounding may cause dust issues here
                                   ],
                                 }),
                           ]
