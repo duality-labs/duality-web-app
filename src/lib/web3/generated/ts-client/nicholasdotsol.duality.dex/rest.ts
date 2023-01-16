@@ -31,6 +31,23 @@ export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequest
  * ---------------------------------------------------------------
  */
 
+export interface DexDepositRecord {
+  pairId?: string;
+  sharesOwned?: string;
+
+  /** @format int64 */
+  centerTickIndex?: string;
+
+  /** @format int64 */
+  lowerTickIndex?: string;
+
+  /** @format int64 */
+  upperTickIndex?: string;
+
+  /** @format uint64 */
+  feeIndex?: string;
+}
+
 export interface DexFeeTier {
   /** @format uint64 */
   id?: string;
@@ -197,6 +214,14 @@ export interface DexQueryAllTradingPairResponse {
   pagination?: V1Beta1PageResponse;
 }
 
+export interface DexQueryAllUserDepositsResponse {
+  Deposits?: DexDepositRecord[];
+}
+
+export interface DexQueryAllUserLimitOrdersResponse {
+  limitOrders?: DexLimitOrderTrancheUser[];
+}
+
 export interface DexQueryGetFeeTierResponse {
   FeeTier?: DexFeeTier;
 }
@@ -223,6 +248,10 @@ export interface DexQueryGetTokensResponse {
 
 export interface DexQueryGetTradingPairResponse {
   TradingPair?: DexTradingPair;
+}
+
+export interface DexQueryGetUserPositionsResponse {
+  UserPositions?: DexUserPositions;
 }
 
 /**
@@ -276,6 +305,11 @@ export interface DexTradingPair {
 
   /** @format int64 */
   minTick?: string;
+}
+
+export interface DexUserPositions {
+  PoolDeposits?: DexDepositRecord[];
+  LimitOrders?: DexLimitOrderTrancheUser[];
 }
 
 export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
@@ -482,7 +516,7 @@ export class HttpClient<SecurityDataType = unknown> {
 }
 
 /**
- * @title duality/dex/fee_tier.proto
+ * @title duality/dex/deposit_record.proto
  * @version version not set
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
@@ -821,6 +855,57 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
           format: "json",
           method: "GET",
           path: `/NicholasDotSol/duality/dex/trading_pair/${pairId}`,
+          ...params
+        });
+
+  /**
+   * No description
+   *
+   * @tags Query
+   * @name QueryUserDepositsAll
+   * @summary Queries a list of UserDeposits items.
+   * @request GET:/NicholasDotSol/duality/dex/user/deposits/{address}
+   */
+  queryUserDepositsAll = (address: string, params: RequestParams = {}) =>
+    this.request<DexQueryAllUserDepositsResponse, RpcStatus>({
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/user/deposits/${address}`,
+          ...params
+        });
+
+  /**
+   * No description
+   *
+   * @tags Query
+   * @name QueryUserLimitOrdersAll
+   * @summary Queries a list of UserLimitOrders items.
+   * @request GET:/NicholasDotSol/duality/dex/user/limit_orders/{address}
+   */
+  queryUserLimitOrdersAll = (address: string, params: RequestParams = {}) =>
+    this.request<DexQueryAllUserLimitOrdersResponse, RpcStatus>({
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/user/limit_orders/${address}`,
+          ...params
+        });
+
+  /**
+   * No description
+   *
+   * @tags Query
+   * @name QueryGetUserPositions
+   * @summary Queries a list of GetUserPositions items.
+   * @request GET:/NicholasDotSol/duality/dex/user/positions/{address}
+   */
+  queryGetUserPositions = (address: string, params: RequestParams = {}) =>
+    this.request<DexQueryGetUserPositionsResponse, RpcStatus>({
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/user/positions/${address}`,
           ...params
         });
 }

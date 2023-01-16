@@ -4,6 +4,7 @@
 import Long from "long";
 import _m0 from "protobufjs/minimal";
 import { PageRequest, PageResponse } from "../../cosmos/base/query/v1beta1/pagination";
+import { DepositRecord } from "./deposit_record";
 import { FeeTier } from "./fee_tier";
 import { LimitOrderTranche } from "./limit_order_tranche";
 import { LimitOrderTrancheUser } from "./limit_order_tranche_user";
@@ -12,6 +13,7 @@ import { Tick } from "./tick";
 import { Tokens } from "./tokens";
 import { TokenMap } from "./token_map";
 import { TradingPair } from "./trading_pair";
+import { UserPositions } from "./user_positions";
 export type DeepPartial<T> = T extends Builtin ? T
   : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
@@ -55,6 +57,12 @@ export interface Query {
   LimitOrderTranche(request: QueryGetLimitOrderTrancheRequest): Promise<QueryGetLimitOrderTrancheResponse>;
   /** Queries a list of LimitOrderTranche items. */
   LimitOrderTrancheAll(request: QueryAllLimitOrderTrancheRequest): Promise<QueryAllLimitOrderTrancheResponse>;
+  /** Queries a list of GetUserPositions items. */
+  GetUserPositions(request: QueryGetUserPositionsRequest): Promise<QueryGetUserPositionsResponse>;
+  /** Queries a list of UserDeposits items. */
+  UserDepositsAll(request: QueryAllUserDepositsRequest): Promise<QueryAllUserDepositsResponse>;
+  /** Queries a list of UserLimitOrders items. */
+  UserLimitOrdersAll(request: QueryAllUserLimitOrdersRequest): Promise<QueryAllUserLimitOrdersResponse>;
 }
 
 export interface QueryAllFeeTierRequest {
@@ -120,6 +128,22 @@ export interface QueryAllTradingPairResponse {
   pagination: PageResponse | undefined;
 }
 
+export interface QueryAllUserDepositsRequest {
+  address: string;
+}
+
+export interface QueryAllUserDepositsResponse {
+  Deposits: DepositRecord[];
+}
+
+export interface QueryAllUserLimitOrdersRequest {
+  address: string;
+}
+
+export interface QueryAllUserLimitOrdersResponse {
+  limitOrders: LimitOrderTrancheUser[];
+}
+
 export interface QueryGetFeeTierRequest {
   id: number;
 }
@@ -182,6 +206,14 @@ export interface QueryGetTradingPairRequest {
 
 export interface QueryGetTradingPairResponse {
   TradingPair: TradingPair | undefined;
+}
+
+export interface QueryGetUserPositionsRequest {
+  address: string;
+}
+
+export interface QueryGetUserPositionsResponse {
+  UserPositions: UserPositions | undefined;
 }
 
 /** QueryParamsRequest is request type for the Query/Params RPC method. */
@@ -1892,6 +1924,313 @@ export const QueryAllLimitOrderTrancheResponse = {
   }
 };
 
+function createBaseQueryGetUserPositionsRequest(): QueryGetUserPositionsRequest {
+  return { address: "" };
+}
+
+export const QueryGetUserPositionsRequest = {
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryGetUserPositionsRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryGetUserPositionsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.address = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  encode(message: QueryGetUserPositionsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.address !== "") {
+      writer.uint32(10).string(message.address);
+    }
+    return writer;
+  },
+
+  fromJSON(object: any): QueryGetUserPositionsRequest {
+    return { address: isSet(object.address) ? String(object.address) : "" };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<QueryGetUserPositionsRequest>, I>>(object: I): QueryGetUserPositionsRequest {
+    const message = createBaseQueryGetUserPositionsRequest();
+    message.address = object.address ?? "";
+    return message;
+  },
+
+  toJSON(message: QueryGetUserPositionsRequest): unknown {
+    const obj: any = {};
+    message.address !== undefined && (obj.address = message.address);
+    return obj;
+  }
+};
+
+function createBaseQueryGetUserPositionsResponse(): QueryGetUserPositionsResponse {
+  return { UserPositions: undefined };
+}
+
+export const QueryGetUserPositionsResponse = {
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryGetUserPositionsResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryGetUserPositionsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.UserPositions = UserPositions.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  encode(message: QueryGetUserPositionsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.UserPositions !== undefined) {
+      UserPositions.encode(message.UserPositions, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  fromJSON(object: any): QueryGetUserPositionsResponse {
+    return { UserPositions: isSet(object.UserPositions) ? UserPositions.fromJSON(object.UserPositions) : undefined };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<QueryGetUserPositionsResponse>, I>>(
+    object: I,
+  ): QueryGetUserPositionsResponse {
+    const message = createBaseQueryGetUserPositionsResponse();
+    message.UserPositions = (object.UserPositions !== undefined && object.UserPositions !== null)
+      ? UserPositions.fromPartial(object.UserPositions)
+      : undefined;
+    return message;
+  },
+
+  toJSON(message: QueryGetUserPositionsResponse): unknown {
+    const obj: any = {};
+    message.UserPositions !== undefined
+      && (obj.UserPositions = message.UserPositions ? UserPositions.toJSON(message.UserPositions) : undefined);
+    return obj;
+  }
+};
+
+function createBaseQueryAllUserDepositsRequest(): QueryAllUserDepositsRequest {
+  return { address: "" };
+}
+
+export const QueryAllUserDepositsRequest = {
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryAllUserDepositsRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryAllUserDepositsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.address = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  encode(message: QueryAllUserDepositsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.address !== "") {
+      writer.uint32(10).string(message.address);
+    }
+    return writer;
+  },
+
+  fromJSON(object: any): QueryAllUserDepositsRequest {
+    return { address: isSet(object.address) ? String(object.address) : "" };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<QueryAllUserDepositsRequest>, I>>(object: I): QueryAllUserDepositsRequest {
+    const message = createBaseQueryAllUserDepositsRequest();
+    message.address = object.address ?? "";
+    return message;
+  },
+
+  toJSON(message: QueryAllUserDepositsRequest): unknown {
+    const obj: any = {};
+    message.address !== undefined && (obj.address = message.address);
+    return obj;
+  }
+};
+
+function createBaseQueryAllUserDepositsResponse(): QueryAllUserDepositsResponse {
+  return { Deposits: [] };
+}
+
+export const QueryAllUserDepositsResponse = {
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryAllUserDepositsResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryAllUserDepositsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.Deposits.push(DepositRecord.decode(reader, reader.uint32()));
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  encode(message: QueryAllUserDepositsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.Deposits) {
+      DepositRecord.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  fromJSON(object: any): QueryAllUserDepositsResponse {
+    return {
+
+          Deposits: Array.isArray(object?.Deposits) ? object.Deposits.map((e: any) => DepositRecord.fromJSON(e)) : []
+        };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<QueryAllUserDepositsResponse>, I>>(object: I): QueryAllUserDepositsResponse {
+    const message = createBaseQueryAllUserDepositsResponse();
+    message.Deposits = object.Deposits?.map((e) => DepositRecord.fromPartial(e)) || [];
+    return message;
+  },
+
+  toJSON(message: QueryAllUserDepositsResponse): unknown {
+    const obj: any = {};
+    if (message.Deposits) {
+      obj.Deposits = message.Deposits.map((e) => e ? DepositRecord.toJSON(e) : undefined);
+    } else {
+      obj.Deposits = [];
+    }
+    return obj;
+  }
+};
+
+function createBaseQueryAllUserLimitOrdersRequest(): QueryAllUserLimitOrdersRequest {
+  return { address: "" };
+}
+
+export const QueryAllUserLimitOrdersRequest = {
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryAllUserLimitOrdersRequest {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryAllUserLimitOrdersRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.address = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  encode(message: QueryAllUserLimitOrdersRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.address !== "") {
+      writer.uint32(10).string(message.address);
+    }
+    return writer;
+  },
+
+  fromJSON(object: any): QueryAllUserLimitOrdersRequest {
+    return { address: isSet(object.address) ? String(object.address) : "" };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<QueryAllUserLimitOrdersRequest>, I>>(
+    object: I,
+  ): QueryAllUserLimitOrdersRequest {
+    const message = createBaseQueryAllUserLimitOrdersRequest();
+    message.address = object.address ?? "";
+    return message;
+  },
+
+  toJSON(message: QueryAllUserLimitOrdersRequest): unknown {
+    const obj: any = {};
+    message.address !== undefined && (obj.address = message.address);
+    return obj;
+  }
+};
+
+function createBaseQueryAllUserLimitOrdersResponse(): QueryAllUserLimitOrdersResponse {
+  return { limitOrders: [] };
+}
+
+export const QueryAllUserLimitOrdersResponse = {
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): QueryAllUserLimitOrdersResponse {
+    const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryAllUserLimitOrdersResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.limitOrders.push(LimitOrderTrancheUser.decode(reader, reader.uint32()));
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  encode(message: QueryAllUserLimitOrdersResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.limitOrders) {
+      LimitOrderTrancheUser.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  fromJSON(object: any): QueryAllUserLimitOrdersResponse {
+    return {
+
+          limitOrders: Array.isArray(object?.limitOrders)
+            ? object.limitOrders.map((e: any) => LimitOrderTrancheUser.fromJSON(e))
+            : []
+        };
+  },
+
+  fromPartial<I extends Exact<DeepPartial<QueryAllUserLimitOrdersResponse>, I>>(
+    object: I,
+  ): QueryAllUserLimitOrdersResponse {
+    const message = createBaseQueryAllUserLimitOrdersResponse();
+    message.limitOrders = object.limitOrders?.map((e) => LimitOrderTrancheUser.fromPartial(e)) || [];
+    return message;
+  },
+
+  toJSON(message: QueryAllUserLimitOrdersResponse): unknown {
+    const obj: any = {};
+    if (message.limitOrders) {
+      obj.limitOrders = message.limitOrders.map((e) => e ? LimitOrderTrancheUser.toJSON(e) : undefined);
+    } else {
+      obj.limitOrders = [];
+    }
+    return obj;
+  }
+};
+
 export class QueryClientImpl implements Query {
   private readonly rpc: Rpc;
   constructor(rpc: Rpc) {
@@ -1911,6 +2250,9 @@ export class QueryClientImpl implements Query {
     this.LimitOrderTrancheUserAll = this.LimitOrderTrancheUserAll.bind(this);
     this.LimitOrderTranche = this.LimitOrderTranche.bind(this);
     this.LimitOrderTrancheAll = this.LimitOrderTrancheAll.bind(this);
+    this.GetUserPositions = this.GetUserPositions.bind(this);
+    this.UserDepositsAll = this.UserDepositsAll.bind(this);
+    this.UserLimitOrdersAll = this.UserLimitOrdersAll.bind(this);
   }
   Params(request: QueryParamsRequest): Promise<QueryParamsResponse> {
     const data = QueryParamsRequest.encode(request).finish();
@@ -2002,6 +2344,24 @@ export class QueryClientImpl implements Query {
     const data = QueryAllLimitOrderTrancheRequest.encode(request).finish();
     const promise = this.rpc.request("nicholasdotsol.duality.dex.Query", "LimitOrderTrancheAll", data);
     return promise.then((data) => QueryAllLimitOrderTrancheResponse.decode(new _m0.Reader(data)));
+  }
+
+  GetUserPositions(request: QueryGetUserPositionsRequest): Promise<QueryGetUserPositionsResponse> {
+    const data = QueryGetUserPositionsRequest.encode(request).finish();
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Query", "GetUserPositions", data);
+    return promise.then((data) => QueryGetUserPositionsResponse.decode(new _m0.Reader(data)));
+  }
+
+  UserDepositsAll(request: QueryAllUserDepositsRequest): Promise<QueryAllUserDepositsResponse> {
+    const data = QueryAllUserDepositsRequest.encode(request).finish();
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Query", "UserDepositsAll", data);
+    return promise.then((data) => QueryAllUserDepositsResponse.decode(new _m0.Reader(data)));
+  }
+
+  UserLimitOrdersAll(request: QueryAllUserLimitOrdersRequest): Promise<QueryAllUserLimitOrdersResponse> {
+    const data = QueryAllUserLimitOrdersRequest.encode(request).finish();
+    const promise = this.rpc.request("nicholasdotsol.duality.dex.Query", "UserLimitOrdersAll", data);
+    return promise.then((data) => QueryAllUserLimitOrdersResponse.decode(new _m0.Reader(data)));
   }
 }
 
