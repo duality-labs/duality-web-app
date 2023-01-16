@@ -29,6 +29,7 @@ import {
 } from '../../components/TokenPicker/hooks';
 import { feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
+import { calculateShares } from './utils/ticks';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -455,8 +456,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       const FeeIndex = event['message.FeeIndex'];
       const NewReserves0 = event['message.NewReserves0'];
       const NewReserves1 = event['message.NewReserves1'];
-      const SharesMinted = event['message.SharesMinted'];
-      const SharesRemoved = event['message.SharesRemoved'];
 
       if (
         !Creator ||
@@ -489,10 +488,11 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           feeIndex: FeeIndex,
           pairId: getPairID(Token0, Token1),
           tickIndex: TickIndex,
-          sharesOwned: new BigNumber(shareFound?.sharesOwned || '0')
-            .plus(SharesMinted || '0')
-            .minus(SharesRemoved || '0')
-            .toFixed(),
+          sharesOwned: calculateShares({
+            tickIndex: new BigNumber(TickIndex),
+            reserve0: new BigNumber(NewReserves0),
+            reserve1: new BigNumber(NewReserves1),
+          }).toFixed(),
         };
         if (shareFound) {
           // update share
