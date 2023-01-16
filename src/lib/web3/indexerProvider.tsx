@@ -319,6 +319,15 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                     }
                     // drop unknown (to front end) share
                     else {
+                      // eslint-disable-next-line no-console
+                      console.warn(
+                        `Received unknown denomination in tokenized shares: ${coin.denom}`,
+                        {
+                          feeTypes,
+                          feeIndex,
+                          address,
+                        }
+                      );
                       return [tokens, tokenizedShares];
                     }
                   } else {
