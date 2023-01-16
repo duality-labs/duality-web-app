@@ -7,11 +7,8 @@ This version of the front end is intended to work with this release of the backe
 - https://github.com/duality-labs/duality/pull/267
 - run with Docker:
   - checkout [ec25137](https://github.com/duality-labs/duality/commit/ec251371d382332c37006693fd5f835b1a6fbe26) (PR [#267](https://github.com/duality-labs/duality/pull/267))
-  - cherry-pick [ec25137](https://github.com/duality-labs/duality/commit/ec251371d382332c37006693fd5f835b1a6fbe26) FeeTier naming fix
 - run with Docker Compose:
-  - checkout [374eec4](https://github.com/duality-labs/duality/commit/374eec40948564930c22f3f867be12a3b3168f02) part of Docker Compose setup
-  - cherry-pick [2f92a20..1d3680f](https://github.com/duality-labs/duality/compare/2f92a208459b2729694e8d3a6a19d349b85f4368..1d3680f2ee6b31351dc7769b376454c246d84c1d)
-  - cherry-pick [c0a4196..ec25137](https://github.com/duality-labs/duality/compare/c0a419600d5920c58f68822f932afb5857ebe45f..ec251371d382332c37006693fd5f835b1a6fbe26)
+  - checkout [4dd6d4b](https://github.com/duality-labs/duality/commit/4dd6d4b4e289cd7cc99fd8f459a7c938bff154e3) part of Docker Compose setup
 
 ## Setting up the dev environment
 
