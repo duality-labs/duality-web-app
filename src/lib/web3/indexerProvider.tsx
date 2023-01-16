@@ -530,15 +530,18 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       // todo: do a partial update of indexer data?
       // see this commit for previous work done on this
     };
-    subscriber.subscribeMessage(onDexUpdateMessage, {
-      message: { action: 'NewDeposit' },
-    });
-    subscriber.subscribeMessage(onDexUpdateMessage, {
-      message: { action: 'NewWithdraw' },
-    });
-    return () => {
-      subscriber.unsubscribeMessage(onDexUpdateMessage);
-    };
+    // subscribe to messages for this address only
+    if (address) {
+      subscriber.subscribeMessage(onDexUpdateMessage, {
+        message: { action: 'NewDeposit', Receiver: address },
+      });
+      subscriber.subscribeMessage(onDexUpdateMessage, {
+        message: { action: 'NewWithdraw', Receiver: address },
+      });
+      return () => {
+        subscriber.unsubscribeMessage(onDexUpdateMessage);
+      };
+    }
   }, [address]);
 
   useEffect(() => {
