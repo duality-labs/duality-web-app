@@ -3,7 +3,6 @@
 /* eslint-disable */
 import Long from "long";
 import _m0 from "protobufjs/minimal";
-import { EdgeRow } from "./edge_row";
 export type DeepPartial<T> = T extends Builtin ? T
   : T extends Array<infer U> ? Array<DeepPartial<U>> : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
@@ -12,31 +11,31 @@ export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export interface AdjanceyMatrix {
-  id: number;
-  edgeRow: EdgeRow | undefined;
+export interface LimitTrancheIndexes {
+  fillTrancheIndex: number;
+  placeTrancheIndex: number;
 }
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
-function createBaseAdjanceyMatrix(): AdjanceyMatrix {
-  return { edgeRow: undefined, id: 0 };
+function createBaseLimitTrancheIndexes(): LimitTrancheIndexes {
+  return { fillTrancheIndex: 0, placeTrancheIndex: 0 };
 }
 
-export const AdjanceyMatrix = {
+export const LimitTrancheIndexes = {
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): AdjanceyMatrix {
+  decode(input: _m0.Reader | Uint8Array, length?: number): LimitTrancheIndexes {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseAdjanceyMatrix();
+    const message = createBaseLimitTrancheIndexes();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.id = longToNumber(reader.uint64() as Long);
+          message.fillTrancheIndex = longToNumber(reader.uint64() as Long);
           break;
         case 2:
-          message.edgeRow = EdgeRow.decode(reader, reader.uint32());
+          message.placeTrancheIndex = longToNumber(reader.uint64() as Long);
           break;
         default:
           reader.skipType(tag & 7);
@@ -45,37 +44,35 @@ export const AdjanceyMatrix = {
     }
     return message;
   },
-  encode(message: AdjanceyMatrix, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.id !== 0) {
-      writer.uint32(8).uint64(message.id);
+  encode(message: LimitTrancheIndexes, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.fillTrancheIndex !== 0) {
+      writer.uint32(8).uint64(message.fillTrancheIndex);
     }
-    if (message.edgeRow !== undefined) {
-      EdgeRow.encode(message.edgeRow, writer.uint32(18).fork()).ldelim();
+    if (message.placeTrancheIndex !== 0) {
+      writer.uint32(16).uint64(message.placeTrancheIndex);
     }
     return writer;
   },
 
-  fromJSON(object: any): AdjanceyMatrix {
+  fromJSON(object: any): LimitTrancheIndexes {
     return {
 
-          edgeRow: isSet(object.edgeRow) ? EdgeRow.fromJSON(object.edgeRow) : undefined,
-          id: isSet(object.id) ? Number(object.id) : 0
+          fillTrancheIndex: isSet(object.fillTrancheIndex) ? Number(object.fillTrancheIndex) : 0,
+          placeTrancheIndex: isSet(object.placeTrancheIndex) ? Number(object.placeTrancheIndex) : 0
         };
   },
 
-  fromPartial<I extends Exact<DeepPartial<AdjanceyMatrix>, I>>(object: I): AdjanceyMatrix {
-    const message = createBaseAdjanceyMatrix();
-    message.id = object.id ?? 0;
-    message.edgeRow = (object.edgeRow !== undefined && object.edgeRow !== null)
-      ? EdgeRow.fromPartial(object.edgeRow)
-      : undefined;
+  fromPartial<I extends Exact<DeepPartial<LimitTrancheIndexes>, I>>(object: I): LimitTrancheIndexes {
+    const message = createBaseLimitTrancheIndexes();
+    message.fillTrancheIndex = object.fillTrancheIndex ?? 0;
+    message.placeTrancheIndex = object.placeTrancheIndex ?? 0;
     return message;
   },
 
-  toJSON(message: AdjanceyMatrix): unknown {
+  toJSON(message: LimitTrancheIndexes): unknown {
     const obj: any = {};
-    message.id !== undefined && (obj.id = Math.round(message.id));
-    message.edgeRow !== undefined && (obj.edgeRow = message.edgeRow ? EdgeRow.toJSON(message.edgeRow) : undefined);
+    message.fillTrancheIndex !== undefined && (obj.fillTrancheIndex = Math.round(message.fillTrancheIndex));
+    message.placeTrancheIndex !== undefined && (obj.placeTrancheIndex = Math.round(message.placeTrancheIndex));
     return obj;
   }
 };

@@ -18,7 +18,7 @@ import {
 import {
   MsgSwap,
   MsgSwapResponse,
-} from '../../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/types/dex/tx';
+} from '../../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/types/duality/dex/tx';
 import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 import { readEvents } from '../../../lib/web3/utils/txs';

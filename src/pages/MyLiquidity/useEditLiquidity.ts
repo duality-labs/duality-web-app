@@ -5,7 +5,6 @@ import BigNumber from 'bignumber.js';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import apiClient from '../../lib/web3/apiClient';
 import { Token } from '../../components/TokenPicker/hooks';
-import { DexShares } from '../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/rest';
 import { TickInfo } from '../../lib/web3/indexerProvider';
 import {
   checkMsgErrorToast,
@@ -15,9 +14,10 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { IndexedShare } from '../../lib/web3/utils/shares';
 
 export interface ShareValue {
-  share: DexShares;
+  share: IndexedShare;
   token0: Token;
   token1: Token;
   userReserves0?: BigNumber;
@@ -89,7 +89,7 @@ export function useEditLiquidity(): [
         );
 
         const gasEstimate =
-          40000 + depositCount * 80000 + withdrawCount * 80000;
+          50000 + depositCount * 100000 + withdrawCount * 100000;
 
         // wrap transaction logic
         try {
@@ -128,8 +128,7 @@ export function useEditLiquidity(): [
                                     amountsA: [
                                       getAmountInDenom(
                                         token0,
-                                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                                        tickDiff0.shiftedBy(18),
+                                        tickDiff0,
                                         token0.display
                                       ) || '0',
                                     ],
@@ -149,14 +148,11 @@ export function useEditLiquidity(): [
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
                                       sharesToRemove: [
-                                        getAmountInDenom(
-                                          token0,
-                                          tickDiff0
-                                            .negated()
-                                            .dividedBy(userReserves0)
-                                            .multipliedBy(share.sharesOwned),
-                                          token0.display
-                                        ) || '0',
+                                        tickDiff0
+                                          .negated()
+                                          .dividedBy(userReserves0)
+                                          .multipliedBy(share.sharesOwned)
+                                          .toFixed(0),
                                       ],
                                     },
                                   }
@@ -178,8 +174,7 @@ export function useEditLiquidity(): [
                                     amountsB: [
                                       getAmountInDenom(
                                         token1,
-                                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                                        tickDiff1.shiftedBy(18),
+                                        tickDiff1,
                                         token1.display
                                       ) || '0',
                                     ],
@@ -198,14 +193,11 @@ export function useEditLiquidity(): [
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
                                       sharesToRemove: [
-                                        getAmountInDenom(
-                                          token1,
-                                          tickDiff1
-                                            .negated()
-                                            .dividedBy(userReserves1)
-                                            .multipliedBy(share.sharesOwned),
-                                          token1.display
-                                        ) || '0',
+                                        tickDiff1
+                                          .negated()
+                                          .dividedBy(userReserves1)
+                                          .multipliedBy(share.sharesOwned)
+                                          .toFixed(0),
                                       ],
                                     },
                                   }

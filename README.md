@@ -4,12 +4,11 @@ The code for the Duality front-end web app.
 
 This version of the front end is intended to work with this release of the backend:
 
-- https://github.com/duality-labs/duality/releases/tag/v0.1.0
+- https://github.com/duality-labs/duality/pull/267
 - run with Docker:
-  - checkout [35cdba3](https://github.com/duality-labs/duality/commit/35cdba33e71742d213c3f873a08fe5e46b5ec493) (tag [v0.1.0](https://github.com/duality-labs/duality/releases/tag/v0.1.0))
-  - cherry-pick [c0a4196](https://github.com/duality-labs/duality/commit/c0a419600d5920c58f68822f932afb5857ebe45f) Dockerized Setup
+  - checkout [ec25137](https://github.com/duality-labs/duality/commit/ec251371d382332c37006693fd5f835b1a6fbe26) (PR [#267](https://github.com/duality-labs/duality/pull/267))
 - run with Docker Compose:
-  - checkout [cee44d7](https://github.com/duality-labs/duality/commit/cee44d7cf9d079ad2302d2ffb6a9a67847aa0e10) part of Docker Compose setup
+  - checkout [4dd6d4b](https://github.com/duality-labs/duality/commit/4dd6d4b4e289cd7cc99fd8f459a7c938bff154e3) part of Docker Compose setup
 
 ## Setting up the dev environment
 

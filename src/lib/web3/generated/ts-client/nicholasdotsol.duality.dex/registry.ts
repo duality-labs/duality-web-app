@@ -1,7 +1,7 @@
 /* eslint-disable */
 /* tslint:disable */
 import { GeneratedType } from "@cosmjs/proto-signing";
-import { MsgCancelLimitOrder, MsgDeposit, MsgPlaceLimitOrder, MsgSwap, MsgWithdrawFilledLimitOrder, MsgWithdrawl } from "./types/dex/tx";
+import { MsgCancelLimitOrder, MsgDeposit, MsgPlaceLimitOrder, MsgSwap, MsgWithdrawFilledLimitOrder, MsgWithdrawl } from "./types/duality/dex/tx";
 
 const msgTypes: Array<[string, GeneratedType]>  = [
     ["/nicholasdotsol.duality.dex.MsgCancelLimitOrder", MsgCancelLimitOrder],

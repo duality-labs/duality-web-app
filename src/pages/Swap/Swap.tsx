@@ -154,33 +154,22 @@ export default function Swap() {
             120000 +
             // add 80000 if multiple ticks need to be traversed
             (ticksUsed > 1 ? 80000 : 0) +
-            // add 700000 for each tick that we need to remove liquidity from
-            700000 * (ticksUsed - 1) +
-            // add 400000 for each tick we pass without drawing liquidity from
-            400000 * ticksUnused +
-            // add another 400000 for each reverse tick we pass without drawing liquidity from
-            (forward ? 0 : 400000 * ticksUnused)
+            // add 1000000 for each tick that we need to remove liquidity from
+            1000000 * (ticksUsed - 1) +
+            // add 500000 for each tick we pass without drawing liquidity from
+            500000 * ticksUnused +
+            // add another 500000 for each reverse tick we pass without drawing liquidity from
+            (forward ? 0 : 500000 * ticksUnused)
           : 0;
 
         swapRequest(
           {
             amountIn:
-              getAmountInDenom(
-                tokenA,
-                // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                result.amountIn.shiftedBy(18),
-                tokenA?.display
-              ) || '0',
+              getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
             tokenIn: result.tokenIn,
             tokenA: result.tokenIn,
             tokenB: result.tokenOut,
-            minOut:
-              getAmountInDenom(
-                tokenB,
-                // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                minOut.shiftedBy(18),
-                tokenB?.display
-              ) || '0',
+            minOut: getAmountInDenom(tokenB, minOut, tokenB?.display) || '0',
             creator: address,
             receiver: address,
           },

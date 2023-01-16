@@ -150,9 +150,9 @@ export function useDeposit(): [
                   );
                 })
               : undefined;
-          // add 40000 for existing ticks
-          // add 40000 more for initializing a new tick
-          return gasEstimate + (existingTick ? 40000 : 80000);
+          // add 50000 for existing ticks
+          // add 50000 more for initializing a new tick
+          return gasEstimate + (existingTick ? 50000 : 100000);
           // add 80000 base gas
           // add 60000 for initilizing a new tick pair
         }, 80000 + (!pairTicks ? 60000 : 0));
@@ -180,21 +180,11 @@ export function useDeposit(): [
                   feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
                   amountsA: filteredUserTicks.map(
                     ({ reserveA }) =>
-                      getAmountInDenom(
-                        tokenA,
-                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                        reserveA.shiftedBy(18),
-                        tokenA.display
-                      ) || '0'
+                      getAmountInDenom(tokenA, reserveA, tokenA.display) || '0'
                   ),
                   amountsB: filteredUserTicks.map(
                     ({ reserveB }) =>
-                      getAmountInDenom(
-                        tokenB,
-                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                        reserveB.shiftedBy(18),
-                        tokenB.display
-                      ) || '0'
+                      getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
                   ),
                 },
               }),

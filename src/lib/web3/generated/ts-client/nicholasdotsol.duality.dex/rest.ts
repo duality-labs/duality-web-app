@@ -31,19 +31,7 @@ export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequest
  * ---------------------------------------------------------------
  */
 
-export interface DexAdjanceyMatrix {
-  /** @format uint64 */
-  id?: string;
-  edgeRow?: DexEdgeRow;
-}
-
-export interface DexEdgeRow {
-  /** @format uint64 */
-  id?: string;
-  edge?: boolean;
-}
-
-export interface DexFeeList {
+export interface DexFeeTier {
   /** @format uint64 */
   id?: string;
 
@@ -66,14 +54,6 @@ export interface DexLimitOrderTranche {
   totalTokenOut?: string;
 }
 
-export interface DexLimitOrderTrancheTrancheIndexes {
-  /** @format uint64 */
-  fillTrancheIndex?: string;
-
-  /** @format uint64 */
-  placeTrancheIndex?: string;
-}
-
 export interface DexLimitOrderTrancheUser {
   pairId?: string;
   token?: string;
@@ -87,6 +67,14 @@ export interface DexLimitOrderTrancheUser {
   sharesOwned?: string;
   sharesWithdrawn?: string;
   sharesCancelled?: string;
+}
+
+export interface DexLimitTrancheIndexes {
+  /** @format uint64 */
+  fillTrancheIndex?: string;
+
+  /** @format uint64 */
+  placeTrancheIndex?: string;
 }
 
 export interface DexMsgDepositResponse {
@@ -104,49 +92,8 @@ export interface DexMsgSwapResponse {
   coinOut?: V1Beta1Coin;
 }
 
-export interface DexPairMap {
-  pairId?: string;
-  tokenPair?: DexTokenPairType;
-
-  /** @format int64 */
-  maxTick?: string;
-
-  /** @format int64 */
-  minTick?: string;
-}
-
-export interface DexQueryAllAdjanceyMatrixResponse {
-  AdjanceyMatrix?: DexAdjanceyMatrix[];
-
-  /**
-   * PageResponse is to be embedded in gRPC response messages where the
-   * corresponding request message has used PageRequest.
-   *
-   *  message SomeResponse {
-   *          repeated Bar results = 1;
-   *          PageResponse page = 2;
-   *  }
-   */
-  pagination?: V1Beta1PageResponse;
-}
-
-export interface DexQueryAllEdgeRowResponse {
-  EdgeRow?: DexEdgeRow[];
-
-  /**
-   * PageResponse is to be embedded in gRPC response messages where the
-   * corresponding request message has used PageRequest.
-   *
-   *  message SomeResponse {
-   *          repeated Bar results = 1;
-   *          PageResponse page = 2;
-   *  }
-   */
-  pagination?: V1Beta1PageResponse;
-}
-
-export interface DexQueryAllFeeListResponse {
-  FeeList?: DexFeeList[];
+export interface DexQueryAllFeeTierResponse {
+  FeeTier?: DexFeeTier[];
 
   /**
    * PageResponse is to be embedded in gRPC response messages where the
@@ -190,38 +137,8 @@ export interface DexQueryAllLimitOrderTrancheUserResponse {
   pagination?: V1Beta1PageResponse;
 }
 
-export interface DexQueryAllPairMapResponse {
-  pairMap?: DexPairMap[];
-
-  /**
-   * PageResponse is to be embedded in gRPC response messages where the
-   * corresponding request message has used PageRequest.
-   *
-   *  message SomeResponse {
-   *          repeated Bar results = 1;
-   *          PageResponse page = 2;
-   *  }
-   */
-  pagination?: V1Beta1PageResponse;
-}
-
-export interface DexQueryAllSharesResponse {
-  shares?: DexShares[];
-
-  /**
-   * PageResponse is to be embedded in gRPC response messages where the
-   * corresponding request message has used PageRequest.
-   *
-   *  message SomeResponse {
-   *          repeated Bar results = 1;
-   *          PageResponse page = 2;
-   *  }
-   */
-  pagination?: V1Beta1PageResponse;
-}
-
-export interface DexQueryAllTickMapResponse {
-  tickMap?: DexTickMap[];
+export interface DexQueryAllTickResponse {
+  Tick?: DexTick[];
 
   /**
    * PageResponse is to be embedded in gRPC response messages where the
@@ -265,16 +182,23 @@ export interface DexQueryAllTokensResponse {
   pagination?: V1Beta1PageResponse;
 }
 
-export interface DexQueryGetAdjanceyMatrixResponse {
-  AdjanceyMatrix?: DexAdjanceyMatrix;
+export interface DexQueryAllTradingPairResponse {
+  TradingPair?: DexTradingPair[];
+
+  /**
+   * PageResponse is to be embedded in gRPC response messages where the
+   * corresponding request message has used PageRequest.
+   *
+   *  message SomeResponse {
+   *          repeated Bar results = 1;
+   *          PageResponse page = 2;
+   *  }
+   */
+  pagination?: V1Beta1PageResponse;
 }
 
-export interface DexQueryGetEdgeRowResponse {
-  EdgeRow?: DexEdgeRow;
-}
-
-export interface DexQueryGetFeeListResponse {
-  FeeList?: DexFeeList;
+export interface DexQueryGetFeeTierResponse {
+  FeeTier?: DexFeeTier;
 }
 
 export interface DexQueryGetLimitOrderTrancheResponse {
@@ -285,16 +209,8 @@ export interface DexQueryGetLimitOrderTrancheUserResponse {
   LimitOrderTrancheUser?: DexLimitOrderTrancheUser;
 }
 
-export interface DexQueryGetPairMapResponse {
-  pairMap?: DexPairMap;
-}
-
-export interface DexQueryGetSharesResponse {
-  shares?: DexShares;
-}
-
-export interface DexQueryGetTickMapResponse {
-  tickMap?: DexTickMap;
+export interface DexQueryGetTickResponse {
+  Tick?: DexTick;
 }
 
 export interface DexQueryGetTokenMapResponse {
@@ -305,6 +221,10 @@ export interface DexQueryGetTokensResponse {
   Tokens?: DexTokens;
 }
 
+export interface DexQueryGetTradingPairResponse {
+  TradingPair?: DexTradingPair;
+}
+
 /**
  * QueryParamsResponse is response type for the Query/Params RPC method.
  */
@@ -313,36 +233,20 @@ export interface DexQueryParamsResponse {
   params?: DexParams;
 }
 
-export interface DexReserve0AndSharesType {
-  reserve0?: string;
-  totalShares?: string;
-}
-
-export interface DexShares {
-  address?: string;
-  pairId?: string;
-
-  /** @format int64 */
-  tickIndex?: string;
-
-  /** @format uint64 */
-  feeIndex?: string;
-  sharesOwned?: string;
-}
-
-export interface DexTickDataType {
-  reserve0AndShares?: DexReserve0AndSharesType[];
-  reserve1?: string[];
-}
-
-export interface DexTickMap {
+export interface DexTick {
   pairId?: string;
 
   /** @format int64 */
   tickIndex?: string;
   tickData?: DexTickDataType;
-  LimitOrderTranche0to1?: DexLimitOrderTrancheTrancheIndexes;
-  LimitOrderTranche1to0?: DexLimitOrderTrancheTrancheIndexes;
+  LimitOrderTranche0to1?: DexLimitTrancheIndexes;
+  LimitOrderTranche1to0?: DexLimitTrancheIndexes;
+  price0To1?: string;
+}
+
+export interface DexTickDataType {
+  reserve0?: string[];
+  reserve1?: string[];
 }
 
 export interface DexTokenMap {
@@ -352,18 +256,26 @@ export interface DexTokenMap {
   index?: string;
 }
 
-export interface DexTokenPairType {
+export interface DexTokens {
+  /** @format uint64 */
+  id?: string;
+  address?: string;
+}
+
+export interface DexTradingPair {
+  pairId?: string;
+
   /** @format int64 */
   currentTick0To1?: string;
 
   /** @format int64 */
   currentTick1To0?: string;
-}
 
-export interface DexTokens {
-  /** @format uint64 */
-  id?: string;
-  address?: string;
+  /** @format int64 */
+  maxTick?: string;
+
+  /** @format int64 */
+  minTick?: string;
 }
 
 export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
@@ -570,7 +482,7 @@ export class HttpClient<SecurityDataType = unknown> {
 }
 
 /**
- * @title dex/adjancey_matrix.proto
+ * @title duality/dex/fee_tier.proto
  * @version version not set
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
@@ -578,11 +490,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * No description
    *
    * @tags Query
-   * @name QueryAdjanceyMatrixAll
-   * @summary Queries a list of AdjanceyMatrix items.
-   * @request GET:/NicholasDotSol/duality/dex/adjancey_matrix
+   * @name QueryFeeTierAll
+   * @summary Queries a list of FeeTier items.
+   * @request GET:/NicholasDotSol/duality/dex/fee_tier
    */
-  queryAdjanceyMatrixAll = (
+  queryFeeTierAll = (
     query?: {
       "pagination.key"?: string;
       "pagination.offset"?: string;
@@ -592,11 +504,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     },
     params: RequestParams = {},
   ) =>
-    this.request<DexQueryAllAdjanceyMatrixResponse, RpcStatus>({
+    this.request<DexQueryAllFeeTierResponse, RpcStatus>({
 
           format: "json",
           method: "GET",
-          path: `/NicholasDotSol/duality/dex/adjancey_matrix`,
+          path: `/NicholasDotSol/duality/dex/fee_tier`,
           query: query,
           ...params
         });
@@ -605,104 +517,16 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * No description
    *
    * @tags Query
-   * @name QueryAdjanceyMatrix
-   * @summary Queries a AdjanceyMatrix by id.
-   * @request GET:/NicholasDotSol/duality/dex/adjancey_matrix/{id}
+   * @name QueryFeeTier
+   * @summary Queries a FeeTier by id.
+   * @request GET:/NicholasDotSol/duality/dex/fee_tier/{id}
    */
-  queryAdjanceyMatrix = (id: string, params: RequestParams = {}) =>
-    this.request<DexQueryGetAdjanceyMatrixResponse, RpcStatus>({
+  queryFeeTier = (id: string, params: RequestParams = {}) =>
+    this.request<DexQueryGetFeeTierResponse, RpcStatus>({
 
           format: "json",
           method: "GET",
-          path: `/NicholasDotSol/duality/dex/adjancey_matrix/${id}`,
-          ...params
-        });
-
-  /**
-   * No description
-   *
-   * @tags Query
-   * @name QueryEdgeRowAll
-   * @summary Queries a list of EdgeRow items.
-   * @request GET:/NicholasDotSol/duality/dex/edge_row
-   */
-  queryEdgeRowAll = (
-    query?: {
-      "pagination.key"?: string;
-      "pagination.offset"?: string;
-      "pagination.limit"?: string;
-      "pagination.count_total"?: boolean;
-      "pagination.reverse"?: boolean;
-    },
-    params: RequestParams = {},
-  ) =>
-    this.request<DexQueryAllEdgeRowResponse, RpcStatus>({
-
-          format: "json",
-          method: "GET",
-          path: `/NicholasDotSol/duality/dex/edge_row`,
-          query: query,
-          ...params
-        });
-
-  /**
-   * No description
-   *
-   * @tags Query
-   * @name QueryEdgeRow
-   * @summary Queries a EdgeRow by id.
-   * @request GET:/NicholasDotSol/duality/dex/edge_row/{id}
-   */
-  queryEdgeRow = (id: string, params: RequestParams = {}) =>
-    this.request<DexQueryGetEdgeRowResponse, RpcStatus>({
-
-          format: "json",
-          method: "GET",
-          path: `/NicholasDotSol/duality/dex/edge_row/${id}`,
-          ...params
-        });
-
-  /**
-   * No description
-   *
-   * @tags Query
-   * @name QueryFeeListAll
-   * @summary Queries a list of FeeList items.
-   * @request GET:/NicholasDotSol/duality/dex/fee_list
-   */
-  queryFeeListAll = (
-    query?: {
-      "pagination.key"?: string;
-      "pagination.offset"?: string;
-      "pagination.limit"?: string;
-      "pagination.count_total"?: boolean;
-      "pagination.reverse"?: boolean;
-    },
-    params: RequestParams = {},
-  ) =>
-    this.request<DexQueryAllFeeListResponse, RpcStatus>({
-
-          format: "json",
-          method: "GET",
-          path: `/NicholasDotSol/duality/dex/fee_list`,
-          query: query,
-          ...params
-        });
-
-  /**
-   * No description
-   *
-   * @tags Query
-   * @name QueryFeeList
-   * @summary Queries a FeeList by id.
-   * @request GET:/NicholasDotSol/duality/dex/fee_list/{id}
-   */
-  queryFeeList = (id: string, params: RequestParams = {}) =>
-    this.request<DexQueryGetFeeListResponse, RpcStatus>({
-
-          format: "json",
-          method: "GET",
-          path: `/NicholasDotSol/duality/dex/fee_list/${id}`,
+          path: `/NicholasDotSol/duality/dex/fee_tier/${id}`,
           ...params
         });
 
@@ -811,50 +635,6 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * No description
    *
    * @tags Query
-   * @name QueryPairMapAll
-   * @summary Queries a list of PairMap items.
-   * @request GET:/NicholasDotSol/duality/dex/pair_map
-   */
-  queryPairMapAll = (
-    query?: {
-      "pagination.key"?: string;
-      "pagination.offset"?: string;
-      "pagination.limit"?: string;
-      "pagination.count_total"?: boolean;
-      "pagination.reverse"?: boolean;
-    },
-    params: RequestParams = {},
-  ) =>
-    this.request<DexQueryAllPairMapResponse, RpcStatus>({
-
-          format: "json",
-          method: "GET",
-          path: `/NicholasDotSol/duality/dex/pair_map`,
-          query: query,
-          ...params
-        });
-
-  /**
-   * No description
-   *
-   * @tags Query
-   * @name QueryPairMap
-   * @summary Queries a PairMap by index.
-   * @request GET:/NicholasDotSol/duality/dex/pair_map/{pairId}
-   */
-  queryPairMap = (pairId: string, params: RequestParams = {}) =>
-    this.request<DexQueryGetPairMapResponse, RpcStatus>({
-
-          format: "json",
-          method: "GET",
-          path: `/NicholasDotSol/duality/dex/pair_map/${pairId}`,
-          ...params
-        });
-
-  /**
-   * No description
-   *
-   * @tags Query
    * @name QueryParams
    * @summary Parameters queries the parameters of the module.
    * @request GET:/NicholasDotSol/duality/dex/params
@@ -872,11 +652,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * No description
    *
    * @tags Query
-   * @name QuerySharesAll
-   * @summary Queries a list of Shares items.
-   * @request GET:/NicholasDotSol/duality/dex/shares
+   * @name QueryTickAll
+   * @summary Queries a list of Tick items.
+   * @request GET:/NicholasDotSol/duality/dex/tick
    */
-  querySharesAll = (
+  queryTickAll = (
     query?: {
       "pagination.key"?: string;
       "pagination.offset"?: string;
@@ -886,11 +666,11 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     },
     params: RequestParams = {},
   ) =>
-    this.request<DexQueryAllSharesResponse, RpcStatus>({
+    this.request<DexQueryAllTickResponse, RpcStatus>({
 
           format: "json",
           method: "GET",
-          path: `/NicholasDotSol/duality/dex/shares`,
+          path: `/NicholasDotSol/duality/dex/tick`,
           query: query,
           ...params
         });
@@ -899,60 +679,16 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
    * No description
    *
    * @tags Query
-   * @name QueryShares
-   * @summary Queries a Shares by index.
-   * @request GET:/NicholasDotSol/duality/dex/shares/{address}/{pairId}/{tickIndex}/{fee}
+   * @name QueryTick
+   * @summary Queries a Tick by index.
+   * @request GET:/NicholasDotSol/duality/dex/tick/{pairId}/{tickIndex}
    */
-  queryShares = (address: string, pairId: string, tickIndex: string, fee: string, params: RequestParams = {}) =>
-    this.request<DexQueryGetSharesResponse, RpcStatus>({
+  queryTick = (pairId: string, tickIndex: string, params: RequestParams = {}) =>
+    this.request<DexQueryGetTickResponse, RpcStatus>({
 
           format: "json",
           method: "GET",
-          path: `/NicholasDotSol/duality/dex/shares/${address}/${pairId}/${tickIndex}/${fee}`,
-          ...params
-        });
-
-  /**
-   * No description
-   *
-   * @tags Query
-   * @name QueryTickMapAll
-   * @summary Queries a list of TickMap items.
-   * @request GET:/NicholasDotSol/duality/dex/tick_map
-   */
-  queryTickMapAll = (
-    query?: {
-      "pagination.key"?: string;
-      "pagination.offset"?: string;
-      "pagination.limit"?: string;
-      "pagination.count_total"?: boolean;
-      "pagination.reverse"?: boolean;
-    },
-    params: RequestParams = {},
-  ) =>
-    this.request<DexQueryAllTickMapResponse, RpcStatus>({
-
-          format: "json",
-          method: "GET",
-          path: `/NicholasDotSol/duality/dex/tick_map`,
-          query: query,
-          ...params
-        });
-
-  /**
-   * No description
-   *
-   * @tags Query
-   * @name QueryTickMap
-   * @summary Queries a TickMap by index.
-   * @request GET:/NicholasDotSol/duality/dex/tick_map/{pairId}/{tickIndex}
-   */
-  queryTickMap = (pairId: string, tickIndex: string, params: RequestParams = {}) =>
-    this.request<DexQueryGetTickMapResponse, RpcStatus>({
-
-          format: "json",
-          method: "GET",
-          path: `/NicholasDotSol/duality/dex/tick_map/${pairId}/${tickIndex}`,
+          path: `/NicholasDotSol/duality/dex/tick/${pairId}/${tickIndex}`,
           ...params
         });
 
@@ -1041,6 +777,50 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
           format: "json",
           method: "GET",
           path: `/NicholasDotSol/duality/dex/tokens/${id}`,
+          ...params
+        });
+
+  /**
+   * No description
+   *
+   * @tags Query
+   * @name QueryTradingPairAll
+   * @summary Queries a list of TradingPair items.
+   * @request GET:/NicholasDotSol/duality/dex/trading_pair
+   */
+  queryTradingPairAll = (
+    query?: {
+      "pagination.key"?: string;
+      "pagination.offset"?: string;
+      "pagination.limit"?: string;
+      "pagination.count_total"?: boolean;
+      "pagination.reverse"?: boolean;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<DexQueryAllTradingPairResponse, RpcStatus>({
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/trading_pair`,
+          query: query,
+          ...params
+        });
+
+  /**
+   * No description
+   *
+   * @tags Query
+   * @name QueryTradingPair
+   * @summary Queries a TradingPair by index.
+   * @request GET:/NicholasDotSol/duality/dex/trading_pair/{pairId}
+   */
+  queryTradingPair = (pairId: string, params: RequestParams = {}) =>
+    this.request<DexQueryGetTradingPairResponse, RpcStatus>({
+
+          format: "json",
+          method: "GET",
+          path: `/NicholasDotSol/duality/dex/trading_pair/${pairId}`,
           ...params
         });
 }

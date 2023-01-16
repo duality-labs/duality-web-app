@@ -11,23 +11,23 @@ export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 type KeysOfUnion<T> = T extends T ? keyof T : never;
-export interface EdgeRow {
+export interface FeeTier {
   id: number;
-  edge: boolean;
+  fee: number;
 }
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
 
-function createBaseEdgeRow(): EdgeRow {
-  return { edge: false, id: 0 };
+function createBaseFeeTier(): FeeTier {
+  return { fee: 0, id: 0 };
 }
 
-export const EdgeRow = {
+export const FeeTier = {
 
-  decode(input: _m0.Reader | Uint8Array, length?: number): EdgeRow {
+  decode(input: _m0.Reader | Uint8Array, length?: number): FeeTier {
     const reader = input instanceof _m0.Reader ? input : new _m0.Reader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseEdgeRow();
+    const message = createBaseFeeTier();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -35,7 +35,7 @@ export const EdgeRow = {
           message.id = longToNumber(reader.uint64() as Long);
           break;
         case 2:
-          message.edge = reader.bool();
+          message.fee = longToNumber(reader.int64() as Long);
           break;
         default:
           reader.skipType(tag & 7);
@@ -44,31 +44,31 @@ export const EdgeRow = {
     }
     return message;
   },
-  encode(message: EdgeRow, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+  encode(message: FeeTier, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
     if (message.id !== 0) {
       writer.uint32(8).uint64(message.id);
     }
-    if (message.edge === true) {
-      writer.uint32(16).bool(message.edge);
+    if (message.fee !== 0) {
+      writer.uint32(16).int64(message.fee);
     }
     return writer;
   },
 
-  fromJSON(object: any): EdgeRow {
-    return { edge: isSet(object.edge) ? Boolean(object.edge) : false, id: isSet(object.id) ? Number(object.id) : 0 };
+  fromJSON(object: any): FeeTier {
+    return { fee: isSet(object.fee) ? Number(object.fee) : 0, id: isSet(object.id) ? Number(object.id) : 0 };
   },
 
-  fromPartial<I extends Exact<DeepPartial<EdgeRow>, I>>(object: I): EdgeRow {
-    const message = createBaseEdgeRow();
+  fromPartial<I extends Exact<DeepPartial<FeeTier>, I>>(object: I): FeeTier {
+    const message = createBaseFeeTier();
     message.id = object.id ?? 0;
-    message.edge = object.edge ?? false;
+    message.fee = object.fee ?? 0;
     return message;
   },
 
-  toJSON(message: EdgeRow): unknown {
+  toJSON(message: FeeTier): unknown {
     const obj: any = {};
     message.id !== undefined && (obj.id = Math.round(message.id));
-    message.edge !== undefined && (obj.edge = message.edge);
+    message.fee !== undefined && (obj.fee = Math.round(message.fee));
     return obj;
   }
 };
