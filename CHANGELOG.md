@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.86](https://github.com/duality-labs/duality-web-app/compare/v0.1.85...v0.1.86) (2023-01-16)
+
+
+### Fixes
+
+* update generated typescript api client process ([#281](https://github.com/duality-labs/duality-web-app/issues/281)) ([6eaed83](https://github.com/duality-labs/duality-web-app/commit/6eaed83dd2f49e093d3ca4dfc723e2bf19978203))
+
 ## [0.1.85](https://github.com/duality-labs/duality-web-app/compare/v0.1.84...v0.1.85) (2023-01-16)
 
 
