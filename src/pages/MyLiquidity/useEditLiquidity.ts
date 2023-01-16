@@ -148,14 +148,11 @@ export function useEditLiquidity(): [
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
                                       sharesToRemove: [
-                                        getAmountInDenom(
-                                          token0,
-                                          tickDiff0
-                                            .negated()
-                                            .dividedBy(userReserves0)
-                                            .multipliedBy(share.sharesOwned),
-                                          token0.display
-                                        ) || '0',
+                                        tickDiff0
+                                          .negated()
+                                          .dividedBy(userReserves0)
+                                          .multipliedBy(share.sharesOwned)
+                                          .toFixed(0),
                                       ],
                                     },
                                   }
@@ -196,14 +193,11 @@ export function useEditLiquidity(): [
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
                                       sharesToRemove: [
-                                        getAmountInDenom(
-                                          token1,
-                                          tickDiff1
-                                            .negated()
-                                            .dividedBy(userReserves1)
-                                            .multipliedBy(share.sharesOwned),
-                                          token1.display
-                                        ) || '0',
+                                        tickDiff1
+                                          .negated()
+                                          .dividedBy(userReserves1)
+                                          .multipliedBy(share.sharesOwned)
+                                          .toFixed(0),
                                       ],
                                     },
                                   }
