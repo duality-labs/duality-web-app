@@ -89,7 +89,7 @@ export function useEditLiquidity(): [
         );
 
         const gasEstimate =
-          40000 + depositCount * 80000 + withdrawCount * 80000;
+          50000 + depositCount * 100000 + withdrawCount * 100000;
 
         // wrap transaction logic
         try {
