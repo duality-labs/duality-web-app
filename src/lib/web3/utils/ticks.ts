@@ -14,12 +14,20 @@ export function priceToTickIndex(price: BigNumber): BigNumber {
 const bigZero = new BigNumber(0);
 export function calculateShares({
   price,
+  tickIndex,
   reserve0 = bigZero,
   reserve1 = bigZero,
-}: {
-  price: TickInfo['price'];
-  reserve0?: TickInfo['reserve0'];
-  reserve1?: TickInfo['reserve1'];
-}): BigNumber {
-  return reserve0.plus(reserve1.multipliedBy(price));
+}: Partial<TickInfo> &
+  // must include either price or tickIndex
+  (| {
+        price: TickInfo['price'];
+      }
+    | {
+        price?: undefined;
+        tickIndex: TickInfo['tickIndex'];
+      }
+  )): BigNumber {
+  return reserve0.plus(
+    reserve1.multipliedBy(price || tickIndexToPrice(tickIndex))
+  );
 }
