@@ -32,7 +32,8 @@ files
     (file) =>
       !(
         file.includes('/ts-client/cosmos.bank.v1beta1/') ||
-        file.includes('/ts-client/nicholasdotsol.duality.dex/')
+        file.includes('/ts-client/nicholasdotsol.duality.dex/') ||
+        file.includes('/ts-client/nicholasdotsol.duality.mev/')
       )
   )
   .forEach((file) => {
