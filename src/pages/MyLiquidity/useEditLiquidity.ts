@@ -128,8 +128,7 @@ export function useEditLiquidity(): [
                                     amountsA: [
                                       getAmountInDenom(
                                         token0,
-                                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                                        tickDiff0.shiftedBy(18),
+                                        tickDiff0,
                                         token0.display
                                       ) || '0',
                                     ],
@@ -149,14 +148,11 @@ export function useEditLiquidity(): [
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
                                       sharesToRemove: [
-                                        getAmountInDenom(
-                                          token0,
-                                          tickDiff0
-                                            .negated()
-                                            .dividedBy(userReserves0)
-                                            .multipliedBy(share.sharesOwned),
-                                          token0.display
-                                        ) || '0',
+                                        tickDiff0
+                                          .negated()
+                                          .dividedBy(userReserves0)
+                                          .multipliedBy(share.sharesOwned)
+                                          .toFixed(0),
                                       ],
                                     },
                                   }
@@ -178,8 +174,7 @@ export function useEditLiquidity(): [
                                     amountsB: [
                                       getAmountInDenom(
                                         token1,
-                                        // shift by 18 decimal places representing 18 decimal place string serialization of sdk.Dec inputs to the backend
-                                        tickDiff1.shiftedBy(18),
+                                        tickDiff1,
                                         token1.display
                                       ) || '0',
                                     ],
@@ -198,14 +193,11 @@ export function useEditLiquidity(): [
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
                                       sharesToRemove: [
-                                        getAmountInDenom(
-                                          token1,
-                                          tickDiff1
-                                            .negated()
-                                            .dividedBy(userReserves1)
-                                            .multipliedBy(share.sharesOwned),
-                                          token1.display
-                                        ) || '0',
+                                        tickDiff1
+                                          .negated()
+                                          .dividedBy(userReserves1)
+                                          .multipliedBy(share.sharesOwned)
+                                          .toFixed(0),
                                       ],
                                     },
                                   }
