@@ -290,15 +290,37 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       setFetchBankDataState((fetchState) => {
         // check if already fetching (and other other passed in check)
         if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
+          // clean up this effect when address has changed
           fetchBankData()
             .then((data = []) => {
-              // extract 'normal' bank balances from tokenized shares
+              // separate out 'normal' and 'share' tokens from the bank balance
               const [tokens, tokenizedShares] = data.reduce<
-                [Array<Coin>, Array<Coin>]
+                [Array<Coin>, Array<DexShares>]
               >(
                 ([tokens, tokenizedShares], coin) => {
-                  if (coin.denom.match(/^([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/)) {
-                    return [tokens, [...tokenizedShares, coin]];
+                  const [, token0, token1, tickIndex, feeTier] =
+                    coin.denom.match(/^([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/) || [];
+                  // transform tokenized shares into shares
+                  if (token0 && token1 && tickIndex && feeTier) {
+                    // calculate tokenized shares here
+                    const feeIndex = feeTypes.findIndex(
+                      ({ fee }) => fee === Number(feeTier) / 10000
+                    );
+                    // add tokenized share if everything is fine
+                    if (address && feeIndex >= 0) {
+                      const tokenizedShare = {
+                        address,
+                        pairId: getPairID(token0, token1),
+                        tickIndex,
+                        feeIndex: `${feeIndex}`,
+                        sharesOwned: coin.amount,
+                      };
+                      return [tokens, [...tokenizedShares, tokenizedShare]];
+                    }
+                    // drop unknown (to front end) share
+                    else {
+                      return [tokens, tokenizedShares];
+                    }
                   } else {
                     return [[...tokens, coin], tokenizedShares];
                   }
@@ -306,29 +328,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 [[], []]
               );
               setBankData({ balances: tokens });
-              // transform tokenized balances into shares
-              const shares: Array<DexShares> = tokenizedShares.flatMap(
-                ({ denom = '', amount = '' }) => {
-                  const [, token0, token1, tickIndex, feeTier] =
-                    denom.match(/^([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/) || [];
-                  if (address && token0 && token1 && tickIndex && feeTier) {
-                    const feeIndex = feeTypes.findIndex(
-                      ({ fee }) => fee === Number(feeTier) / 10000
-                    );
-                    if (feeIndex >= 0) {
-                      return {
-                        address,
-                        pairId: getPairID(token0, token1),
-                        tickIndex,
-                        feeIndex: `${feeIndex}`,
-                        sharesOwned: amount,
-                      };
-                    }
-                  }
-                  return [];
-                }
-              );
-              setShareData({ shares });
+              setShareData({ shares: tokenizedShares });
             })
             .catch((e) => {
               setFetchBankDataState((state) => ({
