@@ -100,7 +100,6 @@ files
   .forEach((file) => {
     const replaced = fs
       .readFileSync(file, { encoding: 'utf8' })
-      // .replace(/async useKeplr/s, 'useKaplr')
       .replace(/async useKeplr.*}/s, '}');
     fs.writeFileSync(file, replaced);
   });
