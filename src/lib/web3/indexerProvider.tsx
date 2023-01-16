@@ -290,7 +290,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       setFetchBankDataState((fetchState) => {
         // check if already fetching (and other other passed in check)
         if (!fetchState.fetching && (fetchStateCheck?.(fetchState) ?? true)) {
-          // clean up this effect when address has changed
+          // todo: clean up this effect when address has changed
+          // see: https://github.com/duality-labs/duality-web-app/issues/290
           fetchBankData()
             .then((data = []) => {
               // separate out 'normal' and 'share' tokens from the bank balance
