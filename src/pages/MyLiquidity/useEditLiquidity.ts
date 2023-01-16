@@ -14,10 +14,10 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
-import { DexShares } from '../../lib/web3/utils/shares';
+import { IndexedShare } from '../../lib/web3/utils/shares';
 
 export interface ShareValue {
-  share: DexShares;
+  share: IndexedShare;
   token0: Token;
   token1: Token;
   userReserves0?: BigNumber;

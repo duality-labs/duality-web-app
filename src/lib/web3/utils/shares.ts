@@ -5,5 +5,3 @@ export interface IndexedShare {
   feeIndex: string;
   sharesOwned: string;
 }
-
-export { IndexedShare as DexShares };

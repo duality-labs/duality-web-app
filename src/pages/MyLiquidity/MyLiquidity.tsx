@@ -45,13 +45,13 @@ import { useEditLiquidity } from './useEditLiquidity';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 import { calculateShares } from '../../lib/web3/utils/ticks';
-import { DexShares } from '../../lib/web3/utils/shares';
+import { IndexedShare } from '../../lib/web3/utils/shares';
 
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
 interface ShareValue {
-  share: DexShares;
+  share: IndexedShare;
   token0: Token;
   token1: Token;
   userReserves0?: BigNumber;

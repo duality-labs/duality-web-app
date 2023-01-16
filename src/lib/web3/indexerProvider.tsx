@@ -27,7 +27,7 @@ import {
 import { feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
 import { calculateShares } from './utils/ticks';
-import { DexShares } from './utils/shares';
+import { IndexedShare } from './utils/shares';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -75,7 +75,7 @@ interface UserBankBalance {
 }
 
 interface UserShares {
-  shares: Array<DexShares>;
+  shares: Array<IndexedShare>;
 }
 
 interface IndexerContextType {
@@ -296,7 +296,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             .then((data = []) => {
               // separate out 'normal' and 'share' tokens from the bank balance
               const [tokens, tokenizedShares] = data.reduce<
-                [Array<Coin>, Array<DexShares>]
+                [Array<Coin>, Array<IndexedShare>]
               >(
                 ([tokens, tokenizedShares], coin) => {
                   const [, token0, token1, tickIndex, feeTier] =
