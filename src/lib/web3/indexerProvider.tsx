@@ -302,7 +302,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 ([tokens, tokenizedShares], coin) => {
                   const [, token0, token1, tickIndex, feeIndex] =
                     coin.denom.match(
-                      /^DualityLPShares-([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/
+                      /^DualityPoolShares-([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/
                     ) || [];
                   // transform tokenized shares into shares
                   if (token0 && token1 && tickIndex && feeIndex) {
