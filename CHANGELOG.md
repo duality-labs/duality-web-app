@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.88](https://github.com/duality-labs/duality-web-app/compare/v0.1.87...v0.1.88) (2023-01-16)
+
+
+### Features
+
+* upgrade API to v0.1.2 use new paths and object names ([#294](https://github.com/duality-labs/duality-web-app/issues/294)) ([f95c097](https://github.com/duality-labs/duality-web-app/commit/f95c09791d1c516da9479d15b945d82034e226b4))
+
 ## [0.1.87](https://github.com/duality-labs/duality-web-app/compare/v0.1.86...v0.1.87) (2023-01-16)
 
 
