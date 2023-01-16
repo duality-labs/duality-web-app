@@ -19,6 +19,7 @@ export interface Tick {
   tickData: TickDataType | undefined;
   LimitOrderTranche0to1: LimitTrancheIndexes | undefined;
   LimitOrderTranche1to0: LimitTrancheIndexes | undefined;
+  price0To1: string;
 }
 
 export const protobufPackage = "nicholasdotsol.duality.dex";
@@ -29,6 +30,7 @@ function createBaseTick(): Tick {
       LimitOrderTranche0to1: undefined,
       LimitOrderTranche1to0: undefined,
       pairId: "",
+      price0To1: "",
       tickData: undefined,
       tickIndex: 0
     };
@@ -58,6 +60,9 @@ export const Tick = {
         case 5:
           message.LimitOrderTranche1to0 = LimitTrancheIndexes.decode(reader, reader.uint32());
           break;
+        case 6:
+          message.price0To1 = reader.string();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -81,6 +86,9 @@ export const Tick = {
     if (message.LimitOrderTranche1to0 !== undefined) {
       LimitTrancheIndexes.encode(message.LimitOrderTranche1to0, writer.uint32(42).fork()).ldelim();
     }
+    if (message.price0To1 !== "") {
+      writer.uint32(50).string(message.price0To1);
+    }
     return writer;
   },
 
@@ -94,6 +102,7 @@ export const Tick = {
             ? LimitTrancheIndexes.fromJSON(object.LimitOrderTranche1to0)
             : undefined,
           pairId: isSet(object.pairId) ? String(object.pairId) : "",
+          price0To1: isSet(object.price0To1) ? String(object.price0To1) : "",
           tickData: isSet(object.tickData) ? TickDataType.fromJSON(object.tickData) : undefined,
           tickIndex: isSet(object.tickIndex) ? Number(object.tickIndex) : 0
         };
@@ -114,6 +123,7 @@ export const Tick = {
       (object.LimitOrderTranche1to0 !== undefined && object.LimitOrderTranche1to0 !== null)
         ? LimitTrancheIndexes.fromPartial(object.LimitOrderTranche1to0)
         : undefined;
+    message.price0To1 = object.price0To1 ?? "";
     return message;
   },
 
@@ -129,6 +139,7 @@ export const Tick = {
     message.LimitOrderTranche1to0 !== undefined && (obj.LimitOrderTranche1to0 = message.LimitOrderTranche1to0
       ? LimitTrancheIndexes.toJSON(message.LimitOrderTranche1to0)
       : undefined);
+    message.price0To1 !== undefined && (obj.price0To1 = message.price0To1);
     return obj;
   }
 };

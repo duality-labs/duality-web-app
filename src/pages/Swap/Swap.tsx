@@ -154,12 +154,12 @@ export default function Swap() {
             120000 +
             // add 80000 if multiple ticks need to be traversed
             (ticksUsed > 1 ? 80000 : 0) +
-            // add 700000 for each tick that we need to remove liquidity from
-            700000 * (ticksUsed - 1) +
-            // add 400000 for each tick we pass without drawing liquidity from
-            400000 * ticksUnused +
-            // add another 400000 for each reverse tick we pass without drawing liquidity from
-            (forward ? 0 : 400000 * ticksUnused)
+            // add 1000000 for each tick that we need to remove liquidity from
+            1000000 * (ticksUsed - 1) +
+            // add 500000 for each tick we pass without drawing liquidity from
+            500000 * ticksUnused +
+            // add another 500000 for each reverse tick we pass without drawing liquidity from
+            (forward ? 0 : 500000 * ticksUnused)
           : 0;
 
         swapRequest(

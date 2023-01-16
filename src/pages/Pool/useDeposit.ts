@@ -150,9 +150,9 @@ export function useDeposit(): [
                   );
                 })
               : undefined;
-          // add 40000 for existing ticks
-          // add 40000 more for initializing a new tick
-          return gasEstimate + (existingTick ? 40000 : 80000);
+          // add 50000 for existing ticks
+          // add 50000 more for initializing a new tick
+          return gasEstimate + (existingTick ? 50000 : 100000);
           // add 80000 base gas
           // add 60000 for initilizing a new tick pair
         }, 80000 + (!pairTicks ? 60000 : 0));

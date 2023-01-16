@@ -8,7 +8,7 @@ import { DeliverTxResponse, SigningStargateClient } from "@cosmjs/stargate";
 import { IgniteClient } from "../client";
 import { msgTypes } from './registry';
 import { Api } from "./rest";
-import { MsgCancelLimitOrder, MsgDeposit, MsgPlaceLimitOrder, MsgSwap, MsgWithdrawFilledLimitOrder, MsgWithdrawl } from "./types/dex/tx";
+import { MsgCancelLimitOrder, MsgDeposit, MsgPlaceLimitOrder, MsgSwap, MsgWithdrawFilledLimitOrder, MsgWithdrawl } from "./types/duality/dex/tx";
 type msgCancelLimitOrderParams = {
   value: MsgCancelLimitOrder,
 };

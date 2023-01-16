@@ -241,6 +241,7 @@ export interface DexTick {
   tickData?: DexTickDataType;
   LimitOrderTranche0to1?: DexLimitTrancheIndexes;
   LimitOrderTranche1to0?: DexLimitTrancheIndexes;
+  price0To1?: string;
 }
 
 export interface DexTickDataType {
@@ -481,7 +482,7 @@ export class HttpClient<SecurityDataType = unknown> {
 }
 
 /**
- * @title dex/fee_tier.proto
+ * @title duality/dex/fee_tier.proto
  * @version version not set
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
