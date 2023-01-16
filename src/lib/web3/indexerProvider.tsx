@@ -449,7 +449,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let lastRequested = 0;
     const onDexUpdateMessage = function (event: MessageActionEvent) {
-      const Creator = event['message.Creator'];
+      const Receiver = event['message.Receiver'];
       const Token0 = event['message.Token0'];
       const Token1 = event['message.Token1'];
       const TickIndex = event['message.TickIndex'];
@@ -458,7 +458,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       const NewReserves1 = event['message.NewReserves1'];
 
       if (
-        !Creator ||
+        Receiver !== address ||
         !Token0 ||
         !Token1 ||
         !TickIndex ||
@@ -493,7 +493,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         if (sharesOwned.isGreaterThan(0)) {
           const newShare = {
             pairId,
-            address: Creator,
+            address,
             feeIndex: FeeIndex,
             tickIndex: TickIndex,
             sharesOwned: sharesOwned.toFixed(),
@@ -539,7 +539,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscriber.unsubscribeMessage(onDexUpdateMessage);
     };
-  }, []);
+  }, [address]);
 
   useEffect(() => {
     const onRouterUpdateMessage = function (event: MessageActionEvent) {
