@@ -481,7 +481,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           (share) =>
             share.tickIndex === TickIndex && share.feeIndex === FeeIndex
         );
-        const shareFound = shares[shareFoundIndex];
         const sharesOwned = calculateShares({
           tickIndex: new BigNumber(TickIndex),
           reserve0: new BigNumber(NewReserves0),
@@ -490,14 +489,13 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         // upsert new share
         if (sharesOwned.isGreaterThan(0)) {
           const newShare = {
-            ...shareFound,
             address: Creator,
             feeIndex: FeeIndex,
             pairId: getPairID(Token0, Token1),
             tickIndex: TickIndex,
             sharesOwned: sharesOwned.toFixed(),
           };
-          if (shareFound) {
+          if (shareFoundIndex >= 0) {
             // update share
             data.splice(shareFoundIndex, 1, newShare);
           } else {
@@ -507,7 +505,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         }
         // else remove share
         else {
-          if (shareFound) {
+          if (shareFoundIndex >= 0) {
             data.splice(shareFoundIndex, 1);
           }
         }
