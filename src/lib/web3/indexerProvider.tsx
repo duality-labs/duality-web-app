@@ -299,23 +299,19 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 [Array<Coin>, Array<IndexedShare>]
               >(
                 ([tokens, tokenizedShares], coin) => {
-                  const [, token0, token1, tickIndex, feeTier] =
+                  const [, token0, token1, tickIndex, feeIndex] =
                     coin.denom.match(
                       /^DualityLPShares-([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/
                     ) || [];
                   // transform tokenized shares into shares
-                  if (token0 && token1 && tickIndex && feeTier) {
-                    // calculate tokenized shares here
-                    const feeIndex = feeTypes.findIndex(
-                      ({ fee }) => fee === Number(feeTier) / 10000
-                    );
+                  if (token0 && token1 && tickIndex && feeIndex) {
                     // add tokenized share if everything is fine
-                    if (address && feeIndex >= 0) {
+                    if (address) {
                       const tokenizedShare = {
                         address,
                         pairId: getPairID(token0, token1),
                         tickIndex,
-                        feeIndex: `${feeIndex}`,
+                        feeIndex,
                         sharesOwned: coin.amount,
                       };
                       return [tokens, [...tokenizedShares, tokenizedShare]];
