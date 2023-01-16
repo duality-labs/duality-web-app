@@ -474,12 +474,15 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       // update user's share state
       setShareData((state) => {
         if (!state) return state;
+        // find matched data
         const { shares = [] } = state || {};
-        // upsert shares
         const data = shares.slice();
+        const pairId = getPairID(Token0, Token1);
         const shareFoundIndex = shares.findIndex(
           (share) =>
-            share.tickIndex === TickIndex && share.feeIndex === FeeIndex
+            share.pairId === pairId &&
+            share.tickIndex === TickIndex &&
+            share.feeIndex === FeeIndex
         );
         const sharesOwned = calculateShares({
           tickIndex: new BigNumber(TickIndex),
@@ -489,9 +492,9 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         // upsert new share
         if (sharesOwned.isGreaterThan(0)) {
           const newShare = {
+            pairId,
             address: Creator,
             feeIndex: FeeIndex,
-            pairId: getPairID(Token0, Token1),
             tickIndex: TickIndex,
             sharesOwned: sharesOwned.toFixed(),
           };
