@@ -822,18 +822,79 @@ export default function Pool() {
         <div
           className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
+          <div className="chart-header row">
+            <div className="col">
+              <h3 className="h3">Add Liquidity</h3>
+            </div>
+            <div className="col flex-centered chart-type-value">Customized</div>
+            <div className="col flex-centered ml-auto">Transaction Details</div>
+          </div>
+          <hr className="mt-3 mb-4" />
           <div className="flex row">
             <div className="flex col col--left">
               <div className="chart-header row my-4">
-                <h3 className="h3">Liquidity Distribution</h3>
                 <span className="tokens-badge badge-default badge-large">
                   {tokenA?.symbol}/{tokenB?.symbol}
                 </span>
-                <button type="button" className="icon-button" onClick={swapAll}>
+                <button
+                  type="button"
+                  className="ml-auto icon-button"
+                  onClick={swapAll}
+                >
                   <FontAwesomeIcon
                     icon={faArrowRightArrowLeft}
                   ></FontAwesomeIcon>
                 </button>
+              </div>
+              <div className="card-row my-3">
+                <TokenInputGroup
+                  className="flex"
+                  variant={!hasSufficientFundsA && 'error'}
+                  onValueChanged={setInputValueA}
+                  onTokenChanged={setTokenA}
+                  tokenList={tokenList}
+                  token={tokenA}
+                  value={inputValueA}
+                  exclusion={tokenB}
+                />
+              </div>
+              <div className="card-row my-3">
+                <TokenInputGroup
+                  className="flex"
+                  variant={!hasSufficientFundsB && 'error'}
+                  onValueChanged={setInputValueB}
+                  onTokenChanged={setTokenB}
+                  tokenList={tokenList}
+                  token={tokenB}
+                  value={inputValueB}
+                  exclusion={tokenA}
+                />
+              </div>
+              <input
+                className="button-primary text-medium mt-3 p-3"
+                type="submit"
+                value="Confirm"
+              />
+            </div>
+            <div className="flex col col--right">
+              <div className="chart-header row my-4">
+                <div className="col">
+                  <h3 className="h3">Liquidity Distribution</h3>
+                </div>
+                <div className="col flex-centered ml-auto">
+                  <div className="row gap-2">
+                    <div>Current Price</div>
+                    <div className="current-price">
+                      {currentPriceFromTicks?.toFixed(5) ?? '-'}
+                    </div>
+                    {tokenA && tokenB && (
+                      <div>
+                        {tokenA.display.toUpperCase()} per{' '}
+                        {tokenB.display.toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="flex row chart-area">
                 <LiquiditySelector
@@ -855,24 +916,6 @@ export default function Pool() {
                   canMoveX
                   oneSidedLiquidity={isValueAZero || isValueBZero}
                 ></LiquiditySelector>
-              </div>
-            </div>
-            <div className="col chart-price">
-              <div className="hero-text mt-4">
-                {currentPriceFromTicks?.toFixed(5) ?? '-'}
-              </div>
-              <div className="hero-texts mb-4">
-                {currentPriceFromTicks
-                  ? `${tokenA.display.toUpperCase()}/${tokenB.display.toUpperCase()}`
-                  : '-'}
-              </div>
-              <div>Current Price</div>
-              <div className="mt-auto mb-4">
-                <input
-                  className="button-primary text-medium mx-auto px-4 py-4"
-                  type="submit"
-                  value="Add Liquidity"
-                />
               </div>
             </div>
           </div>
