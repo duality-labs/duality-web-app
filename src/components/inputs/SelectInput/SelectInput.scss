@@ -35,7 +35,7 @@
       bottom: 0;
     }
 
-    .select-input-group {
+    .select-input-group--column {
       & {
         display: flex;
         flex: 1 1 auto;
@@ -44,6 +44,19 @@
         gap: 0;
         background-color: var(--default);
         border-radius: paddings.$p-3;
+      }
+    }
+    .select-input-group--row {
+      .select-input-option {
+        background-color: var(--default);
+        border-radius: paddings.$p-3;
+        flex: 1 1 auto;
+        label {
+        }
+      }
+    }
+    .select-input-group {
+      & {
         padding-top: paddings.$p-3;
         padding-bottom: paddings.$p-3;
         margin-bottom: margins.$m-3;

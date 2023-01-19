@@ -68,6 +68,7 @@ export default function SelectInput<T>({
   getSelectedText = getLabel,
   list,
   value,
+  maxColumnCount = 1,
   ...radioInputProps
 }: SelectInputProps<T>) {
   const selectedItem = list.find((item) => item === value);
@@ -100,7 +101,10 @@ export default function SelectInput<T>({
       <Drawer containerClassName="select-input-options" expanded={expanded}>
         <RadioInput<T>
           inputType="checkbox"
-          className="select-input-group"
+          className={[
+            'select-input-group',
+            `select-input-group--${maxColumnCount === 1 ? 'column' : 'row'}`,
+          ].join(' ')}
           OptionContainerComponent={({ children }) => (
             <div className="select-input-option">{children}</div>
           )}
@@ -120,6 +124,7 @@ export default function SelectInput<T>({
           {...radioInputProps}
           list={list}
           value={value}
+          maxColumnCount={maxColumnCount}
         />
       </Drawer>
     </div>
