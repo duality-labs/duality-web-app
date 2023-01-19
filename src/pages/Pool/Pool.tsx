@@ -25,6 +25,7 @@ import {
 import { useHasPriceData } from '../../lib/tokenPrices';
 
 import RadioInput from '../../components/RadioInput';
+import SelectInput from '../../components/inputs/SelectInput/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
 import { useNumericInputState } from '../../components/inputs/NumberInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
@@ -845,6 +846,17 @@ export default function Pool() {
                     icon={faArrowRightArrowLeft}
                   ></FontAwesomeIcon>
                 </button>
+              </div>
+              <div className="row">
+                <SelectInput<FeeType>
+                  className="col flex"
+                  list={feeTypes}
+                  value={feeType}
+                  onChange={setFeeType}
+                  getLabel={(feeType) =>
+                    feeType ? `${feeType.label} Fee Tier` : 'Select Fee Tier'
+                  }
+                />
               </div>
               <div className="card-row my-3">
                 <TokenInputGroup
