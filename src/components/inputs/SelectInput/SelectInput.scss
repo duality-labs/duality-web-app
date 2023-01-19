@@ -16,6 +16,11 @@
   .select-input-options {
     display: flex;
     flex-direction: row;
+    border-radius: paddings.$p-3;
+
+    .drawer-panel {
+      bottom: 0;
+    }
 
     .select-input-group {
       & {

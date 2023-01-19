@@ -1,6 +1,7 @@
 import { faAngleDown, faAngleUp } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useCallback, useState } from 'react';
+import Drawer from '../../Drawer';
 import RadioInput from '../../RadioInput';
 import { OptionProps, RadioInputProps } from '../../RadioInput/RadioInput';
 
@@ -92,9 +93,7 @@ export default function SelectInput<T>({
           <FontAwesomeIcon icon={!expanded ? faAngleDown : faAngleUp} />
         </div>
       </button>
-      <div
-        className={['select-input-options', !expanded ? 'hide' : ''].join(' ')}
-      >
+      <Drawer containerClassName="select-input-options" expanded={expanded}>
         <RadioInput<T>
           inputType="checkbox"
           className="select-input-group"
@@ -118,7 +117,7 @@ export default function SelectInput<T>({
           list={list}
           value={value}
         />
-      </div>
+      </Drawer>
     </div>
   );
 }
