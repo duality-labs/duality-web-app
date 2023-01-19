@@ -1,5 +1,6 @@
 @use '../../../styles/mixins-vars/margins.scss' as margins;
 @use '../../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../../styles/mixins-vars/animations.scss' as animations;
 
 .select-input {
   margin-top: margins.$m-3;
@@ -11,6 +12,14 @@
     margin-bottom: margins.$m-3;
     padding: paddings.$p-4;
     background-color: var(--default);
+  }
+
+  .select-input-selection svg {
+    transition: transform animations.$short-duration animations.$default-mode;
+    transform: rotate(0deg);
+  }
+  &.expanded .select-input-selection svg {
+    transform: rotate(180deg);
   }
 
   .select-input-options {

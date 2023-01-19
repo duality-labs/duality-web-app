@@ -1,4 +1,4 @@
-import { faAngleDown, faAngleUp } from '@fortawesome/free-solid-svg-icons';
+import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useCallback, useState } from 'react';
 import Drawer from '../../Drawer';
@@ -77,7 +77,11 @@ export default function SelectInput<T>({
     []
   );
   return (
-    <div className={['select-input', className].filter(Boolean).join(' ')}>
+    <div
+      className={['select-input', className, expanded && 'expanded']
+        .filter(Boolean)
+        .join(' ')}
+    >
       <button
         className="select-input-selection row flex-centered"
         type="button"
@@ -90,7 +94,7 @@ export default function SelectInput<T>({
           />
         </div>
         <div className="col ml-auto flex-centered">
-          <FontAwesomeIcon icon={!expanded ? faAngleDown : faAngleUp} />
+          <FontAwesomeIcon icon={faAngleDown} />
         </div>
       </button>
       <Drawer containerClassName="select-input-options" expanded={expanded}>
