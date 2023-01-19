@@ -17,8 +17,12 @@
     display: flex;
     flex-direction: row;
     border-radius: paddings.$p-3;
+    overflow: visible;
+    overflow-y: hidden;
+    margin: 0 -2px;
 
     .drawer-panel {
+      padding: 0px 2px;
       bottom: 0;
     }
 
