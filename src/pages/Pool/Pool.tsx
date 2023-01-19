@@ -44,6 +44,7 @@ import useFeeLiquidityMap from './useFeeLiquidityMap';
 import { formatPrice } from '../../lib/utils/number';
 import { priceToTickIndex } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
+import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 
 import './Pool.scss';
 
@@ -53,15 +54,8 @@ const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 const priceMin = Math.pow(10, -maxFractionDigits);
 const priceMax = Math.pow(10, +maxFractionDigits);
 const defaultFee = '0.30%';
-const defaultSlopeType = 'UNIFORM';
-
-type SlopeType = 'UNIFORM' | 'UP-SLOPE' | 'BELL CURVE' | 'DOWN-SLOPE';
-const slopeTypes: Array<SlopeType> = [
-  'UNIFORM',
-  'UP-SLOPE',
-  'BELL CURVE',
-  'DOWN-SLOPE',
-];
+const defaultLiquidityShape =
+  liquidityShapes.find(({ value }) => value === 'flat') ?? liquidityShapes[0];
 
 const defaultPrecision = '6';
 
@@ -154,7 +148,9 @@ export default function Pool() {
   const invertedTokenOrder =
     tokenA?.address === token1 && tokenB?.address === token0;
 
-  const [slopeType, setSlopeType] = useState<SlopeType>(defaultSlopeType);
+  const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
+    defaultLiquidityShape
+  );
   const [precision, setPrecision] = useState<string>(defaultPrecision);
   // restrict precision to 2 ticks on double-sided liquidity mode
   useEffect(() => {
@@ -508,13 +504,13 @@ export default function Pool() {
 
         const shapeFactor = (() => {
           return (() => {
-            switch (slopeType) {
-              case 'UP-SLOPE':
+            switch (liquidityShape.value) {
+              case 'increasing':
                 return tickPrices.map((_, index, tickPrices) => {
                   const percent = index / (tickPrices.length - 1);
                   return 1 + percent;
                 });
-              case 'BELL CURVE':
+              case 'normal':
                 return tickPrices.map((_, index, tickPrices) => {
                   const percent = index / (tickPrices.length - 1);
                   return (
@@ -522,12 +518,12 @@ export default function Pool() {
                     Math.exp(-(1 / 2) * Math.pow((percent - 0.5) / 0.25, 2))
                   );
                 });
-              case 'DOWN-SLOPE':
+              case 'decreasing':
                 return tickPrices.map((_, index, tickPrices) => {
                   const percent = 1 - index / (tickPrices.length - 1);
                   return 1 + percent;
                 });
-              case 'UNIFORM':
+              case 'flat':
               default:
                 return tickPrices.map(() => 1);
             }
@@ -617,7 +613,7 @@ export default function Pool() {
     feeType,
     tokenA,
     tokenB,
-    slopeType,
+    liquidityShape,
     rangeMin,
     rangeMax,
     tickCount,
@@ -882,6 +878,27 @@ export default function Pool() {
                   exclusion={tokenA}
                 />
               </div>
+              <div className="row">
+                <div className="col flex">
+                  <h4 className="mt-4">Liquidity Shape</h4>
+                  <SelectInput<LiquidityShape>
+                    className="col flex"
+                    maxColumnCount={4}
+                    list={liquidityShapes}
+                    value={liquidityShape}
+                    onChange={setLiquidityShape}
+                    getLabel={(feeType) =>
+                      feeType ? `${feeType.label}` : 'Select Fee Tier'
+                    }
+                    OptionComponent={({ option: { icon, label } }) => (
+                      <div className="col flex flex-centered mt-1 pt-3">
+                        <img src={icon} alt={label} width="44" />
+                        <div className="my-2">{label}</div>
+                      </div>
+                    )}
+                  />
+                </div>
+              </div>
               <input
                 className="button-primary text-medium mt-3 p-3"
                 type="submit"
@@ -1034,13 +1051,6 @@ export default function Pool() {
                   Your liquidity will be distributed among different price
                   points (called ticks) in the shape of the liquidity curve.
                   This is represented by the yellow curve above.
-                </div>
-                <div className="card-row mt-4">
-                  <RadioButtonGroupInput<SlopeType>
-                    values={slopeTypes}
-                    value={slopeType}
-                    onChange={setSlopeType}
-                  />
                 </div>
               </div>
             )}
