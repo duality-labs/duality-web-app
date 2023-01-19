@@ -6,8 +6,9 @@ export interface OptionProps<T> {
   id: string;
   index: number;
 }
-interface RadioInputProps<T> {
+export interface RadioInputProps<T> {
   OptionComponent?: React.ElementType<OptionProps<T>>;
+  OptionContainerComponent?: React.ElementType;
   onChange?: (value: T, index: number) => void;
   list: Array<T>;
   maxColumnCount?: number;
@@ -23,6 +24,7 @@ function DefaultOptionComponent<T>({ option }: OptionProps<T>) {
 
 export default function RadioInput<T>({
   OptionComponent = DefaultOptionComponent,
+  OptionContainerComponent = Fragment,
   onChange,
   list,
   maxColumnCount,
@@ -47,7 +49,7 @@ export default function RadioInput<T>({
         const id = `${groupName}-${index}`;
 
         return (
-          <Fragment key={id}>
+          <OptionContainerComponent key={id}>
             <input
               type="radio"
               name={groupName}
@@ -58,7 +60,7 @@ export default function RadioInput<T>({
             <label htmlFor={id} style={labelStyle}>
               <OptionComponent option={option} id={id} index={index} />
             </label>
-          </Fragment>
+          </OptionContainerComponent>
         );
       })}
     </div>

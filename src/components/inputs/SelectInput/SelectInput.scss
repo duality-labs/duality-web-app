@@ -1,0 +1,27 @@
+@use '../../../styles/mixins-vars/margins.scss' as margins;
+@use '../../../styles/mixins-vars/paddings.scss' as paddings;
+
+.select-input {
+  .select-input-options {
+    display: flex;
+    flex-direction: row;
+    .select-input-group {
+      & {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        gap: 0;
+      }
+    }
+
+    .select-input-option {
+      label {
+        display: flex;
+        flex-direction: row;
+        padding-top: paddings.$p-2;
+        padding-bottom: paddings.$p-2;
+      }
+    }
+  }
+}
