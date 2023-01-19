@@ -2,9 +2,21 @@
 @use '../../../styles/mixins-vars/paddings.scss' as paddings;
 
 .select-input {
+  margin-top: margins.$m-3;
+  margin-bottom: margins.$m-3;
+  padding-top: paddings.$p-2;
+  padding-bottom: paddings.$p-2;
+
+  .select-input-selection {
+    margin-bottom: margins.$m-3;
+    padding: paddings.$p-4;
+    background-color: var(--default);
+  }
+
   .select-input-options {
     display: flex;
     flex-direction: row;
+
     .select-input-group {
       & {
         display: flex;
@@ -12,6 +24,11 @@
         flex-direction: column;
         flex-wrap: nowrap;
         gap: 0;
+        background-color: var(--default);
+        border-radius: paddings.$p-3;
+        padding-top: paddings.$p-3;
+        padding-bottom: paddings.$p-3;
+        margin-bottom: margins.$m-3;
       }
     }
 
@@ -19,6 +36,7 @@
       label {
         display: flex;
         flex-direction: row;
+        padding: paddings.$p-4;
         padding-top: paddings.$p-2;
         padding-bottom: paddings.$p-2;
       }
@@ -31,10 +49,22 @@
       opacity: 0;
       width: 0;
       height: 0;
-      &:focus + label {
-        outline: #fff solid 1px;
+      & + label * {
+        opacity: 0.6;
+      }
+      &:checked + label * {
+        opacity: 1;
+      }
+      &:focus + label,
+      :active + label,
+      + label:hover {
         border-radius: 6px;
         background-color: rgba($color: #fff, $alpha: 0.1);
+      }
+      &:focus + label,
+      :active + label {
+        outline: #fff solid 1px;
+        border-radius: 6px;
       }
     }
   }
