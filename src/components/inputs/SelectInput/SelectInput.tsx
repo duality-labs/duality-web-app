@@ -96,6 +96,7 @@ export default function SelectInput<T>({
         className={['select-input-options', !expanded ? 'hide' : ''].join(' ')}
       >
         <RadioInput<T>
+          inputType="checkbox"
           className="select-input-group"
           OptionContainerComponent={({ children }) => (
             <div className="select-input-option">{children}</div>

@@ -23,5 +23,19 @@
         padding-bottom: paddings.$p-2;
       }
     }
+
+    // invisible but present checkboxes for keyboard navigation
+    input[type='checkbox'] {
+      display: block;
+      appearance: none;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      &:focus + label {
+        outline: #fff solid 1px;
+        border-radius: 6px;
+        background-color: rgba($color: #fff, $alpha: 0.1);
+      }
+    }
   }
 }
