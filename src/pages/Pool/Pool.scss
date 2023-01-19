@@ -256,6 +256,9 @@
   }
 
   .orderbook-card {
+    background-color: var(--default);
+    border-radius: paddings.$p-4;
+
     > .row {
       gap: 3rem;
       flex-direction: column;

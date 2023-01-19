@@ -24,7 +24,6 @@ import {
 } from '../../lib/web3/indexerProvider';
 import { useHasPriceData } from '../../lib/tokenPrices';
 
-import RadioInput from '../../components/RadioInput';
 import SelectInput from '../../components/inputs/SelectInput/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
 import { useNumericInputState } from '../../components/inputs/NumberInput';
@@ -428,9 +427,6 @@ export default function Pool() {
     setInputValueB,
   ]);
 
-  const [tabSelected, setTabSelected] = useState<'range' | 'fee' | 'curve'>(
-    'range'
-  );
   const [chartTypeSelected, setChartTypeSelected] = useState<
     'AMM' | 'Orderbook'
   >('AMM');
@@ -624,7 +620,6 @@ export default function Pool() {
 
   const hasPriceData = useHasPriceData([tokenA, tokenB]);
 
-  const [editingFee, setEditingFee] = useState(false);
   const { data: balances } = useBankBalances();
   const balanceTokenA =
     tokenA && balances && new BigNumber(getBalance(tokenA, balances));
@@ -1000,259 +995,103 @@ export default function Pool() {
                   />
                 </div>
               </div>
+              {chartTypeSelected === 'Orderbook' && (
+                <div className="mt-4 pt-4 page-card orderbook-card">
+                  <RadioButtonGroupInput<number>
+                    className="mx-auto mt-2 mb-4"
+                    buttonClassName="py-3 px-4"
+                    values={(() => {
+                      const map = new Map<number, ReactNode>();
+                      map.set(-1, 'All');
+                      if (rangeMin === rangeMax) {
+                        map.set(0, 1);
+                        return map;
+                      }
+                      for (let index = 0; index < Number(precision); index++) {
+                        map.set(index, index + 1);
+                      }
+                      return map;
+                    })()}
+                    value={userTickSelected}
+                    onChange={(tickSelectedString) => {
+                      setUserTickSelected(tickSelectedString);
+                    }}
+                  />
+                  <div className="row">
+                    <div className="col">
+                      {!userTicks[userTickSelected] ? (
+                        <div className="row precision-card">
+                          <h3 className="card-title mr-auto">
+                            Number of Ticks
+                          </h3>
+                          <StepNumberInput
+                            editable={false}
+                            min={
+                              rangeMin === rangeMax
+                                ? 1
+                                : !isValueAZero && !isValueBZero
+                                ? 2
+                                : 1
+                            }
+                            max={rangeMin === rangeMax ? 1 : 10}
+                            value={rangeMin === rangeMax ? '1' : precision}
+                            onChange={setPrecision}
+                            minSignificantDigits={1}
+                          />
+                          <button
+                            type="button"
+                            className="button-info ml-2"
+                            onClick={() => setPrecision(defaultPrecision)}
+                          >
+                            Auto
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="row tick-price-card">
+                          <h3 className="card-title mr-auto">Price</h3>
+                          <StepNumberInput
+                            key={userTickSelected}
+                            min={priceMin}
+                            max={priceMax}
+                            pressedDelay={500}
+                            pressedInterval={100}
+                            stepFunction={logarithmStep}
+                            value={userTicks[userTickSelected].price.toFixed()}
+                            onChange={(value) => {
+                              setUserTicks((userTicks) => {
+                                // skip non-update
+                                const newValue = new BigNumber(value);
+                                if (
+                                  userTicks[userTickSelected].price.isEqualTo(
+                                    newValue
+                                  )
+                                )
+                                  return userTicks;
+                                // replace singular tick price
+                                return userTicks.map((userTick, index) => {
+                                  return index === userTickSelected
+                                    ? {
+                                        ...userTick,
+                                        price: newValue,
+                                        tickIndex:
+                                          priceToTickIndex(newValue).toNumber(),
+                                      }
+                                    : userTick;
+                                });
+                              });
+                            }}
+                            maxSignificantDigits={maxFractionDigits + 1}
+                            format={formatStepNumberPriceInput}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
-        {chartTypeSelected === 'AMM' ? (
-          <div className="page-card mx-auto">
-            <RadioButtonGroupInput<'range' | 'fee' | 'curve'>
-              className="mx-auto mt-2 mb-4"
-              values={{
-                range: <span>Price&nbsp;Range</span>,
-                fee: <span>Fee&nbsp;Tier</span>,
-                curve: <span>Liquidity&nbsp;Curve</span>,
-              }}
-              value={tabSelected}
-              onChange={setTabSelected}
-            />
-            {tabSelected === 'range' && (
-              <div className="price-card">
-                <div className="row mt-4 mb-2">
-                  Your liquidity will be distributed within the minimum and
-                  maximum price ranges.
-                </div>
-              </div>
-            )}
-            {tabSelected === 'fee' && (
-              <div className="fee-card">
-                <RadioInput<FeeType>
-                  value={feeType}
-                  list={feeTypes}
-                  onChange={setFeeType}
-                  OptionComponent={({
-                    option: { fee, label, description },
-                  }) => (
-                    <div
-                      key={fee}
-                      className="button button-default card fee-type"
-                    >
-                      <h5 className="fee-title">{label}</h5>
-                      <span className="fee-description">{description}</span>
-                      {feeLiquidityMap?.[fee] && (
-                        <span
-                          className={[
-                            feeLiquidityMap[fee].isZero() && 'badge-muted',
-                            'pill fee-liquidity',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                        >
-                          {feeLiquidityMap[fee]
-                            .multipliedBy(100)
-                            .toNumber()
-                            .toLocaleString('en-US', {
-                              maximumFractionDigits: 1,
-                            })}
-                          % liquidity
-                        </span>
-                      )}
-                    </div>
-                  )}
-                />
-              </div>
-            )}
-            {tabSelected === 'curve' && (
-              <div className="curve-card">
-                <div className="info">
-                  Your liquidity will be distributed among different price
-                  points (called ticks) in the shape of the liquidity curve.
-                  This is represented by the yellow curve above.
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="page-card orderbook-card mx-auto">
-            <RadioButtonGroupInput<number>
-              className="mx-auto mt-2 mb-4"
-              buttonClassName="py-3 px-4"
-              values={(() => {
-                const map = new Map<number, ReactNode>();
-                map.set(-1, 'All');
-                if (rangeMin === rangeMax) {
-                  map.set(0, 1);
-                  return map;
-                }
-                for (let index = 0; index < Number(precision); index++) {
-                  map.set(index, index + 1);
-                }
-                return map;
-              })()}
-              value={userTickSelected}
-              onChange={(tickSelectedString) => {
-                setUserTickSelected(tickSelectedString);
-              }}
-            />
-            <div className="row">
-              <div className="col">
-                {!userTicks[userTickSelected] ? (
-                  <div className="row precision-card">
-                    <h3 className="card-title mr-auto">Number of Ticks</h3>
-                    <StepNumberInput
-                      editable={false}
-                      min={
-                        rangeMin === rangeMax
-                          ? 1
-                          : !isValueAZero && !isValueBZero
-                          ? 2
-                          : 1
-                      }
-                      max={rangeMin === rangeMax ? 1 : 10}
-                      value={rangeMin === rangeMax ? '1' : precision}
-                      onChange={setPrecision}
-                      minSignificantDigits={1}
-                    />
-                    <button
-                      type="button"
-                      className="button-info ml-2"
-                      onClick={() => setPrecision(defaultPrecision)}
-                    >
-                      Auto
-                    </button>
-                  </div>
-                ) : (
-                  <div className="row tick-price-card">
-                    <h3 className="card-title mr-auto">Price</h3>
-                    <StepNumberInput
-                      key={userTickSelected}
-                      min={priceMin}
-                      max={priceMax}
-                      pressedDelay={500}
-                      pressedInterval={100}
-                      stepFunction={logarithmStep}
-                      value={userTicks[userTickSelected].price.toFixed()}
-                      onChange={(value) => {
-                        setUserTicks((userTicks) => {
-                          // skip non-update
-                          const newValue = new BigNumber(value);
-                          if (
-                            userTicks[userTickSelected].price.isEqualTo(
-                              newValue
-                            )
-                          )
-                            return userTicks;
-                          // replace singular tick price
-                          return userTicks.map((userTick, index) => {
-                            return index === userTickSelected
-                              ? {
-                                  ...userTick,
-                                  price: newValue,
-                                  tickIndex:
-                                    priceToTickIndex(newValue).toNumber(),
-                                }
-                              : userTick;
-                          });
-                        });
-                      }}
-                      maxSignificantDigits={maxFractionDigits + 1}
-                      format={formatStepNumberPriceInput}
-                    />
-                  </div>
-                )}
-              </div>
-              <div
-                className="col"
-                style={{
-                  display: userTickSelected >= 0 ? 'none' : 'block',
-                }}
-              >
-                <div className="fee-card">
-                  <div className="card-header">
-                    <h3 className="card-title mr-auto">Fee Tier</h3>
-                    {!editingFee && (
-                      <div className="badge-default corner-border badge-large ml-auto py-0">
-                        {feeType?.label}
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      className="button-secondary ml-2"
-                      onClick={() => setEditingFee((mode) => !mode)}
-                    >
-                      {editingFee ? 'Hide' : 'Edit'}
-                    </button>
-                  </div>
-                  <div className="card-row">
-                    {editingFee ? (
-                      <RadioInput<FeeType>
-                        value={feeType}
-                        list={feeTypes}
-                        onChange={setFeeType}
-                        OptionComponent={({
-                          option: { fee, label, description },
-                        }) => (
-                          <div
-                            key={fee}
-                            className="button button-default card fee-type"
-                          >
-                            <h5 className="fee-title">{label}</h5>
-                            <span className="fee-description">
-                              {description}
-                            </span>
-                            {feeLiquidityMap?.[fee] && (
-                              <span
-                                className={[
-                                  feeLiquidityMap[fee].isZero() &&
-                                    'badge-muted',
-                                  'pill fee-liquidity',
-                                ]
-                                  .filter(Boolean)
-                                  .join(' ')}
-                              >
-                                {feeLiquidityMap[fee]
-                                  .multipliedBy(100)
-                                  .toNumber()
-                                  .toLocaleString('en-US', {
-                                    maximumFractionDigits: 1,
-                                  })}
-                                % liquidity
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      />
-                    ) : (
-                      <>
-                        {feeType && feeLiquidityMap?.[feeType.fee] && (
-                          <span
-                            className={[
-                              feeLiquidityMap?.[feeType.fee].isZero() &&
-                                'badge-muted',
-                              'badge-info pill ml-auto badge-large fs-s mt-auto',
-                            ]
-                              .filter(Boolean)
-                              .join(' ')}
-                          >
-                            {feeLiquidityMap[feeType.fee]
-                              .multipliedBy(100)
-                              .toNumber()
-                              .toLocaleString('en-US', {
-                                maximumFractionDigits: 1,
-                              })}
-                            % liquidity
-                          </span>
-                        )}
-                        <span className="badge-info pill ml-2 badge-large fs-s mt-auto">
-                          {feeType?.description}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
       <div className="spacer"></div>
     </form>
