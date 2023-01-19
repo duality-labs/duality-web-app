@@ -15,7 +15,6 @@ export interface RadioInputProps<T> {
   list: Array<T>;
   maxColumnCount?: number;
   value?: T;
-  index?: number;
   name?: string;
   className?: string;
 }
