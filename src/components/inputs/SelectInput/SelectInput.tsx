@@ -32,7 +32,7 @@ function DefaultOptionComponent<T>({
   const description = getDescription(option) ?? '';
   return (
     <>
-      <div className="label">{label}</div>
+      <div className="label mr-auto">{label}</div>
       <div
         className={['description', !description && 'hide', 'ml-auto']
           .filter(Boolean)
@@ -76,20 +76,22 @@ export default function SelectInput<T>({
     []
   );
   return (
-    <div className="select-input">
-      <div className="select-input-selection row">
-        <div className="col">
+    <div className={['select-input', className].filter(Boolean).join(' ')}>
+      <button
+        className="select-input-selection row flex-centered"
+        type="button"
+        onClick={toggleExpand}
+      >
+        <div className="col mr-auto">
           <SelectedComponent
             value={selectedItem}
             getSelectedText={getSelectedText}
           />
         </div>
         <div className="col ml-auto flex-centered">
-          <button type="button" onClick={toggleExpand}>
-            <FontAwesomeIcon icon={!expanded ? faAngleDown : faAngleUp} />
-          </button>
+          <FontAwesomeIcon icon={!expanded ? faAngleDown : faAngleUp} />
         </div>
-      </div>
+      </button>
       <div
         className={['select-input-options', !expanded ? 'hide' : ''].join(' ')}
       >
