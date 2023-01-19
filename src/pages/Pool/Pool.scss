@@ -158,8 +158,6 @@
   }
 
   .chart-card {
-    min-height: 30vh;
-    height: 500px;
     align-self: stretch;
 
     > .row {
@@ -175,13 +173,12 @@
       }
     }
 
-    .hero-text {
-      font-size: 2.75rem;
-      font-weight: bold;
+    .chart-area {
+      min-height: 10em;
     }
 
-    .chart-price {
-      align-items: flex-end;
+    .col--left {
+      min-width: 24em;
     }
   }
 
