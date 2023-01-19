@@ -946,23 +946,7 @@ export default function Pool() {
                   oneSidedLiquidity={isValueAZero || isValueBZero}
                 ></LiquiditySelector>
               </div>
-            </div>
-          </div>
-        </div>
-        {chartTypeSelected === 'AMM' ? (
-          <div className="page-card mx-auto">
-            <RadioButtonGroupInput<'range' | 'fee' | 'curve'>
-              className="mx-auto mt-2 mb-4"
-              values={{
-                range: <span>Price&nbsp;Range</span>,
-                fee: <span>Fee&nbsp;Tier</span>,
-                curve: <span>Liquidity&nbsp;Curve</span>,
-              }}
-              value={tabSelected}
-              onChange={setTabSelected}
-            />
-            {tabSelected === 'range' && (
-              <div className="price-card">
+              <div className="price-card mt-4">
                 <div className="card-row">
                   <StepNumberInput
                     title="MIN PRICE"
@@ -1001,6 +985,24 @@ export default function Pool() {
                     format={formatStepNumberPriceInput}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {chartTypeSelected === 'AMM' ? (
+          <div className="page-card mx-auto">
+            <RadioButtonGroupInput<'range' | 'fee' | 'curve'>
+              className="mx-auto mt-2 mb-4"
+              values={{
+                range: <span>Price&nbsp;Range</span>,
+                fee: <span>Fee&nbsp;Tier</span>,
+                curve: <span>Liquidity&nbsp;Curve</span>,
+              }}
+              value={tabSelected}
+              onChange={setTabSelected}
+            />
+            {tabSelected === 'range' && (
+              <div className="price-card">
                 <div className="row mt-4 mb-2">
                   Your liquidity will be distributed within the minimum and
                   maximum price ranges.
