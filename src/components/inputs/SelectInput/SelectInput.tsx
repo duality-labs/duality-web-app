@@ -83,7 +83,7 @@ export default function SelectInput<T>({
         .join(' ')}
     >
       <button
-        className="select-input-selection row flex-centered"
+        className="select-input-selection row flex flex-centered"
         type="button"
         onClick={toggleExpand}
       >

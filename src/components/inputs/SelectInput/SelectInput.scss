@@ -67,8 +67,11 @@
       opacity: 0;
       width: 0;
       height: 0;
-      & + label * {
+      & + label *:not(:has(> *)) {
         opacity: 0.6;
+      }
+      & + label img {
+        opacity: 0.75;
       }
       &:checked + label * {
         opacity: 1;
