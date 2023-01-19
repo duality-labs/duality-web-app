@@ -43,6 +43,8 @@ export default function SelectInput<T>({
           OptionContainerComponent={({ children }) => (
             <div className="select-input-option">{children}</div>
           )}
+          onClick={() => setExpanded(false)}
+          // allow overwriting with custom components
           {...radioInputProps}
           list={list}
           value={value}

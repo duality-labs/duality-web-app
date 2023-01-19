@@ -10,6 +10,7 @@ export interface RadioInputProps<T> {
   OptionComponent?: React.ElementType<OptionProps<T>>;
   OptionContainerComponent?: React.ElementType;
   onChange?: (value: T, index: number) => void;
+  onClick?: React.MouseEventHandler<HTMLInputElement>;
   list: Array<T>;
   maxColumnCount?: number;
   value?: T;
@@ -26,6 +27,7 @@ export default function RadioInput<T>({
   OptionComponent = DefaultOptionComponent,
   OptionContainerComponent = Fragment,
   onChange,
+  onClick,
   list,
   maxColumnCount,
   value,
@@ -56,6 +58,7 @@ export default function RadioInput<T>({
               id={id}
               checked={index === selectedIndex}
               onChange={() => onChange?.(option, index)}
+              onClick={onClick}
             ></input>
             <label htmlFor={id} style={labelStyle}>
               <OptionComponent option={option} id={id} index={index} />
