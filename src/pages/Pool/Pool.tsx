@@ -892,7 +892,7 @@ export default function Pool() {
                     }
                     OptionComponent={({ option: { icon, label } }) => (
                       <div className="col flex flex-centered mt-1 pt-3">
-                        <img src={icon} alt={label} width="44" />
+                        <img src={icon} alt={label} height={36} />
                         <div className="my-2">{label}</div>
                       </div>
                     )}
