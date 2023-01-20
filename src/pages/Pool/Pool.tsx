@@ -845,12 +845,26 @@ export default function Pool() {
               </div>
               <div className="row">
                 <SelectInput<FeeType>
-                  className="col flex"
+                  className="col flex select-fee-tier"
                   list={feeTypes}
                   value={feeType}
                   onChange={setFeeType}
                   getLabel={(feeType) =>
                     feeType ? `${feeType.label} Fee Tier` : 'Select Fee Tier'
+                  }
+                  getDescription={(feeType) =>
+                    !feeType ? null : (
+                      <>
+                        <span>{feeType.description}</span>
+                        <span> </span>
+                        <span className="badge">
+                          {feeLiquidityMap?.[feeType.fee]
+                            .multipliedBy(100)
+                            .toFixed(0) ?? '0'}
+                          % of Liquidity
+                        </span>
+                      </>
+                    )
                   }
                 />
               </div>

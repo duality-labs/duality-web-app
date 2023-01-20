@@ -183,6 +183,20 @@
     }
   }
 
+  .select-fee-tier {
+    .badge {
+      // enforce consistent width that can cover 100%
+      display: inline-block;
+      width: 9em;
+      padding-left: 0;
+      padding-right: 0;
+      // todo: replace following with new global badge styling
+      background-color: #ffffff;
+      color: hsla(0, 0%, 0%, 0.6);
+      border-radius: 6px;
+    }
+  }
+
   .fee-card {
     .card-row {
       flex-grow: 1;
