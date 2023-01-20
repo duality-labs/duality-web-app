@@ -1,16 +1,16 @@
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useCallback, useState } from 'react';
+import { ReactNode, useCallback, useState } from 'react';
 import Drawer from '../../Drawer';
 import RadioInput from '../../RadioInput';
 import { OptionProps, RadioInputProps } from '../../RadioInput/RadioInput';
 
 import './SelectInput.scss';
 
-type GetString<T> = (item: T | undefined) => string;
+type GetNode<T> = (item: T | undefined) => ReactNode;
 interface SelectedComponentProps<T> {
   value: T | undefined;
-  getSelectedText: GetString<T>;
+  getSelectedText: GetNode<T>;
 }
 function DefaultSelectedComponent<T>({
   value,
@@ -20,8 +20,8 @@ function DefaultSelectedComponent<T>({
 }
 
 interface SelectOptionsProps<T> extends OptionProps<T> {
-  getLabel: GetString<T>;
-  getDescription: GetString<T>;
+  getLabel: GetNode<T>;
+  getDescription: GetNode<T>;
 }
 
 function DefaultOptionComponent<T>({
@@ -47,9 +47,9 @@ function DefaultOptionComponent<T>({
 
 interface SelectInputProps<T> extends RadioInputProps<T> {
   SelectedComponent?: React.ComponentType<SelectedComponentProps<T>>;
-  getSelectedText?: GetString<T>;
-  getLabel?: GetString<T>;
-  getDescription?: GetString<T>;
+  getSelectedText?: GetNode<T>;
+  getLabel?: GetNode<T>;
+  getDescription?: GetNode<T>;
 }
 
 function defaultGetLabelText<T>(item: T) {
