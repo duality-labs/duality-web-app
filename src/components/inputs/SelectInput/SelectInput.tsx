@@ -7,6 +7,9 @@ import { OptionProps, RadioInputProps } from '../../RadioInput/RadioInput';
 
 import './SelectInput.scss';
 
+// re-export the reused OptionProps
+export type { OptionProps };
+
 type GetNode<T> = (item: T | undefined) => ReactNode;
 interface SelectedComponentProps<T> {
   value: T | undefined;
