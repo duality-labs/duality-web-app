@@ -24,7 +24,7 @@ import {
 } from '../../lib/web3/indexerProvider';
 import { useHasPriceData } from '../../lib/tokenPrices';
 
-import SelectInput from '../../components/inputs/SelectInput/SelectInput';
+import SelectInput from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
 import { useNumericInputState } from '../../components/inputs/NumberInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
