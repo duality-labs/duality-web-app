@@ -1,6 +1,6 @@
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ReactNode, useCallback, useState } from 'react';
+import { PropsWithChildren, ReactNode, useCallback, useState } from 'react';
 import Drawer from '../../Drawer';
 import RadioInput from '../../RadioInput';
 import { OptionProps, RadioInputProps } from '../../RadioInput/RadioInput';
@@ -108,8 +108,11 @@ export default function SelectInput<T>({
             'select-input-group',
             `select-input-group--${maxColumnCount === 1 ? 'column' : 'row'}`,
           ].join(' ')}
-          OptionContainerComponent={({ children }) => (
-            <div className="select-input-option">{children}</div>
+          OptionContainerComponent={useCallback(
+            ({ children }: PropsWithChildren<unknown>) => (
+              <div className="select-input-option">{children}</div>
+            ),
+            []
           )}
           // set default OptionComponent to use getters
           OptionComponent={useCallback(
@@ -122,7 +125,7 @@ export default function SelectInput<T>({
             ),
             [getLabel, getDescription]
           )}
-          onClick={() => setExpanded(false)}
+          onClick={useCallback(() => setExpanded(false), [])}
           // allow overwriting with custom components
           {...radioInputProps}
           list={list}

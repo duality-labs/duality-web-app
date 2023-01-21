@@ -24,7 +24,7 @@ import {
 } from '../../lib/web3/indexerProvider';
 import { useHasPriceData } from '../../lib/tokenPrices';
 
-import SelectInput from '../../components/inputs/SelectInput';
+import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
 import { useNumericInputState } from '../../components/inputs/NumberInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
@@ -899,12 +899,7 @@ export default function Pool() {
                     getLabel={(feeType) =>
                       feeType ? `${feeType.label}` : 'Select Fee Tier'
                     }
-                    OptionComponent={({ option: { icon, label } }) => (
-                      <div className="col flex flex-centered mt-1 pt-3">
-                        <img src={icon} alt={label} height={36} />
-                        <div className="my-2">{label}</div>
-                      </div>
-                    )}
+                    OptionComponent={LiquidityShapeOptionComponent}
                   />
                 </div>
               </div>
@@ -1095,6 +1090,17 @@ export default function Pool() {
       </div>
       <div className="spacer"></div>
     </form>
+  );
+}
+
+function LiquidityShapeOptionComponent({
+  option: { icon, label },
+}: OptionProps<LiquidityShape>) {
+  return (
+    <div className="col flex flex-centered mt-1 pt-3">
+      <img src={icon} alt={label} height={36} />
+      <div className="my-2">{label}</div>
+    </div>
   );
 }
 
