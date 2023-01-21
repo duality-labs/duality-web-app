@@ -46,6 +46,7 @@ import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 
 import './Pool.scss';
+import TokenPairLogos from '../../components/TokenPairLogos';
 
 // the default resolution for a number in 18 decimal places
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
@@ -825,9 +826,14 @@ export default function Pool() {
           <div className="flex row">
             <div className="flex col col--left">
               <div className="chart-header row my-4">
-                <span className="tokens-badge badge-default badge-large">
-                  {tokenA?.symbol}/{tokenB?.symbol}
-                </span>
+                <TokenPairLogos
+                  className="h3"
+                  tokenA={tokenA}
+                  tokenB={tokenB}
+                />
+                <h2 className="h3">
+                  {tokenA.symbol} {tokenB.symbol} Pool
+                </h2>
                 <button
                   type="button"
                   className="ml-auto icon-button"
