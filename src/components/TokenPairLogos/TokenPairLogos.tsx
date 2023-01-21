@@ -5,17 +5,28 @@ import './TokenPairLogos.scss';
 
 function TokenLogo({
   className,
-  token: { symbol, logo_URIs },
+  token,
+  previousToken = token,
 }: {
-  className?: string;
+  className: string;
   token: Token;
+  previousToken?: Token;
 }) {
   return (
-    <img
-      className={['token-pair-logo', className].filter(Boolean).join(' ')}
-      alt={`${symbol} logo`}
-      src={logo_URIs?.svg ?? logo_URIs?.png}
-    />
+    <div className="token-pair-logo">
+      <img
+        className={`${className} token-current`}
+        alt={`${token.symbol} logo`}
+        src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
+      />
+      <img
+        className={`${className} token-${
+          token === previousToken ? 'current' : 'previous'
+        }`}
+        alt={`${previousToken.symbol} logo`}
+        src={previousToken.logo_URIs?.svg ?? previousToken.logo_URIs?.png}
+      />
+    </div>
   );
 }
 
@@ -61,6 +72,7 @@ export default function TokenPairLogos({
               : 'swapping-token-a'
             : 'token-a'
         }
+        previousToken={previousTokenA}
         token={tokenA}
       />
       <TokenLogo
@@ -71,6 +83,7 @@ export default function TokenPairLogos({
               : 'swapping-token-b'
             : 'token-b'
         }
+        previousToken={previousTokenB}
         token={tokenB}
       />
     </div>

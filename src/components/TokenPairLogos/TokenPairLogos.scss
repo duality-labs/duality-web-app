@@ -1,7 +1,25 @@
 .token-pair-logos {
   .token-pair-logo {
+    display: inline-block;
     height: 1.7em;
+    width: 1.7em;
     vertical-align: middle;
+    position: relative;
+    img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: z-index linear 1s;
+    }
+    .token-previous {
+      z-index: 0;
+    }
+    .token-current {
+      z-index: 1;
+    }
   }
   .token-pair-logo + .token-pair-logo {
     margin-left: -0.33em;
