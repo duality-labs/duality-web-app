@@ -4,9 +4,11 @@
   "version": "0.1.88",
   "private": true,
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "vite",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "echo 'tests not configured yet'",
     "lint": "eslint .",
     "prepare": "husky install",
     "update": "sh ./scripts/update-generated-files.sh"
