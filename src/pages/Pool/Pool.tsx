@@ -47,7 +47,7 @@ import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import './Pool.scss';
 
 // the default resolution for a number in 18 decimal places
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const { REACT_APP__MAX_FRACTION_DIGITS = '' } = import.meta.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 const priceMin = Math.pow(10, -maxFractionDigits);
 const priceMax = Math.pow(10, +maxFractionDigits);

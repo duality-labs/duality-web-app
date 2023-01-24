@@ -6,7 +6,7 @@ import { Env } from './generated/ts-client/env';
 import { Module as CosmosBankV1Beta1 } from './generated/ts-client/cosmos.bank.v1beta1';
 import { Module as Dex } from './generated/ts-client/nicholasdotsol.duality.dex';
 
-const { REACT_APP__REST_API = '', REACT_APP__RPC_API = '' } = process.env;
+const { REACT_APP__REST_API = '', REACT_APP__RPC_API = '' } = import.meta.env;
 
 const CustomClient = IgniteClient.plugin([CosmosBankV1Beta1, Dex]);
 

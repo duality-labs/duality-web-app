@@ -1,4 +1,4 @@
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const { REACT_APP__MAX_FRACTION_DIGITS = '' } = import.meta.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
 // format to a visually pleasing output

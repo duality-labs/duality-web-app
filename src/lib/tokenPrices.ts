@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Token } from '../components/TokenPicker/hooks';
 
-const { REACT_APP__DEV_TOKEN_DENOMS } = process.env;
+const { REACT_APP__DEV_TOKEN_DENOMS } = import.meta.env;
 
 const baseAPI = 'https://api.coingecko.com/api/v3';
 

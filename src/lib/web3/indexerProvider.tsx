@@ -29,7 +29,7 @@ import { getAmountInDenom } from './utils/tokens';
 import { calculateShares } from './utils/ticks';
 import { IndexedShare } from './utils/shares';
 
-const { REACT_APP__REST_API } = process.env;
+const { REACT_APP__REST_API } = import.meta.env;
 
 export type TokenAddress = string; // a valid hex address, eg. 0x01
 

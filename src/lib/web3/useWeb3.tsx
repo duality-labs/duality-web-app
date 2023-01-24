@@ -12,7 +12,7 @@ const {
   REACT_APP__RPC_API,
   REACT_APP__REST_API,
   REACT_APP__BECH_PREFIX,
-} = process.env;
+} = import.meta.env;
 
 export const chainId = REACT_APP__CHAIN_ID || '';
 const chainName = REACT_APP__CHAIN_NAME || '';

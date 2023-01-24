@@ -16,7 +16,7 @@ import {
 
 import './TokenInputGroup.scss';
 
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const { REACT_APP__MAX_FRACTION_DIGITS = '' } = import.meta.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
 const maxSignificantDigits = 20;

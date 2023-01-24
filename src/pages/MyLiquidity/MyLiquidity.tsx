@@ -47,7 +47,7 @@ import { formatLongPrice } from '../../lib/utils/number';
 import { calculateShares } from '../../lib/web3/utils/ticks';
 import { IndexedShare } from '../../lib/web3/utils/shares';
 
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const { REACT_APP__MAX_FRACTION_DIGITS = '' } = import.meta.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
 interface ShareValue {
