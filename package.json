@@ -45,6 +45,7 @@
   "devDependencies": {
     "@chain-registry/types": "^0.11.0",
     "@esbuild-plugins/node-globals-polyfill": "^0.1.1",
+    "@esbuild-plugins/node-modules-polyfill": "^0.1.4",
     "@keplr-wallet/types": "^0.10.13",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
