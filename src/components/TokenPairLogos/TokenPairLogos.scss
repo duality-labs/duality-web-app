@@ -1,10 +1,18 @@
 .token-pair-logos {
+  & {
+    position: relative;
+    height: 1.7em;
+    width: 3em;
+  }
   .token-pair-logo {
-    display: inline-block;
+    position: absolute;
+    left: 0;
+    top: 0;
     height: 1.7em;
     width: 1.7em;
+    display: inline-block;
     vertical-align: middle;
-    position: relative;
+
     img {
       position: absolute;
       top: 0;
@@ -12,16 +20,71 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      transition: z-index linear 1s;
-    }
-    .token-previous {
-      z-index: 0;
-    }
-    .token-current {
-      z-index: 1;
     }
   }
-  .token-pair-logo + .token-pair-logo {
-    margin-left: -0.33em;
+
+  /*
+   * handle position transitions:
+   *   to rotate tokens to the swap position and then back again
+   *   it should appear to create an "orbiting" effect
+   */
+
+  // start at these positions
+  .token-a img {
+    margin-left: 0em;
+  }
+  .token-b img {
+    margin-left: 1.3em;
+  }
+  &.token-pair-transition-active {
+    // go to these positions
+    &.token-pair-transition-start .token-a img {
+      margin-left: 1.3em;
+    }
+    &.token-pair-transition-start .token-b img {
+      margin-left: 0em;
+    }
+    .token-pair-logo img {
+      transition: margin-left cubic-bezier(0.5, -0.8, 1, 1) 0.8s;
+    }
+    &.token-pair-transition-end .token-pair-logo img {
+      transition: margin-left cubic-bezier(0, 0, 0.5, 1.8) 0.8s;
+    }
+  }
+
+  /*
+   * handle previous token visibility:
+   *   to show previous token for the first part of the transition
+   */
+
+  .token-previous {
+    visibility: hidden;
+  }
+  &.token-pair-transition-start .token-previous {
+    visibility: visible;
+  }
+
+  /*
+   * handle z-index transitions:
+   *   to ensure what appears to be "token-b" will be above "token-a"
+   *   at the correct time when they orbit around each other
+   */
+
+  .token-pair-logo {
+    z-index: 0;
+  }
+
+  &.token-pair-transition-active {
+    .token-pair-logo {
+      transition: z-index linear 0.6s;
+    }
+    // place token-a in front of token b for a brief period during the first part of the transition
+    &.token-pair-transition-start .token-a.token-pair-logo {
+      z-index: 1;
+    }
+    // remove the z-index effect immediately for the second part of the transition
+    &.token-pair-transition-end .token-a.token-pair-logo {
+      transition: none;
+    }
   }
 }

@@ -13,16 +13,14 @@ function TokenLogo({
   previousToken?: Token;
 }) {
   return (
-    <div className="token-pair-logo">
+    <div className={`${className} token-pair-logo`}>
       <img
-        className={`${className} token-current`}
+        className="token-current"
         alt={`${token.symbol} logo`}
         src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
       />
       <img
-        className={`${className} token-${
-          token === previousToken ? 'current' : 'previous'
-        }`}
+        className="token-previous"
         alt={`${previousToken.symbol} logo`}
         src={previousToken.logo_URIs?.svg ?? previousToken.logo_URIs?.png}
       />
@@ -30,7 +28,7 @@ function TokenLogo({
   );
 }
 
-const tokenSwitchDelayMs = 1000;
+const tokenSwitchDelayMs = 800;
 export default function TokenPairLogos({
   className,
   tokenA,
@@ -45,32 +43,48 @@ export default function TokenPairLogos({
   const [previousTokenB, setPreviousTokenB] = useState(tokenB);
   const tokenAisTransitioning = tokenA !== previousTokenA;
   const tokenBisTransitioning = tokenB !== previousTokenB;
+  const tokensTransitioning = tokenAisTransitioning || tokenBisTransitioning;
+
+  // set the middle of the transition
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (tokensTransitioning && containerRef.current) {
+      containerRef.current?.classList.add('token-pair-transition-start');
+      setTimeout(() => {
+        containerRef.current?.classList.add('token-pair-transition-end');
+        containerRef.current?.classList.remove('token-pair-transition-start');
+      }, tokenSwitchDelayMs / 1.25); // cut-off early for smoother transition
+    }
+  }, [tokensTransitioning]);
 
   // update tokens after the transition
   useEffect(() => {
     const timeout = setTimeout(() => {
       setPreviousTokenA(tokenA);
-    }, tokenSwitchDelayMs);
-    timeoutRef.current = timeout;
-    return () => clearTimeout(timeout);
-  }, [tokenA]);
-  useEffect(() => {
-    const timeout = setTimeout(() => {
       setPreviousTokenB(tokenB);
-    }, tokenSwitchDelayMs);
+    }, tokenSwitchDelayMs + 25); // add a little allowance for smoother transition
     timeoutRef.current = timeout;
     return () => clearTimeout(timeout);
-  }, [tokenB]);
+  }, [tokenA, tokenB, previousTokenA, previousTokenB]);
 
   return (
-    <div className={['token-pair-logos', className].filter(Boolean).join(' ')}>
+    <div
+      ref={containerRef}
+      className={[
+        'token-pair-logos',
+        className,
+        tokensTransitioning && 'token-pair-transition-active',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <TokenLogo
         // add transition classes
         className={
           tokenAisTransitioning
             ? tokenBisTransitioning
-              ? 'swapping-tokens-a'
-              : 'swapping-token-a'
+              ? 'token-a swapping-tokens-a'
+              : 'token-a swapping-token-a'
             : 'token-a'
         }
         previousToken={previousTokenA}
@@ -80,8 +94,8 @@ export default function TokenPairLogos({
         className={
           tokenBisTransitioning
             ? tokenAisTransitioning
-              ? 'swapping-tokens-b'
-              : 'swapping-token-b'
+              ? 'token-b swapping-tokens-b'
+              : 'token-b swapping-token-b'
             : 'token-b'
         }
         previousToken={previousTokenB}
