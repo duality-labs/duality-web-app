@@ -30,6 +30,7 @@ function TokenLogo({
   );
 }
 
+const tokenSwitchDelayMs = 1000;
 export default function TokenPairLogos({
   className,
   tokenA,
@@ -49,14 +50,14 @@ export default function TokenPairLogos({
   useEffect(() => {
     const timeout = setTimeout(() => {
       setPreviousTokenA(tokenA);
-    }, 1000);
+    }, tokenSwitchDelayMs);
     timeoutRef.current = timeout;
     return () => clearTimeout(timeout);
   }, [tokenA]);
   useEffect(() => {
     const timeout = setTimeout(() => {
       setPreviousTokenB(tokenB);
-    }, 1000);
+    }, tokenSwitchDelayMs);
     timeoutRef.current = timeout;
     return () => clearTimeout(timeout);
   }, [tokenB]);
