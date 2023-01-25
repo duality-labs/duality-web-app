@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import WS from 'jest-websocket-mock';
 import {
   createSubscriptionManager,
@@ -89,10 +90,12 @@ describe('The event subscription manager', function () {
       await server?.closed;
     });
 
-    it('should be able to open a connection', function (done) {
+    it('should be able to open a connection', async function () {
       subManager = createSubscriptionManager(url);
       subManager.open();
-      subManager.addSocketListener('open', () => done());
+      await new Promise<void>((resolve) =>
+        subManager.addSocketListener('open', () => resolve())
+      );
     });
 
     it('should be able to close an open connection', function (done) {
@@ -915,14 +918,11 @@ function getClientMessageID(message: Awaited<WS['nextMessage']>) {
 
 async function resolveQueuedMessages(server: WS) {
   const messages: Array<Awaited<WS['nextMessage']>> = [];
-  await new Promise<void>(async (resolve) => {
+  messages.push(await server.nextMessage);
+  await delay(1);
+  while (server.messagesToConsume.pendingItems.length > 0) {
     messages.push(await server.nextMessage);
-    await delay(1);
-    while (server.messagesToConsume.pendingItems.length > 0) {
-      messages.push(await server.nextMessage);
-    }
-    resolve();
-  });
+  }
   return messages;
 }
 
