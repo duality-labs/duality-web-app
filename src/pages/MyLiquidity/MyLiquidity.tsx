@@ -24,7 +24,7 @@ import {
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
-import { useHasPriceData, useSimplePrice } from '../../lib/tokenPrices';
+import { useSimplePrice } from '../../lib/tokenPrices';
 
 import {
   Token,
@@ -39,6 +39,7 @@ import { useNumericInputState } from '../../components/inputs/NumberInput';
 import LiquidityDistribution from '../../components/LiquidityDistribution';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import { Tick, TickGroup } from '../../components/LiquiditySelector';
+import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 
 import './MyLiquidity.scss';
 import { useEditLiquidity } from './useEditLiquidity';
@@ -870,7 +871,6 @@ function LiquidityDetailPage({
     </div>
   );
 
-  const hasPriceData = useHasPriceData([tokenA, tokenB]);
   const tokenList = useTokens();
   const { data: balances } = useBankBalances();
   const balanceTokenA =
@@ -939,18 +939,7 @@ function LiquidityDetailPage({
             exclusion={tokenA}
           />
         </div>
-        {hasPriceData && (
-          <div className="attribution">
-            Price data from{' '}
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href="https://www.coingecko.com/"
-            >
-              CoinGecko
-            </a>
-          </div>
-        )}
+        <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
       </div>
     </div>
   );
