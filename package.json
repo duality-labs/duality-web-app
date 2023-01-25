@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "echo 'tests not configured yet'",
+    "test": "vitest",
     "lint": "eslint .",
     "prepare": "husky install",
     "update": "sh ./scripts/update-generated-files.sh"
@@ -71,7 +71,8 @@
     "sass": "^1.57.1",
     "ts-morph": "^17.0.1",
     "typescript": "^4.6.3",
-    "vite": "^4.0.4"
+    "vite": "^4.0.4",
+    "vitest": "^0.28.1"
   },
   "lint-staged": {
     "**/*.{mjs,js,jsx,ts,tsx,json,css,scss,html,md,yaml,yml}": [
