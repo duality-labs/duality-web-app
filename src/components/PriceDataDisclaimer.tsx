@@ -5,8 +5,8 @@ export default function PriceDataDisclaimer({
   tokenA,
   tokenB,
 }: {
-  tokenA: Token;
-  tokenB: Token;
+  tokenA: Token | undefined;
+  tokenB: Token | undefined;
 }) {
   const hasPriceData = useHasPriceData([tokenA, tokenB]);
 
