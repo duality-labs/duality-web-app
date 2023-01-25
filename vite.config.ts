@@ -54,5 +54,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     plugins: [htmlPlugin(), react()],
+    test: {
+      environment: 'jsdom',
+    },
   };
 });
