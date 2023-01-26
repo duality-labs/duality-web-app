@@ -40,40 +40,70 @@ interface CoinGeckoSimplePrice {
   };
 }
 
+class ObservableArray<T> {
+  private _array: Array<T> = [];
+  private _listeners: Array<(array: Array<T>) => void> = [];
+  get() {
+    return this._array;
+  }
+  add(item: T) {
+    this._array.push(item);
+    this._listeners.forEach((listener) => listener(this.get()));
+  }
+  remove(item: T) {
+    const itemIndex = this._array.indexOf(item);
+    if (itemIndex >= 0) {
+      this._array.splice(itemIndex, 1);
+      this._listeners.forEach((listener) => listener(this.get()));
+    }
+  }
+  subscribe(onChangeCallback: (array: Array<T>) => void) {
+    this._listeners.push(onChangeCallback);
+  }
+  unsubscribe(onChangeCallback: (array: Array<T>) => void) {
+    const onChangeCallbackIndex = this._listeners.indexOf(onChangeCallback);
+    if (onChangeCallbackIndex >= 0) {
+      this._listeners.splice(onChangeCallbackIndex, 1);
+    }
+  }
+}
+
+const currentRequests = new ObservableArray<TokenRequests>();
+
 // single request, eg: ATOM/USD
 type TokenRequest = [tokenID: string, currencyID: string];
 
 // component requests, eg: [ATOM/USD, ETH/USD]
 type TokenRequests = Array<TokenRequest>; // eg. [ATOM/USD, ETH/USD]
 
-// all components requests, eg: [[ATOM/USD], [ATOM/USD, ETH/USD]]
-const currentTokenRequests: TokenRequests[] = [];
 function useCombinedSimplePrices(
   tokenIDs: (string | undefined)[],
   currencyID: string
 ) {
   const tokenIDsString = tokenIDs.filter(Boolean).join(',');
-  const [_currentTokenRequests, _setCurrentTokenRequests] =
-    useState(currentTokenRequests);
+  const [_currentTokenRequests, _setCurrentTokenRequests] = useState(() =>
+    currentRequests.get()
+  );
 
   // synchronize hook with global state
   useEffect(() => {
+    // set callback to update local state
+    const updateRequests = (requests: Array<TokenRequests>) =>
+      _setCurrentTokenRequests(requests);
     if (tokenIDsString && currencyID) {
+      // define this components requests
       const requests: TokenRequests = tokenIDsString
         .split(',')
         .map((tokenID) => {
           return [tokenID, currencyID];
         });
-      // add tokens
-      currentTokenRequests.push(requests);
-      _setCurrentTokenRequests(currentTokenRequests.slice());
+      // add requests
+      currentRequests.subscribe(updateRequests);
+      currentRequests.add(requests);
       return () => {
-        // remove old tokens
-        const index = currentTokenRequests.findIndex(
-          (thisRequest) => thisRequest === requests
-        );
-        currentTokenRequests.splice(index, 1);
-        _setCurrentTokenRequests(currentTokenRequests.slice());
+        // remove old requests
+        currentRequests.remove(requests);
+        currentRequests.unsubscribe(updateRequests);
       };
     }
   }, [tokenIDsString, currencyID]);
