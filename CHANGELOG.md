@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.90](https://github.com/duality-labs/duality-web-app/compare/v0.1.89...v0.1.90) (2023-01-26)
+
+
+### Fixes
+
+* multiple price requests should not be sent out at the same time ([#301](https://github.com/duality-labs/duality-web-app/issues/301)) ([1608233](https://github.com/duality-labs/duality-web-app/commit/16082332da907e5449ab7473bd50f43afa187ac3))
+
 ## [0.1.89](https://github.com/duality-labs/duality-web-app/compare/v0.1.88...v0.1.89) (2023-01-26)
 
 
