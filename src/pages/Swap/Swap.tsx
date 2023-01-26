@@ -15,13 +15,13 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 import NumberInput, {
   useNumericInputState,
 } from '../../components/inputs/NumberInput';
+import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import {
   useBankBalance,
   useIndexerPairData,
 } from '../../lib/web3/indexerProvider';
-import { useHasPriceData } from '../../lib/tokenPrices';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -241,8 +241,6 @@ export default function Swap() {
     }
   }, [tokenA, tokenB]);
 
-  const hasPriceData = useHasPriceData([tokenA, tokenB]);
-
   const priceImpact =
     routerResult &&
     routerResult.priceIn?.isGreaterThan(0) &&
@@ -455,18 +453,7 @@ export default function Swap() {
             </button>
           )}
         </div>
-        {hasPriceData && (
-          <div className="attribution">
-            Price data from{' '}
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href="https://www.coingecko.com/"
-            >
-              CoinGecko
-            </a>
-          </div>
-        )}
+        <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
       </div>
     </div>
   );
