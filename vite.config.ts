@@ -54,7 +54,13 @@ export default defineConfig(({ mode }) => {
         ],
       },
     },
-    plugins: [htmlPlugin(), react(), vanillaExtractPlugin()],
+    plugins: [
+      htmlPlugin(),
+      react(),
+      vanillaExtractPlugin({
+        identifiers: env['REACT_APP__DEBUG'] ? 'debug' : 'short',
+      }),
+    ],
     test: {
       environment: 'jsdom',
     },
