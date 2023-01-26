@@ -7,6 +7,7 @@ import './StepNumberInput.scss';
 type Direction = 1 | -1;
 
 interface StepNumberInputProps<T extends number | string = string> {
+  className?: string;
   onChange?: (value: T) => void;
   tabbableButtons?: boolean;
   pressedInterval?: number;
@@ -29,6 +30,7 @@ interface StepNumberInputProps<T extends number | string = string> {
 }
 
 export default function StepNumberInput<T extends number | string = string>({
+  className,
   onChange,
   tabbableButtons = false,
   pressedInterval = 50,
@@ -176,7 +178,11 @@ export default function StepNumberInput<T extends number | string = string>({
 
   return (
     <div
-      className={['range-step-input', readOnly && 'range-step-input--read-only']
+      className={[
+        className,
+        'range-step-input',
+        readOnly && 'range-step-input--read-only',
+      ]
         .filter(Boolean)
         .join(' ')}
     >

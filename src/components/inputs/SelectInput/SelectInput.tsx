@@ -1,6 +1,12 @@
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { PropsWithChildren, ReactNode, useCallback, useState } from 'react';
+import {
+  PropsWithChildren,
+  ReactNode,
+  useCallback,
+  useLayoutEffect,
+  useState,
+} from 'react';
 import Drawer from '../../Drawer';
 import RadioInput from '../../RadioInput';
 import { OptionProps, RadioInputProps } from '../../RadioInput/RadioInput';
@@ -53,6 +59,7 @@ interface SelectInputProps<T> extends RadioInputProps<T> {
   getSelectedText?: GetNode<T>;
   getLabel?: GetNode<T>;
   getDescription?: GetNode<T>;
+  open?: boolean;
 }
 
 function defaultGetLabelText<T>(item: T) {
@@ -71,6 +78,7 @@ export default function SelectInput<T>({
   getSelectedText = getLabel,
   list,
   value,
+  open,
   maxColumnCount = 1,
   ...radioInputProps
 }: SelectInputProps<T>) {
@@ -80,6 +88,11 @@ export default function SelectInput<T>({
     () => setExpanded((expanded) => !expanded),
     []
   );
+  useLayoutEffect(() => {
+    if (open !== undefined) {
+      setExpanded(open);
+    }
+  }, [open, expanded]);
   return (
     <div
       className={['select-input', className, expanded && 'expanded']

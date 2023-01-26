@@ -1,11 +1,4 @@
-import {
-  useEffect,
-  useState,
-  useCallback,
-  FormEvent,
-  ReactNode,
-  useMemo,
-} from 'react';
+import { useEffect, useState, useCallback, FormEvent, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -714,7 +707,7 @@ export default function Pool() {
         .join(' ')}
       onSubmit={onSubmit}
     >
-      <div className="pool-banner">
+      <div className="pool-banner hide">
         <div className="row">
           <div className="row col-row">
             <h2>Assets</h2>
@@ -882,7 +875,34 @@ export default function Pool() {
               </div>
               <div className="row">
                 <div className="col flex">
-                  <h4 className="mt-4">Liquidity Shape</h4>
+                  <div className="row mt-4">
+                    <div className="col">
+                      <h4 className="">Liquidity Shape</h4>
+                    </div>
+                    <div className="col ml-auto">
+                      <div className="row gap-2" style={{ cursor: 'pointer' }}>
+                        <input
+                          id="shape-mode"
+                          type="checkbox"
+                          name="mode"
+                          value="custom"
+                          style={{ appearance: 'auto', cursor: 'pointer' }}
+                          onChange={(e) => {
+                            setChartTypeSelected(
+                              e.target.checked ? 'Orderbook' : 'AMM'
+                            );
+                            setUserTickSelected(-1);
+                          }}
+                        />
+                        <label
+                          htmlFor="shape-mode"
+                          style={{ cursor: 'pointer' }}
+                        >
+                          Customize
+                        </label>
+                      </div>
+                    </div>
+                  </div>
                   <SelectInput<LiquidityShape>
                     className="col flex"
                     maxColumnCount={4}
@@ -892,8 +912,47 @@ export default function Pool() {
                     getLabel={(feeType) =>
                       feeType ? `${feeType.label}` : 'Select Fee Tier'
                     }
+                    open={chartTypeSelected === 'Orderbook' || undefined}
                     OptionComponent={LiquidityShapeOptionComponent}
                   />
+                  {chartTypeSelected === 'Orderbook' && (
+                    <div
+                      className="mb-4 p-4 orderbook-card"
+                      style={{ borderRadius: 6 }}
+                    >
+                      <div className="row">
+                        <div className="col">
+                          <div className="row precision-card">
+                            <div className="card-titles mr-auto">
+                              Number of Ticks
+                            </div>
+                            <StepNumberInput
+                              className="smalll"
+                              editable={false}
+                              min={
+                                rangeMin === rangeMax
+                                  ? 1
+                                  : !isValueAZero && !isValueBZero
+                                  ? 2
+                                  : 1
+                              }
+                              max={rangeMin === rangeMax ? 1 : 10}
+                              value={rangeMin === rangeMax ? '1' : precision}
+                              onChange={setPrecision}
+                              minSignificantDigits={1}
+                            />
+                            <button
+                              type="button"
+                              className="button-info ml-2"
+                              onClick={() => setPrecision(defaultPrecision)}
+                            >
+                              Auto
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <input
@@ -983,100 +1042,6 @@ export default function Pool() {
                   />
                 </div>
               </div>
-              {chartTypeSelected === 'Orderbook' && (
-                <div className="mt-4 pt-4 page-card orderbook-card">
-                  <RadioButtonGroupInput<number>
-                    className="mx-auto mt-2 mb-4"
-                    buttonClassName="py-3 px-4"
-                    values={(() => {
-                      const map = new Map<number, ReactNode>();
-                      map.set(-1, 'All');
-                      if (rangeMin === rangeMax) {
-                        map.set(0, 1);
-                        return map;
-                      }
-                      for (let index = 0; index < Number(precision); index++) {
-                        map.set(index, index + 1);
-                      }
-                      return map;
-                    })()}
-                    value={userTickSelected}
-                    onChange={(tickSelectedString) => {
-                      setUserTickSelected(tickSelectedString);
-                    }}
-                  />
-                  <div className="row">
-                    <div className="col">
-                      {!userTicks[userTickSelected] ? (
-                        <div className="row precision-card">
-                          <h3 className="card-title mr-auto">
-                            Number of Ticks
-                          </h3>
-                          <StepNumberInput
-                            editable={false}
-                            min={
-                              rangeMin === rangeMax
-                                ? 1
-                                : !isValueAZero && !isValueBZero
-                                ? 2
-                                : 1
-                            }
-                            max={rangeMin === rangeMax ? 1 : 10}
-                            value={rangeMin === rangeMax ? '1' : precision}
-                            onChange={setPrecision}
-                            minSignificantDigits={1}
-                          />
-                          <button
-                            type="button"
-                            className="button-info ml-2"
-                            onClick={() => setPrecision(defaultPrecision)}
-                          >
-                            Auto
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="row tick-price-card">
-                          <h3 className="card-title mr-auto">Price</h3>
-                          <StepNumberInput
-                            key={userTickSelected}
-                            min={priceMin}
-                            max={priceMax}
-                            pressedDelay={500}
-                            pressedInterval={100}
-                            stepFunction={logarithmStep}
-                            value={userTicks[userTickSelected].price.toFixed()}
-                            onChange={(value) => {
-                              setUserTicks((userTicks) => {
-                                // skip non-update
-                                const newValue = new BigNumber(value);
-                                if (
-                                  userTicks[userTickSelected].price.isEqualTo(
-                                    newValue
-                                  )
-                                )
-                                  return userTicks;
-                                // replace singular tick price
-                                return userTicks.map((userTick, index) => {
-                                  return index === userTickSelected
-                                    ? {
-                                        ...userTick,
-                                        price: newValue,
-                                        tickIndex:
-                                          priceToTickIndex(newValue).toNumber(),
-                                      }
-                                    : userTick;
-                                });
-                              });
-                            }}
-                            maxSignificantDigits={maxFractionDigits + 1}
-                            format={formatStepNumberPriceInput}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
