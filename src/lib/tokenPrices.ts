@@ -1,7 +1,8 @@
 import useSWR from 'swr';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { Token } from '../components/TokenPicker/hooks';
+import { ObservableList, useObservableList } from './utils/observableList';
 
 const { REACT_APP__DEV_TOKEN_DENOMS } = process.env;
 
@@ -40,37 +41,45 @@ interface CoinGeckoSimplePrice {
   };
 }
 
-const currentTokenRequests: [tokenID: string, currencyID: string][][] = [];
+const currentRequests = new ObservableList<TokenRequests>();
+
+// single request, eg: ATOM/USD
+type TokenRequest = [tokenID: string, currencyID: string];
+
+// component requests, eg: [ATOM/USD, ETH/USD]
+type TokenRequests = Array<TokenRequest>; // eg. [ATOM/USD, ETH/USD]
+
 function useCombinedSimplePrices(
   tokenIDs: (string | undefined)[],
   currencyID: string
 ) {
   const tokenIDsString = tokenIDs.filter(Boolean).join(',');
-  const [_currentTokenRequests, _setCurrentTokenRequests] =
-    useState(currentTokenRequests);
+  const [
+    allTokenRequests,
+    { add: addTokenRequest, remove: removeTokenRequest },
+  ] = useObservableList<TokenRequests>(currentRequests);
 
   // synchronize hook with global state
   useEffect(() => {
+    // set callback to update local state
     if (tokenIDsString && currencyID) {
-      const request = tokenIDsString.split(',').map((tokenID) => {
-        return [tokenID, currencyID] as [tokenID: string, currencyID: string];
-      });
-      // add tokens
-      currentTokenRequests.push(request);
-      _setCurrentTokenRequests(currentTokenRequests.slice());
+      // define this components requests
+      const requests: TokenRequests = tokenIDsString
+        .split(',')
+        .map((tokenID) => {
+          return [tokenID, currencyID];
+        });
+      // add requests
+      addTokenRequest(requests);
       return () => {
-        // remove old tokens
-        const index = currentTokenRequests.findIndex(
-          (thisRequest) => thisRequest === request
-        );
-        currentTokenRequests.splice(index, 1);
-        _setCurrentTokenRequests(currentTokenRequests.slice());
+        // remove old requests
+        removeTokenRequest(requests);
       };
     }
-  }, [tokenIDsString, currencyID]);
+  }, [tokenIDsString, currencyID, addTokenRequest, removeTokenRequest]);
 
   // get all current unique request IDs
-  const currentIDs = _currentTokenRequests.reduce(
+  const allTokenIDs = allTokenRequests.reduce(
     (result, currentTokenRequest) => {
       currentTokenRequest.forEach(([tokenID, currencyID]) => {
         result.tokenIDs.add(tokenID);
@@ -81,10 +90,10 @@ function useCombinedSimplePrices(
     { tokenIDs: new Set(), currencyIDs: new Set() }
   );
   // consdense out ID values into array strings
-  const allTokenIDsString = Array.from(currentIDs.tokenIDs.values()).join(',');
-  const allCurrencyIDsString = Array.from(currentIDs.currencyIDs.values()).join(
-    ','
-  );
+  const allTokenIDsString = Array.from(allTokenIDs.tokenIDs.values()).join(',');
+  const allCurrencyIDsString = Array.from(
+    allTokenIDs.currencyIDs.values()
+  ).join(',');
 
   // create query with all current combinations
   return useSWR<CoinGeckoSimplePrice, FetchError>(
@@ -192,5 +201,9 @@ export function useHasPriceData(
   currencyID = 'usd'
 ) {
   const { data, isValidating } = useSimplePrice(tokens, currencyID);
+  // do not claim price data for dev tokens
+  if (useDevTokenPrices(tokens)) {
+    return false;
+  }
   return isValidating || data.some(Boolean);
 }

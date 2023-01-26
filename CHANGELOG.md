@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.1.90](https://github.com/duality-labs/duality-web-app/compare/v0.1.89...v0.1.90) (2023-01-26)
+
+
+### Fixes
+
+* multiple price requests should not be sent out at the same time ([#301](https://github.com/duality-labs/duality-web-app/issues/301)) ([1608233](https://github.com/duality-labs/duality-web-app/commit/16082332da907e5449ab7473bd50f43afa187ac3))
+
+## [0.1.89](https://github.com/duality-labs/duality-web-app/compare/v0.1.88...v0.1.89) (2023-01-26)
+
+
+### Other
+
+* better instructions for upgrade API to v0.1.2 ([#295](https://github.com/duality-labs/duality-web-app/issues/295)) ([ecb4595](https://github.com/duality-labs/duality-web-app/commit/ecb459509f4eedbcec4a910620b2a45b6487c232))
+
+
+### Fixes
+
+* remove coin gecko disclaimer notice when viewing dev coins ([#299](https://github.com/duality-labs/duality-web-app/issues/299)) ([85e6e85](https://github.com/duality-labs/duality-web-app/commit/85e6e8564f57261efd4c0d44c3bcbeb25be75d1e))
+
 ## [0.1.88](https://github.com/duality-labs/duality-web-app/compare/v0.1.87...v0.1.88) (2023-01-16)
 
 

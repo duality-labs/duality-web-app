@@ -22,7 +22,6 @@ import {
   useBankBalances,
   useIndexerPairData,
 } from '../../lib/web3/indexerProvider';
-import { useHasPriceData } from '../../lib/tokenPrices';
 
 import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -35,6 +34,7 @@ import {
 } from '../../components/LiquiditySelector/LiquiditySelector';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
+import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import { useDeposit } from './useDeposit';
@@ -619,8 +619,6 @@ export default function Pool() {
     setUserTicks,
   ]);
 
-  const hasPriceData = useHasPriceData([tokenA, tokenB]);
-
   const { data: balances } = useBankBalances();
   const balanceTokenA =
     tokenA && balances && new BigNumber(getBalance(tokenA, balances));
@@ -703,18 +701,7 @@ export default function Pool() {
               />
             </div>
           </div>
-          {hasPriceData && (
-            <div className="attribution">
-              Price data from{' '}
-              <a
-                target="_blank"
-                rel="noreferrer"
-                href="https://www.coingecko.com/"
-              >
-                CoinGecko
-              </a>
-            </div>
-          )}
+          <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
         </div>
       </form>
     );
