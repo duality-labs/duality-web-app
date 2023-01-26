@@ -40,7 +40,14 @@ interface CoinGeckoSimplePrice {
   };
 }
 
-const currentTokenRequests: [tokenID: string, currencyID: string][][] = [];
+// single request, eg: ATOM/USD
+type TokenRequest = [tokenID: string, currencyID: string];
+
+// component requests, eg: [ATOM/USD, ETH/USD]
+type TokenRequests = Array<TokenRequest>; // eg. [ATOM/USD, ETH/USD]
+
+// all components requests, eg: [[ATOM/USD], [ATOM/USD, ETH/USD]]
+const currentTokenRequests: TokenRequests[] = [];
 function useCombinedSimplePrices(
   tokenIDs: (string | undefined)[],
   currencyID: string
@@ -53,7 +60,7 @@ function useCombinedSimplePrices(
   useEffect(() => {
     if (tokenIDsString && currencyID) {
       const request = tokenIDsString.split(',').map((tokenID) => {
-        return [tokenID, currencyID] as [tokenID: string, currencyID: string];
+        return [tokenID, currencyID] as TokenRequest;
       });
       // add tokens
       currentTokenRequests.push(request);
