@@ -81,7 +81,7 @@ function useCombinedSimplePrices(
   currencyID: string
 ) {
   const tokenIDsString = tokenIDs.filter(Boolean).join(',');
-  const [_currentTokenRequests, _setCurrentTokenRequests] = useState(() =>
+  const [currentTokenRequests, setCurrentTokenRequests] = useState(() =>
     currentRequests.get()
   );
 
@@ -89,7 +89,7 @@ function useCombinedSimplePrices(
   useEffect(() => {
     // set callback to update local state
     const updateRequests = (requests: Array<TokenRequests>) =>
-      _setCurrentTokenRequests(requests);
+      setCurrentTokenRequests(requests);
     if (tokenIDsString && currencyID) {
       // define this components requests
       const requests: TokenRequests = tokenIDsString
@@ -109,7 +109,7 @@ function useCombinedSimplePrices(
   }, [tokenIDsString, currencyID]);
 
   // get all current unique request IDs
-  const currentIDs = _currentTokenRequests.reduce(
+  const currentIDs = currentTokenRequests.reduce(
     (result, currentTokenRequest) => {
       currentTokenRequest.forEach(([tokenID, currencyID]) => {
         result.tokenIDs.add(tokenID);
