@@ -4,13 +4,16 @@ import './index.css';
 import './index.scss';
 import App from './pages/App';
 import reportWebVitals from './reportWebVitals';
+import { darkThemeClass, lightThemeClass } from './styles/theme/index.css';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <App />
+    <div className={`${darkThemeClass} ${lightThemeClass}`}>
+      <App />
+    </div>
   </React.StrictMode>
 );
 

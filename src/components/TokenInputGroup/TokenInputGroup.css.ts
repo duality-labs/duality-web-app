@@ -1,4 +1,5 @@
 import { style, styleVariants } from '@vanilla-extract/css';
+import { vars } from '../../styles/theme/index.css';
 
 const error = style({});
 export const tokenInputGroupStyle = style({
@@ -27,7 +28,7 @@ export const tokenInputGroupStyles = styleVariants({
 export const tokenInputGroupTitleStyle = style({
   selectors: {
     [`${tokenInputGroupStyles.error} &`]: {
-      color: 'var(--error)',
+      color: vars.color.red.dark,
     },
   },
 });
