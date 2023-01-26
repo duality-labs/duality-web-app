@@ -201,5 +201,9 @@ export function useHasPriceData(
   currencyID = 'usd'
 ) {
   const { data, isValidating } = useSimplePrice(tokens, currencyID);
+  // do not claim price data for dev tokens
+  if (useDevTokenPrices(tokens)) {
+    return false;
+  }
   return isValidating || data.some(Boolean);
 }
