@@ -59,18 +59,18 @@ function useCombinedSimplePrices(
   // synchronize hook with global state
   useEffect(() => {
     if (tokenIDsString && currencyID) {
-      const request: TokenRequests = tokenIDsString
+      const requests: TokenRequests = tokenIDsString
         .split(',')
         .map((tokenID) => {
           return [tokenID, currencyID];
         });
       // add tokens
-      currentTokenRequests.push(request);
+      currentTokenRequests.push(requests);
       _setCurrentTokenRequests(currentTokenRequests.slice());
       return () => {
         // remove old tokens
         const index = currentTokenRequests.findIndex(
-          (thisRequest) => thisRequest === request
+          (thisRequest) => thisRequest === requests
         );
         currentTokenRequests.splice(index, 1);
         _setCurrentTokenRequests(currentTokenRequests.slice());
