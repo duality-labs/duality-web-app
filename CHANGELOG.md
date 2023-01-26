@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.89](https://github.com/duality-labs/duality-web-app/compare/v0.1.88...v0.1.89) (2023-01-26)
+
+
+### Other
+
+* better instructions for upgrade API to v0.1.2 ([#295](https://github.com/duality-labs/duality-web-app/issues/295)) ([ecb4595](https://github.com/duality-labs/duality-web-app/commit/ecb459509f4eedbcec4a910620b2a45b6487c232))
+
+
+### Fixes
+
+* remove coin gecko disclaimer notice when viewing dev coins ([#299](https://github.com/duality-labs/duality-web-app/issues/299)) ([85e6e85](https://github.com/duality-labs/duality-web-app/commit/85e6e8564f57261efd4c0d44c3bcbeb25be75d1e))
+
 ## [0.1.88](https://github.com/duality-labs/duality-web-app/compare/v0.1.87...v0.1.88) (2023-01-16)
 
 
