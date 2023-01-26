@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
 import '@esbuild-plugins/node-modules-polyfill';
 
@@ -53,7 +54,7 @@ export default defineConfig(({ mode }) => {
         ],
       },
     },
-    plugins: [htmlPlugin(), react()],
+    plugins: [htmlPlugin(), react(), vanillaExtractPlugin()],
     test: {
       environment: 'jsdom',
     },
