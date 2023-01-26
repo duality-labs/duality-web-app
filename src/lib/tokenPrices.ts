@@ -59,9 +59,11 @@ function useCombinedSimplePrices(
   // synchronize hook with global state
   useEffect(() => {
     if (tokenIDsString && currencyID) {
-      const request = tokenIDsString.split(',').map((tokenID) => {
-        return [tokenID, currencyID] as TokenRequest;
-      });
+      const request: TokenRequests = tokenIDsString
+        .split(',')
+        .map((tokenID) => {
+          return [tokenID, currencyID];
+        });
       // add tokens
       currentTokenRequests.push(request);
       _setCurrentTokenRequests(currentTokenRequests.slice());
