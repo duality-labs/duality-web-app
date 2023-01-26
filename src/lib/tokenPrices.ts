@@ -81,7 +81,7 @@ function useCombinedSimplePrices(
   currencyID: string
 ) {
   const tokenIDsString = tokenIDs.filter(Boolean).join(',');
-  const [currentTokenRequests, setCurrentTokenRequests] = useState(() =>
+  const [allTokenRequests, setAllTokenRequests] = useState(() =>
     currentRequests.get()
   );
 
@@ -89,7 +89,7 @@ function useCombinedSimplePrices(
   useEffect(() => {
     // set callback to update local state
     const updateRequests = (requests: Array<TokenRequests>) =>
-      setCurrentTokenRequests(requests);
+      setAllTokenRequests(requests);
     if (tokenIDsString && currencyID) {
       // define this components requests
       const requests: TokenRequests = tokenIDsString
@@ -109,7 +109,7 @@ function useCombinedSimplePrices(
   }, [tokenIDsString, currencyID]);
 
   // get all current unique request IDs
-  const currentIDs = currentTokenRequests.reduce(
+  const allTokenIDs = allTokenRequests.reduce(
     (result, currentTokenRequest) => {
       currentTokenRequest.forEach(([tokenID, currencyID]) => {
         result.tokenIDs.add(tokenID);
@@ -120,10 +120,10 @@ function useCombinedSimplePrices(
     { tokenIDs: new Set(), currencyIDs: new Set() }
   );
   // consdense out ID values into array strings
-  const allTokenIDsString = Array.from(currentIDs.tokenIDs.values()).join(',');
-  const allCurrencyIDsString = Array.from(currentIDs.currencyIDs.values()).join(
-    ','
-  );
+  const allTokenIDsString = Array.from(allTokenIDs.tokenIDs.values()).join(',');
+  const allCurrencyIDsString = Array.from(
+    allTokenIDs.currencyIDs.values()
+  ).join(',');
 
   // create query with all current combinations
   return useSWR<CoinGeckoSimplePrice, FetchError>(
