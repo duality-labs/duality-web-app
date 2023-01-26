@@ -15,6 +15,11 @@ import {
 } from '../../lib/utils/number';
 
 import './TokenInputGroup.scss';
+import {
+  tokenInputGroupStyle,
+  tokenInputGroupStyles,
+  tokenInputGroupTitleStyle,
+} from './TokenInputGroup.css';
 
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = import.meta.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
@@ -23,7 +28,7 @@ const maxSignificantDigits = 20;
 const placeholder = '0';
 
 interface InputGroupProps {
-  variant?: 'success' | 'error' | false;
+  variant?: 'error' | false;
   onTokenChanged?: (token?: Token) => void;
   onValueChanged?: (value: string) => void;
   tokenList: Array<Token>;
@@ -81,6 +86,8 @@ export default function TokenInputGroup({
   return (
     <div
       className={[
+        tokenInputGroupStyle,
+        variant && tokenInputGroupStyles[variant],
         className,
         'token-input-group',
         variant && `token-input-group--${variant}`,
@@ -89,7 +96,7 @@ export default function TokenInputGroup({
         .join(' ')}
     >
       {maxValue && (
-        <h5 className="token-group-title">
+        <h5 className={`${tokenInputGroupTitleStyle} token-group-title`}>
           Available{' '}
           {formatAmount(maxValue, {
             maximumSignificantDigits: 9,
