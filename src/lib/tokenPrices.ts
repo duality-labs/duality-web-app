@@ -1,8 +1,8 @@
 import useSWR from 'swr';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { Token } from '../components/TokenPicker/hooks';
-import { ObservableList } from './utils/observableList';
+import { ObservableList, useObservableList } from './utils/observableList';
 
 const { REACT_APP__DEV_TOKEN_DENOMS } = process.env;
 
@@ -54,15 +54,14 @@ function useCombinedSimplePrices(
   currencyID: string
 ) {
   const tokenIDsString = tokenIDs.filter(Boolean).join(',');
-  const [allTokenRequests, setAllTokenRequests] = useState(() =>
-    currentRequests.get()
-  );
+  const [
+    allTokenRequests,
+    { add: addTokenRequest, remove: removeTokenRequest },
+  ] = useObservableList<TokenRequests>(currentRequests);
 
   // synchronize hook with global state
   useEffect(() => {
     // set callback to update local state
-    const updateRequests = (requests: Array<TokenRequests>) =>
-      setAllTokenRequests(requests);
     if (tokenIDsString && currencyID) {
       // define this components requests
       const requests: TokenRequests = tokenIDsString
@@ -71,15 +70,13 @@ function useCombinedSimplePrices(
           return [tokenID, currencyID];
         });
       // add requests
-      currentRequests.subscribe(updateRequests);
-      currentRequests.add(requests);
+      addTokenRequest(requests);
       return () => {
         // remove old requests
-        currentRequests.remove(requests);
-        currentRequests.unsubscribe(updateRequests);
+        removeTokenRequest(requests);
       };
     }
-  }, [tokenIDsString, currencyID]);
+  }, [tokenIDsString, currencyID, addTokenRequest, removeTokenRequest]);
 
   // get all current unique request IDs
   const allTokenIDs = allTokenRequests.reduce(
