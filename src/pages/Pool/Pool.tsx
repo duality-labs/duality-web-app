@@ -915,8 +915,8 @@ export default function Pool() {
                   />
                   {chartTypeSelected === 'Orderbook' && (
                     <div
-                      className="mt-0 mb-4 p-4 orderbook-card"
-                      style={{ borderRadius: 6 }}
+                      className="mb-4 p-4 orderbook-card"
+                      style={{ borderRadius: 6, marginTop: -20 }}
                     >
                       <div className="row flex-centered">
                         <div className="col mr-auto">
