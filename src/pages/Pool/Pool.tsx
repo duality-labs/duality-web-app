@@ -331,13 +331,13 @@ export default function Pool() {
   const onSubmit = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
-      if (!valuesValid) return;
       const submitValue =
         // eslint-disable-next-line  @typescript-eslint/no-explicit-any
         ((e.nativeEvent as any)?.submitter as HTMLInputElement).value;
       if (submitValue.toLowerCase() === 'customize') {
-        return setValuesConfirmed(true);
+        return setValuesConfirmed(!!(tokenA && tokenB));
       }
+      if (!valuesValid) return;
 
       // normalize tick reserve to the values asked for
       const { reserveATotal, reserveBTotal } = userTicks.reduce(
@@ -674,9 +674,7 @@ export default function Pool() {
             <div className="col">
               <input
                 className="button-primary text-medium pill pill-outline px-4 py-4"
-                disabled={
-                  !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
-                }
+                disabled={!(tokenA && tokenB)}
                 type="submit"
                 name="action"
                 value="Customize"
@@ -958,6 +956,9 @@ export default function Pool() {
               <input
                 className="button-primary text-medium mt-3 p-3"
                 type="submit"
+                disabled={
+                  !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
+                }
                 value="Confirm"
               />
             </div>
