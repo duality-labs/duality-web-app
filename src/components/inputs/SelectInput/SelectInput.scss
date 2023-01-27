@@ -15,11 +15,16 @@
   }
 
   .select-input-selection svg {
-    transition: transform animations.$short-duration animations.$default-mode;
+    opacity: 1;
+    transition: transform animations.$short-duration animations.$default-mode,
+      opacity animations.$short-duration animations.$default-mode;
     transform: rotate(0deg);
   }
   &.expanded .select-input-selection svg {
     transform: rotate(180deg);
+  }
+  &.forced-open.expanded .select-input-selection svg {
+    opacity: 0;
   }
 
   .select-input-options {
@@ -58,8 +63,8 @@
     .select-input-group {
       & {
         padding-top: paddings.$p-3;
-        padding-bottom: paddings.$p-3;
-        margin-bottom: margins.$m-3;
+        // padding-bottom: paddings.$p-3;
+        // margin-bottom: margins.$m-3;
       }
     }
 
@@ -102,4 +107,10 @@
       }
     }
   }
+  // &.forced-open .select-input-options .select-input-group {
+  //   & {
+  //     padding-bottom: 0;
+  //     margin-bottom: 0;
+  //   }
+  // }
 }

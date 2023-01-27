@@ -910,7 +910,7 @@ export default function Pool() {
                     getLabel={(feeType) =>
                       feeType ? `${feeType.label}` : 'Select Fee Tier'
                     }
-                    open={chartTypeSelected === 'Orderbook' || undefined}
+                    open={chartTypeSelected === 'Orderbook'}
                     OptionComponent={LiquidityShapeOptionComponent}
                   />
                   {chartTypeSelected === 'Orderbook' && (

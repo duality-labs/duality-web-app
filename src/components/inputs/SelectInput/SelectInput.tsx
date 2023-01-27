@@ -5,6 +5,7 @@ import {
   ReactNode,
   useCallback,
   useLayoutEffect,
+  useRef,
   useState,
 } from 'react';
 import Drawer from '../../Drawer';
@@ -88,14 +89,24 @@ export default function SelectInput<T>({
     () => setExpanded((expanded) => !expanded),
     []
   );
+  const openRef = useRef(false);
   useLayoutEffect(() => {
-    if (open !== undefined) {
+    if (open === true) {
       setExpanded(open);
     }
+    if (open === false && openRef.current === true) {
+      setExpanded(false);
+    }
+    openRef.current = !!open;
   }, [open, expanded]);
   return (
     <div
-      className={['select-input', className, expanded && 'expanded']
+      className={[
+        'select-input',
+        open && 'forced-open',
+        className,
+        expanded && 'expanded',
+      ]
         .filter(Boolean)
         .join(' ')}
     >
