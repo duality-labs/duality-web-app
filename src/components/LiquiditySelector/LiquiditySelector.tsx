@@ -484,7 +484,7 @@ export default function LiquiditySelector({
         </linearGradient>
       </defs>
       {graphEnd.isZero() && <text>Chart is not currently available</text>}
-      {!advanced && (
+      {true && (
         <TicksBackgroundArea
           className="new-ticks-area"
           rangeMin={rangeMin}
@@ -505,24 +505,10 @@ export default function LiquiditySelector({
         plotX={plotXBigNumber}
         plotY={plotYBigNumber}
       />
-      {advanced ? (
-        <TicksGroup
-          className="new-ticks"
-          currentPrice={warningPrice || currentPriceFromTicks}
-          userTicks={userTicks}
-          backgroundTicks={userTicksBase}
-          setUserTicks={setUserTicks}
-          userTickSelected={userTickSelected}
-          setUserTickSelected={setUserTickSelected}
-          plotX={plotXBigNumber}
-          percentY={percentYBigNumber}
-          canMoveUp={canMoveUp}
-          canMoveDown={canMoveDown}
-          canMoveX={canMoveX}
-        />
-      ) : (
+      <>
         <TicksArea
           className="new-ticks-area"
+          advanced={advanced}
           currentPrice={warningPrice || currentPriceFromTicks}
           oneSidedLiquidity={oneSidedLiquidity}
           ticks={userTicks.filter((tick): tick is Tick => !!tick)}
@@ -535,7 +521,22 @@ export default function LiquiditySelector({
           plotXinverse={plotXinverse}
           bucketRatio={bucketRatio}
         />
-      )}
+        <TicksGroup
+          className="new-ticks"
+          advanced={advanced}
+          currentPrice={warningPrice || currentPriceFromTicks}
+          userTicks={userTicks}
+          backgroundTicks={userTicksBase}
+          setUserTicks={setUserTicks}
+          userTickSelected={userTickSelected}
+          setUserTickSelected={setUserTickSelected}
+          plotX={plotXBigNumber}
+          percentY={percentYBigNumber}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+          canMoveX={canMoveX}
+        />
+      </>
       <Axis
         className="x-axis"
         // todo: make better (x-axis roughly adds tick marks to buckets near the extents)
@@ -638,6 +639,7 @@ function TicksBackgroundArea({
 }
 
 function TicksArea({
+  advanced = false,
   currentPrice,
   oneSidedLiquidity,
   ticks,
@@ -651,6 +653,7 @@ function TicksArea({
   bucketRatio,
   className,
 }: {
+  advanced: boolean;
   currentPrice: BigNumber | undefined;
   oneSidedLiquidity: boolean;
   ticks: TickGroup;
@@ -917,6 +920,7 @@ function TicksArea({
 }
 
 function TicksGroup({
+  advanced = false,
   currentPrice,
   userTicks,
   backgroundTicks,
@@ -931,6 +935,7 @@ function TicksGroup({
   canMoveX = false,
   ...rest
 }: {
+  advanced: boolean;
   currentPrice: BigNumber | undefined;
   userTicks: Array<Tick | undefined>;
   backgroundTicks: Array<Tick | undefined>;
@@ -1200,38 +1205,42 @@ function TicksGroup({
               className="tip tip--diff"
             />
           )}
-          <text
-            x={plotX(price).toFixed(3)}
-            y={(percentY(maxValue) - 28).toFixed(3)}
-            dy="12"
-            dominantBaseline="middle"
-            textAnchor="middle"
-          >
-            {index + 1}
-          </text>
-          <rect
-            className="tick--hit-area"
-            data-key={index}
-            {...(isDragging
-              ? {
-                  x: '0',
-                  y: '-1000',
-                  width: '10000',
-                  height: '1000',
-                }
-              : {
-                  x: (plotX(price) - 7.5).toFixed(3),
-                  y: (percentY(maxValue) - 25).toFixed(3),
-                  rx: 7.5,
-                  width: 15,
-                  height: (
-                    percentY(minValue) -
-                    percentY(maxValue) +
-                    35
-                  ).toFixed(3),
-                })}
-            onMouseDown={onTickSelected}
-          />
+          {advanced && (
+            <>
+              <text
+                x={plotX(price).toFixed(3)}
+                y={(percentY(maxValue) - 28).toFixed(3)}
+                dy="12"
+                dominantBaseline="middle"
+                textAnchor="middle"
+              >
+                {index + 1}
+              </text>
+              <rect
+                className="tick--hit-area"
+                data-key={index}
+                {...(isDragging
+                  ? {
+                      x: '0',
+                      y: '-1000',
+                      width: '10000',
+                      height: '1000',
+                    }
+                  : {
+                      x: (plotX(price) - 7.5).toFixed(3),
+                      y: (percentY(maxValue) - 25).toFixed(3),
+                      rx: 7.5,
+                      width: 15,
+                      height: (
+                        percentY(minValue) -
+                        percentY(maxValue) +
+                        35
+                      ).toFixed(3),
+                    })}
+                onMouseDown={onTickSelected}
+              />
+            </>
+          )}
         </g>
       );
     });

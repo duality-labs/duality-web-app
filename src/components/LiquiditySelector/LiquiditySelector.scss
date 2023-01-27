@@ -13,7 +13,7 @@
   bottom: 0;
 }
 
-.chart-type--advanced {
+.chart-liquidity {
   // restrict pointer events, only certain parts require interaction
   pointer-events: none;
 }
@@ -112,11 +112,15 @@
     stroke-width: 1px;
     stroke: hsl(37, 62%, 68%);
   }
+  .flag-joiner {
+    stroke-width: 0;
+  }
   .flag-joiner--price-warning {
+    stroke-width: 1px;
     stroke: var(--error);
   }
   .pole-stick {
-    stroke-width: 4px;
+    stroke-width: 2px;
   }
   .pole-flag,
   .pole-to-flag {
@@ -132,6 +136,7 @@
     stroke: transparent;
     stroke-width: 10px;
     cursor: pointer;
+    pointer-events: visible;
   }
   .pole--price-warning {
     .pole-stick,
@@ -140,6 +145,20 @@
       fill: var(--error);
       stroke: var(--error);
     }
+  }
+}
+
+.tick-area {
+  opacity: 0.8;
+  transition: opacity ease 0.2s;
+}
+.chart-type--advanced {
+  .pole-stick {
+    stroke-width: 2px;
+    opacity: 0.2;
+  }
+  .tick-area {
+    opacity: 0.2;
   }
 }
 
