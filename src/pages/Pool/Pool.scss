@@ -269,15 +269,6 @@
       flex-direction: column;
     }
 
-    > .row > .col {
-      min-width: 25rem;
-      flex: 1;
-    }
-
-    > .row > .col > .row {
-      gap: 1rem;
-    }
-
     h3.card-title {
       font-weight: 400;
       font-size: 1.5rem;

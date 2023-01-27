@@ -915,37 +915,43 @@ export default function Pool() {
                   />
                   {chartTypeSelected === 'Orderbook' && (
                     <div
-                      className="mb-4 p-4 orderbook-card"
+                      className="mt-0 mb-4 p-4 orderbook-card"
                       style={{ borderRadius: 6 }}
                     >
-                      <div className="row">
-                        <div className="col">
-                          <div className="row precision-card">
-                            <div className="card-titles mr-auto">
-                              Number of Ticks
+                      <div className="row flex-centered">
+                        <div className="col mr-auto">
+                          <div className="card-titles mt-1 mr-auto">
+                            Number of Ticks
+                          </div>
+                        </div>
+                        <div className="col ml-auto">
+                          <div className="row mt-1 gap-2">
+                            <div className="col">
+                              <StepNumberInput
+                                className="smalll"
+                                editable={false}
+                                min={
+                                  rangeMin === rangeMax
+                                    ? 1
+                                    : !isValueAZero && !isValueBZero
+                                    ? 2
+                                    : 1
+                                }
+                                max={rangeMin === rangeMax ? 1 : 10}
+                                value={rangeMin === rangeMax ? '1' : precision}
+                                onChange={setPrecision}
+                                minSignificantDigits={1}
+                              />
                             </div>
-                            <StepNumberInput
-                              className="smalll"
-                              editable={false}
-                              min={
-                                rangeMin === rangeMax
-                                  ? 1
-                                  : !isValueAZero && !isValueBZero
-                                  ? 2
-                                  : 1
-                              }
-                              max={rangeMin === rangeMax ? 1 : 10}
-                              value={rangeMin === rangeMax ? '1' : precision}
-                              onChange={setPrecision}
-                              minSignificantDigits={1}
-                            />
-                            <button
-                              type="button"
-                              className="button-info ml-2"
-                              onClick={() => setPrecision(defaultPrecision)}
-                            >
-                              Auto
-                            </button>
+                            <div className="col">
+                              <button
+                                type="button"
+                                className="button-info ml-2"
+                                onClick={() => setPrecision(defaultPrecision)}
+                              >
+                                Auto
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
