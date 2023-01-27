@@ -868,6 +868,30 @@ function LiquidityDetailPage({
           
         </div>
       </div>
+      <div className='row mt-4'>
+        <div className='col flex'>
+          <table style={{width: '100%'}}>
+            <tr>
+              <th>Tick</th>
+              <th>Price</th>
+              <th>Token {tokenA.display.toUpperCase()}</th>
+              <th>Token {tokenB.display.toUpperCase()}</th>
+            </tr>
+            {userTicks.map((tick, index) => {
+              return (
+                <tr key={tick.tickIndex} className="pt-2">
+                  <td>{index + 1}</td>
+                  <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
+                  <td>{tick.reserveA.isGreaterThan(1e-5) ? new BigNumber(tick.reserveA.toFixed(5)).toFixed(5): ''}</td>
+                  <td>{tick.reserveB.isGreaterThan(1e-5) ? new BigNumber(tick.reserveB.toFixed(5)).toFixed(5): ''}</td>
+                  <td><button className='button button-error'>Withdraw</button></td>
+                  <td><button className='button button-default'>Reset</button></td>
+                </tr>
+              );
+            })}
+          </table>
+        </div>
+      </div>
       <div className="page-card orderbook-card mx-auto hide">
         <RadioButtonGroupInput<number>
           className="mx-auto mt-2 mb-4"
