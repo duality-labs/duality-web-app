@@ -723,6 +723,13 @@ function LiquidityDetailPage({
     });
   }, [values, userTicks, valueA, valueB, editingType]);
 
+  const [reserveATotal, reserveBTotal] = useMemo(() => {
+    return [
+      editedUserTicks.reduce((acc, tick) => acc.plus(tick.reserveA), new BigNumber(0)),
+      editedUserTicks.reduce((acc, tick) => acc.plus(tick.reserveB), new BigNumber(0)),
+    ]
+  }, [editedUserTicks]);
+
   const leftColumn = (
     <div className="col">
       <div className='flex'>
@@ -874,16 +881,16 @@ function LiquidityDetailPage({
             <tr>
               <th>Tick</th>
               <th>Price</th>
-              <th>Token {tokenA.display.toUpperCase()}</th>
-              <th>Token {tokenB.display.toUpperCase()}</th>
+              <th>{tokenA.display.toUpperCase()}</th>
+              <th>{tokenB.display.toUpperCase()}</th>
             </tr>
-            {userTicks.map((tick, index) => {
+            {editedUserTicks.map((tick, index) => {
               return (
                 <tr key={tick.tickIndex} className="pt-2">
                   <td>{index + 1}</td>
                   <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
-                  <td>{tick.reserveA.isGreaterThan(1e-5) ? new BigNumber(tick.reserveA.toFixed(5)).toFixed(5): ''}</td>
-                  <td>{tick.reserveB.isGreaterThan(1e-5) ? new BigNumber(tick.reserveB.toFixed(5)).toFixed(5): ''}</td>
+                  <td>{tick.reserveA.isGreaterThan(1e-5) ? `${reserveATotal.isGreaterThan(0) ? new BigNumber(tick.reserveA.multipliedBy(100).dividedBy(reserveATotal)).toFixed(1): 0}%` : ''}</td>
+                  <td>{tick.reserveB.isGreaterThan(1e-5) ? `${reserveBTotal.isGreaterThan(0) ? new BigNumber(tick.reserveB.multipliedBy(100).dividedBy(reserveBTotal)).toFixed(1): 0}%` : ''}</td>
                   <td><button className='button button-error'>Withdraw</button></td>
                   <td><button className='button button-default'>Reset</button></td>
                 </tr>
@@ -1004,14 +1011,14 @@ function LiquidityDetailPage({
       ? diffToken1.abs().isGreaterThan(1e-5)
         // both exist
         ? `${
-          diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0.abs().toFixed(5)} ${token0.display.toUpperCase()
+          diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0.abs().toFixed(5)} ${tokenA.display.toUpperCase()
         }\n+\n${
-          diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken1.abs().toFixed(5)} ${token1.display.toUpperCase()
+          diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken1.abs().toFixed(5)} ${tokenB.display.toUpperCase()
         }`
         // only token0
-        : `${ diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0.abs().toFixed(5)} ${token0.display.toUpperCase()}`
+        : `${ diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0.abs().toFixed(5)} ${tokenA.display.toUpperCase()}`
       // only token1
-      : `${ diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken1.abs().toFixed(5)} ${token1.display.toUpperCase()}`;
+      : `${ diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken1.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`;
 
   const rightColumn = (
     <div className="col col--left">
