@@ -1026,7 +1026,7 @@ export default function Pool() {
                         : 'No Tokens'
                     }
                     minSignificantDigits={8}
-                    maxSignificantDigits={maxFractionDigits + 2}
+                    maxSignificantDigits={10}
                     format={formatStepNumberPriceInput}
                   />
                   <StepNumberInput
@@ -1044,7 +1044,7 @@ export default function Pool() {
                         : 'No Tokens'
                     }
                     minSignificantDigits={8}
-                    maxSignificantDigits={maxFractionDigits + 2}
+                    maxSignificantDigits={10}
                     format={formatStepNumberPriceInput}
                   />
                 </div>
