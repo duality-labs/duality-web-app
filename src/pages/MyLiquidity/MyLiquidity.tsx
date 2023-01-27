@@ -7,8 +7,6 @@ import {
   useState,
 } from 'react';
 import { Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
@@ -36,9 +34,11 @@ import StepNumberInput from '../../components/StepNumberInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
 import { useNumericInputState } from '../../components/inputs/NumberInput';
 
-import LiquidityDistribution from '../../components/LiquidityDistribution';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
-import LiquiditySelector, { Tick, TickGroup } from '../../components/LiquiditySelector';
+import LiquiditySelector, {
+  Tick,
+  TickGroup,
+} from '../../components/LiquiditySelector';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 
 import './MyLiquidity.scss';
@@ -52,7 +52,7 @@ import useFeeLiquidityMap from '../Pool/useFeeLiquidityMap';
 
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
-type FeeTypeAndAll = Omit<FeeType, 'fee'> & { fee: number | undefined }
+type FeeTypeAndAll = Omit<FeeType, 'fee'> & { fee: number | undefined };
 const feeTypesAndAll: Array<FeeTypeAndAll> = [
   {
     label: 'All Fee Tiers',
@@ -77,10 +77,6 @@ interface TickShareValue extends ShareValue {
   feeIndex: number;
   tick0: TickInfo;
   tick1: TickInfo;
-}
-interface EditedTickShareValue extends TickShareValue {
-  tickDiff0: BigNumber;
-  tickDiff1: BigNumber;
 }
 interface TickShareValueMap {
   [pairID: string]: Array<TickShareValue>;
@@ -399,16 +395,6 @@ function ShareValuesPage({
 const setRangeMin = () => undefined;
 const setRangeMax = () => undefined;
 
-type EditingType = 'redistribute' | 'add' | 'remove';
-const submitButtonSettings: Record<
-  EditingType,
-  { text: string; variant: 'primary' | 'error' | 'warning' }
-> = {
-  add: { text: 'Add Liquidity', variant: 'primary' },
-  remove: { text: 'Remove Liquidity', variant: 'error' },
-  redistribute: { text: 'Redistribute Liquidity', variant: 'warning' },
-};
-
 function LiquidityDetailPage({
   token0,
   token1,
@@ -435,7 +421,7 @@ function LiquidityDetailPage({
     token1.address
   );
 
-  const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
+  const [invertedTokenOrder] = useState<boolean>(() => {
     return currentPriceFromTicks0to1?.isLessThan(1) ?? false;
   });
 
@@ -480,9 +466,6 @@ function LiquidityDetailPage({
       : currentPriceFromTicks0to1;
   }, [invertedTokenOrder, currentPriceFromTicks0to1]);
 
-  const swapAll = useCallback(() => {
-    setInvertedTokenOrder((order) => !order);
-  }, []);
   const tokenA = invertedTokenOrder ? token1 : token0;
   const tokenB = invertedTokenOrder ? token0 : token1;
 
@@ -651,10 +634,8 @@ function LiquidityDetailPage({
     'redistribute' | 'add' | 'remove'
   >('redistribute');
 
-  const [inputValueA, setInputValueA, tokenAValue = '0'] =
-    useNumericInputState();
-  const [inputValueB, setInputValueB, tokenBValue = '0'] =
-    useNumericInputState();
+  const [, setInputValueA, tokenAValue = '0'] = useNumericInputState();
+  const [, setInputValueB, tokenBValue = '0'] = useNumericInputState();
   const values = useMemo(
     (): [string, string] => [tokenAValue, tokenBValue],
     [tokenAValue, tokenBValue]
@@ -725,14 +706,20 @@ function LiquidityDetailPage({
 
   const [reserveATotal, reserveBTotal] = useMemo(() => {
     return [
-      editedUserTicks.reduce((acc, tick) => acc.plus(tick.reserveA), new BigNumber(0)),
-      editedUserTicks.reduce((acc, tick) => acc.plus(tick.reserveB), new BigNumber(0)),
-    ]
+      editedUserTicks.reduce(
+        (acc, tick) => acc.plus(tick.reserveA),
+        new BigNumber(0)
+      ),
+      editedUserTicks.reduce(
+        (acc, tick) => acc.plus(tick.reserveB),
+        new BigNumber(0)
+      ),
+    ];
   }, [editedUserTicks]);
 
   const leftColumn = (
     <div className="col">
-      <div className='flex'>
+      <div className="flex">
         <div className="chart-header row my-4">
           <div className="col">
             <h3 className="h3">Liquidity Distribution</h3>
@@ -752,132 +739,131 @@ function LiquidityDetailPage({
             </div>
           </div>
         </div>
-        <div className='flex row chart-area'>
-      <LiquiditySelector
-        advanced={true}
-        tokenA={tokenA}
-        tokenB={tokenB}
-        ticks={ticks}
-        feeTier={feeType?.fee}
-        // setFeeTier={setFeeTier}
-        // currentPriceFromTicks={currentPriceFromTicks}
-        userTickSelected={userTickSelected}
-        setUserTickSelected={setUserTickSelected}
-        userTicks={editedUserTicks}
-        userTicksBase={userTicks}
-        // setUserTicks={useCallback(
-        //   (
-        //     callback: (
-        //       userTicks: TickGroup,
-        //       meta?: { index?: number }
-        //     ) => TickGroup
-        //   ): void => {
-        //     setEditedUserTicks((currentEditedUserTicks) => {
-        //       // bail if bad state: the editedUserTicks and current userTicks do not match
-        //       if (
-        //         !userTicks ||
-        //         !currentEditedUserTicks ||
-        //         userTicks.length !== currentEditedUserTicks.length
-        //       ) {
-        //         return currentEditedUserTicks;
-        //       }
-        //       const meta: { index?: number } = {};
-        //       const newEditedUserTicks = callback(currentEditedUserTicks, meta);
-        //       const indexSelected = meta.index !== undefined ? meta.index : -1;
-        //       // normalise to value
-        //       const newEditedUserTick = newEditedUserTicks?.[indexSelected];
-        //       const currentEditedUserTick =
-        //         currentEditedUserTicks?.[indexSelected];
-        //       const oldUserTick = userTicks?.[indexSelected];
-        //       // bail if no current selection
-        //       if (
-        //         !newEditedUserTick ||
-        //         !currentEditedUserTick ||
-        //         !oldUserTick
-        //       ) {
-        //         return currentEditedUserTicks;
-        //       }
+        <div className="flex row chart-area">
+          <LiquiditySelector
+            advanced={true}
+            tokenA={tokenA}
+            tokenB={tokenB}
+            ticks={ticks}
+            feeTier={feeType?.fee}
+            // setFeeTier={setFeeTier}
+            // currentPriceFromTicks={currentPriceFromTicks}
+            userTickSelected={userTickSelected}
+            setUserTickSelected={setUserTickSelected}
+            userTicks={editedUserTicks}
+            userTicksBase={userTicks}
+            // setUserTicks={useCallback(
+            //   (
+            //     callback: (
+            //       userTicks: TickGroup,
+            //       meta?: { index?: number }
+            //     ) => TickGroup
+            //   ): void => {
+            //     setEditedUserTicks((currentEditedUserTicks) => {
+            //       // bail if bad state: the editedUserTicks and current userTicks do not match
+            //       if (
+            //         !userTicks ||
+            //         !currentEditedUserTicks ||
+            //         userTicks.length !== currentEditedUserTicks.length
+            //       ) {
+            //         return currentEditedUserTicks;
+            //       }
+            //       const meta: { index?: number } = {};
+            //       const newEditedUserTicks = callback(currentEditedUserTicks, meta);
+            //       const indexSelected = meta.index !== undefined ? meta.index : -1;
+            //       // normalise to value
+            //       const newEditedUserTick = newEditedUserTicks?.[indexSelected];
+            //       const currentEditedUserTick =
+            //         currentEditedUserTicks?.[indexSelected];
+            //       const oldUserTick = userTicks?.[indexSelected];
+            //       // bail if no current selection
+            //       if (
+            //         !newEditedUserTick ||
+            //         !currentEditedUserTick ||
+            //         !oldUserTick
+            //       ) {
+            //         return currentEditedUserTicks;
+            //       }
 
-        //       const newUpdate = currentEditedUserTicks.map((tick, index) => {
-        //         return index === indexSelected ? 
-        //       })
+            //       const newUpdate = currentEditedUserTicks.map((tick, index) => {
+            //         return index === indexSelected ?
+            //       })
 
-        //       // find how much correction needs to be applied to meet the current goal
-        //       const [diffAValue, diffBValue] = getTickDiffCumulativeValues(
-        //         newEditedUserTicks,
-        //         userTicks,
-        //         values,
-        //         editingType
-        //       );
+            //       // find how much correction needs to be applied to meet the current goal
+            //       const [diffAValue, diffBValue] = getTickDiffCumulativeValues(
+            //         newEditedUserTicks,
+            //         userTicks,
+            //         values,
+            //         editingType
+            //       );
 
-        //       // allow the new update to be conditionally adjusted
-        //       let newUpdate: TickGroup | undefined;
+            //       // allow the new update to be conditionally adjusted
+            //       let newUpdate: TickGroup | undefined;
 
-        //       // modify only if difference is greater than our tolerance
-        //       if (
-        //         // if diff A is significant
-        //         diffAValue
-        //           ?.absoluteValue()
-        //           .isGreaterThan(normalizationTolerance) &&
-        //         // if value isn't trying to go negative
-        //         !(
-        //           newEditedUserTick.reserveA.isNegative() &&
-        //           currentEditedUserTick.reserveA.isZero()
-        //         )
-        //       ) {
-        //         newUpdate = applyDiffToIndex(
-        //           newUpdate || newEditedUserTicks,
-        //           userTicks,
-        //           diffAValue,
-        //           'reserveA',
-        //           indexSelected,
-        //           editingType === 'add'
-        //         );
-        //       }
-        //       if (
-        //         // if diff B is significant
-        //         diffBValue
-        //           ?.absoluteValue()
-        //           .isGreaterThan(normalizationTolerance) &&
-        //         // if value isn't trying to go negative
-        //         !(
-        //           newEditedUserTick.reserveB.isNegative() &&
-        //           currentEditedUserTick.reserveB.isZero()
-        //         )
-        //       ) {
-        //         newUpdate = applyDiffToIndex(
-        //           newUpdate || newEditedUserTicks,
-        //           userTicks,
-        //           diffBValue,
-        //           'reserveB',
-        //           indexSelected,
-        //           editingType === 'add'
-        //         );
-        //       }
+            //       // modify only if difference is greater than our tolerance
+            //       if (
+            //         // if diff A is significant
+            //         diffAValue
+            //           ?.absoluteValue()
+            //           .isGreaterThan(normalizationTolerance) &&
+            //         // if value isn't trying to go negative
+            //         !(
+            //           newEditedUserTick.reserveA.isNegative() &&
+            //           currentEditedUserTick.reserveA.isZero()
+            //         )
+            //       ) {
+            //         newUpdate = applyDiffToIndex(
+            //           newUpdate || newEditedUserTicks,
+            //           userTicks,
+            //           diffAValue,
+            //           'reserveA',
+            //           indexSelected,
+            //           editingType === 'add'
+            //         );
+            //       }
+            //       if (
+            //         // if diff B is significant
+            //         diffBValue
+            //           ?.absoluteValue()
+            //           .isGreaterThan(normalizationTolerance) &&
+            //         // if value isn't trying to go negative
+            //         !(
+            //           newEditedUserTick.reserveB.isNegative() &&
+            //           currentEditedUserTick.reserveB.isZero()
+            //         )
+            //       ) {
+            //         newUpdate = applyDiffToIndex(
+            //           newUpdate || newEditedUserTicks,
+            //           userTicks,
+            //           diffBValue,
+            //           'reserveB',
+            //           indexSelected,
+            //           editingType === 'add'
+            //         );
+            //       }
 
-        //       // default to no update if no normalization occurred
-        //       return newUpdate || currentEditedUserTicks;
-        //     });
-        //   },
-        //   [editingType, values, userTicks]
-        // )}
-        setUserTicks={setEditedUserTicks}
-        rangeMin={minPrice?.toFixed() || ''}
-        rangeMax={maxPrice?.toFixed() || ''}
-        setRangeMin={setRangeMin}
-        setRangeMax={setRangeMax}
-        // swapAll={swapAll}
-        canMoveUp
-        canMoveDown
-        // submitButtonText={submitButtonSettings[editingType].text}
-        // submitButtonVariant={submitButtonSettings[editingType].variant}
-      />
-          
+            //       // default to no update if no normalization occurred
+            //       return newUpdate || currentEditedUserTicks;
+            //     });
+            //   },
+            //   [editingType, values, userTicks]
+            // )}
+            setUserTicks={setEditedUserTicks}
+            rangeMin={minPrice?.toFixed() || ''}
+            rangeMax={maxPrice?.toFixed() || ''}
+            setRangeMin={setRangeMin}
+            setRangeMax={setRangeMax}
+            // swapAll={swapAll}
+            canMoveUp
+            canMoveDown
+            // submitButtonText={submitButtonSettings[editingType].text}
+            // submitButtonVariant={submitButtonSettings[editingType].variant}
+          />
         </div>
       </div>
-      <div className='row mt-4'>
-        <div className='col flex'>
-          <table style={{width: '100%'}}>
+      <div className="row mt-4">
+        <div className="col flex">
+          <table style={{ width: '100%' }}>
             <tr>
               <th>Tick</th>
               <th>Price</th>
@@ -889,10 +875,38 @@ function LiquidityDetailPage({
                 <tr key={tick.tickIndex} className="pt-2">
                   <td>{index + 1}</td>
                   <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
-                  <td>{tick.reserveA.isGreaterThan(1e-5) ? `${reserveATotal.isGreaterThan(0) ? new BigNumber(tick.reserveA.multipliedBy(100).dividedBy(reserveATotal)).toFixed(1): 0}%` : ''}</td>
-                  <td>{tick.reserveB.isGreaterThan(1e-5) ? `${reserveBTotal.isGreaterThan(0) ? new BigNumber(tick.reserveB.multipliedBy(100).dividedBy(reserveBTotal)).toFixed(1): 0}%` : ''}</td>
-                  <td><button className='button button-error'>Withdraw</button></td>
-                  <td><button className='button button-default'>Reset</button></td>
+                  <td>
+                    {tick.reserveA.isGreaterThan(1e-5)
+                      ? `${
+                          reserveATotal.isGreaterThan(0)
+                            ? new BigNumber(
+                                tick.reserveA
+                                  .multipliedBy(100)
+                                  .dividedBy(reserveATotal)
+                              ).toFixed(1)
+                            : 0
+                        }%`
+                      : ''}
+                  </td>
+                  <td>
+                    {tick.reserveB.isGreaterThan(1e-5)
+                      ? `${
+                          reserveBTotal.isGreaterThan(0)
+                            ? new BigNumber(
+                                tick.reserveB
+                                  .multipliedBy(100)
+                                  .dividedBy(reserveBTotal)
+                              ).toFixed(1)
+                            : 0
+                        }%`
+                      : ''}
+                  </td>
+                  <td>
+                    <button className="button button-error">Withdraw</button>
+                  </td>
+                  <td>
+                    <button className="button button-default">Reset</button>
+                  </td>
                 </tr>
               );
             })}
@@ -980,12 +994,8 @@ function LiquidityDetailPage({
         return {
           ...share,
           // // realign tickDiff A/B back to original shares 0/1 order
-          tickDiff0: invertedTokenOrder
-            ? tickDiff.reserveB
-            : tickDiff.reserveA,
-          tickDiff1: invertedTokenOrder
-            ? tickDiff.reserveA
-            : tickDiff.reserveB,
+          tickDiff0: invertedTokenOrder ? tickDiff.reserveB : tickDiff.reserveA,
+          tickDiff1: invertedTokenOrder ? tickDiff.reserveA : tickDiff.reserveB,
         };
       })
       .filter(
@@ -995,30 +1005,44 @@ function LiquidityDetailPage({
 
   // const [{ submitButtonVariant, submitButtonText }, setSubmitButtonState] = useState(() => ({ submitButtonVariant: 'primary', submitButtonText: 'No Change' }));
 
-  const diffToken0 = useMemo(() => sharesDiff.reduce((acc, shareDiff) => acc.plus(shareDiff.tickDiff0), new BigNumber(0)), [sharesDiff]);
-  const diffToken1 = useMemo(() => sharesDiff.reduce((acc, shareDiff) => acc.plus(shareDiff.tickDiff1), new BigNumber(0)), [sharesDiff]);
+  const diffToken0 = useMemo(
+    () =>
+      sharesDiff.reduce(
+        (acc, shareDiff) => acc.plus(shareDiff.tickDiff0),
+        new BigNumber(0)
+      ),
+    [sharesDiff]
+  );
+  const diffToken1 = useMemo(
+    () =>
+      sharesDiff.reduce(
+        (acc, shareDiff) => acc.plus(shareDiff.tickDiff1),
+        new BigNumber(0)
+      ),
+    [sharesDiff]
+  );
   const noChange = diffToken0.abs().plus(diffToken1.abs()).isLessThan(10e-9);
 
-  const submitButtonVariant =
-    noChange
-    ? 'primary'
-    : 'primary';
+  const submitButtonVariant = noChange ? 'primary' : 'primary';
 
-  const submitButtonText =
-    noChange
+  const submitButtonText = noChange
     ? 'No Change'
     : diffToken0.abs().isGreaterThan(1e-5)
-      ? diffToken1.abs().isGreaterThan(1e-5)
-        // both exist
-        ? `${
-          diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0.abs().toFixed(5)} ${tokenA.display.toUpperCase()
-        }\n+\n${
-          diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken1.abs().toFixed(5)} ${tokenB.display.toUpperCase()
-        }`
-        // only token0
-        : `${ diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0.abs().toFixed(5)} ${tokenA.display.toUpperCase()}`
-      // only token1
-      : `${ diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken1.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`;
+    ? diffToken1.abs().isGreaterThan(1e-5)
+      ? // both exist
+        `${diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0
+          .abs()
+          .toFixed(5)} ${tokenA.display.toUpperCase()}\n+\n${
+          diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'
+        } ${diffToken1.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`
+      : // only token0
+        `${diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0
+          .abs()
+          .toFixed(5)} ${tokenA.display.toUpperCase()}`
+    : // only token1
+      `${diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken1
+        .abs()
+        .toFixed(5)} ${tokenB.display.toUpperCase()}`;
 
   const rightColumn = (
     <div className="col col--left">
@@ -1028,9 +1052,7 @@ function LiquidityDetailPage({
           list={feeTypesAndAll}
           value={feeType}
           onChange={setFeeType}
-          getLabel={(feeType) =>
-            feeType ? feeType.label : 'All Fee Tiers'
-          }
+          getLabel={(feeType) => (feeType ? feeType.label : 'All Fee Tiers')}
           getDescription={(feeType) =>
             !(feeType && feeType.fee !== undefined) ? null : (
               <>
@@ -1063,7 +1085,9 @@ function LiquidityDetailPage({
         </div>
         <div className="card-row">
           <TokenInputGroup
-            className={diffToken0.isLessThan(-1e-5) ? 'token-input-group--success' : ''}
+            className={
+              diffToken0.isLessThan(-1e-5) ? 'token-input-group--success' : ''
+            }
             disabledToken
             // disabledInput={editingType === 'redistribute'}
             variant={!hasSufficientFundsA && 'error'}
@@ -1075,16 +1099,19 @@ function LiquidityDetailPage({
                 : balanceTokenA?.toNumber()
             }
             token={tokenA}
-            value={`${diffToken0.isGreaterThan(-1e-5) ? '' : '+'}${new BigNumber(diffToken0.abs().toFixed(5)).toFixed()}`}
+            value={`${
+              diffToken0.isGreaterThan(-1e-5) ? '' : '+'
+            }${new BigNumber(diffToken0.abs().toFixed(5)).toFixed()}`}
             onValueChanged={setInputValueA}
             exclusion={tokenB}
           />
         </div>
-        <div className="plus-space mx-auto my-4">
-        </div>
+        <div className="plus-space mx-auto my-4"></div>
         <div className="card-row">
           <TokenInputGroup
-            className={diffToken1.isLessThan(-1e-5) ? 'token-input-group--success' : ''}
+            className={
+              diffToken1.isLessThan(-1e-5) ? 'token-input-group--success' : ''
+            }
             disabledToken
             // disabledInput={editingType === 'redistribute'}
             variant={!hasSufficientFundsB && 'error'}
@@ -1096,7 +1123,9 @@ function LiquidityDetailPage({
                 : balanceTokenB?.toNumber()
             }
             token={tokenB}
-            value={`${diffToken1.isLessThan(-1e-5) ? '+' : ''}${new BigNumber(diffToken1.abs().toFixed(5)).toFixed()}`}
+            value={`${diffToken1.isLessThan(-1e-5) ? '+' : ''}${new BigNumber(
+              diffToken1.abs().toFixed(5)
+            ).toFixed()}`}
             onValueChanged={setInputValueB}
             exclusion={tokenA}
           />
@@ -1122,10 +1151,7 @@ function LiquidityDetailPage({
       // get relevant tick diffs
       await sendEditRequest(sharesDiff);
     },
-    [
-      sendEditRequest,
-      sharesDiff,
-    ]
+    [sendEditRequest, sharesDiff]
   );
 
   return (
@@ -1185,18 +1211,18 @@ function LiquidityDetailPage({
           </div>
         </div>
       </div>
-      <div className='pool-page'>
-      <form
-        className={['page-card chart-card', isValidating && '']
-          .filter(Boolean)
-          .join(' ')}
-        onSubmit={onSubmit}
-      >
-        <div className='row'>
-          {leftColumn}
-          {rightColumn}
-        </div>
-      </form>
+      <div className="pool-page">
+        <form
+          className={['page-card chart-card', isValidating && '']
+            .filter(Boolean)
+            .join(' ')}
+          onSubmit={onSubmit}
+        >
+          <div className="row">
+            {leftColumn}
+            {rightColumn}
+          </div>
+        </form>
       </div>
     </div>
   );
