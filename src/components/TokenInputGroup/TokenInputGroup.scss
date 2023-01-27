@@ -67,6 +67,12 @@
     text-align: end;
   }
 
+  &.token-input-group--success {
+    .token-group-input {
+      color: var(--success);
+    }
+  }
+
   .token-group-input {
     & {
       font-weight: bold;

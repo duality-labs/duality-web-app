@@ -484,7 +484,7 @@ export default function LiquiditySelector({
         </linearGradient>
       </defs>
       {graphEnd.isZero() && <text>Chart is not currently available</text>}
-      {true && (
+      {canMoveX && (
         <TicksBackgroundArea
           className="new-ticks-area"
           rangeMin={rangeMin}
@@ -505,7 +505,7 @@ export default function LiquiditySelector({
         plotX={plotXBigNumber}
         plotY={plotYBigNumber}
       />
-      <>
+      {canMoveX && (
         <TicksArea
           className="new-ticks-area"
           advanced={advanced}
@@ -521,6 +521,8 @@ export default function LiquiditySelector({
           plotXinverse={plotXinverse}
           bucketRatio={bucketRatio}
         />
+      )}
+      <>
         <TicksGroup
           className="new-ticks"
           advanced={advanced}
