@@ -68,7 +68,7 @@ export default function NumberInput({
       className={['number-input', className].filter(Boolean).join(' ')}
       type="text"
       placeholder={placeholder}
-      pattern={`^[0-9]*[.,]?[0-9]*${sanitizeInputRegex(appendString)}$`}
+      pattern={`^+?[0-9]*[.,]?[0-9]*${sanitizeInputRegex(appendString)}$`}
       value={`${value}${appendString}`}
       // global HTML element attribute options
       inputMode="decimal"
