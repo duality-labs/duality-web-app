@@ -7,6 +7,8 @@ import {
   useState,
 } from 'react';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
@@ -49,6 +51,7 @@ import { calculateShares } from '../../lib/web3/utils/ticks';
 import { IndexedShare } from '../../lib/web3/utils/shares';
 import SelectInput from '../../components/inputs/SelectInput';
 import useFeeLiquidityMap from '../Pool/useFeeLiquidityMap';
+import TokenPairLogos from '../../components/TokenPairLogos';
 
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
@@ -421,10 +424,12 @@ function LiquidityDetailPage({
     token1.address
   );
 
-  const [invertedTokenOrder] = useState<boolean>(() => {
+  const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
     return currentPriceFromTicks0to1?.isLessThan(1) ?? false;
   });
-
+  const swapAll = useCallback(() => {
+    setInvertedTokenOrder((order) => !order);
+  }, []);
   // calculate the graph extent based on the unfiltered lowest and highest tick prices
   const [minPrice0to1, maxPrice0to1] = useMemo<
     [BigNumber | undefined, BigNumber | undefined]
@@ -722,7 +727,20 @@ function LiquidityDetailPage({
       <div className="flex">
         <div className="chart-header row my-4">
           <div className="col">
-            <h3 className="h3">Liquidity Distribution</h3>
+            <div className="row flex-centered gap-3">
+              <TokenPairLogos className="h4" tokenA={tokenA} tokenB={tokenB} />
+
+              <h2 className="h4">
+                {tokenA.display.toUpperCase()} / {tokenB.display.toUpperCase()}
+              </h2>
+              <button
+                type="button"
+                className="ml-auto icon-button h4"
+                onClick={swapAll}
+              >
+                <FontAwesomeIcon icon={faArrowRightArrowLeft}></FontAwesomeIcon>
+              </button>
+            </div>
           </div>
           <div className="col flex-centered ml-auto">
             <div className="row gap-2">
