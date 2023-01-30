@@ -1043,6 +1043,8 @@ function TicksGroup({
                 const originalTick = backgroundTicks[index] as Tick;
                 const originalAValue = originalTick.reserveA;
                 const originalBValue = originalTick.reserveB;
+                // todo: if this can be done linearly by calculating the amount of shares per pixel
+                // then the ticks may be moved "off" of zero easily
                 const newAValue = tick.reserveA.multipliedBy(adjustedMovement);
                 const newBValue = tick.reserveB.multipliedBy(adjustedMovement);
                 return {
