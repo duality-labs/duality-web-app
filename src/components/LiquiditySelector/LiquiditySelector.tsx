@@ -1018,8 +1018,8 @@ function TicksGroup({
             });
           });
         }
-        // move tick value if at least a few pixels away from the original value
-        else if (Math.abs(displacement.y) > 1) {
+        // move tick value
+        else {
           return setUserTicks?.((userTicks, meta = {}) => {
             // append context for callers that read from this
             // note: this is a bit of a hack to keep setUserTicks(tick => ticks)-like compatibility
@@ -1063,32 +1063,6 @@ function TicksGroup({
                       : newBValue.isLessThan(0)
                       ? new BigNumber(0)
                       : newBValue,
-                };
-              } else {
-                return userTick;
-              }
-            });
-          });
-        }
-        // else return to original position
-        else {
-          return setUserTicks?.((userTicks, meta = {}) => {
-            // append context for callers that read from this
-            // note: this is a bit of a hack to keep setUserTicks(tick => ticks)-like compatibility
-            meta.index = userTickSelected;
-            return userTicks?.map((userTick, index) => {
-              // modify price
-              if (
-                userTickSelected === index &&
-                backgroundTicks[index] !== undefined
-              ) {
-                const originalTick = backgroundTicks[index] as Tick;
-                const originalAValue = originalTick.reserveA;
-                const originalBValue = originalTick.reserveB;
-                return {
-                  ...userTick,
-                  reserveA: originalAValue,
-                  reserveB: originalBValue,
                 };
               } else {
                 return userTick;
