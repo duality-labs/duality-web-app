@@ -1023,42 +1023,46 @@ function LiquidityDetailPage({
 
   // const [{ submitButtonVariant, submitButtonText }, setSubmitButtonState] = useState(() => ({ submitButtonVariant: 'primary', submitButtonText: 'No Change' }));
 
-  const diffToken0 = useMemo(
+  const diffTokenA = useMemo(
     () =>
       sharesDiff.reduce(
-        (acc, shareDiff) => acc.plus(shareDiff.tickDiff0),
+        !invertedTokenOrder
+          ? (acc, shareDiff) => acc.plus(shareDiff.tickDiff0)
+          : (acc, shareDiff) => acc.plus(shareDiff.tickDiff1),
         new BigNumber(0)
       ),
-    [sharesDiff]
+    [invertedTokenOrder, sharesDiff]
   );
-  const diffToken1 = useMemo(
+  const diffTokenB = useMemo(
     () =>
       sharesDiff.reduce(
-        (acc, shareDiff) => acc.plus(shareDiff.tickDiff1),
+        !invertedTokenOrder
+          ? (acc, shareDiff) => acc.plus(shareDiff.tickDiff1)
+          : (acc, shareDiff) => acc.plus(shareDiff.tickDiff0),
         new BigNumber(0)
       ),
-    [sharesDiff]
+    [invertedTokenOrder, sharesDiff]
   );
-  const noChange = diffToken0.abs().plus(diffToken1.abs()).isLessThan(10e-9);
+  const noChange = diffTokenA.abs().plus(diffTokenB.abs()).isLessThan(10e-9);
 
   const submitButtonVariant = noChange ? 'primary' : 'primary';
 
   const submitButtonText = noChange
     ? 'No Change'
-    : diffToken0.abs().isGreaterThan(1e-5)
-    ? diffToken1.abs().isGreaterThan(1e-5)
+    : diffTokenA.abs().isGreaterThan(1e-5)
+    ? diffTokenB.abs().isGreaterThan(1e-5)
       ? // both exist
-        `${diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0
+        `${diffTokenA.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffTokenA
           .abs()
           .toFixed(5)} ${tokenA.display.toUpperCase()}\n+\n${
-          diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'
-        } ${diffToken1.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`
+          diffTokenB.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'
+        } ${diffTokenB.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`
       : // only token0
-        `${diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0
+        `${diffTokenA.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffTokenA
           .abs()
           .toFixed(5)} ${tokenA.display.toUpperCase()}`
     : // only token1
-      `${diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken1
+      `${diffTokenB.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffTokenB
         .abs()
         .toFixed(5)} ${tokenB.display.toUpperCase()}`;
 
@@ -1104,7 +1108,7 @@ function LiquidityDetailPage({
         <div className="card-row">
           <TokenInputGroup
             className={
-              diffToken0.isLessThan(-1e-5) ? 'token-input-group--success' : ''
+              diffTokenA.isLessThan(-1e-5) ? 'token-input-group--success' : ''
             }
             disabledToken
             // disabledInput={editingType === 'redistribute'}
@@ -1118,8 +1122,8 @@ function LiquidityDetailPage({
             }
             token={tokenA}
             value={`${
-              diffToken0.isGreaterThan(-1e-5) ? '' : '+'
-            }${new BigNumber(diffToken0.abs().toFixed(5)).toFixed()}`}
+              diffTokenA.isGreaterThan(-1e-5) ? '' : '+'
+            }${new BigNumber(diffTokenA.abs().toFixed(5)).toFixed()}`}
             onValueChanged={setInputValueA}
             exclusion={tokenB}
           />
@@ -1128,7 +1132,7 @@ function LiquidityDetailPage({
         <div className="card-row">
           <TokenInputGroup
             className={
-              diffToken1.isLessThan(-1e-5) ? 'token-input-group--success' : ''
+              diffTokenB.isLessThan(-1e-5) ? 'token-input-group--success' : ''
             }
             disabledToken
             // disabledInput={editingType === 'redistribute'}
@@ -1141,8 +1145,8 @@ function LiquidityDetailPage({
                 : balanceTokenB?.toNumber()
             }
             token={tokenB}
-            value={`${diffToken1.isLessThan(-1e-5) ? '+' : ''}${new BigNumber(
-              diffToken1.abs().toFixed(5)
+            value={`${diffTokenB.isLessThan(-1e-5) ? '+' : ''}${new BigNumber(
+              diffTokenB.abs().toFixed(5)
             ).toFixed()}`}
             onValueChanged={setInputValueB}
             exclusion={tokenA}
