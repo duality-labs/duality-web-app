@@ -413,6 +413,7 @@ export default function LiquiditySelector({
     },
     [xMin, xMax, containerSize.width]
   );
+  // plotY is for background ticks (cumulative share amounts)
   const plotY = useCallback(
     (y: number): number => {
       const topPadding = 0;
@@ -424,6 +425,7 @@ export default function LiquiditySelector({
     },
     [graphHeight, containerSize.height]
   );
+  // percentY is for user ticks (unknown maximum value)
   const percentY = useCallback(
     (y: number): number => {
       const topPadding = 0;
@@ -1034,9 +1036,13 @@ function TicksGroup({
             const adjustedMovement = 1 + dragSpeedFactor * displacementPercent;
             return userTicks?.map((userTick, index) => {
               // modify price
-              if (userTickSelected === index) {
-                const originalAValue = backgroundTicks[index]?.reserveA;
-                const originalBValue = backgroundTicks[index]?.reserveB;
+              if (
+                userTickSelected === index &&
+                backgroundTicks[index] !== undefined
+              ) {
+                const originalTick = backgroundTicks[index] as Tick;
+                const originalAValue = originalTick.reserveA;
+                const originalBValue = originalTick.reserveB;
                 const newAValue = tick.reserveA.multipliedBy(adjustedMovement);
                 const newBValue = tick.reserveB.multipliedBy(adjustedMovement);
                 return {
@@ -1047,7 +1053,10 @@ function TicksGroup({
                       newAValue.isLessThan(originalAValue)) ||
                     (!canMoveUp &&
                       originalAValue &&
-                      newAValue.isGreaterThan(originalAValue))
+                      newAValue.isGreaterThan(originalAValue)) ||
+                    // ensure value is more than ~2px away from the original value position
+                    Math.abs(percentY(newAValue) - percentY(originalAValue)) <
+                      dragSpeedFactor * 2
                       ? originalAValue
                       : newAValue.isLessThan(0)
                       ? new BigNumber(0)
@@ -1058,7 +1067,10 @@ function TicksGroup({
                       newBValue.isLessThan(originalBValue)) ||
                     (!canMoveUp &&
                       originalBValue &&
-                      newBValue.isGreaterThan(originalBValue))
+                      newBValue.isGreaterThan(originalBValue)) ||
+                    // ensure value is more than ~2px away from the original value position
+                    Math.abs(percentY(newBValue) - percentY(originalBValue)) <
+                      dragSpeedFactor * 2
                       ? originalBValue
                       : newBValue.isLessThan(0)
                       ? new BigNumber(0)
