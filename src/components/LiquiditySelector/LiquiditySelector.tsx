@@ -1049,6 +1049,8 @@ function TicksGroup({
                       originalAValue &&
                       newAValue.isGreaterThan(originalAValue))
                       ? originalAValue
+                      : newAValue.isLessThan(0)
+                      ? new BigNumber(0)
                       : newAValue,
                   reserveB:
                     (!canMoveDown &&
@@ -1058,6 +1060,8 @@ function TicksGroup({
                       originalBValue &&
                       newBValue.isGreaterThan(originalBValue))
                       ? originalBValue
+                      : newBValue.isLessThan(0)
+                      ? new BigNumber(0)
                       : newBValue,
                 };
               } else {
