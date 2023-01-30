@@ -7,8 +7,6 @@ import {
   useState,
 } from 'react';
 import { Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
@@ -51,7 +49,6 @@ import { calculateShares } from '../../lib/web3/utils/ticks';
 import { IndexedShare } from '../../lib/web3/utils/shares';
 import SelectInput from '../../components/inputs/SelectInput';
 import useFeeLiquidityMap from '../Pool/useFeeLiquidityMap';
-import TokenPairLogos from '../../components/TokenPairLogos';
 
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
@@ -424,12 +421,10 @@ function LiquidityDetailPage({
     token1.address
   );
 
-  const [invertedTokenOrder, setInvertedTokenOrder] = useState<boolean>(() => {
+  const [invertedTokenOrder] = useState<boolean>(() => {
     return currentPriceFromTicks0to1?.isLessThan(1) ?? false;
   });
-  const swapAll = useCallback(() => {
-    setInvertedTokenOrder((order) => !order);
-  }, []);
+
   // calculate the graph extent based on the unfiltered lowest and highest tick prices
   const [minPrice0to1, maxPrice0to1] = useMemo<
     [BigNumber | undefined, BigNumber | undefined]
@@ -727,20 +722,7 @@ function LiquidityDetailPage({
       <div className="flex">
         <div className="chart-header row my-4">
           <div className="col">
-            <div className="row flex-centered gap-3">
-              <TokenPairLogos className="h4" tokenA={tokenA} tokenB={tokenB} />
-
-              <h2 className="h4">
-                {tokenA.display.toUpperCase()} / {tokenB.display.toUpperCase()}
-              </h2>
-              <button
-                type="button"
-                className="ml-auto icon-button h4"
-                onClick={swapAll}
-              >
-                <FontAwesomeIcon icon={faArrowRightArrowLeft}></FontAwesomeIcon>
-              </button>
-            </div>
+            <h3 className="h3">Liquidity Distribution</h3>
           </div>
           <div className="col flex-centered ml-auto">
             <div className="row gap-2">
@@ -1050,29 +1032,17 @@ function LiquidityDetailPage({
       ? // both exist
         `${diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0
           .abs()
-          .toFixed(5)} ${(!invertedTokenOrder
-          ? tokenA
-          : tokenB
-        ).display.toUpperCase()}\n+\n${
+          .toFixed(5)} ${tokenA.display.toUpperCase()}\n+\n${
           diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'
-        } ${diffToken1.abs().toFixed(5)} ${(!invertedTokenOrder
-          ? tokenB
-          : tokenA
-        ).display.toUpperCase()}`
+        } ${diffToken1.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`
       : // only token0
         `${diffToken0.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken0
           .abs()
-          .toFixed(5)} ${(!invertedTokenOrder
-          ? tokenA
-          : tokenB
-        ).display.toUpperCase()}`
+          .toFixed(5)} ${tokenA.display.toUpperCase()}`
     : // only token1
       `${diffToken1.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffToken1
         .abs()
-        .toFixed(5)} ${(!invertedTokenOrder
-        ? tokenB
-        : tokenA
-      ).display.toUpperCase()}`;
+        .toFixed(5)} ${tokenB.display.toUpperCase()}`;
 
   const rightColumn = (
     <div className="col col--left">
