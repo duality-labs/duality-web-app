@@ -126,6 +126,12 @@
     align-items: center;
   }
 
+  .chart-card .chart-header + .chart-area {
+    min-height: 15em;
+    min-width: 40em;
+    max-width: 100%;
+  }
+
   .banner {
     & {
       width: 100%;
