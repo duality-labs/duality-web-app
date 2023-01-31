@@ -249,6 +249,13 @@
       gap: 2rem;
     }
   }
+
+  table {
+    th,
+    td {
+      text-align: right;
+    }
+  }
 }
 
 .credit-card {

@@ -887,11 +887,11 @@ function LiquidityDetailPage({
         <div className="col flex">
           <table style={{ width: '100%' }}>
             <tr>
-              <th>Tick</th>
-              <th>Price</th>
-              <th>{tokenA.display.toUpperCase()}</th>
-              <th>{tokenB.display.toUpperCase()}</th>
-              <th>Actions</th>
+              <th style={{ width: '7.5%' }}></th>
+              <th style={{ width: '20%' }}>Price</th>
+              <th style={{ width: '30%' }}>{tokenA.display.toUpperCase()}</th>
+              <th style={{ width: '30%' }}>{tokenB.display.toUpperCase()}</th>
+              <th style={{ width: '12.5%' }}>Actions</th>
             </tr>
             {editedUserTicks.map((tick, index) => {
               return (
