@@ -887,6 +887,8 @@ function LiquidityDetailPage({
               <th>Price</th>
               <th>{tokenA.display.toUpperCase()}</th>
               <th>{tokenB.display.toUpperCase()}</th>
+              <th>Withdraw</th>
+              <th>Reset</th>
             </tr>
             {editedUserTicks.map((tick, index) => {
               return (
@@ -920,10 +922,15 @@ function LiquidityDetailPage({
                       : ''}
                   </td>
                   <td>
-                    <button className="button button-error">Withdraw</button>
+                    {tick.reserveA.plus(tick.reserveB).isGreaterThan(0) && (
+                      <button className="button button-error">Withdraw</button>
+                    )}
                   </td>
                   <td>
-                    <button className="button button-default">Reset</button>
+                    {(!tick.reserveA.isEqualTo(userTicks[index].reserveA) ||
+                      !tick.reserveB.isEqualTo(userTicks[index].reserveB)) && (
+                      <button className="button button-default">Reset</button>
+                    )}
                   </td>
                 </tr>
               );
