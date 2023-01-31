@@ -900,7 +900,7 @@ function LiquidityDetailPage({
                   <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
                   <td>
                     {tick.reserveA.isGreaterThan(1e-5)
-                      ? `${
+                      ? `${tick.reserveA.toFixed(3)} (${
                           reserveATotal.isGreaterThan(0)
                             ? new BigNumber(
                                 tick.reserveA
@@ -908,12 +908,12 @@ function LiquidityDetailPage({
                                   .dividedBy(reserveATotal)
                               ).toFixed(1)
                             : 0
-                        }%`
+                        }%)`
                       : ''}
                   </td>
                   <td>
                     {tick.reserveB.isGreaterThan(1e-5)
-                      ? `${
+                      ? `${tick.reserveB.toFixed(3)} (${
                           reserveBTotal.isGreaterThan(0)
                             ? new BigNumber(
                                 tick.reserveB
@@ -921,7 +921,7 @@ function LiquidityDetailPage({
                                   .dividedBy(reserveBTotal)
                               ).toFixed(1)
                             : 0
-                        }%`
+                        }%)`
                       : ''}
                   </td>
                   <td>
