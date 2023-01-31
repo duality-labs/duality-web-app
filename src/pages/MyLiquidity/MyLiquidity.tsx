@@ -923,13 +923,53 @@ function LiquidityDetailPage({
                   </td>
                   <td>
                     {tick.reserveA.plus(tick.reserveB).isGreaterThan(0) && (
-                      <button className="button button-error">Withdraw</button>
+                      <button
+                        type="button"
+                        className="button button-error"
+                        onClick={() => {
+                          setEditedUserTicks((ticks) => {
+                            return ticks.map((tick, currentTickIndex) => {
+                              return index !== currentTickIndex
+                                ? tick
+                                : {
+                                    ...tick,
+                                    reserveA: new BigNumber(0),
+                                    reserveB: new BigNumber(0),
+                                  };
+                            });
+                          });
+                        }}
+                      >
+                        Withdraw
+                      </button>
                     )}
                   </td>
                   <td>
                     {(!tick.reserveA.isEqualTo(userTicks[index].reserveA) ||
                       !tick.reserveB.isEqualTo(userTicks[index].reserveB)) && (
-                      <button className="button button-default">Reset</button>
+                      <button
+                        type="button"
+                        className="button button-default"
+                        onClick={() => {
+                          setEditedUserTicks((ticks) => {
+                            return ticks.map((tick, currentTickIndex) => {
+                              return index !== currentTickIndex
+                                ? tick
+                                : {
+                                    ...tick,
+                                    reserveA: new BigNumber(
+                                      userTicks[index].reserveA
+                                    ),
+                                    reserveB: new BigNumber(
+                                      userTicks[index].reserveB
+                                    ),
+                                  };
+                            });
+                          });
+                        }}
+                      >
+                        Reset
+                      </button>
                     )}
                   </td>
                 </tr>
