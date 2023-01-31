@@ -8,7 +8,11 @@ import {
 } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowRightArrowLeft,
+  faArrowRotateLeft,
+  faArrowUpFromBracket,
+} from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
@@ -887,8 +891,7 @@ function LiquidityDetailPage({
               <th>Price</th>
               <th>{tokenA.display.toUpperCase()}</th>
               <th>{tokenB.display.toUpperCase()}</th>
-              <th>Withdraw</th>
-              <th>Reset</th>
+              <th>Actions</th>
             </tr>
             {editedUserTicks.map((tick, index) => {
               return (
@@ -940,11 +943,9 @@ function LiquidityDetailPage({
                           });
                         }}
                       >
-                        Withdraw
+                        <FontAwesomeIcon icon={faArrowUpFromBracket} />
                       </button>
                     )}
-                  </td>
-                  <td>
                     {(!tick.reserveA.isEqualTo(userTicks[index].reserveA) ||
                       !tick.reserveB.isEqualTo(userTicks[index].reserveB)) && (
                       <button
@@ -968,7 +969,7 @@ function LiquidityDetailPage({
                           });
                         }}
                       >
-                        Reset
+                        <FontAwesomeIcon icon={faArrowRotateLeft} />
                       </button>
                     )}
                   </td>
