@@ -640,9 +640,7 @@ function LiquidityDetailPage({
     setEditedUserTicks(userTicks.slice());
   }, [userTicks]);
 
-  const [editingType, setEditingType] = useState<
-    'redistribute' | 'add' | 'remove'
-  >('redistribute');
+  const [editingType, setEditingType] = useState<'add' | 'edit'>('edit');
 
   const [, setInputValueA, tokenAValue = '0'] = useNumericInputState();
   const [, setInputValueB, tokenBValue = '0'] = useNumericInputState();
@@ -656,9 +654,7 @@ function LiquidityDetailPage({
   useEffect(() => {
     setInputValueA('');
     setInputValueB('');
-    if (editingType !== 'redistribute') {
-      setEditedUserTicks(userTicks);
-    }
+    setEditedUserTicks(userTicks);
   }, [editingType, userTicks, setInputValueA, setInputValueB]);
 
   useLayoutEffect(() => {
@@ -1147,6 +1143,20 @@ function LiquidityDetailPage({
 
   const rightColumn = (
     <div className="col col--left">
+      <div className="row mb-3">
+        <div className="col flex">
+          <RadioButtonGroupInput
+            className="mt-2"
+            buttonClassName="py-3 px-4"
+            values={{
+              add: 'Add Liquidity',
+              edit: 'Edit Liquidity',
+            }}
+            value={editingType}
+            onChange={setEditingType}
+          />
+        </div>
+      </div>
       <div className="row">
         <SelectInput<FeeTypeAndAll>
           className="col flex select-fee-tier"
@@ -1171,19 +1181,6 @@ function LiquidityDetailPage({
         />
       </div>
       <div className="assets-card">
-        <div className="mb-4 hide">
-          <RadioButtonGroupInput
-            className="mx-auto mt-2 mb-4"
-            buttonClassName="py-3 px-4"
-            values={{
-              redistribute: 'Redistribute',
-              add: 'Add Liquidity',
-              remove: 'Remove Liquidity',
-            }}
-            value={editingType}
-            onChange={setEditingType}
-          />
-        </div>
         <div className="card-row">
           <TokenInputGroup
             className={
@@ -1193,12 +1190,7 @@ function LiquidityDetailPage({
             // disabledInput={editingType === 'redistribute'}
             variant={!hasSufficientFundsA && 'error'}
             tokenList={tokenList}
-            maxValue={
-              editingType === 'remove'
-                ? // use share token total or default to wallet balance
-                  valueA.toNumber()
-                : balanceTokenA?.toNumber()
-            }
+            maxValue={balanceTokenA?.toNumber()}
             token={tokenA}
             value={`${
               diffTokenA.isGreaterThan(-1e-5) ? '' : '+'
@@ -1217,12 +1209,7 @@ function LiquidityDetailPage({
             // disabledInput={editingType === 'redistribute'}
             variant={!hasSufficientFundsB && 'error'}
             tokenList={tokenList}
-            maxValue={
-              editingType === 'remove'
-                ? // use share token total or default to wallet balance
-                  valueB.toNumber()
-                : balanceTokenB?.toNumber()
-            }
+            maxValue={balanceTokenB?.toNumber()}
             token={tokenB}
             value={`${diffTokenB.isLessThan(-1e-5) ? '+' : ''}${new BigNumber(
               diffTokenB.abs().toFixed(5)
@@ -1449,20 +1436,16 @@ function getTickDiffCumulativeValues(
   newTicks: TickGroup,
   oldTicks: TickGroup,
   tokenValueStrings: [string, string],
-  editingType: 'redistribute' | 'add' | 'remove'
+  editingType: 'redistribute' | 'add' | 'edit'
 ) {
   const [tokenAValueString, tokenBValueString] = tokenValueStrings;
   const tokenAValue =
     editingType !== 'redistribute'
-      ? new BigNumber(
-          editingType === 'remove' ? `-${tokenAValueString}` : tokenAValueString
-        )
+      ? new BigNumber(tokenAValueString)
       : new BigNumber(0);
   const tokenBValue =
     editingType !== 'redistribute'
-      ? new BigNumber(
-          editingType === 'remove' ? `-${tokenBValueString}` : tokenBValueString
-        )
+      ? new BigNumber(tokenBValueString)
       : new BigNumber(0);
 
   return getTickDiffs(newTicks, oldTicks).reduce(
