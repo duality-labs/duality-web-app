@@ -723,6 +723,10 @@ function LiquidityDetailPage({
     ];
   }, [editedUserTicks]);
 
+  const [chartTypeSelected, setChartTypeSelected] = useState<
+    'AMM' | 'Orderbook'
+  >('AMM');
+
   const leftColumn = (
     <div className="col">
       <div className="flex">
@@ -880,132 +884,134 @@ function LiquidityDetailPage({
           />
         </div>
       </div>
-      <div className="row mt-4">
-        <div className="col flex">
-          <table style={{ width: '100%' }}>
-            <tr>
-              <th style={{ width: '7.5%' }}></th>
-              <th style={{ width: '20%' }}>Price</th>
-              <th style={{ width: '20%' }}>{tokenA.display.toUpperCase()}</th>
-              <th style={{ width: '10%' }}></th>
-              <th style={{ width: '20%' }}>{tokenB.display.toUpperCase()}</th>
-              <th style={{ width: '10%' }}></th>
-              <th style={{ width: '12.5%' }}>Actions</th>
-            </tr>
-            {editedUserTicks.map((tick, index) => {
-              return (
-                <tr key={tick.tickIndex} className="pt-2">
-                  <td>{index + 1}</td>
-                  <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
-                  <td>
-                    {tick.reserveA.isGreaterThan(1e-5)
-                      ? tick.reserveA.toFixed(3)
-                      : ''}
-                  </td>
-                  <td>
-                    {tick.reserveA.isGreaterThan(1e-5)
-                      ? `(${
-                          reserveATotal.isGreaterThan(0)
-                            ? new BigNumber(
-                                tick.reserveA
-                                  .multipliedBy(100)
-                                  .dividedBy(reserveATotal)
-                              ).toFixed(1)
-                            : 0
-                        }%)`
-                      : ''}
-                  </td>
-                  <td>
-                    {tick.reserveB.isGreaterThan(1e-5)
-                      ? tick.reserveB.toFixed(3)
-                      : ''}
-                  </td>
-                  <td>
-                    {tick.reserveB.isGreaterThan(1e-5)
-                      ? `(${
-                          reserveBTotal.isGreaterThan(0)
-                            ? new BigNumber(
-                                tick.reserveB
-                                  .multipliedBy(100)
-                                  .dividedBy(reserveBTotal)
-                              ).toFixed(1)
-                            : 0
-                        }%)`
-                      : ''}
-                  </td>
-                  <td className="row gap-2">
-                    {tick &&
-                      tick.reserveA
-                        ?.plus(tick.reserveB || 0)
-                        .isGreaterThan(0) &&
-                      (tick.reserveA.isZero() || tick.reserveB.isZero()) && (
-                        <button
-                          type="button"
-                          className="button button-secondary ml-auto"
-                        >
-                          <FontAwesomeIcon icon={faEdit} />
-                        </button>
-                      )}
-                    {tick &&
-                      tick.reserveA
-                        ?.plus(tick.reserveB || 0)
-                        .isGreaterThan(0) && (
-                        <button
-                          type="button"
-                          className="button button-error"
-                          onClick={() => {
-                            setEditedUserTicks((ticks) => {
-                              return ticks.map((tick, currentTickIndex) => {
-                                return index !== currentTickIndex
-                                  ? tick
-                                  : {
-                                      ...tick,
-                                      reserveA: new BigNumber(0),
-                                      reserveB: new BigNumber(0),
-                                    };
+      {chartTypeSelected === 'Orderbook' && (
+        <div className="row mt-4">
+          <div className="col flex">
+            <table style={{ width: '100%' }}>
+              <tr>
+                <th style={{ width: '7.5%' }}></th>
+                <th style={{ width: '20%' }}>Price</th>
+                <th style={{ width: '20%' }}>{tokenA.display.toUpperCase()}</th>
+                <th style={{ width: '10%' }}></th>
+                <th style={{ width: '20%' }}>{tokenB.display.toUpperCase()}</th>
+                <th style={{ width: '10%' }}></th>
+                <th style={{ width: '12.5%' }}>Actions</th>
+              </tr>
+              {editedUserTicks.map((tick, index) => {
+                return (
+                  <tr key={tick.tickIndex} className="pt-2">
+                    <td>{index + 1}</td>
+                    <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
+                    <td>
+                      {tick.reserveA.isGreaterThan(1e-5)
+                        ? tick.reserveA.toFixed(3)
+                        : ''}
+                    </td>
+                    <td>
+                      {tick.reserveA.isGreaterThan(1e-5)
+                        ? `(${
+                            reserveATotal.isGreaterThan(0)
+                              ? new BigNumber(
+                                  tick.reserveA
+                                    .multipliedBy(100)
+                                    .dividedBy(reserveATotal)
+                                ).toFixed(1)
+                              : 0
+                          }%)`
+                        : ''}
+                    </td>
+                    <td>
+                      {tick.reserveB.isGreaterThan(1e-5)
+                        ? tick.reserveB.toFixed(3)
+                        : ''}
+                    </td>
+                    <td>
+                      {tick.reserveB.isGreaterThan(1e-5)
+                        ? `(${
+                            reserveBTotal.isGreaterThan(0)
+                              ? new BigNumber(
+                                  tick.reserveB
+                                    .multipliedBy(100)
+                                    .dividedBy(reserveBTotal)
+                                ).toFixed(1)
+                              : 0
+                          }%)`
+                        : ''}
+                    </td>
+                    <td className="row gap-2">
+                      {tick &&
+                        tick.reserveA
+                          ?.plus(tick.reserveB || 0)
+                          .isGreaterThan(0) &&
+                        (tick.reserveA.isZero() || tick.reserveB.isZero()) && (
+                          <button
+                            type="button"
+                            className="button button-secondary ml-auto"
+                          >
+                            <FontAwesomeIcon icon={faEdit} />
+                          </button>
+                        )}
+                      {tick &&
+                        tick.reserveA
+                          ?.plus(tick.reserveB || 0)
+                          .isGreaterThan(0) && (
+                          <button
+                            type="button"
+                            className="button button-error"
+                            onClick={() => {
+                              setEditedUserTicks((ticks) => {
+                                return ticks.map((tick, currentTickIndex) => {
+                                  return index !== currentTickIndex
+                                    ? tick
+                                    : {
+                                        ...tick,
+                                        reserveA: new BigNumber(0),
+                                        reserveB: new BigNumber(0),
+                                      };
+                                });
                               });
-                            });
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faArrowUpFromBracket} />
-                        </button>
-                      )}
-                    {tick &&
-                      (!tick.reserveA.isEqualTo(userTicks[index]?.reserveA) ||
-                        !tick.reserveB.isEqualTo(
-                          userTicks[index]?.reserveB
-                        )) && (
-                        <button
-                          type="button"
-                          className="button button-default"
-                          onClick={() => {
-                            setEditedUserTicks((ticks) => {
-                              return ticks.map((tick, currentTickIndex) => {
-                                return index !== currentTickIndex
-                                  ? tick
-                                  : {
-                                      ...tick,
-                                      reserveA: new BigNumber(
-                                        userTicks[index].reserveA
-                                      ),
-                                      reserveB: new BigNumber(
-                                        userTicks[index].reserveB
-                                      ),
-                                    };
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faArrowUpFromBracket} />
+                          </button>
+                        )}
+                      {tick &&
+                        (!tick.reserveA.isEqualTo(userTicks[index]?.reserveA) ||
+                          !tick.reserveB.isEqualTo(
+                            userTicks[index]?.reserveB
+                          )) && (
+                          <button
+                            type="button"
+                            className="button button-default"
+                            onClick={() => {
+                              setEditedUserTicks((ticks) => {
+                                return ticks.map((tick, currentTickIndex) => {
+                                  return index !== currentTickIndex
+                                    ? tick
+                                    : {
+                                        ...tick,
+                                        reserveA: new BigNumber(
+                                          userTicks[index].reserveA
+                                        ),
+                                        reserveB: new BigNumber(
+                                          userTicks[index].reserveB
+                                        ),
+                                      };
+                                });
                               });
-                            });
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faArrowRotateLeft} />
-                        </button>
-                      )}
-                  </td>
-                </tr>
-              );
-            })}
-          </table>
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faArrowRotateLeft} />
+                          </button>
+                        )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </table>
+          </div>
         </div>
-      </div>
+      )}
       <div className="page-card orderbook-card mx-auto hide">
         <RadioButtonGroupInput<number>
           className="mx-auto mt-2 mb-4"
@@ -1330,7 +1336,18 @@ function LiquidityDetailPage({
               </h3>
             </div>
             <div className="col flex-centered chart-type-value">Customized</div>
-            <div className="col flex-centered ml-auto">Transaction Details</div>
+            <div className="col ml-auto" style={{ width: '10em' }}>
+              <RadioButtonGroupInput<'AMM' | 'Orderbook'>
+                className="chart-type-input"
+                values={{
+                  AMM: 'Basic',
+                  Orderbook: 'Pro',
+                }}
+                value={chartTypeSelected}
+                onChange={setChartTypeSelected}
+              />
+            </div>
+            <div className="col flex-centered">Transaction Details</div>
           </div>
           <hr className="mt-3 mb-4 flex" />
           <div className="row">
