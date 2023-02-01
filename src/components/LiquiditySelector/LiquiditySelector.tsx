@@ -30,8 +30,8 @@ export interface LiquiditySelectorProps {
   setUserTickSelected: (index: number) => void;
   rangeMin: string;
   rangeMax: string;
-  setRangeMin: (rangeMin: string) => void;
-  setRangeMax: (rangeMax: string) => void;
+  setRangeMin: (rangeMin: string) => void | undefined;
+  setRangeMax: (rangeMax: string) => void | undefined;
   userTicksBase?: Array<Tick | undefined>;
   userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
@@ -486,7 +486,7 @@ export default function LiquiditySelector({
         </linearGradient>
       </defs>
       {graphEnd.isZero() && <text>Chart is not currently available</text>}
-      {canMoveX && (
+      {setRangeMin !== undefined && setRangeMax !== undefined && (
         <TicksBackgroundArea
           className="new-ticks-area"
           rangeMin={rangeMin}
@@ -507,7 +507,7 @@ export default function LiquiditySelector({
         plotX={plotXBigNumber}
         plotY={plotYBigNumber}
       />
-      {canMoveX && (
+      {setRangeMin !== undefined && setRangeMax !== undefined && (
         <TicksArea
           className="new-ticks-area"
           advanced={advanced}

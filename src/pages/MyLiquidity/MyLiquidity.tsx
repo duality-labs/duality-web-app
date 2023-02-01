@@ -399,10 +399,6 @@ function ShareValuesPage({
   );
 }
 
-// set as constant to avoid unwanted hook effects
-const setRangeMin = () => undefined;
-const setRangeMax = () => undefined;
-
 function LiquidityDetailPage({
   token0,
   token1,
@@ -731,6 +727,11 @@ function LiquidityDetailPage({
     'All' | 'A' | 'B'
   >('All');
 
+  const [rangeMin, setRangeMin] = useState('1');
+  const [rangeMax, setRangeMax] = useState('1');
+  const priceMin = minPrice?.toFixed() || '1';
+  const priceMax = maxPrice?.toFixed() || '1';
+
   const leftColumn = (
     <div className="col">
       <div className="flex">
@@ -768,7 +769,7 @@ function LiquidityDetailPage({
         </div>
         <div className="flex row chart-area">
           <LiquiditySelector
-            advanced={true}
+            advanced={chartTypeSelected === 'Orderbook'}
             tokenA={tokenA}
             tokenB={tokenB}
             ticks={ticks}
@@ -876,8 +877,8 @@ function LiquidityDetailPage({
             //   [editingType, values, userTicks]
             // )}
             setUserTicks={setEditedUserTicks}
-            rangeMin={minPrice?.toFixed() || ''}
-            rangeMax={maxPrice?.toFixed() || ''}
+            rangeMin={rangeMin}
+            rangeMax={rangeMax}
             setRangeMin={setRangeMin}
             setRangeMax={setRangeMax}
             // swapAll={swapAll}
@@ -943,6 +944,47 @@ function LiquidityDetailPage({
           </div>
         </>
       )}
+      <div className="price-card mt-4">
+        <div className="card-row">
+          <StepNumberInput
+            title="MIN PRICE"
+            value={rangeMin}
+            onChange={setRangeMin}
+            // stepFunction={logarithmStep}
+            pressedDelay={500}
+            pressedInterval={100}
+            min={priceMin}
+            max={rangeMax}
+            description={
+              tokenA && tokenB
+                ? `${tokenA.symbol} per ${tokenB.symbol}`
+                : 'No Tokens'
+            }
+            minSignificantDigits={8}
+            maxSignificantDigits={10}
+            // format={formatStepNumberPriceInput}
+          />
+          <StepNumberInput
+            title="MAX PRICE"
+            value={rangeMax}
+            onChange={setRangeMax}
+            // stepFunction={logarithmStep}
+            pressedDelay={500}
+            pressedInterval={100}
+            min={rangeMin}
+            max={priceMax}
+            description={
+              tokenA && tokenB
+                ? `${tokenA.symbol} per ${tokenB.symbol}`
+                : 'No Tokens'
+            }
+            minSignificantDigits={8}
+            maxSignificantDigits={10}
+            // format={formatStepNumberPriceInput}
+          />
+        </div>
+      </div>
+
       {chartTypeSelected === 'Orderbook' && (
         <div className="row mt-4">
           <div className="col flex">
