@@ -889,8 +889,10 @@ function LiquidityDetailPage({
             <tr>
               <th style={{ width: '7.5%' }}></th>
               <th style={{ width: '20%' }}>Price</th>
-              <th style={{ width: '30%' }}>{tokenA.display.toUpperCase()}</th>
-              <th style={{ width: '30%' }}>{tokenB.display.toUpperCase()}</th>
+              <th style={{ width: '20%' }}>{tokenA.display.toUpperCase()}</th>
+              <th style={{ width: '10%' }}></th>
+              <th style={{ width: '20%' }}>{tokenB.display.toUpperCase()}</th>
+              <th style={{ width: '10%' }}></th>
               <th style={{ width: '12.5%' }}>Actions</th>
             </tr>
             {editedUserTicks.map((tick, index) => {
@@ -900,7 +902,12 @@ function LiquidityDetailPage({
                   <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
                   <td>
                     {tick.reserveA.isGreaterThan(1e-5)
-                      ? `${tick.reserveA.toFixed(3)} (${
+                      ? tick.reserveA.toFixed(3)
+                      : ''}
+                  </td>
+                  <td>
+                    {tick.reserveA.isGreaterThan(1e-5)
+                      ? `(${
                           reserveATotal.isGreaterThan(0)
                             ? new BigNumber(
                                 tick.reserveA
@@ -913,7 +920,12 @@ function LiquidityDetailPage({
                   </td>
                   <td>
                     {tick.reserveB.isGreaterThan(1e-5)
-                      ? `${tick.reserveB.toFixed(3)} (${
+                      ? tick.reserveB.toFixed(3)
+                      : ''}
+                  </td>
+                  <td>
+                    {tick.reserveB.isGreaterThan(1e-5)
+                      ? `(${
                           reserveBTotal.isGreaterThan(0)
                             ? new BigNumber(
                                 tick.reserveB
