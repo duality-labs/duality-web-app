@@ -944,7 +944,14 @@ function LiquidityDetailPage({
           </div>
         </>
       )}
-      <div className="price-card mt-4">
+      <div
+        className={[
+          'price-card mt-4',
+          chartTypeSelected === 'Orderbook' && 'hide',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <div className="card-row">
           <StepNumberInput
             title="MIN PRICE"
@@ -1250,7 +1257,7 @@ function LiquidityDetailPage({
 
   const rightColumn = (
     <div className="col col--left">
-      <div className="row mb-3 hide">
+      <div className="row mb-3">
         <div className="col flex">
           <RadioButtonGroupInput
             className="mt-2"
@@ -1261,6 +1268,19 @@ function LiquidityDetailPage({
             }}
             value={editingType}
             onChange={setEditingType}
+          />
+        </div>
+      </div>
+      <div className="row mb-3">
+        <div className="col flex">
+          <RadioButtonGroupInput<'AMM' | 'Orderbook'>
+            className="chart-type-input"
+            values={{
+              AMM: 'Basic',
+              Orderbook: 'Pro',
+            }}
+            value={chartTypeSelected}
+            onChange={setChartTypeSelected}
           />
         </div>
       </div>
@@ -1328,7 +1348,7 @@ function LiquidityDetailPage({
 
   return (
     <div className="my-liquidity-detail-page">
-      <div className="banner">
+      <div className="banner hide">
         <div className="heading row">
           <div className="token-symbols col py-5">
             <h1>
@@ -1392,7 +1412,7 @@ function LiquidityDetailPage({
           onSubmit={onSubmit}
         >
           <div className="chart-header row flex-centered mb-4">
-            <div className="col" style={{ width: '30em' }}>
+            <div className="col hide" style={{ width: '30em' }}>
               <RadioButtonGroupInput
                 className="heading-buttons"
                 buttonClassName="py-4 px-4 h3"
@@ -1404,7 +1424,7 @@ function LiquidityDetailPage({
                 onChange={setEditingType}
               />
             </div>
-            <div className="col hide">
+            <div className="col">
               <h3 className="h3">
                 {editingType
                   .split('')
@@ -1414,7 +1434,7 @@ function LiquidityDetailPage({
               </h3>
             </div>
             <div className="col flex-centered chart-type-value">Customized</div>
-            <div className="col ml-auto" style={{ width: '10em' }}>
+            <div className="col ml-auto hide" style={{ width: '10em' }}>
               <RadioButtonGroupInput<'AMM' | 'Orderbook'>
                 className="chart-type-input"
                 values={{
@@ -1425,7 +1445,7 @@ function LiquidityDetailPage({
                 onChange={setChartTypeSelected}
               />
             </div>
-            <div className="col flex-centered">Transaction Details</div>
+            <div className="col flex-centered ml-auto">Transaction Details</div>
           </div>
           <hr className="mt-3 mb-4 flex" />
           <div className="row">
