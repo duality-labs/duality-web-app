@@ -727,6 +727,10 @@ function LiquidityDetailPage({
     'AMM' | 'Orderbook'
   >('AMM');
 
+  const [withdrawTypeSelected, setWithdrawTypeSelected] = useState<
+    'All' | 'A' | 'B'
+  >('All');
+
   const leftColumn = (
     <div className="col">
       <div className="flex">
@@ -885,7 +889,9 @@ function LiquidityDetailPage({
         </div>
       </div>
       <div className="row mt-2 gap-4 flex-centered">
-        <div className="col pb-3">Shown Fee Tier:</div>
+        <div className="col pb-3" style={{ width: '8em', textAlign: 'right' }}>
+          Shown Fee Tier:
+        </div>
         <div className="col flex">
           <SelectInput<FeeTypeAndAll>
             className="col flex select-fee-tier"
@@ -910,6 +916,33 @@ function LiquidityDetailPage({
           />
         </div>
       </div>
+      {chartTypeSelected === 'AMM' && (
+        <>
+          <div className="row mt-2 gap-4 flex-centered">
+            <div
+              className="col pb-0"
+              style={{ width: '8em', textAlign: 'right' }}
+            >
+              Withdraw:
+            </div>
+            <div className="col flex">
+              <RadioButtonGroupInput<'All' | 'A' | 'B'>
+                className="chart-type-input"
+                values={{
+                  All: 'All',
+                  A: tokenA.display.toUpperCase(),
+                  B: tokenB.display.toUpperCase(),
+                }}
+                value={withdrawTypeSelected}
+                onChange={setWithdrawTypeSelected}
+              />
+            </div>
+          </div>
+          <div className="row mt-2 gap-4 flex-centered hide">
+            Drag range to select liquidity pools to withdraw
+          </div>
+        </>
+      )}
       {chartTypeSelected === 'Orderbook' && (
         <div className="row mt-4">
           <div className="col flex">
