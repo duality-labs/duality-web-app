@@ -12,6 +12,7 @@ import {
   faArrowRightArrowLeft,
   faArrowRotateLeft,
   faArrowUpFromBracket,
+  faEdit,
 } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
@@ -936,7 +937,19 @@ function LiquidityDetailPage({
                         }%)`
                       : ''}
                   </td>
-                  <td>
+                  <td className="row gap-2">
+                    {tick &&
+                      tick.reserveA
+                        ?.plus(tick.reserveB || 0)
+                        .isGreaterThan(0) &&
+                      (tick.reserveA.isZero() || tick.reserveB.isZero()) && (
+                        <button
+                          type="button"
+                          className="button button-secondary ml-auto"
+                        >
+                          <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                      )}
                     {tick &&
                       tick.reserveA
                         ?.plus(tick.reserveB || 0)
