@@ -925,53 +925,59 @@ function LiquidityDetailPage({
                       : ''}
                   </td>
                   <td>
-                    {tick.reserveA.plus(tick.reserveB).isGreaterThan(0) && (
-                      <button
-                        type="button"
-                        className="button button-error"
-                        onClick={() => {
-                          setEditedUserTicks((ticks) => {
-                            return ticks.map((tick, currentTickIndex) => {
-                              return index !== currentTickIndex
-                                ? tick
-                                : {
-                                    ...tick,
-                                    reserveA: new BigNumber(0),
-                                    reserveB: new BigNumber(0),
-                                  };
+                    {tick &&
+                      tick.reserveA
+                        ?.plus(tick.reserveB || 0)
+                        .isGreaterThan(0) && (
+                        <button
+                          type="button"
+                          className="button button-error"
+                          onClick={() => {
+                            setEditedUserTicks((ticks) => {
+                              return ticks.map((tick, currentTickIndex) => {
+                                return index !== currentTickIndex
+                                  ? tick
+                                  : {
+                                      ...tick,
+                                      reserveA: new BigNumber(0),
+                                      reserveB: new BigNumber(0),
+                                    };
+                              });
                             });
-                          });
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faArrowUpFromBracket} />
-                      </button>
-                    )}
-                    {(!tick.reserveA.isEqualTo(userTicks[index].reserveA) ||
-                      !tick.reserveB.isEqualTo(userTicks[index].reserveB)) && (
-                      <button
-                        type="button"
-                        className="button button-default"
-                        onClick={() => {
-                          setEditedUserTicks((ticks) => {
-                            return ticks.map((tick, currentTickIndex) => {
-                              return index !== currentTickIndex
-                                ? tick
-                                : {
-                                    ...tick,
-                                    reserveA: new BigNumber(
-                                      userTicks[index].reserveA
-                                    ),
-                                    reserveB: new BigNumber(
-                                      userTicks[index].reserveB
-                                    ),
-                                  };
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faArrowUpFromBracket} />
+                        </button>
+                      )}
+                    {tick &&
+                      (!tick.reserveA.isEqualTo(userTicks[index]?.reserveA) ||
+                        !tick.reserveB.isEqualTo(
+                          userTicks[index]?.reserveB
+                        )) && (
+                        <button
+                          type="button"
+                          className="button button-default"
+                          onClick={() => {
+                            setEditedUserTicks((ticks) => {
+                              return ticks.map((tick, currentTickIndex) => {
+                                return index !== currentTickIndex
+                                  ? tick
+                                  : {
+                                      ...tick,
+                                      reserveA: new BigNumber(
+                                        userTicks[index].reserveA
+                                      ),
+                                      reserveB: new BigNumber(
+                                        userTicks[index].reserveB
+                                      ),
+                                    };
+                              });
                             });
-                          });
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faArrowRotateLeft} />
-                      </button>
-                    )}
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faArrowRotateLeft} />
+                        </button>
+                      )}
                   </td>
                 </tr>
               );
