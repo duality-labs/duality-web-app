@@ -126,6 +126,9 @@
     align-items: center;
   }
 
+  .chart-card {
+    // padding-top: 1em;
+  }
   .chart-card .chart-header + .chart-area {
     min-height: 15em;
     min-width: 40em;
@@ -248,12 +251,16 @@
 
   form {
     & {
-      flex-direction: row;
       align-items: flex-start;
     }
     > .col {
       gap: 2rem;
     }
+  }
+  .heading-buttons {
+    border-color: hsl(0deg 0% 100% / 25%);
+    border: none;
+    background: hsl(0deg 0% 100% / 7.5%);
   }
 
   table {

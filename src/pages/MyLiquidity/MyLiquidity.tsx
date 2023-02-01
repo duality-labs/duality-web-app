@@ -1143,7 +1143,7 @@ function LiquidityDetailPage({
 
   const rightColumn = (
     <div className="col col--left">
-      <div className="row mb-3">
+      <div className="row mb-3 hide">
         <div className="col flex">
           <RadioButtonGroupInput
             className="mt-2"
@@ -1304,8 +1304,35 @@ function LiquidityDetailPage({
           className={['page-card chart-card', isValidating && '']
             .filter(Boolean)
             .join(' ')}
+          style={{ display: 'block' }}
           onSubmit={onSubmit}
         >
+          <div className="chart-header row flex-centered mb-4">
+            <div className="col" style={{ width: '30em' }}>
+              <RadioButtonGroupInput
+                className="heading-buttons"
+                buttonClassName="py-4 px-4 h3"
+                values={{
+                  add: 'Add Liquidity',
+                  edit: 'Edit Liquidity',
+                }}
+                value={editingType}
+                onChange={setEditingType}
+              />
+            </div>
+            <div className="col hide">
+              <h3 className="h3">
+                {editingType
+                  .split('')
+                  .map((s, i) => (i > 0 ? s : s.toUpperCase()))
+                  .join('')}{' '}
+                Liquidity
+              </h3>
+            </div>
+            <div className="col flex-centered chart-type-value">Customized</div>
+            <div className="col flex-centered ml-auto">Transaction Details</div>
+          </div>
+          <hr className="mt-3 mb-4 flex" />
           <div className="row">
             {leftColumn}
             {rightColumn}
