@@ -811,9 +811,7 @@ function LiquidityDetailPage({
   }, [chartTypeSelected, priceMin, priceMax]);
 
   useEffect(() => {
-    if (chartTypeSelected === 'Orderbook') {
-      setTimeout(() => setRangeMin(rangeMin), 0);
-    }
+    setTimeout(() => setRangeMin(rangeMin), 0);
   }, [chartTypeSelected, rangeMin, setRangeMin]);
 
   const leftColumn = (
