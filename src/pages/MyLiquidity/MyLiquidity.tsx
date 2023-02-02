@@ -1526,26 +1526,6 @@ function LiquidityDetailPage({
             <div className="col">
               <h4 className="">Liquidity Shape</h4>
             </div>
-            <div className="col ml-auto">
-              <div className="row gap-2" style={{ cursor: 'pointer' }}>
-                <input
-                  id="shape-mode"
-                  type="checkbox"
-                  name="mode"
-                  value="custom"
-                  style={{ appearance: 'auto', cursor: 'pointer' }}
-                  onChange={(e) => {
-                    setChartTypeSelected(
-                      e.target.checked ? 'Orderbook' : 'AMM'
-                    );
-                    setUserTickSelected(-1);
-                  }}
-                />
-                <label htmlFor="shape-mode" style={{ cursor: 'pointer' }}>
-                  Customize
-                </label>
-              </div>
-            </div>
           </div>
           <SelectInput<LiquidityShape>
             className="col flex"
