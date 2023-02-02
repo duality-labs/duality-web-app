@@ -727,8 +727,57 @@ function LiquidityDetailPage({
     'All' | 'A' | 'B'
   >('All');
 
-  const [rangeMin, setRangeMin] = useState('1');
-  const [rangeMax, setRangeMax] = useState('1');
+  const [rangeMin, setRangeMinUnprotected] = useState('1');
+  const [rangeMax, setRangeMaxUnprotected] = useState('1');
+
+  const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
+    (valueOrCallback) => {
+      return setRangeMinUnprotected((previousRangeMin) => {
+        const rangeMin =
+          typeof valueOrCallback === 'string'
+            ? valueOrCallback
+            : valueOrCallback(previousRangeMin);
+        setEditedUserTicks(() => {
+          return userTicks.map((tick) => {
+            return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
+              tick.price.isLessThanOrEqualTo(rangeMax)
+              ? {
+                  ...tick,
+                  reserveA: new BigNumber(0),
+                  reserveB: new BigNumber(0),
+                }
+              : tick;
+          });
+        });
+        return rangeMin;
+      });
+    },
+    [userTicks, rangeMax]
+  );
+  const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
+    (valueOrCallback) => {
+      return setRangeMaxUnprotected((previousRangeMax) => {
+        const rangeMax =
+          typeof valueOrCallback === 'string'
+            ? valueOrCallback
+            : valueOrCallback(previousRangeMax);
+        setEditedUserTicks(() => {
+          return userTicks.map((tick) => {
+            return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
+              tick.price.isLessThanOrEqualTo(rangeMax)
+              ? {
+                  ...tick,
+                  reserveA: new BigNumber(0),
+                  reserveB: new BigNumber(0),
+                }
+              : tick;
+          });
+        });
+        return rangeMax;
+      });
+    },
+    [userTicks, rangeMin]
+  );
   const priceMin = minPrice?.toFixed() || '1';
   const priceMax = maxPrice?.toFixed() || '1';
 
