@@ -1261,7 +1261,6 @@ function LiquidityDetailPage({
         <div className="col flex">
           <RadioButtonGroupInput
             className="mt-2"
-            buttonClassName="py-3 px-4"
             values={{
               add: 'Add Liquidity',
               edit: 'Edit Liquidity',
