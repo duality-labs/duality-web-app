@@ -716,7 +716,9 @@ function LiquidityDetailPage({
     });
   }, [sortedShares, invertedTokenOrder]);
 
-  const [editingType, setEditingType] = useState<'add' | 'edit'>('add');
+  const [editingType, setEditingType] = useState<'add' | 'edit'>(
+    givenValueA || givenValueB ? 'add' : 'edit'
+  );
   const userTicks = editingType === 'add' ? userTicksAdd : userTicksEdit;
 
   const currentTick: Tick | undefined = userTicks[userTickSelected];

@@ -701,8 +701,8 @@ export default function Pool() {
       <MyLiquidity
         tokenA={tokenA}
         tokenB={tokenB}
-        valueA={inputValueA}
-        valueB={inputValueB}
+        valueA={inputValueA || '0'}
+        valueB={inputValueB || '0'}
       />
     );
   }
