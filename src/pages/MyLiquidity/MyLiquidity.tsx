@@ -1399,18 +1399,13 @@ function LiquidityDetailPage({
         <div className="row my-2">Input:</div>
         <div className="card-row">
           <TokenInputGroup
-            className={
-              diffTokenA.isLessThan(-1e-5) ? 'token-input-group--success' : ''
-            }
             disabledToken
             // disabledInput={editingType === 'redistribute'}
             variant={!hasSufficientFundsA && 'error'}
             tokenList={tokenList}
             maxValue={balanceTokenA?.toNumber()}
             token={tokenA}
-            value={`${
-              diffTokenA.isGreaterThan(-1e-5) ? '' : '+'
-            }${new BigNumber(diffTokenA.abs().toFixed(5)).toFixed()}`}
+            value={diffTokenA.isGreaterThan(0) ? diffTokenA.toFixed(5) : '0'}
             onValueChanged={setInputValueA}
             exclusion={tokenB}
           />
@@ -1418,18 +1413,13 @@ function LiquidityDetailPage({
         <div className="plus-space mx-auto my-4"></div>
         <div className="card-row">
           <TokenInputGroup
-            className={
-              diffTokenB.isLessThan(-1e-5) ? 'token-input-group--success' : ''
-            }
             disabledToken
             // disabledInput={editingType === 'redistribute'}
             variant={!hasSufficientFundsB && 'error'}
             tokenList={tokenList}
             maxValue={balanceTokenB?.toNumber()}
             token={tokenB}
-            value={`${diffTokenB.isLessThan(-1e-5) ? '+' : ''}${new BigNumber(
-              diffTokenB.abs().toFixed(5)
-            ).toFixed()}`}
+            value={diffTokenB.isGreaterThan(0) ? diffTokenB.toFixed(5) : '0'}
             onValueChanged={setInputValueB}
             exclusion={tokenA}
           />
