@@ -919,7 +919,7 @@ function LiquidityDetailPage({
       </div>
       {chartTypeSelected === 'AMM' && (
         <>
-          <div className="row mt-2 gap-4 flex-centered">
+          <div className="row mt-2 gap-4 flex-centered hide">
             <div
               className="col pb-0"
               style={{ width: '8em', textAlign: 'right' }}
@@ -1306,7 +1306,14 @@ function LiquidityDetailPage({
           }
         />
       </div>
-      <div className="assets-card">
+      <div
+        className={[
+          'assets-card',
+          editingType === 'edit' && chartTypeSelected === 'AMM' && 'hide',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <div className="card-row">
           <TokenInputGroup
             className={
@@ -1344,16 +1351,43 @@ function LiquidityDetailPage({
             exclusion={tokenA}
           />
         </div>
-        <div className="row my-4">
-          <input
-            className={`button-${submitButtonVariant} text-medium flex mx-auto px-4 py-4`}
-            disabled={noChange}
-            type="submit"
-            value={submitButtonText}
-          />
-        </div>
-        <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
       </div>
+      {editingType === 'edit' && chartTypeSelected === 'AMM' && (
+        <>
+          <div className="row gap-4 flex-centered">
+            <div
+              className="col pb-0 mt-3"
+              style={{ width: '', textAlign: 'right' }}
+            >
+              Withdraw:
+            </div>
+            <div className="col flex">
+              <RadioButtonGroupInput<'All' | 'A' | 'B'>
+                className="chart-type-input"
+                values={{
+                  All: 'All',
+                  A: tokenA.display.toUpperCase(),
+                  B: tokenB.display.toUpperCase(),
+                }}
+                value={withdrawTypeSelected}
+                onChange={setWithdrawTypeSelected}
+              />
+              <div className="row mt-2 gap-4 flex-centered">
+                Drag range to select liquidity pools to withdraw
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      <div className="row my-4">
+        <input
+          className={`button-${submitButtonVariant} text-medium flex mx-auto px-4 py-4`}
+          disabled={noChange}
+          type="submit"
+          value={submitButtonText}
+        />
+      </div>
+      <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
     </div>
   );
 
