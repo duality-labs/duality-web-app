@@ -809,7 +809,7 @@ function LiquidityDetailPage({
 
   const leftColumn = (
     <div className="col">
-      <div className="flex">
+      <div className="">
         <div className="chart-header row my-4">
           <div className="col">
             <div className="row flex-centered gap-3">
@@ -1192,17 +1192,7 @@ function LiquidityDetailPage({
                         )}
                     </td>
                   </tr>
-                ) : (
-                  <tr key={tick.tickIndex} className="pt-2">
-                    <td>{index + 1}</td>
-                    <td>-</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-                );
+                ) : null;
               })}
             </table>
           </div>
