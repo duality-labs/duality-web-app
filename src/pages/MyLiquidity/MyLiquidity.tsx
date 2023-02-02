@@ -54,9 +54,10 @@ import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 import { calculateShares } from '../../lib/web3/utils/ticks';
 import { IndexedShare } from '../../lib/web3/utils/shares';
-import SelectInput from '../../components/inputs/SelectInput';
+import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import useFeeLiquidityMap from '../Pool/useFeeLiquidityMap';
 import TokenPairLogos from '../../components/TokenPairLogos';
+import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
@@ -73,6 +74,10 @@ const feeTypesAndAll: Array<FeeTypeAndAll> = [
     description,
   })),
 ];
+
+const defaultPrecision = '6';
+const defaultLiquidityShape =
+  liquidityShapes.find(({ value }) => value === 'flat') ?? liquidityShapes[0];
 
 interface ShareValue {
   share: IndexedShare;
@@ -513,6 +518,8 @@ function LiquidityDetailPage({
           price1 ? totalB.multipliedBy(price1) : new BigNumber(0),
         ];
   }, [totalA, totalB, invertedTokenOrder, price0, price1]);
+  const isValueAZero = new BigNumber(valueA).isZero();
+  const isValueBZero = new BigNumber(valueB).isZero();
 
   const [userTickSelected, setUserTickSelected] = useState(-1);
   // constrain the selected tick index if the index does no longer exist
@@ -1364,6 +1371,18 @@ function LiquidityDetailPage({
         .filter(Boolean)
         .join(' & ');
 
+  const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
+    defaultLiquidityShape
+  );
+  const [precision, setPrecision] = useState<string>(defaultPrecision);
+  // restrict precision to 2 ticks on double-sided liquidity mode
+  useEffect(() => {
+    setPrecision((precision) => {
+      const precisionMin = !isValueAZero && !isValueBZero ? 2 : 1;
+      return Number(precision) >= precisionMin ? precision : `${precisionMin}`;
+    });
+  }, [isValueAZero, isValueBZero]);
+
   const rightColumn = (
     <div className="col col--left">
       <div className="row mb-3 gap-3">
@@ -1495,6 +1514,95 @@ function LiquidityDetailPage({
         <div className="col">
           {diffTokenB.isLessThan(0) ? diffTokenB.abs().toFixed(5) : '0'}{' '}
           {tokenB.display.toUpperCase()}
+        </div>
+      </div>
+      <div
+        className={['row', editingType !== 'add' && 'hide']
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <div className="col flex">
+          <div className="row mt-4">
+            <div className="col">
+              <h4 className="">Liquidity Shape</h4>
+            </div>
+            <div className="col ml-auto">
+              <div className="row gap-2" style={{ cursor: 'pointer' }}>
+                <input
+                  id="shape-mode"
+                  type="checkbox"
+                  name="mode"
+                  value="custom"
+                  style={{ appearance: 'auto', cursor: 'pointer' }}
+                  onChange={(e) => {
+                    setChartTypeSelected(
+                      e.target.checked ? 'Orderbook' : 'AMM'
+                    );
+                    setUserTickSelected(-1);
+                  }}
+                />
+                <label htmlFor="shape-mode" style={{ cursor: 'pointer' }}>
+                  Customize
+                </label>
+              </div>
+            </div>
+          </div>
+          <SelectInput<LiquidityShape>
+            className="col flex"
+            maxColumnCount={4}
+            list={liquidityShapes}
+            value={liquidityShape}
+            onChange={setLiquidityShape}
+            getLabel={(feeType) =>
+              feeType ? `${feeType.label}` : 'Select Fee Tier'
+            }
+            open={chartTypeSelected === 'Orderbook'}
+            OptionComponent={LiquidityShapeOptionComponent}
+          />
+          {chartTypeSelected === 'Orderbook' && (
+            <div
+              className="mb-4 p-4 orderbook-card"
+              style={{ borderRadius: 6, marginTop: -20 }}
+            >
+              <div className="row flex-centered">
+                <div className="col mr-auto">
+                  <div className="card-titles mt-1 mr-auto">
+                    Number of Ticks
+                  </div>
+                </div>
+                <div className="col ml-auto">
+                  <div className="row mt-1 gap-2">
+                    <div className="col">
+                      <StepNumberInput
+                        className="smalll"
+                        editable={false}
+                        min={
+                          rangeMin === rangeMax
+                            ? 1
+                            : !isValueAZero && !isValueBZero
+                            ? 2
+                            : 1
+                        }
+                        max={rangeMin === rangeMax ? 1 : 10}
+                        value={rangeMin === rangeMax ? '1' : precision}
+                        onChange={setPrecision}
+                        minSignificantDigits={1}
+                      />
+                    </div>
+                    <div className="col">
+                      <button
+                        type="button"
+                        className="button-info ml-2"
+                        onClick={() => setPrecision(defaultPrecision)}
+                      >
+                        Auto
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div className="row my-4">
@@ -1872,4 +1980,15 @@ function applyDiffToIndex(
   return adjustedUserTicks
     .sort(([, aIndex], [, bIndex]) => aIndex - bIndex)
     .map(([tick]) => tick);
+}
+
+function LiquidityShapeOptionComponent({
+  option: { icon, label },
+}: OptionProps<LiquidityShape>) {
+  return (
+    <div className="col flex flex-centered mt-1 pt-3">
+      <img src={icon} alt={label} height={36} />
+      <div className="my-2">{label}</div>
+    </div>
+  );
 }
