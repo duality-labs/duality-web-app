@@ -732,51 +732,61 @@ function LiquidityDetailPage({
 
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
-      return setRangeMinUnprotected((previousRangeMin) => {
-        const rangeMin =
-          typeof valueOrCallback === 'string'
-            ? valueOrCallback
-            : valueOrCallback(previousRangeMin);
-        setEditedUserTicks(() => {
-          return userTicks.map((tick) => {
-            return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
-              tick.price.isLessThanOrEqualTo(rangeMax)
-              ? {
-                  ...tick,
-                  reserveA: new BigNumber(0),
-                  reserveB: new BigNumber(0),
-                }
-              : tick;
-          });
-        });
-        return rangeMin;
-      });
+      return setRangeMinUnprotected(
+        editingType === 'add'
+          ? valueOrCallback
+          : (previousRangeMin) => {
+              const rangeMin =
+                typeof valueOrCallback === 'string'
+                  ? valueOrCallback
+                  : valueOrCallback(previousRangeMin);
+              chartTypeSelected === 'AMM' &&
+                setEditedUserTicks(() => {
+                  return userTicks.map((tick) => {
+                    return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
+                      tick.price.isLessThanOrEqualTo(rangeMax)
+                      ? {
+                          ...tick,
+                          reserveA: new BigNumber(0),
+                          reserveB: new BigNumber(0),
+                        }
+                      : tick;
+                  });
+                });
+              return rangeMin;
+            }
+      );
     },
-    [userTicks, rangeMax]
+    [userTicks, rangeMax, editingType, chartTypeSelected]
   );
   const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
-      return setRangeMaxUnprotected((previousRangeMax) => {
-        const rangeMax =
-          typeof valueOrCallback === 'string'
-            ? valueOrCallback
-            : valueOrCallback(previousRangeMax);
-        setEditedUserTicks(() => {
-          return userTicks.map((tick) => {
-            return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
-              tick.price.isLessThanOrEqualTo(rangeMax)
-              ? {
-                  ...tick,
-                  reserveA: new BigNumber(0),
-                  reserveB: new BigNumber(0),
-                }
-              : tick;
-          });
-        });
-        return rangeMax;
-      });
+      return setRangeMaxUnprotected(
+        editingType === 'add'
+          ? valueOrCallback
+          : (previousRangeMax) => {
+              const rangeMax =
+                typeof valueOrCallback === 'string'
+                  ? valueOrCallback
+                  : valueOrCallback(previousRangeMax);
+              chartTypeSelected === 'AMM' &&
+                setEditedUserTicks(() => {
+                  return userTicks.map((tick) => {
+                    return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
+                      tick.price.isLessThanOrEqualTo(rangeMax)
+                      ? {
+                          ...tick,
+                          reserveA: new BigNumber(0),
+                          reserveB: new BigNumber(0),
+                        }
+                      : tick;
+                  });
+                });
+              return rangeMax;
+            }
+      );
     },
-    [userTicks, rangeMin]
+    [userTicks, rangeMin, editingType, chartTypeSelected]
   );
   const priceMin = minPrice?.toFixed() || '1';
   const priceMax = maxPrice?.toFixed() || '1';
