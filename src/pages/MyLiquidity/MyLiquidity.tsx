@@ -696,8 +696,8 @@ function LiquidityDetailPage({
     userTicks.slice()
   );
   useEffect(() => {
-    setEditedUserTicks(userTicks.slice());
-  }, [userTicks]);
+    editingType === 'edit' && setEditedUserTicks(userTicks.slice());
+  }, [editingType, userTicks]);
 
   const [, setInputValueA, tokenAValue = '0'] = useNumericInputState();
   const [, setInputValueB, tokenBValue = '0'] = useNumericInputState();
@@ -717,56 +717,61 @@ function LiquidityDetailPage({
   }, [editingType, userTicks, setInputValueA, setInputValueB]);
 
   useLayoutEffect(() => {
-    setEditedUserTicks(() => {
-      const [diffAValue, diffBValue] = getTickDiffCumulativeValues(
-        userTicks,
-        userTicks,
-        values,
-        editingType
-      );
-
-      // constrain the diff values to the users available shares
-      const cappedDiffAValue = valueA.isLessThan(diffAValue)
-        ? valueA
-        : diffAValue;
-      const cappedDiffBValue = valueB.isLessThan(diffBValue)
-        ? valueB
-        : diffBValue;
-
-      // allow the new update to be conditionally adjusted
-      let newUpdate;
-
-      // modify only if difference is greater than our tolerance
-      if (
-        // if diff A is significant
-        cappedDiffAValue?.absoluteValue().isGreaterThan(normalizationTolerance)
-      ) {
-        newUpdate = applyDiffToIndex(
-          newUpdate || userTicks,
+    editingType === 'edit' &&
+      setEditedUserTicks(() => {
+        const [diffAValue, diffBValue] = getTickDiffCumulativeValues(
           userTicks,
-          cappedDiffAValue,
-          'reserveA',
-          -1,
-          editingType === 'add'
-        );
-      }
-      if (
-        // if diff B is significant
-        cappedDiffBValue?.absoluteValue().isGreaterThan(normalizationTolerance)
-      ) {
-        newUpdate = applyDiffToIndex(
-          newUpdate || userTicks,
           userTicks,
-          cappedDiffBValue,
-          'reserveB',
-          -1,
-          editingType === 'add'
+          values,
+          editingType
         );
-      }
 
-      // default to no update if no normalization occurred
-      return newUpdate || userTicks;
-    });
+        // constrain the diff values to the users available shares
+        const cappedDiffAValue = valueA.isLessThan(diffAValue)
+          ? valueA
+          : diffAValue;
+        const cappedDiffBValue = valueB.isLessThan(diffBValue)
+          ? valueB
+          : diffBValue;
+
+        // allow the new update to be conditionally adjusted
+        let newUpdate;
+
+        // modify only if difference is greater than our tolerance
+        if (
+          // if diff A is significant
+          cappedDiffAValue
+            ?.absoluteValue()
+            .isGreaterThan(normalizationTolerance)
+        ) {
+          newUpdate = applyDiffToIndex(
+            newUpdate || userTicks,
+            userTicks,
+            cappedDiffAValue,
+            'reserveA',
+            -1,
+            diffAValue.isGreaterThan(0)
+          );
+        }
+        if (
+          // if diff B is significant
+          cappedDiffBValue
+            ?.absoluteValue()
+            .isGreaterThan(normalizationTolerance)
+        ) {
+          newUpdate = applyDiffToIndex(
+            newUpdate || userTicks,
+            userTicks,
+            cappedDiffBValue,
+            'reserveB',
+            -1,
+            diffBValue.isGreaterThan(0)
+          );
+        }
+
+        // default to no update if no normalization occurred
+        return newUpdate || userTicks;
+      });
   }, [values, userTicks, valueA, valueB, editingType]);
 
   const [reserveATotal, reserveBTotal] = useMemo(() => {
