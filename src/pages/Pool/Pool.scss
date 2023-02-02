@@ -14,14 +14,6 @@
   }
 }
 
-.pool-banner {
-  .chart-type-input {
-    .button {
-      min-width: 10rem;
-    }
-  }
-}
-
 .curve-card {
   & {
     // "nice-fit" to curve selections
@@ -38,57 +30,6 @@
       background-color: var(--default);
     }
   }
-}
-
-.pool-banner {
-  width: 100%;
-  background-color: hsla(0, 0%, 0%, 0.6);
-
-  & > .row {
-    padding: 1.125rem 4rem;
-  }
-
-  .row {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 2rem;
-
-    .col-row {
-      gap: 0.5rem;
-      background-color: transparent;
-      padding: 0;
-    }
-  }
-
-  h2 {
-    font-size: 1.25rem;
-  }
-
-  .token-image {
-    height: 1.2rem;
-    width: 1.2rem;
-    // align logo to top and drop from there
-    // the button contents here are a little special as there are no descenders
-    vertical-align: top;
-  }
-
-  .chart-type-input {
-    margin: 0 1rem;
-  }
-}
-
-.pool-banner::before,
-.pool-banner::after {
-  display: block;
-  content: ' ';
-  height: 8px;
-  width: 100%;
-  background: linear-gradient(90deg, #4eb1e8 0%, rgba(78, 177, 232, 0) 100%);
-}
-.pool-banner::after {
-  background: linear-gradient(90deg, rgba(78, 177, 232, 0) 0%, #4eb1e8 100%);
 }
 
 .spacer {
