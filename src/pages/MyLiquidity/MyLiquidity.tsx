@@ -1262,7 +1262,10 @@ function LiquidityDetailPage({
           <RadioButtonGroupInput
             values={{
               add: 'Add Liquidity',
-              edit: 'Edit Liquidity',
+              edit:
+                chartTypeSelected === 'Orderbook'
+                  ? 'Edit Liquidity'
+                  : 'Remove Liquidity',
             }}
             value={editingType}
             onChange={setEditingType}
