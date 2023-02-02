@@ -1067,7 +1067,8 @@ function LiquidityDetailPage({
                 <th style={{ width: '12.5%' }}>Actions</th>
               </tr>
               {editedUserTicks.map((tick, index) => {
-                return (
+                return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
+                  tick.price.isLessThanOrEqualTo(rangeMax) ? (
                   <tr key={tick.tickIndex} className="pt-2">
                     <td>{index + 1}</td>
                     <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
@@ -1174,6 +1175,16 @@ function LiquidityDetailPage({
                           </button>
                         )}
                     </td>
+                  </tr>
+                ) : (
+                  <tr key={tick.tickIndex} className="pt-2">
+                    <td>{index + 1}</td>
+                    <td>-</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                   </tr>
                 );
               })}
