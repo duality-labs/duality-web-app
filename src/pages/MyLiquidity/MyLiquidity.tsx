@@ -12,6 +12,7 @@ import {
   faArrowRightArrowLeft,
   faArrowRotateLeft,
   faArrowUpFromBracket,
+  faTrash,
   faEdit,
 } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
@@ -1501,7 +1502,13 @@ function LiquidityDetailPage({
                               });
                             }}
                           >
-                            <FontAwesomeIcon icon={faArrowUpFromBracket} />
+                            <FontAwesomeIcon
+                              icon={
+                                editingType === 'add'
+                                  ? faTrash
+                                  : faArrowUpFromBracket
+                              }
+                            />
                           </button>
                         )}
                       {tick &&
