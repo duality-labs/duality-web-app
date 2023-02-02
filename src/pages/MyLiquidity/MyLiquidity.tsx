@@ -1316,6 +1316,7 @@ function LiquidityDetailPage({
           .filter(Boolean)
           .join(' ')}
       >
+        <div className="row my-2">Input:</div>
         <div className="card-row">
           <TokenInputGroup
             className={
