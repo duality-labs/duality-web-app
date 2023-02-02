@@ -1048,7 +1048,7 @@ function LiquidityDetailPage({
                           }%)`
                         : ''}
                     </td>
-                    <td className="row gap-2">
+                    <td className="row gap-2 flex-end">
                       {tick &&
                         tick.reserveA
                           ?.plus(tick.reserveB || 0)
@@ -1056,7 +1056,7 @@ function LiquidityDetailPage({
                         (tick.reserveA.isZero() || tick.reserveB.isZero()) && (
                           <button
                             type="button"
-                            className="button button-secondary ml-auto"
+                            className="button button-secondary"
                           >
                             <FontAwesomeIcon icon={faEdit} />
                           </button>
