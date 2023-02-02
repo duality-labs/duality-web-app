@@ -1473,11 +1473,11 @@ function LiquidityDetailPage({
       >
         <div className="col">You will receive:</div>
         <div className="col">
-          {diffTokenA.isLessThan(-1e-5) ? diffTokenA.abs().toFixed(5) : '0'}{' '}
+          {diffTokenA.isLessThan(0) ? diffTokenA.abs().toFixed(5) : '0'}{' '}
           {tokenA.display.toUpperCase()},
         </div>
         <div className="col">
-          {diffTokenB.isLessThan(-1e-5) ? diffTokenB.abs().toFixed(5) : '0'}{' '}
+          {diffTokenB.isLessThan(0) ? diffTokenB.abs().toFixed(5) : '0'}{' '}
           {tokenB.display.toUpperCase()}
         </div>
       </div>
