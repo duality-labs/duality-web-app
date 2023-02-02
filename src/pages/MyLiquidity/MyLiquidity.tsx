@@ -723,7 +723,7 @@ function LiquidityDetailPage({
     'AMM' | 'Orderbook'
   >('AMM');
   useEffect(() => {
-    setEditedUserTicks(userTicks);
+    setEditedUserTicks(userTicks.slice());
   }, [chartTypeSelected, userTicks]);
 
   const [withdrawTypeSelected, setWithdrawTypeSelected] = useState<
@@ -791,13 +791,16 @@ function LiquidityDetailPage({
     },
     [userTicks, rangeMin, editingType, chartTypeSelected]
   );
-  const priceMin = minPrice?.toFixed() || '1';
-  const priceMax = maxPrice?.toFixed() || '1';
-
-  // hack: get effect of basic range selection to fire on switch of Basic/Pro
-  useEffect(() => {
-    setRangeMin(rangeMin);
-  }, [chartTypeSelected, rangeMin, setRangeMin]);
+  const priceMin = minPrice?.toFixed();
+  const priceMax = maxPrice?.toFixed();
+  useEffect(
+    () => (!priceMin ? undefined : setRangeMin(priceMin)),
+    [priceMin, setRangeMin]
+  );
+  useEffect(
+    () => (!priceMax ? undefined : setRangeMax(priceMax)),
+    [priceMax, setRangeMax]
+  );
 
   const leftColumn = (
     <div className="col">
