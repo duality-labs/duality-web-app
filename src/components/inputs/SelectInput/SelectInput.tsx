@@ -38,7 +38,12 @@ function DefaultOptionComponent<T>({
     <>
       <div className="label mr-auto">{label}</div>
       <div
-        className={['description', !description && 'hide', 'ml-auto']
+        className={[
+          'description',
+          'row flex-centered gap-1',
+          !description && 'hide',
+          'ml-auto',
+        ]
           .filter(Boolean)
           .join(' ')}
       >
