@@ -1360,7 +1360,7 @@ function LiquidityDetailPage({
       <div
         className={[
           'price-card mt-4',
-          chartTypeSelected === 'Orderbook' && 'hide',
+          // chartTypeSelected === 'Orderbook' && 'hide',
         ]
           .filter(Boolean)
           .join(' ')}
