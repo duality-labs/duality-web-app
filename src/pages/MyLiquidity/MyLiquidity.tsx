@@ -1335,7 +1335,7 @@ function LiquidityDetailPage({
             .join(', ')}`,
       ]
         .filter(Boolean)
-        .join(' &\n');
+        .join(' & ');
 
   const rightColumn = (
     <div className="col col--left">
