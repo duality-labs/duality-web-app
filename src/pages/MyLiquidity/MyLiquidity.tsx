@@ -1916,9 +1916,13 @@ function LiquidityDetailPage({
       <div className="row my-4">
         <input
           className={`button-${submitButtonVariant} text-medium flex mx-auto px-4 py-4`}
-          disabled={noChange}
+          disabled={
+            editingType === 'add'
+              ? !(Number(tokenAValue) + Number(tokenBValue) > 0)
+              : noChange
+          }
           type="submit"
-          value={submitButtonText}
+          value={editingType === 'add' ? 'Deposit' : submitButtonText}
         />
       </div>
       <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
