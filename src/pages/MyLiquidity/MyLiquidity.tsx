@@ -51,8 +51,8 @@ import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import './MyLiquidity.scss';
 import { useEditLiquidity } from './useEditLiquidity';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
-import { formatLongPrice } from '../../lib/utils/number';
-import { calculateShares } from '../../lib/web3/utils/ticks';
+import { formatLongPrice, formatPrice } from '../../lib/utils/number';
+import { calculateShares, priceToTickIndex } from '../../lib/web3/utils/ticks';
 import { IndexedShare } from '../../lib/web3/utils/shares';
 import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import useFeeLiquidityMap from '../Pool/useFeeLiquidityMap';
@@ -487,6 +487,37 @@ function LiquidityDetailPage({
       : currentPriceFromTicks0to1;
   }, [invertedTokenOrder, currentPriceFromTicks0to1]);
 
+  // note warning price, the price at which warning states should be shown
+  // for one-sided liquidity this is the extent of data to one side
+  const edgePrice =
+    useMemo(() => {
+      const allTicks = (ticks || [])
+        .filter(
+          (tick): tick is TickInfo =>
+            tick?.reserve0.isGreaterThan(0) || tick?.reserve1.isGreaterThan(0)
+        ) // filter to only ticks
+        .sort((a, b) => a.price.comparedTo(b.price))
+        .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
+
+      const isReserveAZero = allTicks.every(([, reserveA]) =>
+        reserveA.isZero()
+      );
+      const isReserveBZero = allTicks.every(([, , reserveB]) =>
+        reserveB.isZero()
+      );
+
+      const startTick = allTicks[0];
+      const endTick = allTicks[allTicks.length - 1];
+      const edgePrice =
+        (isReserveAZero && startTick?.[0]) ||
+        (isReserveBZero && endTick?.[0]) ||
+        undefined;
+      return (
+        edgePrice &&
+        (invertedTokenOrder ? new BigNumber(1).dividedBy(edgePrice) : edgePrice)
+      );
+    }, [ticks, invertedTokenOrder]) || currentPriceFromTicks;
+
   const tokenA = invertedTokenOrder ? token1 : token0;
   const tokenB = invertedTokenOrder ? token0 : token1;
 
@@ -558,7 +589,8 @@ function LiquidityDetailPage({
     });
   }, [filteredShares, invertedTokenOrder]);
 
-  const userTicks = useMemo<Array<Tick>>(() => {
+  const [userTicksAdd, setUserTicksUnprotected] = useState<TickGroup>([]);
+  const userTicksEdit = useMemo<Array<Tick>>(() => {
     const forward = !invertedTokenOrder;
     return sortedShares.flatMap<Tick>((share) => {
       const {
@@ -642,6 +674,9 @@ function LiquidityDetailPage({
     });
   }, [sortedShares, invertedTokenOrder]);
 
+  const [editingType, setEditingType] = useState<'add' | 'edit'>('add');
+  const userTicks = editingType === 'add' ? userTicksAdd : userTicksEdit;
+
   const currentTick: Tick | undefined = userTicks[userTickSelected];
   const currentFeeType: FeeType | undefined =
     feeTypes[sortedShares[userTickSelected]?.feeIndex];
@@ -653,8 +688,6 @@ function LiquidityDetailPage({
     setEditedUserTicks(userTicks.slice());
   }, [userTicks]);
 
-  const [editingType, setEditingType] = useState<'add' | 'edit'>('edit');
-
   const [, setInputValueA, tokenAValue = '0'] = useNumericInputState();
   const [, setInputValueB, tokenBValue = '0'] = useNumericInputState();
   const values = useMemo(
@@ -665,9 +698,11 @@ function LiquidityDetailPage({
   // reset when switching between modes
   // there is a lot going on, best to just remove the state
   useEffect(() => {
-    setInputValueA('');
-    setInputValueB('');
-    setEditedUserTicks(userTicks);
+    if (editingType === 'edit') {
+      setInputValueA('');
+      setInputValueB('');
+      setEditedUserTicks(userTicks);
+    }
   }, [editingType, userTicks, setInputValueA, setInputValueB]);
 
   useLayoutEffect(() => {
@@ -836,6 +871,262 @@ function LiquidityDetailPage({
   useEffect(() => {
     setTimeout(() => setRangeMin(rangeMin), 0);
   }, [chartTypeSelected, rangeMin, setRangeMin]);
+
+  // ensure that setting of user ticks never goes outside our prescribed bounds
+  const setUserTicks = useCallback<
+    React.Dispatch<React.SetStateAction<TickGroup>>
+  >(
+    (userTicksOrCallback) => {
+      function restrictTickPrices(tick: Tick): Tick {
+        const { reserveA, reserveB, price } = tick;
+        // restrict values to equal to or greater than 0
+        const newReserveA = reserveA.isGreaterThan(0)
+          ? reserveA
+          : new BigNumber(0);
+        const newReserveB = reserveB.isGreaterThan(0)
+          ? reserveB
+          : new BigNumber(0);
+
+        if (priceMin && price.isLessThan(priceMin)) {
+          const newPrice = new BigNumber(priceMin);
+          return {
+            ...tick,
+            reserveA: newReserveA,
+            reserveB: newReserveB,
+            price: new BigNumber(priceMin),
+            tickIndex: priceToTickIndex(newPrice).toNumber(),
+          };
+        }
+        if (priceMax && price.isGreaterThan(priceMax)) {
+          const newPrice = new BigNumber(priceMax);
+          return {
+            ...tick,
+            reserveA: newReserveA,
+            reserveB: newReserveB,
+            price: new BigNumber(priceMax),
+            tickIndex: priceToTickIndex(newPrice).toNumber(),
+          };
+        }
+        return {
+          ...tick,
+          reserveA: newReserveA,
+          reserveB: newReserveB,
+        };
+      }
+      if (typeof userTicksOrCallback === 'function') {
+        const userTicksCallback = userTicksOrCallback;
+        return setUserTicksUnprotected((userTicks) => {
+          return userTicksCallback(userTicks).map(restrictTickPrices);
+        });
+      }
+      const userTicks = userTicksOrCallback;
+      setUserTicksUnprotected(userTicks.map(restrictTickPrices));
+    },
+    [priceMin, priceMax]
+  );
+
+  const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
+    defaultLiquidityShape
+  );
+  const [precision, setPrecision] = useState<string>(defaultPrecision);
+  // restrict precision to 2 ticks on double-sided liquidity mode
+  useEffect(() => {
+    setPrecision((precision) => {
+      const precisionMin = !isValueAZero && !isValueBZero ? 2 : 1;
+      return Number(precision) >= precisionMin ? precision : `${precisionMin}`;
+    });
+  }, [isValueAZero, isValueBZero]);
+
+  const tickCount = Number(precision || 1);
+  useEffect(() => {
+    function getUserTicks(): TickGroup {
+      const tickStart = new BigNumber(rangeMin);
+      const tickEnd = new BigNumber(rangeMax);
+      // set multiple ticks across the range
+      const restrictedFeeType: FeeType | undefined =
+        feeType.fee === undefined ? undefined : (feeType as FeeType);
+      const feeIndex = restrictedFeeType
+        ? feeTypes.findIndex(({ fee }) => fee === restrictedFeeType.fee)
+        : -1;
+
+      if (
+        tokenA &&
+        tokenB &&
+        tickCount > 1 &&
+        tickEnd.isGreaterThan(tickStart) &&
+        restrictedFeeType &&
+        feeIndex >= 0
+      ) {
+        const tokenAmountA = new BigNumber(values[0]);
+        const tokenAmountB = new BigNumber(values[1]);
+        // spread evenly after adding padding on each side
+        if (tickStart.isZero() || tickEnd.isZero()) return [];
+
+        // space new ticks by a multiplication ratio gap
+        // use Math.pow becuse BigNumber does not support logarithm calculation
+        // todo: use BigNumber logarithm compatible library to more accurately calculate tick spacing,
+        //       with many ticks the effect of this precision may be quite noticable
+        const tickGapRatio = new BigNumber(
+          Math.pow(tickEnd.dividedBy(tickStart).toNumber(), 1 / (tickCount - 1))
+        );
+        const tickCounts: [number, number] = [0, 0];
+        const tickPrices = Array.from({ length: tickCount }).reduceRight<
+          Tick[]
+        >((result, _, index, tickPrices) => {
+          const lastPrice: BigNumber | undefined = result[0]?.price;
+          const price = lastPrice?.isLessThan(edgePrice || 0)
+            ? // calculate price from left (to have exact left value)
+              tickStart.multipliedBy(tickGapRatio.exponentiatedBy(index))
+            : // calculate price from right (to have exact right value)
+              lastPrice?.dividedBy(tickGapRatio) ?? tickEnd;
+
+          // choose whether token A or B should be added for the tick at this price
+          const invertToken =
+            isValueAZero || isValueBZero
+              ? // enforce singe-sided liquidity has single ticks
+                isValueBZero
+              : // for double-sided liquidity split the ticks somewhere
+              edgePrice
+              ? // split the ticks at the current price if it exists
+                price.isLessThan(edgePrice)
+              : // split the ticks by index if no price exists yet
+                index < tickPrices.length / 2;
+          // add to count
+          tickCounts[invertToken ? 0 : 1] += 1;
+          const roundedPrice = new BigNumber(formatPrice(price.toFixed()));
+          return [
+            {
+              reserveA: new BigNumber(invertToken ? 1 : 0),
+              reserveB: new BigNumber(invertToken ? 0 : 1),
+              price: roundedPrice,
+              tickIndex: priceToTickIndex(roundedPrice).toNumber(),
+              fee: new BigNumber(restrictedFeeType.fee),
+              feeIndex: feeIndex,
+              tokenA: tokenA,
+              tokenB: tokenB,
+            },
+            ...result,
+          ];
+        }, []);
+
+        const shapeFactor = (() => {
+          return (() => {
+            switch (liquidityShape.value) {
+              case 'increasing':
+                return tickPrices.map((_, index, tickPrices) => {
+                  const percent = index / (tickPrices.length - 1);
+                  return 1 + percent;
+                });
+              case 'normal':
+                return tickPrices.map((_, index, tickPrices) => {
+                  const percent = index / (tickPrices.length - 1);
+                  return (
+                    (1 / Math.sqrt(2 * Math.PI)) *
+                    Math.exp(-(1 / 2) * Math.pow((percent - 0.5) / 0.25, 2))
+                  );
+                });
+              case 'decreasing':
+                return tickPrices.map((_, index, tickPrices) => {
+                  const percent = 1 - index / (tickPrices.length - 1);
+                  return 1 + percent;
+                });
+              case 'flat':
+              default:
+                return tickPrices.map(() => 1);
+            }
+          })();
+        })();
+
+        // normalise the tick amounts given
+        return tickPrices.map((tick, index) => {
+          return {
+            ...tick,
+            reserveA: tickCounts[0]
+              ? tokenAmountA
+                  .multipliedBy(shapeFactor[index])
+                  .multipliedBy(tick.reserveA)
+                  // normalize ticks to market value
+                  .multipliedBy(edgePrice || 1)
+              : new BigNumber(0),
+            reserveB: tickCounts[1]
+              ? tokenAmountB
+                  .multipliedBy(shapeFactor[index])
+                  .multipliedBy(tick.reserveB)
+              : new BigNumber(0),
+          };
+        });
+      }
+      // set 1 tick in the middle of the range given
+      else if (
+        tokenA &&
+        tokenB &&
+        (tickCount === 1 || tickStart.isEqualTo(tickEnd)) &&
+        restrictedFeeType &&
+        feeIndex &&
+        feeIndex >= 0
+      ) {
+        const price = tickStart.plus(tickEnd).dividedBy(2);
+        const roundedPrice = new BigNumber(formatPrice(price.toFixed()));
+        const isValueA =
+          !isValueAZero && !isValueBZero
+            ? edgePrice?.isGreaterThan(price) || isValueAZero
+            : !isValueAZero;
+        return [
+          {
+            reserveA: new BigNumber(isValueA ? 1 : 0),
+            reserveB: new BigNumber(isValueA ? 0 : 1),
+            price: roundedPrice,
+            tickIndex: priceToTickIndex(roundedPrice).toNumber(),
+            fee: new BigNumber(restrictedFeeType.fee),
+            feeIndex: feeIndex,
+            tokenA: tokenA,
+            tokenB: tokenB,
+          },
+        ];
+      }
+      // or set no ticks
+      else {
+        return [];
+      }
+    }
+
+    setUserTicks?.((userTicks) => {
+      const newUserTicks = getUserTicks();
+
+      // check if number of ticks are equal or value in ticks are equal
+      if (
+        userTicks.length !== newUserTicks.length ||
+        !newUserTicks.every((newUserTick, ticksIndex) => {
+          const userTick = userTicks[ticksIndex];
+          return (
+            newUserTick.feeIndex === userTick.feeIndex &&
+            newUserTick.tickIndex === userTick.tickIndex &&
+            newUserTick.reserveA.isEqualTo(userTick.reserveA) &&
+            newUserTick.reserveB.isEqualTo(userTick.reserveB)
+          );
+        })
+      ) {
+        // return changed values
+        return newUserTicks;
+      } else {
+        // return same values
+        return userTicks;
+      }
+    });
+  }, [
+    values,
+    isValueAZero,
+    isValueBZero,
+    feeType,
+    tokenA,
+    tokenB,
+    liquidityShape,
+    rangeMin,
+    rangeMax,
+    tickCount,
+    edgePrice,
+    setUserTicks,
+  ]);
 
   const leftColumn = (
     <div className="col">
@@ -1371,18 +1662,6 @@ function LiquidityDetailPage({
         .filter(Boolean)
         .join(' & ');
 
-  const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
-    defaultLiquidityShape
-  );
-  const [precision, setPrecision] = useState<string>(defaultPrecision);
-  // restrict precision to 2 ticks on double-sided liquidity mode
-  useEffect(() => {
-    setPrecision((precision) => {
-      const precisionMin = !isValueAZero && !isValueBZero ? 2 : 1;
-      return Number(precision) >= precisionMin ? precision : `${precisionMin}`;
-    });
-  }, [isValueAZero, isValueBZero]);
-
   const rightColumn = (
     <div className="col col--left">
       <div className="row mb-3 gap-3">
@@ -1451,7 +1730,13 @@ function LiquidityDetailPage({
             tokenList={tokenList}
             maxValue={balanceTokenA?.toNumber()}
             token={tokenA}
-            value={diffTokenA.isGreaterThan(0) ? diffTokenA.toFixed(5) : '0'}
+            value={
+              editingType === 'edit'
+                ? diffTokenA.isGreaterThan(0)
+                  ? diffTokenA.toFixed(5)
+                  : '0'
+                : tokenAValue
+            }
             onValueChanged={setInputValueA}
             exclusion={tokenB}
           />
@@ -1465,7 +1750,13 @@ function LiquidityDetailPage({
             tokenList={tokenList}
             maxValue={balanceTokenB?.toNumber()}
             token={tokenB}
-            value={diffTokenB.isGreaterThan(0) ? diffTokenB.toFixed(5) : '0'}
+            value={
+              editingType === 'edit'
+                ? diffTokenB.isGreaterThan(0)
+                  ? diffTokenB.toFixed(5)
+                  : '0'
+                : tokenBValue
+            }
             onValueChanged={setInputValueB}
             exclusion={tokenA}
           />
