@@ -1302,19 +1302,15 @@ function LiquidityDetailPage({
     : [
         (diffTokenA.isGreaterThan(0) || diffTokenB.isGreaterThan(0)) &&
           `Deposit ${[
-            diffTokenA.isGreaterThan(0) &&
-              `${diffTokenA.abs().toFixed(5)} ${tokenA.display.toUpperCase()}`,
-            diffTokenB.isGreaterThan(0) &&
-              `${diffTokenB.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`,
+            diffTokenA.isGreaterThan(0) && tokenA.display.toUpperCase(),
+            diffTokenB.isGreaterThan(0) && tokenB.display.toUpperCase(),
           ]
             .filter(Boolean)
             .join(', ')}`,
         (diffTokenA.isLessThan(0) || diffTokenB.isLessThan(0)) &&
           `Withdraw ${[
-            diffTokenA.isLessThan(0) &&
-              `${diffTokenA.abs().toFixed(5)} ${tokenA.display.toUpperCase()}`,
-            diffTokenB.isLessThan(0) &&
-              `${diffTokenB.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`,
+            diffTokenA.isLessThan(0) && tokenA.display.toUpperCase(),
+            diffTokenB.isLessThan(0) && tokenB.display.toUpperCase(),
           ]
             .filter(Boolean)
             .join(', ')}`,
