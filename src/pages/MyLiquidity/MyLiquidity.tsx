@@ -62,6 +62,13 @@ import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 type FeeTypeAndAll = Omit<FeeType, 'fee'> & { fee: number | undefined };
+const feeTypesLabelled: Array<FeeType> = [
+  ...feeTypes.map(({ label, fee, description }) => ({
+    label: `${label} Fee Tier`,
+    fee,
+    description,
+  })),
+];
 const feeTypesAndAll: Array<FeeTypeAndAll> = [
   {
     label: 'All Fee Tiers',
@@ -75,6 +82,10 @@ const feeTypesAndAll: Array<FeeTypeAndAll> = [
   })),
 ];
 
+const defaultFee = '0.30%';
+const defaultFeeType = feeTypesLabelled.find(({ fee }) => {
+  return fee === Number(defaultFee.match(/[\d.]+/)?.[0]) / 100;
+});
 const defaultPrecision = '6';
 const defaultLiquidityShape =
   liquidityShapes.find(({ value }) => value === 'flat') ?? liquidityShapes[0];
@@ -1662,6 +1673,20 @@ function LiquidityDetailPage({
         .filter(Boolean)
         .join(' & ');
 
+  useEffect(() => {
+    if (editingType === 'add') {
+      setFeeType((feeType) => {
+        if (defaultFeeType && !feeType.fee) {
+          return defaultFeeType;
+        } else {
+          return feeTypesLabelled.find(
+            ({ fee }) => fee === feeType.fee
+          ) as FeeType;
+        }
+      });
+    }
+  }, [editingType]);
+
   const rightColumn = (
     <div className="col col--left">
       <div className="row mb-3 gap-3">
@@ -1693,7 +1718,7 @@ function LiquidityDetailPage({
       <div className="row">
         <SelectInput<FeeTypeAndAll>
           className="col flex select-fee-tier"
-          list={feeTypesAndAll}
+          list={editingType === 'edit' ? feeTypesAndAll : feeTypesLabelled}
           value={feeType}
           onChange={setFeeType}
           getLabel={(feeType) => (feeType ? feeType.label : 'All Fee Tiers')}
