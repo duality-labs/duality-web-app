@@ -1699,6 +1699,12 @@ function LiquidityDetailPage({
     }
   }, [editingType]);
 
+  useEffect(() => {
+    if (chartTypeSelected === 'AMM') {
+      setPrecision(defaultPrecision);
+    }
+  }, [chartTypeSelected]);
+
   const rightColumn = (
     <div className="col col--left">
       <div className="row mb-3 gap-3">
