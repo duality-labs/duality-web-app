@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.91](https://github.com/duality-labs/duality-web-app/compare/v0.1.90...v0.1.91) (2023-02-02)
+
+
+### Features
+
+* update liquidity layout to new design ([#303](https://github.com/duality-labs/duality-web-app/issues/303)) ([fa6e22a](https://github.com/duality-labs/duality-web-app/commit/fa6e22a6c3a772bfc1d2f8f97183b7ef701eb944))
+
 ## [0.1.90](https://github.com/duality-labs/duality-web-app/compare/v0.1.89...v0.1.90) (2023-01-26)
 
 

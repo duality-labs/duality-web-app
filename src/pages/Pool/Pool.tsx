@@ -5,8 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
   faArrowRightArrowLeft,
-  faSliders,
-  faCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -26,7 +24,6 @@ import {
   Tick,
 } from '../../components/LiquiditySelector/LiquiditySelector';
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
-import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
@@ -705,93 +702,9 @@ export default function Pool() {
         .join(' ')}
       onSubmit={onSubmit}
     >
-      <div className="pool-banner hide">
-        <div className="row">
-          <div className="row col-row">
-            <h2>Assets</h2>
-            <button
-              className="button-secondary corner-border ml-1"
-              onClick={() => setValuesConfirmed(false)}
-            >
-              Edit
-            </button>
-          </div>
-          <div className="row col-row">
-            {tokenA && (
-              <button
-                className={[
-                  'badge-default corner-border badge-large',
-                  isValueAZero && 'badge-muted',
-                ].join(' ')}
-                type="button"
-              >
-                {new BigNumber(values[0]).toFormat()}
-                {tokenA.logo_URIs ? (
-                  <img
-                    className="ml-3 mr-2 token-image"
-                    alt={`${tokenA.name} logo`}
-                    // in this context (large images) prefer SVGs over PNGs for better images
-                    src={tokenA.logo_URIs.svg || tokenA.logo_URIs.png}
-                  />
-                ) : (
-                  <FontAwesomeIcon
-                    icon={faCircle}
-                    size="2x"
-                    className="ml-3 mr-2 token-image token-image-not-found"
-                  ></FontAwesomeIcon>
-                )}
-                {tokenA?.symbol}
-              </button>
-            )}
-            {tokenA && tokenB && <div>+</div>}
-            {tokenB && (
-              <button
-                className={[
-                  'badge-default corner-border badge-large',
-                  isValueBZero && 'badge-muted',
-                ].join(' ')}
-                type="button"
-              >
-                {new BigNumber(values[1]).toFormat()}
-                {tokenB.logo_URIs ? (
-                  <img
-                    className="ml-3 mr-2 token-image"
-                    alt={`${tokenB.name} logo`}
-                    // in this context (large images) prefer SVGs over PNGs for better images
-                    src={tokenB.logo_URIs.svg || tokenB.logo_URIs.png}
-                  />
-                ) : (
-                  <FontAwesomeIcon
-                    icon={faCircle}
-                    size="2x"
-                    className="ml-3 mr-2 token-image token-image-not-found"
-                  ></FontAwesomeIcon>
-                )}
-                {tokenB?.symbol}
-              </button>
-            )}
-          </div>
-          <div className="row col-row ml-auto">
-            <RadioButtonGroupInput<'AMM' | 'Orderbook'>
-              className="chart-type-input"
-              values={{
-                AMM: 'Basic',
-                Orderbook: 'Pro',
-              }}
-              value={chartTypeSelected}
-              onChange={setChartTypeSelected}
-            />
-          </div>
-          <div className="row col-row hide">
-            <button className="icon-button" type="button">
-              <FontAwesomeIcon icon={faSliders}></FontAwesomeIcon>
-            </button>
-          </div>
-        </div>
-      </div>
       <div className="page pool-page">
         <div
-          className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
+          className={`my-4 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
           <div className="chart-header row">
             <div className="col">
