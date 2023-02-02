@@ -1381,6 +1381,24 @@ function LiquidityDetailPage({
           </div>
         </>
       )}
+      <div
+        className={[
+          'row my-4 pt-4 mx-auto gap-3 h3',
+          editingType === 'add' && 'hide',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <div className="col">You will receive:</div>
+        <div className="col">
+          {diffTokenA.isLessThan(-1e-5) ? diffTokenA.abs().toFixed(5) : '0'}{' '}
+          {tokenA.display.toUpperCase()},
+        </div>
+        <div className="col">
+          {diffTokenB.isLessThan(-1e-5) ? diffTokenB.abs().toFixed(5) : '0'}{' '}
+          {tokenB.display.toUpperCase()}
+        </div>
+      </div>
       <div className="row my-4">
         <input
           className={`button-${submitButtonVariant} text-medium flex mx-auto px-4 py-4`}
