@@ -162,6 +162,11 @@
     opacity: 0.2;
   }
 }
+.my-liquidity-chart {
+  .flag-line {
+    display: none;
+  }
+}
 
 .axis {
   stroke-width: 1;

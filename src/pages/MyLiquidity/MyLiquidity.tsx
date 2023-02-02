@@ -834,7 +834,7 @@ function LiquidityDetailPage({
             </div>
           </div>
         </div>
-        <div className="flex row chart-area">
+        <div className="flex row chart-area my-liquidity-chart">
           <LiquiditySelector
             advanced={chartTypeSelected === 'Orderbook'}
             tokenA={tokenA}
