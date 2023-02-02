@@ -794,13 +794,18 @@ function LiquidityDetailPage({
   const priceMin = minPrice?.toFixed(4, BigNumber.ROUND_FLOOR);
   const priceMax = maxPrice?.toFixed(4, BigNumber.ROUND_CEIL);
   useEffect(
-    () => (!priceMin ? undefined : setRangeMin(priceMin)),
-    [priceMin, setRangeMin]
+    () => (!priceMin ? undefined : setRangeMinUnprotected(priceMin)),
+    [priceMin]
   );
   useEffect(
-    () => (!priceMax ? undefined : setRangeMax(priceMax)),
-    [priceMax, setRangeMax]
+    () => (!priceMax ? undefined : setRangeMaxUnprotected(priceMax)),
+    [priceMax]
   );
+
+  // hack: get effect of basic range selection to fire on switch of Basic/Pro
+  useEffect(() => {
+    setTimeout(() => setRangeMin(rangeMin), 0);
+  }, [chartTypeSelected, rangeMin, setRangeMin]);
 
   const leftColumn = (
     <div className="col">
