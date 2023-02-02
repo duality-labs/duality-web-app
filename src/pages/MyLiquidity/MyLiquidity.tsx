@@ -129,7 +129,17 @@ export function getVirtualTickIndexes(
     : [];
 }
 
-export default function MyLiquidity() {
+export default function MyLiquidity({
+  tokenA: givenTokenA,
+  tokenB: givenTokenB,
+  valueA: givenValueA = '',
+  valueB: givenValueB = '',
+}: {
+  tokenA?: Token;
+  tokenB?: Token;
+  valueA?: string;
+  valueB?: string;
+}) {
   const { wallet } = useWeb3();
   const { data: balances, isValidating } = useBankBalances();
 
@@ -137,7 +147,21 @@ export default function MyLiquidity() {
   const { data: shares } = useShares();
   const dualityTokens = useDualityTokens();
 
-  const [selectedTokens, setSelectedTokens] = useState<[Token, Token]>();
+  const [selectedTokens, setSelectedTokens] = useState<
+    [Token, Token] | undefined
+  >(() => {
+    if (givenTokenA?.address && givenTokenB?.address) {
+      return !hasInvertedOrder(
+        getPairID(givenTokenA.address, givenTokenB.address),
+        givenTokenA.address,
+        givenTokenB.address
+      )
+        ? [givenTokenB, givenTokenA]
+        : [givenTokenA, givenTokenB];
+    } else {
+      return undefined;
+    }
+  });
 
   const shareValueMap = useMemo(() => {
     if (shares && indexer) {
@@ -253,6 +277,8 @@ export default function MyLiquidity() {
         token0={token0}
         token1={token1}
         shares={shareValueMap?.[getPairID(token0.address, token1.address)]}
+        valueA={givenValueA}
+        valueB={givenValueB}
       />
     );
   }
@@ -419,10 +445,14 @@ function ShareValuesPage({
 function LiquidityDetailPage({
   token0,
   token1,
+  valueA: givenValueA = '',
+  valueB: givenValueB = '',
   shares = [],
 }: {
   token0: Token;
   token1: Token;
+  valueA?: string;
+  valueB?: string;
   shares?: TickShareValue[];
 }) {
   const sharesLength = shares?.length || 1;
@@ -700,8 +730,10 @@ function LiquidityDetailPage({
     editingType === 'edit' && setEditedUserTicks(userTicks.slice());
   }, [editingType, userTicks]);
 
-  const [, setInputValueA, tokenAValue = '0'] = useNumericInputState();
-  const [, setInputValueB, tokenBValue = '0'] = useNumericInputState();
+  const [, setInputValueA, tokenAValue = '0'] =
+    useNumericInputState(givenValueA);
+  const [, setInputValueB, tokenBValue = '0'] =
+    useNumericInputState(givenValueB);
   const values = useMemo(
     (): [string, string] => [tokenAValue, tokenBValue],
     [tokenAValue, tokenBValue]
@@ -711,11 +743,18 @@ function LiquidityDetailPage({
   // there is a lot going on, best to just remove the state
   useEffect(() => {
     if (editingType === 'edit') {
-      setInputValueA('');
-      setInputValueB('');
+      setInputValueA(givenValueA);
+      setInputValueB(givenValueB);
       setEditedUserTicks(userTicks);
     }
-  }, [editingType, userTicks, setInputValueA, setInputValueB]);
+  }, [
+    editingType,
+    userTicks,
+    setInputValueA,
+    setInputValueB,
+    givenValueA,
+    givenValueB,
+  ]);
 
   useLayoutEffect(() => {
     editingType === 'edit' &&

@@ -37,6 +37,7 @@ import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 
 import './Pool.scss';
 import TokenPairLogos from '../../components/TokenPairLogos';
+import MyLiquidity from '../MyLiquidity';
 
 // the default resolution for a number in 18 decimal places
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
@@ -692,6 +693,17 @@ export default function Pool() {
           <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
         </div>
       </form>
+    );
+  }
+
+  if (Math.random() >= 0) {
+    return (
+      <MyLiquidity
+        tokenA={tokenA}
+        tokenB={tokenB}
+        valueA={inputValueA}
+        valueB={inputValueB}
+      />
     );
   }
 
