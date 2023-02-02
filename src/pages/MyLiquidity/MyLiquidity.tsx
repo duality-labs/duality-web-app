@@ -408,7 +408,7 @@ function LiquidityDetailPage({
   token1: Token;
   shares?: TickShareValue[];
 }) {
-  const precision = shares?.length || 1;
+  const sharesLength = shares?.length || 1;
 
   const selectedTokens = useMemo(() => [token0, token1], [token0, token1]);
   const {
@@ -518,9 +518,9 @@ function LiquidityDetailPage({
   // constrain the selected tick index if the index does no longer exist
   useEffect(() => {
     setUserTickSelected((selected) =>
-      Math.min(selected, Number(precision) - 1)
+      Math.min(selected, Number(sharesLength) - 1)
     );
-  }, [precision]);
+  }, [sharesLength]);
 
   const [feeType, setFeeType] = useState<FeeTypeAndAll>(feeTypesAndAll[0]);
 
@@ -1234,7 +1234,7 @@ function LiquidityDetailPage({
           values={(() => {
             const map = new Map<number, string | number>();
             map.set(-1, 'All');
-            for (let index = 0; index < Number(precision); index++) {
+            for (let index = 0; index < Number(sharesLength); index++) {
               map.set(index, index + 1);
             }
             return map;
