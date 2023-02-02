@@ -804,7 +804,16 @@ function LiquidityDetailPage({
 
   // hack: get effect of basic range selection to fire on switch of Basic/Pro
   useEffect(() => {
-    setTimeout(() => setRangeMin(rangeMin), 0);
+    if (chartTypeSelected === 'AMM') {
+      priceMin && setRangeMinUnprotected(priceMin);
+      priceMax && setRangeMaxUnprotected(priceMax);
+    }
+  }, [chartTypeSelected, priceMin, priceMax]);
+
+  useEffect(() => {
+    if (chartTypeSelected === 'Orderbook') {
+      setTimeout(() => setRangeMin(rangeMin), 0);
+    }
   }, [chartTypeSelected, rangeMin, setRangeMin]);
 
   const leftColumn = (
