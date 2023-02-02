@@ -889,7 +889,7 @@ function LiquidityDetailPage({
           />
         </div>
       </div>
-      <div className="row mt-2 gap-4 flex-centered">
+      <div className="row mt-2 gap-4 flex-centered hide">
         <div className="col pb-3" style={{ width: '8em', textAlign: 'right' }}>
           Shown Fee Tier:
         </div>
@@ -1282,6 +1282,29 @@ function LiquidityDetailPage({
             onChange={setChartTypeSelected}
           />
         </div>
+      </div>
+      <div className="row">
+        <SelectInput<FeeTypeAndAll>
+          className="col flex select-fee-tier"
+          list={feeTypesAndAll}
+          value={feeType}
+          onChange={setFeeType}
+          getLabel={(feeType) => (feeType ? feeType.label : 'All Fee Tiers')}
+          getDescription={(feeType) =>
+            !(feeType && feeType.fee !== undefined) ? null : (
+              <>
+                <span>{feeType.description}</span>
+                <span> </span>
+                <span className="badge">
+                  {feeLiquidityMap?.[feeType.fee]
+                    .multipliedBy(100)
+                    .toFixed(0) ?? '0'}
+                  % of Liquidity
+                </span>
+              </>
+            )
+          }
+        />
       </div>
       <div className="assets-card">
         <div className="card-row">
