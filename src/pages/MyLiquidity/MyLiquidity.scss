@@ -272,6 +272,10 @@
       text-align: right;
     }
   }
+
+  .col--left .radio-button-group-switch {
+    border-color: rgb(255, 255, 255, 0.3);
+  }
 }
 
 .credit-card {
