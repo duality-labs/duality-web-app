@@ -430,6 +430,16 @@ function LiquidityDetailPage({
   });
   const swapAll = useCallback(() => {
     setInvertedTokenOrder((order) => !order);
+    setWithdrawTypeSelected((withdrawType) => {
+      switch (withdrawType) {
+        case 'A':
+          return 'B';
+        case 'B':
+          return 'A';
+        default:
+          return 'All';
+      }
+    });
   }, []);
   // calculate the graph extent based on the unfiltered lowest and highest tick prices
   const [minPrice0to1, maxPrice0to1] = useMemo<
