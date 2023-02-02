@@ -954,6 +954,7 @@ function LiquidityDetailPage({
       >
         <div className="card-row">
           <StepNumberInput
+            className="flex"
             title="MIN PRICE"
             value={rangeMin}
             onChange={setRangeMin}
@@ -972,6 +973,7 @@ function LiquidityDetailPage({
             // format={formatStepNumberPriceInput}
           />
           <StepNumberInput
+            className="flex"
             title="MAX PRICE"
             value={rangeMax}
             onChange={setRangeMax}
