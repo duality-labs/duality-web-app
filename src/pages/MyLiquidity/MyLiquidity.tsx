@@ -791,8 +791,14 @@ function LiquidityDetailPage({
     },
     [userTicks, rangeMin, editingType, chartTypeSelected]
   );
-  const priceMin = minPrice?.toFixed(4, BigNumber.ROUND_FLOOR);
-  const priceMax = maxPrice?.toFixed(4, BigNumber.ROUND_CEIL);
+  const priceMin =
+    withdrawTypeSelected === 'B'
+      ? currentPriceFromTicks?.toFixed(4)
+      : minPrice?.toFixed(4, BigNumber.ROUND_FLOOR);
+  const priceMax =
+    withdrawTypeSelected === 'A'
+      ? currentPriceFromTicks?.toFixed(4)
+      : maxPrice?.toFixed(4, BigNumber.ROUND_CEIL);
   useEffect(
     () => (!priceMin ? undefined : setRangeMinUnprotected(priceMin)),
     [priceMin]
