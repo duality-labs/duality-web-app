@@ -1059,7 +1059,10 @@ function LiquidityDetailPage({
             // stepFunction={logarithmStep}
             pressedDelay={500}
             pressedInterval={100}
-            min={priceMin}
+            min={
+              priceMin &&
+              Math.min(Number(priceMin), Number(rangeMax)).toFixed(8)
+            }
             max={rangeMax}
             description={
               tokenA && tokenB
@@ -1079,7 +1082,10 @@ function LiquidityDetailPage({
             pressedDelay={500}
             pressedInterval={100}
             min={rangeMin}
-            max={priceMax}
+            max={
+              priceMax &&
+              Math.max(Number(priceMax), Number(rangeMin)).toFixed(8)
+            }
             description={
               tokenA && tokenB
                 ? `${tokenA.symbol} per ${tokenB.symbol}`
