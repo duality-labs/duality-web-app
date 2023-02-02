@@ -3,17 +3,6 @@
 @use '../../styles/font/size.scss' as font-size;
 @use 'sass:map';
 
-.button-switch-group,
-.chart-type-input {
-  border: 1px solid white;
-  border-radius: 0.75rem;
-  overflow: hidden;
-
-  .button {
-    border-radius: 0.75rem;
-  }
-}
-
 .smalll .range-step-controls span,
 .smalll .range-step-controls button {
   font-size: 1.2rem;

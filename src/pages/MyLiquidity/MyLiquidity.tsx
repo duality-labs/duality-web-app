@@ -1257,10 +1257,9 @@ function LiquidityDetailPage({
 
   const rightColumn = (
     <div className="col col--left">
-      <div className="row mb-3">
+      <div className="row mb-3 gap-3">
         <div className="col flex">
           <RadioButtonGroupInput
-            className="mt-2"
             values={{
               add: 'Add Liquidity',
               edit: 'Edit Liquidity',
@@ -1269,8 +1268,6 @@ function LiquidityDetailPage({
             onChange={setEditingType}
           />
         </div>
-      </div>
-      <div className="row mb-3">
         <div className="col flex">
           <RadioButtonGroupInput<'AMM' | 'Orderbook'>
             className="chart-type-input"
