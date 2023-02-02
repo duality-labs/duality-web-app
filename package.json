@@ -24,6 +24,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.1.2",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@reach/dialog": "^0.17.0",
+    "@react-hook/resize-observer": "^1.2.6",
     "bignumber.js": "^9.0.2",
     "buffer": "^6.0.3",
     "chain-registry": "^1.0.0",

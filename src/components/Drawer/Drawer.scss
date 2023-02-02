@@ -1,6 +1,12 @@
 @use '../../styles/mixins-vars/animations.scss' as animations;
 
 .drawer {
+  position: relative;
   overflow: hidden;
   transition: height animations.$short-duration;
+
+  .drawer-panel {
+    position: absolute;
+    width: 100%;
+  }
 }

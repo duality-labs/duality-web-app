@@ -135,3 +135,8 @@ form.disabled button {
   cursor: not-allowed !important;
   pointer-events: none;
 }
+
+hr {
+  border-bottom-width: 0;
+  opacity: 0.5;
+}

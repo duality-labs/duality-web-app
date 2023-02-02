@@ -14,14 +14,6 @@
   }
 }
 
-.pool-banner {
-  .chart-type-input {
-    .button {
-      min-width: 10rem;
-    }
-  }
-}
-
 .curve-card {
   & {
     // "nice-fit" to curve selections
@@ -38,57 +30,6 @@
       background-color: var(--default);
     }
   }
-}
-
-.pool-banner {
-  width: 100%;
-  background-color: hsla(0, 0%, 0%, 0.6);
-
-  & > .row {
-    padding: 1.125rem 4rem;
-  }
-
-  .row {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 2rem;
-
-    .col-row {
-      gap: 0.5rem;
-      background-color: transparent;
-      padding: 0;
-    }
-  }
-
-  h2 {
-    font-size: 1.25rem;
-  }
-
-  .token-image {
-    height: 1.2rem;
-    width: 1.2rem;
-    // align logo to top and drop from there
-    // the button contents here are a little special as there are no descenders
-    vertical-align: top;
-  }
-
-  .chart-type-input {
-    margin: 0 1rem;
-  }
-}
-
-.pool-banner::before,
-.pool-banner::after {
-  display: block;
-  content: ' ';
-  height: 8px;
-  width: 100%;
-  background: linear-gradient(90deg, #4eb1e8 0%, rgba(78, 177, 232, 0) 100%);
-}
-.pool-banner::after {
-  background: linear-gradient(90deg, rgba(78, 177, 232, 0) 0%, #4eb1e8 100%);
 }
 
 .spacer {
@@ -158,8 +99,6 @@
   }
 
   .chart-card {
-    min-height: 30vh;
-    height: 500px;
     align-self: stretch;
 
     > .row {
@@ -175,13 +114,27 @@
       }
     }
 
-    .hero-text {
-      font-size: 2.75rem;
-      font-weight: bold;
+    .chart-area {
+      min-height: 10rem;
+      max-height: 20rem;
     }
 
-    .chart-price {
-      align-items: flex-end;
+    .col--left {
+      min-width: 27.5em;
+    }
+  }
+
+  .select-fee-tier {
+    .badge {
+      // enforce consistent width that can cover 100%
+      display: inline-block;
+      width: 9em;
+      padding-left: 0;
+      padding-right: 0;
+      // todo: replace following with new global badge styling
+      background-color: #ffffff;
+      color: hsla(0, 0%, 0%, 0.6);
+      border-radius: 6px;
     }
   }
 
@@ -244,6 +197,9 @@
   }
 
   .orderbook-card {
+    background-color: var(--default);
+    border-radius: paddings.$p-4;
+
     > .row {
       gap: 3rem;
       flex-direction: column;

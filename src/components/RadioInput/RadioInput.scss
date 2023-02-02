@@ -6,22 +6,27 @@
     gap: 0.5rem;
   }
 
-  input[type='radio'] {
-    display: none;
+  input[type='radio'],
+  input[type='checkbox'] {
+    & {
+      display: none;
+    }
+    & + label {
+      box-sizing: border-box;
+      text-align: center;
+      cursor: pointer;
+      display: block;
+      flex: 0 0 auto;
+    }
+    & + label .button {
+      border: 1px solid transparent;
+    }
   }
 
-  input[type='radio'] + label {
-    box-sizing: border-box;
-    text-align: center;
-    cursor: pointer;
-    display: block;
-    flex: 0 0 auto;
-  }
-
-  input[type='radio'] + label .button {
-    border: 1px solid transparent;
-  }
-  input[type='radio']:checked + label .button {
-    border-color: var(--info);
+  input[type='radio']:checked,
+  input[type='checkbox']:checked {
+    & + label .button {
+      border-color: var(--info);
+    }
   }
 }

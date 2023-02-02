@@ -8,6 +8,7 @@ import {
   useRef,
   useEffect,
 } from 'react';
+import useResizeObserver from '@react-hook/resize-observer';
 
 import { formatPrice } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
@@ -65,20 +66,6 @@ type TickGroupBucketsFilled = Array<
 >;
 
 const bucketWidth = 50; // bucket width in pixels
-
-function useWindowWidth() {
-  const [width, setWidth] = useState(window.innerWidth);
-
-  useLayoutEffect(() => {
-    const handleResize = () => setWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  return width;
-}
 
 const defaultStartValue = new BigNumber(1 / 1.1);
 const defaultEndValue = new BigNumber(1.1);
@@ -245,15 +232,21 @@ export default function LiquiditySelector({
   const [graphEnd, setGraphEnd] = useState(initialGraphEnd);
 
   // find container size that buckets should fit
-  const [container, setContainer] = useState<HTMLDivElement | null>(null);
-  const windowWidth = useWindowWidth();
+  const svgContainer = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   useLayoutEffect(() => {
     setContainerSize({
-      width: container?.clientWidth ?? 0,
-      height: container?.clientHeight ?? 0,
+      width: svgContainer.current?.clientWidth ?? 0,
+      height: svgContainer.current?.clientHeight ?? 0,
     });
-  }, [container, windowWidth]);
+  }, [svgContainer]);
+
+  useResizeObserver(svgContainer, (container) =>
+    setContainerSize({
+      width: container.contentRect.width,
+      height: container.contentRect.height,
+    })
+  );
 
   const bucketCount =
     (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
@@ -555,7 +548,7 @@ export default function LiquiditySelector({
   );
 
   return (
-    <div className="svg-container" ref={setContainer}>
+    <div className="svg-container" ref={svgContainer}>
       {svg}
     </div>
   );

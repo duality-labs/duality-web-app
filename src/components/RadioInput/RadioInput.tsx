@@ -6,13 +6,15 @@ export interface OptionProps<T> {
   id: string;
   index: number;
 }
-interface RadioInputProps<T> {
+export interface RadioInputProps<T> {
+  inputType?: 'radio' | 'checkbox';
   OptionComponent?: React.ElementType<OptionProps<T>>;
+  OptionContainerComponent?: React.ElementType;
   onChange?: (value: T, index: number) => void;
+  onClick?: React.MouseEventHandler<HTMLInputElement>;
   list: Array<T>;
   maxColumnCount?: number;
   value?: T;
-  index?: number;
   name?: string;
   className?: string;
 }
@@ -22,8 +24,11 @@ function DefaultOptionComponent<T>({ option }: OptionProps<T>) {
 }
 
 export default function RadioInput<T>({
+  inputType = 'radio',
   OptionComponent = DefaultOptionComponent,
+  OptionContainerComponent = Fragment,
   onChange,
+  onClick,
   list,
   maxColumnCount,
   value,
@@ -47,18 +52,19 @@ export default function RadioInput<T>({
         const id = `${groupName}-${index}`;
 
         return (
-          <Fragment key={id}>
+          <OptionContainerComponent key={id}>
             <input
-              type="radio"
+              type={inputType}
               name={groupName}
               id={id}
               checked={index === selectedIndex}
               onChange={() => onChange?.(option, index)}
+              onClick={onClick}
             ></input>
             <label htmlFor={id} style={labelStyle}>
               <OptionComponent option={option} id={id} index={index} />
             </label>
-          </Fragment>
+          </OptionContainerComponent>
         );
       })}
     </div>
