@@ -1240,22 +1240,28 @@ function LiquidityDetailPage({
 
   const submitButtonText = noChange
     ? 'No Change'
-    : diffTokenA.abs().isGreaterThan(1e-5)
-    ? diffTokenB.abs().isGreaterThan(1e-5)
-      ? // both exist
-        `${diffTokenA.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffTokenA
-          .abs()
-          .toFixed(5)} ${tokenA.display.toUpperCase()}\n+\n${
-          diffTokenB.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'
-        } ${diffTokenB.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`
-      : // only token0
-        `${diffTokenA.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffTokenA
-          .abs()
-          .toFixed(5)} ${tokenA.display.toUpperCase()}`
-    : // only token1
-      `${diffTokenB.isLessThan(1e-5) ? 'Withdraw' : 'Deposit'} ${diffTokenB
-        .abs()
-        .toFixed(5)} ${tokenB.display.toUpperCase()}`;
+    : [
+        (diffTokenA.isGreaterThan(0) || diffTokenB.isGreaterThan(0)) &&
+          `Deposit ${[
+            diffTokenA.isGreaterThan(0) &&
+              `${diffTokenA.abs().toFixed(5)} ${tokenA.display.toUpperCase()}`,
+            diffTokenB.isGreaterThan(0) &&
+              `${diffTokenB.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`,
+          ]
+            .filter(Boolean)
+            .join(', ')}`,
+        (diffTokenA.isLessThan(0) || diffTokenB.isLessThan(0)) &&
+          `Withdraw ${[
+            diffTokenA.isLessThan(0) &&
+              `${diffTokenA.abs().toFixed(5)} ${tokenA.display.toUpperCase()}`,
+            diffTokenB.isLessThan(0) &&
+              `${diffTokenB.abs().toFixed(5)} ${tokenB.display.toUpperCase()}`,
+          ]
+            .filter(Boolean)
+            .join(', ')}`,
+      ]
+        .filter(Boolean)
+        .join(' &\n');
 
   const rightColumn = (
     <div className="col col--left">
