@@ -126,6 +126,11 @@
     display: flex;
     background-color: hsla(212, 28%, 17%, 1);
     border-radius: 1rem;
+
+    .asset-list-card__table {
+      overflow-y: scroll;
+      flex-basis: 0;
+    }
   }
 }
 

@@ -333,7 +333,7 @@ function ShareValuesPage({
             <div className="asset-list-card__search row m-4">
               <div className="col">{'{ search goes here }'}</div>
             </div>
-            <div className="asset-list-card__table row flex m-4">
+            <div className="asset-list-card__table row flex mt-4 pb-4 px-4">
               <div className="col">{'{ table goes here }'}</div>
             </div>
           </div>
