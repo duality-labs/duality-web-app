@@ -317,7 +317,7 @@ function ShareValuesPage({
           </div>
         </div>
       </div>
-      <div className="position-cards row mt-5 px-6">
+      <div className="position-cards row mt-5 px-6 mx-auto">
         {shareValueMap &&
           Object.entries(shareValueMap).map(([pairID, shareValues]) => {
             return (

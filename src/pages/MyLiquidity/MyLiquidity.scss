@@ -21,7 +21,6 @@
 
   .home-hero-section,
   .position-cards {
-    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -33,6 +32,7 @@
   .position-cards {
     flex: 3;
     align-items: flex-start;
+    justify-content: flex-start;
   }
 
   .position-card {
