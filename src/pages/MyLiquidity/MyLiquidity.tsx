@@ -318,7 +318,26 @@ function ShareValuesPage({
             </div>
           </div>
         </div>
-        <div className="asset-list-card flex my-4 py-2 px-3"></div>
+        <div className="asset-list-card flex my-4 py-2 px-3">
+          <div className="col flex">
+            <div className="row m-4">
+              <div className="col flex">
+                <h2 className="asset-list-card__hero-title">Tokens</h2>
+              </div>
+              <div className="col">
+                <div className="asset-list-card__asset-toggle">
+                  {'{ toggle goes here }'}
+                </div>
+              </div>
+            </div>
+            <div className="asset-list-card__search row m-4">
+              <div className="col">{'{ search goes here }'}</div>
+            </div>
+            <div className="asset-list-card__table row flex m-4">
+              <div className="col">{'{ table goes here }'}</div>
+            </div>
+          </div>
+        </div>
       </div>
       <div className="position-cards row mt-5">
         {shareValueMap &&
