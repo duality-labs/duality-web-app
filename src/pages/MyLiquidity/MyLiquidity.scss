@@ -25,14 +25,13 @@
     align-items: center;
     justify-content: center;
     gap: 3rem;
-    flex: 1;
     flex-flow: wrap;
   }
 
   .position-cards {
-    flex: 3;
     align-items: flex-start;
     justify-content: flex-start;
+    min-height: 25vh; // make 4:3 look reasonable
   }
 
   .position-card {
