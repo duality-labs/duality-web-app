@@ -21,9 +21,10 @@
 
   .home-hero-section,
   .position-cards {
+    width: 100%;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 3rem;
     flex-flow: wrap;
   }
