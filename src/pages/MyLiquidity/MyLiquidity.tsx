@@ -318,6 +318,7 @@ function ShareValuesPage({
             </div>
           </div>
         </div>
+        <div className="asset-list-card flex my-4 py-2 px-3"></div>
       </div>
       <div className="position-cards row mt-5">
         {shareValueMap &&
