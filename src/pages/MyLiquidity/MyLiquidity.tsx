@@ -274,8 +274,8 @@ function ShareValuesPage({
 
   // show loken list cards
   return (
-    <div className="my-liquidity-page py-6">
-      <div className="home-hero-section row px-6">
+    <div className="my-liquidity-page container py-6">
+      <div className="home-hero-section row">
         <div className="credit-card my-4 py-2 px-3">
           <div className="credit-card__top-line row m-4">
             <div className="col font-brand">{address}</div>
@@ -317,7 +317,7 @@ function ShareValuesPage({
           </div>
         </div>
       </div>
-      <div className="position-cards row mt-5 px-6 mx-auto">
+      <div className="position-cards row mt-5">
         {shareValueMap &&
           Object.entries(shareValueMap).map(([pairID, shareValues]) => {
             return (
