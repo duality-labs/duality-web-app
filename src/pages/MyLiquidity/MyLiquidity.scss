@@ -117,6 +117,7 @@
 
 .credit-card {
   min-height: 384px;
+  min-width: 240px;
   aspect-ratio: 1.58588;
 
   display: flex;
@@ -147,6 +148,11 @@
   .credit-card__top-line {
     font-size: 1rem;
     font-weight: font-weight.$bold;
+    .credit-card__name {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
   .credit-card__hero-title {
     margin-top: 1rem;
