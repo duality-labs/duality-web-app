@@ -1,7 +1,8 @@
 @use '../../styles/font/weight.scss' as font-weight;
+@use '../../styles/font/size.scss' as font-size;
 
 .no-liquidity .add-liquidity {
-  font-size: 1.5rem;
+  font-size: font-size.$h3;
   font-weight: font-weight.$medium;
 }
 
@@ -126,6 +127,10 @@
     display: flex;
     background-color: hsla(212, 28%, 17%, 1);
     border-radius: 1rem;
+
+    .asset-list-card__hero-title {
+      font-size: font-size.$h4;
+    }
 
     .asset-list-card__table {
       overflow-y: scroll;
