@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
+import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import {
   useBankBalances,
   useIndexerData,
@@ -272,6 +273,10 @@ function ShareValuesPage({
     new BigNumber(0)
   );
 
+  const [selectedAssetList, setSelectedAssetList] = useState<
+    'my-assets' | 'all-assets'
+  >('my-assets');
+
   // show loken list cards
   return (
     <div className="my-liquidity-page container py-6">
@@ -320,13 +325,24 @@ function ShareValuesPage({
         </div>
         <div className="asset-list-card flex my-4 py-2 px-3">
           <div className="col flex">
-            <div className="row m-4">
+            <div className="row flex-centered gap-3 m-4">
               <div className="col flex">
                 <h2 className="asset-list-card__hero-title">Tokens</h2>
               </div>
               <div className="col">
                 <div className="asset-list-card__asset-toggle">
-                  {'{ toggle goes here }'}
+                  <RadioButtonGroupInput<'my-assets' | 'all-assets'>
+                    buttonClassName="px-5"
+                    values={useMemo(
+                      () => ({
+                        'my-assets': 'My Assets',
+                        'all-assets': 'All Assets',
+                      }),
+                      []
+                    )}
+                    value={selectedAssetList}
+                    onChange={setSelectedAssetList}
+                  />
                 </div>
               </div>
             </div>

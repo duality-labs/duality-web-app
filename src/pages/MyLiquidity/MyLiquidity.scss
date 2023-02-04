@@ -131,7 +131,9 @@
     .asset-list-card__hero-title {
       font-size: font-size.$h4;
     }
-
+    .asset-list-card__asset-toggle {
+      font-size: font-size.$button;
+    }
     .asset-list-card__table {
       overflow-y: scroll;
       flex-basis: 0;
