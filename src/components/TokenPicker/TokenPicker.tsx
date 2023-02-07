@@ -18,6 +18,7 @@ import { useSimplePrices } from '../../lib/tokenPrices';
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 
 import Dialog from '../Dialog/Dialog';
+import SearchInput from '../inputs/SearchInput/SearchInput';
 
 import './TokenPicker.scss';
 
@@ -333,15 +334,15 @@ export default function TokenPicker({
     return (
       <div className="token-picker-head">
         <label htmlFor={`token-selector-${currentID}`}>Select a token</label>
-        <input
+        <SearchInput
           type="search"
           id={`token-selector-${currentID}`}
-          onInput={(e) => setSearchQuery(e.currentTarget.value)}
+          onInput={setSearchQuery}
           onKeyDown={onKeyDown}
           value={searchQuery}
           placeholder="Search name or paste address"
           autoComplete="off"
-          ref={inputRef}
+          innerRef={inputRef}
         />
       </div>
     );

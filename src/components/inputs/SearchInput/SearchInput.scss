@@ -1,0 +1,30 @@
+@use '../../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../../styles/font/size.scss' as font-size;
+
+.search-input {
+  input {
+    & {
+      padding: paddings.$p-4 paddings.$p-5;
+      appearance: none;
+      // todo: put the input in the dialog body not the dialog header
+      // this workaround is unnecessarily complex
+      width: calc(
+        100% + #{paddings.size(4) * 2 + font-size.$text-m}
+      ); // 100% + parent paddings + x
+      border: 1px solid var(--token-search-border);
+      background-color: var(--token-search-bg);
+      font-size: font-size.$input-small;
+      color: var(--token-search-text);
+      border-radius: paddings.size(4);
+      display: block;
+      outline: none;
+    }
+
+    &::-webkit-search-decoration,
+    &::-webkit-search-cancel-button,
+    &::-webkit-search-results-button,
+    &::-webkit-search-results-decoration {
+      display: none;
+    }
+  }
+}
