@@ -4,6 +4,7 @@ import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
+import SearchInput from '../../components/inputs/SearchInput/SearchInput';
 import {
   useBankBalances,
   useIndexerData,
@@ -277,6 +278,8 @@ function ShareValuesPage({
     'my-assets' | 'all-assets'
   >('my-assets');
 
+  const [searchValue, setSearchValue] = useState<string>('');
+
   // show loken list cards
   return (
     <div className="my-liquidity-page container py-6">
@@ -347,7 +350,9 @@ function ShareValuesPage({
               </div>
             </div>
             <div className="asset-list-card__search row m-4">
-              <div className="col">{'{ search goes here }'}</div>
+              <div className="col flex">
+                <SearchInput value={searchValue} onInput={setSearchValue} />
+              </div>
             </div>
             <div className="asset-list-card__table row flex mt-4 pb-4 px-4">
               <div className="col">{'{ table goes here }'}</div>
