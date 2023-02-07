@@ -1,12 +1,18 @@
-import { InputHTMLAttributes, RefObject } from 'react';
+import {
+  useCallback,
+  InputHTMLAttributes,
+  RefObject,
+  FormEvent,
+  ChangeEvent,
+} from 'react';
 
 import './SearchInput.scss';
 
 interface SearchInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onInput' | 'onChange'> {
   value: string | undefined;
-  onInput?: (value: string) => void;
-  onChange?: (value: string) => void;
+  onInput?: (value: string, event: FormEvent<HTMLInputElement>) => void;
+  onChange?: (value: string, event: ChangeEvent<HTMLInputElement>) => void;
   innerRef?: RefObject<HTMLInputElement>;
 }
 
@@ -21,8 +27,16 @@ export default function SearchInput({
     <div className="search-input">
       <input
         type="search"
-        onInput={(e) => onInput?.(e.currentTarget.value)}
-        onChange={(e) => onChange?.(e.currentTarget.value)}
+        onInput={useCallback(
+          (e: FormEvent<HTMLInputElement>) =>
+            onInput?.(e.currentTarget.value, e),
+          [onInput]
+        )}
+        onChange={useCallback(
+          (e: ChangeEvent<HTMLInputElement>) =>
+            onChange?.(e.currentTarget.value, e),
+          [onChange]
+        )}
         value={value}
         // add sane defaults
         autoComplete="off"
