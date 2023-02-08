@@ -22,7 +22,7 @@ import {
   useTokens,
 } from '../../components/TokenPicker/hooks';
 
-import { formatAmount, formatPrice } from '../../lib/utils/number';
+import { formatAmount } from '../../lib/utils/number';
 
 import './MyLiquidity.scss';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
@@ -490,9 +490,14 @@ function AssetRow({ token, amount, value }: TokenCoin) {
     <tr>
       <td>{token.address}</td>
       <td>{`${formatAmount(
-        getAmountInDenom(token, amount, token.address, token.display) || ''
+        getAmountInDenom(token, amount, token.address, token.display) || '',
+        {
+          useGrouping: true,
+        }
       )} ${token.display.toUpperCase()}`}</td>
-      <td>{`$${formatPrice(value?.toFixed() || '')}`}</td>
+      <td>{`$${formatAmount(value?.toFixed() || '', {
+        useGrouping: true,
+      })}`}</td>
     </tr>
   );
 }
