@@ -26,7 +26,7 @@ $min-body-height: 150px;
     color: var(--text-default);
   }
 
-  input {
+  .search-input input {
     // todo: put the input in the dialog body not the dialog header
     // this workaround is unnecessarily complex
     width: calc(
