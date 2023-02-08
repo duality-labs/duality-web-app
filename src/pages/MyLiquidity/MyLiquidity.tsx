@@ -63,6 +63,12 @@ export function getVirtualTickIndexes(
     : [];
 }
 
+type TokenCoin = Coin & {
+  token: Token;
+  price: number;
+  value: BigNumber | undefined;
+};
+
 export default function MyLiquidity() {
   const { wallet } = useWeb3();
   const { data: balances, isValidating } = useBankBalances();
@@ -259,20 +265,29 @@ function ShareValuesPage({
     new BigNumber(0)
   );
 
-  const allUserBankValue = (balances || []).reduce(
-    (result, { amount, denom }) => {
-      const tokenIndex = allUserTokensList.findIndex(matchTokenDenom(denom));
-      const token = allUserTokensList[tokenIndex] as Token | undefined;
-      if (!token) return result;
-      const tokenAmount =
-        getAmountInDenom(token, amount, denom, token.display) || '0';
-      const tokenPrice = allUserTokenPrices[tokenIndex];
-      const tokenValue = new BigNumber(tokenAmount).multipliedBy(
-        tokenPrice || 0
-      );
-      return result.plus(tokenValue);
-    },
-    new BigNumber(0)
+  const allUserBankAssets = useMemo<Array<TokenCoin>>(() => {
+    return (balances || [])
+      .map(({ amount, denom }) => {
+        const tokenIndex = allUserTokensList.findIndex(matchTokenDenom(denom));
+        const token = allUserTokensList[tokenIndex] as Token | undefined;
+        const price = allUserTokenPrices[tokenIndex];
+        const value =
+          token &&
+          new BigNumber(
+            getAmountInDenom(token, amount, denom, token.display) || 0
+          ).multipliedBy(price || 0);
+        return token ? { amount, denom, token, price, value } : null;
+      })
+      .filter((v): v is TokenCoin => !!v);
+  }, [balances, allUserTokensList, allUserTokenPrices]);
+
+  const allUserBankValue = useMemo(
+    () =>
+      (allUserBankAssets || []).reduce((result, { value }) => {
+        if (!value) return result;
+        return result.plus(value);
+      }, new BigNumber(0)),
+    [allUserBankAssets]
   );
 
   const [selectedAssetList, setSelectedAssetList] = useState<
