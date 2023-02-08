@@ -311,7 +311,11 @@ function ShareValuesPage({
       .trim();
     // return filtered assetList
     return assetList.filter(({ token }) => {
-      return token.address?.includes(simpleSearchValue);
+      return (
+        token.address?.includes(simpleSearchValue) ||
+        token.display.includes(simpleSearchValue) ||
+        token.name.includes(simpleSearchValue)
+      );
     });
   }, [selectedAssetList, allUserBankAssets, searchValue]);
 
