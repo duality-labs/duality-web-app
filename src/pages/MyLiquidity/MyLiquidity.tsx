@@ -11,7 +11,6 @@ import {
   useShares,
   TickInfo,
   hasInvertedOrder,
-  getPairID,
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { feeTypes } from '../../lib/web3/utils/fees';
@@ -22,6 +21,8 @@ import {
   useDualityTokens,
   useTokens,
 } from '../../components/TokenPicker/hooks';
+
+import { formatAmount, formatPrice } from '../../lib/utils/number';
 
 import './MyLiquidity.scss';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
@@ -296,6 +297,7 @@ function ShareValuesPage({
 
   const [searchValue, setSearchValue] = useState<string>('');
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const assetList = useMemo(() => {
     const assetList =
       selectedAssetList === 'my-assets'
@@ -405,18 +407,14 @@ function ShareValuesPage({
                 <table>
                   <thead></thead>
                   <tbody>
-                    {assetList.map(
-                      ({ pairID, token0, token1, shareValues }) => {
-                        return token0 && token1 ? (
-                          <PoolRow
-                            key={pairID}
-                            token0={token0}
-                            token1={token1}
-                            shareValues={shareValues}
-                          />
-                        ) : null;
-                      }
-                    )}
+                    {allUserBankAssets.map((tokenCoin) => {
+                      return tokenCoin.token ? (
+                        <AssetRow
+                          key={tokenCoin.token.address}
+                          {...tokenCoin}
+                        />
+                      ) : null;
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -496,18 +494,16 @@ function useUserReservesNominalValues(shareValues: Array<TickShareValue>) {
   return [new BigNumber(0), new BigNumber(0)];
 }
 
-function PoolRow({
-  token0,
-  token1,
-}: {
-  token0: Token;
-  token1: Token;
-  shareValues: Array<TickShareValue>;
-  setSelectedTokens?: React.Dispatch<
-    React.SetStateAction<[Token, Token] | undefined>
-  >;
-}) {
-  return <tr key={getPairID(token0.address || '', token1.address || '')}></tr>;
+function AssetRow({ token, amount, value }: TokenCoin) {
+  return (
+    <tr>
+      <td>{token.address}</td>
+      <td>{`${formatAmount(
+        getAmountInDenom(token, amount, token.address, token.display) || ''
+      )} ${token.display.toUpperCase()}`}</td>
+      <td>{`$${formatPrice(value?.toFixed() || '')}`}</td>
+    </tr>
+  );
 }
 
 function PositionCard({
