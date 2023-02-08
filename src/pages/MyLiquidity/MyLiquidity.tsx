@@ -11,6 +11,7 @@ import {
   useShares,
   TickInfo,
   hasInvertedOrder,
+  getPairID,
 } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { feeTypes } from '../../lib/web3/utils/fees';
@@ -280,6 +281,36 @@ function ShareValuesPage({
 
   const [searchValue, setSearchValue] = useState<string>('');
 
+  const assetList = useMemo(() => {
+    const assetList =
+      selectedAssetList === 'my-assets'
+        ? // create list from user's shares list
+          (shareValueMap &&
+            Object.entries(shareValueMap).map(([pairID, shareValues]) => {
+              return {
+                pairID,
+                token0: shareValues[0].token0,
+                token1: shareValues[0].token1,
+                shareValues,
+              };
+            })) ||
+          []
+        : // create asset list from all token pairs known to duality
+          [];
+    // simplify search text by removing probably unwanted characters
+    const simpleSearchValue = searchValue
+      .toLowerCase()
+      .replace(/\s+/, ' ')
+      .trim();
+    // return filtered assetList
+    return assetList.filter(({ token0, token1 }) => {
+      return (
+        token0.address?.includes(simpleSearchValue) ||
+        token1.address?.includes(simpleSearchValue)
+      );
+    });
+  }, [selectedAssetList, shareValueMap, searchValue]);
+
   // show loken list cards
   return (
     <div className="my-liquidity-page container py-6">
@@ -330,7 +361,7 @@ function ShareValuesPage({
           <div className="col flex">
             <div className="row flex-centered gap-3 m-4">
               <div className="col flex">
-                <h2 className="asset-list-card__hero-title">Tokens</h2>
+                <h2 className="asset-list-card__hero-title">Pools</h2>
               </div>
               <div className="col">
                 <div className="asset-list-card__asset-toggle">
@@ -355,7 +386,25 @@ function ShareValuesPage({
               </div>
             </div>
             <div className="asset-list-card__table row flex mt-4 pb-4 px-4">
-              <div className="col">{'{ table goes here }'}</div>
+              <div className="col">
+                <table>
+                  <thead></thead>
+                  <tbody>
+                    {assetList.map(
+                      ({ pairID, token0, token1, shareValues }) => {
+                        return token0 && token1 ? (
+                          <PoolRow
+                            key={pairID}
+                            token0={token0}
+                            token1={token1}
+                            shareValues={shareValues}
+                          />
+                        ) : null;
+                      }
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -430,6 +479,20 @@ function useUserReservesNominalValues(shareValues: Array<TickShareValue>) {
     return [value0, value1];
   }
   return [new BigNumber(0), new BigNumber(0)];
+}
+
+function PoolRow({
+  token0,
+  token1,
+}: {
+  token0: Token;
+  token1: Token;
+  shareValues: Array<TickShareValue>;
+  setSelectedTokens?: React.Dispatch<
+    React.SetStateAction<[Token, Token] | undefined>
+  >;
+}) {
+  return <tr key={getPairID(token0.address || '', token1.address || '')}></tr>;
 }
 
 function PositionCard({
