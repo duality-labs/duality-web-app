@@ -140,10 +140,13 @@
       th,
       td {
         text-align: left;
+        width: 20%;
+        min-width: 6em;
       }
       th + th,
       td + td {
         text-align: right;
+        width: 30%;
       }
     }
   }
