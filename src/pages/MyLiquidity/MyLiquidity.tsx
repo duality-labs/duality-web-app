@@ -404,14 +404,22 @@ function ShareValuesPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {assetList.map((tokenCoin) => {
-                      return tokenCoin.token ? (
-                        <AssetRow
-                          key={tokenCoin.token.address}
-                          {...tokenCoin}
-                        />
-                      ) : null;
-                    })}
+                    {assetList.length > 0 ? (
+                      assetList.map((tokenCoin) => {
+                        return tokenCoin.token ? (
+                          <AssetRow
+                            key={tokenCoin.token.address}
+                            {...tokenCoin}
+                          />
+                        ) : null;
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={3} align="center">
+                          No {!!searchValue ? 'Matching' : ''} Assets Found
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
