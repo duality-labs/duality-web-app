@@ -378,6 +378,60 @@ function ShareValuesPage({
   );
 }
 
+function getShareTokens(
+  shareValues: Array<ShareValue>
+): [token0: Token, token1: Token] {
+  return [shareValues[0]?.token0, shareValues[0]?.token1];
+}
+
+// todo: use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function useTotalReserves(shareValues: Array<TickShareValue>) {
+  return useMemo(
+    () =>
+      shareValues.reduce<[BigNumber, BigNumber]>(
+        ([total0, total1], shareValue) => {
+          return [
+            total0.plus(shareValue.tick0.reserve0 || 0),
+            total1.plus(shareValue.tick1.reserve1 || 0),
+          ];
+        },
+        [new BigNumber(0), new BigNumber(0)]
+      ),
+    [shareValues]
+  );
+}
+
+function useUserReserves(shareValues: Array<TickShareValue>) {
+  return useMemo(
+    () =>
+      shareValues.reduce<[BigNumber, BigNumber]>(
+        ([total0, total1], shareValue) => {
+          return [
+            total0.plus(shareValue.userReserves0 || 0),
+            total1.plus(shareValue.userReserves1 || 0),
+          ];
+        },
+        [new BigNumber(0), new BigNumber(0)]
+      ),
+    [shareValues]
+  );
+}
+
+function useUserReservesNominalValues(shareValues: Array<TickShareValue>) {
+  const tokens = getShareTokens(shareValues);
+  const {
+    data: [price0, price1],
+  } = useSimplePrice(tokens);
+  const [total0, total1] = useUserReserves(shareValues);
+  if (price0 && price1 && total0 && total1) {
+    const value0 = total0.multipliedBy(price0);
+    const value1 = total1.multipliedBy(price1);
+    return [value0, value1];
+  }
+  return [new BigNumber(0), new BigNumber(0)];
+}
+
 function PositionCard({
   token0,
   token1,
@@ -386,27 +440,14 @@ function PositionCard({
 }: {
   token0: Token;
   token1: Token;
-  shareValues: Array<ShareValue>;
+  shareValues: Array<TickShareValue>;
   setSelectedTokens: React.Dispatch<
     React.SetStateAction<[Token, Token] | undefined>
   >;
 }) {
-  const {
-    data: [price0, price1],
-  } = useSimplePrice([token0, token1]);
-  if (token0 && token1) {
-    const [total0, total1] = shareValues.reduce<[BigNumber, BigNumber]>(
-      ([total0, total1], shareValue) => {
-        return [
-          total0.plus(shareValue.userReserves0 || 0),
-          total1.plus(shareValue.userReserves1 || 0),
-        ];
-      },
-      [new BigNumber(0), new BigNumber(0)]
-    );
-    const value0 = price0 && total0.multipliedBy(price0);
-    const value1 = price1 && total1.multipliedBy(price1);
-
+  const [total0, total1] = useUserReserves(shareValues);
+  const [value0, value1] = useUserReservesNominalValues(shareValues);
+  if (total0 && total1) {
     return (
       <button
         className="position-card page-card"
