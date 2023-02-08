@@ -394,9 +394,15 @@ function ShareValuesPage({
               </div>
             </div>
             <div className="asset-list-card__table row flex mt-4 pb-4 px-4">
-              <div className="col">
+              <div className="col flex">
                 <table>
-                  <thead></thead>
+                  <thead>
+                    <tr>
+                      <th>Token + Chain</th>
+                      <th>Balance</th>
+                      <th>Nominal Value</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {assetList.map((tokenCoin) => {
                       return tokenCoin.token ? (
