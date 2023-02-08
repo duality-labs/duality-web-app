@@ -1,3 +1,4 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
 @use '../../styles/font/weight.scss' as font-weight;
 @use '../../styles/font/size.scss' as font-size;
 
@@ -137,11 +138,21 @@
     .asset-list-card__table {
       overflow-y: scroll;
       flex-basis: 0;
+      th {
+        border-bottom: 1px solid hsl(0, 0%, 75%);
+      }
       th,
       td {
         text-align: left;
         width: 20%;
-        min-width: 6em;
+        min-width: 7em;
+        padding: paddings.$p-3;
+        &:first-child {
+          padding-left: 0;
+        }
+        &:last-child {
+          padding-right: 0;
+        }
       }
       th + th,
       td + td {

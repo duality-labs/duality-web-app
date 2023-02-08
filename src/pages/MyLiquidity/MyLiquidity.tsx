@@ -395,7 +395,7 @@ function ShareValuesPage({
             </div>
             <div className="asset-list-card__table row flex mt-4 pb-4 px-4">
               <div className="col flex">
-                <table>
+                <table cellSpacing="0">
                   <thead>
                     <tr>
                       <th>Token + Chain</th>
