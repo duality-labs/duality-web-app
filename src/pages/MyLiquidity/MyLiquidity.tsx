@@ -297,21 +297,11 @@ function ShareValuesPage({
 
   const [searchValue, setSearchValue] = useState<string>('');
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const assetList = useMemo(() => {
     const assetList =
       selectedAssetList === 'my-assets'
         ? // create list from user's shares list
-          (shareValueMap &&
-            Object.entries(shareValueMap).map(([pairID, shareValues]) => {
-              return {
-                pairID,
-                token0: shareValues[0].token0,
-                token1: shareValues[0].token1,
-                shareValues,
-              };
-            })) ||
-          []
+          allUserBankAssets || []
         : // create asset list from all token pairs known to duality
           [];
     // simplify search text by removing probably unwanted characters
@@ -320,13 +310,10 @@ function ShareValuesPage({
       .replace(/\s+/, ' ')
       .trim();
     // return filtered assetList
-    return assetList.filter(({ token0, token1 }) => {
-      return (
-        token0.address?.includes(simpleSearchValue) ||
-        token1.address?.includes(simpleSearchValue)
-      );
+    return assetList.filter(({ token }) => {
+      return token.address?.includes(simpleSearchValue);
     });
-  }, [selectedAssetList, shareValueMap, searchValue]);
+  }, [selectedAssetList, allUserBankAssets, searchValue]);
 
   // show loken list cards
   return (
@@ -378,7 +365,7 @@ function ShareValuesPage({
           <div className="col flex">
             <div className="row flex-centered gap-3 m-4">
               <div className="col flex">
-                <h2 className="asset-list-card__hero-title">Pools</h2>
+                <h2 className="asset-list-card__hero-title">Assets</h2>
               </div>
               <div className="col">
                 <div className="asset-list-card__asset-toggle">
@@ -407,7 +394,7 @@ function ShareValuesPage({
                 <table>
                   <thead></thead>
                   <tbody>
-                    {allUserBankAssets.map((tokenCoin) => {
+                    {assetList.map((tokenCoin) => {
                       return tokenCoin.token ? (
                         <AssetRow
                           key={tokenCoin.token.address}
