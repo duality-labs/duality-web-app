@@ -24,7 +24,7 @@ export default function SearchInput({
   ...rest
 }: SearchInputProps) {
   return (
-    <div className="search-input">
+    <label className="search-input">
       <input
         type="search"
         onInput={useCallback(
@@ -44,6 +44,6 @@ export default function SearchInput({
         // pass inner reference
         ref={innerRef}
       />
-    </div>
+    </label>
   );
 }
