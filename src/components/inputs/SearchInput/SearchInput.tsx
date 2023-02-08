@@ -5,6 +5,8 @@ import {
   FormEvent,
   ChangeEvent,
 } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
 
 import './SearchInput.scss';
 
@@ -24,7 +26,8 @@ export default function SearchInput({
   ...rest
 }: SearchInputProps) {
   return (
-    <label className="search-input">
+    <label className="search-input row flex-centered gap-4 p-4">
+      <FontAwesomeIcon icon={faSearch} />
       <input
         type="search"
         onInput={useCallback(
