@@ -280,6 +280,17 @@ function transformData(ticks: Array<DexTick>): PairMap {
   );
 }
 
+function getNextPaginationKey(
+  _: number,
+  lastPage: { data: { pagination: V1Beta1PageResponse } }
+) {
+  return lastPage
+    ? // get next key or null (null will de-activate fetcher)
+      lastPage?.data?.pagination?.next_key ?? null
+    : // use undefined in a tuple to activate fetcher but with an `undefined` key
+      [undefined];
+}
+
 type QueryTokensAll = Awaited<ReturnType<Api<unknown>['queryTokensAll']>>;
 type QueryTokensAllList = QueryTokensAll['data']['Tokens'];
 type QueryTokensAllState = {
@@ -303,15 +314,8 @@ function useTokens({
     size,
     setSize,
   } = useSWRInfinite<QueryTokensAll>(
-    (
-      _: number,
-      lastPage: { data: { pagination: V1Beta1PageResponse } }
-    ): Parameters<Api<unknown>['queryTokensAll']>[0] | null => {
-      return {
-        'pagination.key': lastPage?.data?.pagination?.next_key ?? undefined,
-      };
-    },
-    async (paginationConfig: Parameters<Api<unknown>['queryTokensAll']>[0]) => {
+    getNextPaginationKey,
+    async (paginationKey: string) => {
       const client = queryClient({
         ...defaultQueryClientConfig,
         ...queryClientConfig,
@@ -319,7 +323,7 @@ function useTokens({
       const response: QueryTokensAll = await client.queryTokensAll({
         ...defaultFetchParams,
         ...queryConfig,
-        ...paginationConfig,
+        'pagination.key': paginationKey,
       });
       if (response.status === 200) {
         return response;
@@ -374,17 +378,8 @@ function useTokenPairs({
     size,
     setSize,
   } = useSWRInfinite<QueryTokenPairsAll>(
-    (
-      _: number,
-      lastPage: { data: { pagination: V1Beta1PageResponse } }
-    ): Parameters<Api<unknown>['queryTradingPairAll']>[0] | null => {
-      return {
-        'pagination.key': lastPage?.data?.pagination?.next_key ?? undefined,
-      };
-    },
-    async (
-      paginationConfig: Parameters<Api<unknown>['queryTradingPairAll']>[0]
-    ) => {
+    getNextPaginationKey,
+    async (paginationKey: string) => {
       const client = queryClient({
         ...defaultQueryClientConfig,
         ...queryClientConfig,
@@ -392,7 +387,7 @@ function useTokenPairs({
       const response: QueryTokenPairsAll = await client.queryTradingPairAll({
         ...defaultFetchParams,
         ...queryConfig,
-        ...paginationConfig,
+        'pagination.key': paginationKey,
       });
       if (response.status === 200) {
         return response;
