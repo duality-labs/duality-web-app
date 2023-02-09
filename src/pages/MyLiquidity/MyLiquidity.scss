@@ -188,20 +188,10 @@
   flex-direction: column;
   justify-content: space-between;
 
-  background: transparent
-    conic-gradient(
-      from 0deg at 100% 55%,
-      rgba(230, 230, 230, 0.2) 180deg,
-      rgba(64, 64, 64, 0.1) 254.45deg,
-      rgba(64, 64, 64, 0.9) 254.45deg,
-      rgba(110, 110, 110, 0.5) 284deg,
-      rgba(240, 240, 240, 0.25) 360deg
-    );
+  background: hsla(202, 28%, 87%, 0.2);
   border-radius: 1rem;
 
   font-size: 1rem;
-  text-shadow: 0 0.125em 0.25em rgba(0, 0, 0, 0.5);
-  box-shadow: 4px 4px 8px #000;
   // allow all shadows in the credit card to overflow
   &,
   .row,
