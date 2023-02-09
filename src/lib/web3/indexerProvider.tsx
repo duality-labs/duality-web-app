@@ -18,6 +18,7 @@ import { Api as BankApi } from './generated/ts-client/cosmos.bank.v1beta1/rest';
 import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/module';
 import {
   DexTick,
+  DexTokens,
   Api,
 } from './generated/ts-client/nicholasdotsol.duality.dex/rest';
 import {
@@ -28,6 +29,7 @@ import { feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
 import { calculateShares } from './utils/ticks';
 import { IndexedShare } from './utils/shares';
+import { TradingPair } from './generated/ts-client/nicholasdotsol.duality.dex';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -94,6 +96,16 @@ interface IndexerContextType {
     error?: string;
     isValidating: boolean;
   };
+  tokens: {
+    data?: DexTokens[];
+    error?: string;
+    isValidating: boolean;
+  };
+  tokenPairs: {
+    data?: TradingPair;
+    error?: string;
+    isValidating: boolean;
+  };
 }
 
 interface FetchState {
@@ -110,6 +122,12 @@ const IndexerContext = createContext<IndexerContextType>({
     isValidating: true,
   },
   indexer: {
+    isValidating: true,
+  },
+  tokens: {
+    isValidating: true,
+  },
+  tokenPairs: {
     isValidating: true,
   },
 });
@@ -256,10 +274,23 @@ function transformData(ticks: Array<DexTick>): PairMap {
   );
 }
 
+function useTokens(): DexTokens | undefined {
+  const [data] = useState<DexTokens>();
+  return data;
+}
+
+function useTokenPairs(): TradingPair | undefined {
+  const [data] = useState<TradingPair>();
+  return data;
+}
+
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [indexerData, setIndexerData] = useState<PairMap>();
   const [bankData, setBankData] = useState<UserBankBalance>();
   const [shareData, setShareData] = useState<UserShares>();
+  const tokensData = useTokens();
+  const tokenPairsData = useTokenPairs();
+
   const [error, setError] = useState<string>();
   // avoid sending more than once
   const [, setRequestedFlag] = useState(false);
@@ -276,6 +307,16 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     },
     indexer: {
       data: indexerData,
+      error: error,
+      isValidating: true,
+    },
+    tokens: {
+      data: tokensData,
+      error: error,
+      isValidating: true,
+    },
+    tokenPairs: {
+      data: tokenPairsData,
       error: error,
       isValidating: true,
     },
@@ -577,6 +618,16 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       },
       shares: {
         data: shareData,
+        error: error,
+        isValidating: !shareData && !error,
+      },
+      tokens: {
+        data: undefined,
+        error: error,
+        isValidating: !shareData && !error,
+      },
+      tokenPairs: {
+        data: undefined,
         error: error,
         isValidating: !shareData && !error,
       },
