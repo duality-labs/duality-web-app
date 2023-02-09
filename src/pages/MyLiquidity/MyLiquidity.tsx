@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { MouseEventHandler, useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
@@ -28,6 +28,7 @@ import './MyLiquidity.scss';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { calculateShares } from '../../lib/web3/utils/ticks';
 import { IndexedShare } from '../../lib/web3/utils/shares';
+import { EditedTickShareValue, useEditLiquidity } from './useEditLiquidity';
 
 interface ShareValue {
   share: IndexedShare;
@@ -319,6 +320,28 @@ function ShareValuesPage({
     });
   }, [selectedAssetList, allUserBankAssets, searchValue]);
 
+  const [{ isValidating }, sendEditRequest] = useEditLiquidity();
+  const withdrawPair = useCallback(
+    async (shareValues: Array<TickShareValue>) => {
+      if (!isValidating) {
+        // get relevant tick diffs
+        const sharesDiff: Array<EditedTickShareValue> = shareValues.flatMap(
+          (share: TickShareValue) => {
+            return {
+              ...share,
+              // remove user's reserves if found
+              tickDiff0: share.userReserves0?.negated() ?? new BigNumber(0),
+              tickDiff1: share.userReserves1?.negated() ?? new BigNumber(0),
+            };
+          }
+        );
+
+        await sendEditRequest(sharesDiff);
+      }
+    },
+    [isValidating, sendEditRequest]
+  );
+
   // show loken list cards
   return (
     <div className="my-liquidity-page container py-6">
@@ -436,7 +459,7 @@ function ShareValuesPage({
                 token0={shareValues[0].token0}
                 token1={shareValues[0].token1}
                 shareValues={shareValues}
-                setSelectedTokens={setSelectedTokens}
+                onClick={withdrawPair}
               />
             );
           })}
@@ -520,25 +543,21 @@ function PositionCard({
   token0,
   token1,
   shareValues,
-  setSelectedTokens,
+  onClick: givenOnClick,
 }: {
   token0: Token;
   token1: Token;
   shareValues: Array<TickShareValue>;
-  setSelectedTokens: React.Dispatch<
-    React.SetStateAction<[Token, Token] | undefined>
-  >;
+  onClick?: (shareValues: Array<TickShareValue>) => void;
 }) {
   const [total0, total1] = useUserReserves(shareValues);
   const [value0, value1] = useUserReservesNominalValues(shareValues);
+  const onClick = useCallback<MouseEventHandler<HTMLButtonElement>>(() => {
+    return givenOnClick?.(shareValues);
+  }, [givenOnClick, shareValues]);
   if (total0 && total1) {
     return (
-      <button
-        className="position-card page-card"
-        onClick={() => {
-          setSelectedTokens([token0, token1]);
-        }}
-      >
+      <button className="position-card page-card" onClick={onClick}>
         <div className="heading col">
           <div className="row">
             <div className="token-symbols col">
