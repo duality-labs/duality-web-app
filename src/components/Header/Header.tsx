@@ -14,9 +14,8 @@ const keplrLogoURI =
   'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
 
 const pageLinkMap = {
-  '/': 'Trade',
-  '/add-liquidity': 'Add Liquidity',
-  '/my-liquidity': 'My Liquidity',
+  '/trade': 'Trade',
+  '/liquidity': 'Liquidity',
   '/stake': 'Stake',
 };
 

@@ -1,7 +1,9 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
 @use '../../styles/font/weight.scss' as font-weight;
+@use '../../styles/font/size.scss' as font-size;
 
 .no-liquidity .add-liquidity {
-  font-size: 1.5rem;
+  font-size: font-size.$h3;
   font-weight: font-weight.$medium;
 }
 
@@ -9,8 +11,7 @@
   align-items: center;
 }
 
-.my-liquidity-page,
-.my-liquidity-detail-page {
+.my-liquidity-page {
   & {
     display: flex;
     flex-direction: column;
@@ -25,20 +26,20 @@
     width: 100%;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 3rem;
-    flex: 1;
+    justify-content: space-between;
+    gap: 5rem;
     flex-flow: wrap;
   }
 
   .position-cards {
-    flex: 3;
     align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 25vh; // make 4:3 look reasonable
   }
 
   .position-card {
     min-height: 15rem;
-    width: 24rem;
+    width: 25rem;
     padding: 2rem 2rem;
   }
 
@@ -114,158 +115,73 @@
       color: #8fcef0;
     }
   }
-}
 
-.my-liquidity-detail-page {
-  & {
-    flex: 1;
-    width: 100%;
+  .home-hero-section {
+    align-items: stretch;
+    justify-content: stretch;
+    > div {
+      flex: 1 1 0;
+    }
+  }
+
+  .asset-list-card {
     display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-  }
+    background-color: hsla(212, 28%, 17%, 1);
+    border-radius: 1rem;
+    min-height: 18em;
 
-  .banner {
-    & {
-      width: 100%;
+    .asset-list-card__hero-title {
+      font-size: font-size.$h4;
     }
-
-    &::before,
-    &::after {
-      display: block;
-      content: ' ';
-      height: 8px;
-      width: 100%;
-      background: linear-gradient(
-        90deg,
-        #4eb1e8 0%,
-        rgba(78, 177, 232, 0) 100%
-      );
+    .asset-list-card__asset-toggle {
+      font-size: font-size.$button;
     }
-    &::after {
-      background: linear-gradient(
-        90deg,
-        rgba(78, 177, 232, 0) 0%,
-        #4eb1e8 100%
-      );
-    }
-  }
-
-  .heading {
-    & {
-      margin: 0;
-      width: auto;
-    }
-    // add faded background so token icons may fade behind rest of heading if there is not enough width
-    .token-symbols {
-      background-color: rgba(0, 0, 0, 0.6);
-    }
-    .token-icons {
-      & {
-        position: relative;
+    .asset-list-card__table {
+      overflow-y: scroll;
+      flex-basis: 0;
+      th {
+        border-bottom: 1px solid hsl(0, 0%, 75%);
       }
-      &::before,
-      &::after {
-        content: ' ';
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-      }
-      // one gradient below the icons
-      &::before {
-        // opacity is multiplicative each stop needs to be equal to 0.6 opacity
-        // (1-0.6)*(1-0) = 0.4
-        // (1-0.5)*(1-0.2) = 0.4
-        // (1-0.3675)*(1-0.3675) ≈ 0.4 as 0.3675 ≈ 1-√(1-0.6)
-        background: linear-gradient(
-          90deg,
-          rgba(0, 0, 0, 0) 0px,
-          rgba(0, 0, 0, 0.2) 30px,
-          rgba(0, 0, 0, 0.3675) 60px,
-          rgba(0, 0, 0, 0.5) 120px,
-          rgba(0, 0, 0, 0.6) 240px,
-          rgba(0, 0, 0, 0.6) 100%
-        );
-      }
-      // one gradient above the icons
-      &::after {
-        background: linear-gradient(
-          90deg,
-          rgba(0, 0, 0, 0.6) 0px,
-          rgba(0, 0, 0, 0.5) 30px,
-          rgba(0, 0, 0, 0.3675) 60px,
-          rgba(0, 0, 0, 0.2) 120px,
-          rgba(0, 0, 0, 0) 240px,
-          rgba(0, 0, 0, 0) 100%
-        );
-      }
-    }
-    .token-symbols {
-      z-index: 2;
-      padding-left: 10%;
-    }
-    .token-icons {
-      flex: 1 0 0.01px; // allow token column to take no room but display absolutely positioned overflowing icons
-
-      // make row fill token-icons column space, but not take any space itself
-      position: relative;
-      > .row {
-        position: absolute;
-        width: max-content;
-        right: 20%;
-        top: 0;
-        bottom: 0;
-        align-items: center;
-        justify-content: flex-end;
-        img {
-          position: static;
-          margin: 0;
-          margin-left: -2rem; // add icon overlap
-          height: 120%;
-          width: auto;
+      th,
+      td {
+        text-align: left;
+        width: 40%;
+        min-width: 7em;
+        padding: paddings.$p-2;
+        &:first-child {
+          padding-left: 0;
+        }
+        &:last-child {
+          padding-right: 0;
         }
       }
-    }
-    .token-symbols {
-      font-size: 1rem;
-      h1 {
-        font-size: 3rem;
+      tr:first-child td {
+        padding-top: paddings.$p-3;
       }
-    }
-    .token-symbols {
-      max-width: 700px;
-    }
-  }
+      th + th,
+      td + td {
+        text-align: right;
+        width: 30%;
+      }
 
-  form {
-    & {
-      flex-direction: row;
-      align-items: flex-start;
-    }
-    > .col {
-      gap: 2rem;
-    }
-  }
-
-  .pool-page {
-    max-width: none;
-    .col {
-      flex: 1;
-    }
-    .col + .col {
-      flex: none;
-    }
-    .orderbook-card > .row > .col {
-      min-width: 12rem;
+      .token-and-chain {
+        .token-logo {
+          height: 2em;
+          width: 2em;
+          object-fit: contain;
+        }
+        .token-chain {
+          font-size: 0.85em;
+          color: hsl(0, 0%, 75%);
+        }
+      }
     }
   }
 }
 
 .credit-card {
   min-height: 384px;
+  min-width: 240px;
   aspect-ratio: 1.58588;
 
   display: flex;
@@ -296,6 +212,11 @@
   .credit-card__top-line {
     font-size: 1rem;
     font-weight: font-weight.$bold;
+    .credit-card__name {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
   .credit-card__hero-title {
     margin-top: 1rem;

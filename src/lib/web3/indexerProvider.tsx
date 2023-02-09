@@ -18,12 +18,18 @@ import { Api as BankApi } from './generated/ts-client/cosmos.bank.v1beta1/rest';
 import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/module';
 import {
   DexTick,
+  DexTokens,
+  DexTradingPair,
   Api,
 } from './generated/ts-client/nicholasdotsol.duality.dex/rest';
+import useTokens from './hooks/useTokens';
+import useTokenPairs from './hooks/useTokenPairs';
+
 import {
   addressableTokenMap as tokenMap,
   Token,
 } from '../../components/TokenPicker/hooks';
+
 import { feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
 import { calculateShares } from './utils/ticks';
@@ -94,6 +100,16 @@ interface IndexerContextType {
     error?: string;
     isValidating: boolean;
   };
+  tokens: {
+    data?: DexTokens[];
+    error?: string;
+    isValidating: boolean;
+  };
+  tokenPairs: {
+    data?: DexTradingPair[];
+    error?: string;
+    isValidating: boolean;
+  };
 }
 
 interface FetchState {
@@ -112,10 +128,17 @@ const IndexerContext = createContext<IndexerContextType>({
   indexer: {
     isValidating: true,
   },
+  tokens: {
+    isValidating: true,
+  },
+  tokenPairs: {
+    isValidating: true,
+  },
 });
 
 const defaultFetchParams = {
   'pagination.limit': '1000',
+  'pagination.count_total': true,
 };
 
 function getFullData(): Promise<PairMap> {
@@ -258,8 +281,18 @@ function transformData(ticks: Array<DexTick>): PairMap {
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [indexerData, setIndexerData] = useState<PairMap>();
+  const seconds = 1000;
+  const minutes = 60 * seconds;
+
   const [bankData, setBankData] = useState<UserBankBalance>();
   const [shareData, setShareData] = useState<UserShares>();
+  const { data: tokensData } = useTokens({
+    swr: { refreshInterval: 10 * minutes },
+  });
+  const { data: tokenPairsData } = useTokenPairs({
+    swr: { refreshInterval: 10 * minutes },
+  });
+
   const [error, setError] = useState<string>();
   // avoid sending more than once
   const [, setRequestedFlag] = useState(false);
@@ -276,6 +309,16 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     },
     indexer: {
       data: indexerData,
+      error: error,
+      isValidating: true,
+    },
+    tokens: {
+      data: tokensData,
+      error: error,
+      isValidating: true,
+    },
+    tokenPairs: {
+      data: tokenPairsData,
       error: error,
       isValidating: true,
     },
@@ -580,6 +623,16 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         error: error,
         isValidating: !shareData && !error,
       },
+      tokens: {
+        data: undefined,
+        error: error,
+        isValidating: !shareData && !error,
+      },
+      tokenPairs: {
+        data: undefined,
+        error: error,
+        isValidating: !shareData && !error,
+      },
     });
   }, [bankData, indexerData, shareData, error]);
 
@@ -685,4 +738,12 @@ export function getBalance(
       )) ||
     '0'
   );
+}
+
+export function useTokensList() {
+  return useContext(IndexerContext).tokens;
+}
+
+export function useTokenPairsList() {
+  return useContext(IndexerContext).tokenPairs;
 }

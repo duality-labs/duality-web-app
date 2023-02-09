@@ -54,9 +54,9 @@ $dialog-bg: core.$black;
 $dialog-backdrop: rgba(core.$dark-black, 50%);
 $selected-token: core.$dark-black;
 
-$token-search-bg: transparent;
-$token-search-text: core.$dark-gray;
-$token-search-border: core.$light-black;
+$token-search-bg: hsl(217, 19%, 27%);
+$token-search-text: hsl(218, 11%, 65%);
+$token-search-border: hsl(215, 14%, 34%);
 
 $input: rgb(255, 255, 255);
 $ghost: rgba(255, 255, 255, 0.5);
