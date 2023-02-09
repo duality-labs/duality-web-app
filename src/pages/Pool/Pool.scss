@@ -72,6 +72,9 @@
       min-width: 384px; // influenced by default selected tokens rendered text
       max-width: 800px;
     }
+    a {
+      text-decoration: underline;
+    }
     .token-input-group {
       box-sizing: border-box;
       width: 100%;
@@ -93,8 +96,8 @@
       align-items: center;
     }
     .plus-space .fa-plus {
-      color: rgb(78, 177, 232);
-      color: linear-gradient(135deg, rgb(78, 177, 232) 0%, #ffffff 100%);
+      color: white;
+      font-size: 1.25rem;
     }
   }
 

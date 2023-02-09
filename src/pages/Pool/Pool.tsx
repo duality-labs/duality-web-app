@@ -669,7 +669,7 @@ export default function Pool() {
         onSubmit={onSubmit}
       >
         <div className="assets-card page-card">
-          <h3 className="card-title mb-3">Add Liquidity</h3>
+          <h3 className="card-title mb-4">Add Liquidity</h3>
           <div className="mb-4">
             <p>
               Add liquidity in any ratio to earn fees on
@@ -688,8 +688,8 @@ export default function Pool() {
               exclusion={tokenB}
             />
           </div>
-          <div className="plus-space mx-auto my-2">
-            <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>
+          <div className="plus-space mx-auto my-4">
+            <FontAwesomeIcon icon={faPlus}></FontAwesomeIcon>
           </div>
           <div className="card-row">
             <TokenInputGroup
