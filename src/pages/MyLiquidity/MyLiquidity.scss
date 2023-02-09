@@ -163,6 +163,18 @@
         text-align: right;
         width: 30%;
       }
+
+      .token-and-chain {
+        .token-logo {
+          height: 2em;
+          width: 2em;
+          object-fit: contain;
+        }
+        .token-chain {
+          font-size: 0.85em;
+          color: hsl(0, 0%, 75%);
+        }
+      }
     }
   }
 }

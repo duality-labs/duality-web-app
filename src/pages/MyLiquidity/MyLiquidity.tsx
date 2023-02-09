@@ -536,7 +536,27 @@ function useUserReservesNominalValues(shareValues: Array<TickShareValue>) {
 function AssetRow({ token, amount, value }: TokenCoin) {
   return (
     <tr>
-      <td>{token.display.toUpperCase()}</td>
+      <td>
+        <div className="row gap-3 token-and-chain">
+          <div className="col">
+            <img
+              className="token-logo"
+              src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
+              alt={`${token.symbol} logo`}
+            />
+          </div>
+          <div className="col">
+            <div className="row">
+              <div className="col token-denom">
+                {token.display.toUpperCase()}
+              </div>
+            </div>
+            <div className="row">
+              <div className="col token-chain">{token.chain.chain_name}</div>
+            </div>
+          </div>
+        </div>
+      </td>
       <td>{`${formatAmount(
         getAmountInDenom(token, amount, token.address, token.display) || '',
         {
