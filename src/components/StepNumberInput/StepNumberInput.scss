@@ -10,7 +10,7 @@ $border-width: 2px;
   & {
     padding: paddings.$p-4 paddings.$p-5;
     border-radius: paddings.$p-4;
-    border: $border-width solid var(--card-border);
+    background: hsla(202, 57%, 33%, 1);
     flex-direction: column;
     overflow: hidden;
     display: flex;
