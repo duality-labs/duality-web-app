@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.92](https://github.com/duality-labs/duality-web-app/compare/v0.1.91...v0.1.92) (2023-02-09)
+
+
+### Features
+
+* replace My Liquidity pro UI with basic UI actions on home page ([#309](https://github.com/duality-labs/duality-web-app/issues/309)) ([d1c85ab](https://github.com/duality-labs/duality-web-app/commit/d1c85abb953947457d2e4213230bd27370024189))
+
 ## [0.1.91](https://github.com/duality-labs/duality-web-app/compare/v0.1.90...v0.1.91) (2023-02-02)
 
 
