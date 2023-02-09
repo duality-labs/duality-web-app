@@ -23,6 +23,7 @@ import {
   DexTokens,
   Api,
   V1Beta1PageResponse,
+  DexTradingPair,
 } from './generated/ts-client/nicholasdotsol.duality.dex/rest';
 import {
   addressableTokenMap as tokenMap,
@@ -32,7 +33,6 @@ import { feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
 import { calculateShares } from './utils/ticks';
 import { IndexedShare } from './utils/shares';
-import { TradingPair } from './generated/ts-client/nicholasdotsol.duality.dex';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -105,7 +105,7 @@ interface IndexerContextType {
     isValidating: boolean;
   };
   tokenPairs: {
-    data?: TradingPair;
+    data?: DexTradingPair[];
     error?: string;
     isValidating: boolean;
   };
@@ -353,9 +353,68 @@ function useTokens({
   return { data: tokens, isValidating, error };
 }
 
-function useTokenPairs(): TradingPair | undefined {
-  const [data] = useState<TradingPair>();
-  return data;
+type QueryTokenPairsAll = Awaited<
+  ReturnType<Api<unknown>['queryTradingPairAll']>
+>;
+type QueryTokenPairsAllList = QueryTokenPairsAll['data']['TradingPair'];
+type QueryTokenPairsAllState = {
+  data: QueryTokenPairsAllList;
+  isValidating: SWRResponse['isValidating'];
+  error: SWRResponse['error'];
+};
+function useTokenPairs({
+  swr: swrConfig,
+  query: queryConfig,
+  queryClient: queryClientConfig,
+}: {
+  swr?: SWRConfiguration;
+  query?: Parameters<Api<unknown>['queryTradingPairAll']>[0];
+  queryClient?: Parameters<typeof queryClient>[0];
+} = {}): QueryTokenPairsAllState {
+  const {
+    data: pages,
+    isValidating,
+    error,
+    size,
+    setSize,
+  } = useSWRInfinite<QueryTokenPairsAll>(
+    getNextPaginationKey,
+    async (paginationKey: string) => {
+      const client = queryClient({
+        ...defaultQueryClientConfig,
+        ...queryClientConfig,
+      });
+      const response: QueryTokenPairsAll = await client.queryTradingPairAll({
+        ...defaultFetchParams,
+        ...queryConfig,
+        'pagination.key': paginationKey,
+      });
+      if (response.status === 200) {
+        return response;
+      } else {
+        // remove API error details from public view
+        throw new Error(
+          `API error code: ${response.status} ${response.statusText}`
+        );
+      }
+      // default to persisting the current size so the list is only resized by 'setSize'
+    },
+    { persistSize: true, ...swrConfig }
+  );
+  // set number of pages to latest total
+  const pageItemCount = Number(pages?.[0]?.data.TradingPair?.length);
+  const totalItemCount = Number(pages?.[0]?.data.pagination?.total);
+  if (pageItemCount > 0 && totalItemCount > pageItemCount) {
+    const pageCount = Math.ceil(totalItemCount / pageItemCount);
+    if (size !== pageCount) {
+      setSize(pageCount);
+    }
+  }
+  // place pages of data into the same list
+  const tokens = pages?.reduce<DexTradingPair[]>((acc, page) => {
+    return acc.concat(page.data.TradingPair || []);
+  }, []);
+  return { data: tokens, isValidating, error };
 }
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
@@ -368,7 +427,9 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const { data: tokensData } = useTokens({
     swr: { refreshInterval: 10 * minutes },
   });
-  const tokenPairsData = useTokenPairs();
+  const { data: tokenPairsData } = useTokenPairs({
+    swr: { refreshInterval: 10 * minutes },
+  });
 
   const [error, setError] = useState<string>();
   // avoid sending more than once
