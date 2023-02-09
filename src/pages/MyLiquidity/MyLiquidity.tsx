@@ -19,6 +19,7 @@ import { useSimplePrice } from '../../lib/tokenPrices';
 import {
   Token,
   useDualityTokens,
+  useFilteredTokenList,
   useTokens,
 } from '../../components/TokenPicker/hooks';
 
@@ -297,27 +298,22 @@ function ShareValuesPage({
 
   const [searchValue, setSearchValue] = useState<string>('');
 
-  const assetList = useMemo(() => {
-    const assetList =
-      selectedAssetList === 'my-assets'
-        ? // create list from user's shares list
-          allUserBankAssets || []
-        : // create asset list from all token pairs known to duality
-          [];
-    // simplify search text by removing probably unwanted characters
-    const simpleSearchValue = searchValue
-      .toLowerCase()
-      .replace(/\s+/, ' ')
-      .trim();
-    // return filtered assetList
-    return assetList.filter(({ token }) => {
-      return (
-        token.address?.includes(simpleSearchValue) ||
-        token.display.includes(simpleSearchValue) ||
-        token.name.includes(simpleSearchValue)
-      );
-    });
-  }, [selectedAssetList, allUserBankAssets, searchValue]);
+  const tokenList = useTokens();
+  const userList = useMemo(() => {
+    return balances
+      ? tokenList.filter((token) =>
+          balances.find((balance) =>
+            token.denom_units.find((token) => token.denom === balance.denom)
+          )
+        )
+      : [];
+  }, [tokenList, balances]);
+
+  // update the filtered list whenever the query or the list changes
+  const filteredList = useFilteredTokenList(
+    selectedAssetList === 'my-assets' ? userList : tokenList,
+    searchValue
+  );
 
   const [{ isValidating }, sendEditRequest] = useEditLiquidity();
   const withdrawPair = useCallback(
@@ -426,14 +422,30 @@ function ShareValuesPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {assetList.length > 0 ? (
-                      assetList.map((tokenCoin) => {
-                        return tokenCoin.token ? (
+                    {filteredList.length > 0 ? (
+                      filteredList.map(({ chain, symbol, token }) => {
+                        const foundUserAsset = allUserBankAssets.find(
+                          (userToken) => {
+                            return userToken.token === token;
+                          }
+                        );
+                        return foundUserAsset ? (
                           <AssetRow
-                            key={tokenCoin.token.address}
-                            {...tokenCoin}
+                            key={`${token.base}-${token.chain.chain_name}`}
+                            {...foundUserAsset}
+                            token={token}
+                            amount={foundUserAsset.amount}
+                            value={foundUserAsset.value}
                           />
-                        ) : null;
+                        ) : (
+                          <AssetRow
+                            key={`${token.base}-${token.chain.chain_name}`}
+                            token={token}
+                            denom={''}
+                            amount="0"
+                            value={new BigNumber(0)}
+                          />
+                        );
                       })
                     ) : (
                       <tr>
