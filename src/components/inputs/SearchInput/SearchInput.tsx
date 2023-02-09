@@ -26,8 +26,7 @@ export default function SearchInput({
   ...rest
 }: SearchInputProps) {
   return (
-    <div className="search-input row flex-centered gap-4 p-4">
-      <FontAwesomeIcon icon={faSearch} />
+    <div className="search-input">
       <input
         type="search"
         onInput={useCallback(
@@ -47,6 +46,7 @@ export default function SearchInput({
         // pass inner reference
         ref={innerRef}
       />
+      <FontAwesomeIcon icon={faSearch} />
     </div>
   );
 }
