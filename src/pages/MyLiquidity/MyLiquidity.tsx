@@ -538,7 +538,7 @@ function AssetRow({ token, amount, value }: TokenCoin) {
     <tr>
       <td>
         <div className="row gap-3 token-and-chain">
-          <div className="col">
+          <div className="col flex-centered">
             <img
               className="token-logo"
               src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
@@ -552,7 +552,11 @@ function AssetRow({ token, amount, value }: TokenCoin) {
               </div>
             </div>
             <div className="row">
-              <div className="col token-chain">{token.chain.chain_name}</div>
+              <div className="col token-chain">
+                {token.chain.chain_name
+                  .split('')
+                  .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
+              </div>
             </div>
           </div>
         </div>
