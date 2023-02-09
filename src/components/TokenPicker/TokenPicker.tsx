@@ -9,10 +9,9 @@ import {
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
-import { Chain } from '@chain-registry/types';
 import BigNumber from 'bignumber.js';
 
-import { Token, useDualityTokens } from './hooks';
+import { Token, useDualityTokens, useFilteredTokenList } from './hooks';
 import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 import { useSimplePrices } from '../../lib/tokenPrices';
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
@@ -85,7 +84,6 @@ export default function TokenPicker({
   tokenList,
   disabled = false,
 }: TokenPickerProps) {
-  const [filteredList, setFilteredList] = useState<Array<TokenResult>>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -128,6 +126,28 @@ export default function TokenPicker({
     [close, onChange]
   );
 
+  const dualityTokensList = useDualityTokens();
+
+  // update the filtered list whenever the query or the list changes
+  const filteredList = useFilteredTokenList(
+    (() => {
+      switch (assetMode) {
+        case 'Duality':
+          return dualityTokensList;
+        case 'User':
+          return userList;
+        default:
+          return tokenList;
+      }
+    })(),
+    searchQuery
+  );
+
+  // udate the selected index each time the list changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [filteredList]);
+
   const onKeyDown = useCallback(
     function (event: React.KeyboardEvent) {
       setSelectedIndex(function (newIndex) {
@@ -159,83 +179,6 @@ export default function TokenPicker({
       });
     },
     [filteredList, close, exclusion?.address, selectToken]
-  );
-
-  const dualityTokensList = useDualityTokens();
-
-  // update the filtered list whenever the query or the list changes
-  useEffect(
-    function () {
-      const list = (() => {
-        switch (assetMode) {
-          case 'Duality':
-            return dualityTokensList;
-          case 'User':
-            return userList;
-          default:
-            return tokenList;
-        }
-      })();
-      const chainsByPrettyName = list.reduce((result, token) => {
-        const name = token.chain.pretty_name;
-        // use set to ensure unique chains
-        const chains = result.get(name) || new Set<Chain>();
-        if (!chains.has(token.chain)) {
-          return result.set(token.chain.pretty_name, chains.add(token.chain));
-        }
-        return result;
-      }, new Map<string, Set<Chain>>());
-
-      function getChainName(token: Token) {
-        const chains = chainsByPrettyName.get(token.chain.pretty_name);
-        return (chains?.size || 0) > 1
-          ? `${token.chain.pretty_name} (${token.chain.chain_name})`
-          : token.chain.pretty_name;
-      }
-
-      // if the query is empty return the full list
-      if (!searchQuery) {
-        return setFilteredList(
-          list.map((token) => ({
-            chain: [getChainName(token)],
-            symbol: [token.symbol],
-            token,
-          }))
-        );
-      }
-
-      // remove invalid characters + remove space limitations (but still match any found)
-      const queryRegexText = searchQuery
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, ' ') //condense spaces
-        .replace(/^["']*(.*)["']*$/, '$1') // remove enclosing quotes
-        .replace(/[^a-z0-9 ]/gi, (char) => `\\${char}`); // whitelist ok chars
-      const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
-
-      setFilteredList(
-        list
-          .filter((token) =>
-            [
-              token.symbol,
-              token.name,
-              token.address,
-              token.chain.pretty_name,
-              token.chain.chain_name,
-            ].some((txt) => txt && regexQuery.test(txt))
-          )
-          .map(function (token) {
-            // Split the symbol and name using the query (and include the query in the list)
-            const symbolResult = token.symbol?.split(regexQuery) || [''];
-            const chainName = getChainName(token);
-            const nameResult = chainName?.split(regexQuery) || [''];
-            return { chain: nameResult, symbol: symbolResult, token };
-          })
-      );
-
-      setSelectedIndex(0);
-    },
-    [tokenList, userList, dualityTokensList, assetMode, searchQuery]
   );
 
   const { data: userListPrices } = useSimplePrices(userList);

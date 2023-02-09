@@ -739,3 +739,11 @@ export function getBalance(
     '0'
   );
 }
+
+export function useTokensList() {
+  return useContext(IndexerContext).tokens;
+}
+
+export function useTokenPairsList() {
+  return useContext(IndexerContext).tokenPairs;
+}
