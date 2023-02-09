@@ -57,7 +57,7 @@ button[type='submit'],
 .submit-button {
   @include paddings.padding('y', 3);
   @include paddings.padding('x', 4);
-  font-size: font-size.$button-large;
+  font-size: 1.25rem;
   border-radius: 0.6rem;
   border: 0px none transparent;
   cursor: pointer;
