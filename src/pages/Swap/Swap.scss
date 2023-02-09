@@ -88,10 +88,10 @@
       gap: margins.$m-2;
 
       input {
-        color: core.$dark-gray;
-        background-color: core.$black;
+        color: hsla(218, 11%, 65%, 1);
+        background-color: var(--token-search-bg);
+        border: 1px solid hsla(215, 14%, 34%, 1);
         padding: paddings.$p-2 paddings.$p-4;
-        border: none;
         border-radius: paddings.$p-3;
         width: 6ch;
         box-sizing: content-box;
