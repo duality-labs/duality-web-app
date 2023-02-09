@@ -8,8 +8,6 @@ import {
 } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
-import { SWRConfiguration, SWRResponse } from 'swr';
-import useSWRInfinite from 'swr/infinite';
 
 import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
@@ -21,14 +19,17 @@ import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/mo
 import {
   DexTick,
   DexTokens,
-  Api,
-  V1Beta1PageResponse,
   DexTradingPair,
+  Api,
 } from './generated/ts-client/nicholasdotsol.duality.dex/rest';
+import useTokens from './hooks/useTokens';
+import useTokenPairs from './hooks/useTokenPairs';
+
 import {
   addressableTokenMap as tokenMap,
   Token,
 } from '../../components/TokenPicker/hooks';
+
 import { feeTypes } from './utils/fees';
 import { getAmountInDenom } from './utils/tokens';
 import { calculateShares } from './utils/ticks';
@@ -139,8 +140,6 @@ const defaultFetchParams = {
   'pagination.limit': '1000',
   'pagination.count_total': true,
 };
-
-const defaultQueryClientConfig = { addr: REACT_APP__REST_API || '' };
 
 function getFullData(): Promise<PairMap> {
   return new Promise(function (resolve, reject) {
@@ -278,143 +277,6 @@ function transformData(ticks: Array<DexTick>): PairMap {
     },
     {}
   );
-}
-
-function getNextPaginationKey(
-  _: number,
-  lastPage: { data: { pagination: V1Beta1PageResponse } }
-) {
-  return lastPage
-    ? // get next key or null (null will de-activate fetcher)
-      lastPage?.data?.pagination?.next_key ?? null
-    : // use undefined in a tuple to activate fetcher but with an `undefined` key
-      [undefined];
-}
-
-type QueryTokensAll = Awaited<ReturnType<Api<unknown>['queryTokensAll']>>;
-type QueryTokensAllList = QueryTokensAll['data']['Tokens'];
-type QueryTokensAllState = {
-  data: QueryTokensAllList;
-  isValidating: SWRResponse['isValidating'];
-  error: SWRResponse['error'];
-};
-function useTokens({
-  swr: swrConfig,
-  query: queryConfig,
-  queryClient: queryClientConfig,
-}: {
-  swr?: SWRConfiguration;
-  query?: Parameters<Api<unknown>['queryTokensAll']>[0];
-  queryClient?: Parameters<typeof queryClient>[0];
-} = {}): QueryTokensAllState {
-  const {
-    data: pages,
-    isValidating,
-    error,
-    size,
-    setSize,
-  } = useSWRInfinite<QueryTokensAll>(
-    getNextPaginationKey,
-    async (paginationKey: string) => {
-      const client = queryClient({
-        ...defaultQueryClientConfig,
-        ...queryClientConfig,
-      });
-      const response: QueryTokensAll = await client.queryTokensAll({
-        ...defaultFetchParams,
-        ...queryConfig,
-        'pagination.key': paginationKey,
-      });
-      if (response.status === 200) {
-        return response;
-      } else {
-        // remove API error details from public view
-        throw new Error(
-          `API error code: ${response.status} ${response.statusText}`
-        );
-      }
-      // default to persisting the current size so the list is only resized by 'setSize'
-    },
-    { persistSize: true, ...swrConfig }
-  );
-  // set number of pages to latest total
-  const pageItemCount = Number(pages?.[0]?.data.Tokens?.length);
-  const totalItemCount = Number(pages?.[0]?.data.pagination?.total);
-  if (pageItemCount > 0 && totalItemCount > pageItemCount) {
-    const pageCount = Math.ceil(totalItemCount / pageItemCount);
-    if (size !== pageCount) {
-      setSize(pageCount);
-    }
-  }
-  // place pages of data into the same list
-  const tokens = pages?.reduce<DexTokens[]>((acc, page) => {
-    return acc.concat(page.data.Tokens || []);
-  }, []);
-  return { data: tokens, isValidating, error };
-}
-
-type QueryTokenPairsAll = Awaited<
-  ReturnType<Api<unknown>['queryTradingPairAll']>
->;
-type QueryTokenPairsAllList = QueryTokenPairsAll['data']['TradingPair'];
-type QueryTokenPairsAllState = {
-  data: QueryTokenPairsAllList;
-  isValidating: SWRResponse['isValidating'];
-  error: SWRResponse['error'];
-};
-function useTokenPairs({
-  swr: swrConfig,
-  query: queryConfig,
-  queryClient: queryClientConfig,
-}: {
-  swr?: SWRConfiguration;
-  query?: Parameters<Api<unknown>['queryTradingPairAll']>[0];
-  queryClient?: Parameters<typeof queryClient>[0];
-} = {}): QueryTokenPairsAllState {
-  const {
-    data: pages,
-    isValidating,
-    error,
-    size,
-    setSize,
-  } = useSWRInfinite<QueryTokenPairsAll>(
-    getNextPaginationKey,
-    async (paginationKey: string) => {
-      const client = queryClient({
-        ...defaultQueryClientConfig,
-        ...queryClientConfig,
-      });
-      const response: QueryTokenPairsAll = await client.queryTradingPairAll({
-        ...defaultFetchParams,
-        ...queryConfig,
-        'pagination.key': paginationKey,
-      });
-      if (response.status === 200) {
-        return response;
-      } else {
-        // remove API error details from public view
-        throw new Error(
-          `API error code: ${response.status} ${response.statusText}`
-        );
-      }
-      // default to persisting the current size so the list is only resized by 'setSize'
-    },
-    { persistSize: true, ...swrConfig }
-  );
-  // set number of pages to latest total
-  const pageItemCount = Number(pages?.[0]?.data.TradingPair?.length);
-  const totalItemCount = Number(pages?.[0]?.data.pagination?.total);
-  if (pageItemCount > 0 && totalItemCount > pageItemCount) {
-    const pageCount = Math.ceil(totalItemCount / pageItemCount);
-    if (size !== pageCount) {
-      setSize(pageCount);
-    }
-  }
-  // place pages of data into the same list
-  const tokens = pages?.reduce<DexTradingPair[]>((acc, page) => {
-    return acc.concat(page.data.TradingPair || []);
-  }, []);
-  return { data: tokens, isValidating, error };
 }
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
