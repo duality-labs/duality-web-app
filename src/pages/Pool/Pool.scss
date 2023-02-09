@@ -69,7 +69,7 @@
 
   .assets-card {
     & {
-      min-width: 384px; // influenced by default selected tokens rendered text
+      min-width: 480px; // influenced by default selected tokens rendered text
       max-width: 800px;
     }
     a {
@@ -86,7 +86,7 @@
     .pill-outline {
       background-color: transparent;
       color: var(--text-default);
-      border: 3px solid var(--submit-button-bg);
+      border: 1.5px solid var(--submit-button-bg);
       &:hover,
       :active {
         background-color: rgba($color: rgb(78, 177, 232), $alpha: 0.2);
