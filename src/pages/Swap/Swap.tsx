@@ -315,7 +315,7 @@ export default function Swap() {
             exclusion={tokenB}
           ></TokenInputGroup>
         </div>
-        <div className="card-row my-2">
+        <div className="card-row my-3">
           <button
             type="button"
             onClick={swapTokens}
