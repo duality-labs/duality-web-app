@@ -70,7 +70,8 @@ export function useEditLiquidity(): [
         setError(undefined);
 
         const id = `${Date.now()}.${Math.random}`;
-        createLoadingToast({ id, description: 'Editing Liquidity...' });
+        // todo: change this on use of "edit liquidity mode again"
+        createLoadingToast({ id, description: 'Removing Liquidity...' });
 
         const [depositCount, withdrawCount] = sharesDiff.reduce<
           [number, number]
