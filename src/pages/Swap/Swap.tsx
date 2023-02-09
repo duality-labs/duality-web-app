@@ -445,7 +445,7 @@ export default function Swap() {
             )
           ) : (
             <button
-              className="submit-button button-primary"
+              className="submit-button button-dark"
               type="button"
               onClick={connectWallet}
             >
