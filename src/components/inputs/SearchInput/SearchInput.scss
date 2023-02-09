@@ -2,10 +2,14 @@
 @use '../../../styles/font/size.scss' as font-size;
 
 .search-input {
+  position: relative;
   background: #374151;
   border: 1px solid #4b5563;
   border-radius: 8px;
-  cursor: text;
+
+  svg {
+    margin-right: auto;
+  }
 
   svg,
   input {
@@ -15,7 +19,12 @@
 
   input {
     & {
-      padding: 0;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem 1rem 1rem 3rem;
       appearance: none;
       background-color: transparent;
       border: none;
