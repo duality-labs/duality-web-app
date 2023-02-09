@@ -67,7 +67,6 @@ export function getVirtualTickIndexes(
 
 type TokenCoin = Coin & {
   token: Token;
-  price: number;
   value: BigNumber | undefined;
 };
 
@@ -278,7 +277,7 @@ function ShareValuesPage({
           new BigNumber(
             getAmountInDenom(token, amount, denom, token.display) || 0
           ).multipliedBy(price || 0);
-        return token ? { amount, denom, token, price, value } : null;
+        return token ? { amount, denom, token, value } : null;
       })
       .filter((v): v is TokenCoin => !!v);
   }, [balances, allUserTokensList, allUserTokenPrices]);
@@ -525,13 +524,13 @@ function useUserReservesNominalValues(shareValues: Array<TickShareValue>) {
 function AssetRow({ token, amount, value }: TokenCoin) {
   return (
     <tr>
-      <td>{token.address}</td>
+      <td>{token.display.toUpperCase()}</td>
       <td>{`${formatAmount(
         getAmountInDenom(token, amount, token.address, token.display) || '',
         {
           useGrouping: true,
         }
-      )} ${token.display.toUpperCase()}`}</td>
+      )}`}</td>
       <td>{`$${formatAmount(value?.toFixed() || '', {
         useGrouping: true,
       })}`}</td>
