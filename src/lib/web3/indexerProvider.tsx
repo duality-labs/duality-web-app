@@ -8,6 +8,8 @@ import {
 } from 'react';
 import { BigNumber } from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
+import { SWRConfiguration, SWRResponse } from 'swr';
+import useSWRInfinite from 'swr/infinite';
 
 import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
@@ -20,6 +22,7 @@ import {
   DexTick,
   DexTokens,
   Api,
+  V1Beta1PageResponse,
 } from './generated/ts-client/nicholasdotsol.duality.dex/rest';
 import {
   addressableTokenMap as tokenMap,
@@ -134,7 +137,10 @@ const IndexerContext = createContext<IndexerContextType>({
 
 const defaultFetchParams = {
   'pagination.limit': '1000',
+  'pagination.count_total': true,
 };
+
+const defaultQueryClientConfig = { addr: REACT_APP__REST_API || '' };
 
 function getFullData(): Promise<PairMap> {
   return new Promise(function (resolve, reject) {
@@ -274,9 +280,77 @@ function transformData(ticks: Array<DexTick>): PairMap {
   );
 }
 
-function useTokens(): DexTokens | undefined {
-  const [data] = useState<DexTokens>();
-  return data;
+function getNextPaginationKey(
+  _: number,
+  lastPage: { data: { pagination: V1Beta1PageResponse } }
+) {
+  return lastPage
+    ? // get next key or null (null will de-activate fetcher)
+      lastPage?.data?.pagination?.next_key ?? null
+    : // use undefined in a tuple to activate fetcher but with an `undefined` key
+      [undefined];
+}
+
+type QueryTokensAll = Awaited<ReturnType<Api<unknown>['queryTokensAll']>>;
+type QueryTokensAllList = QueryTokensAll['data']['Tokens'];
+type QueryTokensAllState = {
+  data: QueryTokensAllList;
+  isValidating: SWRResponse['isValidating'];
+  error: SWRResponse['error'];
+};
+function useTokens({
+  swr: swrConfig,
+  query: queryConfig,
+  queryClient: queryClientConfig,
+}: {
+  swr?: SWRConfiguration;
+  query?: Parameters<Api<unknown>['queryTokensAll']>[0];
+  queryClient?: Parameters<typeof queryClient>[0];
+} = {}): QueryTokensAllState {
+  const {
+    data: pages,
+    isValidating,
+    error,
+    size,
+    setSize,
+  } = useSWRInfinite<QueryTokensAll>(
+    getNextPaginationKey,
+    async (paginationKey: string) => {
+      const client = queryClient({
+        ...defaultQueryClientConfig,
+        ...queryClientConfig,
+      });
+      const response: QueryTokensAll = await client.queryTokensAll({
+        ...defaultFetchParams,
+        ...queryConfig,
+        'pagination.key': paginationKey,
+      });
+      if (response.status === 200) {
+        return response;
+      } else {
+        // remove API error details from public view
+        throw new Error(
+          `API error code: ${response.status} ${response.statusText}`
+        );
+      }
+      // default to persisting the current size so the list is only resized by 'setSize'
+    },
+    { persistSize: true, ...swrConfig }
+  );
+  // set number of pages to latest total
+  const pageItemCount = Number(pages?.[0]?.data.Tokens?.length);
+  const totalItemCount = Number(pages?.[0]?.data.pagination?.total);
+  if (pageItemCount > 0 && totalItemCount > pageItemCount) {
+    const pageCount = Math.ceil(totalItemCount / pageItemCount);
+    if (size !== pageCount) {
+      setSize(pageCount);
+    }
+  }
+  // place pages of data into the same list
+  const tokens = pages?.reduce<DexTokens[]>((acc, page) => {
+    return acc.concat(page.data.Tokens || []);
+  }, []);
+  return { data: tokens, isValidating, error };
 }
 
 function useTokenPairs(): TradingPair | undefined {
@@ -286,9 +360,14 @@ function useTokenPairs(): TradingPair | undefined {
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [indexerData, setIndexerData] = useState<PairMap>();
+  const seconds = 1000;
+  const minutes = 60 * seconds;
+
   const [bankData, setBankData] = useState<UserBankBalance>();
   const [shareData, setShareData] = useState<UserShares>();
-  const tokensData = useTokens();
+  const { data: tokensData } = useTokens({
+    swr: { refreshInterval: 10 * minutes },
+  });
   const tokenPairsData = useTokenPairs();
 
   const [error, setError] = useState<string>();
