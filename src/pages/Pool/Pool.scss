@@ -69,7 +69,7 @@
 
   .assets-card {
     & {
-      min-width: 480px; // influenced by default selected tokens rendered text
+      min-width: 460px; // align with Trade page width
       max-width: 800px;
     }
     a {
