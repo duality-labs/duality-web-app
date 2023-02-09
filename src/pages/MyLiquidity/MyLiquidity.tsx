@@ -178,7 +178,7 @@ export default function MyLiquidity() {
     return (
       <div className="no-liquidity col">
         <h3 className="h2 mb-4 text-center"> No liquidity positions found</h3>
-        <Link to="/add-liquidity">
+        <Link to="/liquidity">
           <button className="button button-info add-liquidity p-3 px-4">
             Add new liquidity
           </button>

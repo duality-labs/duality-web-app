@@ -645,7 +645,7 @@ export default function Pool() {
             <p>
               Add liquidity in any ratio to earn fees on
               <br /> other people’s trades! Learn more{' '}
-              <Link to="/my-liquidity">here</Link>.
+              <Link to="/liquidity">here</Link>.
             </p>
           </div>
           <div className="card-row">
