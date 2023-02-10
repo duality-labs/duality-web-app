@@ -126,6 +126,18 @@ a {
 .hide {
   display: none !important;
 }
+.relative {
+  position: relative;
+}
+.absolute {
+  position: absolute;
+}
+.absolute.filled {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
 
 input[disabled],
 button[disabled],
