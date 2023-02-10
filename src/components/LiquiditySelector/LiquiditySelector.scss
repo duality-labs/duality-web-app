@@ -157,6 +157,9 @@
     fill: hsl(216, 12%, 84%);
     font-size: 12px;
   }
+  line.line--success {
+    stroke: hsl(165, 83%, 57%);
+  }
   text.text--success {
     fill: hsl(165, 83%, 57%);
   }
