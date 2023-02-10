@@ -25,13 +25,10 @@
     opacity: 0.75;
   }
 
-  .token-a {
-    fill: hsl(262, 100%, 15%);
-    stroke: hsl(262, 100%, 15%);
-  }
+  .token-a,
   .token-b {
-    fill: hsl(202, 76%, 30%);
-    stroke: hsl(202, 76%, 30%);
+    fill: hsl(202deg 58% 33%);
+    stroke: hsl(202deg 58% 33%);
   }
 }
 .chart-type--amm {
@@ -46,7 +43,7 @@
 .new-ticks {
   pointer-events: none;
   stroke-width: 2px;
-  stroke: hsl(37, 62%, 68%);
+  stroke: hsl(202deg 58% 33%);
   .tip {
     stroke-width: 1px;
   }
@@ -69,7 +66,7 @@
     pointer-events: visible;
   }
   .tick text {
-    fill: hsl(37, 62%, 68%);
+    fill: hsl(202deg 58% 33%);
   }
   .tick--selected {
     stroke: var(--submit-button-bg);
@@ -110,22 +107,24 @@
 .new-ticks-area {
   .line {
     stroke-width: 1px;
-    stroke: hsl(37, 62%, 68%);
+    stroke: transparent;
   }
   .flag-joiner--price-warning {
     stroke: var(--error);
   }
   .pole-stick {
-    stroke-width: 4px;
+    stroke-width: 8px;
+    stroke: hsl(202deg 58% 33%);
   }
   .pole-flag,
   .pole-to-flag {
-    fill: hsl(37, 62%, 68%);
+    fill: hsl(202deg 58% 33%);
   }
   .pole-flag-stripe {
     fill: transparent;
     stroke: white;
-    stroke-dasharray: 20 10;
+    stroke-width: 3px;
+    stroke-linecap: round;
   }
   .pole-flag--hit-area {
     fill: transparent;
@@ -146,12 +145,19 @@
 .axis {
   stroke-width: 1;
   stroke: var(--text-default);
+  > line {
+    stroke: hsl(202deg 58% 33%);
+    stroke-width: 8px;
+  }
 }
 
 .chart-liquidity {
   text {
     stroke-width: 0;
-    fill: hsl(202, 76%, 60%);
+    fill: hsl(216, 12%, 84%);
     font-size: 12px;
+  }
+  text.text--success {
+    fill: hsl(165, 83%, 57%);
   }
 }
