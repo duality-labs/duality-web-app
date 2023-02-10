@@ -1,18 +1,29 @@
-$p-0: 0rem;
-$p-1: 0.125rem;
-$p-2: 0.25rem;
-$p-3: 0.5rem;
-$p-4: 1rem;
-$p-5: 2rem;
-$p-6: 4rem;
+$p-0: 0rem; //        0px
+$p-1: 0.125rem; //    2px
+$p-2: 0.25rem; //     4px
+$p-3: 0.5rem; //      8px
+$p-4: 1rem; //       16px
+$p-5: 2rem; //       32px
+$p-6: 4rem; //       64px
+
+$p-xs: 0.1875rem; //  3px
+$p-sm: 0.375rem; //   6px
+$p-md: 0.75rem; //   12px
+$p-lg: 1.5rem; //    24px
+$p-xl: 3rem; //      48px
 
 $sizes: (
   '0': $p-0,
   '1': $p-1,
+  'xs': $p-xs,
   '2': $p-2,
+  'sm': $p-sm,
   '3': $p-3,
+  'md': $p-md,
   '4': $p-4,
+  'lg': $p-lg,
   '5': $p-5,
+  'xl': $p-xl,
   '6': $p-6,
 );
 
