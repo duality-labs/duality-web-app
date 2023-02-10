@@ -145,9 +145,9 @@
 .axis {
   stroke-width: 1;
   stroke: var(--text-default);
-  > line {
-    stroke: hsl(202deg 58% 33%);
-    stroke-width: 8px;
+  > rect {
+    fill: hsl(202deg 58% 33%);
+    stroke-width: 0;
   }
 }
 
