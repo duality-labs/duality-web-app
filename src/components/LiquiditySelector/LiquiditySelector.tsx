@@ -10,7 +10,7 @@ import {
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import { formatPrice } from '../../lib/utils/number';
+import { formatAmount, formatPrice } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
 import { priceToTickIndex } from '../../lib/web3/utils/ticks';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
@@ -410,7 +410,7 @@ export default function LiquiditySelector({
   );
   const plotY = useCallback(
     (y: number): number => {
-      const topPadding = 0;
+      const topPadding = 20;
       const bottomPadding = 28; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return graphHeight === 0
@@ -421,7 +421,7 @@ export default function LiquiditySelector({
   );
   const percentY = useCallback(
     (y: number): number => {
-      const topPadding = 0;
+      const topPadding = 20;
       const bottomPadding = 28; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
@@ -516,6 +516,7 @@ export default function LiquiditySelector({
           ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
+          containerHeight={containerSize.height}
           rangeMin={rangeMin}
           rangeMax={rangeMax}
           setRangeMin={setRangeMin}
@@ -644,6 +645,7 @@ function TicksArea({
   ticks,
   plotX,
   plotY,
+  containerHeight,
   rangeMin,
   rangeMax,
   setRangeMin,
@@ -657,6 +659,7 @@ function TicksArea({
   ticks: TickGroup;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
+  containerHeight: number;
   rangeMin: string;
   rangeMax: string;
   setRangeMin: (rangeMin: string) => void;
@@ -789,6 +792,27 @@ function TicksArea({
           y1={plotY(new BigNumber(0.965)).toFixed(3)}
           y2={plotY(new BigNumber(0.895)).toFixed(3)}
         />
+        {currentPrice && (
+          <text
+            x={plotX(startTickPrice).toFixed(3)}
+            y={-containerHeight}
+            dy="12"
+            textAnchor="end"
+          >
+            {formatAmount(
+              startTickPrice
+                .multipliedBy(100)
+                .dividedBy(currentPrice)
+                .minus(100)
+                .toFixed(0),
+              {
+                signDisplay: 'always',
+                useGrouping: true,
+              }
+            )}
+            %
+          </text>
+        )}
         {isDraggingMin ? (
           <rect
             className="pole-flag--hit-area"
@@ -891,6 +915,27 @@ function TicksArea({
           y1={plotY(new BigNumber(0.965)).toFixed(3)}
           y2={plotY(new BigNumber(0.895)).toFixed(3)}
         />
+        {currentPrice && (
+          <text
+            x={plotX(endTickPrice).toFixed(3)}
+            y={-containerHeight}
+            dy="12"
+            textAnchor="start"
+          >
+            {formatAmount(
+              endTickPrice
+                .multipliedBy(100)
+                .dividedBy(currentPrice)
+                .minus(100)
+                .toFixed(0),
+              {
+                signDisplay: 'always',
+                useGrouping: true,
+              }
+            )}
+            %
+          </text>
+        )}
         {isDraggingMax ? (
           <rect
             className="pole-flag--hit-area"
