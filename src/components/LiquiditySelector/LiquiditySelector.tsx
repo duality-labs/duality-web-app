@@ -770,14 +770,14 @@ function TicksArea({
           x={(plotX(startTickPrice) - rounding).toFixed(3)}
           width={rounding}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+          height="40"
         />
         <rect
           className="pole-flag"
           x={(plotX(startTickPrice) - 30).toFixed(3)}
           width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+          height="40"
           rx={rounding}
         />
         <line
@@ -808,7 +808,7 @@ function TicksArea({
             x={(plotX(startTickPrice) - 30).toFixed(3)}
             width="30"
             y={plotY(new BigNumber(1)).toFixed(3)}
-            height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+            height="40"
             rx={rounding}
             onMouseDown={startDragMin}
           />
@@ -872,14 +872,14 @@ function TicksArea({
           x={plotX(endTickPrice).toFixed(3)}
           width={rounding}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+          height="40"
         />
         <rect
           className="pole-flag"
           x={plotX(endTickPrice).toFixed(3)}
           width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+          height="40"
           rx={rounding}
         />
         <line
@@ -910,7 +910,7 @@ function TicksArea({
             x={plotX(endTickPrice).toFixed(3)}
             width="30"
             y={plotY(new BigNumber(1)).toFixed(3)}
-            height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+            height="40"
             rx={rounding}
             onMouseDown={startDragMax}
           />
