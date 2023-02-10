@@ -449,6 +449,19 @@ export default function LiquiditySelector({
       viewBox={`0 -${containerSize.height} ${containerSize.width} ${containerSize.height}`}
     >
       <defs>
+        <filter
+          x="-0.1"
+          y="-0.1"
+          width="1.2"
+          height="1.2"
+          id="text-solid-background"
+        >
+          <feFlood floodColor="hsl(202, 59%, 21%)" result="bg" />
+          <feMerge>
+            <feMergeNode in="bg" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
         <linearGradient id="white-concave-fade">
           <stop offset="0%" stopColor="hsl(220, 44%, 45%)" stopOpacity="0.1" />
           <stop
@@ -517,8 +530,8 @@ export default function LiquiditySelector({
         xMin={xMin / 1.2}
         xMax={xMax * 1.2}
         tickMarks={[
-          rangeMin,
           currentPriceFromTicks?.toNumber() || '0',
+          rangeMin,
           rangeMax,
         ]
           .map((v) => formatPrice(v))
@@ -1332,6 +1345,7 @@ function Axis({
     return (
       <g key={index} className="axis-tick">
         <text
+          filter="url(#text-solid-background)"
           className={tickMark === highlightedTick ? 'text--success' : ''}
           x={plotX(tickMark).toFixed(3)}
           y={plotY(0) + 5 + 8}
