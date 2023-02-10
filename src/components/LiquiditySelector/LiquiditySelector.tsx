@@ -10,7 +10,7 @@ import {
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import { formatLongPrice, formatPrice } from '../../lib/utils/number';
+import { formatPrice } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
 import { priceToTickIndex } from '../../lib/web3/utils/ticks';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
@@ -526,11 +526,11 @@ export default function LiquiditySelector({
           currentPriceFromTicks?.toNumber() || '0',
           rangeMax,
         ]
-          .map((v) => formatLongPrice(v))
+          .map((v) => formatPrice(v))
           .map(Number)
           .filter((v): v is number => !!v && v > 0)}
         highlightedTick={Number(
-          formatLongPrice(currentPriceFromTicks?.toNumber() || 0)
+          formatPrice(currentPriceFromTicks?.toNumber() || 0)
         )}
         getDecimalPlaces={null}
         plotX={plotX}
