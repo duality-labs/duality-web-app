@@ -383,9 +383,9 @@ function ShareValuesPage({
             </div>
           </div>
         </div>
-        <div className="asset-list-card flex my-4 py-2 px-3">
+        <div className="asset-list-card flex my-4">
           <div className="col flex">
-            <div className="row flex-centered gap-3 m-4">
+            <div className="row flex-centered gap-3 m-lg mb-0">
               <div className="col flex">
                 <h2 className="asset-list-card__hero-title">Assets</h2>
               </div>
@@ -406,14 +406,14 @@ function ShareValuesPage({
                 </div>
               </div>
             </div>
-            <div className="asset-list-card__search row m-4">
+            <div className="asset-list-card__search row m-lg mb-0">
               <div className="col flex">
                 <SearchInput value={searchValue} onInput={setSearchValue} />
               </div>
             </div>
-            <div className="asset-list-card__table row flex mt-4 pb-4 px-4">
-              <div className="col flex">
-                <table cellSpacing="0">
+            <div className="relative row flex mt-lg">
+              <div className="asset-list-card__table col flex absolute filled">
+                <table cellSpacing="0" className="px-lg mb-4">
                   <thead>
                     <tr>
                       <th>Token + Chain</th>
