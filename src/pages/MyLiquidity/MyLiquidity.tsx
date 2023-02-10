@@ -418,7 +418,7 @@ function ShareValuesPage({
                     <tr>
                       <th>Token + Chain</th>
                       <th>Balance</th>
-                      <th>Nominal Value</th>
+                      <th>Value</th>
                     </tr>
                   </thead>
                   <tbody>

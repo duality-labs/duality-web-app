@@ -149,7 +149,7 @@
       th,
       td {
         text-align: left;
-        width: 40%;
+        width: 50%;
         min-width: 7em;
         padding: paddings.$p-2;
         &:first-child {
@@ -165,7 +165,7 @@
       th + th,
       td + td {
         text-align: right;
-        width: 30%;
+        width: 25%;
       }
 
       .token-and-chain {
