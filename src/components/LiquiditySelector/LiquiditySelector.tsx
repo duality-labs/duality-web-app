@@ -416,7 +416,7 @@ export default function LiquiditySelector({
   const plotY = useCallback(
     (y: number): number => {
       const topPadding = 0;
-      const bottomPadding = 21; // height of axis-ticks element
+      const bottomPadding = 28; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return graphHeight === 0
         ? -bottomPadding // pin to bottom
@@ -427,7 +427,7 @@ export default function LiquiditySelector({
   const percentY = useCallback(
     (y: number): number => {
       const topPadding = 0;
-      const bottomPadding = 21; // height of axis-ticks element
+      const bottomPadding = 28; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
     },
@@ -1308,12 +1308,7 @@ function Axis({
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
-      <line
-        x1="0"
-        x2={plotX(xMax * 2)}
-        y1={plotY(0).toFixed(0)}
-        y2={plotY(0).toFixed(0)}
-      />
+      <rect x="0" width={plotX(xMax * 2)} y={plotY(0).toFixed(0)} height="8" />
       <g className="axis-ticks">{tickMarks.map(mapTickMark)}</g>
     </g>
   );
@@ -1324,7 +1319,7 @@ function Axis({
       <g key={tickMark} className="axis-tick">
         <text
           x={plotX(tickMark).toFixed(3)}
-          y={plotY(0) + 8}
+          y={plotY(0) + 5 + 8}
           dominantBaseline="middle"
           textAnchor="middle"
           alignmentBaseline="text-before-edge"
