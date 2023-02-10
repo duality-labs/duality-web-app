@@ -543,6 +543,7 @@ export default function LiquiditySelector({
         getDecimalPlaces={null}
         plotX={plotX}
         plotY={plotY}
+        percentY={percentY}
       />
     </svg>
   );
@@ -1304,6 +1305,7 @@ function Axis({
     Math.max(0, -Math.floor(Math.log10(tickMark))),
   plotX,
   plotY,
+  percentY,
 }: {
   xMin: number;
   xMax: number;
@@ -1313,6 +1315,7 @@ function Axis({
   getDecimalPlaces?: ((value: number) => number) | null;
   plotX: (x: number) => number;
   plotY: (y: number) => number;
+  percentY: (y: number) => number;
 }) {
   if (!xMin || !xMax || xMin === xMax) return null;
 
@@ -1344,6 +1347,15 @@ function Axis({
     const decimalPlaces = getDecimalPlaces?.(tickMark);
     return (
       <g key={index} className="axis-tick">
+        {tickMark === highlightedTick && (
+          <line
+            className="line--success"
+            x1={plotX(tickMark).toFixed(3)}
+            x2={plotX(tickMark).toFixed(3)}
+            y1={plotY(0) + 8}
+            y2={percentY(1)}
+          />
+        )}
         <text
           filter="url(#text-solid-background)"
           className={tickMark === highlightedTick ? 'text--success' : ''}
