@@ -10,7 +10,7 @@ import {
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import { formatPrice } from '../../lib/utils/number';
+import { formatLongPrice, formatPrice } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
 import { priceToTickIndex } from '../../lib/web3/utils/ticks';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
@@ -522,11 +522,17 @@ export default function LiquiditySelector({
         xMin={xMin / 1.2}
         xMax={xMax * 1.2}
         tickMarks={[
-          Number(rangeMin),
-          currentPriceFromTicks?.toNumber(),
-          Number(rangeMax),
-        ].filter((v): v is number => !!v && v > 0)}
-        highlightedTick={currentPriceFromTicks?.toNumber()}
+          rangeMin,
+          currentPriceFromTicks?.toNumber() || '0',
+          rangeMax,
+        ]
+          .map((v) => formatLongPrice(v))
+          .map(Number)
+          .filter((v): v is number => !!v && v > 0)}
+        highlightedTick={Number(
+          formatLongPrice(currentPriceFromTicks?.toNumber() || 0)
+        )}
+        getDecimalPlaces={null}
         plotX={plotX}
         plotY={plotY}
       />
@@ -1286,6 +1292,8 @@ function Axis({
   xMax,
   tickMarks: givenTickMarks,
   highlightedTick = -1,
+  getDecimalPlaces = (tickMark) =>
+    Math.max(0, -Math.floor(Math.log10(tickMark))),
   plotX,
   plotY,
 }: {
@@ -1294,6 +1302,7 @@ function Axis({
   className?: string;
   tickMarks?: number[];
   highlightedTick?: number;
+  getDecimalPlaces?: ((value: number) => number) | null;
   plotX: (x: number) => number;
   plotY: (y: number) => number;
 }) {
@@ -1324,7 +1333,7 @@ function Axis({
   );
 
   function mapTickMark(tickMark: number, index: number) {
-    const decimalPlaces = Math.max(0, -Math.floor(Math.log10(tickMark)));
+    const decimalPlaces = getDecimalPlaces?.(tickMark);
     return (
       <g key={index} className="axis-tick">
         <text
@@ -1335,7 +1344,9 @@ function Axis({
           textAnchor="middle"
           alignmentBaseline="text-before-edge"
         >
-          {tickMark.toFixed(decimalPlaces)}
+          {decimalPlaces !== undefined
+            ? tickMark.toFixed(decimalPlaces)
+            : tickMark}
         </text>
       </g>
     );
