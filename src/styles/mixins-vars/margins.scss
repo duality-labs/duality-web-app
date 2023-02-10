@@ -99,42 +99,55 @@ $sizes: (
   .m-#{$name} {
     @include margin('*', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .mx-#{$name} {
     @include margin('x', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .mr-#{$name} {
     @include margin('r', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .ml-#{$name} {
     @include margin('l', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .my-#{$name} {
     @include margin('y', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .mb-#{$name} {
     @include margin('b', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .mt-#{$name} {
     @include margin('t', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
+  @if ($name != 'auto') {
+    .gap-#{$name} {
+      @include gap('*', $name, $important: true);
+    }
+  }
+}
+@each $name, $size in $sizes {
   @if ($name != 'auto') {
     .gapx-#{$name} {
       @include gap('x', $name, $important: true);
     }
-
+  }
+}
+@each $name, $size in $sizes {
+  @if ($name != 'auto') {
     .gapy-#{$name} {
       @include gap('y', $name, $important: true);
-    }
-
-    .gap-#{$name} {
-      @include gap('*', $name, $important: true);
     }
   }
 }

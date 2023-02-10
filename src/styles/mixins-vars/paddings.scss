@@ -74,27 +74,33 @@ $sizes: (
   .p-#{$name} {
     @include padding('*', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .px-#{$name} {
     @include padding('x', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .pr-#{$name} {
     @include padding('r', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .pl-#{$name} {
     @include padding('l', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .py-#{$name} {
     @include padding('y', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .pb-#{$name} {
     @include padding('b', $name, $important: true);
   }
-
+}
+@each $name, $size in $sizes {
   .pt-#{$name} {
     @include padding('t', $name, $important: true);
   }
