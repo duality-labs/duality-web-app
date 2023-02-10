@@ -521,6 +521,12 @@ export default function LiquiditySelector({
         // todo: make better (x-axis roughly adds tick marks to buckets near the extents)
         xMin={xMin / 1.2}
         xMax={xMax * 1.2}
+        tickMarks={[
+          Number(rangeMin),
+          currentPriceFromTicks?.toNumber(),
+          Number(rangeMax),
+        ].filter((v): v is number => !!v && v > 0)}
+        highlightedTick={currentPriceFromTicks?.toNumber()}
         plotX={plotX}
         plotY={plotY}
       />
@@ -1278,20 +1284,25 @@ function Axis({
   className = '',
   xMin,
   xMax,
+  tickMarks: givenTickMarks,
+  highlightedTick = -1,
   plotX,
   plotY,
 }: {
   xMin: number;
   xMax: number;
   className?: string;
+  tickMarks?: number[];
+  highlightedTick?: number;
   plotX: (x: number) => number;
   plotY: (y: number) => number;
 }) {
   if (!xMin || !xMax || xMin === xMax) return null;
 
   const start = Math.pow(10, Math.floor(Math.log10(xMin)));
-  const tickMarks = Array.from({ length: Math.log10(xMax / xMin) + 2 }).flatMap(
-    (_, index) => {
+  const tickMarks =
+    givenTickMarks ||
+    Array.from({ length: Math.log10(xMax / xMin) + 2 }).flatMap((_, index) => {
       const baseNumber = start * Math.pow(10, index);
       const possibleMultiples = [2, 5, 10];
       const possibleInclusions = possibleMultiples.map((v) => v * baseNumber);
@@ -1303,8 +1314,7 @@ function Axis({
           return 0;
         })
         .filter(Boolean);
-    }
-  );
+    });
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
@@ -1313,11 +1323,12 @@ function Axis({
     </g>
   );
 
-  function mapTickMark(tickMark: number) {
+  function mapTickMark(tickMark: number, index: number) {
     const decimalPlaces = Math.max(0, -Math.floor(Math.log10(tickMark)));
     return (
-      <g key={tickMark} className="axis-tick">
+      <g key={index} className="axis-tick">
         <text
+          className={tickMark === highlightedTick ? 'text--success' : ''}
           x={plotX(tickMark).toFixed(3)}
           y={plotY(0) + 5 + 8}
           dominantBaseline="middle"
