@@ -65,7 +65,7 @@ type TickGroupBucketsFilled = Array<
   ]
 >;
 
-const bucketWidth = 50; // bucket width in pixels
+const bucketWidth = 8; // bucket width in pixels
 
 const defaultStartValue = new BigNumber(1 / 1.1);
 const defaultEndValue = new BigNumber(1.1);
@@ -455,31 +455,11 @@ export default function LiquiditySelector({
     >
       <defs>
         <linearGradient id="white-concave-fade">
-          <stop offset="0%" stopColor="var(--text-default)" stopOpacity="0.6" />
-          <stop
-            offset="20%"
-            stopColor="var(--text-default)"
-            stopOpacity="0.5"
-          />
-          <stop
-            offset="46%"
-            stopColor="var(--text-default)"
-            stopOpacity="0.4"
-          />
-          <stop
-            offset="54%"
-            stopColor="var(--text-default)"
-            stopOpacity="0.4"
-          />
-          <stop
-            offset="80%"
-            stopColor="var(--text-default)"
-            stopOpacity="0.5"
-          />
+          <stop offset="0%" stopColor="hsl(220, 44%, 45%)" stopOpacity="0.1" />
           <stop
             offset="100%"
-            stopColor="var(--text-default)"
-            stopOpacity="0.6"
+            stopColor="hsl(220, 44%, 45%)"
+            stopOpacity="0.1"
           />
         </linearGradient>
       </defs>
@@ -668,8 +648,6 @@ function TicksArea({
   const endTick = ticks?.[ticks.length - 1];
   const startTickPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
   const endTickPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
-  const bucketWidth =
-    plotX(new BigNumber(bucketRatio)) - plotX(new BigNumber(1));
 
   const lastMinTickPrice = useRef<BigNumber>();
   const [startDragMin, isDraggingMin] = useOnDragMove(
@@ -770,25 +748,25 @@ function TicksArea({
         />
         <rect
           className="pole-flag"
-          x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
-          width={(0.75 * bucketWidth).toFixed(3)}
+          x={(plotX(startTickPrice) - 30).toFixed(3)}
+          width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
           height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
           rx={rounding}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(startTickPrice) - 0.45 * bucketWidth).toFixed(3)}
-          x2={(plotX(startTickPrice) - 0.45 * bucketWidth).toFixed(3)}
-          y1={plotY(new BigNumber(0.97)).toFixed(3)}
-          y2={plotY(new BigNumber(0.92)).toFixed(3)}
+          x1={(plotX(startTickPrice) - 11.5).toFixed(3)}
+          x2={(plotX(startTickPrice) - 11.5).toFixed(3)}
+          y1={plotY(new BigNumber(0.965)).toFixed(3)}
+          y2={plotY(new BigNumber(0.895)).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(startTickPrice) - 0.25 * bucketWidth).toFixed(3)}
-          x2={(plotX(startTickPrice) - 0.25 * bucketWidth).toFixed(3)}
-          y1={plotY(new BigNumber(0.97)).toFixed(3)}
-          y2={plotY(new BigNumber(0.92)).toFixed(3)}
+          x1={(plotX(startTickPrice) - 18.5).toFixed(3)}
+          x2={(plotX(startTickPrice) - 18.5).toFixed(3)}
+          y1={plotY(new BigNumber(0.965)).toFixed(3)}
+          y2={plotY(new BigNumber(0.895)).toFixed(3)}
         />
         {isDraggingMin ? (
           <rect
@@ -801,8 +779,8 @@ function TicksArea({
         ) : (
           <rect
             className="pole-flag--hit-area"
-            x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
-            width={(0.75 * bucketWidth).toFixed(3)}
+            x={(plotX(startTickPrice) - 30).toFixed(3)}
+            width="30"
             y={plotY(new BigNumber(1)).toFixed(3)}
             height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
             rx={rounding}
@@ -873,24 +851,24 @@ function TicksArea({
         <rect
           className="pole-flag"
           x={plotX(endTickPrice).toFixed(3)}
-          width={(0.75 * bucketWidth).toFixed(3)}
+          width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
           height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
           rx={rounding}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(endTickPrice) + 0.45 * bucketWidth).toFixed(3)}
-          x2={(plotX(endTickPrice) + 0.45 * bucketWidth).toFixed(3)}
-          y1={plotY(new BigNumber(0.97)).toFixed(3)}
-          y2={plotY(new BigNumber(0.92)).toFixed(3)}
+          x1={(plotX(endTickPrice) + 11.5).toFixed(3)}
+          x2={(plotX(endTickPrice) + 11.5).toFixed(3)}
+          y1={plotY(new BigNumber(0.965)).toFixed(3)}
+          y2={plotY(new BigNumber(0.895)).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(endTickPrice) + 0.25 * bucketWidth).toFixed(3)}
-          x2={(plotX(endTickPrice) + 0.25 * bucketWidth).toFixed(3)}
-          y1={plotY(new BigNumber(0.97)).toFixed(3)}
-          y2={plotY(new BigNumber(0.92)).toFixed(3)}
+          x1={(plotX(endTickPrice) + 18.5).toFixed(3)}
+          x2={(plotX(endTickPrice) + 18.5).toFixed(3)}
+          y1={plotY(new BigNumber(0.965)).toFixed(3)}
+          y2={plotY(new BigNumber(0.895)).toFixed(3)}
         />
         {isDraggingMax ? (
           <rect
@@ -904,7 +882,7 @@ function TicksArea({
           <rect
             className="pole-flag--hit-area"
             x={plotX(endTickPrice).toFixed(3)}
-            width={(0.75 * bucketWidth).toFixed(3)}
+            width="30"
             y={plotY(new BigNumber(1)).toFixed(3)}
             height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
             rx={rounding}
@@ -1344,15 +1322,9 @@ function Axis({
     const decimalPlaces = Math.max(0, -Math.floor(Math.log10(tickMark)));
     return (
       <g key={tickMark} className="axis-tick">
-        <line
-          x1={plotX(tickMark).toFixed(3)}
-          x2={plotX(tickMark).toFixed(3)}
-          y1={plotY(0)}
-          y2={plotY(0) + 2}
-        />
         <text
           x={plotX(tickMark).toFixed(3)}
-          y={plotY(0) + 5}
+          y={plotY(0) + 8}
           dominantBaseline="middle"
           textAnchor="middle"
           alignmentBaseline="text-before-edge"
