@@ -38,7 +38,10 @@ import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
-import { formatPrice } from '../../lib/utils/number';
+import {
+  formatMaxSignificantDigits,
+  formatPrice,
+} from '../../lib/utils/number';
 import { priceToTickIndex } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
@@ -112,9 +115,7 @@ export default function Pool() {
           new BigNumber(absoluteRestrictedValue).isLessThan(
             currentPriceFromTicks.dividedBy(1000)
           )
-            ? currentPriceFromTicks
-                .dividedBy(1000)
-                .toFixed(BigNumber.ROUND_FLOOR)
+            ? formatMaxSignificantDigits(currentPriceFromTicks.dividedBy(1000))
             : value;
         return relativeRestrictedValue;
       };
@@ -138,9 +139,9 @@ export default function Pool() {
           new BigNumber(absoluteRestrictedValue).isGreaterThan(
             currentPriceFromTicks.multipliedBy(1000)
           )
-            ? currentPriceFromTicks
-                .multipliedBy(1000)
-                .toFixed(BigNumber.ROUND_CEIL)
+            ? formatMaxSignificantDigits(
+                currentPriceFromTicks.multipliedBy(1000)
+              )
             : value;
         return relativeRestrictedValue;
       };
