@@ -544,6 +544,10 @@ export default function LiquiditySelector({
       <Axis
         className="x-axis"
         // todo: make better (x-axis roughly adds tick marks to buckets near the extents)
+        //       to fix this here, for the x-axis to go from 0 to container width:
+        //       the xMin and xMax could be determined from number of buckets and bucket width ratio
+        //       to provide the extact extents for taking up the entire container
+        //       with a reasonably stable center marker point (not always, a distribution could be skewed)
         xMin={xMin / 1.2}
         xMax={xMax * 1.2}
         tickMarks={[
