@@ -811,11 +811,12 @@ function TicksArea({
         {currentPrice && (
           <text
             filter="url(#text-solid-highlight)"
-            x={plotX(startTickPrice).toFixed(3)}
+            x={(4 + plotX(startTickPrice)).toFixed(3)}
             y={4 - containerHeight}
             dy="12"
             textAnchor="end"
           >
+            &nbsp;&nbsp;&nbsp;
             {`${formatAmount(
               startTickPrice
                 .multipliedBy(100)
@@ -827,6 +828,7 @@ function TicksArea({
                 useGrouping: true,
               }
             )}%`}
+            &nbsp;&nbsp;&nbsp;
           </text>
         )}
         {isDraggingMin ? (
@@ -934,11 +936,12 @@ function TicksArea({
         {currentPrice && (
           <text
             filter="url(#text-solid-highlight)"
-            x={plotX(endTickPrice).toFixed(3)}
+            x={(-4 + plotX(endTickPrice)).toFixed(3)}
             y={4 - containerHeight}
             dy="12"
             textAnchor="start"
           >
+            &nbsp;&nbsp;&nbsp;
             {`${formatAmount(
               endTickPrice
                 .multipliedBy(100)
@@ -950,6 +953,7 @@ function TicksArea({
                 useGrouping: true,
               }
             )}%`}
+            &nbsp;&nbsp;&nbsp;
           </text>
         )}
         {isDraggingMax ? (
