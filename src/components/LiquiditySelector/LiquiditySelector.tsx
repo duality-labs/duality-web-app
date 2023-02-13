@@ -1424,7 +1424,10 @@ function Axis({
         <text
           filter="url(#text-solid-background)"
           className={tickMark === highlightedTick ? 'text--success' : ''}
-          x={plotX(tickMark).toFixed(3)}
+          x={(
+            plotX(tickMark) +
+            (highlightedTick && index > 0 ? (index === 1 ? 1.5 : -1.5) : 0)
+          ).toFixed(3)}
           y={plotY(0) + 4 + 8}
           dominantBaseline="middle"
           textAnchor={
