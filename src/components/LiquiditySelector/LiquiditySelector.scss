@@ -149,6 +149,9 @@
     fill: hsl(202deg 58% 33%);
     stroke-width: 0;
   }
+  &.x-axis line {
+    pointer-events: none;
+  }
 }
 
 .chart-liquidity {
