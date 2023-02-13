@@ -384,7 +384,7 @@ export default function LiquiditySelector({
   const plotX = useCallback(
     (x: number): number => {
       const leftPadding = containerSize.width * 0.1;
-      const rightPadding = containerSize.width * 0.1;
+      const rightPadding = containerSize.width * 0.15;
       const width = containerSize.width - leftPadding - rightPadding;
       return xMin === xMax
         ? // choose midpoint
