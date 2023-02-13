@@ -410,8 +410,8 @@ export default function LiquiditySelector({
   );
   const plotY = useCallback(
     (y: number): number => {
-      const topPadding = 28;
-      const bottomPadding = 28; // height of axis-ticks element
+      const topPadding = 34;
+      const bottomPadding = 26; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return graphHeight === 0
         ? -bottomPadding // pin to bottom
@@ -421,8 +421,8 @@ export default function LiquiditySelector({
   );
   const percentY = useCallback(
     (y: number): number => {
-      const topPadding = 28;
-      const bottomPadding = 28; // height of axis-ticks element
+      const topPadding = 34;
+      const bottomPadding = 26; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
     },
@@ -462,9 +462,9 @@ export default function LiquiditySelector({
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <filter x="0" y="-0.2" width="1" height="1.4" id="text-solid-highlight">
+        <filter x="0" y="-0.4" width="1" height="1.8" id="text-solid-highlight">
           <feFlood floodColor="hsl(201, 77%, 61%)" />
-          <feGaussianBlur stdDeviation="2" />
+          <feGaussianBlur stdDeviation="3.5" />
           <feComponentTransfer>
             <feFuncA type="table" tableValues="0 0 0 1" />
           </feComponentTransfer>
@@ -807,7 +807,7 @@ function TicksArea({
           <text
             filter="url(#text-solid-highlight)"
             x={(4 + plotX(startTickPrice)).toFixed(3)}
-            y={4 - containerHeight}
+            y={6 - containerHeight}
             dy="12"
             textAnchor="end"
           >
@@ -932,7 +932,7 @@ function TicksArea({
           <text
             filter="url(#text-solid-highlight)"
             x={(-4 + plotX(endTickPrice)).toFixed(3)}
-            y={4 - containerHeight}
+            y={6 - containerHeight}
             dy="12"
             textAnchor="start"
           >
@@ -1420,7 +1420,7 @@ function Axis({
           filter="url(#text-solid-background)"
           className={tickMark === highlightedTick ? 'text--success' : ''}
           x={plotX(tickMark).toFixed(3)}
-          y={plotY(0) + 5 + 8}
+          y={plotY(0) + 4 + 8}
           dominantBaseline="middle"
           textAnchor="middle"
           alignmentBaseline="text-before-edge"
