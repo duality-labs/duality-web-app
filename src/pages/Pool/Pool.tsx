@@ -432,7 +432,7 @@ export default function Pool() {
       // invert price
       const newValue = new BigNumber(1).dividedBy(new BigNumber(value));
       // round number to formatted string
-      return newValue.toFixed();
+      return formatMaxSignificantDigits(newValue);
     };
     setInvertTokenOrder((order) => !order);
     setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
