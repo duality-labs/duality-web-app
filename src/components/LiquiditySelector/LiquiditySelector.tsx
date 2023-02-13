@@ -410,7 +410,7 @@ export default function LiquiditySelector({
   );
   const plotY = useCallback(
     (y: number): number => {
-      const topPadding = 20;
+      const topPadding = 28;
       const bottomPadding = 28; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return graphHeight === 0
@@ -421,7 +421,7 @@ export default function LiquiditySelector({
   );
   const percentY = useCallback(
     (y: number): number => {
-      const topPadding = 20;
+      const topPadding = 28;
       const bottomPadding = 28; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
@@ -461,6 +461,17 @@ export default function LiquiditySelector({
             <feMergeNode in="bg" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
+        </filter>
+        <filter x="0" y="-0.2" width="1" height="1.4" id="text-solid-highlight">
+          <feFlood floodColor="hsl(201, 77%, 61%)" />
+          <feGaussianBlur stdDeviation="2" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0 0 1" />
+          </feComponentTransfer>
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 1 1 1 1 1 1 1" />
+          </feComponentTransfer>
+          <feComposite operator="over" in="SourceGraphic" />
         </filter>
         <linearGradient id="white-concave-fade">
           <stop offset="0%" stopColor="hsl(220, 44%, 45%)" stopOpacity="0.1" />
@@ -794,8 +805,9 @@ function TicksArea({
         />
         {currentPrice && (
           <text
+            filter="url(#text-solid-highlight)"
             x={plotX(startTickPrice).toFixed(3)}
-            y={-containerHeight}
+            y={4 - containerHeight}
             dy="12"
             textAnchor="end"
           >
@@ -916,8 +928,9 @@ function TicksArea({
         />
         {currentPrice && (
           <text
+            filter="url(#text-solid-highlight)"
             x={plotX(endTickPrice).toFixed(3)}
-            y={-containerHeight}
+            y={4 - containerHeight}
             dy="12"
             textAnchor="start"
           >
