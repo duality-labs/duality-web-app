@@ -799,7 +799,7 @@ function TicksArea({
             dy="12"
             textAnchor="end"
           >
-            {formatAmount(
+            {`${formatAmount(
               startTickPrice
                 .multipliedBy(100)
                 .dividedBy(currentPrice)
@@ -809,8 +809,7 @@ function TicksArea({
                 signDisplay: 'always',
                 useGrouping: true,
               }
-            )}
-            %
+            )}%`}
           </text>
         )}
         {isDraggingMin ? (
@@ -922,7 +921,7 @@ function TicksArea({
             dy="12"
             textAnchor="start"
           >
-            {formatAmount(
+            {`${formatAmount(
               endTickPrice
                 .multipliedBy(100)
                 .dividedBy(currentPrice)
@@ -932,8 +931,7 @@ function TicksArea({
                 signDisplay: 'always',
                 useGrouping: true,
               }
-            )}
-            %
+            )}%`}
           </text>
         )}
         {isDraggingMax ? (
