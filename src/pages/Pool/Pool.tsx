@@ -93,6 +93,11 @@ export default function Pool() {
     }
   }, [tokenB, tokenList]);
 
+  const currentPriceFromTicks = useCurrentPriceFromTicks(
+    tokenA?.address,
+    tokenB?.address
+  );
+
   // start with a default range of nothing, but is should be quickly set
   // after price information becomes available
   const [rangeMin, setRangeMinUnprotected] = useState('1');
@@ -100,29 +105,56 @@ export default function Pool() {
   // protect price range extents
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
+      const restrictValue = (value: string) => {
+        const absoluteRestrictedValue = restrictPriceRangeValues(value);
+        const relativeRestrictedValue =
+          currentPriceFromTicks &&
+          new BigNumber(absoluteRestrictedValue).isLessThan(
+            currentPriceFromTicks.dividedBy(1000)
+          )
+            ? currentPriceFromTicks
+                .dividedBy(1000)
+                .toFixed(BigNumber.ROUND_FLOOR)
+            : value;
+        return relativeRestrictedValue;
+      };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
         return setRangeMinUnprotected((value) => {
-          return restrictPriceRangeValues(callback(value));
+          return restrictValue(callback(value));
         });
       }
       const value = valueOrCallback;
-      setRangeMinUnprotected(restrictPriceRangeValues(value));
+      setRangeMinUnprotected(restrictValue(value));
     },
-    []
+    [currentPriceFromTicks]
   );
   const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
+      const restrictValue = (value: string) => {
+        const absoluteRestrictedValue = restrictPriceRangeValues(value);
+        const relativeRestrictedValue =
+          currentPriceFromTicks &&
+          new BigNumber(absoluteRestrictedValue).isGreaterThan(
+            currentPriceFromTicks.multipliedBy(1000)
+          )
+            ? currentPriceFromTicks
+                .multipliedBy(1000)
+                .toFixed(BigNumber.ROUND_CEIL)
+            : value;
+        return relativeRestrictedValue;
+      };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
         return setRangeMaxUnprotected((value) => {
-          return restrictPriceRangeValues(callback(value));
+          return restrictValue(callback(value));
         });
       }
       const value = valueOrCallback;
-      setRangeMaxUnprotected(restrictPriceRangeValues(value));
+
+      setRangeMaxUnprotected(restrictValue(value));
     },
-    []
+    [currentPriceFromTicks]
   );
 
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
@@ -211,11 +243,6 @@ export default function Pool() {
     const userTicks = userTicksOrCallback;
     setUserTicksUnprotected(userTicks.map(restrictTickPrices));
   }, []);
-
-  const currentPriceFromTicks = useCurrentPriceFromTicks(
-    tokenA?.address,
-    tokenB?.address
-  );
 
   // note warning price, the price at which warning states should be shown
   // for one-sided liquidity this is the extent of data to one side
