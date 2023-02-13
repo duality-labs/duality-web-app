@@ -455,9 +455,9 @@ export default function LiquiditySelector({
     >
       <defs>
         <filter
-          x="-0.1"
+          x="0"
           y="-0.1"
-          width="1.2"
+          width="1"
           height="1.2"
           id="text-solid-background"
         >
@@ -1430,9 +1430,11 @@ function Axis({
           textAnchor="middle"
           alignmentBaseline="text-before-edge"
         >
+          &nbsp;
           {decimalPlaces !== undefined
             ? tickMark.toFixed(decimalPlaces)
             : tickMark}
+          &nbsp;
         </text>
       </g>
     );
