@@ -811,7 +811,7 @@ function TicksArea({
         {currentPrice && (
           <text
             filter="url(#text-solid-highlight)"
-            x={(4 + plotX(startTickPrice)).toFixed(3)}
+            x={(2 + 3.5 + plotX(startTickPrice)).toFixed(3)}
             y={6 - containerHeight}
             dy="12"
             textAnchor="end"
@@ -936,7 +936,7 @@ function TicksArea({
         {currentPrice && (
           <text
             filter="url(#text-solid-highlight)"
-            x={(-4 + plotX(endTickPrice)).toFixed(3)}
+            x={(-(2 + 3.5) + plotX(endTickPrice)).toFixed(3)}
             y={6 - containerHeight}
             dy="12"
             textAnchor="start"
