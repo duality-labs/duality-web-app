@@ -1427,7 +1427,13 @@ function Axis({
           x={plotX(tickMark).toFixed(3)}
           y={plotY(0) + 4 + 8}
           dominantBaseline="middle"
-          textAnchor="middle"
+          textAnchor={
+            highlightedTick && index > 0
+              ? index === 1
+                ? 'end'
+                : 'start'
+              : 'middle'
+          }
           alignmentBaseline="text-before-edge"
         >
           &nbsp;
