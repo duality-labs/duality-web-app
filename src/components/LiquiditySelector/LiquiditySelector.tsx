@@ -72,7 +72,7 @@ const defaultEndValue = new BigNumber(1.1);
 
 const leftPadding = 75;
 const rightPadding = 75;
-const topPadding = 34;
+const topPadding = 33;
 const bottomPadding = 26; // height of axis-ticks element
 
 export default function LiquiditySelector({
@@ -810,7 +810,7 @@ function TicksArea({
           <text
             filter="url(#text-solid-highlight)"
             x={(4 + 1.8 + plotX(startTickPrice)).toFixed(3)}
-            y={6 - containerHeight}
+            y={5 - containerHeight}
             dy="12"
             textAnchor="end"
           >
@@ -935,7 +935,7 @@ function TicksArea({
           <text
             filter="url(#text-solid-highlight)"
             x={(-(4 + 1.8) + plotX(endTickPrice)).toFixed(3)}
-            y={6 - containerHeight}
+            y={5 - containerHeight}
             dy="12"
             textAnchor="start"
           >
