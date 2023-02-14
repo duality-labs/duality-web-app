@@ -228,11 +228,10 @@ export default function LiquiditySelector({
   }, [allTicks]);
 
   // set and allow ephemeral setting of graph extents
-  const [graphStart, setGraphStart] = useState(initialGraphStart);
-  const [graphEnd, setGraphEnd] = useState(initialGraphEnd);
-
   // allow user ticks to reset the boundary of the graph
-  useLayoutEffect(() => {
+  const [graphStart = initialGraphStart, graphEnd = initialGraphEnd] = useMemo<
+    [BigNumber | undefined, BigNumber | undefined]
+  >(() => {
     const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
       (result, tick) => {
         if (!tick) return result;
@@ -260,18 +259,14 @@ export default function LiquiditySelector({
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
     // by padding dataStart and dataEnd with the needed amount of pixels
     if (allValues.length > 0) {
-      setGraphStart(new BigNumber(Math.min(...allValues)));
-      setGraphEnd(new BigNumber(Math.max(...allValues)));
+      return [
+        new BigNumber(Math.min(...allValues)),
+        new BigNumber(Math.max(...allValues)),
+      ];
+    } else {
+      return [undefined, undefined];
     }
-  }, [
-    initialGraphStart,
-    initialGraphEnd,
-    dataStart,
-    dataEnd,
-    rangeMin,
-    rangeMax,
-    userTicks,
-  ]);
+  }, [dataStart, dataEnd, rangeMin, rangeMax, userTicks]);
 
   // find container size that buckets should fit
   const svgContainer = useRef<HTMLDivElement>(null);
