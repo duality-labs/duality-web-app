@@ -54,13 +54,17 @@ const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 const priceMin = Math.pow(10, -maxFractionDigits);
 const priceMax = Math.pow(10, +maxFractionDigits);
+const priceRangeLimits: [number, number] = [priceMin, priceMax];
 const defaultFee = '0.30%';
 const defaultLiquidityShape =
   liquidityShapes.find(({ value }) => value === 'flat') ?? liquidityShapes[0];
 
 const defaultPrecision = '6';
 
-const restrictPriceRangeValues = (valueString: string) => {
+const restrictPriceRangeValues = (
+  valueString: string,
+  [priceMin, priceMax]: [number | string, number | string] = priceRangeLimits
+) => {
   const value = new BigNumber(valueString);
   if (value.isLessThan(priceMin)) {
     return formatPrice(priceMin);
@@ -109,15 +113,13 @@ export default function Pool() {
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
       const restrictValue = (value: string) => {
-        const absoluteRestrictedValue = restrictPriceRangeValues(value);
-        const relativeRestrictedValue =
-          currentPriceFromTicks &&
-          new BigNumber(absoluteRestrictedValue).isLessThan(
-            currentPriceFromTicks.dividedBy(1000)
-          )
-            ? formatMaxSignificantDigits(currentPriceFromTicks.dividedBy(1000))
-            : value;
-        return relativeRestrictedValue;
+        return restrictPriceRangeValues(
+          value,
+          currentPriceFromTicks && [
+            currentPriceFromTicks.dividedBy(1000).toFixed(),
+            currentPriceFromTicks?.multipliedBy(1000).toFixed(),
+          ]
+        );
       };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
@@ -133,17 +135,13 @@ export default function Pool() {
   const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
       const restrictValue = (value: string) => {
-        const absoluteRestrictedValue = restrictPriceRangeValues(value);
-        const relativeRestrictedValue =
-          currentPriceFromTicks &&
-          new BigNumber(absoluteRestrictedValue).isGreaterThan(
-            currentPriceFromTicks.multipliedBy(1000)
-          )
-            ? formatMaxSignificantDigits(
-                currentPriceFromTicks.multipliedBy(1000)
-              )
-            : value;
-        return relativeRestrictedValue;
+        return restrictPriceRangeValues(
+          value,
+          currentPriceFromTicks && [
+            currentPriceFromTicks.dividedBy(1000).toFixed(),
+            currentPriceFromTicks?.multipliedBy(1000).toFixed(),
+          ]
+        );
       };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
