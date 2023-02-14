@@ -881,17 +881,8 @@ export default function Pool() {
                   canMoveDown
                   canMoveX
                   oneSidedLiquidity={isValueAZero || isValueBZero}
+                  ControlsComponent={ChartControls}
                 ></LiquiditySelector>
-                <div className="col">
-                  <div className="row chart-zoom-controls gap-2">
-                    <button type="button" className="col flex-centered">
-                      <FontAwesomeIcon icon={faMagnifyingGlassPlus} />
-                    </button>
-                    <button type="button" className="col flex-centered">
-                      <FontAwesomeIcon icon={faMagnifyingGlassMinus} />
-                    </button>
-                  </div>
-                </div>
               </div>
               <div className="price-card mt-4">
                 <div className="card-row">
@@ -1033,6 +1024,25 @@ export default function Pool() {
       </div>
       <div className="spacer"></div>
     </form>
+  );
+}
+
+function ChartControls({
+  zoomIn,
+  zoomOut,
+}: {
+  zoomIn: () => void;
+  zoomOut: () => void;
+}) {
+  return (
+    <div className="row chart-zoom-controls gap-2">
+      <button type="button" className="col flex-centered" onClick={zoomIn}>
+        <FontAwesomeIcon icon={faMagnifyingGlassPlus} />
+      </button>
+      <button type="button" className="col flex-centered" onClick={zoomOut}>
+        <FontAwesomeIcon icon={faMagnifyingGlassMinus} />
+      </button>
+    </div>
   );
 }
 
