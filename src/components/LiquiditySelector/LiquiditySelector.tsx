@@ -374,8 +374,8 @@ export default function LiquiditySelector({
       return [[], []];
     }
     // get bounds
-    const xMin = dataStart.sd(2, BigNumber.ROUND_DOWN);
-    const xMax = dataEnd.sd(2, BigNumber.ROUND_UP);
+    const xMin = dataStart;
+    const xMax = dataEnd;
     // get middle 'break' point which will separate bucket sections
     const breakPoint = edgePrice || currentPriceFromTicks;
     // skip if there is no breakpoint
