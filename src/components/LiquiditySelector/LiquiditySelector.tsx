@@ -70,8 +70,8 @@ const bucketWidth = 8; // bucket width in pixels
 const defaultStartValue = new BigNumber(1 / 1.1);
 const defaultEndValue = new BigNumber(1.1);
 
-const leftPadding = 64;
-const rightPadding = 96;
+const leftPadding = 75;
+const rightPadding = 75;
 
 export default function LiquiditySelector({
   ticks = [],
