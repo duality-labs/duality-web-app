@@ -72,6 +72,8 @@ const defaultEndValue = new BigNumber(1.1);
 
 const leftPadding = 75;
 const rightPadding = 75;
+const topPadding = 34;
+const bottomPadding = 26; // height of axis-ticks element
 
 export default function LiquiditySelector({
   ticks = [],
@@ -410,8 +412,6 @@ export default function LiquiditySelector({
   );
   const plotY = useCallback(
     (y: number): number => {
-      const topPadding = 34;
-      const bottomPadding = 26; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return graphHeight === 0
         ? -bottomPadding // pin to bottom
@@ -421,8 +421,6 @@ export default function LiquiditySelector({
   );
   const percentY = useCallback(
     (y: number): number => {
-      const topPadding = 34;
-      const bottomPadding = 26; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
     },
