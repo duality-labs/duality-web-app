@@ -1029,15 +1029,25 @@ function ChartControls({
   zoomIn,
   zoomOut,
 }: {
-  zoomIn: () => void;
-  zoomOut: () => void;
+  zoomIn?: () => void;
+  zoomOut?: () => void;
 }) {
   return (
     <div className="row chart-zoom-controls gap-2">
-      <button type="button" className="col flex-centered" onClick={zoomIn}>
+      <button
+        type="button"
+        className="col flex-centered"
+        disabled={!zoomIn}
+        onClick={zoomIn}
+      >
         <FontAwesomeIcon icon={faMagnifyingGlassPlus} />
       </button>
-      <button type="button" className="col flex-centered" onClick={zoomOut}>
+      <button
+        type="button"
+        className="col flex-centered"
+        disabled={!zoomOut}
+        onClick={zoomOut}
+      >
         <FontAwesomeIcon icon={faMagnifyingGlassMinus} />
       </button>
     </div>

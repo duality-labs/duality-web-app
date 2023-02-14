@@ -42,8 +42,8 @@ export interface LiquiditySelectorProps {
   canMoveX?: boolean;
   oneSidedLiquidity?: boolean;
   ControlsComponent?: ComponentType<{
-    zoomIn: () => void;
-    zoomOut: () => void;
+    zoomIn?: () => void;
+    zoomOut?: () => void;
   }>;
 }
 
@@ -680,7 +680,17 @@ export default function LiquiditySelector({
       </div>
       {ControlsComponent && (
         <div className="col">
-          <ControlsComponent zoomIn={zoomIn} zoomOut={zoomOut} />
+          <ControlsComponent
+            zoomIn={zoomIn}
+            zoomOut={
+              zoomMin &&
+              zoomMax &&
+              allDataStart?.isGreaterThanOrEqualTo(zoomMin) &&
+              allDataEnd?.isLessThanOrEqualTo(zoomMax)
+                ? undefined
+                : zoomOut
+            }
+          />
         </div>
       )}
     </>
