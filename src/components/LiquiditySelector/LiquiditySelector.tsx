@@ -798,15 +798,15 @@ function TicksArea({
           className="pole-flag-stripe"
           x1={(plotX(startTickPrice) - 11.5).toFixed(3)}
           x2={(plotX(startTickPrice) - 11.5).toFixed(3)}
-          y1={plotY(new BigNumber(0.965)).toFixed(3)}
-          y2={plotY(new BigNumber(0.895)).toFixed(3)}
+          y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
+          y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
           x1={(plotX(startTickPrice) - 18.5).toFixed(3)}
           x2={(plotX(startTickPrice) - 18.5).toFixed(3)}
-          y1={plotY(new BigNumber(0.965)).toFixed(3)}
-          y2={plotY(new BigNumber(0.895)).toFixed(3)}
+          y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
+          y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         {currentPrice && (
           <text
@@ -923,15 +923,15 @@ function TicksArea({
           className="pole-flag-stripe"
           x1={(plotX(endTickPrice) + 11.5).toFixed(3)}
           x2={(plotX(endTickPrice) + 11.5).toFixed(3)}
-          y1={plotY(new BigNumber(0.965)).toFixed(3)}
-          y2={plotY(new BigNumber(0.895)).toFixed(3)}
+          y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
+          y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
           x1={(plotX(endTickPrice) + 18.5).toFixed(3)}
           x2={(plotX(endTickPrice) + 18.5).toFixed(3)}
-          y1={plotY(new BigNumber(0.965)).toFixed(3)}
-          y2={plotY(new BigNumber(0.895)).toFixed(3)}
+          y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
+          y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         {currentPrice && (
           <text
