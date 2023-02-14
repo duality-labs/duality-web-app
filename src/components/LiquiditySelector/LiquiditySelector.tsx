@@ -231,6 +231,48 @@ export default function LiquiditySelector({
   const [graphStart, setGraphStart] = useState(initialGraphStart);
   const [graphEnd, setGraphEnd] = useState(initialGraphEnd);
 
+  // allow user ticks to reset the boundary of the graph
+  useLayoutEffect(() => {
+    const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
+      (result, tick) => {
+        if (!tick) return result;
+        const { price } = tick;
+        return !result || price.isLessThan(result) ? price : result;
+      },
+      undefined
+    );
+    const maxUserTickPrice = userTicks.reduce<BigNumber | undefined>(
+      (result, tick) => {
+        if (!tick) return result;
+        const { price } = tick;
+        return !result || price.isGreaterThan(result) ? price : result;
+      },
+      undefined
+    );
+    const allValues = [
+      Number(rangeMin),
+      Number(rangeMax),
+      dataStart?.toNumber() || 0,
+      dataEnd?.toNumber() || 0,
+      minUserTickPrice?.toNumber() || 0,
+      maxUserTickPrice?.toNumber() || 0,
+    ].filter((v) => v && !isNaN(v));
+    // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
+    // by padding dataStart and dataEnd with the needed amount of pixels
+    if (allValues.length > 0) {
+      setGraphStart(new BigNumber(Math.min(...allValues)));
+      setGraphEnd(new BigNumber(Math.max(...allValues)));
+    }
+  }, [
+    initialGraphStart,
+    initialGraphEnd,
+    dataStart,
+    dataEnd,
+    rangeMin,
+    rangeMax,
+    userTicks,
+  ]);
+
   // find container size that buckets should fit
   const svgContainer = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -317,48 +359,6 @@ export default function LiquiditySelector({
     bucketCount,
     dataStart,
     dataEnd,
-  ]);
-
-  // allow user ticks to reset the boundary of the graph
-  useLayoutEffect(() => {
-    const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
-      (result, tick) => {
-        if (!tick) return result;
-        const { price } = tick;
-        return !result || price.isLessThan(result) ? price : result;
-      },
-      undefined
-    );
-    const maxUserTickPrice = userTicks.reduce<BigNumber | undefined>(
-      (result, tick) => {
-        if (!tick) return result;
-        const { price } = tick;
-        return !result || price.isGreaterThan(result) ? price : result;
-      },
-      undefined
-    );
-    const allValues = [
-      Number(rangeMin),
-      Number(rangeMax),
-      dataStart?.toNumber() || 0,
-      dataEnd?.toNumber() || 0,
-      minUserTickPrice?.toNumber() || 0,
-      maxUserTickPrice?.toNumber() || 0,
-    ].filter((v) => v && !isNaN(v));
-    // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
-    // by padding dataStart and dataEnd with the needed amount of pixels
-    if (allValues.length > 0) {
-      setGraphStart(new BigNumber(Math.min(...allValues)));
-      setGraphEnd(new BigNumber(Math.max(...allValues)));
-    }
-  }, [
-    initialGraphStart,
-    initialGraphEnd,
-    dataStart,
-    dataEnd,
-    rangeMin,
-    rangeMax,
-    userTicks,
   ]);
 
   // calculate histogram values
