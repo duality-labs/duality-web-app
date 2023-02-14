@@ -70,6 +70,9 @@ const bucketWidth = 8; // bucket width in pixels
 const defaultStartValue = new BigNumber(1 / 1.1);
 const defaultEndValue = new BigNumber(1.1);
 
+const leftPadding = 64;
+const rightPadding = 96;
+
 export default function LiquiditySelector({
   ticks = [],
   tokenA,
@@ -384,8 +387,6 @@ export default function LiquiditySelector({
   const xMax = (startIsEnd ? graphEnd.plus(1e-18) : graphEnd).toNumber();
   const plotX = useCallback(
     (x: number): number => {
-      const leftPadding = containerSize.width * 0.1;
-      const rightPadding = containerSize.width * 0.15;
       const width = containerSize.width - leftPadding - rightPadding;
       return xMin === xMax
         ? // choose midpoint
@@ -399,8 +400,6 @@ export default function LiquiditySelector({
   );
   const plotXinverse = useCallback(
     (x: number): number => {
-      const leftPadding = 0;
-      const rightPadding = 0;
       const width = containerSize.width - leftPadding - rightPadding;
       return Math.exp(
         ((x - leftPadding) * (Math.log(xMax) - Math.log(xMin))) / width +
@@ -546,6 +545,7 @@ export default function LiquiditySelector({
         //       with a reasonably stable center marker point (not always, a distribution could be skewed)
         xMin={xMin / 1.2}
         xMax={xMax * 1.2}
+        axisWidth={containerSize.width - (rightPadding - leftPadding)}
         tickMarks={[
           currentPriceFromTicks?.toNumber() || '0',
           rangeMin,
@@ -1364,6 +1364,7 @@ function Axis({
   className = '',
   xMin,
   xMax,
+  axisWidth,
   tickMarks: givenTickMarks,
   highlightedTick = -1,
   getDecimalPlaces = (tickMark) =>
@@ -1374,6 +1375,7 @@ function Axis({
 }: {
   xMin: number;
   xMax: number;
+  axisWidth?: number;
   className?: string;
   tickMarks?: number[];
   highlightedTick?: number;
@@ -1403,7 +1405,12 @@ function Axis({
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
-      <rect x="0" width={plotX(xMax * 2)} y={plotY(0).toFixed(0)} height="8" />
+      <rect
+        x="0"
+        width={axisWidth || plotX(xMax)}
+        y={plotY(0).toFixed(0)}
+        height="8"
+      />
       <g className="axis-ticks">{tickMarks.map(mapTickMark)}</g>
     </g>
   );
