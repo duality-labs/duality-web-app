@@ -243,27 +243,9 @@ export default function LiquiditySelector({
   const [allDataStart, allDataEnd] = useMemo<
     [BigNumber | undefined, BigNumber | undefined]
   >(() => {
-    const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
-      (result, tick) => {
-        if (!tick) return result;
-        const { price } = tick;
-        return !result || price.isLessThan(result) ? price : result;
-      },
-      undefined
-    );
-    const maxUserTickPrice = userTicks.reduce<BigNumber | undefined>(
-      (result, tick) => {
-        if (!tick) return result;
-        const { price } = tick;
-        return !result || price.isGreaterThan(result) ? price : result;
-      },
-      undefined
-    );
     const allValues = [
       dataStart?.toNumber() || 0,
       dataEnd?.toNumber() || 0,
-      minUserTickPrice?.toNumber() || 0,
-      maxUserTickPrice?.toNumber() || 0,
     ].filter((v) => v && !isNaN(v));
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
     // by padding dataStart and dataEnd with the needed amount of pixels
@@ -275,7 +257,7 @@ export default function LiquiditySelector({
     } else {
       return [undefined, undefined];
     }
-  }, [dataStart, dataEnd, userTicks]);
+  }, [dataStart, dataEnd]);
 
   const [[zoomMin, zoomMax] = [], setZoomRange] = useState<[string, string]>();
 
@@ -308,9 +290,27 @@ export default function LiquiditySelector({
   const [graphStart = initialGraphStart, graphEnd = initialGraphEnd] = useMemo<
     [BigNumber | undefined, BigNumber | undefined]
   >(() => {
+    const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
+      (result, tick) => {
+        if (!tick) return result;
+        const { price } = tick;
+        return !result || price.isLessThan(result) ? price : result;
+      },
+      undefined
+    );
+    const maxUserTickPrice = userTicks.reduce<BigNumber | undefined>(
+      (result, tick) => {
+        if (!tick) return result;
+        const { price } = tick;
+        return !result || price.isGreaterThan(result) ? price : result;
+      },
+      undefined
+    );
     const allValues = [
       Number(rangeMin),
       Number(rangeMax),
+      minUserTickPrice?.toNumber() || 0,
+      maxUserTickPrice?.toNumber() || 0,
       zoomedDataStart?.toNumber(),
       zoomedDataEnd?.toNumber(),
     ].filter((v): v is number => !!v && !isNaN(v));
@@ -324,7 +324,7 @@ export default function LiquiditySelector({
     } else {
       return [undefined, undefined];
     }
-  }, [rangeMin, rangeMax, zoomedDataStart, zoomedDataEnd]);
+  }, [rangeMin, rangeMax, userTicks, zoomedDataStart, zoomedDataEnd]);
 
   // find container size that buckets should fit
   const svgContainer = useRef<HTMLDivElement>(null);
