@@ -543,8 +543,8 @@ export default function LiquiditySelector({
         //       the xMin and xMax could be determined from number of buckets and bucket width ratio
         //       to provide the extact extents for taking up the entire container
         //       with a reasonably stable center marker point (not always, a distribution could be skewed)
-        xMin={xMin / 1.2}
-        xMax={xMax * 1.2}
+        xMin={xMin}
+        xMax={xMax}
         axisWidth={containerSize.width - (rightPadding - leftPadding)}
         tickMarks={[
           currentPriceFromTicks?.toNumber() || '0',
