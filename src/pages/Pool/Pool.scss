@@ -124,6 +124,21 @@
     }
   }
 
+  .chart-zoom-controls {
+    button {
+      & {
+        // align button control with absolute height of chart text boxes
+        padding: 4.65px;
+        border-radius: 5px;
+      }
+      &:hover,
+      &:focus,
+      &:active {
+        background-color: hsl(202deg 58% 33%);
+      }
+    }
+  }
+
   .select-fee-tier {
     .badge {
       // enforce consistent width that can cover 100%

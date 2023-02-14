@@ -12,6 +12,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
   faArrowRightArrowLeft,
+  faMagnifyingGlassPlus,
+  faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -860,7 +862,7 @@ export default function Pool() {
                   </div>
                 </div>
               </div>
-              <div className="flex row chart-area">
+              <div className="flex row chart-area gap-3">
                 <LiquiditySelector
                   tokenA={tokenA}
                   tokenB={tokenB}
@@ -880,6 +882,16 @@ export default function Pool() {
                   canMoveX
                   oneSidedLiquidity={isValueAZero || isValueBZero}
                 ></LiquiditySelector>
+                <div className="col">
+                  <div className="row chart-zoom-controls gap-2">
+                    <button type="button" className="col flex-centered">
+                      <FontAwesomeIcon icon={faMagnifyingGlassPlus} />
+                    </button>
+                    <button type="button" className="col flex-centered">
+                      <FontAwesomeIcon icon={faMagnifyingGlassMinus} />
+                    </button>
+                  </div>
+                </div>
               </div>
               <div className="price-card mt-4">
                 <div className="card-row">
