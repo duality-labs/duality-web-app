@@ -7,6 +7,7 @@ import {
   MouseEvent,
   useRef,
   useEffect,
+  ComponentType,
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
 
@@ -40,6 +41,10 @@ export interface LiquiditySelectorProps {
   canMoveDown?: boolean;
   canMoveX?: boolean;
   oneSidedLiquidity?: boolean;
+  ControlsComponent?: ComponentType<{
+    zoomIn: () => void;
+    zoomOut: () => void;
+  }>;
 }
 
 export interface Tick {
@@ -96,6 +101,7 @@ export default function LiquiditySelector({
   canMoveDown,
   canMoveX,
   oneSidedLiquidity = false,
+  ControlsComponent,
 }: LiquiditySelectorProps) {
   // translate ticks from token0/1 to tokenA/B
   const allTicks: TickGroup = useMemo(() => {
@@ -273,6 +279,32 @@ export default function LiquiditySelector({
     }
   }, [dataStart, dataEnd, userTicks]);
 
+  const [[zoomMin, zoomMax] = [], setZoomRange] = useState<[string, string]>();
+
+  const [zoomedDataStart, zoomedDataEnd] = useMemo<
+    [BigNumber | undefined, BigNumber | undefined]
+  >(() => {
+    if (
+      !!zoomMin &&
+      !!zoomMax &&
+      !isNaN(Number(zoomMin)) &&
+      !isNaN(Number(zoomMax))
+    ) {
+      if (allDataStart?.isNaN() === false && allDataEnd?.isNaN() === false) {
+        const min = allDataStart.isLessThan(zoomMin)
+          ? new BigNumber(zoomMin)
+          : allDataStart;
+        const max = allDataEnd.isGreaterThan(zoomMax)
+          ? new BigNumber(zoomMax)
+          : allDataEnd;
+        return [min, max];
+      } else {
+        return [new BigNumber(zoomMin), new BigNumber(zoomMax)];
+      }
+    }
+    return [allDataStart, allDataEnd];
+  }, [zoomMin, zoomMax, allDataStart, allDataEnd]);
+
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
   const [graphStart = initialGraphStart, graphEnd = initialGraphEnd] = useMemo<
@@ -281,8 +313,8 @@ export default function LiquiditySelector({
     const allValues = [
       Number(rangeMin),
       Number(rangeMax),
-      allDataStart?.toNumber(),
-      allDataEnd?.toNumber(),
+      zoomedDataStart?.toNumber(),
+      zoomedDataEnd?.toNumber(),
     ].filter((v): v is number => !!v && !isNaN(v));
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
     // by padding dataStart and dataEnd with the needed amount of pixels
@@ -294,7 +326,7 @@ export default function LiquiditySelector({
     } else {
       return [undefined, undefined];
     }
-  }, [rangeMin, rangeMax, allDataStart, allDataEnd]);
+  }, [rangeMin, rangeMax, zoomedDataStart, zoomedDataEnd]);
 
   // find container size that buckets should fit
   const svgContainer = useRef<HTMLDivElement>(null);
@@ -605,10 +637,58 @@ export default function LiquiditySelector({
     </svg>
   );
 
+  const zoomIn = useCallback(() => {
+    const rangeMinNumber = Number(rangeMin);
+    const rangeMaxNumber = Number(rangeMax);
+    const zoomMinNumber = Number(zoomMin) || graphStart.toNumber();
+    const zoomMaxNumber = Number(zoomMax) || graphEnd.toNumber();
+    if (
+      [rangeMinNumber, rangeMaxNumber, zoomMinNumber, zoomMaxNumber].every(
+        (v) => !isNaN(v)
+      )
+    ) {
+      const midpoint =
+        Math.sqrt(rangeMaxNumber / rangeMinNumber) * rangeMinNumber;
+      const zoomRatio = Math.sqrt(zoomMaxNumber / zoomMinNumber);
+      const newZoomRatio = zoomRatio / 2;
+      setZoomRange([
+        (midpoint / newZoomRatio).toFixed(20),
+        (midpoint * newZoomRatio).toFixed(20),
+      ]);
+    }
+  }, [rangeMin, rangeMax, zoomMin, zoomMax, graphStart, graphEnd]);
+  const zoomOut = useCallback(() => {
+    const rangeMinNumber = Number(rangeMin);
+    const rangeMaxNumber = Number(rangeMax);
+    const zoomMinNumber = Number(zoomMin) || graphStart.toNumber();
+    const zoomMaxNumber = Number(zoomMax) || graphEnd.toNumber();
+    if (
+      [rangeMinNumber, rangeMaxNumber, zoomMinNumber, zoomMaxNumber].every(
+        (v) => !isNaN(v)
+      )
+    ) {
+      const midpoint =
+        Math.sqrt(rangeMaxNumber / rangeMinNumber) * rangeMinNumber;
+      const zoomRatio = Math.sqrt(zoomMaxNumber / zoomMinNumber);
+      const newZoomRatio = zoomRatio * 2;
+      setZoomRange([
+        (midpoint / newZoomRatio).toFixed(20),
+        (midpoint * newZoomRatio).toFixed(20),
+      ]);
+    }
+  }, [rangeMin, rangeMax, zoomMin, zoomMax, graphStart, graphEnd]);
+
   return (
-    <div className="svg-container" ref={svgContainer}>
-      {svg}
-    </div>
+    <>
+      <div className="svg-container" ref={svgContainer}>
+        {svg}
+      </div>
+      {ControlsComponent && (
+        <div className="col">
+          <ControlsComponent zoomIn={zoomIn} zoomOut={zoomOut} />
+        </div>
+      )}
+    </>
   );
 }
 
