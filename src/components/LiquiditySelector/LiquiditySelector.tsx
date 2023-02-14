@@ -236,7 +236,7 @@ export default function LiquiditySelector({
 
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
-  const [graphStart = initialGraphStart, graphEnd = initialGraphEnd] = useMemo<
+  const [allDataStart, allDataEnd] = useMemo<
     [BigNumber | undefined, BigNumber | undefined]
   >(() => {
     const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
@@ -256,8 +256,6 @@ export default function LiquiditySelector({
       undefined
     );
     const allValues = [
-      Number(rangeMin),
-      Number(rangeMax),
       dataStart?.toNumber() || 0,
       dataEnd?.toNumber() || 0,
       minUserTickPrice?.toNumber() || 0,
@@ -273,7 +271,30 @@ export default function LiquiditySelector({
     } else {
       return [undefined, undefined];
     }
-  }, [dataStart, dataEnd, rangeMin, rangeMax, userTicks]);
+  }, [dataStart, dataEnd, userTicks]);
+
+  // set and allow ephemeral setting of graph extents
+  // allow user ticks to reset the boundary of the graph
+  const [graphStart = initialGraphStart, graphEnd = initialGraphEnd] = useMemo<
+    [BigNumber | undefined, BigNumber | undefined]
+  >(() => {
+    const allValues = [
+      Number(rangeMin),
+      Number(rangeMax),
+      allDataStart?.toNumber(),
+      allDataEnd?.toNumber(),
+    ].filter((v): v is number => !!v && !isNaN(v));
+    // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
+    // by padding dataStart and dataEnd with the needed amount of pixels
+    if (allValues.length > 0) {
+      return [
+        new BigNumber(Math.min(...allValues)),
+        new BigNumber(Math.max(...allValues)),
+      ];
+    } else {
+      return [undefined, undefined];
+    }
+  }, [rangeMin, rangeMax, allDataStart, allDataEnd]);
 
   // find container size that buckets should fit
   const svgContainer = useRef<HTMLDivElement>(null);
