@@ -42,7 +42,7 @@
         flex-direction: column;
         flex-wrap: nowrap;
         gap: 0;
-        background-color: var(--default);
+        background-color: hsla(202, 57%, 33%, 1);
         border-radius: paddings.$p-3;
       }
     }
@@ -66,7 +66,7 @@
         padding: paddings.$p-4;
         padding-top: paddings.$p-2;
         padding-bottom: paddings.$p-2;
-        background-color: var(--default);
+        background-color: hsla(202, 57%, 33%, 1);
         // add barely noticable rounding to avoid looking flat/sharp
         border-radius: 2px;
       }
@@ -88,16 +88,11 @@
       & + label *:not(:has(> *)) {
         opacity: 0.6;
       }
-      & + label img {
-        opacity: 0.75;
-      }
-      &:checked + label * {
-        opacity: 1;
-      }
+      &:checked + label *,
       &:focus + label,
       &:active + label,
-      + label:hover {
-        background-color: rgba($color: #fff, $alpha: 0.1);
+      + label:hover * {
+        opacity: 1;
       }
       &:focus + label,
       &:active + label {
