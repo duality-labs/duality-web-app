@@ -98,6 +98,8 @@
       &:focus + label,
       &:active + label {
         outline: #fff solid 1px;
+        // bump the z-index of the active element so outline can be easily seen
+        position: relative;
       }
     }
   }
