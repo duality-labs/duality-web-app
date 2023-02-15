@@ -90,13 +90,13 @@
         opacity: 1;
       }
       &:focus + label,
-      :active + label,
+      &:active + label,
       + label:hover {
         border-radius: 6px;
         background-color: rgba($color: #fff, $alpha: 0.1);
       }
       &:focus + label,
-      :active + label {
+      &:active + label {
         outline: #fff solid 1px;
         border-radius: 6px;
       }
