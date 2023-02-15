@@ -48,11 +48,7 @@
     }
     .select-input-group--row {
       .select-input-option {
-        background-color: var(--default);
-        border-radius: paddings.$p-3;
         flex: 1 1 auto;
-        label {
-        }
       }
     }
     .select-input-group {
@@ -70,6 +66,15 @@
         padding: paddings.$p-4;
         padding-top: paddings.$p-2;
         padding-bottom: paddings.$p-2;
+        background-color: var(--default);
+        // add barely noticable rounding to avoid looking flat/sharp
+        border-radius: 2px;
+      }
+    }
+    // only round corners of row options (not dropdown columns)
+    .select-input-group--row .select-input-option {
+      label {
+        border-radius: paddings.$p-3;
       }
     }
 
@@ -92,13 +97,11 @@
       &:focus + label,
       &:active + label,
       + label:hover {
-        border-radius: 6px;
         background-color: rgba($color: #fff, $alpha: 0.1);
       }
       &:focus + label,
       &:active + label {
         outline: #fff solid 1px;
-        border-radius: 6px;
       }
     }
   }
