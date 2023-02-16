@@ -682,19 +682,35 @@ export default function LiquiditySelector({
         (v) => !isNaN(v)
       )
     ) {
-      const midpoint =
+      const zoomMidpoint =
         Math.sqrt(rangeMaxNumber / rangeMinNumber) * rangeMinNumber;
       const zoomRatio = zoomMaxNumber / zoomMinNumber;
       const rangeLimitRatio = Math.sqrt(
         1 + (zoomRatio - 1) / (1 - zoomSpeedFactor)
       );
       const newZoomRatio = Math.max(maxZoomRatio, rangeLimitRatio);
+      const midpoint = allDataStart
+        ?.multipliedBy(newZoomRatio)
+        .isGreaterThan(zoomMidpoint)
+        ? allDataStart?.multipliedBy(newZoomRatio).toNumber()
+        : allDataEnd?.dividedBy(newZoomRatio).isLessThan(zoomMidpoint)
+        ? allDataEnd?.dividedBy(newZoomRatio).toNumber()
+        : zoomMidpoint;
       setZoomRange([
         (midpoint / newZoomRatio).toFixed(20),
         (midpoint * newZoomRatio).toFixed(20),
       ]);
     }
-  }, [rangeMin, rangeMax, zoomMin, zoomMax, graphStart, graphEnd]);
+  }, [
+    rangeMin,
+    rangeMax,
+    zoomMin,
+    zoomMax,
+    graphStart,
+    graphEnd,
+    allDataStart,
+    allDataEnd,
+  ]);
 
   return (
     <>
