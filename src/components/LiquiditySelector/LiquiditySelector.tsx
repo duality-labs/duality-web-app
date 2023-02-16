@@ -646,9 +646,18 @@ export default function LiquiditySelector({
         Math.sqrt(rangeMaxNumber / rangeMinNumber) * rangeMinNumber;
       const zoomRatio = Math.sqrt(zoomMaxNumber / zoomMinNumber);
       const newZoomRatio = zoomRatio / 2;
+      // limit the new zoom limits to a fraction of the current range
+      const rangeRatio = new BigNumber(rangeMax).dividedBy(rangeMin);
+      const rangeLimitRatio = rangeRatio.minus(1).dividedBy(10).plus(1);
+      const limitMinNumber = new BigNumber(rangeMin)
+        .multipliedBy(rangeLimitRatio)
+        .toNumber();
+      const limitMaxNumber = new BigNumber(rangeMax)
+        .dividedBy(rangeLimitRatio)
+        .toNumber();
       setZoomRange([
-        (midpoint / newZoomRatio).toFixed(20),
-        (midpoint * newZoomRatio).toFixed(20),
+        Math.min(limitMinNumber, midpoint / newZoomRatio).toFixed(20),
+        Math.max(limitMaxNumber, midpoint * newZoomRatio).toFixed(20),
       ]);
     }
   }, [rangeMin, rangeMax, zoomMin, zoomMax, graphStart, graphEnd]);
