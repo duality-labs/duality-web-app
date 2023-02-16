@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import {
+import React, {
   useState,
   useMemo,
   useCallback,
@@ -31,8 +31,8 @@ export interface LiquiditySelectorProps {
   setUserTickSelected: (index: number) => void;
   rangeMin: string;
   rangeMax: string;
-  setRangeMin: (rangeMin: string) => void;
-  setRangeMax: (rangeMax: string) => void;
+  setRangeMin: React.Dispatch<React.SetStateAction<string>>;
+  setRangeMax: React.Dispatch<React.SetStateAction<string>>;
   userTicksBase?: Array<Tick | undefined>;
   userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
@@ -80,7 +80,7 @@ const defaultEndValue = new BigNumber(1.1);
 // We should allow users to see at minimum a few ticks across the width of a
 // the chart. As our tickspacing base is a ratio of 1.0001, a max ratio of
 // 1.001 should allow users to see to space of about 10 ticks at max zoom.
-const maxZoomRatio = 1.001; // eg. midpoint of 2000: zoomMin≈1999 zoomMax≈2001
+const maxZoomRatio = 1.01; // eg. midpoint of 200: zoomMin≈199 zoomMax≈201
 const zoomSpeedFactor = 0.5; // approx equivalent to zooming in range by 10%
 
 const leftPadding = 75;
@@ -664,8 +664,27 @@ export default function LiquiditySelector({
         (midpoint / newZoomRatio).toFixed(20),
         (midpoint * newZoomRatio).toFixed(20),
       ]);
+      setRangeMin((rangeMin: string) => {
+        return new BigNumber(rangeMin).isLessThan(midpoint / newZoomRatio)
+          ? (midpoint / newZoomRatio).toFixed(20)
+          : rangeMin;
+      });
+      setRangeMax((rangeMax: string) => {
+        return new BigNumber(rangeMax).isGreaterThan(midpoint * newZoomRatio)
+          ? (midpoint * newZoomRatio).toFixed(20)
+          : rangeMax;
+      });
     }
-  }, [rangeMin, rangeMax, zoomMin, zoomMax, graphStart, graphEnd]);
+  }, [
+    rangeMin,
+    rangeMax,
+    zoomMin,
+    zoomMax,
+    graphStart,
+    graphEnd,
+    setRangeMin,
+    setRangeMax,
+  ]);
   const zoomOut = useCallback(() => {
     const rangeMinNumber = Number(rangeMin);
     const rangeMaxNumber = Number(rangeMax);
