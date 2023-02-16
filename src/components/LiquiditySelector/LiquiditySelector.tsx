@@ -704,7 +704,13 @@ export default function LiquiditySelector({
       {ControlsComponent && (
         <div className="col">
           <ControlsComponent
-            zoomIn={zoomIn}
+            zoomIn={
+              zoomMax &&
+              zoomMin &&
+              Math.sqrt(Number(zoomMax) / Number(zoomMin)) <= maxZoomRatio
+                ? undefined
+                : zoomIn
+            }
             zoomOut={
               zoomMin &&
               zoomMax &&
