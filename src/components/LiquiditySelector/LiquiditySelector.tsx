@@ -81,6 +81,7 @@ const defaultEndValue = new BigNumber(1.1);
 // the chart. As our tickspacing base is a ratio of 1.0001, a max ratio of
 // 1.001 should allow users to see to space of about 10 ticks at max zoom.
 const maxZoomRatio = 1.001; // eg. midpoint of 2000: zoomMin≈1999 zoomMax≈2001
+const zoomSpeedFactor = 0.5; // approx equivalent to zooming in range by 10%
 
 const leftPadding = 75;
 const rightPadding = 75;
@@ -656,8 +657,11 @@ export default function LiquiditySelector({
     ) {
       const midpoint =
         Math.sqrt(rangeMaxNumber / rangeMinNumber) * rangeMinNumber;
-      const zoomRatio = Math.sqrt(zoomMaxNumber / zoomMinNumber);
-      const newZoomRatio = Math.max(maxZoomRatio, zoomRatio / 2);
+      const zoomRatio = zoomMaxNumber / zoomMinNumber;
+      const rangeLimitRatio = Math.sqrt(
+        1 + (zoomRatio - 1) * (1 - zoomSpeedFactor)
+      );
+      const newZoomRatio = Math.max(maxZoomRatio, rangeLimitRatio);
       setZoomRange([
         (midpoint / newZoomRatio).toFixed(20),
         (midpoint * newZoomRatio).toFixed(20),
@@ -676,8 +680,11 @@ export default function LiquiditySelector({
     ) {
       const midpoint =
         Math.sqrt(rangeMaxNumber / rangeMinNumber) * rangeMinNumber;
-      const zoomRatio = Math.sqrt(zoomMaxNumber / zoomMinNumber);
-      const newZoomRatio = zoomRatio * 2;
+      const zoomRatio = zoomMaxNumber / zoomMinNumber;
+      const rangeLimitRatio = Math.sqrt(
+        1 + (zoomRatio - 1) / (1 - zoomSpeedFactor)
+      );
+      const newZoomRatio = Math.max(maxZoomRatio, rangeLimitRatio);
       setZoomRange([
         (midpoint / newZoomRatio).toFixed(20),
         (midpoint * newZoomRatio).toFixed(20),
