@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useState,
   useCallback,
   FormEvent,
@@ -456,8 +457,9 @@ export default function Pool() {
 
   const [chartTypeSelected] = useState<'AMM' | 'Orderbook'>('AMM');
 
+  // todo: this effect should be replaced with a better calculation for ticks
   const tickCount = Number(precision || 1);
-  useEffect(() => {
+  useLayoutEffect(() => {
     function getUserTicks(): TickGroup {
       const tickStart = new BigNumber(rangeMin);
       const tickEnd = new BigNumber(rangeMax);
