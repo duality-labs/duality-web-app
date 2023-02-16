@@ -75,6 +75,13 @@ const bucketWidth = 8; // bucket width in pixels
 const defaultStartValue = new BigNumber(1 / 1.1);
 const defaultEndValue = new BigNumber(1.1);
 
+// set maximum zoom constants:
+// zooming past the resolution of ticks does not help the end users.
+// We should allow users to see at minimum a few ticks across the width of a
+// the chart. As our tickspacing base is a ratio of 1.0001, a max ratio of
+// 1.001 should allow users to see to space of about 10 ticks at max zoom.
+const maxZoomRatio = 1.001; // eg. midpoint of 2000: zoomMin≈1999 zoomMax≈2001
+
 const leftPadding = 75;
 const rightPadding = 75;
 const topPadding = 33;
@@ -629,19 +636,10 @@ export default function LiquiditySelector({
       const midpoint =
         Math.sqrt(rangeMaxNumber / rangeMinNumber) * rangeMinNumber;
       const zoomRatio = Math.sqrt(zoomMaxNumber / zoomMinNumber);
-      const newZoomRatio = zoomRatio / 2;
-      // limit the new zoom limits to a fraction of the current range
-      const rangeRatio = new BigNumber(rangeMax).dividedBy(rangeMin);
-      const rangeLimitRatio = rangeRatio.minus(1).dividedBy(10).plus(1);
-      const limitMinNumber = new BigNumber(rangeMin)
-        .multipliedBy(rangeLimitRatio)
-        .toNumber();
-      const limitMaxNumber = new BigNumber(rangeMax)
-        .dividedBy(rangeLimitRatio)
-        .toNumber();
+      const newZoomRatio = Math.max(maxZoomRatio, zoomRatio / 2);
       setZoomRange([
-        Math.min(limitMinNumber, midpoint / newZoomRatio).toFixed(20),
-        Math.max(limitMaxNumber, midpoint * newZoomRatio).toFixed(20),
+        (midpoint / newZoomRatio).toFixed(20),
+        (midpoint * newZoomRatio).toFixed(20),
       ]);
     }
   }, [rangeMin, rangeMax, zoomMin, zoomMax, graphStart, graphEnd]);
