@@ -643,8 +643,11 @@ export default function LiquiditySelector({
   const zoomIn = useCallback(() => {
     const rangeMinNumber = Number(rangeMin);
     const rangeMaxNumber = Number(rangeMax);
-    const zoomMinNumber = Number(zoomMin) || graphStart.toNumber();
-    const zoomMaxNumber = Number(zoomMax) || graphEnd.toNumber();
+    const zoomMinNumber = Math.max(Number(zoomMin) || 0, graphStart.toNumber());
+    const zoomMaxNumber = Math.min(
+      Number(zoomMax) || Infinity,
+      graphEnd.toNumber()
+    );
     if (
       [rangeMinNumber, rangeMaxNumber, zoomMinNumber, zoomMaxNumber].every(
         (v) => !isNaN(v)
@@ -666,8 +669,11 @@ export default function LiquiditySelector({
   const zoomOut = useCallback(() => {
     const rangeMinNumber = Number(rangeMin);
     const rangeMaxNumber = Number(rangeMax);
-    const zoomMinNumber = Number(zoomMin) || graphStart.toNumber();
-    const zoomMaxNumber = Number(zoomMax) || graphEnd.toNumber();
+    const zoomMinNumber = Math.max(Number(zoomMin) || 0, graphStart.toNumber());
+    const zoomMaxNumber = Math.min(
+      Number(zoomMax) || Infinity,
+      graphEnd.toNumber()
+    );
     if (
       [rangeMinNumber, rangeMaxNumber, zoomMinNumber, zoomMaxNumber].every(
         (v) => !isNaN(v)
