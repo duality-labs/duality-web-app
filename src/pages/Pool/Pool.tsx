@@ -898,7 +898,10 @@ export default function Pool() {
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
                         : 'No Tokens'
                     }
-                    minSignificantDigits={8}
+                    minSignificantDigits={Math.min(
+                      Math.max(rangeMin.length + 1),
+                      8
+                    )}
                     maxSignificantDigits={maxFractionDigits + 2}
                     format={formatStepNumberPriceInput}
                   />
@@ -916,7 +919,10 @@ export default function Pool() {
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
                         : 'No Tokens'
                     }
-                    minSignificantDigits={8}
+                    minSignificantDigits={Math.min(
+                      Math.max(rangeMax.length + 1),
+                      8
+                    )}
                     maxSignificantDigits={maxFractionDigits + 2}
                     format={formatStepNumberPriceInput}
                   />
