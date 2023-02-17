@@ -1,5 +1,8 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faXmark } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCheckCircle,
+  faCircleXmark,
+} from '@fortawesome/free-solid-svg-icons';
 
 import { toast } from './Notifications';
 import { DeliverTxResponse } from '@cosmjs/stargate';
@@ -61,7 +64,7 @@ export function checkMsgRejectedToast(
       id,
       description: description || 'You declined the transaction',
       descriptionLink,
-      icon: <FontAwesomeIcon icon={faXmark} color="red" />,
+      icon: <FontAwesomeIcon icon={faCircleXmark} color="red" />,
       duration: 5e3,
       dismissable: true,
     });
@@ -85,7 +88,7 @@ export function checkMsgOutOfGasToast(
       descriptionLink:
         descriptionLink ||
         `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-      icon: <FontAwesomeIcon icon={faXmark} color="red" />,
+      icon: <FontAwesomeIcon icon={faCircleXmark} color="red" />,
       duration: Infinity,
       dismissable: true,
     });
@@ -108,7 +111,7 @@ export function checkMsgErrorToast(
     id,
     description: description || 'Something went wrong, please try again',
     descriptionLink: descriptionLink || transactionLink,
-    icon: <FontAwesomeIcon icon={faXmark} color="red" />,
+    icon: <FontAwesomeIcon icon={faCircleXmark} color="red" />,
     duration: Infinity,
     dismissable: true,
   });
