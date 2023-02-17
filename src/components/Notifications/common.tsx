@@ -48,7 +48,7 @@ export function checkMsgSuccessToast(
       descriptionLink:
         descriptionLink ||
         `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-      icon: <FontAwesomeIcon icon={faCheckCircle} color="#5bc7b7" />,
+      icon: <FontAwesomeIcon icon={faCheckCircle} />,
       duration: 15e3,
       dismissable: true,
     });
@@ -64,7 +64,7 @@ export function checkMsgRejectedToast(
       id,
       description: description || 'You declined the transaction',
       descriptionLink,
-      icon: <FontAwesomeIcon icon={faCircleXmark} color="red" />,
+      icon: <FontAwesomeIcon icon={faCircleXmark} />,
       duration: 5e3,
       dismissable: true,
     });
@@ -88,7 +88,7 @@ export function checkMsgOutOfGasToast(
       descriptionLink:
         descriptionLink ||
         `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-      icon: <FontAwesomeIcon icon={faCircleXmark} color="red" />,
+      icon: <FontAwesomeIcon icon={faCircleXmark} />,
       duration: Infinity,
       dismissable: true,
     });
@@ -111,7 +111,7 @@ export function checkMsgErrorToast(
     id,
     description: description || 'Something went wrong, please try again',
     descriptionLink: descriptionLink || transactionLink,
-    icon: <FontAwesomeIcon icon={faCircleXmark} color="red" />,
+    icon: <FontAwesomeIcon icon={faCircleXmark} />,
     duration: Infinity,
     dismissable: true,
   });
