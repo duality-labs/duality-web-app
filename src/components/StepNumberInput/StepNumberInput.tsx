@@ -181,7 +181,7 @@ export default function StepNumberInput<T extends number | string = string>({
         .join(' ')}
     >
       {title && <h6 className="range-step-title">{title}</h6>}
-      <div className="range-step-controls">
+      <div className="range-step-controls row flex-centered my-2">
         {!readOnly && (
           <button
             type="button"

@@ -210,11 +210,14 @@
   }
 
   .price-card > .card-row {
-    justify-content: space-between;
+    justify-content: stretch;
     gap: margins.$m-4;
     // allow inputs to wrap around if they have a large number of significant digits
     // (should only occur in the cases where we have no context of price)
     flex-flow: wrap;
+    .range-step-input {
+      flex: 1 0 0;
+    }
   }
 
   .tick-price-card {
