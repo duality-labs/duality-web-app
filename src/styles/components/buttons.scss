@@ -28,7 +28,7 @@ button,
 }
 .button-error {
   background-color: transparent;
-  border-color: var(--error);
+  border-color: var(--error) !important;
   color: hsla(0, 73%, 97%, 1);
 }
 .button-dark {
