@@ -36,6 +36,7 @@ export default function Dialog({
           onDismiss={onDismiss}
           initialFocusRef={initialFocusRef}
         >
+          <div className="dialog-background absolute filled"></div>
           <DialogContent className="dialog-content" aria-label="dialog content">
             <div className="dialog-header-row">
               <div className="dialog-header" role="heading" aria-level={1}>
