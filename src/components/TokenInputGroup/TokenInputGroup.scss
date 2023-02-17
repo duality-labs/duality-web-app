@@ -95,9 +95,8 @@
       color: var(--text-disabled);
       pointer-events: none;
     }
-  }
-
-  .input--zero {
-    color: var(--text-alt);
+    &::placeholder {
+      color: var(--text-alt);
+    }
   }
 }
