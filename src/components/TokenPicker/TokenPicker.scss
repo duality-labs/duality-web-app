@@ -185,7 +185,7 @@ $min-body-height: 150px;
 }
 
 .token-picker-dialog {
-  & {
+  .dialog-background {
     background-color: var(--dialog-backdrop);
     height: 100%;
   }
