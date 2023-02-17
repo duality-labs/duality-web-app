@@ -13,6 +13,7 @@
 //    <Dialog className="token-dialog">
 //    .token-dialog .dialog-content { width: 600px }
 .dialog-content {
+  position: relative;
   margin: 10vh auto;
   padding: 0;
   display: flex;
@@ -60,6 +61,11 @@
 
 .dialog-header {
   flex: 1 1 auto;
+}
+
+.dialog-background {
+  background-color: var(--dialog-backdrop);
+  backdrop-filter: blur(3px);
 }
 
 .dialog-scrollable {
