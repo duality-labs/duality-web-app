@@ -29,13 +29,28 @@ function CustomToast({
 }: ToastOptions) {
   return (
     <div
-      className={['notification--inner', className].filter(Boolean).join(' ')}
+      className={['col notification--inner p-4 pb-3 gap-2', className]
+        .filter(Boolean)
+        .join(' ')}
     >
-      {icon && <div className="icon">{icon}</div>}
-      <div className="content">
-        {message && <div className="message">{message}</div>}
-        {description &&
-          (descriptionLink ? (
+      <div className="row gap-md">
+        {icon && <div className="col icon">{icon}</div>}
+        {message && <div className="col message">{message}</div>}
+        {dismissable && (
+          <div className="col ml-auto">
+            <button
+              aria-label="Close"
+              className="close-button"
+              onClick={() => baseToast.dismiss(id)}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          </div>
+        )}
+      </div>
+      {description && (
+        <div className="row mb-2">
+          {descriptionLink ? (
             <a
               className="description"
               href={descriptionLink}
@@ -46,16 +61,8 @@ function CustomToast({
             </a>
           ) : (
             <div className="description">{description}</div>
-          ))}
-      </div>
-      {dismissable && (
-        <button
-          aria-label="Close"
-          className="close-button"
-          onClick={() => baseToast.dismiss(id)}
-        >
-          <FontAwesomeIcon icon={faXmark} />
-        </button>
+          )}
+        </div>
       )}
     </div>
   );
