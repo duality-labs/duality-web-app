@@ -1,10 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faCheckCircle,
-  faCircleNotch,
-  faGasPump,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons';
+import { faCheckCircle, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 import { toast } from './Notifications';
 import { DeliverTxResponse } from '@cosmjs/stargate';
@@ -33,7 +28,6 @@ export function createLoadingToast({
     id,
     description: description || 'Executing your trade',
     descriptionLink,
-    icon: <FontAwesomeIcon icon={faCircleNotch} spin />,
     duration: Infinity,
     dismissable: true,
   });
@@ -91,7 +85,7 @@ export function checkMsgOutOfGasToast(
       descriptionLink:
         descriptionLink ||
         `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-      icon: <FontAwesomeIcon icon={faGasPump} color="var(--error)" />,
+      icon: <FontAwesomeIcon icon={faXmark} color="red" />,
       duration: Infinity,
       dismissable: true,
     });
@@ -114,7 +108,7 @@ export function checkMsgErrorToast(
     id,
     description: description || 'Something went wrong, please try again',
     descriptionLink: descriptionLink || transactionLink,
-    icon: '🤔',
+    icon: <FontAwesomeIcon icon={faXmark} color="red" />,
     duration: Infinity,
     dismissable: true,
   });
