@@ -740,13 +740,13 @@ export default function Pool() {
     >
       <div className="page pool-page">
         <div
-          className={`my-4 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
+          className={`my-4 p-5 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
           <div className="chart-header row">
             <div className="col">
               <h3 className="h3">Add Liquidity</h3>
             </div>
-            <div className="col flex-centered chart-type-value">Customized</div>
+            <div className="col flex-centered chart-highlight">Customized</div>
             <div className="col flex-centered ml-auto">Transaction Details</div>
           </div>
           <hr className="mt-3 mb-4" />
@@ -847,10 +847,10 @@ export default function Pool() {
                 <div className="col">
                   <h3 className="h3">Liquidity Distribution</h3>
                 </div>
-                <div className="col flex-centered ml-auto">
+                <div className="col flex-centered ml-auto text-muted">
                   <div className="row gap-2">
-                    <div>Current Price</div>
-                    <div className="current-price">
+                    <strong>Current Price:</strong>
+                    <div className="chart-highlight">
                       {currentPriceFromTicks?.toFixed(5) ?? '-'}
                     </div>
                     {tokenA && tokenB && (

@@ -24,6 +24,10 @@
   }
 }
 
+.text-muted {
+  color: hsla(218, 11%, 65%, 1);
+}
+
 .text-grid {
   & {
     grid-template-columns: auto 1fr;
