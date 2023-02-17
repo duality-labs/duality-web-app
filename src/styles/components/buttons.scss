@@ -9,7 +9,7 @@ button,
   @include paddings.padding('y', 2);
   border-radius: paddings.size(3);
   background-color: transparent;
-  border: 0px none transparent;
+  border: 1px solid transparent;
   font-size: font-size.$button;
   color: var(--text-default);
   cursor: pointer;
@@ -25,6 +25,11 @@ button,
     background-color: var(--#{$name}-alt);
     color: var(--#{$name});
   }
+}
+.button-error {
+  background-color: transparent;
+  border-color: var(--error);
+  color: hsla(0, 73%, 97%, 1);
 }
 .button-dark {
   background-color: hsla(212, 28%, 17%, 1);
@@ -58,8 +63,8 @@ button[type='submit'],
   @include paddings.padding('y', 3);
   @include paddings.padding('x', 4);
   font-size: 1.25rem;
-  border-radius: 0.6rem;
-  border: 0px none transparent;
+  border-radius: paddings.$p-3;
+  border: 1px solid transparent;
   cursor: pointer;
 }
 
