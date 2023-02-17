@@ -27,7 +27,7 @@ export function createLoadingToast({
   description,
   descriptionLink,
 }: ToastOptions = {}) {
-  return toast.loading(title || 'Loading', {
+  return toast.loading(title || 'Transaction in Progress...', {
     id,
     description: description || 'Executing your trade',
     descriptionLink,
@@ -42,7 +42,7 @@ export function checkMsgSuccessToast(
 ) {
   const { code, transactionHash } = res;
   if (code === REQUEST_SUCCESS) {
-    return toast.success(title || 'Transaction Successful', {
+    return toast.success(title || 'Transaction Successful!', {
       id,
       description: description || 'View more details',
       descriptionLink:
