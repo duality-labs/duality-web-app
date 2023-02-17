@@ -21,6 +21,29 @@
     margin-right: 0.5rem;
     padding: 0.5rem;
     list-style: none;
+    &.notification--success {
+      .notification--inner {
+        border-color: hsla(156, 61%, 70%, 1);
+      }
+      .icon,
+      .message {
+        color: hsla(158, 60%, 48%, 1);
+      }
+    }
+    &.notification--error {
+      .notification--inner {
+        border-color: hsla(0, 74%, 45%, 1);
+      }
+      .icon {
+        color: hsla(0, 84%, 63%, 1);
+      }
+    }
+    &.notification--success,
+    &.notification--error {
+      .description {
+        color: hsla(210, 20%, 98%, 1);
+      }
+    }
   }
 
   // add our own inner toast component styling
@@ -28,6 +51,7 @@
     & {
       background-color: hsla(217, 19%, 27%, 1);
       box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.08);
+      border: 1px solid transparent;
       border-radius: 8px;
     }
 
