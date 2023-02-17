@@ -36,7 +36,6 @@ $border-width: 2px;
       & {
         @include paddings.padding('*', 3);
         background-color: hsla(201, 77%, 61%, 1);
-        opacity: 0.8;
         font-size: font-size.$h4;
         border: 0px none transparent;
         box-sizing: content-box;
@@ -49,7 +48,7 @@ $border-width: 2px;
       }
 
       &:disabled {
-        filter: brightness(50%);
+        filter: brightness(85%);
         cursor: not-allowed;
       }
     }
