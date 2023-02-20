@@ -88,6 +88,8 @@ const rightPadding = 75;
 const topPadding = 33;
 const bottomPadding = 26; // height of axis-ticks element
 
+const poleWidth = 8;
+
 export default function LiquiditySelector({
   ticks = [],
   tokenA,
@@ -944,8 +946,8 @@ function TicksArea({
       >
         <line
           className="line pole-stick"
-          x1={plotX(startTickPrice).toFixed(3)}
-          x2={plotX(startTickPrice).toFixed(3)}
+          x1={(plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
+          x2={(plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
           y1={plotY(new BigNumber(0)).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
@@ -958,7 +960,7 @@ function TicksArea({
         />
         <rect
           className="pole-flag"
-          x={(plotX(startTickPrice) - 30).toFixed(3)}
+          x={(plotX(startTickPrice) - 30 - poleWidth / 2).toFixed(3)}
           width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
           height="40"
@@ -966,22 +968,22 @@ function TicksArea({
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(startTickPrice) - 11.5).toFixed(3)}
-          x2={(plotX(startTickPrice) - 11.5).toFixed(3)}
+          x1={(plotX(startTickPrice) - 11.5 - poleWidth / 2).toFixed(3)}
+          x2={(plotX(startTickPrice) - 11.5 - poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(startTickPrice) - 18.5).toFixed(3)}
-          x2={(plotX(startTickPrice) - 18.5).toFixed(3)}
+          x1={(plotX(startTickPrice) - 18.5 - poleWidth / 2).toFixed(3)}
+          x2={(plotX(startTickPrice) - 18.5 - poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         {currentPrice && (
           <text
             filter="url(#text-solid-highlight)"
-            x={(4 + 1.8 + plotX(startTickPrice)).toFixed(3)}
+            x={(4 + 1.8 + plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
             textAnchor="end"
@@ -1069,8 +1071,8 @@ function TicksArea({
       >
         <line
           className="line pole-stick"
-          x1={plotX(endTickPrice).toFixed(3)}
-          x2={plotX(endTickPrice).toFixed(3)}
+          x1={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
+          x2={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
           y1={plotY(new BigNumber(0)).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
@@ -1083,7 +1085,7 @@ function TicksArea({
         />
         <rect
           className="pole-flag"
-          x={plotX(endTickPrice).toFixed(3)}
+          x={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
           width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
           height="40"
@@ -1091,22 +1093,22 @@ function TicksArea({
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(endTickPrice) + 11.5).toFixed(3)}
-          x2={(plotX(endTickPrice) + 11.5).toFixed(3)}
+          x1={(plotX(endTickPrice) + 11.5 + poleWidth / 2).toFixed(3)}
+          x2={(plotX(endTickPrice) + 11.5 + poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(endTickPrice) + 18.5).toFixed(3)}
-          x2={(plotX(endTickPrice) + 18.5).toFixed(3)}
+          x1={(plotX(endTickPrice) + 18.5 + poleWidth / 2).toFixed(3)}
+          x2={(plotX(endTickPrice) + 18.5 + poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         {currentPrice && (
           <text
             filter="url(#text-solid-highlight)"
-            x={(-(4 + 1.8) + plotX(endTickPrice)).toFixed(3)}
+            x={(-(4 + 1.8) + plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
             textAnchor="start"
