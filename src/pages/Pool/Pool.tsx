@@ -742,7 +742,7 @@ export default function Pool() {
         <div
           className={`my-4 p-5 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
-          <div className="chart-header row">
+          <div className="chart-header row flow-wrap">
             <div className="col">
               <h3 className="h3">Add Liquidity</h3>
             </div>
@@ -750,7 +750,7 @@ export default function Pool() {
             <div className="col flex-centered ml-auto">Transaction Details</div>
           </div>
           <hr className="mt-3 mb-4" />
-          <div className="flex row">
+          <div className="flex row flow-wrap flow-nowrap-lg">
             <div className="flex col col--left">
               <div className="chart-header row my-4">
                 <TokenPairLogos
@@ -843,7 +843,7 @@ export default function Pool() {
               />
             </div>
             <div className="flex col col--right">
-              <div className="chart-header row my-4">
+              <div className="chart-header row flow-wrap my-4">
                 <div className="col">
                   <h3 className="h3">Liquidity Distribution</h3>
                 </div>
@@ -1041,7 +1041,7 @@ function ChartControls({
   zoomOut?: () => void;
 }) {
   return (
-    <div className="row chart-zoom-controls gap-2">
+    <div className="row chart-zoom-controls flow-wrap gap-2">
       <button
         type="button"
         className="col flex-centered"
