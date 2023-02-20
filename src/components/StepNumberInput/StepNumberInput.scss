@@ -15,6 +15,7 @@ $border-width: 2px;
     overflow: hidden;
     display: flex;
     justify-content: center;
+    min-width: 14em;
   }
 
   .range-step-title {
