@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.95](https://github.com/duality-labs/duality-web-app/compare/v0.1.94...v0.1.95) (2023-02-20)
+
+
+### Features
+
+* add chart zoom controls ([#316](https://github.com/duality-labs/duality-web-app/issues/316)) ([b49d04c](https://github.com/duality-labs/duality-web-app/commit/b49d04cf675d76a37cd42d69b20ac940a0bbf980))
+
 ## [0.1.94](https://github.com/duality-labs/duality-web-app/compare/v0.1.93...v0.1.94) (2023-02-20)
 
 
