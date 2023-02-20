@@ -63,6 +63,7 @@
       label {
         display: flex;
         flex-direction: row;
+        flex-flow: wrap;
         padding: paddings.$p-4;
         padding-top: paddings.$p-2;
         padding-bottom: paddings.$p-2;
