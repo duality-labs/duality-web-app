@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useState,
   useCallback,
   FormEvent,
@@ -12,6 +13,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
   faArrowRightArrowLeft,
+  faMagnifyingGlassPlus,
+  faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -452,8 +455,9 @@ export default function Pool() {
 
   const [chartTypeSelected] = useState<'AMM' | 'Orderbook'>('AMM');
 
+  // todo: this effect should be replaced with a better calculation for ticks
   const tickCount = Number(precision || 1);
-  useEffect(() => {
+  useLayoutEffect(() => {
     function getUserTicks(): TickGroup {
       const tickStart = new BigNumber(rangeMin);
       const tickEnd = new BigNumber(rangeMax);
@@ -858,7 +862,7 @@ export default function Pool() {
                   </div>
                 </div>
               </div>
-              <div className="flex row chart-area">
+              <div className="flex row chart-area gap-3">
                 <LiquiditySelector
                   tokenA={tokenA}
                   tokenB={tokenB}
@@ -877,6 +881,7 @@ export default function Pool() {
                   canMoveDown
                   canMoveX
                   oneSidedLiquidity={isValueAZero || isValueBZero}
+                  ControlsComponent={ChartControls}
                 ></LiquiditySelector>
               </div>
               <div className="price-card mt-4">
@@ -1019,6 +1024,35 @@ export default function Pool() {
       </div>
       <div className="spacer"></div>
     </form>
+  );
+}
+
+function ChartControls({
+  zoomIn,
+  zoomOut,
+}: {
+  zoomIn?: () => void;
+  zoomOut?: () => void;
+}) {
+  return (
+    <div className="row chart-zoom-controls gap-2">
+      <button
+        type="button"
+        className="col flex-centered"
+        disabled={!zoomIn}
+        onClick={zoomIn}
+      >
+        <FontAwesomeIcon icon={faMagnifyingGlassPlus} />
+      </button>
+      <button
+        type="button"
+        className="col flex-centered"
+        disabled={!zoomOut}
+        onClick={zoomOut}
+      >
+        <FontAwesomeIcon icon={faMagnifyingGlassMinus} />
+      </button>
+    </div>
   );
 }
 
