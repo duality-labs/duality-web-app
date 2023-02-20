@@ -268,6 +268,12 @@
   }
 }
 
+@media (min-width: 992px) {
+  .col--left {
+    flex-grow: 0;
+  }
+}
+
 @media screen and (min-width: 1024px) {
   .pool-page {
     .orderbook-card {
