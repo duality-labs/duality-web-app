@@ -820,7 +820,7 @@ export default function Pool() {
                   exclusion={tokenA}
                 />
               </div>
-              <div className="row">
+              <div className="row liquidity-shape">
                 <div className="col flex">
                   <h4 className="mt-4">Liquidity Shape</h4>
                   <SelectInput<LiquidityShape>
