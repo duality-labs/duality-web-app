@@ -502,6 +502,28 @@ export default function LiquiditySelector({
     [percentY]
   );
 
+  function TextRoundedBackgroundFilter({
+    id,
+    floodColor,
+  }: {
+    id: string;
+    floodColor: string;
+  }) {
+    return (
+      <filter x="0" y="-0.4" width="1" height="1.8" id={id}>
+        <feFlood floodColor={floodColor} />
+        <feGaussianBlur stdDeviation="3.5" />
+        <feComponentTransfer>
+          <feFuncA type="table" tableValues="0 0 0 1" />
+        </feComponentTransfer>
+        <feComponentTransfer>
+          <feFuncA type="table" tableValues="0 1 1 1 1 1 1 1" />
+        </feComponentTransfer>
+        <feComposite operator="over" in="SourceGraphic" />
+      </filter>
+    );
+  }
+
   const svg = (
     <svg
       className={['chart-liquidity', advanced && 'chart-type--advanced']
@@ -523,28 +545,14 @@ export default function LiquiditySelector({
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <filter x="0" y="-0.4" width="1" height="1.8" id="text-solid-highlight">
-          <feFlood floodColor="hsl(201, 77%, 61%)" />
-          <feGaussianBlur stdDeviation="3.5" />
-          <feComponentTransfer>
-            <feFuncA type="table" tableValues="0 0 0 1" />
-          </feComponentTransfer>
-          <feComponentTransfer>
-            <feFuncA type="table" tableValues="0 1 1 1 1 1 1 1" />
-          </feComponentTransfer>
-          <feComposite operator="over" in="SourceGraphic" />
-        </filter>
-        <filter x="0" y="-0.4" width="1" height="1.8" id="text-solid-error">
-          <feFlood floodColor="var(--error)" />
-          <feGaussianBlur stdDeviation="3.5" />
-          <feComponentTransfer>
-            <feFuncA type="table" tableValues="0 0 0 1" />
-          </feComponentTransfer>
-          <feComponentTransfer>
-            <feFuncA type="table" tableValues="0 1 1 1 1 1 1 1" />
-          </feComponentTransfer>
-          <feComposite operator="over" in="SourceGraphic" />
-        </filter>
+        <TextRoundedBackgroundFilter
+          id="text-solid-highlight"
+          floodColor="hsl(201, 77%, 61%)"
+        />
+        <TextRoundedBackgroundFilter
+          id="text-solid-error"
+          floodColor="var(--error)"
+        />
         <linearGradient id="white-concave-fade">
           <stop offset="0%" stopColor="hsl(220, 44%, 45%)" stopOpacity="0.1" />
           <stop
