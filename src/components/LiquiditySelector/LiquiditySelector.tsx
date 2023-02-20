@@ -478,7 +478,7 @@ export default function LiquiditySelector({
           height="1.2"
           id="text-solid-background"
         >
-          <feFlood floodColor="hsl(202, 59%, 21%)" result="bg" />
+          <feFlood floodColor="var(--page-card)" result="bg" />
           <feMerge>
             <feMergeNode in="bg" />
             <feMergeNode in="SourceGraphic" />
