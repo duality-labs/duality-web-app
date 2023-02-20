@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.94](https://github.com/duality-labs/duality-web-app/compare/v0.1.93...v0.1.94) (2023-02-20)
+
+
+### Features
+
+* update chart designs ([#315](https://github.com/duality-labs/duality-web-app/issues/315)) ([535e240](https://github.com/duality-labs/duality-web-app/commit/535e2408de152b699756ae245b75d3546e7bed4d))
+
 ## [0.1.93](https://github.com/duality-labs/duality-web-app/compare/v0.1.92...v0.1.93) (2023-02-20)
 
 
