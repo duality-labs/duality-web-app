@@ -38,7 +38,10 @@ import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
-import { formatPrice } from '../../lib/utils/number';
+import {
+  formatMaxSignificantDigits,
+  formatPrice,
+} from '../../lib/utils/number';
 import { priceToTickIndex } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
@@ -51,13 +54,17 @@ const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 const priceMin = Math.pow(10, -maxFractionDigits);
 const priceMax = Math.pow(10, +maxFractionDigits);
+const priceRangeLimits: [number, number] = [priceMin, priceMax];
 const defaultFee = '0.30%';
 const defaultLiquidityShape =
   liquidityShapes.find(({ value }) => value === 'flat') ?? liquidityShapes[0];
 
 const defaultPrecision = '6';
 
-const restrictPriceRangeValues = (valueString: string) => {
+const restrictPriceRangeValues = (
+  valueString: string,
+  [priceMin, priceMax]: [number | string, number | string] = priceRangeLimits
+) => {
   const value = new BigNumber(valueString);
   if (value.isLessThan(priceMin)) {
     return formatPrice(priceMin);
@@ -93,36 +100,58 @@ export default function Pool() {
     }
   }, [tokenB, tokenList]);
 
+  const currentPriceFromTicks = useCurrentPriceFromTicks(
+    tokenA?.address,
+    tokenB?.address
+  );
+
   // start with a default range of nothing, but is should be quickly set
   // after price information becomes available
   const [rangeMin, setRangeMinUnprotected] = useState('1');
   const [rangeMax, setRangeMaxUnprotected] = useState('1');
+  const [pairPriceMin, pairPriceMax] = useMemo(
+    () =>
+      currentPriceFromTicks
+        ? [
+            formatPrice(currentPriceFromTicks.dividedBy(1000).toFixed()),
+            formatPrice(currentPriceFromTicks.multipliedBy(1000).toFixed()),
+          ]
+        : [priceMin, priceMax],
+    [currentPriceFromTicks]
+  );
   // protect price range extents
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
+      const restrictValue = (value: string) => {
+        return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
+      };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
         return setRangeMinUnprotected((value) => {
-          return restrictPriceRangeValues(callback(value));
+          return restrictValue(callback(value));
         });
       }
       const value = valueOrCallback;
-      setRangeMinUnprotected(restrictPriceRangeValues(value));
+      setRangeMinUnprotected(restrictValue(value));
     },
-    []
+    [pairPriceMin, pairPriceMax]
   );
   const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
+      const restrictValue = (value: string) => {
+        return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
+      };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
         return setRangeMaxUnprotected((value) => {
-          return restrictPriceRangeValues(callback(value));
+          return restrictValue(callback(value));
         });
       }
       const value = valueOrCallback;
-      setRangeMaxUnprotected(restrictPriceRangeValues(value));
+
+      setRangeMaxUnprotected(restrictValue(value));
     },
-    []
+    [pairPriceMin, pairPriceMax]
   );
 
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
@@ -211,11 +240,6 @@ export default function Pool() {
     const userTicks = userTicksOrCallback;
     setUserTicksUnprotected(userTicks.map(restrictTickPrices));
   }, []);
-
-  const currentPriceFromTicks = useCurrentPriceFromTicks(
-    tokenA?.address,
-    tokenB?.address
-  );
 
   // note warning price, the price at which warning states should be shown
   // for one-sided liquidity this is the extent of data to one side
@@ -404,7 +428,7 @@ export default function Pool() {
       // invert price
       const newValue = new BigNumber(1).dividedBy(new BigNumber(value));
       // round number to formatted string
-      return newValue.toFixed();
+      return formatMaxSignificantDigits(newValue);
     };
     setInvertTokenOrder((order) => !order);
     setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
@@ -864,7 +888,7 @@ export default function Pool() {
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
-                    min={priceMin}
+                    min={pairPriceMin}
                     max={rangeMax}
                     description={
                       tokenA && tokenB
@@ -883,7 +907,7 @@ export default function Pool() {
                     pressedDelay={500}
                     pressedInterval={100}
                     min={rangeMin}
-                    max={priceMax}
+                    max={pairPriceMax}
                     description={
                       tokenA && tokenB
                         ? `${tokenA.symbol} per ${tokenB.symbol}`

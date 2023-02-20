@@ -1,5 +1,19 @@
+import BigNumber from 'bignumber.js';
+
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
+
+export function formatMaxSignificantDigits(
+  value: BigNumber.Value,
+  maximumSignificantDigits = 3
+) {
+  const bigValue = new BigNumber(value);
+  const orderOfMagnitude = Math.floor(Math.log10(bigValue.toNumber()));
+  return bigValue.toFixed(
+    Math.max(0, maximumSignificantDigits - orderOfMagnitude - 1),
+    BigNumber.ROUND_HALF_UP
+  );
+}
 
 // format to a visually pleasing output
 // should never be passed on to further calculations due to rounding
