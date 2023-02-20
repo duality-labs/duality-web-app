@@ -113,8 +113,8 @@ export default function Pool() {
     () =>
       currentPriceFromTicks
         ? [
-            currentPriceFromTicks.dividedBy(1000).toFixed(),
-            currentPriceFromTicks.multipliedBy(1000).toFixed(),
+            formatPrice(currentPriceFromTicks.dividedBy(1000).toFixed()),
+            formatPrice(currentPriceFromTicks.multipliedBy(1000).toFixed()),
           ]
         : [priceMin, priceMax],
     [currentPriceFromTicks]
@@ -888,7 +888,7 @@ export default function Pool() {
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
-                    min={priceMin}
+                    min={pairPriceMin}
                     max={rangeMax}
                     description={
                       tokenA && tokenB
@@ -907,7 +907,7 @@ export default function Pool() {
                     pressedDelay={500}
                     pressedInterval={100}
                     min={rangeMin}
-                    max={priceMax}
+                    max={pairPriceMax}
                     description={
                       tokenA && tokenB
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
