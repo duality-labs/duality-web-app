@@ -133,10 +133,11 @@
     cursor: pointer;
   }
   .pole--price-warning {
-    .pole-stick,
     .pole-to-flag,
     .pole-flag {
       fill: var(--error);
+    }
+    .pole-stick {
       stroke: var(--error);
     }
   }
