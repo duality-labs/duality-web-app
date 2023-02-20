@@ -471,6 +471,17 @@ export default function LiquiditySelector({
           </feComponentTransfer>
           <feComposite operator="over" in="SourceGraphic" />
         </filter>
+        <filter x="0" y="-0.4" width="1" height="1.8" id="text-solid-error">
+          <feFlood floodColor="var(--error)" />
+          <feGaussianBlur stdDeviation="3.5" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0 0 1" />
+          </feComponentTransfer>
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 1 1 1 1 1 1 1" />
+          </feComponentTransfer>
+          <feComposite operator="over" in="SourceGraphic" />
+        </filter>
         <linearGradient id="white-concave-fade">
           <stop offset="0%" stopColor="hsl(220, 44%, 45%)" stopOpacity="0.1" />
           <stop
@@ -803,7 +814,9 @@ function TicksArea({
         />
         {currentPrice && (
           <text
-            filter="url(#text-solid-highlight)"
+            filter={`url(#text-solid-${
+              startTickHasPriceWarning ? 'error' : 'highlight'
+            })`}
             x={(4 + 1.8 + plotX(startTickPrice)).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
@@ -928,7 +941,9 @@ function TicksArea({
         />
         {currentPrice && (
           <text
-            filter="url(#text-solid-highlight)"
+            filter={`url(#text-solid-${
+              endTickHasPriceWarning ? 'error' : 'highlight'
+            })`}
             x={(-(4 + 1.8) + plotX(endTickPrice)).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
