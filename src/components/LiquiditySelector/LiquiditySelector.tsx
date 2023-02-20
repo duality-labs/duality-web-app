@@ -13,7 +13,7 @@ import useResizeObserver from '@react-hook/resize-observer';
 
 import { formatAmount, formatPrice } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
-import { priceToTickIndex } from '../../lib/web3/utils/ticks';
+import { calculateShares, priceToTickIndex } from '../../lib/web3/utils/ticks';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
@@ -152,6 +152,10 @@ export default function LiquiditySelector({
     );
   }, [ticks, tokenA, tokenB]);
 
+  const sharesTotal = useMemo(() => {
+    return ticks.reduce<BigNumber>((result, tick) => result.plus(calculateShares(tick)), new BigNumber(0));
+  }, [ticks]);
+
   const isReserveAZero = allTicks.every(({ reserveA }) => reserveA.isZero());
   const isReserveBZero = allTicks.every(({ reserveB }) => reserveB.isZero());
 
@@ -269,6 +273,48 @@ export default function LiquiditySelector({
     }
   }, [dataStart, dataEnd]);
 
+  const [mostDataStart = allDataStart, mostDataEnd = allDataEnd] = useMemo(() => {
+
+    // found on https://gist.github.com/stekhn/1254b2f799b1f6da4bf1736424102c8e
+    function weightedStdDev(values: number[], weights: number[]) {
+      const avg = weightedMean(values, weights);
+      const result = values.map(function (value, i) {
+        const weight = weights[i];
+        const diff = value - avg;
+        const sqrDiff = weight * Math.pow(diff, 2);
+        return [sqrDiff, weight];
+      }).reduce(function (previous, current) {
+        return [previous[0] + current[0], previous[1] + current[1]];
+      }, [0, 0]);
+      return Math.sqrt(result[0] / result[1]);
+    }
+    function weightedMean(values: number[], weights: number[]) {
+      const result = values.map(function (value, i) {
+        const weight = weights[i];
+        const sum = value * weight;
+        return [sum, weight];
+      }).reduce(function (previous, current) {
+        return [previous[0] + current[0], previous[1] + current[1]];
+      }, [0, 0]);
+      return result[0] / result[1];
+    }
+
+    if (ticks.length > 0) {
+      const prices = ticks.map(tick => Math.log10(tick.price.toNumber()));
+      const shares = ticks.map(tick => calculateShares(tick).toNumber());
+      const mean = weightedMean(prices, shares);
+      const stDev = weightedStdDev(prices, shares);
+      console.log({
+        mean,
+        stDev,
+        min: Math.pow(10, mean - 2 * stDev), 
+        max: Math.pow(10, mean + 2 * stDev),
+      })
+      return [new BigNumber(Math.pow(10, mean - 2 * stDev)), new BigNumber(Math.pow(10, mean + 2 * stDev))];
+    }
+    return [undefined, undefined];
+  }, [ticks]);
+
   const [[zoomMin, zoomMax] = [], setZoomRange] = useState<[string, string]>();
 
   const [zoomedDataStart, zoomedDataEnd] = useMemo<
@@ -292,8 +338,9 @@ export default function LiquiditySelector({
         return [new BigNumber(zoomMin), new BigNumber(zoomMax)];
       }
     }
-    return [allDataStart, allDataEnd];
-  }, [zoomMin, zoomMax, allDataStart, allDataEnd]);
+    // default starting data
+    return [mostDataStart, mostDataEnd];
+  }, [zoomMin, zoomMax, allDataStart, allDataEnd, mostDataStart, mostDataEnd]);
 
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
