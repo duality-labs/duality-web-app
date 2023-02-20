@@ -82,6 +82,44 @@ a {
   align-items: center;
   justify-content: center;
 }
+.flow-wrap {
+  flex-flow: wrap;
+}
+.flow-nowrap {
+  flex-flow: nowrap;
+}
+@media (min-width: 576px) {
+  .flow-nowrap-sm {
+    flex-flow: nowrap;
+  }
+  .flow-wrap-sm {
+    flex-flow: wrap;
+  }
+}
+@media (min-width: 768px) {
+  .flow-nowrap-md {
+    flex-flow: nowrap;
+  }
+  .flow-wrap-md {
+    flex-flow: wrap;
+  }
+}
+@media (min-width: 992px) {
+  .flow-nowrap-lg {
+    flex-flow: nowrap;
+  }
+  .flow-wrap-lg {
+    flex-flow: wrap;
+  }
+}
+@media (min-width: 1200px) {
+  .flow-nowrap-xl {
+    flex-flow: nowrap;
+  }
+  .flow-wrap-xl {
+    flex-flow: wrap;
+  }
+}
 
 // dynamic displays based on viewport size
 .col-sm,
