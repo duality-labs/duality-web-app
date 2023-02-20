@@ -10,7 +10,7 @@ import {
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import { formatPrice } from '../../lib/utils/number';
+import { formatAmount, formatPrice } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
 import { priceToTickIndex } from '../../lib/web3/utils/ticks';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
@@ -65,10 +65,17 @@ type TickGroupBucketsFilled = Array<
   ]
 >;
 
-const bucketWidth = 50; // bucket width in pixels
+const bucketWidth = 8; // bucket width in pixels
 
 const defaultStartValue = new BigNumber(1 / 1.1);
 const defaultEndValue = new BigNumber(1.1);
+
+const leftPadding = 75;
+const rightPadding = 75;
+const topPadding = 33;
+const bottomPadding = 26; // height of axis-ticks element
+
+const poleWidth = 8;
 
 export default function LiquiditySelector({
   ticks = [],
@@ -316,8 +323,8 @@ export default function LiquiditySelector({
       return [[], []];
     }
     // get bounds
-    const xMin = dataStart.sd(2, BigNumber.ROUND_DOWN);
-    const xMax = dataEnd.sd(2, BigNumber.ROUND_UP);
+    const xMin = dataStart;
+    const xMax = dataEnd;
     // get middle 'break' point which will separate bucket sections
     const breakPoint = edgePrice || currentPriceFromTicks;
     // skip if there is no breakpoint
@@ -379,12 +386,11 @@ export default function LiquiditySelector({
   }, [emptyBuckets, allTicks]);
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
-  const xMin = graphStart.sd(2, BigNumber.ROUND_DOWN).toNumber();
-  const xMax = graphEnd.sd(2, BigNumber.ROUND_UP).toNumber();
+  const startIsEnd = graphEnd.isLessThanOrEqualTo(graphStart);
+  const xMin = (startIsEnd ? graphStart.minus(1e-18) : graphStart).toNumber();
+  const xMax = (startIsEnd ? graphEnd.plus(1e-18) : graphEnd).toNumber();
   const plotX = useCallback(
     (x: number): number => {
-      const leftPadding = containerSize.width * 0.1;
-      const rightPadding = containerSize.width * 0.1;
       const width = containerSize.width - leftPadding - rightPadding;
       return xMin === xMax
         ? // choose midpoint
@@ -398,8 +404,6 @@ export default function LiquiditySelector({
   );
   const plotXinverse = useCallback(
     (x: number): number => {
-      const leftPadding = 0;
-      const rightPadding = 0;
       const width = containerSize.width - leftPadding - rightPadding;
       return Math.exp(
         ((x - leftPadding) * (Math.log(xMax) - Math.log(xMin))) / width +
@@ -410,8 +414,6 @@ export default function LiquiditySelector({
   );
   const plotY = useCallback(
     (y: number): number => {
-      const topPadding = 0;
-      const bottomPadding = 21; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return graphHeight === 0
         ? -bottomPadding // pin to bottom
@@ -421,8 +423,6 @@ export default function LiquiditySelector({
   );
   const percentY = useCallback(
     (y: number): number => {
-      const topPadding = 0;
-      const bottomPadding = 21; // height of axis-ticks element
       const height = containerSize.height - topPadding - bottomPadding;
       return -bottomPadding - height * y;
     },
@@ -441,6 +441,28 @@ export default function LiquiditySelector({
     [percentY]
   );
 
+  function TextRoundedBackgroundFilter({
+    id,
+    floodColor,
+  }: {
+    id: string;
+    floodColor: string;
+  }) {
+    return (
+      <filter x="0" y="-0.4" width="1" height="1.8" id={id}>
+        <feFlood floodColor={floodColor} />
+        <feGaussianBlur stdDeviation="3.5" />
+        <feComponentTransfer>
+          <feFuncA type="table" tableValues="0 0 0 1" />
+        </feComponentTransfer>
+        <feComponentTransfer>
+          <feFuncA type="table" tableValues="0 1 1 1 1 1 1 1" />
+        </feComponentTransfer>
+        <feComposite operator="over" in="SourceGraphic" />
+      </filter>
+    );
+  }
+
   const svg = (
     <svg
       className={['chart-liquidity', advanced && 'chart-type--advanced']
@@ -449,32 +471,33 @@ export default function LiquiditySelector({
       viewBox={`0 -${containerSize.height} ${containerSize.width} ${containerSize.height}`}
     >
       <defs>
+        <filter
+          x="0"
+          y="-0.1"
+          width="1"
+          height="1.2"
+          id="text-solid-background"
+        >
+          <feFlood floodColor="var(--page-card)" result="bg" />
+          <feMerge>
+            <feMergeNode in="bg" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <TextRoundedBackgroundFilter
+          id="text-solid-highlight"
+          floodColor="hsl(201, 77%, 61%)"
+        />
+        <TextRoundedBackgroundFilter
+          id="text-solid-error"
+          floodColor="var(--error)"
+        />
         <linearGradient id="white-concave-fade">
-          <stop offset="0%" stopColor="var(--text-default)" stopOpacity="0.6" />
-          <stop
-            offset="20%"
-            stopColor="var(--text-default)"
-            stopOpacity="0.5"
-          />
-          <stop
-            offset="46%"
-            stopColor="var(--text-default)"
-            stopOpacity="0.4"
-          />
-          <stop
-            offset="54%"
-            stopColor="var(--text-default)"
-            stopOpacity="0.4"
-          />
-          <stop
-            offset="80%"
-            stopColor="var(--text-default)"
-            stopOpacity="0.5"
-          />
+          <stop offset="0%" stopColor="hsl(220, 44%, 45%)" stopOpacity="0.1" />
           <stop
             offset="100%"
-            stopColor="var(--text-default)"
-            stopOpacity="0.6"
+            stopColor="hsl(220, 44%, 45%)"
+            stopOpacity="0.1"
           />
         </linearGradient>
       </defs>
@@ -523,6 +546,7 @@ export default function LiquiditySelector({
           ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
+          containerHeight={containerSize.height}
           rangeMin={rangeMin}
           rangeMax={rangeMax}
           setRangeMin={setRangeMin}
@@ -533,11 +557,24 @@ export default function LiquiditySelector({
       )}
       <Axis
         className="x-axis"
-        // todo: make better (x-axis roughly adds tick marks to buckets near the extents)
-        xMin={xMin / 1.2}
-        xMax={xMax * 1.2}
+        xMin={xMin}
+        xMax={xMax}
+        axisWidth={containerSize.width - (rightPadding - leftPadding)}
+        tickMarks={[
+          currentPriceFromTicks?.toNumber() || '0',
+          rangeMin,
+          rangeMax,
+        ]
+          .map((v) => formatPrice(v))
+          .map(Number)
+          .filter((v): v is number => !!v && v > 0)}
+        highlightedTick={Number(
+          formatPrice(currentPriceFromTicks?.toNumber() || 0)
+        )}
+        getDecimalPlaces={null}
         plotX={plotX}
         plotY={plotY}
+        percentY={percentY}
       />
     </svg>
   );
@@ -638,6 +675,7 @@ function TicksArea({
   ticks,
   plotX,
   plotY,
+  containerHeight,
   rangeMin,
   rangeMax,
   setRangeMin,
@@ -651,6 +689,7 @@ function TicksArea({
   ticks: TickGroup;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
+  containerHeight: number;
   rangeMin: string;
   rangeMax: string;
   setRangeMin: (rangeMin: string) => void;
@@ -663,8 +702,6 @@ function TicksArea({
   const endTick = ticks?.[ticks.length - 1];
   const startTickPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
   const endTickPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
-  const bucketWidth =
-    plotX(new BigNumber(bucketRatio)) - plotX(new BigNumber(1));
 
   const lastMinTickPrice = useRef<BigNumber>();
   const [startDragMin, isDraggingMin] = useOnDragMove(
@@ -751,8 +788,8 @@ function TicksArea({
       >
         <line
           className="line pole-stick"
-          x1={plotX(startTickPrice).toFixed(3)}
-          x2={plotX(startTickPrice).toFixed(3)}
+          x1={(plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
+          x2={(plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
           y1={plotY(new BigNumber(0)).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
@@ -761,30 +798,55 @@ function TicksArea({
           x={(plotX(startTickPrice) - rounding).toFixed(3)}
           width={rounding}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+          height="40"
         />
         <rect
           className="pole-flag"
-          x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
-          width={(0.75 * bucketWidth).toFixed(3)}
+          x={(plotX(startTickPrice) - 30 - poleWidth / 2).toFixed(3)}
+          width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+          height="40"
           rx={rounding}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(startTickPrice) - 0.45 * bucketWidth).toFixed(3)}
-          x2={(plotX(startTickPrice) - 0.45 * bucketWidth).toFixed(3)}
-          y1={plotY(new BigNumber(0.97)).toFixed(3)}
-          y2={plotY(new BigNumber(0.92)).toFixed(3)}
+          x1={(plotX(startTickPrice) - 11.5 - poleWidth / 2).toFixed(3)}
+          x2={(plotX(startTickPrice) - 11.5 - poleWidth / 2).toFixed(3)}
+          y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
+          y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(startTickPrice) - 0.25 * bucketWidth).toFixed(3)}
-          x2={(plotX(startTickPrice) - 0.25 * bucketWidth).toFixed(3)}
-          y1={plotY(new BigNumber(0.97)).toFixed(3)}
-          y2={plotY(new BigNumber(0.92)).toFixed(3)}
+          x1={(plotX(startTickPrice) - 18.5 - poleWidth / 2).toFixed(3)}
+          x2={(plotX(startTickPrice) - 18.5 - poleWidth / 2).toFixed(3)}
+          y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
+          y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
+        {currentPrice && (
+          <text
+            filter={`url(#text-solid-${
+              startTickHasPriceWarning ? 'error' : 'highlight'
+            })`}
+            x={(4 + 1.8 + plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
+            y={5 - containerHeight}
+            dy="12"
+            textAnchor="end"
+          >
+            &nbsp;&nbsp;&nbsp;
+            {`${formatAmount(
+              startTickPrice
+                .multipliedBy(100)
+                .dividedBy(currentPrice)
+                .minus(100)
+                .toFixed(0),
+              {
+                signDisplay: 'always',
+                useGrouping: true,
+              }
+            )}%`}
+            &nbsp;&nbsp;&nbsp;
+          </text>
+        )}
         {isDraggingMin ? (
           <rect
             className="pole-flag--hit-area"
@@ -796,10 +858,10 @@ function TicksArea({
         ) : (
           <rect
             className="pole-flag--hit-area"
-            x={(plotX(startTickPrice) - 0.75 * bucketWidth).toFixed(3)}
-            width={(0.75 * bucketWidth).toFixed(3)}
+            x={(plotX(startTickPrice) - 30).toFixed(3)}
+            width="30"
             y={plotY(new BigNumber(1)).toFixed(3)}
-            height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+            height="40"
             rx={rounding}
             onMouseDown={startDragMin}
           />
@@ -853,8 +915,8 @@ function TicksArea({
       >
         <line
           className="line pole-stick"
-          x1={plotX(endTickPrice).toFixed(3)}
-          x2={plotX(endTickPrice).toFixed(3)}
+          x1={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
+          x2={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
           y1={plotY(new BigNumber(0)).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
@@ -863,30 +925,55 @@ function TicksArea({
           x={plotX(endTickPrice).toFixed(3)}
           width={rounding}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+          height="40"
         />
         <rect
           className="pole-flag"
-          x={plotX(endTickPrice).toFixed(3)}
-          width={(0.75 * bucketWidth).toFixed(3)}
+          x={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
+          width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+          height="40"
           rx={rounding}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(endTickPrice) + 0.45 * bucketWidth).toFixed(3)}
-          x2={(plotX(endTickPrice) + 0.45 * bucketWidth).toFixed(3)}
-          y1={plotY(new BigNumber(0.97)).toFixed(3)}
-          y2={plotY(new BigNumber(0.92)).toFixed(3)}
+          x1={(plotX(endTickPrice) + 11.5 + poleWidth / 2).toFixed(3)}
+          x2={(plotX(endTickPrice) + 11.5 + poleWidth / 2).toFixed(3)}
+          y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
+          y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(endTickPrice) + 0.25 * bucketWidth).toFixed(3)}
-          x2={(plotX(endTickPrice) + 0.25 * bucketWidth).toFixed(3)}
-          y1={plotY(new BigNumber(0.97)).toFixed(3)}
-          y2={plotY(new BigNumber(0.92)).toFixed(3)}
+          x1={(plotX(endTickPrice) + 18.5 + poleWidth / 2).toFixed(3)}
+          x2={(plotX(endTickPrice) + 18.5 + poleWidth / 2).toFixed(3)}
+          y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
+          y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
+        {currentPrice && (
+          <text
+            filter={`url(#text-solid-${
+              endTickHasPriceWarning ? 'error' : 'highlight'
+            })`}
+            x={(-(4 + 1.8) + plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
+            y={5 - containerHeight}
+            dy="12"
+            textAnchor="start"
+          >
+            &nbsp;&nbsp;&nbsp;
+            {`${formatAmount(
+              endTickPrice
+                .multipliedBy(100)
+                .dividedBy(currentPrice)
+                .minus(100)
+                .toFixed(0),
+              {
+                signDisplay: 'always',
+                useGrouping: true,
+              }
+            )}%`}
+            &nbsp;&nbsp;&nbsp;
+          </text>
+        )}
         {isDraggingMax ? (
           <rect
             className="pole-flag--hit-area"
@@ -899,9 +986,9 @@ function TicksArea({
           <rect
             className="pole-flag--hit-area"
             x={plotX(endTickPrice).toFixed(3)}
-            width={(0.75 * bucketWidth).toFixed(3)}
+            width="30"
             y={plotY(new BigNumber(1)).toFixed(3)}
-            height={-(plotY(new BigNumber(0)) * 2).toFixed(3)}
+            height="40"
             rx={rounding}
             onMouseDown={startDragMax}
           />
@@ -1295,20 +1382,32 @@ function Axis({
   className = '',
   xMin,
   xMax,
+  axisWidth,
+  tickMarks: givenTickMarks,
+  highlightedTick = -1,
+  getDecimalPlaces = (tickMark) =>
+    Math.max(0, -Math.floor(Math.log10(tickMark))),
   plotX,
   plotY,
+  percentY,
 }: {
   xMin: number;
   xMax: number;
+  axisWidth?: number;
   className?: string;
+  tickMarks?: number[];
+  highlightedTick?: number;
+  getDecimalPlaces?: ((value: number) => number) | null;
   plotX: (x: number) => number;
   plotY: (y: number) => number;
+  percentY: (y: number) => number;
 }) {
   if (!xMin || !xMax || xMin === xMax) return null;
 
   const start = Math.pow(10, Math.floor(Math.log10(xMin)));
-  const tickMarks = Array.from({ length: Math.log10(xMax / xMin) + 2 }).flatMap(
-    (_, index) => {
+  const tickMarks =
+    givenTickMarks ||
+    Array.from({ length: Math.log10(xMax / xMin) + 2 }).flatMap((_, index) => {
       const baseNumber = start * Math.pow(10, index);
       const possibleMultiples = [2, 5, 10];
       const possibleInclusions = possibleMultiples.map((v) => v * baseNumber);
@@ -1320,39 +1419,56 @@ function Axis({
           return 0;
         })
         .filter(Boolean);
-    }
-  );
+    });
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
-      <line
-        x1="0"
-        x2={plotX(xMax * 2)}
-        y1={plotY(0).toFixed(0)}
-        y2={plotY(0).toFixed(0)}
+      <rect
+        x="0"
+        width={axisWidth || plotX(xMax)}
+        y={plotY(0).toFixed(0)}
+        height="8"
       />
       <g className="axis-ticks">{tickMarks.map(mapTickMark)}</g>
     </g>
   );
 
-  function mapTickMark(tickMark: number) {
-    const decimalPlaces = Math.max(0, -Math.floor(Math.log10(tickMark)));
+  function mapTickMark(tickMark: number, index: number) {
+    const decimalPlaces = getDecimalPlaces?.(tickMark);
     return (
-      <g key={tickMark} className="axis-tick">
-        <line
-          x1={plotX(tickMark).toFixed(3)}
-          x2={plotX(tickMark).toFixed(3)}
-          y1={plotY(0)}
-          y2={plotY(0) + 2}
-        />
+      <g key={index} className="axis-tick">
+        {tickMark === highlightedTick && (
+          <line
+            className="line--success"
+            x1={plotX(tickMark).toFixed(3)}
+            x2={plotX(tickMark).toFixed(3)}
+            y1={plotY(0) + 8}
+            y2={percentY(1)}
+          />
+        )}
         <text
-          x={plotX(tickMark).toFixed(3)}
-          y={plotY(0) + 5}
+          filter="url(#text-solid-background)"
+          className={tickMark === highlightedTick ? 'text--success' : ''}
+          x={(
+            plotX(tickMark) +
+            (highlightedTick && index > 0 ? (index === 1 ? 1.5 : -1.5) : 0)
+          ).toFixed(3)}
+          y={plotY(0) + 4 + 8}
           dominantBaseline="middle"
-          textAnchor="middle"
+          textAnchor={
+            highlightedTick && index > 0
+              ? index === 1
+                ? 'end'
+                : 'start'
+              : 'middle'
+          }
           alignmentBaseline="text-before-edge"
         >
-          {tickMark.toFixed(decimalPlaces)}
+          &nbsp;
+          {decimalPlaces !== undefined
+            ? tickMark.toFixed(decimalPlaces)
+            : tickMark}
+          &nbsp;
         </text>
       </g>
     );
