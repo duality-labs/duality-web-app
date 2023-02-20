@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.93](https://github.com/duality-labs/duality-web-app/compare/v0.1.92...v0.1.93) (2023-02-20)
+
+
+### Fixes
+
+* improve liquidity chart restrict pool range orders of magnitude ([#312](https://github.com/duality-labs/duality-web-app/issues/312)) ([7acc586](https://github.com/duality-labs/duality-web-app/commit/7acc586297904250d0d68743128a83d0005b2382))
+
 ## [0.1.92](https://github.com/duality-labs/duality-web-app/compare/v0.1.91...v0.1.92) (2023-02-09)
 
 

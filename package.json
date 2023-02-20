@@ -1,7 +1,7 @@
 {
   "name": "duality-webapp",
   "homepage": "https://app.duality.xyz",
-  "version": "0.1.92",
+  "version": "0.1.93",
   "private": true,
   "scripts": {
     "start": "react-scripts start",
