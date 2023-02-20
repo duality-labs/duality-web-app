@@ -109,17 +109,21 @@ export default function Pool() {
   // after price information becomes available
   const [rangeMin, setRangeMinUnprotected] = useState('1');
   const [rangeMax, setRangeMaxUnprotected] = useState('1');
+  const [pairPriceMin, pairPriceMax] = useMemo(
+    () =>
+      currentPriceFromTicks
+        ? [
+            currentPriceFromTicks.dividedBy(1000).toFixed(),
+            currentPriceFromTicks.multipliedBy(1000).toFixed(),
+          ]
+        : [priceMin, priceMax],
+    [currentPriceFromTicks]
+  );
   // protect price range extents
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
       const restrictValue = (value: string) => {
-        return restrictPriceRangeValues(
-          value,
-          currentPriceFromTicks && [
-            currentPriceFromTicks.dividedBy(1000).toFixed(),
-            currentPriceFromTicks?.multipliedBy(1000).toFixed(),
-          ]
-        );
+        return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
       };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
@@ -130,18 +134,12 @@ export default function Pool() {
       const value = valueOrCallback;
       setRangeMinUnprotected(restrictValue(value));
     },
-    [currentPriceFromTicks]
+    [pairPriceMin, pairPriceMax]
   );
   const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
       const restrictValue = (value: string) => {
-        return restrictPriceRangeValues(
-          value,
-          currentPriceFromTicks && [
-            currentPriceFromTicks.dividedBy(1000).toFixed(),
-            currentPriceFromTicks?.multipliedBy(1000).toFixed(),
-          ]
-        );
+        return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
       };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
@@ -153,7 +151,7 @@ export default function Pool() {
 
       setRangeMaxUnprotected(restrictValue(value));
     },
-    [currentPriceFromTicks]
+    [pairPriceMin, pairPriceMax]
   );
 
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
