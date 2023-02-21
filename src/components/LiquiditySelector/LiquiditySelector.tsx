@@ -1005,9 +1005,7 @@ function TicksArea({
         />
         {currentPrice && (
           <text
-            filter={`url(#text-solid-${
-              startTickHasPriceWarning ? 'error' : 'highlight'
-            })`}
+            filter="url(#text-solid-highlight)"
             x={(4 + 1.8 + plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
@@ -1132,9 +1130,7 @@ function TicksArea({
         />
         {currentPrice && (
           <text
-            filter={`url(#text-solid-${
-              endTickHasPriceWarning ? 'error' : 'highlight'
-            })`}
+            filter="url(#text-solid-highlight)"
             x={(-(4 + 1.8) + plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
