@@ -15,9 +15,11 @@ export interface RadioInputProps<T> {
   list: Array<T>;
   maxColumnCount?: number;
   value?: T;
+  styledAsButtons?: boolean;
   name?: string;
   className?: string;
   containerClassName?: string;
+  labelClassName?: string;
 }
 
 function DefaultOptionComponent<T>({ option }: OptionProps<T>) {
@@ -25,6 +27,7 @@ function DefaultOptionComponent<T>({ option }: OptionProps<T>) {
 }
 
 export default function RadioInput<T>({
+  styledAsButtons = true,
   inputType = 'radio',
   OptionComponent = DefaultOptionComponent,
   OptionContainerComponent = 'div',
@@ -36,6 +39,7 @@ export default function RadioInput<T>({
   name,
   className,
   containerClassName,
+  labelClassName = styledAsButtons ? 'button' : '',
 }: RadioInputProps<T>) {
   const selectedIndex = value !== undefined ? list.indexOf(value) : -1;
   const groupID = useId();
@@ -68,7 +72,7 @@ export default function RadioInput<T>({
               onChange={() => onChange?.(option, index)}
               onClick={onClick}
             ></input>
-            <label htmlFor={id} style={labelStyle}>
+            <label className={labelClassName} htmlFor={id} style={labelStyle}>
               <OptionComponent option={option} id={id} index={index} />
             </label>
           </OptionContainerComponent>

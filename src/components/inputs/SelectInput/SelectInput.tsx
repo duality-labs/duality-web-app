@@ -114,6 +114,7 @@ export default function SelectInput<T>({
             `select-input-group--${maxColumnCount === 1 ? 'column' : 'row'}`,
           ].join(' ')}
           containerClassName="select-input-option"
+          styledAsButtons={maxColumnCount !== 1}
           // set default OptionComponent to use getters
           OptionComponent={useCallback(
             (optionComponentProps: OptionProps<T>) => (
