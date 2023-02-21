@@ -28,7 +28,8 @@ function DefaultOptionComponent<T>({ option }: OptionProps<T>) {
 
 export default function RadioInput<T>({
   styledAsButtons = true,
-  inputType = 'radio',
+  // when rendered as buttons a checkbox keyboard navigation is more inuitive
+  inputType = styledAsButtons ? 'checkbox' : 'radio',
   OptionComponent = DefaultOptionComponent,
   OptionContainerComponent = 'div',
   onChange,

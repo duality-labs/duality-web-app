@@ -44,62 +44,9 @@
         gap: 0;
         background-color: var(--default);
         border-radius: paddings.$p-3;
-      }
-    }
-    .select-input-group--row {
-      .select-input-option {
-        flex: 1 1 auto;
-      }
-    }
-    .select-input-group {
-      & {
-        padding-top: paddings.$p-3;
-        padding-bottom: paddings.$p-3;
-        margin-bottom: margins.$m-3;
-      }
-    }
-
-    .select-input-option {
-      label {
-        display: flex;
-        flex-direction: row;
-        flex-flow: wrap;
-        padding: paddings.$p-4;
-        padding-top: paddings.$p-2;
-        padding-bottom: paddings.$p-2;
-        background-color: var(--default);
-        // add barely noticable rounding to avoid looking flat/sharp
-        border-radius: 2px;
-      }
-    }
-    // only round corners of row options (not dropdown columns)
-    .select-input-group--row .select-input-option {
-      label {
-        border-radius: paddings.$p-3;
-      }
-    }
-
-    // invisible but present checkboxes for keyboard navigation
-    input[type='checkbox'] {
-      display: block;
-      appearance: none;
-      opacity: 0;
-      width: 0;
-      height: 0;
-      & + label *:not(:has(> *)) {
-        opacity: 0.6;
-      }
-      &:checked + label *,
-      &:focus + label,
-      &:active + label,
-      + label:hover * {
-        opacity: 1;
-      }
-      &:focus + label,
-      &:active + label {
-        outline: #fff solid 1px;
-        // bump the z-index of the active element so outline can be easily seen
-        position: relative;
+        // replace margins with paddings for better drawer panel background color
+        margin: 0;
+        padding: paddings.$p-3 0;
       }
     }
   }

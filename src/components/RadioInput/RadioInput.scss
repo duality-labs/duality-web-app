@@ -1,32 +1,79 @@
+@use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+
 .radio-input-group {
   & {
     flex-direction: row;
     flex-wrap: wrap;
     display: flex;
-    gap: 0.5rem;
+    gap: margins.$m-3;
+    margin: margins.$m-3 0;
   }
 
   input[type='radio'],
   input[type='checkbox'] {
+    // invisible but present inputs allow automatic keyboard navigation
     & {
-      display: none;
+      display: block;
+      appearance: none;
+      opacity: 0;
+      width: 0;
+      height: 0;
     }
     & + label {
       box-sizing: border-box;
       text-align: center;
       cursor: pointer;
-      display: block;
-      flex: 0 0 auto;
     }
-    & + label .button {
+    & + label.button {
       border: 1px solid transparent;
     }
   }
 
-  input[type='radio']:checked,
-  input[type='checkbox']:checked {
-    & + label .button {
-      border-color: var(--info);
+  // dim unchecked options
+  input[type='radio'],
+  input[type='checkbox'] {
+    & + label *:not(:has(> *)) {
+      opacity: 0.6;
+    }
+    &:checked + label *,
+    &:focus + label,
+    &:active + label,
+    + label:hover * {
+      opacity: 1;
+    }
+  }
+
+  // highlight focused option
+  input {
+    &:focus + label,
+    &:active + label {
+      outline: #fff solid 1px;
+      // bump the z-index of the active element so outline can be easily seen
+      position: relative;
+    }
+  }
+
+  // highlight checked option
+  input:checked {
+    & + label.button {
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+  }
+
+  .radio-input-option {
+    flex: 1 1 auto;
+    label {
+      display: flex;
+      flex-direction: row;
+      flex-flow: wrap;
+      padding: paddings.$p-2 paddings.$p-4;
+      background-color: var(--default);
+      // add barely noticable rounding to avoid looking flat/sharp/rounded
+      border-radius: 2px;
+      &.button {
+        border-radius: paddings.$p-3;
+      }
     }
   }
 }
