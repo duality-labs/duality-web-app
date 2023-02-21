@@ -89,16 +89,11 @@
       & + label *:not(:has(> *)) {
         opacity: 0.6;
       }
-      & + label img {
-        opacity: 0.75;
-      }
-      &:checked + label * {
-        opacity: 1;
-      }
+      &:checked + label *,
       &:focus + label,
       &:active + label,
-      + label:hover {
-        background-color: rgba($color: #fff, $alpha: 0.1);
+      + label:hover * {
+        opacity: 1;
       }
       &:focus + label,
       &:active + label {
