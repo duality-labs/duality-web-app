@@ -669,7 +669,7 @@ export default function Pool() {
         onSubmit={onSubmit}
       >
         <div className="assets-card page-card">
-          <h3 className="card-title mb-3">Add Liquidity</h3>
+          <h3 className="card-title mb-4">Add Liquidity</h3>
           <div className="mb-4">
             <p>
               Add liquidity in any ratio to earn fees on
@@ -688,8 +688,8 @@ export default function Pool() {
               exclusion={tokenB}
             />
           </div>
-          <div className="plus-space mx-auto my-2">
-            <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>
+          <div className="plus-space mx-auto my-4">
+            <FontAwesomeIcon icon={faPlus}></FontAwesomeIcon>
           </div>
           <div className="card-row">
             <TokenInputGroup
@@ -702,10 +702,10 @@ export default function Pool() {
               exclusion={tokenA}
             />
           </div>
-          <div className="row flex-centered mt-5 mb-3 gapx-4">
-            <div className="col">
+          <div className="row flex-centered mt-5 gapx-5">
+            <div className="col flex">
               <input
-                className="button-primary text-medium pill pill-outline px-4 py-4"
+                className="button-primary text-medium pill-outline px-4 py-4"
                 disabled={
                   !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
                 }
@@ -714,9 +714,9 @@ export default function Pool() {
                 value="Customize"
               />
             </div>
-            <div className="col">
+            <div className="col flex">
               <input
-                className="button-primary text-medium pill px-4 py-4"
+                className="button-primary text-medium px-4 py-4"
                 disabled={
                   !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
                 }
@@ -741,17 +741,17 @@ export default function Pool() {
     >
       <div className="page pool-page">
         <div
-          className={`my-4 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
+          className={`my-4 p-5 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
-          <div className="chart-header row">
+          <div className="chart-header row flow-wrap">
             <div className="col">
               <h3 className="h3">Add Liquidity</h3>
             </div>
-            <div className="col flex-centered chart-type-value">Customized</div>
+            <div className="col flex-centered chart-highlight">Customized</div>
             <div className="col flex-centered ml-auto">Transaction Details</div>
           </div>
           <hr className="mt-3 mb-4" />
-          <div className="flex row">
+          <div className="flex row flow-wrap flow-nowrap-lg">
             <div className="flex col col--left">
               <div className="chart-header row my-4">
                 <TokenPairLogos
@@ -821,7 +821,7 @@ export default function Pool() {
                   exclusion={tokenA}
                 />
               </div>
-              <div className="row">
+              <div className="row liquidity-shape">
                 <div className="col flex">
                   <h4 className="mt-4">Liquidity Shape</h4>
                   <RadioInput<LiquidityShape>
@@ -841,14 +841,14 @@ export default function Pool() {
               />
             </div>
             <div className="flex col col--right">
-              <div className="chart-header row my-4">
+              <div className="chart-header row flow-wrap my-4">
                 <div className="col">
                   <h3 className="h3">Liquidity Distribution</h3>
                 </div>
-                <div className="col flex-centered ml-auto">
+                <div className="col flex-centered ml-auto text-muted">
                   <div className="row gap-2">
-                    <div>Current Price</div>
-                    <div className="current-price">
+                    <strong>Current Price:</strong>
+                    <div className="chart-highlight">
                       {currentPriceFromTicks?.toFixed(5) ?? '-'}
                     </div>
                     {tokenA && tokenB && (
@@ -898,7 +898,10 @@ export default function Pool() {
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
                         : 'No Tokens'
                     }
-                    minSignificantDigits={8}
+                    minSignificantDigits={Math.min(
+                      Math.max(rangeMin.length + 1),
+                      8
+                    )}
                     maxSignificantDigits={maxFractionDigits + 2}
                     format={formatStepNumberPriceInput}
                   />
@@ -916,7 +919,10 @@ export default function Pool() {
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
                         : 'No Tokens'
                     }
-                    minSignificantDigits={8}
+                    minSignificantDigits={Math.min(
+                      Math.max(rangeMax.length + 1),
+                      8
+                    )}
                     maxSignificantDigits={maxFractionDigits + 2}
                     format={formatStepNumberPriceInput}
                   />
@@ -1033,7 +1039,7 @@ function ChartControls({
   zoomOut?: () => void;
 }) {
   return (
-    <div className="row chart-zoom-controls gap-2">
+    <div className="row chart-zoom-controls flow-wrap gap-2">
       <button
         type="button"
         className="col flex-centered"

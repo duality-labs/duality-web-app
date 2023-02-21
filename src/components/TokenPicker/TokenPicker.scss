@@ -136,7 +136,6 @@ $min-body-height: 150px;
 .token-picker-toggle {
   & {
     margin-left: calc(0px - paddings.$p-3); // offset button padding
-    background-color: var(--token-group);
     grid-template-columns: auto 1fr;
     grid-template-rows: 1fr auto;
     border: 0px none transparent;
@@ -186,7 +185,7 @@ $min-body-height: 150px;
 }
 
 .token-picker-dialog {
-  & {
+  .dialog-background {
     background-color: var(--dialog-backdrop);
     height: 100%;
   }

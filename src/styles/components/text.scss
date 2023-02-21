@@ -24,23 +24,27 @@
   }
 }
 
+.text-muted {
+  color: hsla(218, 11%, 65%, 1);
+}
+
 .text-grid {
   & {
     grid-template-columns: auto 1fr;
     display: grid;
     width: 100%;
-    gap: 1rem;
+    gap: 0.5rem 1rem;
     font-size: 1.25rem;
   }
 
   & > .text-header {
     text-align: start;
-    color: grays.$gray;
+    color: hsla(220, 9%, 46%, 1);
   }
 
   & > .text-value {
     text-align: end;
-    color: grays.$light-gray;
+    color: hsla(216, 12%, 84%, 1);
   }
 
   // allow other colors inside text grids

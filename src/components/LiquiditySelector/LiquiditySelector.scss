@@ -3,6 +3,11 @@
   flex: 1;
   position: relative;
   overflow: hidden;
+  // together with chart-zoom-controls allow for a min screen width of 375px
+  // (the smallest non-deprecated iPhone screen size)
+  // note: calculated with HTML meta viewport tag of:
+  //       content="width=540, user-scalable=no, minimum-scale=0.5"
+  min-width: 376px;
 }
 
 .chart-liquidity {
@@ -114,11 +119,11 @@
   }
   .pole-stick {
     stroke-width: 8px;
-    stroke: hsl(202deg 58% 33%);
+    stroke: hsla(165, 83%, 57%, 1);
   }
   .pole-flag,
   .pole-to-flag {
-    fill: hsl(202deg 58% 33%);
+    fill: hsla(165, 83%, 57%, 1);
   }
   .pole-flag-stripe {
     fill: transparent;

@@ -1,9 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCheckCircle,
-  faCircleNotch,
-  faGasPump,
-  faXmark,
+  faCircleXmark,
 } from '@fortawesome/free-solid-svg-icons';
 
 import { toast } from './Notifications';
@@ -29,11 +27,10 @@ export function createLoadingToast({
   description,
   descriptionLink,
 }: ToastOptions = {}) {
-  return toast.loading(title || 'Loading', {
+  return toast.loading(title || 'Transaction in Progress...', {
     id,
     description: description || 'Executing your trade',
     descriptionLink,
-    icon: <FontAwesomeIcon icon={faCircleNotch} spin />,
     duration: Infinity,
     dismissable: true,
   });
@@ -45,13 +42,13 @@ export function checkMsgSuccessToast(
 ) {
   const { code, transactionHash } = res;
   if (code === REQUEST_SUCCESS) {
-    return toast.success(title || 'Transaction Successful', {
+    return toast.success(title || 'Transaction Successful!', {
       id,
       description: description || 'View more details',
       descriptionLink:
         descriptionLink ||
         `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-      icon: <FontAwesomeIcon icon={faCheckCircle} color="#5bc7b7" />,
+      icon: <FontAwesomeIcon icon={faCheckCircle} />,
       duration: 15e3,
       dismissable: true,
     });
@@ -67,7 +64,7 @@ export function checkMsgRejectedToast(
       id,
       description: description || 'You declined the transaction',
       descriptionLink,
-      icon: <FontAwesomeIcon icon={faXmark} color="red" />,
+      icon: <FontAwesomeIcon icon={faCircleXmark} />,
       duration: 5e3,
       dismissable: true,
     });
@@ -91,7 +88,7 @@ export function checkMsgOutOfGasToast(
       descriptionLink:
         descriptionLink ||
         `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
-      icon: <FontAwesomeIcon icon={faGasPump} color="var(--error)" />,
+      icon: <FontAwesomeIcon icon={faCircleXmark} />,
       duration: Infinity,
       dismissable: true,
     });
@@ -114,7 +111,7 @@ export function checkMsgErrorToast(
     id,
     description: description || 'Something went wrong, please try again',
     descriptionLink: descriptionLink || transactionLink,
-    icon: '🤔',
+    icon: <FontAwesomeIcon icon={faCircleXmark} />,
     duration: Infinity,
     dismissable: true,
   });

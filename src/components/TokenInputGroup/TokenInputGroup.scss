@@ -17,8 +17,18 @@
   }
 
   &.token-input-group--error {
-    border: 1px solid var(--error);
-    .token-group-title {
+    color: var(--error);
+    background-color: hsla(0, 73%, 97%, 1);
+    &,
+    .token-group-balance button {
+      border: 1px solid var(--error);
+    }
+    .token-group-title,
+    .token-picker-toggle,
+    button,
+    input,
+    input:disabled {
+      opacity: 1;
       color: var(--error);
     }
   }
@@ -85,9 +95,8 @@
       color: var(--text-disabled);
       pointer-events: none;
     }
-  }
-
-  .input--zero {
-    color: var(--text-alt);
+    &::placeholder {
+      color: var(--text-alt);
+    }
   }
 }

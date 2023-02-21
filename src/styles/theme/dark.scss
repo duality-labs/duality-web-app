@@ -4,7 +4,7 @@ $text-default: core.$light-white;
 $text-alt: core.$light-gray;
 $text-disabled: core.$gray;
 
-$default: core.$bg-dark;
+$default: hsla(202, 57%, 33%, 1);;
 $default-shadow: core.$bg-darker;
 $default-alt: core.$light-white;
 $primary: core.$bg-light;
@@ -14,10 +14,10 @@ $secondary-alt: core.$light-white;
 $success: rgb(38, 128, 27);
 $success-alt: core.$light-white;
 $info: rgb(224, 184, 121);
-$info-alt: core.$light-white;
+$info-alt: hsla(39, 57%, 34%, 1);
 $warning: rgb(220, 156, 25);
 $warning-alt: core.$light-white;
-$error: rgb(214, 92, 110);
+$error: hsla(0, 84%, 63%, 1);
 $error-alt: core.$light-white;
 $light: core.$light-blue;
 $light-alt: core.$light-white;
@@ -39,7 +39,7 @@ $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
 $profile-button-bg: rgba(core.$dark-black, 80%);
 $profile-button-text: $text-default;
-$submit-button-bg: core.$bg-light;
+$submit-button-bg: hsla(201, 77%, 61%, 1);
 $submit-button-text: core.$light-white;
 
 $input-text: core.$light-white;
@@ -51,7 +51,7 @@ $page-card: rgba(core.$dark-black, 60%);
 $card-border: core.$bg-light;
 
 $dialog-bg: core.$black;
-$dialog-backdrop: rgba(core.$dark-black, 50%);
+$dialog-backdrop: rgba(core.$dark-black, 25%);
 $selected-token: core.$dark-black;
 
 $token-search-bg: hsl(217, 19%, 27%);
@@ -60,8 +60,8 @@ $token-search-border: hsl(215, 14%, 34%);
 
 $input: rgb(255, 255, 255);
 $ghost: rgba(255, 255, 255, 0.5);
-$page-card: rgb(24, 42, 52);
-$token-group: rgb(18, 92, 135);
+$page-card: hsla(202, 59%, 21%, 1);
+$token-group: hsla(202, 57%, 33%, 1);
 $icon-button-bg: rgba(125, 125, 125, 0.4);
 $icon-button-text: rgb(230, 230, 230);
 $submit-button-bg: rgb(78, 177, 232);

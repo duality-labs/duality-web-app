@@ -10,15 +10,16 @@ $border-width: 2px;
   & {
     padding: paddings.$p-4 paddings.$p-5;
     border-radius: paddings.$p-4;
-    border: $border-width solid var(--card-border);
+    background: hsla(202, 57%, 33%, 1);
     flex-direction: column;
     overflow: hidden;
     display: flex;
     justify-content: center;
+    min-width: 14em;
   }
 
   .range-step-title {
-    color: var(--ghost-button);
+    color: hsla(201, 77%, 61%, 1);
     font-size: font-size.$h4;
     text-align: center;
     width: 100%;
@@ -32,31 +33,22 @@ $border-width: 2px;
   }
 
   .range-step-controls {
-    & {
-      flex-direction: row;
-      display: flex;
-      align-items: center;
-    }
-
     button {
       & {
-        @include paddings.padding('*', 2);
-        border-radius: paddings.$p-2;
-        background-color: var(--text-default);
-        opacity: 0.8;
-        font-size: font-size.$button-large;
+        @include paddings.padding('*', 3);
+        background-color: hsla(201, 77%, 61%, 1);
+        font-size: font-size.$h4;
         border: 0px none transparent;
         box-sizing: content-box;
         line-height: 1em;
         aspect-ratio: 1;
         flex: 0 0 auto;
-        color: var(--page-card);
         height: 1em;
         width: 1em;
       }
 
       &:disabled {
-        filter: brightness(50%);
+        filter: brightness(85%);
         cursor: not-allowed;
       }
     }
@@ -69,12 +61,12 @@ $border-width: 2px;
       @include paddings.padding('x', 3);
       background-color: transparent;
       border: 0px none transparent;
-      font-size: 1.75rem;
+      font-size: font-size.$h3;
       font-weight: font-weight.$medium;
       line-height: 1em;
       text-align: center;
       color: var(--text-default);
-      flex: 1 1 auto;
+      flex: 0 1 auto;
       outline: none;
       width: 100%;
       // allow inline sizing by number of characters (eg. 5ch) to work as intended

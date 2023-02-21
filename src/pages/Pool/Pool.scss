@@ -69,8 +69,11 @@
 
   .assets-card {
     & {
-      min-width: 384px; // influenced by default selected tokens rendered text
+      min-width: 460px; // align with Trade page width
       max-width: 800px;
+    }
+    a {
+      text-decoration: underline;
     }
     .token-input-group {
       box-sizing: border-box;
@@ -83,7 +86,7 @@
     .pill-outline {
       background-color: transparent;
       color: var(--text-default);
-      border: 3px solid var(--submit-button-bg);
+      border: 1.5px solid var(--submit-button-bg);
       &:hover,
       :active {
         background-color: rgba($color: rgb(78, 177, 232), $alpha: 0.2);
@@ -93,8 +96,8 @@
       align-items: center;
     }
     .plus-space .fa-plus {
-      color: rgb(78, 177, 232);
-      color: linear-gradient(135deg, rgb(78, 177, 232) 0%, #ffffff 100%);
+      color: white;
+      font-size: 1.25rem;
     }
   }
 
@@ -113,14 +116,14 @@
         border-radius: 0.5rem;
       }
     }
-
-    .chart-area {
-      min-height: 10rem;
-      max-height: 20rem;
+    .chart-highlight {
+      font-weight: 500;
+      color: hsla(165, 83%, 57%, 1);
     }
 
-    .col--left {
-      min-width: 27.5em;
+    .chart-area {
+      min-height: 12rem;
+      max-height: 20rem;
     }
   }
 
@@ -203,11 +206,14 @@
   }
 
   .price-card > .card-row {
-    justify-content: space-between;
+    justify-content: stretch;
     gap: margins.$m-4;
     // allow inputs to wrap around if they have a large number of significant digits
     // (should only occur in the cases where we have no context of price)
     flex-flow: wrap;
+    .range-step-input {
+      flex: 1 0 0;
+    }
   }
 
   .tick-price-card {
@@ -255,6 +261,19 @@
     }
   }
 }
+
+@media (min-width: 768px) {
+  .liquidity-shape {
+    min-width: 27.5em;
+  }
+}
+
+@media (min-width: 992px) {
+  .col--left {
+    flex-grow: 0;
+  }
+}
+
 @media screen and (min-width: 1024px) {
   .pool-page {
     .orderbook-card {

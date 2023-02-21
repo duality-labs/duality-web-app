@@ -315,7 +315,7 @@ export default function Swap() {
             exclusion={tokenB}
           ></TokenInputGroup>
         </div>
-        <div className="card-row my-2">
+        <div className="card-row my-3">
           <button
             type="button"
             onClick={swapTokens}
@@ -327,7 +327,7 @@ export default function Swap() {
             ></FontAwesomeIcon>
           </button>
         </div>
-        <div className="card-row mb-4">
+        <div className="card-row">
           <TokenInputGroup
             variant={error?.insufficientLiquidityOut && 'error'}
             onValueChanged={onValueBChanged}
@@ -351,7 +351,7 @@ export default function Swap() {
             tokenB &&
             parseFloat(valueAConverted || '') > 0 &&
             parseFloat(valueBConverted || '') > 0 && (
-              <div className="text-grid my-3">
+              <div className="text-grid my-4">
                 <span className="text-header">Exchange Rate</span>
                 <span className="text-value">
                   {routerResult && rateTokenOrder ? (
@@ -412,7 +412,7 @@ export default function Swap() {
               </div>
             )}
         </div>
-        <div className="my-4">
+        <div className="mt-4">
           {address ? (
             hasFormData &&
             hasSufficientFunds &&
@@ -445,7 +445,7 @@ export default function Swap() {
             )
           ) : (
             <button
-              className="submit-button button-primary"
+              className="submit-button button-dark"
               type="button"
               onClick={connectWallet}
             >

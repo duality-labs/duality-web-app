@@ -563,6 +563,14 @@ export default function LiquiditySelector({
         </linearGradient>
       </defs>
       {graphEnd.isZero() && <text>Chart is not currently available</text>}
+      <g className="axis x-axis">
+        <rect
+          x="0"
+          width={containerSize.width}
+          y={plotY(0).toFixed(0)}
+          height="8"
+        />
+      </g>
       {!advanced && (
         <TicksBackgroundArea
           className="new-ticks-area"
@@ -620,7 +628,6 @@ export default function LiquiditySelector({
         className="x-axis"
         xMin={xMin}
         xMax={xMax}
-        axisWidth={containerSize.width - (rightPadding - leftPadding)}
         tickMarks={[
           currentPriceFromTicks?.toNumber() || '0',
           rangeMin,
@@ -835,7 +842,9 @@ function TicksBackgroundArea({
             : '0'
         }
         y={plotY(new BigNumber(1)).toFixed(3)}
-        height={(plotY(new BigNumber(0)) - plotY(new BigNumber(1))).toFixed(3)}
+        height={(plotY(new BigNumber(0)) - plotY(new BigNumber(1)) + 8).toFixed(
+          3
+        )}
       />
     </g>
   ) : null;
@@ -962,7 +971,7 @@ function TicksArea({
           className="line pole-stick"
           x1={(plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
           x2={(plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
-          y1={plotY(new BigNumber(0)).toFixed(3)}
+          y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
@@ -996,9 +1005,7 @@ function TicksArea({
         />
         {currentPrice && (
           <text
-            filter={`url(#text-solid-${
-              startTickHasPriceWarning ? 'error' : 'highlight'
-            })`}
+            filter="url(#text-solid-highlight)"
             x={(4 + 1.8 + plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
@@ -1089,7 +1096,7 @@ function TicksArea({
           className="line pole-stick"
           x1={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
           x2={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
-          y1={plotY(new BigNumber(0)).toFixed(3)}
+          y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
@@ -1123,9 +1130,7 @@ function TicksArea({
         />
         {currentPrice && (
           <text
-            filter={`url(#text-solid-${
-              endTickHasPriceWarning ? 'error' : 'highlight'
-            })`}
+            filter="url(#text-solid-highlight)"
             x={(-(4 + 1.8) + plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
@@ -1554,7 +1559,6 @@ function Axis({
   className = '',
   xMin,
   xMax,
-  axisWidth,
   tickMarks: givenTickMarks,
   highlightedTick = -1,
   getDecimalPlaces = (tickMark) =>
@@ -1565,7 +1569,6 @@ function Axis({
 }: {
   xMin: number;
   xMax: number;
-  axisWidth?: number;
   className?: string;
   tickMarks?: number[];
   highlightedTick?: number;
@@ -1595,12 +1598,6 @@ function Axis({
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
-      <rect
-        x="0"
-        width={axisWidth || plotX(xMax)}
-        y={plotY(0).toFixed(0)}
-        height="8"
-      />
       <g className="axis-ticks">{tickMarks.map(mapTickMark)}</g>
     </g>
   );

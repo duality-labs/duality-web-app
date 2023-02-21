@@ -143,7 +143,7 @@ export default function Header() {
                   </button>
                 ) : (
                   <button
-                    className="connect-wallet button-primary"
+                    className="connect-wallet button-dark"
                     onClick={connectWallet}
                   >
                     Connect Wallet
