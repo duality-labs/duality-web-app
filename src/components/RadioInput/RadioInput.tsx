@@ -1,4 +1,4 @@
-import { Fragment, useId, useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import './RadioInput.scss';
 
 export interface OptionProps<T> {
@@ -17,6 +17,7 @@ export interface RadioInputProps<T> {
   value?: T;
   name?: string;
   className?: string;
+  containerClassName?: string;
 }
 
 function DefaultOptionComponent<T>({ option }: OptionProps<T>) {
@@ -26,7 +27,7 @@ function DefaultOptionComponent<T>({ option }: OptionProps<T>) {
 export default function RadioInput<T>({
   inputType = 'radio',
   OptionComponent = DefaultOptionComponent,
-  OptionContainerComponent = Fragment,
+  OptionContainerComponent = 'div',
   onChange,
   onClick,
   list,
@@ -34,6 +35,7 @@ export default function RadioInput<T>({
   value,
   name,
   className,
+  containerClassName,
 }: RadioInputProps<T>) {
   const selectedIndex = value !== undefined ? list.indexOf(value) : -1;
   const groupID = useId();
@@ -52,7 +54,12 @@ export default function RadioInput<T>({
         const id = `${groupName}-${index}`;
 
         return (
-          <OptionContainerComponent key={id}>
+          <OptionContainerComponent
+            key={id}
+            className={['radio-input-option', containerClassName]
+              .filter(Boolean)
+              .join(' ')}
+          >
             <input
               type={inputType}
               name={groupName}
