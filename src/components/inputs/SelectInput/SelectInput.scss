@@ -48,6 +48,9 @@
         margin: 0;
         padding: paddings.$p-3 0;
       }
+      label {
+        padding: paddings.$p-2 paddings.$p-4;
+      }
     }
   }
 }
