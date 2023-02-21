@@ -842,7 +842,9 @@ function TicksBackgroundArea({
             : '0'
         }
         y={plotY(new BigNumber(1)).toFixed(3)}
-        height={(plotY(new BigNumber(0)) - plotY(new BigNumber(1))).toFixed(3)}
+        height={(plotY(new BigNumber(0)) - plotY(new BigNumber(1)) + 8).toFixed(
+          3
+        )}
       />
     </g>
   ) : null;
@@ -969,7 +971,7 @@ function TicksArea({
           className="line pole-stick"
           x1={(plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
           x2={(plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
-          y1={plotY(new BigNumber(0)).toFixed(3)}
+          y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
@@ -1096,7 +1098,7 @@ function TicksArea({
           className="line pole-stick"
           x1={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
           x2={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
-          y1={plotY(new BigNumber(0)).toFixed(3)}
+          y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
