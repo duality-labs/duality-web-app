@@ -563,6 +563,14 @@ export default function LiquiditySelector({
         </linearGradient>
       </defs>
       {graphEnd.isZero() && <text>Chart is not currently available</text>}
+      <g className="axis x-axis">
+        <rect
+          x="0"
+          width={containerSize.width}
+          y={plotY(0).toFixed(0)}
+          height="8"
+        />
+      </g>
       {!advanced && (
         <TicksBackgroundArea
           className="new-ticks-area"
@@ -620,7 +628,6 @@ export default function LiquiditySelector({
         className="x-axis"
         xMin={xMin}
         xMax={xMax}
-        axisWidth={containerSize.width - (rightPadding - leftPadding)}
         tickMarks={[
           currentPriceFromTicks?.toNumber() || '0',
           rangeMin,
@@ -1554,7 +1561,6 @@ function Axis({
   className = '',
   xMin,
   xMax,
-  axisWidth,
   tickMarks: givenTickMarks,
   highlightedTick = -1,
   getDecimalPlaces = (tickMark) =>
@@ -1565,7 +1571,6 @@ function Axis({
 }: {
   xMin: number;
   xMax: number;
-  axisWidth?: number;
   className?: string;
   tickMarks?: number[];
   highlightedTick?: number;
@@ -1595,12 +1600,6 @@ function Axis({
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
-      <rect
-        x="0"
-        width={axisWidth || plotX(xMax)}
-        y={plotY(0).toFixed(0)}
-        height="8"
-      />
       <g className="axis-ticks">{tickMarks.map(mapTickMark)}</g>
     </g>
   );
