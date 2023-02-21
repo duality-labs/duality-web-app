@@ -51,6 +51,7 @@ import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 
 import './Pool.scss';
 import TokenPairLogos from '../../components/TokenPairLogos';
+import RadioInput from '../../components/RadioInput';
 
 // the default resolution for a number in 18 decimal places
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
@@ -823,21 +824,18 @@ export default function Pool() {
               <div className="row">
                 <div className="col flex">
                   <h4 className="mt-4">Liquidity Shape</h4>
-                  <SelectInput<LiquidityShape>
+                  <RadioInput<LiquidityShape>
                     className="col flex"
                     maxColumnCount={4}
                     list={liquidityShapes}
                     value={liquidityShape}
                     onChange={setLiquidityShape}
-                    getLabel={(feeType) =>
-                      feeType ? `${feeType.label}` : 'Select Fee Tier'
-                    }
                     OptionComponent={LiquidityShapeOptionComponent}
                   />
                 </div>
               </div>
               <input
-                className="button-primary text-medium mt-3 p-3"
+                className="button-primary text-medium mt-4 p-3"
                 type="submit"
                 value="Confirm"
               />

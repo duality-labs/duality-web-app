@@ -44,61 +44,12 @@
         gap: 0;
         background-color: var(--default);
         border-radius: paddings.$p-3;
+        // replace margins with paddings for better drawer panel background color
+        margin: 0 0 margins.$m-3;
+        padding: paddings.$p-3 0;
       }
-    }
-    .select-input-group--row {
-      .select-input-option {
-        background-color: var(--default);
-        border-radius: paddings.$p-3;
-        flex: 1 1 auto;
-        label {
-        }
-      }
-    }
-    .select-input-group {
-      & {
-        padding-top: paddings.$p-3;
-        padding-bottom: paddings.$p-3;
-        margin-bottom: margins.$m-3;
-      }
-    }
-
-    .select-input-option {
       label {
-        display: flex;
-        flex-direction: row;
-        padding: paddings.$p-4;
-        padding-top: paddings.$p-2;
-        padding-bottom: paddings.$p-2;
-      }
-    }
-
-    // invisible but present checkboxes for keyboard navigation
-    input[type='checkbox'] {
-      display: block;
-      appearance: none;
-      opacity: 0;
-      width: 0;
-      height: 0;
-      & + label *:not(:has(> *)) {
-        opacity: 0.6;
-      }
-      & + label img {
-        opacity: 0.75;
-      }
-      &:checked + label * {
-        opacity: 1;
-      }
-      &:focus + label,
-      :active + label,
-      + label:hover {
-        border-radius: 6px;
-        background-color: rgba($color: #fff, $alpha: 0.1);
-      }
-      &:focus + label,
-      :active + label {
-        outline: #fff solid 1px;
-        border-radius: 6px;
+        padding: paddings.$p-2 paddings.$p-4;
       }
     }
   }

@@ -1,6 +1,6 @@
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { PropsWithChildren, ReactNode, useCallback, useState } from 'react';
+import { ReactNode, useCallback, useState } from 'react';
 import Drawer from '../../Drawer';
 import RadioInput from '../../RadioInput';
 import { OptionProps, RadioInputProps } from '../../RadioInput/RadioInput';
@@ -113,12 +113,8 @@ export default function SelectInput<T>({
             'select-input-group',
             `select-input-group--${maxColumnCount === 1 ? 'column' : 'row'}`,
           ].join(' ')}
-          OptionContainerComponent={useCallback(
-            ({ children }: PropsWithChildren<unknown>) => (
-              <div className="select-input-option">{children}</div>
-            ),
-            []
-          )}
+          containerClassName="select-input-option"
+          styledAsButtons={maxColumnCount !== 1}
           // set default OptionComponent to use getters
           OptionComponent={useCallback(
             (optionComponentProps: OptionProps<T>) => (
