@@ -45,7 +45,7 @@
         background-color: var(--default);
         border-radius: paddings.$p-3;
         // replace margins with paddings for better drawer panel background color
-        margin: 0;
+        margin: 0 0 margins.$m-3;
         padding: paddings.$p-3 0;
       }
       label {
