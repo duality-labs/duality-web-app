@@ -48,7 +48,11 @@ export default function RadioInput<T>({
   const labelStyle = useMemo(
     () => ({
       // set column width style
-      flexBasis: maxColumnCount ? `${100 / maxColumnCount}%` : undefined,
+      flexBasis: maxColumnCount
+        ? `calc(${100 / maxColumnCount}% - ${
+            ((maxColumnCount - 1) / maxColumnCount) * 0.5
+          }rem)`
+        : undefined,
     }),
     [maxColumnCount]
   );
@@ -64,6 +68,7 @@ export default function RadioInput<T>({
             className={['radio-input-option', containerClassName]
               .filter(Boolean)
               .join(' ')}
+            style={labelStyle}
           >
             <input
               type={inputType}
@@ -73,7 +78,7 @@ export default function RadioInput<T>({
               onChange={() => onChange?.(option, index)}
               onClick={onClick}
             ></input>
-            <label className={labelClassName} htmlFor={id} style={labelStyle}>
+            <label className={labelClassName} htmlFor={id}>
               <OptionComponent option={option} id={id} index={index} />
             </label>
           </OptionContainerComponent>
