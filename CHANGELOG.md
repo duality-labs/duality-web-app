@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.96](https://github.com/duality-labs/duality-web-app/compare/v0.1.95...v0.1.96) (2023-02-21)
+
+
+### Features
+
+* change liquidity shape input into radio button input ([#319](https://github.com/duality-labs/duality-web-app/issues/319)) ([72994dd](https://github.com/duality-labs/duality-web-app/commit/72994dd8d84adf8fa1dbd2193d2df48a64f6ed45))
+
 ## [0.1.95](https://github.com/duality-labs/duality-web-app/compare/v0.1.94...v0.1.95) (2023-02-20)
 
 
