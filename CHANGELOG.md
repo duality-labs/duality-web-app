@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.98](https://github.com/duality-labs/duality-web-app/compare/v0.1.97...v0.1.98) (2023-02-22)
+
+
+### Fixes
+
+* add console error logs for errors that can occur before a transaction ([#323](https://github.com/duality-labs/duality-web-app/issues/323)) ([d8bc6a6](https://github.com/duality-labs/duality-web-app/commit/d8bc6a68b717c95041ce72046d0baead88a77ea5))
+
 ## [0.1.97](https://github.com/duality-labs/duality-web-app/compare/v0.1.96...v0.1.97) (2023-02-21)
 
 
