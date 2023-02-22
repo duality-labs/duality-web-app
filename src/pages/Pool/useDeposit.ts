@@ -332,6 +332,9 @@ export function useDeposit(): [
       } catch (e) {
         setIsValidating(false);
         setError((e as Error)?.message || (e as string));
+        // pass error to console for developer
+        // eslint-disable-next-line no-console
+        console.error(e);
       }
     },
     [web3.address, web3.wallet, pairs]
