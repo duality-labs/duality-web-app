@@ -30,6 +30,10 @@
     gap: 5rem;
     flex-flow: wrap;
   }
+  // vertically space hero cards a little less
+  .home-hero-section {
+    row-gap: 1rem;
+  }
 
   .position-cards {
     align-items: flex-start;
