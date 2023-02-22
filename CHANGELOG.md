@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.99](https://github.com/duality-labs/duality-web-app/compare/v0.1.98...v0.1.99) (2023-02-22)
+
+
+### Features
+
+* update designs of current components to match new design style (part 2) ([#324](https://github.com/duality-labs/duality-web-app/issues/324)) ([91a6127](https://github.com/duality-labs/duality-web-app/commit/91a61278903ca4af110daa386cb4f54f63efa765))
+
 ## [0.1.98](https://github.com/duality-labs/duality-web-app/compare/v0.1.97...v0.1.98) (2023-02-22)
 
 
