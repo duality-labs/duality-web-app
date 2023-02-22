@@ -73,7 +73,7 @@ type TokenCoin = Coin & {
 
 export default function MyLiquidity() {
   const { wallet } = useWeb3();
-  const { data: balances, isValidating } = useBankBalances();
+  const { data: balances } = useBankBalances();
 
   const { data: indexer } = useIndexerData();
   const { data: shares } = useShares();
@@ -174,7 +174,7 @@ export default function MyLiquidity() {
   }, [shares, indexer, dualityTokens]);
 
   // show connect page
-  if (!wallet || (!isValidating && (!balances || balances.length === 0))) {
+  if (!wallet) {
     return (
       <div className="no-liquidity col">
         <h3 className="h2 mb-4 text-center"> No liquidity positions found</h3>
@@ -198,7 +198,7 @@ export default function MyLiquidity() {
 
 function ShareValuesPage({
   shareValueMap,
-  balances,
+  balances = [],
   setSelectedTokens,
 }: {
   shareValueMap?: TickShareValueMap;
@@ -462,7 +462,7 @@ function ShareValuesPage({
         </div>
       </div>
       <div className="position-cards row mt-5">
-        {shareValueMap &&
+        {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
           Object.entries(shareValueMap).map(([pairID, shareValues]) => {
             return (
               <PositionCard
@@ -473,7 +473,14 @@ function ShareValuesPage({
                 onClick={withdrawPair}
               />
             );
-          })}
+          })
+        ) : (
+          <Link to="/liquidity">
+            <button className="button-primary text-medium px-4 py-4">
+              Add Liquidity
+            </button>
+          </Link>
+        )}
       </div>
     </div>
   );
