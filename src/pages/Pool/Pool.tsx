@@ -169,7 +169,8 @@ export default function Pool() {
   const isValueBZero = new BigNumber(valueB).isZero();
 
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
-  const valuesValid = !!tokenA && !!tokenB && values.some((v) => Number(v));
+  const valuesValid =
+    !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
 
   const { data: { ticks = [], token0, token1 } = {} } = useIndexerPairData(
     tokenA?.address,
@@ -291,12 +292,12 @@ export default function Pool() {
   useEffect(() => {
     const setRangeForNewPriceData = (price: number | BigNumber) => {
       setRangeMin(
-        isValueAZero
+        isValueAZero && !isValueBZero
           ? new BigNumber(price).multipliedBy(1.1).toFixed()
           : new BigNumber(price).multipliedBy(0.5).toFixed()
       );
       setRangeMax(
-        isValueBZero
+        isValueBZero && !isValueAZero
           ? new BigNumber(price).multipliedBy(0.9).toFixed()
           : new BigNumber(price).multipliedBy(2).toFixed()
       );
@@ -718,7 +719,9 @@ export default function Pool() {
               <input
                 className="button-primary text-medium px-4 py-4"
                 disabled={
-                  !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
+                  (isValueAZero && isValueBZero) ||
+                  !hasSufficientFundsA ||
+                  !hasSufficientFundsB
                 }
                 type="submit"
                 name="action"
@@ -837,6 +840,11 @@ export default function Pool() {
               <input
                 className="button-primary text-medium mt-4 p-3"
                 type="submit"
+                disabled={
+                  (isValueAZero && isValueBZero) ||
+                  !hasSufficientFundsA ||
+                  !hasSufficientFundsB
+                }
                 value="Confirm"
               />
             </div>
