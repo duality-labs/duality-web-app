@@ -252,6 +252,9 @@ export function useEditLiquidity(): [
       } catch (e) {
         setIsValidating(false);
         setError((e as Error)?.message || (e as string));
+        // pass error to console for developer
+        // eslint-disable-next-line no-console
+        console.error(e as Error);
       }
     },
     [web3.address, web3.wallet]

@@ -191,6 +191,9 @@ export function useSwap(): [
         })
         .catch(function (err: Error) {
           onError(err?.message ?? 'Unknown error');
+          // pass error to console for developer
+          // eslint-disable-next-line no-console
+          console.error(err);
         });
 
       function onError(message?: string) {
