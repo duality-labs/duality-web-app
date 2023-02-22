@@ -49,7 +49,8 @@ header,
     border: 1px solid transparent;
   }
 
-  button.user-profile {
+  button.user-profile,
+  .button.user-profile {
     width: 100%;
     max-width: 10em;
     background-color: var(--profile-button-bg);
