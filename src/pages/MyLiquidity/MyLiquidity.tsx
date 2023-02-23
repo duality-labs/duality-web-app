@@ -354,13 +354,10 @@ function ShareValuesPage({
                 <h2 className="credit-card__hero-title">Portfolio Value</h2>
                 <div className="credit-card__hero-value">
                   $
-                  {allUserBankValue
-                    .plus(allUserSharesValue)
-                    .toNumber()
-                    .toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                  {allUserSharesValue.toNumber().toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </div>
               </div>
               <div className="mt-3 mb-4 pb-3">
@@ -369,7 +366,7 @@ function ShareValuesPage({
                 </h3>
                 <div className="credit-card__lesser-hero-value">
                   $
-                  {allUserSharesValue.toNumber().toLocaleString('en-US', {
+                  {allUserBankValue.toNumber().toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
