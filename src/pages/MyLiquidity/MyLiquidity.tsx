@@ -369,7 +369,7 @@ function ShareValuesPage({
                 </h3>
                 <div className="credit-card__lesser-hero-value">
                   $
-                  {allUserSharesValue.toNumber().toLocaleString('en-US', {
+                  {allUserBankValue.toNumber().toLocaleString('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
