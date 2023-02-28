@@ -1,0 +1,49 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../styles/font/size.scss' as font-size;
+
+.table-card {
+  display: flex;
+  background-color: hsla(212, 28%, 17%, 1);
+  border-radius: 1rem;
+  overflow: hidden;
+  min-height: 18em;
+  min-width: 28em;
+
+  .table-card__hero-title {
+    font-size: font-size.$h4;
+  }
+  .table-card__asset-toggle {
+    font-size: font-size.$button;
+  }
+  .table-card__table {
+    overflow-y: scroll;
+    flex-basis: 0;
+    th {
+      border-bottom: 1px solid hsl(0, 0%, 75%);
+      position: sticky;
+      top: 0;
+      background-color: hsla(212, 28%, 17%, 1);
+    }
+    th,
+    td {
+      text-align: left;
+      width: 50%;
+      min-width: 7em;
+      padding: paddings.$p-2;
+      &:first-child {
+        padding-left: 0;
+      }
+      &:last-child {
+        padding-right: 0;
+      }
+    }
+    tr:first-child td {
+      padding-top: paddings.$p-3;
+    }
+    th + th,
+    td + td {
+      text-align: right;
+      width: 25%;
+    }
+  }
+}

@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { Coin } from '@cosmjs/launchpad';
 
-import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
-import SearchInput from '../../components/inputs/SearchInput/SearchInput';
 import {
   useBankBalances,
   useIndexerData,
@@ -30,6 +28,7 @@ import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { calculateShares } from '../../lib/web3/utils/ticks';
 import { IndexedShare } from '../../lib/web3/utils/shares';
 import { EditedTickShareValue, useEditLiquidity } from './useEditLiquidity';
+import TableCard from '../../components/cards/TableCard';
 
 interface ShareValue {
   share: IndexedShare;
@@ -380,83 +379,63 @@ function ShareValuesPage({
             </div>
           </div>
         </div>
-        <div className="asset-list-card flex my-4">
-          <div className="col flex">
-            <div className="row flex-centered gap-3 m-lg mb-0">
-              <div className="col flex">
-                <h2 className="asset-list-card__hero-title">Assets</h2>
-              </div>
-              <div className="col">
-                <div className="asset-list-card__asset-toggle">
-                  <RadioButtonGroupInput<'my-assets' | 'all-assets'>
-                    buttonClassName="px-5"
-                    values={useMemo(
-                      () => ({
-                        'my-assets': 'My Assets',
-                        'all-assets': 'All Assets',
-                      }),
-                      []
-                    )}
-                    value={selectedAssetList}
-                    onChange={setSelectedAssetList}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="asset-list-card__search row m-lg mb-0">
-              <div className="col flex">
-                <SearchInput value={searchValue} onInput={setSearchValue} />
-              </div>
-            </div>
-            <div className="relative row flex mt-lg">
-              <div className="asset-list-card__table col flex absolute filled">
-                <table cellSpacing="0" className="px-lg mb-4">
-                  <thead>
-                    <tr>
-                      <th>Token + Chain</th>
-                      <th>Balance</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredList.length > 0 ? (
-                      filteredList.map(({ chain, symbol, token }) => {
-                        const foundUserAsset = allUserBankAssets.find(
-                          (userToken) => {
-                            return userToken.token === token;
-                          }
-                        );
-                        return foundUserAsset ? (
-                          <AssetRow
-                            key={`${token.base}-${token.chain.chain_name}`}
-                            {...foundUserAsset}
-                            token={token}
-                            amount={foundUserAsset.amount}
-                            value={foundUserAsset.value}
-                          />
-                        ) : (
-                          <AssetRow
-                            key={`${token.base}-${token.chain.chain_name}`}
-                            token={token}
-                            denom={''}
-                            amount="0"
-                            value={new BigNumber(0)}
-                          />
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={3} align="center">
-                          No {!!searchValue ? 'Matching' : ''} Assets Found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TableCard
+          className="asset-list-card"
+          title="Assets"
+          switchValues={useMemo(
+            () => ({
+              'my-assets': 'My Assets',
+              'all-assets': 'All Assets',
+            }),
+            []
+          )}
+          switchValue={selectedAssetList}
+          switchOnChange={setSelectedAssetList}
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
+        >
+          <table cellSpacing="0" className="px-lg mb-4">
+            <thead>
+              <tr>
+                <th>Token + Chain</th>
+                <th>Balance</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredList.length > 0 ? (
+                filteredList.map(({ chain, symbol, token }) => {
+                  const foundUserAsset = allUserBankAssets.find((userToken) => {
+                    return userToken.token === token;
+                  });
+                  return foundUserAsset ? (
+                    <AssetRow
+                      key={`${token.base}-${token.chain.chain_name}`}
+                      {...foundUserAsset}
+                      token={token}
+                      amount={foundUserAsset.amount}
+                      value={foundUserAsset.value}
+                    />
+                  ) : (
+                    <AssetRow
+                      key={`${token.base}-${token.chain.chain_name}`}
+                      token={token}
+                      denom={''}
+                      amount="0"
+                      value={new BigNumber(0)}
+                    />
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={3} align="center">
+                    No {!!searchValue ? 'Matching' : ''} Assets Found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </TableCard>
       </div>
       <div className="position-cards row mt-5">
         {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
