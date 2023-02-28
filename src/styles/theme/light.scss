@@ -55,6 +55,7 @@ $selected-token: core.$bg-light;
 
 $token-search-bg: transparent;
 $token-search-text: core.$dark-gray;
+$token-search-placeholder: hsl(218, 11%, 65%);
 $token-search-border: core.$light-black;
 
 $input: rgb(0, 0, 0);
@@ -138,6 +139,7 @@ $map: (
 
   'token-search-bg': $token-search-bg,
   'token-search-text': $token-search-text,
+  'token-search-placeholder': $token-search-placeholder,
   'token-search-border': $token-search-border,
 
   'badge-main-bg': $badge-main-bg,

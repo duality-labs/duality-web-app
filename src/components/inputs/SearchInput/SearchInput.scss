@@ -11,7 +11,7 @@
     left: 1.2rem;
     margin: auto;
     pointer-events: none;
-    color: var(--token-search-text);
+    color: var(--token-search-placeholder);
   }
 
   svg,
@@ -21,7 +21,7 @@
 
   input {
     & {
-      color: hsla(216, 12%, 84%, 1);
+      color: var(--token-search-text);
       padding: 1rem 1rem 1rem 3rem;
       appearance: none;
       background: var(--token-search-bg);
@@ -33,7 +33,7 @@
     }
 
     &::placeholder {
-      color: var(--token-search-text);
+      color: var(--token-search-placeholder);
     }
 
     // give interaction feedback

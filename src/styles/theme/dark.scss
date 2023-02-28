@@ -4,7 +4,7 @@ $text-default: core.$light-white;
 $text-alt: core.$light-gray;
 $text-disabled: core.$gray;
 
-$default: hsla(202, 57%, 33%, 1);;
+$default: hsla(202, 57%, 33%, 1);
 $default-shadow: core.$bg-darker;
 $default-alt: core.$light-white;
 $primary: core.$bg-light;
@@ -55,7 +55,8 @@ $dialog-backdrop: rgba(core.$dark-black, 25%);
 $selected-token: core.$dark-black;
 
 $token-search-bg: hsl(217, 19%, 27%);
-$token-search-text: hsl(218, 11%, 65%);
+$token-search-text: hsl(216, 12%, 84%);
+$token-search-placeholder: hsl(218, 11%, 65%);
 $token-search-border: hsl(215, 14%, 34%);
 
 $input: rgb(255, 255, 255);
@@ -139,6 +140,7 @@ $map: (
 
   'token-search-bg': $token-search-bg,
   'token-search-text': $token-search-text,
+  'token-search-placeholder': $token-search-placeholder,
   'token-search-border': $token-search-border,
 
   'badge-main-bg': $badge-main-bg,
