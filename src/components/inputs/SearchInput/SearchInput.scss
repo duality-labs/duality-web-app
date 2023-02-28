@@ -11,16 +11,17 @@
     left: 1.2rem;
     margin: auto;
     pointer-events: none;
+    color: var(--token-search-text);
   }
 
   svg,
   input {
     font-size: font-size.$input-small;
-    color: var(--token-search-text);
   }
 
   input {
     & {
+      color: hsla(216, 12%, 84%, 1);
       padding: 1rem 1rem 1rem 3rem;
       appearance: none;
       background: var(--token-search-bg);
@@ -29,6 +30,10 @@
       display: block;
       outline: none;
       width: 100%;
+    }
+
+    &::placeholder {
+      color: var(--token-search-text);
     }
 
     // give interaction feedback
