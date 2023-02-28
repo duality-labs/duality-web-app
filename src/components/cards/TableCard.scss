@@ -18,6 +18,9 @@
   .table-card__table {
     overflow-y: scroll;
     flex-basis: 0;
+    table {
+      border-spacing: 0;
+    }
     th {
       border-bottom: 1px solid hsl(0, 0%, 75%);
       position: sticky;

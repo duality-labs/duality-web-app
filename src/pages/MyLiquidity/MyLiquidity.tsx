@@ -394,7 +394,7 @@ function ShareValuesPage({
           searchValue={searchValue}
           setSearchValue={setSearchValue}
         >
-          <table cellSpacing="0" className="px-lg mb-4">
+          <table>
             <thead>
               <tr>
                 <th>Token + Chain</th>
