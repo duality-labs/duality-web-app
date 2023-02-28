@@ -163,7 +163,11 @@ export default function RadioButtonGroupInput<T extends string | number>({
             <button
               key={entryValue}
               type="button"
-              className={['button non-moving', buttonClassName]
+              className={[
+                'button non-moving',
+                buttonClassName,
+                selectedIndex === index && 'active',
+              ]
                 .filter(Boolean)
                 .join(' ')}
               ref={createRefForValue(entryValue)}
