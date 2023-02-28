@@ -19,6 +19,13 @@
     font-size: font-size.$input-small;
   }
 
+  // highlight search icon when search text has been entered
+  &:has(input:not([value=''])) {
+    svg {
+      color: var(--token-search-text);
+    }
+  }
+
   input {
     & {
       color: var(--token-search-text);
