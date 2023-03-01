@@ -56,7 +56,7 @@ export default function TableCard<T extends string | number>({
             </div>
           </div>
         )}
-        <div className="relative row flex mt-lg">
+        <div className="table-card__table_container relative row flex mt-lg">
           <div className="table-card__table col flex absolute filled px-lg pb-4">
             {children}
           </div>

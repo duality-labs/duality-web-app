@@ -12,7 +12,6 @@
 }
 
 .my-liquidity-page {
-
   .value-barchart {
     border-radius: 0.5rem;
     width: 100%;
@@ -50,7 +49,7 @@
   }
 
   .asset-list-card {
-    // ensure enough space to read current tokens list without scrolling
+    // ensure enough space to read current list without scrolling horizontally
     .table-card__table_container {
       min-width: 28em;
     }
@@ -69,6 +68,16 @@
         text-align: right;
         width: 25%;
       }
+    }
+  }
+
+  .pool-list-card {
+    // ensure enough space to read current list without scrolling horizontally
+    & {
+      min-width: 32em;
+    }
+    .value-visual {
+      min-width: 15em;
     }
   }
 
