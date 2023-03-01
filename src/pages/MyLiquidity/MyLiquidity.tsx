@@ -454,7 +454,7 @@ function ShareValuesPage({
                   <tr>
                     <th>Pool</th>
                     <th>Value</th>
-                    <th>Current Composition</th>
+                    <th>Composition</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -668,35 +668,12 @@ function PositionRow({
           </button>
         </td>
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
-        <td className="pl-3">
-          <>
-            <div className="value-visual row">
-              {value0 && value1 && (
-                <div className="value-barchart">
-                  <div
-                    className="value-A"
-                    style={{
-                      width: `${value0
-                        .dividedBy(value0.plus(value1))
-                        .multipliedBy(100)
-                        .toFixed(3)}%`,
-                    }}
-                  ></div>
-                  <div className="value-B"></div>
-                </div>
-              )}
-            </div>
-            <div className="value-text row">
-              <div className="value-A col">
-                {total0.toFixed(3)} {token0.symbol}{' '}
-                {value0 && <>(${value0.toFixed(2)})</>}
-              </div>
-              <div className="value-B col ml-auto">
-                {total1.toFixed(3)} {token1.symbol}{' '}
-                {value1 && <>(${value1.toFixed(2)})</>}
-              </div>
-            </div>
-          </>
+        <td>
+          <span className="token-compositions">
+            {formatAmount(total0.toFixed())}&nbsp;{token0.symbol}
+            {' / '}
+            {formatAmount(total1.toFixed())}&nbsp;{token1.symbol}
+          </span>
         </td>
       </tr>
     );

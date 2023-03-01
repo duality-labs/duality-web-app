@@ -12,31 +12,6 @@
 }
 
 .my-liquidity-page {
-  .value-barchart {
-    border-radius: 0.5rem;
-    width: 100%;
-    background-color: #8fcef0;
-    overflow: hidden;
-    height: 1em;
-
-    .value-A {
-      height: 1em;
-      background-color: #bfa1f7;
-    }
-  }
-
-  .value-text {
-    font-size: 0.85em;
-    .value-A {
-      color: #bfa1f7;
-      text-align: left;
-    }
-    .value-B {
-      color: #8fcef0;
-      text-align: right;
-    }
-  }
-
   .home-hero-section {
     align-items: stretch;
     justify-content: stretch;
@@ -74,10 +49,7 @@
   .pool-list-card {
     // ensure enough space to read current list without scrolling horizontally
     & {
-      min-width: 32em;
-    }
-    .value-visual {
-      min-width: 15em;
+      min-width: 24em;
     }
   }
 
@@ -94,6 +66,13 @@
   // adjust row of token logo size due to overlapping logos
   .row.flow-nowrap:has(.token-logo + .token-logo) {
     width: 3.35em;
+  }
+
+  // because composition text is only ever numbers and capitals
+  // there are no ascenders on descenders and the height may be reduced
+  // to have rows of the same height if this cell is 1 or 2 lines high
+  .token-composition {
+    line-height: 1;
   }
 }
 
