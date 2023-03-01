@@ -381,7 +381,7 @@ function ShareValuesPage({
         </div>
         <>
           <TableCard
-            className="asset-list-card"
+            className="asset-list-card flex my-4"
             title="Assets"
             switchValues={useMemo(
               () => ({

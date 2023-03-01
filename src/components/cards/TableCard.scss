@@ -7,7 +7,6 @@
   border-radius: 1rem;
   overflow: hidden;
   min-height: 18em;
-  min-width: 28em;
 
   .table-card__hero-title {
     font-size: font-size.$h4;
@@ -29,9 +28,6 @@
     }
     th,
     td {
-      text-align: left;
-      width: 50%;
-      min-width: 7em;
       padding: paddings.$p-2;
       &:first-child {
         padding-left: 0;
@@ -42,11 +38,6 @@
     }
     tr:first-child td {
       padding-top: paddings.$p-3;
-    }
-    th + th,
-    td + td {
-      text-align: right;
-      width: 25%;
     }
   }
 }

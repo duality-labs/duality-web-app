@@ -26,9 +26,7 @@ export default function TableCard<T extends string | number>({
 }) {
   // show loken list cards
   return (
-    <div
-      className={['table-card flex my-4', className].filter(Boolean).join(' ')}
-    >
+    <div className={['table-card', className].filter(Boolean).join(' ')}>
       <div className="col flex">
         <div className="row flex-centered gap-3 m-lg mb-0">
           <div className="col flex">

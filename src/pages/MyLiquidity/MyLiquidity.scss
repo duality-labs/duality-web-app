@@ -131,6 +131,27 @@
   }
 
   .asset-list-card {
+    // ensure enough space to read current tokens list without scrolling
+    & {
+      min-width: 28em;
+    }
+
+    .table-card__table {
+      // style first column
+      th,
+      td {
+        text-align: left;
+        width: 50%;
+        min-width: 7em;
+      }
+      // style second and third columns
+      th + th,
+      td + td {
+        text-align: right;
+        width: 25%;
+      }
+    }
+
     .token-and-chain {
       .token-logo {
         height: 2em;
