@@ -398,7 +398,7 @@ function ShareValuesPage({
           </div>
         </div>
       </div>
-      <div className="row gapx-4 gapy-5 flow-wrap">
+      <div className="row flex gapx-4 gapy-5 flow-wrap">
         <div className="col flex">
           <TableCard
             className="asset-list-card flex"
