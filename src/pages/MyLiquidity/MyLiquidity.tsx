@@ -379,63 +379,67 @@ function ShareValuesPage({
             </div>
           </div>
         </div>
-        <TableCard
-          className="asset-list-card"
-          title="Assets"
-          switchValues={useMemo(
-            () => ({
-              'my-assets': 'My Assets',
-              'all-assets': 'All Assets',
-            }),
-            []
-          )}
-          switchValue={selectedAssetList}
-          switchOnChange={setSelectedAssetList}
-          searchValue={searchValue}
-          setSearchValue={setSearchValue}
-        >
-          <table>
-            <thead>
-              <tr>
-                <th>Token + Chain</th>
-                <th>Balance</th>
-                <th>Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredList.length > 0 ? (
-                filteredList.map(({ chain, symbol, token }) => {
-                  const foundUserAsset = allUserBankAssets.find((userToken) => {
-                    return userToken.token === token;
-                  });
-                  return foundUserAsset ? (
-                    <AssetRow
-                      key={`${token.base}-${token.chain.chain_name}`}
-                      {...foundUserAsset}
-                      token={token}
-                      amount={foundUserAsset.amount}
-                      value={foundUserAsset.value}
-                    />
-                  ) : (
-                    <AssetRow
-                      key={`${token.base}-${token.chain.chain_name}`}
-                      token={token}
-                      denom={''}
-                      amount="0"
-                      value={new BigNumber(0)}
-                    />
-                  );
-                })
-              ) : (
+        <>
+          <TableCard
+            className="asset-list-card"
+            title="Assets"
+            switchValues={useMemo(
+              () => ({
+                'my-assets': 'My Assets',
+                'all-assets': 'All Assets',
+              }),
+              []
+            )}
+            switchValue={selectedAssetList}
+            switchOnChange={setSelectedAssetList}
+            searchValue={searchValue}
+            setSearchValue={setSearchValue}
+          >
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan={3} align="center">
-                    No {!!searchValue ? 'Matching' : ''} Assets Found
-                  </td>
+                  <th>Token + Chain</th>
+                  <th>Balance</th>
+                  <th>Value</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </TableCard>
+              </thead>
+              <tbody>
+                {filteredList.length > 0 ? (
+                  filteredList.map(({ chain, symbol, token }) => {
+                    const foundUserAsset = allUserBankAssets.find(
+                      (userToken) => {
+                        return userToken.token === token;
+                      }
+                    );
+                    return foundUserAsset ? (
+                      <AssetRow
+                        key={`${token.base}-${token.chain.chain_name}`}
+                        {...foundUserAsset}
+                        token={token}
+                        amount={foundUserAsset.amount}
+                        value={foundUserAsset.value}
+                      />
+                    ) : (
+                      <AssetRow
+                        key={`${token.base}-${token.chain.chain_name}`}
+                        token={token}
+                        denom={''}
+                        amount="0"
+                        value={new BigNumber(0)}
+                      />
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={3} align="center">
+                      No {!!searchValue ? 'Matching' : ''} Assets Found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </TableCard>
+        </>
       </div>
       <div className="position-cards row mt-5">
         {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
