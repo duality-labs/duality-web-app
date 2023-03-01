@@ -316,9 +316,21 @@ function ShareValuesPage({
     searchValue
   );
 
+  const [searchPoolValue, setSearchPoolValue] = useState<string>('');
+
+  const filteredPoolTokenList = useFilteredTokenList(
+    tokenList,
+    searchPoolValue
+  );
+
   const myPoolsList = useMemo<Array<[string, TickShareValue[]]>>(() => {
-    return shareValueMap ? Object.entries(shareValueMap) : [];
-  }, [shareValueMap]);
+    const tokenList = filteredPoolTokenList.map(({ token }) => token);
+    return shareValueMap
+      ? Object.entries(shareValueMap).filter(([, [{ token0, token1 }]]) => {
+          return tokenList.includes(token0) || tokenList.includes(token1);
+        })
+      : [];
+  }, [shareValueMap, filteredPoolTokenList]);
 
   const [{ isValidating }, sendEditRequest] = useEditLiquidity();
   const withdrawPair = useCallback(
@@ -449,7 +461,12 @@ function ShareValuesPage({
           </TableCard>
         </div>
         <div className="col flex">
-          <TableCard className="pool-list-card flex" title="My Pools">
+          <TableCard
+            className="pool-list-card flex"
+            title="My Pools"
+            searchValue={searchPoolValue}
+            setSearchValue={setSearchPoolValue}
+          >
             {myPoolsList.length > 0 ? (
               <table>
                 <thead>
