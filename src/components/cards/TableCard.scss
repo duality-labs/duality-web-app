@@ -39,5 +39,14 @@
     tr:first-child td {
       padding-top: paddings.$p-3;
     }
+    // general table text alignment (header column as text)
+    th,
+    td {
+      text-align: left;
+    }
+    th + th,
+    td + td {
+      text-align: right;
+    }
   }
 }
