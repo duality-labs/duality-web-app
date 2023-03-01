@@ -29,6 +29,8 @@ import { calculateShares } from '../../lib/web3/utils/ticks';
 import { IndexedShare } from '../../lib/web3/utils/shares';
 import { EditedTickShareValue, useEditLiquidity } from './useEditLiquidity';
 import TableCard from '../../components/cards/TableCard';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
 interface ShareValue {
   share: IndexedShare;
@@ -455,6 +457,7 @@ function ShareValuesPage({
                     <th>Pool</th>
                     <th>Value</th>
                     <th>Composition</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -608,11 +611,7 @@ function PositionRow({
     return (
       <tr>
         <td>
-          <button
-            onClick={onClick}
-            className="p-0"
-            style={{ textAlign: 'left' }}
-          >
+          <>
             <div className="row gap-3 token-and-chain">
               <div className="row flex-centered flow-nowrap">
                 <img
@@ -665,7 +664,7 @@ function PositionRow({
                 </div>
               </div>
             </div>
-          </button>
+          </>
         </td>
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
         <td>
@@ -674,6 +673,12 @@ function PositionRow({
             {' / '}
             {formatAmount(total1.toFixed())}&nbsp;{token1.symbol}
           </span>
+        </td>
+        <td>
+          <button onClick={onClick} className="button nowrap">
+            <FontAwesomeIcon icon={faArrowUp} className="mr-3" />
+            Withdraw
+          </button>
         </td>
       </tr>
     );
