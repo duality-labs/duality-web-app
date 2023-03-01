@@ -48,6 +48,9 @@ interface TickShareValueMap {
   [pairID: string]: Array<TickShareValue>;
 }
 
+const keplrLogoURI =
+  'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
+
 function matchTokenDenom(denom: string) {
   return (token: Token) =>
     !!token.denom_units.find((unit) => unit.denom === denom);
@@ -357,44 +360,33 @@ function ShareValuesPage({
   // show loken list cards
   return (
     <div className="my-liquidity-page container col flex gap-6 py-6">
-      <div className="home-hero-section row flow-wrap flow-nowrap-lg">
-        <div className="credit-card py-2 px-3">
-          <div className="credit-card__top-line row gap-3 m-4">
-            <div className="col flex credit-card__name font-brand">
-              {address}
-            </div>
-            <div className="col ml-auto font-brand">Duality</div>
-          </div>
-          <div className="row m-4">
+      <div className="home-hero-section row gapx-4 gapy-5 flow-wrap">
+        <div className="home-hero-section__left col flex">
+          <div className="home-hero-section__top-line row flex flex-centered gap-3">
             <div className="col">
-              <div className="my-3">
-                <h2 className="credit-card__hero-title">Portfolio Value</h2>
-                <div className="credit-card__hero-value">
-                  $
-                  {allUserSharesValue.toNumber().toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </div>
-              </div>
-              <div className="mt-3 mb-4 pb-3">
-                <h3 className="credit-card__lesser-hero-title">
-                  Available Tokens
-                </h3>
-                <div className="credit-card__lesser-hero-value">
-                  $
-                  {allUserBankValue.toNumber().toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </div>
-              </div>
+              <img src={keplrLogoURI} className="logo mr-3" alt="logo" />
             </div>
-            <div className="col ml-auto mt-auto">
-              <a href="#deposit" className="button button-default hide">
-                Deposit/Withdraw
-              </a>
+            <div className="col flex home-hero-section__name span-truncate">
+              <span>{address}</span>&nbsp;
             </div>
+          </div>
+        </div>
+        <div className="hero-card ml-auto grid gapx-5 gapy-3 p-4">
+          <h2 className="hero-card__hero-title">Portfolio Value</h2>
+          <h3 className="hero-card__hero-title">Available Tokens</h3>
+          <div className="hero-card__hero-value">
+            $
+            {allUserSharesValue.toNumber().toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </div>
+          <div className="hero-card__hero-value">
+            $
+            {allUserBankValue.toNumber().toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </div>
         </div>
       </div>

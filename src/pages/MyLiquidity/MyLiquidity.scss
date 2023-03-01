@@ -12,17 +12,6 @@
 }
 
 .my-liquidity-page {
-  .home-hero-section {
-    align-items: stretch;
-    justify-content: stretch;
-    > div {
-      // take up as much width as allowed by flex-flow wrapping
-      flex: 1 1 100%;
-      height: 24em;
-      max-height: 70vh;
-    }
-  }
-
   .asset-list-card {
     // ensure enough space to read current list without scrolling horizontally
     .table-card__table_container {
@@ -76,50 +65,47 @@
   }
 }
 
-.credit-card {
-  min-height: 384px;
-  min-width: 240px;
-  aspect-ratio: 1.58588;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-
-  background: hsla(202, 28%, 87%, 0.2);
-  border-radius: 1rem;
-
-  font-size: 1rem;
-  // allow all shadows in the credit card to overflow
-  &,
-  .row,
-  .col {
-    overflow: visible;
+.home-hero-section {
+  // allow left column to stretch much more than the right column
+  .home-hero-section__left {
+    flex-grow: 1000;
   }
 
-  .credit-card__top-line {
-    font-size: 1rem;
-    font-weight: font-weight.$bold;
-    .credit-card__name {
+  .hero-card {
+    border: 1px solid hsla(0deg, 0%, 100%, 60%);
+    background: linear-gradient(110deg, hsla(0, 0%, 100%, 0.2), transparent);
+    border-radius: paddings.$p-3;
+    flex: 1 1 auto;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto auto;
+
+    .hero-card__hero-value {
+      font-size: 2.25rem;
+      font-weight: font-weight.$bold;
+    }
+  }
+
+  .home-hero-section__left {
+    .logo {
+      height: 4em;
+    }
+    .home-hero-section__name {
+      font-size: 3rem;
+      min-width: 7em;
+    }
+    .span-truncate {
+      position: relative;
+    }
+    .span-truncate span {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       display: block;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-  }
-  .credit-card__hero-title {
-    margin-top: 1rem;
-  }
-  .credit-card__hero-value {
-    font-size: 2rem;
-    font-weight: font-weight.$bold;
-  }
-  .credit-card__lesser-hero-value {
-    font-weight: font-weight.$bold;
-  }
-
-  .button {
-    background: var(--page-card);
-    border-radius: 1.25rem;
-    padding: 0.75rem 1.5rem;
-    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
   }
 }
