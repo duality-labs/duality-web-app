@@ -314,6 +314,10 @@ function ShareValuesPage({
     searchValue
   );
 
+  const myPoolsList = useMemo<Array<[string, TickShareValue[]]>>(() => {
+    return shareValueMap ? Object.entries(shareValueMap) : [];
+  }, [shareValueMap]);
+
   const [{ isValidating }, sendEditRequest] = useEditLiquidity();
   const withdrawPair = useCallback(
     async (shareValues: Array<TickShareValue>) => {
@@ -444,7 +448,7 @@ function ShareValuesPage({
         </div>
         <div className="col flex">
           <TableCard className="pool-list-card flex" title="My Pools">
-            {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
+            {myPoolsList.length > 0 ? (
               <table>
                 <thead>
                   <tr>
@@ -454,20 +458,18 @@ function ShareValuesPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
-                    Object.entries(shareValueMap).map(
-                      ([pairID, shareValues]) => {
-                        return (
-                          <PositionRow
-                            key={pairID}
-                            token0={shareValues[0].token0}
-                            token1={shareValues[0].token1}
-                            shareValues={shareValues}
-                            onClick={withdrawPair}
-                          />
-                        );
-                      }
-                    )
+                  {myPoolsList.length > 0 ? (
+                    myPoolsList.map(([pairID, shareValues]) => {
+                      return (
+                        <PositionRow
+                          key={pairID}
+                          token0={shareValues[0].token0}
+                          token1={shareValues[0].token1}
+                          shareValues={shareValues}
+                          onClick={withdrawPair}
+                        />
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan={3} align="center">
