@@ -8,6 +8,10 @@
   overflow: hidden;
   min-height: 18em;
 
+  .table-card__header {
+    // be as tall as the switch component
+    min-height: calc(2.5rem + 2px);
+  }
   .table-card__hero-title {
     font-size: font-size.$h4;
   }

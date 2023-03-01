@@ -28,7 +28,7 @@ export default function TableCard<T extends string | number>({
   return (
     <div className={['table-card', className].filter(Boolean).join(' ')}>
       <div className="col flex">
-        <div className="row flex-centered gap-3 m-lg mb-0">
+        <div className="table-card__header row flex-centered gap-3 m-lg mb-0">
           <div className="col flex">
             <h2 className="table-card__hero-title">{title}</h2>
           </div>
