@@ -380,7 +380,7 @@ function ShareValuesPage({
           </div>
         </div>
       </div>
-      <div className="row gap-4">
+      <div className="row gapx-4 gapy-5 flow-wrap">
         <div className="col flex">
           <TableCard
             className="asset-list-card flex"
@@ -442,27 +442,50 @@ function ShareValuesPage({
             </table>
           </TableCard>
         </div>
-      </div>
-      <div className="position-cards row">
-        {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
-          Object.entries(shareValueMap).map(([pairID, shareValues]) => {
-            return (
-              <PositionCard
-                key={pairID}
-                token0={shareValues[0].token0}
-                token1={shareValues[0].token1}
-                shareValues={shareValues}
-                onClick={withdrawPair}
-              />
-            );
-          })
-        ) : (
-          <Link to="/liquidity">
-            <button className="button-primary text-medium px-4 py-4">
-              Add Liquidity
-            </button>
-          </Link>
-        )}
+        <div className="col flex">
+          <TableCard className="pool-list-card flex" title="My Pools">
+            {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pool</th>
+                    <th>Value</th>
+                    <th>Current Composition</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
+                    Object.entries(shareValueMap).map(
+                      ([pairID, shareValues]) => {
+                        return (
+                          <PositionRow
+                            key={pairID}
+                            token0={shareValues[0].token0}
+                            token1={shareValues[0].token1}
+                            shareValues={shareValues}
+                            onClick={withdrawPair}
+                          />
+                        );
+                      }
+                    )
+                  ) : (
+                    <tr>
+                      <td colSpan={3} align="center">
+                        No {!!searchValue ? 'Matching' : ''} Pools Found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            ) : (
+              <Link to="/liquidity" className="m-auto">
+                <button className="button-primary text-medium px-4 py-4 mb-lg">
+                  Add Liquidity
+                </button>
+              </Link>
+            )}
+          </TableCard>
+        </div>
       </div>
     </div>
   );
@@ -563,7 +586,7 @@ function AssetRow({ token, amount, value }: TokenCoin) {
   );
 }
 
-function PositionCard({
+function PositionRow({
   token0,
   token1,
   shareValues,
@@ -581,35 +604,70 @@ function PositionCard({
   }, [givenOnClick, shareValues]);
   if (total0 && total1) {
     return (
-      <button className="position-card page-card" onClick={onClick}>
-        <div className="heading col">
-          <div className="row">
-            <div className="token-symbols col">
-              {token0.symbol} +<br /> {token1.symbol}
-            </div>
-            <div className="token-icons col ml-auto">
-              <div className="row">
+      <tr>
+        <td>
+          <button
+            onClick={onClick}
+            className="p-0"
+            style={{ textAlign: 'left' }}
+          >
+            <div className="row gap-3 token-and-chain">
+              <div className="row flex-centered flow-nowrap">
                 <img
+                  className="token-logo"
                   src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
                   alt={`${token0.name} logo`}
                 />
                 <img
+                  className="token-logo"
                   src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
                   alt={`${token1.name} logo`}
                 />
               </div>
-            </div>
-          </div>
-        </div>
-        <div className="divider mb-4"></div>
-        <div className="content mt-3">
-          <div className="share-total">
-            <div className="balance row">
-              <div className="col">Balance</div>
-              <div className="col ml-auto">
-                {value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}
+              <div className="col">
+                <div className="row">
+                  <div className="col token-denom">
+                    {token0.display.toUpperCase()}
+                    {' / '}
+                    {token1.display.toUpperCase()}
+                  </div>
+                </div>
+                <div className="row">
+                  <div className="col subtext">
+                    {token0.chain.chain_name === token1.chain.chain_name ? (
+                      <span className="nowrap">
+                        {token0.chain.chain_name
+                          .split('')
+                          .map((v, i) => (i > 0 ? v : v.toUpperCase()))
+                          .join('')}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="nowrap">
+                          {token0.chain.chain_name
+                            .split('')
+                            .map((v, i) => (i > 0 ? v : v.toUpperCase()))
+                            .join('')}
+                        </span>
+                        <span> / </span>
+                        <span>
+                          {token1.chain.chain_name
+                            .split('')
+                            .map((v, i) => (i > 0 ? v : v.toUpperCase()))
+                            .join('')}
+                          `
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
+          </button>
+        </td>
+        <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
+        <td className="pl-3">
+          <>
             <div className="value-visual row">
               {value0 && value1 && (
                 <div className="value-barchart">
@@ -636,9 +694,9 @@ function PositionCard({
                 {value1 && <>(${value1.toFixed(2)})</>}
               </div>
             </div>
-          </div>
-        </div>
-      </button>
+          </>
+        </td>
+      </tr>
     );
   }
   return null;

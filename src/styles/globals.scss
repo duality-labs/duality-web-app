@@ -121,6 +121,10 @@ a {
   }
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
 // dynamic displays based on viewport size
 .col-sm,
 .col-md,
