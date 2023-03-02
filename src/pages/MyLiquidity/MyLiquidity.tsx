@@ -20,6 +20,8 @@ import './MyLiquidity.scss';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import TableCard from '../../components/cards/TableCard';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowDown, faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
 const keplrLogoURI =
   'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
@@ -250,6 +252,8 @@ function ShareValuesPage({
                 <tr>
                   <th>Token + Chain</th>
                   <th>Balance</th>
+                  <th>Deposit</th>
+                  <th>Withdraw</th>
                 </tr>
               </thead>
               <tbody>
@@ -339,6 +343,24 @@ function AssetRow({ token, amount, value }: TokenCoin) {
             useGrouping: true,
           })}`}
         </div>
+      </td>
+      <td>
+        <Link to="/">
+          <button className="button nowrap">
+            {token.display.toUpperCase()}
+            <FontAwesomeIcon icon={faArrowDown} className="ml-3" />
+          </button>
+        </Link>
+      </td>
+      <td>
+        {value?.isGreaterThan(0) && (
+          <Link to="/">
+            <button className="button nowrap">
+              {token.display.toUpperCase()}
+              <FontAwesomeIcon icon={faArrowUp} className="ml-3" />
+            </button>
+          </Link>
+        )}
       </td>
     </tr>
   );
