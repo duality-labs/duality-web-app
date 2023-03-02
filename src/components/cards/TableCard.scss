@@ -52,5 +52,9 @@
     td + td {
       text-align: right;
     }
+    td .subtext {
+      font-size: 0.85em;
+      color: hsl(0, 0%, 75%);
+    }
   }
 }

@@ -539,7 +539,7 @@ function AssetRow({ token, amount, value }: TokenCoin) {
               </div>
             </div>
             <div className="row">
-              <div className="col token-chain">
+              <div className="col subtext">
                 {token.chain.chain_name
                   .split('')
                   .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
