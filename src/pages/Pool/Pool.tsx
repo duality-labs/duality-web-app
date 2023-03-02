@@ -82,7 +82,17 @@ const restrictPriceRangeValues = (
   return formatPrice(1);
 };
 
-export default function Pool() {
+export default function PoolPage() {
+  return (
+    <div className="container">
+      <div className="page">
+        <Pool />
+      </div>
+    </div>
+  );
+}
+
+function Pool() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
@@ -664,7 +674,10 @@ export default function Pool() {
   if (!tokenA || !tokenB || !valuesConfirmed) {
     return (
       <form
-        className={['page', 'pool-page', isValidatingDeposit && 'disabled']
+        className={[
+          'pool-page row flex-centered gap-5',
+          isValidatingDeposit && 'disabled',
+        ]
           .filter(Boolean)
           .join(' ')}
         onSubmit={onSubmit}
@@ -737,12 +750,10 @@ export default function Pool() {
 
   return (
     <form
-      className={['main-area', isValidatingDeposit && 'disabled']
-        .filter(Boolean)
-        .join(' ')}
+      className={[isValidatingDeposit && 'disabled'].filter(Boolean).join(' ')}
       onSubmit={onSubmit}
     >
-      <div className="page pool-page">
+      <div className="pool-page">
         <div
           className={`my-4 p-5 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >

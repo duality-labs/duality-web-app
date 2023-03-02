@@ -37,7 +37,17 @@ type OrderType = 'market' | 'limit';
 
 const defaultSlippage = '0.5';
 
-export default function Swap() {
+export default function SwapPage() {
+  return (
+    <div className="container row">
+      <div className="page col m-auto">
+        <Swap />
+      </div>
+    </div>
+  );
+}
+
+function Swap() {
   const { address, connectWallet } = useWeb3();
   const tokenList = useTokens();
   const [tokenA, setTokenA] = useState(
@@ -466,7 +476,7 @@ export default function Swap() {
   return (
     <form
       onSubmit={onFormSubmit}
-      className={['page swap-page', isValidatingSwap && 'disabled']
+      className={['swap-page row', isValidatingSwap && 'disabled']
         .filter(Boolean)
         .join(' ')}
     >
