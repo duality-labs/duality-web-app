@@ -455,6 +455,12 @@ export default function Swap() {
         </div>
         <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
       </div>
+      <SettingsCard
+        cardType={cardType}
+        setCardType={setCardType}
+        inputSlippage={inputSlippage}
+        setInputSlippage={setInputSlippage}
+      />
     </div>
   );
   return (
@@ -465,12 +471,6 @@ export default function Swap() {
         .join(' ')}
     >
       {tradeCard}
-      <SettingsCard
-        cardType={cardType}
-        setCardType={setCardType}
-        inputSlippage={inputSlippage}
-        setInputSlippage={setInputSlippage}
-      />
     </form>
   );
 }

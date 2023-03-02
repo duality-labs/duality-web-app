@@ -5,7 +5,7 @@
 @use '../../styles/font/weight.scss' as font-weight;
 
 .swap-page {
-  & {
+  .trade-card {
     position: relative;
     overflow: hidden;
     border-radius: 2rem;
