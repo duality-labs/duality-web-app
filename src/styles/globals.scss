@@ -76,7 +76,10 @@ a {
   flex-direction: column;
 }
 .flex {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+}
+.flex-auto {
+  flex-basis: auto;
 }
 .flex-centered {
   align-items: center;
