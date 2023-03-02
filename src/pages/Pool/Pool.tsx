@@ -692,6 +692,10 @@ function Pool() {
           title="Pools"
           switchValue={selectedPoolsList}
           switchOnChange={setSelectedPoolsList}
+          onClick={([token0, token1]) => {
+            setTokenA(token0);
+            setTokenB(token1);
+          }}
         />
         <div className="assets-card page-card">
           <h3 className="card-title mb-4">Add Liquidity</h3>
