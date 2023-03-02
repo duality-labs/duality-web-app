@@ -166,7 +166,7 @@ export default function PoolsTableCard({
                   <th>Pool</th>
                   <th>Value</th>
                   <th>Composition</th>
-                  <th></th>
+                  <th>Withdraw</th>
                 </tr>
               ) : (
                 <tr>
@@ -329,8 +329,13 @@ function PositionRow({
         </td>
         <td>
           <button onClick={onClick} className="button nowrap">
-            <FontAwesomeIcon icon={faArrowUp} className="mr-3" />
-            Withdraw
+            {[
+              value0.isGreaterThan(0) && token0.display.toUpperCase(),
+              value1.isGreaterThan(0) && token1.display.toUpperCase(),
+            ]
+              .filter(Boolean)
+              .join(' / ')}
+            <FontAwesomeIcon icon={faArrowUp} className="ml-3" />
           </button>
         </td>
       </tr>
