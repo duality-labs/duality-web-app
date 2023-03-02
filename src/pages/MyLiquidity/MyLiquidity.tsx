@@ -342,18 +342,18 @@ function ShareValuesPage({
             setSearchValue={setSearchPoolValue}
           >
             {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Pool</th>
-                    <th>Value</th>
-                    <th>Composition</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {myPoolsList.length > 0 ? (
-                    myPoolsList.map(([pairID, shareValues]) => {
+              myPoolsList.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Pool</th>
+                      <th>Value</th>
+                      <th>Composition</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {myPoolsList.map(([pairID, shareValues]) => {
                       return (
                         <PositionRow
                           key={pairID}
@@ -363,16 +363,25 @@ function ShareValuesPage({
                           onClick={withdrawPair}
                         />
                       );
-                    })
-                  ) : (
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <table>
+                  <thead>
                     <tr>
-                      <td colSpan={3} align="center">
+                      <th>Pool</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td align="center">
                         No {!!searchValue ? 'Matching' : ''} Pools Found
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              )
             ) : (
               <Link to="/liquidity" className="m-auto">
                 <button className="button-primary text-medium px-4 py-4 mb-lg">
