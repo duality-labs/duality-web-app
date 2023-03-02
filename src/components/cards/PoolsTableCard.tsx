@@ -168,60 +168,7 @@ function PositionRow({
     return (
       <tr>
         <td>
-          <>
-            <div className="row gap-3 token-and-chain">
-              <div className="row flex-centered flow-nowrap">
-                <img
-                  className="token-logo"
-                  src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
-                  alt={`${token0.name} logo`}
-                />
-                <img
-                  className="token-logo"
-                  src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
-                  alt={`${token1.name} logo`}
-                />
-              </div>
-              <div className="col">
-                <div className="row">
-                  <div className="col token-denom">
-                    {token0.display.toUpperCase()}
-                    {' / '}
-                    {token1.display.toUpperCase()}
-                  </div>
-                </div>
-                <div className="row">
-                  <div className="col subtext">
-                    {token0.chain.chain_name === token1.chain.chain_name ? (
-                      <span className="nowrap">
-                        {token0.chain.chain_name
-                          .split('')
-                          .map((v, i) => (i > 0 ? v : v.toUpperCase()))
-                          .join('')}
-                      </span>
-                    ) : (
-                      <>
-                        <span className="nowrap">
-                          {token0.chain.chain_name
-                            .split('')
-                            .map((v, i) => (i > 0 ? v : v.toUpperCase()))
-                            .join('')}
-                        </span>
-                        <span> / </span>
-                        <span>
-                          {token1.chain.chain_name
-                            .split('')
-                            .map((v, i) => (i > 0 ? v : v.toUpperCase()))
-                            .join('')}
-                          `
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
+          <TokenPair token0={token0} token1={token1} />
         </td>
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
         <td>
@@ -241,6 +188,63 @@ function PositionRow({
     );
   }
   return null;
+}
+
+function TokenPair({ token0, token1 }: { token0: Token; token1: Token }) {
+  return (
+    <div className="row gap-3 token-and-chain">
+      <div className="row flex-centered flow-nowrap">
+        <img
+          className="token-logo"
+          src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
+          alt={`${token0.name} logo`}
+        />
+        <img
+          className="token-logo"
+          src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
+          alt={`${token1.name} logo`}
+        />
+      </div>
+      <div className="col">
+        <div className="row">
+          <div className="col token-denom">
+            {token0.display.toUpperCase()}
+            {' / '}
+            {token1.display.toUpperCase()}
+          </div>
+        </div>
+        <div className="row">
+          <div className="col subtext">
+            {token0.chain.chain_name === token1.chain.chain_name ? (
+              <span className="nowrap">
+                {token0.chain.chain_name
+                  .split('')
+                  .map((v, i) => (i > 0 ? v : v.toUpperCase()))
+                  .join('')}
+              </span>
+            ) : (
+              <>
+                <span className="nowrap">
+                  {token0.chain.chain_name
+                    .split('')
+                    .map((v, i) => (i > 0 ? v : v.toUpperCase()))
+                    .join('')}
+                </span>
+                <span> / </span>
+                <span>
+                  {token1.chain.chain_name
+                    .split('')
+                    .map((v, i) => (i > 0 ? v : v.toUpperCase()))
+                    .join('')}
+                  `
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function useUserReserves(shareValues: Array<TickShareValue>) {
