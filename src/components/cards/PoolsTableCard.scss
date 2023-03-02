@@ -1,0 +1,17 @@
+.pool-list-card {
+  // allow token pair logos to overlap slightly
+  .token-logo + .token-logo {
+    margin-left: -20%;
+  }
+  // adjust row of token logo size due to overlapping token pair logos
+  .row.flow-nowrap:has(.token-logo + .token-logo) {
+    width: 3.35em;
+  }
+
+  // because composition text is only ever numbers and capitals
+  // there are no ascenders on descenders and the height may be reduced
+  // to have rows of the same height if this cell is 1 or 2 lines high
+  .token-composition {
+    line-height: 1;
+  }
+}

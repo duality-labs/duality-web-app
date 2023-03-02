@@ -41,28 +41,6 @@
       min-width: 32em;
     }
   }
-
-  .token-and-chain {
-    .token-logo {
-      height: 2em;
-      width: 2em;
-      object-fit: contain;
-    }
-    .token-logo + .token-logo {
-      margin-left: -20%;
-    }
-  }
-  // adjust row of token logo size due to overlapping logos
-  .row.flow-nowrap:has(.token-logo + .token-logo) {
-    width: 3.35em;
-  }
-
-  // because composition text is only ever numbers and capitals
-  // there are no ascenders on descenders and the height may be reduced
-  // to have rows of the same height if this cell is 1 or 2 lines high
-  .token-composition {
-    line-height: 1;
-  }
 }
 
 .home-hero-section {
