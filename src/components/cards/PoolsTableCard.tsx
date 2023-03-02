@@ -37,6 +37,7 @@ export default function PoolsTableCard({
   className,
   title = 'Pools',
   switchValue = 'mine',
+  onClick,
   ...props
 }: {
   className?: string;
@@ -45,6 +46,7 @@ export default function PoolsTableCard({
   switchOnChange?: React.Dispatch<
     React.SetStateAction<keyof typeof switchValues>
   >;
+  onClick?: (tokens: [token0: Token, token1: Token]) => void;
 }) {
   const [searchValue, setSearchValue] = useState<string>('');
 
@@ -192,6 +194,15 @@ export default function PoolsTableCard({
                       token0={token0}
                       token1={token1}
                       ticks={ticks}
+                      // add interaction with token pair
+                      onClick={
+                        onClick
+                          ? (e) => {
+                              e.preventDefault();
+                              onClick([token0, token1]);
+                            }
+                          : undefined
+                      }
                     />
                   );
                 }
@@ -229,11 +240,12 @@ function PairRow({
   token0,
   token1,
   ticks = [],
+  onClick,
 }: {
   token0: Token;
   token1: Token;
   ticks?: Array<TickInfo>;
-  onClick?: (shareValues: Array<TickShareValue>) => void;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   const {
     data: [price0, price1],
@@ -272,7 +284,7 @@ function PairRow({
     return (
       <tr>
         <td>
-          <TokenPair token0={token0} token1={token1} />
+          <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
       </tr>
@@ -305,7 +317,7 @@ function PositionRow({
     return (
       <tr>
         <td>
-          <TokenPair token0={token0} token1={token1} />
+          <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
         <td>
@@ -327,9 +339,20 @@ function PositionRow({
   return null;
 }
 
-function TokenPair({ token0, token1 }: { token0: Token; token1: Token }) {
+function TokenPair({
+  token0,
+  token1,
+  onClick,
+  as = !!onClick ? 'button' : 'div',
+}: {
+  token0: Token;
+  token1: Token;
+  as?: React.ElementType;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+}) {
+  const BaseElement = as;
   return (
-    <div className="row gap-3 token-and-chain">
+    <BaseElement className="row gap-3 token-and-chain" onClick={onClick}>
       <div className="row flex-centered flow-nowrap">
         <img
           className="token-logo"
@@ -380,7 +403,7 @@ function TokenPair({ token0, token1 }: { token0: Token; token1: Token }) {
           </div>
         </div>
       </div>
-    </div>
+    </BaseElement>
   );
 }
 
