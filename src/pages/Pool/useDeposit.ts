@@ -16,7 +16,7 @@ import {
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { readEvents } from '../../lib/web3/utils/txs';
 import { getPairID, useIndexerData } from '../../lib/web3/indexerProvider';
-import { getVirtualTickIndexes } from '../MyLiquidity/MyLiquidity';
+import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
 
 interface SendDepositResponse {
   gasUsed: string;
