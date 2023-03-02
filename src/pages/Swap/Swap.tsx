@@ -457,8 +457,36 @@ export default function Swap() {
       </div>
     </div>
   );
+  return (
+    <form
+      onSubmit={onFormSubmit}
+      className={['page swap-page', isValidatingSwap && 'disabled']
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {tradeCard}
+      <SettingsCard
+        cardType={cardType}
+        setCardType={setCardType}
+        inputSlippage={inputSlippage}
+        setInputSlippage={setInputSlippage}
+      />
+    </form>
+  );
+}
 
-  const settingsCard = (
+function SettingsCard({
+  cardType,
+  setCardType,
+  inputSlippage,
+  setInputSlippage,
+}: {
+  cardType: CardType;
+  setCardType: React.Dispatch<React.SetStateAction<CardType>>;
+  inputSlippage: string;
+  setInputSlippage: React.Dispatch<React.SetStateAction<string>>;
+}) {
+  return (
     <div
       className={[
         'settings-card',
@@ -495,16 +523,5 @@ export default function Swap() {
         </div>
       </div>
     </div>
-  );
-  return (
-    <form
-      onSubmit={onFormSubmit}
-      className={['page swap-page', isValidatingSwap && 'disabled']
-        .filter(Boolean)
-        .join(' ')}
-    >
-      {tradeCard}
-      {settingsCard}
-    </form>
   );
 }
