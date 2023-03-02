@@ -38,17 +38,29 @@ export default function PoolsTableCard({
 
   const tokenList = useTokens();
   const shareValueMap = useShareValueMap();
+  const myPoolsList = useMemo<
+    Array<[string, Token, Token, TickShareValue[]]>
+  >(() => {
+    return shareValueMap
+      ? Object.entries(shareValueMap).map<
+          [string, Token, Token, TickShareValue[]]
+        >(([pairId, shareValues]) => {
+          const [{ token0, token1 }] = shareValues;
+          return [pairId, token0, token1, shareValues];
+        })
+      : [];
+  }, [shareValueMap]);
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
 
-  const myPoolsList = useMemo<Array<[string, TickShareValue[]]>>(() => {
+  const filteredPoolsList = useMemo<
+    Array<[string, Token, Token, TickShareValue[]]>
+  >(() => {
     const tokenList = filteredPoolTokenList.map(({ token }) => token);
-    return shareValueMap
-      ? Object.entries(shareValueMap).filter(([, [{ token0, token1 }]]) => {
-          return tokenList.includes(token0) || tokenList.includes(token1);
-        })
-      : [];
-  }, [shareValueMap, filteredPoolTokenList]);
+    return myPoolsList.filter(([, token0, token1]) => {
+      return tokenList.includes(token0) || tokenList.includes(token1);
+    });
+  }, [myPoolsList, filteredPoolTokenList]);
 
   const [{ isValidating }, sendEditRequest] = useEditLiquidity();
   const withdrawPair = useCallback<
@@ -83,7 +95,7 @@ export default function PoolsTableCard({
       {...props}
     >
       {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
-        myPoolsList.length > 0 ? (
+        filteredPoolsList.length > 0 ? (
           <table>
             <thead>
               <tr>
@@ -94,17 +106,19 @@ export default function PoolsTableCard({
               </tr>
             </thead>
             <tbody>
-              {myPoolsList.map(([pairID, shareValues]) => {
-                return (
-                  <PositionRow
-                    key={pairID}
-                    token0={shareValues[0].token0}
-                    token1={shareValues[0].token1}
-                    shareValues={shareValues}
-                    onClick={withdrawPair}
-                  />
-                );
-              })}
+              {filteredPoolsList.map(
+                ([pairId, token0, token1, shareValues]) => {
+                  return (
+                    <PositionRow
+                      key={pairId}
+                      token0={token0}
+                      token1={token1}
+                      shareValues={shareValues}
+                      onClick={withdrawPair}
+                    />
+                  );
+                }
+              )}
             </tbody>
           </table>
         ) : (
