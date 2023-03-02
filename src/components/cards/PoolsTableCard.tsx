@@ -36,7 +36,8 @@ const switchValues = {
 export default function PoolsTableCard({
   className,
   title = 'Pools',
-  switchValue = 'mine',
+  switchValue: givenSwitchValue = 'mine',
+  switchOnChange: givenSwitchOnChange,
   onClick,
   ...props
 }: {
@@ -102,6 +103,9 @@ export default function PoolsTableCard({
       : [];
   }, [shareValueMap]);
 
+  // enforce switch state and non-interactivity if the user has no pools
+  const switchValue = !myPoolsList.length ? 'all' : givenSwitchValue;
+  const switchOnChange = !myPoolsList.length ? undefined : givenSwitchOnChange;
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
 
   const filteredPoolsList = useMemo<
@@ -154,6 +158,7 @@ export default function PoolsTableCard({
       setSearchValue={setSearchValue}
       switchValues={switchValues}
       switchValue={switchValue}
+      switchOnChange={switchOnChange}
       {...props}
     >
       {switchValue === 'all' ||
