@@ -341,7 +341,7 @@ function ShareValuesPage({
             searchValue={searchPoolValue}
             setSearchValue={setSearchPoolValue}
           >
-            {myPoolsList.length > 0 ? (
+            {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
               <table>
                 <thead>
                   <tr>
