@@ -12,6 +12,9 @@
 }
 
 .my-liquidity-page {
+  .flex {
+    flex-basis: 0;
+  }
   .asset-list-card {
     // ensure enough space to read current list without scrolling horizontally
     .table-card__table_container {
