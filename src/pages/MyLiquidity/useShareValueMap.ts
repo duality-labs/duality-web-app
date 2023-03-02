@@ -23,6 +23,7 @@ export interface ShareValue {
   userReserves1?: BigNumber;
 }
 export interface TickShareValue extends ShareValue {
+  // todo: take from useShareValueMap??
   feeIndex: number;
   tick0: TickInfo;
   tick1: TickInfo;
