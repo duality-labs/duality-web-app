@@ -37,6 +37,10 @@
 }
 
 .pool-page {
+  // make main cards of equal height
+  & {
+    align-items: stretch;
+  }
   .page-card {
     @include margins.gap('*', '2');
     > .radio-button-group-switch .button {

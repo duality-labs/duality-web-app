@@ -36,6 +36,7 @@ import {
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
+import PoolsTableCard from '../../components/cards/PoolsTableCard';
 
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import { useDeposit } from './useDeposit';
@@ -682,6 +683,7 @@ function Pool() {
           .join(' ')}
         onSubmit={onSubmit}
       >
+        <PoolsTableCard className="flex" title="Pools" />
         <div className="assets-card page-card">
           <h3 className="card-title mb-4">Add Liquidity</h3>
           <div className="mb-4">
