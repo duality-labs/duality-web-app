@@ -69,4 +69,11 @@
       }
     }
   }
+
+  // format token logos in table cards specifically
+  .token-logo {
+    height: 2em;
+    width: 2em;
+    object-fit: contain;
+  }
 }
