@@ -250,7 +250,6 @@ function ShareValuesPage({
                 <tr>
                   <th>Token + Chain</th>
                   <th>Balance</th>
-                  <th>Value</th>
                 </tr>
               </thead>
               <tbody>
@@ -326,15 +325,21 @@ function AssetRow({ token, amount, value }: TokenCoin) {
           </div>
         </div>
       </td>
-      <td>{`${formatAmount(
-        getAmountInDenom(token, amount, token.address, token.display) || '',
-        {
-          useGrouping: true,
-        }
-      )}`}</td>
-      <td>{`$${formatAmount(value?.toFixed() || '', {
-        useGrouping: true,
-      })}`}</td>
+      <td>
+        <div>
+          {`${formatAmount(
+            getAmountInDenom(token, amount, token.address, token.display) || '',
+            {
+              useGrouping: true,
+            }
+          )}`}
+        </div>
+        <div className="subtext">
+          {`$${formatAmount(value?.toFixed() || '', {
+            useGrouping: true,
+          })}`}
+        </div>
+      </td>
     </tr>
   );
 }
