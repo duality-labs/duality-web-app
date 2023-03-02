@@ -672,6 +672,10 @@ function Pool() {
     tokenB?.address
   );
 
+  const [selectedPoolsList, setSelectedPoolsList] = useState<'all' | 'mine'>(
+    'all'
+  );
+
   if (!tokenA || !tokenB || !valuesConfirmed) {
     return (
       <form
@@ -683,7 +687,12 @@ function Pool() {
           .join(' ')}
         onSubmit={onSubmit}
       >
-        <PoolsTableCard className="flex" title="Pools" />
+        <PoolsTableCard
+          className="flex"
+          title="Pools"
+          switchValue={selectedPoolsList}
+          switchOnChange={setSelectedPoolsList}
+        />
         <div className="assets-card page-card">
           <h3 className="card-title mb-4">Add Liquidity</h3>
           <div className="mb-4">

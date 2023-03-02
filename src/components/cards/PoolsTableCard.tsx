@@ -7,6 +7,7 @@ import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
 import TableCard from './TableCard';
 
+import { TickInfo, useIndexerData } from '../../lib/web3/indexerProvider';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import useShareValueMap, {
   ShareValue,
@@ -25,28 +26,76 @@ import {
 import { formatAmount } from '../../lib/utils/number';
 
 import './PoolsTableCard.scss';
+import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+
+const switchValues = {
+  all: 'All Pools',
+  mine: 'My Pools',
+};
 
 export default function PoolsTableCard({
   className,
   title = 'Pools',
+  switchValue = 'mine',
   ...props
 }: {
   className?: string;
   title?: string;
+  switchValue?: keyof typeof switchValues;
+  switchOnChange?: React.Dispatch<
+    React.SetStateAction<keyof typeof switchValues>
+  >;
 }) {
   const [searchValue, setSearchValue] = useState<string>('');
 
   const tokenList = useTokens();
+  const { data: pairsData } = useIndexerData();
+  const allPairsList = useMemo<
+    Array<[string, Token, Token, undefined, TickInfo[]]>
+  >(() => {
+    const tokenListByAddress = tokenList.reduce<{ [address: string]: Token }>(
+      (acc, token) => {
+        if (token.address) {
+          acc[token.address] = token;
+        }
+        return acc;
+      },
+      {}
+    );
+    return pairsData
+      ? Object.entries(pairsData)
+          .map<[string, Token, Token, undefined, TickInfo[]]>(
+            ([pairId, { token0, token1, ticks }]) => {
+              return [
+                pairId,
+                tokenListByAddress[token0],
+                tokenListByAddress[token1],
+                undefined,
+                ticks,
+              ];
+            }
+          )
+          .filter(([, token0, token1]) => token0 && token1)
+      : [];
+  }, [tokenList, pairsData]);
   const shareValueMap = useShareValueMap();
   const myPoolsList = useMemo<
-    Array<[string, Token, Token, TickShareValue[]]>
+    Array<
+      [
+        string,
+        Token,
+        Token,
+        TickShareValue[] | undefined,
+        TickInfo[] | undefined
+      ]
+    >
   >(() => {
     return shareValueMap
       ? Object.entries(shareValueMap).map<
-          [string, Token, Token, TickShareValue[]]
+          [string, Token, Token, TickShareValue[], undefined]
         >(([pairId, shareValues]) => {
           const [{ token0, token1 }] = shareValues;
-          return [pairId, token0, token1, shareValues];
+          return [pairId, token0, token1, shareValues, undefined];
         })
       : [];
   }, [shareValueMap]);
@@ -54,13 +103,22 @@ export default function PoolsTableCard({
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
 
   const filteredPoolsList = useMemo<
-    Array<[string, Token, Token, TickShareValue[]]>
+    Array<
+      [
+        string,
+        Token,
+        Token,
+        TickShareValue[] | undefined,
+        TickInfo[] | undefined
+      ]
+    >
   >(() => {
     const tokenList = filteredPoolTokenList.map(({ token }) => token);
-    return myPoolsList.filter(([, token0, token1]) => {
+    const poolList = switchValue === 'mine' ? myPoolsList : allPairsList;
+    return poolList.filter(([, token0, token1]) => {
       return tokenList.includes(token0) || tokenList.includes(token1);
     });
-  }, [myPoolsList, filteredPoolTokenList]);
+  }, [switchValue, myPoolsList, allPairsList, filteredPoolTokenList]);
 
   const [{ isValidating }, sendEditRequest] = useEditLiquidity();
   const withdrawPair = useCallback<
@@ -92,29 +150,48 @@ export default function PoolsTableCard({
       title={title}
       searchValue={searchValue}
       setSearchValue={setSearchValue}
+      switchValues={switchValues}
+      switchValue={switchValue}
       {...props}
     >
-      {shareValueMap && Object.entries(shareValueMap).length > 0 ? (
+      {switchValue === 'all' ||
+      (shareValueMap && Object.entries(shareValueMap).length > 0) ? (
         filteredPoolsList.length > 0 ? (
           <table>
             <thead>
-              <tr>
-                <th>Pool</th>
-                <th>Value</th>
-                <th>Composition</th>
-                <th></th>
-              </tr>
+              {switchValue === 'mine' ? (
+                <tr>
+                  <th>Pool</th>
+                  <th>Value</th>
+                  <th>Composition</th>
+                  <th></th>
+                </tr>
+              ) : (
+                <tr>
+                  <th>Pool</th>
+                  <th>TVL</th>
+                </tr>
+              )}
             </thead>
             <tbody>
               {filteredPoolsList.map(
-                ([pairId, token0, token1, shareValues]) => {
-                  return (
+                ([pairId, token0, token1, shareValues, ticks]) => {
+                  return shareValues ? (
+                    // show user's positions
                     <PositionRow
                       key={pairId}
                       token0={token0}
                       token1={token1}
                       shareValues={shareValues}
                       onClick={withdrawPair}
+                    />
+                  ) : (
+                    // show general pair data
+                    <PairRow
+                      key={pairId}
+                      token0={token0}
+                      token1={token1}
+                      ticks={ticks}
                     />
                   );
                 }
@@ -145,6 +222,66 @@ export default function PoolsTableCard({
         </Link>
       )}
     </TableCard>
+  );
+}
+
+function PairRow({
+  token0,
+  token1,
+  ticks = [],
+}: {
+  token0: Token;
+  token1: Token;
+  ticks?: Array<TickInfo>;
+  onClick?: (shareValues: Array<TickShareValue>) => void;
+}) {
+  const {
+    data: [price0, price1],
+  } = useSimplePrice([token0, token1]);
+  const [value0, value1] = useMemo(() => {
+    const initialValues: [BigNumber, BigNumber] = [
+      new BigNumber(0),
+      new BigNumber(0),
+    ];
+    if (price0 && price1) {
+      return ticks.reduce<[BigNumber, BigNumber]>(([value0, value1], tick) => {
+        return [
+          value0.plus(
+            getAmountInDenom(
+              token0,
+              tick.reserve0.multipliedBy(price0),
+              token0.address,
+              token0.display
+            ) || 0
+          ),
+          value1.plus(
+            getAmountInDenom(
+              token1,
+              tick.reserve1.multipliedBy(price1),
+              token1.address,
+              token1.display
+            ) || 0
+          ),
+        ];
+      }, initialValues);
+    }
+    return initialValues;
+  }, [ticks, token0, token1, price0, price1]);
+
+  if (token0 && token1 && price0 && price1) {
+    return (
+      <tr>
+        <td>
+          <TokenPair token0={token0} token1={token1} />
+        </td>
+        <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
+      </tr>
+    );
+  }
+  return (
+    <tr>
+      <td colSpan={100}>Fetching price data ...</td>
+    </tr>
   );
 }
 
