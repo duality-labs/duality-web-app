@@ -373,7 +373,18 @@ function ShareValuesPage({
         </div>
         <div className="hero-card ml-auto grid gapx-5 gapy-3 p-4">
           <h2 className="hero-card__hero-title">Portfolio Value</h2>
+          <h3 className="hero-card__hero-title">My Liquidity</h3>
           <h3 className="hero-card__hero-title">Available Tokens</h3>
+          <div className="hero-card__hero-value">
+            $
+            {allUserSharesValue
+              .plus(allUserBankValue)
+              .toNumber()
+              .toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+          </div>
           <div className="hero-card__hero-value">
             $
             {allUserSharesValue.toNumber().toLocaleString('en-US', {
