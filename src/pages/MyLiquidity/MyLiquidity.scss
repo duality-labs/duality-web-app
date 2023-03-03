@@ -12,6 +12,12 @@
 }
 
 .my-liquidity-page {
+  .table-card {
+    // todo: maybe fix better:
+    // the cards look a little strange if they get too long
+    max-height: 35em;
+  }
+
   .asset-list-card {
     // ensure enough space to read current list without scrolling horizontally
     .table-card__table_container {
