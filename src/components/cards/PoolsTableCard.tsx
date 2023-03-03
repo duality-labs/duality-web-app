@@ -176,7 +176,10 @@ export default function PoolsTableCard({
               ) : (
                 <tr>
                   <th>Pool</th>
+                  <th>APR</th>
                   <th>TVL</th>
+                  <th>Fee (24h)</th>
+                  <th>Volume (24h)</th>
                 </tr>
               )}
             </thead>
@@ -291,7 +294,14 @@ function PairRow({
         <td>
           <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
+        {/* APR col */}
+        <td>-</td>
+        {/* TVL col */}
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
+        {/* Fee (24h) col */}
+        <td>-</td>
+        {/* Volume (24h) col */}
+        <td>-</td>
       </tr>
     );
   }
