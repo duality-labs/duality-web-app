@@ -692,7 +692,7 @@ function Pool() {
           title="Pools"
           switchValue={selectedPoolsList}
           switchOnChange={setSelectedPoolsList}
-          onClick={([token0, token1]) => {
+          onTokenPairClick={([token0, token1]) => {
             setTokenA(token0);
             setTokenB(token1);
           }}
