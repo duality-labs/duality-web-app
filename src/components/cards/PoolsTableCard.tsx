@@ -189,18 +189,12 @@ export default function PoolsTableCard({
                   const onRowClick:
                     | MouseEventHandler<HTMLButtonElement>
                     | undefined = onTokenPairClick
-                    ? (e) => {
-                        e.preventDefault();
-                        onTokenPairClick([token0, token1]);
-                      }
+                    ? () => onTokenPairClick([token0, token1])
                     : undefined;
                   const withdraw:
                     | MouseEventHandler<HTMLButtonElement>
                     | undefined = shareValues
-                    ? (e) => {
-                        e.preventDefault();
-                        withdrawPair(shareValues);
-                      }
+                    ? () => withdrawPair(shareValues)
                     : undefined;
                   return shareValues ? (
                     // show user's positions
@@ -351,7 +345,7 @@ function PositionRow({
           </span>
         </td>
         <td>
-          <button onClick={withdraw} className="button nowrap">
+          <button type="button" onClick={withdraw} className="button nowrap">
             {[
               value0.isGreaterThan(0) && token0.display.toUpperCase(),
               value1.isGreaterThan(0) && token1.display.toUpperCase(),
@@ -380,7 +374,11 @@ function TokenPair({
 }) {
   const BaseElement = as;
   return (
-    <BaseElement className="row gap-3 token-and-chain" onClick={onClick}>
+    <BaseElement
+      type={as === 'button' ? 'button' : undefined}
+      className="row gap-3 token-and-chain"
+      onClick={onClick}
+    >
       <div className="row flex-centered flow-nowrap">
         <img
           className="token-logo"
