@@ -680,7 +680,7 @@ function Pool() {
     return (
       <form
         className={[
-          'pool-page row flex-centered gap-5',
+          'pool-page row flex-centered flow-wrap gap-5',
           isValidatingDeposit && 'disabled',
         ]
           .filter(Boolean)
@@ -688,7 +688,7 @@ function Pool() {
         onSubmit={onSubmit}
       >
         <PoolsTableCard
-          className="flex"
+          className="flex flex-auto"
           title="Pools"
           switchValue={selectedPoolsList}
           switchOnChange={setSelectedPoolsList}
