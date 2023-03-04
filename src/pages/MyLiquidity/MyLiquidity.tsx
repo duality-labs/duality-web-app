@@ -338,7 +338,7 @@ function ShareValuesPage({
 
   // show loken list cards
   return (
-    <div className="my-liquidity-page container py-6">
+    <div className="my-liquidity-page container col flex gap-6 py-6">
       <div className="home-hero-section row flow-wrap flow-nowrap-lg">
         <div className="credit-card my-4 py-2 px-3">
           <div className="credit-card__top-line row gap-3 m-4">

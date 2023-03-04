@@ -13,12 +13,7 @@
 
 .my-liquidity-page {
   & {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    width: 100vw;
     justify-content: space-around;
-    gap: 4rem;
   }
 
   .home-hero-section,

@@ -5,10 +5,11 @@
 @use '../../styles/font/weight.scss' as font-weight;
 
 .swap-page {
-  & {
+  .trade-card {
     position: relative;
     overflow: hidden;
     border-radius: 2rem;
+    flex: 1 0 auto;
   }
 
   .card-title {

@@ -6,6 +6,9 @@
   margin: 2rem;
   min-width: 460px;
 }
+.container .page {
+  margin: 0;
+}
 
 .card {
   flex-direction: column;
@@ -15,8 +18,8 @@
 }
 
 .page-card {
-  padding: 3rem 2rem;
-  border-radius: 2rem;
+  padding: 2rem 1.65rem;
+  border-radius: 1.5rem;
   background-color: var(--page-card);
   color: var(--text-default);
   flex-direction: column;
