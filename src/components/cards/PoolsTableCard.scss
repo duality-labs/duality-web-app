@@ -14,4 +14,10 @@
   .token-composition {
     line-height: 1;
   }
+
+  // because the table itself cannot set a width, set a reasonable
+  // min-width here so that the table does not overflow scroll easily
+  .table-card__table_container {
+    min-width: 30em;
+  }
 }
