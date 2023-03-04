@@ -6,7 +6,7 @@
   background-color: hsla(212, 28%, 17%, 1);
   border-radius: 1rem;
   overflow: hidden;
-  min-height: 18em;
+  min-height: 21em;
 
   .table-card__header {
     // be as tall as the switch component
@@ -20,7 +20,6 @@
   }
   .table-card__table {
     overflow-y: scroll;
-    flex-basis: 0;
     table {
       border-spacing: 0;
     }
@@ -69,5 +68,12 @@
         }
       }
     }
+  }
+
+  // format token logos in table cards specifically
+  .token-logo {
+    height: 2em;
+    width: 2em;
+    object-fit: contain;
   }
 }

@@ -48,11 +48,15 @@ export default function TableCard<T extends string | number>({
         {setSearchValue && (
           <div className="table-card__search row m-lg mb-0">
             <div className="col flex">
-              <SearchInput value={searchValue} onInput={setSearchValue} />
+              <SearchInput
+                placeholder="Search token name or paste address"
+                value={searchValue}
+                onInput={setSearchValue}
+              />
             </div>
           </div>
         )}
-        <div className="relative row flex mt-lg">
+        <div className="table-card__table_container relative row flex mt-lg">
           <div className="table-card__table col flex absolute filled px-lg pb-4">
             {children}
           </div>

@@ -36,6 +36,7 @@ import {
 import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
+import PoolsTableCard from '../../components/cards/PoolsTableCard';
 
 import { useTokens, Token } from '../../components/TokenPicker/hooks';
 import { useDeposit } from './useDeposit';
@@ -671,17 +672,31 @@ function Pool() {
     tokenB?.address
   );
 
+  const [selectedPoolsList, setSelectedPoolsList] = useState<'all' | 'mine'>(
+    'all'
+  );
+
   if (!tokenA || !tokenB || !valuesConfirmed) {
     return (
       <form
         className={[
-          'pool-page row flex-centered gap-5',
+          'pool-page row flex-centered flow-wrap gap-5',
           isValidatingDeposit && 'disabled',
         ]
           .filter(Boolean)
           .join(' ')}
         onSubmit={onSubmit}
       >
+        <PoolsTableCard
+          className="flex flex-auto"
+          title="Pools"
+          switchValue={selectedPoolsList}
+          switchOnChange={setSelectedPoolsList}
+          onTokenPairClick={([token0, token1]) => {
+            setTokenA(token0);
+            setTokenB(token1);
+          }}
+        />
         <div className="assets-card page-card">
           <h3 className="card-title mb-4">Add Liquidity</h3>
           <div className="mb-4">

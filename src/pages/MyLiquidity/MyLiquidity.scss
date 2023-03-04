@@ -12,125 +12,13 @@
 }
 
 .my-liquidity-page {
-  & {
-    justify-content: space-around;
-  }
-
-  .home-hero-section,
-  .position-cards {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 5rem;
-  }
-  // vertically space hero cards a little less
-  .home-hero-section {
-    row-gap: 1rem;
-  }
-
-  .position-cards {
-    align-items: flex-start;
-    justify-content: flex-start;
-    min-height: 25vh; // make 4:3 look reasonable
-  }
-
-  .position-card {
-    min-height: 15rem;
-    width: 25rem;
-    padding: 2rem 2rem;
-  }
-
-  .position-card > * {
-    pointer-events: none;
-  }
-
-  .heading {
-    margin: -2rem -2rem 0;
-    width: calc(100% + 4rem);
-    font-size: 2rem;
-    position: relative;
-    overflow: hidden;
-
-    > .row {
-      margin: 0.75rem 2rem;
-    }
-
-    .row,
-    .col {
-      overflow: visible;
-    }
-
-    .token-symbols {
-      line-height: 1.1;
-    }
-
-    .token-icons img {
-      width: 7.5rem;
-      height: 7.5rem;
-      margin-right: -1rem;
-      object-fit: contain;
-      margin-top: -0.75rem;
-      position: absolute;
-      top: 0;
-      right: 7rem;
-      opacity: 0.6;
-    }
-    .token-icons img + img {
-      right: 2rem;
-    }
-  }
-  .divider {
-    margin: 0 -2rem;
-    height: 8px;
-    width: calc(100% + 4rem);
-    background: linear-gradient(90deg, rgba(78, 177, 232, 0) 0%, #4eb1e8 100%);
-  }
-
-  .content {
-    width: 100%;
-  }
-
-  .value-barchart {
-    border-radius: 0.5rem;
-    // allow column to fill space (but to a limited size)
-    width: 100vw;
-    background-color: #8fcef0;
-    overflow: hidden;
-    margin: 0.5rem 0 0.25rem;
-
-    .value-A {
-      height: 1em;
-      background-color: #bfa1f7;
-    }
-  }
-
-  .value-text {
-    .value-A {
-      color: #bfa1f7;
-    }
-    .value-B {
-      color: #8fcef0;
-    }
-  }
-
-  .home-hero-section {
-    align-items: stretch;
-    justify-content: stretch;
-    > div {
-      // take up as much width as allowed by flex-flow wrapping
-      flex: 1 1 100%;
-      height: 24em;
-      max-height: 70vh;
-    }
+  .table-card {
+    // todo: maybe fix better:
+    // the cards look a little strange if they get too long
+    max-height: 35em;
   }
 
   .asset-list-card {
-    // ensure enough space to read current tokens list without scrolling
-    .table-card__table_container {
-      min-width: 28em;
-    }
-
     .table-card__table {
       // style first column
       th,
@@ -142,69 +30,69 @@
       // style second and third columns
       th + th,
       td + td {
+        min-width: auto;
         text-align: right;
-        width: 25%;
+        width: 30%;
+      }
+      th + th + th,
+      td + td + td {
+        text-align: right;
+        width: 20%;
+        min-width: 5em;
       }
     }
+  }
 
-    .token-and-chain {
-      .token-logo {
-        height: 2em;
-        width: 2em;
-        object-fit: contain;
-      }
-      .token-chain {
-        font-size: 0.85em;
-        color: hsl(0, 0%, 75%);
-      }
+  .asset-list-card,
+  .pool-list-card {
+    // ensure enough space to read current list without scrolling horizontally
+    .table-card__table_container {
+      min-width: 32em;
     }
   }
 }
 
-.credit-card {
-  min-height: 384px;
-  min-width: 240px;
-  aspect-ratio: 1.58588;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-
-  background: hsla(202, 28%, 87%, 0.2);
-  border-radius: 1rem;
-
-  font-size: 1rem;
-  // allow all shadows in the credit card to overflow
-  &,
-  .row,
-  .col {
-    overflow: visible;
+.home-hero-section {
+  // allow left column to stretch much more than the right column
+  .home-hero-section__left {
+    flex-grow: 1000;
   }
 
-  .credit-card__top-line {
-    font-size: 1rem;
-    font-weight: font-weight.$bold;
-    .credit-card__name {
+  .hero-card {
+    border: 1px solid hsla(0deg, 0%, 100%, 60%);
+    background: linear-gradient(110deg, hsla(0, 0%, 100%, 0.2), transparent);
+    border-radius: paddings.$p-3;
+    flex: 1 1 auto;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto auto auto;
+
+    .hero-card__hero-value {
+      font-size: 2.25rem;
+      font-weight: font-weight.$bold;
+    }
+  }
+
+  .home-hero-section__left {
+    .logo {
+      height: 4em;
+    }
+    .home-hero-section__name {
+      font-size: 3rem;
+      min-width: 7em;
+    }
+    .span-truncate {
+      position: relative;
+    }
+    .span-truncate span {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       display: block;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-  }
-  .credit-card__hero-title {
-    margin-top: 1rem;
-  }
-  .credit-card__hero-value {
-    font-size: 2rem;
-    font-weight: font-weight.$bold;
-  }
-  .credit-card__lesser-hero-value {
-    font-weight: font-weight.$bold;
-  }
-
-  .button {
-    background: var(--page-card);
-    border-radius: 1.25rem;
-    padding: 0.75rem 1.5rem;
-    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
   }
 }

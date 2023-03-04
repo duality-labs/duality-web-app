@@ -19,7 +19,12 @@
     opacity: 1;
     border-radius: 0.75rem;
     position: relative;
-    color: var(--default-alt);
+    transition: color ease 0.25s;
+    color: hsla(218, 11%, 65%, 1);
+    &:hover,
+    &.active {
+      color: hsla(202, 28%, 87%, 1);
+    }
   }
   button:hover::before {
     content: ' ';
