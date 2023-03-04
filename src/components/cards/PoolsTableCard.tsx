@@ -38,7 +38,7 @@ export default function PoolsTableCard({
   title = 'Pools',
   switchValue: givenSwitchValue = 'mine',
   switchOnChange: givenSwitchOnChange,
-  onClick,
+  onTokenPairClick,
   ...props
 }: {
   className?: string;
@@ -47,7 +47,7 @@ export default function PoolsTableCard({
   switchOnChange?: React.Dispatch<
     React.SetStateAction<keyof typeof switchValues>
   >;
-  onClick?: (tokens: [token0: Token, token1: Token]) => void;
+  onTokenPairClick?: (tokens: [token0: Token, token1: Token]) => void;
 }) {
   const [searchValue, setSearchValue] = useState<string>('');
 
@@ -186,6 +186,14 @@ export default function PoolsTableCard({
             <tbody>
               {filteredPoolsList.map(
                 ([pairId, token0, token1, shareValues, ticks]) => {
+                  const onRowClick:
+                    | MouseEventHandler<HTMLButtonElement>
+                    | undefined = onTokenPairClick
+                    ? (e) => {
+                        e.preventDefault();
+                        onTokenPairClick([token0, token1]);
+                      }
+                    : undefined;
                   const withdraw:
                     | MouseEventHandler<HTMLButtonElement>
                     | undefined = shareValues
@@ -201,7 +209,8 @@ export default function PoolsTableCard({
                       token0={token0}
                       token1={token1}
                       shareValues={shareValues}
-                      onClick={withdraw}
+                      onClick={onRowClick}
+                      withdraw={withdraw}
                     />
                   ) : (
                     // show general pair data
@@ -210,7 +219,7 @@ export default function PoolsTableCard({
                       token0={token0}
                       token1={token1}
                       ticks={ticks}
-                      onClick={withdraw}
+                      onClick={onRowClick}
                     />
                   );
                 }
@@ -317,11 +326,13 @@ function PositionRow({
   token1,
   shareValues,
   onClick,
+  withdraw,
 }: {
   token0: Token;
   token1: Token;
   shareValues: Array<TickShareValue>;
   onClick?: MouseEventHandler<HTMLButtonElement>;
+  withdraw?: MouseEventHandler<HTMLButtonElement>;
 }) {
   const [total0, total1] = useUserReserves(shareValues);
   const [value0, value1] = useUserReservesNominalValues(shareValues);
@@ -340,7 +351,7 @@ function PositionRow({
           </span>
         </td>
         <td>
-          <button onClick={onClick} className="button nowrap">
+          <button onClick={withdraw} className="button nowrap">
             {[
               value0.isGreaterThan(0) && token0.display.toUpperCase(),
               value1.isGreaterThan(0) && token1.display.toUpperCase(),
