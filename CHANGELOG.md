@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.101](https://github.com/duality-labs/duality-web-app/compare/v0.1.100...v0.1.101) (2023-03-04)
+
+
+### Features
+
+* update home and liquidity page designs ([#328](https://github.com/duality-labs/duality-web-app/issues/328)) ([76af22d](https://github.com/duality-labs/duality-web-app/commit/76af22d4704308d0e5a0cc0064a8da62c4380171))
+
+
+### Other
+
+* 326 part 1: add table card component ([#329](https://github.com/duality-labs/duality-web-app/issues/329)) ([75cc378](https://github.com/duality-labs/duality-web-app/commit/75cc378bad99ae6c7bec36fdeba9e010761b4995))
+* 326 part 2: refactor page layouts ([#330](https://github.com/duality-labs/duality-web-app/issues/330)) ([a77706c](https://github.com/duality-labs/duality-web-app/commit/a77706ca64512b6905fd0fcd1c1077fe5f30df16))
+
 ## [0.1.100](https://github.com/duality-labs/duality-web-app/compare/v0.1.99...v0.1.100) (2023-02-23)
 
 
