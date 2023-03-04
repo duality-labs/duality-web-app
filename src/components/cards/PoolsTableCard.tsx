@@ -186,6 +186,14 @@ export default function PoolsTableCard({
             <tbody>
               {filteredPoolsList.map(
                 ([pairId, token0, token1, shareValues, ticks]) => {
+                  const withdraw:
+                    | MouseEventHandler<HTMLButtonElement>
+                    | undefined = shareValues
+                    ? (e) => {
+                        e.preventDefault();
+                        withdrawPair(shareValues);
+                      }
+                    : undefined;
                   return shareValues ? (
                     // show user's positions
                     <PositionRow
@@ -193,7 +201,7 @@ export default function PoolsTableCard({
                       token0={token0}
                       token1={token1}
                       shareValues={shareValues}
-                      onClick={withdrawPair}
+                      onClick={withdraw}
                     />
                   ) : (
                     // show general pair data
@@ -202,15 +210,7 @@ export default function PoolsTableCard({
                       token0={token0}
                       token1={token1}
                       ticks={ticks}
-                      // add interaction with token pair
-                      onClick={
-                        onClick
-                          ? (e) => {
-                              e.preventDefault();
-                              onClick([token0, token1]);
-                            }
-                          : undefined
-                      }
+                      onClick={withdraw}
                     />
                   );
                 }
@@ -316,18 +316,15 @@ function PositionRow({
   token0,
   token1,
   shareValues,
-  onClick: givenOnClick,
+  onClick,
 }: {
   token0: Token;
   token1: Token;
   shareValues: Array<TickShareValue>;
-  onClick?: (shareValues: Array<TickShareValue>) => void;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   const [total0, total1] = useUserReserves(shareValues);
   const [value0, value1] = useUserReservesNominalValues(shareValues);
-  const onClick = useCallback<MouseEventHandler<HTMLButtonElement>>(() => {
-    return givenOnClick?.(shareValues);
-  }, [givenOnClick, shareValues]);
   if (total0 && total1) {
     return (
       <tr>
