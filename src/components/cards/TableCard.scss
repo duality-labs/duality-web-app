@@ -56,5 +56,15 @@
       font-size: 0.85em;
       color: hsl(0, 0%, 75%);
     }
+
+    td {
+      button,
+      .button {
+        // add button interactivity hints by default
+        &:hover {
+          background-color: var(--token-search-bg);
+        }
+      }
+    }
   }
 }
