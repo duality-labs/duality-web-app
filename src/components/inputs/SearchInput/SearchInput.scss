@@ -11,16 +11,24 @@
     left: 1.2rem;
     margin: auto;
     pointer-events: none;
+    color: var(--token-search-placeholder);
   }
 
   svg,
   input {
     font-size: font-size.$input-small;
-    color: var(--token-search-text);
+  }
+
+  // highlight search icon when search text has been entered
+  &:has(input:not([value=''])) {
+    svg {
+      color: var(--token-search-text);
+    }
   }
 
   input {
     & {
+      color: var(--token-search-text);
       padding: 1rem 1rem 1rem 3rem;
       appearance: none;
       background: var(--token-search-bg);
@@ -29,6 +37,10 @@
       display: block;
       outline: none;
       width: 100%;
+    }
+
+    &::placeholder {
+      color: var(--token-search-placeholder);
     }
 
     // give interaction feedback

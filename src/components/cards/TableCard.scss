@@ -1,0 +1,73 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../styles/font/size.scss' as font-size;
+
+.table-card {
+  display: flex;
+  background-color: hsla(212, 28%, 17%, 1);
+  border-radius: 1rem;
+  overflow: hidden;
+  min-height: 18em;
+
+  .table-card__header {
+    // be as tall as the switch component
+    min-height: calc(2.5rem + 2px);
+  }
+  .table-card__hero-title {
+    font-size: font-size.$h4;
+  }
+  .table-card__asset-toggle {
+    font-size: font-size.$button;
+  }
+  .table-card__table {
+    overflow-y: scroll;
+    flex-basis: 0;
+    table {
+      border-spacing: 0;
+    }
+    th {
+      border-bottom: 1px solid hsl(0, 0%, 75%);
+      position: sticky;
+      top: 0;
+      background-color: hsla(212, 28%, 17%, 1);
+    }
+    th,
+    td {
+      padding: paddings.$p-2 paddings.$p-3;
+      &:first-child {
+        padding-left: 0;
+      }
+      &:last-child {
+        padding-right: 0;
+      }
+    }
+    tr:first-child td {
+      padding-top: paddings.$p-3;
+    }
+    // general table text alignment (header column as text)
+    th,
+    td {
+      text-align: left;
+    }
+    th + th,
+    td + td {
+      text-align: right;
+    }
+    td .subtext {
+      font-size: 0.85em;
+      color: hsl(0, 0%, 75%);
+    }
+
+    td {
+      button,
+      .button {
+        // align button texts to where you would expect them to be
+        margin-left: -0.5rem; // equivalent to paddings.$p-3
+        margin-right: -0.5rem; // equivalent to paddings.$p-3
+        // add button interactivity hints by default
+        &:hover {
+          background-color: var(--token-search-bg);
+        }
+      }
+    }
+  }
+}
