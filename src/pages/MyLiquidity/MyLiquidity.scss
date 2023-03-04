@@ -19,11 +19,6 @@
   }
 
   .asset-list-card {
-    // ensure enough space to read current list without scrolling horizontally
-    .table-card__table_container {
-      min-width: 28em;
-    }
-
     .table-card__table {
       // style first column
       th,
@@ -48,6 +43,7 @@
     }
   }
 
+  .asset-list-card,
   .pool-list-card {
     // ensure enough space to read current list without scrolling horizontally
     .table-card__table_container {
