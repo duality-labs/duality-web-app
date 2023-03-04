@@ -32,7 +32,7 @@
     }
     th,
     td {
-      padding: paddings.$p-2;
+      padding: paddings.$p-2 paddings.$p-3;
       &:first-child {
         padding-left: 0;
       }
@@ -60,6 +60,9 @@
     td {
       button,
       .button {
+        // align button texts to where you would expect them to be
+        margin-left: -0.5rem; // equivalent to paddings.$p-3
+        margin-right: -0.5rem; // equivalent to paddings.$p-3
         // add button interactivity hints by default
         &:hover {
           background-color: var(--token-search-bg);
