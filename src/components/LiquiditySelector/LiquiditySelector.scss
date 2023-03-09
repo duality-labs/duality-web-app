@@ -173,3 +173,18 @@
     fill: hsl(165, 83%, 57%);
   }
 }
+
+.data-zoom {
+  .data-zoom-area {
+    fill: hsla(220, 44%, 45%, 0.1);
+    stroke-width: 1;
+    stroke: hsla(220, 44%, 45%, 0.6);
+  }
+  .data-zoom-range-area {
+    fill: hsla(220, 44%, 45%, 0.5);
+    stroke-width: 0;
+  }
+  .data-zoom-data {
+    stroke: var(--text-default);
+  }
+}

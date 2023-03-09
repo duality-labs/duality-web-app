@@ -29,6 +29,8 @@ export interface LiquiditySelectorProps {
   feeTier: number | undefined;
   userTickSelected: number | undefined;
   setUserTickSelected: (index: number) => void;
+  rangeMinLimit?: string | number;
+  rangeMaxLimit?: string | number;
   rangeMin: string;
   rangeMax: string;
   setRangeMin: React.Dispatch<React.SetStateAction<string>>;
@@ -86,7 +88,8 @@ const zoomSpeedFactor = 0.5; // approx equivalent to zooming in range by 10%
 const leftPadding = 75;
 const rightPadding = 75;
 const topPadding = 33;
-const bottomPadding = 26; // height of axis-ticks element
+const bottomPadding = 56;
+const dataZoomHeight = 26;
 
 const poleWidth = 8;
 
@@ -97,6 +100,8 @@ export default function LiquiditySelector({
   feeTier,
   userTickSelected = -1,
   setUserTickSelected,
+  rangeMinLimit,
+  rangeMaxLimit,
   rangeMin,
   rangeMax,
   setRangeMin,
@@ -336,6 +341,25 @@ export default function LiquiditySelector({
     }
   }, [rangeMin, rangeMax, userTicks, zoomedDataStart, zoomedDataEnd]);
 
+  const [graphStartLimit = initialGraphStart, graphEndLimit = initialGraphEnd] =
+    useMemo<[BigNumber | undefined, BigNumber | undefined]>(() => {
+      const allValues = [
+        Number(rangeMinLimit),
+        Number(rangeMaxLimit),
+        allDataStart?.toNumber(),
+        allDataEnd?.toNumber(),
+      ].filter((v): v is number => !!v && !isNaN(v));
+
+      if (allValues.length > 0) {
+        return [
+          new BigNumber(Math.min(...allValues)),
+          new BigNumber(Math.max(...allValues)),
+        ];
+      } else {
+        return [undefined, undefined];
+      }
+    }, [allDataStart, allDataEnd, rangeMinLimit, rangeMaxLimit]);
+
   // find container size that buckets should fit
   const svgContainer = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -478,6 +502,27 @@ export default function LiquiditySelector({
     },
     [xMin, xMax, containerSize.width]
   );
+  // note: could abstract plotXs to a common creator
+  //   eg: createPlotX: (xMin, Max) => (x:number) => number
+  const plotXDataZoom = useCallback(
+    (xValue: BigNumber.Value): number => {
+      // define different extents than the main graph
+      // const leftPadding = 0;
+      // const rightPadding = 0;
+      const x = new BigNumber(xValue).toNumber();
+      const xMin = graphStartLimit?.toNumber();
+      const xMax = graphEndLimit?.toNumber();
+      const width = containerSize.width - leftPadding - rightPadding;
+      return xMin === undefined || xMax === undefined || xMin === xMax
+        ? // choose midpoint
+          leftPadding + width / 2
+        : // interpolate coordinate to graph
+          leftPadding +
+            (width * (Math.log(x) - Math.log(xMin))) /
+              (Math.log(xMax) - Math.log(xMin));
+    },
+    [graphStartLimit, graphEndLimit, containerSize.width]
+  );
   const plotXinverse = useCallback(
     (x: number): number => {
       const width = containerSize.width - leftPadding - rightPadding;
@@ -496,6 +541,15 @@ export default function LiquiditySelector({
         : -bottomPadding - (height * y) / graphHeight;
     },
     [graphHeight, containerSize.height]
+  );
+  // eslint-disable-next-line
+  const plotYDataZoom = useCallback(
+    (yValue: BigNumber.Value): number => {
+      const y = new BigNumber(yValue).toNumber();
+      const height = dataZoomHeight;
+      return graphHeight === 0 ? 0 : 0 - (height * y) / graphHeight;
+    },
+    [graphHeight]
   );
   const percentY = useCallback(
     (y: number): number => {
@@ -657,6 +711,16 @@ export default function LiquiditySelector({
         plotX={plotX}
         plotY={plotY}
         percentY={percentY}
+      />
+      <DataZoom
+        currentPrice={warningPrice || currentPriceFromTicks}
+        viewableStart={viewableStart}
+        viewableEnd={viewableEnd}
+        dataStart={dataStart}
+        dataEnd={dataEnd}
+        rangeMin={rangeMin}
+        rangeMax={rangeMax}
+        plotX={plotXDataZoom}
       />
     </svg>
   );
@@ -1669,4 +1733,54 @@ function Axis({
 
 function getMinYHeight(tickCount: number): number {
   return 1 / ((tickCount - 2) / 6 + 2) + 0.4;
+}
+
+function DataZoom({
+  currentPrice,
+  plotX,
+  viewableStart,
+  viewableEnd,
+  dataStart,
+  dataEnd,
+  rangeMin,
+  rangeMax,
+  className,
+}: {
+  currentPrice: BigNumber | undefined;
+  plotX: (x: BigNumber.Value) => number;
+  viewableStart: BigNumber;
+  viewableEnd: BigNumber;
+  dataStart: BigNumber | undefined;
+  dataEnd: BigNumber | undefined;
+  rangeMin: string;
+  rangeMax: string;
+  className?: string;
+}) {
+  return (
+    <g className={['data-zoom', className].filter(Boolean).join(' ')}>
+      <rect
+        className="data-zoom-area data-zoom-viewable-area"
+        x={plotX(viewableStart)}
+        width={plotX(viewableEnd) - plotX(viewableStart)}
+        y={-dataZoomHeight}
+        height={dataZoomHeight - 1}
+      />
+      <rect
+        className="data-zoom-area data-zoom-range-area"
+        x={plotX(rangeMin)}
+        width={plotX(rangeMax) - plotX(rangeMin)}
+        y={-dataZoomHeight}
+        height={dataZoomHeight - 1}
+      />
+      {dataStart && dataEnd && (
+        <rect
+          className="data-zoom-area data-zoom-data"
+          x={plotX(dataStart)}
+          width={plotX(dataEnd) - plotX(dataStart)}
+          y={-dataZoomHeight / 2}
+          height={dataZoomHeight / 2 - 1}
+        />
+      )}
+    </g>
+  );
 }

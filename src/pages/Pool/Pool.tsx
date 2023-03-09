@@ -886,6 +886,8 @@ function Pool() {
                 <LiquiditySelector
                   tokenA={tokenA}
                   tokenB={tokenB}
+                  rangeMinLimit={pairPriceMin}
+                  rangeMaxLimit={pairPriceMax}
                   rangeMin={rangeMin}
                   rangeMax={rangeMax}
                   setRangeMin={setRangeMin}
