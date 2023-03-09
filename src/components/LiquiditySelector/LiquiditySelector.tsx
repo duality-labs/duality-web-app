@@ -391,16 +391,21 @@ export default function LiquiditySelector({
 
     // find total ratio to cover in the range
     const totalRatio = xMax.dividedBy(xMin);
-    // round to a coarse number so that when changing viewable data
-    // (eg. when dragging) the buckets don't rearrange on every change
-    const approxTotalRatio = totalRatio.sd(1, BigNumber.ROUND_UP).toNumber();
 
     // the bucket ratio is the nth root of the total ratio
     // eg.       totalRatio = 10, and buckets = 3
     //     then bucketRatio = ∛10
     //     check totalRatio = ∛10 * ∛10 * ∛10 = (∛10)³ = 10
-    const bucketRatio = Math.pow(approxTotalRatio, 1 / bucketCount);
     // note: BigNumber cannot handle logarithms so it cannot calculate this
+    const perfectRatio = Math.pow(totalRatio.toNumber(), 1 / bucketCount);
+
+    // round to a coarse number so that when changing viewable data
+    // (eg. when dragging) the buckets don't rearrange on every change
+    // also limit to a minimum ratio to prevent excess
+    const bucketRatio = new BigNumber(perfectRatio - 1)
+      .sd(2)
+      .plus(1)
+      .toNumber();
 
     // calculate number of buckets from breakpoint to xMin inclusive:
     const tokenABucketCount = Math.ceil(
