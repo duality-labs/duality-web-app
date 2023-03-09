@@ -360,18 +360,18 @@ export default function LiquiditySelector({
     // get bounds
     const xMin = graphStart.sd(1, BigNumber.ROUND_DOWN);
     const xMax = graphEnd.sd(1, BigNumber.ROUND_UP);
-    const xWidth = xMax.dividedBy(xMin);
+    const xTotalRatio = xMax.dividedBy(xMin);
 
     /**
-     * The "width" of the buckets is a ratio that is applied bucketCount times up to the total width:
-     *   xWidth = x^bucketCountAdjusted
-     *   x^bucketCountAdjusted) = xWidth
-     *   ln(x^bucketCountAdjusted) = ln(xWidth)
-     *   ln(x)*bucketCountAdjusted = ln(xWidth)
-     *   ln(x) = ln(xWidth)/bucketCountAdjusted
-     *   x = e^(ln(xWidth)/bucketCountAdjusted)
+     * The ratio of the buckets is a ratio that is applied bucketCount times up to the total ratio:
+     *   xTotalRatio = xRatio^bucketCount
+     *   xRatio^bucketCount) = xTotalRatio
+     *   ln(xRatio^bucketCount) = ln(xTotalRatio)
+     *   ln(xRatio)*bucketCount = ln(xTotalRatio)
+     *   ln(xRatio) = ln(xTotalRatio)/bucketCount
+     *   xRatio = e^(ln(xTotalRatio)/bucketCount)
      */
-    return Math.exp(Math.log(xWidth.toNumber()) / bucketCount) || 1; // set at least 1
+    return Math.exp(Math.log(xTotalRatio.toNumber()) / bucketCount) || 1; // set at least 1
     // note: BigNumber cannot handle logarithms so it cannot calculate this
   }, [graphStart, graphEnd, bucketCount]);
 
