@@ -407,24 +407,43 @@ export default function LiquiditySelector({
       .plus(1)
       .toNumber();
 
-    // calculate number of buckets from breakpoint to xMin inclusive:
+    // calculate number of buckets from breakpoint (or edge of view) to xMin inclusive:
+    const aOffset = Math.floor(
+      Math.log(breakPoint.dividedBy(viewableEnd).toNumber()) /
+        Math.log(bucketRatio)
+    );
+    const aStart =
+      aOffset > 0
+        ? // find the first bucket edge value outside the viewable range
+          breakPoint.dividedBy(Math.pow(bucketRatio, aOffset))
+        : breakPoint;
+
     const tokenABucketCount = Math.ceil(
-      Math.log(breakPoint.dividedBy(xMin).toNumber()) / Math.log(bucketRatio)
+      Math.log(aStart.dividedBy(xMin).toNumber()) / Math.log(bucketRatio)
     );
     const tokenABuckets = Array.from({
       length: Math.max(0, tokenABucketCount),
     }).reduce<[min: BigNumber, max: BigNumber][]>((result) => {
-      const newValue = result[0]?.[0] ?? breakPoint;
+      const newValue = result[0]?.[0] ?? aStart;
       // prepend new bucket
       return [[newValue.dividedBy(bucketRatio), newValue], ...result];
     }, []);
+    const bOffset = Math.floor(
+      Math.log(viewableStart.dividedBy(breakPoint).toNumber()) /
+        Math.log(bucketRatio)
+    );
+    const bStart =
+      bOffset > 0
+        ? // find the first bucket edge value outside the viewable range
+          breakPoint.multipliedBy(Math.pow(bucketRatio, bOffset))
+        : breakPoint;
     const tokenBBucketCount = Math.ceil(
-      Math.log(xMax.dividedBy(breakPoint).toNumber()) / Math.log(bucketRatio)
+      Math.log(xMax.dividedBy(bStart).toNumber()) / Math.log(bucketRatio)
     );
     const tokenBBuckets = Array.from({
       length: Math.max(0, tokenBBucketCount),
     }).reduce<[min: BigNumber, max: BigNumber][]>((result) => {
-      const newValue = result[result.length - 1]?.[1] ?? breakPoint;
+      const newValue = result[result.length - 1]?.[1] ?? bStart;
       // append new bucket
       return [...result, [newValue, newValue.multipliedBy(bucketRatio)]];
     }, []);
