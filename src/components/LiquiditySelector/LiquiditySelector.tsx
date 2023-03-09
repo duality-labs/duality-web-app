@@ -371,30 +371,6 @@ export default function LiquiditySelector({
     ];
   }, [xMin, xMax, containerSize.width]);
 
-  const bucketRatio = useMemo(() => {
-    const bucketCount =
-      (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
-      1; // add bucket to account for splitting bucket on current price
-
-    // find total ratio to cover in the range
-    const totalRatio = viewableEnd.dividedBy(viewableStart);
-    // round to a coarse number so that when changing viewable data
-    // (eg. when dragging) the buckets don't rearrange on every change
-    const approxTotalRatio = totalRatio.sd(1, BigNumber.ROUND_UP).toNumber();
-
-    /**
-     * The ratio of the buckets is a ratio that is applied bucketCount times up to the total ratio:
-     *   xTotalRatio = xRatio^bucketCount
-     *   xRatio^bucketCount) = xTotalRatio
-     *   ln(xRatio^bucketCount) = ln(xTotalRatio)
-     *   ln(xRatio)*bucketCount = ln(xTotalRatio)
-     *   ln(xRatio) = ln(xTotalRatio)/bucketCount
-     *   xRatio = e^(ln(xTotalRatio)/bucketCount)
-     */
-    return Math.exp(Math.log(approxTotalRatio) / bucketCount) || 1; // set at least 1
-    // note: BigNumber cannot handle logarithms so it cannot calculate this
-  }, [viewableStart, viewableEnd, containerSize.width]);
-
   // calculate bucket extents
   const emptyBuckets = useMemo<
     [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
@@ -408,6 +384,29 @@ export default function LiquiditySelector({
     // get bounds
     const xMin = viewableStart;
     const xMax = viewableEnd;
+
+    const bucketCount =
+      (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
+      1; // add bucket to account for splitting bucket on current price
+
+    // find total ratio to cover in the range
+    const totalRatio = xMax.dividedBy(xMin);
+    // round to a coarse number so that when changing viewable data
+    // (eg. when dragging) the buckets don't rearrange on every change
+    const approxTotalRatio = totalRatio.sd(1, BigNumber.ROUND_UP).toNumber();
+
+    /**
+     * The ratio of the buckets is a ratio that is applied bucketCount times up to the total ratio:
+     *   xTotalRatio = xRatio^bucketCount
+     *   xRatio^bucketCount) = xTotalRatio
+     *   ln(xRatio^bucketCount) = ln(xTotalRatio)
+     *   ln(xRatio)*bucketCount = ln(xTotalRatio)
+     *   ln(xRatio) = ln(xTotalRatio)/bucketCount
+     *   xRatio = e^(ln(xTotalRatio)/bucketCount)
+     */
+    const bucketRatio = Math.exp(Math.log(approxTotalRatio) / bucketCount) || 1; // set at least 1
+    // note: BigNumber cannot handle logarithms so it cannot calculate this
+
     // calculate number of buckets from breakpoint to xMin inclusive:
     const tokenABucketCount = Math.ceil(
       Math.log(breakPoint.dividedBy(xMin).toNumber()) / Math.log(bucketRatio)
@@ -435,7 +434,7 @@ export default function LiquiditySelector({
   }, [
     edgePrice,
     currentPriceFromTicks,
-    bucketRatio,
+    containerSize.width,
     viewableStart,
     viewableEnd,
   ]);
