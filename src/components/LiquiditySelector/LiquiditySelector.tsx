@@ -395,16 +395,11 @@ export default function LiquiditySelector({
     // (eg. when dragging) the buckets don't rearrange on every change
     const approxTotalRatio = totalRatio.sd(1, BigNumber.ROUND_UP).toNumber();
 
-    /**
-     * The ratio of the buckets is a ratio that is applied bucketCount times up to the total ratio:
-     *   xTotalRatio = xRatio^bucketCount
-     *   xRatio^bucketCount) = xTotalRatio
-     *   ln(xRatio^bucketCount) = ln(xTotalRatio)
-     *   ln(xRatio)*bucketCount = ln(xTotalRatio)
-     *   ln(xRatio) = ln(xTotalRatio)/bucketCount
-     *   xRatio = e^(ln(xTotalRatio)/bucketCount)
-     */
-    const bucketRatio = Math.exp(Math.log(approxTotalRatio) / bucketCount) || 1; // set at least 1
+    // the bucket ratio is the nth root of the total ratio
+    // eg.       totalRatio = 10, and buckets = 3
+    //     then bucketRatio = ∛10
+    //     check totalRatio = ∛10 * ∛10 * ∛10 = (∛10)³ = 10
+    const bucketRatio = Math.pow(approxTotalRatio, 1 / bucketCount);
     // note: BigNumber cannot handle logarithms so it cannot calculate this
 
     // calculate number of buckets from breakpoint to xMin inclusive:
