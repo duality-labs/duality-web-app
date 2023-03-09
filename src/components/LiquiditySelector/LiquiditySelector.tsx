@@ -448,8 +448,8 @@ export default function LiquiditySelector({
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
   const startIsEnd = graphEnd.isLessThanOrEqualTo(graphStart);
-  const xMin = (startIsEnd ? graphStart.minus(1e-18) : graphStart).toNumber();
-  const xMax = (startIsEnd ? graphEnd.plus(1e-18) : graphEnd).toNumber();
+  const xMin = (startIsEnd ? graphStart.dividedBy(10) : graphStart).toNumber();
+  const xMax = (startIsEnd ? graphEnd.multipliedBy(10) : graphEnd).toNumber();
   const plotX = useCallback(
     (x: number): number => {
       const width = containerSize.width - leftPadding - rightPadding;
