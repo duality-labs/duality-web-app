@@ -621,7 +621,6 @@ export default function LiquiditySelector({
           setRangeMin={setRangeMin}
           setRangeMax={setRangeMax}
           plotXinverse={plotXinverse}
-          bucketRatio={bucketRatio}
         />
       )}
       <Axis
@@ -862,7 +861,6 @@ function TicksArea({
   setRangeMin,
   setRangeMax,
   plotXinverse,
-  bucketRatio,
   className,
 }: {
   currentPrice: BigNumber | undefined;
@@ -876,7 +874,6 @@ function TicksArea({
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
   plotXinverse: (x: number) => number;
-  bucketRatio: number;
   className?: string;
 }) {
   const startTick = ticks?.[0];
