@@ -392,37 +392,31 @@ export default function LiquiditySelector({
     if (!breakPoint) {
       return [[], []];
     }
-    const tokenABuckets = Array.from({ length: bucketCount }).reduce<
+    // calculate number of buckets from breakpoint to xMin inclusive:
+    const tokenABucketCount = Math.ceil(
+      Math.log(breakPoint.dividedBy(xMin).toNumber()) / Math.log(bucketRatio)
+    );
+    const tokenABuckets = Array.from({ length: tokenABucketCount }).reduce<
       [min: BigNumber, max: BigNumber][]
     >((result) => {
       const newValue = result[0]?.[0] ?? breakPoint;
-      return newValue.isLessThanOrEqualTo(xMin)
-        ? // return finished array
-          result
-        : // prepend new bucket
-          [[newValue.dividedBy(bucketRatio), newValue], ...result];
+      // prepend new bucket
+      return [[newValue.dividedBy(bucketRatio), newValue], ...result];
     }, []);
-    const tokenBBuckets = Array.from({ length: bucketCount }).reduce<
+    const tokenBBucketCount = Math.ceil(
+      Math.log(xMax.dividedBy(breakPoint).toNumber()) / Math.log(bucketRatio)
+    );
+    const tokenBBuckets = Array.from({ length: tokenBBucketCount }).reduce<
       [min: BigNumber, max: BigNumber][]
     >((result) => {
       const newValue = result[result.length - 1]?.[1] ?? breakPoint;
-      return newValue.isGreaterThanOrEqualTo(xMax)
-        ? // return finished array
-          result
-        : // append new bucket
-          [...result, [newValue, newValue.multipliedBy(bucketRatio)]];
+      // append new bucket
+      return [...result, [newValue, newValue.multipliedBy(bucketRatio)]];
     }, []);
 
-    // return concantenated buckes
+    // return concantenated buckets
     return [tokenABuckets, tokenBBuckets];
-  }, [
-    edgePrice,
-    currentPriceFromTicks,
-    bucketRatio,
-    bucketCount,
-    dataStart,
-    dataEnd,
-  ]);
+  }, [edgePrice, currentPriceFromTicks, bucketRatio, dataStart, dataEnd]);
 
   // calculate histogram values
   const feeTickBuckets = useMemo<
