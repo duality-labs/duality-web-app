@@ -395,6 +395,26 @@ export default function LiquiditySelector({
     ];
   }, [xMin, xMax, containerSize.width]);
 
+  const [dataZoomViewableStart, dataZoomViewableEnd] = useMemo(() => {
+    // get bounds
+    const startIsEnd = graphEndLimit.isLessThanOrEqualTo(graphStartLimit);
+    const xMin = (
+      startIsEnd ? graphStartLimit.dividedBy(10) : graphStartLimit
+    ).toNumber();
+    const xMax = (
+      startIsEnd ? graphEndLimit.multipliedBy(10) : graphEndLimit
+    ).toNumber();
+    const xTotalRatio = xMax / xMin;
+    const xWidth = Math.max(
+      1,
+      containerSize.width - leftPadding - rightPadding
+    );
+    return [
+      new BigNumber(xMin / Math.pow(xTotalRatio, leftPadding / xWidth)),
+      new BigNumber(xMax * Math.pow(xTotalRatio, rightPadding / xWidth)),
+    ];
+  }, [graphStartLimit, graphEndLimit, containerSize.width]);
+
   // calculate bucket extents
   const getEmptyBuckets = useCallback<
     (
@@ -489,6 +509,31 @@ export default function LiquiditySelector({
       }, 0);
   }, [emptyBuckets, allTicks]);
 
+  const dataZoomEmptyBuckets = useMemo(() => {
+    return getEmptyBuckets(dataZoomViewableStart, dataZoomViewableEnd);
+  }, [getEmptyBuckets, dataZoomViewableStart, dataZoomViewableEnd]);
+
+  const dataZoomFeeTickBuckets = useMemo<
+    [TickGroupBucketsFilled, TickGroupBucketsFilled]
+  >(() => {
+    return [
+      fillBuckets(dataZoomEmptyBuckets[0], feeTicks),
+      fillBuckets(dataZoomEmptyBuckets[1], feeTicks),
+    ];
+  }, [dataZoomEmptyBuckets, feeTicks]);
+
+  const dataZoomGraphHeight = useMemo(() => {
+    const allFeesTickBuckets = [
+      fillBuckets(dataZoomEmptyBuckets[0], allTicks),
+      fillBuckets(dataZoomEmptyBuckets[1], allTicks),
+    ];
+    return allFeesTickBuckets
+      .flat()
+      .reduce((result, [lowerBound, upperBound, tokenAValue, tokenBValue]) => {
+        return Math.max(result, tokenAValue.toNumber(), tokenBValue.toNumber());
+      }, 0);
+  }, [dataZoomEmptyBuckets, allTicks]);
+
   const plotX = useCallback(
     (x: number): number => {
       const width = containerSize.width - leftPadding - rightPadding;
@@ -546,9 +591,11 @@ export default function LiquiditySelector({
     (yValue: BigNumber.Value): number => {
       const y = new BigNumber(yValue).toNumber();
       const height = dataZoomHeight;
-      return graphHeight === 0 ? 0 : 0 - (height * y) / graphHeight;
+      return dataZoomGraphHeight === 0
+        ? 0
+        : 0 - (height * y) / dataZoomGraphHeight;
     },
-    [graphHeight]
+    [dataZoomGraphHeight]
   );
   const percentY = useCallback(
     (y: number): number => {
@@ -723,13 +770,13 @@ export default function LiquiditySelector({
       >
         <TickBucketsGroup
           className="left-ticks"
-          tickBuckets={feeTickBuckets[0]}
+          tickBuckets={dataZoomFeeTickBuckets[0]}
           plotX={plotXDataZoom}
           plotY={plotYDataZoom}
         />
         <TickBucketsGroup
           className="right-ticks"
-          tickBuckets={feeTickBuckets[1]}
+          tickBuckets={dataZoomFeeTickBuckets[1]}
           plotX={plotXDataZoom}
           plotY={plotYDataZoom}
         />
