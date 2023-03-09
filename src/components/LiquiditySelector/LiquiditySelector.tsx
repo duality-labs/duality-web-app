@@ -411,9 +411,9 @@ export default function LiquiditySelector({
     const tokenABucketCount = Math.ceil(
       Math.log(breakPoint.dividedBy(xMin).toNumber()) / Math.log(bucketRatio)
     );
-    const tokenABuckets = Array.from({ length: tokenABucketCount }).reduce<
-      [min: BigNumber, max: BigNumber][]
-    >((result) => {
+    const tokenABuckets = Array.from({
+      length: Math.max(0, tokenABucketCount),
+    }).reduce<[min: BigNumber, max: BigNumber][]>((result) => {
       const newValue = result[0]?.[0] ?? breakPoint;
       // prepend new bucket
       return [[newValue.dividedBy(bucketRatio), newValue], ...result];
@@ -421,9 +421,9 @@ export default function LiquiditySelector({
     const tokenBBucketCount = Math.ceil(
       Math.log(xMax.dividedBy(breakPoint).toNumber()) / Math.log(bucketRatio)
     );
-    const tokenBBuckets = Array.from({ length: tokenBBucketCount }).reduce<
-      [min: BigNumber, max: BigNumber][]
-    >((result) => {
+    const tokenBBuckets = Array.from({
+      length: Math.max(0, tokenBBucketCount),
+    }).reduce<[min: BigNumber, max: BigNumber][]>((result) => {
       const newValue = result[result.length - 1]?.[1] ?? breakPoint;
       // append new bucket
       return [...result, [newValue, newValue.multipliedBy(bucketRatio)]];
