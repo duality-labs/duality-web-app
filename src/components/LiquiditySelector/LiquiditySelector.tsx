@@ -376,10 +376,11 @@ export default function LiquiditySelector({
       (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
       1; // add bucket to account for splitting bucket on current price
 
-    // get bounds
-    const xMin = viewableStart.sd(1, BigNumber.ROUND_DOWN);
-    const xMax = viewableEnd.sd(1, BigNumber.ROUND_UP);
-    const xTotalRatio = xMax.dividedBy(xMin);
+    // find total ratio to cover in the range
+    const totalRatio = viewableEnd.dividedBy(viewableStart);
+    // round to a coarse number so that when changing viewable data
+    // (eg. when dragging) the buckets don't rearrange on every change
+    const approxTotalRatio = totalRatio.sd(1, BigNumber.ROUND_UP).toNumber();
 
     /**
      * The ratio of the buckets is a ratio that is applied bucketCount times up to the total ratio:
@@ -390,7 +391,7 @@ export default function LiquiditySelector({
      *   ln(xRatio) = ln(xTotalRatio)/bucketCount
      *   xRatio = e^(ln(xTotalRatio)/bucketCount)
      */
-    return Math.exp(Math.log(xTotalRatio.toNumber()) / bucketCount) || 1; // set at least 1
+    return Math.exp(Math.log(approxTotalRatio) / bucketCount) || 1; // set at least 1
     // note: BigNumber cannot handle logarithms so it cannot calculate this
   }, [viewableStart, viewableEnd, containerSize.width]);
 
