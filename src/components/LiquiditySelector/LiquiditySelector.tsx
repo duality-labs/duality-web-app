@@ -1835,6 +1835,20 @@ function DataZoom({
         height={dataZoomHeight - 1}
       />
       <g className="data-zoom-data">{children}</g>
+      <rect
+        className="data-zoom-range-flag data-zoom-range-start"
+        x={plotX(rangeMin) - 4}
+        width={4}
+        y={-dataZoomHeight}
+        height={dataZoomHeight - 1}
+      />
+      <rect
+        className="data-zoom-range-flag data-zoom-range-end"
+        x={plotX(rangeMax)}
+        width={4}
+        y={-dataZoomHeight}
+        height={dataZoomHeight - 1}
+      />
     </g>
   );
 }

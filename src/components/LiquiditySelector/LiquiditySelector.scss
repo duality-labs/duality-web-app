@@ -181,14 +181,18 @@
     stroke: hsla(220, 44%, 45%, 0.6);
   }
   .data-zoom-range-area {
-    fill: hsla(220, 44%, 45%, 0.5);
     stroke-width: 0;
+  }
+  .data-zoom-range-flag {
+    fill: hsla(165, 83%, 57%, 1);
   }
   .data-zoom-data {
     rect {
       fill: hsl(202deg, 58%, 33%);
       stroke-width: 0.5;
       stroke: hsl(202deg, 58%, 33%);
+      opacity: 1;
+      cursor: default;
     }
   }
 }
