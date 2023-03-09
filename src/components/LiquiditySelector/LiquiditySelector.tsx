@@ -398,19 +398,15 @@ export default function LiquiditySelector({
   const emptyBuckets = useMemo<
     [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
   >(() => {
-    // skip unknown bucket placements
-    if (!viewableStart || !viewableEnd) {
-      return [[], []];
-    }
-    // get bounds
-    const xMin = viewableStart;
-    const xMax = viewableEnd;
     // get middle 'break' point which will separate bucket sections
     const breakPoint = edgePrice || currentPriceFromTicks;
     // skip if there is no breakpoint
     if (!breakPoint) {
       return [[], []];
     }
+    // get bounds
+    const xMin = viewableStart;
+    const xMax = viewableEnd;
     // calculate number of buckets from breakpoint to xMin inclusive:
     const tokenABucketCount = Math.ceil(
       Math.log(breakPoint.dividedBy(xMin).toNumber()) / Math.log(bucketRatio)
