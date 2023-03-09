@@ -43,6 +43,8 @@ export interface LiquiditySelectorProps {
   canMoveDown?: boolean;
   canMoveX?: boolean;
   oneSidedLiquidity?: boolean;
+  containRangeInView?: boolean;
+  setContainRangeInView?: React.Dispatch<React.SetStateAction<boolean>>;
   ControlsComponent?: ComponentType<{
     zoomIn?: () => void;
     zoomOut?: () => void;
@@ -114,6 +116,8 @@ export default function LiquiditySelector({
   canMoveDown,
   canMoveX,
   oneSidedLiquidity = false,
+  containRangeInView = true,
+  setContainRangeInView,
   ControlsComponent,
 }: LiquiditySelectorProps) {
   // translate ticks from token0/1 to tokenA/B
@@ -322,10 +326,14 @@ export default function LiquiditySelector({
       undefined
     );
     const allValues = [
-      Number(rangeMin),
-      Number(rangeMax),
-      minUserTickPrice?.toNumber() || 0,
-      maxUserTickPrice?.toNumber() || 0,
+      ...(containRangeInView
+        ? [
+            Number(rangeMin),
+            Number(rangeMax),
+            minUserTickPrice?.toNumber() || 0,
+            maxUserTickPrice?.toNumber() || 0,
+          ]
+        : []),
       zoomedDataStart?.toNumber(),
       zoomedDataEnd?.toNumber(),
     ].filter((v): v is number => !!v && !isNaN(v));
@@ -339,7 +347,14 @@ export default function LiquiditySelector({
     } else {
       return [undefined, undefined];
     }
-  }, [rangeMin, rangeMax, userTicks, zoomedDataStart, zoomedDataEnd]);
+  }, [
+    containRangeInView,
+    rangeMin,
+    rangeMax,
+    userTicks,
+    zoomedDataStart,
+    zoomedDataEnd,
+  ]);
 
   const [graphStartLimit = initialGraphStart, graphEndLimit = initialGraphEnd] =
     useMemo<[BigNumber | undefined, BigNumber | undefined]>(() => {
@@ -805,20 +820,11 @@ export default function LiquiditySelector({
         1 + (zoomRatio - 1) * (1 - zoomSpeedFactor)
       );
       const newZoomRatio = Math.max(maxZoomRatio, rangeLimitRatio);
+      setContainRangeInView?.(false);
       setZoomRange([
         (midpoint / newZoomRatio).toFixed(20),
         (midpoint * newZoomRatio).toFixed(20),
       ]);
-      setRangeMin((rangeMin: string) => {
-        return new BigNumber(rangeMin).isLessThan(midpoint / newZoomRatio)
-          ? (midpoint / newZoomRatio).toFixed(20)
-          : rangeMin;
-      });
-      setRangeMax((rangeMax: string) => {
-        return new BigNumber(rangeMax).isGreaterThan(midpoint * newZoomRatio)
-          ? (midpoint * newZoomRatio).toFixed(20)
-          : rangeMax;
-      });
     }
   }, [
     rangeMin,
@@ -827,8 +833,7 @@ export default function LiquiditySelector({
     zoomMax,
     graphStart,
     graphEnd,
-    setRangeMin,
-    setRangeMax,
+    setContainRangeInView,
   ]);
   const zoomOut = useCallback(() => {
     const rangeMinNumber = Number(rangeMin);

@@ -187,9 +187,14 @@ function Pool() {
         : [priceMin, priceMax],
     [currentPriceFromTicks]
   );
+
+  // allow range flags to be outside of the view sometimes
+  const [containRangeInView, setContainRangeInView] = useState(true);
+
   // protect price range extents
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
+      setContainRangeInView(true);
       const restrictValue = (value: string) => {
         return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
       };
@@ -206,6 +211,7 @@ function Pool() {
   );
   const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
+      setContainRangeInView(true);
       const restrictValue = (value: string) => {
         return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
       };
@@ -903,6 +909,8 @@ function Pool() {
                   canMoveDown
                   canMoveX
                   oneSidedLiquidity={isValueAZero || isValueBZero}
+                  containRangeInView={containRangeInView}
+                  setContainRangeInView={setContainRangeInView}
                   ControlsComponent={ChartControls}
                 ></LiquiditySelector>
               </div>
