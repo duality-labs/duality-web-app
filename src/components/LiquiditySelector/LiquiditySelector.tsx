@@ -420,10 +420,11 @@ export default function LiquiditySelector({
     (
       // get bounds
       xMin: BigNumber,
-      xMax: BigNumber
+      xMax: BigNumber,
+      bucketWidth?: number
     ) => [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
   >(
-    (xMin, xMax) => {
+    (xMin, xMax, xbucketWidth = bucketWidth) => {
       // get middle 'break' point which will separate bucket sections
       const breakPoint = edgePrice || currentPriceFromTicks;
       // skip if there is no breakpoint
@@ -439,7 +440,7 @@ export default function LiquiditySelector({
 
       // estimate number of buckets needed
       const bucketCount =
-        (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
+        (Math.ceil(containerSize.width / xbucketWidth) ?? 1) + // default to 1 bucket if none
         (currentPriceIsWithinView ? 1 : 0); // add bucket to account for splitting bucket on current price within view
 
       // find number of indexes on each side to show
@@ -510,7 +511,7 @@ export default function LiquiditySelector({
   }, [emptyBuckets, allTicks]);
 
   const dataZoomEmptyBuckets = useMemo(() => {
-    return getEmptyBuckets(dataZoomViewableStart, dataZoomViewableEnd);
+    return getEmptyBuckets(dataZoomViewableStart, dataZoomViewableEnd, 1.75);
   }, [getEmptyBuckets, dataZoomViewableStart, dataZoomViewableEnd]);
 
   const dataZoomFeeTickBuckets = useMemo<
