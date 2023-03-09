@@ -609,7 +609,7 @@ export default function LiquiditySelector({
       const height = dataZoomHeight;
       return dataZoomGraphHeight === 0
         ? 0
-        : 0 - (height * y) / dataZoomGraphHeight;
+        : -3 - ((height - 6) * y) / dataZoomGraphHeight;
     },
     [dataZoomGraphHeight]
   );
@@ -1836,23 +1836,23 @@ function DataZoom({
         className="data-zoom-area data-zoom-range-area"
         x={plotX(rangeMin)}
         width={plotX(rangeMax) - plotX(rangeMin)}
-        y={-dataZoomHeight}
-        height={dataZoomHeight - 1}
+        y={-(dataZoomHeight - 2)}
+        height={dataZoomHeight - 2 - 1}
       />
       <g className="data-zoom-data">{children}</g>
       <rect
         className="data-zoom-range-flag data-zoom-range-start"
         x={plotX(rangeMin) - 4}
         width={4}
-        y={-dataZoomHeight}
-        height={dataZoomHeight - 1}
+        y={-(dataZoomHeight - 0)}
+        height={dataZoomHeight - 0 - 1}
       />
       <rect
         className="data-zoom-range-flag data-zoom-range-end"
         x={plotX(rangeMax)}
         width={4}
-        y={-dataZoomHeight}
-        height={dataZoomHeight - 1}
+        y={-(dataZoomHeight - 0)}
+        height={dataZoomHeight - 0 - 1}
       />
     </g>
   );
