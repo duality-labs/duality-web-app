@@ -542,7 +542,6 @@ export default function LiquiditySelector({
     },
     [graphHeight, containerSize.height]
   );
-  // eslint-disable-next-line
   const plotYDataZoom = useCallback(
     (yValue: BigNumber.Value): number => {
       const y = new BigNumber(yValue).toNumber();
@@ -721,7 +720,20 @@ export default function LiquiditySelector({
         rangeMin={rangeMin}
         rangeMax={rangeMax}
         plotX={plotXDataZoom}
-      />
+      >
+        <TickBucketsGroup
+          className="left-ticks"
+          tickBuckets={feeTickBuckets[0]}
+          plotX={plotXDataZoom}
+          plotY={plotYDataZoom}
+        />
+        <TickBucketsGroup
+          className="right-ticks"
+          tickBuckets={feeTickBuckets[1]}
+          plotX={plotXDataZoom}
+          plotY={plotYDataZoom}
+        />
+      </DataZoom>
     </svg>
   );
 
@@ -1745,6 +1757,7 @@ function DataZoom({
   rangeMin,
   rangeMax,
   className,
+  children,
 }: {
   currentPrice: BigNumber | undefined;
   plotX: (x: BigNumber.Value) => number;
@@ -1755,6 +1768,7 @@ function DataZoom({
   rangeMin: string;
   rangeMax: string;
   className?: string;
+  children?: React.ReactNode;
 }) {
   return (
     <g className={['data-zoom', className].filter(Boolean).join(' ')}>
@@ -1772,15 +1786,7 @@ function DataZoom({
         y={-dataZoomHeight}
         height={dataZoomHeight - 1}
       />
-      {dataStart && dataEnd && (
-        <rect
-          className="data-zoom-area data-zoom-data"
-          x={plotX(dataStart)}
-          width={plotX(dataEnd) - plotX(dataStart)}
-          y={-dataZoomHeight / 2}
-          height={dataZoomHeight / 2 - 1}
-        />
-      )}
+      <g className="data-zoom-data">{children}</g>
     </g>
   );
 }

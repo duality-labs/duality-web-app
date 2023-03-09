@@ -185,6 +185,9 @@
     stroke-width: 0;
   }
   .data-zoom-data {
-    stroke: var(--text-default);
+    rect {
+      fill: white;
+      stroke-width: 0;
+    }
   }
 }
