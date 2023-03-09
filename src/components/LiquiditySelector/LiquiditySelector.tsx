@@ -353,10 +353,11 @@ export default function LiquiditySelector({
     })
   );
 
-  const bucketCount =
-    (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
-    1; // add bucket to account for splitting bucket on current price
   const bucketRatio = useMemo(() => {
+    const bucketCount =
+      (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
+      1; // add bucket to account for splitting bucket on current price
+
     // get bounds
     const xMin = graphStart.sd(1, BigNumber.ROUND_DOWN);
     const xMax = graphEnd.sd(1, BigNumber.ROUND_UP);
@@ -373,7 +374,7 @@ export default function LiquiditySelector({
      */
     return Math.exp(Math.log(xTotalRatio.toNumber()) / bucketCount) || 1; // set at least 1
     // note: BigNumber cannot handle logarithms so it cannot calculate this
-  }, [graphStart, graphEnd, bucketCount]);
+  }, [graphStart, graphEnd, containerSize.width]);
 
   // calculate bucket extents
   const emptyBuckets = useMemo<
