@@ -372,91 +372,91 @@ export default function LiquiditySelector({
   }, [xMin, xMax, containerSize.width]);
 
   // calculate bucket extents
-  const emptyBuckets = useMemo<
-    [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
-  >(() => {
-    // get middle 'break' point which will separate bucket sections
-    const breakPoint = edgePrice || currentPriceFromTicks;
-    // skip if there is no breakpoint
-    if (!breakPoint) {
-      return [[], []];
-    }
-    // get bounds
-    const xMin = viewableStart;
-    const xMax = viewableEnd;
+  const getEmptyBuckets = useCallback<
+    (
+      // get bounds
+      xMin: BigNumber,
+      xMax: BigNumber
+    ) => [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
+  >(
+    (xMin, xMax) => {
+      // get middle 'break' point which will separate bucket sections
+      const breakPoint = edgePrice || currentPriceFromTicks;
+      // skip if there is no breakpoint
+      if (!breakPoint) {
+        return [[], []];
+      }
 
-    const bucketCount =
-      (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
-      1; // add bucket to account for splitting bucket on current price
+      const bucketCount =
+        (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
+        1; // add bucket to account for splitting bucket on current price
 
-    // find total ratio to cover in the range
-    const totalRatio = xMax.dividedBy(xMin);
+      // find total ratio to cover in the range
+      const totalRatio = xMax.dividedBy(xMin);
 
-    // the bucket ratio is the nth root of the total ratio
-    // eg.       totalRatio = 10, and buckets = 3
-    //     then bucketRatio = ∛10
-    //     check totalRatio = ∛10 * ∛10 * ∛10 = (∛10)³ = 10
-    // note: BigNumber cannot handle logarithms so it cannot calculate this
-    const perfectRatio = Math.pow(totalRatio.toNumber(), 1 / bucketCount);
+      // the bucket ratio is the nth root of the total ratio
+      // eg.       totalRatio = 10, and buckets = 3
+      //     then bucketRatio = ∛10
+      //     check totalRatio = ∛10 * ∛10 * ∛10 = (∛10)³ = 10
+      // note: BigNumber cannot handle logarithms so it cannot calculate this
+      const perfectRatio = Math.pow(totalRatio.toNumber(), 1 / bucketCount);
 
-    // round to a coarse number so that when changing viewable data
-    // (eg. when dragging) the buckets don't rearrange on every change
-    // also limit to a minimum ratio to prevent excess
-    const bucketRatio = new BigNumber(perfectRatio - 1)
-      .sd(2)
-      .plus(1)
-      .toNumber();
+      // round to a coarse number so that when changing viewable data
+      // (eg. when dragging) the buckets don't rearrange on every change
+      // also limit to a minimum ratio to prevent excess
+      const bucketRatio = new BigNumber(perfectRatio - 1)
+        .sd(2)
+        .plus(1)
+        .toNumber();
 
-    // calculate number of buckets from breakpoint (or edge of view) to xMin inclusive:
-    const aOffset = Math.floor(
-      Math.log(breakPoint.dividedBy(viewableEnd).toNumber()) /
-        Math.log(bucketRatio)
-    );
-    const aStart =
-      aOffset > 0
-        ? // find the first bucket edge value outside the viewable range
-          breakPoint.dividedBy(Math.pow(bucketRatio, aOffset))
-        : breakPoint;
+      // calculate number of buckets from breakpoint (or edge of view) to xMin inclusive:
+      const aOffset = Math.floor(
+        Math.log(breakPoint.dividedBy(xMax).toNumber()) / Math.log(bucketRatio)
+      );
+      const aStart =
+        aOffset > 0
+          ? // find the first bucket edge value outside the viewable range
+            breakPoint.dividedBy(Math.pow(bucketRatio, aOffset))
+          : breakPoint;
 
-    const tokenABucketCount = Math.ceil(
-      Math.log(aStart.dividedBy(xMin).toNumber()) / Math.log(bucketRatio)
-    );
-    const tokenABuckets = Array.from({
-      length: Math.max(0, tokenABucketCount),
-    }).reduce<[min: BigNumber, max: BigNumber][]>((result) => {
-      const newValue = result[0]?.[0] ?? aStart;
-      // prepend new bucket
-      return [[newValue.dividedBy(bucketRatio), newValue], ...result];
-    }, []);
-    const bOffset = Math.floor(
-      Math.log(viewableStart.dividedBy(breakPoint).toNumber()) /
-        Math.log(bucketRatio)
-    );
-    const bStart =
-      bOffset > 0
-        ? // find the first bucket edge value outside the viewable range
-          breakPoint.multipliedBy(Math.pow(bucketRatio, bOffset))
-        : breakPoint;
-    const tokenBBucketCount = Math.ceil(
-      Math.log(xMax.dividedBy(bStart).toNumber()) / Math.log(bucketRatio)
-    );
-    const tokenBBuckets = Array.from({
-      length: Math.max(0, tokenBBucketCount),
-    }).reduce<[min: BigNumber, max: BigNumber][]>((result) => {
-      const newValue = result[result.length - 1]?.[1] ?? bStart;
-      // append new bucket
-      return [...result, [newValue, newValue.multipliedBy(bucketRatio)]];
-    }, []);
+      const tokenABucketCount = Math.ceil(
+        Math.log(aStart.dividedBy(xMin).toNumber()) / Math.log(bucketRatio)
+      );
+      const tokenABuckets = Array.from({
+        length: Math.max(0, tokenABucketCount),
+      }).reduce<[min: BigNumber, max: BigNumber][]>((result) => {
+        const newValue = result[0]?.[0] ?? aStart;
+        // prepend new bucket
+        return [[newValue.dividedBy(bucketRatio), newValue], ...result];
+      }, []);
+      const bOffset = Math.floor(
+        Math.log(xMin.dividedBy(breakPoint).toNumber()) / Math.log(bucketRatio)
+      );
+      const bStart =
+        bOffset > 0
+          ? // find the first bucket edge value outside the viewable range
+            breakPoint.multipliedBy(Math.pow(bucketRatio, bOffset))
+          : breakPoint;
+      const tokenBBucketCount = Math.ceil(
+        Math.log(xMax.dividedBy(bStart).toNumber()) / Math.log(bucketRatio)
+      );
+      const tokenBBuckets = Array.from({
+        length: Math.max(0, tokenBBucketCount),
+      }).reduce<[min: BigNumber, max: BigNumber][]>((result) => {
+        const newValue = result[result.length - 1]?.[1] ?? bStart;
+        // append new bucket
+        return [...result, [newValue, newValue.multipliedBy(bucketRatio)]];
+      }, []);
 
-    // return concantenated buckets
-    return [tokenABuckets, tokenBBuckets];
-  }, [
-    edgePrice,
-    currentPriceFromTicks,
-    containerSize.width,
-    viewableStart,
-    viewableEnd,
-  ]);
+      // return concantenated buckets
+      return [tokenABuckets, tokenBBuckets];
+    },
+    [edgePrice, currentPriceFromTicks, containerSize.width]
+  );
+
+  const emptyBuckets = useMemo(() => {
+    return getEmptyBuckets(viewableStart, viewableEnd);
+  }, [getEmptyBuckets, viewableStart, viewableEnd]);
 
   // calculate histogram values
   const feeTickBuckets = useMemo<
