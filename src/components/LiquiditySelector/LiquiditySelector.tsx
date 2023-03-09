@@ -353,6 +353,24 @@ export default function LiquiditySelector({
     })
   );
 
+  // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
+  const startIsEnd = graphEnd.isLessThanOrEqualTo(graphStart);
+  const xMin = (startIsEnd ? graphStart.dividedBy(10) : graphStart).toNumber();
+  const xMax = (startIsEnd ? graphEnd.multipliedBy(10) : graphEnd).toNumber();
+
+  const [viewableStart, viewableEnd] = useMemo(() => {
+    // get bounds
+    const xTotalRatio = xMax / xMin;
+    const xWidth = Math.max(
+      1,
+      containerSize.width - leftPadding - rightPadding
+    );
+    return [
+      new BigNumber(xMin / Math.pow(xTotalRatio, leftPadding / xWidth)),
+      new BigNumber(xMax * Math.pow(xTotalRatio, rightPadding / xWidth)),
+    ];
+  }, [xMin, xMax, containerSize.width]);
+
   const bucketRatio = useMemo(() => {
     const bucketCount =
       (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
@@ -381,12 +399,12 @@ export default function LiquiditySelector({
     [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
   >(() => {
     // skip unknown bucket placements
-    if (!dataStart || !dataEnd) {
+    if (!viewableStart || !viewableEnd) {
       return [[], []];
     }
     // get bounds
-    const xMin = dataStart;
-    const xMax = dataEnd;
+    const xMin = viewableStart;
+    const xMax = viewableEnd;
     // get middle 'break' point which will separate bucket sections
     const breakPoint = edgePrice || currentPriceFromTicks;
     // skip if there is no breakpoint
@@ -417,7 +435,13 @@ export default function LiquiditySelector({
 
     // return concantenated buckets
     return [tokenABuckets, tokenBBuckets];
-  }, [edgePrice, currentPriceFromTicks, bucketRatio, dataStart, dataEnd]);
+  }, [
+    edgePrice,
+    currentPriceFromTicks,
+    bucketRatio,
+    viewableStart,
+    viewableEnd,
+  ]);
 
   // calculate histogram values
   const feeTickBuckets = useMemo<
@@ -441,10 +465,6 @@ export default function LiquiditySelector({
       }, 0);
   }, [emptyBuckets, allTicks]);
 
-  // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
-  const startIsEnd = graphEnd.isLessThanOrEqualTo(graphStart);
-  const xMin = (startIsEnd ? graphStart.dividedBy(10) : graphStart).toNumber();
-  const xMax = (startIsEnd ? graphEnd.multipliedBy(10) : graphEnd).toNumber();
   const plotX = useCallback(
     (x: number): number => {
       const width = containerSize.width - leftPadding - rightPadding;
