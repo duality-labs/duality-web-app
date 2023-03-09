@@ -511,7 +511,7 @@ export default function LiquiditySelector({
   }, [emptyBuckets, allTicks]);
 
   const dataZoomEmptyBuckets = useMemo(() => {
-    return getEmptyBuckets(dataZoomViewableStart, dataZoomViewableEnd, 1.75);
+    return getEmptyBuckets(dataZoomViewableStart, dataZoomViewableEnd);
   }, [getEmptyBuckets, dataZoomViewableStart, dataZoomViewableEnd]);
 
   const dataZoomFeeTickBuckets = useMemo<
