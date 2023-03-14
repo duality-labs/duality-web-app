@@ -387,9 +387,13 @@ export default function LiquiditySelector({
         return [[], []];
       }
 
+      const currentPriceIsWithinView =
+        breakPoint.isGreaterThanOrEqualTo(xMin) &&
+        breakPoint.isLessThanOrEqualTo(xMax);
+
       const bucketCount =
         (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
-        1; // add bucket to account for splitting bucket on current price
+        (currentPriceIsWithinView ? 1 : 0); // add bucket to account for splitting bucket on current price within view
 
       // find total ratio to cover in the range
       const totalRatio = xMax.dividedBy(xMin);
