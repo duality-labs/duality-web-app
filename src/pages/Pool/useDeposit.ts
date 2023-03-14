@@ -118,6 +118,56 @@ export function useDeposit(): [
             }
             return reserveA.isGreaterThan(0) || reserveB.isGreaterThan(0);
           })
+          // convert virtual (indexer) Ticks into "real" index Ticks (which are expected in the API)
+          .flatMap((tick) => {
+            const hasA = tick.reserveA.isGreaterThan(0);
+            const hasB = tick.reserveB.isGreaterThan(0);
+
+            // the order of tick indexes appears reversed here because we are
+            // converting from virtual to real ticks (not real to virual)
+            const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
+              tick.tickIndex,
+              tick.feeIndex
+            );
+
+            if (tickIndex0 === undefined || tickIndex1 === undefined) {
+              return [];
+            }
+
+            const [forward] = hasMatchingPairOfOrder(
+              pairs,
+              tick.tokenA.address || '',
+              tick.tokenB.address || ''
+            );
+
+            const ticks: TickGroup = [];
+
+            // add reserveA as a single tick
+            if (hasA) {
+              ticks.push({
+                ...tick,
+                // tick indexes must be in form of "token0/1" not "tokenA/B":
+                // we invert the indexes because we work with price1to0
+                // and the backend works on the basis of price0to1
+                tickIndex: forward ? -tickIndex0 : -tickIndex1,
+                reserveB: new BigNumber(0),
+              });
+            }
+
+            // add reserveB as a single tick
+            if (hasB) {
+              ticks.push({
+                ...tick,
+                // tick indexes must be in form of "token0/1" not "tokenA/B":
+                // we invert the indexes because we work with price1to0
+                // and the backend works on the basis of price0to1
+                tickIndex: forward ? -tickIndex1 : -tickIndex0,
+                reserveA: new BigNumber(0),
+              });
+            }
+
+            return ticks;
+          })
           .reduce<TickGroup>((ticks, tick) => {
             // find equivalent tick
             const foundTickIndex = ticks.findIndex((searchTick) => {
@@ -190,16 +240,10 @@ export function useDeposit(): [
                   tokenA: tokenA.address,
                   tokenB: tokenB.address,
                   receiver: web3Address,
-                  // tick indexes must be in the form of "token0/1 index"
+                  // note: tick indexes must be in the form of "token0/1 index"
                   // not "tokenA/B" index, so inverted order indexes should be reversed
-                  tickIndexes: filteredUserTicks.map((tick) => {
-                    const [forward] = hasMatchingPairOfOrder(
-                      pairs,
-                      tick.tokenA.address || '',
-                      tick.tokenB.address || ''
-                    );
-                    return tick.tickIndex * (forward ? 1 : -1);
-                  }),
+                  // check this commit for changes if this behavior changes
+                  tickIndexes: filteredUserTicks.map((tick) => tick.tickIndex),
                   feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
                   amountsA: filteredUserTicks.map(
                     ({ reserveA }) =>
