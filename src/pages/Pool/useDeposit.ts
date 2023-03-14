@@ -15,7 +15,11 @@ import {
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { readEvents } from '../../lib/web3/utils/txs';
-import { getPairID, useIndexerData } from '../../lib/web3/indexerProvider';
+import {
+  getPairID,
+  hasMatchingPairOfOrder,
+  useIndexerData,
+} from '../../lib/web3/indexerProvider';
 import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
 
 interface SendDepositResponse {
@@ -34,8 +38,7 @@ export function useDeposit(): [
     tokenA: Token | undefined,
     tokenB: Token | undefined,
     fee: BigNumber | undefined,
-    userTicks: TickGroup,
-    invertedOrder?: boolean
+    userTicks: TickGroup
   ) => Promise<void>
 ] {
   // get previous ticks context
@@ -51,8 +54,7 @@ export function useDeposit(): [
       tokenA: Token | undefined,
       tokenB: Token | undefined,
       fee: BigNumber | undefined,
-      userTicks: TickGroup,
-      invertedOrder = false
+      userTicks: TickGroup
     ) {
       try {
         // check for correct inputs
@@ -65,6 +67,36 @@ export function useDeposit(): [
         }
         if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
           throw new Error('Fee not set');
+        }
+
+        // do not make requests if they are not routable
+        if (!tokenA.address) {
+          throw new Error(
+            `Token ${tokenA.symbol} has no address on the Duality chain`
+          );
+        }
+        if (!tokenB.address) {
+          throw new Error(
+            `Token ${tokenB.symbol} has no address on the Duality chain`
+          );
+        }
+
+        const forward = pairs?.[getPairID(tokenA.address, tokenB.address)];
+        const reverse = pairs?.[getPairID(tokenB.address, tokenA.address)];
+        const pairTicks = forward || reverse;
+
+        if (!pairs || !pairTicks) {
+          throw new Error(
+            `Cannot initialize a new pair here: ${[
+              `our calculation of pair ID as either "${getPairID(
+                tokenA.address,
+                tokenB.address
+              )}" or "${getPairID(
+                tokenB.address,
+                tokenA.address
+              )}" may be incorrect.`,
+            ].join(', ')}`
+          );
         }
 
         // check all user ticks and filter to non-zero ticks
@@ -122,20 +154,6 @@ export function useDeposit(): [
         setIsValidating(true);
         setError(undefined);
 
-        // do not make requests if they are not routable
-        if (!tokenA.address) {
-          throw new Error(
-            `Token ${tokenA.symbol} has no address on the Duality chain`
-          );
-        }
-        if (!tokenB.address) {
-          throw new Error(
-            `Token ${tokenB.symbol} has no address on the Duality chain`
-          );
-        }
-        const forward = pairs?.[getPairID(tokenA.address, tokenB.address)];
-        const reverse = pairs?.[getPairID(tokenB.address, tokenA.address)];
-        const pairTicks = forward || reverse;
         const gasEstimate = filteredUserTicks.reduce((gasEstimate, tick) => {
           const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
             tick.tickIndex,
@@ -174,9 +192,14 @@ export function useDeposit(): [
                   receiver: web3Address,
                   // tick indexes must be in the form of "token0/1 index"
                   // not "tokenA/B" index, so inverted order indexes should be reversed
-                  tickIndexes: filteredUserTicks.map(
-                    (tick) => tick.tickIndex * (!invertedOrder ? -1 : 1)
-                  ),
+                  tickIndexes: filteredUserTicks.map((tick) => {
+                    const [forward] = hasMatchingPairOfOrder(
+                      pairs,
+                      tick.tokenA.address || '',
+                      tick.tokenB.address || ''
+                    );
+                    return tick.tickIndex * (forward ? 1 : -1);
+                  }),
                   feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
                   amountsA: filteredUserTicks.map(
                     ({ reserveA }) =>

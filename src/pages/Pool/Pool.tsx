@@ -386,8 +386,7 @@ function Pool() {
           tokenA,
           tokenB,
           new BigNumber(feeType.fee),
-          normalizedTicks,
-          invertTokenOrder
+          normalizedTicks
         );
       }
     },
@@ -399,7 +398,6 @@ function Pool() {
       feeType,
       userTicks,
       sendDepositRequest,
-      invertTokenOrder,
     ]
   );
 
