@@ -13,7 +13,7 @@ import useResizeObserver from '@react-hook/resize-observer';
 
 import { formatAmount, formatPrice } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
-import { priceToTickIndex } from '../../lib/web3/utils/ticks';
+import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
@@ -59,12 +59,12 @@ export interface Tick {
 }
 export type TickGroup = Array<Tick>;
 type TickGroupBucketsEmpty = Array<
-  [lowerBound: BigNumber, upperBound: BigNumber]
+  [lowerIndexBound: number, upperIndexBound: number]
 >;
 type TickGroupBucketsFilled = Array<
   [
-    lowerBound: BigNumber,
-    upperBound: BigNumber,
+    lowerPriceBound: BigNumber,
+    upperPriceBound: BigNumber,
     reserveA: BigNumber,
     reserveB: BigNumber
   ]
@@ -387,69 +387,50 @@ export default function LiquiditySelector({
         return [[], []];
       }
 
+      const indexNow = priceToTickIndex(breakPoint).toNumber();
+      const indexMin = priceToTickIndex(xMin, 'floor').toNumber();
+      const indexMax = priceToTickIndex(xMax, 'ceil').toNumber();
       const currentPriceIsWithinView =
-        breakPoint.isGreaterThanOrEqualTo(xMin) &&
-        breakPoint.isLessThanOrEqualTo(xMax);
+        indexMin <= indexNow && indexNow <= indexMax;
 
+      // estimate number of buckets needed
       const bucketCount =
         (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
         (currentPriceIsWithinView ? 1 : 0); // add bucket to account for splitting bucket on current price within view
 
-      // find total ratio to cover in the range
-      const totalRatio = xMax.dividedBy(xMin);
+      // find number of indexes on each side to show
+      const tokenAIndexCount =
+        indexNow >= indexMin ? Math.min(indexNow, indexMax) - indexMin + 1 : 0;
+      const tokenBIndexCount =
+        indexNow <= indexMax ? indexMax - Math.max(indexNow, indexMin) + 1 : 0;
 
-      // the bucket ratio is the nth root of the total ratio
-      // eg.       totalRatio = 10, and buckets = 3
-      //     then bucketRatio = ∛10
-      //     check totalRatio = ∛10 * ∛10 * ∛10 = (∛10)³ = 10
-      // note: BigNumber cannot handle logarithms so it cannot calculate this
-      const perfectRatio = Math.pow(totalRatio.toNumber(), 1 / bucketCount);
-
-      // round to a coarse number so that when changing viewable data
-      // (eg. when dragging) the buckets don't rearrange on every change
-      // also limit to a minimum ratio to prevent excess
-      const bucketRatio = new BigNumber(perfectRatio - 1)
-        .sd(2)
-        .plus(1)
-        .toNumber();
-
-      // calculate number of buckets from breakpoint (or edge of view) to xMin inclusive:
-      const aOffset = Math.floor(
-        Math.log(breakPoint.dividedBy(xMax).toNumber()) / Math.log(bucketRatio)
-      );
-      const aStart =
-        aOffset > 0
-          ? // find the first bucket edge value outside the viewable range
-            breakPoint.dividedBy(Math.pow(bucketRatio, aOffset))
-          : breakPoint;
-
+      // find number of buckets on each side to show
+      const indexTotalCount = tokenAIndexCount + tokenBIndexCount;
+      const indexesPerBucketCount = Math.ceil(indexTotalCount / bucketCount);
       const tokenABucketCount = Math.ceil(
-        Math.log(aStart.dividedBy(xMin).toNumber()) / Math.log(bucketRatio)
+        tokenAIndexCount / indexesPerBucketCount
       );
+      const tokenBBucketCount = Math.ceil(
+        tokenBIndexCount / indexesPerBucketCount
+      );
+
+      // compute the limits of tokenA buckets
       const tokenABuckets = Array.from({
         length: Math.max(0, tokenABucketCount),
-      }).reduce<[min: BigNumber, max: BigNumber][]>((result) => {
-        const newValue = result[0]?.[0] ?? aStart;
+      }).reduce<[min: number, max: number][]>((result) => {
+        const newValue = result[0]?.[0] ?? Math.min(indexMax, indexNow);
         // prepend new bucket
-        return [[newValue.dividedBy(bucketRatio), newValue], ...result];
+        return [[newValue - indexesPerBucketCount, newValue], ...result];
       }, []);
-      const bOffset = Math.floor(
-        Math.log(xMin.dividedBy(breakPoint).toNumber()) / Math.log(bucketRatio)
-      );
-      const bStart =
-        bOffset > 0
-          ? // find the first bucket edge value outside the viewable range
-            breakPoint.multipliedBy(Math.pow(bucketRatio, bOffset))
-          : breakPoint;
-      const tokenBBucketCount = Math.ceil(
-        Math.log(xMax.dividedBy(bStart).toNumber()) / Math.log(bucketRatio)
-      );
+
+      // compute the limits of tokenB buckets
       const tokenBBuckets = Array.from({
         length: Math.max(0, tokenBBucketCount),
-      }).reduce<[min: BigNumber, max: BigNumber][]>((result) => {
-        const newValue = result[result.length - 1]?.[1] ?? bStart;
+      }).reduce<[min: number, max: number][]>((result) => {
+        const newValue =
+          result[result.length - 1]?.[1] ?? Math.max(indexMin, indexNow);
         // append new bucket
-        return [...result, [newValue, newValue.multipliedBy(bucketRatio)]];
+        return [...result, [newValue, newValue + indexesPerBucketCount]];
       }, []);
 
       // return concantenated buckets
@@ -806,17 +787,15 @@ function fillBuckets(
     ({ reserveA, reserveB }) => !reserveA.isZero() || !reserveB.isZero()
   );
   return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
-    (result, [lowerBound, upperBound]) => {
+    (result, [lowerIndexBound, upperIndexBound]) => {
       const [reserveA, reserveB] = ticks.reduceRight(
-        (result, { price, reserveA, reserveB }, index, ticks) => {
+        (result, { tickIndex, reserveA, reserveB }, index, ticks) => {
           // match tokens unevenly (token0 "left-aligned" / token1 "right-aligned")
           // as we bucket ticks away from the central x-axis point
           const matchToken1 =
-            price.isGreaterThanOrEqualTo(lowerBound) &&
-            price.isLessThan(upperBound);
+            tickIndex >= lowerIndexBound && tickIndex < upperIndexBound;
           const matchToken0 =
-            price.isGreaterThan(lowerBound) &&
-            price.isLessThanOrEqualTo(upperBound);
+            tickIndex > lowerIndexBound && tickIndex <= upperIndexBound;
           const addToken0 =
             matchToken0 && !reserveA.isZero() ? reserveA : undefined;
           const addToken1 =
@@ -833,8 +812,21 @@ function fillBuckets(
         },
         [new BigNumber(0), new BigNumber(0)]
       );
-      if (reserveA || reserveB) {
-        result.push([lowerBound, upperBound, reserveA, reserveB]);
+      // place tokenA buckets to the left of the current price
+      if (reserveA.isGreaterThan(0)) {
+        result.push([
+          tickIndexToPrice(new BigNumber(lowerIndexBound)),
+          tickIndexToPrice(new BigNumber(upperIndexBound)),
+          reserveA,
+          reserveB,
+        ]);
+      } else if (reserveB.isGreaterThan(0)) {
+        result.push([
+          tickIndexToPrice(new BigNumber(lowerIndexBound)),
+          tickIndexToPrice(new BigNumber(upperIndexBound)),
+          reserveA,
+          reserveB,
+        ]);
       }
       return result;
     },
