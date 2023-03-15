@@ -135,19 +135,19 @@ export function useDeposit(): [
         }
         const forward = pairs?.[getPairID(tokenA.address, tokenB.address)];
         const reverse = pairs?.[getPairID(tokenB.address, tokenA.address)];
-        const pairTicks = (forward || reverse)?.ticks;
+        const pairTicks = forward || reverse;
         const gasEstimate = filteredUserTicks.reduce((gasEstimate, tick) => {
           const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
             tick.tickIndex,
             tick.feeIndex
           );
           const existingTick =
-            tickIndex0 && tickIndex1
-              ? pairTicks?.find((pairTick) => {
-                  return (
-                    pairTick.tickIndex.isEqualTo(tickIndex0) ||
-                    pairTick.tickIndex.isEqualTo(tickIndex1)
-                  );
+            pairTicks && tickIndex0 !== undefined && tickIndex1 !== undefined
+              ? !!pairTicks.token0Ticks.find((pairTick) => {
+                  return pairTick.tickIndex.isEqualTo(tickIndex0);
+                }) &&
+                !!pairTicks.token1Ticks.find((pairTick) => {
+                  return pairTick.tickIndex.isEqualTo(tickIndex1);
                 })
               : undefined;
           // add 50000 for existing ticks

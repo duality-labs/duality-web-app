@@ -129,9 +129,12 @@ function Pool() {
   const valuesValid =
     !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
 
-  const { data: { ticks = [], token0, token1 } = {} } = useIndexerPairData(
-    tokenA?.address,
-    tokenB?.address
+  const { data: { token0Ticks = [], token1Ticks = [] } = {} } =
+    useIndexerPairData(tokenA?.address, tokenB?.address);
+
+  const ticks = useMemo<TickInfo[]>(
+    () => token0Ticks.concat(token1Ticks),
+    [token0Ticks, token1Ticks]
   );
 
   const currentPriceFromTicks = useCurrentPriceFromTicks(
@@ -139,39 +142,7 @@ function Pool() {
     tokenB?.address
   );
 
-  const invertedTokenOrder =
-    tokenA?.address === token1 && tokenB?.address === token0;
-
-  // note warning price, the price at which warning states should be shown
-  // for one-sided liquidity this is the extent of data to one side
-  const edgePrice =
-    useMemo(() => {
-      const allTicks = (ticks || [])
-        .filter(
-          (tick): tick is TickInfo =>
-            tick?.reserve0.isGreaterThan(0) || tick?.reserve1.isGreaterThan(0)
-        ) // filter to only ticks
-        .sort((a, b) => a.price.comparedTo(b.price))
-        .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
-
-      const isReserveAZero = allTicks.every(([, reserveA]) =>
-        reserveA.isZero()
-      );
-      const isReserveBZero = allTicks.every(([, , reserveB]) =>
-        reserveB.isZero()
-      );
-
-      const startTick = allTicks[0];
-      const endTick = allTicks[allTicks.length - 1];
-      const edgePrice =
-        (isReserveAZero && startTick?.[0]) ||
-        (isReserveBZero && endTick?.[0]) ||
-        undefined;
-      return (
-        edgePrice &&
-        (invertedTokenOrder ? new BigNumber(1).dividedBy(edgePrice) : edgePrice)
-      );
-    }, [ticks, invertedTokenOrder]) || currentPriceFromTicks;
+  const edgePrice = currentPriceFromTicks;
 
   // start with a default range of nothing, but is should be quickly set
   // after price information becomes available
