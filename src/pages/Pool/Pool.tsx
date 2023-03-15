@@ -46,7 +46,7 @@ import {
   formatMaxSignificantDigits,
   formatPrice,
 } from '../../lib/utils/number';
-import { priceToTickIndex } from '../../lib/web3/utils/ticks';
+import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 
@@ -115,10 +115,63 @@ function Pool() {
     }
   }, [tokenB, tokenList]);
 
+  const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
+  const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
+  const values = useMemo(
+    (): [string, string] => [valueA, valueB],
+    [valueA, valueB]
+  );
+
+  const isValueAZero = new BigNumber(valueA).isZero();
+  const isValueBZero = new BigNumber(valueB).isZero();
+
+  const [valuesConfirmed, setValuesConfirmed] = useState(false);
+  const valuesValid =
+    !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
+
+  const { data: { ticks = [], token0, token1 } = {} } = useIndexerPairData(
+    tokenA?.address,
+    tokenB?.address
+  );
+
   const currentPriceFromTicks = useCurrentPriceFromTicks(
     tokenA?.address,
     tokenB?.address
   );
+
+  const invertedTokenOrder =
+    tokenA?.address === token1 && tokenB?.address === token0;
+
+  // note warning price, the price at which warning states should be shown
+  // for one-sided liquidity this is the extent of data to one side
+  const edgePrice =
+    useMemo(() => {
+      const allTicks = (ticks || [])
+        .filter(
+          (tick): tick is TickInfo =>
+            tick?.reserve0.isGreaterThan(0) || tick?.reserve1.isGreaterThan(0)
+        ) // filter to only ticks
+        .sort((a, b) => a.price.comparedTo(b.price))
+        .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
+
+      const isReserveAZero = allTicks.every(([, reserveA]) =>
+        reserveA.isZero()
+      );
+      const isReserveBZero = allTicks.every(([, , reserveB]) =>
+        reserveB.isZero()
+      );
+
+      const startTick = allTicks[0];
+      const endTick = allTicks[allTicks.length - 1];
+      const edgePrice =
+        (isReserveAZero && startTick?.[0]) ||
+        (isReserveBZero && endTick?.[0]) ||
+        undefined;
+      return (
+        edgePrice &&
+        (invertedTokenOrder ? new BigNumber(1).dividedBy(edgePrice) : edgePrice)
+      );
+    }, [ticks, invertedTokenOrder]) || currentPriceFromTicks;
 
   // start with a default range of nothing, but is should be quickly set
   // after price information becomes available
@@ -168,28 +221,6 @@ function Pool() {
     },
     [pairPriceMin, pairPriceMax]
   );
-
-  const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
-  const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
-  const values = useMemo(
-    (): [string, string] => [valueA, valueB],
-    [valueA, valueB]
-  );
-
-  const isValueAZero = new BigNumber(valueA).isZero();
-  const isValueBZero = new BigNumber(valueB).isZero();
-
-  const [valuesConfirmed, setValuesConfirmed] = useState(false);
-  const valuesValid =
-    !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
-
-  const { data: { ticks = [], token0, token1 } = {} } = useIndexerPairData(
-    tokenA?.address,
-    tokenB?.address
-  );
-
-  const invertedTokenOrder =
-    tokenA?.address === token1 && tokenB?.address === token0;
 
   const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
     defaultLiquidityShape
@@ -256,37 +287,6 @@ function Pool() {
     const userTicks = userTicksOrCallback;
     setUserTicksUnprotected(userTicks.map(restrictTickPrices));
   }, []);
-
-  // note warning price, the price at which warning states should be shown
-  // for one-sided liquidity this is the extent of data to one side
-  const edgePrice =
-    useMemo(() => {
-      const allTicks = (ticks || [])
-        .filter(
-          (tick): tick is TickInfo =>
-            tick?.reserve0.isGreaterThan(0) || tick?.reserve1.isGreaterThan(0)
-        ) // filter to only ticks
-        .sort((a, b) => a.price.comparedTo(b.price))
-        .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
-
-      const isReserveAZero = allTicks.every(([, reserveA]) =>
-        reserveA.isZero()
-      );
-      const isReserveBZero = allTicks.every(([, , reserveB]) =>
-        reserveB.isZero()
-      );
-
-      const startTick = allTicks[0];
-      const endTick = allTicks[allTicks.length - 1];
-      const edgePrice =
-        (isReserveAZero && startTick?.[0]) ||
-        (isReserveBZero && endTick?.[0]) ||
-        undefined;
-      return (
-        edgePrice &&
-        (invertedTokenOrder ? new BigNumber(1).dividedBy(edgePrice) : edgePrice)
-      );
-    }, [ticks, invertedTokenOrder]) || currentPriceFromTicks;
 
   const [invertTokenOrder, setInvertTokenOrder] = useState<boolean>(() => {
     return edgePrice?.isLessThan(1) || false;
@@ -415,8 +415,7 @@ function Pool() {
           tokenA,
           tokenB,
           new BigNumber(feeType.fee),
-          normalizedTicks,
-          invertTokenOrder
+          normalizedTicks
         );
       }
     },
@@ -428,7 +427,6 @@ function Pool() {
       feeType,
       userTicks,
       sendDepositRequest,
-      invertTokenOrder,
     ]
   );
 
@@ -472,40 +470,33 @@ function Pool() {
   const tickCount = Number(precision || 1);
   useLayoutEffect(() => {
     function getUserTicks(): TickGroup {
-      const tickStart = new BigNumber(rangeMin);
-      const tickEnd = new BigNumber(rangeMax);
+      const indexMin = priceToTickIndex(new BigNumber(rangeMin)).toNumber();
+      const indexMax = priceToTickIndex(new BigNumber(rangeMax)).toNumber();
       // set multiple ticks across the range
       const feeIndex = feeType ? feeTypes.indexOf(feeType) : -1;
       if (
         tokenA &&
         tokenB &&
         tickCount > 1 &&
-        tickEnd.isGreaterThan(tickStart) &&
+        indexMin !== undefined &&
+        indexMax !== undefined &&
+        indexMax > indexMin &&
         feeType &&
         feeIndex >= 0
       ) {
         const tokenAmountA = new BigNumber(values[0]);
         const tokenAmountB = new BigNumber(values[1]);
-        // spread evenly after adding padding on each side
-        if (tickStart.isZero() || tickEnd.isZero()) return [];
 
-        // space new ticks by a multiplication ratio gap
-        // use Math.pow becuse BigNumber does not support logarithm calculation
-        // todo: use BigNumber logarithm compatible library to more accurately calculate tick spacing,
-        //       with many ticks the effect of this precision may be quite noticable
-        const tickGapRatio = new BigNumber(
-          Math.pow(tickEnd.dividedBy(tickStart).toNumber(), 1 / (tickCount - 1))
-        );
+        // space new ticks linearly across tick (which is exponentially across price)
         const tickCounts: [number, number] = [0, 0];
         const tickPrices = Array.from({ length: tickCount }).reduceRight<
           Tick[]
         >((result, _, index, tickPrices) => {
-          const lastPrice: BigNumber | undefined = result[0]?.price;
-          const price = lastPrice?.isLessThan(edgePrice || 0)
-            ? // calculate price from left (to have exact left value)
-              tickStart.multipliedBy(tickGapRatio.exponentiatedBy(index))
-            : // calculate price from right (to have exact right value)
-              lastPrice?.dividedBy(tickGapRatio) ?? tickEnd;
+          const tickIndex = Math.round(
+            indexMin +
+              (index * (indexMax - indexMin)) / Math.max(1, tickCount - 1)
+          );
+          const price = tickIndexToPrice(new BigNumber(tickIndex));
 
           // choose whether token A or B should be added for the tick at this price
           const invertToken =
@@ -520,13 +511,12 @@ function Pool() {
                 index < tickPrices.length / 2;
           // add to count
           tickCounts[invertToken ? 0 : 1] += 1;
-          const roundedPrice = new BigNumber(formatPrice(price.toFixed()));
           return [
             {
               reserveA: new BigNumber(invertToken ? 1 : 0),
               reserveB: new BigNumber(invertToken ? 0 : 1),
-              price: roundedPrice,
-              tickIndex: priceToTickIndex(roundedPrice).toNumber(),
+              price: price,
+              tickIndex: tickIndex,
               fee: new BigNumber(feeType.fee),
               feeIndex: feeIndex,
               tokenA: tokenA,
@@ -587,23 +577,21 @@ function Pool() {
       else if (
         tokenA &&
         tokenB &&
-        (tickCount === 1 || tickStart.isEqualTo(tickEnd)) &&
+        indexMin !== undefined &&
+        indexMax !== undefined &&
+        indexMin === indexMax &&
         feeType &&
         feeIndex &&
         feeIndex >= 0
       ) {
-        const price = tickStart.plus(tickEnd).dividedBy(2);
-        const roundedPrice = new BigNumber(formatPrice(price.toFixed()));
-        const isValueA =
-          !isValueAZero && !isValueBZero
-            ? edgePrice?.isGreaterThan(price) || isValueAZero
-            : !isValueAZero;
+        const tickIndex = Math.round((indexMin + indexMax) / 2);
+        const price = tickIndexToPrice(new BigNumber(tickIndex));
         return [
           {
-            reserveA: new BigNumber(isValueA ? 1 : 0),
-            reserveB: new BigNumber(isValueA ? 0 : 1),
-            price: roundedPrice,
-            tickIndex: priceToTickIndex(roundedPrice).toNumber(),
+            reserveA: new BigNumber(!isValueAZero ? 1 : 0),
+            reserveB: new BigNumber(!isValueBZero ? 1 : 0),
+            price: price,
+            tickIndex: tickIndex,
             fee: new BigNumber(feeType.fee),
             feeIndex: feeIndex,
             tokenA: tokenA,

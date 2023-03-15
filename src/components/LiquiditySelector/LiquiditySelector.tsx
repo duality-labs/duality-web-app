@@ -13,7 +13,7 @@ import useResizeObserver from '@react-hook/resize-observer';
 
 import { formatAmount, formatPrice } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
-import { priceToTickIndex } from '../../lib/web3/utils/ticks';
+import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
@@ -59,12 +59,12 @@ export interface Tick {
 }
 export type TickGroup = Array<Tick>;
 type TickGroupBucketsEmpty = Array<
-  [lowerBound: BigNumber, upperBound: BigNumber]
+  [lowerIndexBound: number, upperIndexBound: number]
 >;
 type TickGroupBucketsFilled = Array<
   [
-    lowerBound: BigNumber,
-    upperBound: BigNumber,
+    lowerPriceBound: BigNumber,
+    upperPriceBound: BigNumber,
     reserveA: BigNumber,
     reserveB: BigNumber
   ]
@@ -353,76 +353,95 @@ export default function LiquiditySelector({
     })
   );
 
-  const bucketCount =
-    (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
-    1; // add bucket to account for splitting bucket on current price
-  const bucketRatio = useMemo(() => {
-    // get bounds
-    const xMin = graphStart.sd(1, BigNumber.ROUND_DOWN);
-    const xMax = graphEnd.sd(1, BigNumber.ROUND_UP);
-    const xWidth = xMax.dividedBy(xMin);
+  // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
+  const startIsEnd = graphEnd.isLessThanOrEqualTo(graphStart);
+  const xMin = (startIsEnd ? graphStart.dividedBy(10) : graphStart).toNumber();
+  const xMax = (startIsEnd ? graphEnd.multipliedBy(10) : graphEnd).toNumber();
 
-    /**
-     * The "width" of the buckets is a ratio that is applied bucketCount times up to the total width:
-     *   xWidth = x^bucketCountAdjusted
-     *   x^bucketCountAdjusted) = xWidth
-     *   ln(x^bucketCountAdjusted) = ln(xWidth)
-     *   ln(x)*bucketCountAdjusted = ln(xWidth)
-     *   ln(x) = ln(xWidth)/bucketCountAdjusted
-     *   x = e^(ln(xWidth)/bucketCountAdjusted)
-     */
-    return Math.exp(Math.log(xWidth.toNumber()) / bucketCount) || 1; // set at least 1
-    // note: BigNumber cannot handle logarithms so it cannot calculate this
-  }, [graphStart, graphEnd, bucketCount]);
+  const [viewableStart, viewableEnd] = useMemo(() => {
+    // get bounds
+    const xTotalRatio = xMax / xMin;
+    const xWidth = Math.max(
+      1,
+      containerSize.width - leftPadding - rightPadding
+    );
+    return [
+      new BigNumber(xMin / Math.pow(xTotalRatio, leftPadding / xWidth)),
+      new BigNumber(xMax * Math.pow(xTotalRatio, rightPadding / xWidth)),
+    ];
+  }, [xMin, xMax, containerSize.width]);
 
   // calculate bucket extents
-  const emptyBuckets = useMemo<
-    [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
-  >(() => {
-    // skip unknown bucket placements
-    if (!dataStart || !dataEnd) {
-      return [[], []];
-    }
-    // get bounds
-    const xMin = dataStart;
-    const xMax = dataEnd;
-    // get middle 'break' point which will separate bucket sections
-    const breakPoint = edgePrice || currentPriceFromTicks;
-    // skip if there is no breakpoint
-    if (!breakPoint) {
-      return [[], []];
-    }
-    const tokenABuckets = Array.from({ length: bucketCount }).reduce<
-      [min: BigNumber, max: BigNumber][]
-    >((result) => {
-      const newValue = result[0]?.[0] ?? breakPoint;
-      return newValue.isLessThanOrEqualTo(xMin)
-        ? // return finished array
-          result
-        : // prepend new bucket
-          [[newValue.dividedBy(bucketRatio), newValue], ...result];
-    }, []);
-    const tokenBBuckets = Array.from({ length: bucketCount }).reduce<
-      [min: BigNumber, max: BigNumber][]
-    >((result) => {
-      const newValue = result[result.length - 1]?.[1] ?? breakPoint;
-      return newValue.isGreaterThanOrEqualTo(xMax)
-        ? // return finished array
-          result
-        : // append new bucket
-          [...result, [newValue, newValue.multipliedBy(bucketRatio)]];
-    }, []);
+  const getEmptyBuckets = useCallback<
+    (
+      // get bounds
+      xMin: BigNumber,
+      xMax: BigNumber
+    ) => [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
+  >(
+    (xMin, xMax) => {
+      // get middle 'break' point which will separate bucket sections
+      const breakPoint = edgePrice || currentPriceFromTicks;
+      // skip if there is no breakpoint
+      if (!breakPoint) {
+        return [[], []];
+      }
 
-    // return concantenated buckes
-    return [tokenABuckets, tokenBBuckets];
-  }, [
-    edgePrice,
-    currentPriceFromTicks,
-    bucketRatio,
-    bucketCount,
-    dataStart,
-    dataEnd,
-  ]);
+      const indexNow = priceToTickIndex(breakPoint).toNumber();
+      const indexMin = priceToTickIndex(xMin, 'floor').toNumber();
+      const indexMax = priceToTickIndex(xMax, 'ceil').toNumber();
+      const currentPriceIsWithinView =
+        indexMin <= indexNow && indexNow <= indexMax;
+
+      // estimate number of buckets needed
+      const bucketCount =
+        (Math.ceil(containerSize.width / bucketWidth) ?? 1) + // default to 1 bucket if none
+        (currentPriceIsWithinView ? 1 : 0); // add bucket to account for splitting bucket on current price within view
+
+      // find number of indexes on each side to show
+      const tokenAIndexCount =
+        indexNow >= indexMin ? Math.min(indexNow, indexMax) - indexMin + 1 : 0;
+      const tokenBIndexCount =
+        indexNow <= indexMax ? indexMax - Math.max(indexNow, indexMin) + 1 : 0;
+
+      // find number of buckets on each side to show
+      const indexTotalCount = tokenAIndexCount + tokenBIndexCount;
+      const indexesPerBucketCount = Math.ceil(indexTotalCount / bucketCount);
+      const tokenABucketCount = Math.ceil(
+        tokenAIndexCount / indexesPerBucketCount
+      );
+      const tokenBBucketCount = Math.ceil(
+        tokenBIndexCount / indexesPerBucketCount
+      );
+
+      // compute the limits of tokenA buckets
+      const tokenABuckets = Array.from({
+        length: Math.max(0, tokenABucketCount),
+      }).reduce<[min: number, max: number][]>((result) => {
+        const newValue = result[0]?.[0] ?? Math.min(indexMax, indexNow);
+        // prepend new bucket
+        return [[newValue - indexesPerBucketCount, newValue], ...result];
+      }, []);
+
+      // compute the limits of tokenB buckets
+      const tokenBBuckets = Array.from({
+        length: Math.max(0, tokenBBucketCount),
+      }).reduce<[min: number, max: number][]>((result) => {
+        const newValue =
+          result[result.length - 1]?.[1] ?? Math.max(indexMin, indexNow);
+        // append new bucket
+        return [...result, [newValue, newValue + indexesPerBucketCount]];
+      }, []);
+
+      // return concantenated buckets
+      return [tokenABuckets, tokenBBuckets];
+    },
+    [edgePrice, currentPriceFromTicks, containerSize.width]
+  );
+
+  const emptyBuckets = useMemo(() => {
+    return getEmptyBuckets(viewableStart, viewableEnd);
+  }, [getEmptyBuckets, viewableStart, viewableEnd]);
 
   // calculate histogram values
   const feeTickBuckets = useMemo<
@@ -446,10 +465,6 @@ export default function LiquiditySelector({
       }, 0);
   }, [emptyBuckets, allTicks]);
 
-  // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
-  const startIsEnd = graphEnd.isLessThanOrEqualTo(graphStart);
-  const xMin = (startIsEnd ? graphStart.minus(1e-18) : graphStart).toNumber();
-  const xMax = (startIsEnd ? graphEnd.plus(1e-18) : graphEnd).toNumber();
   const plotX = useCallback(
     (x: number): number => {
       const width = containerSize.width - leftPadding - rightPadding;
@@ -621,7 +636,6 @@ export default function LiquiditySelector({
           setRangeMin={setRangeMin}
           setRangeMax={setRangeMax}
           plotXinverse={plotXinverse}
-          bucketRatio={bucketRatio}
         />
       )}
       <Axis
@@ -773,17 +787,15 @@ function fillBuckets(
     ({ reserveA, reserveB }) => !reserveA.isZero() || !reserveB.isZero()
   );
   return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
-    (result, [lowerBound, upperBound]) => {
+    (result, [lowerIndexBound, upperIndexBound]) => {
       const [reserveA, reserveB] = ticks.reduceRight(
-        (result, { price, reserveA, reserveB }, index, ticks) => {
+        (result, { tickIndex, reserveA, reserveB }, index, ticks) => {
           // match tokens unevenly (token0 "left-aligned" / token1 "right-aligned")
           // as we bucket ticks away from the central x-axis point
           const matchToken1 =
-            price.isGreaterThanOrEqualTo(lowerBound) &&
-            price.isLessThan(upperBound);
+            tickIndex >= lowerIndexBound && tickIndex < upperIndexBound;
           const matchToken0 =
-            price.isGreaterThan(lowerBound) &&
-            price.isLessThanOrEqualTo(upperBound);
+            tickIndex > lowerIndexBound && tickIndex <= upperIndexBound;
           const addToken0 =
             matchToken0 && !reserveA.isZero() ? reserveA : undefined;
           const addToken1 =
@@ -800,8 +812,21 @@ function fillBuckets(
         },
         [new BigNumber(0), new BigNumber(0)]
       );
-      if (reserveA || reserveB) {
-        result.push([lowerBound, upperBound, reserveA, reserveB]);
+      // place tokenA buckets to the left of the current price
+      if (reserveA.isGreaterThan(0)) {
+        result.push([
+          tickIndexToPrice(new BigNumber(lowerIndexBound)),
+          tickIndexToPrice(new BigNumber(upperIndexBound)),
+          reserveA,
+          reserveB,
+        ]);
+      } else if (reserveB.isGreaterThan(0)) {
+        result.push([
+          tickIndexToPrice(new BigNumber(lowerIndexBound)),
+          tickIndexToPrice(new BigNumber(upperIndexBound)),
+          reserveA,
+          reserveB,
+        ]);
       }
       return result;
     },
@@ -862,7 +887,6 @@ function TicksArea({
   setRangeMin,
   setRangeMax,
   plotXinverse,
-  bucketRatio,
   className,
 }: {
   currentPrice: BigNumber | undefined;
@@ -876,7 +900,6 @@ function TicksArea({
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
   plotXinverse: (x: number) => number;
-  bucketRatio: number;
   className?: string;
 }) {
   const startTick = ticks?.[0];
