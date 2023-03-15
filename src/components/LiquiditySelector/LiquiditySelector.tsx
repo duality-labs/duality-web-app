@@ -18,12 +18,11 @@ import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
 import { Token } from '../TokenPicker/hooks';
-import { TickInfo } from '../../lib/web3/indexerProvider';
+import { TickInfo, useIndexerPairData } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
 
 export interface LiquiditySelectorProps {
-  ticks: TickInfo[] | undefined;
   tokenA: Token;
   tokenB: Token;
   feeTier: number | undefined;
@@ -91,7 +90,6 @@ const bottomPadding = 26; // height of axis-ticks element
 const poleWidth = 8;
 
 export default function LiquiditySelector({
-  ticks = [],
   tokenA,
   tokenB,
   feeTier,
@@ -111,6 +109,14 @@ export default function LiquiditySelector({
   oneSidedLiquidity = false,
   ControlsComponent,
 }: LiquiditySelectorProps) {
+  const { data: { token0Ticks = [], token1Ticks = [] } = {} } =
+    useIndexerPairData(tokenA?.address, tokenB?.address);
+
+  const ticks = useMemo<TickInfo[]>(
+    () => token0Ticks.concat(token1Ticks),
+    [token0Ticks, token1Ticks]
+  );
+
   // translate ticks from token0/1 to tokenA/B
   const allTicks: TickGroup = useMemo(() => {
     return (

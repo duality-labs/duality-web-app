@@ -17,12 +17,7 @@ import {
   faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
 
-import {
-  getBalance,
-  TickInfo,
-  useBankBalances,
-  useIndexerPairData,
-} from '../../lib/web3/indexerProvider';
+import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 
 import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -135,14 +130,6 @@ function Pool() {
   const [valuesConfirmed, setValuesConfirmed] = useState(false);
   const valuesValid =
     !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
-
-  const { data: { token0Ticks = [], token1Ticks = [] } = {} } =
-    useIndexerPairData(tokenA?.address, tokenB?.address);
-
-  const ticks = useMemo<TickInfo[]>(
-    () => token0Ticks.concat(token1Ticks),
-    [token0Ticks, token1Ticks]
-  );
 
   const currentPriceFromTicks = useCurrentPriceFromTicks(
     tokenA?.address,
@@ -867,7 +854,6 @@ function Pool() {
                   rangeMax={rangeMax}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
-                  ticks={ticks}
                   userTickSelected={userTickSelected}
                   setUserTickSelected={setUserTickSelected}
                   feeTier={feeType?.fee}
