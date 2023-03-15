@@ -179,13 +179,13 @@ function Pool() {
   const [rangeMax, setRangeMaxUnprotected] = useState('1');
   const [pairPriceMin, pairPriceMax] = useMemo(
     () =>
-      currentPriceFromTicks
+      edgePrice
         ? [
-            formatPrice(currentPriceFromTicks.dividedBy(1000).toFixed()),
-            formatPrice(currentPriceFromTicks.multipliedBy(1000).toFixed()),
+            formatPrice(edgePrice.dividedBy(1000).toFixed()),
+            formatPrice(edgePrice.multipliedBy(1000).toFixed()),
           ]
         : [priceMin, priceMax],
-    [currentPriceFromTicks]
+    [edgePrice]
   );
   // protect price range extents
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
