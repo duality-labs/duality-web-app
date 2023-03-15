@@ -54,7 +54,7 @@ export default function PoolsTableCard({
   const tokenList = useTokens();
   const { data: pairsData } = useIndexerData();
   const allPairsList = useMemo<
-    Array<[string, Token, Token, undefined, TickInfo[]]>
+    Array<[string, Token, Token, undefined, TickInfo[], TickInfo[]]>
   >(() => {
     const tokenListByAddress = tokenList.reduce<{ [address: string]: Token }>(
       (acc, token) => {
@@ -67,14 +67,15 @@ export default function PoolsTableCard({
     );
     return pairsData
       ? Object.entries(pairsData)
-          .map<[string, Token, Token, undefined, TickInfo[]]>(
-            ([pairId, { token0, token1, ticks }]) => {
+          .map<[string, Token, Token, undefined, TickInfo[], TickInfo[]]>(
+            ([pairId, { token0, token1, token0Ticks, token1Ticks }]) => {
               return [
                 pairId,
                 tokenListByAddress[token0],
                 tokenListByAddress[token1],
                 undefined,
-                ticks,
+                token0Ticks,
+                token1Ticks,
               ];
             }
           )
@@ -89,16 +90,17 @@ export default function PoolsTableCard({
         Token,
         Token,
         TickShareValue[] | undefined,
+        TickInfo[] | undefined,
         TickInfo[] | undefined
       ]
     >
   >(() => {
     return shareValueMap
       ? Object.entries(shareValueMap).map<
-          [string, Token, Token, TickShareValue[], undefined]
+          [string, Token, Token, TickShareValue[], undefined, undefined]
         >(([pairId, shareValues]) => {
           const [{ token0, token1 }] = shareValues;
-          return [pairId, token0, token1, shareValues, undefined];
+          return [pairId, token0, token1, shareValues, undefined, undefined];
         })
       : [];
   }, [shareValueMap]);
@@ -115,6 +117,7 @@ export default function PoolsTableCard({
         Token,
         Token,
         TickShareValue[] | undefined,
+        TickInfo[] | undefined,
         TickInfo[] | undefined
       ]
     >
@@ -185,7 +188,14 @@ export default function PoolsTableCard({
             </thead>
             <tbody>
               {filteredPoolsList.map(
-                ([pairId, token0, token1, shareValues, ticks]) => {
+                ([
+                  pairId,
+                  token0,
+                  token1,
+                  shareValues,
+                  token0Ticks,
+                  token1Ticks,
+                ]) => {
                   const onRowClick:
                     | MouseEventHandler<HTMLButtonElement>
                     | undefined = onTokenPairClick
@@ -212,7 +222,8 @@ export default function PoolsTableCard({
                       key={pairId}
                       token0={token0}
                       token1={token1}
-                      ticks={ticks}
+                      token0Ticks={token0Ticks}
+                      token1Ticks={token1Ticks}
                       onClick={onRowClick}
                     />
                   );
@@ -250,12 +261,14 @@ export default function PoolsTableCard({
 function PairRow({
   token0,
   token1,
-  ticks = [],
+  token0Ticks = [],
+  token1Ticks = [],
   onClick,
 }: {
   token0: Token;
   token1: Token;
-  ticks?: Array<TickInfo>;
+  token0Ticks?: Array<TickInfo>;
+  token1Ticks?: Array<TickInfo>;
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   const {
@@ -267,29 +280,31 @@ function PairRow({
       new BigNumber(0),
     ];
     if (price0 && price1) {
-      return ticks.reduce<[BigNumber, BigNumber]>(([value0, value1], tick) => {
-        return [
-          value0.plus(
+      return [
+        token0Ticks.reduce<BigNumber>((acc, tick) => {
+          return acc.plus(
             getAmountInDenom(
               token0,
               tick.reserve0.multipliedBy(price0),
               token0.address,
               token0.display
             ) || 0
-          ),
-          value1.plus(
+          );
+        }, initialValues[0]),
+        token1Ticks.reduce<BigNumber>((acc, tick) => {
+          return acc.plus(
             getAmountInDenom(
               token1,
               tick.reserve1.multipliedBy(price1),
               token1.address,
               token1.display
             ) || 0
-          ),
-        ];
-      }, initialValues);
+          );
+        }, initialValues[1]),
+      ];
     }
     return initialValues;
-  }, [ticks, token0, token1, price0, price1]);
+  }, [token0Ticks, token1Ticks, token0, token1, price0, price1]);
 
   if (token0 && token1 && price0 && price1) {
     return (

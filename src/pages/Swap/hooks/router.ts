@@ -24,7 +24,6 @@ export function router(
   let error: SwapError | false = false;
 
   // find pair by searching both directions in the current state
-  // the pairs are sorted by the backend not here
   const [forward, reverse] = hasMatchingPairOfOrder(state, tokenA, tokenB);
 
   if (!forward && !reverse) {
@@ -32,11 +31,12 @@ export function router(
     error.insufficientLiquidity = true;
     throw error;
   } else {
-    const exactPair = forward
+    const { token0Ticks, token1Ticks } = forward
       ? state[getPairID(tokenA, tokenB)]
       : state[getPairID(tokenB, tokenA)];
-    // note: sorting can be done earlier check this commit description
-    const sortedTicks = exactPair.ticks
+    // todo: the calculateOut can be done more efficiently using separated tick lists
+    const sortedTicks = token0Ticks
+      .concat(token1Ticks)
       .filter((tick) => !tick.reserve0.isZero() || !tick.reserve1.isZero())
       .sort(
         forward
@@ -62,7 +62,8 @@ export function router(
           amountIn: amountIn,
           sortedTicks,
         });
-      const maxOut = sortedTicks.reduce((result, tick) => {
+      const ticksOut = reverse ? token0Ticks : token1Ticks;
+      const maxOut = ticksOut.reduce((result, tick) => {
         return result.plus(reverse ? tick.reserve0 : tick.reserve1);
       }, new BigNumber(0));
 

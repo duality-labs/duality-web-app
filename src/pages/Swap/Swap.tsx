@@ -137,7 +137,9 @@ function Swap() {
             routerResult.tickIndexIn.negated().toNumber(),
             routerResult.tickIndexOut.negated().toNumber()
           );
-        const { ticks, token0 } = pair || {};
+        const { token0Ticks, token1Ticks, token0 } = pair || {};
+        const forward = result.tokenIn === token0;
+        const ticks = forward ? token1Ticks : token0Ticks;
         const ticksPassed =
           (tickMin !== undefined &&
             tickMax !== undefined &&
@@ -148,7 +150,6 @@ function Swap() {
               );
             })) ||
           [];
-        const forward = result.tokenIn === token0;
         const ticksUsed =
           ticksPassed?.filter(
             forward
