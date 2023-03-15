@@ -155,16 +155,15 @@ function Pool() {
   // after price information becomes available
   const [rangeMin, setRangeMinUnprotected] = useState('1');
   const [rangeMax, setRangeMaxUnprotected] = useState('1');
-  const [pairPriceMin, pairPriceMax] = useMemo(
-    () =>
-      edgePrice
-        ? [
-            formatPrice(edgePrice.dividedBy(1000).toFixed()),
-            formatPrice(edgePrice.multipliedBy(1000).toFixed()),
-          ]
-        : [priceMin, priceMax],
-    [edgePrice]
-  );
+  const [pairPriceMin, pairPriceMax] = useMemo(() => {
+    const spreadFactor = 1000;
+    return edgePrice
+      ? [
+          formatPrice(edgePrice.dividedBy(spreadFactor).toFixed()),
+          formatPrice(edgePrice.multipliedBy(spreadFactor).toFixed()),
+        ]
+      : [priceMin, priceMax];
+  }, [edgePrice]);
   // protect price range extents
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
