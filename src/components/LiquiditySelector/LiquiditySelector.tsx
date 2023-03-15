@@ -57,10 +57,24 @@ export interface Tick {
   tokenB: Token;
 }
 export type TickGroup = Array<Tick>;
+
+interface TokenTick {
+  reserve: BigNumber;
+  tickIndex: number;
+  price: BigNumber;
+  fee: BigNumber;
+  feeIndex: number;
+  token: Token;
+}
+type TokenTickGroup = Array<TokenTick>;
+
 type TickGroupBucketsEmpty = Array<
   [lowerIndexBound: number, upperIndexBound: number]
 >;
 type TickGroupBucketsFilled = Array<
+  [lowerPriceBound: BigNumber, upperPriceBound: BigNumber, reserve: BigNumber]
+>;
+type TickGroupMergedBucketsFilled = Array<
   [
     lowerPriceBound: BigNumber,
     upperPriceBound: BigNumber,
@@ -109,66 +123,65 @@ export default function LiquiditySelector({
   oneSidedLiquidity = false,
   ControlsComponent,
 }: LiquiditySelectorProps) {
-  const { data: { token0Ticks = [], token1Ticks = [] } = {} } =
-    useIndexerPairData(tokenA?.address, tokenB?.address);
+  const {
+    data: {
+      token0Ticks = [],
+      token1Ticks = [],
+      token0: token0Address,
+      token1: token1Address,
+    } = {},
+  } = useIndexerPairData(tokenA?.address, tokenB?.address);
 
-  const ticks = useMemo<TickInfo[]>(
-    () => token0Ticks.concat(token1Ticks),
-    [token0Ticks, token1Ticks]
-  );
+  const [forward, reverse] = [
+    token0Address === tokenA?.address && token1Address === tokenB?.address,
+    token1Address === tokenA?.address && token0Address === tokenB?.address,
+  ];
 
   // translate ticks from token0/1 to tokenA/B
-  const allTicks: TickGroup = useMemo(() => {
-    return (
-      ticks
-        // filter to only ticks that match our token set
-        .filter(
-          ({ token0, token1, reserve0, reserve1 }) =>
-            // check that there are reserves in this tick
-            (!reserve0.isZero() || !reserve1.isZero()) &&
-            // check the direction is either forward or reverse
-            ((token0 === tokenA && token1 === tokenB) ||
-              (token1 === tokenA && token0 === tokenB))
-        )
-        .map(
-          ({
-            token0,
-            token1,
-            reserve0,
-            reserve1,
-            tickIndex,
-            price,
+  const [tokenATicks, tokenBTicks]: [TokenTickGroup, TokenTickGroup] =
+    useMemo(() => {
+      function mapWith(isToken1: boolean | 0 | 1) {
+        return ({
+          token0,
+          token1,
+          reserve0,
+          reserve1,
+          tickIndex,
+          price,
+          fee,
+          feeIndex,
+        }: TickInfo): TokenTick => {
+          return {
+            token: isToken1 ? token1 : token0,
+            reserve: isToken1 ? reserve1 : reserve0,
+            tickIndex: (forward ? tickIndex : tickIndex.negated()).toNumber(),
+            price: forward ? price : new BigNumber(1).dividedBy(price),
             fee,
-            feeIndex,
-          }) => {
-            const forward = token0 === tokenA;
-            return {
-              tokenA: forward ? token0 : token1,
-              tokenB: forward ? token1 : token0,
-              reserveA: forward ? reserve0 : reserve1,
-              reserveB: forward ? reserve1 : reserve0,
-              tickIndex: (forward ? tickIndex : tickIndex.negated()).toNumber(),
-              price: forward ? price : new BigNumber(1).dividedBy(price),
-              fee,
-              feeIndex: feeIndex.toNumber(),
-            };
-          }
-        )
-        .sort((a, b) => a.price.comparedTo(b.price))
-    );
-  }, [ticks, tokenA, tokenB]);
+            feeIndex: feeIndex.toNumber(),
+          };
+        };
+      }
 
-  const isReserveAZero = allTicks.every(({ reserveA }) => reserveA.isZero());
-  const isReserveBZero = allTicks.every(({ reserveB }) => reserveB.isZero());
+      return forward || reverse
+        ? [
+            forward ? token0Ticks.map(mapWith(0)) : token1Ticks.map(mapWith(1)),
+            forward ? token1Ticks.map(mapWith(1)) : token0Ticks.map(mapWith(0)),
+          ]
+        : [[], []];
+    }, [token0Ticks, token1Ticks, forward, reverse]);
+
+  const isReserveAZero = tokenATicks.length === 0;
+  const isReserveBZero = tokenBTicks.length === 0;
 
   // collect tick information in a more useable form
-  const feeTicks: TickGroup = useMemo(() => {
+  const feeTicks: [TokenTickGroup, TokenTickGroup] = useMemo(() => {
+    const feeTierFilter = (tick: TokenTick) =>
+      feeTypes[tick.feeIndex]?.fee === feeTier;
     return !feeTier
-      ? allTicks
-      : allTicks
-          // filter to only fee tier ticks
-          .filter((tick) => feeTypes[tick.feeIndex]?.fee === feeTier);
-  }, [allTicks, feeTier]);
+      ? [tokenATicks, tokenBTicks]
+      : // filter to only fee tier ticks
+        [tokenATicks.filter(feeTierFilter), tokenBTicks.filter(feeTierFilter)];
+  }, [tokenATicks, tokenBTicks, feeTier]);
 
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
@@ -187,24 +200,24 @@ export default function LiquiditySelector({
 
   // note edge price, the price of the edge of one-sided liquidity
   const edgePrice = useMemo(() => {
-    const startTick = allTicks[0];
-    const endTick = allTicks[allTicks.length - 1];
+    const [tokenAEdgeTick]: (TokenTick | undefined)[] = tokenATicks;
+    const [tokenBEdgeTick]: (TokenTick | undefined)[] = tokenBTicks;
     return (
-      (isReserveAZero && startTick?.price) ||
-      (isReserveBZero && endTick?.price) ||
+      (isReserveAZero && tokenBEdgeTick?.price) ||
+      (isReserveBZero && tokenAEdgeTick?.price) ||
       undefined
     );
-  }, [isReserveAZero, isReserveBZero, allTicks]);
+  }, [isReserveAZero, isReserveBZero, tokenATicks, tokenBTicks]);
 
   // note warning price, the price at which warning states should be shown
   // for one-sided liquidity this is the extent of data to one side
   const warningPriceSingleSidedLiquidity = useMemo(() => {
-    const startTick = allTicks[0];
-    const endTick = allTicks[allTicks.length - 1];
+    const [tokenAEdgeTick]: (TokenTick | undefined)[] = tokenATicks;
+    const [tokenBEdgeTick]: (TokenTick | undefined)[] = tokenBTicks;
     return (
       (oneSidedLiquidity &&
-        ((isReserveAZero && !isUserTicksAZero && startTick?.price) ||
-          (isReserveBZero && !isUserTicksBZero && endTick?.price))) ||
+        ((isReserveAZero && !isUserTicksAZero && tokenBEdgeTick?.price) ||
+          (isReserveBZero && !isUserTicksBZero && tokenAEdgeTick?.price))) ||
       undefined
     );
   }, [
@@ -213,7 +226,8 @@ export default function LiquiditySelector({
     isReserveBZero,
     isUserTicksAZero,
     isUserTicksBZero,
-    allTicks,
+    tokenATicks,
+    tokenBTicks,
   ]);
 
   const warningPriceDoubleSidedLiquidity = useMemo(() => {
@@ -241,18 +255,12 @@ export default function LiquiditySelector({
     return graphEnd.isLessThan(defaultEndValue) ? defaultEndValue : graphEnd;
   }, [currentPriceFromTicks]);
 
-  const [dataStart, dataEnd] = useMemo(() => {
-    const { xMin, xMax } = allTicks.reduce<{
-      [key: string]: BigNumber | undefined;
-    }>((result, { price }) => {
-      if (result.xMin === undefined || price.isLessThan(result.xMin))
-        result.xMin = price;
-      if (result.xMax === undefined || price.isGreaterThan(result.xMax))
-        result.xMax = price;
-      return result;
-    }, {});
-    return [xMin, xMax];
-  }, [allTicks]);
+  const [dataStart, dataEnd] = useMemo<(BigNumber | undefined)[]>(() => {
+    return [
+      (tokenATicks[tokenATicks.length - 1] || tokenBTicks[0])?.price,
+      (tokenBTicks[tokenBTicks.length - 1] || tokenATicks[0])?.price,
+    ];
+  }, [tokenATicks, tokenBTicks]);
 
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
@@ -450,26 +458,25 @@ export default function LiquiditySelector({
   }, [getEmptyBuckets, viewableStart, viewableEnd]);
 
   // calculate histogram values
-  const feeTickBuckets = useMemo<
-    [TickGroupBucketsFilled, TickGroupBucketsFilled]
-  >(() => {
-    return [
-      fillBuckets(emptyBuckets[0], feeTicks),
-      fillBuckets(emptyBuckets[1], feeTicks),
-    ];
+  const feeTickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
+    return mergeBuckets(
+      fillBuckets(emptyBuckets[0], feeTicks[0], 'upper'),
+      fillBuckets(emptyBuckets[1], feeTicks[1], 'lower')
+    );
   }, [emptyBuckets, feeTicks]);
 
   const graphHeight = useMemo(() => {
     const allFeesTickBuckets = [
-      fillBuckets(emptyBuckets[0], allTicks),
-      fillBuckets(emptyBuckets[1], allTicks),
+      fillBuckets(emptyBuckets[0], tokenATicks, 'upper'),
+      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower'),
     ];
-    return allFeesTickBuckets
-      .flat()
-      .reduce((result, [lowerBound, upperBound, tokenAValue, tokenBValue]) => {
+    return mergeBuckets(allFeesTickBuckets[0], allFeesTickBuckets[1]).reduce(
+      (result, [lowerBound, upperBound, tokenAValue, tokenBValue]) => {
         return Math.max(result, tokenAValue.toNumber(), tokenBValue.toNumber());
-      }, 0);
-  }, [emptyBuckets, allTicks]);
+      },
+      0
+    );
+  }, [emptyBuckets, tokenATicks, tokenBTicks]);
 
   const plotX = useCallback(
     (x: number): number => {
@@ -602,14 +609,7 @@ export default function LiquiditySelector({
         />
       )}
       <TickBucketsGroup
-        className="left-ticks"
-        tickBuckets={feeTickBuckets[0]}
-        plotX={plotXBigNumber}
-        plotY={plotYBigNumber}
-      />
-      <TickBucketsGroup
-        className="right-ticks"
-        tickBuckets={feeTickBuckets[1]}
+        tickBuckets={feeTickBuckets}
         plotX={plotXBigNumber}
         plotY={plotYBigNumber}
       />
@@ -787,57 +787,82 @@ export default function LiquiditySelector({
 
 function fillBuckets(
   emptyBuckets: TickGroupBucketsEmpty,
-  originalTicks: Tick[]
+  originalTicks: TokenTick[],
+  matchSide: 'upper' | 'lower'
 ) {
-  const ticks = originalTicks.filter(
-    ({ reserveA, reserveB }) => !reserveA.isZero() || !reserveB.isZero()
-  );
+  const sideLower = matchSide === 'lower';
+  const ticks = originalTicks.filter(({ reserve }) => !reserve.isZero());
   return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
     (result, [lowerIndexBound, upperIndexBound]) => {
-      const [reserveA, reserveB] = ticks.reduceRight(
-        (result, { tickIndex, reserveA, reserveB }, index, ticks) => {
-          // match tokens unevenly (token0 "left-aligned" / token1 "right-aligned")
-          // as we bucket ticks away from the central x-axis point
-          const matchToken1 =
-            tickIndex >= lowerIndexBound && tickIndex < upperIndexBound;
-          const matchToken0 =
-            tickIndex > lowerIndexBound && tickIndex <= upperIndexBound;
-          const addToken0 =
-            matchToken0 && !reserveA.isZero() ? reserveA : undefined;
-          const addToken1 =
-            matchToken1 && !reserveB.isZero() ? reserveB : undefined;
+      const reserve = ticks.reduceRight(
+        (result, { tickIndex, reserve }, index, ticks) => {
+          const matchToken = sideLower
+            ? tickIndex >= lowerIndexBound && tickIndex < upperIndexBound
+            : tickIndex > lowerIndexBound && tickIndex <= upperIndexBound;
           // remove tick so it doesn't need to be iterated on again in next bucket
-          if (matchToken0) {
+          if (matchToken) {
             ticks.splice(index, 1);
+            return result.plus(reserve);
+          } else {
+            return result;
           }
-          const [sum0Value, sum1Value] = result;
-          return [
-            addToken0 ? sum0Value.plus(addToken0) : sum0Value,
-            addToken1 ? sum1Value.plus(addToken1) : sum1Value,
-          ];
         },
-        [new BigNumber(0), new BigNumber(0)]
+        new BigNumber(0)
       );
       // place tokenA buckets to the left of the current price
-      if (reserveA.isGreaterThan(0)) {
+      if (reserve.isGreaterThan(0)) {
         result.push([
           tickIndexToPrice(new BigNumber(lowerIndexBound)),
           tickIndexToPrice(new BigNumber(upperIndexBound)),
-          reserveA,
-          reserveB,
-        ]);
-      } else if (reserveB.isGreaterThan(0)) {
-        result.push([
-          tickIndexToPrice(new BigNumber(lowerIndexBound)),
-          tickIndexToPrice(new BigNumber(upperIndexBound)),
-          reserveA,
-          reserveB,
+          reserve,
         ]);
       }
       return result;
     },
     []
   );
+}
+
+function mergeBuckets(
+  tokenABuckets: TickGroupBucketsFilled,
+  tokenBBuckets: TickGroupBucketsFilled
+) {
+  const mergedTokenABuckets: TickGroupMergedBucketsFilled = tokenABuckets.map(
+    ([lowerBound, upperBound, reserve]) => {
+      return [lowerBound, upperBound, reserve, new BigNumber(0)];
+    }
+  );
+  const mergedTokenBBuckets: TickGroupMergedBucketsFilled = tokenBBuckets.map(
+    ([lowerBound, upperBound, reserve]) => {
+      return [lowerBound, upperBound, new BigNumber(0), reserve];
+    }
+  );
+
+  const middleABucket = mergedTokenABuckets.shift();
+  const middleBBucket = mergedTokenBBuckets.shift();
+
+  // find if there is a bucket of bounds that does contain reserves of A and B
+  if (
+    middleABucket &&
+    middleBBucket &&
+    middleABucket[0] === middleBBucket[0] &&
+    middleABucket[1] === middleBBucket[1]
+  ) {
+    // merge the one bucket that has reserves of both tokenA and tokenB
+    const middleBuckets: TickGroupMergedBucketsFilled = [
+      [middleABucket[0], middleABucket[1], middleABucket[2], middleBBucket[3]],
+    ];
+    return middleBuckets.concat(mergedTokenABuckets, mergedTokenBBuckets);
+  }
+  // else just return all parts as they are
+  else {
+    return ([] as TickGroupMergedBucketsFilled).concat(
+      middleABucket ? [middleABucket] : [],
+      mergedTokenABuckets,
+      middleBBucket ? [middleBBucket] : [],
+      mergedTokenBBuckets
+    );
+  }
 }
 
 function TicksBackgroundArea({
@@ -1542,7 +1567,7 @@ function TickBucketsGroup({
   className,
   ...rest
 }: {
-  tickBuckets: TickGroupBucketsFilled;
+  tickBuckets: TickGroupMergedBucketsFilled;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
   className?: string;
