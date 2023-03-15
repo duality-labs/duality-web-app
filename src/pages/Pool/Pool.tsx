@@ -55,10 +55,17 @@ import TokenPairLogos from '../../components/TokenPairLogos';
 import RadioInput from '../../components/RadioInput';
 
 // the default resolution for a number in 18 decimal places
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const {
+  REACT_APP__MAX_FRACTION_DIGITS = '',
+  REACT_APP__MAX_TICK_INDEXES = '',
+} = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
-const priceMin = Math.pow(10, -maxFractionDigits);
-const priceMax = Math.pow(10, +maxFractionDigits);
+const [
+  priceMinIndex = Number.MIN_SAFE_INTEGER,
+  priceMaxIndex = Number.MAX_SAFE_INTEGER,
+] = REACT_APP__MAX_TICK_INDEXES.split(',').map(Number).filter(Boolean);
+const priceMin = tickIndexToPrice(new BigNumber(priceMinIndex)).toNumber();
+const priceMax = tickIndexToPrice(new BigNumber(priceMaxIndex)).toNumber();
 const priceRangeLimits: [number, number] = [priceMin, priceMax];
 const defaultFee = '0.30%';
 const defaultLiquidityShape =
