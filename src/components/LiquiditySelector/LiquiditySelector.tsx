@@ -1031,47 +1031,6 @@ function TicksArea({
           />
         )}
       </g>
-      <g className="flag-line">
-        <line
-          className="line flag-joiner"
-          x1={plotX(rangeMinPrice).toFixed(3)}
-          x2={plotX(rangeMaxPrice).toFixed(3)}
-          y1={plotY(new BigNumber(0.7)).toFixed(3)}
-          y2={plotY(new BigNumber(0.7)).toFixed(3)}
-        />
-        {rangeMinPriceWarning && (
-          <line
-            className={[
-              'line flag-joiner flag-joiner--price-warning',
-              !(oneSidedLiquidity
-                ? rangeMinPriceWarning
-                : rangeMinPrice.isGreaterThan(rangeMinPriceWarning)) && 'hide',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            x1={plotX(rangeMinPriceWarning).toFixed(3)}
-            x2={plotX(rangeMinPrice).toFixed(3)}
-            y1={plotY(new BigNumber(0.7)).toFixed(3)}
-            y2={plotY(new BigNumber(0.7)).toFixed(3)}
-          />
-        )}
-        {rangeMaxPriceWarning && (
-          <line
-            className={[
-              'line flag-joiner flag-joiner--price-warning',
-              !(oneSidedLiquidity
-                ? rangeMaxPriceWarning
-                : rangeMaxPrice.isLessThan(rangeMaxPriceWarning)) && 'hide',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            x1={plotX(rangeMaxPrice).toFixed(3)}
-            x2={plotX(rangeMaxPriceWarning).toFixed(3)}
-            y1={plotY(new BigNumber(0.7)).toFixed(3)}
-            y2={plotY(new BigNumber(0.7)).toFixed(3)}
-          />
-        )}
-      </g>
       <g
         className={[
           'pole-b',
@@ -1156,6 +1115,47 @@ function TicksArea({
             height="40"
             rx={rounding}
             onMouseDown={startDragMax}
+          />
+        )}
+      </g>
+      <g className="flag-line">
+        <line
+          className="line flag-joiner"
+          x1={plotX(rangeMinPrice).toFixed(3)}
+          x2={plotX(rangeMaxPrice).toFixed(3)}
+          y1={plotY(new BigNumber(0.7)).toFixed(3)}
+          y2={plotY(new BigNumber(0.7)).toFixed(3)}
+        />
+        {rangeMinPriceWarning && (
+          <line
+            className={[
+              'line flag-joiner flag-joiner--price-warning',
+              !(oneSidedLiquidity
+                ? rangeMinPriceWarning
+                : rangeMinPrice.isGreaterThan(rangeMinPriceWarning)) && 'hide',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            x1={plotX(rangeMinPriceWarning).toFixed(3)}
+            x2={plotX(rangeMinPrice).toFixed(3)}
+            y1={plotY(new BigNumber(0.7)).toFixed(3)}
+            y2={plotY(new BigNumber(0.7)).toFixed(3)}
+          />
+        )}
+        {rangeMaxPriceWarning && (
+          <line
+            className={[
+              'line flag-joiner flag-joiner--price-warning',
+              !(oneSidedLiquidity
+                ? rangeMaxPriceWarning
+                : rangeMaxPrice.isLessThan(rangeMaxPriceWarning)) && 'hide',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            x1={plotX(rangeMaxPrice).toFixed(3)}
+            x2={plotX(rangeMaxPriceWarning).toFixed(3)}
+            y1={plotY(new BigNumber(0.7)).toFixed(3)}
+            y2={plotY(new BigNumber(0.7)).toFixed(3)}
           />
         )}
       </g>
