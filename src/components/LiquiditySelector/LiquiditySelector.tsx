@@ -230,33 +230,14 @@ export default function LiquiditySelector({
     return graphEnd.isLessThan(defaultEndValue) ? defaultEndValue : graphEnd;
   }, [edgePrice]);
 
+  // set and allow ephemeral setting of graph extents
+  // allow user ticks to reset the boundary of the graph
   const [dataStart, dataEnd] = useMemo<(BigNumber | undefined)[]>(() => {
     return [
       (tokenATicks[tokenATicks.length - 1] || tokenBTicks[0])?.price,
       (tokenBTicks[tokenBTicks.length - 1] || tokenATicks[0])?.price,
     ];
   }, [tokenATicks, tokenBTicks]);
-
-  // set and allow ephemeral setting of graph extents
-  // allow user ticks to reset the boundary of the graph
-  const [allDataStart, allDataEnd] = useMemo<
-    [BigNumber | undefined, BigNumber | undefined]
-  >(() => {
-    const allValues = [
-      dataStart?.toNumber() || 0,
-      dataEnd?.toNumber() || 0,
-    ].filter((v) => v && !isNaN(v));
-    // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
-    // by padding dataStart and dataEnd with the needed amount of pixels
-    if (allValues.length > 0) {
-      return [
-        new BigNumber(Math.min(...allValues)),
-        new BigNumber(Math.max(...allValues)),
-      ];
-    } else {
-      return [undefined, undefined];
-    }
-  }, [dataStart, dataEnd]);
 
   const [[zoomMin, zoomMax] = [], setZoomRange] = useState<[string, string]>();
 
@@ -269,20 +250,20 @@ export default function LiquiditySelector({
       !isNaN(Number(zoomMin)) &&
       !isNaN(Number(zoomMax))
     ) {
-      if (allDataStart?.isNaN() === false && allDataEnd?.isNaN() === false) {
-        const min = allDataStart.isLessThan(zoomMin)
+      if (dataStart?.isNaN() === false && dataEnd?.isNaN() === false) {
+        const min = dataStart.isLessThan(zoomMin)
           ? new BigNumber(zoomMin)
-          : allDataStart;
-        const max = allDataEnd.isGreaterThan(zoomMax)
+          : dataStart;
+        const max = dataEnd.isGreaterThan(zoomMax)
           ? new BigNumber(zoomMax)
-          : allDataEnd;
+          : dataEnd;
         return [min, max];
       } else {
         return [new BigNumber(zoomMin), new BigNumber(zoomMax)];
       }
     }
-    return [allDataStart, allDataEnd];
-  }, [zoomMin, zoomMax, allDataStart, allDataEnd]);
+    return [dataStart, dataEnd];
+  }, [zoomMin, zoomMax, dataStart, dataEnd]);
 
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
@@ -704,12 +685,12 @@ export default function LiquiditySelector({
         1 + (zoomRatio - 1) / (1 - zoomSpeedFactor)
       );
       const newZoomRatio = Math.max(maxZoomRatio, rangeLimitRatio);
-      const midpoint = allDataStart
+      const midpoint = dataStart
         ?.multipliedBy(newZoomRatio)
         .isGreaterThan(zoomMidpoint)
-        ? allDataStart?.multipliedBy(newZoomRatio).toNumber()
-        : allDataEnd?.dividedBy(newZoomRatio).isLessThan(zoomMidpoint)
-        ? allDataEnd?.dividedBy(newZoomRatio).toNumber()
+        ? dataStart?.multipliedBy(newZoomRatio).toNumber()
+        : dataEnd?.dividedBy(newZoomRatio).isLessThan(zoomMidpoint)
+        ? dataEnd?.dividedBy(newZoomRatio).toNumber()
         : zoomMidpoint;
       setZoomRange([
         (midpoint / newZoomRatio).toFixed(20),
@@ -723,8 +704,8 @@ export default function LiquiditySelector({
     zoomMax,
     graphStart,
     graphEnd,
-    allDataStart,
-    allDataEnd,
+    dataStart,
+    dataEnd,
   ]);
 
   return (
@@ -745,8 +726,8 @@ export default function LiquiditySelector({
             zoomOut={
               zoomMin &&
               zoomMax &&
-              allDataStart?.isGreaterThanOrEqualTo(zoomMin) &&
-              allDataEnd?.isLessThanOrEqualTo(zoomMax)
+              dataStart?.isGreaterThanOrEqualTo(zoomMin) &&
+              dataEnd?.isLessThanOrEqualTo(zoomMax)
                 ? undefined
                 : zoomOut
             }
