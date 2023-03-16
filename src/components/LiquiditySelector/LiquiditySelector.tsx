@@ -1128,14 +1128,7 @@ function TicksArea({
         />
         {rangeMinPriceWarning && (
           <line
-            className={[
-              'line flag-joiner flag-joiner--price-warning',
-              !(oneSidedLiquidity
-                ? rangeMinPriceWarning
-                : rangeMinPrice.isGreaterThan(rangeMinPriceWarning)) && 'hide',
-            ]
-              .filter(Boolean)
-              .join(' ')}
+            className="line flag-joiner flag-joiner--price-warning"
             x1={plotX(rangeMinPriceWarning).toFixed(3)}
             x2={plotX(rangeMinPrice).toFixed(3)}
             y1={plotY(new BigNumber(0.7)).toFixed(3)}
@@ -1144,14 +1137,7 @@ function TicksArea({
         )}
         {rangeMaxPriceWarning && (
           <line
-            className={[
-              'line flag-joiner flag-joiner--price-warning',
-              !(oneSidedLiquidity
-                ? rangeMaxPriceWarning
-                : rangeMaxPrice.isLessThan(rangeMaxPriceWarning)) && 'hide',
-            ]
-              .filter(Boolean)
-              .join(' ')}
+            className="line flag-joiner flag-joiner--price-warning"
             x1={plotX(rangeMaxPrice).toFixed(3)}
             x2={plotX(rangeMaxPriceWarning).toFixed(3)}
             y1={plotY(new BigNumber(0.7)).toFixed(3)}
