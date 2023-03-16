@@ -565,7 +565,6 @@ export default function LiquiditySelector({
           tokenAWarningPrice={tokenAWarningPrice}
           tokenBWarningPrice={tokenBWarningPrice}
           oneSidedLiquidity={oneSidedLiquidity}
-          ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
           plotY={percentYBigNumber}
           containerHeight={containerSize.height}
@@ -836,7 +835,6 @@ function TicksArea({
   tokenAWarningPrice,
   tokenBWarningPrice,
   oneSidedLiquidity,
-  ticks,
   plotX,
   plotY,
   containerHeight,
@@ -850,7 +848,6 @@ function TicksArea({
   tokenAWarningPrice: BigNumber | undefined;
   tokenBWarningPrice: BigNumber | undefined;
   oneSidedLiquidity: boolean;
-  ticks: TickGroup;
   plotX: (x: BigNumber) => number;
   plotY: (y: BigNumber) => number;
   containerHeight: number;
@@ -860,8 +857,6 @@ function TicksArea({
   setRangeMax: (rangeMax: string) => void;
   className?: string;
 }) {
-  const startTick = ticks?.[0];
-  const endTick = ticks?.[ticks.length - 1];
   const startTickPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
   const endTickPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
 
@@ -939,13 +934,13 @@ function TicksArea({
     return limit && price?.isLessThan(limit) ? limit : undefined;
   };
   const startTickPriceWarning = oneSidedLiquidity
-    ? warningPriceIfGreaterThan(startTick?.price, tokenAWarningPrice) ||
-      warningPriceIfLessThan(startTick?.price, tokenBWarningPrice)
-    : warningPriceIfGreaterThan(startTick?.price, currentPrice);
+    ? warningPriceIfGreaterThan(startTickPrice, tokenAWarningPrice) ||
+      warningPriceIfLessThan(startTickPrice, tokenBWarningPrice)
+    : warningPriceIfGreaterThan(startTickPrice, currentPrice);
   const endTickPriceWarning = oneSidedLiquidity
-    ? warningPriceIfGreaterThan(endTick?.price, tokenAWarningPrice) ||
-      warningPriceIfLessThan(endTick?.price, tokenBWarningPrice)
-    : warningPriceIfLessThan(endTick?.price, currentPrice);
+    ? warningPriceIfGreaterThan(endTickPrice, tokenAWarningPrice) ||
+      warningPriceIfLessThan(endTickPrice, tokenBWarningPrice)
+    : warningPriceIfLessThan(endTickPrice, currentPrice);
 
   return startTickPrice && endTickPrice ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
