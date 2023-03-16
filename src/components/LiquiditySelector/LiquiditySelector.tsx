@@ -199,15 +199,7 @@ export default function LiquiditySelector({
     userTicks.every((tick) => tick?.reserveB.isZero() ?? true);
 
   // note edge price, the price of the edge of one-sided liquidity
-  const edgePrice = useMemo(() => {
-    const [tokenAEdgeTick]: (TokenTick | undefined)[] = tokenATicks;
-    const [tokenBEdgeTick]: (TokenTick | undefined)[] = tokenBTicks;
-    return (
-      (isReserveAZero && tokenBEdgeTick?.price) ||
-      (isReserveBZero && tokenAEdgeTick?.price) ||
-      undefined
-    );
-  }, [isReserveAZero, isReserveBZero, tokenATicks, tokenBTicks]);
+  const edgePrice = currentPriceFromTicks;
 
   // note warning price, the price at which warning states should be shown
   // for one-sided liquidity this is the extent of data to one side
@@ -231,7 +223,7 @@ export default function LiquiditySelector({
   ]);
 
   const warningPriceDoubleSidedLiquidity = useMemo(() => {
-    const warningPrice = edgePrice || currentPriceFromTicks;
+    const warningPrice = edgePrice;
     return (
       (!oneSidedLiquidity &&
         (warningPrice?.isLessThan(rangeMin) ||
@@ -239,21 +231,21 @@ export default function LiquiditySelector({
         warningPrice) ||
       undefined
     );
-  }, [oneSidedLiquidity, rangeMin, rangeMax, edgePrice, currentPriceFromTicks]);
+  }, [oneSidedLiquidity, rangeMin, rangeMax, edgePrice]);
 
   const warningPrice =
     warningPriceSingleSidedLiquidity || warningPriceDoubleSidedLiquidity;
 
   const initialGraphStart = useMemo(() => {
-    const graphStart = currentPriceFromTicks?.dividedBy(4) ?? defaultStartValue;
+    const graphStart = edgePrice?.dividedBy(4) ?? defaultStartValue;
     return graphStart.isLessThan(defaultStartValue)
       ? defaultStartValue
       : graphStart;
-  }, [currentPriceFromTicks]);
+  }, [edgePrice]);
   const initialGraphEnd = useMemo(() => {
-    const graphEnd = currentPriceFromTicks?.multipliedBy(4) ?? defaultEndValue;
+    const graphEnd = edgePrice?.multipliedBy(4) ?? defaultEndValue;
     return graphEnd.isLessThan(defaultEndValue) ? defaultEndValue : graphEnd;
-  }, [currentPriceFromTicks]);
+  }, [edgePrice]);
 
   const [dataStart, dataEnd] = useMemo<(BigNumber | undefined)[]>(() => {
     return [
@@ -395,7 +387,7 @@ export default function LiquiditySelector({
   >(
     (xMin, xMax) => {
       // get middle 'break' point which will separate bucket sections
-      const breakPoint = edgePrice || currentPriceFromTicks;
+      const breakPoint = edgePrice;
       // skip if there is no breakpoint
       if (!breakPoint) {
         return [[], []];
@@ -450,7 +442,7 @@ export default function LiquiditySelector({
       // return concantenated buckets
       return [tokenABuckets, tokenBBuckets];
     },
-    [edgePrice, currentPriceFromTicks, containerSize.width]
+    [edgePrice, containerSize.width]
   );
 
   const emptyBuckets = useMemo(() => {
@@ -616,7 +608,7 @@ export default function LiquiditySelector({
       {advanced ? (
         <TicksGroup
           className="new-ticks"
-          currentPrice={warningPrice || currentPriceFromTicks}
+          currentPrice={warningPrice || edgePrice}
           userTicks={userTicks}
           backgroundTicks={userTicksBase}
           setUserTicks={setUserTicks}
@@ -631,7 +623,7 @@ export default function LiquiditySelector({
       ) : (
         <TicksArea
           className="new-ticks-area"
-          currentPrice={warningPrice || currentPriceFromTicks}
+          currentPrice={warningPrice || edgePrice}
           oneSidedLiquidity={oneSidedLiquidity}
           ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
@@ -648,17 +640,11 @@ export default function LiquiditySelector({
         className="x-axis"
         xMin={xMin}
         xMax={xMax}
-        tickMarks={[
-          currentPriceFromTicks?.toNumber() || '0',
-          rangeMin,
-          rangeMax,
-        ]
+        tickMarks={[edgePrice?.toNumber() || '0', rangeMin, rangeMax]
           .map((v) => formatPrice(v))
           .map(Number)
           .filter((v): v is number => !!v && v > 0)}
-        highlightedTick={Number(
-          formatPrice(currentPriceFromTicks?.toNumber() || 0)
-        )}
+        highlightedTick={Number(formatPrice(edgePrice?.toNumber() || 0))}
         getDecimalPlaces={null}
         plotX={plotX}
         plotY={plotY}
