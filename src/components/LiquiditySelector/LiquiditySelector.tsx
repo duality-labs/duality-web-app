@@ -802,10 +802,10 @@ function TicksBackgroundArea({
   plotY: (y: BigNumber) => number;
   className?: string;
 }) {
-  const startTickPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
-  const endTickPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
+  const rangeMinPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
+  const rangeMaxPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
 
-  return startTickPrice && endTickPrice ? (
+  return rangeMinPrice && rangeMaxPrice ? (
     <g
       className={['ticks-area__background', className]
         .filter(Boolean)
@@ -815,10 +815,10 @@ function TicksBackgroundArea({
         className="tick-area"
         // fill is defined on <svg><defs><linearGradient>
         fill="url(#white-concave-fade)"
-        x={plotX(startTickPrice).toFixed(3)}
+        x={plotX(rangeMinPrice).toFixed(3)}
         width={
-          endTickPrice.isGreaterThan(startTickPrice)
-            ? (plotX(endTickPrice) - plotX(startTickPrice)).toFixed(3)
+          rangeMaxPrice.isGreaterThan(rangeMinPrice)
+            ? (plotX(rangeMaxPrice) - plotX(rangeMinPrice)).toFixed(3)
             : '0'
         }
         y={plotY(new BigNumber(1)).toFixed(3)}
@@ -857,15 +857,15 @@ function TicksArea({
   setRangeMax: (rangeMax: string) => void;
   className?: string;
 }) {
-  const startTickPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
-  const endTickPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
+  const rangeMinPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
+  const rangeMaxPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
 
-  const lastMinTickPrice = useRef<BigNumber>();
+  const lastRangeMinPrice = useRef<BigNumber>();
   const [startDragMin, isDraggingMin] = useOnDragMove(
     useCallback(
       (ev: Event, displacement = { x: 0, y: 0 }) => {
         const x = displacement.x;
-        if (x && lastMinTickPrice.current) {
+        if (x && lastRangeMinPrice.current) {
           const orderOfMagnitudePixels =
             plotX(new BigNumber(10)) - plotX(new BigNumber(1));
           const displacementRatio = Math.pow(
@@ -873,29 +873,29 @@ function TicksArea({
             displacement.x / orderOfMagnitudePixels
           );
           const newValue =
-            lastMinTickPrice.current.multipliedBy(displacementRatio);
+            lastRangeMinPrice.current.multipliedBy(displacementRatio);
           const newValueString = formatPrice(newValue.toFixed());
           setRangeMin(newValueString);
-          if (endTickPrice.isLessThanOrEqualTo(newValue)) {
+          if (rangeMaxPrice.isLessThanOrEqualTo(newValue)) {
             setRangeMax(newValueString);
           }
         }
       },
-      [lastMinTickPrice, endTickPrice, plotX, setRangeMin, setRangeMax]
+      [lastRangeMinPrice, rangeMaxPrice, plotX, setRangeMin, setRangeMax]
     )
   );
   useEffect(() => {
     if (!isDraggingMin) {
-      lastMinTickPrice.current = startTickPrice;
+      lastRangeMinPrice.current = rangeMinPrice;
     }
-  }, [startTickPrice, isDraggingMin]);
+  }, [rangeMinPrice, isDraggingMin]);
 
-  const lastMaxTickPrice = useRef<BigNumber>();
+  const lastRangeMaxPrice = useRef<BigNumber>();
   const [startDragMax, isDraggingMax] = useOnDragMove(
     useCallback(
       (ev: Event, displacement = { x: 0, y: 0 }) => {
         const x = displacement.x;
-        if (x && lastMaxTickPrice.current) {
+        if (x && lastRangeMaxPrice.current) {
           const orderOfMagnitudePixels =
             plotX(new BigNumber(10)) - plotX(new BigNumber(1));
           const displacementRatio = Math.pow(
@@ -903,22 +903,22 @@ function TicksArea({
             displacement.x / orderOfMagnitudePixels
           );
           const newValue =
-            lastMaxTickPrice.current.multipliedBy(displacementRatio);
+            lastRangeMaxPrice.current.multipliedBy(displacementRatio);
           const newValueString = formatPrice(newValue.toFixed());
           setRangeMax(newValueString);
-          if (startTickPrice.isGreaterThanOrEqualTo(newValue)) {
+          if (rangeMinPrice.isGreaterThanOrEqualTo(newValue)) {
             setRangeMin(newValueString);
           }
         }
       },
-      [startTickPrice, plotX, setRangeMin, setRangeMax]
+      [rangeMinPrice, plotX, setRangeMin, setRangeMax]
     )
   );
   useEffect(() => {
     if (!isDraggingMax) {
-      lastMaxTickPrice.current = endTickPrice;
+      lastRangeMaxPrice.current = rangeMaxPrice;
     }
-  }, [endTickPrice, isDraggingMax]);
+  }, [rangeMaxPrice, isDraggingMax]);
 
   const rounding = 5;
   const warningPriceIfGreaterThan = (
@@ -933,42 +933,42 @@ function TicksArea({
   ): BigNumber | undefined => {
     return limit && price?.isLessThan(limit) ? limit : undefined;
   };
-  const startTickPriceWarning = oneSidedLiquidity
-    ? warningPriceIfGreaterThan(startTickPrice, tokenAWarningPrice) ||
-      warningPriceIfLessThan(startTickPrice, tokenBWarningPrice)
-    : warningPriceIfGreaterThan(startTickPrice, currentPrice);
-  const endTickPriceWarning = oneSidedLiquidity
-    ? warningPriceIfGreaterThan(endTickPrice, tokenAWarningPrice) ||
-      warningPriceIfLessThan(endTickPrice, tokenBWarningPrice)
-    : warningPriceIfLessThan(endTickPrice, currentPrice);
+  const rangeMinPriceWarning = oneSidedLiquidity
+    ? warningPriceIfGreaterThan(rangeMinPrice, tokenAWarningPrice) ||
+      warningPriceIfLessThan(rangeMinPrice, tokenBWarningPrice)
+    : warningPriceIfGreaterThan(rangeMinPrice, currentPrice);
+  const rangeMaxPriceWarning = oneSidedLiquidity
+    ? warningPriceIfGreaterThan(rangeMaxPrice, tokenAWarningPrice) ||
+      warningPriceIfLessThan(rangeMaxPrice, tokenBWarningPrice)
+    : warningPriceIfLessThan(rangeMaxPrice, currentPrice);
 
-  return startTickPrice && endTickPrice ? (
+  return rangeMinPrice && rangeMaxPrice ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
       <g
         className={[
           'pole-a',
-          oneSidedLiquidity && startTickPriceWarning && 'pole--price-warning',
+          oneSidedLiquidity && rangeMinPriceWarning && 'pole--price-warning',
         ]
           .filter(Boolean)
           .join(' ')}
       >
         <line
           className="line pole-stick"
-          x1={(plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
-          x2={(plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMinPrice) - poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMinPrice) - poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
           className="pole-to-flag"
-          x={(plotX(startTickPrice) - rounding).toFixed(3)}
+          x={(plotX(rangeMinPrice) - rounding).toFixed(3)}
           width={rounding}
           y={plotY(new BigNumber(1)).toFixed(3)}
           height="40"
         />
         <rect
           className="pole-flag"
-          x={(plotX(startTickPrice) - 30 - poleWidth / 2).toFixed(3)}
+          x={(plotX(rangeMinPrice) - 30 - poleWidth / 2).toFixed(3)}
           width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
           height="40"
@@ -976,29 +976,29 @@ function TicksArea({
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(startTickPrice) - 11.5 - poleWidth / 2).toFixed(3)}
-          x2={(plotX(startTickPrice) - 11.5 - poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMinPrice) - 11.5 - poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMinPrice) - 11.5 - poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(startTickPrice) - 18.5 - poleWidth / 2).toFixed(3)}
-          x2={(plotX(startTickPrice) - 18.5 - poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMinPrice) - 18.5 - poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMinPrice) - 18.5 - poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         {currentPrice && (
           <text
             filter="url(#text-solid-highlight)"
-            x={(4 + 1.8 + plotX(startTickPrice) - poleWidth / 2).toFixed(3)}
+            x={(4 + 1.8 + plotX(rangeMinPrice) - poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
             textAnchor="end"
           >
             &nbsp;&nbsp;&nbsp;
             {`${formatAmount(
-              startTickPrice
+              rangeMinPrice
                 .multipliedBy(100)
                 .dividedBy(currentPrice)
                 .minus(100)
@@ -1022,7 +1022,7 @@ function TicksArea({
         ) : (
           <rect
             className="pole-flag--hit-area"
-            x={(plotX(startTickPrice) - 30).toFixed(3)}
+            x={(plotX(rangeMinPrice) - 30).toFixed(3)}
             width="30"
             y={plotY(new BigNumber(1)).toFixed(3)}
             height="40"
@@ -1034,40 +1034,39 @@ function TicksArea({
       <g className="flag-line">
         <line
           className="line flag-joiner"
-          x1={plotX(startTickPrice).toFixed(3)}
-          x2={plotX(endTickPrice).toFixed(3)}
+          x1={plotX(rangeMinPrice).toFixed(3)}
+          x2={plotX(rangeMaxPrice).toFixed(3)}
           y1={plotY(new BigNumber(0.7)).toFixed(3)}
           y2={plotY(new BigNumber(0.7)).toFixed(3)}
         />
-        {startTickPriceWarning && (
+        {rangeMinPriceWarning && (
           <line
             className={[
               'line flag-joiner flag-joiner--price-warning',
               !(oneSidedLiquidity
-                ? startTickPriceWarning
-                : startTickPrice.isGreaterThan(startTickPriceWarning)) &&
-                'hide',
+                ? rangeMinPriceWarning
+                : rangeMinPrice.isGreaterThan(rangeMinPriceWarning)) && 'hide',
             ]
               .filter(Boolean)
               .join(' ')}
-            x1={plotX(startTickPriceWarning).toFixed(3)}
-            x2={plotX(startTickPrice).toFixed(3)}
+            x1={plotX(rangeMinPriceWarning).toFixed(3)}
+            x2={plotX(rangeMinPrice).toFixed(3)}
             y1={plotY(new BigNumber(0.7)).toFixed(3)}
             y2={plotY(new BigNumber(0.7)).toFixed(3)}
           />
         )}
-        {endTickPriceWarning && (
+        {rangeMaxPriceWarning && (
           <line
             className={[
               'line flag-joiner flag-joiner--price-warning',
               !(oneSidedLiquidity
-                ? endTickPriceWarning
-                : endTickPrice.isLessThan(endTickPriceWarning)) && 'hide',
+                ? rangeMaxPriceWarning
+                : rangeMaxPrice.isLessThan(rangeMaxPriceWarning)) && 'hide',
             ]
               .filter(Boolean)
               .join(' ')}
-            x1={plotX(endTickPrice).toFixed(3)}
-            x2={plotX(endTickPriceWarning).toFixed(3)}
+            x1={plotX(rangeMaxPrice).toFixed(3)}
+            x2={plotX(rangeMaxPriceWarning).toFixed(3)}
             y1={plotY(new BigNumber(0.7)).toFixed(3)}
             y2={plotY(new BigNumber(0.7)).toFixed(3)}
           />
@@ -1076,28 +1075,28 @@ function TicksArea({
       <g
         className={[
           'pole-b',
-          oneSidedLiquidity && endTickPriceWarning && 'pole--price-warning',
+          oneSidedLiquidity && rangeMaxPriceWarning && 'pole--price-warning',
         ]
           .filter(Boolean)
           .join(' ')}
       >
         <line
           className="line pole-stick"
-          x1={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
-          x2={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMaxPrice) + poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMaxPrice) + poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
           className="pole-to-flag"
-          x={plotX(endTickPrice).toFixed(3)}
+          x={plotX(rangeMaxPrice).toFixed(3)}
           width={rounding}
           y={plotY(new BigNumber(1)).toFixed(3)}
           height="40"
         />
         <rect
           className="pole-flag"
-          x={(plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
+          x={(plotX(rangeMaxPrice) + poleWidth / 2).toFixed(3)}
           width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
           height="40"
@@ -1105,29 +1104,29 @@ function TicksArea({
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(endTickPrice) + 11.5 + poleWidth / 2).toFixed(3)}
-          x2={(plotX(endTickPrice) + 11.5 + poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMaxPrice) + 11.5 + poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMaxPrice) + 11.5 + poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(endTickPrice) + 18.5 + poleWidth / 2).toFixed(3)}
-          x2={(plotX(endTickPrice) + 18.5 + poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMaxPrice) + 18.5 + poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMaxPrice) + 18.5 + poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         {currentPrice && (
           <text
             filter="url(#text-solid-highlight)"
-            x={(-(4 + 1.8) + plotX(endTickPrice) + poleWidth / 2).toFixed(3)}
+            x={(-(4 + 1.8) + plotX(rangeMaxPrice) + poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
             textAnchor="start"
           >
             &nbsp;&nbsp;&nbsp;
             {`${formatAmount(
-              endTickPrice
+              rangeMaxPrice
                 .multipliedBy(100)
                 .dividedBy(currentPrice)
                 .minus(100)
@@ -1151,7 +1150,7 @@ function TicksArea({
         ) : (
           <rect
             className="pole-flag--hit-area"
-            x={plotX(endTickPrice).toFixed(3)}
+            x={plotX(rangeMaxPrice).toFixed(3)}
             width="30"
             y={plotY(new BigNumber(1)).toFixed(3)}
             height="40"
