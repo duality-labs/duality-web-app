@@ -1127,22 +1127,44 @@ function TicksArea({
           y2={plotY(new BigNumber(0.7)).toFixed(3)}
         />
         {rangeMinPriceWarning && (
-          <line
-            className="line flag-joiner flag-joiner--price-warning"
-            x1={plotX(rangeMinPriceWarning).toFixed(3)}
-            x2={plotX(rangeMinPrice).toFixed(3)}
-            y1={plotY(new BigNumber(0.7)).toFixed(3)}
-            y2={plotY(new BigNumber(0.7)).toFixed(3)}
-          />
+          <>
+            {/* draw warning line between flag and warning point */}
+            <line
+              className="line flag-joiner flag-joiner--price-warning"
+              x1={plotX(rangeMinPriceWarning).toFixed(3)}
+              x2={plotX(rangeMinPrice).toFixed(3)}
+              y1={plotY(new BigNumber(0.7)).toFixed(3)}
+              y2={plotY(new BigNumber(0.7)).toFixed(3)}
+            />
+            {/* draw warning line across flag */}
+            <line
+              className="line flag-joiner flag-joiner--price-warning"
+              x1={plotX(rangeMinPrice).toFixed(3)}
+              x2={(plotX(rangeMinPrice) - poleWidth).toFixed(3)}
+              y1={plotY(new BigNumber(0.7)).toFixed(3)}
+              y2={plotY(new BigNumber(0.7)).toFixed(3)}
+            />
+          </>
         )}
         {rangeMaxPriceWarning && (
-          <line
-            className="line flag-joiner flag-joiner--price-warning"
-            x1={plotX(rangeMaxPrice).toFixed(3)}
-            x2={plotX(rangeMaxPriceWarning).toFixed(3)}
-            y1={plotY(new BigNumber(0.7)).toFixed(3)}
-            y2={plotY(new BigNumber(0.7)).toFixed(3)}
-          />
+          <>
+            {/* draw warning line between flag and warning point */}
+            <line
+              className="line flag-joiner flag-joiner--price-warning"
+              x1={plotX(rangeMaxPrice).toFixed(3)}
+              x2={plotX(rangeMaxPriceWarning).toFixed(3)}
+              y1={plotY(new BigNumber(0.7)).toFixed(3)}
+              y2={plotY(new BigNumber(0.7)).toFixed(3)}
+            />
+            {/* draw warning line across flag */}
+            <line
+              className="line flag-joiner flag-joiner--price-warning"
+              x1={plotX(rangeMaxPrice).toFixed(3)}
+              x2={(plotX(rangeMaxPrice) + poleWidth).toFixed(3)}
+              y1={plotY(new BigNumber(0.7)).toFixed(3)}
+              y2={plotY(new BigNumber(0.7)).toFixed(3)}
+            />
+          </>
         )}
       </g>
     </g>
