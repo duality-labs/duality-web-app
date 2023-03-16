@@ -170,9 +170,6 @@ export default function LiquiditySelector({
         : [[], []];
     }, [token0Ticks, token1Ticks, forward, reverse]);
 
-  const isReserveAZero = tokenATicks.length === 0;
-  const isReserveBZero = tokenBTicks.length === 0;
-
   // collect tick information in a more useable form
   const feeTicks: [TokenTickGroup, TokenTickGroup] = useMemo(() => {
     const feeTierFilter = (tick: TokenTick) =>
@@ -202,39 +199,25 @@ export default function LiquiditySelector({
   const edgePrice = currentPriceFromTicks;
 
   // note warning price, the price at which warning states should be shown
-  // for one-sided liquidity this is the extent of data to one side
-  const warningPriceSingleSidedLiquidity = useMemo(() => {
+  const [tokenAWarningPrice, tokenBWarningPrice] = useMemo(() => {
     const [tokenAEdgeTick]: (TokenTick | undefined)[] = tokenATicks;
     const [tokenBEdgeTick]: (TokenTick | undefined)[] = tokenBTicks;
-    return (
-      (oneSidedLiquidity &&
-        ((isReserveAZero && !isUserTicksAZero && tokenBEdgeTick?.price) ||
-          (isReserveBZero && !isUserTicksBZero && tokenAEdgeTick?.price))) ||
-      undefined
-    );
+    return oneSidedLiquidity
+      ? // for one-sided liquidity this is the behind enemy lines check
+        [
+          !isUserTicksAZero ? tokenBEdgeTick?.price : undefined,
+          !isUserTicksBZero ? tokenAEdgeTick?.price : undefined,
+        ]
+      : // for double-sided liquidity we switch on the current price
+        [edgePrice, edgePrice];
   }, [
     oneSidedLiquidity,
-    isReserveAZero,
-    isReserveBZero,
+    edgePrice,
     isUserTicksAZero,
     isUserTicksBZero,
     tokenATicks,
     tokenBTicks,
   ]);
-
-  const warningPriceDoubleSidedLiquidity = useMemo(() => {
-    const warningPrice = edgePrice;
-    return (
-      (!oneSidedLiquidity &&
-        (warningPrice?.isLessThan(rangeMin) ||
-          warningPrice?.isGreaterThan(rangeMax)) &&
-        warningPrice) ||
-      undefined
-    );
-  }, [oneSidedLiquidity, rangeMin, rangeMax, edgePrice]);
-
-  const warningPrice =
-    warningPriceSingleSidedLiquidity || warningPriceDoubleSidedLiquidity;
 
   const initialGraphStart = useMemo(() => {
     const graphStart = edgePrice?.dividedBy(4) ?? defaultStartValue;
@@ -608,7 +591,8 @@ export default function LiquiditySelector({
       {advanced ? (
         <TicksGroup
           className="new-ticks"
-          currentPrice={warningPrice || edgePrice}
+          tokenAWarningPrice={tokenAWarningPrice}
+          tokenBWarningPrice={tokenBWarningPrice}
           userTicks={userTicks}
           backgroundTicks={userTicksBase}
           setUserTicks={setUserTicks}
@@ -623,7 +607,9 @@ export default function LiquiditySelector({
       ) : (
         <TicksArea
           className="new-ticks-area"
-          currentPrice={warningPrice || edgePrice}
+          currentPrice={edgePrice}
+          tokenAWarningPrice={tokenAWarningPrice}
+          tokenBWarningPrice={tokenBWarningPrice}
           oneSidedLiquidity={oneSidedLiquidity}
           ticks={userTicks.filter((tick): tick is Tick => !!tick)}
           plotX={plotXBigNumber}
@@ -894,6 +880,8 @@ function TicksBackgroundArea({
 
 function TicksArea({
   currentPrice,
+  tokenAWarningPrice,
+  tokenBWarningPrice,
   oneSidedLiquidity,
   ticks,
   plotX,
@@ -907,6 +895,8 @@ function TicksArea({
   className,
 }: {
   currentPrice: BigNumber | undefined;
+  tokenAWarningPrice: BigNumber | undefined;
+  tokenBWarningPrice: BigNumber | undefined;
   oneSidedLiquidity: boolean;
   ticks: TickGroup;
   plotX: (x: BigNumber) => number;
@@ -985,25 +975,34 @@ function TicksArea({
   }, [endTickPrice, isDraggingMax]);
 
   const rounding = 5;
-  const hasPriceWarning =
-    currentPrice &&
-    (({ price, reserveA, reserveB }: Tick) => {
-      return (
-        // if tick is tokenA: warn if price is higher than current price
-        (!reserveA?.isZero() && price.isGreaterThan(currentPrice)) ||
-        // if tick is tokenB: warn if price is lower than current price
-        (!reserveB?.isZero() && price.isLessThan(currentPrice))
-      );
-    });
-  const startTickHasPriceWarning = !!(
-    startTick && hasPriceWarning?.(startTick)
-  );
-  const endTickHasPriceWarning = !!(endTick && hasPriceWarning?.(endTick));
+  const warningPriceIfGreaterThan = (
+    price: BigNumber | undefined,
+    limit: BigNumber | undefined
+  ): BigNumber | undefined => {
+    return limit && price?.isGreaterThan(limit) ? limit : undefined;
+  };
+  const warningPriceIfLessThan = (
+    price: BigNumber | undefined,
+    limit: BigNumber | undefined
+  ): BigNumber | undefined => {
+    return limit && price?.isLessThan(limit) ? limit : undefined;
+  };
+  const startTickPriceWarning = oneSidedLiquidity
+    ? warningPriceIfGreaterThan(startTick?.price, tokenAWarningPrice) ||
+      warningPriceIfLessThan(startTick?.price, tokenBWarningPrice)
+    : warningPriceIfGreaterThan(startTick?.price, currentPrice);
+  const endTickPriceWarning = oneSidedLiquidity
+    ? warningPriceIfGreaterThan(endTick?.price, tokenAWarningPrice) ||
+      warningPriceIfLessThan(endTick?.price, tokenBWarningPrice)
+    : warningPriceIfLessThan(endTick?.price, currentPrice);
 
   return startTickPrice && endTickPrice ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
       <g
-        className={['pole-a', startTickHasPriceWarning && 'pole--price-warning']
+        className={[
+          'pole-a',
+          oneSidedLiquidity && startTickPriceWarning && 'pole--price-warning',
+        ]
           .filter(Boolean)
           .join(' ')}
       >
@@ -1094,41 +1093,45 @@ function TicksArea({
           y1={plotY(new BigNumber(0.7)).toFixed(3)}
           y2={plotY(new BigNumber(0.7)).toFixed(3)}
         />
-        {currentPrice && (
+        {startTickPriceWarning && (
           <line
             className={[
               'line flag-joiner flag-joiner--price-warning',
               !(oneSidedLiquidity
-                ? startTickHasPriceWarning
-                : startTickPrice.isGreaterThan(currentPrice)) && 'hide',
+                ? startTickPriceWarning
+                : startTickPrice.isGreaterThan(startTickPriceWarning)) &&
+                'hide',
             ]
               .filter(Boolean)
               .join(' ')}
-            x1={plotX(currentPrice).toFixed(3)}
+            x1={plotX(startTickPriceWarning).toFixed(3)}
             x2={plotX(startTickPrice).toFixed(3)}
             y1={plotY(new BigNumber(0.7)).toFixed(3)}
             y2={plotY(new BigNumber(0.7)).toFixed(3)}
           />
         )}
-        {currentPrice && (
+        {endTickPriceWarning && (
           <line
             className={[
               'line flag-joiner flag-joiner--price-warning',
               !(oneSidedLiquidity
-                ? endTickHasPriceWarning
-                : endTickPrice.isLessThan(currentPrice)) && 'hide',
+                ? endTickPriceWarning
+                : endTickPrice.isLessThan(endTickPriceWarning)) && 'hide',
             ]
               .filter(Boolean)
               .join(' ')}
             x1={plotX(endTickPrice).toFixed(3)}
-            x2={plotX(currentPrice).toFixed(3)}
+            x2={plotX(endTickPriceWarning).toFixed(3)}
             y1={plotY(new BigNumber(0.7)).toFixed(3)}
             y2={plotY(new BigNumber(0.7)).toFixed(3)}
           />
         )}
       </g>
       <g
-        className={['pole-b', endTickHasPriceWarning && 'pole--price-warning']
+        className={[
+          'pole-b',
+          oneSidedLiquidity && endTickPriceWarning && 'pole--price-warning',
+        ]
           .filter(Boolean)
           .join(' ')}
       >
@@ -1216,7 +1219,8 @@ function TicksArea({
 }
 
 function TicksGroup({
-  currentPrice,
+  tokenAWarningPrice,
+  tokenBWarningPrice,
   userTicks,
   backgroundTicks,
   setUserTicks,
@@ -1230,7 +1234,8 @@ function TicksGroup({
   canMoveX = false,
   ...rest
 }: {
-  currentPrice: BigNumber | undefined;
+  tokenAWarningPrice: BigNumber | undefined;
+  tokenBWarningPrice: BigNumber | undefined;
   userTicks: Array<Tick | undefined>;
   backgroundTicks: Array<Tick | undefined>;
   setUserTicks?: (
@@ -1459,10 +1464,13 @@ function TicksGroup({
                 ? 'tick--diff-negative'
                 : 'tick--diff-positive'),
             // warn user if this seems to be a bad trade
-            currentPrice &&
-              (reserveA.isGreaterThan(0)
-                ? price.isGreaterThan(currentPrice) && 'tick--price-warning'
-                : price.isLessThan(currentPrice) && 'tick--price-warning'),
+            reserveA.isGreaterThan(0)
+              ? tokenAWarningPrice &&
+                price.isGreaterThan(tokenAWarningPrice) &&
+                'tick--price-warning'
+              : tokenBWarningPrice &&
+                price.isLessThan(tokenBWarningPrice) &&
+                'tick--price-warning',
           ]
             .filter(Boolean)
             .join(' ')}
