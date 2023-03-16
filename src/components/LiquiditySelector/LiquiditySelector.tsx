@@ -270,27 +270,10 @@ export default function LiquiditySelector({
   const [graphStart = initialGraphStart, graphEnd = initialGraphEnd] = useMemo<
     [BigNumber | undefined, BigNumber | undefined]
   >(() => {
-    const minUserTickPrice = userTicks.reduce<BigNumber | undefined>(
-      (result, tick) => {
-        if (!tick) return result;
-        const { price } = tick;
-        return !result || price.isLessThan(result) ? price : result;
-      },
-      undefined
-    );
-    const maxUserTickPrice = userTicks.reduce<BigNumber | undefined>(
-      (result, tick) => {
-        if (!tick) return result;
-        const { price } = tick;
-        return !result || price.isGreaterThan(result) ? price : result;
-      },
-      undefined
-    );
     const allValues = [
+      ...userTicks.map<number | undefined>((tick) => tick?.price.toNumber()),
       Number(rangeMin),
       Number(rangeMax),
-      minUserTickPrice?.toNumber() || 0,
-      maxUserTickPrice?.toNumber() || 0,
       zoomedDataStart?.toNumber(),
       zoomedDataEnd?.toNumber(),
     ].filter((v): v is number => !!v && !isNaN(v));
