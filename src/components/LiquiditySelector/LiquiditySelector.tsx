@@ -430,16 +430,6 @@ export default function LiquiditySelector({
     },
     [xMin, xMax, containerSize.width]
   );
-  const plotXinverse = useCallback(
-    (x: number): number => {
-      const width = containerSize.width - leftPadding - rightPadding;
-      return Math.exp(
-        ((x - leftPadding) * (Math.log(xMax) - Math.log(xMin))) / width +
-          Math.log(xMin)
-      );
-    },
-    [xMin, xMax, containerSize.width]
-  );
   const plotY = useCallback(
     (y: number): number => {
       const height = containerSize.height - topPadding - bottomPadding;
@@ -583,7 +573,6 @@ export default function LiquiditySelector({
           rangeMax={rangeMax}
           setRangeMin={setRangeMin}
           setRangeMax={setRangeMax}
-          plotXinverse={plotXinverse}
         />
       )}
       <Axis
@@ -855,7 +844,6 @@ function TicksArea({
   rangeMax,
   setRangeMin,
   setRangeMax,
-  plotXinverse,
   className,
 }: {
   currentPrice: BigNumber | undefined;
@@ -870,7 +858,6 @@ function TicksArea({
   rangeMax: string;
   setRangeMin: (rangeMin: string) => void;
   setRangeMax: (rangeMax: string) => void;
-  plotXinverse: (x: number) => number;
   className?: string;
 }) {
   const startTick = ticks?.[0];
