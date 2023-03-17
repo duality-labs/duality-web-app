@@ -860,65 +860,65 @@ function TicksArea({
   const rangeMinPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
   const rangeMaxPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
 
-  const lastRangeMinPrice = useRef<BigNumber>();
+  const lastDisplacementMin = useRef<number>(0);
   const [startDragMin, isDraggingMin] = useOnDragMove(
     useCallback(
       (ev: Event, displacement = { x: 0, y: 0 }) => {
-        const x = displacement.x;
-        if (x && lastRangeMinPrice.current) {
+        if (displacement.x && displacement.x !== lastDisplacementMin.current) {
+          const newDisplacement = displacement.x - lastDisplacementMin.current;
           const orderOfMagnitudePixels =
             plotX(new BigNumber(10)) - plotX(new BigNumber(1));
           const displacementRatio = Math.pow(
             10,
-            displacement.x / orderOfMagnitudePixels
+            newDisplacement / orderOfMagnitudePixels
           );
-          const newValue =
-            lastRangeMinPrice.current.multipliedBy(displacementRatio);
+          const newValue = rangeMinPrice.multipliedBy(displacementRatio);
           const newValueString = formatPrice(newValue.toFixed());
           setRangeMin(newValueString);
           if (rangeMaxPrice.isLessThanOrEqualTo(newValue)) {
             setRangeMax(newValueString);
           }
+          lastDisplacementMin.current = displacement.x;
         }
       },
-      [rangeMaxPrice, plotX, setRangeMin, setRangeMax]
+      [rangeMinPrice, rangeMaxPrice, plotX, setRangeMin, setRangeMax]
     )
   );
   useEffect(() => {
     if (!isDraggingMin) {
-      lastRangeMinPrice.current = rangeMinPrice;
+      lastDisplacementMin.current = 0;
     }
-  }, [rangeMinPrice, isDraggingMin]);
+  }, [isDraggingMin]);
 
-  const lastRangeMaxPrice = useRef<BigNumber>();
+  const lastDisplacementMax = useRef<number>(0);
   const [startDragMax, isDraggingMax] = useOnDragMove(
     useCallback(
       (ev: Event, displacement = { x: 0, y: 0 }) => {
-        const x = displacement.x;
-        if (x && lastRangeMaxPrice.current) {
+        if (displacement.x && displacement.x !== lastDisplacementMax.current) {
+          const newDisplacement = displacement.x - lastDisplacementMax.current;
           const orderOfMagnitudePixels =
             plotX(new BigNumber(10)) - plotX(new BigNumber(1));
           const displacementRatio = Math.pow(
             10,
-            displacement.x / orderOfMagnitudePixels
+            newDisplacement / orderOfMagnitudePixels
           );
-          const newValue =
-            lastRangeMaxPrice.current.multipliedBy(displacementRatio);
+          const newValue = rangeMaxPrice.multipliedBy(displacementRatio);
           const newValueString = formatPrice(newValue.toFixed());
           setRangeMax(newValueString);
           if (rangeMinPrice.isGreaterThanOrEqualTo(newValue)) {
             setRangeMin(newValueString);
           }
+          lastDisplacementMax.current = displacement.x;
         }
       },
-      [rangeMinPrice, plotX, setRangeMin, setRangeMax]
+      [rangeMinPrice, rangeMaxPrice, plotX, setRangeMin, setRangeMax]
     )
   );
   useEffect(() => {
     if (!isDraggingMax) {
-      lastRangeMaxPrice.current = rangeMaxPrice;
+      lastDisplacementMax.current = 0;
     }
-  }, [rangeMaxPrice, isDraggingMax]);
+  }, [isDraggingMax]);
 
   const rounding = 5;
   const warningPriceIfGreaterThan = (
