@@ -665,37 +665,50 @@ export default function LiquiditySelector({
     </svg>
   );
 
-  const zoomIn = useCallback(() => {
-    const currentMinIndex =
-      zoomMinIndex !== undefined
-        ? Math.max(zoomMinIndex, graphStartIndex)
-        : graphStartIndex;
-    const currentMaxIndex =
-      zoomMaxIndex !== undefined
-        ? Math.min(zoomMaxIndex, graphEndIndex)
-        : graphEndIndex;
-    if (
-      [rangeMinIndex, rangeMaxIndex, currentMinIndex, currentMaxIndex].every(
-        (v) => !isNaN(v)
-      )
-    ) {
-      const midpointIndex = (rangeMinIndex + rangeMaxIndex) / 2;
-      const indexSpread = Math.max(
-        minZoomIndexSpread,
-        // zoom in
-        (currentMaxIndex - currentMinIndex) / zoomSpeedFactor
-      );
-      const newZoomMinIndex = Math.round(midpointIndex - indexSpread / 2);
-      const newZoomMaxIndex = Math.round(midpointIndex + indexSpread / 2);
-      // calculate better positioning of new range as it could end up far to the side
-      const offset =
-        0 +
-        // bump from left edge of data
-        Math.max(graphStartIndex - newZoomMinIndex, 0) +
-        // bump from right edge of data
-        Math.min(graphEndIndex - newZoomMaxIndex, 0);
-      // set these new values
-      setZoomRange([newZoomMinIndex + offset, newZoomMaxIndex + offset]);
+  const [zoomIn, zoomOut] = useMemo(() => {
+    // define common zoom behavior
+    function zoom(direction: 'in' | 'out') {
+      const currentMinIndex =
+        zoomMinIndex !== undefined
+          ? Math.max(zoomMinIndex, graphStartIndex)
+          : graphStartIndex;
+      const currentMaxIndex =
+        zoomMaxIndex !== undefined
+          ? Math.min(zoomMaxIndex, graphEndIndex)
+          : graphEndIndex;
+      if (
+        [rangeMinIndex, rangeMaxIndex, currentMinIndex, currentMaxIndex].every(
+          (v) => !isNaN(v)
+        )
+      ) {
+        const midpointIndex = (rangeMinIndex + rangeMaxIndex) / 2;
+        const indexSpread = Math.max(
+          minZoomIndexSpread,
+          direction === 'in'
+            ? // zoom in by defining less indexes on graph
+              (currentMaxIndex - currentMinIndex) / zoomSpeedFactor
+            : // zoom out by defining more indexes on graph
+              (currentMaxIndex - currentMinIndex) * zoomSpeedFactor
+        );
+        const newZoomMinIndex = Math.round(midpointIndex - indexSpread / 2);
+        const newZoomMaxIndex = Math.round(midpointIndex + indexSpread / 2);
+        // calculate better positioning of new range as it could end up far to the side
+        const offset =
+          0 +
+          // bump from left edge of data
+          Math.max(graphStartIndex - newZoomMinIndex, 0) +
+          // bump from right edge of data
+          Math.min(graphEndIndex - newZoomMaxIndex, 0);
+        // set these new values
+        return [newZoomMinIndex + offset, newZoomMaxIndex + offset];
+      } else {
+        return [currentMinIndex, currentMaxIndex];
+      }
+    }
+
+    function zoomIn() {
+      const [newZoomMinIndex, newZoomMaxIndex] = zoom('in');
+      setZoomRange([newZoomMinIndex, newZoomMaxIndex]);
       setRangeMinIndex((rangeMinIndex: number) =>
         Math.max(rangeMinIndex, newZoomMinIndex)
       );
@@ -703,6 +716,11 @@ export default function LiquiditySelector({
         Math.min(rangeMaxIndex, newZoomMaxIndex)
       );
     }
+    function zoomOut() {
+      const [newZoomMinIndex, newZoomMaxIndex] = zoom('out');
+      setZoomRange([newZoomMinIndex, newZoomMaxIndex]);
+    }
+    return [zoomIn, zoomOut];
   }, [
     rangeMinIndex,
     rangeMaxIndex,
@@ -712,46 +730,6 @@ export default function LiquiditySelector({
     graphEndIndex,
     setRangeMinIndex,
     setRangeMaxIndex,
-  ]);
-  const zoomOut = useCallback(() => {
-    const currentMinIndex =
-      zoomMinIndex !== undefined
-        ? Math.max(zoomMinIndex, graphStartIndex)
-        : graphStartIndex;
-    const currentMaxIndex =
-      zoomMaxIndex !== undefined
-        ? Math.min(zoomMaxIndex, graphEndIndex)
-        : graphEndIndex;
-    if (
-      [rangeMinIndex, rangeMaxIndex, currentMinIndex, currentMaxIndex].every(
-        (v) => !isNaN(v)
-      )
-    ) {
-      const midpointIndex = (rangeMinIndex + rangeMaxIndex) / 2;
-      const indexSpread = Math.max(
-        minZoomIndexSpread,
-        // zoom out
-        (currentMaxIndex - currentMinIndex) * zoomSpeedFactor
-      );
-      const newZoomMinIndex = Math.round(midpointIndex - indexSpread / 2);
-      const newZoomMaxIndex = Math.round(midpointIndex + indexSpread / 2);
-      // calculate better positioning of new range as it could end up far to the side
-      const offset =
-        0 +
-        // bump from left edge of data
-        Math.max(graphStartIndex - newZoomMinIndex, 0) +
-        // bump from right edge of data
-        Math.min(graphEndIndex - newZoomMaxIndex, 0);
-      // set these new values
-      setZoomRange([newZoomMinIndex + offset, newZoomMaxIndex + offset]);
-    }
-  }, [
-    rangeMinIndex,
-    rangeMaxIndex,
-    zoomMinIndex,
-    zoomMaxIndex,
-    graphStartIndex,
-    graphEndIndex,
   ]);
 
   return (
