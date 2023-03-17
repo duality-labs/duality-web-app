@@ -14,13 +14,19 @@ import useResizeObserver from '@react-hook/resize-observer';
 import { formatAmount, formatPrice } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
 import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
-import useCurrentPriceFromTicks from './useCurrentPriceFromTicks';
+import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
 import { Token } from '../TokenPicker/hooks';
 import { TickInfo, useIndexerPairData } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
+
+const { REACT_APP__MAX_TICK_INDEXES = '' } = process.env;
+const [
+  priceMinIndex = Number.MIN_SAFE_INTEGER,
+  priceMaxIndex = Number.MAX_SAFE_INTEGER,
+] = REACT_APP__MAX_TICK_INDEXES.split(',').map(Number).filter(Boolean);
 
 export interface LiquiditySelectorProps {
   tokenA: Token;
@@ -72,12 +78,12 @@ type TickGroupBucketsEmpty = Array<
   [lowerIndexBound: number, upperIndexBound: number]
 >;
 type TickGroupBucketsFilled = Array<
-  [lowerPriceBound: BigNumber, upperPriceBound: BigNumber, reserve: BigNumber]
+  [lowerIndexBound: number, upperIndexBound: number, reserve: BigNumber]
 >;
 type TickGroupMergedBucketsFilled = Array<
   [
-    lowerPriceBound: BigNumber,
-    upperPriceBound: BigNumber,
+    lowerIndexBound: number,
+    upperIndexBound: number,
     reserveA: BigNumber,
     reserveB: BigNumber
   ]
@@ -85,16 +91,13 @@ type TickGroupMergedBucketsFilled = Array<
 
 const bucketWidth = 8; // bucket width in pixels
 
-const defaultStartValue = new BigNumber(1 / 1.1);
-const defaultEndValue = new BigNumber(1.1);
+const defaultStartIndex = priceToTickIndex(new BigNumber(1 / 1.1)).toNumber();
+const defaultEndIndex = priceToTickIndex(new BigNumber(1.1)).toNumber();
 
 // set maximum zoom constants:
 // zooming past the resolution of ticks does not help the end users.
-// We should allow users to see at minimum a few ticks across the width of a
-// the chart. As our tickspacing base is a ratio of 1.0001, a max ratio of
-// 1.001 should allow users to see to space of about 10 ticks at max zoom.
-const maxZoomRatio = 1.01; // eg. midpoint of 200: zoomMin≈199 zoomMax≈201
-const zoomSpeedFactor = 0.5; // approx equivalent to zooming in range by 10%
+const minZoomIndexSpread = 10; // approx minimum number of indexes to show on the graph at once
+const zoomSpeedFactor = 2; // zoom in/out means divide/multiply the number of shown tick indexes by x
 
 const leftPadding = 75;
 const rightPadding = 75;
@@ -123,6 +126,74 @@ export default function LiquiditySelector({
   oneSidedLiquidity = false,
   ControlsComponent,
 }: LiquiditySelectorProps) {
+  // convert range price state controls into range index state controls
+  const rangeMinIndex = useMemo(() => {
+    const index = priceToTickIndex(new BigNumber(rangeMin)).toNumber();
+    // guard against incorrect numbers
+    return !isNaN(index)
+      ? Math.max(priceMinIndex, Math.min(priceMaxIndex, index))
+      : defaultStartIndex;
+  }, [rangeMin]);
+  const rangeMaxIndex = useMemo(() => {
+    const index = priceToTickIndex(new BigNumber(rangeMax)).toNumber();
+    // guard against incorrect numbers
+    return !isNaN(index)
+      ? Math.max(priceMinIndex, Math.min(priceMaxIndex, index))
+      : defaultEndIndex;
+  }, [rangeMax]);
+  const setRangeMinIndex: React.Dispatch<React.SetStateAction<number>> =
+    useCallback(
+      (valueOrCallback) => {
+        // process as a callback
+        if (typeof valueOrCallback === 'function') {
+          const callback = valueOrCallback;
+          setRangeMin((rangeMin) => {
+            // convert price to index
+            const rangeMinIndex = priceToTickIndex(
+              new BigNumber(rangeMin)
+            ).toNumber();
+            // process as index
+            const value = callback(rangeMinIndex);
+            // convert index back to price
+            return tickIndexToPrice(new BigNumber(value)).toFixed();
+          });
+        }
+        // process as a value
+        else {
+          const value = valueOrCallback;
+          // convert index to price
+          setRangeMin(tickIndexToPrice(new BigNumber(value)).toFixed());
+        }
+      },
+      [setRangeMin]
+    );
+  const setRangeMaxIndex: React.Dispatch<React.SetStateAction<number>> =
+    useCallback(
+      (valueOrCallback) => {
+        // process as a callback
+        if (typeof valueOrCallback === 'function') {
+          const callback = valueOrCallback;
+          setRangeMax((rangeMax) => {
+            // convert price to index
+            const rangeMinIndex = priceToTickIndex(
+              new BigNumber(rangeMax)
+            ).toNumber();
+            // process as index
+            const value = callback(rangeMinIndex);
+            // convert index back to price
+            return tickIndexToPrice(new BigNumber(value)).toFixed();
+          });
+        }
+        // process as a value
+        else {
+          const value = valueOrCallback;
+          // convert index to price
+          setRangeMax(tickIndexToPrice(new BigNumber(value)).toFixed());
+        }
+      },
+      [setRangeMax]
+    );
+
   const {
     data: {
       token0Ticks = [],
@@ -183,7 +254,7 @@ export default function LiquiditySelector({
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
-  const currentPriceFromTicks = useCurrentPriceFromTicks(
+  const currentPriceIndexFromTicks = useCurrentPriceIndexFromTicks(
     tokenA.address,
     tokenB.address
   );
@@ -196,98 +267,105 @@ export default function LiquiditySelector({
     userTicks.every((tick) => tick?.reserveB.isZero() ?? true);
 
   // note edge price, the price of the edge of one-sided liquidity
-  const edgePrice = currentPriceFromTicks;
+  const edgePriceIndex = currentPriceIndexFromTicks;
 
   // note warning price, the price at which warning states should be shown
-  const [tokenAWarningPrice, tokenBWarningPrice] = useMemo(() => {
+  const [tokenAWarningPriceIndex, tokenBWarningPriceIndex] = useMemo(() => {
     const [tokenAEdgeTick]: (TokenTick | undefined)[] = tokenATicks;
     const [tokenBEdgeTick]: (TokenTick | undefined)[] = tokenBTicks;
     return oneSidedLiquidity
       ? // for one-sided liquidity this is the behind enemy lines check
         [
-          !isUserTicksAZero ? tokenBEdgeTick?.price : undefined,
-          !isUserTicksBZero ? tokenAEdgeTick?.price : undefined,
+          !isUserTicksAZero ? tokenBEdgeTick?.tickIndex : undefined,
+          !isUserTicksBZero ? tokenAEdgeTick?.tickIndex : undefined,
         ]
       : // for double-sided liquidity we switch on the current price
-        [edgePrice, edgePrice];
+        [edgePriceIndex, edgePriceIndex];
   }, [
     oneSidedLiquidity,
-    edgePrice,
+    edgePriceIndex,
     isUserTicksAZero,
     isUserTicksBZero,
     tokenATicks,
     tokenBTicks,
   ]);
 
-  const initialGraphStart = useMemo(() => {
-    const graphStart = edgePrice?.dividedBy(4) ?? defaultStartValue;
-    return graphStart.isLessThan(defaultStartValue)
-      ? defaultStartValue
-      : graphStart;
-  }, [edgePrice]);
-  const initialGraphEnd = useMemo(() => {
-    const graphEnd = edgePrice?.multipliedBy(4) ?? defaultEndValue;
-    return graphEnd.isLessThan(defaultEndValue) ? defaultEndValue : graphEnd;
-  }, [edgePrice]);
+  const [initialGraphStartIndex, initialGraphEndIndex] = useMemo<
+    [number, number]
+  >(() => {
+    // get factor for 1/4 and 4x of price
+    const spread = Math.log(4) / Math.log(1.0001);
+    return [
+      edgePriceIndex ? edgePriceIndex - spread : defaultStartIndex,
+      edgePriceIndex ? edgePriceIndex + spread : defaultEndIndex,
+    ];
+  }, [edgePriceIndex]);
 
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
-  const [dataStart, dataEnd] = useMemo<(BigNumber | undefined)[]>(() => {
+  const [dataStartIndex, dataEndIndex] = useMemo<(number | undefined)[]>(() => {
     return [
-      (tokenATicks[tokenATicks.length - 1] || tokenBTicks[0])?.price,
-      (tokenBTicks[tokenBTicks.length - 1] || tokenATicks[0])?.price,
+      (tokenATicks[tokenATicks.length - 1] || tokenBTicks[0])?.tickIndex,
+      (tokenBTicks[tokenBTicks.length - 1] || tokenATicks[0])?.tickIndex,
     ];
   }, [tokenATicks, tokenBTicks]);
 
-  const [[zoomMin, zoomMax] = [], setZoomRange] = useState<[string, string]>();
+  const [[zoomMinIndex, zoomMaxIndex] = [], setZoomRange] =
+    useState<[number, number]>();
 
-  const [zoomedDataStart, zoomedDataEnd] = useMemo<
-    [BigNumber | undefined, BigNumber | undefined]
+  const [zoomedDataStartIndex, zoomedDataEndIndex] = useMemo<
+    (number | undefined)[]
   >(() => {
     if (
-      !!zoomMin &&
-      !!zoomMax &&
-      !isNaN(Number(zoomMin)) &&
-      !isNaN(Number(zoomMax))
+      !!zoomMinIndex &&
+      !!zoomMaxIndex &&
+      !isNaN(Number(zoomMinIndex)) &&
+      !isNaN(Number(zoomMaxIndex))
     ) {
-      if (dataStart?.isNaN() === false && dataEnd?.isNaN() === false) {
-        const min = dataStart.isLessThan(zoomMin)
-          ? new BigNumber(zoomMin)
-          : dataStart;
-        const max = dataEnd.isGreaterThan(zoomMax)
-          ? new BigNumber(zoomMax)
-          : dataEnd;
-        return [min, max];
+      if (
+        dataStartIndex &&
+        dataEndIndex &&
+        isNaN(dataStartIndex) === false &&
+        isNaN(dataEndIndex) === false
+      ) {
+        return [
+          Math.max(dataStartIndex, zoomMinIndex),
+          Math.min(dataEndIndex, zoomMaxIndex),
+        ];
       } else {
-        return [new BigNumber(zoomMin), new BigNumber(zoomMax)];
+        return [zoomMinIndex, zoomMaxIndex];
       }
     }
-    return [dataStart, dataEnd];
-  }, [zoomMin, zoomMax, dataStart, dataEnd]);
+    return [dataStartIndex, dataEndIndex];
+  }, [zoomMinIndex, zoomMaxIndex, dataStartIndex, dataEndIndex]);
 
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
-  const [graphStart = initialGraphStart, graphEnd = initialGraphEnd] = useMemo<
-    [BigNumber | undefined, BigNumber | undefined]
-  >(() => {
+  const [
+    graphStartIndex = initialGraphStartIndex,
+    graphEndIndex = initialGraphEndIndex,
+  ] = useMemo<[number | undefined, number | undefined]>(() => {
     const allValues = [
-      ...userTicks.map<number | undefined>((tick) => tick?.price.toNumber()),
-      Number(rangeMin),
-      Number(rangeMax),
-      zoomedDataStart?.toNumber(),
-      zoomedDataEnd?.toNumber(),
-    ].filter((v): v is number => !!v && !isNaN(v));
+      ...userTicks.map<number | undefined>((tick) => tick?.tickIndex),
+      rangeMinIndex,
+      rangeMaxIndex,
+      zoomedDataStartIndex,
+      zoomedDataEndIndex,
+    ].filter((v): v is number => v !== undefined && !isNaN(v));
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
-    // by padding dataStart and dataEnd with the needed amount of pixels
+    // by padding dataStartIndex and dataEndIndex with the needed amount of pixels
     if (allValues.length > 0) {
-      return [
-        new BigNumber(Math.min(...allValues)),
-        new BigNumber(Math.max(...allValues)),
-      ];
+      return [Math.min(...allValues), Math.max(...allValues)];
     } else {
       return [undefined, undefined];
     }
-  }, [rangeMin, rangeMax, userTicks, zoomedDataStart, zoomedDataEnd]);
+  }, [
+    rangeMinIndex,
+    rangeMaxIndex,
+    userTicks,
+    zoomedDataStartIndex,
+    zoomedDataEndIndex,
+  ]);
 
   // find container size that buckets should fit
   const svgContainer = useRef<HTMLDivElement>(null);
@@ -307,42 +385,43 @@ export default function LiquiditySelector({
   );
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
-  const startIsEnd = graphEnd.isLessThanOrEqualTo(graphStart);
-  const xMin = (startIsEnd ? graphStart.dividedBy(10) : graphStart).toNumber();
-  const xMax = (startIsEnd ? graphEnd.multipliedBy(10) : graphEnd).toNumber();
+  const startIsEnd = graphEndIndex <= graphStartIndex;
+  // get factor for 1/10 and 10x of price
+  const spread = Math.log(10) / Math.log(1.0001);
+  const xMinIndex = startIsEnd ? graphStartIndex - spread : graphStartIndex;
+  const xMaxIndex = startIsEnd ? graphEndIndex + spread : graphEndIndex;
 
-  const [viewableStart, viewableEnd] = useMemo(() => {
+  const [viewableStartIndex, viewableEndIndex] = useMemo<
+    [number, number]
+  >(() => {
     // get bounds
-    const xTotalRatio = xMax / xMin;
-    const xWidth = Math.max(
-      1,
-      containerSize.width - leftPadding - rightPadding
-    );
+    const spread = xMaxIndex - xMinIndex;
+    const width = Math.max(1, containerSize.width - leftPadding - rightPadding);
     return [
-      new BigNumber(xMin / Math.pow(xTotalRatio, leftPadding / xWidth)),
-      new BigNumber(xMax * Math.pow(xTotalRatio, rightPadding / xWidth)),
+      xMinIndex - (spread * leftPadding) / width,
+      xMaxIndex + (spread * rightPadding) / width,
     ];
-  }, [xMin, xMax, containerSize.width]);
+  }, [xMinIndex, xMaxIndex, containerSize.width]);
 
   // calculate bucket extents
   const getEmptyBuckets = useCallback<
     (
       // get bounds
-      xMin: BigNumber,
-      xMax: BigNumber
+      xMinIndex: number,
+      xMaxIndex: number
     ) => [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
   >(
-    (xMin, xMax) => {
+    (xMinIndex, xMaxIndex) => {
       // get middle 'break' point which will separate bucket sections
-      const breakPoint = edgePrice;
+      const breakIndex = edgePriceIndex;
       // skip if there is no breakpoint
-      if (!breakPoint) {
+      if (breakIndex === undefined) {
         return [[], []];
       }
 
-      const indexNow = priceToTickIndex(breakPoint).toNumber();
-      const indexMin = priceToTickIndex(xMin, 'floor').toNumber();
-      const indexMax = priceToTickIndex(xMax, 'ceil').toNumber();
+      const indexNow = breakIndex;
+      const indexMin = xMinIndex;
+      const indexMax = xMaxIndex;
       const currentPriceIsWithinView =
         indexMin <= indexNow && indexNow <= indexMax;
 
@@ -389,12 +468,12 @@ export default function LiquiditySelector({
       // return concantenated buckets
       return [tokenABuckets, tokenBBuckets];
     },
-    [edgePrice, containerSize.width]
+    [edgePriceIndex, containerSize.width]
   );
 
   const emptyBuckets = useMemo(() => {
-    return getEmptyBuckets(viewableStart, viewableEnd);
-  }, [getEmptyBuckets, viewableStart, viewableEnd]);
+    return getEmptyBuckets(viewableStartIndex, viewableEndIndex);
+  }, [getEmptyBuckets, viewableStartIndex, viewableEndIndex]);
 
   // calculate histogram values
   const feeTickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
@@ -410,7 +489,10 @@ export default function LiquiditySelector({
       fillBuckets(emptyBuckets[1], tokenBTicks, 'lower'),
     ];
     return mergeBuckets(allFeesTickBuckets[0], allFeesTickBuckets[1]).reduce(
-      (result, [lowerBound, upperBound, tokenAValue, tokenBValue]) => {
+      (
+        result,
+        [lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue]
+      ) => {
         return Math.max(result, tokenAValue.toNumber(), tokenBValue.toNumber());
       },
       0
@@ -420,15 +502,13 @@ export default function LiquiditySelector({
   const plotX = useCallback(
     (x: number): number => {
       const width = containerSize.width - leftPadding - rightPadding;
-      return xMin === xMax
+      return xMinIndex === xMaxIndex
         ? // choose midpoint
           leftPadding + width / 2
         : // interpolate coordinate to graph
-          leftPadding +
-            (width * (Math.log(x) - Math.log(xMin))) /
-              (Math.log(xMax) - Math.log(xMin));
+          leftPadding + (width * (x - xMinIndex)) / (xMaxIndex - xMinIndex);
     },
-    [xMin, xMax, containerSize.width]
+    [xMinIndex, xMaxIndex, containerSize.width]
   );
   const plotY = useCallback(
     (y: number): number => {
@@ -445,10 +525,6 @@ export default function LiquiditySelector({
       return -bottomPadding - height * y;
     },
     [containerSize.height]
-  );
-  const plotXBigNumber = useCallback(
-    (x: BigNumber) => plotX(x.toNumber()),
-    [plotX]
   );
   const plotYBigNumber = useCallback(
     (y: BigNumber) => plotY(y.toNumber()),
@@ -519,7 +595,6 @@ export default function LiquiditySelector({
           />
         </linearGradient>
       </defs>
-      {graphEnd.isZero() && <text>Chart is not currently available</text>}
       <g className="axis x-axis">
         <rect
           x="0"
@@ -531,28 +606,28 @@ export default function LiquiditySelector({
       {!advanced && (
         <TicksBackgroundArea
           className="new-ticks-area"
-          rangeMin={rangeMin}
-          rangeMax={rangeMax}
-          plotX={plotXBigNumber}
+          rangeMinIndex={rangeMinIndex}
+          rangeMaxIndex={rangeMaxIndex}
+          plotX={plotX}
           plotY={percentYBigNumber}
         />
       )}
       <TickBucketsGroup
         tickBuckets={feeTickBuckets}
-        plotX={plotXBigNumber}
+        plotX={plotX}
         plotY={plotYBigNumber}
       />
       {advanced ? (
         <TicksGroup
           className="new-ticks"
-          tokenAWarningPrice={tokenAWarningPrice}
-          tokenBWarningPrice={tokenBWarningPrice}
+          tokenAWarningPriceIndex={tokenAWarningPriceIndex}
+          tokenBWarningPriceIndex={tokenBWarningPriceIndex}
           userTicks={userTicks}
           backgroundTicks={userTicksBase}
           setUserTicks={setUserTicks}
           userTickSelected={userTickSelected}
           setUserTickSelected={setUserTickSelected}
-          plotX={plotXBigNumber}
+          plotX={plotX}
           percentY={percentYBigNumber}
           canMoveUp={canMoveUp}
           canMoveDown={canMoveDown}
@@ -561,28 +636,27 @@ export default function LiquiditySelector({
       ) : (
         <TicksArea
           className="new-ticks-area"
-          currentPrice={edgePrice}
-          tokenAWarningPrice={tokenAWarningPrice}
-          tokenBWarningPrice={tokenBWarningPrice}
+          currentPriceIndex={edgePriceIndex}
+          tokenAWarningPriceIndex={tokenAWarningPriceIndex}
+          tokenBWarningPriceIndex={tokenBWarningPriceIndex}
           oneSidedLiquidity={oneSidedLiquidity}
-          plotX={plotXBigNumber}
+          plotX={plotX}
           plotY={percentYBigNumber}
           containerHeight={containerSize.height}
-          rangeMin={rangeMin}
-          rangeMax={rangeMax}
-          setRangeMin={setRangeMin}
-          setRangeMax={setRangeMax}
+          rangeMinIndex={rangeMinIndex}
+          rangeMaxIndex={rangeMaxIndex}
+          setRangeMinIndex={setRangeMinIndex}
+          setRangeMaxIndex={setRangeMaxIndex}
         />
       )}
       <Axis
         className="x-axis"
-        xMin={xMin}
-        xMax={xMax}
-        tickMarks={[edgePrice?.toNumber() || '0', rangeMin, rangeMax]
-          .map((v) => formatPrice(v))
-          .map(Number)
-          .filter((v): v is number => !!v && v > 0)}
-        highlightedTick={Number(formatPrice(edgePrice?.toNumber() || 0))}
+        xMinIndex={xMinIndex}
+        xMaxIndex={xMaxIndex}
+        tickMarkIndexes={[edgePriceIndex, rangeMinIndex, rangeMaxIndex].filter(
+          (v): v is number => v !== undefined
+        )}
+        highlightedTickIndex={edgePriceIndex}
         getDecimalPlaces={null}
         plotX={plotX}
         plotY={plotY}
@@ -592,91 +666,92 @@ export default function LiquiditySelector({
   );
 
   const zoomIn = useCallback(() => {
-    const rangeMinNumber = Number(rangeMin);
-    const rangeMaxNumber = Number(rangeMax);
-    const zoomMinNumber = Math.max(Number(zoomMin) || 0, graphStart.toNumber());
-    const zoomMaxNumber = Math.min(
-      Number(zoomMax) || Infinity,
-      graphEnd.toNumber()
-    );
+    const currentMinIndex =
+      zoomMinIndex !== undefined
+        ? Math.max(zoomMinIndex, graphStartIndex)
+        : graphStartIndex;
+    const currentMaxIndex =
+      zoomMaxIndex !== undefined
+        ? Math.min(zoomMaxIndex, graphEndIndex)
+        : graphEndIndex;
     if (
-      [rangeMinNumber, rangeMaxNumber, zoomMinNumber, zoomMaxNumber].every(
+      [rangeMinIndex, rangeMaxIndex, currentMinIndex, currentMaxIndex].every(
         (v) => !isNaN(v)
       )
     ) {
-      const midpoint =
-        Math.sqrt(rangeMaxNumber / rangeMinNumber) * rangeMinNumber;
-      const zoomRatio = zoomMaxNumber / zoomMinNumber;
-      const rangeLimitRatio = Math.sqrt(
-        1 + (zoomRatio - 1) * (1 - zoomSpeedFactor)
+      const midpointIndex = (rangeMinIndex + rangeMaxIndex) / 2;
+      const indexSpread = Math.max(
+        minZoomIndexSpread,
+        // zoom in
+        (currentMaxIndex - currentMinIndex) / zoomSpeedFactor
       );
-      const newZoomRatio = Math.max(maxZoomRatio, rangeLimitRatio);
-      setZoomRange([
-        (midpoint / newZoomRatio).toFixed(20),
-        (midpoint * newZoomRatio).toFixed(20),
-      ]);
-      setRangeMin((rangeMin: string) => {
-        return new BigNumber(rangeMin).isLessThan(midpoint / newZoomRatio)
-          ? (midpoint / newZoomRatio).toFixed(20)
-          : rangeMin;
-      });
-      setRangeMax((rangeMax: string) => {
-        return new BigNumber(rangeMax).isGreaterThan(midpoint * newZoomRatio)
-          ? (midpoint * newZoomRatio).toFixed(20)
-          : rangeMax;
-      });
+      const newZoomMinIndex = Math.round(midpointIndex - indexSpread / 2);
+      const newZoomMaxIndex = Math.round(midpointIndex + indexSpread / 2);
+      // calculate better positioning of new range as it could end up far to the side
+      const offset =
+        0 +
+        // bump from left edge of data
+        Math.max(graphStartIndex - newZoomMinIndex, 0) +
+        // bump from right edge of data
+        Math.min(graphEndIndex - newZoomMaxIndex, 0);
+      // set these new values
+      setZoomRange([newZoomMinIndex + offset, newZoomMaxIndex + offset]);
+      setRangeMinIndex((rangeMinIndex: number) =>
+        Math.max(rangeMinIndex, newZoomMinIndex)
+      );
+      setRangeMaxIndex((rangeMaxIndex: number) =>
+        Math.min(rangeMaxIndex, newZoomMaxIndex)
+      );
     }
   }, [
-    rangeMin,
-    rangeMax,
-    zoomMin,
-    zoomMax,
-    graphStart,
-    graphEnd,
-    setRangeMin,
-    setRangeMax,
+    rangeMinIndex,
+    rangeMaxIndex,
+    zoomMinIndex,
+    zoomMaxIndex,
+    graphStartIndex,
+    graphEndIndex,
+    setRangeMinIndex,
+    setRangeMaxIndex,
   ]);
   const zoomOut = useCallback(() => {
-    const rangeMinNumber = Number(rangeMin);
-    const rangeMaxNumber = Number(rangeMax);
-    const zoomMinNumber = Math.max(Number(zoomMin) || 0, graphStart.toNumber());
-    const zoomMaxNumber = Math.min(
-      Number(zoomMax) || Infinity,
-      graphEnd.toNumber()
-    );
+    const currentMinIndex =
+      zoomMinIndex !== undefined
+        ? Math.max(zoomMinIndex, graphStartIndex)
+        : graphStartIndex;
+    const currentMaxIndex =
+      zoomMaxIndex !== undefined
+        ? Math.min(zoomMaxIndex, graphEndIndex)
+        : graphEndIndex;
     if (
-      [rangeMinNumber, rangeMaxNumber, zoomMinNumber, zoomMaxNumber].every(
+      [rangeMinIndex, rangeMaxIndex, currentMinIndex, currentMaxIndex].every(
         (v) => !isNaN(v)
       )
     ) {
-      const zoomMidpoint =
-        Math.sqrt(rangeMaxNumber / rangeMinNumber) * rangeMinNumber;
-      const zoomRatio = zoomMaxNumber / zoomMinNumber;
-      const rangeLimitRatio = Math.sqrt(
-        1 + (zoomRatio - 1) / (1 - zoomSpeedFactor)
+      const midpointIndex = (rangeMinIndex + rangeMaxIndex) / 2;
+      const indexSpread = Math.max(
+        minZoomIndexSpread,
+        // zoom out
+        (currentMaxIndex - currentMinIndex) * zoomSpeedFactor
       );
-      const newZoomRatio = Math.max(maxZoomRatio, rangeLimitRatio);
-      const midpoint = dataStart
-        ?.multipliedBy(newZoomRatio)
-        .isGreaterThan(zoomMidpoint)
-        ? dataStart?.multipliedBy(newZoomRatio).toNumber()
-        : dataEnd?.dividedBy(newZoomRatio).isLessThan(zoomMidpoint)
-        ? dataEnd?.dividedBy(newZoomRatio).toNumber()
-        : zoomMidpoint;
-      setZoomRange([
-        (midpoint / newZoomRatio).toFixed(20),
-        (midpoint * newZoomRatio).toFixed(20),
-      ]);
+      const newZoomMinIndex = Math.round(midpointIndex - indexSpread / 2);
+      const newZoomMaxIndex = Math.round(midpointIndex + indexSpread / 2);
+      // calculate better positioning of new range as it could end up far to the side
+      const offset =
+        0 +
+        // bump from left edge of data
+        Math.max(graphStartIndex - newZoomMinIndex, 0) +
+        // bump from right edge of data
+        Math.min(graphEndIndex - newZoomMaxIndex, 0);
+      // set these new values
+      setZoomRange([newZoomMinIndex + offset, newZoomMaxIndex + offset]);
     }
   }, [
-    rangeMin,
-    rangeMax,
-    zoomMin,
-    zoomMax,
-    graphStart,
-    graphEnd,
-    dataStart,
-    dataEnd,
+    rangeMinIndex,
+    rangeMaxIndex,
+    zoomMinIndex,
+    zoomMaxIndex,
+    graphStartIndex,
+    graphEndIndex,
   ]);
 
   return (
@@ -688,17 +763,19 @@ export default function LiquiditySelector({
         <div className="col">
           <ControlsComponent
             zoomIn={
-              zoomMax &&
-              zoomMin &&
-              Math.sqrt(Number(zoomMax) / Number(zoomMin)) <= maxZoomRatio
+              zoomMaxIndex !== undefined &&
+              zoomMinIndex !== undefined &&
+              zoomMaxIndex - zoomMinIndex < minZoomIndexSpread
                 ? undefined
                 : zoomIn
             }
             zoomOut={
-              zoomMin &&
-              zoomMax &&
-              dataStart?.isGreaterThanOrEqualTo(zoomMin) &&
-              dataEnd?.isLessThanOrEqualTo(zoomMax)
+              zoomMinIndex &&
+              zoomMaxIndex &&
+              dataStartIndex !== undefined &&
+              dataEndIndex !== undefined &&
+              dataStartIndex >= zoomMinIndex &&
+              dataEndIndex <= zoomMaxIndex
                 ? undefined
                 : zoomOut
             }
@@ -735,11 +812,7 @@ function fillBuckets(
       );
       // place tokenA buckets to the left of the current price
       if (reserve.isGreaterThan(0)) {
-        result.push([
-          tickIndexToPrice(new BigNumber(lowerIndexBound)),
-          tickIndexToPrice(new BigNumber(upperIndexBound)),
-          reserve,
-        ]);
+        result.push([lowerIndexBound, upperIndexBound, reserve]);
       }
       return result;
     },
@@ -752,13 +825,13 @@ function mergeBuckets(
   tokenBBuckets: TickGroupBucketsFilled
 ) {
   const mergedTokenABuckets: TickGroupMergedBucketsFilled = tokenABuckets.map(
-    ([lowerBound, upperBound, reserve]) => {
-      return [lowerBound, upperBound, reserve, new BigNumber(0)];
+    ([lowerBoundIndex, upperBoundIndex, reserve]) => {
+      return [lowerBoundIndex, upperBoundIndex, reserve, new BigNumber(0)];
     }
   );
   const mergedTokenBBuckets: TickGroupMergedBucketsFilled = tokenBBuckets.map(
-    ([lowerBound, upperBound, reserve]) => {
-      return [lowerBound, upperBound, new BigNumber(0), reserve];
+    ([lowerBoundIndex, upperBoundIndex, reserve]) => {
+      return [lowerBoundIndex, upperBoundIndex, new BigNumber(0), reserve];
     }
   );
 
@@ -790,22 +863,19 @@ function mergeBuckets(
 }
 
 function TicksBackgroundArea({
-  rangeMin,
-  rangeMax,
+  rangeMinIndex,
+  rangeMaxIndex,
   plotX,
   plotY,
   className,
 }: {
-  rangeMin: string;
-  rangeMax: string;
-  plotX: (x: BigNumber) => number;
+  rangeMinIndex: number;
+  rangeMaxIndex: number;
+  plotX: (x: number) => number;
   plotY: (y: BigNumber) => number;
   className?: string;
 }) {
-  const rangeMinPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
-  const rangeMaxPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
-
-  return rangeMinPrice && rangeMaxPrice ? (
+  return !isNaN(rangeMinIndex) && !isNaN(rangeMaxIndex) ? (
     <g
       className={['ticks-area__background', className]
         .filter(Boolean)
@@ -815,10 +885,10 @@ function TicksBackgroundArea({
         className="tick-area"
         // fill is defined on <svg><defs><linearGradient>
         fill="url(#white-concave-fade)"
-        x={plotX(rangeMinPrice).toFixed(3)}
+        x={plotX(rangeMinIndex).toFixed(3)}
         width={
-          rangeMaxPrice.isGreaterThan(rangeMinPrice)
-            ? (plotX(rangeMaxPrice) - plotX(rangeMinPrice)).toFixed(3)
+          rangeMaxIndex > rangeMinIndex
+            ? (plotX(rangeMaxIndex) - plotX(rangeMinIndex)).toFixed(3)
             : '0'
         }
         y={plotY(new BigNumber(1)).toFixed(3)}
@@ -831,57 +901,48 @@ function TicksBackgroundArea({
 }
 
 function TicksArea({
-  currentPrice,
-  tokenAWarningPrice,
-  tokenBWarningPrice,
+  currentPriceIndex,
+  tokenAWarningPriceIndex,
+  tokenBWarningPriceIndex,
   oneSidedLiquidity,
   plotX,
   plotY,
   containerHeight,
-  rangeMin,
-  rangeMax,
-  setRangeMin,
-  setRangeMax,
+  rangeMinIndex,
+  rangeMaxIndex,
+  setRangeMinIndex,
+  setRangeMaxIndex,
   className,
 }: {
-  currentPrice: BigNumber | undefined;
-  tokenAWarningPrice: BigNumber | undefined;
-  tokenBWarningPrice: BigNumber | undefined;
+  currentPriceIndex: number | undefined;
+  tokenAWarningPriceIndex: number | undefined;
+  tokenBWarningPriceIndex: number | undefined;
   oneSidedLiquidity: boolean;
-  plotX: (x: BigNumber) => number;
+  plotX: (x: number) => number;
   plotY: (y: BigNumber) => number;
   containerHeight: number;
-  rangeMin: string;
-  rangeMax: string;
-  setRangeMin: (rangeMin: string) => void;
-  setRangeMax: (rangeMax: string) => void;
+  rangeMinIndex: number;
+  rangeMaxIndex: number;
+  setRangeMinIndex: (rangeMinIndex: number) => void;
+  setRangeMaxIndex: (rangeMaxIndex: number) => void;
   className?: string;
 }) {
-  const rangeMinPrice = useMemo(() => new BigNumber(rangeMin), [rangeMin]);
-  const rangeMaxPrice = useMemo(() => new BigNumber(rangeMax), [rangeMax]);
-
   const lastDisplacementMin = useRef<number>(0);
   const [startDragMin, isDraggingMin] = useOnDragMove(
     useCallback(
       (ev: Event, displacement = { x: 0, y: 0 }) => {
         if (displacement.x && displacement.x !== lastDisplacementMin.current) {
           const newDisplacement = displacement.x - lastDisplacementMin.current;
-          const orderOfMagnitudePixels =
-            plotX(new BigNumber(10)) - plotX(new BigNumber(1));
-          const displacementRatio = Math.pow(
-            10,
-            newDisplacement / orderOfMagnitudePixels
-          );
-          const newValue = rangeMinPrice.multipliedBy(displacementRatio);
-          const newValueString = formatPrice(newValue.toFixed());
-          setRangeMin(newValueString);
-          if (rangeMaxPrice.isLessThanOrEqualTo(newValue)) {
-            setRangeMax(newValueString);
+          const pixelsPerIndex = plotX(1) - plotX(0);
+          const newIndex = rangeMinIndex + newDisplacement / pixelsPerIndex;
+          setRangeMinIndex(newIndex);
+          if (rangeMaxIndex < newIndex) {
+            setRangeMaxIndex(newIndex);
           }
           lastDisplacementMin.current = displacement.x;
         }
       },
-      [rangeMinPrice, rangeMaxPrice, plotX, setRangeMin, setRangeMax]
+      [rangeMinIndex, rangeMaxIndex, plotX, setRangeMinIndex, setRangeMaxIndex]
     )
   );
   useEffect(() => {
@@ -896,22 +957,16 @@ function TicksArea({
       (ev: Event, displacement = { x: 0, y: 0 }) => {
         if (displacement.x && displacement.x !== lastDisplacementMax.current) {
           const newDisplacement = displacement.x - lastDisplacementMax.current;
-          const orderOfMagnitudePixels =
-            plotX(new BigNumber(10)) - plotX(new BigNumber(1));
-          const displacementRatio = Math.pow(
-            10,
-            newDisplacement / orderOfMagnitudePixels
-          );
-          const newValue = rangeMaxPrice.multipliedBy(displacementRatio);
-          const newValueString = formatPrice(newValue.toFixed());
-          setRangeMax(newValueString);
-          if (rangeMinPrice.isGreaterThanOrEqualTo(newValue)) {
-            setRangeMin(newValueString);
+          const pixelsPerIndex = plotX(1) - plotX(0);
+          const newIndex = rangeMaxIndex + newDisplacement / pixelsPerIndex;
+          setRangeMaxIndex(newIndex);
+          if (rangeMinIndex > newIndex) {
+            setRangeMinIndex(newIndex);
           }
           lastDisplacementMax.current = displacement.x;
         }
       },
-      [rangeMinPrice, rangeMaxPrice, plotX, setRangeMin, setRangeMax]
+      [rangeMinIndex, rangeMaxIndex, plotX, setRangeMinIndex, setRangeMaxIndex]
     )
   );
   useEffect(() => {
@@ -921,54 +976,60 @@ function TicksArea({
   }, [isDraggingMax]);
 
   const rounding = 5;
-  const warningPriceIfGreaterThan = (
-    price: BigNumber | undefined,
-    limit: BigNumber | undefined
-  ): BigNumber | undefined => {
-    return limit && price?.isGreaterThan(limit) ? limit : undefined;
+  const warningIndexIfGreaterThan = (
+    index: number | undefined,
+    limit: number | undefined
+  ): number | undefined => {
+    return limit !== undefined && index !== undefined && index > limit
+      ? limit
+      : undefined;
   };
   const warningPriceIfLessThan = (
-    price: BigNumber | undefined,
-    limit: BigNumber | undefined
-  ): BigNumber | undefined => {
-    return limit && price?.isLessThan(limit) ? limit : undefined;
+    index: number | undefined,
+    limit: number | undefined
+  ): number | undefined => {
+    return limit !== undefined && index !== undefined && index < limit
+      ? limit
+      : undefined;
   };
-  const rangeMinPriceWarning = oneSidedLiquidity
-    ? warningPriceIfGreaterThan(rangeMinPrice, tokenAWarningPrice) ||
-      warningPriceIfLessThan(rangeMinPrice, tokenBWarningPrice)
-    : warningPriceIfGreaterThan(rangeMinPrice, currentPrice);
-  const rangeMaxPriceWarning = oneSidedLiquidity
-    ? warningPriceIfGreaterThan(rangeMaxPrice, tokenAWarningPrice) ||
-      warningPriceIfLessThan(rangeMaxPrice, tokenBWarningPrice)
-    : warningPriceIfLessThan(rangeMaxPrice, currentPrice);
+  const rangeMinIndexWarning = oneSidedLiquidity
+    ? warningIndexIfGreaterThan(rangeMinIndex, tokenAWarningPriceIndex) ??
+      warningPriceIfLessThan(rangeMinIndex, tokenBWarningPriceIndex)
+    : warningIndexIfGreaterThan(rangeMinIndex, currentPriceIndex);
+  const rangeMaxIndexWarning = oneSidedLiquidity
+    ? warningIndexIfGreaterThan(rangeMaxIndex, tokenAWarningPriceIndex) ??
+      warningPriceIfLessThan(rangeMaxIndex, tokenBWarningPriceIndex)
+    : warningPriceIfLessThan(rangeMaxIndex, currentPriceIndex);
 
-  return rangeMinPrice && rangeMaxPrice ? (
+  return !isNaN(rangeMinIndex) && !isNaN(rangeMaxIndex) ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
       <g
         className={[
           'pole-a',
-          oneSidedLiquidity && rangeMinPriceWarning && 'pole--price-warning',
+          oneSidedLiquidity &&
+            rangeMinIndexWarning !== undefined &&
+            'pole--price-warning',
         ]
           .filter(Boolean)
           .join(' ')}
       >
         <line
           className="line pole-stick"
-          x1={(plotX(rangeMinPrice) - poleWidth / 2).toFixed(3)}
-          x2={(plotX(rangeMinPrice) - poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
           className="pole-to-flag"
-          x={(plotX(rangeMinPrice) - rounding).toFixed(3)}
+          x={(plotX(rangeMinIndex) - rounding).toFixed(3)}
           width={rounding}
           y={plotY(new BigNumber(1)).toFixed(3)}
           height="40"
         />
         <rect
           className="pole-flag"
-          x={(plotX(rangeMinPrice) - 30 - poleWidth / 2).toFixed(3)}
+          x={(plotX(rangeMinIndex) - 30 - poleWidth / 2).toFixed(3)}
           width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
           height="40"
@@ -976,31 +1037,31 @@ function TicksArea({
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(rangeMinPrice) - 11.5 - poleWidth / 2).toFixed(3)}
-          x2={(plotX(rangeMinPrice) - 11.5 - poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMinIndex) - 11.5 - poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMinIndex) - 11.5 - poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(rangeMinPrice) - 18.5 - poleWidth / 2).toFixed(3)}
-          x2={(plotX(rangeMinPrice) - 18.5 - poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMinIndex) - 18.5 - poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMinIndex) - 18.5 - poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
-        {currentPrice && (
+        {currentPriceIndex !== undefined && (
           <text
             filter="url(#text-solid-highlight)"
-            x={(4 + 1.8 + plotX(rangeMinPrice) - poleWidth / 2).toFixed(3)}
+            x={(4 + 1.8 + plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
             textAnchor="end"
           >
             &nbsp;&nbsp;&nbsp;
             {`${formatAmount(
-              rangeMinPrice
+              tickIndexToPrice(new BigNumber(rangeMinIndex))
                 .multipliedBy(100)
-                .dividedBy(currentPrice)
+                .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
                 .minus(100)
                 .toFixed(0),
               {
@@ -1022,7 +1083,7 @@ function TicksArea({
         ) : (
           <rect
             className="pole-flag--hit-area"
-            x={(plotX(rangeMinPrice) - 30).toFixed(3)}
+            x={(plotX(rangeMinIndex) - 30).toFixed(3)}
             width="30"
             y={plotY(new BigNumber(1)).toFixed(3)}
             height="40"
@@ -1034,28 +1095,30 @@ function TicksArea({
       <g
         className={[
           'pole-b',
-          oneSidedLiquidity && rangeMaxPriceWarning && 'pole--price-warning',
+          oneSidedLiquidity &&
+            rangeMaxIndexWarning !== undefined &&
+            'pole--price-warning',
         ]
           .filter(Boolean)
           .join(' ')}
       >
         <line
           className="line pole-stick"
-          x1={(plotX(rangeMaxPrice) + poleWidth / 2).toFixed(3)}
-          x2={(plotX(rangeMaxPrice) + poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMaxIndex) + poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMaxIndex) + poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
           className="pole-to-flag"
-          x={plotX(rangeMaxPrice).toFixed(3)}
+          x={plotX(rangeMaxIndex).toFixed(3)}
           width={rounding}
           y={plotY(new BigNumber(1)).toFixed(3)}
           height="40"
         />
         <rect
           className="pole-flag"
-          x={(plotX(rangeMaxPrice) + poleWidth / 2).toFixed(3)}
+          x={(plotX(rangeMaxIndex) + poleWidth / 2).toFixed(3)}
           width="30"
           y={plotY(new BigNumber(1)).toFixed(3)}
           height="40"
@@ -1063,31 +1126,31 @@ function TicksArea({
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(rangeMaxPrice) + 11.5 + poleWidth / 2).toFixed(3)}
-          x2={(plotX(rangeMaxPrice) + 11.5 + poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMaxIndex) + 11.5 + poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMaxIndex) + 11.5 + poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
         <line
           className="pole-flag-stripe"
-          x1={(plotX(rangeMaxPrice) + 18.5 + poleWidth / 2).toFixed(3)}
-          x2={(plotX(rangeMaxPrice) + 18.5 + poleWidth / 2).toFixed(3)}
+          x1={(plotX(rangeMaxIndex) + 18.5 + poleWidth / 2).toFixed(3)}
+          x2={(plotX(rangeMaxIndex) + 18.5 + poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
-        {currentPrice && (
+        {currentPriceIndex !== undefined && (
           <text
             filter="url(#text-solid-highlight)"
-            x={(-(4 + 1.8) + plotX(rangeMaxPrice) + poleWidth / 2).toFixed(3)}
+            x={(-(4 + 1.8) + plotX(rangeMaxIndex) + poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
             dy="12"
             textAnchor="start"
           >
             &nbsp;&nbsp;&nbsp;
             {`${formatAmount(
-              rangeMaxPrice
+              tickIndexToPrice(new BigNumber(rangeMaxIndex))
                 .multipliedBy(100)
-                .dividedBy(currentPrice)
+                .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
                 .minus(100)
                 .toFixed(0),
               {
@@ -1109,7 +1172,7 @@ function TicksArea({
         ) : (
           <rect
             className="pole-flag--hit-area"
-            x={plotX(rangeMaxPrice).toFixed(3)}
+            x={plotX(rangeMaxIndex).toFixed(3)}
             width="30"
             y={plotY(new BigNumber(1)).toFixed(3)}
             height="40"
@@ -1121,46 +1184,46 @@ function TicksArea({
       <g className="flag-line">
         <line
           className="line flag-joiner"
-          x1={plotX(rangeMinPrice).toFixed(3)}
-          x2={plotX(rangeMaxPrice).toFixed(3)}
+          x1={plotX(rangeMinIndex).toFixed(3)}
+          x2={plotX(rangeMaxIndex).toFixed(3)}
           y1={plotY(new BigNumber(0.7)).toFixed(3)}
           y2={plotY(new BigNumber(0.7)).toFixed(3)}
         />
-        {rangeMinPriceWarning && (
+        {rangeMinIndexWarning !== undefined && (
           <>
             {/* draw warning line between flag and warning point */}
             <line
               className="line flag-joiner flag-joiner--price-warning"
-              x1={plotX(rangeMinPriceWarning).toFixed(3)}
-              x2={plotX(rangeMinPrice).toFixed(3)}
+              x1={plotX(rangeMinIndexWarning).toFixed(3)}
+              x2={plotX(rangeMinIndex).toFixed(3)}
               y1={plotY(new BigNumber(0.7)).toFixed(3)}
               y2={plotY(new BigNumber(0.7)).toFixed(3)}
             />
             {/* draw warning line across flag */}
             <line
               className="line flag-joiner flag-joiner--price-warning"
-              x1={plotX(rangeMinPrice).toFixed(3)}
-              x2={(plotX(rangeMinPrice) - poleWidth).toFixed(3)}
+              x1={plotX(rangeMinIndex).toFixed(3)}
+              x2={(plotX(rangeMinIndex) - poleWidth).toFixed(3)}
               y1={plotY(new BigNumber(0.7)).toFixed(3)}
               y2={plotY(new BigNumber(0.7)).toFixed(3)}
             />
           </>
         )}
-        {rangeMaxPriceWarning && (
+        {rangeMaxIndexWarning !== undefined && (
           <>
             {/* draw warning line between flag and warning point */}
             <line
               className="line flag-joiner flag-joiner--price-warning"
-              x1={plotX(rangeMaxPrice).toFixed(3)}
-              x2={plotX(rangeMaxPriceWarning).toFixed(3)}
+              x1={plotX(rangeMaxIndex).toFixed(3)}
+              x2={plotX(rangeMaxIndexWarning).toFixed(3)}
               y1={plotY(new BigNumber(0.7)).toFixed(3)}
               y2={plotY(new BigNumber(0.7)).toFixed(3)}
             />
             {/* draw warning line across flag */}
             <line
               className="line flag-joiner flag-joiner--price-warning"
-              x1={plotX(rangeMaxPrice).toFixed(3)}
-              x2={(plotX(rangeMaxPrice) + poleWidth).toFixed(3)}
+              x1={plotX(rangeMaxIndex).toFixed(3)}
+              x2={(plotX(rangeMaxIndex) + poleWidth).toFixed(3)}
               y1={plotY(new BigNumber(0.7)).toFixed(3)}
               y2={plotY(new BigNumber(0.7)).toFixed(3)}
             />
@@ -1172,8 +1235,8 @@ function TicksArea({
 }
 
 function TicksGroup({
-  tokenAWarningPrice,
-  tokenBWarningPrice,
+  tokenAWarningPriceIndex,
+  tokenBWarningPriceIndex,
   userTicks,
   backgroundTicks,
   setUserTicks,
@@ -1187,8 +1250,8 @@ function TicksGroup({
   canMoveX = false,
   ...rest
 }: {
-  tokenAWarningPrice: BigNumber | undefined;
-  tokenBWarningPrice: BigNumber | undefined;
+  tokenAWarningPriceIndex: number | undefined;
+  tokenBWarningPriceIndex: number | undefined;
   userTicks: Array<Tick | undefined>;
   backgroundTicks: Array<Tick | undefined>;
   setUserTicks?: (
@@ -1196,7 +1259,7 @@ function TicksGroup({
   ) => void;
   userTickSelected: number;
   setUserTickSelected: (index: number) => void;
-  plotX: (x: BigNumber) => number;
+  plotX: (x: number) => number;
   percentY: (y: BigNumber) => number;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
@@ -1244,23 +1307,21 @@ function TicksGroup({
         // move tick price
         if (canMoveX && Math.abs(displacement.x) > Math.abs(displacement.y)) {
           return setUserTicks?.((userTicks) => {
-            const orderOfMagnitudePixels =
-              plotX(new BigNumber(10)) - plotX(new BigNumber(1));
-            const displacementRatio = Math.pow(
-              10,
-              displacement.x / orderOfMagnitudePixels
-            );
+            const pixelsPerIndex = plotX(1) - plotX(0);
             return userTicks?.map((userTick, index) => {
               // modify price
               if (userTickSelected === index) {
-                const newPrice = tick.price.multipliedBy(displacementRatio);
+                const newIndex =
+                  tick.tickIndex + displacement.x / pixelsPerIndex;
                 const roundedPrice = new BigNumber(
-                  formatPrice(newPrice.toFixed())
+                  formatPrice(
+                    tickIndexToPrice(new BigNumber(newIndex)).toFixed()
+                  )
                 );
                 return {
                   ...userTick,
                   price: roundedPrice,
-                  tickIndex: priceToTickIndex(roundedPrice).toNumber(),
+                  tickIndex: newIndex,
                 };
               } else {
                 return userTick;
@@ -1370,11 +1431,11 @@ function TicksGroup({
     .map(([tick, index]) => {
       const backgroundTick = backgroundTicks[index] || tick;
       const background = {
-        price: backgroundTick.price,
+        tickIndex: backgroundTick.tickIndex,
         reserveA: backgroundTick.reserveA,
         reserveB: backgroundTick.reserveB,
       };
-      const { price, reserveA, reserveB } = tick;
+      const { tickIndex, reserveA, reserveB } = tick;
       // todo: display cumulative value of both side of ticks, not just one side
       const totalValue =
         (reserveA.isGreaterThan(0)
@@ -1418,11 +1479,11 @@ function TicksGroup({
                 : 'tick--diff-positive'),
             // warn user if this seems to be a bad trade
             reserveA.isGreaterThan(0)
-              ? tokenAWarningPrice &&
-                price.isGreaterThan(tokenAWarningPrice) &&
+              ? tokenAWarningPriceIndex &&
+                tickIndex > tokenAWarningPriceIndex &&
                 'tick--price-warning'
-              : tokenBWarningPrice &&
-                price.isLessThan(tokenBWarningPrice) &&
+              : tokenBWarningPriceIndex &&
+                tickIndex < tokenBWarningPriceIndex &&
                 'tick--price-warning',
           ]
             .filter(Boolean)
@@ -1430,8 +1491,8 @@ function TicksGroup({
         >
           <line
             {...rest}
-            x1={plotX(price).toFixed(3)}
-            x2={plotX(price).toFixed(3)}
+            x1={plotX(tickIndex).toFixed(3)}
+            x2={plotX(tickIndex).toFixed(3)}
             y1={percentY(new BigNumber(0)).toFixed(3)}
             y2={percentY(minValue).toFixed(3)}
             className="line"
@@ -1439,29 +1500,29 @@ function TicksGroup({
           {tick !== backgroundTick && (
             <line
               {...rest}
-              x1={plotX(price).toFixed(3)}
-              x2={plotX(price).toFixed(3)}
+              x1={plotX(tickIndex).toFixed(3)}
+              x2={plotX(tickIndex).toFixed(3)}
               y1={percentY(minValue).toFixed(3)}
               y2={percentY(maxValue).toFixed(3)}
               className="line line--diff"
             />
           )}
           <circle
-            cx={plotX(price).toFixed(3)}
+            cx={plotX(tickIndex).toFixed(3)}
             cy={percentY(backgroundValue).toFixed(3)}
             r="5"
             className="tip"
           />
           {tick !== backgroundTick && (
             <circle
-              cx={plotX(price).toFixed(3)}
+              cx={plotX(tickIndex).toFixed(3)}
               cy={percentY(totalValue).toFixed(3)}
               r="5"
               className="tip tip--diff"
             />
           )}
           <text
-            x={plotX(price).toFixed(3)}
+            x={plotX(tickIndex).toFixed(3)}
             y={(percentY(maxValue) - 28).toFixed(3)}
             dy="12"
             dominantBaseline="middle"
@@ -1480,7 +1541,7 @@ function TicksGroup({
                   height: '1000',
                 }
               : {
-                  x: (plotX(price) - 7.5).toFixed(3),
+                  x: (plotX(tickIndex) - 7.5).toFixed(3),
                   y: (percentY(maxValue) - 25).toFixed(3),
                   rx: 7.5,
                   width: 15,
@@ -1515,22 +1576,24 @@ function TickBucketsGroup({
   ...rest
 }: {
   tickBuckets: TickGroupMergedBucketsFilled;
-  plotX: (x: BigNumber) => number;
+  plotX: (x: number) => number;
   plotY: (y: BigNumber) => number;
   className?: string;
 }) {
   return (
     <g className={['tick-buckets', className].filter(Boolean).join(' ')}>
       {tickBuckets.flatMap(
-        ([lowerBound, upperBound, tokenAValue, tokenBValue], index) =>
+        ([lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue], index) =>
           [
             tokenAValue?.isGreaterThan(0) && (
               <rect
                 key={`${index}-0`}
                 className="tick-bucket token-a"
                 {...rest}
-                x={plotX(lowerBound).toFixed(3)}
-                width={(plotX(upperBound) - plotX(lowerBound)).toFixed(3)}
+                x={plotX(lowerBoundIndex).toFixed(3)}
+                width={(
+                  plotX(upperBoundIndex) - plotX(lowerBoundIndex)
+                ).toFixed(3)}
                 y={plotY(tokenAValue).toFixed(3)}
                 height={(plotY(new BigNumber(0)) - plotY(tokenAValue)).toFixed(
                   3
@@ -1542,8 +1605,10 @@ function TickBucketsGroup({
                 key={`${index}-1`}
                 className="tick-bucket token-b"
                 {...rest}
-                x={plotX(lowerBound).toFixed(3)}
-                width={(plotX(upperBound) - plotX(lowerBound)).toFixed(3)}
+                x={plotX(lowerBoundIndex).toFixed(3)}
+                width={(
+                  plotX(upperBoundIndex) - plotX(lowerBoundIndex)
+                ).toFixed(3)}
                 y={plotY(tokenAValue.plus(tokenBValue)).toFixed(3)}
                 height={(plotY(new BigNumber(0)) - plotY(tokenBValue)).toFixed(
                   3
@@ -1558,75 +1623,86 @@ function TickBucketsGroup({
 
 function Axis({
   className = '',
-  xMin,
-  xMax,
-  tickMarks: givenTickMarks,
-  highlightedTick = -1,
-  getDecimalPlaces = (tickMark) =>
-    Math.max(0, -Math.floor(Math.log10(tickMark))),
+  xMinIndex,
+  xMaxIndex,
+  tickMarkIndexes: givenTickMarkIndexes,
+  highlightedTickIndex,
+  getDecimalPlaces = (tickMarkIndex) =>
+    Math.max(0, -Math.floor(Math.log10(tickMarkIndex))),
   plotX,
   plotY,
   percentY,
 }: {
-  xMin: number;
-  xMax: number;
+  xMinIndex: number;
+  xMaxIndex: number;
   className?: string;
-  tickMarks?: number[];
-  highlightedTick?: number;
+  tickMarkIndexes?: number[];
+  highlightedTickIndex?: number;
   getDecimalPlaces?: ((value: number) => number) | null;
   plotX: (x: number) => number;
   plotY: (y: number) => number;
   percentY: (y: number) => number;
 }) {
-  if (!xMin || !xMax || xMin === xMax) return null;
+  if (!xMinIndex || !xMaxIndex || xMinIndex === xMaxIndex) return null;
 
-  const start = Math.pow(10, Math.floor(Math.log10(xMin)));
-  const tickMarks =
-    givenTickMarks ||
-    Array.from({ length: Math.log10(xMax / xMin) + 2 }).flatMap((_, index) => {
-      const baseNumber = start * Math.pow(10, index);
-      const possibleMultiples = [2, 5, 10];
-      const possibleInclusions = possibleMultiples.map((v) => v * baseNumber);
-      return possibleInclusions
-        .map((possibleInclusion) => {
-          if (possibleInclusion >= xMin && possibleInclusion <= xMax) {
-            return possibleInclusion;
-          }
-          return 0;
-        })
-        .filter(Boolean);
-    });
+  const start = Math.pow(10, Math.floor(Math.log10(xMinIndex)));
+  const tickMarkIndexes =
+    givenTickMarkIndexes ||
+    Array.from({ length: Math.log10(xMaxIndex / xMinIndex) + 2 }).flatMap(
+      (_, index) => {
+        const baseNumber = start * Math.pow(10, index);
+        const possibleMultiples = [2, 5, 10];
+        const possibleInclusions = possibleMultiples.map((v) => v * baseNumber);
+        return possibleInclusions
+          .map((possibleInclusion) => {
+            if (
+              possibleInclusion >= xMinIndex &&
+              possibleInclusion <= xMaxIndex
+            ) {
+              return possibleInclusion;
+            }
+            return 0;
+          })
+          .filter(Boolean);
+      }
+    );
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
-      <g className="axis-ticks">{tickMarks.map(mapTickMark)}</g>
+      <g className="axis-ticks">{tickMarkIndexes.map(mapTickMarkIndex)}</g>
     </g>
   );
 
-  function mapTickMark(tickMark: number, index: number) {
-    const decimalPlaces = getDecimalPlaces?.(tickMark);
+  function mapTickMarkIndex(tickMarkIndex: number, index: number) {
+    const decimalPlaces = getDecimalPlaces?.(tickMarkIndex);
     return (
       <g key={index} className="axis-tick">
-        {tickMark === highlightedTick && (
+        {tickMarkIndex === highlightedTickIndex && (
           <line
             className="line--success"
-            x1={plotX(tickMark).toFixed(3)}
-            x2={plotX(tickMark).toFixed(3)}
+            x1={plotX(tickMarkIndex).toFixed(3)}
+            x2={plotX(tickMarkIndex).toFixed(3)}
             y1={plotY(0) + 8}
             y2={percentY(1)}
           />
         )}
         <text
           filter="url(#text-solid-background)"
-          className={tickMark === highlightedTick ? 'text--success' : ''}
+          className={
+            tickMarkIndex === highlightedTickIndex ? 'text--success' : ''
+          }
           x={(
-            plotX(tickMark) +
-            (highlightedTick && index > 0 ? (index === 1 ? 1.5 : -1.5) : 0)
+            plotX(tickMarkIndex) +
+            (highlightedTickIndex !== undefined && index > 0
+              ? index === 1
+                ? 1.5
+                : -1.5
+              : 0)
           ).toFixed(3)}
           y={plotY(0) + 4 + 8}
           dominantBaseline="middle"
           textAnchor={
-            highlightedTick && index > 0
+            highlightedTickIndex !== undefined && index > 0
               ? index === 1
                 ? 'end'
                 : 'start'
@@ -1635,9 +1711,13 @@ function Axis({
           alignmentBaseline="text-before-edge"
         >
           &nbsp;
-          {decimalPlaces !== undefined
-            ? tickMark.toFixed(decimalPlaces)
-            : tickMark}
+          {formatPrice(
+            decimalPlaces !== undefined
+              ? tickIndexToPrice(new BigNumber(tickMarkIndex)).toFixed(
+                  decimalPlaces
+                )
+              : tickIndexToPrice(new BigNumber(tickMarkIndex)).toFixed()
+          )}
           &nbsp;
         </text>
       </g>

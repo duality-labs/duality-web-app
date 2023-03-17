@@ -6,7 +6,7 @@ import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 // current price of A to B is given in price B/A
 // eg. price of ATOM in USDC is given in USDC/ATOM units
-export default function useCurrentPriceFromTicks(
+export function useCurrentPriceFromTicks(
   tokenA?: string,
   tokenB?: string
 ): BigNumber | undefined {
@@ -18,7 +18,7 @@ export default function useCurrentPriceFromTicks(
   }, [midIndex]);
 }
 
-function useMidTickIndexFromTicks(
+export default function useMidTickIndexFromTicks(
   tokenA?: string,
   tokenB?: string
 ): number | undefined {

@@ -28,7 +28,7 @@ import {
   TickGroup,
   Tick,
 } from '../../components/LiquiditySelector/LiquiditySelector';
-import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
+import { useCurrentPriceFromTicks } from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
