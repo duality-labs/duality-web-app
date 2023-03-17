@@ -410,14 +410,13 @@ export default function LiquiditySelector({
     ) => [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
   >(
     (xMinIndex, xMaxIndex) => {
-      // get middle 'break' point which will separate bucket sections
-      const breakIndex = edgePriceIndex;
       // skip if there is no breakpoint
-      if (breakIndex === undefined) {
+      if (edgePriceIndex === undefined) {
         return [[], []];
       }
 
-      const indexNow = breakIndex;
+      // get middle 'break' point which will separate bucket sections
+      const indexNow = Math.round(edgePriceIndex);
       const indexMin = xMinIndex;
       const indexMax = xMaxIndex;
       const currentPriceIsWithinView =
