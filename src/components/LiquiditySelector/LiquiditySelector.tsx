@@ -317,8 +317,8 @@ export default function LiquiditySelector({
     (number | undefined)[]
   >(() => {
     if (
-      !!zoomMinIndex &&
-      !!zoomMaxIndex &&
+      zoomMinIndex !== undefined &&
+      zoomMaxIndex !== undefined &&
       !isNaN(Number(zoomMinIndex)) &&
       !isNaN(Number(zoomMaxIndex))
     ) {
