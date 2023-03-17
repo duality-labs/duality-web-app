@@ -91,8 +91,8 @@ type TickGroupMergedBucketsFilled = Array<
 
 const bucketWidth = 8; // bucket width in pixels
 
-const defaultStartIndex = priceToTickIndex(new BigNumber(1 / 1.1)).toNumber();
-const defaultEndIndex = priceToTickIndex(new BigNumber(1.1)).toNumber();
+const defaultMinIndex = priceToTickIndex(new BigNumber(1 / 1.1)).toNumber();
+const defaultMaxIndex = priceToTickIndex(new BigNumber(1.1)).toNumber();
 
 // set maximum zoom constants:
 // zooming past the resolution of ticks does not help the end users.
@@ -132,14 +132,14 @@ export default function LiquiditySelector({
     // guard against incorrect numbers
     return !isNaN(index)
       ? Math.max(priceMinIndex, Math.min(priceMaxIndex, index))
-      : defaultStartIndex;
+      : defaultMinIndex;
   }, [rangeMin]);
   const rangeMaxIndex = useMemo(() => {
     const index = priceToTickIndex(new BigNumber(rangeMax)).toNumber();
     // guard against incorrect numbers
     return !isNaN(index)
       ? Math.max(priceMinIndex, Math.min(priceMaxIndex, index))
-      : defaultEndIndex;
+      : defaultMaxIndex;
   }, [rangeMax]);
   const setRangeMinIndex: React.Dispatch<React.SetStateAction<number>> =
     useCallback(
@@ -290,20 +290,20 @@ export default function LiquiditySelector({
     tokenBTicks,
   ]);
 
-  const [initialGraphStartIndex, initialGraphEndIndex] = useMemo<
+  const [initialGraphMinIndex, initialGraphMaxIndex] = useMemo<
     [number, number]
   >(() => {
     // get factor for 1/4 and 4x of price
     const spread = Math.log(4) / Math.log(1.0001);
     return [
-      edgePriceIndex ? edgePriceIndex - spread : defaultStartIndex,
-      edgePriceIndex ? edgePriceIndex + spread : defaultEndIndex,
+      edgePriceIndex ? edgePriceIndex - spread : defaultMinIndex,
+      edgePriceIndex ? edgePriceIndex + spread : defaultMaxIndex,
     ];
   }, [edgePriceIndex]);
 
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
-  const [dataStartIndex, dataEndIndex] = useMemo<(number | undefined)[]>(() => {
+  const [dataMinIndex, dataMaxIndex] = useMemo<(number | undefined)[]>(() => {
     return [
       (tokenATicks[tokenATicks.length - 1] || tokenBTicks[0])?.tickIndex,
       (tokenBTicks[tokenBTicks.length - 1] || tokenATicks[0])?.tickIndex,
@@ -313,7 +313,7 @@ export default function LiquiditySelector({
   const [[zoomMinIndex, zoomMaxIndex] = [], setZoomRange] =
     useState<[number, number]>();
 
-  const [zoomedDataStartIndex, zoomedDataEndIndex] = useMemo<
+  const [zoomedDataMinIndex, zoomedDataMaxIndex] = useMemo<
     (number | undefined)[]
   >(() => {
     if (
@@ -323,37 +323,37 @@ export default function LiquiditySelector({
       !isNaN(Number(zoomMaxIndex))
     ) {
       if (
-        dataStartIndex &&
-        dataEndIndex &&
-        isNaN(dataStartIndex) === false &&
-        isNaN(dataEndIndex) === false
+        dataMinIndex &&
+        dataMaxIndex &&
+        isNaN(dataMinIndex) === false &&
+        isNaN(dataMaxIndex) === false
       ) {
         return [
-          Math.max(dataStartIndex, zoomMinIndex),
-          Math.min(dataEndIndex, zoomMaxIndex),
+          Math.max(dataMinIndex, zoomMinIndex),
+          Math.min(dataMaxIndex, zoomMaxIndex),
         ];
       } else {
         return [zoomMinIndex, zoomMaxIndex];
       }
     }
-    return [dataStartIndex, dataEndIndex];
-  }, [zoomMinIndex, zoomMaxIndex, dataStartIndex, dataEndIndex]);
+    return [dataMinIndex, dataMaxIndex];
+  }, [zoomMinIndex, zoomMaxIndex, dataMinIndex, dataMaxIndex]);
 
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
   const [
-    graphStartIndex = initialGraphStartIndex,
-    graphEndIndex = initialGraphEndIndex,
+    graphMinIndex = initialGraphMinIndex,
+    graphMaxIndex = initialGraphMaxIndex,
   ] = useMemo<[number | undefined, number | undefined]>(() => {
     const allValues = [
       ...userTicks.map<number | undefined>((tick) => tick?.tickIndex),
       rangeMinIndex,
       rangeMaxIndex,
-      zoomedDataStartIndex,
-      zoomedDataEndIndex,
+      zoomedDataMinIndex,
+      zoomedDataMaxIndex,
     ].filter((v): v is number => v !== undefined && !isNaN(v));
     // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
-    // by padding dataStartIndex and dataEndIndex with the needed amount of pixels
+    // by padding dataMinIndex and dataMaxIndex with the needed amount of pixels
     if (allValues.length > 0) {
       return [Math.min(...allValues), Math.max(...allValues)];
     } else {
@@ -363,8 +363,8 @@ export default function LiquiditySelector({
     rangeMinIndex,
     rangeMaxIndex,
     userTicks,
-    zoomedDataStartIndex,
-    zoomedDataEndIndex,
+    zoomedDataMinIndex,
+    zoomedDataMaxIndex,
   ]);
 
   // find container size that buckets should fit
@@ -385,15 +385,13 @@ export default function LiquiditySelector({
   );
 
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
-  const startIsEnd = graphEndIndex <= graphStartIndex;
+  const noGraphRange = graphMaxIndex <= graphMinIndex;
   // get factor for 1/10 and 10x of price
   const spread = Math.log(10) / Math.log(1.0001);
-  const xMinIndex = startIsEnd ? graphStartIndex - spread : graphStartIndex;
-  const xMaxIndex = startIsEnd ? graphEndIndex + spread : graphEndIndex;
+  const xMinIndex = noGraphRange ? graphMinIndex - spread : graphMinIndex;
+  const xMaxIndex = noGraphRange ? graphMaxIndex + spread : graphMaxIndex;
 
-  const [viewableStartIndex, viewableEndIndex] = useMemo<
-    [number, number]
-  >(() => {
+  const [viewableMinIndex, viewableMaxIndex] = useMemo<[number, number]>(() => {
     // get bounds
     const spread = xMaxIndex - xMinIndex;
     const width = Math.max(1, containerSize.width - leftPadding - rightPadding);
@@ -472,8 +470,8 @@ export default function LiquiditySelector({
   );
 
   const emptyBuckets = useMemo(() => {
-    return getEmptyBuckets(viewableStartIndex, viewableEndIndex);
-  }, [getEmptyBuckets, viewableStartIndex, viewableEndIndex]);
+    return getEmptyBuckets(viewableMinIndex, viewableMaxIndex);
+  }, [getEmptyBuckets, viewableMinIndex, viewableMaxIndex]);
 
   // calculate histogram values
   const feeTickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
@@ -669,7 +667,7 @@ export default function LiquiditySelector({
     // define common zoom behavior
     function zoom(direction: 'in' | 'out') {
       if (
-        [rangeMinIndex, rangeMaxIndex, graphStartIndex, graphEndIndex].every(
+        [rangeMinIndex, rangeMaxIndex, graphMinIndex, graphMaxIndex].every(
           (v) => !isNaN(v)
         )
       ) {
@@ -678,9 +676,9 @@ export default function LiquiditySelector({
           minZoomIndexSpread,
           direction === 'in'
             ? // zoom in by defining less indexes on graph
-              (graphEndIndex - graphStartIndex) / zoomSpeedFactor
+              (graphMaxIndex - graphMinIndex) / zoomSpeedFactor
             : // zoom out by defining more indexes on graph
-              (graphEndIndex - graphStartIndex) * zoomSpeedFactor
+              (graphMaxIndex - graphMinIndex) * zoomSpeedFactor
         );
         const newZoomMinIndex = Math.round(midpointIndex - indexSpread / 2);
         const newZoomMaxIndex = Math.round(midpointIndex + indexSpread / 2);
@@ -688,13 +686,13 @@ export default function LiquiditySelector({
         const offset =
           0 +
           // bump from left edge of data
-          Math.max(graphStartIndex - newZoomMinIndex, 0) +
+          Math.max(graphMinIndex - newZoomMinIndex, 0) +
           // bump from right edge of data
-          Math.min(graphEndIndex - newZoomMaxIndex, 0);
+          Math.min(graphMaxIndex - newZoomMaxIndex, 0);
         // set these new values
         return [newZoomMinIndex + offset, newZoomMaxIndex + offset];
       } else {
-        return [graphStartIndex, graphEndIndex];
+        return [graphMinIndex, graphMaxIndex];
       }
     }
 
@@ -716,8 +714,8 @@ export default function LiquiditySelector({
   }, [
     rangeMinIndex,
     rangeMaxIndex,
-    graphStartIndex,
-    graphEndIndex,
+    graphMinIndex,
+    graphMaxIndex,
     setRangeMinIndex,
     setRangeMaxIndex,
   ]);
@@ -740,10 +738,10 @@ export default function LiquiditySelector({
             zoomOut={
               zoomMinIndex &&
               zoomMaxIndex &&
-              dataStartIndex !== undefined &&
-              dataEndIndex !== undefined &&
-              dataStartIndex >= zoomMinIndex &&
-              dataEndIndex <= zoomMaxIndex
+              dataMinIndex !== undefined &&
+              dataMaxIndex !== undefined &&
+              dataMinIndex >= zoomMinIndex &&
+              dataMaxIndex <= zoomMaxIndex
                 ? undefined
                 : zoomOut
             }
