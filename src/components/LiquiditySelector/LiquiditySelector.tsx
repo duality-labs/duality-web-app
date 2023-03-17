@@ -668,16 +668,8 @@ export default function LiquiditySelector({
   const [zoomIn, zoomOut] = useMemo(() => {
     // define common zoom behavior
     function zoom(direction: 'in' | 'out') {
-      const currentMinIndex =
-        zoomMinIndex !== undefined
-          ? Math.max(zoomMinIndex, graphStartIndex)
-          : graphStartIndex;
-      const currentMaxIndex =
-        zoomMaxIndex !== undefined
-          ? Math.min(zoomMaxIndex, graphEndIndex)
-          : graphEndIndex;
       if (
-        [rangeMinIndex, rangeMaxIndex, currentMinIndex, currentMaxIndex].every(
+        [rangeMinIndex, rangeMaxIndex, graphStartIndex, graphEndIndex].every(
           (v) => !isNaN(v)
         )
       ) {
@@ -686,9 +678,9 @@ export default function LiquiditySelector({
           minZoomIndexSpread,
           direction === 'in'
             ? // zoom in by defining less indexes on graph
-              (currentMaxIndex - currentMinIndex) / zoomSpeedFactor
+              (graphEndIndex - graphStartIndex) / zoomSpeedFactor
             : // zoom out by defining more indexes on graph
-              (currentMaxIndex - currentMinIndex) * zoomSpeedFactor
+              (graphEndIndex - graphStartIndex) * zoomSpeedFactor
         );
         const newZoomMinIndex = Math.round(midpointIndex - indexSpread / 2);
         const newZoomMaxIndex = Math.round(midpointIndex + indexSpread / 2);
@@ -702,7 +694,7 @@ export default function LiquiditySelector({
         // set these new values
         return [newZoomMinIndex + offset, newZoomMaxIndex + offset];
       } else {
-        return [currentMinIndex, currentMaxIndex];
+        return [graphStartIndex, graphEndIndex];
       }
     }
 
@@ -724,8 +716,6 @@ export default function LiquiditySelector({
   }, [
     rangeMinIndex,
     rangeMaxIndex,
-    zoomMinIndex,
-    zoomMaxIndex,
     graphStartIndex,
     graphEndIndex,
     setRangeMinIndex,
