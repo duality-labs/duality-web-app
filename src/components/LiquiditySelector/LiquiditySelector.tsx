@@ -881,7 +881,7 @@ function TicksArea({
           }
         }
       },
-      [lastRangeMinPrice, rangeMaxPrice, plotX, setRangeMin, setRangeMax]
+      [rangeMaxPrice, plotX, setRangeMin, setRangeMax]
     )
   );
   useEffect(() => {
