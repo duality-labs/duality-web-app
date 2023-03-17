@@ -7,10 +7,12 @@ export function tickIndexToPrice(tickIndex: BigNumber): BigNumber {
 
 export function priceToTickIndex(
   price: BigNumber,
-  roundingMethod = 'round' as 'round' | 'ceil' | 'floor'
+  roundingMethod = 'none' as 'round' | 'ceil' | 'floor' | 'none'
 ): BigNumber {
+  const roundingFunction =
+    roundingMethod !== 'none' ? Math[roundingMethod] : (v: number) => v;
   return new BigNumber(
-    Math[roundingMethod](Math.log(price.toNumber()) / Math.log(1.0001))
+    roundingFunction(Math.log(price.toNumber()) / Math.log(1.0001))
   );
 }
 

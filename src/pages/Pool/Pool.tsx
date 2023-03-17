@@ -137,11 +137,22 @@ function Pool() {
   );
 
   const edgePrice = currentPriceFromTicks;
+  const [fineRangeMin, setFineRangeMin] = useState('1');
+  const [fineRangeMax, setFineRangeMax] = useState('1');
 
   // start with a default range of nothing, but is should be quickly set
   // after price information becomes available
   const [rangeMin, setRangeMinUnprotected] = useState('1');
   const [rangeMax, setRangeMaxUnprotected] = useState('1');
+
+  // side effect hack override fine controls with rough controls
+  useLayoutEffect(() => {
+    setFineRangeMin(rangeMin);
+  }, [rangeMin]);
+  useLayoutEffect(() => {
+    setFineRangeMax(rangeMax);
+  }, [rangeMax]);
+
   const [pairPriceMin, pairPriceMax] = useMemo(() => {
     const spreadFactor = 1000;
     return edgePrice
@@ -434,8 +445,8 @@ function Pool() {
   const tickCount = Number(precision || 1);
   useLayoutEffect(() => {
     function getUserTicks(): TickGroup {
-      const indexMin = priceToTickIndex(new BigNumber(rangeMin)).toNumber();
-      const indexMax = priceToTickIndex(new BigNumber(rangeMax)).toNumber();
+      const indexMin = priceToTickIndex(new BigNumber(fineRangeMin)).toNumber();
+      const indexMax = priceToTickIndex(new BigNumber(fineRangeMax)).toNumber();
       // set multiple ticks across the range
       const feeIndex = feeType ? feeTypes.indexOf(feeType) : -1;
       if (
@@ -600,8 +611,8 @@ function Pool() {
     tokenA,
     tokenB,
     liquidityShape,
-    rangeMin,
-    rangeMax,
+    fineRangeMin,
+    fineRangeMax,
     tickCount,
     edgePrice,
     invertTokenOrder,
@@ -850,10 +861,10 @@ function Pool() {
                 <LiquiditySelector
                   tokenA={tokenA}
                   tokenB={tokenB}
-                  rangeMin={rangeMin}
-                  rangeMax={rangeMax}
-                  setRangeMin={setRangeMin}
-                  setRangeMax={setRangeMax}
+                  rangeMin={fineRangeMin}
+                  rangeMax={fineRangeMax}
+                  setRangeMin={setFineRangeMin}
+                  setRangeMax={setFineRangeMax}
                   userTickSelected={userTickSelected}
                   setUserTickSelected={setUserTickSelected}
                   feeTier={feeType?.fee}
