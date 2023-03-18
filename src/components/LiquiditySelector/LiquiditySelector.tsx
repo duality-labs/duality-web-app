@@ -127,14 +127,14 @@ export default function LiquiditySelector({
   ControlsComponent,
 }: LiquiditySelectorProps) {
   // convert range price state controls into range index state controls
-  const rangeMinIndex = useMemo(() => {
+  const fractionalRangeMinIndex = useMemo(() => {
     const index = priceToTickIndex(new BigNumber(rangeMin)).toNumber();
     // guard against incorrect numbers
     return !isNaN(index)
       ? Math.max(priceMinIndex, Math.min(priceMaxIndex, index))
       : defaultMinIndex;
   }, [rangeMin]);
-  const rangeMaxIndex = useMemo(() => {
+  const fractionalRangeMaxIndex = useMemo(() => {
     const index = priceToTickIndex(new BigNumber(rangeMax)).toNumber();
     // guard against incorrect numbers
     return !isNaN(index)
@@ -149,11 +149,11 @@ export default function LiquiditySelector({
           const callback = valueOrCallback;
           setRangeMin((rangeMin) => {
             // convert price to index
-            const rangeMinIndex = priceToTickIndex(
+            const fractionalRangeMinIndex = priceToTickIndex(
               new BigNumber(rangeMin)
             ).toNumber();
             // process as index
-            const value = callback(rangeMinIndex);
+            const value = callback(fractionalRangeMinIndex);
             // convert index back to price
             return tickIndexToPrice(new BigNumber(value)).toFixed();
           });
@@ -175,11 +175,11 @@ export default function LiquiditySelector({
           const callback = valueOrCallback;
           setRangeMax((rangeMax) => {
             // convert price to index
-            const rangeMinIndex = priceToTickIndex(
+            const fractionalRangeMinIndex = priceToTickIndex(
               new BigNumber(rangeMax)
             ).toNumber();
             // process as index
-            const value = callback(rangeMinIndex);
+            const value = callback(fractionalRangeMinIndex);
             // convert index back to price
             return tickIndexToPrice(new BigNumber(value)).toFixed();
           });
@@ -193,6 +193,11 @@ export default function LiquiditySelector({
       },
       [setRangeMax]
     );
+
+  // move one away from the tick index in question
+  // ie. make the range flag be "around" the desired range (not "on" it)
+  const rangeMinIndex = Math.ceil(fractionalRangeMinIndex - 1);
+  const rangeMaxIndex = Math.floor(fractionalRangeMaxIndex + 1);
 
   const {
     data: {
@@ -347,8 +352,8 @@ export default function LiquiditySelector({
   ] = useMemo<[number | undefined, number | undefined]>(() => {
     const allValues = [
       ...userTicks.map<number | undefined>((tick) => tick?.tickIndex),
-      rangeMinIndex,
-      rangeMaxIndex,
+      fractionalRangeMinIndex,
+      fractionalRangeMaxIndex,
       zoomedDataMinIndex,
       zoomedDataMaxIndex,
     ].filter((v): v is number => v !== undefined && !isNaN(v));
@@ -360,8 +365,8 @@ export default function LiquiditySelector({
       return [undefined, undefined];
     }
   }, [
-    rangeMinIndex,
-    rangeMaxIndex,
+    fractionalRangeMinIndex,
+    fractionalRangeMaxIndex,
     userTicks,
     zoomedDataMinIndex,
     zoomedDataMaxIndex,
@@ -642,6 +647,8 @@ export default function LiquiditySelector({
           containerHeight={containerSize.height}
           rangeMinIndex={rangeMinIndex}
           rangeMaxIndex={rangeMaxIndex}
+          fractionalRangeMinIndex={fractionalRangeMinIndex}
+          fractionalRangeMaxIndex={fractionalRangeMaxIndex}
           setRangeMinIndex={setRangeMinIndex}
           setRangeMaxIndex={setRangeMaxIndex}
         />
@@ -875,6 +882,8 @@ function TicksArea({
   containerHeight,
   rangeMinIndex,
   rangeMaxIndex,
+  fractionalRangeMinIndex,
+  fractionalRangeMaxIndex,
   setRangeMinIndex,
   setRangeMaxIndex,
   className,
@@ -888,6 +897,8 @@ function TicksArea({
   containerHeight: number;
   rangeMinIndex: number;
   rangeMaxIndex: number;
+  fractionalRangeMinIndex: number;
+  fractionalRangeMaxIndex: number;
   setRangeMinIndex: (rangeMinIndex: number) => void;
   setRangeMaxIndex: (rangeMaxIndex: number) => void;
   className?: string;
@@ -899,15 +910,22 @@ function TicksArea({
         if (displacement.x && displacement.x !== lastDisplacementMin.current) {
           const newDisplacement = displacement.x - lastDisplacementMin.current;
           const pixelsPerIndex = plotX(1) - plotX(0);
-          const newIndex = rangeMinIndex + newDisplacement / pixelsPerIndex;
+          const newIndex =
+            fractionalRangeMinIndex + newDisplacement / pixelsPerIndex;
           setRangeMinIndex(newIndex);
-          if (rangeMaxIndex < newIndex) {
+          if (fractionalRangeMaxIndex < newIndex) {
             setRangeMaxIndex(newIndex);
           }
           lastDisplacementMin.current = displacement.x;
         }
       },
-      [rangeMinIndex, rangeMaxIndex, plotX, setRangeMinIndex, setRangeMaxIndex]
+      [
+        fractionalRangeMinIndex,
+        fractionalRangeMaxIndex,
+        plotX,
+        setRangeMinIndex,
+        setRangeMaxIndex,
+      ]
     )
   );
   useEffect(() => {
@@ -923,15 +941,22 @@ function TicksArea({
         if (displacement.x && displacement.x !== lastDisplacementMax.current) {
           const newDisplacement = displacement.x - lastDisplacementMax.current;
           const pixelsPerIndex = plotX(1) - plotX(0);
-          const newIndex = rangeMaxIndex + newDisplacement / pixelsPerIndex;
+          const newIndex =
+            fractionalRangeMaxIndex + newDisplacement / pixelsPerIndex;
           setRangeMaxIndex(newIndex);
-          if (rangeMinIndex > newIndex) {
+          if (fractionalRangeMinIndex > newIndex) {
             setRangeMinIndex(newIndex);
           }
           lastDisplacementMax.current = displacement.x;
         }
       },
-      [rangeMinIndex, rangeMaxIndex, plotX, setRangeMinIndex, setRangeMaxIndex]
+      [
+        fractionalRangeMinIndex,
+        fractionalRangeMaxIndex,
+        plotX,
+        setRangeMinIndex,
+        setRangeMaxIndex,
+      ]
     )
   );
   useEffect(() => {
