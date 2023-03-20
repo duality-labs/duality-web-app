@@ -478,30 +478,35 @@ function Pool() {
 
         // space new ticks linearly across tick (which is exponentially across price)
         const tickCounts: [number, number] = [0, 0];
-        const tickPrices = Array.from({ length: tickCount }).reduceRight<
-          Tick[]
-        >((result, _, index, tickPrices) => {
-          const tickIndex = Math.round(
-            indexMin +
-              (index * (indexMax - indexMin)) / Math.max(1, tickCount - 1)
-          );
-          const price = tickIndexToPrice(new BigNumber(tickIndex));
+        // space ticks across unique tick indexes
+        const tickPrices = Array.from({ length: tickCount })
+          .reduce<number[]>((result, _, index) => {
+            const tickIndex = Math.round(
+              indexMin +
+                (index * (indexMax - indexMin)) / Math.max(1, tickCount - 1)
+            );
+            // add index only if it is unique
+            return !result.includes(tickIndex)
+              ? [...result, tickIndex]
+              : result;
+          }, [])
+          .map<Tick>((tickIndex, index, tickIndexes) => {
+            const price = tickIndexToPrice(new BigNumber(tickIndex));
 
-          // choose whether token A or B should be added for the tick at this price
-          const invertToken =
-            isValueAZero || isValueBZero
-              ? // enforce singe-sided liquidity has single ticks
-                isValueBZero
-              : // for double-sided liquidity split the ticks somewhere
-              edgePrice
-              ? // split the ticks at the current price if it exists
-                price.isLessThan(edgePrice)
-              : // split the ticks by index if no price exists yet
-                index < tickPrices.length / 2;
-          // add to count
-          tickCounts[invertToken ? 0 : 1] += 1;
-          return [
-            {
+            // choose whether token A or B should be added for the tick at this price
+            const invertToken =
+              isValueAZero || isValueBZero
+                ? // enforce singe-sided liquidity has single ticks
+                  isValueBZero
+                : // for double-sided liquidity split the ticks somewhere
+                edgePrice
+                ? // split the ticks at the current price if it exists
+                  price.isLessThan(edgePrice)
+                : // split the ticks by index if no price exists yet
+                  index < tickIndexes.length / 2;
+            // add to count
+            tickCounts[invertToken ? 0 : 1] += 1;
+            return {
               reserveA: new BigNumber(invertToken ? 1 : 0),
               reserveB: new BigNumber(invertToken ? 0 : 1),
               price: price,
@@ -510,10 +515,8 @@ function Pool() {
               feeIndex: feeIndex,
               tokenA: tokenA,
               tokenB: tokenB,
-            },
-            ...result,
-          ];
-        }, []);
+            };
+          });
 
         const shapeFactor = (() => {
           return (() => {
