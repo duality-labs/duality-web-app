@@ -1013,6 +1013,17 @@ function TicksArea({
       warningPriceIfLessThan(rangeMaxIndex, tokenBWarningPriceIndex)
     : warningPriceIfLessThan(rangeMaxIndex, currentPriceIndex);
 
+  const rangeMinValueIndex =
+    currentPriceIndex !== undefined &&
+    rangeMinIndex < Math.round(currentPriceIndex)
+      ? rangeMinIndex + 1
+      : rangeMinIndex;
+  const rangeMaxValueIndex =
+    currentPriceIndex !== undefined &&
+    rangeMaxIndex > Math.round(currentPriceIndex)
+      ? rangeMaxIndex - 1
+      : rangeMaxIndex;
+
   const formatPercentageValue = useCallback(
     (tickIndex: number, currentPriceIndex: number) => {
       return formatAmount(
@@ -1092,7 +1103,7 @@ function TicksArea({
           &nbsp;
           {formatAmount(
             formatMaximumSignificantDecimals(
-              tickIndexToPrice(new BigNumber(rangeMinIndex)).toFixed(),
+              tickIndexToPrice(new BigNumber(rangeMinValueIndex)).toFixed(),
               significantDecimals
             ),
             {
@@ -1112,7 +1123,7 @@ function TicksArea({
             textAnchor="end"
           >
             &nbsp;&nbsp;&nbsp;
-            {`${formatPercentageValue(rangeMinIndex, currentPriceIndex)}%`}
+            {`${formatPercentageValue(rangeMinValueIndex, currentPriceIndex)}%`}
             &nbsp;&nbsp;&nbsp;
           </text>
         )}
@@ -1194,7 +1205,7 @@ function TicksArea({
           &nbsp;
           {formatAmount(
             formatMaximumSignificantDecimals(
-              tickIndexToPrice(new BigNumber(rangeMaxIndex)).toFixed(),
+              tickIndexToPrice(new BigNumber(rangeMaxValueIndex)).toFixed(),
               significantDecimals
             ),
             {
@@ -1214,7 +1225,7 @@ function TicksArea({
             textAnchor="start"
           >
             &nbsp;&nbsp;&nbsp;
-            {`${formatPercentageValue(rangeMaxIndex, currentPriceIndex)}%`}
+            {`${formatPercentageValue(rangeMaxValueIndex, currentPriceIndex)}%`}
             &nbsp;&nbsp;&nbsp;
           </text>
         )}
