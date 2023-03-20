@@ -665,7 +665,7 @@ export default function LiquiditySelector({
           (v): v is number => v !== undefined
         )}
         highlightedTickIndex={edgePriceIndex}
-        getDecimalPlaces={null}
+        significantDecimals={3}
         plotX={plotX}
         plotY={plotY}
         percentY={percentY}
@@ -1620,8 +1620,7 @@ function Axis({
   xMaxIndex,
   tickMarkIndexes: givenTickMarkIndexes,
   highlightedTickIndex,
-  getDecimalPlaces = (tickMarkIndex) =>
-    Math.max(0, -Math.floor(Math.log10(tickMarkIndex))),
+  significantDecimals,
   plotX,
   plotY,
   percentY,
@@ -1631,7 +1630,7 @@ function Axis({
   className?: string;
   tickMarkIndexes?: number[];
   highlightedTickIndex?: number;
-  getDecimalPlaces?: ((value: number) => number) | null;
+  significantDecimals?: number;
   plotX: (x: number) => number;
   plotY: (y: number) => number;
   percentY: (y: number) => number;
@@ -1667,7 +1666,6 @@ function Axis({
   );
 
   function mapTickMarkIndex(tickMarkIndex: number, index: number) {
-    const decimalPlaces = getDecimalPlaces?.(tickMarkIndex);
     return (
       <g key={index} className="axis-tick">
         {tickMarkIndex === highlightedTickIndex && (
@@ -1704,12 +1702,15 @@ function Axis({
           alignmentBaseline="text-before-edge"
         >
           &nbsp;
-          {formatPrice(
-            decimalPlaces !== undefined
-              ? tickIndexToPrice(new BigNumber(tickMarkIndex)).toFixed(
-                  decimalPlaces
-                )
-              : tickIndexToPrice(new BigNumber(tickMarkIndex)).toFixed()
+          {formatAmount(
+            formatMaximumSignificantDecimals(
+              tickIndexToPrice(new BigNumber(tickMarkIndex)).toFixed(),
+              significantDecimals
+            ),
+            {
+              minimumSignificantDigits: significantDecimals,
+              useGrouping: true,
+            }
           )}
           &nbsp;
         </text>
