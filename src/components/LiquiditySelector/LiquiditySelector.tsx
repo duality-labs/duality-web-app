@@ -198,10 +198,10 @@ export default function LiquiditySelector({
       [setRangeMax]
     );
 
-  // move one away from the tick index in question
-  // ie. make the range flag be "around" the desired range (not "on" it)
-  const rangeMinIndex = Math.ceil(fractionalRangeMinIndex - 1);
-  const rangeMaxIndex = Math.floor(fractionalRangeMaxIndex + 1);
+  const [rangeMinIndex, rangeMaxIndex] = getRangePositions(
+    fractionalRangeMinIndex,
+    fractionalRangeMaxIndex
+  );
 
   const {
     data: {
@@ -854,6 +854,43 @@ function mergeBuckets(
   }
 }
 
+function getRangePositions(
+  fractionalRangeMinIndex: number,
+  fractionalRangeMaxIndex: number
+): [number, number] {
+  // move one away from the tick index in question
+  // ie. make the range flag be "around" the desired range (not "on" it)
+  return [
+    Math.ceil(fractionalRangeMinIndex - 1),
+    Math.floor(fractionalRangeMaxIndex + 1),
+  ];
+}
+
+function getRangeIndexes(
+  currentPriceIndex: number | undefined,
+  fractionalRangeMinIndex: number,
+  fractionalRangeMaxIndex: number
+) {
+  const [rangeMinIndex, rangeMaxIndex] = getRangePositions(
+    fractionalRangeMinIndex,
+    fractionalRangeMaxIndex
+  );
+  if (currentPriceIndex === undefined) {
+    return [rangeMinIndex, rangeMaxIndex];
+  } else {
+    const roundedCurrentPriceIndex =
+      currentPriceIndex && Math.round(currentPriceIndex);
+    return [
+      rangeMinIndex < roundedCurrentPriceIndex
+        ? rangeMinIndex + 1
+        : rangeMinIndex,
+      rangeMaxIndex > roundedCurrentPriceIndex
+        ? rangeMaxIndex - 1
+        : rangeMaxIndex,
+    ];
+  }
+}
+
 function TicksBackgroundArea({
   rangeMinIndex,
   rangeMaxIndex,
@@ -1007,16 +1044,11 @@ function TicksArea({
 
   const roundedCurrentPriceIndex =
     currentPriceIndex && Math.round(currentPriceIndex);
-  const rangeMinValueIndex =
-    roundedCurrentPriceIndex !== undefined &&
-    rangeMinIndex < roundedCurrentPriceIndex
-      ? rangeMinIndex + 1
-      : rangeMinIndex;
-  const rangeMaxValueIndex =
-    roundedCurrentPriceIndex !== undefined &&
-    rangeMaxIndex > roundedCurrentPriceIndex
-      ? rangeMaxIndex - 1
-      : rangeMaxIndex;
+  const [rangeMinValueIndex, rangeMaxValueIndex] = getRangeIndexes(
+    roundedCurrentPriceIndex,
+    fractionalRangeMinIndex,
+    fractionalRangeMaxIndex
+  );
 
   const rangeMinIndexWarning = oneSidedLiquidity
     ? warningIndexIfGreaterThan(rangeMinValueIndex, tokenAWarningPriceIndex) ??
