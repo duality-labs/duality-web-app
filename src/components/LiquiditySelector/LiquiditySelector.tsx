@@ -352,8 +352,8 @@ export default function LiquiditySelector({
   ] = useMemo<[number | undefined, number | undefined]>(() => {
     const allValues = [
       ...userTicks.map<number | undefined>((tick) => tick?.tickIndex),
-      fractionalRangeMinIndex,
-      fractionalRangeMaxIndex,
+      rangeMinIndex,
+      rangeMaxIndex,
       zoomedDataMinIndex,
       zoomedDataMaxIndex,
     ].filter((v): v is number => v !== undefined && !isNaN(v));
@@ -365,8 +365,8 @@ export default function LiquiditySelector({
       return [undefined, undefined];
     }
   }, [
-    fractionalRangeMinIndex,
-    fractionalRangeMaxIndex,
+    rangeMinIndex,
+    rangeMaxIndex,
     userTicks,
     zoomedDataMinIndex,
     zoomedDataMaxIndex,
