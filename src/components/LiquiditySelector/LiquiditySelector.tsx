@@ -866,7 +866,7 @@ function getRangePositions(
   ];
 }
 
-function getRangeIndexes(
+export function getRangeIndexes(
   currentPriceIndex: number | undefined,
   fractionalRangeMinIndex: number,
   fractionalRangeMaxIndex: number

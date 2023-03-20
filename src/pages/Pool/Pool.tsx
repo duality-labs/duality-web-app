@@ -27,6 +27,7 @@ import LiquiditySelector from '../../components/LiquiditySelector';
 import {
   TickGroup,
   Tick,
+  getRangeIndexes,
 } from '../../components/LiquiditySelector/LiquiditySelector';
 import { useCurrentPriceFromTicks } from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
@@ -445,8 +446,21 @@ function Pool() {
   const tickCount = Number(precision || 1);
   useLayoutEffect(() => {
     function getUserTicks(): TickGroup {
-      const indexMin = priceToTickIndex(new BigNumber(fineRangeMin)).toNumber();
-      const indexMax = priceToTickIndex(new BigNumber(fineRangeMax)).toNumber();
+      const fractionalIndexMin = priceToTickIndex(
+        new BigNumber(fineRangeMin),
+        'none'
+      ).toNumber();
+      const fractionalIndexMax = priceToTickIndex(
+        new BigNumber(fineRangeMax),
+        'none'
+      ).toNumber();
+      const edgePriceIndex =
+        edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
+      const [indexMin, indexMax] = getRangeIndexes(
+        edgePriceIndex,
+        fractionalIndexMin,
+        fractionalIndexMax
+      );
       // set multiple ticks across the range
       const feeIndex = feeType ? feeTypes.indexOf(feeType) : -1;
       if (
@@ -455,7 +469,7 @@ function Pool() {
         tickCount > 1 &&
         indexMin !== undefined &&
         indexMax !== undefined &&
-        indexMax > indexMin &&
+        indexMax >= indexMin &&
         feeType &&
         feeIndex >= 0
       ) {
