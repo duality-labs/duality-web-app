@@ -38,7 +38,7 @@ import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
 import {
-  formatMaxSignificantDigits,
+  formatMaximumSignificantDecimals,
   formatPrice,
 } from '../../lib/utils/number';
 import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
@@ -417,7 +417,7 @@ function Pool() {
       // invert price
       const newValue = new BigNumber(1).dividedBy(new BigNumber(value));
       // round number to formatted string
-      return formatMaxSignificantDigits(newValue);
+      return formatMaximumSignificantDecimals(newValue);
     };
     setInvertTokenOrder((order) => !order);
     setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
