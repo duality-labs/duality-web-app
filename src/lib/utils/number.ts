@@ -27,10 +27,12 @@ export function formatMaximumSignificantDecimals(
   maximumSignificantDecimals = 3
 ) {
   const bigValue = new BigNumber(value);
-  const orderOfMagnitude = Math.floor(Math.log10(bigValue.abs().toNumber()));
+  const roundingFunction = BigNumber.ROUND_HALF_UP;
+  const roundedValue = bigValue.abs().toPrecision(roundingFunction);
+  const roundedOrderOfMagnitude = Math.floor(Math.log10(Number(roundedValue)));
   return bigValue.toFixed(
-    Math.max(0, maximumSignificantDecimals - orderOfMagnitude - 1),
-    BigNumber.ROUND_HALF_UP
+    Math.max(0, maximumSignificantDecimals - roundedOrderOfMagnitude - 1),
+    roundingFunction
   );
 }
 
