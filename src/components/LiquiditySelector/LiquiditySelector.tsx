@@ -11,7 +11,11 @@ import React, {
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import { formatAmount, formatPrice } from '../../lib/utils/number';
+import {
+  formatAmount,
+  formatPrice,
+  formatMaximumSignificantDecimals,
+} from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
 import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
@@ -1049,11 +1053,13 @@ function TicksArea({
           >
             &nbsp;&nbsp;&nbsp;
             {`${formatAmount(
-              tickIndexToPrice(new BigNumber(rangeMinIndex))
-                .multipliedBy(100)
-                .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
-                .minus(100)
-                .toFixed(0),
+              formatMaximumSignificantDecimals(
+                tickIndexToPrice(new BigNumber(rangeMinIndex))
+                  .multipliedBy(100)
+                  .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
+                  .minus(100),
+                2
+              ),
               {
                 signDisplay: 'always',
                 useGrouping: true,
@@ -1138,11 +1144,13 @@ function TicksArea({
           >
             &nbsp;&nbsp;&nbsp;
             {`${formatAmount(
-              tickIndexToPrice(new BigNumber(rangeMaxIndex))
-                .multipliedBy(100)
-                .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
-                .minus(100)
-                .toFixed(0),
+              formatMaximumSignificantDecimals(
+                tickIndexToPrice(new BigNumber(rangeMaxIndex))
+                  .multipliedBy(100)
+                  .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
+                  .minus(100),
+                2
+              ),
               {
                 signDisplay: 'always',
                 useGrouping: true,
