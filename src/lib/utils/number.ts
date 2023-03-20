@@ -27,7 +27,7 @@ export function formatMaximumSignificantDecimals(
   maximumSignificantDecimals = 3
 ) {
   const bigValue = new BigNumber(value);
-  const orderOfMagnitude = Math.floor(Math.log10(bigValue.toNumber()));
+  const orderOfMagnitude = Math.floor(Math.log10(bigValue.abs().toNumber()));
   return bigValue.toFixed(
     Math.max(0, maximumSignificantDecimals - orderOfMagnitude - 1),
     BigNumber.ROUND_HALF_UP
