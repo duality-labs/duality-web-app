@@ -400,6 +400,23 @@ export default function LiquiditySelector({
   const xMinIndex = noGraphRange ? graphMinIndex - spread : graphMinIndex;
   const xMaxIndex = noGraphRange ? graphMaxIndex + spread : graphMaxIndex;
 
+  // find significant digits for display on the chart that makes sense
+  // eg. when viewing from 1-100 just 3 significant digits is fine
+  //     when viewing from 100-100.01 then 6 significant digits is needed
+  const dynamicSignificantDigits = useMemo(() => {
+    const diff = Math.min(xMaxIndex - xMinIndex, rangeMaxIndex - rangeMinIndex);
+    switch (true) {
+      case diff <= 10:
+        return 6;
+      case diff <= 100:
+        return 5;
+      case diff <= 1000:
+        return 4;
+      default:
+        return 3;
+    }
+  }, [xMinIndex, xMaxIndex, rangeMinIndex, rangeMaxIndex]);
+
   const [viewableMinIndex, viewableMaxIndex] = useMemo<[number, number]>(() => {
     // get bounds
     const spread = xMaxIndex - xMinIndex;
@@ -665,7 +682,7 @@ export default function LiquiditySelector({
           (v): v is number => v !== undefined
         )}
         highlightedTickIndex={edgePriceIndex}
-        significantDecimals={3}
+        significantDecimals={dynamicSignificantDigits}
         plotX={plotX}
         plotY={plotY}
         percentY={percentY}
