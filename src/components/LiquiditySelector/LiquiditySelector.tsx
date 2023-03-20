@@ -995,6 +995,25 @@ function TicksArea({
       warningPriceIfLessThan(rangeMaxIndex, tokenBWarningPriceIndex)
     : warningPriceIfLessThan(rangeMaxIndex, currentPriceIndex);
 
+  const formatPercentageValue = useCallback(
+    (tickIndex: number, currentPriceIndex: number) => {
+      return formatAmount(
+        formatMaximumSignificantDecimals(
+          tickIndexToPrice(new BigNumber(tickIndex))
+            .multipliedBy(100)
+            .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
+            .minus(100),
+          2
+        ),
+        {
+          signDisplay: 'always',
+          useGrouping: true,
+        }
+      );
+    },
+    []
+  );
+
   return !isNaN(rangeMinIndex) && !isNaN(rangeMaxIndex) ? (
     <g className={['ticks-area', className].filter(Boolean).join(' ')}>
       <g
@@ -1052,19 +1071,7 @@ function TicksArea({
             textAnchor="end"
           >
             &nbsp;&nbsp;&nbsp;
-            {`${formatAmount(
-              formatMaximumSignificantDecimals(
-                tickIndexToPrice(new BigNumber(rangeMinIndex))
-                  .multipliedBy(100)
-                  .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
-                  .minus(100),
-                2
-              ),
-              {
-                signDisplay: 'always',
-                useGrouping: true,
-              }
-            )}%`}
+            {`${formatPercentageValue(rangeMinIndex, currentPriceIndex)}%`}
             &nbsp;&nbsp;&nbsp;
           </text>
         )}
@@ -1143,19 +1150,7 @@ function TicksArea({
             textAnchor="start"
           >
             &nbsp;&nbsp;&nbsp;
-            {`${formatAmount(
-              formatMaximumSignificantDecimals(
-                tickIndexToPrice(new BigNumber(rangeMaxIndex))
-                  .multipliedBy(100)
-                  .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
-                  .minus(100),
-                2
-              ),
-              {
-                signDisplay: 'always',
-                useGrouping: true,
-              }
-            )}%`}
+            {`${formatPercentageValue(rangeMaxIndex, currentPriceIndex)}%`}
             &nbsp;&nbsp;&nbsp;
           </text>
         )}
