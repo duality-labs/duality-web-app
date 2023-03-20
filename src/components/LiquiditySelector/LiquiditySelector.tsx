@@ -1004,25 +1004,28 @@ function TicksArea({
       ? limit
       : undefined;
   };
-  const rangeMinIndexWarning = oneSidedLiquidity
-    ? warningIndexIfGreaterThan(rangeMinIndex, tokenAWarningPriceIndex) ??
-      warningPriceIfLessThan(rangeMinIndex, tokenBWarningPriceIndex)
-    : warningIndexIfGreaterThan(rangeMinIndex, currentPriceIndex);
-  const rangeMaxIndexWarning = oneSidedLiquidity
-    ? warningIndexIfGreaterThan(rangeMaxIndex, tokenAWarningPriceIndex) ??
-      warningPriceIfLessThan(rangeMaxIndex, tokenBWarningPriceIndex)
-    : warningPriceIfLessThan(rangeMaxIndex, currentPriceIndex);
 
+  const roundedCurrentPriceIndex =
+    currentPriceIndex && Math.round(currentPriceIndex);
   const rangeMinValueIndex =
-    currentPriceIndex !== undefined &&
-    rangeMinIndex < Math.round(currentPriceIndex)
+    roundedCurrentPriceIndex !== undefined &&
+    rangeMinIndex < roundedCurrentPriceIndex
       ? rangeMinIndex + 1
       : rangeMinIndex;
   const rangeMaxValueIndex =
-    currentPriceIndex !== undefined &&
-    rangeMaxIndex > Math.round(currentPriceIndex)
+    roundedCurrentPriceIndex !== undefined &&
+    rangeMaxIndex > roundedCurrentPriceIndex
       ? rangeMaxIndex - 1
       : rangeMaxIndex;
+
+  const rangeMinIndexWarning = oneSidedLiquidity
+    ? warningIndexIfGreaterThan(rangeMinValueIndex, tokenAWarningPriceIndex) ??
+      warningPriceIfLessThan(rangeMinValueIndex, tokenBWarningPriceIndex)
+    : warningIndexIfGreaterThan(rangeMinValueIndex, roundedCurrentPriceIndex);
+  const rangeMaxIndexWarning = oneSidedLiquidity
+    ? warningIndexIfGreaterThan(rangeMaxValueIndex, tokenAWarningPriceIndex) ??
+      warningPriceIfLessThan(rangeMaxValueIndex, tokenBWarningPriceIndex)
+    : warningPriceIfLessThan(rangeMaxValueIndex, roundedCurrentPriceIndex);
 
   const formatPercentageValue = useCallback(
     (tickIndex: number, currentPriceIndex: number) => {
