@@ -644,9 +644,7 @@ export default function LiquiditySelector({
         className="x-axis"
         xMinIndex={xMinIndex}
         xMaxIndex={xMaxIndex}
-        tickMarkIndexes={[edgePriceIndex].filter(
-          (v): v is number => v !== undefined
-        )}
+        tickMarkIndex={edgePriceIndex}
         highlightedTickIndex={edgePriceIndex}
         significantDecimals={dynamicSignificantDigits}
         plotX={plotX}
@@ -1684,7 +1682,10 @@ function Axis({
   className = '',
   xMinIndex,
   xMaxIndex,
-  tickMarkIndexes: givenTickMarkIndexes,
+  tickMarkIndex,
+  tickMarkIndexes: givenTickMarkIndexes = tickMarkIndex
+    ? [tickMarkIndex]
+    : undefined,
   highlightedTickIndex,
   significantDecimals,
   plotX,
@@ -1694,6 +1695,7 @@ function Axis({
   xMinIndex: number;
   xMaxIndex: number;
   className?: string;
+  tickMarkIndex?: number;
   tickMarkIndexes?: number[];
   highlightedTickIndex?: number;
   significantDecimals?: number;
