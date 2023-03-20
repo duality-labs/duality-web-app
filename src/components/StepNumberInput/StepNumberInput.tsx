@@ -7,6 +7,7 @@ import './StepNumberInput.scss';
 type Direction = 1 | -1;
 
 interface StepNumberInputProps<T extends number | string = string> {
+  onInput?: (value: T) => void;
   onChange?: (value: T) => void;
   tabbableButtons?: boolean;
   pressedInterval?: number;
@@ -29,7 +30,8 @@ interface StepNumberInputProps<T extends number | string = string> {
 }
 
 export default function StepNumberInput<T extends number | string = string>({
-  onChange,
+  onInput,
+  onChange = onInput,
   tabbableButtons = false,
   pressedInterval = 50,
   disableLimit = true,
@@ -66,7 +68,7 @@ export default function StepNumberInput<T extends number | string = string>({
    * @param newValue the proposed new value to be checked
    */
   const maybeUpdate = useCallback(
-    (newValueString: string) => {
+    (newValueString: string, onChange?: (value: T) => void) => {
       if (onChange) {
         const newValue = new BigNumber(newValueString);
         // note: allow unsafe parsing to deal with parsing to type T
@@ -84,7 +86,7 @@ export default function StepNumberInput<T extends number | string = string>({
         }
       }
     },
-    [min, max, onChange, parse]
+    [min, max, parse]
   );
 
   /**
@@ -97,10 +99,10 @@ export default function StepNumberInput<T extends number | string = string>({
         const newValue = stepFunction
           ? new BigNumber(stepFunction(value, direction))
           : new BigNumber(value).plus(step * direction);
-        maybeUpdate(newValue.toFixed());
+        maybeUpdate(newValue.toFixed(), onChange);
       }
     },
-    [step, stepFunction, maybeUpdate, value]
+    [step, stepFunction, maybeUpdate, onChange, value]
   );
   const onSubStep = useCallback(() => onStep(-1), [onStep]);
   const onAddStep = useCallback(() => onStep(+1), [onStep]);
@@ -133,13 +135,6 @@ export default function StepNumberInput<T extends number | string = string>({
     pressedDelay,
     pressedInterval
   );
-
-  /**
-   * To be called when there is a change with the input
-   */
-  const onInputChange = useCallback(() => {
-    maybeUpdate(inputRef.current?.value || '0');
-  }, [maybeUpdate]);
 
   useEffect(() => {
     function handleArrowKeyStep(event: KeyboardEvent) {
@@ -199,7 +194,10 @@ export default function StepNumberInput<T extends number | string = string>({
           <input
             type="number"
             value={currentValue}
-            onInput={onInputChange}
+            onInput={() => maybeUpdate(inputRef.current?.value || '0', onInput)}
+            onChange={() =>
+              maybeUpdate(inputRef.current?.value || '0', onChange)
+            }
             ref={inputRef}
             style={dynamicInputStyle}
           />
