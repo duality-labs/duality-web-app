@@ -640,6 +640,19 @@ export default function LiquiditySelector({
         plotX={plotX}
         plotY={plotYBigNumber}
       />
+      <Axis
+        className="x-axis"
+        xMinIndex={xMinIndex}
+        xMaxIndex={xMaxIndex}
+        tickMarkIndexes={[edgePriceIndex].filter(
+          (v): v is number => v !== undefined
+        )}
+        highlightedTickIndex={edgePriceIndex}
+        significantDecimals={dynamicSignificantDigits}
+        plotX={plotX}
+        plotY={plotY}
+        percentY={percentY}
+      />
       {advanced ? (
         <TicksGroup
           className="new-ticks"
@@ -672,21 +685,9 @@ export default function LiquiditySelector({
           fractionalRangeMaxIndex={fractionalRangeMaxIndex}
           setRangeMinIndex={setRangeMinIndex}
           setRangeMaxIndex={setRangeMaxIndex}
+          significantDecimals={dynamicSignificantDigits}
         />
       )}
-      <Axis
-        className="x-axis"
-        xMinIndex={xMinIndex}
-        xMaxIndex={xMaxIndex}
-        tickMarkIndexes={[edgePriceIndex, rangeMinIndex, rangeMaxIndex].filter(
-          (v): v is number => v !== undefined
-        )}
-        highlightedTickIndex={edgePriceIndex}
-        significantDecimals={dynamicSignificantDigits}
-        plotX={plotX}
-        plotY={plotY}
-        percentY={percentY}
-      />
     </svg>
   );
 
@@ -907,6 +908,7 @@ function TicksArea({
   fractionalRangeMaxIndex,
   setRangeMinIndex,
   setRangeMaxIndex,
+  significantDecimals,
   className,
 }: {
   currentPriceIndex: number | undefined;
@@ -922,6 +924,7 @@ function TicksArea({
   fractionalRangeMaxIndex: number;
   setRangeMinIndex: (rangeMinIndex: number) => void;
   setRangeMaxIndex: (rangeMaxIndex: number) => void;
+  significantDecimals: number;
   className?: string;
 }) {
   const lastDisplacementMin = useRef<number>(0);
@@ -1079,8 +1082,31 @@ function TicksArea({
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
+        <text
+          className="pole-value-text"
+          filter="url(#text-solid-background)"
+          x={(4 + 1.8 + plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
+          y={plotY(new BigNumber(0)) + 4 + 8}
+          dominantBaseline="middle"
+          textAnchor="end"
+          alignmentBaseline="text-before-edge"
+        >
+          &nbsp;
+          {formatAmount(
+            formatMaximumSignificantDecimals(
+              tickIndexToPrice(new BigNumber(rangeMinIndex)).toFixed(),
+              significantDecimals
+            ),
+            {
+              minimumSignificantDigits: significantDecimals,
+              useGrouping: true,
+            }
+          )}
+          &nbsp;
+        </text>
         {currentPriceIndex !== undefined && (
           <text
+            className="pole-percent-text"
             filter="url(#text-solid-highlight)"
             x={(4 + 1.8 + plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
@@ -1158,8 +1184,31 @@ function TicksArea({
           y1={(plotY(new BigNumber(1)) + 10).toFixed(3)}
           y2={(plotY(new BigNumber(1)) + 30).toFixed(3)}
         />
+        <text
+          className="pole-value-text"
+          filter="url(#text-solid-background)"
+          x={(4 + 1.8 + plotX(rangeMaxIndex) - poleWidth / 2).toFixed(3)}
+          y={plotY(new BigNumber(0)) + 4 + 8}
+          dominantBaseline="middle"
+          textAnchor="start"
+          alignmentBaseline="text-before-edge"
+        >
+          &nbsp;
+          {formatAmount(
+            formatMaximumSignificantDecimals(
+              tickIndexToPrice(new BigNumber(rangeMaxIndex)).toFixed(),
+              significantDecimals
+            ),
+            {
+              minimumSignificantDigits: significantDecimals,
+              useGrouping: true,
+            }
+          )}
+          &nbsp;
+        </text>
         {currentPriceIndex !== undefined && (
           <text
+            className="pole-percent-text"
             filter="url(#text-solid-highlight)"
             x={(-(4 + 1.8) + plotX(rangeMaxIndex) + poleWidth / 2).toFixed(3)}
             y={5 - containerHeight}
@@ -1699,23 +1748,10 @@ function Axis({
           className={
             tickMarkIndex === highlightedTickIndex ? 'text--success' : ''
           }
-          x={(
-            plotX(tickMarkIndex) +
-            (highlightedTickIndex !== undefined && index > 0
-              ? index === 1
-                ? 1.5
-                : -1.5
-              : 0)
-          ).toFixed(3)}
+          x={plotX(tickMarkIndex).toFixed(3)}
           y={plotY(0) + 4 + 8}
           dominantBaseline="middle"
-          textAnchor={
-            highlightedTickIndex !== undefined && index > 0
-              ? index === 1
-                ? 'end'
-                : 'start'
-              : 'middle'
-          }
+          textAnchor="middle"
           alignmentBaseline="text-before-edge"
         >
           &nbsp;
