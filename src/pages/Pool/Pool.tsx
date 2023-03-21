@@ -70,28 +70,29 @@ const defaultLiquidityShape =
 
 const defaultPrecision = '6';
 
+const formatRangeString = (value: BigNumber.Value, significantDecimals = 3) => {
+  return formatAmount(
+    formatMaximumSignificantDecimals(value, significantDecimals),
+    { minimumSignificantDigits: significantDecimals }
+  );
+};
+
 const restrictPriceRangeValues = (
   valueString: string,
   [priceMin, priceMax]: [number | string, number | string] = priceRangeLimits,
   significantDecimals = 3
 ) => {
-  const format = (value: BigNumber.Value) => {
-    return formatAmount(
-      formatMaximumSignificantDecimals(value, significantDecimals),
-      { minimumSignificantDigits: significantDecimals }
-    );
-  };
   const value = new BigNumber(valueString);
   if (value.isLessThan(priceMin)) {
-    return format(priceMin);
+    return formatRangeString(priceMin, significantDecimals);
   }
   if (value.isGreaterThan(priceMax)) {
-    return format(priceMax);
+    return formatRangeString(priceMax, significantDecimals);
   }
   if (!value.isNaN()) {
-    return format(value);
+    return formatRangeString(value, significantDecimals);
   }
-  return format(1);
+  return formatRangeString(1, significantDecimals);
 };
 
 export default function PoolPage() {
@@ -149,8 +150,8 @@ function Pool() {
 
   // start with a default range of nothing, but is should be quickly set
   // after price information becomes available
-  const [rangeMin, setRangeMinUnprotected] = useState('1');
-  const [rangeMax, setRangeMaxUnprotected] = useState('1');
+  const [fractionalRangeMin, setRangeMinUnprotected] = useState('1');
+  const [fractionalRangeMax, setRangeMaxUnprotected] = useState('1');
   const [significantDecimals, setSignificantDecimals] = useState(3);
 
   const [pairPriceMin, pairPriceMax] = useMemo(() => {
@@ -427,11 +428,11 @@ function Pool() {
 
   const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
     const fractionalIndexMin = priceToTickIndex(
-      new BigNumber(rangeMin),
+      new BigNumber(fractionalRangeMin),
       'none'
     ).toNumber();
     const fractionalIndexMax = priceToTickIndex(
-      new BigNumber(rangeMax),
+      new BigNumber(fractionalRangeMax),
       'none'
     ).toNumber();
     return getRangeIndexes(
@@ -439,7 +440,20 @@ function Pool() {
       fractionalIndexMin,
       fractionalIndexMax
     );
-  }, [rangeMin, rangeMax, edgePriceIndex]);
+  }, [fractionalRangeMin, fractionalRangeMax, edgePriceIndex]);
+
+  const [rangeMin, rangeMax] = useMemo<[string, string]>(() => {
+    return [
+      formatRangeString(
+        tickIndexToPrice(new BigNumber(rangeMinIndex)),
+        significantDecimals
+      ),
+      formatRangeString(
+        tickIndexToPrice(new BigNumber(rangeMaxIndex)),
+        significantDecimals
+      ),
+    ];
+  }, [rangeMinIndex, rangeMaxIndex, significantDecimals]);
 
   const swapAll = useCallback(() => {
     const flipAroundCurrentPriceSwap = (value: string) => {
@@ -895,8 +909,8 @@ function Pool() {
                 <LiquiditySelector
                   tokenA={tokenA}
                   tokenB={tokenB}
-                  rangeMin={rangeMin}
-                  rangeMax={rangeMax}
+                  rangeMin={fractionalRangeMin}
+                  rangeMax={fractionalRangeMax}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
                   setSignificantDecimals={setSignificantDecimals}
