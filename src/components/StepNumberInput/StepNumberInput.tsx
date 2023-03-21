@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useOnContinualPress from '../hooks/useOnContinualPress';
 
 import './StepNumberInput.scss';
@@ -62,6 +62,8 @@ export default function StepNumberInput<T extends number | string = string>({
     );
   }
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [internalValue = currentValue, setInternalValue] = useState<string>();
 
   /**
    * Makes sure the value is valid number within the proper range
@@ -193,11 +195,13 @@ export default function StepNumberInput<T extends number | string = string>({
         {!readOnly && editable ? (
           <input
             type="number"
-            value={currentValue}
+            value={internalValue}
             onInput={() => maybeUpdate(inputRef.current?.value || '0', onInput)}
             onChange={(e) => {
+              setInternalValue(e.target.value);
               maybeUpdate(e.target.value || '0', onChange);
             }}
+            onBlur={() => setInternalValue(undefined)}
             ref={inputRef}
             style={dynamicInputStyle}
           />
