@@ -420,6 +420,27 @@ function Pool() {
     );
   }, [precision]);
 
+  const edgePriceIndex =
+    useMemo(() => {
+      return edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
+    }, [edgePrice]) || 0;
+
+  const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
+    const fractionalIndexMin = priceToTickIndex(
+      new BigNumber(rangeMin),
+      'none'
+    ).toNumber();
+    const fractionalIndexMax = priceToTickIndex(
+      new BigNumber(rangeMax),
+      'none'
+    ).toNumber();
+    return getRangeIndexes(
+      edgePriceIndex,
+      fractionalIndexMin,
+      fractionalIndexMax
+    );
+  }, [rangeMin, rangeMax, edgePriceIndex]);
+
   const swapAll = useCallback(() => {
     const flipAroundCurrentPriceSwap = (value: string) => {
       // invert price
@@ -448,27 +469,6 @@ function Pool() {
   ]);
 
   const [chartTypeSelected] = useState<'AMM' | 'Orderbook'>('AMM');
-
-  const edgePriceIndex =
-    useMemo(() => {
-      return edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
-    }, [edgePrice]) || 0;
-
-  const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
-    const fractionalIndexMin = priceToTickIndex(
-      new BigNumber(rangeMin),
-      'none'
-    ).toNumber();
-    const fractionalIndexMax = priceToTickIndex(
-      new BigNumber(rangeMax),
-      'none'
-    ).toNumber();
-    return getRangeIndexes(
-      edgePriceIndex,
-      fractionalIndexMin,
-      fractionalIndexMax
-    );
-  }, [rangeMin, rangeMax, edgePriceIndex]);
 
   // todo: this effect should be replaced with a better calculation for ticks
   const tickCount = Number(precision || 1);
