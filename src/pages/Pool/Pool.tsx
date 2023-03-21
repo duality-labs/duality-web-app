@@ -442,25 +442,33 @@ function Pool() {
 
   const [chartTypeSelected] = useState<'AMM' | 'Orderbook'>('AMM');
 
+  const edgePriceIndex =
+    useMemo(() => {
+      return edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
+    }, [edgePrice]) || 0;
+
+  const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
+    const fractionalIndexMin = priceToTickIndex(
+      new BigNumber(fineRangeMin),
+      'none'
+    ).toNumber();
+    const fractionalIndexMax = priceToTickIndex(
+      new BigNumber(fineRangeMax),
+      'none'
+    ).toNumber();
+    return getRangeIndexes(
+      edgePriceIndex,
+      fractionalIndexMin,
+      fractionalIndexMax
+    );
+  }, [fineRangeMin, fineRangeMax, edgePriceIndex]);
+
   // todo: this effect should be replaced with a better calculation for ticks
   const tickCount = Number(precision || 1);
   useLayoutEffect(() => {
     function getUserTicks(): TickGroup {
-      const fractionalIndexMin = priceToTickIndex(
-        new BigNumber(fineRangeMin),
-        'none'
-      ).toNumber();
-      const fractionalIndexMax = priceToTickIndex(
-        new BigNumber(fineRangeMax),
-        'none'
-      ).toNumber();
-      const edgePriceIndex =
-        edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
-      const [indexMin, indexMax] = getRangeIndexes(
-        edgePriceIndex,
-        fractionalIndexMin,
-        fractionalIndexMax
-      );
+      const indexMin = rangeMinIndex;
+      const indexMax = rangeMaxIndex;
       // set multiple ticks across the range
       const feeIndex = feeType ? feeTypes.indexOf(feeType) : -1;
       if (
@@ -628,8 +636,8 @@ function Pool() {
     tokenA,
     tokenB,
     liquidityShape,
-    fineRangeMin,
-    fineRangeMax,
+    rangeMinIndex,
+    rangeMaxIndex,
     tickCount,
     edgePrice,
     invertTokenOrder,
