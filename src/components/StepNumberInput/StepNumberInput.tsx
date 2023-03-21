@@ -195,9 +195,9 @@ export default function StepNumberInput<T extends number | string = string>({
             type="number"
             value={currentValue}
             onInput={() => maybeUpdate(inputRef.current?.value || '0', onInput)}
-            onChange={() =>
-              maybeUpdate(inputRef.current?.value || '0', onChange)
-            }
+            onChange={(e) => {
+              maybeUpdate(e.target.value || '0', onChange);
+            }}
             ref={inputRef}
             style={dynamicInputStyle}
           />
