@@ -39,6 +39,7 @@ import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
 import {
+  formatAmount,
   formatMaximumSignificantDecimals,
   formatPrice,
 } from '../../lib/utils/number';
@@ -71,19 +72,26 @@ const defaultPrecision = '6';
 
 const restrictPriceRangeValues = (
   valueString: string,
-  [priceMin, priceMax]: [number | string, number | string] = priceRangeLimits
+  [priceMin, priceMax]: [number | string, number | string] = priceRangeLimits,
+  significantDecimals = 3
 ) => {
+  const format = (value: BigNumber.Value) => {
+    return formatAmount(
+      formatMaximumSignificantDecimals(value, significantDecimals),
+      { minimumSignificantDigits: significantDecimals }
+    );
+  };
   const value = new BigNumber(valueString);
   if (value.isLessThan(priceMin)) {
-    return formatPrice(priceMin);
+    return format(priceMin);
   }
   if (value.isGreaterThan(priceMax)) {
-    return formatPrice(priceMax);
+    return format(priceMax);
   }
   if (!value.isNaN()) {
-    return formatPrice(value.toFixed(), { minimumSignificantDigits: 3 });
+    return format(value);
   }
-  return formatPrice(1);
+  return format(1);
 };
 
 export default function PoolPage() {
@@ -143,6 +151,7 @@ function Pool() {
   // after price information becomes available
   const [rangeMin, setRangeMinUnprotected] = useState('1');
   const [rangeMax, setRangeMaxUnprotected] = useState('1');
+  const [significantDecimals, setSignificantDecimals] = useState(3);
 
   const [pairPriceMin, pairPriceMax] = useMemo(() => {
     const spreadFactor = 1000;
@@ -157,7 +166,11 @@ function Pool() {
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
       const restrictValue = (value: string) => {
-        return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
+        return restrictPriceRangeValues(
+          value,
+          [pairPriceMin, pairPriceMax],
+          significantDecimals
+        );
       };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
@@ -168,12 +181,16 @@ function Pool() {
       const value = valueOrCallback;
       setRangeMinUnprotected(restrictValue(value));
     },
-    [pairPriceMin, pairPriceMax]
+    [pairPriceMin, pairPriceMax, significantDecimals]
   );
   const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
       const restrictValue = (value: string) => {
-        return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
+        return restrictPriceRangeValues(
+          value,
+          [pairPriceMin, pairPriceMax],
+          significantDecimals
+        );
       };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
@@ -185,7 +202,7 @@ function Pool() {
 
       setRangeMaxUnprotected(restrictValue(value));
     },
-    [pairPriceMin, pairPriceMax]
+    [pairPriceMin, pairPriceMax, significantDecimals]
   );
 
   const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
@@ -882,6 +899,7 @@ function Pool() {
                   rangeMax={rangeMax}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
+                  setSignificantDecimals={setSignificantDecimals}
                   userTickSelected={userTickSelected}
                   setUserTickSelected={setUserTickSelected}
                   feeTier={feeType?.fee}

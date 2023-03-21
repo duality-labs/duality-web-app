@@ -42,6 +42,7 @@ export interface LiquiditySelectorProps {
   rangeMax: string;
   setRangeMin: React.Dispatch<React.SetStateAction<string>>;
   setRangeMax: React.Dispatch<React.SetStateAction<string>>;
+  setSignificantDecimals?: React.Dispatch<React.SetStateAction<number>>;
   userTicksBase?: Array<Tick | undefined>;
   userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
@@ -120,6 +121,7 @@ export default function LiquiditySelector({
   rangeMax,
   setRangeMin,
   setRangeMax,
+  setSignificantDecimals,
   userTicks = [],
   userTicksBase = userTicks,
   setUserTicks,
@@ -416,6 +418,10 @@ export default function LiquiditySelector({
         return 3;
     }
   }, [xMinIndex, xMaxIndex, rangeMinIndex, rangeMaxIndex]);
+
+  useEffect(() => {
+    setSignificantDecimals?.(dynamicSignificantDigits);
+  }, [setSignificantDecimals, dynamicSignificantDigits]);
 
   const [viewableMinIndex, viewableMaxIndex] = useMemo<[number, number]>(() => {
     // get bounds
