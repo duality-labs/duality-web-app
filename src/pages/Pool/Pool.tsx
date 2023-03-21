@@ -138,21 +138,11 @@ function Pool() {
   );
 
   const edgePrice = currentPriceFromTicks;
-  const [fineRangeMin, setFineRangeMin] = useState('1');
-  const [fineRangeMax, setFineRangeMax] = useState('1');
 
   // start with a default range of nothing, but is should be quickly set
   // after price information becomes available
   const [rangeMin, setRangeMinUnprotected] = useState('1');
   const [rangeMax, setRangeMaxUnprotected] = useState('1');
-
-  // side effect hack override fine controls with rough controls
-  useLayoutEffect(() => {
-    setFineRangeMin(rangeMin);
-  }, [rangeMin]);
-  useLayoutEffect(() => {
-    setFineRangeMax(rangeMax);
-  }, [rangeMax]);
 
   const [pairPriceMin, pairPriceMax] = useMemo(() => {
     const spreadFactor = 1000;
@@ -449,11 +439,11 @@ function Pool() {
 
   const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
     const fractionalIndexMin = priceToTickIndex(
-      new BigNumber(fineRangeMin),
+      new BigNumber(rangeMin),
       'none'
     ).toNumber();
     const fractionalIndexMax = priceToTickIndex(
-      new BigNumber(fineRangeMax),
+      new BigNumber(rangeMax),
       'none'
     ).toNumber();
     return getRangeIndexes(
@@ -461,7 +451,7 @@ function Pool() {
       fractionalIndexMin,
       fractionalIndexMax
     );
-  }, [fineRangeMin, fineRangeMax, edgePriceIndex]);
+  }, [rangeMin, rangeMax, edgePriceIndex]);
 
   // todo: this effect should be replaced with a better calculation for ticks
   const tickCount = Number(precision || 1);
@@ -888,10 +878,10 @@ function Pool() {
                 <LiquiditySelector
                   tokenA={tokenA}
                   tokenB={tokenB}
-                  rangeMin={fineRangeMin}
-                  rangeMax={fineRangeMax}
-                  setRangeMin={setFineRangeMin}
-                  setRangeMax={setFineRangeMax}
+                  rangeMin={rangeMin}
+                  rangeMax={rangeMax}
+                  setRangeMin={setRangeMin}
+                  setRangeMax={setRangeMax}
                   userTickSelected={userTickSelected}
                   setUserTickSelected={setUserTickSelected}
                   feeTier={feeType?.fee}
