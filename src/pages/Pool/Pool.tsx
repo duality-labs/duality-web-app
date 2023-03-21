@@ -79,20 +79,19 @@ const formatRangeString = (value: BigNumber.Value, significantDecimals = 3) => {
 
 const restrictPriceRangeValues = (
   valueString: string,
-  [priceMin, priceMax]: [number, number] = priceRangeLimits,
-  significantDecimals = 3
-) => {
+  [priceMin, priceMax]: [number, number] = priceRangeLimits
+): string => {
   const value = new BigNumber(valueString);
   if (value.isLessThan(priceMin)) {
-    return formatRangeString(priceMin, significantDecimals);
+    return new BigNumber(priceMin).toFixed();
   }
   if (value.isGreaterThan(priceMax)) {
-    return formatRangeString(priceMax, significantDecimals);
+    return new BigNumber(priceMax).toFixed();
   }
   if (!value.isNaN()) {
-    return formatRangeString(value, significantDecimals);
+    return valueString;
   }
-  return formatRangeString(1, significantDecimals);
+  return '1';
 };
 
 export default function PoolPage() {
@@ -167,11 +166,7 @@ function Pool() {
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
       const restrictValue = (value: string) => {
-        return restrictPriceRangeValues(
-          value,
-          [pairPriceMin, pairPriceMax],
-          significantDecimals
-        );
+        return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
       };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
@@ -182,16 +177,12 @@ function Pool() {
       const value = valueOrCallback;
       setRangeMinUnprotected(restrictValue(value));
     },
-    [pairPriceMin, pairPriceMax, significantDecimals]
+    [pairPriceMin, pairPriceMax]
   );
   const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
       const restrictValue = (value: string) => {
-        return restrictPriceRangeValues(
-          value,
-          [pairPriceMin, pairPriceMax],
-          significantDecimals
-        );
+        return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
       };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
@@ -203,7 +194,7 @@ function Pool() {
 
       setRangeMaxUnprotected(restrictValue(value));
     },
-    [pairPriceMin, pairPriceMax, significantDecimals]
+    [pairPriceMin, pairPriceMax]
   );
 
   const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
