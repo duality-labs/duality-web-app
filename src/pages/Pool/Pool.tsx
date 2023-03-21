@@ -79,7 +79,7 @@ const formatRangeString = (value: BigNumber.Value, significantDecimals = 3) => {
 
 const restrictPriceRangeValues = (
   valueString: string,
-  [priceMin, priceMax]: [number | string, number | string] = priceRangeLimits,
+  [priceMin, priceMax]: [number, number] = priceRangeLimits,
   significantDecimals = 3
 ) => {
   const value = new BigNumber(valueString);
@@ -154,12 +154,12 @@ function Pool() {
   const [fractionalRangeMax, setRangeMaxUnprotected] = useState('1');
   const [significantDecimals, setSignificantDecimals] = useState(3);
 
-  const [pairPriceMin, pairPriceMax] = useMemo(() => {
+  const [pairPriceMin, pairPriceMax] = useMemo<[number, number]>(() => {
     const spreadFactor = 1000;
     return edgePrice
       ? [
-          formatPrice(edgePrice.dividedBy(spreadFactor).toFixed()),
-          formatPrice(edgePrice.multipliedBy(spreadFactor).toFixed()),
+          edgePrice.dividedBy(spreadFactor).toNumber(),
+          edgePrice.multipliedBy(spreadFactor).toNumber(),
         ]
       : [priceMin, priceMax];
   }, [edgePrice]);
