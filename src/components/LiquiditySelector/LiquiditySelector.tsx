@@ -181,11 +181,11 @@ export default function LiquiditySelector({
           const callback = valueOrCallback;
           setRangeMax((rangeMax) => {
             // convert price to index
-            const fractionalRangeMinIndex = priceToTickIndex(
+            const fractionalRangeMaxIndex = priceToTickIndex(
               new BigNumber(rangeMax)
             ).toNumber();
             // process as index
-            const value = callback(fractionalRangeMinIndex);
+            const value = callback(fractionalRangeMaxIndex);
             // convert index back to price
             return tickIndexToPrice(new BigNumber(value)).toFixed();
           });
