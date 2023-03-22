@@ -1755,29 +1755,32 @@ function Axis({
   plotY: (y: number) => number;
   percentY: (y: number) => number;
 }) {
-  if (!xMinIndex || !xMaxIndex || xMinIndex === xMaxIndex) return null;
+  const minOrderOfMagnitude = Math.floor(
+    Math.log10(tickIndexToPrice(new BigNumber(xMinIndex)).toNumber())
+  );
+  const maxOrderOfMagnitude = Math.floor(
+    Math.log10(tickIndexToPrice(new BigNumber(xMaxIndex)).toNumber())
+  );
 
-  const start = Math.pow(10, Math.floor(Math.log10(xMinIndex)));
   const tickMarkIndexes =
     givenTickMarkIndexes ||
-    Array.from({ length: Math.log10(xMaxIndex / xMinIndex) + 2 }).flatMap(
-      (_, index) => {
-        const baseNumber = start * Math.pow(10, index);
-        const possibleMultiples = [2, 5, 10];
-        const possibleInclusions = possibleMultiples.map((v) => v * baseNumber);
-        return possibleInclusions
-          .map((possibleInclusion) => {
-            if (
-              possibleInclusion >= xMinIndex &&
-              possibleInclusion <= xMaxIndex
-            ) {
-              return possibleInclusion;
-            }
-            return 0;
-          })
-          .filter(Boolean);
-      }
-    );
+    Array.from({
+      length: maxOrderOfMagnitude - minOrderOfMagnitude + 1,
+    }).flatMap((_, index) => {
+      const baseNumber = Math.pow(10, minOrderOfMagnitude + index);
+      const possibleMultiples = [2, 5, 10];
+      const possibleInclusions = possibleMultiples.map((v) => v * baseNumber);
+      return possibleInclusions.flatMap<number>((possibleInclusion) => {
+        const tickIndex = priceToTickIndex(
+          new BigNumber(possibleInclusion),
+          'none'
+        ).toNumber();
+        // only show values between the range min/max
+        return xMinIndex < tickIndex && tickIndex < xMaxIndex
+          ? [tickIndex]
+          : [];
+      });
+    });
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
@@ -1815,7 +1818,10 @@ function Axis({
               significantDecimals
             ),
             {
-              minimumSignificantDigits: significantDecimals,
+              minimumSignificantDigits:
+                tickMarkIndex === highlightedTickIndex
+                  ? significantDecimals
+                  : 1,
               useGrouping: true,
             }
           )}
