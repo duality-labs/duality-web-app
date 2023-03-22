@@ -408,11 +408,11 @@ export default function LiquiditySelector({
   const dynamicSignificantDigits = useMemo(() => {
     const diff = Math.min(xMaxIndex - xMinIndex, rangeMaxIndex - rangeMinIndex);
     switch (true) {
-      case diff <= 10:
+      case diff <= 25:
         return 6;
-      case diff <= 100:
+      case diff <= 250:
         return 5;
-      case diff <= 1000:
+      case diff <= 2500:
         return 4;
       default:
         return 3;
