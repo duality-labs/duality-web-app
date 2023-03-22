@@ -512,7 +512,8 @@ export default function LiquiditySelector({
     );
   }, [emptyBuckets, feeTicks]);
 
-  const graphHeight = useMemo(() => {
+  // calculate highest value to plot on the chart
+  const yMaxValue = useMemo(() => {
     const allFeesTickBuckets = [
       fillBuckets(emptyBuckets[0], tokenATicks, 'upper'),
       fillBuckets(emptyBuckets[1], tokenBTicks, 'lower'),
@@ -552,11 +553,11 @@ export default function LiquiditySelector({
   const plotY = useCallback(
     (y: number): number => {
       const height = plotHeight;
-      return graphHeight === 0
+      return yMaxValue === 0
         ? -bottomPadding // pin to bottom
-        : -bottomPadding - (height * y) / graphHeight;
+        : -bottomPadding - (height * y) / yMaxValue;
     },
-    [graphHeight, plotHeight]
+    [yMaxValue, plotHeight]
   );
   const percentY = useCallback(
     (y: number): number => {
