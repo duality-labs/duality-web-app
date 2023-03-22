@@ -418,18 +418,18 @@ function Pool() {
     }, [edgePrice]) || 0;
 
   const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
-    const fractionalIndexMin = priceToTickIndex(
+    const fractionalRangeMinIndex = priceToTickIndex(
       new BigNumber(fractionalRangeMin),
       'none'
     ).toNumber();
-    const fractionalIndexMax = priceToTickIndex(
+    const fractionalRangeMaxIndex = priceToTickIndex(
       new BigNumber(fractionalRangeMax),
       'none'
     ).toNumber();
     return getRangeIndexes(
       edgePriceIndex,
-      fractionalIndexMin,
-      fractionalIndexMax
+      fractionalRangeMinIndex,
+      fractionalRangeMaxIndex
     );
   }, [fractionalRangeMin, fractionalRangeMax, edgePriceIndex]);
 
