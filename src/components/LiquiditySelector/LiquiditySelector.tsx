@@ -753,7 +753,7 @@ export default function LiquiditySelector({
   return (
     <>
       <div className="svg-container" ref={svgContainer}>
-        {svg}
+        {containerSize.width > 0 && containerSize.height > 0 ? svg : null}
       </div>
       {ControlsComponent && (
         <div className="col">
