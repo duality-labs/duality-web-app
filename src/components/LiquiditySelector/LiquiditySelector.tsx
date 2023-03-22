@@ -352,10 +352,7 @@ export default function LiquiditySelector({
 
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
-  const [
-    graphMinIndex = initialGraphMinIndex,
-    graphMaxIndex = initialGraphMaxIndex,
-  ] = useMemo<[number | undefined, number | undefined]>(() => {
+  const [graphMinIndex, graphMaxIndex] = useMemo<[number, number]>(() => {
     const allValues = [
       ...userTicks.map<number | undefined>((tick) => tick?.tickIndex),
       rangeMinIndex,
@@ -364,17 +361,25 @@ export default function LiquiditySelector({
       zoomedDataMaxIndex,
     ].filter((v): v is number => v !== undefined && !isNaN(v));
     // find the edges of the plot area in terms of x-axis values
-    if (allValues.length > 0) {
-      return [Math.min(...allValues), Math.max(...allValues)];
-    } else {
-      return [undefined, undefined];
+    const [min, max] =
+      allValues.length > 0
+        ? [Math.min(...allValues), Math.max(...allValues)]
+        : [initialGraphMinIndex, initialGraphMaxIndex];
+
+    if (min === max) {
+      // get factor for 1/10 and 10x of price
+      const spread = Math.round(Math.log(10) / Math.log(1.0001));
+      return [min - spread, max + spread];
     }
+    return [min, max];
   }, [
     rangeMinIndex,
     rangeMaxIndex,
     userTicks,
     zoomedDataMinIndex,
     zoomedDataMaxIndex,
+    initialGraphMinIndex,
+    initialGraphMaxIndex,
   ]);
 
   // find container size that buckets should fit
@@ -394,18 +399,14 @@ export default function LiquiditySelector({
     })
   );
 
-  // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
-  const noGraphRange = graphMaxIndex <= graphMinIndex;
-  // get factor for 1/10 and 10x of price
-  const spread = Math.round(Math.log(10) / Math.log(1.0001));
-  const xMinIndex = noGraphRange ? graphMinIndex - spread : graphMinIndex;
-  const xMaxIndex = noGraphRange ? graphMaxIndex + spread : graphMaxIndex;
-
   // find significant digits for display on the chart that makes sense
   // eg. when viewing from 1-100 just 3 significant digits is fine
   //     when viewing from 100-100.01 then 6 significant digits is needed
   const dynamicSignificantDigits = useMemo(() => {
-    const diff = Math.min(xMaxIndex - xMinIndex, rangeMaxIndex - rangeMinIndex);
+    const diff = Math.min(
+      graphMaxIndex - graphMinIndex,
+      rangeMaxIndex - rangeMinIndex
+    );
     switch (true) {
       case diff <= 25:
         return 6;
@@ -416,7 +417,7 @@ export default function LiquiditySelector({
       default:
         return 3;
     }
-  }, [xMinIndex, xMaxIndex, rangeMinIndex, rangeMaxIndex]);
+  }, [graphMinIndex, graphMaxIndex, rangeMinIndex, rangeMaxIndex]);
 
   useEffect(() => {
     setSignificantDecimals?.(dynamicSignificantDigits);
@@ -424,23 +425,23 @@ export default function LiquiditySelector({
 
   const [viewableMinIndex, viewableMaxIndex] = useMemo<[number, number]>(() => {
     // get bounds
-    const spread = xMaxIndex - xMinIndex;
+    const spread = graphMaxIndex - graphMinIndex;
     const width = Math.max(1, containerSize.width - leftPadding - rightPadding);
     return [
-      xMinIndex - (spread * leftPadding) / width,
-      xMaxIndex + (spread * rightPadding) / width,
+      graphMinIndex - (spread * leftPadding) / width,
+      graphMaxIndex + (spread * rightPadding) / width,
     ];
-  }, [xMinIndex, xMaxIndex, containerSize.width]);
+  }, [graphMinIndex, graphMaxIndex, containerSize.width]);
 
   // calculate bucket extents
   const getEmptyBuckets = useCallback<
     (
       // get bounds
-      xMinIndex: number,
-      xMaxIndex: number
+      graphMinIndex: number,
+      graphMaxIndex: number
     ) => [TickGroupBucketsEmpty, TickGroupBucketsEmpty]
   >(
-    (xMinIndex, xMaxIndex) => {
+    (graphMinIndex, graphMaxIndex) => {
       // skip if there is no breakpoint
       if (edgePriceIndex === undefined) {
         return [[], []];
@@ -448,8 +449,8 @@ export default function LiquiditySelector({
 
       // get middle 'break' point which will separate bucket sections
       const indexNow = Math.round(edgePriceIndex);
-      const indexMin = Math.floor(xMinIndex);
-      const indexMax = Math.ceil(xMaxIndex);
+      const indexMin = Math.floor(graphMinIndex);
+      const indexMax = Math.ceil(graphMaxIndex);
       const currentPriceIsWithinView =
         indexMin <= indexNow && indexNow <= indexMax;
 
@@ -541,13 +542,14 @@ export default function LiquiditySelector({
   const plotX = useCallback(
     (x: number): number => {
       const width = plotWidth;
-      return xMinIndex === xMaxIndex
+      return graphMinIndex === graphMaxIndex
         ? // choose midpoint
           leftPadding + width / 2
         : // interpolate coordinate to graph
-          leftPadding + (width * (x - xMinIndex)) / (xMaxIndex - xMinIndex);
+          leftPadding +
+            (width * (x - graphMinIndex)) / (graphMaxIndex - graphMinIndex);
     },
-    [xMinIndex, xMaxIndex, plotWidth]
+    [graphMinIndex, graphMaxIndex, plotWidth]
   );
   const plotY = useCallback(
     (y: number): number => {
