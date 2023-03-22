@@ -1134,19 +1134,45 @@ function logarithmStep(valueString: string, direction: number): string {
   // find order of magnitude of last digit to use as basis of add/sub value
   const orderOfMagnitudeLastDigit =
     orderOfMagnitude - significantDigits - trailingZeros + 1;
-  return direction >= 0
-    ? value
-        .plus(new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit))
-        .toFixed()
-    : value
-        .minus(
-          new BigNumber(10).exponentiatedBy(
-            // reduce the order of magnitude of the value if going from a singular '1'
-            // eg. 1 -> 0.9,  0.1 -> 0.09,  0.01 -> 0.009
-            // so that the user doesn't go to 0 on a logarithmic scale
-            orderOfMagnitudeLastDigit +
-              (significantDigits === 1 && !!valueString.match(/1/) ? -1 : 0)
-          )
+
+  // add or remove values
+  if (direction !== 0) {
+    // if adding to value
+    if (direction > 0) {
+      const nextStep = value.plus(
+        new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit)
+      );
+      // go to the next index value if it is further away than this new value
+      // otherwise the nextStep value may get rounded back down and not change
+      const nextIndexStep = tickIndexToPrice(
+        priceToTickIndex(value, 'round').plus(1)
+      );
+      return formatRangeString(
+        BigNumber.max(nextStep, nextIndexStep),
+        significantDigits + trailingZeros
+      );
+    }
+    // if subtracting from value
+    else {
+      const nextStep = value.minus(
+        new BigNumber(10).exponentiatedBy(
+          // reduce the order of magnitude of the value if going from a singular '1'
+          // eg. 1 -> 0.9,  0.1 -> 0.09,  0.01 -> 0.009
+          // so that the user doesn't go to 0 on a logarithmic scale
+          orderOfMagnitudeLastDigit +
+            (significantDigits === 1 && !!valueString.match(/1/) ? -1 : 0)
         )
-        .toFixed();
+      );
+      // go to the next index value if it is further away than this new value
+      // otherwise the nextStep value may get rounded back down and not change
+      const nextIndexStep = tickIndexToPrice(
+        priceToTickIndex(value, 'round').minus(1)
+      );
+      return formatRangeString(
+        BigNumber.min(nextStep, nextIndexStep),
+        significantDigits + trailingZeros
+      );
+    }
+  }
+  return valueString;
 }
