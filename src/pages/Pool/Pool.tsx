@@ -1139,13 +1139,9 @@ function logarithmStep(valueString: string, direction: number): string {
       : // get significant figure
         value.toFixed(0).at(significantDigits - 1);
   return direction >= 0
-    ? value.isGreaterThan(0)
-      ? value
-          .plus(
-            new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit + 1)
-          )
-          .toFixed()
-      : new BigNumber(10).exponentiatedBy(-maxFractionDigits).toFixed()
+    ? value
+        .plus(new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit + 1))
+        .toFixed()
     : value
         .minus(
           new BigNumber(10).exponentiatedBy(
