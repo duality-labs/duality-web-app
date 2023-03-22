@@ -363,8 +363,7 @@ export default function LiquiditySelector({
       zoomedDataMinIndex,
       zoomedDataMaxIndex,
     ].filter((v): v is number => v !== undefined && !isNaN(v));
-    // todo: ensure buckets (of maximum bucketWidth) can fit onto the graph extents
-    // by padding dataMinIndex and dataMaxIndex with the needed amount of pixels
+    // find the edges of the plot area in terms of x-axis values
     if (allValues.length > 0) {
       return [Math.min(...allValues), Math.max(...allValues)];
     } else {
