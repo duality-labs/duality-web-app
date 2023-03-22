@@ -432,25 +432,30 @@ function Pool() {
     );
   }, [fractionalRangeMin, fractionalRangeMax, edgePriceIndex]);
 
+  const formatSignificantDecimalRangeString = useCallback(
+    (price: BigNumber.Value) => {
+      return formatRangeString(price, significantDecimals);
+    },
+    [significantDecimals]
+  );
+
   const [rangeMin, rangeMax] = useMemo<[string, string]>(() => {
     return [
-      formatRangeString(
-        tickIndexToPrice(new BigNumber(rangeMinIndex)),
-        significantDecimals
+      formatSignificantDecimalRangeString(
+        tickIndexToPrice(new BigNumber(rangeMinIndex))
       ),
-      formatRangeString(
-        tickIndexToPrice(new BigNumber(rangeMaxIndex)),
-        significantDecimals
+      formatSignificantDecimalRangeString(
+        tickIndexToPrice(new BigNumber(rangeMaxIndex))
       ),
     ];
-  }, [rangeMinIndex, rangeMaxIndex, significantDecimals]);
+  }, [rangeMinIndex, rangeMaxIndex, formatSignificantDecimalRangeString]);
 
   const swapAll = useCallback(() => {
     const flipAroundCurrentPriceSwap = (value: string) => {
       // invert price
       const newValue = new BigNumber(1).dividedBy(new BigNumber(value));
       // round number to formatted string
-      return formatRangeString(newValue, significantDecimals);
+      return formatSignificantDecimalRangeString(newValue);
     };
     setInvertTokenOrder((order) => !order);
     setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
@@ -470,7 +475,7 @@ function Pool() {
     inputValueB,
     setInputValueA,
     setInputValueB,
-    significantDecimals,
+    formatSignificantDecimalRangeString,
   ]);
 
   const [chartTypeSelected] = useState<'AMM' | 'Orderbook'>('AMM');
@@ -927,8 +932,8 @@ function Pool() {
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
-                    min={formatRangeString(pairPriceMin, significantDecimals)}
-                    max={formatRangeString(rangeMax, significantDecimals)}
+                    min={formatSignificantDecimalRangeString(pairPriceMin)}
+                    max={formatSignificantDecimalRangeString(rangeMax)}
                     description={
                       tokenA && tokenB
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
@@ -948,8 +953,8 @@ function Pool() {
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
-                    min={formatRangeString(rangeMin, significantDecimals)}
-                    max={formatRangeString(pairPriceMax, significantDecimals)}
+                    min={formatSignificantDecimalRangeString(rangeMin)}
+                    max={formatSignificantDecimalRangeString(pairPriceMax)}
                     description={
                       tokenA && tokenB
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
