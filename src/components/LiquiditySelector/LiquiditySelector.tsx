@@ -398,7 +398,7 @@ export default function LiquiditySelector({
   // plot values as percentages on a 100 height viewbox (viewBox="0 -100 100 100")
   const noGraphRange = graphMaxIndex <= graphMinIndex;
   // get factor for 1/10 and 10x of price
-  const spread = Math.log(10) / Math.log(1.0001);
+  const spread = Math.round(Math.log(10) / Math.log(1.0001));
   const xMinIndex = noGraphRange ? graphMinIndex - spread : graphMinIndex;
   const xMaxIndex = noGraphRange ? graphMaxIndex + spread : graphMaxIndex;
 
@@ -449,8 +449,8 @@ export default function LiquiditySelector({
 
       // get middle 'break' point which will separate bucket sections
       const indexNow = Math.round(edgePriceIndex);
-      const indexMin = xMinIndex;
-      const indexMax = xMaxIndex;
+      const indexMin = Math.floor(xMinIndex);
+      const indexMax = Math.ceil(xMaxIndex);
       const currentPriceIsWithinView =
         indexMin <= indexNow && indexNow <= indexMax;
 
