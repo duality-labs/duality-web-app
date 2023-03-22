@@ -451,7 +451,7 @@ function Pool() {
       // invert price
       const newValue = new BigNumber(1).dividedBy(new BigNumber(value));
       // round number to formatted string
-      return formatMaximumSignificantDecimals(newValue);
+      return formatRangeString(newValue, significantDecimals);
     };
     setInvertTokenOrder((order) => !order);
     setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
@@ -471,6 +471,7 @@ function Pool() {
     inputValueB,
     setInputValueA,
     setInputValueB,
+    significantDecimals,
   ]);
 
   const [chartTypeSelected] = useState<'AMM' | 'Orderbook'>('AMM');
