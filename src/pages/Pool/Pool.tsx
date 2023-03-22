@@ -928,8 +928,8 @@ function Pool() {
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
-                    min={pairPriceMin}
-                    max={rangeMax}
+                    min={formatRangeString(pairPriceMin, significantDecimals)}
+                    max={formatRangeString(rangeMax, significantDecimals)}
                     description={
                       tokenA && tokenB
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
@@ -949,8 +949,8 @@ function Pool() {
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
-                    min={rangeMin}
-                    max={pairPriceMax}
+                    min={formatRangeString(rangeMin, significantDecimals)}
+                    max={formatRangeString(pairPriceMax, significantDecimals)}
                     description={
                       tokenA && tokenB
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
