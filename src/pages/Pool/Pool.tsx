@@ -1123,15 +1123,17 @@ function LiquidityShapeOptionComponent({
   );
 }
 
-// calculates set from last siginificant digit (eg. 0.8 -> 0.9 -> 1 -> 2)
-// todo: could respect trailing zeros is strings were passed
+// calculates set from last digit (eg. 0.98 -> 0.99 -> 1.0 -> 1.1)
+// while respecting significant digits expectation
 function logarithmStep(valueString: string, direction: number): string {
   const value = new BigNumber(valueString);
-  const significantDigits = value.sd(true);
+  const significantDigits = value.sd(false);
+  const trailingZeros =
+    valueString.length - valueString.replace(/0*(.?)0+$/g, '$1').length;
   const orderOfMagnitude = Math.floor(Math.log10(value.toNumber()));
-  const orderOfMagnitudeLastSignificantDigit =
-    orderOfMagnitude - significantDigits + 1;
-  // remove leading zeros then get significant digit
+  // find order of magnitude of last digit to use as basis of add/sub value
+  const orderOfMagnitudeLastDigit =
+    orderOfMagnitude - significantDigits - trailingZeros + 1;
   const decimalPlaces = value.decimalPlaces();
   const lastDigit =
     decimalPlaces > 0
@@ -1141,11 +1143,7 @@ function logarithmStep(valueString: string, direction: number): string {
         value.toFixed(0).at(significantDigits - 1);
   return direction >= 0
     ? value
-        .plus(
-          new BigNumber(10).exponentiatedBy(
-            orderOfMagnitudeLastSignificantDigit
-          )
-        )
+        .plus(new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit))
         .toFixed()
     : value
         .minus(
@@ -1153,7 +1151,7 @@ function logarithmStep(valueString: string, direction: number): string {
             // reduce the order of magnitude of the value if going from a singular '1'
             // eg. 1 -> 0.9,  0.1 -> 0.09,  0.01 -> 0.009
             // so that the user doesn't go to 0 on a logarithmic scale
-            orderOfMagnitudeLastSignificantDigit +
+            orderOfMagnitudeLastDigit +
               (lastDigit === '1' && value.sd(false) === 1 ? -1 : 0)
           )
         )
