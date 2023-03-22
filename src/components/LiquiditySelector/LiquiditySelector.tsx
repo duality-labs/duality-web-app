@@ -528,32 +528,42 @@ export default function LiquiditySelector({
     );
   }, [emptyBuckets, tokenATicks, tokenBTicks]);
 
+  // get plotting functions
+  const [plotWidth, plotHeight] = useMemo(() => {
+    return [
+      // width
+      Math.max(0, containerSize.width - leftPadding - rightPadding),
+      // height
+      Math.max(0, containerSize.height - topPadding - bottomPadding),
+    ];
+  }, [containerSize]);
+
   const plotX = useCallback(
     (x: number): number => {
-      const width = containerSize.width - leftPadding - rightPadding;
+      const width = plotWidth;
       return xMinIndex === xMaxIndex
         ? // choose midpoint
           leftPadding + width / 2
         : // interpolate coordinate to graph
           leftPadding + (width * (x - xMinIndex)) / (xMaxIndex - xMinIndex);
     },
-    [xMinIndex, xMaxIndex, containerSize.width]
+    [xMinIndex, xMaxIndex, plotWidth]
   );
   const plotY = useCallback(
     (y: number): number => {
-      const height = containerSize.height - topPadding - bottomPadding;
+      const height = plotHeight;
       return graphHeight === 0
         ? -bottomPadding // pin to bottom
         : -bottomPadding - (height * y) / graphHeight;
     },
-    [graphHeight, containerSize.height]
+    [graphHeight, plotHeight]
   );
   const percentY = useCallback(
     (y: number): number => {
-      const height = containerSize.height - topPadding - bottomPadding;
+      const height = plotHeight;
       return -bottomPadding - height * y;
     },
-    [containerSize.height]
+    [plotHeight]
   );
   const plotYBigNumber = useCallback(
     (y: BigNumber) => plotY(y.toNumber()),
