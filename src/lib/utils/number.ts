@@ -28,7 +28,7 @@ export function formatMaximumSignificantDecimals(
 ) {
   const bigValue = new BigNumber(value);
   const roundingFunction = BigNumber.ROUND_HALF_UP;
-  const roundedValue = bigValue.abs().toPrecision(roundingFunction);
+  const roundedValue = bigValue.abs().toPrecision(6, roundingFunction);
   const roundedOrderOfMagnitude = Math.floor(Math.log10(Number(roundedValue)));
   return bigValue.toFixed(
     Math.max(0, maximumSignificantDecimals - roundedOrderOfMagnitude - 1),
