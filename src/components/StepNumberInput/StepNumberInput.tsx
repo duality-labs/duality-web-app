@@ -168,17 +168,17 @@ export default function StepNumberInput<T extends number | string = string>({
       // set width of input based on current values but restrained to a min/max
       minWidth: `${minSignificantDigits}ch`,
       maxWidth: `${
-        maxSignificantDigits + (currentValue.includes('.') ? 1 : 0)
+        maxSignificantDigits + (internalValue.includes('.') ? 1 : 0)
       }ch`,
-      width: `${currentValue.length}ch`,
+      width: `${internalValue.length}ch`,
     };
-  }, [currentValue, minSignificantDigits, maxSignificantDigits]);
+  }, [internalValue, minSignificantDigits, maxSignificantDigits]);
 
   const dynamicContainerStyle = useMemo(() => {
     return {
-      minWidth: `${currentValue.length + 17}ch`,
+      minWidth: `${internalValue.length + 17}ch`,
     };
-  }, [currentValue]);
+  }, [internalValue]);
 
   return (
     <div
