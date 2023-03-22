@@ -54,7 +54,10 @@ export function formatAmount(
   return !isNaN(numericAmount)
     ? numericAmount.toLocaleString('en-US', {
         maximumFractionDigits: maxFractionDigits,
-        maximumSignificantDigits: 6,
+        maximumSignificantDigits: Math.max(
+          6,
+          opts.minimumSignificantDigits || 0
+        ),
         useGrouping: false,
         ...opts,
       })
