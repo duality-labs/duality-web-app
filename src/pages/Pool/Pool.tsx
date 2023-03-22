@@ -1129,7 +1129,8 @@ function logarithmStep(valueString: string, direction: number): string {
   const value = new BigNumber(valueString);
   const significantDigits = value.sd(true);
   const orderOfMagnitude = Math.floor(Math.log10(value.toNumber()));
-  const orderOfMagnitudeLastDigit = orderOfMagnitude - significantDigits;
+  const orderOfMagnitudeLastSignificantDigit =
+    orderOfMagnitude - significantDigits + 1;
   // remove leading zeros then get significant digit
   const decimalPlaces = value.decimalPlaces();
   const lastDigit =
@@ -1140,7 +1141,11 @@ function logarithmStep(valueString: string, direction: number): string {
         value.toFixed(0).at(significantDigits - 1);
   return direction >= 0
     ? value
-        .plus(new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit + 1))
+        .plus(
+          new BigNumber(10).exponentiatedBy(
+            orderOfMagnitudeLastSignificantDigit
+          )
+        )
         .toFixed()
     : value
         .minus(
@@ -1148,8 +1153,8 @@ function logarithmStep(valueString: string, direction: number): string {
             // reduce the order of magnitude of the value if going from a singular '1'
             // eg. 1 -> 0.9,  0.1 -> 0.09,  0.01 -> 0.009
             // so that the user doesn't go to 0 on a logarithmic scale
-            orderOfMagnitudeLastDigit +
-              (lastDigit === '1' && value.sd(false) === 1 ? 0 : +1)
+            orderOfMagnitudeLastSignificantDigit +
+              (lastDigit === '1' && value.sd(false) === 1 ? -1 : 0)
           )
         )
         .toFixed();
