@@ -160,6 +160,9 @@ export default function StepNumberInput<T extends number | string = string>({
     }
   }, [onSubStep, onAddStep]);
 
+  // note: these dynamic styles could be made redundant if a monospaced font
+  //       is used for the numeric text here. the dynamic style here is to
+  //       avoid the size of the input field resizing for every number change
   const dynamicInputStyle = useMemo(() => {
     return {
       // set width of input based on current values but restrained to a min/max
