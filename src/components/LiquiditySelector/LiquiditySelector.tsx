@@ -1755,16 +1755,20 @@ function Axis({
   plotY: (y: number) => number;
   percentY: (y: number) => number;
 }) {
-  const minOrderOfMagnitude = Math.floor(
-    Math.log10(tickIndexToPrice(new BigNumber(xMinIndex)).toNumber())
-  );
-  const maxOrderOfMagnitude = Math.floor(
-    Math.log10(tickIndexToPrice(new BigNumber(xMaxIndex)).toNumber())
-  );
+  // find tick marks to plot on this axis if not yet given
+  const tickMarkIndexes = useMemo(() => {
+    if (givenTickMarkIndexes) {
+      return givenTickMarkIndexes;
+    }
 
-  const tickMarkIndexes =
-    givenTickMarkIndexes ||
-    Array.from({
+    const minOrderOfMagnitude = Math.floor(
+      Math.log10(tickIndexToPrice(new BigNumber(xMinIndex)).toNumber())
+    );
+    const maxOrderOfMagnitude = Math.floor(
+      Math.log10(tickIndexToPrice(new BigNumber(xMaxIndex)).toNumber())
+    );
+
+    return Array.from({
       length: maxOrderOfMagnitude - minOrderOfMagnitude + 1,
     }).flatMap((_, index) => {
       const baseNumber = Math.pow(10, minOrderOfMagnitude + index);
@@ -1781,6 +1785,7 @@ function Axis({
           : [];
       });
     });
+  }, [givenTickMarkIndexes, xMinIndex, xMaxIndex]);
 
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
