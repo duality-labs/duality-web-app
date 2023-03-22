@@ -648,8 +648,6 @@ export default function LiquiditySelector({
       />
       <Axis
         className="x-axis"
-        xMinIndex={xMinIndex}
-        xMaxIndex={xMaxIndex}
         tickMarkIndex={edgePriceIndex}
         highlightedTickIndex={edgePriceIndex}
         significantDecimals={dynamicSignificantDigits}
@@ -1732,20 +1730,14 @@ function TickBucketsGroup({
 
 function Axis({
   className = '',
-  xMinIndex,
-  xMaxIndex,
   tickMarkIndex,
-  tickMarkIndexes: givenTickMarkIndexes = tickMarkIndex
-    ? [tickMarkIndex]
-    : undefined,
+  tickMarkIndexes = tickMarkIndex ? [tickMarkIndex] : [],
   highlightedTickIndex,
   significantDecimals,
   plotX,
   plotY,
   percentY,
 }: {
-  xMinIndex: number;
-  xMaxIndex: number;
   className?: string;
   tickMarkIndex?: number;
   tickMarkIndexes?: number[];
@@ -1755,38 +1747,6 @@ function Axis({
   plotY: (y: number) => number;
   percentY: (y: number) => number;
 }) {
-  // find tick marks to plot on this axis if not yet given
-  const tickMarkIndexes = useMemo(() => {
-    if (givenTickMarkIndexes) {
-      return givenTickMarkIndexes;
-    }
-
-    const minOrderOfMagnitude = Math.floor(
-      Math.log10(tickIndexToPrice(new BigNumber(xMinIndex)).toNumber())
-    );
-    const maxOrderOfMagnitude = Math.floor(
-      Math.log10(tickIndexToPrice(new BigNumber(xMaxIndex)).toNumber())
-    );
-
-    return Array.from({
-      length: maxOrderOfMagnitude - minOrderOfMagnitude + 1,
-    }).flatMap((_, index) => {
-      const baseNumber = Math.pow(10, minOrderOfMagnitude + index);
-      const possibleMultiples = [2, 5, 10];
-      const possibleInclusions = possibleMultiples.map((v) => v * baseNumber);
-      return possibleInclusions.flatMap<number>((possibleInclusion) => {
-        const tickIndex = priceToTickIndex(
-          new BigNumber(possibleInclusion),
-          'none'
-        ).toNumber();
-        // only show values between the range min/max
-        return xMinIndex < tickIndex && tickIndex < xMaxIndex
-          ? [tickIndex]
-          : [];
-      });
-    });
-  }, [givenTickMarkIndexes, xMinIndex, xMaxIndex]);
-
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
       <g className="axis-ticks">{tickMarkIndexes.map(mapTickMarkIndex)}</g>
