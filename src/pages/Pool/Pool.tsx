@@ -412,10 +412,9 @@ function Pool() {
     );
   }, [precision]);
 
-  const edgePriceIndex =
-    useMemo(() => {
-      return edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
-    }, [edgePrice]) || 0;
+  const edgePriceIndex = useMemo(() => {
+    return edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
+  }, [edgePrice]);
 
   const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
     const fractionalRangeMinIndex = priceToTickIndex(
