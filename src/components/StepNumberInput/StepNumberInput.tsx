@@ -171,11 +171,18 @@ export default function StepNumberInput<T extends number | string = string>({
     };
   }, [currentValue, minSignificantDigits, maxSignificantDigits]);
 
+  const dynamicContainerStyle = useMemo(() => {
+    return {
+      minWidth: `${currentValue.length + 17}ch`,
+    };
+  }, [currentValue]);
+
   return (
     <div
       className={['range-step-input', readOnly && 'range-step-input--read-only']
         .filter(Boolean)
         .join(' ')}
+      style={dynamicContainerStyle}
     >
       {title && <h6 className="range-step-title">{title}</h6>}
       <div className="range-step-controls row flex-centered my-2">
