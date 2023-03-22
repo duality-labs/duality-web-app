@@ -41,7 +41,6 @@ import useFeeLiquidityMap from './useFeeLiquidityMap';
 import {
   formatAmount,
   formatMaximumSignificantDecimals,
-  formatPrice,
 } from '../../lib/utils/number';
 import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
@@ -944,7 +943,7 @@ function Pool() {
                       8
                     )}
                     maxSignificantDigits={maxFractionDigits + 2}
-                    format={formatStepNumberPriceInput}
+                    format={formatSignificantDecimalRangeString}
                   />
                   <StepNumberInput
                     title="MAX PRICE"
@@ -965,7 +964,7 @@ function Pool() {
                       8
                     )}
                     maxSignificantDigits={maxFractionDigits + 2}
-                    format={formatStepNumberPriceInput}
+                    format={formatSignificantDecimalRangeString}
                   />
                 </div>
               </div>
@@ -1055,7 +1054,7 @@ function Pool() {
                               });
                             }}
                             maxSignificantDigits={maxFractionDigits + 1}
-                            format={formatStepNumberPriceInput}
+                            format={formatSignificantDecimalRangeString}
                           />
                         </div>
                       )}
@@ -1158,13 +1157,4 @@ function logarithmStep(valueString: string, direction: number): string {
           )
         )
         .toFixed();
-}
-
-// note: this cause odd issues when trying to control the number via keys or StepNumberInput
-// instead of dragging (eg. select all and press 1 -> 1.00, press "1.5" -> 1.005)
-// This could be fixed by using a string for all cases of price as BigNumber
-// objects are not aware of how many significant digits they have.
-function formatStepNumberPriceInput(value: string) {
-  const formatted = formatPrice(value, { minimumSignificantDigits: 3 });
-  return formatted.length > value.length ? formatted : value;
 }
