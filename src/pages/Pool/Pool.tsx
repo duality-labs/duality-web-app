@@ -1134,13 +1134,6 @@ function logarithmStep(valueString: string, direction: number): string {
   // find order of magnitude of last digit to use as basis of add/sub value
   const orderOfMagnitudeLastDigit =
     orderOfMagnitude - significantDigits - trailingZeros + 1;
-  const decimalPlaces = value.decimalPlaces();
-  const lastDigit =
-    decimalPlaces > 0
-      ? // get decimal place
-        value.toFixed(decimalPlaces).slice(-1)
-      : // get significant figure
-        value.toFixed(0).at(significantDigits - 1);
   return direction >= 0
     ? value
         .plus(new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit))
@@ -1152,7 +1145,7 @@ function logarithmStep(valueString: string, direction: number): string {
             // eg. 1 -> 0.9,  0.1 -> 0.09,  0.01 -> 0.009
             // so that the user doesn't go to 0 on a logarithmic scale
             orderOfMagnitudeLastDigit +
-              (lastDigit === '1' && value.sd(false) === 1 ? -1 : 0)
+              (significantDigits === 1 && !!valueString.match(/1/) ? -1 : 0)
           )
         )
         .toFixed();
