@@ -7,7 +7,7 @@ const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 // for all tick indexes using the basis of price = 1.0001^index
 export function roundToSignificantDigits(
   value: number,
-  significantDigits = 5
+  significantDigits = 8
 ): number {
   if (value === 0) return 0;
   const orderOfMagnitude = Math.floor(Math.log10(Math.abs(value)));
