@@ -1803,7 +1803,7 @@ function TickBucketsGroup({
 function Axis({
   className = '',
   tickMarkIndex,
-  tickMarkIndexes = tickMarkIndex ? [tickMarkIndex] : [],
+  tickMarkIndexes = tickMarkIndex !== undefined ? [tickMarkIndex] : [],
   highlightedTickIndex,
   significantDecimals,
   plotX,
