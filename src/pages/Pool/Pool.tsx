@@ -959,10 +959,9 @@ function Pool() {
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
                         : 'No Tokens'
                     }
-                    minSignificantDigits={Math.min(
-                      Math.max(rangeMin.length + 1),
-                      8
-                    )}
+                    minSignificantDigits={(valueString: string) =>
+                      Math.min(Math.max(valueString.length + 1), 8)
+                    }
                     maxSignificantDigits={maxFractionDigits + 2}
                     format={formatSignificantDecimalRangeString}
                   />
@@ -1002,10 +1001,9 @@ function Pool() {
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
                         : 'No Tokens'
                     }
-                    minSignificantDigits={Math.min(
-                      Math.max(rangeMax.length + 1),
-                      8
-                    )}
+                    minSignificantDigits={(valueString: string) =>
+                      Math.min(Math.max(valueString.length + 1), 8)
+                    }
                     maxSignificantDigits={maxFractionDigits + 2}
                     format={formatSignificantDecimalRangeString}
                   />

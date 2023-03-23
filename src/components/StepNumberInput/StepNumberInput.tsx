@@ -23,8 +23,8 @@ interface StepNumberInputProps<T extends number | string = string> {
   step?: string | number;
   max?: string | number;
   min?: string | number;
-  minSignificantDigits?: number;
-  maxSignificantDigits?: number;
+  minSignificantDigits?: number | ((valueString: string) => number);
+  maxSignificantDigits?: number | ((valueString: string) => number);
   parse?: (value: string) => T;
   format?: (value: T) => string;
 }
@@ -46,8 +46,8 @@ export default function StepNumberInput<T extends number | string = string>({
   step: rawStep = 1,
   max: rawMax,
   min: rawMin,
-  minSignificantDigits = 2,
-  maxSignificantDigits = 6,
+  minSignificantDigits: minSignificantDigitsOrCallback = 2,
+  maxSignificantDigits: maxSignificantDigitsOrCallback = 6,
   parse,
   format = String,
 }: StepNumberInputProps<T>) {
@@ -164,6 +164,14 @@ export default function StepNumberInput<T extends number | string = string>({
   //       is used for the numeric text here. the dynamic style here is to
   //       avoid the size of the input field resizing for every number change
   const dynamicInputStyle = useMemo(() => {
+    const minSignificantDigits =
+      typeof minSignificantDigitsOrCallback === 'function'
+        ? minSignificantDigitsOrCallback(internalValue)
+        : minSignificantDigitsOrCallback;
+    const maxSignificantDigits =
+      typeof maxSignificantDigitsOrCallback === 'function'
+        ? maxSignificantDigitsOrCallback(internalValue)
+        : maxSignificantDigitsOrCallback;
     return {
       // set width of input based on current values but restrained to a min/max
       minWidth: `${minSignificantDigits}ch`,
@@ -172,7 +180,11 @@ export default function StepNumberInput<T extends number | string = string>({
       }ch`,
       width: `${internalValue.length}ch`,
     };
-  }, [internalValue, minSignificantDigits, maxSignificantDigits]);
+  }, [
+    internalValue,
+    minSignificantDigitsOrCallback,
+    maxSignificantDigitsOrCallback,
+  ]);
 
   const dynamicContainerStyle = useMemo(() => {
     return {
