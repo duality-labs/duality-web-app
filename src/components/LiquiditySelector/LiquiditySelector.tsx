@@ -1190,7 +1190,13 @@ function TicksArea({
             textAnchor="end"
           >
             &nbsp;&nbsp;&nbsp;
-            {`${formatPercentageValue(rangeMinValueIndex, currentPriceIndex)}%`}
+            {`${formatPercentageValue(
+              // show percentage to this limit index line (inclusive)
+              rangeMinValueIndex <= Math.round(currentPriceIndex)
+                ? rangeMinValueIndex - 1
+                : rangeMinValueIndex,
+              currentPriceIndex
+            )}%`}
             &nbsp;&nbsp;&nbsp;
           </text>
         )}
@@ -1292,7 +1298,13 @@ function TicksArea({
             textAnchor="start"
           >
             &nbsp;&nbsp;&nbsp;
-            {`${formatPercentageValue(rangeMaxValueIndex, currentPriceIndex)}%`}
+            {`${formatPercentageValue(
+              // show percentage to this limit index line (inclusive)
+              rangeMaxValueIndex >= Math.round(currentPriceIndex)
+                ? rangeMaxValueIndex + 1
+                : rangeMaxValueIndex,
+              currentPriceIndex
+            )}%`}
             &nbsp;&nbsp;&nbsp;
           </text>
         )}
