@@ -697,7 +697,7 @@ export default function LiquiditySelector({
       />
       <Axis
         className="x-axis"
-        tickMarkIndex={edgePriceIndex}
+        tickMarkIndex={edgePriceIndex || 0}
         highlightedTickIndex={edgePriceIndex}
         significantDecimals={dynamicSignificantDigits}
         plotX={plotX}
