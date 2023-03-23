@@ -780,8 +780,8 @@ export default function LiquiditySelector({
                 : zoomIn
             }
             zoomOut={
-              zoomMinIndex &&
-              zoomMaxIndex &&
+              zoomMinIndex !== undefined &&
+              zoomMaxIndex !== undefined &&
               dataMinIndex !== undefined &&
               dataMaxIndex !== undefined &&
               dataMinIndex >= zoomMinIndex &&
