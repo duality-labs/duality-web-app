@@ -352,6 +352,30 @@ export default function LiquiditySelector({
     fractionalRangeMaxIndex
   );
 
+  const [zoomedRangeMinIndex, zoomedRangeMaxIndex] = useMemo<number[]>(() => {
+    if (
+      zoomMinIndex !== undefined &&
+      zoomMaxIndex !== undefined &&
+      !isNaN(Number(zoomMinIndex)) &&
+      !isNaN(Number(zoomMaxIndex))
+    ) {
+      if (
+        rangeMinIndex &&
+        rangeMaxIndex &&
+        isNaN(rangeMinIndex) === false &&
+        isNaN(rangeMaxIndex) === false
+      ) {
+        return [
+          Math.min(rangeMinIndex, zoomMinIndex),
+          Math.max(rangeMaxIndex, zoomMaxIndex),
+        ];
+      } else {
+        return [zoomMinIndex, zoomMaxIndex];
+      }
+    }
+    return [rangeMinIndex, rangeMaxIndex];
+  }, [zoomMinIndex, zoomMaxIndex, rangeMinIndex, rangeMaxIndex]);
+
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
   const [graphMinIndex, graphMaxIndex] = useMemo<[number, number]>(() => {
@@ -773,19 +797,17 @@ export default function LiquiditySelector({
         <div className="col">
           <ControlsComponent
             zoomIn={
-              zoomMaxIndex !== undefined &&
-              zoomMinIndex !== undefined &&
-              zoomMaxIndex - zoomMinIndex <= minZoomIndexSpread
+              // the +2 on index spread allows for rounded values on both sides
+              zoomedRangeMaxIndex - zoomedRangeMinIndex <=
+              minZoomIndexSpread + 2
                 ? undefined
                 : zoomIn
             }
             zoomOut={
-              zoomMinIndex !== undefined &&
-              zoomMaxIndex !== undefined &&
               dataMinIndex !== undefined &&
               dataMaxIndex !== undefined &&
-              dataMinIndex >= zoomMinIndex &&
-              dataMaxIndex <= zoomMaxIndex
+              dataMinIndex >= zoomedRangeMinIndex &&
+              dataMaxIndex <= zoomedRangeMaxIndex
                 ? undefined
                 : zoomOut
             }
