@@ -3,6 +3,18 @@ import BigNumber from 'bignumber.js';
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
+// rounding to 6 significant figures will guarantee a unique index
+// for all tick indexes using the basis of price = 1.0001^index
+export function roundToSignificantDigits(
+  value: number,
+  significantDigits = 5
+): number {
+  if (value === 0) return 0;
+  const orderOfMagnitude = Math.floor(Math.log10(Math.abs(value)));
+  const factor = Math.pow(10, significantDigits - orderOfMagnitude - 1);
+  return Math.round(value * factor) / factor;
+}
+
 // format a special "significant decimals" function which means
 // something different when above and below 0.
 // eg. significant decimals of 3 can format 1,234,567 and 0.00000123

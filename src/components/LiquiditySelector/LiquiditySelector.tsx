@@ -15,6 +15,7 @@ import {
   formatAmount,
   formatPrice,
   formatMaximumSignificantDecimals,
+  roundToSignificantDigits,
 } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
 import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
@@ -877,8 +878,8 @@ function getRangePositions(
   // move one away from the tick index in question
   // ie. make the range flag be "around" the desired range (not "on" it)
   return [
-    Math.ceil(fractionalRangeMinIndex - 1),
-    Math.floor(fractionalRangeMaxIndex + 1),
+    Math.ceil(roundToSignificantDigits(fractionalRangeMinIndex) - 1),
+    Math.floor(roundToSignificantDigits(fractionalRangeMaxIndex) + 1),
   ];
 }
 

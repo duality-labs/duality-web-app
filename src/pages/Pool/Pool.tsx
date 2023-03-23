@@ -1147,10 +1147,7 @@ function logarithmStep(valueString: string, direction: number): string {
       const nextIndexStep = tickIndexToPrice(
         priceToTickIndex(value, 'round').plus(1)
       );
-      return formatRangeString(
-        BigNumber.max(nextStep, nextIndexStep),
-        significantDigits + trailingZeros
-      );
+      return BigNumber.max(nextStep, nextIndexStep).toFixed();
     }
     // if subtracting from value
     else {
@@ -1168,10 +1165,7 @@ function logarithmStep(valueString: string, direction: number): string {
       const nextIndexStep = tickIndexToPrice(
         priceToTickIndex(value, 'round').minus(1)
       );
-      return formatRangeString(
-        BigNumber.min(nextStep, nextIndexStep),
-        significantDigits + trailingZeros
-      );
+      return BigNumber.min(nextStep, nextIndexStep).toFixed();
     }
   }
   return valueString;
