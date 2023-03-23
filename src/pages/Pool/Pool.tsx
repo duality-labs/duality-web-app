@@ -190,7 +190,6 @@ function Pool() {
         });
       }
       const value = valueOrCallback;
-
       setRangeMaxUnprotected(restrictValue(value));
     },
     [pairPriceMin, pairPriceMax]

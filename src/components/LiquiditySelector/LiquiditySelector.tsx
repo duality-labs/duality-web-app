@@ -201,11 +201,6 @@ export default function LiquiditySelector({
       [setRangeMax]
     );
 
-  const [rangeMinIndex, rangeMaxIndex] = getRangePositions(
-    fractionalRangeMinIndex,
-    fractionalRangeMaxIndex
-  );
-
   const {
     data: {
       token0Ticks = [],
@@ -350,6 +345,12 @@ export default function LiquiditySelector({
     }
     return [dataMinIndex, dataMaxIndex];
   }, [zoomMinIndex, zoomMaxIndex, dataMinIndex, dataMaxIndex]);
+
+  const [rangeMinIndex, rangeMaxIndex] = getRangePositions(
+    edgePriceIndex,
+    fractionalRangeMinIndex,
+    fractionalRangeMaxIndex
+  );
 
   // set and allow ephemeral setting of graph extents
   // allow user ticks to reset the boundary of the graph
@@ -872,14 +873,25 @@ function mergeBuckets(
 }
 
 function getRangePositions(
+  currentPriceIndex: number | undefined,
   fractionalRangeMinIndex: number,
   fractionalRangeMaxIndex: number
 ): [number, number] {
+  const roundedCurrentPriceIndex =
+    currentPriceIndex && Math.round(currentPriceIndex);
+  const [rangeMinIndex, rangeMaxIndex] = getRangeIndexes(
+    currentPriceIndex,
+    fractionalRangeMinIndex,
+    fractionalRangeMaxIndex
+  );
   // move one away from the tick index in question
   // ie. make the range flag be "around" the desired range (not "on" it)
+  if (roundedCurrentPriceIndex === undefined) {
+    return [rangeMinIndex, rangeMaxIndex];
+  }
   return [
-    Math.ceil(roundToSignificantDigits(fractionalRangeMinIndex) - 1),
-    Math.floor(roundToSignificantDigits(fractionalRangeMaxIndex) + 1),
+    rangeMinIndex + (rangeMinIndex <= roundedCurrentPriceIndex ? -1 : 0),
+    rangeMaxIndex + (rangeMaxIndex >= roundedCurrentPriceIndex ? +1 : 0),
   ];
 }
 
@@ -888,24 +900,21 @@ export function getRangeIndexes(
   fractionalRangeMinIndex: number,
   fractionalRangeMaxIndex: number
 ) {
-  const [rangeMinIndex, rangeMaxIndex] = getRangePositions(
-    fractionalRangeMinIndex,
-    fractionalRangeMaxIndex
-  );
-  if (currentPriceIndex === undefined) {
-    return [rangeMinIndex, rangeMaxIndex];
-  } else {
-    const roundedCurrentPriceIndex =
-      currentPriceIndex && Math.round(currentPriceIndex);
-    return [
-      rangeMinIndex < roundedCurrentPriceIndex
-        ? rangeMinIndex + 1
-        : rangeMinIndex,
-      rangeMaxIndex > roundedCurrentPriceIndex
-        ? rangeMaxIndex - 1
-        : rangeMaxIndex,
-    ];
+  const roundedCurrentPriceIndex =
+    currentPriceIndex && Math.round(currentPriceIndex);
+  const rangeMinIndex = roundToSignificantDigits(fractionalRangeMinIndex);
+  const rangeMaxIndex = roundToSignificantDigits(fractionalRangeMaxIndex);
+  // align fractional index positions to whole tick index positions
+  // for the min and max cases
+  if (roundedCurrentPriceIndex === undefined) {
+    return [rangeMinIndex - 0.5, rangeMaxIndex + 0.5];
   }
+  return [
+    Math.ceil(rangeMinIndex) +
+      (rangeMinIndex >= roundedCurrentPriceIndex ? -1 : 0),
+    Math.floor(rangeMaxIndex) +
+      (rangeMaxIndex <= roundedCurrentPriceIndex ? +1 : 0),
+  ];
 }
 
 function TicksBackgroundArea({
@@ -988,7 +997,10 @@ function TicksArea({
           const pixelsPerIndex = plotX(1) - plotX(0);
           const newIndex =
             fractionalRangeMinIndex + newDisplacement / pixelsPerIndex;
+          // set main range first to avoid flash of not disabled styling
+          // when moving between two disabled index pairs
           setRangeMinIndex(newIndex);
+          // keep one tick space between min and max UI visuals
           if (fractionalRangeMaxIndex < newIndex) {
             setRangeMaxIndex(newIndex);
           }
@@ -1019,7 +1031,10 @@ function TicksArea({
           const pixelsPerIndex = plotX(1) - plotX(0);
           const newIndex =
             fractionalRangeMaxIndex + newDisplacement / pixelsPerIndex;
+          // set main range first to avoid flash of not disabled styling
+          // when moving between two disabled index pairs
           setRangeMaxIndex(newIndex);
+          // keep one tick space between min and max UI visuals
           if (fractionalRangeMinIndex > newIndex) {
             setRangeMinIndex(newIndex);
           }
@@ -1062,7 +1077,7 @@ function TicksArea({
   const roundedCurrentPriceIndex =
     currentPriceIndex && Math.round(currentPriceIndex);
   const [rangeMinValueIndex, rangeMaxValueIndex] = getRangeIndexes(
-    roundedCurrentPriceIndex,
+    currentPriceIndex,
     fractionalRangeMinIndex,
     fractionalRangeMaxIndex
   );
