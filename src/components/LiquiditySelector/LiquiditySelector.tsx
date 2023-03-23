@@ -104,6 +104,9 @@ const defaultMaxIndex = priceToTickIndex(new BigNumber(1.1)).toNumber();
 // zooming past the resolution of ticks does not help the end users.
 const minZoomIndexSpread = 10; // approx minimum number of indexes to show on the graph at once
 const zoomSpeedFactor = 2; // zoom in/out means divide/multiply the number of shown tick indexes by x
+// zoom limits: the *2 allows us to see more of the axis labels when zoomed out
+const zoomMinIndexLimit = priceMinIndex * 2;
+const zoomMaxIndexLimit = priceMaxIndex * 2;
 
 const leftPadding = 75;
 const rightPadding = 75;
@@ -317,8 +320,16 @@ export default function LiquiditySelector({
     ];
   }, [tokenATicks, tokenBTicks]);
 
-  const [[zoomMinIndex, zoomMaxIndex] = [], setZoomRange] =
+  const [[zoomMinIndex, zoomMaxIndex] = [], setZoomRangeUnprotected] =
     useState<[number, number]>();
+
+  const setZoomRange = useCallback(([zoomMinIndex, zoomMaxIndex]: number[]) => {
+    // set zoom limits
+    setZoomRangeUnprotected([
+      Math.max(zoomMinIndex, zoomMinIndexLimit),
+      Math.min(zoomMaxIndex, zoomMaxIndexLimit),
+    ]);
+  }, []);
 
   const [zoomedDataMinIndex, zoomedDataMaxIndex] = useMemo<
     (number | undefined)[]
@@ -786,6 +797,7 @@ export default function LiquiditySelector({
     graphMaxIndex,
     setRangeMinIndex,
     setRangeMaxIndex,
+    setZoomRange,
   ]);
 
   return (
@@ -804,10 +816,8 @@ export default function LiquiditySelector({
                 : zoomIn
             }
             zoomOut={
-              dataMinIndex !== undefined &&
-              dataMaxIndex !== undefined &&
-              dataMinIndex >= zoomedRangeMinIndex &&
-              dataMaxIndex <= zoomedRangeMaxIndex
+              (dataMinIndex ?? zoomMinIndexLimit) >= zoomedRangeMinIndex &&
+              (dataMaxIndex ?? zoomMaxIndexLimit) <= zoomedRangeMaxIndex
                 ? undefined
                 : zoomOut
             }
