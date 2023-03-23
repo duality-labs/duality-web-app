@@ -320,8 +320,16 @@ export default function LiquiditySelector({
     ];
   }, [tokenATicks, tokenBTicks]);
 
-  const [[zoomMinIndex, zoomMaxIndex] = [], setZoomRangeUnprotected] =
-    useState<[number, number]>();
+  // set some somewhat reasonable starting zoom points
+  // these really only affect the view when no data is present
+  // and we want the dragging of limits to feel reasonably sensible\
+  const [
+    [
+      zoomMinIndex = zoomMinIndexLimit / 10,
+      zoomMaxIndex = zoomMaxIndexLimit / 10,
+    ] = [],
+    setZoomRangeUnprotected,
+  ] = useState<[number, number]>();
 
   const setZoomRange = useCallback(([zoomMinIndex, zoomMaxIndex]: number[]) => {
     // set zoom limits
