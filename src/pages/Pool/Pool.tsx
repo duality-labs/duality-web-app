@@ -194,27 +194,6 @@ function Pool() {
     },
     [pairPriceMin, pairPriceMax]
   );
-  // add coarser control for deliberately snapping to tick index prices
-  const setRangeMinOfNearestTickIndex = useCallback(
-    (value: BigNumber.Value) => {
-      setRangeMin(
-        tickIndexToPrice(
-          priceToTickIndex(new BigNumber(value), 'round')
-        ).toFixed()
-      );
-    },
-    [setRangeMin]
-  );
-  const setRangeMaxOfNearestTickIndex = useCallback(
-    (value: BigNumber.Value) => {
-      setRangeMax(
-        tickIndexToPrice(
-          priceToTickIndex(new BigNumber(value), 'round')
-        ).toFixed()
-      );
-    },
-    [setRangeMax]
-  );
 
   const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
     defaultLiquidityShape
@@ -947,7 +926,29 @@ function Pool() {
                   <StepNumberInput
                     title="MIN PRICE"
                     value={rangeMin}
-                    onChange={setRangeMinOfNearestTickIndex}
+                    onChange={(value: string) => {
+                      setRangeMin(() => {
+                        const newIndex = priceToTickIndex(
+                          new BigNumber(value),
+                          'round'
+                        );
+                        // place the price halfway inside the fractional index limits
+                        // of the desired tick index bucket (remember these are rounded
+                        // away from zero on a split-token chart) so when the user
+                        // drags the limit controls we are not 1px from an index change
+                        if (edgePriceIndex !== undefined) {
+                          const offset = newIndex.isGreaterThanOrEqualTo(
+                            Math.round(edgePriceIndex)
+                          )
+                            ? +0.5
+                            : -0.5;
+                          return tickIndexToPrice(
+                            newIndex.plus(offset)
+                          ).toFixed();
+                        }
+                        return tickIndexToPrice(newIndex).toFixed();
+                      });
+                    }}
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
@@ -968,7 +969,29 @@ function Pool() {
                   <StepNumberInput
                     title="MAX PRICE"
                     value={rangeMax}
-                    onChange={setRangeMaxOfNearestTickIndex}
+                    onChange={(value: string) => {
+                      setRangeMax(() => {
+                        const newIndex = priceToTickIndex(
+                          new BigNumber(value),
+                          'round'
+                        );
+                        // place the price halfway inside the fractional index limits
+                        // of the desired tick index bucket (remember these are rounded
+                        // away from zero on a split-token chart) so when the user
+                        // drags the limit controls we are not 1px from an index change
+                        if (edgePriceIndex !== undefined) {
+                          const offset = newIndex.isLessThanOrEqualTo(
+                            Math.round(edgePriceIndex)
+                          )
+                            ? -0.5
+                            : +0.5;
+                          return tickIndexToPrice(
+                            newIndex.plus(offset)
+                          ).toFixed();
+                        }
+                        return tickIndexToPrice(newIndex).toFixed();
+                      });
+                    }}
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
