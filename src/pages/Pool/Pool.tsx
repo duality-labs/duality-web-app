@@ -437,19 +437,17 @@ function Pool() {
     [significantDecimals]
   );
 
-  const [rangeMin, rangeMax] = useMemo<[string, string]>(() => {
-    return [
-      formatSignificantDecimalRangeString(
-        tickIndexToPrice(new BigNumber(rangeMinIndex))
-      ),
-      formatSignificantDecimalRangeString(
-        tickIndexToPrice(new BigNumber(rangeMaxIndex))
-      ),
-    ];
-  }, [rangeMinIndex, rangeMaxIndex, formatSignificantDecimalRangeString]);
+  const rangeMin = useMemo<number>(
+    () => tickIndexToPrice(new BigNumber(rangeMinIndex)).toNumber(),
+    [rangeMinIndex]
+  );
+  const rangeMax = useMemo<number>(
+    () => tickIndexToPrice(new BigNumber(rangeMaxIndex)).toNumber(),
+    [rangeMaxIndex]
+  );
 
   const swapAll = useCallback(() => {
-    const flipAroundCurrentPriceSwap = (value: string) => {
+    const flipAroundCurrentPriceSwap = (value: BigNumber.Value) => {
       // invert price
       const newValue = new BigNumber(1).dividedBy(new BigNumber(value));
       // round number to formatted string
@@ -923,10 +921,10 @@ function Pool() {
               </div>
               <div className="price-card mt-4">
                 <div className="card-row">
-                  <StepNumberInput
+                  <StepNumberInput<number>
                     title="MIN PRICE"
                     value={rangeMin}
-                    onChange={(value: string) => {
+                    onChange={(value: BigNumber.Value) => {
                       setRangeMin(() => {
                         const newIndex = priceToTickIndex(
                           new BigNumber(value),
@@ -952,8 +950,8 @@ function Pool() {
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
-                    min={formatSignificantDecimalRangeString(pairPriceMin)}
-                    max={formatSignificantDecimalRangeString(rangeMax)}
+                    min={pairPriceMin}
+                    max={rangeMax}
                     description={
                       tokenA && tokenB
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
@@ -965,10 +963,10 @@ function Pool() {
                     maxSignificantDigits={maxFractionDigits + 2}
                     format={formatSignificantDecimalRangeString}
                   />
-                  <StepNumberInput
+                  <StepNumberInput<number>
                     title="MAX PRICE"
                     value={rangeMax}
-                    onChange={(value: string) => {
+                    onChange={(value: BigNumber.Value) => {
                       setRangeMax(() => {
                         const newIndex = priceToTickIndex(
                           new BigNumber(value),
@@ -994,8 +992,8 @@ function Pool() {
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
-                    min={formatSignificantDecimalRangeString(rangeMin)}
-                    max={formatSignificantDecimalRangeString(pairPriceMax)}
+                    min={rangeMin}
+                    max={pairPriceMax}
                     description={
                       tokenA && tokenB
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
@@ -1070,7 +1068,7 @@ function Pool() {
                             pressedDelay={500}
                             pressedInterval={100}
                             stepFunction={logarithmStep}
-                            value={userTicks[userTickSelected].price.toFixed()}
+                            value={userTicks[userTickSelected].price.toNumber()}
                             onChange={(value) => {
                               setUserTicks((userTicks) => {
                                 // skip non-update
@@ -1166,7 +1164,11 @@ function LiquidityShapeOptionComponent({
 
 // calculates set from last digit (eg. 0.98 -> 0.99 -> 1.0 -> 1.1)
 // while respecting significant digits expectation
-function logarithmStep(valueString: string, direction: number): string {
+function logarithmStep(
+  valueNumber: number,
+  direction: number,
+  valueString: string
+): number {
   const value = new BigNumber(valueString);
   const significantDigits = value.sd(false);
   const trailingZeros =
@@ -1188,7 +1190,7 @@ function logarithmStep(valueString: string, direction: number): string {
       const nextIndexStep = tickIndexToPrice(
         priceToTickIndex(value, 'round').plus(1)
       );
-      return BigNumber.max(nextStep, nextIndexStep).toFixed();
+      return BigNumber.max(nextStep, nextIndexStep).toNumber();
     }
     // if subtracting from value
     else {
@@ -1206,8 +1208,8 @@ function logarithmStep(valueString: string, direction: number): string {
       const nextIndexStep = tickIndexToPrice(
         priceToTickIndex(value, 'round').minus(1)
       );
-      return BigNumber.min(nextStep, nextIndexStep).toFixed();
+      return BigNumber.min(nextStep, nextIndexStep).toNumber();
     }
   }
-  return valueString;
+  return valueNumber;
 }

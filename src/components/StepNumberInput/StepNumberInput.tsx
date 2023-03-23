@@ -19,7 +19,7 @@ interface StepNumberInputProps<T extends number | string = string> {
   readOnly?: boolean; // force the input to be an uneditable span instead of an input
   title?: string;
   value: T;
-  stepFunction?: (value: T, direction: number) => T;
+  stepFunction?: (value: T, direction: number, valueString: string) => T;
   step?: string | number;
   max?: string | number;
   min?: string | number;
@@ -99,12 +99,12 @@ export default function StepNumberInput<T extends number | string = string>({
     (direction: Direction) => {
       if (maybeUpdate) {
         const newValue = stepFunction
-          ? new BigNumber(stepFunction(value, direction))
+          ? new BigNumber(stepFunction(value, direction, currentValue))
           : new BigNumber(value).plus(step * direction);
         maybeUpdate(newValue.toFixed(), onChange);
       }
     },
-    [step, stepFunction, maybeUpdate, onChange, value]
+    [step, stepFunction, maybeUpdate, onChange, value, currentValue]
   );
   const onSubStep = useCallback(() => onStep(-1), [onStep]);
   const onAddStep = useCallback(() => onStep(+1), [onStep]);
