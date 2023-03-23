@@ -194,6 +194,27 @@ function Pool() {
     },
     [pairPriceMin, pairPriceMax]
   );
+  // add coarser control for deliberately snapping to tick index prices
+  const setRangeMinOfNearestTickIndex = useCallback(
+    (value: BigNumber.Value) => {
+      setRangeMin(
+        tickIndexToPrice(
+          priceToTickIndex(new BigNumber(value), 'round')
+        ).toFixed()
+      );
+    },
+    [setRangeMin]
+  );
+  const setRangeMaxOfNearestTickIndex = useCallback(
+    (value: BigNumber.Value) => {
+      setRangeMax(
+        tickIndexToPrice(
+          priceToTickIndex(new BigNumber(value), 'round')
+        ).toFixed()
+      );
+    },
+    [setRangeMax]
+  );
 
   const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
     defaultLiquidityShape
@@ -926,7 +947,7 @@ function Pool() {
                   <StepNumberInput
                     title="MIN PRICE"
                     value={rangeMin}
-                    onChange={setRangeMin}
+                    onChange={setRangeMinOfNearestTickIndex}
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
@@ -947,7 +968,7 @@ function Pool() {
                   <StepNumberInput
                     title="MAX PRICE"
                     value={rangeMax}
-                    onChange={setRangeMax}
+                    onChange={setRangeMaxOfNearestTickIndex}
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
