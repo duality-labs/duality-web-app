@@ -964,6 +964,7 @@ function Pool() {
                       8
                     )}
                     maxSignificantDigits={maxFractionDigits + 2}
+                    format={formatSignificantDecimalRangeString}
                   />
                   <StepNumberInput
                     title="MAX PRICE"
@@ -1006,6 +1007,7 @@ function Pool() {
                       8
                     )}
                     maxSignificantDigits={maxFractionDigits + 2}
+                    format={formatSignificantDecimalRangeString}
                   />
                 </div>
               </div>
