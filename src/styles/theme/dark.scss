@@ -54,7 +54,7 @@ $input-bg: transparent;
 
 $token-group: core.$bg-dark;
 
-$page-card: rgba(core.$dark-black, 60%);
+$page-card: hsla(212, 28%, 17%, 1);
 $card-border: core.$bg-light;
 
 $dialog-bg: core.$black;
@@ -68,7 +68,7 @@ $token-search-border: hsl(215, 14%, 34%);
 
 $input: rgb(255, 255, 255);
 $ghost: rgba(255, 255, 255, 0.5);
-$page-card: hsla(202, 59%, 21%, 1);
+
 $token-group: hsla(202, 57%, 33%, 1);
 $icon-button-bg: rgba(125, 125, 125, 0.4);
 $icon-button-text: rgb(230, 230, 230);

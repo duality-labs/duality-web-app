@@ -3,7 +3,7 @@
 
 .table-card {
   display: flex;
-  background-color: hsla(212, 28%, 17%, 1);
+  background-color: var(--page-card);
   border-radius: 1rem;
   overflow: hidden;
   min-height: 21em;
@@ -11,6 +11,8 @@
   .table-card__header {
     // be as tall as the switch component
     min-height: calc(2.5rem + 2px);
+    // but still be vertically aligned
+    margin-top: calc(-0.25rem - 2px);
   }
   .table-card__hero-title {
     font-size: font-size.$h4;
@@ -27,7 +29,7 @@
       border-bottom: 1px solid hsl(0, 0%, 75%);
       position: sticky;
       top: 0;
-      background-color: hsla(212, 28%, 17%, 1);
+      background-color: var(--page-card);
     }
     th,
     td {

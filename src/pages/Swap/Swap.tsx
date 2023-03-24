@@ -476,7 +476,7 @@ function Swap() {
   return (
     <form
       onSubmit={onFormSubmit}
-      className={['swap-page row', isValidatingSwap && 'disabled']
+      className={['swap-page page-card p-0 row', isValidatingSwap && 'disabled']
         .filter(Boolean)
         .join(' ')}
     >

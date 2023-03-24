@@ -770,7 +770,7 @@ function Pool() {
     >
       <div className="pool-page">
         <div
-          className={`my-4 p-5 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
+          className={`my-4 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
           <div className="chart-header row flow-wrap">
             <div className="col">
@@ -963,7 +963,7 @@ function Pool() {
                 </div>
               </div>
               {chartTypeSelected === 'Orderbook' && (
-                <div className="mt-4 pt-4 page-card orderbook-card">
+                <div className="mt-4 p-4 orderbook-card">
                   <RadioButtonGroupInput<number>
                     className="mx-auto mt-2 mb-4"
                     buttonClassName="py-3 px-4"
