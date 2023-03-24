@@ -46,7 +46,7 @@ $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
 $profile-button-bg: rgba(core.$dark-black, 80%);
 $profile-button-text: $text-default;
-$submit-button-bg: hsla(201, 77%, 61%, 1);
+$submit-button-bg: $primary;
 $submit-button-text: core.$light-white;
 
 $input-text: core.$light-white;
@@ -69,8 +69,6 @@ $ghost: rgba(255, 255, 255, 0.5);
 
 $icon-button-bg: rgba(125, 125, 125, 0.4);
 $icon-button-text: rgb(230, 230, 230);
-$submit-button-bg: rgb(78, 177, 232);
-$submit-button-text: rgb(255, 255, 255);
 $card-border: rgb(78, 177, 232);
 $badge-main-bg: rgb(18, 93, 135);
 $badge-main-text: rgb(255, 255, 255);
