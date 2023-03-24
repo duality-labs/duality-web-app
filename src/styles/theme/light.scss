@@ -4,8 +4,8 @@ $text-default: core.$light-black;
 $text-alt: core.$white;
 $text-disabled: core.$dark-white;
 
-$default: core.$bg-lighter;
-$default-shadow: core.$bg-light;
+$default: core.$bg-light;
+$default-shadow: adjust-color($default, $alpha: -0.3%);
 $default-alt: core.$light-black;
 $primary: core.$bg-light;
 $primary-alt: core.$light-white;
@@ -38,7 +38,7 @@ $bg: fixed
 // color + border color in default state, background + border color in hover state
 $ghost-button: core.$dark-white;
 
-$button-group-bg: core.$light-blue;
+$button-group-bg: core.$light-white;
 $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
 $profile-button-bg: rgba(core.$light-gray, 40%);
@@ -56,10 +56,10 @@ $dialog-bg: core.$light-blue;
 $dialog-backdrop: rgba(core.$dark-black, 50%);
 $selected-token: core.$bg-light;
 
-$token-search-bg: transparent;
-$token-search-text: core.$dark-gray;
+$token-search-bg: core.$white;
+$token-search-text: core.$light-black;
 $token-search-placeholder: hsl(218, 11%, 65%);
-$token-search-border: core.$light-black;
+$token-search-border: core.$light-gray;
 
 $input: rgb(0, 0, 0);
 $ghost: rgba(0, 0, 0, 0.5);
