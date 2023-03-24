@@ -7,6 +7,13 @@
   .row.flow-nowrap:has(.token-logo + .token-logo) {
     width: 3.35em;
   }
+  // add fix for FireFox which does not support the :has() selector used above
+  // link: https://bugzilla.mozilla.org/show_bug.cgi?id=418039
+  // this solution looks different to other browsers, but at least the row size
+  // looks aligned as there's no longer space to the left of the tokens column
+  .row.flow-nowrap {
+    justify-content: flex-start;
+  }
 
   // because composition text is only ever numbers and capitals
   // there are no ascenders on descenders and the height may be reduced
