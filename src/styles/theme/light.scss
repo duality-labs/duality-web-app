@@ -49,8 +49,6 @@ $submit-button-text: core.$light-white;
 $input-text: core.$light-white;
 $input-bg: transparent;
 
-$token-group: core.$bg-dark;
-
 $page-card: rgb(255, 255, 255);
 $card-border: core.$bg-light;
 
@@ -65,7 +63,6 @@ $token-search-border: core.$light-black;
 
 $input: rgb(0, 0, 0);
 $ghost: rgba(0, 0, 0, 0.5);
-$token-group: rgb(76, 142, 180);
 $icon-button-bg: rgba(170, 169, 169, 0.4);
 $icon-button-text: rgb(188, 188, 188);
 $submit-button-bg: rgb(78, 177, 232);
@@ -131,8 +128,6 @@ $map: (
 
   'input-text': $input-text,
   'input-bg': $input-bg,
-
-  'token-group': $token-group,
 
   'page-card': $page-card,
   'card-border': $card-border,
