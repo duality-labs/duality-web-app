@@ -708,7 +708,7 @@ function Pool() {
           </div>
           <div className="card-row">
             <TokenInputGroup
-              variant={!hasSufficientFundsA && 'error'}
+              variant={tokenA && !hasSufficientFundsA && 'error'}
               onValueChanged={setInputValueA}
               onTokenChanged={setTokenA}
               tokenList={tokenList}
@@ -722,7 +722,7 @@ function Pool() {
           </div>
           <div className="card-row">
             <TokenInputGroup
-              variant={!hasSufficientFundsB && 'error'}
+              variant={tokenB && !hasSufficientFundsB && 'error'}
               onValueChanged={setInputValueB}
               onTokenChanged={setTokenB}
               tokenList={tokenList}
@@ -829,7 +829,7 @@ function Pool() {
               <div className="card-row my-3">
                 <TokenInputGroup
                   className="flex"
-                  variant={!hasSufficientFundsA && 'error'}
+                  variant={tokenA && !hasSufficientFundsA && 'error'}
                   onValueChanged={setInputValueA}
                   onTokenChanged={setTokenA}
                   tokenList={tokenList}
@@ -841,7 +841,7 @@ function Pool() {
               <div className="card-row my-3">
                 <TokenInputGroup
                   className="flex"
-                  variant={!hasSufficientFundsB && 'error'}
+                  variant={tokenB && !hasSufficientFundsB && 'error'}
                   onValueChanged={setInputValueB}
                   onTokenChanged={setTokenB}
                   tokenList={tokenList}
