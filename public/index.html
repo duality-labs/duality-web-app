@@ -32,7 +32,7 @@
       sizes="16x16"
       href="%PUBLIC_URL%/images/favicon-16x16.png"
     />
-    <meta name="theme-color" content="#3f7391" />
+    <meta name="theme-color" content="#161d2d" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
@@ -82,7 +82,11 @@
       body {
         margin: 0;
         font-family: sans-serif;
-        background-color: #282c34;
+        /*
+         * use ~average background color as background for HTML
+         * seen in macOS/iOS if user tries to scroll past the edge of the page
+         */
+        background-color: #161d2d;
         color: #eeeeee;
       }
     </style>

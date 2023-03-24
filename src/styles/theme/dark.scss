@@ -24,12 +24,7 @@ $light-alt: core.$light-white;
 $link: transparent;
 $link-alt: core.$light-white;
 
-$bg: conic-gradient(
-  from 120deg at 50% 100%,
-  core.$bg-light 0deg,
-  mix(#fff, core.$bg-dark, 20%) 180deg,
-  mix(#fff, core.$dark-black, 20%) 360deg
-);
+$bg: linear-gradient(240deg, hsl(219, 40%, 11%) 12%, hsl(213, 28%, 17%) 98%);
 
 // color + border color in default state, background + border color in hover state
 $ghost-button: core.$dark-white;
