@@ -770,7 +770,7 @@ function Pool() {
     >
       <div className="pool-page">
         <div
-          className={`my-4 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
+          className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
           <div className="chart-header row flow-wrap">
             <div className="col">

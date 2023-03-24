@@ -18,6 +18,8 @@
 }
 
 .page-card {
+  margin-top: margins.$m-4;
+  margin-bottom: margins.$m-4;
   padding: 2rem 1.65rem;
   border-radius: 1rem;
   background-color: var(--page-card);
@@ -28,6 +30,11 @@
   overflow: auto;
   display: flex;
   position: relative;
+
+  .page-card {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
 
   // undo regular paddings
   // todo: remove paddings and made internal card parts have consistent padding
