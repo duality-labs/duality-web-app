@@ -24,7 +24,19 @@ $light-alt: core.$light-white;
 $link: transparent;
 $link-alt: core.$light-white;
 
-$bg: linear-gradient(240deg, hsl(219, 40%, 11%) 12%, hsl(213, 28%, 17%) 98%);
+// this color is pre-mixed aqua: hsla(165, 83%, 57%, 0.5) and the background
+// but mixed using `mix-blend-mode: overlay` which is hard to replicate
+// *inside* a background color but can be done with multiple elements
+$blended-aqua-and-blue: hsl(190, 90%, 13%);
+$bg: fixed
+    radial-gradient(
+      circle at 50vw 95vh,
+      change-color($blended-aqua-and-blue, $alpha: 1) 0vw,
+      change-color($blended-aqua-and-blue, $alpha: 0.9) 10vw,
+      change-color($blended-aqua-and-blue, $alpha: 0.7) 20vw,
+      change-color($blended-aqua-and-blue, $alpha: 0) 45vw
+    ),
+  fixed linear-gradient(240deg, hsl(219, 40%, 11%) 12%, hsl(213, 28%, 17%) 98%);
 
 // color + border color in default state, background + border color in hover state
 $ghost-button: core.$dark-white;

@@ -24,7 +24,16 @@ $light-alt: core.$light-white;
 $link: transparent;
 $link-alt: core.$dark-gray;
 
-$bg: linear-gradient(240deg, core.$bg-light 12%, core.$bg-lighter 98%);
+$aqua: hsl(165, 83%, 57%);
+$bg: fixed
+    radial-gradient(
+      circle at 50vw 95vh,
+      change-color($aqua, $alpha: 0.5) 0vw,
+      change-color($aqua, $alpha: 0.45) 10vw,
+      change-color($aqua, $alpha: 0.35) 20vw,
+      change-color($aqua, $alpha: 0) 45vw
+    ),
+  fixed linear-gradient(240deg, core.$bg-light 12%, core.$bg-lighter 98%);
 
 // color + border color in default state, background + border color in hover state
 $ghost-button: core.$dark-white;
