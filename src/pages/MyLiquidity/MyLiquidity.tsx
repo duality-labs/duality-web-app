@@ -21,7 +21,7 @@ import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import TableCard from '../../components/cards/TableCard';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowDown, faArrowUp } from '@fortawesome/free-solid-svg-icons';
+import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
 
 function matchTokenDenom(denom: string) {
   return (token: Token) =>
@@ -238,7 +238,6 @@ function ShareValuesPage({
                   <th>Token + Chain</th>
                   <th>Balance</th>
                   <th>Deposit</th>
-                  <th>Withdraw</th>
                 </tr>
               </thead>
               <tbody>
@@ -336,16 +335,6 @@ function AssetRow({ token, amount, value }: TokenCoin) {
             <FontAwesomeIcon icon={faArrowDown} className="ml-3" />
           </button>
         </Link>
-      </td>
-      <td>
-        {value?.isGreaterThan(0) && (
-          <Link to="/">
-            <button className="button nowrap">
-              {token.display.toUpperCase()}
-              <FontAwesomeIcon icon={faArrowUp} className="ml-3" />
-            </button>
-          </Link>
-        )}
       </td>
     </tr>
   );
