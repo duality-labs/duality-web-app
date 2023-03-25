@@ -10,7 +10,7 @@ $border-width: 2px;
   & {
     padding: paddings.$p-4 paddings.$p-5;
     border-radius: paddings.$p-4;
-    background: hsla(202, 57%, 33%, 1);
+    background-color: var(--default);
     flex-direction: column;
     overflow: hidden;
     display: flex;
@@ -36,7 +36,7 @@ $border-width: 2px;
     button {
       & {
         @include paddings.padding('*', 3);
-        background-color: var(--primary);
+        background-color: var(--primary-muted);
         font-size: font-size.$h4;
         border: 0px none transparent;
         box-sizing: content-box;

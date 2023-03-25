@@ -8,6 +8,7 @@ $default: hsla(219, 40%, 11%, 1);
 $default-shadow: core.$bg-darker;
 $default-alt: core.$light-white;
 $primary: core.$bg-light;
+$primary-muted: core.$bg-dark;
 $primary-alt: core.$light-white;
 $secondary: rgba(core.$light-gray, 0.8);
 $secondary-alt: core.$light-white;
@@ -100,6 +101,7 @@ $map: (
   'default-shadow': $default-shadow,
   'default-alt': $default-alt,
   'primary': $primary,
+  'primary-muted': $primary-muted,
   'primary-alt': $primary-alt,
   'secondary': $secondary,
   'secondary-alt': $secondary-alt,

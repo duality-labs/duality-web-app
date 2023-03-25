@@ -4,10 +4,11 @@ $text-default: core.$light-black;
 $text-alt: core.$white;
 $text-disabled: core.$dark-white;
 
-$default: core.$bg-light;
+$default: adjust-color(core.$bg-lighter, $lightness: -8%);
 $default-shadow: adjust-color($default, $alpha: -0.3%);
 $default-alt: core.$light-black;
 $primary: core.$bg-light;
+$primary-muted: core.$bg-lighter;
 $primary-alt: core.$light-white;
 $secondary: rgba(core.$dark-gray, 0.8);
 $secondary-alt: core.$light-white;
@@ -96,6 +97,7 @@ $map: (
   'default-shadow': $default-shadow,
   'default-alt': $default-alt,
   'primary': $primary,
+  'primary-muted': $primary-muted,
   'primary-alt': $primary-alt,
   'secondary': $secondary,
   'secondary-alt': $secondary-alt,
