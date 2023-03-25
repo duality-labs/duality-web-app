@@ -8,6 +8,7 @@ import { Navigate } from 'react-router';
 import Header from '../../components/Header';
 import Notifications from '../../components/Notifications';
 
+import Stars from './Stars';
 import Swap from '../Swap';
 import Pool from '../Pool';
 import MyLiquidity from '../MyLiquidity';
@@ -26,6 +27,7 @@ function App() {
         <ThemeProvider>
           <BrowserRouter>
             <Header />
+            <Stars />
             <main>
               <Routes>
                 <Route index element={<MyLiquidityOrTrade />} />
