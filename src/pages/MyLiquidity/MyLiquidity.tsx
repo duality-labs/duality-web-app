@@ -330,7 +330,7 @@ function AssetRow({ token, amount, value }: TokenCoin) {
       </td>
       <td>
         <Link to="/">
-          <button className="button nowrap">
+          <button className="button text-action-button nowrap">
             {token.display.toUpperCase()}
             <FontAwesomeIcon icon={faArrowDown} className="ml-3" />
           </button>
