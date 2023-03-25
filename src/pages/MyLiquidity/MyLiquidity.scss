@@ -72,27 +72,4 @@
       font-weight: font-weight.$bold;
     }
   }
-
-  .home-hero-section__left {
-    .logo {
-      height: 4em;
-    }
-    .home-hero-section__name {
-      font-size: 3rem;
-      min-width: 7em;
-    }
-    .span-truncate {
-      position: relative;
-    }
-    .span-truncate span {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
 }

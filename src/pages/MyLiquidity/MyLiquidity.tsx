@@ -23,9 +23,6 @@ import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown, faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
-const keplrLogoURI =
-  'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
-
 function matchTokenDenom(denom: string) {
   return (token: Token) =>
     !!token.denom_units.find((unit) => unit.denom === denom);
@@ -78,8 +75,6 @@ function ShareValuesPage({
     React.SetStateAction<[Token, Token] | undefined>
   >;
 }) {
-  const { address } = useWeb3();
-
   const allUserSharesTokensList = useMemo<Token[]>(() => {
     // collect all tokens noted in each share
     const list = Object.values(shareValueMap || {}).reduce<Token[]>(
@@ -190,16 +185,6 @@ function ShareValuesPage({
   return (
     <div className="my-liquidity-page container col flex gap-6 py-6">
       <div className="home-hero-section row gapx-4 gapy-5 flow-wrap">
-        <div className="home-hero-section__left col flex">
-          <div className="home-hero-section__top-line row flex flex-centered gap-3">
-            <div className="col">
-              <img src={keplrLogoURI} className="logo mr-3" alt="logo" />
-            </div>
-            <div className="col flex home-hero-section__name span-truncate">
-              <span>{address}</span>&nbsp;
-            </div>
-          </div>
-        </div>
         <div className="hero-card ml-auto grid gapx-5 gapy-3 p-4">
           <h2 className="hero-card__hero-title">Portfolio Value</h2>
           <h3 className="hero-card__hero-title">My Liquidity</h3>
