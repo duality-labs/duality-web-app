@@ -1,6 +1,10 @@
 @use '../../styles/mixins-vars/animations.scss' as animations;
 @use '../../styles/theme/core.scss' as colors;
 
+$border-width: 1px;
+$border-radius: 0.75rem;
+$inner-border-radius: calc($border-radius - 2 * $border-width);
+
 .radio-button-group-switch {
   & {
     isolation: isolate;
@@ -9,7 +13,7 @@
     display: flex;
     justify-content: stretch;
     border: 1px solid var(--token-search-bg);
-    border-radius: 0.75rem;
+    border-radius: $border-radius;
     overflow: hidden;
     background-color: var(--button-group-bg);
   }
@@ -17,7 +21,7 @@
   button {
     flex: 1 1 auto;
     opacity: 1;
-    border-radius: 0.75rem;
+    border-radius: $inner-border-radius;
     position: relative;
     transition: color ease 0.25s;
     color: var(--token-search-placeholder);
@@ -32,17 +36,17 @@
     right: 0;
     top: 0;
     bottom: 0;
-    border-radius: 0.75rem;
+    border-radius: $inner-border-radius;
     background-color: var(--token-search-bg);
     z-index: -1;
   }
   button + button + button {
-    margin-left: -0.75rem;
+    margin-left: calc(-1 * $inner-border-radius);
     &.p-3,
     &.px-3,
     &.p-4,
     &.px-4 {
-      margin-left: -0.25rem;
+      margin-left: calc(-0.5 * $inner-border-radius);
     }
   }
 
