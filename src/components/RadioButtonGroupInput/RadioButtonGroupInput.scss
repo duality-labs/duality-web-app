@@ -29,7 +29,9 @@ $inner-border-radius: calc($border-radius - 2 * $border-width);
       color: var(--token-search-text);
     }
   }
-  button:hover::before {
+
+  // add on-hover background
+  button.non-moving::before {
     content: ' ';
     position: absolute;
     left: 0;
@@ -39,15 +41,21 @@ $inner-border-radius: calc($border-radius - 2 * $border-width);
     border-radius: $inner-border-radius;
     background-color: var(--token-search-bg);
     z-index: -1;
+    opacity: 0;
   }
-  button + button + button {
-    margin-left: calc(-1 * $inner-border-radius);
-    &.p-3,
-    &.px-3,
-    &.p-4,
-    &.px-4 {
-      margin-left: calc(-0.5 * $inner-border-radius);
-    }
+  // show on hover
+  // but also add a little bit on the left edge
+  // if hovered button is next to active button
+  // this bridges the space between the button button areas
+  button.active::before,
+  button:hover::before {
+    opacity: 1;
+  }
+  button.active + button:hover::before {
+    left: calc(-2 * $inner-border-radius);
+  }
+  button:hover:has(+ button.active)::before {
+    right: calc(-2 * $inner-border-radius);
   }
 
   .moving-background {
