@@ -51,15 +51,26 @@ $inner-border-radius: calc($border-radius - 2 * $border-width);
   button:hover::before {
     opacity: 1;
   }
+  // the first selection line below is only needed on FireFox
+  // as FireFox does not support :has() which fixes allows us
+  // to set the fix using the right (CSS right: 1px) attribute
+  // link: https://bugzilla.mozilla.org/show_bug.cgi?id=418039
+  // you can revert this commit (not the entire squashed PR commit)
+  // if this bug gets resolved in the future
+  button:hover + button.active::before,
   button.active + button:hover::before {
     left: calc(-2 * $inner-border-radius);
+  }
+  // this can also be deleted on FireFox bug fix
+  button:hover:has(+ button) + button.active::before {
+    left: 0;
   }
   button:hover:has(+ button.active)::before {
     right: calc(-2 * $inner-border-radius);
   }
   // fix glitch of gap between buttons during transition
   // by delaying the dissapearance of the bridge for a little bit
-  button.active::before {
+  button:has(+ button) + button.active::before {
     transition-delay: 0.1s, 0.1s;
     transition-property: left, right;
   }
