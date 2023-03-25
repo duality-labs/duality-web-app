@@ -40,7 +40,6 @@ export default function TableCard<T extends string | number>({
             <div className="col">
               <div className="table-card__asset-toggle">
                 <RadioButtonGroupInput<T>
-                  buttonClassName="px-5"
                   values={switchValues}
                   value={switchValue}
                   onChange={switchOnChange}
