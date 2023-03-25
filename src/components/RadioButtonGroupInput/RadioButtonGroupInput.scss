@@ -57,6 +57,12 @@ $inner-border-radius: calc($border-radius - 2 * $border-width);
   button:hover:has(+ button.active)::before {
     right: calc(-2 * $inner-border-radius);
   }
+  // fix glitch of gap between buttons during transition
+  // by delaying the dissapearance of the bridge for a little bit
+  button.active::before {
+    transition-delay: 0.1s, 0.1s;
+    transition-property: left, right;
+  }
 
   .moving-background {
     position: absolute;
