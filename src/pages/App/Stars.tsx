@@ -1,4 +1,6 @@
 import { useCallback, useRef } from 'react';
+import { alea } from 'seedrandom';
+
 import useResizeObserver from '@react-hook/resize-observer';
 
 import './Stars.scss';
@@ -30,8 +32,8 @@ function sizeDistribution(percentile: number) {
     : percentile * 0.5417 + 0.0298;
 }
 
-function random(min: number, max: number) {
-  return min + Math.random() * (max - min);
+function random(min: number, max: number, rng = Math.random) {
+  return min + rng() * (max - min);
 }
 
 function draw(ctx: CanvasRenderingContext2D): void {
@@ -44,14 +46,16 @@ function draw(ctx: CanvasRenderingContext2D): void {
   const [dimPointX, dimPointY] = [canvasWidth / 2, canvasHeight];
   const dimRadius = canvasWidth;
 
+  const prng = alea('duality');
+
   // clear canvas
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
   // loop through each star and generate a path for each
   for (let i = 0; i < starsTotal; i += 1) {
-    const x: number = random(0, canvasWidth);
-    const y: number = random(0, canvasHeight);
-    const radius = sizeDistribution(random(0, 1)) * maxStarDiameterPixels;
+    const x: number = random(0, canvasWidth, prng);
+    const y: number = random(0, canvasHeight, prng);
+    const radius = sizeDistribution(random(0, 1, prng)) * maxStarDiameterPixels;
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, 2 * Math.PI);
     // calculate how dim the star should be in relation to its distance to the dim point
