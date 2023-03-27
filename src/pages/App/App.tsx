@@ -9,6 +9,7 @@ import Header from '../../components/Header';
 import Notifications from '../../components/Notifications';
 
 import Stars from './Stars';
+import Planets from './Planets';
 import Swap from '../Swap';
 import Pool from '../Pool';
 import MyLiquidity from '../MyLiquidity';
@@ -28,6 +29,7 @@ function App() {
           <BrowserRouter>
             <Header />
             <Stars />
+            <Planets />
             <main>
               <Routes>
                 <Route index element={<MyLiquidityOrTrade />} />

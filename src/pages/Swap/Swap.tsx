@@ -30,7 +30,6 @@ import { formatAmount } from '../../lib/utils/number';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 
-import planetSVG from '../../assets/planets/planet-trade.svg';
 import './Swap.scss';
 
 type CardType = 'trade' | 'settings';
@@ -481,11 +480,6 @@ function Swap() {
         .filter(Boolean)
         .join(' ')}
     >
-      <img
-        src={planetSVG}
-        alt="planet of trade"
-        style={{ position: 'fixed', bottom: 0, right: 0, opacity: 0.4 }}
-      />
       {tradeCard}
     </form>
   );
