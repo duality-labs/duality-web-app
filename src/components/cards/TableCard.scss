@@ -27,7 +27,9 @@
     }
     th {
       border-bottom: 1px solid hsl(0, 0%, 75%);
+      // ensure heading cell sit above row content
       position: sticky;
+      z-index: 1;
       top: 0;
       background-color: var(--page-card);
     }
