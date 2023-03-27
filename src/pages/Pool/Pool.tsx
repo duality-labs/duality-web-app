@@ -50,6 +50,7 @@ import { priceToTickIndex } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 
+import planetSVG from '../../assets/planets/planet-liquidity.svg';
 import './Pool.scss';
 import TokenPairLogos from '../../components/TokenPairLogos';
 import RadioInput from '../../components/RadioInput';
@@ -687,6 +688,11 @@ function Pool() {
           .join(' ')}
         onSubmit={onSubmit}
       >
+        <img
+          src={planetSVG}
+          alt="planet of liquidity"
+          style={{ position: 'fixed', top: '10vh', right: 0, opacity: 0.4 }}
+        />
         <PoolsTableCard
           className="flex flex-auto"
           title="Pools"
@@ -768,6 +774,11 @@ function Pool() {
       className={[isValidatingDeposit && 'disabled'].filter(Boolean).join(' ')}
       onSubmit={onSubmit}
     >
+      <img
+        src={planetSVG}
+        alt="planet of liquidity"
+        style={{ position: 'fixed', top: '10vh', right: 0, opacity: 0.4 }}
+      />
       <div className="pool-page">
         <div
           className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
