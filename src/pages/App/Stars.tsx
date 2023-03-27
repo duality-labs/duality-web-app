@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { alea } from 'seedrandom';
 
 import useResizeObserver from '@react-hook/resize-observer';
@@ -10,6 +10,10 @@ import './Stars.scss';
 const starDensity = 1360 / (1440 * 520);
 const maxStarDiameterPixels = 4.2;
 const maxStarOpacity = 0.4;
+const minStarBrightnessPeriodMS = 5000;
+const maxStarBrightnessPeriodMS = 10000;
+// about 20-30 frames per brightness cycle is enough resolution to look smooth
+const brightnessRefreshRate = minStarBrightnessPeriodMS / 20;
 
 function createGradient(
   ctx: CanvasRenderingContext2D,
@@ -52,10 +56,21 @@ function draw(ctx: CanvasRenderingContext2D): void {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
   // loop through each star and generate a path for each
+  const now = Date.now();
   for (let i = 0; i < starsTotal; i += 1) {
+    // get placement
     const x: number = random(0, canvasWidth, prng);
     const y: number = random(0, canvasHeight, prng);
     const radius = sizeDistribution(random(0, 1, prng)) * maxStarDiameterPixels;
+    // get brightness
+    const brightnessPeriodMs = random(
+      minStarBrightnessPeriodMS,
+      maxStarBrightnessPeriodMS,
+      prng
+    );
+    const brightnessOffset = Math.sin((now / brightnessPeriodMs) * Math.PI * 2); // from -1 to 1
+    const brightness = 0.5 + 0.5 * brightnessOffset; // from 0 to 1
+
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, 2 * Math.PI);
     // calculate how dim the star should be in relation to its distance to the dim point
@@ -63,7 +78,7 @@ function draw(ctx: CanvasRenderingContext2D): void {
       Math.pow(x - dimPointX, 2) + Math.pow(y - dimPointY, 2)
     );
     const dimming = Math.max(0, (dimRadius - dimDistance) / dimRadius);
-    const opacity = maxStarOpacity * (1 - dimming);
+    const opacity = brightness * maxStarOpacity * (1 - dimming);
     ctx.fillStyle = createGradient(ctx, x, y - radius, 0, radius * 2, opacity);
     ctx.fill();
   }
@@ -96,6 +111,23 @@ export default function Stars() {
   useResizeObserver(canvasRef, () => {
     drawOnCanvas(canvasRef.current);
   });
+
+  // add animation
+  useEffect(() => {
+    let lastTimeStamp = 0;
+    let animationFrame = window?.requestAnimationFrame(onFrame);
+    return () => cancelAnimationFrame(animationFrame);
+
+    function onFrame(timestamp: DOMHighResTimeStamp) {
+      // don't animate too frequently: redraw only if enough time has passed
+      if (timestamp - lastTimeStamp > brightnessRefreshRate) {
+        lastTimeStamp = timestamp;
+        // redraw canvas
+        drawOnCanvas(canvasRef.current);
+      }
+      animationFrame = window?.requestAnimationFrame(onFrame);
+    }
+  }, []);
 
   return <canvas className="stars-bg" ref={getCanvasRef}></canvas>;
 }
