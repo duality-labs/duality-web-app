@@ -1,4 +1,5 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
+import useResizeObserver from '@react-hook/resize-observer';
 
 import './Stars.scss';
 
@@ -43,6 +44,9 @@ function draw(ctx: CanvasRenderingContext2D): void {
   const [dimPointX, dimPointY] = [canvasWidth / 2, canvasHeight];
   const dimRadius = canvasWidth;
 
+  // clear canvas
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
   // loop through each star and generate a path for each
   for (let i = 0; i < starsTotal; i += 1) {
     const x: number = random(0, canvasWidth);
@@ -62,20 +66,32 @@ function draw(ctx: CanvasRenderingContext2D): void {
   ctx.closePath();
 }
 
-export default function Stars() {
-  // draw on canvas when first found
-  const getCanvasRef = useCallback((canvas: HTMLCanvasElement) => {
-    if (canvas) {
-      const context = canvas.getContext('2d');
-      if (context) {
-        // the offset width and height have been set from CSS rules
-        // which have stretched the element to the window's extents
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw(context);
-      }
+// check canvas and context before drawing entire canvas area
+function drawOnCanvas(canvas: HTMLCanvasElement | null) {
+  if (canvas) {
+    const context = canvas.getContext('2d');
+    if (context) {
+      // the offset width and height have been set from CSS rules
+      // which have stretched the element to the window's extents
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      draw(context);
     }
+  }
+}
+
+export default function Stars() {
+  // store ref but also draw on canvas when first found
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const getCanvasRef = useCallback((canvas: HTMLCanvasElement | null) => {
+    canvasRef.current = canvas;
+    drawOnCanvas(canvasRef.current);
   }, []);
+
+  // redraw canvas when the screen size changes
+  useResizeObserver(canvasRef, () => {
+    drawOnCanvas(canvasRef.current);
+  });
 
   return <canvas className="stars-bg" ref={getCanvasRef}></canvas>;
 }
