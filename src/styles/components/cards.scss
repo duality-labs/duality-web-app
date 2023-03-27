@@ -17,10 +17,12 @@
   border-radius: paddings.$p-3;
 }
 
+$page-card-padding-width: 1.65rem;
+
 .page-card {
   margin-top: margins.$m-4;
   margin-bottom: margins.$m-4;
-  padding: 2rem 1.65rem;
+  padding: 2rem $page-card-padding-width;
   border-radius: 1rem;
   background-color: var(--page-card);
   box-shadow: 0px 2px 4px -2px rgba(0, 0, 0, 0.05),
@@ -39,10 +41,16 @@
   // undo regular paddings
   // todo: remove paddings and made internal card parts have consistent padding
   .page-card__footer {
-    margin-left: -1.65rem;
-    margin-right: -1.65rem;
+    margin-left: -$page-card-padding-width;
+    margin-right: -$page-card-padding-width;
     margin-bottom: -2rem;
+    // redo paddings inside the footer
+    .page-card__padding-width {
+      padding-left: $page-card-padding-width;
+      padding-right: $page-card-padding-width;
+    }
   }
+
   .attribution {
     position: absolute;
     left: 0;
