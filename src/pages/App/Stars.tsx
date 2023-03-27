@@ -3,8 +3,29 @@ import { useCallback } from 'react';
 import './Stars.scss';
 
 // set constant density of stars
-const starDensity = 1 / 2000;
-const maxStarDiameterPixels = 5;
+// to that of about the design spec image (1359 stars over a 1441 x 519 image)
+const starDensity = 1360 / (1440 * 520);
+const maxStarDiameterPixels = 4.2;
+
+function createGradient(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
+  gradient.addColorStop(0.4159, '#F9FAFB00');
+  gradient.addColorStop(0.6631, '#4EB1E866'); // 40% opacity for all stars
+  gradient.addColorStop(0.8439, '#FAF9FB00');
+  return gradient;
+}
+
+function sizeDistribution(percentile: number) {
+  return percentile > 0.85855
+    ? percentile * 3.5714 - 2.5714
+    : percentile * 0.5417 + 0.0298;
+}
 
 function random(min: number, max: number) {
   return min + Math.random() * (max - min);
@@ -21,12 +42,13 @@ function draw(ctx: CanvasRenderingContext2D): void {
   for (let i = 0; i < starsTotal; i += 1) {
     const x: number = random(0, canvasWidth);
     const y: number = random(0, canvasHeight);
-    const width: number = random(1, maxStarDiameterPixels);
-    const height: number = width / 3;
-    const alpha: number = random(0, 40);
-    ctx.fillStyle = `#ffffff${alpha.toFixed(0)}`;
-    ctx.fillRect(x, y, width, height);
+    const radius = sizeDistribution(random(0, 1)) * maxStarDiameterPixels;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = createGradient(ctx, x, y - radius, 0, radius * 2);
+    ctx.fill();
   }
+  ctx.closePath();
 }
 
 export default function Stars() {
