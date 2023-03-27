@@ -6,18 +6,20 @@ import './Stars.scss';
 // to that of about the design spec image (1359 stars over a 1441 x 519 image)
 const starDensity = 1360 / (1440 * 520);
 const maxStarDiameterPixels = 4.2;
+const maxStarOpacity = 0.4;
 
 function createGradient(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   width: number,
-  height: number
+  height: number,
+  alpha = 1
 ) {
   const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
-  gradient.addColorStop(0.4159, '#F9FAFB00');
-  gradient.addColorStop(0.6631, '#4EB1E866'); // 40% opacity for all stars
-  gradient.addColorStop(0.8439, '#FAF9FB00');
+  gradient.addColorStop(0.4159, 'rgba(249, 250, 251, 0)');
+  gradient.addColorStop(0.6631, `rgba(78, 177, 232, ${alpha.toFixed(3)})`);
+  gradient.addColorStop(0.8439, 'rgba(250, 249, 251, 0)');
   return gradient;
 }
 
@@ -38,6 +40,9 @@ function draw(ctx: CanvasRenderingContext2D): void {
   const canvasSize = canvasWidth * canvasHeight;
   const starsTotal = canvasSize * starDensity;
 
+  const [dimPointX, dimPointY] = [canvasWidth / 2, canvasHeight];
+  const dimRadius = canvasWidth;
+
   // loop through each star and generate a path for each
   for (let i = 0; i < starsTotal; i += 1) {
     const x: number = random(0, canvasWidth);
@@ -45,7 +50,13 @@ function draw(ctx: CanvasRenderingContext2D): void {
     const radius = sizeDistribution(random(0, 1)) * maxStarDiameterPixels;
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = createGradient(ctx, x, y - radius, 0, radius * 2);
+    // calculate how dim the star should be in relation to its distance to the dim point
+    const dimDistance = Math.sqrt(
+      Math.pow(x - dimPointX, 2) + Math.pow(y - dimPointY, 2)
+    );
+    const dimming = Math.max(0, (dimRadius - dimDistance) / dimRadius);
+    const opacity = maxStarOpacity * (1 - dimming);
+    ctx.fillStyle = createGradient(ctx, x, y - radius, 0, radius * 2, opacity);
     ctx.fill();
   }
   ctx.closePath();
