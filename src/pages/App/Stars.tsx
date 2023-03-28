@@ -11,17 +11,17 @@ import './Stars.scss';
 const starDensity = 1360 / (1440 * 520);
 const maxStarDiameterPixels = 4.2;
 const maxStarOpacity = 0.4;
-const minStarBrightnessPeriodMS = 5000;
-const maxStarBrightnessPeriodMS = 10000;
+const minStarBrightnessPeriodMS = 4000;
+const maxStarBrightnessPeriodMS = 7000;
 // about 20-30 frames per brightness cycle is enough resolution to look smooth
-const brightnessRefreshRate = minStarBrightnessPeriodMS / 20;
-const maxStarSpeed = 2.5; // pixels per second
+const brightnessRefreshRate = minStarBrightnessPeriodMS / 25;
+const maxStarSpeed = 5; // pixels per second
 
 // set "hyperjump" animation (on page navigation change) settings
 // allow the stars to travel just a little longer than the planets (set in CSS)
 // values determined empirically through a bit of trial and error :/
 const displacementMs = 2750;
-const displacementPx = 1000;
+const displacementPx = 375;
 
 function createGradient(
   ctx: CanvasRenderingContext2D,
