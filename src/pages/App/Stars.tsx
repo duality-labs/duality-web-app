@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { alea } from 'seedrandom';
 
 import useResizeObserver from '@react-hook/resize-observer';
@@ -15,6 +16,12 @@ const maxStarBrightnessPeriodMS = 10000;
 // about 20-30 frames per brightness cycle is enough resolution to look smooth
 const brightnessRefreshRate = minStarBrightnessPeriodMS / 20;
 const maxStarSpeed = 2.5; // pixels per second
+
+// set "hyperjump" animation (on page navigation change) settings
+// allow the stars to travel just a little longer than the planets (set in CSS)
+// values determined empirically through a bit of trial and error :/
+const displacementMs = 2750;
+const displacementPx = 1000;
 
 function createGradient(
   ctx: CanvasRenderingContext2D,
@@ -41,7 +48,9 @@ function random(min: number, max: number, rng = Math.random) {
   return min + rng() * (max - min);
 }
 
-function draw(ctx: CanvasRenderingContext2D): void {
+let globalOffsetMs = 0;
+function draw(ctx: CanvasRenderingContext2D, offsetMs = 0): void {
+  globalOffsetMs += offsetMs;
   // get canvas and star stats
   const canvasWidth = ctx.canvas.width;
   const canvasHeight = ctx.canvas.height;
@@ -61,7 +70,7 @@ function draw(ctx: CanvasRenderingContext2D): void {
   for (let i = 0; i < starsTotal; i += 1) {
     // get placement
     const speed: number = random(maxStarSpeed / 100, maxStarSpeed, prng);
-    const displacement = (now / 1000) * speed;
+    const displacement = (now / 1000 + globalOffsetMs) * speed;
     const x: number = displacement % canvasWidth;
     const y: number = random(0, canvasHeight, prng);
     const radius = sizeDistribution(random(0, 1, prng)) * maxStarDiameterPixels;
@@ -89,7 +98,7 @@ function draw(ctx: CanvasRenderingContext2D): void {
 }
 
 // check canvas and context before drawing entire canvas area
-function drawOnCanvas(canvas: HTMLCanvasElement | null) {
+function drawOnCanvas(canvas: HTMLCanvasElement | null, offsetMs?: number) {
   if (canvas) {
     const context = canvas.getContext('2d');
     if (context) {
@@ -97,7 +106,7 @@ function drawOnCanvas(canvas: HTMLCanvasElement | null) {
       // which have stretched the element to the window's extents
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
-      draw(context);
+      draw(context, offsetMs);
     }
   }
 }
@@ -115,7 +124,7 @@ export default function Stars() {
     drawOnCanvas(canvasRef.current);
   });
 
-  // add animation
+  // add animation for star opacity and/or movement
   useEffect(() => {
     let lastTimeStamp = 0;
     let animationFrame = window?.requestAnimationFrame(onFrame);
@@ -132,5 +141,32 @@ export default function Stars() {
     }
   }, []);
 
+  // add animation for star movement on navigation change
+  const route = useLocation()?.pathname;
+  useEffect(() => {
+    const endTimeStamp = Date.now() + displacementMs;
+    let cumulativePercent = 0;
+    let animationFrame = window?.requestAnimationFrame(onFrame);
+    return () => cancelAnimationFrame(animationFrame);
+
+    function onFrame(timestamp: DOMHighResTimeStamp) {
+      // don't animate too frequently: redraw only if enough time has passed
+      const now = Date.now();
+      if (now < endTimeStamp) {
+        const progression = 1 + (1 - (endTimeStamp - now)) / displacementMs;
+        const percent = easeOutCubic(progression);
+        const percentDiff = percent - cumulativePercent;
+        cumulativePercent = percent;
+        // redraw canvas
+        drawOnCanvas(canvasRef.current, percentDiff * displacementPx);
+        animationFrame = window?.requestAnimationFrame(onFrame);
+      }
+    }
+  }, [route]);
+
   return <canvas className="stars-bg" ref={getCanvasRef}></canvas>;
+}
+
+function easeOutCubic(x: number): number {
+  return 1 - Math.pow(1 - x, 3);
 }
