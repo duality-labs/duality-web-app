@@ -10,3 +10,10 @@
     transition-delay: 1s, 1s, 0.75s;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .planet-bg,
+  .planet-bg.active {
+    transition: opacity 0.5s;
+  }
+}

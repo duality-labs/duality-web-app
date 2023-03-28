@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { alea } from 'seedrandom';
 
@@ -164,6 +164,8 @@ export default function Stars() {
     drawOnCanvas(canvasRef.current);
   });
 
+  const userPrefersMotion = usePrefersMotion();
+
   // add animation for star opacity and/or movement
   useEffect(() => {
     let lastTimeStamp = 0;
@@ -172,14 +174,18 @@ export default function Stars() {
 
     function onFrame(timestamp: DOMHighResTimeStamp) {
       // don't animate too frequently: redraw only if enough time has passed
-      if (timestamp - lastTimeStamp > brightnessRefreshRate) {
+      // and animate only if user allows it
+      if (
+        canUseMotion(userPrefersMotion) &&
+        timestamp - lastTimeStamp > brightnessRefreshRate
+      ) {
         lastTimeStamp = timestamp;
         // redraw canvas
         drawOnCanvas(canvasRef.current);
       }
       animationFrame = window?.requestAnimationFrame(onFrame);
     }
-  }, []);
+  }, [userPrefersMotion]);
 
   // add animation for star movement on navigation change
   const route = useLocation()?.pathname;
@@ -192,7 +198,8 @@ export default function Stars() {
     function onFrame(timestamp: DOMHighResTimeStamp) {
       // don't animate too frequently: redraw only if enough time has passed
       const now = Date.now();
-      if (now < endTimeStamp) {
+      // animate only if user allows it
+      if (canUseMotion(userPrefersMotion) && now < endTimeStamp) {
         const progress = 1 + (1 - (endTimeStamp - now)) / displacementMs;
         // choose a line between cubic and quadratic ease-out lines
         // looks a bit like a standard ease-out curve but with a flatter start
@@ -206,7 +213,7 @@ export default function Stars() {
         animationFrame = window?.requestAnimationFrame(onFrame);
       }
     }
-  }, [route]);
+  }, [route, userPrefersMotion]);
 
   return <canvas className="stars-bg" ref={getCanvasRef}></canvas>;
 }
@@ -217,4 +224,34 @@ function easeOutCubic(x: number): number {
 
 function easeOutQuad(x: number): number {
   return 1 - Math.pow(1 - x, 2);
+}
+
+// determine if the user has flagged reduced motion
+// and determine this by the timestamp that we detected the change
+// we test the timestamp so that we can avoid the first "hyperjump" animation
+// when the page is first loaded
+function canUseMotion(userPrefersMotion: number | false) {
+  // empirical 100ms delay between first page navigation and media query result
+  return userPrefersMotion !== false && Date.now() - userPrefersMotion > 100;
+}
+function usePrefersMotion() {
+  const [userPrefersMotionSince, setUserPrefersMotion] = useState<
+    number | false
+  >(false);
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // execute immediately
+    onPrefersMotionChange();
+    // execute on change
+    mediaQuery.addEventListener('change', onPrefersMotionChange);
+    // remove when no longer needed
+    return () =>
+      mediaQuery.removeEventListener('change', onPrefersMotionChange);
+
+    function onPrefersMotionChange() {
+      setUserPrefersMotion(mediaQuery.matches ? false : Date.now());
+    }
+  }, []);
+
+  return userPrefersMotionSince;
 }
