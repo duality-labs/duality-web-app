@@ -48,9 +48,10 @@ function random(min: number, max: number, rng = Math.random) {
   return min + rng() * (max - min);
 }
 
-let globalOffsetMs = 0;
+let lastDrawTime = 0;
+let lastCanvasWidth = 0;
+let displacementMemory: number[] = [];
 function draw(ctx: CanvasRenderingContext2D, offsetMs = 0): void {
-  globalOffsetMs += offsetMs;
   // get canvas and star stats
   const canvasWidth = ctx.canvas.width;
   const canvasHeight = ctx.canvas.height;
@@ -64,14 +65,51 @@ function draw(ctx: CanvasRenderingContext2D, offsetMs = 0): void {
 
   // clear canvas
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  // unset all displacement memory longer than current star total
+  if (displacementMemory.length !== starsTotal) {
+    displacementMemory = displacementMemory.slice(0, starsTotal);
+  }
 
   // loop through each star and generate a path for each
   const now = Date.now();
   for (let i = 0; i < starsTotal; i += 1) {
     // get placement
     const speed: number = random(maxStarSpeed / 100, maxStarSpeed, prng);
-    const displacement = (now / 1000 + globalOffsetMs) * speed;
+    // const displacement = (now / 1000 + globalOffsetMs) * speed;
+    const displacementNow = (now / 1000 + offsetMs) * speed;
+    const displacementLast = (lastDrawTime / 1000 + 0) * speed;
+    const displacementIncrement = displacementNow - displacementLast;
+    // correct the x placement only if needed
+    const displacementNowWrapAdjusted =
+      (canvasWidth === lastCanvasWidth
+        ? displacementMemory[i]
+        : // add adjustments for moving stars that either appear or disappear
+        // due to a change in the screen size
+        // canvas became either smaller or larger
+        canvasWidth < lastCanvasWidth
+        ? // canvas became smaller:
+          // does the remembered point no longer fit on the page?
+          // then place it somewhere spread across the new range
+          // else keep the old value
+          displacementMemory[i] &&
+          (displacementMemory[i] + displacementIncrement) % lastCanvasWidth >
+            canvasWidth
+          ? displacementNow * 2
+          : undefined
+        : // canvas became larger:
+        // if we have no memory of this point: add it as a new number
+        // else keep the old value
+        i >= displacementMemory.length
+        ? // add the new star within the new area created by the larger canvas
+          (displacementNow % (canvasWidth - lastCanvasWidth)) + lastCanvasWidth
+        : undefined) ??
+      // if no specific new value was set, default to memory or new point creation
+      displacementMemory[i] ??
+      displacementNow;
+    const displacement = displacementNowWrapAdjusted + displacementIncrement;
     const x: number = displacement % canvasWidth;
+    // save position for next time
+    displacementMemory[i] = x;
     const y: number = random(0, canvasHeight, prng);
     const radius = sizeDistribution(random(0, 1, prng)) * maxStarDiameterPixels;
     // get brightness
@@ -95,6 +133,8 @@ function draw(ctx: CanvasRenderingContext2D, offsetMs = 0): void {
     ctx.fill();
   }
   ctx.closePath();
+  lastDrawTime = now;
+  lastCanvasWidth = canvasWidth;
 }
 
 // check canvas and context before drawing entire canvas area
