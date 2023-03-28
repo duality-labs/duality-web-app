@@ -154,7 +154,11 @@ export default function Stars() {
       const now = Date.now();
       if (now < endTimeStamp) {
         const progression = 1 + (1 - (endTimeStamp - now)) / displacementMs;
-        const percent = easeOutCubic(progression);
+        // choose a line between cubic ease-out lines for a smooth in/out
+        // looks a bit like a standard ease curve
+        const percent =
+          2 * Math.min(1, easeOutCubic(progression)) -
+          Math.min(1, easeOutCubic(2 * progression));
         const percentDiff = percent - cumulativePercent;
         cumulativePercent = percent;
         // redraw canvas
