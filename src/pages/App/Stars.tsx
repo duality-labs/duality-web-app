@@ -153,12 +153,12 @@ export default function Stars() {
       // don't animate too frequently: redraw only if enough time has passed
       const now = Date.now();
       if (now < endTimeStamp) {
-        const progression = 1 + (1 - (endTimeStamp - now)) / displacementMs;
-        // choose a line between cubic ease-out lines for a smooth in/out
-        // looks a bit like a standard ease curve
+        const progress = 1 + (1 - (endTimeStamp - now)) / displacementMs;
+        // choose a line between cubic and quadratic ease-out lines
+        // looks a bit like a standard ease-out curve but with a flatter start
         const percent =
-          2 * Math.min(1, easeOutCubic(progression)) -
-          Math.min(1, easeOutCubic(2 * progression));
+          progress * easeOutCubic(progress) +
+          (1 - progress) * easeOutQuad(progress);
         const percentDiff = percent - cumulativePercent;
         cumulativePercent = percent;
         // redraw canvas
@@ -173,4 +173,8 @@ export default function Stars() {
 
 function easeOutCubic(x: number): number {
   return 1 - Math.pow(1 - x, 3);
+}
+
+function easeOutQuad(x: number): number {
+  return 1 - Math.pow(1 - x, 2);
 }
