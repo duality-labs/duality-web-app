@@ -14,6 +14,7 @@ const minStarBrightnessPeriodMS = 5000;
 const maxStarBrightnessPeriodMS = 10000;
 // about 20-30 frames per brightness cycle is enough resolution to look smooth
 const brightnessRefreshRate = minStarBrightnessPeriodMS / 20;
+const maxStarSpeed = 2.5; // pixels per second
 
 function createGradient(
   ctx: CanvasRenderingContext2D,
@@ -59,7 +60,9 @@ function draw(ctx: CanvasRenderingContext2D): void {
   const now = Date.now();
   for (let i = 0; i < starsTotal; i += 1) {
     // get placement
-    const x: number = random(0, canvasWidth, prng);
+    const speed: number = random(maxStarSpeed / 100, maxStarSpeed, prng);
+    const displacement = (now / 1000) * speed;
+    const x: number = displacement % canvasWidth;
     const y: number = random(0, canvasHeight, prng);
     const radius = sizeDistribution(random(0, 1, prng)) * maxStarDiameterPixels;
     // get brightness
