@@ -29,7 +29,7 @@ function draw(ctx: CanvasRenderingContext2D): void {
     ctx.beginPath();
 
     // draw rings
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 8;
     for (let i = 0; i < ringsTotal; i += 1) {
       ctx.beginPath();
       // add some randomness to the ring intervals
@@ -40,7 +40,10 @@ function draw(ctx: CanvasRenderingContext2D): void {
       // and some glowing (high-saturated colors cycling on dark background)
       ctx.strokeStyle = `hsla(${((now / 100 - i * 10) % 350).toFixed(
         0
-      )}, 100%, 75%, ${random(0.25, 0.75, prng).toFixed(3)})`;
+      )}, 100%, 75%, ${(
+        0.25 +
+        0.25 * Math.sin((random(1, 2, prng) * now) / 2000)
+      ).toFixed(3)})`;
       ctx.stroke();
     }
   }
