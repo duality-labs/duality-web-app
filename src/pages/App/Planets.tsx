@@ -1,5 +1,5 @@
 import { useMatch } from 'react-router-dom';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import planetTradeSVG from '../../assets/planets/planet-trade.svg';
 import planetLiquiditySVG from '../../assets/planets/planet-liquidity.svg';
@@ -41,6 +41,28 @@ function Planet({
   width?: number | string;
 }) {
   const active = useMatch(name);
+  const style = useMemo(() => {
+    return {
+      top,
+      bottom,
+      width,
+      // add dynamic left or right calculation
+      ...(left !== undefined && {
+        left: active
+          ? left
+          : `calc(${measurementToString(left)} - ${measurementToString(
+              width
+            )})`,
+      }),
+      ...(right !== undefined && {
+        right: active
+          ? right
+          : `calc(${measurementToString(right)} - ${measurementToString(
+              width
+            )})`,
+      }),
+    };
+  }, [active, top, bottom, width, left, right]);
   return src ? (
     <img
       src={src}
@@ -48,26 +70,7 @@ function Planet({
         .filter(Boolean)
         .join(' ')}
       alt={`planet of ${name}`}
-      style={{
-        top,
-        bottom,
-        width,
-        // add dynamic left or right calculation
-        ...(left !== undefined && {
-          left: active
-            ? left
-            : `calc(${measurementToString(left)} - ${measurementToString(
-                width
-              )})`,
-        }),
-        ...(right !== undefined && {
-          right: active
-            ? right
-            : `calc(${measurementToString(right)} - ${measurementToString(
-                width
-              )})`,
-        }),
-      }}
+      style={style}
     />
   ) : null;
 }
