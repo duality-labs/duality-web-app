@@ -34,8 +34,8 @@ function draw(ctx: CanvasRenderingContext2D): void {
     ctx.beginPath();
 
     // draw rings
-    ctx.lineWidth = 8;
     for (let i = 0; i < ringsTotal; i += 1) {
+      ctx.lineWidth = 8 * (1 - i / ringsTotal) + 1;
       ctx.beginPath();
       // add some randomness to the ring intervals
       const ringInterval = (ringMaxRadiusPx - ringMinRadiusPx) / ringsTotal;
@@ -53,7 +53,9 @@ function draw(ctx: CanvasRenderingContext2D): void {
         between(92 + 8, 67 + 8, factor).toFixed(0) + '%',
         between(30 + 8, 45 + 8, factor).toFixed(0) + '%',
         // adjust the opacity separately for a "layered opacity twinkle" effect
-        between(0, 0.5, Math.sin((now / 2000) * random(1, 2, prng))).toFixed(3),
+        between(0, 0.75, Math.sin((now / 2000) * random(1, 2, prng))).toFixed(
+          3
+        ),
       ];
       ctx.strokeStyle = `hsla(${hsla.join(', ')})`;
       ctx.stroke();
