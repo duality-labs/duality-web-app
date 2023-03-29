@@ -28,38 +28,31 @@ function draw(ctx: CanvasRenderingContext2D): void {
   // clear canvas
   ctx.clearRect(-canvasWidth / 2, -canvasHeight / 2, canvasWidth, canvasHeight);
 
-  // loop through each star and generate a path for each
+  // draw rings
   const now = Date.now();
   for (let i = 0; i < ringsTotal; i += 1) {
+    // make inner orbits thicker than outer orbits
+    ctx.lineWidth = 2.5 + 2.5 * (1 - i / ringsTotal);
     ctx.beginPath();
-
-    // draw rings
-    for (let i = 0; i < ringsTotal; i += 1) {
-      ctx.lineWidth = 8 * (1 - i / ringsTotal) + 1;
-      ctx.beginPath();
-      // add some randomness to the ring intervals
-      const ringInterval = (ringMaxRadiusPx - ringMinRadiusPx) / ringsTotal;
-      const ringRadius =
-        ringMinRadiusPx + (i + random(-0.5, 0.5, prng)) * ringInterval;
-      ctx.arc(0, 0, ringRadius, 0, 2 * Math.PI);
-      // and some glowing (high-saturated colors cycling on dark background)
-      // oscillate between defined gradient color stops
-      // the i part of the factor makes it look like colors "travel outward"
-      const factor = Math.sin(now / 3000 + random(0, 2 * Math.PI, prng));
-      const hsla = [
-        // oscillate the color parts together
-        between(175, 211, factor).toFixed(0),
-        // added saturation and lightness to compenstate for less opacity
-        between(92 + 8, 67 + 8, factor).toFixed(0) + '%',
-        between(30 + 8, 45 + 8, factor).toFixed(0) + '%',
-        // adjust the opacity separately for a "layered opacity twinkle" effect
-        between(0, 0.75, Math.sin((now / 2000) * random(1, 2, prng))).toFixed(
-          3
-        ),
-      ];
-      ctx.strokeStyle = `hsla(${hsla.join(', ')})`;
-      ctx.stroke();
-    }
+    // add some randomness to the ring intervals
+    const ringInterval = (ringMaxRadiusPx - ringMinRadiusPx) / ringsTotal;
+    const ringRadius =
+      ringMinRadiusPx + (i + random(-0.125, 0.125, prng)) * ringInterval;
+    ctx.arc(0, 0, ringRadius, 0, 2 * Math.PI);
+    // and some glowing (high-saturated colors cycling on dark background)
+    // oscillate between defined gradient color stops
+    // the i part of the factor makes it look like colors "travel outward"
+    const factor = Math.sin(now / 3000 + random(0, 2 * Math.PI, prng));
+    const hsla = [
+      // oscillate the color parts together
+      between(175, 211, factor).toFixed(0),
+      between(92, 67, factor).toFixed(0) + '%',
+      between(30, 45, factor).toFixed(0) + '%',
+      // adjust the opacity separately for a "layered opacity twinkle" effect
+      between(0.5, 1, Math.sin((now / 2000) * random(1, 2, prng))).toFixed(3),
+    ];
+    ctx.strokeStyle = `hsla(${hsla.join(', ')})`;
+    ctx.stroke();
   }
   ctx.closePath();
 }
