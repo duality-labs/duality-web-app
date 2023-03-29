@@ -13,6 +13,11 @@ function random(min: number, max: number, rng = Math.random) {
   return min + rng() * (max - min);
 }
 
+function between(min: number, max: number, signedOffset: number): number {
+  const identityOffset = (signedOffset + 1) / 2;
+  return min + identityOffset * (max - min);
+}
+
 function draw(ctx: CanvasRenderingContext2D): void {
   // get canvas and star stats
   const canvasWidth = ctx.canvas.width;
@@ -38,12 +43,19 @@ function draw(ctx: CanvasRenderingContext2D): void {
         ringMinRadiusPx + (i + random(-0.5, 0.5, prng)) * ringInterval;
       ctx.arc(0, 0, ringRadius, 0, 2 * Math.PI);
       // and some glowing (high-saturated colors cycling on dark background)
-      ctx.strokeStyle = `hsla(${((now / 100 - i * 10) % 350).toFixed(
-        0
-      )}, 100%, 75%, ${(
-        0.25 +
-        0.25 * Math.sin((random(1, 2, prng) * now) / 2000)
-      ).toFixed(3)})`;
+      // oscillate between defined gradient color stops
+      // the i part of the factor makes it look like colors "travel outward"
+      const factor = Math.sin(now / 3000 + random(0, 2 * Math.PI, prng));
+      const hsla = [
+        // oscillate the color parts together
+        between(175, 211, factor).toFixed(0),
+        // added saturation and lightness to compenstate for less opacity
+        between(92 + 8, 67 + 8, factor).toFixed(0) + '%',
+        between(30 + 8, 45 + 8, factor).toFixed(0) + '%',
+        // adjust the opacity separately for a "layered opacity twinkle" effect
+        between(0, 0.5, Math.sin((now / 2000) * random(1, 2, prng))).toFixed(3),
+      ];
+      ctx.strokeStyle = `hsla(${hsla.join(', ')})`;
       ctx.stroke();
     }
   }
