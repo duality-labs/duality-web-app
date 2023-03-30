@@ -78,7 +78,8 @@ export function draw2DBezierPath(
 export function draw3DBezierPath(
   context: CanvasRenderingContext2D,
   path: BezierCurve3D[],
-  pointTransformer: PointTransformer
+  pointTransformer: PointTransformer,
+  close = true
 ) {
   context.beginPath();
 
@@ -96,7 +97,9 @@ export function draw3DBezierPath(
     );
   });
 
-  context.closePath();
+  if (close) {
+    context.closePath();
+  }
 }
 
 // radius factor to best approximate circles using bezier curves
