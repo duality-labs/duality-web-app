@@ -1,11 +1,17 @@
 import { CSSProperties, useCallback, useEffect, useRef } from 'react';
 import { alea } from 'seedrandom';
+import {
+  createBezierCircle3D,
+  draw3DBezierPath,
+  getContextWithOriginAtMidpoint,
+  getPointTransformer,
+} from './utils';
 
-const canvasWidth = 1200;
-const canvasHeight = 1200;
+const canvasWidth = 1000;
+const canvasHeight = 400;
 const ringsTotal = 12;
-const ringMinRadiusPx = 190;
-const ringMaxRadiusPx = 600;
+const ringMinRadiusPx = 180;
+const ringMaxRadiusPx = 580;
 
 const orbitRefreshRateHz = 10;
 
@@ -19,26 +25,21 @@ function between(min: number, max: number, signedOffset: number): number {
 }
 
 function draw(ctx: CanvasRenderingContext2D): void {
-  // get canvas and star stats
-  const canvasWidth = ctx.canvas.width;
-  const canvasHeight = ctx.canvas.height;
-
   const prng = alea('duality');
-
-  // clear canvas
-  ctx.clearRect(-canvasWidth / 2, -canvasHeight / 2, canvasWidth, canvasHeight);
 
   // draw rings
   const now = Date.now();
   for (let i = 0; i < ringsTotal; i += 1) {
     // make inner orbits thicker than outer orbits
-    ctx.lineWidth = 2.5 + 2.5 * (1 - i / ringsTotal);
-    ctx.beginPath();
+    ctx.lineWidth = 1 + 2 * (1 - i / ringsTotal);
     // add some randomness to the ring intervals
     const ringInterval = (ringMaxRadiusPx - ringMinRadiusPx) / ringsTotal;
     const ringRadius =
       ringMinRadiusPx + (i + random(-0.125, 0.125, prng)) * ringInterval;
-    ctx.arc(0, 0, ringRadius, 0, 2 * Math.PI);
+
+    const ring = createBezierCircle3D(ringRadius, [0, 0, 0]);
+    draw3DBezierPath(ctx, ring, pointTransformer);
+
     // and some glowing (high-saturated colors cycling on dark background)
     // oscillate between defined gradient color stops
     // the i part of the factor makes it look like colors "travel outward"
@@ -54,26 +55,12 @@ function draw(ctx: CanvasRenderingContext2D): void {
     ctx.strokeStyle = `hsla(${hsla.join(', ')})`;
     ctx.stroke();
   }
-  ctx.closePath();
 }
 
 // check canvas and context before drawing entire canvas area
 function drawOnCanvas(canvas: HTMLCanvasElement | null) {
-  if (canvas) {
-    const context = canvas.getContext('2d');
-    if (context) {
-      // set basis of canvas work to have the center point as 0,0
-      context.setTransform(1, 0, 0, 1, 0, 0);
-      context.translate(canvas.height / 2, canvas.height / 2);
-      context.clearRect(
-        -canvasWidth / 2,
-        -canvasHeight / 2,
-        canvasWidth,
-        canvasHeight
-      );
-      draw(context);
-    }
-  }
+  const context = getContextWithOriginAtMidpoint(canvas);
+  if (context) draw(context);
 }
 
 export default function TradePlanet({
@@ -109,43 +96,24 @@ export default function TradePlanet({
   }, []);
 
   return (
-    <div
-      className={['planet-perspective-container', className]
-        .filter(Boolean)
-        .join(' ')}
-      style={{
-        ...styles.planetContainer,
-        ...style,
-      }}
-    >
-      <canvas
-        className={'planet--trade'}
-        ref={getCanvasRef}
-        style={styles.planet}
-        width={canvasWidth}
-        height={canvasHeight}
-      />
-    </div>
+    <canvas
+      className={['planet--trade', className].filter(Boolean).join(' ')}
+      ref={getCanvasRef}
+      style={style}
+      width={canvasWidth}
+      height={canvasHeight}
+    />
   );
 }
 
-// define styles here because they are mostly unique to this image
-const styles: { [className: string]: CSSProperties } = {
-  planetContainer: {
-    position: 'fixed',
-    width: 1000,
-    height: 400,
-    perspective: 800,
-    perspectiveOrigin: '900px 900px',
-  },
-  planet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: canvasWidth,
-    height: canvasHeight,
-    transform: 'rotateX(38.5deg) rotateY(351deg)',
-    scale: '1',
-    translate: '100px 435px',
-  },
-};
+// define our specific perspective transformation here
+const pointTransformer = getPointTransformer(
+  // rotation X and Y
+  [Math.PI / 2.4, Math.PI / 6],
+  // perspective distance
+  1500,
+  // perspective origin
+  [0, 0, 0],
+  // translate points after transformation
+  [190, 30]
+);
