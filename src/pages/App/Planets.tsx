@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 
 import planetLiquiditySVG from '../../assets/planets/planet-liquidity.svg';
 
-import TradePlanet from './planets/TradePlanet';
+import TradePlanet from './backgrounds/TradePlanet';
 
 import './Planets.scss';
 
