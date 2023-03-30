@@ -1,6 +1,7 @@
 import { useMatch } from 'react-router-dom';
 import React, { useMemo } from 'react';
 
+import planetTradeSVG from '../../assets/planets/planet-trade.svg';
 import planetLiquiditySVG from '../../assets/planets/planet-liquidity.svg';
 
 import TradePlanet from './backgrounds/TradePlanet';
@@ -8,14 +9,16 @@ import TradePlanet from './backgrounds/TradePlanet';
 import './Planets.scss';
 
 const planets: { [planetName: string]: string | undefined } = {
+  trade: planetTradeSVG,
   liquidity: planetLiquiditySVG,
 };
 
 export default function Planets() {
   return (
     <>
-      <Planet name="trade" bottom={0} width={1000} right={0} />
+      <Planet name="trade" bottom={0} width={947} right={0} />
       <Planet name="liquidity" top="10vh" width={774} right={0} />
+      <Planet name="stake" bottom={0} right={0} width={1000} />
     </>
   );
 }
