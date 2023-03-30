@@ -52,6 +52,28 @@ export function translate3D(
   return [x + xOffset, y + yOffset, z + zOffset];
 }
 
+// tPoint finds the point along a curve at fraction of distance traveled: t
+function tPoint([x1, y1]: Point2D, [x2, y2]: Point2D, t: number): Point2D {
+  return [x1 * (1 - t) + x2 * t, y1 * (1 - t) + y2 * t];
+}
+export function splitBezier2D(
+  [p0, p1, p2, p3]: BezierCurve2D,
+  t = 0.5
+): [BezierCurve2D, BezierCurve2D] {
+  const p4 = tPoint(p0, p1, t);
+  const p5 = tPoint(p1, p2, t);
+  const p6 = tPoint(p2, p3, t);
+  const p7 = tPoint(p4, p5, t);
+  const p8 = tPoint(p5, p6, t);
+  const p9 = tPoint(p7, p8, t);
+  return [
+    // first half
+    [p0, p4, p7, p9],
+    // second half
+    [p9, p8, p6, p3],
+  ];
+}
+
 /**
  * path functions
  */
