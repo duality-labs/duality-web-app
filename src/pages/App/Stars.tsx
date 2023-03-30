@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { alea } from 'seedrandom';
 
 import useResizeObserver from '@react-hook/resize-observer';
+
+import { useAnimation, useTransitionAnimation } from './backgrounds/hooks';
 
 import './Stars.scss';
 
@@ -164,56 +166,35 @@ export default function Stars() {
     drawOnCanvas(canvasRef.current);
   });
 
-  const userPrefersMotion = usePrefersMotion();
-
   // add animation for star opacity and/or movement
-  useEffect(() => {
-    let lastTimeStamp = 0;
-    let animationFrame = window?.requestAnimationFrame(onFrame);
-    return () => cancelAnimationFrame(animationFrame);
-
-    function onFrame(timestamp: DOMHighResTimeStamp) {
-      // don't animate too frequently: redraw only if enough time has passed
-      // and animate only if user allows it
-      if (
-        canUseMotion(userPrefersMotion) &&
-        timestamp - lastTimeStamp > brightnessRefreshRate
-      ) {
-        lastTimeStamp = timestamp;
-        // redraw canvas
-        drawOnCanvas(canvasRef.current);
-      }
-      animationFrame = window?.requestAnimationFrame(onFrame);
-    }
-  }, [userPrefersMotion]);
+  const starrySkyAnimation = useCallback(function onStarrySkyAnimationFrame() {
+    // just redraw canvas
+    drawOnCanvas(canvasRef.current);
+  }, []);
+  useAnimation(starrySkyAnimation, brightnessRefreshRate);
 
   // add animation for star movement on navigation change
-  const route = useLocation()?.pathname;
-  useEffect(() => {
-    const endTimeStamp = Date.now() + displacementMs;
-    let cumulativePercent = 0;
-    let animationFrame = window?.requestAnimationFrame(onFrame);
-    return () => cancelAnimationFrame(animationFrame);
+  const hyperjumpAnimation = useCallback(function onHyperjumpTransitionFrame(
+    now: DOMHighResTimeStamp,
+    progress: number,
+    lastProgress: number
+  ): void {
+    // choose a line between cubic and quadratic ease-out lines
+    // looks a bit like a standard ease-out curve but with a flatter start
+    const getPercent = (progress: number) => {
+      return (
+        progress * easeOutCubic(progress) +
+        (1 - progress) * easeOutQuad(progress)
+      );
+    };
+    const percentDiff = getPercent(progress) - getPercent(lastProgress);
+    // redraw canvas
+    drawOnCanvas(canvasRef.current, percentDiff * displacementPx);
+  },
+  []);
 
-    function onFrame(timestamp: DOMHighResTimeStamp) {
-      // don't animate too frequently: redraw only if enough time has passed
-      const now = Date.now();
-      // animate only if user allows it
-      if (canUseMotion(userPrefersMotion) && now < endTimeStamp) {
-        const progress = 1 + (1 - (endTimeStamp - now)) / displacementMs;
-        // choose a line between cubic and quadratic ease-out lines
-        // looks a bit like a standard ease-out curve but with a flatter start
-        const percent =
-          progress * easeOutCubic(progress) +
-          (1 - progress) * easeOutQuad(progress);
-        const percentDiff = percent - cumulativePercent;
-        cumulativePercent = percent;
-        // redraw canvas
-        drawOnCanvas(canvasRef.current, percentDiff * displacementPx);
-        animationFrame = window?.requestAnimationFrame(onFrame);
-      }
-    }
-  }, [route, userPrefersMotion]);
+  const route = useLocation()?.pathname;
+  useTransitionAnimation(hyperjumpAnimation, [route], displacementMs);
 
   return <canvas className="stars-bg" ref={getCanvasRef}></canvas>;
 }
@@ -224,34 +205,4 @@ function easeOutCubic(x: number): number {
 
 function easeOutQuad(x: number): number {
   return 1 - Math.pow(1 - x, 2);
-}
-
-// determine if the user has flagged reduced motion
-// and determine this by the timestamp that we detected the change
-// we test the timestamp so that we can avoid the first "hyperjump" animation
-// when the page is first loaded
-function canUseMotion(userPrefersMotion: number | false) {
-  // empirical 100ms delay between first page navigation and media query result
-  return userPrefersMotion !== false && Date.now() - userPrefersMotion > 100;
-}
-function usePrefersMotion() {
-  const [userPrefersMotionSince, setUserPrefersMotion] = useState<
-    number | false
-  >(false);
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    // execute immediately
-    onPrefersMotionChange();
-    // execute on change
-    mediaQuery.addEventListener('change', onPrefersMotionChange);
-    // remove when no longer needed
-    return () =>
-      mediaQuery.removeEventListener('change', onPrefersMotionChange);
-
-    function onPrefersMotionChange() {
-      setUserPrefersMotion(mediaQuery.matches ? false : Date.now());
-    }
-  }, []);
-
-  return userPrefersMotionSince;
 }
