@@ -16,6 +16,8 @@ import {
 const canvasWidth = 1000;
 const canvasHeight = 400;
 const planetRadiusPx = 100;
+const planetX = 190;
+const planetY = 30;
 const ringsTotal = 12;
 const ringMinRadiusPx = 180;
 const ringMaxRadiusPx = 580;
@@ -79,30 +81,45 @@ function draw(ctx: CanvasRenderingContext2D): void {
     );
 
     // and some glowing (high-saturated colors cycling on dark background)
-    // oscillate between defined gradient color stops
-    // the i part of the factor makes it look like colors "travel outward"
-    const factor = Math.sin(now / 3000 + random(0, 2 * Math.PI, prng));
-    const hsla = [
+    // rotate background gradient colors similar to given in design spec image
+    // get offset between -1 and 1
+    const betweenOffset = (2 * i) / (ringsTotal - 1) - 1;
+    const hsl = [
       // oscillate the color parts together
-      between(175, 211, factor).toFixed(0),
-      between(92, 67, factor).toFixed(0) + '%',
-      between(30, 45, factor).toFixed(0) + '%',
-      // adjust the opacity separately for a "layered opacity twinkle" effect
-      between(0.5, 1, Math.sin((now / 2000) * random(1, 2, prng))).toFixed(3),
+      between(175, 211, betweenOffset).toFixed(0),
+      between(92, 67, betweenOffset).toFixed(0) + '%',
+      between(30, 45, betweenOffset).toFixed(0) + '%',
     ];
+    const hslInverse = [
+      // oscillate the color parts together
+      between(211, 175, betweenOffset).toFixed(0),
+      between(67, 92, betweenOffset).toFixed(0) + '%',
+      between(45, 30, betweenOffset).toFixed(0) + '%',
+    ];
+    const gradientRotation = radianDynamic + (i / ringsTotal) * Math.PI * 1.5;
+    const gradientX = Math.cos(gradientRotation);
+    const gradientY = Math.sin(gradientRotation);
+    const gradient = ctx.createLinearGradient(
+      -ringRadius * gradientX + planetX,
+      (-ringRadius * gradientY) / 2 + planetY,
+      ringRadius * gradientX + planetX,
+      (ringRadius * gradientY) / 2 + planetY
+    );
+    gradient.addColorStop(0, `hsl(${hsl.join(', ')})`);
+    gradient.addColorStop(1, `hsl(${hslInverse.join(', ')})`);
 
-    return [lineWidth, modifiedRing, hsla] as [
+    return [lineWidth, modifiedRing, gradient] as [
       number,
       BezierCurve3D[],
-      string[]
+      CanvasGradient
     ];
   });
 
   // draw scene in parts
   // draw rings behind the planet
-  rings.forEach(([lineWidth, ring, hsla]) => {
+  rings.forEach(([lineWidth, ring, gradient]) => {
     ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = `hsla(${hsla.join(', ')})`;
+    ctx.strokeStyle = gradient;
     draw3DBezierPath(
       ctx,
       ring.slice(0 - ring.length / 2),
@@ -113,9 +130,7 @@ function draw(ctx: CanvasRenderingContext2D): void {
   });
 
   // draw planet
-  const planetX = 190;
-  const planetY = 30;
-  const planet = createBezierCircle2D(planetRadiusPx, [190, 30]);
+  const planet = createBezierCircle2D(planetRadiusPx, [planetX, planetY]);
   draw2DBezierPath(ctx, planet);
   const lightRadius = -50;
   const gradient = ctx.createRadialGradient(
@@ -139,9 +154,9 @@ function draw(ctx: CanvasRenderingContext2D): void {
   ctx.shadowBlur = 0;
 
   // draw rings in front of planet
-  rings.forEach(([lineWidth, ring, hsla]) => {
+  rings.forEach(([lineWidth, ring, gradient]) => {
     ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = `hsla(${hsla.join(', ')})`;
+    ctx.strokeStyle = gradient;
     draw3DBezierPath(
       ctx,
       ring.slice(0, ring.length / 2),
