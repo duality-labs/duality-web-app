@@ -4,14 +4,14 @@
   transition: left 1s, right 1s, opacity 0.5s;
 
   &.active {
-    opacity: 0.4;
+    opacity: 1;
+    // use opacity on imported image files only
+    &:is(img) {
+      opacity: 0.4;
+    }
     transition: left 1s, right 1s, opacity 1.25s;
     // pause between an old background leaving and a new background entering
     transition-delay: 1s, 1s, 0.75s;
-
-    &.planet-perspective-container {
-      opacity: 1;
-    }
   }
 }
 
