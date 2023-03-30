@@ -1,5 +1,7 @@
-import { CSSProperties, useCallback, useEffect, useRef } from 'react';
+import { CSSProperties, useCallback, useRef } from 'react';
 import { alea } from 'seedrandom';
+
+import { useAnimation } from './hooks';
 import {
   BezierCurve3D,
   createBezierCircle2D,
@@ -170,23 +172,11 @@ export default function TradePlanet({
   }, []);
 
   // add animation
-  useEffect(() => {
-    if (!active) return;
-    let lastTimeStamp = 0;
-    let animationFrame = window?.requestAnimationFrame(onFrame);
-    return () => cancelAnimationFrame(animationFrame);
-
-    function onFrame(timestamp: DOMHighResTimeStamp) {
-      // don't animate too frequently: redraw only if enough time has passed
-      // and animate only if user allows it
-      if (timestamp - lastTimeStamp > 1000 / orbitRefreshRateHz) {
-        lastTimeStamp = timestamp;
-        // redraw canvas
-        drawOnCanvas(canvasRef.current);
-      }
-      animationFrame = window?.requestAnimationFrame(onFrame);
-    }
-  }, [active]);
+  const planetWobbleAnimation = useCallback(() => {
+    // redraw canvas
+    drawOnCanvas(canvasRef.current);
+  }, []);
+  useAnimation(planetWobbleAnimation, orbitRefreshRateHz);
 
   return (
     <canvas
