@@ -154,9 +154,11 @@ function drawOnCanvas(canvas: HTMLCanvasElement | null) {
 }
 
 export default function TradePlanet({
+  active = false,
   className,
   style,
 }: {
+  active?: boolean;
   className?: string;
   style?: CSSProperties;
 }) {
@@ -169,6 +171,7 @@ export default function TradePlanet({
 
   // add animation
   useEffect(() => {
+    if (!active) return;
     let lastTimeStamp = 0;
     let animationFrame = window?.requestAnimationFrame(onFrame);
     return () => cancelAnimationFrame(animationFrame);
@@ -183,11 +186,13 @@ export default function TradePlanet({
       }
       animationFrame = window?.requestAnimationFrame(onFrame);
     }
-  }, []);
+  }, [active]);
 
   return (
     <canvas
-      className={['planet--trade', className].filter(Boolean).join(' ')}
+      className={['planet--trade', active && 'active', className]
+        .filter(Boolean)
+        .join(' ')}
       ref={getCanvasRef}
       style={style}
       width={canvasWidth}

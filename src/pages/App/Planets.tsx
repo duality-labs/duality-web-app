@@ -74,9 +74,8 @@ function Planet({
     />
   ) : (
     <TradePlanet
-      className={['planet', 'planet-bg', active && 'active', className]
-        .filter(Boolean)
-        .join(' ')}
+      active={!!active}
+      className={['planet', 'planet-bg', className].filter(Boolean).join(' ')}
       style={style}
     />
   );
