@@ -132,8 +132,11 @@ function draw(ctx: CanvasRenderingContext2D): void {
   gradient.addColorStop(0.61, 'hsl(216, 57%, 13%)');
   gradient.addColorStop(0.62, 'hsl(221, 55%, 12%)');
 
+  ctx.shadowColor = 'hsla(177, 87%, 29%, 0.66)';
+  ctx.shadowBlur = 25;
   ctx.fillStyle = gradient;
   ctx.fill();
+  ctx.shadowBlur = 0;
 
   // draw rings in front of planet
   rings.forEach(([lineWidth, ring, hsla]) => {
