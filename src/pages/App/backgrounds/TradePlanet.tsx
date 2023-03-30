@@ -55,6 +55,9 @@ function draw(ctx: CanvasRenderingContext2D): void {
       // split curve to have more points available
       .flatMap((curve) => splitBezier2D(curve))
       .map<BezierCurve3D>(transformBezier2Dto3D);
+
+    // make second wave height different to first wave height
+    const secondHeight = 0.7;
     const modifiedRing = ring.map(
       (
         [point1, controlPoint1, controlPoint2, point2],
@@ -64,14 +67,26 @@ function draw(ctx: CanvasRenderingContext2D): void {
         // find height at all points on the curve
         const radianStart = (index / rings.length) * 2 * Math.PI;
         const radianEnd = ((index + 1) / rings.length) * 2 * Math.PI;
-        const startHeight = zHeight * Math.sin(radianDynamic + radianStart);
+        const startHeight =
+          zHeight *
+          (Math.sin(radianDynamic + radianStart) +
+            secondHeight * Math.sin(radianDynamic + radianStart * 2));
         const startHeightDelta =
-          zHeight * Math.sin(radianDynamic + radianStart + 0.1) - startHeight;
+          zHeight *
+            (Math.sin(radianDynamic + radianStart + 0.1) +
+              secondHeight * Math.sin(radianDynamic + radianStart * 2 + 0.1)) -
+          startHeight;
         const startControlHeight =
           startHeight + startHeightDelta * maxControlHeight;
-        const endHeight = zHeight * Math.sin(radianDynamic + radianEnd);
+        const endHeight =
+          zHeight *
+          (Math.sin(radianDynamic + radianEnd) +
+            secondHeight * Math.sin(radianDynamic + radianEnd * 2));
         const endHeightDelta =
-          zHeight * Math.sin(radianDynamic + radianEnd + 0.1) - endHeight;
+          zHeight *
+            (Math.sin(radianDynamic + radianEnd + 0.1) +
+              secondHeight * Math.sin(radianDynamic + radianEnd * 2 + 0.1)) -
+          endHeight;
         const endControlHeight = endHeight - endHeightDelta * maxControlHeight;
         return [
           translate3D(point1, [0, 0, startHeight]),
