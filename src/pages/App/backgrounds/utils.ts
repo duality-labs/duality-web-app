@@ -154,7 +154,9 @@ export function getPointTransformer(
   // use typical CSS properties as basis for transformation
   [rotationX, rotationY] = [0, 0],
   perspectiveDistance = 1000,
-  perspectiveOrigin: Point3D = [0, 0, 0]
+  perspectiveOrigin: Point3D = [0, 0, 0],
+  // optional and helpful to move points after transformation
+  [translateX, translateY] = [0, 0]
 ): PointTransformer {
   // find the vector representing looking at the view point from the origin
   const perspectiveVector = [
@@ -193,8 +195,8 @@ export function getPointTransformer(
 
     // compute new point by projecting from the perspective point
     return [
-      px + (t / tDenom) * (qx - px),
-      py + (t / tDenom) * (qy - py),
+      px + (t / tDenom) * (qx - px) + translateX,
+      py + (t / tDenom) * (qy - py) + translateY,
       pz + (t / tDenom) * (qz - pz),
     ];
   };
