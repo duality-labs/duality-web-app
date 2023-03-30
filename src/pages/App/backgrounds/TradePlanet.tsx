@@ -5,11 +5,12 @@ import { useAnimation } from './hooks';
 import {
   BezierCurve3D,
   createBezierCircle2D,
-  createBezierCircle3D,
   draw2DBezierPath,
   draw3DBezierPath,
   getContextWithOriginAtMidpoint,
   getPointTransformer,
+  splitBezier2D,
+  transformBezier2Dto3D,
   translate3D,
 } from './utils';
 
@@ -40,11 +41,7 @@ function draw(ctx: CanvasRenderingContext2D): void {
   const now = Date.now();
   const radianDynamic = ((now / 4000) % Math.PI) * 2;
   const zHeight = 30;
-  const sineWavePeriod = Math.PI;
-  const maxControlHeight =
-    (zHeight * sineWavePeriod) /
-    (Math.PI * 2) /
-    ((4 / 3) * Math.tan(Math.PI / 2 / 4));
+  const maxControlHeight = Math.PI;
 
   const rings = Array.from({ length: ringsTotal }).map((_, i) => {
     // make inner orbits thicker than outer orbits
@@ -54,7 +51,10 @@ function draw(ctx: CanvasRenderingContext2D): void {
     const ringRadius =
       ringMinRadiusPx + (i + random(-0.125, 0.125, prng)) * ringInterval;
 
-    const ring = createBezierCircle3D(ringRadius, [0, 0, 0]);
+    const ring = createBezierCircle2D(ringRadius, [0, 0])
+      // split curve to have more points available
+      .flatMap((curve) => splitBezier2D(curve))
+      .map<BezierCurve3D>(transformBezier2Dto3D);
     const modifiedRing = ring.map(
       (
         [point1, controlPoint1, controlPoint2, point2],
@@ -65,12 +65,14 @@ function draw(ctx: CanvasRenderingContext2D): void {
         const radianStart = (index / rings.length) * 2 * Math.PI;
         const radianEnd = ((index + 1) / rings.length) * 2 * Math.PI;
         const startHeight = zHeight * Math.sin(radianDynamic + radianStart);
+        const startHeightDelta =
+          zHeight * Math.sin(radianDynamic + radianStart + 0.1) - startHeight;
         const startControlHeight =
-          startHeight +
-          maxControlHeight * Math.cos(radianDynamic + radianStart);
+          startHeight + startHeightDelta * maxControlHeight;
         const endHeight = zHeight * Math.sin(radianDynamic + radianEnd);
-        const endControlHeight =
-          endHeight - maxControlHeight * Math.cos(radianDynamic + radianEnd);
+        const endHeightDelta =
+          zHeight * Math.sin(radianDynamic + radianEnd + 0.1) - endHeight;
+        const endControlHeight = endHeight - endHeightDelta * maxControlHeight;
         return [
           translate3D(point1, [0, 0, startHeight]),
           translate3D(controlPoint1, [0, 0, startControlHeight]),
