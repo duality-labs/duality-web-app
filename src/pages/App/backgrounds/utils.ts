@@ -2,16 +2,16 @@
  * types
  */
 
-type Point2D = [x: number, y: number];
-type BezierCurve2D = [
+export type Point2D = [x: number, y: number];
+export type BezierCurve2D = [
   point1: Point2D,
   controlPoint1: Point2D,
   controlPoint2: Point2D,
   point2: Point2D
 ];
 
-type Point3D = [x: number, y: number, z: number];
-type BezierCurve3D = [
+export type Point3D = [x: number, y: number, z: number];
+export type BezierCurve3D = [
   point1: Point3D,
   controlPoint1: Point3D,
   controlPoint2: Point3D,
@@ -37,6 +37,19 @@ export function transformPoint3Dto2D([x, y, _]: Point3D): Point2D {
 }
 export function transformBezier3Dto2D(curve: BezierCurve3D): BezierCurve2D {
   return curve.map<Point2D>(transformPoint3Dto2D) as BezierCurve2D;
+}
+
+export function translate2D(
+  [x, y]: Point2D,
+  [xOffset, yOffset]: Point2D
+): Point2D {
+  return [x + xOffset, y + yOffset];
+}
+export function translate3D(
+  [x, y, z]: Point3D,
+  [xOffset, yOffset, zOffset]: Point3D
+): Point3D {
+  return [x + xOffset, y + yOffset, z + zOffset];
 }
 
 /**

@@ -1,10 +1,14 @@
 import { CSSProperties, useCallback, useEffect, useRef } from 'react';
 import { alea } from 'seedrandom';
 import {
+  BezierCurve3D,
+  createBezierCircle2D,
   createBezierCircle3D,
+  draw2DBezierPath,
   draw3DBezierPath,
   getContextWithOriginAtMidpoint,
   getPointTransformer,
+  translate3D,
 } from './utils';
 
 const canvasWidth = 1000;
@@ -27,8 +31,21 @@ function between(min: number, max: number, signedOffset: number): number {
 function draw(ctx: CanvasRenderingContext2D): void {
   const prng = alea('duality');
 
+  // draw planet
+  const planet = createBezierCircle2D(100, [190, 30]);
+  draw2DBezierPath(ctx, planet);
+  ctx.strokeStyle = '#ff0000';
+  ctx.stroke();
+
   // draw rings
   const now = Date.now();
+  const radianDynamic = ((now / 4000) % Math.PI) * 2;
+  const zHeight = 30;
+  const sineWavePeriod = Math.PI;
+  const maxControlHeight =
+    (zHeight * sineWavePeriod) /
+    (Math.PI * 2) /
+    ((4 / 3) * Math.tan(Math.PI / 2 / 4));
   for (let i = 0; i < ringsTotal; i += 1) {
     // make inner orbits thicker than outer orbits
     ctx.lineWidth = 1 + 2 * (1 - i / ringsTotal);
@@ -38,7 +55,31 @@ function draw(ctx: CanvasRenderingContext2D): void {
       ringMinRadiusPx + (i + random(-0.125, 0.125, prng)) * ringInterval;
 
     const ring = createBezierCircle3D(ringRadius, [0, 0, 0]);
-    draw3DBezierPath(ctx, ring, pointTransformer);
+    const modifiedRing = ring.map(
+      (
+        [point1, controlPoint1, controlPoint2, point2],
+        index,
+        rings
+      ): BezierCurve3D => {
+        // find height at all points on the curve
+        const radianStart = (index / rings.length) * 2 * Math.PI;
+        const radianEnd = ((index + 1) / rings.length) * 2 * Math.PI;
+        const startHeight = zHeight * Math.sin(radianDynamic + radianStart);
+        const startControlHeight =
+          startHeight +
+          maxControlHeight * Math.cos(radianDynamic + radianStart);
+        const endHeight = zHeight * Math.sin(radianDynamic + radianEnd);
+        const endControlHeight =
+          endHeight - maxControlHeight * Math.cos(radianDynamic + radianEnd);
+        return [
+          translate3D(point1, [0, 0, startHeight]),
+          translate3D(controlPoint1, [0, 0, startControlHeight]),
+          translate3D(controlPoint2, [0, 0, endControlHeight]),
+          translate3D(point2, [0, 0, endHeight]),
+        ];
+      }
+    );
+    draw3DBezierPath(ctx, modifiedRing, pointTransformer);
 
     // and some glowing (high-saturated colors cycling on dark background)
     // oscillate between defined gradient color stops
