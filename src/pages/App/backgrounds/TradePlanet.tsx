@@ -13,6 +13,7 @@ import {
 
 const canvasWidth = 1000;
 const canvasHeight = 400;
+const planetRadiusPx = 100;
 const ringsTotal = 12;
 const ringMinRadiusPx = 180;
 const ringMaxRadiusPx = 580;
@@ -31,12 +32,6 @@ function between(min: number, max: number, signedOffset: number): number {
 function draw(ctx: CanvasRenderingContext2D): void {
   const prng = alea('duality');
 
-  // draw planet
-  const planet = createBezierCircle2D(100, [190, 30]);
-  draw2DBezierPath(ctx, planet);
-  ctx.strokeStyle = '#ff0000';
-  ctx.stroke();
-
   // draw rings
   const now = Date.now();
   const radianDynamic = ((now / 4000) % Math.PI) * 2;
@@ -46,9 +41,10 @@ function draw(ctx: CanvasRenderingContext2D): void {
     (zHeight * sineWavePeriod) /
     (Math.PI * 2) /
     ((4 / 3) * Math.tan(Math.PI / 2 / 4));
-  for (let i = 0; i < ringsTotal; i += 1) {
+
+  const rings = Array.from({ length: ringsTotal }).map((_, i) => {
     // make inner orbits thicker than outer orbits
-    ctx.lineWidth = 1 + 2 * (1 - i / ringsTotal);
+    const lineWidth = 1 + 2 * (1 - i / ringsTotal);
     // add some randomness to the ring intervals
     const ringInterval = (ringMaxRadiusPx - ringMinRadiusPx) / ringsTotal;
     const ringRadius =
@@ -79,7 +75,6 @@ function draw(ctx: CanvasRenderingContext2D): void {
         ];
       }
     );
-    draw3DBezierPath(ctx, modifiedRing, pointTransformer);
 
     // and some glowing (high-saturated colors cycling on dark background)
     // oscillate between defined gradient color stops
@@ -93,9 +88,63 @@ function draw(ctx: CanvasRenderingContext2D): void {
       // adjust the opacity separately for a "layered opacity twinkle" effect
       between(0.5, 1, Math.sin((now / 2000) * random(1, 2, prng))).toFixed(3),
     ];
+
+    return [lineWidth, modifiedRing, hsla] as [
+      number,
+      BezierCurve3D[],
+      string[]
+    ];
+  });
+
+  // draw scene in parts
+  // draw rings behind the planet
+  rings.forEach(([lineWidth, ring, hsla]) => {
+    ctx.lineWidth = lineWidth;
     ctx.strokeStyle = `hsla(${hsla.join(', ')})`;
+    draw3DBezierPath(
+      ctx,
+      ring.slice(0 - ring.length / 2),
+      pointTransformer,
+      false
+    );
     ctx.stroke();
-  }
+  });
+
+  // draw planet
+  const planetX = 190;
+  const planetY = 30;
+  const planet = createBezierCircle2D(planetRadiusPx, [190, 30]);
+  draw2DBezierPath(ctx, planet);
+  const lightRadius = -50;
+  const gradient = ctx.createRadialGradient(
+    planetX - planetRadiusPx * 0.2 + lightRadius * Math.sin(radianDynamic),
+    planetY - planetRadiusPx * 1.2 + lightRadius * Math.cos(radianDynamic),
+    0,
+    planetX - planetRadiusPx * 0.2,
+    planetY - planetRadiusPx * 1.2,
+    planetRadiusPx * 3
+  );
+  gradient.addColorStop(0.14, 'hsl(180, 79%, 29%)');
+  gradient.addColorStop(0.21, 'hsl(181, 78%, 28%)');
+  gradient.addColorStop(0.32, 'hsl(184, 75%, 25%)');
+  gradient.addColorStop(0.61, 'hsl(216, 57%, 13%)');
+  gradient.addColorStop(0.62, 'hsl(221, 55%, 12%)');
+
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // draw rings in front of planet
+  rings.forEach(([lineWidth, ring, hsla]) => {
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = `hsla(${hsla.join(', ')})`;
+    draw3DBezierPath(
+      ctx,
+      ring.slice(0, ring.length / 2),
+      pointTransformer,
+      false
+    );
+    ctx.stroke();
+  });
 }
 
 // check canvas and context before drawing entire canvas area
