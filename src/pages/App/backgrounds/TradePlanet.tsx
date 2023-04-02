@@ -23,7 +23,7 @@ const ringsTotal = 12;
 const ringMinRadiusPx = 180;
 const ringMaxRadiusPx = 580;
 
-const orbitRefreshRateHz = 10;
+const orbitRefreshRateHz = 50;
 
 function random(min: number, max: number, rng = Math.random) {
   return min + rng() * (max - min);
@@ -39,9 +39,8 @@ function draw(ctx: CanvasRenderingContext2D): void {
 
   // draw rings
   const now = Date.now();
-  const radianDynamic = ((now / 4000) % Math.PI) * 2;
+  const radianDynamic = ((now / 12000) % Math.PI) * 2;
   const zHeight = 30;
-  const maxControlHeight = Math.PI;
 
   const rings = Array.from({ length: ringsTotal }).map((_, i) => {
     // make inner orbits thicker than outer orbits
@@ -54,40 +53,64 @@ function draw(ctx: CanvasRenderingContext2D): void {
     const ring = createBezierCircle2D(ringRadius, [0, 0])
       // split curve to have more points available
       .flatMap((curve) => splitBezier2D(curve))
+      .flatMap((curve) => splitBezier2D(curve))
+      .flatMap((curve) => splitBezier2D(curve))
+      .flatMap((curve) => splitBezier2D(curve))
+      .flatMap((curve) => splitBezier2D(curve))
       .map<BezierCurve3D>(transformBezier2Dto3D);
 
     // make second wave height different to first wave height
-    const secondHeight = 0.7;
+    const secondHeight = 2;
     const modifiedRing = ring.map(
       (
         [point1, controlPoint1, controlPoint2, point2],
         index,
         rings
       ): BezierCurve3D => {
+        const startControlPointDistance = Math.sqrt(
+          Math.pow(controlPoint1[0] - point1[0], 2) +
+            Math.pow(controlPoint1[1] - point1[1], 2)
+        );
+        const endControlPointDistance = Math.sqrt(
+          Math.pow(controlPoint2[0] - point2[0], 2) +
+            Math.pow(controlPoint2[1] - point2[1], 2)
+        );
+        const deltaRadians = 0.01;
         // find height at all points on the curve
         const radianStart = (index / rings.length) * 2 * Math.PI;
+        const radianControlPointFromStart = Math.atan(
+          startControlPointDistance / ringRadius
+        );
+        const radianControlPointFromEnd = -Math.atan(
+          endControlPointDistance / ringRadius
+        );
         const radianEnd = ((index + 1) / rings.length) * 2 * Math.PI;
         const startHeight =
           zHeight *
-          (Math.sin(radianDynamic + radianStart) +
-            secondHeight * Math.sin(radianDynamic + radianStart * 2));
+          (Math.sin(radianDynamic + radianStart) * 2 +
+            secondHeight * Math.sin(radianDynamic + radianStart * 3));
         const startHeightDelta =
           zHeight *
-            (Math.sin(radianDynamic + radianStart + 0.1) +
-              secondHeight * Math.sin(radianDynamic + radianStart * 2 + 0.1)) -
+            (Math.sin(radianDynamic + radianStart + deltaRadians) * 2 +
+              secondHeight *
+                Math.sin(radianDynamic + radianStart * 3 + deltaRadians)) -
           startHeight;
         const startControlHeight =
-          startHeight + startHeightDelta * maxControlHeight;
+          startHeight +
+          (startHeightDelta / deltaRadians) * radianControlPointFromStart;
         const endHeight =
           zHeight *
-          (Math.sin(radianDynamic + radianEnd) +
-            secondHeight * Math.sin(radianDynamic + radianEnd * 2));
+          (Math.sin(radianDynamic + radianEnd) * 2 +
+            secondHeight * Math.sin(radianDynamic + radianEnd * 3));
         const endHeightDelta =
           zHeight *
-            (Math.sin(radianDynamic + radianEnd + 0.1) +
-              secondHeight * Math.sin(radianDynamic + radianEnd * 2 + 0.1)) -
+            (Math.sin(radianDynamic + radianEnd + deltaRadians) * 2 +
+              secondHeight *
+                Math.sin(radianDynamic + radianEnd * 3 + deltaRadians)) -
           endHeight;
-        const endControlHeight = endHeight - endHeightDelta * maxControlHeight;
+        const endControlHeight =
+          endHeight +
+          (endHeightDelta / deltaRadians) * radianControlPointFromEnd;
         return [
           translate3D(point1, [0, 0, startHeight]),
           translate3D(controlPoint1, [0, 0, startControlHeight]),
