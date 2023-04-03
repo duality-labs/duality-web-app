@@ -34,7 +34,7 @@ function App() {
               <Routes>
                 <Route index element={<MyLiquidityOrTrade />} />
                 <Route path="trade" element={<Swap />} />
-                <Route path="liquidity" element={<Pool />} />
+                <Route path="pairs" element={<Pool />} />
                 <Route path="stake" element={<div>Coming soon</div>} />
                 <Route path="*" element={<div>Not found</div>} />
               </Routes>

@@ -689,7 +689,7 @@ function Pool() {
       >
         <PoolsTableCard
           className="flex flex-auto"
-          title="Pools"
+          title="Pairs"
           switchValue={selectedPoolsList}
           switchOnChange={setSelectedPoolsList}
           onTokenPairClick={([token0, token1]) => {
