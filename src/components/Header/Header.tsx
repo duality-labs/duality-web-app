@@ -15,7 +15,7 @@ const keplrLogoURI =
 
 const pageLinkMap = {
   '/swap': 'Swap',
-  '/liquidity': 'Liquidity',
+  '/pairs': 'Pairs',
   '/stake': 'Stake',
 };
 

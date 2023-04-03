@@ -8,14 +8,14 @@ import './Planets.scss';
 
 const planets: { [planetName: string]: string | undefined } = {
   swap: planetTradeSVG,
-  liquidity: planetLiquiditySVG,
+  pairs: planetLiquiditySVG,
 };
 
 export default function Planets() {
   return (
     <>
       <Planet name="swap" bottom={0} width={947} right={0} />
-      <Planet name="liquidity" top="10vh" width={774} right={0} />
+      <Planet name="pairs" top="10vh" width={774} right={0} />
     </>
   );
 }
