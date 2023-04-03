@@ -476,11 +476,11 @@ function Swap() {
               </button>
             ) : (
               <button
-                className="submit-button button-primary"
+                className="submit-button button-ghost"
                 type="button"
                 disabled
               >
-                Enter Token Amount
+                Enter Asset Amount
               </button>
             )
           ) : (
