@@ -31,6 +31,9 @@ button,
   border-color: var(--error) !important;
   color: hsla(0, 73%, 97%, 1);
 }
+.button-light {
+  border-color: var(--light-alt);
+}
 .button-dark {
   background-color: hsla(212, 28%, 17%, 1);
   color: white;
