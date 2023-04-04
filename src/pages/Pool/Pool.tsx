@@ -815,7 +815,7 @@ function Pool() {
                       <>
                         <span>{feeType.description}</span>
                         <span> </span>
-                        <span className="badge">
+                        <span className="badge badge-xs">
                           {feeLiquidityMap?.[feeType.fee]
                             .multipliedBy(100)
                             .toFixed(0) ?? '0'}
