@@ -63,11 +63,6 @@
     display: flex;
     gap: paddings.$p-3;
     margin-left: auto;
-
-    button {
-      border: 1px solid var(--default-alt);
-      padding: paddings.$p-0 paddings.$p-3 paddings.$p-0;
-    }
   }
 
   .token-group-value {
