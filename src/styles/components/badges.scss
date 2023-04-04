@@ -24,6 +24,9 @@
     color: var(--#{$name});
   }
 }
+.badge-light {
+  border-color: var(--light-alt);
+}
 
 // size
 .badge {
