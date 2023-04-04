@@ -9,9 +9,13 @@
   @include paddings.padding('x', 3);
   @include paddings.padding('y', 2);
   border-radius: paddings.$p-sm;
-  font-size: font-size.$text-xs;
+  font-size: font-size.$button;
   border: 1px solid transparent;
   white-space: nowrap;
+}
+
+.badge-sm {
+  font-size: font-size.$text-xs;
 }
 
 @each $name in colors.$main {
@@ -24,10 +28,6 @@
     background-color: var(--#{$name}-alt);
     color: var(--#{$name});
   }
-}
-
-.badge {
-  @extend .badge-primary;
 }
 
 .badge-large {
