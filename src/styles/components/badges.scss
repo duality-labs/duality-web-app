@@ -4,6 +4,8 @@
 @use '../font/size.scss' as font-size;
 
 .badge {
+  display: flex;
+  align-items: center;
   @include paddings.padding('x', 3);
   @include paddings.padding('y', 2);
   font-weight: font-weight.$bold;
