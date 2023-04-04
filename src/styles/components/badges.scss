@@ -8,10 +8,9 @@
   align-items: center;
   @include paddings.padding('x', 3);
   @include paddings.padding('y', 2);
-  font-weight: font-weight.$bold;
-  border-radius: 100vmax;
+  border-radius: paddings.$p-sm;
   font-size: font-size.$text-xs;
-  border: 0px none transparent;
+  border: 1px solid transparent;
   white-space: nowrap;
 }
 
