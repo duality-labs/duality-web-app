@@ -75,7 +75,6 @@ export default function useShareValueMap() {
             ? [tokenB, tokenA]
             : [tokenA, tokenB];
           const extendedShare: ShareValue = { share, token0, token1 };
-          const ticks = indexer[pairId]?.ticks || [];
           const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
             tickIndex,
             feeIndex
@@ -83,12 +82,12 @@ export default function useShareValueMap() {
           if (tickIndex0 === undefined || tickIndex1 === undefined) {
             return result;
           }
-          const tick0 = ticks.find(
+          const tick0 = (indexer[pairId]?.token0Ticks || []).find(
             (tick) =>
               tick.feeIndex.isEqualTo(feeIndex) &&
               tick.tickIndex.isEqualTo(tickIndex0)
           );
-          const tick1 = ticks.find(
+          const tick1 = (indexer[pairId]?.token1Ticks || []).find(
             (tick) =>
               tick.feeIndex.isEqualTo(feeIndex) &&
               tick.tickIndex.isEqualTo(tickIndex1)

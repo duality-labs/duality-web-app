@@ -42,7 +42,8 @@ export type TokenAddress = string; // a valid hex address, eg. 0x01
 export interface PairInfo {
   token0: string;
   token1: string;
-  ticks: TickInfo[];
+  token0Ticks: TickInfo[];
+  token1Ticks: TickInfo[];
 }
 
 /**
@@ -231,27 +232,44 @@ function transformData(ticks: Array<DexTick>): PairMap {
     // token0 and token1 are sorted by the back end
     const [token0, token1] = pairId.split('<>');
     if (token0 && token1 && tokenMap[token0] && tokenMap[token1] && tickData) {
-      result[pairId] = result[pairId] || {
-        token0: token0,
-        token1: token1,
-        ticks: [],
-      };
+      result[pairId] =
+        result[pairId] ||
+        ({
+          token0: token0,
+          token1: token1,
+          token0Ticks: [],
+          token1Ticks: [],
+        } as PairInfo);
 
       feeTypes.forEach(({ fee }, feeIndex) => {
         if (
           !isNaN(parseInt(tickIndex || '')) &&
           parseFloat(price0To1 || '') > 0
         ) {
-          result[pairId].ticks.push({
-            token0: tokenMap[token0],
-            token1: tokenMap[token1],
-            tickIndex: new BigNumber(tickIndex || 0),
-            price: new BigNumber(1).dividedBy(price0To1 || 0),
-            feeIndex: new BigNumber(feeIndex),
-            fee: new BigNumber(fee || 0),
-            reserve0: new BigNumber(tickData.reserve0?.[feeIndex] || 0),
-            reserve1: new BigNumber(tickData.reserve1?.[feeIndex] || 0),
-          });
+          if (tickData.reserve0 && Number(tickData.reserve0[feeIndex]) > 0) {
+            result[pairId].token0Ticks.push({
+              token0: tokenMap[token0],
+              token1: tokenMap[token1],
+              tickIndex: new BigNumber(tickIndex || 0),
+              price: new BigNumber(1).dividedBy(price0To1 || 0),
+              feeIndex: new BigNumber(feeIndex),
+              fee: new BigNumber(fee || 0),
+              reserve0: new BigNumber(tickData.reserve0?.[feeIndex] || 0),
+              reserve1: new BigNumber(0),
+            });
+          }
+          if (tickData.reserve1 && Number(tickData.reserve1[feeIndex]) > 0) {
+            result[pairId].token1Ticks.push({
+              token0: tokenMap[token0],
+              token1: tokenMap[token1],
+              tickIndex: new BigNumber(tickIndex || 0),
+              price: new BigNumber(1).dividedBy(price0To1 || 0),
+              feeIndex: new BigNumber(feeIndex),
+              fee: new BigNumber(fee || 0),
+              reserve0: new BigNumber(0),
+              reserve1: new BigNumber(tickData.reserve1?.[feeIndex] || 0),
+            });
+          }
         }
       });
     }
@@ -265,8 +283,15 @@ function transformData(ticks: Array<DexTick>): PairMap {
       result[pairId] = {
         ...pairInfo,
         // sort each pair's ticks
-        ticks: pairInfo.ticks.sort((a, b) => {
-          // sort by tickIndex (price) then feeIndex
+        token0Ticks: pairInfo.token0Ticks.sort((a, b) => {
+          // sort by decreasing tickIndex (price) then feeIndex
+          return (
+            b.tickIndex.comparedTo(a.tickIndex) ||
+            b.feeIndex.comparedTo(a.feeIndex)
+          );
+        }),
+        token1Ticks: pairInfo.token1Ticks.sort((a, b) => {
+          // sort by increasing tickIndex (price) then feeIndex
           return (
             a.tickIndex.comparedTo(b.tickIndex) ||
             a.feeIndex.comparedTo(b.feeIndex)

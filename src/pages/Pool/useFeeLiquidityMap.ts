@@ -20,7 +20,7 @@ export default function useFeeLiquidityMap(
   const feeLiquidityMap = useMemo(() => {
     if (!pair) return;
 
-    const ticks = Object.values(pair.ticks);
+    const ticks = pair.token0Ticks.concat(pair.token1Ticks);
     const feeTypeLiquidity = feeTypes.reduce<Record<FeeType['fee'], BigNumber>>(
       (result, feeType) => {
         result[feeType.fee] = new BigNumber(0);
