@@ -647,6 +647,19 @@ function Pool() {
     'all'
   );
 
+  const confirmButton = (
+    <input
+      className="button-primary text-medium mt-4 p-3"
+      type="submit"
+      disabled={
+        (isValueAZero && isValueBZero) ||
+        !hasSufficientFundsA ||
+        !hasSufficientFundsB
+      }
+      value="Confirm"
+    />
+  );
+
   if (!tokenA || !tokenB || !valuesConfirmed) {
     return (
       <form
@@ -751,7 +764,7 @@ function Pool() {
             <div className="col flex-centered ml-auto">Transaction Details</div>
           </div>
           <hr className="mt-3 mb-4" />
-          <div className="flex row flow-wrap flow-nowrap-lg">
+          <div className="flex col row-lg gapx-lg">
             <div className="flex col col--left">
               <div className="chart-header row my-4">
                 <TokenPairLogos
@@ -834,16 +847,7 @@ function Pool() {
                   />
                 </div>
               </div>
-              <input
-                className="button-primary text-medium mt-4 p-3"
-                type="submit"
-                disabled={
-                  (isValueAZero && isValueBZero) ||
-                  !hasSufficientFundsA ||
-                  !hasSufficientFundsB
-                }
-                value="Confirm"
-              />
+              <div className="col-lg">{confirmButton}</div>
             </div>
             <div className="flex col col--right">
               <div className="chart-header row flow-wrap my-4">
@@ -1028,6 +1032,7 @@ function Pool() {
                 </div>
               )}
             </div>
+            <div className="col pt-lg col-lg-hide">{confirmButton}</div>
           </div>
         </div>
       </div>

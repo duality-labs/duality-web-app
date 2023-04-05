@@ -75,6 +75,39 @@ a {
 .col {
   flex-direction: column;
 }
+@media (min-width: 576px) {
+  .row-sm {
+    flex-direction: row;
+  }
+  .col-sm {
+    flex-direction: column;
+  }
+}
+@media (min-width: 768px) {
+  .row-md {
+    flex-direction: row;
+  }
+  .col-md {
+    flex-direction: column;
+  }
+}
+@media (min-width: 992px) {
+  .row-lg {
+    flex-direction: row;
+  }
+  .col-lg {
+    flex-direction: column;
+  }
+}
+@media (min-width: 1200px) {
+  .row-xl {
+    flex-direction: row;
+  }
+  .col-xl {
+    flex-direction: column;
+  }
+}
+
 .flex {
   flex: 1 1 0;
 }
