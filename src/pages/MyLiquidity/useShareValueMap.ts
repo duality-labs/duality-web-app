@@ -24,8 +24,8 @@ export interface ShareValue {
 }
 export interface TickShareValue extends ShareValue {
   // todo: take from useShareValueMap??
-  tick0: TickInfo;
-  tick1: TickInfo;
+  tick0?: TickInfo;
+  tick1?: TickInfo;
 }
 export interface TickShareValueMap {
   [pairID: string]: Array<TickShareValue>;
@@ -91,41 +91,50 @@ export default function useShareValueMap() {
               tick.feeIndex.isEqualTo(feeIndex) &&
               tick.tickIndex.isEqualTo(tickIndex1)
           );
-          const totalShares =
-            tick0 && tick1
-              ? calculateShares({
-                  price: tick0.price,
-                  reserve0: tick0.reserve0,
-                }).plus(
-                  calculateShares({
-                    price: tick1.price,
-                    reserve1: tick1.reserve1,
-                  })
-                )
-              : new BigNumber(0);
+          const tick0Shares =
+            tick0 &&
+            calculateShares({
+              price: tick0.price,
+              reserve0: tick0.reserve0,
+            });
+          const tick1Shares =
+            tick1 &&
+            calculateShares({
+              price: tick1.price,
+              reserve1: tick1.reserve1,
+            });
+          // total shares if found
+          const totalShares = new BigNumber(0)
+            .plus(tick0Shares || 0)
+            .plus(tick1Shares || 0);
+
           // add optional tick data from indexer
-          if (tick0 && tick1 && totalShares) {
+          if (totalShares.isGreaterThan(0)) {
             const shareFraction = new BigNumber(sharesOwned ?? 0).dividedBy(
               totalShares
             );
-            extendedShare.userReserves0 = shareFraction.multipliedBy(
-              // convert to big tokens
-              getAmountInDenom(
-                tick0.token0,
-                tick0.reserve0,
-                tick0.token0.address,
-                tick0.token0.display
-              ) || '0'
-            );
-            extendedShare.userReserves1 = shareFraction.multipliedBy(
-              // convert to big tokens
-              getAmountInDenom(
-                tick1.token1,
-                tick1.reserve1,
-                tick1.token1.address,
-                tick1.token1.display
-              ) || '0'
-            );
+            extendedShare.userReserves0 = tick0
+              ? shareFraction.multipliedBy(
+                  // convert to big tokens
+                  getAmountInDenom(
+                    tick0.token0,
+                    tick0.reserve0,
+                    tick0.token0.address,
+                    tick0.token0.display
+                  ) || '0'
+                )
+              : new BigNumber(0);
+            extendedShare.userReserves1 = tick1
+              ? shareFraction.multipliedBy(
+                  // convert to big tokens
+                  getAmountInDenom(
+                    tick1.token1,
+                    tick1.reserve1,
+                    tick1.token1.address,
+                    tick1.token1.display
+                  ) || '0'
+                )
+              : new BigNumber(0);
             // add TickShareValue to TickShareValueMap
             result[pairId] = result[pairId] || [];
             result[pairId].push({
