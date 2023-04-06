@@ -4,8 +4,6 @@ import BigNumber from 'bignumber.js';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import apiClient from '../../lib/web3/apiClient';
-import { Token } from '../../components/TokenPicker/hooks';
-import { TickInfo } from '../../lib/web3/indexerProvider';
 import {
   checkMsgErrorToast,
   checkMsgOutOfGasToast,
@@ -14,25 +12,12 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
-import { IndexedShare } from '../../lib/web3/utils/shares';
 
-export interface ShareValue {
-  share: IndexedShare;
-  token0: Token;
-  token1: Token;
-  userReserves0?: BigNumber;
-  userReserves1?: BigNumber;
-}
-export interface TickShareValue extends ShareValue {
-  tick0: TickInfo;
-  tick1: TickInfo;
-}
+import { TickShareValue } from './useShareValueMap';
+
 export interface EditedTickShareValue extends TickShareValue {
   tickDiff0: BigNumber;
   tickDiff1: BigNumber;
-}
-export interface TickShareValueMap {
-  [pairID: string]: Array<TickShareValue>;
 }
 
 interface SendEditResponse {
