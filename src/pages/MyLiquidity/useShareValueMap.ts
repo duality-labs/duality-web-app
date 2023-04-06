@@ -24,7 +24,6 @@ export interface ShareValue {
 }
 export interface TickShareValue extends ShareValue {
   // todo: take from useShareValueMap??
-  feeIndex: number;
   tick0: TickInfo;
   tick1: TickInfo;
 }
@@ -133,7 +132,6 @@ export default function useShareValueMap() {
               ...extendedShare,
               tick0,
               tick1,
-              feeIndex: Number(feeIndex),
             });
           }
         }
