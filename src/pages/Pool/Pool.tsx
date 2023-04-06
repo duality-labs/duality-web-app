@@ -17,12 +17,7 @@ import {
   faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
 
-import {
-  getBalance,
-  TickInfo,
-  useBankBalances,
-  useIndexerPairData,
-} from '../../lib/web3/indexerProvider';
+import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 
 import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -32,8 +27,9 @@ import LiquiditySelector from '../../components/LiquiditySelector';
 import {
   TickGroup,
   Tick,
+  getRangeIndexes,
 } from '../../components/LiquiditySelector/LiquiditySelector';
-import useCurrentPriceFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
+import { useCurrentPriceFromTicks } from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
@@ -43,10 +39,10 @@ import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
 import {
-  formatMaxSignificantDigits,
-  formatPrice,
+  formatAmount,
+  formatMaximumSignificantDecimals,
 } from '../../lib/utils/number';
-import { priceToTickIndex } from '../../lib/web3/utils/ticks';
+import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 
@@ -55,10 +51,17 @@ import TokenPairLogos from '../../components/TokenPairLogos';
 import RadioInput from '../../components/RadioInput';
 
 // the default resolution for a number in 18 decimal places
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
+const {
+  REACT_APP__MAX_FRACTION_DIGITS = '',
+  REACT_APP__MAX_TICK_INDEXES = '',
+} = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
-const priceMin = Math.pow(10, -maxFractionDigits);
-const priceMax = Math.pow(10, +maxFractionDigits);
+const [
+  priceMinIndex = Number.MIN_SAFE_INTEGER,
+  priceMaxIndex = Number.MAX_SAFE_INTEGER,
+] = REACT_APP__MAX_TICK_INDEXES.split(',').map(Number).filter(Boolean);
+const priceMin = tickIndexToPrice(new BigNumber(priceMinIndex)).toNumber();
+const priceMax = tickIndexToPrice(new BigNumber(priceMaxIndex)).toNumber();
 const priceRangeLimits: [number, number] = [priceMin, priceMax];
 const defaultFee = '0.30%';
 const defaultLiquidityShape =
@@ -66,21 +69,28 @@ const defaultLiquidityShape =
 
 const defaultPrecision = '6';
 
+const formatRangeString = (value: BigNumber.Value, significantDecimals = 3) => {
+  return formatAmount(
+    formatMaximumSignificantDecimals(value, significantDecimals),
+    { minimumSignificantDigits: significantDecimals }
+  );
+};
+
 const restrictPriceRangeValues = (
   valueString: string,
-  [priceMin, priceMax]: [number | string, number | string] = priceRangeLimits
-) => {
+  [priceMin, priceMax]: [number, number] = priceRangeLimits
+): string => {
   const value = new BigNumber(valueString);
   if (value.isLessThan(priceMin)) {
-    return formatPrice(priceMin);
+    return new BigNumber(priceMin).toFixed();
   }
   if (value.isGreaterThan(priceMax)) {
-    return formatPrice(priceMax);
+    return new BigNumber(priceMax).toFixed();
   }
   if (!value.isNaN()) {
-    return formatPrice(value.toFixed(), { minimumSignificantDigits: 3 });
+    return valueString;
   }
-  return formatPrice(1);
+  return '1';
 };
 
 export default function PoolPage() {
@@ -115,25 +125,42 @@ function Pool() {
     }
   }, [tokenB, tokenList]);
 
+  const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
+  const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
+  const values = useMemo(
+    (): [string, string] => [valueA, valueB],
+    [valueA, valueB]
+  );
+
+  const isValueAZero = new BigNumber(valueA).isZero();
+  const isValueBZero = new BigNumber(valueB).isZero();
+
+  const [valuesConfirmed, setValuesConfirmed] = useState(false);
+  const valuesValid =
+    !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
+
   const currentPriceFromTicks = useCurrentPriceFromTicks(
     tokenA?.address,
     tokenB?.address
   );
 
+  const edgePrice = currentPriceFromTicks;
+
   // start with a default range of nothing, but is should be quickly set
   // after price information becomes available
-  const [rangeMin, setRangeMinUnprotected] = useState('1');
-  const [rangeMax, setRangeMaxUnprotected] = useState('1');
-  const [pairPriceMin, pairPriceMax] = useMemo(
-    () =>
-      currentPriceFromTicks
-        ? [
-            formatPrice(currentPriceFromTicks.dividedBy(1000).toFixed()),
-            formatPrice(currentPriceFromTicks.multipliedBy(1000).toFixed()),
-          ]
-        : [priceMin, priceMax],
-    [currentPriceFromTicks]
-  );
+  const [fractionalRangeMin, setRangeMinUnprotected] = useState('1');
+  const [fractionalRangeMax, setRangeMaxUnprotected] = useState('1');
+  const [significantDecimals, setSignificantDecimals] = useState(3);
+
+  const [pairPriceMin, pairPriceMax] = useMemo<[number, number]>(() => {
+    const spreadFactor = 1000;
+    return edgePrice
+      ? [
+          edgePrice.dividedBy(spreadFactor).toNumber(),
+          edgePrice.multipliedBy(spreadFactor).toNumber(),
+        ]
+      : [priceMin, priceMax];
+  }, [edgePrice]);
   // protect price range extents
   const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
     (valueOrCallback) => {
@@ -163,33 +190,10 @@ function Pool() {
         });
       }
       const value = valueOrCallback;
-
       setRangeMaxUnprotected(restrictValue(value));
     },
     [pairPriceMin, pairPriceMax]
   );
-
-  const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
-  const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
-  const values = useMemo(
-    (): [string, string] => [valueA, valueB],
-    [valueA, valueB]
-  );
-
-  const isValueAZero = new BigNumber(valueA).isZero();
-  const isValueBZero = new BigNumber(valueB).isZero();
-
-  const [valuesConfirmed, setValuesConfirmed] = useState(false);
-  const valuesValid =
-    !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
-
-  const { data: { ticks = [], token0, token1 } = {} } = useIndexerPairData(
-    tokenA?.address,
-    tokenB?.address
-  );
-
-  const invertedTokenOrder =
-    tokenA?.address === token1 && tokenB?.address === token0;
 
   const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
     defaultLiquidityShape
@@ -256,37 +260,6 @@ function Pool() {
     const userTicks = userTicksOrCallback;
     setUserTicksUnprotected(userTicks.map(restrictTickPrices));
   }, []);
-
-  // note warning price, the price at which warning states should be shown
-  // for one-sided liquidity this is the extent of data to one side
-  const edgePrice =
-    useMemo(() => {
-      const allTicks = (ticks || [])
-        .filter(
-          (tick): tick is TickInfo =>
-            tick?.reserve0.isGreaterThan(0) || tick?.reserve1.isGreaterThan(0)
-        ) // filter to only ticks
-        .sort((a, b) => a.price.comparedTo(b.price))
-        .map((tick) => [tick.price, tick.reserve0, tick.reserve1]);
-
-      const isReserveAZero = allTicks.every(([, reserveA]) =>
-        reserveA.isZero()
-      );
-      const isReserveBZero = allTicks.every(([, , reserveB]) =>
-        reserveB.isZero()
-      );
-
-      const startTick = allTicks[0];
-      const endTick = allTicks[allTicks.length - 1];
-      const edgePrice =
-        (isReserveAZero && startTick?.[0]) ||
-        (isReserveBZero && endTick?.[0]) ||
-        undefined;
-      return (
-        edgePrice &&
-        (invertedTokenOrder ? new BigNumber(1).dividedBy(edgePrice) : edgePrice)
-      );
-    }, [ticks, invertedTokenOrder]) || currentPriceFromTicks;
 
   const [invertTokenOrder, setInvertTokenOrder] = useState<boolean>(() => {
     return edgePrice?.isLessThan(1) || false;
@@ -415,8 +388,7 @@ function Pool() {
           tokenA,
           tokenB,
           new BigNumber(feeType.fee),
-          normalizedTicks,
-          invertTokenOrder
+          normalizedTicks
         );
       }
     },
@@ -428,7 +400,6 @@ function Pool() {
       feeType,
       userTicks,
       sendDepositRequest,
-      invertTokenOrder,
     ]
   );
 
@@ -439,12 +410,48 @@ function Pool() {
     );
   }, [precision]);
 
+  const edgePriceIndex = useMemo(() => {
+    return edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
+  }, [edgePrice]);
+
+  const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
+    const fractionalRangeMinIndex = priceToTickIndex(
+      new BigNumber(fractionalRangeMin),
+      'none'
+    ).toNumber();
+    const fractionalRangeMaxIndex = priceToTickIndex(
+      new BigNumber(fractionalRangeMax),
+      'none'
+    ).toNumber();
+    return getRangeIndexes(
+      edgePriceIndex,
+      fractionalRangeMinIndex,
+      fractionalRangeMaxIndex
+    );
+  }, [fractionalRangeMin, fractionalRangeMax, edgePriceIndex]);
+
+  const formatSignificantDecimalRangeString = useCallback(
+    (price: BigNumber.Value) => {
+      return formatRangeString(price, significantDecimals);
+    },
+    [significantDecimals]
+  );
+
+  const rangeMin = useMemo<number>(
+    () => tickIndexToPrice(new BigNumber(rangeMinIndex)).toNumber(),
+    [rangeMinIndex]
+  );
+  const rangeMax = useMemo<number>(
+    () => tickIndexToPrice(new BigNumber(rangeMaxIndex)).toNumber(),
+    [rangeMaxIndex]
+  );
+
   const swapAll = useCallback(() => {
-    const flipAroundCurrentPriceSwap = (value: string) => {
+    const flipAroundCurrentPriceSwap = (value: BigNumber.Value) => {
       // invert price
       const newValue = new BigNumber(1).dividedBy(new BigNumber(value));
       // round number to formatted string
-      return formatMaxSignificantDigits(newValue);
+      return formatSignificantDecimalRangeString(newValue);
     };
     setInvertTokenOrder((order) => !order);
     setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
@@ -464,6 +471,7 @@ function Pool() {
     inputValueB,
     setInputValueA,
     setInputValueB,
+    formatSignificantDecimalRangeString,
   ]);
 
   const [chartTypeSelected] = useState<'AMM' | 'Orderbook'>('AMM');
@@ -472,69 +480,64 @@ function Pool() {
   const tickCount = Number(precision || 1);
   useLayoutEffect(() => {
     function getUserTicks(): TickGroup {
-      const tickStart = new BigNumber(rangeMin);
-      const tickEnd = new BigNumber(rangeMax);
+      const indexMin = rangeMinIndex;
+      const indexMax = rangeMaxIndex;
       // set multiple ticks across the range
       const feeIndex = feeType ? feeTypes.indexOf(feeType) : -1;
       if (
         tokenA &&
         tokenB &&
         tickCount > 1 &&
-        tickEnd.isGreaterThan(tickStart) &&
+        indexMin !== undefined &&
+        indexMax !== undefined &&
+        indexMax >= indexMin &&
         feeType &&
         feeIndex >= 0
       ) {
         const tokenAmountA = new BigNumber(values[0]);
         const tokenAmountB = new BigNumber(values[1]);
-        // spread evenly after adding padding on each side
-        if (tickStart.isZero() || tickEnd.isZero()) return [];
 
-        // space new ticks by a multiplication ratio gap
-        // use Math.pow becuse BigNumber does not support logarithm calculation
-        // todo: use BigNumber logarithm compatible library to more accurately calculate tick spacing,
-        //       with many ticks the effect of this precision may be quite noticable
-        const tickGapRatio = new BigNumber(
-          Math.pow(tickEnd.dividedBy(tickStart).toNumber(), 1 / (tickCount - 1))
-        );
+        // space new ticks linearly across tick (which is exponentially across price)
         const tickCounts: [number, number] = [0, 0];
-        const tickPrices = Array.from({ length: tickCount }).reduceRight<
-          Tick[]
-        >((result, _, index, tickPrices) => {
-          const lastPrice: BigNumber | undefined = result[0]?.price;
-          const price = lastPrice?.isLessThan(edgePrice || 0)
-            ? // calculate price from left (to have exact left value)
-              tickStart.multipliedBy(tickGapRatio.exponentiatedBy(index))
-            : // calculate price from right (to have exact right value)
-              lastPrice?.dividedBy(tickGapRatio) ?? tickEnd;
+        // space ticks across unique tick indexes
+        const tickPrices = Array.from({ length: tickCount })
+          .reduce<number[]>((result, _, index) => {
+            const tickIndex = Math.round(
+              indexMin +
+                (index * (indexMax - indexMin)) / Math.max(1, tickCount - 1)
+            );
+            // add index only if it is unique
+            return !result.includes(tickIndex)
+              ? [...result, tickIndex]
+              : result;
+          }, [])
+          .map<Tick>((tickIndex, index, tickIndexes) => {
+            const price = tickIndexToPrice(new BigNumber(tickIndex));
 
-          // choose whether token A or B should be added for the tick at this price
-          const invertToken =
-            isValueAZero || isValueBZero
-              ? // enforce singe-sided liquidity has single ticks
-                isValueBZero
-              : // for double-sided liquidity split the ticks somewhere
-              edgePrice
-              ? // split the ticks at the current price if it exists
-                price.isLessThan(edgePrice)
-              : // split the ticks by index if no price exists yet
-                index < tickPrices.length / 2;
-          // add to count
-          tickCounts[invertToken ? 0 : 1] += 1;
-          const roundedPrice = new BigNumber(formatPrice(price.toFixed()));
-          return [
-            {
+            // choose whether token A or B should be added for the tick at this price
+            const invertToken =
+              isValueAZero || isValueBZero
+                ? // enforce singe-sided liquidity has single ticks
+                  isValueBZero
+                : // for double-sided liquidity split the ticks somewhere
+                edgePrice
+                ? // split the ticks at the current price if it exists
+                  price.isLessThan(edgePrice)
+                : // split the ticks by index if no price exists yet
+                  index < tickIndexes.length / 2;
+            // add to count
+            tickCounts[invertToken ? 0 : 1] += 1;
+            return {
               reserveA: new BigNumber(invertToken ? 1 : 0),
               reserveB: new BigNumber(invertToken ? 0 : 1),
-              price: roundedPrice,
-              tickIndex: priceToTickIndex(roundedPrice).toNumber(),
+              price: price,
+              tickIndex: tickIndex,
               fee: new BigNumber(feeType.fee),
               feeIndex: feeIndex,
               tokenA: tokenA,
               tokenB: tokenB,
-            },
-            ...result,
-          ];
-        }, []);
+            };
+          });
 
         const shapeFactor = (() => {
           return (() => {
@@ -587,23 +590,21 @@ function Pool() {
       else if (
         tokenA &&
         tokenB &&
-        (tickCount === 1 || tickStart.isEqualTo(tickEnd)) &&
+        indexMin !== undefined &&
+        indexMax !== undefined &&
+        indexMin === indexMax &&
         feeType &&
         feeIndex &&
         feeIndex >= 0
       ) {
-        const price = tickStart.plus(tickEnd).dividedBy(2);
-        const roundedPrice = new BigNumber(formatPrice(price.toFixed()));
-        const isValueA =
-          !isValueAZero && !isValueBZero
-            ? edgePrice?.isGreaterThan(price) || isValueAZero
-            : !isValueAZero;
+        const tickIndex = Math.round((indexMin + indexMax) / 2);
+        const price = tickIndexToPrice(new BigNumber(tickIndex));
         return [
           {
-            reserveA: new BigNumber(isValueA ? 1 : 0),
-            reserveB: new BigNumber(isValueA ? 0 : 1),
-            price: roundedPrice,
-            tickIndex: priceToTickIndex(roundedPrice).toNumber(),
+            reserveA: new BigNumber(!isValueAZero ? 1 : 0),
+            reserveB: new BigNumber(!isValueBZero ? 1 : 0),
+            price: price,
+            tickIndex: tickIndex,
             fee: new BigNumber(feeType.fee),
             feeIndex: feeIndex,
             tokenA: tokenA,
@@ -648,8 +649,8 @@ function Pool() {
     tokenA,
     tokenB,
     liquidityShape,
-    rangeMin,
-    rangeMax,
+    rangeMinIndex,
+    rangeMaxIndex,
     tickCount,
     edgePrice,
     invertTokenOrder,
@@ -674,6 +675,19 @@ function Pool() {
 
   const [selectedPoolsList, setSelectedPoolsList] = useState<'all' | 'mine'>(
     'all'
+  );
+
+  const confirmButton = (
+    <input
+      className="button-primary text-medium mt-4 p-3"
+      type="submit"
+      disabled={
+        (isValueAZero && isValueBZero) ||
+        !hasSufficientFundsA ||
+        !hasSufficientFundsB
+      }
+      value="Confirm"
+    />
   );
 
   if (!tokenA || !tokenB || !valuesConfirmed) {
@@ -780,7 +794,7 @@ function Pool() {
             <div className="col flex-centered ml-auto">Transaction Details</div>
           </div>
           <hr className="mt-3 mb-4" />
-          <div className="flex row flow-wrap flow-nowrap-lg">
+          <div className="flex col row-lg gapx-lg">
             <div className="flex col col--left">
               <div className="chart-header row my-4">
                 <TokenPairLogos
@@ -863,16 +877,7 @@ function Pool() {
                   />
                 </div>
               </div>
-              <input
-                className="button-primary text-medium mt-4 p-3"
-                type="submit"
-                disabled={
-                  (isValueAZero && isValueBZero) ||
-                  !hasSufficientFundsA ||
-                  !hasSufficientFundsB
-                }
-                value="Confirm"
-              />
+              <div className="col-lg">{confirmButton}</div>
             </div>
             <div className="flex col col--right">
               <div className="chart-header row flow-wrap my-4">
@@ -898,11 +903,11 @@ function Pool() {
                 <LiquiditySelector
                   tokenA={tokenA}
                   tokenB={tokenB}
-                  rangeMin={rangeMin}
-                  rangeMax={rangeMax}
+                  rangeMin={fractionalRangeMin}
+                  rangeMax={fractionalRangeMax}
                   setRangeMin={setRangeMin}
                   setRangeMax={setRangeMax}
-                  ticks={ticks}
+                  setSignificantDecimals={setSignificantDecimals}
                   userTickSelected={userTickSelected}
                   setUserTickSelected={setUserTickSelected}
                   feeTier={feeType?.fee}
@@ -918,10 +923,32 @@ function Pool() {
               </div>
               <div className="price-card mt-4">
                 <div className="card-row">
-                  <StepNumberInput
+                  <StepNumberInput<number>
                     title="MIN PRICE"
                     value={rangeMin}
-                    onChange={setRangeMin}
+                    onChange={(value: BigNumber.Value) => {
+                      setRangeMin(() => {
+                        const newIndex = priceToTickIndex(
+                          new BigNumber(value),
+                          'round'
+                        );
+                        // place the price halfway inside the fractional index limits
+                        // of the desired tick index bucket (remember these are rounded
+                        // away from zero on a split-token chart) so when the user
+                        // drags the limit controls we are not 1px from an index change
+                        if (edgePriceIndex !== undefined) {
+                          const offset = newIndex.isGreaterThanOrEqualTo(
+                            Math.round(edgePriceIndex)
+                          )
+                            ? +0.5
+                            : -0.5;
+                          return tickIndexToPrice(
+                            newIndex.plus(offset)
+                          ).toFixed();
+                        }
+                        return tickIndexToPrice(newIndex).toFixed();
+                      });
+                    }}
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
@@ -932,17 +959,38 @@ function Pool() {
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
                         : 'No Tokens'
                     }
-                    minSignificantDigits={Math.min(
-                      Math.max(rangeMin.length + 1),
-                      8
-                    )}
+                    minSignificantDigits={(valueString: string) =>
+                      Math.min(Math.max(valueString.length + 1), 8)
+                    }
                     maxSignificantDigits={maxFractionDigits + 2}
-                    format={formatStepNumberPriceInput}
+                    format={formatSignificantDecimalRangeString}
                   />
-                  <StepNumberInput
+                  <StepNumberInput<number>
                     title="MAX PRICE"
                     value={rangeMax}
-                    onChange={setRangeMax}
+                    onChange={(value: BigNumber.Value) => {
+                      setRangeMax(() => {
+                        const newIndex = priceToTickIndex(
+                          new BigNumber(value),
+                          'round'
+                        );
+                        // place the price halfway inside the fractional index limits
+                        // of the desired tick index bucket (remember these are rounded
+                        // away from zero on a split-token chart) so when the user
+                        // drags the limit controls we are not 1px from an index change
+                        if (edgePriceIndex !== undefined) {
+                          const offset = newIndex.isLessThanOrEqualTo(
+                            Math.round(edgePriceIndex)
+                          )
+                            ? -0.5
+                            : +0.5;
+                          return tickIndexToPrice(
+                            newIndex.plus(offset)
+                          ).toFixed();
+                        }
+                        return tickIndexToPrice(newIndex).toFixed();
+                      });
+                    }}
                     stepFunction={logarithmStep}
                     pressedDelay={500}
                     pressedInterval={100}
@@ -953,12 +1001,11 @@ function Pool() {
                         ? `${tokenA.symbol} per ${tokenB.symbol}`
                         : 'No Tokens'
                     }
-                    minSignificantDigits={Math.min(
-                      Math.max(rangeMax.length + 1),
-                      8
-                    )}
+                    minSignificantDigits={(valueString: string) =>
+                      Math.min(Math.max(valueString.length + 1), 8)
+                    }
                     maxSignificantDigits={maxFractionDigits + 2}
-                    format={formatStepNumberPriceInput}
+                    format={formatSignificantDecimalRangeString}
                   />
                 </div>
               </div>
@@ -1023,7 +1070,7 @@ function Pool() {
                             pressedDelay={500}
                             pressedInterval={100}
                             stepFunction={logarithmStep}
-                            value={userTicks[userTickSelected].price.toFixed()}
+                            value={userTicks[userTickSelected].price.toNumber()}
                             onChange={(value) => {
                               setUserTicks((userTicks) => {
                                 // skip non-update
@@ -1048,7 +1095,7 @@ function Pool() {
                               });
                             }}
                             maxSignificantDigits={maxFractionDigits + 1}
-                            format={formatStepNumberPriceInput}
+                            format={formatSignificantDecimalRangeString}
                           />
                         </div>
                       )}
@@ -1057,6 +1104,7 @@ function Pool() {
                 </div>
               )}
             </div>
+            <div className="col pt-lg col-lg-hide">{confirmButton}</div>
           </div>
         </div>
       </div>
@@ -1105,47 +1153,54 @@ function LiquidityShapeOptionComponent({
   );
 }
 
-// calculates set from last siginificant digit (eg. 0.8 -> 0.9 -> 1 -> 2)
-// todo: could respect trailing zeros is strings were passed
-function logarithmStep(valueString: string, direction: number): string {
+// calculates set from last digit (eg. 0.98 -> 0.99 -> 1.0 -> 1.1)
+// while respecting significant digits expectation
+function logarithmStep(
+  valueNumber: number,
+  direction: number,
+  valueString: string
+): number {
   const value = new BigNumber(valueString);
-  const significantDigits = value.sd(true);
+  const significantDigits = value.sd(false);
+  const trailingZeros =
+    valueString.length - valueString.replace(/0*(.?)0+$/g, '$1').length;
   const orderOfMagnitude = Math.floor(Math.log10(value.toNumber()));
-  const orderOfMagnitudeLastDigit = orderOfMagnitude - significantDigits;
-  // remove leading zeros then get significant digit
-  const decimalPlaces = value.decimalPlaces();
-  const lastDigit =
-    decimalPlaces > 0
-      ? // get decimal place
-        value.toFixed(decimalPlaces).slice(-1)
-      : // get significant figure
-        value.toFixed(0).at(significantDigits - 1);
-  return direction >= 0
-    ? value.isGreaterThan(0)
-      ? value
-          .plus(
-            new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit + 1)
-          )
-          .toFixed()
-      : new BigNumber(10).exponentiatedBy(-maxFractionDigits).toFixed()
-    : value
-        .minus(
-          new BigNumber(10).exponentiatedBy(
-            // reduce the order of magnitude of the value if going from a singular '1'
-            // eg. 1 -> 0.9,  0.1 -> 0.09,  0.01 -> 0.009
-            // so that the user doesn't go to 0 on a logarithmic scale
-            orderOfMagnitudeLastDigit +
-              (lastDigit === '1' && value.sd(false) === 1 ? 0 : +1)
-          )
-        )
-        .toFixed();
-}
+  // find order of magnitude of last digit to use as basis of add/sub value
+  const orderOfMagnitudeLastDigit =
+    orderOfMagnitude - significantDigits - trailingZeros + 1;
 
-// note: this cause odd issues when trying to control the number via keys or StepNumberInput
-// instead of dragging (eg. select all and press 1 -> 1.00, press "1.5" -> 1.005)
-// This could be fixed by using a string for all cases of price as BigNumber
-// objects are not aware of how many significant digits they have.
-function formatStepNumberPriceInput(value: string) {
-  const formatted = formatPrice(value, { minimumSignificantDigits: 3 });
-  return formatted.length > value.length ? formatted : value;
+  // add or remove values
+  if (direction !== 0) {
+    // if adding to value
+    if (direction > 0) {
+      const nextStep = value.plus(
+        new BigNumber(10).exponentiatedBy(orderOfMagnitudeLastDigit)
+      );
+      // go to the next index value if it is further away than this new value
+      // otherwise the nextStep value may get rounded back down and not change
+      const nextIndexStep = tickIndexToPrice(
+        priceToTickIndex(value, 'round').plus(1)
+      );
+      return BigNumber.max(nextStep, nextIndexStep).toNumber();
+    }
+    // if subtracting from value
+    else {
+      const nextStep = value.minus(
+        new BigNumber(10).exponentiatedBy(
+          // reduce the order of magnitude of the value if going from a singular '1'
+          // eg. 1 -> 0.9,  0.1 -> 0.09,  0.01 -> 0.009
+          // so that the user doesn't go to 0 on a logarithmic scale
+          orderOfMagnitudeLastDigit +
+            (significantDigits === 1 && !!valueString.match(/1/) ? -1 : 0)
+        )
+      );
+      // go to the next index value if it is further away than this new value
+      // otherwise the nextStep value may get rounded back down and not change
+      const nextIndexStep = tickIndexToPrice(
+        priceToTickIndex(value, 'round').minus(1)
+      );
+      return BigNumber.min(nextStep, nextIndexStep).toNumber();
+    }
+  }
+  return valueNumber;
 }

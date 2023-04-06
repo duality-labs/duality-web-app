@@ -31,7 +31,6 @@ export default function LiquidityDistribution({
   rangeMax,
   setRangeMin,
   setRangeMax,
-  ticks,
   userTickSelected,
   setUserTickSelected,
   feeTier,
@@ -103,7 +102,6 @@ export default function LiquidityDistribution({
               rangeMax={rangeMax}
               setRangeMin={setRangeMin}
               setRangeMax={setRangeMax}
-              ticks={ticks}
               userTickSelected={userTickSelected}
               setUserTickSelected={setUserTickSelected}
               feeTier={feeTier}

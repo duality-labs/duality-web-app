@@ -15,7 +15,11 @@ import {
 } from '../../components/Notifications/common';
 import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { readEvents } from '../../lib/web3/utils/txs';
-import { getPairID, useIndexerData } from '../../lib/web3/indexerProvider';
+import {
+  getPairID,
+  hasMatchingPairOfOrder,
+  useIndexerData,
+} from '../../lib/web3/indexerProvider';
 import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
 
 interface SendDepositResponse {
@@ -34,8 +38,7 @@ export function useDeposit(): [
     tokenA: Token | undefined,
     tokenB: Token | undefined,
     fee: BigNumber | undefined,
-    userTicks: TickGroup,
-    invertedOrder?: boolean
+    userTicks: TickGroup
   ) => Promise<void>
 ] {
   // get previous ticks context
@@ -51,8 +54,7 @@ export function useDeposit(): [
       tokenA: Token | undefined,
       tokenB: Token | undefined,
       fee: BigNumber | undefined,
-      userTicks: TickGroup,
-      invertedOrder = false
+      userTicks: TickGroup
     ) {
       try {
         // check for correct inputs
@@ -65,6 +67,36 @@ export function useDeposit(): [
         }
         if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
           throw new Error('Fee not set');
+        }
+
+        // do not make requests if they are not routable
+        if (!tokenA.address) {
+          throw new Error(
+            `Token ${tokenA.symbol} has no address on the Duality chain`
+          );
+        }
+        if (!tokenB.address) {
+          throw new Error(
+            `Token ${tokenB.symbol} has no address on the Duality chain`
+          );
+        }
+
+        const forward = pairs?.[getPairID(tokenA.address, tokenB.address)];
+        const reverse = pairs?.[getPairID(tokenB.address, tokenA.address)];
+        const pairTicks = forward || reverse;
+
+        if (!pairs || !pairTicks) {
+          throw new Error(
+            `Cannot initialize a new pair here: ${[
+              `our calculation of pair ID as either "${getPairID(
+                tokenA.address,
+                tokenB.address
+              )}" or "${getPairID(
+                tokenB.address,
+                tokenA.address
+              )}" may be incorrect.`,
+            ].join(', ')}`
+          );
         }
 
         // check all user ticks and filter to non-zero ticks
@@ -85,6 +117,56 @@ export function useDeposit(): [
               throw new Error('Amounts not set');
             }
             return reserveA.isGreaterThan(0) || reserveB.isGreaterThan(0);
+          })
+          // convert virtual (indexer) Ticks into "real" index Ticks (which are expected in the API)
+          .flatMap((tick) => {
+            const hasA = tick.reserveA.isGreaterThan(0);
+            const hasB = tick.reserveB.isGreaterThan(0);
+
+            // the order of tick indexes appears reversed here because we are
+            // converting from virtual to real ticks (not real to virual)
+            const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
+              tick.tickIndex,
+              tick.feeIndex
+            );
+
+            if (tickIndex0 === undefined || tickIndex1 === undefined) {
+              return [];
+            }
+
+            const [forward] = hasMatchingPairOfOrder(
+              pairs,
+              tick.tokenA.address || '',
+              tick.tokenB.address || ''
+            );
+
+            const ticks: TickGroup = [];
+
+            // add reserveA as a single tick
+            if (hasA) {
+              ticks.push({
+                ...tick,
+                // tick indexes must be in form of "token0/1" not "tokenA/B":
+                // we invert the indexes because we work with price1to0
+                // and the backend works on the basis of price0to1
+                tickIndex: forward ? -tickIndex0 : -tickIndex1,
+                reserveB: new BigNumber(0),
+              });
+            }
+
+            // add reserveB as a single tick
+            if (hasB) {
+              ticks.push({
+                ...tick,
+                // tick indexes must be in form of "token0/1" not "tokenA/B":
+                // we invert the indexes because we work with price1to0
+                // and the backend works on the basis of price0to1
+                tickIndex: forward ? -tickIndex1 : -tickIndex0,
+                reserveA: new BigNumber(0),
+              });
+            }
+
+            return ticks;
           })
           .reduce<TickGroup>((ticks, tick) => {
             // find equivalent tick
@@ -122,37 +204,23 @@ export function useDeposit(): [
         setIsValidating(true);
         setError(undefined);
 
-        // do not make requests if they are not routable
-        if (!tokenA.address) {
-          throw new Error(
-            `Token ${tokenA.symbol} has no address on the Duality chain`
-          );
-        }
-        if (!tokenB.address) {
-          throw new Error(
-            `Token ${tokenB.symbol} has no address on the Duality chain`
-          );
-        }
-        const forward = pairs?.[getPairID(tokenA.address, tokenB.address)];
-        const reverse = pairs?.[getPairID(tokenB.address, tokenA.address)];
-        const pairTicks = (forward || reverse)?.ticks;
         const gasEstimate = filteredUserTicks.reduce((gasEstimate, tick) => {
           const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
             tick.tickIndex,
             tick.feeIndex
           );
           const existingTick =
-            tickIndex0 && tickIndex1
-              ? pairTicks?.find((pairTick) => {
-                  return (
-                    pairTick.tickIndex.isEqualTo(tickIndex0) ||
-                    pairTick.tickIndex.isEqualTo(tickIndex1)
-                  );
+            pairTicks && tickIndex0 !== undefined && tickIndex1 !== undefined
+              ? !!pairTicks.token0Ticks.find((pairTick) => {
+                  return pairTick.tickIndex.isEqualTo(tickIndex0);
+                }) &&
+                !!pairTicks.token1Ticks.find((pairTick) => {
+                  return pairTick.tickIndex.isEqualTo(tickIndex1);
                 })
               : undefined;
-          // add 50000 for existing ticks
+          // add 60000 for existing ticks
           // add 50000 more for initializing a new tick
-          return gasEstimate + (existingTick ? 50000 : 100000);
+          return gasEstimate + (existingTick ? 60000 : 100000);
           // add 80000 base gas
           // add 60000 for initilizing a new tick pair
         }, 80000 + (!pairTicks ? 60000 : 0));
@@ -172,11 +240,10 @@ export function useDeposit(): [
                   tokenA: tokenA.address,
                   tokenB: tokenB.address,
                   receiver: web3Address,
-                  // tick indexes must be in the form of "token0/1 index"
+                  // note: tick indexes must be in the form of "token0/1 index"
                   // not "tokenA/B" index, so inverted order indexes should be reversed
-                  tickIndexes: filteredUserTicks.map(
-                    (tick) => tick.tickIndex * (!invertedOrder ? -1 : 1)
-                  ),
+                  // check this commit for changes if this behavior changes
+                  tickIndexes: filteredUserTicks.map((tick) => tick.tickIndex),
                   feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
                   amountsA: filteredUserTicks.map(
                     ({ reserveA }) =>
