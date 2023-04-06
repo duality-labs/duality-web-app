@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.103](https://github.com/duality-labs/duality-web-app/compare/v0.1.102...v0.1.103) (2023-04-06)
+
+
+### Features
+
+* improve chart functional resolution ([#333](https://github.com/duality-labs/duality-web-app/issues/333)) ([b8f6d33](https://github.com/duality-labs/duality-web-app/commit/b8f6d337f9faca1a5cb46ac4eddc44001225b3d7))
+
 ## [0.1.102](https://github.com/duality-labs/duality-web-app/compare/v0.1.101...v0.1.102) (2023-04-05)
 
 
