@@ -20,12 +20,12 @@ export interface ShareValue {
   share: IndexedShare;
   token0: Token;
   token1: Token;
-  userReserves0?: BigNumber;
-  userReserves1?: BigNumber;
 }
 export interface TickShareValue extends ShareValue {
   tick0?: TickInfo;
   tick1?: TickInfo;
+  userReserves0?: BigNumber;
+  userReserves1?: BigNumber;
 }
 export interface EditedTickShareValue extends TickShareValue {
   tickDiff0: BigNumber;

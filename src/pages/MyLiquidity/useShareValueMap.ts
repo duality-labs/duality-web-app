@@ -19,13 +19,13 @@ export interface ShareValue {
   share: IndexedShare;
   token0: Token;
   token1: Token;
-  userReserves0?: BigNumber;
-  userReserves1?: BigNumber;
 }
 export interface TickShareValue extends ShareValue {
   // todo: take from useShareValueMap??
   tick0?: TickInfo;
   tick1?: TickInfo;
+  userReserves0?: BigNumber;
+  userReserves1?: BigNumber;
 }
 export interface TickShareValueMap {
   [pairID: string]: Array<TickShareValue>;
@@ -73,7 +73,7 @@ export default function useShareValueMap() {
           const [token0, token1] = inverted
             ? [tokenB, tokenA]
             : [tokenA, tokenB];
-          const extendedShare: ShareValue = { share, token0, token1 };
+          const shareValue: ShareValue = { share, token0, token1 };
           const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
             tickIndex,
             feeIndex
@@ -113,6 +113,11 @@ export default function useShareValueMap() {
             const shareFraction = new BigNumber(sharesOwned ?? 0).dividedBy(
               totalShares
             );
+            const extendedShare: TickShareValue = {
+              ...shareValue,
+              tick0,
+              tick1,
+            };
             extendedShare.userReserves0 = tick0
               ? shareFraction.multipliedBy(
                   // convert to big tokens
@@ -137,11 +142,7 @@ export default function useShareValueMap() {
               : new BigNumber(0);
             // add TickShareValue to TickShareValueMap
             result[pairId] = result[pairId] || [];
-            result[pairId].push({
-              ...extendedShare,
-              tick0,
-              tick1,
-            });
+            result[pairId].push(extendedShare);
           }
         }
         return result;
