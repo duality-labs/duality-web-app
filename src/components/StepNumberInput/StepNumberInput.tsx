@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useOnContinualPress from '../hooks/useOnContinualPress';
 
 import './StepNumberInput.scss';
@@ -7,6 +7,7 @@ import './StepNumberInput.scss';
 type Direction = 1 | -1;
 
 interface StepNumberInputProps<T extends number | string = string> {
+  onInput?: (value: T) => void;
   onChange?: (value: T) => void;
   tabbableButtons?: boolean;
   pressedInterval?: number;
@@ -18,18 +19,19 @@ interface StepNumberInputProps<T extends number | string = string> {
   readOnly?: boolean; // force the input to be an uneditable span instead of an input
   title?: string;
   value: T;
-  stepFunction?: (value: T, direction: number) => T;
+  stepFunction?: (value: T, direction: number, valueString: string) => T;
   step?: string | number;
   max?: string | number;
   min?: string | number;
-  minSignificantDigits?: number;
-  maxSignificantDigits?: number;
+  minSignificantDigits?: number | ((valueString: string) => number);
+  maxSignificantDigits?: number | ((valueString: string) => number);
   parse?: (value: string) => T;
   format?: (value: T) => string;
 }
 
 export default function StepNumberInput<T extends number | string = string>({
-  onChange,
+  onInput,
+  onChange = onInput,
   tabbableButtons = false,
   pressedInterval = 50,
   disableLimit = true,
@@ -44,8 +46,8 @@ export default function StepNumberInput<T extends number | string = string>({
   step: rawStep = 1,
   max: rawMax,
   min: rawMin,
-  minSignificantDigits = 2,
-  maxSignificantDigits = 6,
+  minSignificantDigits: minSignificantDigitsOrCallback = 2,
+  maxSignificantDigits: maxSignificantDigitsOrCallback = 6,
   parse,
   format = String,
 }: StepNumberInputProps<T>) {
@@ -61,12 +63,14 @@ export default function StepNumberInput<T extends number | string = string>({
   }
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [internalValue = currentValue, setInternalValue] = useState<string>();
+
   /**
    * Makes sure the value is valid number within the proper range
    * @param newValue the proposed new value to be checked
    */
   const maybeUpdate = useCallback(
-    (newValueString: string) => {
+    (newValueString: string, onChange?: (value: T) => void) => {
       if (onChange) {
         const newValue = new BigNumber(newValueString);
         // note: allow unsafe parsing to deal with parsing to type T
@@ -84,7 +88,7 @@ export default function StepNumberInput<T extends number | string = string>({
         }
       }
     },
-    [min, max, onChange, parse]
+    [min, max, parse]
   );
 
   /**
@@ -95,12 +99,12 @@ export default function StepNumberInput<T extends number | string = string>({
     (direction: Direction) => {
       if (maybeUpdate) {
         const newValue = stepFunction
-          ? new BigNumber(stepFunction(value, direction))
+          ? new BigNumber(stepFunction(value, direction, currentValue))
           : new BigNumber(value).plus(step * direction);
-        maybeUpdate(newValue.toFixed());
+        maybeUpdate(newValue.toFixed(), onChange);
       }
     },
-    [step, stepFunction, maybeUpdate, value]
+    [step, stepFunction, maybeUpdate, onChange, value, currentValue]
   );
   const onSubStep = useCallback(() => onStep(-1), [onStep]);
   const onAddStep = useCallback(() => onStep(+1), [onStep]);
@@ -134,13 +138,6 @@ export default function StepNumberInput<T extends number | string = string>({
     pressedInterval
   );
 
-  /**
-   * To be called when there is a change with the input
-   */
-  const onInputChange = useCallback(() => {
-    maybeUpdate(inputRef.current?.value || '0');
-  }, [maybeUpdate]);
-
   useEffect(() => {
     function handleArrowKeyStep(event: KeyboardEvent) {
       // catch arrow presses
@@ -163,22 +160,44 @@ export default function StepNumberInput<T extends number | string = string>({
     }
   }, [onSubStep, onAddStep]);
 
+  // note: these dynamic styles could be made redundant if a monospaced font
+  //       is used for the numeric text here. the dynamic style here is to
+  //       avoid the size of the input field resizing for every number change
   const dynamicInputStyle = useMemo(() => {
+    const minSignificantDigits =
+      typeof minSignificantDigitsOrCallback === 'function'
+        ? minSignificantDigitsOrCallback(internalValue)
+        : minSignificantDigitsOrCallback;
+    const maxSignificantDigits =
+      typeof maxSignificantDigitsOrCallback === 'function'
+        ? maxSignificantDigitsOrCallback(internalValue)
+        : maxSignificantDigitsOrCallback;
     return {
       // set width of input based on current values but restrained to a min/max
       minWidth: `${minSignificantDigits}ch`,
       maxWidth: `${
-        maxSignificantDigits + (currentValue.includes('.') ? 1 : 0)
+        maxSignificantDigits + (internalValue.includes('.') ? 1 : 0)
       }ch`,
-      width: `${currentValue.length}ch`,
+      width: `${internalValue.length}ch`,
     };
-  }, [currentValue, minSignificantDigits, maxSignificantDigits]);
+  }, [
+    internalValue,
+    minSignificantDigitsOrCallback,
+    maxSignificantDigitsOrCallback,
+  ]);
+
+  const dynamicContainerStyle = useMemo(() => {
+    return {
+      minWidth: `${internalValue.length + 17}ch`,
+    };
+  }, [internalValue]);
 
   return (
     <div
       className={['range-step-input', readOnly && 'range-step-input--read-only']
         .filter(Boolean)
         .join(' ')}
+      style={dynamicContainerStyle}
     >
       {title && <h6 className="range-step-title">{title}</h6>}
       <div className="range-step-controls row flex-centered my-2">
@@ -198,8 +217,13 @@ export default function StepNumberInput<T extends number | string = string>({
         {!readOnly && editable ? (
           <input
             type="number"
-            value={currentValue}
-            onInput={onInputChange}
+            value={internalValue}
+            onInput={() => maybeUpdate(inputRef.current?.value || '0', onInput)}
+            onChange={(e) => {
+              setInternalValue(e.target.value);
+              maybeUpdate(e.target.value || '0', onChange);
+            }}
+            onBlur={() => setInternalValue(undefined)}
             ref={inputRef}
             style={dynamicInputStyle}
           />
