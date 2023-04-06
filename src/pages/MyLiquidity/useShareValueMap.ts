@@ -20,7 +20,6 @@ export interface ShareValue {
   token1: Token;
 }
 export interface TickShareValue extends ShareValue {
-  // todo: take from useShareValueMap??
   userReserves0?: BigNumber;
   userReserves1?: BigNumber;
 }
