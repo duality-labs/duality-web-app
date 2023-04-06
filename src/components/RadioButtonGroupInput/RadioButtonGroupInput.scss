@@ -1,6 +1,10 @@
 @use '../../styles/mixins-vars/animations.scss' as animations;
 @use '../../styles/theme/core.scss' as colors;
 
+$border-width: 1px;
+$border-radius: 0.75rem;
+$inner-border-radius: calc($border-radius - 2 * $border-width);
+
 .radio-button-group-switch {
   & {
     isolation: isolate;
@@ -8,8 +12,8 @@
     flex: 1;
     display: flex;
     justify-content: stretch;
-    border: 1px solid colors.$light-white;
-    border-radius: 0.75rem;
+    border: 1px solid var(--token-search-bg);
+    border-radius: $border-radius;
     overflow: hidden;
     background-color: var(--button-group-bg);
   }
@@ -17,34 +21,58 @@
   button {
     flex: 1 1 auto;
     opacity: 1;
-    border-radius: 0.75rem;
+    border-radius: $inner-border-radius;
     position: relative;
     transition: color ease 0.25s;
-    color: hsla(218, 11%, 65%, 1);
-    &:hover,
+    color: var(--token-search-placeholder);
     &.active {
-      color: hsla(202, 28%, 87%, 1);
+      color: var(--token-search-text);
     }
   }
-  button:hover::before {
+
+  // add on-hover background
+  button.non-moving::before {
     content: ' ';
     position: absolute;
     left: 0;
     right: 0;
     top: 0;
     bottom: 0;
-    border-radius: 0.75rem;
-    background-color: var(--default-shadow);
+    border-radius: $inner-border-radius;
+    background-color: var(--token-search-bg);
     z-index: -1;
+    opacity: 0;
   }
-  button + button + button {
-    margin-left: -0.75rem;
-    &.p-3,
-    &.px-3,
-    &.p-4,
-    &.px-4 {
-      margin-left: -0.25rem;
-    }
+  // show on hover
+  // but also add a little bit on the left edge
+  // if hovered button is next to active button
+  // this bridges the space between the button button areas
+  button.active::before,
+  button:hover::before {
+    opacity: 1;
+  }
+  // the first selection line below is only needed on FireFox
+  // as FireFox does not support :has() which fixes allows us
+  // to set the fix using the right (CSS right: 1px) attribute
+  // link: https://bugzilla.mozilla.org/show_bug.cgi?id=418039
+  // you can revert this commit (not the entire squashed PR commit)
+  // if this bug gets resolved in the future
+  button:hover + button.active::before,
+  button.active + button:hover::before {
+    left: calc(-2 * $inner-border-radius);
+  }
+  // this can also be deleted on FireFox bug fix
+  button:hover:has(+ button) + button.active::before {
+    left: 0;
+  }
+  button:hover:has(+ button.active)::before {
+    right: calc(-2 * $inner-border-radius);
+  }
+  // fix glitch of gap between buttons during transition
+  // by delaying the dissapearance of the bridge for a little bit
+  button:has(+ button) + button.active::before {
+    transition-delay: 0.1s, 0.1s;
+    transition-property: left, right;
   }
 
   .moving-background {
@@ -59,6 +87,7 @@
 
   .non-moving {
     padding: 0.5rem 1rem;
+    border: none;
   }
 
   .transition-ready {

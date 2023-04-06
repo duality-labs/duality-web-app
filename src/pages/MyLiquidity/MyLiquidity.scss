@@ -16,6 +16,10 @@
     // todo: maybe fix better:
     // the cards look a little strange if they get too long
     max-height: 35em;
+
+    .text-action-button {
+      color: var(--secondary);
+    }
   }
 
   .asset-list-card {
@@ -59,9 +63,6 @@
   }
 
   .hero-card {
-    border: 1px solid hsla(0deg, 0%, 100%, 60%);
-    background: linear-gradient(110deg, hsla(0, 0%, 100%, 0.2), transparent);
-    border-radius: paddings.$p-3;
     flex: 1 1 auto;
     justify-content: space-between;
     display: grid;
@@ -71,28 +72,43 @@
       font-size: 2.25rem;
       font-weight: font-weight.$bold;
     }
-  }
 
-  .home-hero-section__left {
-    .logo {
-      height: 4em;
-    }
-    .home-hero-section__name {
-      font-size: 3rem;
-      min-width: 7em;
-    }
-    .span-truncate {
+    // add gradient border through some hacks
+    // disadvantage of this approach is that all the direct children elements
+    // have a relative position and z-index of 1 (which should be fine)
+    position: relative;
+    border: 1px solid transparent;
+    border-radius: paddings.$p-4;
+    & > * {
       position: relative;
+      z-index: 1;
     }
-    .span-truncate span {
+    &::before,
+    &::after {
+      content: '';
       position: absolute;
       top: 0;
+      bottom: 0;
       left: 0;
       right: 0;
-      bottom: 0;
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      border-radius: inherit;
+    }
+    &::before {
+      background: linear-gradient(
+        to top right,
+        hsl(165, 83%, 57%),
+        hsl(165, 0%, 85%)
+      );
+    }
+    &::after {
+      border: 1px solid transparent;
+      background: linear-gradient(
+          to bottom right,
+          hsla(0, 0%, 100%, 0.2),
+          transparent
+        ),
+        var(--bg);
+      background-clip: padding-box;
     }
   }
 }

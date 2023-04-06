@@ -101,6 +101,7 @@ export default function TokenInputGroup({
         <span className="token-group-balance">
           <button
             type="button"
+            className="badge badge-light"
             onClick={() =>
               onValueChanged?.(
                 // allow max value be as long as it needs to be to perfectly fit user's balance
@@ -117,6 +118,7 @@ export default function TokenInputGroup({
           </button>
           <button
             type="button"
+            className="badge badge-light"
             onClick={() =>
               // allow rounding on half of balance because we don't need an exact target
               onValueChanged?.(formatLongPrice(Number(maxValue) / 2))

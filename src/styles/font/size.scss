@@ -1,6 +1,6 @@
-$text-m: 1rem;
-$text-s: 0.75rem;
-$text-xs: 0.625rem;
+$text-m: 1rem; //      16px
+$text-s: 0.875rem; //  14px
+$text-xs: 0.625rem; // 10px
 
 $token-logo-svg-list: 2.5rem;
 $token-logo-svg: 3rem;
@@ -19,15 +19,3 @@ $button-large: 1.5rem;
 $input: 1.5rem;
 $input-small: 1rem;
 $link: 1rem;
-
-.fs-m {
-  font-size: $text-m !important;
-}
-
-.fs-s {
-  font-size: $text-s !important;
-}
-
-.fs-xs {
-  font-size: $text-xs !important;
-}

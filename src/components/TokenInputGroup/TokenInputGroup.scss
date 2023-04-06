@@ -5,10 +5,10 @@
 
 .token-input-group {
   & {
-    padding: 0.75rem 1.5rem 1rem;
+    padding: paddings.$p-4;
     border-radius: 1rem;
     border: 1px solid transparent;
-    background-color: var(--token-group);
+    background-color: var(--default);
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr auto;
     color: var(--default-alt);
@@ -63,11 +63,6 @@
     display: flex;
     gap: paddings.$p-3;
     margin-left: auto;
-
-    button {
-      border: 1px solid var(--default-alt);
-      padding: paddings.$p-0 paddings.$p-3 paddings.$p-0;
-    }
   }
 
   .token-group-value {

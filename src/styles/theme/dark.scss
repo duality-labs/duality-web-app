@@ -4,12 +4,12 @@ $text-default: core.$light-white;
 $text-alt: core.$light-gray;
 $text-disabled: core.$gray;
 
-$default: hsla(202, 57%, 33%, 1);
+$default: hsla(219, 40%, 11%, 1);
 $default-shadow: core.$bg-darker;
 $default-alt: core.$light-white;
 $primary: core.$bg-light;
 $primary-alt: core.$light-white;
-$secondary: rgba(core.$light-gray, 0.8);
+$secondary: hsla(165, 83%, 57%, 1);
 $secondary-alt: core.$light-white;
 $success: rgb(38, 128, 27);
 $success-alt: core.$light-white;
@@ -19,17 +19,24 @@ $warning: rgb(220, 156, 25);
 $warning-alt: core.$light-white;
 $error: hsla(0, 84%, 63%, 1);
 $error-alt: core.$light-white;
-$light: core.$light-blue;
+$light: transparent;
 $light-alt: core.$light-white;
 $link: transparent;
 $link-alt: core.$light-white;
 
-$bg: conic-gradient(
-  from 120deg at 50% 100%,
-  core.$bg-light 0deg,
-  mix(#fff, core.$bg-dark, 20%) 180deg,
-  mix(#fff, core.$dark-black, 20%) 360deg
-);
+// this color is pre-mixed aqua: hsla(165, 83%, 57%, 0.5) and the background
+// but mixed using `mix-blend-mode: overlay` which is hard to replicate
+// *inside* a background color but can be done with multiple elements
+$blended-aqua-and-blue: hsl(190, 90%, 13%);
+$bg: fixed
+    radial-gradient(
+      circle at 50vw 95vh,
+      change-color($blended-aqua-and-blue, $alpha: 1) 0vw,
+      change-color($blended-aqua-and-blue, $alpha: 0.9) 10vw,
+      change-color($blended-aqua-and-blue, $alpha: 0.7) 20vw,
+      change-color($blended-aqua-and-blue, $alpha: 0) 45vw
+    ),
+  fixed linear-gradient(240deg, hsl(219, 40%, 11%) 12%, hsl(213, 28%, 17%) 98%);
 
 // color + border color in default state, background + border color in hover state
 $ghost-button: core.$dark-white;
@@ -39,15 +46,13 @@ $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
 $profile-button-bg: rgba(core.$dark-black, 80%);
 $profile-button-text: $text-default;
-$submit-button-bg: hsla(201, 77%, 61%, 1);
+$submit-button-bg: $primary;
 $submit-button-text: core.$light-white;
 
 $input-text: core.$light-white;
 $input-bg: transparent;
 
-$token-group: core.$bg-dark;
-
-$page-card: rgba(core.$dark-black, 60%);
+$page-card: hsla(212, 28%, 17%, 1);
 $card-border: core.$bg-light;
 
 $dialog-bg: core.$black;
@@ -61,12 +66,9 @@ $token-search-border: hsl(215, 14%, 34%);
 
 $input: rgb(255, 255, 255);
 $ghost: rgba(255, 255, 255, 0.5);
-$page-card: hsla(202, 59%, 21%, 1);
-$token-group: hsla(202, 57%, 33%, 1);
+
 $icon-button-bg: rgba(125, 125, 125, 0.4);
 $icon-button-text: rgb(230, 230, 230);
-$submit-button-bg: rgb(78, 177, 232);
-$submit-button-text: rgb(255, 255, 255);
 $card-border: rgb(78, 177, 232);
 $badge-main-bg: rgb(18, 93, 135);
 $badge-main-text: rgb(255, 255, 255);
@@ -128,8 +130,6 @@ $map: (
 
   'input-text': $input-text,
   'input-bg': $input-bg,
-
-  'token-group': $token-group,
 
   'page-card': $page-card,
   'card-border': $card-border,

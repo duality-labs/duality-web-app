@@ -21,10 +21,7 @@ import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import TableCard from '../../components/cards/TableCard';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowDown, faArrowUp } from '@fortawesome/free-solid-svg-icons';
-
-const keplrLogoURI =
-  'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
+import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
 
 function matchTokenDenom(denom: string) {
   return (token: Token) =>
@@ -78,8 +75,6 @@ function ShareValuesPage({
     React.SetStateAction<[Token, Token] | undefined>
   >;
 }) {
-  const { address } = useWeb3();
-
   const allUserSharesTokensList = useMemo<Token[]>(() => {
     // collect all tokens noted in each share
     const list = Object.values(shareValueMap || {}).reduce<Token[]>(
@@ -190,16 +185,6 @@ function ShareValuesPage({
   return (
     <div className="my-liquidity-page container col flex gap-6 py-6">
       <div className="home-hero-section row gapx-4 gapy-5 flow-wrap">
-        <div className="home-hero-section__left col flex">
-          <div className="home-hero-section__top-line row flex flex-centered gap-3">
-            <div className="col">
-              <img src={keplrLogoURI} className="logo mr-3" alt="logo" />
-            </div>
-            <div className="col flex home-hero-section__name span-truncate">
-              <span>{address}</span>&nbsp;
-            </div>
-          </div>
-        </div>
         <div className="hero-card ml-auto grid gapx-5 gapy-3 p-4">
           <h2 className="hero-card__hero-title">Portfolio Value</h2>
           <h3 className="hero-card__hero-title">My Liquidity</h3>
@@ -253,7 +238,6 @@ function ShareValuesPage({
                   <th>Token + Chain</th>
                   <th>Balance</th>
                   <th>Deposit</th>
-                  <th>Withdraw</th>
                 </tr>
               </thead>
               <tbody>
@@ -346,21 +330,11 @@ function AssetRow({ token, amount, value }: TokenCoin) {
       </td>
       <td>
         <Link to="/">
-          <button className="button nowrap">
+          <button className="button text-action-button nowrap">
             {token.display.toUpperCase()}
             <FontAwesomeIcon icon={faArrowDown} className="ml-3" />
           </button>
         </Link>
-      </td>
-      <td>
-        {value?.isGreaterThan(0) && (
-          <Link to="/">
-            <button className="button nowrap">
-              {token.display.toUpperCase()}
-              <FontAwesomeIcon icon={faArrowUp} className="ml-3" />
-            </button>
-          </Link>
-        )}
       </td>
     </tr>
   );

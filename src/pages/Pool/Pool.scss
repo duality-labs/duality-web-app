@@ -80,7 +80,6 @@
     .pill-outline {
       background-color: transparent;
       color: var(--text-default);
-      border: 1.5px solid var(--submit-button-bg);
       &:hover,
       :active {
         background-color: rgba($color: rgb(78, 177, 232), $alpha: 0.2);

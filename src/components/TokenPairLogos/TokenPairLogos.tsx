@@ -15,12 +15,12 @@ function TokenLogo({
   return (
     <div className={`${className} token-pair-logo`}>
       <img
-        className="token-current"
+        className="token-logo token-current"
         alt={`${token.symbol} logo`}
         src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
       />
       <img
-        className="token-previous"
+        className="token-logo token-previous"
         alt={`${previousToken.symbol} logo`}
         src={previousToken.logo_URIs?.svg ?? previousToken.logo_URIs?.png}
       />

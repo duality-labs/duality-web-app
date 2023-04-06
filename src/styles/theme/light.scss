@@ -4,12 +4,12 @@ $text-default: core.$light-black;
 $text-alt: core.$white;
 $text-disabled: core.$dark-white;
 
-$default: core.$bg-lighter;
-$default-shadow: core.$bg-light;
+$default: adjust-color(core.$bg-lighter, $lightness: -8%);
+$default-shadow: adjust-color($default, $alpha: -0.3%);
 $default-alt: core.$light-black;
 $primary: core.$bg-light;
 $primary-alt: core.$light-white;
-$secondary: rgba(core.$dark-gray, 0.8);
+$secondary: hsla(165, 83%, 57%, 1);
 $secondary-alt: core.$light-white;
 $success: rgb(38, 128, 27);
 $success-alt: core.$light-white;
@@ -19,53 +19,52 @@ $warning: rgb(218, 225, 137);
 $warning-alt: core.$light-white;
 $error: rgb(214, 92, 110);
 $error-alt: core.$light-white;
-$light: core.$light-blue;
+$light: transparent;
 $light-alt: core.$light-white;
 $link: transparent;
 $link-alt: core.$dark-gray;
 
-$bg: conic-gradient(
-  from 120deg at 50% 100%,
-  core.$bg-light 0deg,
-  mix(#fff, core.$bg-light, 20%) 180deg,
-  mix(#fff, core.$light-white, 20%) 360deg
-);
+$aqua: hsl(165, 83%, 57%);
+$bg: fixed
+    radial-gradient(
+      circle at 50vw 95vh,
+      change-color($aqua, $alpha: 0.5) 0vw,
+      change-color($aqua, $alpha: 0.45) 10vw,
+      change-color($aqua, $alpha: 0.35) 20vw,
+      change-color($aqua, $alpha: 0) 45vw
+    ),
+  fixed linear-gradient(240deg, core.$bg-light 12%, core.$bg-lighter 98%);
+
 // color + border color in default state, background + border color in hover state
 $ghost-button: core.$dark-white;
 
-$button-group-bg: core.$light-blue;
+$button-group-bg: core.$light-white;
 $icon-button-bg: rgba(core.$dark-gray, 40%);
 $icon-button-text: core.$white;
 $profile-button-bg: rgba(core.$light-gray, 40%);
 $profile-button-text: $text-default;
-$submit-button-bg: core.$bg-light;
+$submit-button-bg: $primary;
 $submit-button-text: core.$light-white;
 
 $input-text: core.$light-white;
 $input-bg: transparent;
 
-$token-group: core.$bg-dark;
-
-$page-card: rgba(core.$dark-black, 60%);
+$page-card: rgb(255, 255, 255);
 $card-border: core.$bg-light;
 
 $dialog-bg: core.$light-blue;
 $dialog-backdrop: rgba(core.$dark-black, 50%);
 $selected-token: core.$bg-light;
 
-$token-search-bg: transparent;
-$token-search-text: core.$dark-gray;
+$token-search-bg: core.$white;
+$token-search-text: core.$light-black;
 $token-search-placeholder: hsl(218, 11%, 65%);
-$token-search-border: core.$light-black;
+$token-search-border: core.$light-gray;
 
 $input: rgb(0, 0, 0);
 $ghost: rgba(0, 0, 0, 0.5);
-$page-card: rgb(255, 255, 255);
-$token-group: rgb(76, 142, 180);
 $icon-button-bg: rgba(170, 169, 169, 0.4);
 $icon-button-text: rgb(188, 188, 188);
-$submit-button-bg: rgb(78, 177, 232);
-$submit-button-text: rgb(0, 0, 0);
 $card-border: rgb(152, 203, 231);
 $badge-main-bg: rgb(18, 93, 135);
 $badge-main-text: rgb(255, 255, 255);
@@ -127,8 +126,6 @@ $map: (
 
   'input-text': $input-text,
   'input-bg': $input-bg,
-
-  'token-group': $token-group,
 
   'page-card': $page-card,
   'card-border': $card-border,

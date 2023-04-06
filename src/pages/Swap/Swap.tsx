@@ -477,7 +477,7 @@ function Swap() {
   return (
     <form
       onSubmit={onFormSubmit}
-      className={['swap-page row', isValidatingSwap && 'disabled']
+      className={['swap-page page-card p-0 row', isValidatingSwap && 'disabled']
         .filter(Boolean)
         .join(' ')}
     >
@@ -526,7 +526,7 @@ function SettingsCard({
           />
           <button
             type="button"
-            className="button-info ml-2"
+            className="badge badge-lg badge-info ml-2"
             onClick={() => setInputSlippage(defaultSlippage)}
           >
             Auto

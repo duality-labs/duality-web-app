@@ -31,6 +31,9 @@ button,
   border-color: var(--error) !important;
   color: hsla(0, 73%, 97%, 1);
 }
+.button-light {
+  border-color: var(--light-alt);
+}
 .button-dark {
   background-color: hsla(212, 28%, 17%, 1);
   color: white;
@@ -64,7 +67,7 @@ button[type='submit'],
   @include paddings.padding('x', 4);
   font-size: 1.25rem;
   border-radius: paddings.$p-3;
-  border: 1px solid transparent;
+  border: 1.5px solid var(--submit-button-bg);
   cursor: pointer;
 }
 

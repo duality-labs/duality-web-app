@@ -1,16 +1,12 @@
-@function grayscale($scale) {
-  @return rgb($scale, $scale, $scale);
-}
-
-$light-white: grayscale(255);
-$white: grayscale(230);
-$dark-white: grayscale(217);
-$light-gray: grayscale(187);
-$gray: grayscale(136);
-$dark-gray: grayscale(125);
-$light-black: grayscale(51);
-$black: grayscale(16);
-$dark-black: grayscale(0);
+$light-white: hsl(218, 13%, 100%);
+$white: hsl(218, 13%, 90%);
+$dark-white: hsl(218, 12%, 84%);
+$light-gray: hsl(218, 11%, 73%);
+$gray: hsl(218, 10%, 53%);
+$dark-gray: hsl(218, 10%, 49%);
+$light-black: hsl(218, 30%, 20%);
+$black: hsl(218, 40%, 6%);
+$dark-black: hsl(218, 0%, 0%);
 
 $bg-lighter: rgb(187, 226, 246);
 $bg-light: rgb(78, 177, 232);

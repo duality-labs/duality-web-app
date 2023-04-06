@@ -1,0 +1,19 @@
+.planet-bg {
+  position: fixed;
+  opacity: 0;
+  transition: left 1s, right 1s, opacity 0.5s;
+
+  &.active {
+    opacity: 0.4;
+    transition: left 1s, right 1s, opacity 1.25s;
+    // pause between an old background leaving and a new background entering
+    transition-delay: 1s, 1s, 0.75s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planet-bg,
+  .planet-bg.active {
+    transition: opacity 0.5s;
+  }
+}

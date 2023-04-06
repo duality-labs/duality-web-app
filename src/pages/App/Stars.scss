@@ -1,0 +1,15 @@
+// position following siblings as above this element
+.stars-bg ~ * {
+  position: relative;
+}
+
+.stars-bg {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  // force height to full window
+  width: 100vw;
+  height: 100vh;
+}

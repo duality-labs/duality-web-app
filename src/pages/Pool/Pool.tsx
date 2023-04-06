@@ -722,7 +722,7 @@ function Pool() {
           </div>
           <div className="card-row">
             <TokenInputGroup
-              variant={!hasSufficientFundsA && 'error'}
+              variant={tokenA && !hasSufficientFundsA && 'error'}
               onValueChanged={setInputValueA}
               onTokenChanged={setTokenA}
               tokenList={tokenList}
@@ -736,7 +736,7 @@ function Pool() {
           </div>
           <div className="card-row">
             <TokenInputGroup
-              variant={!hasSufficientFundsB && 'error'}
+              variant={tokenB && !hasSufficientFundsB && 'error'}
               onValueChanged={setInputValueB}
               onTokenChanged={setTokenB}
               tokenList={tokenList}
@@ -784,7 +784,7 @@ function Pool() {
     >
       <div className="pool-page">
         <div
-          className={`my-4 p-5 chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
+          className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
         >
           <div className="chart-header row flow-wrap">
             <div className="col">
@@ -829,7 +829,7 @@ function Pool() {
                       <>
                         <span>{feeType.description}</span>
                         <span> </span>
-                        <span className="badge">
+                        <span className="badge badge-xs">
                           {feeLiquidityMap?.[feeType.fee]
                             .multipliedBy(100)
                             .toFixed(0) ?? '0'}
@@ -843,7 +843,7 @@ function Pool() {
               <div className="card-row my-3">
                 <TokenInputGroup
                   className="flex"
-                  variant={!hasSufficientFundsA && 'error'}
+                  variant={tokenA && !hasSufficientFundsA && 'error'}
                   onValueChanged={setInputValueA}
                   onTokenChanged={setTokenA}
                   tokenList={tokenList}
@@ -855,7 +855,7 @@ function Pool() {
               <div className="card-row my-3">
                 <TokenInputGroup
                   className="flex"
-                  variant={!hasSufficientFundsB && 'error'}
+                  variant={tokenB && !hasSufficientFundsB && 'error'}
                   onValueChanged={setInputValueB}
                   onTokenChanged={setTokenB}
                   tokenList={tokenList}
@@ -1010,7 +1010,7 @@ function Pool() {
                 </div>
               </div>
               {chartTypeSelected === 'Orderbook' && (
-                <div className="mt-4 pt-4 page-card orderbook-card">
+                <div className="mt-4 p-4 orderbook-card">
                   <RadioButtonGroupInput<number>
                     className="mx-auto mt-2 mb-4"
                     buttonClassName="py-3 px-4"

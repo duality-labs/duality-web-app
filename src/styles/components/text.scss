@@ -4,17 +4,6 @@
 @use 'sass:map';
 
 @each $name in colors.$main {
-  .badge-#{$name} {
-    display: flex;
-    align-items: center;
-    @include paddings.padding('x', 4);
-    @include paddings.padding('y', 3);
-    background-color: var(--#{$name});
-    color: var(--#{$name}-alt);
-    border: 0px none transparent;
-    border-radius: 100vmax;
-  }
-
   .text-#{$name} {
     color: var(--#{$name});
   }

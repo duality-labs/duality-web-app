@@ -26,9 +26,13 @@ export default function TableCard<T extends string | number>({
 }) {
   // show loken list cards
   return (
-    <div className={['table-card', className].filter(Boolean).join(' ')}>
+    <div
+      className={['table-card', 'page-card', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className="col flex">
-        <div className="table-card__header row flex-centered gap-3 m-lg mb-0">
+        <div className="table-card__header row flex-centered gap-3">
           <div className="col flex">
             <h2 className="table-card__hero-title">{title}</h2>
           </div>
@@ -36,7 +40,6 @@ export default function TableCard<T extends string | number>({
             <div className="col">
               <div className="table-card__asset-toggle">
                 <RadioButtonGroupInput<T>
-                  buttonClassName="px-5"
                   values={switchValues}
                   value={switchValue}
                   onChange={switchOnChange}
@@ -46,7 +49,7 @@ export default function TableCard<T extends string | number>({
           )}
         </div>
         {setSearchValue && (
-          <div className="table-card__search row m-lg mb-0">
+          <div className="table-card__search row mt-lg">
             <div className="col flex">
               <SearchInput
                 placeholder="Search token name or paste address"
@@ -56,8 +59,8 @@ export default function TableCard<T extends string | number>({
             </div>
           </div>
         )}
-        <div className="table-card__table_container relative row flex mt-lg">
-          <div className="table-card__table col flex absolute filled px-lg pb-4">
+        <div className="table-card__table_container page-card__footer relative row flex mt-lg">
+          <div className="table-card__table col flex absolute filled pb-4 page-card__padding-width">
             {children}
           </div>
         </div>
