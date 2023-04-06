@@ -5,7 +5,6 @@ import BigNumber from 'bignumber.js';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import apiClient from '../../lib/web3/apiClient';
 import { Token } from '../../components/TokenPicker/hooks';
-import { TickInfo } from '../../lib/web3/indexerProvider';
 import {
   checkMsgErrorToast,
   checkMsgOutOfGasToast,
@@ -22,8 +21,6 @@ export interface ShareValue {
   token1: Token;
 }
 export interface TickShareValue extends ShareValue {
-  tick0?: TickInfo;
-  tick1?: TickInfo;
   userReserves0?: BigNumber;
   userReserves1?: BigNumber;
 }

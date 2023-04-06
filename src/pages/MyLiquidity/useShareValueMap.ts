@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js';
 import {
   useIndexerData,
   useShares,
-  TickInfo,
   hasInvertedOrder,
 } from '../../lib/web3/indexerProvider';
 import { feeTypes } from '../../lib/web3/utils/fees';
@@ -22,8 +21,6 @@ export interface ShareValue {
 }
 export interface TickShareValue extends ShareValue {
   // todo: take from useShareValueMap??
-  tick0?: TickInfo;
-  tick1?: TickInfo;
   userReserves0?: BigNumber;
   userReserves1?: BigNumber;
 }
@@ -113,11 +110,7 @@ export default function useShareValueMap() {
             const shareFraction = new BigNumber(sharesOwned ?? 0).dividedBy(
               totalShares
             );
-            const extendedShare: TickShareValue = {
-              ...shareValue,
-              tick0,
-              tick1,
-            };
+            const extendedShare: TickShareValue = { ...shareValue };
             extendedShare.userReserves0 = tick0
               ? shareFraction.multipliedBy(
                   // convert to big tokens
