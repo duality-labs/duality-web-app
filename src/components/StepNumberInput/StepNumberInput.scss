@@ -9,7 +9,7 @@ $border-width: 2px;
 .range-step-input {
   & {
     padding: paddings.$p-4 paddings.$p-5;
-    border-radius: paddings.$p-4;
+    border-radius: paddings.$p-3;
     background-color: var(--default);
     flex-direction: column;
     overflow: hidden;
