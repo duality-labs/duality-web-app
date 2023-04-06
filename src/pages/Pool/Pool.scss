@@ -48,6 +48,14 @@
     }
   }
 
+  table {
+    th,
+    td {
+      text-align: right;
+      justify-content: flex-end;
+    }
+  }
+
   .card-header {
     @include margins.margin('b', 2);
     @include margins.margin('t', 0);
