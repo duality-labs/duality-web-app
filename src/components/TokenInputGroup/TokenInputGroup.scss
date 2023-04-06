@@ -5,7 +5,7 @@
 
 .token-input-group {
   & {
-    padding: 0.75rem 1.5rem 1rem;
+    padding: paddings.$p-4;
     border-radius: 1rem;
     border: 1px solid transparent;
     background-color: var(--default);
