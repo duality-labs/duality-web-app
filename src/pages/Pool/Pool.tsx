@@ -17,7 +17,11 @@ import {
   faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
+import {
+  getBalance,
+  getPairID,
+  useBankBalances,
+} from '../../lib/web3/indexerProvider';
 
 import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -50,6 +54,7 @@ import { Token } from '../../lib/web3/utils/tokens';
 import './Pool.scss';
 import TokenPairLogos from '../../components/TokenPairLogos';
 import RadioInput from '../../components/RadioInput';
+import useShareValueMap from '../MyLiquidity/useShareValueMap';
 
 // the default resolution for a number in 18 decimal places
 const {
@@ -668,6 +673,19 @@ function Pool() {
     tokenB?.address
   );
 
+  const [newReserveATotal, newReserveBTotal] = useMemo(() => {
+    return [
+      userTicks.reduce(
+        (acc, tick) => acc.plus(tick.reserveA),
+        new BigNumber(0)
+      ),
+      userTicks.reduce(
+        (acc, tick) => acc.plus(tick.reserveB),
+        new BigNumber(0)
+      ),
+    ];
+  }, [userTicks]);
+
   const [selectedPoolsList, setSelectedPoolsList] = useState<'all' | 'mine'>(
     'all'
   );
@@ -684,6 +702,31 @@ function Pool() {
       value="Confirm"
     />
   );
+
+  const userShareValueMap = useShareValueMap();
+  const forward =
+    userShareValueMap?.[
+      getPairID(tokenA?.address || '', tokenB?.address || '')
+    ];
+  const reverse =
+    userShareValueMap?.[
+      getPairID(tokenB?.address || '', tokenA?.address || '')
+    ];
+  const userShareValues = forward || reverse;
+
+  const [userReserveATotal, userReserveBTotal] = useMemo(() => {
+    const token0Reserves = userShareValues?.reduce(
+      (acc, { userReserves0 }) => acc.plus(userReserves0),
+      new BigNumber(0)
+    );
+    const token1Reserves = userShareValues?.reduce(
+      (acc, { userReserves1 }) => acc.plus(userReserves1),
+      new BigNumber(0)
+    );
+    return forward
+      ? [token0Reserves, token1Reserves]
+      : [token1Reserves, token0Reserves];
+  }, [userShareValues, forward]);
 
   if (!tokenA || !tokenB || !valuesConfirmed) {
     return (
@@ -1101,6 +1144,257 @@ function Pool() {
             </div>
             <div className="col pt-lg col-lg-hide">{confirmButton}</div>
           </div>
+        </div>
+        <div className="page-card">
+          <table style={{ width: '100%' }}>
+            <thead>
+              <tr>
+                <th style={{ width: '7.5%' }}></th>
+                <th style={{ width: '20%' }}>Price</th>
+                <th style={{ width: '20%' }}>Percent</th>
+                <th style={{ width: '20%' }}>{tokenA.display.toUpperCase()}</th>
+                <th style={{ width: '20%' }}>{tokenB.display.toUpperCase()}</th>
+                <th style={{ width: '12.5%' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isValueAZero && isValueBZero ? (
+                userShareValues ? (
+                  userShareValues
+                    // sort by price
+                    .sort((a, b) => {
+                      return tickIndexToPrice(
+                        forward
+                          ? new BigNumber(a.share.tickIndex)
+                          : new BigNumber(a.share.tickIndex).negated()
+                      )
+                        .minus(
+                          tickIndexToPrice(
+                            forward
+                              ? new BigNumber(b.share.tickIndex)
+                              : new BigNumber(b.share.tickIndex).negated()
+                          )
+                        )
+                        .toNumber();
+                    })
+                    .map(
+                      (
+                        { share, token0, token1, userReserves0, userReserves1 },
+                        index
+                      ) => {
+                        // const tokenA = forward ? token0 : token1;
+                        // const tokenB = forward ? token1 : token0;
+                        const reserveA = forward
+                          ? userReserves0
+                          : userReserves1;
+                        const reserveB = forward
+                          ? userReserves1
+                          : userReserves0;
+                        const price = tickIndexToPrice(
+                          forward
+                            ? new BigNumber(share.tickIndex)
+                            : new BigNumber(share.tickIndex).negated()
+                        );
+                        return price.isGreaterThanOrEqualTo(rangeMin) &&
+                          price.isLessThanOrEqualTo(rangeMax) ? (
+                          <tr key={index} className="pt-2">
+                            <td>{index + 1}</td>
+                            <td>
+                              {new BigNumber(price.toFixed(5)).toFixed(5)}
+                            </td>
+                            <td>
+                              {userReserveATotal && reserveA.isGreaterThan(1e-5)
+                                ? `${
+                                    userReserveATotal.isGreaterThan(0)
+                                      ? new BigNumber(
+                                          reserveA
+                                            .multipliedBy(100)
+                                            .dividedBy(userReserveATotal)
+                                        ).toFixed(1)
+                                      : 0
+                                  }%`
+                                : ''}
+                              {userReserveBTotal && reserveB.isGreaterThan(1e-5)
+                                ? `${
+                                    userReserveBTotal.isGreaterThan(0)
+                                      ? new BigNumber(
+                                          reserveB
+                                            .multipliedBy(100)
+                                            .dividedBy(userReserveBTotal)
+                                        ).toFixed(1)
+                                      : 0
+                                  }%`
+                                : ''}
+                            </td>
+                            <td>
+                              {reserveA.isGreaterThan(1e-5)
+                                ? reserveA.toFixed(3)
+                                : ''}
+                            </td>
+                            <td>
+                              {reserveB.isGreaterThan(1e-5)
+                                ? reserveB.toFixed(3)
+                                : ''}
+                            </td>
+                            <td className="row gap-2 ml-4">
+                              {reserveA?.plus(reserveB || 0).isGreaterThan(0) &&
+                                (reserveA.isZero() || reserveB.isZero()) && (
+                                  <button
+                                    type="button"
+                                    className="button button-light"
+                                  >
+                                    Withdraw
+                                  </button>
+                                )}
+                              {(!reserveA.isEqualTo(
+                                userTicks[index]?.reserveA
+                              ) ||
+                                !reserveB.isEqualTo(
+                                  userTicks[index]?.reserveB
+                                )) && (
+                                <button
+                                  type="button"
+                                  className="button button-default"
+                                >
+                                  Reset
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ) : null;
+                      }
+                    )
+                ) : (
+                  <tr>
+                    <td colSpan={6}>No deposits made yet</td>
+                  </tr>
+                )
+              ) : (
+                userTicks.map((tick, index) => {
+                  return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
+                    tick.price.isLessThanOrEqualTo(rangeMax) ? (
+                    <tr key={index} className="pt-2">
+                      <td>{index + 1}</td>
+                      <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
+                      <td>
+                        {tick.reserveA.isGreaterThan(1e-5)
+                          ? `${
+                              newReserveATotal.isGreaterThan(0)
+                                ? new BigNumber(
+                                    tick.reserveA
+                                      .multipliedBy(100)
+                                      .dividedBy(newReserveATotal)
+                                  ).toFixed(1)
+                                : 0
+                            }%`
+                          : ''}
+                        {tick.reserveB.isGreaterThan(1e-5)
+                          ? `${
+                              newReserveBTotal.isGreaterThan(0)
+                                ? new BigNumber(
+                                    tick.reserveB
+                                      .multipliedBy(100)
+                                      .dividedBy(newReserveBTotal)
+                                  ).toFixed(1)
+                                : 0
+                            }%`
+                          : ''}
+                      </td>
+                      <td>
+                        {tick.reserveA.isGreaterThan(1e-5)
+                          ? tick.reserveA.toFixed(3)
+                          : ''}
+                      </td>
+                      <td>
+                        {tick.reserveB.isGreaterThan(1e-5)
+                          ? tick.reserveB.toFixed(3)
+                          : ''}
+                      </td>
+                      <td className="row gap-2 ml-4">
+                        {tick &&
+                          tick.reserveA
+                            ?.plus(tick.reserveB || 0)
+                            .isGreaterThan(0) &&
+                          (tick.reserveA.isZero() ||
+                            tick.reserveB.isZero()) && (
+                            <button
+                              type="button"
+                              className="button button-light"
+                            >
+                              {/* <FontAwesomeIcon icon={faEdit} /> */}
+                              Withdraw
+                            </button>
+                          )}
+                        {tick &&
+                          tick.reserveA
+                            ?.plus(tick.reserveB || 0)
+                            .isGreaterThan(0) && (
+                            <button
+                              type="button"
+                              className="button button-light"
+                              // onClick={() => {
+                              //   setEditedUserTicks((ticks) => {
+                              //     return ticks.map((tick, currentTickIndex) => {
+                              //       return index !== currentTickIndex
+                              //         ? tick
+                              //         : {
+                              //             ...tick,
+                              //             reserveA: new BigNumber(0),
+                              //             reserveB: new BigNumber(0),
+                              //           };
+                              //     });
+                              //   });
+                              // }}
+                            >
+                              Reset
+                              {/* <FontAwesomeIcon
+                              icon={
+                                faTrash
+                                // editingType === 'add'
+                                //   ? faTrash
+                                //   : faArrowUpFromBracket
+                              }
+                            /> */}
+                            </button>
+                          )}
+                        {tick &&
+                          (!tick.reserveA.isEqualTo(
+                            userTicks[index]?.reserveA
+                          ) ||
+                            !tick.reserveB.isEqualTo(
+                              userTicks[index]?.reserveB
+                            )) && (
+                            <button
+                              type="button"
+                              className="button button-default"
+                              onClick={() => {
+                                // setEditedUserTicks((ticks) => {
+                                //   return ticks.map((tick, currentTickIndex) => {
+                                //     return index !== currentTickIndex
+                                //       ? tick
+                                //       : {
+                                //           ...tick,
+                                //           reserveA: new BigNumber(
+                                //             userTicks[index].reserveA
+                                //           ),
+                                //           reserveB: new BigNumber(
+                                //             userTicks[index].reserveB
+                                //           ),
+                                //         };
+                                //   });
+                                // });
+                              }}
+                            >
+                              Reset
+                            </button>
+                          )}
+                      </td>
+                    </tr>
+                  ) : null;
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
       <div className="spacer"></div>
