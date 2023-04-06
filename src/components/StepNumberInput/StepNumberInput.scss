@@ -36,7 +36,7 @@ $border-width: 2px;
     button {
       & {
         @include paddings.padding('*', 3);
-        background-color: var(--primary-muted);
+        background-color: var(--primary);
         font-size: font-size.$h4;
         border: 0px none transparent;
         box-sizing: content-box;
