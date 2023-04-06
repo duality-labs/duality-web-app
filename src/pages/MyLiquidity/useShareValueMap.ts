@@ -77,6 +77,12 @@ export default function useShareValueMap() {
           if (tickIndex0 === undefined || tickIndex1 === undefined) {
             return result;
           }
+          // the reason that we fetch the reserve0 and reserve1 context
+          // from the indexed ticks is because these reserves indicated
+          // which tokens the user's shares currently represent.
+          // eg. user has 100 shares: is that currently in token0 or token1?
+          //     if indexed data has 0/2000000 token0/token1 reserves
+          //     then the user's share is best represented in token1 values
           const tick0 = (indexer[pairId]?.token0Ticks || []).find(
             (tick) =>
               tick.feeIndex.isEqualTo(feeIndex) &&
