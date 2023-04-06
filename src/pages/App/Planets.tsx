@@ -4,6 +4,8 @@ import React, { useMemo } from 'react';
 import planetTradeSVG from '../../assets/planets/planet-trade.svg';
 import planetLiquiditySVG from '../../assets/planets/planet-liquidity.svg';
 
+import TradePlanet from './backgrounds/TradePlanet';
+
 import './Planets.scss';
 
 const planets: { [planetName: string]: string | undefined } = {
@@ -16,6 +18,7 @@ export default function Planets() {
     <>
       <Planet name="trade" bottom={0} width={947} right={0} />
       <Planet name="liquidity" top="10vh" width={774} right={0} />
+      <Planet name="stake" bottom={0} right={0} width={1000} />
     </>
   );
 }
@@ -72,7 +75,13 @@ function Planet({
       alt={`planet of ${name}`}
       style={style}
     />
-  ) : null;
+  ) : (
+    <TradePlanet
+      active={!!active}
+      className={['planet', 'planet-bg', className].filter(Boolean).join(' ')}
+      style={style}
+    />
+  );
 }
 
 function measurementToString(value: number | string): string {
