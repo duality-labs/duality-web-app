@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.105](https://github.com/duality-labs/duality-web-app/compare/v0.1.104...v0.1.105) (2023-04-06)
+
+
+### Features
+
+* update to new color scheme ([#335](https://github.com/duality-labs/duality-web-app/issues/335)) ([6bbda8e](https://github.com/duality-labs/duality-web-app/commit/6bbda8e2fa2f1d2ac0a8e817c4f3e5c099ab9eec))
+
 ## [0.1.104](https://github.com/duality-labs/duality-web-app/compare/v0.1.103...v0.1.104) (2023-04-06)
 
 
