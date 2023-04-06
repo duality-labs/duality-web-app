@@ -18,8 +18,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
 
+      # this step is a temporary fix due to issue in semantic release package
+      # see https://github.com/cycjimmy/semantic-release-action/issues/159#issuecomment-1490892625
+      - name: Use Node.js 14
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+
       - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v3.0.0
+        uses: cycjimmy/semantic-release-action@v3.4.2
         id: semantic
         with:
           semantic_version: 19

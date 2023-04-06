@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.102](https://github.com/duality-labs/duality-web-app/compare/v0.1.101...v0.1.102) (2023-04-05)
+
+
+### Other
+
+* upgrade api to backend v0.1.3 (part 1) ([#338](https://github.com/duality-labs/duality-web-app/issues/338)) ([3e79cc5](https://github.com/duality-labs/duality-web-app/commit/3e79cc5db1c02475d7eca02aaa62774415346f13))
+
+
+### Fixes
+
+* improve chart layout flow on Liquidity page ([#339](https://github.com/duality-labs/duality-web-app/issues/339)) ([78cc1b4](https://github.com/duality-labs/duality-web-app/commit/78cc1b4d64e8ce75366adce128a756c562cfba32))
+
 ## [0.1.101](https://github.com/duality-labs/duality-web-app/compare/v0.1.100...v0.1.101) (2023-03-04)
 
 
