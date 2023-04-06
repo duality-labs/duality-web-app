@@ -821,38 +821,544 @@ function Pool() {
       onSubmit={onSubmit}
     >
       <div className="pool-page">
-        <div
-          className={`chart-card page-card row chart-type--${chartTypeSelected.toLowerCase()}`}
-        >
-          <div className="chart-header row flow-wrap">
-            <div className="col">
-              <h3 className="h3">Add Liquidity</h3>
-            </div>
-            <div className="col flex-centered chart-highlight">Customized</div>
-            <div className="col flex-centered ml-auto">Transaction Details</div>
-          </div>
-          <hr className="mt-3 mb-4" />
-          <div className="flex col row-lg gapx-lg">
-            <div className="flex col col--left">
-              <div className="chart-header row my-4">
-                <TokenPairLogos
-                  className="h3"
-                  tokenA={tokenA}
-                  tokenB={tokenB}
-                />
-                <h2 className="h3">
-                  {tokenA.symbol} {tokenB.symbol} Pool
-                </h2>
-                <button
-                  type="button"
-                  className="ml-auto icon-button"
-                  onClick={swapAll}
-                >
-                  <FontAwesomeIcon
-                    icon={faArrowRightArrowLeft}
-                  ></FontAwesomeIcon>
-                </button>
+        <div className="row gap-4">
+          <div className="col flex">
+            <div
+              className={`chart-card col chart-type--${chartTypeSelected.toLowerCase()}`}
+            >
+              <div className="chart-header row flow-wrap">
+                <div className="col">
+                  <div className="chart-header row my-4">
+                    <TokenPairLogos
+                      className="h3"
+                      tokenA={tokenA}
+                      tokenB={tokenB}
+                    />
+                    <h2 className="h3">
+                      {tokenA.symbol} {tokenB.symbol} Pool
+                    </h2>
+                    <button
+                      type="button"
+                      className="ml-auto icon-button"
+                      onClick={swapAll}
+                    >
+                      <FontAwesomeIcon
+                        icon={faArrowRightArrowLeft}
+                      ></FontAwesomeIcon>
+                    </button>
+                  </div>
+                </div>
               </div>
+              <hr className="mt-3 mb-4" />
+              <div className="flex col row-lg gapx-lg">
+                <div className="flex col col--right">
+                  <div className="chart-header row flow-wrap my-4">
+                    <div className="col">
+                      <h3 className="h3">Liquidity Distribution</h3>
+                    </div>
+                    <div className="col flex-centered ml-auto text-muted">
+                      <div className="row gap-2">
+                        <strong>Current Price:</strong>
+                        <div className="chart-highlight">
+                          {currentPriceFromTicks?.toFixed(5) ?? '-'}
+                        </div>
+                        {tokenA && tokenB && (
+                          <div>
+                            {tokenA.display.toUpperCase()} per{' '}
+                            {tokenB.display.toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex row chart-area gap-3">
+                    <LiquiditySelector
+                      tokenA={tokenA}
+                      tokenB={tokenB}
+                      rangeMin={fractionalRangeMin}
+                      rangeMax={fractionalRangeMax}
+                      setRangeMin={setRangeMin}
+                      setRangeMax={setRangeMax}
+                      setSignificantDecimals={setSignificantDecimals}
+                      userTickSelected={userTickSelected}
+                      setUserTickSelected={setUserTickSelected}
+                      feeTier={feeType?.fee}
+                      userTicks={userTicks}
+                      setUserTicks={setUserTicks}
+                      advanced={chartTypeSelected === 'Orderbook'}
+                      canMoveUp
+                      canMoveDown
+                      canMoveX
+                      oneSidedLiquidity={isValueAZero || isValueBZero}
+                      ControlsComponent={ChartControls}
+                    ></LiquiditySelector>
+                  </div>
+                  <div className="price-card mt-4">
+                    <div className="card-row">
+                      <StepNumberInput<number>
+                        title="MIN PRICE"
+                        value={rangeMin}
+                        onChange={(value: BigNumber.Value) => {
+                          setRangeMin(() => {
+                            const newIndex = priceToTickIndex(
+                              new BigNumber(value),
+                              'round'
+                            );
+                            // place the price halfway inside the fractional index limits
+                            // of the desired tick index bucket (remember these are rounded
+                            // away from zero on a split-token chart) so when the user
+                            // drags the limit controls we are not 1px from an index change
+                            if (edgePriceIndex !== undefined) {
+                              const offset = newIndex.isGreaterThanOrEqualTo(
+                                Math.round(edgePriceIndex)
+                              )
+                                ? +0.5
+                                : -0.5;
+                              return tickIndexToPrice(
+                                newIndex.plus(offset)
+                              ).toFixed();
+                            }
+                            return tickIndexToPrice(newIndex).toFixed();
+                          });
+                        }}
+                        stepFunction={logarithmStep}
+                        pressedDelay={500}
+                        pressedInterval={100}
+                        min={pairPriceMin}
+                        max={rangeMax}
+                        description={
+                          tokenA && tokenB
+                            ? `${tokenA.symbol} per ${tokenB.symbol}`
+                            : 'No Tokens'
+                        }
+                        minSignificantDigits={(valueString: string) =>
+                          Math.min(Math.max(valueString.length + 1), 8)
+                        }
+                        maxSignificantDigits={maxFractionDigits + 2}
+                        format={formatSignificantDecimalRangeString}
+                      />
+                      <StepNumberInput<number>
+                        title="MAX PRICE"
+                        value={rangeMax}
+                        onChange={(value: BigNumber.Value) => {
+                          setRangeMax(() => {
+                            const newIndex = priceToTickIndex(
+                              new BigNumber(value),
+                              'round'
+                            );
+                            // place the price halfway inside the fractional index limits
+                            // of the desired tick index bucket (remember these are rounded
+                            // away from zero on a split-token chart) so when the user
+                            // drags the limit controls we are not 1px from an index change
+                            if (edgePriceIndex !== undefined) {
+                              const offset = newIndex.isLessThanOrEqualTo(
+                                Math.round(edgePriceIndex)
+                              )
+                                ? -0.5
+                                : +0.5;
+                              return tickIndexToPrice(
+                                newIndex.plus(offset)
+                              ).toFixed();
+                            }
+                            return tickIndexToPrice(newIndex).toFixed();
+                          });
+                        }}
+                        stepFunction={logarithmStep}
+                        pressedDelay={500}
+                        pressedInterval={100}
+                        min={rangeMin}
+                        max={pairPriceMax}
+                        description={
+                          tokenA && tokenB
+                            ? `${tokenA.symbol} per ${tokenB.symbol}`
+                            : 'No Tokens'
+                        }
+                        minSignificantDigits={(valueString: string) =>
+                          Math.min(Math.max(valueString.length + 1), 8)
+                        }
+                        maxSignificantDigits={maxFractionDigits + 2}
+                        format={formatSignificantDecimalRangeString}
+                      />
+                    </div>
+                  </div>
+                  {chartTypeSelected === 'Orderbook' && (
+                    <div className="mt-4 p-4 orderbook-card">
+                      <RadioButtonGroupInput<number>
+                        className="mx-auto mt-2 mb-4"
+                        buttonClassName="py-3 px-4"
+                        values={(() => {
+                          const map = new Map<number, ReactNode>();
+                          map.set(-1, 'All');
+                          if (rangeMin === rangeMax) {
+                            map.set(0, 1);
+                            return map;
+                          }
+                          for (
+                            let index = 0;
+                            index < Number(precision);
+                            index++
+                          ) {
+                            map.set(index, index + 1);
+                          }
+                          return map;
+                        })()}
+                        value={userTickSelected}
+                        onChange={(tickSelectedString) => {
+                          setUserTickSelected(tickSelectedString);
+                        }}
+                      />
+                      <div className="row">
+                        <div className="col">
+                          {!userTicks[userTickSelected] ? (
+                            <div className="row precision-card">
+                              <h3 className="card-title mr-auto">
+                                Number of Ticks
+                              </h3>
+                              <StepNumberInput
+                                editable={false}
+                                min={
+                                  rangeMin === rangeMax
+                                    ? 1
+                                    : !isValueAZero && !isValueBZero
+                                    ? 2
+                                    : 1
+                                }
+                                max={rangeMin === rangeMax ? 1 : 10}
+                                value={rangeMin === rangeMax ? '1' : precision}
+                                onChange={setPrecision}
+                                minSignificantDigits={1}
+                              />
+                              <button
+                                type="button"
+                                className="button-info ml-2"
+                                onClick={() => setPrecision(defaultPrecision)}
+                              >
+                                Auto
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="row tick-price-card">
+                              <h3 className="card-title mr-auto">Price</h3>
+                              <StepNumberInput
+                                key={userTickSelected}
+                                min={priceMin}
+                                max={priceMax}
+                                pressedDelay={500}
+                                pressedInterval={100}
+                                stepFunction={logarithmStep}
+                                value={userTicks[
+                                  userTickSelected
+                                ].price.toNumber()}
+                                onChange={(value) => {
+                                  setUserTicks((userTicks) => {
+                                    // skip non-update
+                                    const newValue = new BigNumber(value);
+                                    if (
+                                      userTicks[
+                                        userTickSelected
+                                      ].price.isEqualTo(newValue)
+                                    )
+                                      return userTicks;
+                                    // replace singular tick price
+                                    return userTicks.map((userTick, index) => {
+                                      return index === userTickSelected
+                                        ? {
+                                            ...userTick,
+                                            price: newValue,
+                                            tickIndex:
+                                              priceToTickIndex(
+                                                newValue
+                                              ).toNumber(),
+                                          }
+                                        : userTick;
+                                    });
+                                  });
+                                }}
+                                maxSignificantDigits={maxFractionDigits + 1}
+                                format={formatSignificantDecimalRangeString}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="col pt-lg col-lg-hide">{confirmButton}</div>
+              </div>
+            </div>
+            <div className="page-card">
+              <table style={{ width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: '7.5%' }}></th>
+                    <th style={{ width: '20%' }}>Price</th>
+                    <th style={{ width: '20%' }}>Percent</th>
+                    <th style={{ width: '20%' }}>
+                      {tokenA.display.toUpperCase()}
+                    </th>
+                    <th style={{ width: '20%' }}>
+                      {tokenB.display.toUpperCase()}
+                    </th>
+                    <th style={{ width: '12.5%' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isValueAZero && isValueBZero ? (
+                    userShareValues ? (
+                      userShareValues
+                        // sort by price
+                        .sort((a, b) => {
+                          return tickIndexToPrice(
+                            forward
+                              ? new BigNumber(a.share.tickIndex)
+                              : new BigNumber(a.share.tickIndex).negated()
+                          )
+                            .minus(
+                              tickIndexToPrice(
+                                forward
+                                  ? new BigNumber(b.share.tickIndex)
+                                  : new BigNumber(b.share.tickIndex).negated()
+                              )
+                            )
+                            .toNumber();
+                        })
+                        .map(
+                          (
+                            {
+                              share,
+                              token0,
+                              token1,
+                              userReserves0,
+                              userReserves1,
+                            },
+                            index
+                          ) => {
+                            // const tokenA = forward ? token0 : token1;
+                            // const tokenB = forward ? token1 : token0;
+                            const reserveA = forward
+                              ? userReserves0
+                              : userReserves1;
+                            const reserveB = forward
+                              ? userReserves1
+                              : userReserves0;
+                            const price = tickIndexToPrice(
+                              forward
+                                ? new BigNumber(share.tickIndex)
+                                : new BigNumber(share.tickIndex).negated()
+                            );
+                            return price.isGreaterThanOrEqualTo(rangeMin) &&
+                              price.isLessThanOrEqualTo(rangeMax) ? (
+                              <tr key={index} className="pt-2">
+                                <td>{index + 1}</td>
+                                <td>
+                                  {new BigNumber(price.toFixed(5)).toFixed(5)}
+                                </td>
+                                <td>
+                                  {userReserveATotal &&
+                                  reserveA.isGreaterThan(1e-5)
+                                    ? `${
+                                        userReserveATotal.isGreaterThan(0)
+                                          ? new BigNumber(
+                                              reserveA
+                                                .multipliedBy(100)
+                                                .dividedBy(userReserveATotal)
+                                            ).toFixed(1)
+                                          : 0
+                                      }%`
+                                    : ''}
+                                  {userReserveBTotal &&
+                                  reserveB.isGreaterThan(1e-5)
+                                    ? `${
+                                        userReserveBTotal.isGreaterThan(0)
+                                          ? new BigNumber(
+                                              reserveB
+                                                .multipliedBy(100)
+                                                .dividedBy(userReserveBTotal)
+                                            ).toFixed(1)
+                                          : 0
+                                      }%`
+                                    : ''}
+                                </td>
+                                <td>
+                                  {reserveA.isGreaterThan(1e-5)
+                                    ? reserveA.toFixed(3)
+                                    : ''}
+                                </td>
+                                <td>
+                                  {reserveB.isGreaterThan(1e-5)
+                                    ? reserveB.toFixed(3)
+                                    : ''}
+                                </td>
+                                <td className="row gap-2 ml-4">
+                                  {reserveA
+                                    ?.plus(reserveB || 0)
+                                    .isGreaterThan(0) &&
+                                    (reserveA.isZero() ||
+                                      reserveB.isZero()) && (
+                                      <button
+                                        type="button"
+                                        className="button button-light"
+                                      >
+                                        Withdraw
+                                      </button>
+                                    )}
+                                  {(!reserveA.isEqualTo(
+                                    userTicks[index]?.reserveA
+                                  ) ||
+                                    !reserveB.isEqualTo(
+                                      userTicks[index]?.reserveB
+                                    )) && (
+                                    <button
+                                      type="button"
+                                      className="button button-default"
+                                    >
+                                      Reset
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ) : null;
+                          }
+                        )
+                    ) : (
+                      <tr>
+                        <td colSpan={6}>No deposits made yet</td>
+                      </tr>
+                    )
+                  ) : (
+                    userTicks.map((tick, index) => {
+                      return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
+                        tick.price.isLessThanOrEqualTo(rangeMax) ? (
+                        <tr key={index} className="pt-2">
+                          <td>{index + 1}</td>
+                          <td>
+                            {new BigNumber(tick.price.toFixed(5)).toFixed(5)}
+                          </td>
+                          <td>
+                            {tick.reserveA.isGreaterThan(1e-5)
+                              ? `${
+                                  newReserveATotal.isGreaterThan(0)
+                                    ? new BigNumber(
+                                        tick.reserveA
+                                          .multipliedBy(100)
+                                          .dividedBy(newReserveATotal)
+                                      ).toFixed(1)
+                                    : 0
+                                }%`
+                              : ''}
+                            {tick.reserveB.isGreaterThan(1e-5)
+                              ? `${
+                                  newReserveBTotal.isGreaterThan(0)
+                                    ? new BigNumber(
+                                        tick.reserveB
+                                          .multipliedBy(100)
+                                          .dividedBy(newReserveBTotal)
+                                      ).toFixed(1)
+                                    : 0
+                                }%`
+                              : ''}
+                          </td>
+                          <td>
+                            {tick.reserveA.isGreaterThan(1e-5)
+                              ? tick.reserveA.toFixed(3)
+                              : ''}
+                          </td>
+                          <td>
+                            {tick.reserveB.isGreaterThan(1e-5)
+                              ? tick.reserveB.toFixed(3)
+                              : ''}
+                          </td>
+                          <td className="row gap-2 ml-4">
+                            {tick &&
+                              tick.reserveA
+                                ?.plus(tick.reserveB || 0)
+                                .isGreaterThan(0) &&
+                              (tick.reserveA.isZero() ||
+                                tick.reserveB.isZero()) && (
+                                <button
+                                  type="button"
+                                  className="button button-light"
+                                >
+                                  {/* <FontAwesomeIcon icon={faEdit} /> */}
+                                  Withdraw
+                                </button>
+                              )}
+                            {tick &&
+                              tick.reserveA
+                                ?.plus(tick.reserveB || 0)
+                                .isGreaterThan(0) && (
+                                <button
+                                  type="button"
+                                  className="button button-light"
+                                  // onClick={() => {
+                                  //   setEditedUserTicks((ticks) => {
+                                  //     return ticks.map((tick, currentTickIndex) => {
+                                  //       return index !== currentTickIndex
+                                  //         ? tick
+                                  //         : {
+                                  //             ...tick,
+                                  //             reserveA: new BigNumber(0),
+                                  //             reserveB: new BigNumber(0),
+                                  //           };
+                                  //     });
+                                  //   });
+                                  // }}
+                                >
+                                  Reset
+                                  {/* <FontAwesomeIcon
+                              icon={
+                                faTrash
+                                // editingType === 'add'
+                                //   ? faTrash
+                                //   : faArrowUpFromBracket
+                              }
+                            /> */}
+                                </button>
+                              )}
+                            {tick &&
+                              (!tick.reserveA.isEqualTo(
+                                userTicks[index]?.reserveA
+                              ) ||
+                                !tick.reserveB.isEqualTo(
+                                  userTicks[index]?.reserveB
+                                )) && (
+                                <button
+                                  type="button"
+                                  className="button button-default"
+                                  onClick={() => {
+                                    // setEditedUserTicks((ticks) => {
+                                    //   return ticks.map((tick, currentTickIndex) => {
+                                    //     return index !== currentTickIndex
+                                    //       ? tick
+                                    //       : {
+                                    //           ...tick,
+                                    //           reserveA: new BigNumber(
+                                    //             userTicks[index].reserveA
+                                    //           ),
+                                    //           reserveB: new BigNumber(
+                                    //             userTicks[index].reserveB
+                                    //           ),
+                                    //         };
+                                    //   });
+                                    // });
+                                  }}
+                                >
+                                  Reset
+                                </button>
+                              )}
+                          </td>
+                        </tr>
+                      ) : null;
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="col col--left">
+            <div className="page-card p-4">
+              <div className="chart-header row mt-2 h4">Manage Liquidity</div>
               <div className="row">
                 <SelectInput<FeeType>
                   className="col flex select-fee-tier"
@@ -917,484 +1423,7 @@ function Pool() {
               </div>
               <div className="col-lg">{confirmButton}</div>
             </div>
-            <div className="flex col col--right">
-              <div className="chart-header row flow-wrap my-4">
-                <div className="col">
-                  <h3 className="h3">Liquidity Distribution</h3>
-                </div>
-                <div className="col flex-centered ml-auto text-muted">
-                  <div className="row gap-2">
-                    <strong>Current Price:</strong>
-                    <div className="chart-highlight">
-                      {currentPriceFromTicks?.toFixed(5) ?? '-'}
-                    </div>
-                    {tokenA && tokenB && (
-                      <div>
-                        {tokenA.display.toUpperCase()} per{' '}
-                        {tokenB.display.toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex row chart-area gap-3">
-                <LiquiditySelector
-                  tokenA={tokenA}
-                  tokenB={tokenB}
-                  rangeMin={fractionalRangeMin}
-                  rangeMax={fractionalRangeMax}
-                  setRangeMin={setRangeMin}
-                  setRangeMax={setRangeMax}
-                  setSignificantDecimals={setSignificantDecimals}
-                  userTickSelected={userTickSelected}
-                  setUserTickSelected={setUserTickSelected}
-                  fee={feeType?.fee}
-                  userTicks={userTicks}
-                  setUserTicks={setUserTicks}
-                  advanced={chartTypeSelected === 'Orderbook'}
-                  canMoveUp
-                  canMoveDown
-                  canMoveX
-                  oneSidedLiquidity={isValueAZero || isValueBZero}
-                  ControlsComponent={ChartControls}
-                ></LiquiditySelector>
-              </div>
-              <div className="price-card mt-4">
-                <div className="card-row">
-                  <StepNumberInput<number>
-                    title="MIN PRICE"
-                    value={rangeMin}
-                    onChange={(value: BigNumber.Value) => {
-                      setRangeMin(() => {
-                        const newIndex = priceToTickIndex(
-                          new BigNumber(value),
-                          'round'
-                        );
-                        // place the price halfway inside the fractional index limits
-                        // of the desired tick index bucket (remember these are rounded
-                        // away from zero on a split-token chart) so when the user
-                        // drags the limit controls we are not 1px from an index change
-                        if (edgePriceIndex !== undefined) {
-                          const offset = newIndex.isGreaterThanOrEqualTo(
-                            Math.round(edgePriceIndex)
-                          )
-                            ? +0.5
-                            : -0.5;
-                          return tickIndexToPrice(
-                            newIndex.plus(offset)
-                          ).toFixed();
-                        }
-                        return tickIndexToPrice(newIndex).toFixed();
-                      });
-                    }}
-                    stepFunction={logarithmStep}
-                    pressedDelay={500}
-                    pressedInterval={100}
-                    min={pairPriceMin}
-                    max={rangeMax}
-                    description={
-                      tokenA && tokenB
-                        ? `${tokenA.symbol} per ${tokenB.symbol}`
-                        : 'No Tokens'
-                    }
-                    minSignificantDigits={(valueString: string) =>
-                      Math.min(Math.max(valueString.length + 1), 8)
-                    }
-                    maxSignificantDigits={maxFractionDigits + 2}
-                    format={formatSignificantDecimalRangeString}
-                  />
-                  <StepNumberInput<number>
-                    title="MAX PRICE"
-                    value={rangeMax}
-                    onChange={(value: BigNumber.Value) => {
-                      setRangeMax(() => {
-                        const newIndex = priceToTickIndex(
-                          new BigNumber(value),
-                          'round'
-                        );
-                        // place the price halfway inside the fractional index limits
-                        // of the desired tick index bucket (remember these are rounded
-                        // away from zero on a split-token chart) so when the user
-                        // drags the limit controls we are not 1px from an index change
-                        if (edgePriceIndex !== undefined) {
-                          const offset = newIndex.isLessThanOrEqualTo(
-                            Math.round(edgePriceIndex)
-                          )
-                            ? -0.5
-                            : +0.5;
-                          return tickIndexToPrice(
-                            newIndex.plus(offset)
-                          ).toFixed();
-                        }
-                        return tickIndexToPrice(newIndex).toFixed();
-                      });
-                    }}
-                    stepFunction={logarithmStep}
-                    pressedDelay={500}
-                    pressedInterval={100}
-                    min={rangeMin}
-                    max={pairPriceMax}
-                    description={
-                      tokenA && tokenB
-                        ? `${tokenA.symbol} per ${tokenB.symbol}`
-                        : 'No Tokens'
-                    }
-                    minSignificantDigits={(valueString: string) =>
-                      Math.min(Math.max(valueString.length + 1), 8)
-                    }
-                    maxSignificantDigits={maxFractionDigits + 2}
-                    format={formatSignificantDecimalRangeString}
-                  />
-                </div>
-              </div>
-              {chartTypeSelected === 'Orderbook' && (
-                <div className="mt-4 p-4 orderbook-card">
-                  <RadioButtonGroupInput<number>
-                    className="mx-auto mt-2 mb-4"
-                    buttonClassName="py-3 px-4"
-                    values={(() => {
-                      const map = new Map<number, ReactNode>();
-                      map.set(-1, 'All');
-                      if (rangeMin === rangeMax) {
-                        map.set(0, 1);
-                        return map;
-                      }
-                      for (let index = 0; index < Number(precision); index++) {
-                        map.set(index, index + 1);
-                      }
-                      return map;
-                    })()}
-                    value={userTickSelected}
-                    onChange={(tickSelectedString) => {
-                      setUserTickSelected(tickSelectedString);
-                    }}
-                  />
-                  <div className="row">
-                    <div className="col">
-                      {!userTicks[userTickSelected] ? (
-                        <div className="row precision-card">
-                          <h3 className="card-title mr-auto">
-                            Number of Ticks
-                          </h3>
-                          <StepNumberInput
-                            editable={false}
-                            min={
-                              rangeMin === rangeMax
-                                ? 1
-                                : !isValueAZero && !isValueBZero
-                                ? 2
-                                : 1
-                            }
-                            max={rangeMin === rangeMax ? 1 : 10}
-                            value={rangeMin === rangeMax ? '1' : precision}
-                            onChange={setPrecision}
-                            minSignificantDigits={1}
-                          />
-                          <button
-                            type="button"
-                            className="button-info ml-2"
-                            onClick={() => setPrecision(defaultPrecision)}
-                          >
-                            Auto
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="row tick-price-card">
-                          <h3 className="card-title mr-auto">Price</h3>
-                          <StepNumberInput
-                            key={userTickSelected}
-                            min={priceMin}
-                            max={priceMax}
-                            pressedDelay={500}
-                            pressedInterval={100}
-                            stepFunction={logarithmStep}
-                            value={userTicks[userTickSelected].price.toNumber()}
-                            onChange={(value) => {
-                              setUserTicks((userTicks) => {
-                                // skip non-update
-                                const newValue = new BigNumber(value);
-                                if (
-                                  userTicks[userTickSelected].price.isEqualTo(
-                                    newValue
-                                  )
-                                )
-                                  return userTicks;
-                                // replace singular tick price
-                                return userTicks.map((userTick, index) => {
-                                  return index === userTickSelected
-                                    ? {
-                                        ...userTick,
-                                        price: newValue,
-                                        tickIndex:
-                                          priceToTickIndex(newValue).toNumber(),
-                                      }
-                                    : userTick;
-                                });
-                              });
-                            }}
-                            maxSignificantDigits={maxFractionDigits + 1}
-                            format={formatSignificantDecimalRangeString}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="col pt-lg col-lg-hide">{confirmButton}</div>
           </div>
-        </div>
-        <div className="page-card">
-          <table style={{ width: '100%' }}>
-            <thead>
-              <tr>
-                <th style={{ width: '7.5%' }}></th>
-                <th style={{ width: '20%' }}>Price</th>
-                <th style={{ width: '20%' }}>Percent</th>
-                <th style={{ width: '20%' }}>{tokenA.display.toUpperCase()}</th>
-                <th style={{ width: '20%' }}>{tokenB.display.toUpperCase()}</th>
-                <th style={{ width: '12.5%' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isValueAZero && isValueBZero ? (
-                userShareValues ? (
-                  userShareValues
-                    // sort by price
-                    .sort((a, b) => {
-                      return tickIndexToPrice(
-                        forward
-                          ? new BigNumber(a.share.tickIndex)
-                          : new BigNumber(a.share.tickIndex).negated()
-                      )
-                        .minus(
-                          tickIndexToPrice(
-                            forward
-                              ? new BigNumber(b.share.tickIndex)
-                              : new BigNumber(b.share.tickIndex).negated()
-                          )
-                        )
-                        .toNumber();
-                    })
-                    .map(
-                      (
-                        { share, token0, token1, userReserves0, userReserves1 },
-                        index
-                      ) => {
-                        // const tokenA = forward ? token0 : token1;
-                        // const tokenB = forward ? token1 : token0;
-                        const reserveA = forward
-                          ? userReserves0
-                          : userReserves1;
-                        const reserveB = forward
-                          ? userReserves1
-                          : userReserves0;
-                        const price = tickIndexToPrice(
-                          forward
-                            ? new BigNumber(share.tickIndex)
-                            : new BigNumber(share.tickIndex).negated()
-                        );
-                        return price.isGreaterThanOrEqualTo(rangeMin) &&
-                          price.isLessThanOrEqualTo(rangeMax) ? (
-                          <tr key={index} className="pt-2">
-                            <td>{index + 1}</td>
-                            <td>
-                              {new BigNumber(price.toFixed(5)).toFixed(5)}
-                            </td>
-                            <td>
-                              {userReserveATotal && reserveA.isGreaterThan(1e-5)
-                                ? `${
-                                    userReserveATotal.isGreaterThan(0)
-                                      ? new BigNumber(
-                                          reserveA
-                                            .multipliedBy(100)
-                                            .dividedBy(userReserveATotal)
-                                        ).toFixed(1)
-                                      : 0
-                                  }%`
-                                : ''}
-                              {userReserveBTotal && reserveB.isGreaterThan(1e-5)
-                                ? `${
-                                    userReserveBTotal.isGreaterThan(0)
-                                      ? new BigNumber(
-                                          reserveB
-                                            .multipliedBy(100)
-                                            .dividedBy(userReserveBTotal)
-                                        ).toFixed(1)
-                                      : 0
-                                  }%`
-                                : ''}
-                            </td>
-                            <td>
-                              {reserveA.isGreaterThan(1e-5)
-                                ? reserveA.toFixed(3)
-                                : ''}
-                            </td>
-                            <td>
-                              {reserveB.isGreaterThan(1e-5)
-                                ? reserveB.toFixed(3)
-                                : ''}
-                            </td>
-                            <td className="row gap-2 ml-4">
-                              {reserveA?.plus(reserveB || 0).isGreaterThan(0) &&
-                                (reserveA.isZero() || reserveB.isZero()) && (
-                                  <button
-                                    type="button"
-                                    className="button button-light"
-                                  >
-                                    Withdraw
-                                  </button>
-                                )}
-                              {(!reserveA.isEqualTo(
-                                userTicks[index]?.reserveA
-                              ) ||
-                                !reserveB.isEqualTo(
-                                  userTicks[index]?.reserveB
-                                )) && (
-                                <button
-                                  type="button"
-                                  className="button button-default"
-                                >
-                                  Reset
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ) : null;
-                      }
-                    )
-                ) : (
-                  <tr>
-                    <td colSpan={6}>No deposits made yet</td>
-                  </tr>
-                )
-              ) : (
-                userTicks.map((tick, index) => {
-                  return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
-                    tick.price.isLessThanOrEqualTo(rangeMax) ? (
-                    <tr key={index} className="pt-2">
-                      <td>{index + 1}</td>
-                      <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
-                      <td>
-                        {tick.reserveA.isGreaterThan(1e-5)
-                          ? `${
-                              newReserveATotal.isGreaterThan(0)
-                                ? new BigNumber(
-                                    tick.reserveA
-                                      .multipliedBy(100)
-                                      .dividedBy(newReserveATotal)
-                                  ).toFixed(1)
-                                : 0
-                            }%`
-                          : ''}
-                        {tick.reserveB.isGreaterThan(1e-5)
-                          ? `${
-                              newReserveBTotal.isGreaterThan(0)
-                                ? new BigNumber(
-                                    tick.reserveB
-                                      .multipliedBy(100)
-                                      .dividedBy(newReserveBTotal)
-                                  ).toFixed(1)
-                                : 0
-                            }%`
-                          : ''}
-                      </td>
-                      <td>
-                        {tick.reserveA.isGreaterThan(1e-5)
-                          ? tick.reserveA.toFixed(3)
-                          : ''}
-                      </td>
-                      <td>
-                        {tick.reserveB.isGreaterThan(1e-5)
-                          ? tick.reserveB.toFixed(3)
-                          : ''}
-                      </td>
-                      <td className="row gap-2 ml-4">
-                        {tick &&
-                          tick.reserveA
-                            ?.plus(tick.reserveB || 0)
-                            .isGreaterThan(0) &&
-                          (tick.reserveA.isZero() ||
-                            tick.reserveB.isZero()) && (
-                            <button
-                              type="button"
-                              className="button button-light"
-                            >
-                              {/* <FontAwesomeIcon icon={faEdit} /> */}
-                              Withdraw
-                            </button>
-                          )}
-                        {tick &&
-                          tick.reserveA
-                            ?.plus(tick.reserveB || 0)
-                            .isGreaterThan(0) && (
-                            <button
-                              type="button"
-                              className="button button-light"
-                              // onClick={() => {
-                              //   setEditedUserTicks((ticks) => {
-                              //     return ticks.map((tick, currentTickIndex) => {
-                              //       return index !== currentTickIndex
-                              //         ? tick
-                              //         : {
-                              //             ...tick,
-                              //             reserveA: new BigNumber(0),
-                              //             reserveB: new BigNumber(0),
-                              //           };
-                              //     });
-                              //   });
-                              // }}
-                            >
-                              Reset
-                              {/* <FontAwesomeIcon
-                              icon={
-                                faTrash
-                                // editingType === 'add'
-                                //   ? faTrash
-                                //   : faArrowUpFromBracket
-                              }
-                            /> */}
-                            </button>
-                          )}
-                        {tick &&
-                          (!tick.reserveA.isEqualTo(
-                            userTicks[index]?.reserveA
-                          ) ||
-                            !tick.reserveB.isEqualTo(
-                              userTicks[index]?.reserveB
-                            )) && (
-                            <button
-                              type="button"
-                              className="button button-default"
-                              onClick={() => {
-                                // setEditedUserTicks((ticks) => {
-                                //   return ticks.map((tick, currentTickIndex) => {
-                                //     return index !== currentTickIndex
-                                //       ? tick
-                                //       : {
-                                //           ...tick,
-                                //           reserveA: new BigNumber(
-                                //             userTicks[index].reserveA
-                                //           ),
-                                //           reserveB: new BigNumber(
-                                //             userTicks[index].reserveB
-                                //           ),
-                                //         };
-                                //   });
-                                // });
-                              }}
-                            >
-                              Reset
-                            </button>
-                          )}
-                      </td>
-                    </tr>
-                  ) : null;
-                })
-              )}
-            </tbody>
-          </table>
         </div>
       </div>
       <div className="spacer"></div>
