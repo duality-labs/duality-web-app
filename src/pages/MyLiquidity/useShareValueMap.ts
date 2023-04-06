@@ -41,10 +41,12 @@ export function getVirtualTickIndexes(
     : [];
 }
 
-export default function useShareValueMap() {
+// todo: fix: all shares or just one shares pair?
+export default function useShareValueMap(givenTokenPair?: [Token, Token]) {
   const { data: indexer } = useIndexerData();
   const { data: shares } = useShares();
   const dualityTokens = useDualityTokens();
+  const tokenPair = givenTokenPair || dualityTokens;
 
   return useMemo(() => {
     if (shares && indexer) {
@@ -52,7 +54,7 @@ export default function useShareValueMap() {
         const { pairId = '', tickIndex, feeIndex, sharesOwned } = share;
         // skip this share object if there are no shares owned
         if (feeIndex === undefined || !(Number(sharesOwned) > 0)) return result;
-        const [tokenA, tokenB] = dualityTokens;
+        const [tokenA, tokenB] = tokenPair;
         const fee = feeTypes[Number(feeIndex)].fee;
         if (
           tokenA &&
@@ -151,5 +153,5 @@ export default function useShareValueMap() {
         return result;
       }, {});
     }
-  }, [shares, indexer, dualityTokens]);
+  }, [shares, indexer, tokenPair]);
 }
