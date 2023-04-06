@@ -38,9 +38,11 @@ export function getVirtualTickIndexes(
     : [];
 }
 
-export default function useShareValueMap() {
+// todo: fix: all shares or just one shares pair?
+export default function useShareValueMap(givenTokenPair?: [Token, Token]) {
   const { data: shares } = useShares();
   const dualityTokens = useDualityTokens();
+  const tokenPair = givenTokenPair || dualityTokens;
 
   return useMemo(() => {
     if (shares) {
@@ -48,7 +50,7 @@ export default function useShareValueMap() {
         const { pairId = '', fee, sharesOwned } = share;
         // skip this share object if there are no shares owned
         if (fee === undefined || !(Number(sharesOwned) > 0)) return result;
-        const [tokenA, tokenB] = dualityTokens;
+        const [tokenA, tokenB] = tokenPair;
         if (
           tokenA &&
           tokenA.address &&
@@ -72,7 +74,7 @@ export default function useShareValueMap() {
         return result;
       }, {});
     }
-  }, [shares, dualityTokens]);
+  }, [shares, tokenPair]);
 }
 
 export function useTickShareValue(
