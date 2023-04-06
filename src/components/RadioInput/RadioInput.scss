@@ -35,14 +35,14 @@
   // dim unchecked options
   input[type='radio'],
   input[type='checkbox'] {
-    & + label {
-      background-color: #374151;
+    & + label *:not(:has(> *)) {
+      opacity: 0.6;
     }
-    &:checked + label,
+    &:checked + label *,
     &:focus + label,
     &:active + label,
-    + label:hover {
-      background-color: var(--default);
+    + label:hover * {
+      opacity: 1;
     }
   }
 
