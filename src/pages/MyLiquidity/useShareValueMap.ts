@@ -83,6 +83,9 @@ export default function useShareValueMap() {
           // eg. user has 100 shares: is that currently in token0 or token1?
           //     if indexed data has 0/2000000 token0/token1 reserves
           //     then the user's share is best represented in token1 values
+          // todo: this may be better optimized as an estimation using
+          //       only the first page of results of each token in a pair
+          //       when a token pair has many (constantly updating) tick pages
           const tick0 = (indexer[pairId]?.token0Ticks || []).find(
             (tick) =>
               tick.feeIndex.isEqualTo(feeIndex) &&
