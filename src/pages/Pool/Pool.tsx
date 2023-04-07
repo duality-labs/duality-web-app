@@ -1241,19 +1241,11 @@ function Pool() {
                       editedUserTicks
                         // sort by price
                         .sort((a, b) => {
-                          return tickIndexToPrice(
-                            forward
-                              ? new BigNumber(a.share.tickIndex)
-                              : new BigNumber(a.share.tickIndex).negated()
-                          )
-                            .minus(
-                              tickIndexToPrice(
-                                forward
-                                  ? new BigNumber(b.share.tickIndex)
-                                  : new BigNumber(b.share.tickIndex).negated()
-                              )
-                            )
-                            .toNumber();
+                          return forward
+                            ? Number(b.share.tickIndex) -
+                                Number(a.share.tickIndex)
+                            : Number(a.share.tickIndex) -
+                                Number(b.share.tickIndex);
                         })
                         .map(
                           (
@@ -1276,8 +1268,8 @@ function Pool() {
                               : userReserves0.plus(tickDiff0);
                             const price = tickIndexToPrice(
                               forward
-                                ? new BigNumber(share.tickIndex)
-                                : new BigNumber(share.tickIndex).negated()
+                                ? new BigNumber(share.tickIndex).negated()
+                                : new BigNumber(share.tickIndex)
                             );
                             return price.isGreaterThanOrEqualTo(rangeMin) &&
                               price.isLessThanOrEqualTo(rangeMax) ? (
