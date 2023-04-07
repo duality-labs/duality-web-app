@@ -1149,7 +1149,7 @@ function Pool() {
               </div>
             </div>
             <div className="page-card">
-              <table style={{ width: '100%' }}>
+              <table className="my-position-table" style={{ width: '100%' }}>
                 <thead>
                   <tr>
                     <th style={{ width: '7.5%' }}></th>
@@ -1261,7 +1261,7 @@ function Pool() {
                                       reserveB.isZero()) && (
                                       <button
                                         type="button"
-                                        className="button button-light"
+                                        className="button button-light m-3"
                                         onClick={() => {
                                           setEditedUserTicks((ticks) => {
                                             return ticks.map((tick) => {
@@ -1512,21 +1512,28 @@ function Pool() {
                     );
                   })}
                 </div>
-                <div className="col my-3">
-                  <div>You will receive:</div>
-                  {!diffTokenA.isZero() && (
-                    <div>
-                      {formatAmount(diffTokenA.negated().toNumber())}{' '}
-                      {tokenA.symbol}
+                {editedUserTicks.filter(
+                  (tick) => !tick.tickDiff0.isZero() || !tick.tickDiff1.isZero()
+                ).length > 1 && (
+                  <>
+                    <hr />
+                    <div className="col my-3">
+                      <div className="h4">You will receive:</div>
+                      {!diffTokenA.isZero() && (
+                        <div className="ml-auto">
+                          {formatAmount(diffTokenA.negated().toNumber())}{' '}
+                          {tokenA.symbol}
+                        </div>
+                      )}
+                      {!diffTokenB.isZero() && (
+                        <div className="ml-auto">
+                          {formatAmount(diffTokenB.negated().toNumber())}{' '}
+                          {tokenB.symbol}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {!diffTokenB.isZero() && (
-                    <div>
-                      {formatAmount(diffTokenB.negated().toNumber())}{' '}
-                      {tokenB.symbol}
-                    </div>
-                  )}
-                </div>
+                  </>
+                )}
                 <div className="row gap-3">
                   <div className="col-lg flex">
                     <button
