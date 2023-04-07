@@ -17,6 +17,8 @@ export interface ShareValue {
   token1: Token;
 }
 export interface TickShareValue extends ShareValue {
+  tickIndex0: number;
+  tickIndex1: number;
   userReserves0: BigNumber;
   userReserves1: BigNumber;
 }
@@ -163,6 +165,8 @@ export function useTickShareValues(
           );
           return {
             ...shareValue,
+            tickIndex0,
+            tickIndex1,
             userReserves0:
               tick0 && tick0.reserve0.isGreaterThan(0)
                 ? shareFraction.multipliedBy(tick0.reserve0)
