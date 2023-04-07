@@ -1345,10 +1345,27 @@ function Pool() {
                                         Withdraw
                                       </button>
                                     )}
-                                  {false && (
+                                  {(!tickDiff0.isZero() ||
+                                    !tickDiff1.isZero()) && (
                                     <button
                                       type="button"
-                                      className="button button-default"
+                                      className="button button-default my-3"
+                                      onClick={() => {
+                                        setEditedUserTicks((ticks) => {
+                                          return ticks.map((tick) => {
+                                            return tick.share.tickIndex ===
+                                              share.tickIndex &&
+                                              tick.share.feeIndex ===
+                                                share.feeIndex
+                                              ? {
+                                                  ...tick,
+                                                  tickDiff0: new BigNumber(0),
+                                                  tickDiff1: new BigNumber(0),
+                                                }
+                                              : tick;
+                                          });
+                                        });
+                                      }}
                                     >
                                       Reset
                                     </button>
