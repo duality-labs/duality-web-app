@@ -352,7 +352,7 @@ function Pool() {
     setRangeMax,
   ]);
 
-  const onSubmit = useCallback(
+  const onSubmitAddLiquidity = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
       if (!valuesValid) return;
@@ -739,7 +739,7 @@ function Pool() {
         ]
           .filter(Boolean)
           .join(' ')}
-        onSubmit={onSubmit}
+        onSubmit={onSubmitAddLiquidity}
       >
         <PoolsTableCard
           className="flex flex-auto"
@@ -818,9 +818,8 @@ function Pool() {
   }
 
   return (
-    <form
+    <div
       className={[isValidatingDeposit && 'disabled'].filter(Boolean).join(' ')}
-      onSubmit={onSubmit}
     >
       <div className="pool-page">
         <div className="row gap-4">
@@ -1291,112 +1290,119 @@ function Pool() {
             </div>
           </div>
           <div className="col col--left gap-4">
-            <fieldset className="page-card p-4" disabled={editMode}>
-              <div className="chart-header row mt-2 h4">Add Liquidity</div>
-              <div className="row">
-                <SelectInput<FeeType>
-                  className="col flex select-fee-tier"
-                  list={feeTypes}
-                  value={feeType}
-                  onChange={setFeeType}
-                  getLabel={(feeType) =>
-                    feeType ? `${feeType.label} Fee Tier` : 'Select Fee Tier'
-                  }
-                  getDescription={(feeType) =>
-                    !feeType ? null : (
-                      <>
-                        <span>{feeType.description}</span>
-                        <span> </span>
-                        <span className="badge badge-xs">
-                          {feeLiquidityMap?.[feeType.fee]
-                            .multipliedBy(100)
-                            .toFixed(0) ?? '0'}
-                          % of Liquidity
-                        </span>
-                      </>
-                    )
-                  }
-                />
-              </div>
-              <div className="card-row my-3">
-                <TokenInputGroup
-                  className="flex"
-                  variant={tokenA && !hasSufficientFundsA && 'error'}
-                  onValueChanged={setInputValueA}
-                  onTokenChanged={setTokenA}
-                  tokenList={tokenList}
-                  token={tokenA}
-                  value={inputValueA}
-                  exclusion={tokenB}
-                />
-              </div>
-              <div className="card-row my-3">
-                <TokenInputGroup
-                  className="flex"
-                  variant={tokenB && !hasSufficientFundsB && 'error'}
-                  onValueChanged={setInputValueB}
-                  onTokenChanged={setTokenB}
-                  tokenList={tokenList}
-                  token={tokenB}
-                  value={inputValueB}
-                  exclusion={tokenA}
-                />
-              </div>
-              <div className="row liquidity-shape">
-                <div className="col flex">
-                  <h4 className="mt-4">Liquidity Shape</h4>
-                  <RadioInput<LiquidityShape>
-                    className="col flex"
-                    maxColumnCount={4}
-                    list={liquidityShapes}
-                    value={liquidityShape}
-                    onChange={setLiquidityShape}
-                    OptionComponent={LiquidityShapeOptionComponent}
-                  />
-                </div>
-              </div>
-              <div className="col-lg">{confirmButton}</div>
-            </fieldset>
-            <fieldset
-              className={['page-card p-4', !editMode && 'hide']
-                .filter(Boolean)
-                .join(' ')}
-              disabled={!editMode}
-            >
-              <div className="chart-header row mt-2 h4">Edit Liquidity</div>
-              <div className="card-row my-3"></div>
-              <div className="row gap-3">
-                <div className="col-lg flex">
-                  <input
-                    className="button-dark text-medium mt-4 p-3"
-                    type="submit"
-                    disabled={
-                      (isValueAZero && isValueBZero) ||
-                      !hasSufficientFundsA ||
-                      !hasSufficientFundsB
+            <form onSubmit={onSubmitAddLiquidity}>
+              <fieldset
+                className="page-card p-4"
+                disabled={editMode || isValidatingDeposit}
+              >
+                <div className="chart-header row mt-2 h4">Add Liquidity</div>
+                <div className="row">
+                  <SelectInput<FeeType>
+                    className="col flex select-fee-tier"
+                    list={feeTypes}
+                    value={feeType}
+                    onChange={setFeeType}
+                    getLabel={(feeType) =>
+                      feeType ? `${feeType.label} Fee Tier` : 'Select Fee Tier'
                     }
-                    value="Cancel"
-                  />
-                </div>
-                <div className="col-lg flex">
-                  <input
-                    className="button-primary text-medium mt-4 p-3"
-                    type="submit"
-                    disabled={
-                      (isValueAZero && isValueBZero) ||
-                      !hasSufficientFundsA ||
-                      !hasSufficientFundsB
+                    getDescription={(feeType) =>
+                      !feeType ? null : (
+                        <>
+                          <span>{feeType.description}</span>
+                          <span> </span>
+                          <span className="badge badge-xs">
+                            {feeLiquidityMap?.[feeType.fee]
+                              .multipliedBy(100)
+                              .toFixed(0) ?? '0'}
+                            % of Liquidity
+                          </span>
+                        </>
+                      )
                     }
-                    value="Confirm"
                   />
                 </div>
-              </div>
-            </fieldset>
+                <div className="card-row my-3">
+                  <TokenInputGroup
+                    className="flex"
+                    variant={tokenA && !hasSufficientFundsA && 'error'}
+                    onValueChanged={setInputValueA}
+                    onTokenChanged={setTokenA}
+                    tokenList={tokenList}
+                    token={tokenA}
+                    value={inputValueA}
+                    exclusion={tokenB}
+                  />
+                </div>
+                <div className="card-row my-3">
+                  <TokenInputGroup
+                    className="flex"
+                    variant={tokenB && !hasSufficientFundsB && 'error'}
+                    onValueChanged={setInputValueB}
+                    onTokenChanged={setTokenB}
+                    tokenList={tokenList}
+                    token={tokenB}
+                    value={inputValueB}
+                    exclusion={tokenA}
+                  />
+                </div>
+                <div className="row liquidity-shape">
+                  <div className="col flex">
+                    <h4 className="mt-4">Liquidity Shape</h4>
+                    <RadioInput<LiquidityShape>
+                      className="col flex"
+                      maxColumnCount={4}
+                      list={liquidityShapes}
+                      value={liquidityShape}
+                      onChange={setLiquidityShape}
+                      OptionComponent={LiquidityShapeOptionComponent}
+                    />
+                  </div>
+                </div>
+                <div className="col-lg">{confirmButton}</div>
+              </fieldset>
+            </form>
+            <form>
+              <fieldset
+                className={['page-card p-4', !editMode && 'hide']
+                  .filter(Boolean)
+                  .join(' ')}
+                disabled={!editMode}
+              >
+                <div className="chart-header row mt-2 h4">Edit Liquidity</div>
+                <div className="card-row my-3"></div>
+                <div className="row gap-3">
+                  <div className="col-lg flex">
+                    <input
+                      className="button-dark text-medium mt-4 p-3"
+                      type="submit"
+                      disabled={
+                        (isValueAZero && isValueBZero) ||
+                        !hasSufficientFundsA ||
+                        !hasSufficientFundsB
+                      }
+                      value="Cancel"
+                    />
+                  </div>
+                  <div className="col-lg flex">
+                    <input
+                      className="button-primary text-medium mt-4 p-3"
+                      type="submit"
+                      disabled={
+                        (isValueAZero && isValueBZero) ||
+                        !hasSufficientFundsA ||
+                        !hasSufficientFundsB
+                      }
+                      value="Confirm"
+                    />
+                  </div>
+                </div>
+              </fieldset>
+            </form>
           </div>
         </div>
       </div>
       <div className="spacer"></div>
-    </form>
+    </div>
   );
 }
 
