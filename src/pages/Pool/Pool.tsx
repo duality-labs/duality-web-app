@@ -1322,7 +1322,7 @@ function Pool() {
                                       reserveB.isZero()) && (
                                       <button
                                         type="button"
-                                        className="button button-light m-3"
+                                        className="button button-light my-3"
                                         onClick={() => {
                                           setEditedUserTicks((ticks) => {
                                             return ticks.map((tick) => {
@@ -1415,7 +1415,7 @@ function Pool() {
                           <td className="row gap-2 ml-4">
                             <button
                               type="button"
-                              className="button button-light"
+                              className="button button-light my-3"
                             >
                               Edit
                             </button>
