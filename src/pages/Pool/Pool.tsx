@@ -1100,7 +1100,9 @@ function Pool() {
                     <th style={{ width: '20%' }}>
                       {tokenB.display.toUpperCase()}
                     </th>
-                    <th style={{ width: '12.5%' }}>Actions</th>
+                    {!(isValueAZero && isValueBZero) && (
+                      <th style={{ width: '12.5%' }}>Actions</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -1203,12 +1205,7 @@ function Pool() {
                                         Withdraw
                                       </button>
                                     )}
-                                  {(!reserveA.isEqualTo(
-                                    userTicks[index]?.reserveA
-                                  ) ||
-                                    !reserveB.isEqualTo(
-                                      userTicks[index]?.reserveB
-                                    )) && (
+                                  {false && (
                                     <button
                                       type="button"
                                       className="button button-default"
@@ -1276,83 +1273,12 @@ function Pool() {
                               : ''}
                           </td>
                           <td className="row gap-2 ml-4">
-                            {tick &&
-                              tick.reserveA
-                                ?.plus(tick.reserveB || 0)
-                                .isGreaterThan(0) &&
-                              (tick.reserveA.isZero() ||
-                                tick.reserveB.isZero()) && (
-                                <button
-                                  type="button"
-                                  className="button button-light"
-                                >
-                                  {/* <FontAwesomeIcon icon={faEdit} /> */}
-                                  Withdraw
-                                </button>
-                              )}
-                            {tick &&
-                              tick.reserveA
-                                ?.plus(tick.reserveB || 0)
-                                .isGreaterThan(0) && (
-                                <button
-                                  type="button"
-                                  className="button button-light"
-                                  // onClick={() => {
-                                  //   setEditedUserTicks((ticks) => {
-                                  //     return ticks.map((tick, currentTickIndex) => {
-                                  //       return index !== currentTickIndex
-                                  //         ? tick
-                                  //         : {
-                                  //             ...tick,
-                                  //             reserveA: new BigNumber(0),
-                                  //             reserveB: new BigNumber(0),
-                                  //           };
-                                  //     });
-                                  //   });
-                                  // }}
-                                >
-                                  Reset
-                                  {/* <FontAwesomeIcon
-                              icon={
-                                faTrash
-                                // editingType === 'add'
-                                //   ? faTrash
-                                //   : faArrowUpFromBracket
-                              }
-                            /> */}
-                                </button>
-                              )}
-                            {tick &&
-                              (!tick.reserveA.isEqualTo(
-                                userTicks[index]?.reserveA
-                              ) ||
-                                !tick.reserveB.isEqualTo(
-                                  userTicks[index]?.reserveB
-                                )) && (
-                                <button
-                                  type="button"
-                                  className="button button-default"
-                                  onClick={() => {
-                                    // setEditedUserTicks((ticks) => {
-                                    //   return ticks.map((tick, currentTickIndex) => {
-                                    //     return index !== currentTickIndex
-                                    //       ? tick
-                                    //       : {
-                                    //           ...tick,
-                                    //           reserveA: new BigNumber(
-                                    //             userTicks[index].reserveA
-                                    //           ),
-                                    //           reserveB: new BigNumber(
-                                    //             userTicks[index].reserveB
-                                    //           ),
-                                    //         };
-                                    //   });
-                                    // });
-                                  }}
-                                >
-                                  Reset
-                                </button>
-                              )}
+                            <button
+                              type="button"
+                              className="button button-light"
+                            >
+                              Edit
+                            </button>
                           </td>
                         </tr>
                       ) : null;
