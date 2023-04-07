@@ -123,8 +123,13 @@
     }
 
     .chart-area {
-      min-height: 18rem;
-      max-height: 24rem;
+      margin: 0 auto;
+      width: 100%;
+      max-width: 50rem;
+      min-height: 20rem;
+      .svg-container svg {
+        height: 20rem;
+      }
     }
   }
 
