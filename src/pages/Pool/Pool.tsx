@@ -45,6 +45,7 @@ import useFeeLiquidityMap from './useFeeLiquidityMap';
 import {
   formatAmount,
   formatMaximumSignificantDecimals,
+  formatPrice,
 } from '../../lib/utils/number';
 import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
@@ -55,6 +56,10 @@ import './Pool.scss';
 import TokenPairLogos from '../../components/TokenPairLogos';
 import RadioInput from '../../components/RadioInput';
 import useShareValueMap from '../MyLiquidity/useShareValueMap';
+import {
+  EditedTickShareValue,
+  useEditLiquidity,
+} from '../MyLiquidity/useEditLiquidity';
 
 // the default resolution for a number in 18 decimal places
 const {
@@ -728,7 +733,62 @@ function Pool() {
       : [token1Reserves, token0Reserves];
   }, [userShareValues, forward]);
 
-  const editMode = false;
+  const [{ isValidating: isValidatingEdit }, sendEditRequest] =
+    useEditLiquidity();
+
+  const invertedTokenOrder = !!reverse;
+
+  const [editedUserTicks, setEditedUserTicks] = useState<
+    Array<EditedTickShareValue>
+  >(
+    () =>
+      userShareValues?.map<EditedTickShareValue>((userShareValue) => ({
+        ...userShareValue,
+        tickDiff0: new BigNumber(0),
+        tickDiff1: new BigNumber(0),
+      })) || []
+  );
+
+  useEffect(() => {
+    setEditedUserTicks(
+      userShareValues?.map<EditedTickShareValue>((userShareValue) => ({
+        ...userShareValue,
+        tickDiff0: new BigNumber(0),
+        tickDiff1: new BigNumber(0),
+      })) || []
+    );
+  }, [userShareValues]);
+
+  const diffTokenA = useMemo(
+    () =>
+      editedUserTicks.reduce(
+        !invertedTokenOrder
+          ? (acc, shareDiff) => acc.plus(shareDiff.tickDiff0)
+          : (acc, shareDiff) => acc.plus(shareDiff.tickDiff1),
+        new BigNumber(0)
+      ),
+    [invertedTokenOrder, editedUserTicks]
+  );
+  const diffTokenB = useMemo(
+    () =>
+      editedUserTicks.reduce(
+        !invertedTokenOrder
+          ? (acc, shareDiff) => acc.plus(shareDiff.tickDiff1)
+          : (acc, shareDiff) => acc.plus(shareDiff.tickDiff0),
+        new BigNumber(0)
+      ),
+    [invertedTokenOrder, editedUserTicks]
+  );
+
+  const onSubmitEditLiquidity = useCallback(
+    async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      // get relevant tick diffs
+      await sendEditRequest(editedUserTicks);
+    },
+    [sendEditRequest, editedUserTicks]
+  );
+  const editMode = !diffTokenA.isZero() || !diffTokenB.isZero();
 
   if (!tokenA || !tokenB || !valuesConfirmed) {
     return (
@@ -1108,8 +1168,8 @@ function Pool() {
                 </thead>
                 <tbody>
                   {isValueAZero && isValueBZero ? (
-                    userShareValues ? (
-                      userShareValues
+                    editedUserTicks ? (
+                      editedUserTicks
                         // sort by price
                         .sort((a, b) => {
                           return tickIndexToPrice(
@@ -1130,8 +1190,8 @@ function Pool() {
                           (
                             {
                               share,
-                              token0,
-                              token1,
+                              tickDiff0,
+                              tickDiff1,
                               userReserves0,
                               userReserves1,
                             },
@@ -1140,11 +1200,11 @@ function Pool() {
                             // const tokenA = forward ? token0 : token1;
                             // const tokenB = forward ? token1 : token0;
                             const reserveA = forward
-                              ? userReserves0
-                              : userReserves1;
+                              ? userReserves0.plus(tickDiff0)
+                              : userReserves1.plus(tickDiff1);
                             const reserveB = forward
-                              ? userReserves1
-                              : userReserves0;
+                              ? userReserves1.plus(tickDiff1)
+                              : userReserves0.plus(tickDiff0);
                             const price = tickIndexToPrice(
                               forward
                                 ? new BigNumber(share.tickIndex)
@@ -1202,6 +1262,24 @@ function Pool() {
                                       <button
                                         type="button"
                                         className="button button-light"
+                                        onClick={() => {
+                                          setEditedUserTicks((ticks) => {
+                                            return ticks.map((tick) => {
+                                              return tick.share.tickIndex ===
+                                                share.tickIndex &&
+                                                tick.share.feeIndex ===
+                                                  share.feeIndex
+                                                ? {
+                                                    ...tick,
+                                                    tickDiff0:
+                                                      tick.userReserves0.negated(),
+                                                    tickDiff1:
+                                                      tick.userReserves1.negated(),
+                                                  }
+                                                : tick;
+                                            });
+                                          });
+                                        }}
                                       >
                                         Withdraw
                                       </button>
@@ -1361,37 +1439,118 @@ function Pool() {
                 <div className="col-lg">{confirmButton}</div>
               </fieldset>
             </form>
-            <form>
+            <form onSubmit={onSubmitEditLiquidity}>
               <fieldset
                 className={['page-card p-4', !editMode && 'hide']
                   .filter(Boolean)
                   .join(' ')}
-                disabled={!editMode}
+                disabled={isValidatingEdit}
               >
                 <div className="chart-header row mt-2 h4">Edit Liquidity</div>
-                <div className="card-row my-3"></div>
+                <div className="col my-3">
+                  {editedUserTicks.map((userTick) => {
+                    const [diffA, diffB] = invertTokenOrder
+                      ? [userTick.tickDiff1, userTick.tickDiff0]
+                      : [userTick.tickDiff0, userTick.tickDiff1];
+                    const [tokenA, tokenB] = invertTokenOrder
+                      ? [userTick.token1, userTick.token0]
+                      : [userTick.token0, userTick.token1];
+                    const price = formatPrice(
+                      tickIndexToPrice(
+                        new BigNumber(userTick.share.tickIndex)
+                      ).toNumber()
+                    );
+                    const withdrawA = diffA.isLessThan(0) && (
+                      <div className="row">
+                        <div className="col">
+                          Withdraw @ {price} {tokenB.symbol}/{tokenA.symbol}
+                        </div>
+                        <div className="col ml-auto">
+                          {formatAmount(diffA.negated().toNumber())}{' '}
+                          {tokenA.symbol}
+                        </div>
+                      </div>
+                    );
+                    const withdrawB = diffB.isLessThan(0) && (
+                      <div className="row">
+                        <div className="col">
+                          Withdraw @ {price} {tokenB.symbol}/{tokenA.symbol}
+                        </div>
+                        <div className="col ml-auto">
+                          {formatAmount(diffB.negated().toNumber())}{' '}
+                          {tokenB.symbol}
+                        </div>
+                      </div>
+                    );
+                    const depositA = diffA.isGreaterThan(0) && (
+                      <div className="row">
+                        <div className="col">
+                          Deposit @ {price} {tokenB.symbol}/{tokenA.symbol}
+                        </div>
+                        <div className="col ml-auto">
+                          {formatAmount(diffA.toNumber())} {tokenA.symbol}
+                        </div>
+                      </div>
+                    );
+                    const depositB = diffB.isGreaterThan(0) && (
+                      <div className="row">
+                        <div className="col">
+                          Deposit @ {price} {tokenB.symbol}/{tokenA.symbol}
+                        </div>
+                        <div className="col ml-auto">
+                          {formatAmount(diffB.toNumber())} {tokenB.symbol}
+                        </div>
+                      </div>
+                    );
+                    return (
+                      <>
+                        {depositA}
+                        {depositB}
+                        {withdrawA}
+                        {withdrawB}
+                      </>
+                    );
+                  })}
+                </div>
+                <div className="col my-3">
+                  <div>You will receive:</div>
+                  {!diffTokenA.isZero() && (
+                    <div>
+                      {formatAmount(diffTokenA.negated().toNumber())}{' '}
+                      {tokenA.symbol}
+                    </div>
+                  )}
+                  {!diffTokenB.isZero() && (
+                    <div>
+                      {formatAmount(diffTokenB.negated().toNumber())}{' '}
+                      {tokenB.symbol}
+                    </div>
+                  )}
+                </div>
                 <div className="row gap-3">
                   <div className="col-lg flex">
-                    <input
-                      className="button-dark text-medium mt-4 p-3"
-                      type="submit"
-                      disabled={
-                        (isValueAZero && isValueBZero) ||
-                        !hasSufficientFundsA ||
-                        !hasSufficientFundsB
-                      }
+                    <button
+                      className="button button-dark submit-button text-medium mt-4 p-3"
+                      type="button"
+                      onClick={() => {
+                        setEditedUserTicks((ticks) =>
+                          ticks.map((tick) => ({
+                            ...tick,
+                            tickDiff0: new BigNumber(0),
+                            tickDiff1: new BigNumber(0),
+                          }))
+                        );
+                      }}
                       value="Cancel"
-                    />
+                    >
+                      Cancel
+                    </button>
                   </div>
                   <div className="col-lg flex">
                     <input
                       className="button-primary text-medium mt-4 p-3"
                       type="submit"
-                      disabled={
-                        (isValueAZero && isValueBZero) ||
-                        !hasSufficientFundsA ||
-                        !hasSufficientFundsB
-                      }
+                      disabled={!hasSufficientFundsA || !hasSufficientFundsB}
                       value="Confirm"
                     />
                   </div>
