@@ -944,9 +944,78 @@ function Pool() {
                       userTickSelected={userTickSelected}
                       setUserTickSelected={setUserTickSelected}
                       feeTier={feeType?.fee}
-                      userTicks={userTicks}
+                      userTicksBase={
+                        editMode
+                          ? editedUserTicks?.map(
+                              ({
+                                token0,
+                                token1,
+                                share,
+                                userReserves0,
+                                userReserves1,
+                              }) => {
+                                return {
+                                  reserveA: invertedTokenOrder
+                                    ? userReserves1
+                                    : userReserves0,
+                                  reserveB: invertedTokenOrder
+                                    ? userReserves0
+                                    : userReserves1,
+                                  tickIndex:
+                                    (invertedTokenOrder ? -1 : 1) *
+                                    Number(share.tickIndex),
+                                  price: tickIndexToPrice(
+                                    new BigNumber(share.tickIndex).negated()
+                                  ),
+                                  fee: new BigNumber(
+                                    feeTypes.find(
+                                      (_, index) =>
+                                        index === Number(share.feeIndex)
+                                    )?.fee || 0
+                                  ),
+                                  feeIndex: Number(share.feeIndex),
+                                  tokenA: invertedTokenOrder ? token1 : token0,
+                                  tokenB: invertedTokenOrder ? token0 : token1,
+                                };
+                              }
+                            ) || []
+                          : userTicks
+                      }
+                      userTicks={
+                        editMode
+                          ? editedUserTicks.map(
+                              ({
+                                token0,
+                                token1,
+                                tickDiff0,
+                                tickDiff1,
+                                share,
+                                userReserves0,
+                                userReserves1,
+                              }) => {
+                                return {
+                                  reserveA: userReserves0.plus(tickDiff0),
+                                  reserveB: userReserves1.plus(tickDiff1),
+                                  tickIndex: Number(share.tickIndex),
+                                  price: tickIndexToPrice(
+                                    new BigNumber(share.tickIndex)
+                                  ),
+                                  fee: new BigNumber(
+                                    feeTypes.find(
+                                      (_, index) =>
+                                        index === Number(share.feeIndex)
+                                    )?.fee || 0
+                                  ),
+                                  feeIndex: Number(share.feeIndex),
+                                  tokenA: invertedTokenOrder ? token1 : token0,
+                                  tokenB: invertedTokenOrder ? token0 : token1,
+                                };
+                              }
+                            )
+                          : userTicks
+                      }
                       setUserTicks={setUserTicks}
-                      advanced={chartTypeSelected === 'Orderbook'}
+                      advanced={editMode}
                       canMoveUp
                       canMoveDown
                       canMoveX
