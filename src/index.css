@@ -7,6 +7,11 @@
   padding: 0;
 }
 
+/* reset default border elements */
+fieldset {
+  border: none;
+}
+
 /* reset box model */
 /* https://css-tricks.com/box-sizing/#aa-universal-box-sizing-with-inheritance */
 html {
