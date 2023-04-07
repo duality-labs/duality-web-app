@@ -822,7 +822,7 @@ function Pool() {
     >
       <div className="pool-page">
         <div className="row gap-4">
-          <div className="col flex">
+          <div className="col flex gap-4">
             <div
               className={`chart-card col chart-type--${chartTypeSelected.toLowerCase()}`}
             >
@@ -1288,7 +1288,7 @@ function Pool() {
               </table>
             </div>
           </div>
-          <div className="col col--left">
+          <div className="col col--left gap-4">
             <div className="page-card p-4">
               <div className="chart-header row mt-2 h4">Manage Liquidity</div>
               <div className="row">
