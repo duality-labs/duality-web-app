@@ -728,6 +728,8 @@ function Pool() {
       : [token1Reserves, token0Reserves];
   }, [userShareValues, forward]);
 
+  const editMode = false;
+
   if (!tokenA || !tokenB || !valuesConfirmed) {
     return (
       <form
@@ -1289,8 +1291,8 @@ function Pool() {
             </div>
           </div>
           <div className="col col--left gap-4">
-            <div className="page-card p-4">
-              <div className="chart-header row mt-2 h4">Manage Liquidity</div>
+            <fieldset className="page-card p-4" disabled={editMode}>
+              <div className="chart-header row mt-2 h4">Add Liquidity</div>
               <div className="row">
                 <SelectInput<FeeType>
                   className="col flex select-fee-tier"
@@ -1354,7 +1356,42 @@ function Pool() {
                 </div>
               </div>
               <div className="col-lg">{confirmButton}</div>
-            </div>
+            </fieldset>
+            <fieldset
+              className={['page-card p-4', !editMode && 'hide']
+                .filter(Boolean)
+                .join(' ')}
+              disabled={!editMode}
+            >
+              <div className="chart-header row mt-2 h4">Edit Liquidity</div>
+              <div className="card-row my-3"></div>
+              <div className="row gap-3">
+                <div className="col-lg flex">
+                  <input
+                    className="button-dark text-medium mt-4 p-3"
+                    type="submit"
+                    disabled={
+                      (isValueAZero && isValueBZero) ||
+                      !hasSufficientFundsA ||
+                      !hasSufficientFundsB
+                    }
+                    value="Cancel"
+                  />
+                </div>
+                <div className="col-lg flex">
+                  <input
+                    className="button-primary text-medium mt-4 p-3"
+                    type="submit"
+                    disabled={
+                      (isValueAZero && isValueBZero) ||
+                      !hasSufficientFundsA ||
+                      !hasSufficientFundsB
+                    }
+                    value="Confirm"
+                  />
+                </div>
+              </div>
+            </fieldset>
           </div>
         </div>
       </div>
