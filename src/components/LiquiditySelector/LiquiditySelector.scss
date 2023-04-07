@@ -71,7 +71,7 @@
     pointer-events: visible;
   }
   .tick text {
-    fill: hsl(202deg 58% 33%);
+    fill: hsla(202, 50%, 84%, 1);
   }
   .tick--selected {
     stroke: var(--submit-button-bg);
