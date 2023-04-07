@@ -100,8 +100,8 @@ const restrictPriceRangeValues = (
 
 export default function PoolPage() {
   return (
-    <div className="container">
-      <div className="page">
+    <div className="container row flex py-5">
+      <div className="page col flex">
         <Pool />
       </div>
     </div>
@@ -737,7 +737,7 @@ function Pool() {
     return (
       <form
         className={[
-          'pool-page row flex-centered flow-wrap gap-5',
+          'pool-page m-auto row flex-centered flow-wrap gap-5',
           isValidatingDeposit && 'disabled',
         ]
           .filter(Boolean)
