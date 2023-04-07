@@ -1223,7 +1223,13 @@ function Pool() {
                         )
                     ) : (
                       <tr>
-                        <td colSpan={6}>No deposits made yet</td>
+                        <td
+                          colSpan={5}
+                          className="p-5"
+                          style={{ textAlign: 'center' }}
+                        >
+                          No deposits made yet
+                        </td>
                       </tr>
                     )
                   ) : (
