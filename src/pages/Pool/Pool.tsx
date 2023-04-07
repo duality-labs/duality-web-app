@@ -1436,7 +1436,22 @@ function Pool() {
                     />
                   </div>
                 </div>
-                <div className="col-lg">{confirmButton}</div>
+                <div className="row gap-3">
+                  <div className="col-lg flex">
+                    <button
+                      className="button button-dark submit-button text-medium mt-4 p-3"
+                      type="button"
+                      onClick={() => {
+                        setInputValueA('');
+                        setInputValueB('');
+                      }}
+                      disabled={isValueAZero && isValueBZero}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <div className="col-lg flex">{confirmButton}</div>
+                </div>
               </fieldset>
             </form>
             <form onSubmit={onSubmitEditLiquidity}>
