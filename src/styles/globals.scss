@@ -229,11 +229,15 @@ a {
 
 input[disabled],
 button[disabled],
-form.disabled input,
-form.disabled button {
+fieldset:disabled input,
+fieldset:disabled button,
+fieldset:disabled label {
   opacity: 0.5;
   cursor: not-allowed !important;
   pointer-events: none;
+}
+fieldset:disabled *:not(:has(> *)) {
+  opacity: 0.5;
 }
 
 hr {
