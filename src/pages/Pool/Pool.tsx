@@ -6,6 +6,7 @@ import {
   FormEvent,
   ReactNode,
   useMemo,
+  Fragment,
 } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
@@ -1596,12 +1597,14 @@ function Pool() {
                       </div>
                     );
                     return (
-                      <>
+                      <Fragment
+                        key={`${userTick.share.tickIndex}-${userTick.share.feeIndex}`}
+                      >
                         {depositA}
                         {depositB}
                         {withdrawA}
                         {withdrawB}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </div>
