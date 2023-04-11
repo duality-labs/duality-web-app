@@ -82,7 +82,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
   const [address, setAddress] = React.useState<string | null>(null);
   const [wallet, setWallet] = React.useState<OfflineSigner | null>(null);
 
-  const connectWallet = async (keplr: Provider | null = null) => {
+  async function connectWallet(keplr: Provider | null = null) {
     invariant(chainId, `Invalid chain id: ${chainId}`);
     invariant(keplr, 'Keplr extension is not installed or enabled');
     await keplr.experimentalSuggestChain(chainInfo);
@@ -95,7 +95,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
     setWallet(address ? offlineSigner : null);
 
     localStorage.setItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY, 'true');
-  };
+  }
 
   React.useEffect(() => {
     async function run() {
