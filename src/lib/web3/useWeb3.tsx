@@ -1,4 +1,10 @@
-import * as React from 'react';
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import invariant from 'invariant';
 
 import { OfflineSigner } from '@cosmjs/proto-signing';
@@ -64,13 +70,13 @@ export interface Web3ContextValue {
   address: string | null;
 }
 
-const Web3Context = React.createContext<Web3ContextValue>({
+const Web3Context = createContext<Web3ContextValue>({
   wallet: null,
   address: null,
 });
 
 interface Web3ContextProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const LOCAL_STORAGE_WALLET_CONNECTED_KEY = 'duality.web3.walletConnected';
@@ -102,8 +108,8 @@ async function getKeplr(): Promise<Keplr | undefined> {
 }
 
 export function Web3Provider({ children }: Web3ContextProps) {
-  const [address, setAddress] = React.useState<string | null>(null);
-  const [wallet, setWallet] = React.useState<OfflineSigner | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
+  const [wallet, setWallet] = useState<OfflineSigner | null>(null);
 
   async function connectWallet() {
     invariant(chainId, `Invalid chain id: ${chainId}`);
@@ -121,7 +127,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
     localStorage.setItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY, 'true');
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     async function run() {
       if (window.keplr && window.getOfflineSigner) {
         if (localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY)) {
@@ -163,5 +169,5 @@ export function Web3Provider({ children }: Web3ContextProps) {
 }
 
 export function useWeb3() {
-  return React.useContext(Web3Context);
+  return useContext(Web3Context);
 }
