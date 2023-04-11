@@ -70,6 +70,17 @@ export function Web3Provider({ children }: Web3ContextProps) {
     connectWallet(walletType || undefined);
   }, [connectWallet]);
 
+  // listen across tabs for wallet connection events through local storage
+  useEffect(() => {
+    function syncWallet(e: StorageEvent) {
+      if (e.key === LOCAL_STORAGE_WALLET_CONNECTED_KEY) {
+        connectWallet(e.newValue || undefined);
+      }
+    }
+    window.addEventListener('storage', syncWallet);
+    return () => window.removeEventListener('storage', syncWallet);
+  }, [connectWallet]);
+
   // sync Keplr wallet on state changes
   useEffect(() => {
     const syncKeplrWallet = () => connectWallet('keplr');
