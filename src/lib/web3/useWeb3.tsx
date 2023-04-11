@@ -149,30 +149,23 @@ export function Web3Provider({ children }: Web3ContextProps) {
   useEffect(() => {
     // set callback to run on load and on Keplr state changes
     async function run() {
-      if (window.keplr && window.getOfflineSigner) {
-        if (localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY)) {
-          try {
-            await connectWallet();
-          } catch {
-            // can happen when the user manually disconnected the app and then rejects the connect dialog
-            // silently ignore
-          }
-        }
-        // add listener for Keplr state changes
-        window.addEventListener('keplr_keystorechange', async () => {
-          const offlineSigner = window.keplr.getOfflineSigner(chainId);
-          const account = await getKeplrWalletAccount(offlineSigner);
-          setAddress((address) => {
-            // switch address or remove if already connected
-            if (address) {
-              return account?.address || null;
-            }
-            return null;
-          });
-        });
+      // check if user has opted in to connecting their wallet
+      if (localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY)) {
+        await connectWallet();
+      }
+      // unset wallet and address if they were not set
+      else {
+        setWallet(null);
+        setAddress(null);
       }
     }
+    // run immediately
     run();
+    // and also listen for account changes
+    window.addEventListener('keplr_keystorechange', run);
+    return () => {
+      window.removeEventListener('keplr_keystorechange', run);
+    };
   }, [connectWallet]);
 
   return (
