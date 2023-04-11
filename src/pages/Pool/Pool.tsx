@@ -8,11 +8,9 @@ import {
   useMemo,
   Fragment,
 } from 'react';
-import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faPlus,
   faArrowRightArrowLeft,
   faMagnifyingGlassPlus,
   faMagnifyingGlassMinus,
@@ -36,7 +34,6 @@ import {
 } from '../../components/LiquiditySelector/LiquiditySelector';
 import { useCurrentPriceFromTicks } from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
-import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 
 import useTokens from '../../lib/web3/hooks/useTokens';
@@ -105,37 +102,69 @@ const restrictPriceRangeValues = (
   return '1';
 };
 
-export default function PoolPage() {
+export default function PairsPage() {
   return (
     <div className="container row flex py-5">
       <div className="page col flex">
-        <Pool />
+        <Pairs />
       </div>
     </div>
   );
 }
 
-function Pool() {
+function Pairs() {
   const [tokenA, setTokenA] = useState(undefined as Token | undefined);
   const [tokenB, setTokenB] = useState(undefined as Token | undefined);
+
+  const [selectedPoolsList, setSelectedPoolsList] = useState<'all' | 'mine'>(
+    'all'
+  );
+
+  if (!tokenA || !tokenB) {
+    return (
+      <div className="pool-page col gap-5 mt-5">
+        <div>
+          <h1 className="h1">Pairs</h1>
+          <div>Provide liquidity and earn fees.</div>
+        </div>
+        <PoolsTableCard
+          className="flex"
+          title="Pairs"
+          switchValue={selectedPoolsList}
+          switchOnChange={setSelectedPoolsList}
+          onTokenPairClick={([token0, token1]) => {
+            setTokenA(token0);
+            setTokenB(token1);
+          }}
+        />
+      </div>
+    );
+  }
+  return (
+    <Pair
+      tokenA={tokenA}
+      tokenB={tokenB}
+      setTokenA={setTokenA}
+      setTokenB={setTokenB}
+    />
+  );
+}
+
+function Pair({
+  tokenA,
+  tokenB,
+  setTokenA,
+  setTokenB,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  setTokenA: React.Dispatch<React.SetStateAction<Token | undefined>>;
+  setTokenB: React.Dispatch<React.SetStateAction<Token | undefined>>;
+}) {
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
   );
   const tokenList = useTokens();
-
-  // set token A to be first token in list if not already populated
-  useEffect(() => {
-    if (tokenList.length > 0 && !tokenA) {
-      setTokenA(tokenList.find((token) => token.symbol === 'TKN'));
-    }
-  }, [tokenA, tokenList]);
-  // set token B to be USDC token in list if not already populated
-  useEffect(() => {
-    const USDC = tokenList?.find((token) => token.symbol === 'STK');
-    if (USDC && !tokenB) {
-      setTokenB(USDC);
-    }
-  }, [tokenB, tokenList]);
 
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
   const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
@@ -147,7 +176,6 @@ function Pool() {
   const isValueAZero = new BigNumber(valueA).isZero();
   const isValueBZero = new BigNumber(valueB).isZero();
 
-  const [valuesConfirmed, setValuesConfirmed] = useState(false);
   const valuesValid =
     !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
 
@@ -362,12 +390,6 @@ function Pool() {
     async function (e: FormEvent<HTMLFormElement>) {
       e.preventDefault();
       if (!valuesValid) return;
-      const submitValue =
-        // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-        ((e.nativeEvent as any)?.submitter as HTMLInputElement).value;
-      if (submitValue.toLowerCase() === 'customize') {
-        return setValuesConfirmed(true);
-      }
 
       // normalize tick reserve to the values asked for
       const { reserveATotal, reserveBTotal } = userTicks.reduce(
@@ -475,6 +497,8 @@ function Pool() {
   }, [
     tokenA,
     tokenB,
+    setTokenA,
+    setTokenB,
     rangeMin,
     rangeMax,
     setRangeMin,
@@ -692,10 +716,6 @@ function Pool() {
     ];
   }, [userTicks]);
 
-  const [selectedPoolsList, setSelectedPoolsList] = useState<'all' | 'mine'>(
-    'all'
-  );
-
   const confirmButton = (
     <input
       className="button-primary text-medium mt-4 p-3"
@@ -790,93 +810,6 @@ function Pool() {
     [sendEditRequest, editedUserTicks]
   );
   const editMode = !diffTokenA.isZero() || !diffTokenB.isZero();
-
-  if (!tokenA || !tokenB || !valuesConfirmed) {
-    return (
-      <form
-        className={[
-          'pool-page m-auto row flex-centered flow-wrap gap-5',
-          isValidatingDeposit && 'disabled',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        onSubmit={onSubmitAddLiquidity}
-      >
-        <PoolsTableCard
-          className="flex flex-auto"
-          title="Pairs"
-          switchValue={selectedPoolsList}
-          switchOnChange={setSelectedPoolsList}
-          onTokenPairClick={([token0, token1]) => {
-            setTokenA(token0);
-            setTokenB(token1);
-          }}
-        />
-        <div className="assets-card page-card">
-          <h3 className="card-title mb-4">Add Liquidity</h3>
-          <div className="mb-4">
-            <p>
-              Add liquidity in any ratio to earn fees on
-              <br /> other people’s trades! Learn more{' '}
-              <Link to="/liquidity">here</Link>.
-            </p>
-          </div>
-          <div className="card-row">
-            <TokenInputGroup
-              variant={tokenA && !hasSufficientFundsA && 'error'}
-              onValueChanged={setInputValueA}
-              onTokenChanged={setTokenA}
-              tokenList={tokenList}
-              token={tokenA}
-              value={inputValueA}
-              exclusion={tokenB}
-            />
-          </div>
-          <div className="plus-space mx-auto my-4">
-            <FontAwesomeIcon icon={faPlus}></FontAwesomeIcon>
-          </div>
-          <div className="card-row">
-            <TokenInputGroup
-              variant={tokenB && !hasSufficientFundsB && 'error'}
-              onValueChanged={setInputValueB}
-              onTokenChanged={setTokenB}
-              tokenList={tokenList}
-              token={tokenB}
-              value={inputValueB}
-              exclusion={tokenA}
-            />
-          </div>
-          <div className="row flex-centered mt-5 gapx-5">
-            <div className="col flex">
-              <input
-                className="button-primary text-medium pill-outline px-4 py-4"
-                disabled={
-                  !valuesValid || !hasSufficientFundsA || !hasSufficientFundsB
-                }
-                type="submit"
-                name="action"
-                value="Customize"
-              />
-            </div>
-            <div className="col flex">
-              <input
-                className="button-primary text-medium px-4 py-4"
-                disabled={
-                  (isValueAZero && isValueBZero) ||
-                  !hasSufficientFundsA ||
-                  !hasSufficientFundsB
-                }
-                type="submit"
-                name="action"
-                value="Add Liquidity"
-              />
-            </div>
-          </div>
-          <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
-        </div>
-      </form>
-    );
-  }
 
   return (
     <div
