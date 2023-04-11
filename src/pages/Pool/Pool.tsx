@@ -918,6 +918,18 @@ function Pair({
             />
           </div>
         </div>
+        <div className="row precision-card">
+          <StepNumberInput
+            title="Number of Ticks"
+            min={
+              rangeMin === rangeMax ? 1 : !isValueAZero && !isValueBZero ? 2 : 1
+            }
+            max={rangeMin === rangeMax ? 1 : 10}
+            value={rangeMin === rangeMax ? '1' : precision}
+            onChange={setPrecision}
+            minSignificantDigits={1}
+          />
+        </div>
         <div className="row gap-3">
           <div className="col flex">
             <button
