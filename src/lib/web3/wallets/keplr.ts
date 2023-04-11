@@ -1,6 +1,6 @@
 import invariant from 'invariant';
 
-import { OfflineSigner } from '@cosmjs/proto-signing';
+import { AccountData, OfflineSigner } from '@cosmjs/proto-signing';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
 
 const {
@@ -82,8 +82,8 @@ async function getKeplr(): Promise<Keplr | undefined> {
 }
 
 // get Keplr objects
-type KeplrWallet = ReturnType<Keplr['getOfflineSigner']>;
-type KeplrWalletAccount = Awaited<ReturnType<OfflineSigner['getAccounts']>>[0];
+type KeplrWallet = OfflineSigner;
+type KeplrWalletAccount = AccountData;
 export async function getKeplrWallet(): Promise<KeplrWallet | undefined> {
   try {
     invariant(chainId, `Invalid chain id: ${chainId}`);
