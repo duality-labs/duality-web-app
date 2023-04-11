@@ -29,13 +29,13 @@ import { getPairID } from '../../lib/web3/utils/pairs';
 import './PoolsTableCard.scss';
 
 const switchValues = {
-  all: 'All Pools',
-  mine: 'My Pools',
+  all: 'Show All',
+  mine: 'My Positions',
 };
 
 export default function PoolsTableCard({
   className,
-  title = 'Pools',
+  title = 'All Pairs',
   switchValue: givenSwitchValue = 'mine',
   switchOnChange: givenSwitchOnChange,
   onTokenPairClick,
@@ -123,18 +123,17 @@ export default function PoolsTableCard({
             <thead>
               {switchValue === 'mine' ? (
                 <tr>
-                  <th>Pool</th>
+                  <th>Pair</th>
                   <th>Value</th>
                   <th>Composition</th>
                   <th>Withdraw</th>
                 </tr>
               ) : (
                 <tr>
-                  <th>Pool</th>
-                  <th>APR</th>
+                  <th>Pair</th>
                   <th>TVL</th>
-                  <th>Fee (24h)</th>
-                  <th>Volume (24h)</th>
+                  <th>Volume (7 days)</th>
+                  <th>Volatility (7 days)</th>
                 </tr>
               )}
             </thead>
@@ -249,13 +248,11 @@ function PairRow({
         <td>
           <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
-        {/* APR col */}
-        <td>-</td>
         {/* TVL col */}
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
-        {/* Fee (24h) col */}
+        {/* Volume (7 days) col */}
         <td>-</td>
-        {/* Volume (24h) col */}
+        {/* Volatility (7 days) col */}
         <td>-</td>
       </tr>
     );

@@ -130,7 +130,7 @@ function Pairs() {
         </div>
         <PoolsTableCard
           className="flex"
-          title="Pairs"
+          title="All Pairs"
           switchValue={selectedPoolsList}
           switchOnChange={setSelectedPoolsList}
           onTokenPairClick={([token0, token1]) => {
