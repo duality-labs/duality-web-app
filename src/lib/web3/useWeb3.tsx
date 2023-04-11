@@ -1,6 +1,7 @@
 import {
   ReactNode,
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -9,8 +10,6 @@ import invariant from 'invariant';
 
 import { OfflineSigner } from '@cosmjs/proto-signing';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
-
-export type Provider = Keplr;
 
 const {
   REACT_APP__CHAIN_ID,
@@ -60,7 +59,7 @@ const chainInfo: ChainInfo = {
 
 declare global {
   interface Window extends KeplrWindow {
-    keplr: Provider;
+    keplr: Keplr;
   }
 }
 
@@ -107,27 +106,48 @@ async function getKeplr(): Promise<Keplr | undefined> {
   });
 }
 
-export function Web3Provider({ children }: Web3ContextProps) {
-  const [address, setAddress] = useState<string | null>(null);
-  const [wallet, setWallet] = useState<OfflineSigner | null>(null);
-
-  async function connectWallet() {
+// get Keplr objects
+type KeplrWallet = ReturnType<Keplr['getOfflineSigner']>;
+type KeplrWalletAccount = Awaited<ReturnType<OfflineSigner['getAccounts']>>[0];
+async function getKeplrWallet(): Promise<KeplrWallet | undefined> {
+  try {
     invariant(chainId, `Invalid chain id: ${chainId}`);
     const keplr = await getKeplr();
     invariant(keplr, 'Keplr extension is not installed or enabled');
     await keplr.experimentalSuggestChain(chainInfo);
     await keplr.enable(chainId);
     const offlineSigner = keplr.getOfflineSigner(chainId);
-    const accounts = await offlineSigner.getAccounts();
-    const address = accounts[0].address;
-    setAddress(address);
-    // set wallet if address is knowable
-    setWallet(address ? offlineSigner : null);
-
-    localStorage.setItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY, 'true');
+    invariant(offlineSigner, 'Keplr wallet is not set');
+    return offlineSigner;
+  } catch {
+    // silently ignore errors
+    // invocations should handle the possibly undefined result
   }
+}
+async function getKeplrWalletAccount(
+  wallet: KeplrWallet
+): Promise<KeplrWalletAccount | undefined> {
+  const [account] = (await wallet?.getAccounts()) || [];
+  return account;
+}
+
+export function Web3Provider({ children }: Web3ContextProps) {
+  const [address, setAddress] = useState<string | null>(null);
+  const [wallet, setWallet] = useState<OfflineSigner | null>(null);
+
+  // set callback to run when user opts in to connecting their wallet
+  const connectWallet = useCallback(async () => {
+    // set or unset wallet
+    const wallet = await getKeplrWallet();
+    setWallet(wallet || null);
+    localStorage.setItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY, 'true');
+    // set or unset default wallet address
+    const account = wallet && (await getKeplrWalletAccount(wallet));
+    setAddress(account?.address || null);
+  }, []);
 
   useEffect(() => {
+    // set callback to run on load and on Keplr state changes
     async function run() {
       if (window.keplr && window.getOfflineSigner) {
         if (localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY)) {
@@ -141,11 +161,11 @@ export function Web3Provider({ children }: Web3ContextProps) {
         // add listener for Keplr state changes
         window.addEventListener('keplr_keystorechange', async () => {
           const offlineSigner = window.keplr.getOfflineSigner(chainId);
-          const accounts = await offlineSigner?.getAccounts();
+          const account = await getKeplrWalletAccount(offlineSigner);
           setAddress((address) => {
             // switch address or remove if already connected
             if (address) {
-              return accounts[0]?.address || null;
+              return account?.address || null;
             }
             return null;
           });
@@ -153,7 +173,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
       }
     }
     run();
-  }, []);
+  }, [connectWallet]);
 
   return (
     <Web3Context.Provider
