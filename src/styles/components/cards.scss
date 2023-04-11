@@ -51,12 +51,11 @@ $page-card-padding-width: paddings.$p-lg;
   }
 
   .attribution {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: fit-content;
-    margin: 0 auto;
+    margin-top: $page-card-padding-width;
+    margin-bottom: -$page-card-padding-width;
+    margin-left: auto;
+    margin-right: auto;
     justify-content: center;
     padding: paddings.$p-1 paddings.$p-4;
     background-color: rgba(white, 0.1);
