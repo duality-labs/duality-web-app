@@ -80,6 +80,8 @@ interface Web3ContextProps {
 
 const LOCAL_STORAGE_WALLET_CONNECTED_KEY = 'duality.web3.walletConnected';
 
+type SupportedWallet = 'keplr';
+
 // the get Keplr function as provided in Keplr docs: https://docs.keplr.app/api
 // it will return the Kelpr global on JS load or on page ready
 async function getKeplr(): Promise<Keplr | undefined> {
@@ -136,42 +138,62 @@ export function Web3Provider({ children }: Web3ContextProps) {
   const [wallet, setWallet] = useState<OfflineSigner | null>(null);
 
   // set callback to run when user opts in to connecting their wallet
-  const connectWallet = useCallback(async () => {
-    // set or unset wallet
-    const wallet = await getKeplrWallet();
-    setWallet(wallet || null);
-    localStorage.setItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY, 'true');
-    // set or unset default wallet address
-    const account = wallet && (await getKeplrWalletAccount(wallet));
-    setAddress(account?.address || null);
-  }, []);
+  const connectWallet = useCallback(
+    async (walletType: SupportedWallet | string = '') => {
+      const [wallet, address] = await (async function (): Promise<
+        [OfflineSigner?, string?]
+      > {
+        switch (walletType) {
+          case 'keplr': {
+            const wallet = await getKeplrWallet();
+            const account = wallet && (await getKeplrWalletAccount(wallet));
+            return [wallet, account?.address];
+          }
+          // if wallet type was not found then mark them as not found
+          default: {
+            return [];
+          }
+        }
+      })();
+      // set or unset wallet and address
+      setWallet(wallet ?? null);
+      setAddress(wallet ? address ?? null : null);
+      // save new state
+      if (walletType) {
+        localStorage.setItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY, walletType);
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY);
+      }
+    },
+    []
+  );
 
+  // sync wallet to saved wallet type on load
   useEffect(() => {
-    // set callback to run on load and on Keplr state changes
-    async function syncConnectedWallet() {
-      // check if user has opted in to connecting their wallet
-      if (localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY)) {
-        await connectWallet();
-      }
-      // unset wallet and address if they were not set
-      else {
-        setWallet(null);
-        setAddress(null);
-      }
+    const walletType = localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY);
+    connectWallet(walletType || undefined);
+  }, [connectWallet]);
+
+  // sync Keplr wallet on state changes
+  useEffect(() => {
+    const syncKeplrWallet = () => connectWallet('keplr');
+    const walletType = localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY);
+    if (walletType === 'keplr') {
+      window.addEventListener('keplr_keystorechange', syncKeplrWallet);
+      return () => {
+        window.removeEventListener('keplr_keystorechange', syncKeplrWallet);
+      };
     }
-    // run immediately
-    syncConnectedWallet();
-    // and also listen for account changes
-    window.addEventListener('keplr_keystorechange', syncConnectedWallet);
-    return () => {
-      window.removeEventListener('keplr_keystorechange', syncConnectedWallet);
-    };
   }, [connectWallet]);
 
   return (
     <Web3Context.Provider
       value={{
-        connectWallet,
+        // only connect to Keplr wallets for now
+        connectWallet: useCallback(
+          async () => await connectWallet('keplr'),
+          [connectWallet]
+        ),
         wallet,
         address,
       }}
