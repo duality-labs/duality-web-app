@@ -174,7 +174,7 @@ export default function Header() {
 }
 
 function NavLink({ to, children, className, ...otherProps }: LinkProps) {
-  const resolved = useResolvedPath(to);
+  const resolved = useResolvedPath(`${to}/*`);
   const match = useMatch({ path: resolved.pathname, end: true });
   const activeClassName = match ? 'active' : '';
   const fullClassName = [className, activeClassName].filter(Boolean).join(' ');

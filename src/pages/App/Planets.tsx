@@ -40,7 +40,7 @@ function Planet({
   right?: number | string;
   width?: number | string;
 }) {
-  const active = useMatch(name);
+  const active = useMatch(`${name}/*`);
   const style = useMemo(() => {
     return {
       top,
