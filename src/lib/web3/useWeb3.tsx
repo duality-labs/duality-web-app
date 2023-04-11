@@ -8,7 +8,11 @@ import {
 } from 'react';
 
 import { OfflineSigner } from '@cosmjs/proto-signing';
-import { getKeplrWallet, getKeplrWalletAccount } from './wallets/keplr';
+import {
+  getKeplrWallet,
+  getKeplrWalletAccount,
+  useSyncKeplrState,
+} from './wallets/keplr';
 
 export interface Web3ContextValue {
   connectWallet?: () => void;
@@ -81,17 +85,11 @@ export function Web3Provider({ children }: Web3ContextProps) {
     return () => window.removeEventListener('storage', syncWallet);
   }, [connectWallet]);
 
-  // sync Keplr wallet on state changes
-  useEffect(() => {
-    const syncKeplrWallet = () => connectWallet('keplr');
-    const walletType = localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY);
-    if (walletType === 'keplr') {
-      window.addEventListener('keplr_keystorechange', syncKeplrWallet);
-      return () => {
-        window.removeEventListener('keplr_keystorechange', syncKeplrWallet);
-      };
-    }
-  }, [connectWallet]);
+  // sync Keplr wallet on Keplr state changes
+  useSyncKeplrState(
+    connectWallet,
+    localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY) === 'keplr'
+  );
 
   return (
     <Web3Context.Provider

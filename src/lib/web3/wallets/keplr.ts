@@ -1,5 +1,6 @@
 import invariant from 'invariant';
 
+import { useEffect } from 'react';
 import { AccountData, OfflineSigner } from '@cosmjs/proto-signing';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
 
@@ -84,6 +85,7 @@ async function getKeplr(): Promise<Keplr | undefined> {
 // get Keplr objects
 type KeplrWallet = OfflineSigner;
 type KeplrWalletAccount = AccountData;
+
 export async function getKeplrWallet(): Promise<KeplrWallet | undefined> {
   try {
     invariant(chainId, `Invalid chain id: ${chainId}`);
@@ -99,9 +101,26 @@ export async function getKeplrWallet(): Promise<KeplrWallet | undefined> {
     // invocations should handle the possibly undefined result
   }
 }
+
 export async function getKeplrWalletAccount(
   wallet: KeplrWallet
 ): Promise<KeplrWalletAccount | undefined> {
   const [account] = (await wallet?.getAccounts()) || [];
   return account;
+}
+
+export function useSyncKeplrState(
+  connectWallet: (walletType: string) => void,
+  syncActive: boolean
+) {
+  // sync Keplr wallet on state changes
+  useEffect(() => {
+    if (syncActive) {
+      const syncKeplrWallet = () => connectWallet('keplr');
+      window.addEventListener('keplr_keystorechange', syncKeplrWallet);
+      return () => {
+        window.removeEventListener('keplr_keystorechange', syncKeplrWallet);
+      };
+    }
+  }, [connectWallet, syncActive]);
 }
