@@ -1194,13 +1194,6 @@ function TicksArea({
           y2={plotY(new BigNumber(1)).toFixed(3)}
         />
         <rect
-          className="pole-to-flag"
-          x={(plotX(rangeMinIndex) - rounding).toFixed(3)}
-          width={rounding}
-          y={plotY(new BigNumber(1)).toFixed(3)}
-          height="40"
-        />
-        <rect
           className="pole-flag"
           x={(plotX(rangeMinIndex) - 30 - poleWidth / 2).toFixed(3)}
           width="30"
@@ -1300,13 +1293,6 @@ function TicksArea({
           x2={(plotX(rangeMaxIndex) + poleWidth / 2).toFixed(3)}
           y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
           y2={plotY(new BigNumber(1)).toFixed(3)}
-        />
-        <rect
-          className="pole-to-flag"
-          x={plotX(rangeMaxIndex).toFixed(3)}
-          width={rounding}
-          y={plotY(new BigNumber(1)).toFixed(3)}
-          height="40"
         />
         <rect
           className="pole-flag"

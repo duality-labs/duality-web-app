@@ -119,11 +119,10 @@
   }
   .pole-stick {
     stroke-width: 8px;
-    stroke: hsla(165, 83%, 57%, 1);
+    stroke: hsla(165, 83%, 57%, 0.5);
   }
-  .pole-flag,
-  .pole-to-flag {
-    fill: hsla(165, 83%, 57%, 1);
+  .pole-flag {
+    fill: hsla(165, 83%, 57%, 0.5);
   }
   .pole-flag-stripe {
     fill: transparent;
@@ -138,7 +137,6 @@
     cursor: pointer;
   }
   .pole--price-warning {
-    .pole-to-flag,
     .pole-flag {
       fill: var(--error);
     }
