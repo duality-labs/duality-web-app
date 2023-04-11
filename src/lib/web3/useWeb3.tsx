@@ -79,8 +79,9 @@ export function Web3Provider({ children }: Web3ContextProps) {
   const [address, setAddress] = React.useState<string | null>(null);
   const [wallet, setWallet] = React.useState<OfflineSigner | null>(null);
 
-  async function connectWallet(keplr: Provider | null = null) {
+  async function connectWallet() {
     invariant(chainId, `Invalid chain id: ${chainId}`);
+    const keplr = window.keplr;
     invariant(keplr, 'Keplr extension is not installed or enabled');
     await keplr.experimentalSuggestChain(chainInfo);
     await keplr.enable(chainId);
@@ -125,7 +126,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
   return (
     <Web3Context.Provider
       value={{
-        connectWallet: () => connectWallet(window.keplr),
+        connectWallet,
         wallet,
         address,
       }}
