@@ -78,6 +78,8 @@ const defaultLiquidityShape =
   liquidityShapes.find(({ value }) => value === 'flat') ?? liquidityShapes[0];
 
 const defaultPrecision = '6';
+const defaultTokenA = 'TKN';
+const defaultTokenB = 'STK';
 
 const formatRangeString = (value: BigNumber.Value, significantDecimals = 3) => {
   return formatAmount(
@@ -134,8 +136,8 @@ function Pairs() {
           <button
             className="button button-primary py-3 px-md"
             onClick={() => {
-              setTokenA(tokenList.find((token) => token.symbol === 'TKN'));
-              setTokenB(tokenList.find((token) => token.symbol === 'STK'));
+              setTokenA(tokenList.find((t) => t.symbol === defaultTokenA));
+              setTokenB(tokenList.find((t) => t.symbol === defaultTokenB));
             }}
           >
             Create New Position
