@@ -1382,10 +1382,10 @@ function Pair({
           <div className="col col--left gap-4">
             <form onSubmit={onSubmitAddLiquidity}>
               <fieldset
-                className="page-card p-4"
+                className="page-card"
                 disabled={editMode || isValidatingDeposit}
               >
-                <div className="chart-header row mt-2 h4">Add Liquidity</div>
+                <div className="chart-header row h4">Add Liquidity</div>
                 <div className="row">
                   <SelectInput<FeeType>
                     className="col flex select-fee-tier"
@@ -1468,12 +1468,12 @@ function Pair({
             </form>
             <form onSubmit={onSubmitEditLiquidity}>
               <fieldset
-                className={['page-card p-4', !editMode && 'hide']
+                className={['page-card', !editMode && 'hide']
                   .filter(Boolean)
                   .join(' ')}
                 disabled={isValidatingEdit}
               >
-                <div className="chart-header row mt-2 h4">Edit Liquidity</div>
+                <div className="chart-header row h4">Edit Liquidity</div>
                 <div className="col my-3">
                   {editedUserTicks.map((userTick) => {
                     const [diffA, diffB] = invertTokenOrder
