@@ -148,7 +148,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
 
   useEffect(() => {
     // set callback to run on load and on Keplr state changes
-    async function run() {
+    async function syncConnectedWallet() {
       // check if user has opted in to connecting their wallet
       if (localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY)) {
         await connectWallet();
@@ -160,11 +160,11 @@ export function Web3Provider({ children }: Web3ContextProps) {
       }
     }
     // run immediately
-    run();
+    syncConnectedWallet();
     // and also listen for account changes
-    window.addEventListener('keplr_keystorechange', run);
+    window.addEventListener('keplr_keystorechange', syncConnectedWallet);
     return () => {
-      window.removeEventListener('keplr_keystorechange', run);
+      window.removeEventListener('keplr_keystorechange', syncConnectedWallet);
     };
   }, [connectWallet]);
 
