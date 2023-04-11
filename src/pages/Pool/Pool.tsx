@@ -767,19 +767,6 @@ function Pair({
     ];
   }, [userTicks]);
 
-  const confirmButton = (
-    <input
-      className="button-primary text-medium mt-4 p-3"
-      type="submit"
-      disabled={
-        (isValueAZero && isValueBZero) ||
-        !hasSufficientFundsA ||
-        !hasSufficientFundsB
-      }
-      value="Confirm"
-    />
-  );
-
   const userShareValueMap = useShareValueMap();
   const forward =
     userShareValueMap?.[
@@ -861,6 +848,232 @@ function Pair({
     [sendEditRequest, editedUserTicks]
   );
   const editMode = !diffTokenA.isZero() || !diffTokenB.isZero();
+
+  const addLiquidityForm = (
+    <form onSubmit={onSubmitAddLiquidity}>
+      <fieldset
+        className="page-card"
+        disabled={editMode || isValidatingDeposit}
+      >
+        <div className="chart-header row h4">Add Liquidity</div>
+        <div className="row">
+          <SelectInput<FeeType>
+            className="col flex select-fee-tier"
+            list={feeTypes}
+            value={feeType}
+            onChange={setFeeType}
+            getLabel={(feeType) =>
+              feeType ? `${feeType.label} Fee Tier` : 'Select Fee Tier'
+            }
+            getDescription={(feeType) =>
+              !feeType ? null : (
+                <>
+                  <span>{feeType.description}</span>
+                  <span> </span>
+                  <span className="badge badge-xs">
+                    {feeLiquidityMap?.[feeType.fee]
+                      .multipliedBy(100)
+                      .toFixed(0) ?? '0'}
+                    % of Liquidity
+                  </span>
+                </>
+              )
+            }
+          />
+        </div>
+        <div className="card-row my-3">
+          <TokenInputGroup
+            className="flex"
+            variant={tokenA && !hasSufficientFundsA && 'error'}
+            onValueChanged={setInputValueA}
+            onTokenChanged={setTokenA}
+            tokenList={tokenList}
+            token={tokenA}
+            value={inputValueA}
+            exclusion={tokenB}
+          />
+        </div>
+        <div className="card-row my-3">
+          <TokenInputGroup
+            className="flex"
+            variant={tokenB && !hasSufficientFundsB && 'error'}
+            onValueChanged={setInputValueB}
+            onTokenChanged={setTokenB}
+            tokenList={tokenList}
+            token={tokenB}
+            value={inputValueB}
+            exclusion={tokenA}
+          />
+        </div>
+        <div className="row liquidity-shape">
+          <div className="col flex">
+            <h4 className="mt-4">Liquidity Shape</h4>
+            <RadioInput<LiquidityShape>
+              className="col flex"
+              maxColumnCount={4}
+              list={liquidityShapes}
+              value={liquidityShape}
+              onChange={setLiquidityShape}
+              OptionComponent={LiquidityShapeOptionComponent}
+            />
+          </div>
+        </div>
+        <div className="row gap-3">
+          <div className="col flex">
+            <button
+              className="button button-dark submit-button text-medium mt-4 p-3"
+              type="button"
+              onClick={() => {
+                setInputValueA('');
+                setInputValueB('');
+              }}
+              disabled={isValueAZero && isValueBZero}
+            >
+              Cancel
+            </button>
+          </div>
+          <div className="col flex">
+            <input
+              className="button-primary text-medium mt-4 p-3"
+              type="submit"
+              disabled={
+                (isValueAZero && isValueBZero) ||
+                !hasSufficientFundsA ||
+                !hasSufficientFundsB
+              }
+              value="Confirm"
+            />
+          </div>
+        </div>
+        <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
+      </fieldset>
+    </form>
+  );
+  const editLiquidityForm = (
+    <form onSubmit={onSubmitEditLiquidity}>
+      <fieldset
+        className={['page-card', !editMode && 'hide'].filter(Boolean).join(' ')}
+        disabled={isValidatingEdit}
+      >
+        <div className="chart-header row h4">Edit Liquidity</div>
+        <div className="col my-3">
+          {editedUserTicks.map((userTick) => {
+            const [diffA, diffB] = invertTokenOrder
+              ? [userTick.tickDiff1, userTick.tickDiff0]
+              : [userTick.tickDiff0, userTick.tickDiff1];
+            const [tokenA, tokenB] = invertTokenOrder
+              ? [userTick.token1, userTick.token0]
+              : [userTick.token0, userTick.token1];
+            const price = formatPrice(
+              tickIndexToPrice(
+                new BigNumber(userTick.share.tickIndex)
+              ).toNumber()
+            );
+            const withdrawA = diffA.isLessThan(0) && (
+              <div className="row">
+                <div className="col">
+                  Withdraw @ {price} {tokenB.symbol}/{tokenA.symbol}
+                </div>
+                <div className="col ml-auto">
+                  {formatAmount(diffA.negated().toNumber())} {tokenA.symbol}
+                </div>
+              </div>
+            );
+            const withdrawB = diffB.isLessThan(0) && (
+              <div className="row">
+                <div className="col">
+                  Withdraw @ {price} {tokenB.symbol}/{tokenA.symbol}
+                </div>
+                <div className="col ml-auto">
+                  {formatAmount(diffB.negated().toNumber())} {tokenB.symbol}
+                </div>
+              </div>
+            );
+            const depositA = diffA.isGreaterThan(0) && (
+              <div className="row">
+                <div className="col">
+                  Deposit @ {price} {tokenB.symbol}/{tokenA.symbol}
+                </div>
+                <div className="col ml-auto">
+                  {formatAmount(diffA.toNumber())} {tokenA.symbol}
+                </div>
+              </div>
+            );
+            const depositB = diffB.isGreaterThan(0) && (
+              <div className="row">
+                <div className="col">
+                  Deposit @ {price} {tokenB.symbol}/{tokenA.symbol}
+                </div>
+                <div className="col ml-auto">
+                  {formatAmount(diffB.toNumber())} {tokenB.symbol}
+                </div>
+              </div>
+            );
+            return (
+              <Fragment
+                key={`${userTick.share.tickIndex}-${userTick.share.feeIndex}`}
+              >
+                {depositA}
+                {depositB}
+                {withdrawA}
+                {withdrawB}
+              </Fragment>
+            );
+          })}
+        </div>
+        {editedUserTicks.filter(
+          (tick) => !tick.tickDiff0.isZero() || !tick.tickDiff1.isZero()
+        ).length > 1 && (
+          <>
+            <hr />
+            <div className="col my-3">
+              <div className="h4">You will receive:</div>
+              {!diffTokenA.isZero() && (
+                <div className="ml-auto">
+                  {formatAmount(diffTokenA.negated().toNumber())}{' '}
+                  {tokenA.symbol}
+                </div>
+              )}
+              {!diffTokenB.isZero() && (
+                <div className="ml-auto">
+                  {formatAmount(diffTokenB.negated().toNumber())}{' '}
+                  {tokenB.symbol}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+        <div className="row gap-3">
+          <div className="col flex">
+            <button
+              className="button button-dark submit-button text-medium mt-4 p-3"
+              type="button"
+              onClick={() => {
+                setEditedUserTicks((ticks) =>
+                  ticks.map((tick) => ({
+                    ...tick,
+                    tickDiff0: new BigNumber(0),
+                    tickDiff1: new BigNumber(0),
+                  }))
+                );
+              }}
+              value="Cancel"
+            >
+              Cancel
+            </button>
+          </div>
+          <div className="col flex">
+            <input
+              className="button-primary text-medium mt-4 p-3"
+              type="submit"
+              disabled={!hasSufficientFundsA || !hasSufficientFundsB}
+              value="Confirm"
+            />
+          </div>
+        </div>
+      </fieldset>
+    </form>
+  );
 
   return (
     <div
@@ -1199,9 +1412,9 @@ function Pair({
                     </div>
                   )}
                 </div>
-                <div className="col pt-lg col-lg-hide">{confirmButton}</div>
               </div>
             </div>
+            <div className="col pt-lg col-lg-hide">{addLiquidityForm}</div>
             <div className="page-card">
               <table className="my-position-table" style={{ width: '100%' }}>
                 <thead>
@@ -1429,222 +1642,11 @@ function Pair({
                 </tbody>
               </table>
             </div>
+            <div className="col pt-lg col-lg-hide">{editLiquidityForm}</div>
           </div>
-          <div className="col col--left gap-4">
-            <form onSubmit={onSubmitAddLiquidity}>
-              <fieldset
-                className="page-card"
-                disabled={editMode || isValidatingDeposit}
-              >
-                <div className="chart-header row h4">Add Liquidity</div>
-                <div className="row">
-                  <SelectInput<FeeType>
-                    className="col flex select-fee-tier"
-                    list={feeTypes}
-                    value={feeType}
-                    onChange={setFeeType}
-                    getLabel={(feeType) =>
-                      feeType ? `${feeType.label} Fee Tier` : 'Select Fee Tier'
-                    }
-                    getDescription={(feeType) =>
-                      !feeType ? null : (
-                        <>
-                          <span>{feeType.description}</span>
-                          <span> </span>
-                          <span className="badge badge-xs">
-                            {feeLiquidityMap?.[feeType.fee]
-                              .multipliedBy(100)
-                              .toFixed(0) ?? '0'}
-                            % of Liquidity
-                          </span>
-                        </>
-                      )
-                    }
-                  />
-                </div>
-                <div className="card-row my-3">
-                  <TokenInputGroup
-                    className="flex"
-                    variant={tokenA && !hasSufficientFundsA && 'error'}
-                    onValueChanged={setInputValueA}
-                    onTokenChanged={setTokenA}
-                    tokenList={tokenList}
-                    token={tokenA}
-                    value={inputValueA}
-                    exclusion={tokenB}
-                  />
-                </div>
-                <div className="card-row my-3">
-                  <TokenInputGroup
-                    className="flex"
-                    variant={tokenB && !hasSufficientFundsB && 'error'}
-                    onValueChanged={setInputValueB}
-                    onTokenChanged={setTokenB}
-                    tokenList={tokenList}
-                    token={tokenB}
-                    value={inputValueB}
-                    exclusion={tokenA}
-                  />
-                </div>
-                <div className="row liquidity-shape">
-                  <div className="col flex">
-                    <h4 className="mt-4">Liquidity Shape</h4>
-                    <RadioInput<LiquidityShape>
-                      className="col flex"
-                      maxColumnCount={4}
-                      list={liquidityShapes}
-                      value={liquidityShape}
-                      onChange={setLiquidityShape}
-                      OptionComponent={LiquidityShapeOptionComponent}
-                    />
-                  </div>
-                </div>
-                <div className="row gap-3">
-                  <div className="col-lg flex">
-                    <button
-                      className="button button-dark submit-button text-medium mt-4 p-3"
-                      type="button"
-                      onClick={() => {
-                        setInputValueA('');
-                        setInputValueB('');
-                      }}
-                      disabled={isValueAZero && isValueBZero}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  <div className="col-lg flex">{confirmButton}</div>
-                </div>
-                <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
-              </fieldset>
-            </form>
-            <form onSubmit={onSubmitEditLiquidity}>
-              <fieldset
-                className={['page-card', !editMode && 'hide']
-                  .filter(Boolean)
-                  .join(' ')}
-                disabled={isValidatingEdit}
-              >
-                <div className="chart-header row h4">Edit Liquidity</div>
-                <div className="col my-3">
-                  {editedUserTicks.map((userTick) => {
-                    const [diffA, diffB] = invertTokenOrder
-                      ? [userTick.tickDiff1, userTick.tickDiff0]
-                      : [userTick.tickDiff0, userTick.tickDiff1];
-                    const [tokenA, tokenB] = invertTokenOrder
-                      ? [userTick.token1, userTick.token0]
-                      : [userTick.token0, userTick.token1];
-                    const price = formatPrice(
-                      tickIndexToPrice(
-                        new BigNumber(userTick.share.tickIndex)
-                      ).toNumber()
-                    );
-                    const withdrawA = diffA.isLessThan(0) && (
-                      <div className="row">
-                        <div className="col">
-                          Withdraw @ {price} {tokenB.symbol}/{tokenA.symbol}
-                        </div>
-                        <div className="col ml-auto">
-                          {formatAmount(diffA.negated().toNumber())}{' '}
-                          {tokenA.symbol}
-                        </div>
-                      </div>
-                    );
-                    const withdrawB = diffB.isLessThan(0) && (
-                      <div className="row">
-                        <div className="col">
-                          Withdraw @ {price} {tokenB.symbol}/{tokenA.symbol}
-                        </div>
-                        <div className="col ml-auto">
-                          {formatAmount(diffB.negated().toNumber())}{' '}
-                          {tokenB.symbol}
-                        </div>
-                      </div>
-                    );
-                    const depositA = diffA.isGreaterThan(0) && (
-                      <div className="row">
-                        <div className="col">
-                          Deposit @ {price} {tokenB.symbol}/{tokenA.symbol}
-                        </div>
-                        <div className="col ml-auto">
-                          {formatAmount(diffA.toNumber())} {tokenA.symbol}
-                        </div>
-                      </div>
-                    );
-                    const depositB = diffB.isGreaterThan(0) && (
-                      <div className="row">
-                        <div className="col">
-                          Deposit @ {price} {tokenB.symbol}/{tokenA.symbol}
-                        </div>
-                        <div className="col ml-auto">
-                          {formatAmount(diffB.toNumber())} {tokenB.symbol}
-                        </div>
-                      </div>
-                    );
-                    return (
-                      <Fragment
-                        key={`${userTick.share.tickIndex}-${userTick.share.feeIndex}`}
-                      >
-                        {depositA}
-                        {depositB}
-                        {withdrawA}
-                        {withdrawB}
-                      </Fragment>
-                    );
-                  })}
-                </div>
-                {editedUserTicks.filter(
-                  (tick) => !tick.tickDiff0.isZero() || !tick.tickDiff1.isZero()
-                ).length > 1 && (
-                  <>
-                    <hr />
-                    <div className="col my-3">
-                      <div className="h4">You will receive:</div>
-                      {!diffTokenA.isZero() && (
-                        <div className="ml-auto">
-                          {formatAmount(diffTokenA.negated().toNumber())}{' '}
-                          {tokenA.symbol}
-                        </div>
-                      )}
-                      {!diffTokenB.isZero() && (
-                        <div className="ml-auto">
-                          {formatAmount(diffTokenB.negated().toNumber())}{' '}
-                          {tokenB.symbol}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-                <div className="row gap-3">
-                  <div className="col-lg flex">
-                    <button
-                      className="button button-dark submit-button text-medium mt-4 p-3"
-                      type="button"
-                      onClick={() => {
-                        setEditedUserTicks((ticks) =>
-                          ticks.map((tick) => ({
-                            ...tick,
-                            tickDiff0: new BigNumber(0),
-                            tickDiff1: new BigNumber(0),
-                          }))
-                        );
-                      }}
-                      value="Cancel"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  <div className="col-lg flex">
-                    <input
-                      className="button-primary text-medium mt-4 p-3"
-                      type="submit"
-                      disabled={!hasSufficientFundsA || !hasSufficientFundsB}
-                      value="Confirm"
-                    />
-                  </div>
-                </div>
-              </fieldset>
-            </form>
+          <div className="col col-lg col--left gap-4">
+            {addLiquidityForm}
+            {editLiquidityForm}
           </div>
         </div>
       </div>
