@@ -1414,7 +1414,13 @@ function Pair({
                 </div>
               </div>
             </div>
-            <div className="col pt-lg col-lg-hide">{addLiquidityForm}</div>
+            <div
+              className={['col pt-lg col-lg-hide', editMode && 'hide']
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {addLiquidityForm}
+            </div>
             <div className="page-card">
               <table className="my-position-table" style={{ width: '100%' }}>
                 <thead>
