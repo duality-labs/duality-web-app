@@ -720,24 +720,23 @@ export default function LiquiditySelector({
         plotY={plotY}
         percentY={percentY}
       />
-      {advanced ? (
-        <TicksGroup
-          className="new-ticks"
-          currentPriceIndex={edgePriceIndex}
-          tokenAWarningPriceIndex={tokenAWarningPriceIndex}
-          tokenBWarningPriceIndex={tokenBWarningPriceIndex}
-          userTicks={userTicks}
-          backgroundTicks={userTicksBase}
-          setUserTicks={setUserTicks}
-          userTickSelected={userTickSelected}
-          setUserTickSelected={setUserTickSelected}
-          plotX={plotX}
-          percentY={percentYBigNumber}
-          canMoveUp={canMoveUp}
-          canMoveDown={canMoveDown}
-          canMoveX={canMoveX}
-        />
-      ) : (
+      <TicksGroup
+        className="new-ticks"
+        currentPriceIndex={edgePriceIndex}
+        tokenAWarningPriceIndex={tokenAWarningPriceIndex}
+        tokenBWarningPriceIndex={tokenBWarningPriceIndex}
+        userTicks={userTicks}
+        backgroundTicks={userTicksBase}
+        setUserTicks={setUserTicks}
+        userTickSelected={userTickSelected}
+        setUserTickSelected={setUserTickSelected}
+        plotX={plotX}
+        percentY={percentYBigNumber}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
+        canMoveX={canMoveX}
+      />
+      {!advanced && (
         <TicksArea
           className="new-ticks-area"
           currentPriceIndex={edgePriceIndex}
