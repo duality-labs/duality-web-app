@@ -121,6 +121,8 @@ function Pairs() {
     'all'
   );
 
+  const tokenList = useTokens();
+
   if (!tokenA || !tokenB) {
     return (
       <div className="pool-page col gap-5 mt-5">
@@ -128,8 +130,19 @@ function Pairs() {
           <h1 className="h1">Pairs</h1>
           <div>Provide liquidity and earn fees.</div>
         </div>
+        <div>
+          <button
+            className="button button-primary py-3 px-md"
+            onClick={() => {
+              setTokenA(tokenList.find((token) => token.symbol === 'TKN'));
+              setTokenB(tokenList.find((token) => token.symbol === 'STK'));
+            }}
+          >
+            Create New Position
+          </button>
+        </div>
         <PoolsTableCard
-          className="flex"
+          className="flex mt-5"
           title="All Pairs"
           switchValue={selectedPoolsList}
           switchOnChange={setSelectedPoolsList}
