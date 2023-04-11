@@ -75,13 +75,39 @@ interface Web3ContextProps {
 
 const LOCAL_STORAGE_WALLET_CONNECTED_KEY = 'duality.web3.walletConnected';
 
+// the get Keplr function as provided in Keplr docs: https://docs.keplr.app/api
+// it will return the Kelpr global on JS load or on page ready
+async function getKeplr(): Promise<Keplr | undefined> {
+  if (window.keplr) {
+    return window.keplr;
+  }
+
+  if (document.readyState === 'complete') {
+    return window.keplr;
+  }
+
+  return new Promise((resolve) => {
+    const documentStateChange = (event: Event) => {
+      if (
+        event.target &&
+        (event.target as Document).readyState === 'complete'
+      ) {
+        resolve(window.keplr);
+        document.removeEventListener('readystatechange', documentStateChange);
+      }
+    };
+
+    document.addEventListener('readystatechange', documentStateChange);
+  });
+}
+
 export function Web3Provider({ children }: Web3ContextProps) {
   const [address, setAddress] = React.useState<string | null>(null);
   const [wallet, setWallet] = React.useState<OfflineSigner | null>(null);
 
   async function connectWallet() {
     invariant(chainId, `Invalid chain id: ${chainId}`);
-    const keplr = window.keplr;
+    const keplr = await getKeplr();
     invariant(keplr, 'Keplr extension is not installed or enabled');
     await keplr.experimentalSuggestChain(chainInfo);
     await keplr.enable(chainId);
