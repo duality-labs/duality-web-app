@@ -8,6 +8,7 @@ import {
   useMemo,
   Fragment,
 } from 'react';
+import { Link, useMatch, useNavigate } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -116,14 +117,56 @@ export default function PairsPage() {
 }
 
 function Pairs() {
-  const [tokenA, setTokenA] = useState(undefined as Token | undefined);
-  const [tokenB, setTokenB] = useState(undefined as Token | undefined);
+  const navigate = useNavigate();
+  const [[tokenA, tokenB], setTokens] = useState<[Token?, Token?]>([]);
+
+  // change tokens to match pathname
+  const tokenList = useTokens();
+  const match = useMatch('/pairs/:tokenA/:tokenB');
+  useEffect(() => {
+    if (match) {
+      const foundTokenA = tokenList.find(
+        (t) => t.symbol === match.params['tokenA']
+      );
+      const foundTokenB = tokenList.find(
+        (t) => t.symbol === match.params['tokenB']
+      );
+      if (foundTokenA && foundTokenB) {
+        setTokens([foundTokenA, foundTokenB]);
+        return;
+      }
+    }
+    setTokens([]);
+  }, [tokenList, match]);
+
+  // don't change tokens directly:
+  // change the path name which will in turn update the tokens selected
+  const setTokensPath = useCallback(
+    ([tokenA, tokenB]: [Token?, Token?]) => {
+      if (tokenA && tokenB) {
+        navigate(`/pairs/${tokenA.symbol}/${tokenB.symbol}`);
+      } else {
+        navigate('/pairs');
+      }
+    },
+    [navigate]
+  );
+  const setTokenAPath = useCallback(
+    (tokenA: Token | undefined) => {
+      setTokensPath([tokenA, tokenB]);
+    },
+    [setTokensPath, tokenB]
+  );
+  const setTokenBPath = useCallback(
+    (tokenB: Token | undefined) => {
+      setTokensPath([tokenA, tokenB]);
+    },
+    [setTokensPath, tokenA]
+  );
 
   const [selectedPoolsList, setSelectedPoolsList] = useState<'all' | 'mine'>(
     'all'
   );
-
-  const tokenList = useTokens();
 
   if (!tokenA || !tokenB) {
     return (
@@ -132,26 +175,17 @@ function Pairs() {
           <h1 className="h1">Pairs</h1>
           <div>Provide liquidity and earn fees.</div>
         </div>
-        <div>
-          <button
-            className="button button-primary py-3 px-md"
-            onClick={() => {
-              setTokenA(tokenList.find((t) => t.symbol === defaultTokenA));
-              setTokenB(tokenList.find((t) => t.symbol === defaultTokenB));
-            }}
-          >
+        <Link to={`/pairs/${defaultTokenA}/${defaultTokenB}`}>
+          <button className="button button-primary py-3 px-md">
             Create New Position
           </button>
-        </div>
+        </Link>
         <PoolsTableCard
           className="flex mt-5"
           title="All Pairs"
           switchValue={selectedPoolsList}
           switchOnChange={setSelectedPoolsList}
-          onTokenPairClick={([token0, token1]) => {
-            setTokenA(token0);
-            setTokenB(token1);
-          }}
+          onTokenPairClick={setTokensPath}
         />
       </div>
     );
@@ -160,8 +194,9 @@ function Pairs() {
     <Pair
       tokenA={tokenA}
       tokenB={tokenB}
-      setTokenA={setTokenA}
-      setTokenB={setTokenB}
+      setTokenA={setTokenAPath}
+      setTokenB={setTokenBPath}
+      setTokens={setTokensPath}
     />
   );
 }
@@ -171,11 +206,13 @@ function Pair({
   tokenB,
   setTokenA,
   setTokenB,
+  setTokens,
 }: {
   tokenA: Token;
   tokenB: Token;
-  setTokenA: React.Dispatch<React.SetStateAction<Token | undefined>>;
-  setTokenB: React.Dispatch<React.SetStateAction<Token | undefined>>;
+  setTokenA: (tokenA: Token | undefined) => void;
+  setTokenB: (tokenB: Token | undefined) => void;
+  setTokens: ([tokenA, tokenB]: [Token?, Token?]) => void;
 }) {
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
@@ -508,13 +545,11 @@ function Pair({
     setRangeMax(() => flipAroundCurrentPriceSwap(rangeMin));
     setInputValueA(inputValueB);
     setInputValueB(inputValueA);
-    setTokenA(tokenB);
-    setTokenB(tokenA);
+    setTokens([tokenB, tokenA]);
   }, [
     tokenA,
     tokenB,
-    setTokenA,
-    setTokenB,
+    setTokens,
     rangeMin,
     rangeMax,
     setRangeMin,
