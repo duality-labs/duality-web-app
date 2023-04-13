@@ -60,6 +60,12 @@
     min-height: paddings.$p-xl;
   }
 
+  .chart-breadcrumbs {
+    a {
+      color: var(--token-search-placeholder);
+    }
+  }
+
   .card-header {
     @include margins.margin('b', 2);
     @include margins.margin('t', 0);
