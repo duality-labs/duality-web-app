@@ -1097,6 +1097,15 @@ function Pair({
             <div
               className={`chart-card col chart-type--${chartTypeSelected.toLowerCase()}`}
             >
+              <div className="chart-breadcrumbs row flow-wrap gap-3 mb-5">
+                <Link className="text-light-alt" to="/pairs">
+                  Pairs
+                </Link>
+                {'>'}
+                <span>
+                  {tokenA.symbol}/{tokenB.symbol}
+                </span>
+              </div>
               <div className="chart-header row flow-wrap">
                 <div className="col">
                   <div className="chart-header row my-4">
