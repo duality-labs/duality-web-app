@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
+import Chart from 'react-apexcharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBolt,
@@ -31,16 +32,112 @@ import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 
 import './Swap.scss';
+import { ApexOptions } from 'apexcharts';
 
 type CardType = 'trade' | 'settings';
 type OrderType = 'market' | 'limit';
 
 const defaultSlippage = '0.5';
+const chartOptions: ApexOptions = {
+  title: {
+    text: 'STK/TKN',
+    align: 'left',
+  },
+  xaxis: {
+    decimalsInFloat: 1,
+    type: 'datetime',
+    title: {
+      text: 'Time',
+    },
+  },
+  yaxis: {
+    decimalsInFloat: 1,
+    tooltip: {
+      enabled: true,
+    },
+    title: {
+      text: 'STK/TKN',
+    },
+  },
+  theme: {
+    mode: 'dark',
+  },
+  chart: {
+    background: '#1f2b37',
+  },
+  plotOptions: {
+    candlestick: {
+      colors: {
+        upward: '#31C48D',
+        downward: '#F05252',
+      },
+      wick: {
+        useFillColor: true,
+      },
+    },
+  },
+  tooltip: {
+    z: {
+      formatter(val) {
+        return Number(val).toFixed(2);
+      },
+    },
+  },
+};
 
 export default function SwapPage() {
+  const [chartSeries, setChartSeries] = useState<ApexAxisChartSeries>([]);
+  useEffect(() => {
+    const poller = {
+      poll: async () => undefined,
+    };
+    poller.poll = async function poll() {
+      let next = '';
+      const liquidity = [];
+      do {
+        const response = await fetch(
+          `http://localhost:8000/timeseries/price/token/stake?pagination.key=${next}&pagination.limit=5`
+        );
+        const { data = [], pagination = {} } = await response.json();
+        // add data into current context
+        liquidity.push(...data);
+        // fetch again if necessary
+        next = pagination['next-key'];
+      } while (next);
+      timeout = setTimeout(poller.poll, 25000);
+
+      setChartSeries([
+        {
+          name: 'STK / TKN',
+          data: liquidity.map((row) => {
+            return [
+              row['time_unix'] * 1000,
+              [row['open'], row['max'], row['min'], row['close']].map(
+                (n: number) => Number(Math.pow(1.0001, n).toFixed(2))
+              ) as number[],
+            ] as number[];
+          }),
+        },
+      ]);
+    } as () => Promise<undefined>;
+
+    let timeout = setTimeout(poller.poll, 0);
+    return () => clearTimeout(timeout);
+  }, []);
+
   return (
-    <div className="container row">
-      <div className="page col m-auto">
+    <div className="row">
+      <div className="page row m-auto gap-5">
+        <div className="page-card flex-centered">
+          <Chart
+            className="candlestick-chart"
+            type="candlestick"
+            options={chartOptions}
+            series={chartSeries}
+            height={400}
+            width={700}
+          />
+        </div>
         <Swap />
       </div>
     </div>
