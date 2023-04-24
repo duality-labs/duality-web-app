@@ -14,6 +14,10 @@ import Planets from './Planets';
 import Swap from '../Swap';
 import Pool from '../Pool';
 import MyLiquidity from '../MyLiquidity';
+// you would think the import order here doesn't matter, but you would be wrong
+// Trade must be imported after Pool so that .table-card styles
+// aren't overridden by page-card styles :(
+import Trade from '../Trade';
 
 import './App.scss';
 
@@ -37,7 +41,8 @@ function App() {
               <main>
                 <Routes>
                   <Route index element={<MyLiquidityOrTrade />} />
-                  <Route path="trade" element={<Swap />} />
+                  <Route path="swap" element={<Swap />} />
+                  <Route path="trade" element={<Trade />} />
                   <Route path="pairs/*" element={<Pool />} />
                   <Route path="stake" element={<div>Coming soon</div>} />
                   <Route path="*" element={<div>Not found</div>} />
