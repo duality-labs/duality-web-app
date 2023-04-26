@@ -111,9 +111,9 @@ export default function SwapPage() {
           name: 'STK / TKN',
           data: liquidity.map((row) => {
             return [
-              row['time'] * 1000,
-              [row['open'], row['high'], row['low'], row['close']].map(
-                (n: number) => Number(Math.pow(1.0001, n).toFixed(2))
+              row[0] * 1000,
+              row[1].map((n: number) =>
+                Number(Math.pow(1.0001, n).toFixed(2))
               ) as number[],
             ] as number[];
           }),
