@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { SWRConfiguration, SWRResponse } from 'swr';
 import useSWRInfinite from 'swr/infinite';
 
@@ -66,28 +67,29 @@ export default function useTokenPairs({
     }
   }
   // place pages of data into the same list
-  const tradingPairs = pages?.reduce<Map<string, [TokenAddress, TokenAddress]>>(
-    (acc, page) => {
-      page.supply.forEach((coin) => {
-        const match = getShareInfo(coin);
-        if (match) {
-          const { token0Address, token1Address } = match;
-          acc.set(getPairID(token0Address, token1Address), [
-            token0Address,
-            token1Address,
-          ]);
-        }
-      });
+  const data = useMemo(() => {
+    const tradingPairMap = pages?.reduce<Map<string, [TokenAddress, TokenAddress]>>(
+      (acc, page) => {
+        page.supply.forEach((coin) => {
+          const match = getShareInfo(coin);
+          if (match) {
+            const { token0Address, token1Address } = match;
+            acc.set(getPairID(token0Address, token1Address), [
+              token0Address,
+              token1Address,
+            ]);
+          }
+        });
 
-      return acc;
-    },
-    new Map<string, [TokenAddress, TokenAddress]>()
-  );
-  return {
-    data: tradingPairs && Array.from(tradingPairs.values()),
-    isValidating,
-    error,
-  };
+        return acc;
+      },
+      new Map<string, [TokenAddress, TokenAddress]>()
+    );
+    return tradingPairMap && Array.from(tradingPairMap.values());
+  }, [pages]);
+
+  // return state
+  return { data, isValidating, error };
 }
 
 // add convenience method to fetch ticks in a pair

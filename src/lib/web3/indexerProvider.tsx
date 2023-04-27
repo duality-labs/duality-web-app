@@ -95,9 +95,10 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [bankData, setBankData] = useState<UserBankBalance>();
   const [shareData, setShareData] = useState<UserShares>();
   const tokensData = useTokens();
-  const { data: tokenPairsData } = useTokenPairs({
-    swr: { refreshInterval: 10 * minutes },
-  });
+  const { data: tokenPairsData, isValidating: isTokenPairsValidating } =
+    useTokenPairs({
+      swr: { refreshInterval: 10 * minutes },
+    });
 
   const rpcPromise = useRpcPromise();
 
@@ -396,12 +397,12 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         isValidating: !shareData && !error,
       },
       tokenPairs: {
-        data: undefined,
+        data: tokenPairsData,
         error: error,
-        isValidating: !shareData && !error,
+        isValidating: isTokenPairsValidating,
       },
     });
-  }, [bankData, shareData, error]);
+  }, [bankData, shareData, tokenPairsData, error, isTokenPairsValidating]);
 
   return (
     <IndexerContext.Provider value={result}>{children}</IndexerContext.Provider>
