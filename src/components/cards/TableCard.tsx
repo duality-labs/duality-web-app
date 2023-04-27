@@ -8,6 +8,7 @@ import './TableCard.scss';
 export default function TableCard<T extends string | number>({
   className,
   title,
+  headerActions,
   switchValues,
   switchValue,
   switchOnChange,
@@ -17,6 +18,7 @@ export default function TableCard<T extends string | number>({
 }: {
   className?: string;
   title: ReactNode;
+  headerActions?: ReactNode;
   switchValues?: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
   switchValue?: T;
   switchOnChange?: React.Dispatch<React.SetStateAction<T>>;
@@ -47,6 +49,7 @@ export default function TableCard<T extends string | number>({
               </div>
             </div>
           )}
+          {headerActions}
         </div>
         {setSearchValue && (
           <div className="table-card__search row mt-lg">
