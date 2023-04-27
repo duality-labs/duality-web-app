@@ -249,9 +249,10 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const { data: tokensData } = useTokens({
     swr: { refreshInterval: 10 * minutes },
   });
-  const { data: tokenPairsData } = useTokenPairs({
-    swr: { refreshInterval: 10 * minutes },
-  });
+  const { data: tokenPairsData, isValidating: isTokenPairsValidating } =
+    useTokenPairs({
+      swr: { refreshInterval: 10 * minutes },
+    });
 
   const rpcPromise = useRpcPromise();
 
@@ -588,12 +589,19 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         isValidating: !shareData && !error,
       },
       tokenPairs: {
-        data: undefined,
+        data: tokenPairsData,
         error: error,
-        isValidating: !shareData && !error,
+        isValidating: isTokenPairsValidating,
       },
     });
-  }, [bankData, indexerData, shareData, error]);
+  }, [
+    bankData,
+    indexerData,
+    shareData,
+    tokenPairsData,
+    error,
+    isTokenPairsValidating,
+  ]);
 
   useEffect(() => {
     setRequestedFlag((oldValue) => {

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { SWRConfiguration, SWRResponse } from 'swr';
 import useSWRInfinite from 'swr/infinite';
 
@@ -66,8 +67,10 @@ export default function useTokenPairs({
     }
   }
   // place pages of data into the same list
-  const tradingPairs = pages?.reduce<Map<string, [TokenAddress, TokenAddress]>>(
-    (acc, page) => {
+  const data = useMemo(() => {
+    const tradingPairMap = pages?.reduce<
+      Map<string, [TokenAddress, TokenAddress]>
+    >((acc, page) => {
       page.supply.forEach((coin) => {
         const match = getShareInfo(coin);
         if (match) {
@@ -80,12 +83,10 @@ export default function useTokenPairs({
       });
 
       return acc;
-    },
-    new Map<string, [TokenAddress, TokenAddress]>()
-  );
-  return {
-    data: tradingPairs && Array.from(tradingPairs.values()),
-    isValidating,
-    error,
-  };
+    }, new Map<string, [TokenAddress, TokenAddress]>());
+    return tradingPairMap && Array.from(tradingPairMap.values());
+  }, [pages]);
+
+  // return state
+  return { data, isValidating, error };
 }
