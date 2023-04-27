@@ -5,6 +5,7 @@ import useShareValueMap, {
 
 import TokenPairLogos from '../TokenPairLogos/TokenPairLogos';
 import TableCard from '../../components/cards/TableCard';
+import { Link } from 'react-router-dom';
 
 export default function OrdersCard({
   size = 'large',
@@ -25,7 +26,11 @@ export default function OrdersCard({
 
   // show loken list cards
   return (
-    <TableCard className="asset-list-card flex" title="Orders">
+    <TableCard
+      className="asset-list-card flex"
+      title="Orders"
+      headerActions={size === 'small' && <HeaderAction />}
+    >
       <hr className="mb-4" />
       <table>
         <tbody>
@@ -58,5 +63,13 @@ export default function OrdersCard({
         </tbody>
       </table>
     </TableCard>
+  );
+}
+
+function HeaderAction() {
+  return (
+    <Link to="/" className="button button-primary-outline">
+      View Orders
+    </Link>
   );
 }
