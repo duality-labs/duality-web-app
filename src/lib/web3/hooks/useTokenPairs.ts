@@ -44,8 +44,6 @@ export default function useTokenPairs({
     data: pages,
     isValidating,
     error,
-    size,
-    setSize,
   } = useSWRInfinite<QueryTotalSupplyResponseSDKType>(
     getNextPaginationKey<QueryTotalSupplyRequest>(
       'cosmos.bank.v1beta1.totalSupply',
@@ -55,17 +53,13 @@ export default function useTokenPairs({
       const client = await lcdClientPromise;
       return await client.cosmos.bank.v1beta1.totalSupply(params);
     },
-    { persistSize: true, ...swrConfig }
-  );
-  // set number of pages to latest total
-  const pageItemCount = Number(pages?.[0]?.supply?.length);
-  const totalItemCount = Number(pages?.[0]?.pagination?.total);
-  if (pageItemCount > 0 && totalItemCount > pageItemCount) {
-    const pageCount = Math.ceil(totalItemCount / pageItemCount);
-    if (size !== pageCount) {
-      setSize(pageCount);
+    {
+      // fetch all pages by default
+      initialSize: Number.MAX_SAFE_INTEGER,
+      persistSize: true,
+      ...swrConfig,
     }
-  }
+  );
   // place pages of data into the same list
   const data = useMemo(() => {
     const tradingPairMap = pages?.reduce<Map<string, [TokenAddress, TokenAddress]>>(
