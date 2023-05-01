@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.107](https://github.com/duality-labs/duality-web-app/compare/v0.1.106...v0.1.107) (2023-05-01)
+
+
+### Fixes
+
+* Keplr wallet doesn't always connect on load ([#353](https://github.com/duality-labs/duality-web-app/issues/353)) ([58625bc](https://github.com/duality-labs/duality-web-app/commit/58625bca771a6b1336e54fb2a787c75e5c2b17b7))
+
 ## [0.1.106](https://github.com/duality-labs/duality-web-app/compare/v0.1.105...v0.1.106) (2023-05-01)
 
 
