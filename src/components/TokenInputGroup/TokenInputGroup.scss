@@ -12,8 +12,9 @@
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr auto;
     color: var(--default-alt);
-    display: grid;
-    row-gap: 2px;
+    .col {
+      gap: 2px;
+    }
   }
 
   &.token-input-group--error {
