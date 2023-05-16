@@ -183,6 +183,8 @@ function Swap() {
             minOut: getAmountInDenom(tokenB, minOut, tokenB?.display) || '0',
             creator: address,
             receiver: address,
+            // todo: allow custom limit price to be set by the user
+            limitPrice: '0',
           },
           gasEstimate
         );
