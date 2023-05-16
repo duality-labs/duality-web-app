@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import BigNumber from 'bignumber.js';
 import Long from 'long';
-import { nicholasdotsol } from '@duality-labs/dualityjs';
+import { dualitylabs } from '@duality-labs/dualityjs';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import rpcClient from '../../lib/web3/rpcMsgClient';
@@ -232,7 +232,7 @@ export function useDeposit(): [
           const res = await client.signAndBroadcast(
             web3.address,
             [
-              nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.deposit({
+              dualitylabs.duality.dex.MessageComposer.withTypeUrl.deposit({
                 creator: web3Address,
                 tokenA: tokenA.address,
                 tokenB: tokenB.address,
