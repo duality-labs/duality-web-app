@@ -40,6 +40,7 @@ async function sendSwap(
     minOut,
     creator,
     receiver,
+    limitPrice,
   }: MsgSwapSDKType,
   gasEstimate: number
 ): Promise<MsgSwapResponseSDKType> {
@@ -51,7 +52,8 @@ async function sendSwap(
     !tokenB ||
     !minOut ||
     !creator ||
-    !creator
+    !creator ||
+    !limitPrice
   ) {
     throw new Error('Invalid Input');
   }
@@ -86,6 +88,7 @@ async function sendSwap(
           minOut,
           creator,
           receiver,
+          limitPrice,
         }),
       ],
       {
