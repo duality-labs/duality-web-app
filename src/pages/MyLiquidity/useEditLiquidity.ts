@@ -14,7 +14,7 @@ import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 import { TickShareValue } from './useShareValueMap';
 import rpcClient from '../../lib/web3/rpcMsgClient';
-import { nicholasdotsol } from '@duality-labs/dualityjs';
+import { dualitylabs } from '@duality-labs/dualityjs';
 import Long from 'long';
 
 export interface EditedTickShareValue extends TickShareValue {
@@ -106,7 +106,7 @@ export function useEditLiquidity(): [
                       ...(!tickDiff0.isZero()
                         ? [
                             tickDiff0.isGreaterThan(0)
-                              ? nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.deposit(
+                              ? dualitylabs.duality.dex.MessageComposer.withTypeUrl.deposit(
                                   {
                                     creator: web3Address,
                                     tokenA: token0.address,
@@ -130,7 +130,7 @@ export function useEditLiquidity(): [
                                     Options: [{ autoswap: true }],
                                   }
                                 )
-                              : nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                              : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawl(
                                   {
                                     creator: web3Address,
                                     tokenA: token0.address,
@@ -159,7 +159,7 @@ export function useEditLiquidity(): [
                       ...(!tickDiff1.isZero()
                         ? [
                             tickDiff1.isGreaterThan(0)
-                              ? nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.deposit(
+                              ? dualitylabs.duality.dex.MessageComposer.withTypeUrl.deposit(
                                   {
                                     creator: web3Address,
                                     tokenA: token0.address,
@@ -183,7 +183,7 @@ export function useEditLiquidity(): [
                                     Options: [{ autoswap: true }],
                                   }
                                 )
-                              : nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                              : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawl(
                                   {
                                     creator: web3Address,
                                     tokenA: token0.address,
