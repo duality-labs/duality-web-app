@@ -155,6 +155,8 @@ export function useEditLiquidity(): [
                                         ) || '0',
                                       ],
                                       amountsB: ['0'],
+                                      // todo: allow user to specify autoswap behavior
+                                      Options: [{ autoswap: true }],
                                     }
                                   )
                                 : nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.withdrawl(
@@ -206,6 +208,8 @@ export function useEditLiquidity(): [
                                           token1.display
                                         ) || '0',
                                       ],
+                                      // todo: allow user to specify autoswap behavior
+                                      Options: [{ autoswap: true }],
                                     }
                                   )
                                 : nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.withdrawl(
