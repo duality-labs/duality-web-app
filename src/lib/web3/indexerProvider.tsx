@@ -505,17 +505,15 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const onRouterUpdateMessage = function (event: MessageActionEvent) {
       const Creator = event['message.Creator'];
-      const Token0 = event['message.Token0'];
-      const Token1 = event['message.Token1'];
       const TokenIn = event['message.TokenIn'];
+      const TokenOut = event['message.TokenOut'];
       const AmountIn = event['message.AmountIn'];
       const AmountOut = event['message.AmountOut'];
       const MinOut = event['message.MinOut'];
       if (
         !Creator ||
         !TokenIn ||
-        !Token0 ||
-        !Token1 ||
+        !TokenOut ||
         !AmountIn ||
         !AmountOut ||
         !MinOut
@@ -526,19 +524,13 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         setError(undefined);
       }
 
-      const forward = TokenIn === Token0;
-      const reverse = TokenIn === Token1;
-      if (!forward && !reverse) {
-        setError('Unknown error occurred. Incorrect tokens');
-        return;
-      }
-
       // todo: update something without refetching?
       // may not be possible or helpful
       // bank balance update will be caught already by the bank event watcher
       // it's too complicated to update indexer state with the event detail's
 
       // fetch new indexer data as the trade would have caused changes in ticks
+      // todo: fetch only ticks of the pair that has changed if in view
       getFullData(rpcPromise)
         .then(function (res) {
           setIndexerData(res);
