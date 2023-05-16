@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.108](https://github.com/duality-labs/duality-web-app/compare/v0.1.107...v0.1.108) (2023-05-16)
+
+
+### Fixes
+
+* tests of upgrade api to backend v0.1.3 (part 1)  ([#348](https://github.com/duality-labs/duality-web-app/issues/348)) ([74ed626](https://github.com/duality-labs/duality-web-app/commit/74ed62616728c24d4df55bfcb0c58c8459976696))
+
 ## [0.1.107](https://github.com/duality-labs/duality-web-app/compare/v0.1.106...v0.1.107) (2023-05-01)
 
 
