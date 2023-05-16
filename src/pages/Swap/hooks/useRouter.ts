@@ -138,6 +138,7 @@ export function getRouterEstimates(
   pairRequest: PairRequest,
   routerResult: RouterResult | undefined
 ): PairResult | undefined {
+  // note: this sorting on the frontend may differ from the sorting on the backend
   const [token0, token1] = [pairRequest.tokenA, pairRequest.tokenB].sort();
   if (token0 && token1) {
     // return estimate from current result
