@@ -1,140 +1,104 @@
-import * as React from 'react';
-import invariant from 'invariant';
+import {
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 import { OfflineSigner } from '@cosmjs/proto-signing';
-import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
-
-export type Provider = Keplr;
-
-const {
-  REACT_APP__CHAIN_ID,
-  REACT_APP__CHAIN_NAME,
-  REACT_APP__RPC_API,
-  REACT_APP__REST_API,
-  REACT_APP__BECH_PREFIX,
-} = process.env;
-
-export const chainId = REACT_APP__CHAIN_ID || '';
-const chainName = REACT_APP__CHAIN_NAME || '';
-export const rpcEndpoint = REACT_APP__RPC_API || '';
-const restEndpoint = REACT_APP__REST_API || '';
-const bech32Prefix = REACT_APP__BECH_PREFIX || 'cosmos';
-
-const token = {
-  coinDenom: 'TOKEN',
-  coinMinimalDenom: 'token',
-  coinDecimals: 18,
-};
-const stake = {
-  coinDenom: 'STAKE',
-  coinMinimalDenom: 'stake',
-  coinDecimals: 18,
-};
-
-const chainInfo: ChainInfo = {
-  chainId,
-  chainName,
-  rpc: rpcEndpoint,
-  rest: restEndpoint,
-  currencies: [token, stake],
-  stakeCurrency: stake,
-  feeCurrencies: [token],
-  bip44: {
-    coinType: 118,
-  },
-  bech32Config: {
-    bech32PrefixAccAddr: `${bech32Prefix}`,
-    bech32PrefixAccPub: `${bech32Prefix}pub`,
-    bech32PrefixValAddr: `${bech32Prefix}valoper`,
-    bech32PrefixValPub: `${bech32Prefix}valoperpub`,
-    bech32PrefixConsAddr: `${bech32Prefix}valcons`,
-    bech32PrefixConsPub: `${bech32Prefix}valconspub`,
-  },
-};
-
-declare global {
-  interface Window extends KeplrWindow {
-    keplr: Provider;
-  }
-}
+import {
+  getKeplrWallet,
+  getKeplrWalletAccount,
+  useSyncKeplrState,
+} from './wallets/keplr';
 
 export interface Web3ContextValue {
-  provider: Provider | null;
   connectWallet?: () => void;
   wallet: OfflineSigner | null;
   address: string | null;
 }
 
-const Web3Context = React.createContext<Web3ContextValue>({
-  provider: null,
+const Web3Context = createContext<Web3ContextValue>({
   wallet: null,
   address: null,
 });
 
 interface Web3ContextProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const LOCAL_STORAGE_WALLET_CONNECTED_KEY = 'duality.web3.walletConnected';
 
+type SupportedWallet = 'keplr';
+
 export function Web3Provider({ children }: Web3ContextProps) {
-  const [provider, setProvider] = React.useState<Provider | null>(null);
-  const [address, setAddress] = React.useState<string | null>(null);
-  const [wallet, setWallet] = React.useState<OfflineSigner | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
+  const [wallet, setWallet] = useState<OfflineSigner | null>(null);
 
-  const connectWallet = async (keplr: Provider | null) => {
-    invariant(chainId, `Invalid chain id: ${chainId}`);
-    invariant(keplr, 'Keplr extension is not installed or enabled');
-    await keplr.experimentalSuggestChain(chainInfo);
-    await keplr.enable(chainId);
-    const offlineSigner = keplr.getOfflineSigner(chainId);
-    const accounts = await offlineSigner.getAccounts();
-    const address = accounts[0].address;
-    setAddress(address);
-    // set wallet if address is knowable
-    setWallet(address ? offlineSigner : null);
-
-    localStorage.setItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY, 'true');
-  };
-
-  React.useEffect(() => {
-    async function run() {
-      if (window.keplr && window.getOfflineSigner) {
-        const provider = window.keplr;
-        if (
-          provider &&
-          localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY)
-        ) {
-          try {
-            await connectWallet(provider);
-          } catch {
-            // can happen when the user manually disconnected the app and then rejects the connect dialog
-            // silently ignore
+  // set callback to run when user opts in to connecting their wallet
+  const connectWallet = useCallback(
+    async (walletType: SupportedWallet | string = '') => {
+      const [wallet, address] = await (async function (): Promise<
+        [OfflineSigner?, string?]
+      > {
+        switch (walletType) {
+          case 'keplr': {
+            const wallet = await getKeplrWallet();
+            const account = wallet && (await getKeplrWalletAccount(wallet));
+            return [wallet, account?.address];
+          }
+          // if wallet type was not found then mark them as not found
+          default: {
+            return [];
           }
         }
-        setProvider(provider);
-        // add listener for Keplr state changes
-        window.addEventListener('keplr_keystorechange', async () => {
-          const offlineSigner = window.keplr.getOfflineSigner(chainId);
-          const accounts = await offlineSigner?.getAccounts();
-          setAddress((address) => {
-            // switch address or remove if already connected
-            if (address) {
-              return accounts[0]?.address || null;
-            }
-            return null;
-          });
-        });
+      })();
+      // set or unset wallet and address
+      setWallet(wallet ?? null);
+      setAddress(wallet ? address ?? null : null);
+      // save new state
+      if (walletType) {
+        localStorage.setItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY, walletType);
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY);
+      }
+    },
+    []
+  );
+
+  // sync wallet to saved wallet type on load
+  useEffect(() => {
+    const walletType = localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY);
+    connectWallet(walletType || undefined);
+  }, [connectWallet]);
+
+  // listen across tabs for wallet connection events through local storage
+  useEffect(() => {
+    function syncWallet(e: StorageEvent) {
+      if (e.key === LOCAL_STORAGE_WALLET_CONNECTED_KEY) {
+        connectWallet(e.newValue || undefined);
       }
     }
-    run();
-  }, []);
+    window.addEventListener('storage', syncWallet);
+    return () => window.removeEventListener('storage', syncWallet);
+  }, [connectWallet]);
+
+  // sync Keplr wallet on Keplr state changes
+  useSyncKeplrState(
+    connectWallet,
+    localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY) === 'keplr'
+  );
 
   return (
     <Web3Context.Provider
       value={{
-        provider,
-        connectWallet: window.keplr && (() => connectWallet(window.keplr)),
+        // only connect to Keplr wallets for now
+        connectWallet: useCallback(
+          async () => await connectWallet('keplr'),
+          [connectWallet]
+        ),
         wallet,
         address,
       }}
@@ -145,5 +109,5 @@ export function Web3Provider({ children }: Web3ContextProps) {
 }
 
 export function useWeb3() {
-  return React.useContext(Web3Context);
+  return useContext(Web3Context);
 }

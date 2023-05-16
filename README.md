@@ -89,4 +89,4 @@ Instructions on how to update these generated types should exist at
 
 ## Deployed At
 
-Current build preview should be available at https://graceful-palmier-ff28ba.netlify.app/
+Current build of `main` should be available at https://app.dev.duality.xyz
