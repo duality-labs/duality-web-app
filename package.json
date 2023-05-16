@@ -18,7 +18,7 @@
     "@cosmjs/launchpad": "^0.27.1",
     "@cosmjs/proto-signing": "^0.30.1",
     "@cosmjs/stargate": "^0.30.1",
-    "@duality-labs/dualityjs": "github:duality-labs/dualityjs#api-commit-00736c0c7db28819c73ffa3e302add5fac3d54cf",
+    "@duality-labs/dualityjs": "github:duality-labs/dualityjs#api-commit-3a93434407b6fd48e44c5c1f0a5d8f15ecdbef45",
     "@floating-ui/react-dom": "^0.6.3",
     "@fortawesome/fontawesome-svg-core": "^6.1.2",
     "@fortawesome/free-solid-svg-icons": "^6.1.2",
