@@ -46,12 +46,12 @@ export default function useTokenPairs({
   } = useSWRInfinite<QueryAllTradingPairResponseSDKType>(
     getNextPaginationKey<QueryAllTradingPairRequest>(
       // set unique cache key for this client method
-      'nicholasdotsol.duality.dex.tradingPairAll',
+      'dualitylabs.duality.dex.tradingPairAll',
       params
     ),
     async ([, params]: [paths: string, params: QueryAllTradingPairRequest]) => {
       const client = await lcdClientPromise;
-      return await client.nicholasdotsol.duality.dex.tradingPairAll(params);
+      return await client.dualitylabs.duality.dex.tradingPairAll(params);
     },
     { persistSize: true, ...swrConfig }
   );
