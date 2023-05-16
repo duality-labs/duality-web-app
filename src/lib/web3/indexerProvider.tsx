@@ -142,10 +142,13 @@ async function getFullData(
 function transformData(ticks: Array<TickSDKType>): PairMap {
   const intermediate = ticks.reduce<PairMap>(function (
     result,
-    { pairId = '', tickIndex, tickData }
+    {
+      pairId: { token0 = '', token1 = '' } = {},
+      tickIndex,
+      tickData,
+    }
   ) {
-    // token0 and token1 are sorted by the back end
-    const [token0, token1] = pairId.split('<>');
+    const pairId = getPairID(token0, token1);
     if (token0 && token1 && tokenMap[token0] && tokenMap[token1] && tickData) {
       result[pairId] =
         result[pairId] ||
