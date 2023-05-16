@@ -254,6 +254,8 @@ export function useDeposit(): [
                   ({ reserveB }) =>
                     getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
                 ),
+                // todo: allow user to specify autoswap behavior
+                Options: filteredUserTicks.map(() => ({ autoswap: true })),
               }),
             ],
             {
