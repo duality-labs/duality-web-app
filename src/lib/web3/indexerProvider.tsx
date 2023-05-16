@@ -8,7 +8,7 @@ import {
 } from 'react';
 import Long from 'long';
 import { BigNumber } from 'bignumber.js';
-import { cosmos, nicholasdotsol } from '@duality-labs/dualityjs';
+import { cosmos, dualitylabs } from '@duality-labs/dualityjs';
 
 import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
@@ -36,7 +36,7 @@ import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 
 const bankClientImpl = cosmos.bank.v1beta1.QueryClientImpl;
-const queryClientImpl = nicholasdotsol.duality.dex.QueryClientImpl;
+const queryClientImpl = dualitylabs.duality.dex.QueryClientImpl;
 
 interface UserBankBalance {
   balances: Array<CoinSDKType>;
