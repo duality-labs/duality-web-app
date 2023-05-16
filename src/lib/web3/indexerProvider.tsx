@@ -31,7 +31,7 @@ import { ProtobufRpcClient } from '@cosmjs/stargate';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 import { TokensSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tokens';
 import { TradingPairSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/trading_pair';
-import { TickSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tick';
+import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tick_liquidity';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 
@@ -115,9 +115,9 @@ async function getFullData(
         .then(async () => {
           const queryClient = new queryClientImpl(rpc);
           let nextKey: Uint8Array | undefined;
-          let tickMap: Array<TickSDKType> = [];
+          let tickMap: Array<TickLiquiditySDKType> = [];
           do {
-            const res = await queryClient.tickAll({
+            const res = await queryClient.tickLiquidityAll({
               ...defaultFetchParams,
               pagination: {
                 offset: Long.fromNumber(0),
@@ -125,7 +125,7 @@ async function getFullData(
                 key: nextKey || [],
               } as PageRequest,
             });
-            tickMap = tickMap.concat(res.Tick || []);
+            tickMap = tickMap.concat(res.tickLiquidity || []);
             nextKey = res.pagination?.nextKey;
           } while (nextKey && nextKey.length > 0);
           return {
@@ -139,17 +139,32 @@ async function getFullData(
   });
 }
 
-function transformData(ticks: Array<TickSDKType>): PairMap {
+function transformData(ticks: Array<TickLiquiditySDKType>): PairMap {
   const intermediate = ticks.reduce<PairMap>(function (
     result,
     {
       pairId: { token0 = '', token1 = '' } = {},
+      tokenIn,
       tickIndex,
-      tickData,
+      liquidityType,
+      liquidityIndex,
+      LPReserve,
     }
   ) {
+    const fee = liquidityIndex.toNumber() / 10000 || 0;
+    const feeIndex = feeTypes.findIndex((feeType) => feeType.fee === fee);
     const pairId = getPairID(token0, token1);
-    if (token0 && token1 && tokenMap[token0] && tokenMap[token1] && tickData) {
+    if (
+      liquidityType === 'A_LPDeposit' &&
+      tokenIn &&
+      token0 &&
+      token1 &&
+      tokenMap[tokenIn] &&
+      tokenMap[token0] &&
+      tokenMap[token1] &&
+      LPReserve &&
+      feeIndex >= 0
+    ) {
       result[pairId] =
         result[pairId] ||
         ({
@@ -164,34 +179,29 @@ function transformData(ticks: Array<TickSDKType>): PairMap {
       const bigTickIndex = new BigNumber(tickIndex.toNumber() || 0);
       const bigPrice = tickIndexToPrice(bigTickIndex);
 
-      feeTypes.forEach(({ fee }, feeIndex) => {
-        if (!bigTickIndex.isNaN() && bigPrice.isGreaterThan(0)) {
-          if (tickData.reserve0 && Number(tickData.reserve0[feeIndex]) > 0) {
-            result[pairId].token0Ticks.push({
-              token0: tokenMap[token0],
-              token1: tokenMap[token1],
-              tickIndex: bigTickIndex,
-              price: bigPrice,
-              feeIndex: new BigNumber(feeIndex),
-              fee: new BigNumber(fee || 0),
-              reserve0: new BigNumber(tickData.reserve0?.[feeIndex] || 0),
-              reserve1: new BigNumber(0),
-            });
-          }
-          if (tickData.reserve1 && Number(tickData.reserve1[feeIndex]) > 0) {
-            result[pairId].token1Ticks.push({
-              token0: tokenMap[token0],
-              token1: tokenMap[token1],
-              tickIndex: bigTickIndex,
-              price: bigPrice,
-              feeIndex: new BigNumber(feeIndex),
-              fee: new BigNumber(fee || 0),
-              reserve0: new BigNumber(0),
-              reserve1: new BigNumber(tickData.reserve1?.[feeIndex] || 0),
-            });
-          }
-        }
-      });
+      if (tokenIn === token0) {
+        result[pairId].token0Ticks.push({
+          token0: tokenMap[token0],
+          token1: tokenMap[token1],
+          tickIndex: bigTickIndex,
+          price: bigPrice,
+          feeIndex: new BigNumber(feeIndex),
+          fee: new BigNumber(fee),
+          reserve0: new BigNumber(LPReserve || 0),
+          reserve1: new BigNumber(0),
+        });
+      } else if (tokenIn === token1) {
+        result[pairId].token1Ticks.push({
+          token0: tokenMap[token0],
+          token1: tokenMap[token1],
+          tickIndex: bigTickIndex,
+          price: bigPrice,
+          feeIndex: new BigNumber(feeIndex),
+          fee: new BigNumber(fee),
+          reserve0: new BigNumber(0),
+          reserve1: new BigNumber(LPReserve || 0),
+        });
+      }
     }
     return result;
   },
