@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { assets, chains } from 'chain-registry';
-import { Asset, Chain } from '@chain-registry/types';
+import { Chain } from '@chain-registry/types';
+import { Token } from '../../lib/web3/utils/tokens';
 
 import tknLogo from '../../assets/tokens/TKN.svg';
 import stkLogo from '../../assets/tokens/STK.svg';
@@ -9,11 +10,6 @@ const {
   REACT_APP__CHAIN_NAME = '[chain_name]',
   REACT_APP__CHAIN_ID = '[chain_id]',
 } = process.env;
-
-// filter to only those with real address and chain
-export interface Token extends Asset {
-  chain: Chain;
-}
 
 interface AddressableToken extends Token {
   address: string; // only accept routeable tokens in lists

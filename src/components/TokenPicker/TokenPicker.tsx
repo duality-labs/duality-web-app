@@ -11,7 +11,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 
-import { Token, useDualityTokens, useFilteredTokenList } from './hooks';
+import { useDualityTokens, useFilteredTokenList } from './hooks';
+import { Token } from '../../lib/web3/utils/tokens';
 import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 import { useSimplePrices } from '../../lib/tokenPrices';
 import { formatAmount, formatCurrency } from '../../lib/utils/number';

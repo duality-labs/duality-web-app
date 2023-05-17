@@ -4,7 +4,6 @@ import BigNumber from 'bignumber.js';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import apiClient from '../../lib/web3/apiClient';
-import { Token } from '../../components/TokenPicker/hooks';
 import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
 import {
   checkMsgErrorToast,
@@ -13,14 +12,11 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
-import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { readEvents } from '../../lib/web3/utils/txs';
-import {
-  getPairID,
-  hasMatchingPairOfOrder,
-  useIndexerData,
-} from '../../lib/web3/indexerProvider';
+import { useIndexerData } from '../../lib/web3/indexerProvider';
 import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
+import { getPairID, hasMatchingPairOfOrder } from '../../lib/web3/utils/pairs';
 
 interface SendDepositResponse {
   gasUsed: string;

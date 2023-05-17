@@ -1,12 +1,10 @@
 import { useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
-import {
-  TokenAddress,
-  useIndexerPairData,
-} from '../../lib/web3/indexerProvider';
+import { useIndexerPairData } from '../../lib/web3/indexerProvider';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { calculateShares } from '../../lib/web3/utils/ticks';
+import { TokenAddress } from '../../lib/web3/utils/tokens';
 
 export default function useFeeLiquidityMap(
   tokenA?: TokenAddress,

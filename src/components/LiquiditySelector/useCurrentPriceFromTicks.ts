@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 
-import { TickInfo, useIndexerPairData } from '../../lib/web3/indexerProvider';
-import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { useIndexerPairData } from '../../lib/web3/indexerProvider';
+import { TickInfo, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 // current price of A to B is given in price B/A
 // eg. price of ATOM in USDC is given in USDC/ATOM units

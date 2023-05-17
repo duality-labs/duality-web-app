@@ -1,4 +1,4 @@
-import { useIndexerData, PairMap } from '../../../lib/web3/indexerProvider';
+import { useIndexerData } from '../../../lib/web3/indexerProvider';
 import { useEffect, useState } from 'react';
 import { PairRequest, PairResult, RouterResult } from './index';
 import { routerAsync, calculateFee, SwapError } from './router';
@@ -7,6 +7,7 @@ import { formatAmount } from '../../../lib/utils/number';
 import BigNumber from 'bignumber.js';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
+import { PairMap } from '../../../lib/web3/utils/pairs';
 
 const cachedRequests: {
   [token0: string]: { [token1: string]: PairResult };

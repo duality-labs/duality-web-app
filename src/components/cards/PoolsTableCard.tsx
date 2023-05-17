@@ -7,7 +7,7 @@ import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
 import TableCard from './TableCard';
 
-import { TickInfo, useIndexerData } from '../../lib/web3/indexerProvider';
+import { useIndexerData } from '../../lib/web3/indexerProvider';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import useShareValueMap, {
   ShareValue,
@@ -18,15 +18,15 @@ import {
   EditedTickShareValue,
 } from '../../pages/MyLiquidity/useEditLiquidity';
 import {
-  Token,
   useFilteredTokenList,
   useTokens,
 } from '../../components/TokenPicker/hooks';
 
 import { formatAmount } from '../../lib/utils/number';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { TickInfo } from '../../lib/web3/utils/ticks';
 
 import './PoolsTableCard.scss';
-import { getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 const switchValues = {
   all: 'All Pools',

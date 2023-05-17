@@ -8,7 +8,7 @@ import LiquiditySelector, {
 } from '../LiquiditySelector';
 import RadioInput from '../RadioInput';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
-import { Token } from '../TokenPicker/hooks';
+import { Token } from '../../lib/web3/utils/tokens';
 
 interface AllTiers {
   label: 'All';

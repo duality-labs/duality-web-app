@@ -34,7 +34,7 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 
-import { useTokens, Token } from '../../components/TokenPicker/hooks';
+import { useTokens } from '../../components/TokenPicker/hooks';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
@@ -45,6 +45,7 @@ import {
 import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
+import { Token } from '../../lib/web3/utils/tokens';
 
 import './Pool.scss';
 import TokenPairLogos from '../../components/TokenPairLogos';

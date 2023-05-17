@@ -9,7 +9,6 @@ import { useSimplePrice } from '../../lib/tokenPrices';
 import useShareValueMap, { TickShareValueMap } from './useShareValueMap';
 
 import {
-  Token,
   useFilteredTokenList,
   useTokens,
 } from '../../components/TokenPicker/hooks';
@@ -17,7 +16,7 @@ import {
 import { formatAmount } from '../../lib/utils/number';
 
 import './MyLiquidity.scss';
-import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import TableCard from '../../components/cards/TableCard';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

@@ -1,5 +1,11 @@
 import BigNumber from 'bignumber.js';
-import { Token } from '../../../components/TokenPicker/hooks';
+import { Asset, Chain } from '@chain-registry/types';
+
+export interface Token extends Asset {
+  chain: Chain;
+}
+
+export type TokenAddress = string; // a valid hex address, eg. 0x01
 
 export function getAmountInDenom(
   token: Token,
