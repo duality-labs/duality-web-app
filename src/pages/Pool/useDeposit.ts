@@ -1,9 +1,11 @@
 import { useState, useCallback } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import BigNumber from 'bignumber.js';
+import Long from 'long';
+import { nicholasdotsol } from '@duality-labs/dualityjs';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import apiClient from '../../lib/web3/apiClient';
+import rpcClient from '../../lib/web3/rpcMsgClient';
 import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
 import {
   checkMsgErrorToast,
@@ -81,19 +83,19 @@ export function useDeposit(): [
         const reverse = pairs?.[getPairID(tokenB.address, tokenA.address)];
         const pairTicks = forward || reverse;
 
-        if (!pairs || !pairTicks) {
-          throw new Error(
-            `Cannot initialize a new pair here: ${[
-              `our calculation of pair ID as either "${getPairID(
-                tokenA.address,
-                tokenB.address
-              )}" or "${getPairID(
-                tokenB.address,
-                tokenA.address
-              )}" may be incorrect.`,
-            ].join(', ')}`
-          );
-        }
+        // if (!pairs || !pairTicks) {
+        //   throw new Error(
+        //     `Cannot initialize a new pair here: ${[
+        //       `our calculation of pair ID as either "${getPairID(
+        //         tokenA.address,
+        //         tokenB.address
+        //       )}" or "${getPairID(
+        //         tokenB.address,
+        //         tokenA.address
+        //       )}" may be incorrect.`,
+        //     ].join(', ')}`
+        //   );
+        // }
 
         // check all user ticks and filter to non-zero ticks
         // also compbine any equivalent deposits into the same Msg
@@ -131,7 +133,7 @@ export function useDeposit(): [
             }
 
             const [forward] = hasMatchingPairOfOrder(
-              pairs,
+              pairs || {},
               tick.tokenA.address || '',
               tick.tokenB.address || ''
             );
@@ -226,30 +228,32 @@ export function useDeposit(): [
 
         // wrap transaction logic
         try {
-          // add each tick message into a signed broadcast
-          const client = apiClient(web3.wallet);
+          const client = await rpcClient(web3.wallet);
           const res = await client.signAndBroadcast(
+            web3.address,
             [
-              client.NicholasdotsolDualityDex.tx.msgDeposit({
-                value: {
-                  creator: web3Address,
-                  tokenA: tokenA.address,
-                  tokenB: tokenB.address,
-                  receiver: web3Address,
-                  // note: tick indexes must be in the form of "token0/1 index"
-                  // not "tokenA/B" index, so inverted order indexes should be reversed
-                  // check this commit for changes if this behavior changes
-                  tickIndexes: filteredUserTicks.map((tick) => tick.tickIndex),
-                  feeIndexes: filteredUserTicks.map((tick) => tick.feeIndex),
-                  amountsA: filteredUserTicks.map(
-                    ({ reserveA }) =>
-                      getAmountInDenom(tokenA, reserveA, tokenA.display) || '0'
-                  ),
-                  amountsB: filteredUserTicks.map(
-                    ({ reserveB }) =>
-                      getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
-                  ),
-                },
+              nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.deposit({
+                creator: web3Address,
+                tokenA: tokenA.address,
+                tokenB: tokenB.address,
+                receiver: web3Address,
+                // note: tick indexes must be in the form of "token0/1 index"
+                // not "tokenA/B" index, so inverted order indexes should be reversed
+                // check this commit for changes if this behavior changes
+                tickIndexes: filteredUserTicks.map((tick) =>
+                  Long.fromNumber(tick.tickIndex)
+                ),
+                feeIndexes: filteredUserTicks.map((tick) =>
+                  Long.fromNumber(tick.feeIndex)
+                ),
+                amountsA: filteredUserTicks.map(
+                  ({ reserveA }) =>
+                    getAmountInDenom(tokenA, reserveA, tokenA.display) || '0'
+                ),
+                amountsB: filteredUserTicks.map(
+                  ({ reserveB }) =>
+                    getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
+                ),
               }),
             ],
             {
@@ -257,8 +261,7 @@ export function useDeposit(): [
               amount: [
                 { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
               ],
-            },
-            ''
+            }
           );
 
           // check for response

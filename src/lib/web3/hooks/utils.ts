@@ -1,23 +1,31 @@
-import { V1Beta1PageResponse } from '../generated/ts-client/nicholasdotsol.duality.dex/rest';
-
-const { REACT_APP__REST_API } = process.env;
+import { PageResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/query/v1beta1/pagination';
+import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers';
+import Long from 'long';
 
 export function getNextPaginationKey<
-  RequestType extends { 'pagination.key'?: string } | undefined
+  RequestType extends { pagination?: Partial<PageRequest> | undefined }
 >(path: string, params: RequestType) {
   return (
     _: number,
-    lastPage: { data: { pagination: V1Beta1PageResponse } }
+    lastPage: { pagination: PageResponseSDKType }
   ): [key: string, params: RequestType] | null => {
+    const nextKey = lastPage?.pagination?.next_key;
     return lastPage
       ? // get next key or null (null will de-activate fetcher)
-        (lastPage?.data?.pagination?.next_key ?? '').length > 0
+        nextKey && nextKey.length > 0
         ? // insert next key into query params
           [
             path,
             {
               ...params,
-              'pagination.key': lastPage?.data?.pagination.next_key,
+              pagination: {
+                ...params?.pagination,
+                // the types say it is a UInt8Array, but it seems to be a string
+                key:
+                  typeof nextKey === 'string'
+                    ? bytesFromBase64(nextKey)
+                    : nextKey,
+              },
             },
           ]
         : // request to cancel the chain of requests
@@ -27,9 +35,15 @@ export function getNextPaginationKey<
   };
 }
 
-export const defaultFetchParams = {
-  'pagination.limit': '1000',
-  'pagination.count_total': true,
+export const defaultPaginationParams: PageRequest = {
+  key: new Uint8Array(),
+  offset: Long.fromNumber(0),
+  limit: Long.fromNumber(1000),
+  countTotal: true,
+  reverse: false,
 };
 
-export const defaultQueryClientConfig = { addr: REACT_APP__REST_API || '' };
+function bytesFromBase64(base64String: string): Uint8Array {
+  const buffer = Buffer.from(base64String, 'base64');
+  return new Uint8Array(buffer);
+}

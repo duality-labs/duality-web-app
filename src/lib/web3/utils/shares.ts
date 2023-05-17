@@ -1,4 +1,4 @@
-import { Coin } from '../generated/ts-client/cosmos.bank.v1beta1/types/cosmos/base/v1beta1/coin';
+import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 export interface IndexedShare {
   address: string;
@@ -8,7 +8,7 @@ export interface IndexedShare {
   sharesOwned: string;
 }
 
-export function getShareInfo(coin: Coin) {
+export function getShareInfo(coin: CoinSDKType) {
   const match = coin.denom.match(
     /^DualityPoolShares-([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/
   );

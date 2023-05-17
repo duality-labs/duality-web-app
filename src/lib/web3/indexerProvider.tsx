@@ -6,22 +6,15 @@ import {
   useMemo,
   useCallback,
 } from 'react';
+import Long from 'long';
 import { BigNumber } from 'bignumber.js';
-import { Coin } from '@cosmjs/launchpad';
+import { cosmos, nicholasdotsol } from '@duality-labs/dualityjs';
 
 import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
-import { queryClient as bankClient } from './generated/ts-client/cosmos.bank.v1beta1/module';
-import { Api as BankApi } from './generated/ts-client/cosmos.bank.v1beta1/rest';
-import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/module';
-import {
-  DexTick,
-  DexTokens,
-  DexTradingPair,
-  Api,
-} from './generated/ts-client/nicholasdotsol.duality.dex/rest';
+import { useRpcPromise } from './rpcQueryClient';
 import useTokens from './hooks/useTokens';
 import useTokenPairs from './hooks/useTokenPairs';
 
@@ -34,10 +27,19 @@ import { calculateShares } from './utils/ticks';
 import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairInfo, PairMap, getPairID } from './utils/pairs';
 
-const { REACT_APP__REST_API } = process.env;
+import { ProtobufRpcClient } from '@cosmjs/stargate';
+import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { TokensSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tokens';
+import { TradingPairSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/trading_pair';
+import { TickSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tick';
+import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
+import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
+
+const bankClientImpl = cosmos.bank.v1beta1.QueryClientImpl;
+const queryClientImpl = nicholasdotsol.duality.dex.QueryClientImpl;
 
 interface UserBankBalance {
-  balances: Array<Coin>;
+  balances: Array<CoinSDKType>;
 }
 
 interface UserShares {
@@ -61,12 +63,12 @@ interface IndexerContextType {
     isValidating: boolean;
   };
   tokens: {
-    data?: DexTokens[];
+    data?: TokensSDKType[];
     error?: string;
     isValidating: boolean;
   };
   tokenPairs: {
-    data?: DexTradingPair[];
+    data?: TradingPairSDKType[];
     error?: string;
     isValidating: boolean;
   };
@@ -96,40 +98,37 @@ const IndexerContext = createContext<IndexerContextType>({
   },
 });
 
-const defaultFetchParams = {
-  'pagination.limit': '1000',
-  'pagination.count_total': true,
+const defaultFetchParams: Partial<PageRequest> = {
+  limit: Long.fromNumber(1000),
+  countTotal: true,
 };
 
-function getFullData(): Promise<PairMap> {
+async function getFullData(
+  rpcPromise: Promise<ProtobufRpcClient>
+): Promise<PairMap> {
+  const rpc = await rpcPromise;
   return new Promise(function (resolve, reject) {
-    if (!REACT_APP__REST_API) {
+    if (!rpc) {
       reject(new Error('Undefined rest api base URL'));
     } else {
-      new Promise<Api<unknown>>((resolve) =>
-        resolve(queryClient({ addr: REACT_APP__REST_API }))
-      )
-        .then(async (client) => {
-          let nextKey: string | undefined;
-          let tickMap: Array<DexTick> = [];
-          let res: Awaited<ReturnType<Api<unknown>['queryTickAll']>>;
+      Promise.resolve()
+        .then(async () => {
+          const queryClient = new queryClientImpl(rpc);
+          let nextKey: Uint8Array | undefined;
+          let tickMap: Array<TickSDKType> = [];
           do {
-            res = await client.queryTickAll({
+            const res = await queryClient.tickAll({
               ...defaultFetchParams,
-              'pagination.key': nextKey,
+              pagination: {
+                offset: Long.fromNumber(0),
+                ...defaultFetchParams,
+                key: nextKey || [],
+              } as PageRequest,
             });
-            if (res.status === 200) {
-              tickMap = tickMap.concat(res.data.Tick || []);
-            } else {
-              // remove API error details from public view
-              throw new Error(
-                `API error code: ${res.status} ${res.statusText}`
-              );
-            }
-            nextKey = res.data.pagination?.next_key;
-          } while (nextKey);
+            tickMap = tickMap.concat(res.Tick || []);
+            nextKey = res.pagination?.nextKey;
+          } while (nextKey && nextKey.length > 0);
           return {
-            ...res.data,
             tickMap: tickMap,
           };
         })
@@ -140,7 +139,7 @@ function getFullData(): Promise<PairMap> {
   });
 }
 
-function transformData(ticks: Array<DexTick>): PairMap {
+function transformData(ticks: Array<TickSDKType>): PairMap {
   const intermediate = ticks.reduce<PairMap>(function (
     result,
     { pairId = '', tickIndex, price0To1, tickData }
@@ -158,15 +157,12 @@ function transformData(ticks: Array<DexTick>): PairMap {
         } as PairInfo);
 
       feeTypes.forEach(({ fee }, feeIndex) => {
-        if (
-          !isNaN(parseInt(tickIndex || '')) &&
-          parseFloat(price0To1 || '') > 0
-        ) {
+        if (!isNaN(tickIndex.toNumber()) && parseFloat(price0To1 || '') > 0) {
           if (tickData.reserve0 && Number(tickData.reserve0[feeIndex]) > 0) {
             result[pairId].token0Ticks.push({
               token0: tokenMap[token0],
               token1: tokenMap[token1],
-              tickIndex: new BigNumber(tickIndex || 0),
+              tickIndex: new BigNumber(tickIndex.toNumber() || 0),
               price: new BigNumber(1).dividedBy(price0To1 || 0),
               feeIndex: new BigNumber(feeIndex),
               fee: new BigNumber(fee || 0),
@@ -178,7 +174,7 @@ function transformData(ticks: Array<DexTick>): PairMap {
             result[pairId].token1Ticks.push({
               token0: tokenMap[token0],
               token1: tokenMap[token1],
-              tickIndex: new BigNumber(tickIndex || 0),
+              tickIndex: new BigNumber(tickIndex.toNumber() || 0),
               price: new BigNumber(1).dividedBy(price0To1 || 0),
               feeIndex: new BigNumber(feeIndex),
               fee: new BigNumber(fee || 0),
@@ -234,6 +230,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     swr: { refreshInterval: 10 * minutes },
   });
 
+  const rpcPromise = useRpcPromise();
+
   const [error, setError] = useState<string>();
   // avoid sending more than once
   const [, setRequestedFlag] = useState(false);
@@ -281,7 +279,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             .then((data = []) => {
               // separate out 'normal' and 'share' tokens from the bank balance
               const [tokens, tokenizedShares] = data.reduce<
-                [Array<Coin>, Array<IndexedShare>]
+                [Array<CoinSDKType>, Array<IndexedShare>]
               >(
                 ([tokens, tokenizedShares], coin) => {
                   const {
@@ -336,43 +334,46 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       });
 
       async function fetchBankData() {
-        if (address && REACT_APP__REST_API) {
-          const client = bankClient({ addr: REACT_APP__REST_API });
+        const rpc = await rpcPromise;
+        if (address && rpc) {
+          const client = new bankClientImpl(rpc);
           setFetchBankDataState(({ fetched }) => ({ fetching: true, fetched }));
-          let nextKey: string | undefined;
-          let balances: Array<Coin> = [];
-          let res: Awaited<ReturnType<BankApi<unknown>['queryAllBalances']>>;
-          // let res: HttpResponse<BalancesResponse, RpcStatus>;
+          let nextKey: Uint8Array | undefined;
+          let balances: Array<CoinSDKType> = [];
+          let res: QueryAllBalancesResponse;
           do {
-            res = await client.queryAllBalances(address, {
-              ...defaultFetchParams,
-              'pagination.key': nextKey,
-            });
-            if (res.status === 200) {
-              const nonZeroBalances = res.data.balances?.filter(
-                (balance): balance is Coin => balance.amount !== undefined
+            try {
+              res = await client.allBalances({
+                address,
+                pagination: {
+                  offset: Long.fromNumber(0),
+                  ...defaultFetchParams,
+                  key: nextKey || [],
+                } as PageRequest,
+              });
+              const nonZeroBalances = res.balances?.filter(
+                (balance: CoinSDKType): balance is CoinSDKType =>
+                  balance.amount !== undefined
               );
               balances = balances.concat(nonZeroBalances || []);
-            } else {
+            } catch (err) {
               setFetchBankDataState(({ fetched }) => ({
                 fetching: false,
                 fetched,
               }));
               // remove API error details from public view
-              throw new Error(
-                `API error code: ${res.status} ${res.statusText}`
-              );
+              throw new Error(`API error: ${err}`);
             }
-            nextKey = res.data.pagination?.next_key;
-          } while (nextKey);
+            nextKey = res.pagination?.nextKey;
+          } while (nextKey && nextKey.length > 0);
           setFetchBankDataState(() => ({ fetching: false, fetched: true }));
           return balances || [];
-        } else if (!REACT_APP__REST_API) {
-          throw new Error('Undefined rest api base URL');
+        } else if (!rpc) {
+          throw new Error('Could not connect to RPC endpoint');
         }
       }
     },
-    [address]
+    [rpcPromise, address]
   );
 
   // update bank data whenever wallet address is updated
@@ -471,7 +472,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       const now = Date.now();
       if (now - lastRequested > 1000) {
         lastRequested = Date.now();
-        getFullData()
+        getFullData(rpcPromise)
           .then(function (res) {
             setIndexerData(res);
           })
@@ -494,7 +495,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         subscriber.unsubscribeMessage(onDexUpdateMessage);
       };
     }
-  }, [address]);
+  }, [rpcPromise, address]);
 
   useEffect(() => {
     const onRouterUpdateMessage = function (event: MessageActionEvent) {
@@ -533,7 +534,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       // it's too complicated to update indexer state with the event detail's
 
       // fetch new indexer data as the trade would have caused changes in ticks
-      getFullData()
+      getFullData(rpcPromise)
         .then(function (res) {
           setIndexerData(res);
         })
@@ -547,7 +548,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscriber.unsubscribeMessage(onRouterUpdateMessage);
     };
-  }, []);
+  }, [rpcPromise]);
 
   useEffect(() => {
     setResult({
@@ -582,7 +583,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setRequestedFlag((oldValue) => {
       if (oldValue) return true;
-      getFullData()
+      getFullData(rpcPromise)
         .then(function (res) {
           setIndexerData(res);
         })
@@ -591,7 +592,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         });
       return true;
     });
-  }, []);
+  }, [rpcPromise]);
 
   return (
     <IndexerContext.Provider value={result}>{children}</IndexerContext.Provider>

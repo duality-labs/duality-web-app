@@ -1,27 +1,19 @@
 import { SWRConfiguration, SWRResponse } from 'swr';
 import useSWRInfinite from 'swr/infinite';
 
-import { queryClient } from '../generated/ts-client/nicholasdotsol.duality.dex/module';
 import {
-  DexTradingPair,
-  Api,
-} from '../generated/ts-client/nicholasdotsol.duality.dex/rest';
+  QueryAllTradingPairRequest,
+  QueryAllTradingPairResponseSDKType,
+} from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+import { useLcdClientPromise } from '../lcdClient';
+import { TradingPairSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/trading_pair';
 
-import {
-  defaultFetchParams,
-  defaultQueryClientConfig,
-  getNextPaginationKey,
-} from './utils';
+import { defaultPaginationParams, getNextPaginationKey } from './utils';
 
-type QueryTokenPairsAllRequest = Parameters<
-  Api<unknown>['queryTradingPairAll']
->[0];
-type QueryTokenPairsAll = Awaited<
-  ReturnType<Api<unknown>['queryTradingPairAll']>
->;
-type QueryTokenPairsAllList = QueryTokenPairsAll['data']['TradingPair'];
+type QueryTradingPairsAllList =
+  QueryAllTradingPairResponseSDKType['TradingPair'];
 type QueryTokenPairsAllState = {
-  data: QueryTokenPairsAllList;
+  data: QueryTradingPairsAllList | undefined;
   isValidating: SWRResponse['isValidating'];
   error: SWRResponse['error'];
 };
@@ -32,17 +24,18 @@ export default function useTokenPairs({
   queryClient: queryClientConfig,
 }: {
   swr?: SWRConfiguration;
-  query?: QueryTokenPairsAllRequest;
-  queryClient?: Parameters<typeof queryClient>[0];
+  query?: QueryAllTradingPairRequest;
+  queryClient?: string;
 } = {}): QueryTokenPairsAllState {
-  const params: QueryTokenPairsAllRequest = {
+  const params: QueryAllTradingPairRequest = {
     ...queryConfig,
-    ...defaultFetchParams,
+    pagination: {
+      ...defaultPaginationParams,
+      ...queryConfig?.pagination,
+    },
   };
-  const client = queryClient({
-    ...defaultQueryClientConfig,
-    ...queryClientConfig,
-  });
+
+  const lcdClientPromise = useLcdClientPromise(queryClientConfig);
 
   const {
     data: pages,
@@ -50,31 +43,21 @@ export default function useTokenPairs({
     error,
     size,
     setSize,
-  } = useSWRInfinite<QueryTokenPairsAll>(
-    getNextPaginationKey(
+  } = useSWRInfinite<QueryAllTradingPairResponseSDKType>(
+    getNextPaginationKey<QueryAllTradingPairRequest>(
       // set unique cache key for this client method
-      client.queryTradingPairAll.toString(),
+      'nicholasdotsol.duality.dex.tradingPairAll',
       params
     ),
-    async (_: string, params: QueryTokenPairsAllRequest) => {
-      const response: QueryTokenPairsAll = await client.queryTradingPairAll(
-        params
-      );
-      if (response.status === 200) {
-        return response;
-      } else {
-        // remove API error details from public view
-        throw new Error(
-          `API error code: ${response.status} ${response.statusText}`
-        );
-      }
-      // default to persisting the current size so the list is only resized by 'setSize'
+    async (_: string, params: QueryAllTradingPairRequest) => {
+      const client = await lcdClientPromise;
+      return await client.nicholasdotsol.duality.dex.tradingPairAll(params);
     },
     { persistSize: true, ...swrConfig }
   );
   // set number of pages to latest total
-  const pageItemCount = Number(pages?.[0]?.data.TradingPair?.length);
-  const totalItemCount = Number(pages?.[0]?.data.pagination?.total);
+  const pageItemCount = Number(pages?.[0]?.TradingPair?.length);
+  const totalItemCount = Number(pages?.[0]?.pagination?.total);
   if (pageItemCount > 0 && totalItemCount > pageItemCount) {
     const pageCount = Math.ceil(totalItemCount / pageItemCount);
     if (size !== pageCount) {
@@ -82,8 +65,8 @@ export default function useTokenPairs({
     }
   }
   // place pages of data into the same list
-  const tokens = pages?.reduce<DexTradingPair[]>((acc, page) => {
-    return acc.concat(page.data.TradingPair || []);
+  const tradingPairs = pages?.reduce<TradingPairSDKType[]>((acc, page) => {
+    return acc.concat(page.TradingPair || []);
   }, []);
-  return { data: tokens, isValidating, error };
+  return { data: tradingPairs, isValidating, error };
 }
