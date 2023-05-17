@@ -31,7 +31,7 @@ import { feeTypes } from './utils/fees';
 
 import { Token, TokenAddress, getAmountInDenom } from './utils/tokens';
 import { calculateShares } from './utils/ticks';
-import { IndexedShare } from './utils/shares';
+import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairInfo, PairMap, getPairID } from './utils/pairs';
 
 const { REACT_APP__REST_API } = process.env;
@@ -284,10 +284,12 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 [Array<Coin>, Array<IndexedShare>]
               >(
                 ([tokens, tokenizedShares], coin) => {
-                  const [, token0, token1, tickIndex, feeIndex] =
-                    coin.denom.match(
-                      /^DualityPoolShares-([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/
-                    ) || [];
+                  const {
+                    token0Address: token0,
+                    token1Address: token1,
+                    tickIndexString: tickIndex,
+                    feeIndexString: feeIndex,
+                  } = getShareInfo(coin) || {};
                   // transform tokenized shares into shares
                   if (token0 && token1 && tickIndex && feeIndex) {
                     // add tokenized share if everything is fine
