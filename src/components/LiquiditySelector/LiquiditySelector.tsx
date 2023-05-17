@@ -19,6 +19,8 @@ import {
 } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
 import { Token } from '../../lib/web3/utils/tokens';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import {
   TickInfo,
   priceToTickIndex,
@@ -26,8 +28,6 @@ import {
 } from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
-
-import { useIndexerPairData } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
 
@@ -208,14 +208,11 @@ export default function LiquiditySelector({
       [setRangeMax]
     );
 
+  const [token0Address, token1Address] =
+    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
   const {
-    data: {
-      token0Ticks = [],
-      token1Ticks = [],
-      token0: token0Address,
-      token1: token1Address,
-    } = {},
-  } = useIndexerPairData(tokenA?.address, tokenB?.address);
+    data: [token0Ticks = [], token1Ticks = []],
+  } = useTokenPairTickLiquidity([token0Address, token1Address]);
 
   const [forward, reverse] = [
     token0Address === tokenA?.address && token1Address === tokenB?.address,

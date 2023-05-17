@@ -90,3 +90,17 @@ export default function useTokenPairs({
   // return state
   return { data, isValidating, error };
 }
+
+// add convenience method to fetch ticks in a pair
+export function useOrderedTokenPair([tokenA, tokenB]: [
+  TokenAddress?,
+  TokenAddress?
+]): [token0: TokenAddress, token1: TokenAddress] | undefined {
+  const { data: tokenPairs } = useTokenPairs();
+  // search for ordered token pair in our token pair list
+  return tokenA && tokenB
+    ? tokenPairs?.find((tokenPair) => {
+        return tokenPair.includes(tokenA) && tokenPair.includes(tokenB);
+      })
+    : undefined;
+}

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
-import { useIndexerPairData } from '../../lib/web3/indexerProvider';
+import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { calculateShares } from '../../lib/web3/utils/ticks';
 import { TokenAddress } from '../../lib/web3/utils/tokens';
@@ -11,14 +11,15 @@ export default function useFeeLiquidityMap(
   tokenB?: TokenAddress
 ) {
   const {
-    data: pair,
+    data: [token0Ticks, token1Ticks],
     isValidating,
     error,
-  } = useIndexerPairData(tokenA, tokenB);
-  const feeLiquidityMap = useMemo(() => {
-    if (!pair) return;
+  } = useTokenPairTickLiquidity([tokenA, tokenB]);
 
-    const ticks = pair.token0Ticks.concat(pair.token1Ticks);
+  const feeLiquidityMap = useMemo(() => {
+    if (!token0Ticks || !token1Ticks) return;
+
+    const ticks = token0Ticks.concat(token1Ticks);
     const feeTypeLiquidity = feeTypes.reduce<Record<FeeType['fee'], BigNumber>>(
       (result, feeType) => {
         result[feeType.fee] = new BigNumber(0);
@@ -53,7 +54,7 @@ export default function useFeeLiquidityMap(
       result[feeString] = shares.dividedBy(totalLiquidity);
       return result;
     }, feeTypeLiquidity);
-  }, [pair]);
+  }, [token0Ticks, token1Ticks]);
 
   return {
     data: feeLiquidityMap,

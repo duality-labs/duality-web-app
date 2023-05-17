@@ -6,7 +6,7 @@ import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v
 import { useBankBalances } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import useShareValueMap, { TickShareValueMap } from './useShareValueMap';
+import useShareValueMap, { ShareValueMap } from './useShareValueMap';
 
 import {
   useFilteredTokenList,
@@ -68,7 +68,7 @@ function ShareValuesPage({
   balances = [],
   setSelectedTokens,
 }: {
-  shareValueMap?: TickShareValueMap;
+  shareValueMap?: ShareValueMap;
   balances?: CoinSDKType[];
   setSelectedTokens: React.Dispatch<
     React.SetStateAction<[Token, Token] | undefined>
@@ -108,26 +108,28 @@ function ShareValuesPage({
 
   const allUserSharesValue = Object.values(shareValueMap || {}).reduce(
     (result, shareValues) => {
-      const sharePairValue = shareValues.reduce((result2, shareValue) => {
-        if (shareValue.userReserves0?.isGreaterThan(0)) {
-          const token0Index = allUserTokensList.indexOf(shareValue.token0);
-          result2 = result2.plus(
-            shareValue.userReserves0.multipliedBy(
-              allUserTokenPrices[token0Index] || 0
-            )
-          );
-        }
-        if (shareValue.userReserves1?.isGreaterThan(0)) {
-          const token1Index = allUserTokensList.indexOf(shareValue.token1);
-          result2 = result2.plus(
-            shareValue.userReserves1.multipliedBy(
-              allUserTokenPrices[token1Index] || 0
-            )
-          );
-        }
-        return result2;
-      }, new BigNumber(0));
-      return result.plus(sharePairValue);
+      // todo: this must be calculated another way
+      return result;
+      // const sharePairValue = shareValues.reduce((result2, shareValue) => {
+      //   if (shareValue.userReserves0?.isGreaterThan(0)) {
+      //     const token0Index = allUserTokensList.indexOf(shareValue.token0);
+      //     result2 = result2.plus(
+      //       shareValue.userReserves0.multipliedBy(
+      //         allUserTokenPrices[token0Index] || 0
+      //       )
+      //     );
+      //   }
+      //   if (shareValue.userReserves1?.isGreaterThan(0)) {
+      //     const token1Index = allUserTokensList.indexOf(shareValue.token1);
+      //     result2 = result2.plus(
+      //       shareValue.userReserves1.multipliedBy(
+      //         allUserTokenPrices[token1Index] || 0
+      //       )
+      //     );
+      //   }
+      //   return result2;
+      // }, new BigNumber(0));
+      // return result.plus(sharePairValue);
     },
     new BigNumber(0)
   );

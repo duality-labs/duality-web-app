@@ -7,11 +7,11 @@ import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
 import TableCard from './TableCard';
 
-import { useIndexerData } from '../../lib/web3/indexerProvider';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import useShareValueMap, {
   ShareValue,
   TickShareValue,
+  useTickShareValues,
 } from '../../pages/MyLiquidity/useShareValueMap';
 import {
   useEditLiquidity,
@@ -24,7 +24,9 @@ import {
 
 import { formatAmount } from '../../lib/utils/number';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
-import { TickInfo } from '../../lib/web3/utils/ticks';
+import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
+import { getPairID } from '../../lib/web3/utils/pairs';
 
 import './PoolsTableCard.scss';
 
@@ -52,10 +54,8 @@ export default function PoolsTableCard({
   const [searchValue, setSearchValue] = useState<string>('');
 
   const tokenList = useTokens();
-  const { data: pairsData } = useIndexerData();
-  const allPairsList = useMemo<
-    Array<[string, Token, Token, undefined, TickInfo[], TickInfo[]]>
-  >(() => {
+  const { data: tokenPairs } = useTokenPairs();
+  const allPairsList = useMemo<Array<[string, Token, Token, undefined]>>(() => {
     const tokenListByAddress = tokenList.reduce<{ [address: string]: Token }>(
       (acc, token) => {
         if (token.address) {
@@ -65,43 +65,30 @@ export default function PoolsTableCard({
       },
       {}
     );
-    return pairsData
-      ? Object.entries(pairsData)
-          .map<[string, Token, Token, undefined, TickInfo[], TickInfo[]]>(
-            ([pairId, { token0, token1, token0Ticks, token1Ticks }]) => {
-              return [
-                pairId,
-                tokenListByAddress[token0],
-                tokenListByAddress[token1],
-                undefined,
-                token0Ticks,
-                token1Ticks,
-              ];
-            }
-          )
+    return tokenPairs
+      ? tokenPairs
+          .map<[string, Token, Token, undefined]>(([token0, token1]) => {
+            return [
+              getPairID(token0, token1),
+              tokenListByAddress[token0],
+              tokenListByAddress[token1],
+              undefined,
+            ];
+          })
           .filter(([, token0, token1]) => token0 && token1)
       : [];
-  }, [tokenList, pairsData]);
+  }, [tokenList, tokenPairs]);
   const shareValueMap = useShareValueMap();
   const myPoolsList = useMemo<
-    Array<
-      [
-        string,
-        Token,
-        Token,
-        TickShareValue[] | undefined,
-        TickInfo[] | undefined,
-        TickInfo[] | undefined
-      ]
-    >
+    Array<[string, Token, Token, ShareValue[] | undefined]>
   >(() => {
     return shareValueMap
-      ? Object.entries(shareValueMap).map<
-          [string, Token, Token, TickShareValue[], undefined, undefined]
-        >(([pairId, shareValues]) => {
-          const [{ token0, token1 }] = shareValues;
-          return [pairId, token0, token1, shareValues, undefined, undefined];
-        })
+      ? Object.entries(shareValueMap).map<[string, Token, Token, ShareValue[]]>(
+          ([pairId, shareValues]) => {
+            const [{ token0, token1 }] = shareValues;
+            return [pairId, token0, token1, shareValues];
+          }
+        )
       : [];
   }, [shareValueMap]);
 
@@ -111,16 +98,7 @@ export default function PoolsTableCard({
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
 
   const filteredPoolsList = useMemo<
-    Array<
-      [
-        string,
-        Token,
-        Token,
-        TickShareValue[] | undefined,
-        TickInfo[] | undefined,
-        TickInfo[] | undefined
-      ]
-    >
+    Array<[string, Token, Token, ShareValue[] | undefined]>
   >(() => {
     const tokenList = filteredPoolTokenList.map(({ token }) => token);
     const poolList = switchValue === 'mine' ? myPoolsList : allPairsList;
@@ -128,30 +106,6 @@ export default function PoolsTableCard({
       return tokenList.includes(token0) || tokenList.includes(token1);
     });
   }, [switchValue, myPoolsList, allPairsList, filteredPoolTokenList]);
-
-  const [{ isValidating }, sendEditRequest] = useEditLiquidity();
-  const withdrawPair = useCallback<
-    Awaited<(shareValues: Array<TickShareValue>) => void>
-  >(
-    async (shareValues: Array<TickShareValue>) => {
-      if (!isValidating) {
-        // get relevant tick diffs
-        const sharesDiff: Array<EditedTickShareValue> = shareValues.flatMap(
-          (share: TickShareValue) => {
-            return {
-              ...share,
-              // remove user's reserves if found
-              tickDiff0: share.userReserves0?.negated() ?? new BigNumber(0),
-              tickDiff1: share.userReserves1?.negated() ?? new BigNumber(0),
-            };
-          }
-        );
-
-        await sendEditRequest(sharesDiff);
-      }
-    },
-    [isValidating, sendEditRequest]
-  );
 
   return (
     <TableCard
@@ -188,23 +142,11 @@ export default function PoolsTableCard({
             </thead>
             <tbody>
               {filteredPoolsList.map(
-                ([
-                  pairId,
-                  token0,
-                  token1,
-                  shareValues,
-                  token0Ticks,
-                  token1Ticks,
-                ]) => {
+                ([pairId, token0, token1, shareValues]) => {
                   const onRowClick:
                     | MouseEventHandler<HTMLButtonElement>
                     | undefined = onTokenPairClick
                     ? () => onTokenPairClick([token0, token1])
-                    : undefined;
-                  const withdraw:
-                    | MouseEventHandler<HTMLButtonElement>
-                    | undefined = shareValues
-                    ? () => withdrawPair(shareValues)
                     : undefined;
                   return shareValues ? (
                     // show user's positions
@@ -214,7 +156,6 @@ export default function PoolsTableCard({
                       token1={token1}
                       shareValues={shareValues}
                       onClick={onRowClick}
-                      withdraw={withdraw}
                     />
                   ) : (
                     // show general pair data
@@ -222,8 +163,6 @@ export default function PoolsTableCard({
                       key={pairId}
                       token0={token0}
                       token1={token1}
-                      token0Ticks={token0Ticks}
-                      token1Ticks={token1Ticks}
                       onClick={onRowClick}
                     />
                   );
@@ -261,19 +200,19 @@ export default function PoolsTableCard({
 function PairRow({
   token0,
   token1,
-  token0Ticks = [],
-  token1Ticks = [],
   onClick,
 }: {
   token0: Token;
   token1: Token;
-  token0Ticks?: Array<TickInfo>;
-  token1Ticks?: Array<TickInfo>;
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   const {
     data: [price0, price1],
   } = useSimplePrice([token0, token1]);
+  const {
+    data: [token0Ticks = [], token1Ticks = []],
+  } = useTokenPairTickLiquidity([token0.address, token1.address]);
+
   const [value0, value1] = useMemo(() => {
     const initialValues: [BigNumber, BigNumber] = [
       new BigNumber(0),
@@ -335,16 +274,46 @@ function PositionRow({
   token1,
   shareValues,
   onClick,
-  withdraw,
 }: {
   token0: Token;
   token1: Token;
-  shareValues: Array<TickShareValue>;
+  shareValues: Array<ShareValue>;
   onClick?: MouseEventHandler<HTMLButtonElement>;
-  withdraw?: MouseEventHandler<HTMLButtonElement>;
 }) {
-  const [total0, total1] = useUserReserves(shareValues);
-  const [value0, value1] = useUserReservesNominalValues(shareValues);
+  const tickShareValues = useTickShareValues(shareValues) || [];
+  const [total0, total1] = useUserReserves(tickShareValues);
+  const [value0, value1] = useUserReservesNominalValues(tickShareValues);
+
+  const [{ isValidating }, sendEditRequest] = useEditLiquidity();
+
+  const withdrawPair = useCallback<
+    Awaited<(shareValues: Array<TickShareValue>) => void>
+  >(
+    async (shareValues: Array<TickShareValue>) => {
+      if (!isValidating) {
+        // get relevant tick diffs
+        const sharesDiff: Array<EditedTickShareValue> = shareValues.flatMap(
+          (share: TickShareValue) => {
+            return {
+              ...share,
+              // remove user's reserves if found
+              tickDiff0: share.userReserves0?.negated() ?? new BigNumber(0),
+              tickDiff1: share.userReserves1?.negated() ?? new BigNumber(0),
+            };
+          }
+        );
+
+        await sendEditRequest(sharesDiff);
+      }
+    },
+    [isValidating, sendEditRequest]
+  );
+
+  const withdraw: MouseEventHandler<HTMLButtonElement> | undefined =
+    tickShareValues.length > 0
+      ? () => withdrawPair(tickShareValues)
+      : undefined;
+
   if (total0 && total1) {
     return (
       <tr>
