@@ -23,7 +23,7 @@ import { addressableTokenMap as tokenMap } from '../../components/TokenPicker/ho
 import { feeTypes } from './utils/fees';
 
 import { Token, TokenAddress, getAmountInDenom } from './utils/tokens';
-import { calculateShares } from './utils/ticks';
+import { calculateShares, tickIndexToPrice } from './utils/ticks';
 import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairInfo, PairMap, getPairID } from './utils/pairs';
 
@@ -142,7 +142,7 @@ async function getFullData(
 function transformData(ticks: Array<TickSDKType>): PairMap {
   const intermediate = ticks.reduce<PairMap>(function (
     result,
-    { pairId = '', tickIndex, price0To1, tickData }
+    { pairId = '', tickIndex, tickData }
   ) {
     // token0 and token1 are sorted by the back end
     const [token0, token1] = pairId.split('<>');
@@ -156,14 +156,19 @@ function transformData(ticks: Array<TickSDKType>): PairMap {
           token1Ticks: [],
         } as PairInfo);
 
+      // calculate price from tickIndex, try to keep price values consistent:
+      //   JS rounding may be inconsistent with API's rounding
+      const bigTickIndex = new BigNumber(tickIndex.toNumber() || 0);
+      const bigPrice = tickIndexToPrice(bigTickIndex);
+
       feeTypes.forEach(({ fee }, feeIndex) => {
-        if (!isNaN(tickIndex.toNumber()) && parseFloat(price0To1 || '') > 0) {
+        if (!bigTickIndex.isNaN() && bigPrice.isGreaterThan(0)) {
           if (tickData.reserve0 && Number(tickData.reserve0[feeIndex]) > 0) {
             result[pairId].token0Ticks.push({
               token0: tokenMap[token0],
               token1: tokenMap[token1],
-              tickIndex: new BigNumber(tickIndex.toNumber() || 0),
-              price: new BigNumber(1).dividedBy(price0To1 || 0),
+              tickIndex: bigTickIndex,
+              price: bigPrice,
               feeIndex: new BigNumber(feeIndex),
               fee: new BigNumber(fee || 0),
               reserve0: new BigNumber(tickData.reserve0?.[feeIndex] || 0),
@@ -174,8 +179,8 @@ function transformData(ticks: Array<TickSDKType>): PairMap {
             result[pairId].token1Ticks.push({
               token0: tokenMap[token0],
               token1: tokenMap[token1],
-              tickIndex: new BigNumber(tickIndex.toNumber() || 0),
-              price: new BigNumber(1).dividedBy(price0To1 || 0),
+              tickIndex: bigTickIndex,
+              price: bigPrice,
               feeIndex: new BigNumber(feeIndex),
               fee: new BigNumber(fee || 0),
               reserve0: new BigNumber(0),
