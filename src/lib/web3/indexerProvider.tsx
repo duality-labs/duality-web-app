@@ -30,7 +30,7 @@ import { PairInfo, PairMap, getPairID } from './utils/pairs';
 import { ProtobufRpcClient } from '@cosmjs/stargate';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 import { TokensSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tokens';
-import { TradingPairSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/trading_pair';
+import { TokenMapSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/token_map';
 import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tick_liquidity';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
@@ -68,7 +68,7 @@ interface IndexerContextType {
     isValidating: boolean;
   };
   tokenPairs: {
-    data?: TradingPairSDKType[];
+    data?: TokenMapSDKType[];
     error?: string;
     isValidating: boolean;
   };
@@ -119,6 +119,9 @@ async function getFullData(
           do {
             const res = await queryClient.tickLiquidityAll({
               ...defaultFetchParams,
+              // note: fetch empty pair for now, fix later
+              pairId: getPairID('', ''),
+              tokenIn: '',
               pagination: {
                 offset: Long.fromNumber(0),
                 ...defaultFetchParams,
@@ -143,26 +146,29 @@ function transformData(ticks: Array<TickLiquiditySDKType>): PairMap {
   const intermediate = ticks.reduce<PairMap>(function (
     result,
     {
-      pairId: { token0 = '', token1 = '' } = {},
-      tokenIn,
-      tickIndex,
-      liquidityType,
-      liquidityIndex,
-      LPReserve,
+      poolReserves: {
+        pairId: { token0 = '', token1 = '' } = {},
+        tokenIn,
+        tickIndex: tickIndexString,
+        fee: feeString,
+        reserves: reservesString,
+      } = {},
     }
   ) {
-    const fee = liquidityIndex.toNumber() / 10000 || 0;
+    const tickIndex = Number(tickIndexString);
+    const reserves = Number(reservesString);
+    const fee = Number(feeString) / 10000 || 0;
     const feeIndex = feeTypes.findIndex((feeType) => feeType.fee === fee);
     const pairId = getPairID(token0, token1);
     if (
-      liquidityType === 'A_LPDeposit' &&
+      !isNaN(tickIndex) &&
       tokenIn &&
       token0 &&
       token1 &&
       tokenMap[tokenIn] &&
       tokenMap[token0] &&
       tokenMap[token1] &&
-      LPReserve &&
+      reserves > 0 &&
       feeIndex >= 0
     ) {
       result[pairId] =
@@ -176,7 +182,7 @@ function transformData(ticks: Array<TickLiquiditySDKType>): PairMap {
 
       // calculate price from tickIndex, try to keep price values consistent:
       //   JS rounding may be inconsistent with API's rounding
-      const bigTickIndex = new BigNumber(tickIndex.toNumber() || 0);
+      const bigTickIndex = new BigNumber(tickIndex || 0);
       const bigPrice = tickIndexToPrice(bigTickIndex);
 
       if (tokenIn === token0) {
@@ -187,7 +193,7 @@ function transformData(ticks: Array<TickLiquiditySDKType>): PairMap {
           price: bigPrice,
           feeIndex: new BigNumber(feeIndex),
           fee: new BigNumber(fee),
-          reserve0: new BigNumber(LPReserve || 0),
+          reserve0: new BigNumber(reserves || 0),
           reserve1: new BigNumber(0),
         });
       } else if (tokenIn === token1) {
@@ -199,7 +205,7 @@ function transformData(ticks: Array<TickLiquiditySDKType>): PairMap {
           feeIndex: new BigNumber(feeIndex),
           fee: new BigNumber(fee),
           reserve0: new BigNumber(0),
-          reserve1: new BigNumber(LPReserve || 0),
+          reserve1: new BigNumber(reserves || 0),
         });
       }
     }
