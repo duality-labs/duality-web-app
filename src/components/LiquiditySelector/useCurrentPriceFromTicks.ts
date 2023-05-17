@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 
-import { useIndexerPairData } from '../../lib/web3/indexerProvider';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { TickInfo, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 // current price of A to B is given in price B/A
@@ -22,14 +23,10 @@ export default function useMidTickIndexFromTicks(
   tokenA?: string,
   tokenB?: string
 ): number | undefined {
+  const [token0, token1] = useOrderedTokenPair([tokenA, tokenB]) || [];
   const {
-    data: {
-      token0Ticks: [token0Tick] = [],
-      token1Ticks: [token1Tick] = [],
-      token0,
-      token1,
-    } = {},
-  } = useIndexerPairData(tokenA, tokenB);
+    data: [[token0Tick] = [], [token1Tick] = []],
+  } = useTokenPairTickLiquidity([token0, token1]);
 
   // skip if there are no ticks to gain insight from
   if (!token0Tick && !token1Tick) {
