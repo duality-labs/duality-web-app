@@ -13,6 +13,7 @@ import {
   getNextPaginationKey,
 } from './utils';
 
+type QueryTokensAllRequest = Parameters<Api<unknown>['queryTokensAll']>[0];
 type QueryTokensAll = Awaited<ReturnType<Api<unknown>['queryTokensAll']>>;
 type QueryTokensAllList = QueryTokensAll['data']['Tokens'];
 type QueryTokensAllState = {
@@ -27,9 +28,18 @@ export default function useTokens({
   queryClient: queryClientConfig,
 }: {
   swr?: SWRConfiguration;
-  query?: Parameters<Api<unknown>['queryTokensAll']>[0];
+  query?: QueryTokensAllRequest;
   queryClient?: Parameters<typeof queryClient>[0];
 } = {}): QueryTokensAllState {
+  const params: QueryTokensAllRequest = {
+    ...defaultFetchParams,
+    ...queryConfig,
+  };
+  const client = queryClient({
+    ...defaultQueryClientConfig,
+    ...queryClientConfig,
+  });
+
   const {
     data: pages,
     isValidating,
@@ -37,17 +47,13 @@ export default function useTokens({
     size,
     setSize,
   } = useSWRInfinite<QueryTokensAll>(
-    getNextPaginationKey,
-    async (paginationKey: string) => {
-      const client = queryClient({
-        ...defaultQueryClientConfig,
-        ...queryClientConfig,
-      });
-      const response: QueryTokensAll = await client.queryTokensAll({
-        ...defaultFetchParams,
-        ...queryConfig,
-        'pagination.key': paginationKey,
-      });
+    getNextPaginationKey<QueryTokensAllRequest>(
+      // set unique cache key for this client method
+      client.queryTokensAll.toString(),
+      params
+    ),
+    async (_: string, params: QueryTokensAllRequest) => {
+      const response: QueryTokensAll = await client.queryTokensAll(params);
       if (response.status === 200) {
         return response;
       } else {

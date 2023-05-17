@@ -13,6 +13,9 @@ import {
   getNextPaginationKey,
 } from './utils';
 
+type QueryTokenPairsAllRequest = Parameters<
+  Api<unknown>['queryTradingPairAll']
+>[0];
 type QueryTokenPairsAll = Awaited<
   ReturnType<Api<unknown>['queryTradingPairAll']>
 >;
@@ -29,9 +32,18 @@ export default function useTokenPairs({
   queryClient: queryClientConfig,
 }: {
   swr?: SWRConfiguration;
-  query?: Parameters<Api<unknown>['queryTradingPairAll']>[0];
+  query?: QueryTokenPairsAllRequest;
   queryClient?: Parameters<typeof queryClient>[0];
 } = {}): QueryTokenPairsAllState {
+  const params: QueryTokenPairsAllRequest = {
+    ...queryConfig,
+    ...defaultFetchParams,
+  };
+  const client = queryClient({
+    ...defaultQueryClientConfig,
+    ...queryClientConfig,
+  });
+
   const {
     data: pages,
     isValidating,
@@ -39,17 +51,15 @@ export default function useTokenPairs({
     size,
     setSize,
   } = useSWRInfinite<QueryTokenPairsAll>(
-    getNextPaginationKey,
-    async (paginationKey: string) => {
-      const client = queryClient({
-        ...defaultQueryClientConfig,
-        ...queryClientConfig,
-      });
-      const response: QueryTokenPairsAll = await client.queryTradingPairAll({
-        ...defaultFetchParams,
-        ...queryConfig,
-        'pagination.key': paginationKey,
-      });
+    getNextPaginationKey(
+      // set unique cache key for this client method
+      client.queryTradingPairAll.toString(),
+      params
+    ),
+    async (_: string, params: QueryTokenPairsAllRequest) => {
+      const response: QueryTokenPairsAll = await client.queryTradingPairAll(
+        params
+      );
       if (response.status === 200) {
         return response;
       } else {
