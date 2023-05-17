@@ -17,7 +17,7 @@ type QueryAllTokensState = {
   error: SWRResponse['error'];
 };
 
-export default function useTokenPairs({
+export default function useTokens({
   swr: swrConfig,
   query: queryConfig,
   queryClient: queryClientConfig,
