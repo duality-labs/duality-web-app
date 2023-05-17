@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { SWRConfiguration, SWRResponse } from 'swr';
 import useSWRInfinite from 'swr/infinite';
 
@@ -6,7 +7,6 @@ import {
   QueryAllTickLiquidityResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { useLcdClientPromise } from '../lcdClient';
-import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tick_liquidity';
 
 import { defaultPaginationParams, getNextPaginationKey } from './utils';
 
@@ -72,8 +72,9 @@ export default function useTickLiquidity({
     }
   }
   // place pages of data into the same list
-  const tradingPairs = pages?.reduce<TickLiquiditySDKType[]>((acc, page) => {
-    return acc.concat(page.tickLiquidity || []);
-  }, []);
+  const tradingPairs = useMemo(() => {
+    const liquidity = pages?.flatMap((page) => page.tickLiquidity);
+    return liquidity && transformData(liquidity);
+  }, [pages]);
   return { data: tradingPairs, isValidating, error };
 }
