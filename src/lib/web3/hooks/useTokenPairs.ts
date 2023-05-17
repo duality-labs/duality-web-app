@@ -2,18 +2,17 @@ import { SWRConfiguration, SWRResponse } from 'swr';
 import useSWRInfinite from 'swr/infinite';
 
 import {
-  QueryAllTradingPairRequest,
-  QueryAllTradingPairResponseSDKType,
+  QueryAllTokenMapRequest,
+  QueryAllTokenMapResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { useLcdClientPromise } from '../lcdClient';
-import { TradingPairSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/trading_pair';
+import { TokenMapSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/token_map';
 
 import { defaultPaginationParams, getNextPaginationKey } from './utils';
 
-type QueryTradingPairsAllList =
-  QueryAllTradingPairResponseSDKType['TradingPair'];
-type QueryTokenPairsAllState = {
-  data: QueryTradingPairsAllList | undefined;
+type QueryAllTokenMapList = QueryAllTokenMapResponseSDKType['tokenMap'];
+type QueryAllTokenMapState = {
+  data: QueryAllTokenMapList | undefined;
   isValidating: SWRResponse['isValidating'];
   error: SWRResponse['error'];
 };
@@ -24,10 +23,10 @@ export default function useTokenPairs({
   queryClient: queryClientConfig,
 }: {
   swr?: SWRConfiguration;
-  query?: QueryAllTradingPairRequest;
+  query?: QueryAllTokenMapRequest;
   queryClient?: string;
-} = {}): QueryTokenPairsAllState {
-  const params: QueryAllTradingPairRequest = {
+} = {}): QueryAllTokenMapState {
+  const params: QueryAllTokenMapRequest = {
     ...queryConfig,
     pagination: {
       ...defaultPaginationParams,
@@ -43,20 +42,20 @@ export default function useTokenPairs({
     error,
     size,
     setSize,
-  } = useSWRInfinite<QueryAllTradingPairResponseSDKType>(
-    getNextPaginationKey<QueryAllTradingPairRequest>(
+  } = useSWRInfinite<QueryAllTokenMapResponseSDKType>(
+    getNextPaginationKey<QueryAllTokenMapRequest>(
       // set unique cache key for this client method
-      'dualitylabs.duality.dex.tradingPairAll',
+      'dualitylabs.duality.dex.tokenMapAll',
       params
     ),
-    async ([, params]: [paths: string, params: QueryAllTradingPairRequest]) => {
+    async ([, params]: [paths: string, params: QueryAllTokenMapRequest]) => {
       const client = await lcdClientPromise;
-      return await client.dualitylabs.duality.dex.tradingPairAll(params);
+      return await client.dualitylabs.duality.dex.tokenMapAll(params);
     },
     { persistSize: true, ...swrConfig }
   );
   // set number of pages to latest total
-  const pageItemCount = Number(pages?.[0]?.TradingPair?.length);
+  const pageItemCount = Number(pages?.[0]?.tokenMap?.length);
   const totalItemCount = Number(pages?.[0]?.pagination?.total);
   if (pageItemCount > 0 && totalItemCount > pageItemCount) {
     const pageCount = Math.ceil(totalItemCount / pageItemCount);
@@ -65,8 +64,8 @@ export default function useTokenPairs({
     }
   }
   // place pages of data into the same list
-  const tradingPairs = pages?.reduce<TradingPairSDKType[]>((acc, page) => {
-    return acc.concat(page.TradingPair || []);
+  const tradingPairs = pages?.reduce<TokenMapSDKType[]>((acc, page) => {
+    return acc.concat(page.tokenMap || []);
   }, []);
   return { data: tradingPairs, isValidating, error };
 }
