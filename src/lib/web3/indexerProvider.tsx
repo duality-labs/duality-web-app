@@ -30,7 +30,6 @@ import { PairInfo, PairMap, getPairID } from './utils/pairs';
 import { ProtobufRpcClient } from '@cosmjs/stargate';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 import { TokensSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tokens';
-import { TokenMapSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/token_map';
 import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tick_liquidity';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
@@ -68,7 +67,7 @@ interface IndexerContextType {
     isValidating: boolean;
   };
   tokenPairs: {
-    data?: TokenMapSDKType[];
+    data?: [TokenAddress, TokenAddress][];
     error?: string;
     isValidating: boolean;
   };
