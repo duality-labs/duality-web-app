@@ -209,7 +209,7 @@ function Pool() {
   }, [isValueAZero, isValueBZero]);
 
   const [{ isValidating: isValidatingDeposit }, sendDepositRequest] =
-    useDeposit();
+    useDeposit([tokenA, tokenB]);
 
   const [userTicks, setUserTicksUnprotected] = useState<TickGroup>([]);
   // ensure that setting of user ticks never goes outside our prescribed bounds

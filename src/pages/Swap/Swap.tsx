@@ -18,10 +18,9 @@ import NumberInput, {
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import {
-  useBankBalance,
-  useIndexerPairData,
-} from '../../lib/web3/indexerProvider';
+import { useBankBalance } from '../../lib/web3/indexerProvider';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -73,6 +72,7 @@ function Swap() {
     valueA: lastUpdatedA ? valueA : undefined,
     valueB: lastUpdatedA ? undefined : valueB,
   });
+
   const rateData = getRouterEstimates(pairRequest, routerResult);
   const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap();
 
@@ -107,7 +107,11 @@ function Swap() {
   const [inputSlippage, setInputSlippage, slippage = '0'] =
     useNumericInputState(defaultSlippage);
 
-  const { data: pair } = useIndexerPairData(tokenA?.address, tokenB?.address);
+  const [token0, token1] =
+    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
+  const {
+    data: [token0Ticks, token1Ticks],
+  } = useTokenPairTickLiquidity([token0, token1]);
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -137,7 +141,6 @@ function Swap() {
             routerResult.tickIndexIn.negated().toNumber(),
             routerResult.tickIndexOut.negated().toNumber()
           );
-        const { token0Ticks, token1Ticks, token0 } = pair || {};
         const forward = result.tokenIn === token0;
         const ticks = forward ? token1Ticks : token0Ticks;
         const ticksPassed =
@@ -190,7 +193,17 @@ function Swap() {
         );
       }
     },
-    [address, routerResult, pair, tokenA, tokenB, slippage, swapRequest]
+    [
+      address,
+      routerResult,
+      tokenA,
+      tokenB,
+      token0,
+      token0Ticks,
+      token1Ticks,
+      slippage,
+      swapRequest,
+    ]
   );
 
   const onValueAChanged = useCallback(
