@@ -34,7 +34,7 @@ import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioB
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 
-import { useTokens } from '../../components/TokenPicker/hooks';
+import useTokens from '../../lib/web3/hooks/useTokens';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
