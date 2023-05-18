@@ -17,10 +17,9 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import useShareValueMap, { ShareValueMap } from './useShareValueMap';
 
-import {
-  useFilteredTokenList,
-  useTokens,
-} from '../../components/TokenPicker/hooks';
+import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
+
+import useTokens from '../../lib/web3/hooks/useTokens';
 
 import { formatAmount } from '../../lib/utils/number';
 

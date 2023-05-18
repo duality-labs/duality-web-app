@@ -10,7 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import { useTokens } from '../../components/TokenPicker/hooks';
+import useTokens from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import NumberInput, {
   useNumericInputState,
