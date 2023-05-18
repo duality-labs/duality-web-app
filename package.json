@@ -25,6 +25,7 @@
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@reach/dialog": "^0.17.0",
     "@react-hook/resize-observer": "^1.2.6",
+    "@tanstack/react-query": "^4.29.7",
     "bignumber.js": "^9.0.2",
     "buffer": "^6.0.3",
     "chain-registry": "^1.0.0",
