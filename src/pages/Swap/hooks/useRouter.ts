@@ -5,7 +5,7 @@ import { formatAmount } from '../../../lib/utils/number';
 
 import BigNumber from 'bignumber.js';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
+import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
 
 import { useTokenPairTickLiquidity } from '../../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../../lib/web3/hooks/useTokenPairs';

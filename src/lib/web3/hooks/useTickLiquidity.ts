@@ -12,7 +12,7 @@ import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/dual
 import { defaultPaginationParams, getNextPaginationKey } from './utils';
 import { feeTypes } from '../utils/fees';
 
-import { addressableTokenMap as tokenMap } from '../../../components/TokenPicker/hooks';
+import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useTokens';
 import BigNumber from 'bignumber.js';
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
