@@ -17,10 +17,8 @@ import {
   useEditLiquidity,
   EditedTickShareValue,
 } from '../../pages/MyLiquidity/useEditLiquidity';
-import {
-  useFilteredTokenList,
-  useTokens,
-} from '../../components/TokenPicker/hooks';
+import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
+import useTokens from '../../lib/web3/hooks/useTokens';
 
 import { formatAmount } from '../../lib/utils/number';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
