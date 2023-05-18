@@ -32,29 +32,10 @@ async function sendSwap(
     wallet: OfflineSigner;
     address: string;
   },
-  {
-    amountIn,
-    tokenIn,
-    tokenA,
-    tokenB,
-    minOut,
-    creator,
-    receiver,
-    limitPrice,
-  }: MsgSwapSDKType,
+  { amountIn, tokenIn, tokenA, tokenB, creator, receiver }: MsgSwapSDKType,
   gasEstimate: number
 ): Promise<MsgSwapResponseSDKType> {
-  if (
-    !amountIn ||
-    !amountIn ||
-    !tokenIn ||
-    !tokenA ||
-    !tokenB ||
-    !minOut ||
-    !creator ||
-    !creator ||
-    !limitPrice
-  ) {
+  if (!amountIn || !amountIn || !tokenIn || !tokenA || !tokenB || !creator) {
     throw new Error('Invalid Input');
   }
 
@@ -85,10 +66,8 @@ async function sendSwap(
           tokenIn,
           tokenA,
           tokenB,
-          minOut,
           creator,
           receiver,
-          limitPrice,
         }),
       ],
       {
@@ -181,17 +160,8 @@ export function useSwap(): [
     (request: MsgSwapSDKType, gasEstimate: number) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
-      const { amountIn, tokenIn, tokenA, tokenB, minOut, creator, receiver } =
-        request;
-      if (
-        !amountIn ||
-        !tokenIn ||
-        !tokenA ||
-        !tokenB ||
-        !minOut ||
-        !creator ||
-        !receiver
-      )
+      const { amountIn, tokenIn, tokenA, tokenB, creator, receiver } = request;
+      if (!amountIn || !tokenIn || !tokenA || !tokenB || !creator || !receiver)
         return onError('Invalid input');
       setValidating(true);
       setError(undefined);
