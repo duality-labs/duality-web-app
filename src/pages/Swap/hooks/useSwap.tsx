@@ -14,7 +14,7 @@ import {
   createLoadingToast,
 } from '../../../components/Notifications/common';
 
-import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
+import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 import { readEvents } from '../../../lib/web3/utils/txs';
 import rpcClient from '../../../lib/web3/rpcMsgClient';

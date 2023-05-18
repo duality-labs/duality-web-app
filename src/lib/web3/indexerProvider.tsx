@@ -15,7 +15,7 @@ import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
 import { useRpcPromise } from './rpcQueryClient';
-import { useTokens } from '../../components/TokenPicker/hooks';
+import useTokens from '../../lib/web3/hooks/useTokens';
 import useTokenPairs from './hooks/useTokenPairs';
 
 import { feeTypes } from './utils/fees';
