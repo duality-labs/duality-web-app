@@ -148,17 +148,17 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                     token0Address: token0,
                     token1Address: token1,
                     tickIndexString: tickIndex,
-                    feeIndexString: feeIndex,
+                    feeString: fee,
                   } = getShareInfo(coin) || {};
                   // transform tokenized shares into shares
-                  if (token0 && token1 && tickIndex && feeIndex) {
+                  if (token0 && token1 && tickIndex && fee) {
                     // add tokenized share if everything is fine
                     if (address) {
                       const tokenizedShare = {
                         address,
                         pairId: getPairID(token0, token1),
                         tickIndex,
-                        feeIndex,
+                        fee,
                         sharesOwned: coin.amount,
                       };
                       return [tokens, [...tokenizedShares, tokenizedShare]];
@@ -170,7 +170,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                         `Received unknown denomination in tokenized shares: ${coin.denom}`,
                         {
                           feeTypes,
-                          feeIndex,
+                          fee,
                           address,
                         }
                       );
@@ -267,7 +267,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       const Token0 = event['message.Token0'];
       const Token1 = event['message.Token1'];
       const TickIndex = event['message.TickIndex'];
-      const FeeIndex = event['message.FeeIndex'];
+      const Fee = event['message.Fee'];
       const NewReserves0 = event['message.NewReserves0'];
       const NewReserves1 = event['message.NewReserves1'];
 
@@ -276,7 +276,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         !Token0 ||
         !Token1 ||
         !TickIndex ||
-        !FeeIndex ||
+        !Fee ||
         !NewReserves0 ||
         !NewReserves1
       ) {
@@ -296,7 +296,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           (share) =>
             share.pairId === pairId &&
             share.tickIndex === TickIndex &&
-            share.feeIndex === FeeIndex
+            share.fee === Fee
         );
         const sharesOwned = calculateShares({
           tickIndex: new BigNumber(TickIndex),
@@ -308,7 +308,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           const newShare = {
             pairId,
             address,
-            feeIndex: FeeIndex,
+            fee: Fee,
             tickIndex: TickIndex,
             sharesOwned: sharesOwned.toFixed(),
           };

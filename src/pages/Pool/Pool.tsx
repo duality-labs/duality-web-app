@@ -484,7 +484,7 @@ function Pool() {
       const indexMin = rangeMinIndex;
       const indexMax = rangeMaxIndex;
       // set multiple ticks across the range
-      const feeIndex = feeType ? feeTypes.indexOf(feeType) : -1;
+      const fee = feeType?.fee;
       if (
         tokenA &&
         tokenB &&
@@ -492,8 +492,7 @@ function Pool() {
         indexMin !== undefined &&
         indexMax !== undefined &&
         indexMax >= indexMin &&
-        feeType &&
-        feeIndex >= 0
+        fee !== undefined
       ) {
         const tokenAmountA = new BigNumber(values[0]);
         const tokenAmountB = new BigNumber(values[1]);
@@ -533,8 +532,7 @@ function Pool() {
               reserveB: new BigNumber(invertToken ? 0 : 1),
               price: price,
               tickIndex: tickIndex,
-              fee: new BigNumber(feeType.fee),
-              feeIndex: feeIndex,
+              fee: fee,
               tokenA: tokenA,
               tokenB: tokenB,
             };
@@ -595,8 +593,7 @@ function Pool() {
         indexMax !== undefined &&
         indexMin === indexMax &&
         feeType &&
-        feeIndex &&
-        feeIndex >= 0
+        fee !== undefined
       ) {
         const tickIndex = Math.round((indexMin + indexMax) / 2);
         const price = tickIndexToPrice(new BigNumber(tickIndex));
@@ -606,8 +603,7 @@ function Pool() {
             reserveB: new BigNumber(!isValueBZero ? 1 : 0),
             price: price,
             tickIndex: tickIndex,
-            fee: new BigNumber(feeType.fee),
-            feeIndex: feeIndex,
+            fee: fee,
             tokenA: tokenA,
             tokenB: tokenB,
           },
@@ -628,7 +624,7 @@ function Pool() {
         !newUserTicks.every((newUserTick, ticksIndex) => {
           const userTick = userTicks[ticksIndex];
           return (
-            newUserTick.feeIndex === userTick.feeIndex &&
+            newUserTick.fee === userTick.fee &&
             newUserTick.tickIndex === userTick.tickIndex &&
             newUserTick.reserveA.isEqualTo(userTick.reserveA) &&
             newUserTick.reserveB.isEqualTo(userTick.reserveB)
@@ -911,7 +907,7 @@ function Pool() {
                   setSignificantDecimals={setSignificantDecimals}
                   userTickSelected={userTickSelected}
                   setUserTickSelected={setUserTickSelected}
-                  feeTier={feeType?.fee}
+                  fee={feeType?.fee}
                   userTicks={userTicks}
                   setUserTicks={setUserTicks}
                   advanced={chartTypeSelected === 'Orderbook'}
