@@ -113,7 +113,7 @@ export function useEditLiquidity(): [
                                     tokenA: token0.address,
                                     tokenB: token1.address,
                                     receiver: web3Address,
-                                    tickIndexes: [
+                                    tickIndexesAToB: [
                                       Long.fromString(share.tickIndex),
                                     ],
                                     fees: [Long.fromString(share.fee)],
@@ -135,7 +135,7 @@ export function useEditLiquidity(): [
                                     tokenA: token0.address,
                                     tokenB: token1.address,
                                     receiver: web3Address,
-                                    tickIndexes: [
+                                    tickIndexesAToB: [
                                       Long.fromString(share.tickIndex),
                                     ],
                                     fees: [Long.fromString(share.fee)],
@@ -162,7 +162,7 @@ export function useEditLiquidity(): [
                                     tokenA: token0.address,
                                     tokenB: token1.address,
                                     receiver: web3Address,
-                                    tickIndexes: [
+                                    tickIndexesAToB: [
                                       Long.fromString(share.tickIndex),
                                     ],
                                     fees: [Long.fromString(share.fee)],
@@ -184,7 +184,7 @@ export function useEditLiquidity(): [
                                     tokenA: token0.address,
                                     tokenB: token1.address,
                                     receiver: web3Address,
-                                    tickIndexes: [
+                                    tickIndexesAToB: [
                                       Long.fromString(share.tickIndex),
                                     ],
                                     fees: [Long.fromString(share.fee)],
