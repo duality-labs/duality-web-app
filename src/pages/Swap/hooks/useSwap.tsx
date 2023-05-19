@@ -16,7 +16,10 @@ import {
 
 import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import { readEvents } from '../../../lib/web3/utils/txs';
+import {
+  DexSwapEvent,
+  getEventAttributeMap,
+} from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
 import { dualitylabs } from '@duality-labs/dualityjs';
 import {
@@ -79,20 +82,26 @@ async function sendSwap(
       }
       const { code } = res;
 
-      const amountOut = readEvents(res.rawLog)
-        ?.find(({ type }: { type: string }) => type === 'message')
-        ?.attributes?.reduceRight(
-          (
-            result: BigNumber,
-            { key, value }: { key: string; value: string }
-          ) => {
-            if (result.isZero() && key === 'AmountOut') {
-              return result.plus(value);
-            }
-            return result;
-          },
-          new BigNumber(0)
-        ) as BigNumber | undefined;
+      const amountOut = res.events.reduce<BigNumber>((result, event) => {
+        if (
+          event.type === 'message' &&
+          event.attributes.find(
+            ({ key, value }) => key === 'module' && value === 'dex'
+          ) &&
+          event.attributes.find(
+            ({ key, value }) => key === 'action' && value === 'Swap'
+          ) &&
+          event.attributes.find(
+            ({ key, value }) => key === 'Creator' && value === address
+          )
+        ) {
+          // collect into more usable format for parsing
+          const attributes = getEventAttributeMap<DexSwapEvent>(event);
+          return result.plus(attributes.AmountOut || 0);
+        }
+        return result;
+      }, new BigNumber(0));
+
       const description = amountOut
         ? `Received ${formatAmount(
             getAmountInDenom(

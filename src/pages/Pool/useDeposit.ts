@@ -15,6 +15,10 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import {
+  DexDepositEvent,
+  getEventAttributeMap,
+} from '../../lib/web3/utils/events';
 import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
@@ -302,18 +306,7 @@ export function useDeposit([tokenA, tokenB]: [
                 )
               ) {
                 // collect into more usable format for parsing
-                const attributes = event.attributes.reduce(
-                  (acc, { key, value }) => ({ ...acc, [key]: value }),
-                  {}
-                ) as {
-                  TickIndex: string;
-                  Fee: string;
-                  Token0: string;
-                  Token1: string;
-                  SharesMinted: string;
-                  Reserves0Deposited: string;
-                  Reserves1Deposited: string;
-                };
+                const attributes = getEventAttributeMap<DexDepositEvent>(event);
 
                 // accumulate share values
                 // ('NewReserves' is the difference between previous and next share value)
