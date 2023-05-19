@@ -126,7 +126,7 @@ export function useEditLiquidity(): [
                                     ],
                                     amountsB: ['0'],
                                     // todo: allow user to specify autoswap behavior
-                                    Options: [{ autoswap: true }],
+                                    Options: [{ disableAutoswap: false }],
                                   }
                                 )
                               : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
@@ -175,7 +175,7 @@ export function useEditLiquidity(): [
                                       ) || '0',
                                     ],
                                     // todo: allow user to specify autoswap behavior
-                                    Options: [{ autoswap: true }],
+                                    Options: [{ disableAutoswap: false }],
                                   }
                                 )
                               : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
