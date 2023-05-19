@@ -241,8 +241,8 @@ export function useDeposit([tokenA, tokenB]: [
                 // note: tick indexes must be in the form of "token0/1 index"
                 // not "tokenA/B" index, so inverted order indexes should be reversed
                 // check this commit for changes if this behavior changes
-                tickIndexes: filteredUserTicks.map((tick) =>
-                  Long.fromNumber(tick.tickIndex)
+                tickIndexesAToB: filteredUserTicks.map((tick) =>
+                  Long.fromNumber(tick.tickIndex).negate()
                 ),
                 fees: filteredUserTicks.map((tick) =>
                   Long.fromNumber(tick.fee)

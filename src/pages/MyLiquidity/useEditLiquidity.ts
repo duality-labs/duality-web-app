@@ -116,7 +116,7 @@ export function useEditLiquidity(): [
                             tokenA: token0.address,
                             tokenB: token1.address,
                             receiver: web3Address,
-                            tickIndexes: [Long.fromString(share.tickIndex)],
+                            tickIndexesAToB: [Long.fromString(share.tickIndex)],
                             fees: [Long.fromString(share.fee)],
                             // approximate removal using percentages
                             // todo: this probably has a bug when withdrawing from a tick
@@ -142,7 +142,7 @@ export function useEditLiquidity(): [
                                       tokenA: token0.address,
                                       tokenB: token1.address,
                                       receiver: web3Address,
-                                      tickIndexes: [
+                                      tickIndexesAToB: [
                                         Long.fromString(share.tickIndex),
                                       ],
                                       fees: [Long.fromString(share.fee)],
@@ -164,7 +164,7 @@ export function useEditLiquidity(): [
                                       tokenA: token0.address,
                                       tokenB: token1.address,
                                       receiver: web3Address,
-                                      tickIndexes: [
+                                      tickIndexesAToB: [
                                         Long.fromString(share.tickIndex),
                                       ],
                                       fees: [Long.fromString(share.fee)],
@@ -191,7 +191,7 @@ export function useEditLiquidity(): [
                                       tokenA: token0.address,
                                       tokenB: token1.address,
                                       receiver: web3Address,
-                                      tickIndexes: [
+                                      tickIndexesAToB: [
                                         Long.fromString(share.tickIndex),
                                       ],
                                       fees: [Long.fromString(share.fee)],
@@ -213,7 +213,7 @@ export function useEditLiquidity(): [
                                       tokenA: token0.address,
                                       tokenB: token1.address,
                                       receiver: web3Address,
-                                      tickIndexes: [
+                                      tickIndexesAToB: [
                                         Long.fromString(share.tickIndex),
                                       ],
                                       fees: [Long.fromString(share.fee)],
