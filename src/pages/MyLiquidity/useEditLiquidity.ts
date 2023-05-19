@@ -102,110 +102,139 @@ export function useEditLiquidity(): [
                   token1.address &&
                   userReserves0 &&
                   userReserves1
-                  ? [
-                      ...(!tickDiff0.isZero()
-                        ? [
-                            tickDiff0.isGreaterThan(0)
-                              ? nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.deposit(
-                                  {
-                                    creator: web3Address,
-                                    tokenA: token0.address,
-                                    tokenB: token1.address,
-                                    receiver: web3Address,
-                                    tickIndexes: [
-                                      Long.fromString(share.tickIndex),
-                                    ],
-                                    feeIndexes: [
-                                      Long.fromString(share.feeIndex),
-                                    ],
-                                    amountsA: [
-                                      getAmountInDenom(
-                                        token0,
-                                        tickDiff0,
-                                        token0.display
-                                      ) || '0',
-                                    ],
-                                    amountsB: ['0'],
-                                  }
-                                )
-                              : nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.withdrawl(
-                                  {
-                                    creator: web3Address,
-                                    tokenA: token0.address,
-                                    tokenB: token1.address,
-                                    receiver: web3Address,
-                                    tickIndexes: [
-                                      Long.fromString(share.tickIndex),
-                                    ],
-                                    feeIndexes: [
-                                      Long.fromString(share.feeIndex),
-                                    ],
-                                    // approximate removal using percentages
-                                    // todo: this probably has a bug when withdrawing from a tick
-                                    // that has both token0 and token1 as this only takes into account one side
-                                    sharesToRemove: [
-                                      tickDiff0
-                                        .negated()
-                                        .dividedBy(userReserves0)
-                                        .multipliedBy(share.sharesOwned)
-                                        .toFixed(0),
-                                    ],
-                                  }
-                                ),
-                          ]
-                        : []),
-                      ...(!tickDiff1.isZero()
-                        ? [
-                            tickDiff1.isGreaterThan(0)
-                              ? nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.deposit(
-                                  {
-                                    creator: web3Address,
-                                    tokenA: token0.address,
-                                    tokenB: token1.address,
-                                    receiver: web3Address,
-                                    tickIndexes: [
-                                      Long.fromString(share.tickIndex),
-                                    ],
-                                    feeIndexes: [
-                                      Long.fromString(share.feeIndex),
-                                    ],
-                                    amountsA: ['0'],
-                                    amountsB: [
-                                      getAmountInDenom(
-                                        token1,
-                                        tickDiff1,
-                                        token1.display
-                                      ) || '0',
-                                    ],
-                                  }
-                                )
-                              : nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.withdrawl(
-                                  {
-                                    creator: web3Address,
-                                    tokenA: token0.address,
-                                    tokenB: token1.address,
-                                    receiver: web3Address,
-                                    tickIndexes: [
-                                      Long.fromString(share.tickIndex),
-                                    ],
-                                    feeIndexes: [
-                                      Long.fromString(share.feeIndex),
-                                    ],
-                                    // approximate removal using percentages
-                                    // todo: this probably has a bug when withdrawing from a tick
-                                    // that has both token0 and token1 as this only takes into account one side
-                                    sharesToRemove: [
-                                      tickDiff1
-                                        .negated()
-                                        .dividedBy(userReserves1)
-                                        .multipliedBy(share.sharesOwned)
-                                        .toFixed(0),
-                                    ],
-                                  }
-                                ),
-                          ]
-                        : []),
-                    ]
+                  ? // for situations where withdrawing both side of liquidity
+                    // then add both together
+                    // todo: this should be reworked, this is a major difference between deposit and
+                    // withdrawal, deposit is per reserve, withdrawal is per share.
+                    // I'm not certain that non-100% withdrawals work in all cases.
+                    tickDiff0.isLessThan(0) && tickDiff1.isLessThan(0)
+                    ? [
+                        nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                          {
+                            creator: web3Address,
+                            tokenA: token0.address,
+                            tokenB: token1.address,
+                            receiver: web3Address,
+                            tickIndexes: [Long.fromString(share.tickIndex)],
+                            feeIndexes: [Long.fromString(share.feeIndex)],
+                            // approximate removal using percentages
+                            // todo: this probably has a bug when withdrawing from a tick
+                            // that has both token0 and token1 as this only takes into account one side
+                            sharesToRemove: [
+                              tickDiff0
+                                .plus(tickDiff1)
+                                .negated()
+                                .dividedBy(userReserves0.plus(userReserves1))
+                                .multipliedBy(share.sharesOwned)
+                                .toFixed(0),
+                            ],
+                          }
+                        ),
+                      ]
+                    : [
+                        ...(!tickDiff0.isZero()
+                          ? [
+                              tickDiff0.isGreaterThan(0)
+                                ? nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.deposit(
+                                    {
+                                      creator: web3Address,
+                                      tokenA: token0.address,
+                                      tokenB: token1.address,
+                                      receiver: web3Address,
+                                      tickIndexes: [
+                                        Long.fromString(share.tickIndex),
+                                      ],
+                                      feeIndexes: [
+                                        Long.fromString(share.feeIndex),
+                                      ],
+                                      amountsA: [
+                                        getAmountInDenom(
+                                          token0,
+                                          tickDiff0,
+                                          token0.display
+                                        ) || '0',
+                                      ],
+                                      amountsB: ['0'],
+                                    }
+                                  )
+                                : nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                                    {
+                                      creator: web3Address,
+                                      tokenA: token0.address,
+                                      tokenB: token1.address,
+                                      receiver: web3Address,
+                                      tickIndexes: [
+                                        Long.fromString(share.tickIndex),
+                                      ],
+                                      feeIndexes: [
+                                        Long.fromString(share.feeIndex),
+                                      ],
+                                      // approximate removal using percentages
+                                      // todo: this probably has a bug when withdrawing from a tick
+                                      // that has both token0 and token1 as this only takes into account one side
+                                      sharesToRemove: [
+                                        tickDiff0
+                                          .negated()
+                                          .dividedBy(userReserves0)
+                                          .multipliedBy(share.sharesOwned)
+                                          .toFixed(0),
+                                      ],
+                                    }
+                                  ),
+                            ]
+                          : []),
+                        ...(!tickDiff1.isZero()
+                          ? [
+                              tickDiff1.isGreaterThan(0)
+                                ? nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.deposit(
+                                    {
+                                      creator: web3Address,
+                                      tokenA: token0.address,
+                                      tokenB: token1.address,
+                                      receiver: web3Address,
+                                      tickIndexes: [
+                                        Long.fromString(share.tickIndex),
+                                      ],
+                                      feeIndexes: [
+                                        Long.fromString(share.feeIndex),
+                                      ],
+                                      amountsA: ['0'],
+                                      amountsB: [
+                                        getAmountInDenom(
+                                          token1,
+                                          tickDiff1,
+                                          token1.display
+                                        ) || '0',
+                                      ],
+                                    }
+                                  )
+                                : nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                                    {
+                                      creator: web3Address,
+                                      tokenA: token0.address,
+                                      tokenB: token1.address,
+                                      receiver: web3Address,
+                                      tickIndexes: [
+                                        Long.fromString(share.tickIndex),
+                                      ],
+                                      feeIndexes: [
+                                        Long.fromString(share.feeIndex),
+                                      ],
+                                      // approximate removal using percentages
+                                      // todo: this probably has a bug when withdrawing from a tick
+                                      // that has both token0 and token1 as this only takes into account one side
+                                      sharesToRemove: [
+                                        tickDiff1
+                                          .negated()
+                                          .dividedBy(userReserves1)
+                                          .multipliedBy(share.sharesOwned)
+                                          .toFixed(0),
+                                      ],
+                                    }
+                                  ),
+                            ]
+                          : []),
+                      ]
                   : [];
               }
             ),
