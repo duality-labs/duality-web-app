@@ -15,7 +15,6 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
-import { readEvents } from '../../lib/web3/utils/txs';
 import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
@@ -283,23 +282,23 @@ export function useDeposit([tokenA, tokenB]: [
           }
 
           // calculate received tokens
-          const foundEvents = readEvents(res.rawLog) || [];
-          const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
+          const { receivedTokenA, receivedTokenB } = res.events.reduce<{
             receivedTokenA: BigNumber;
             receivedTokenB: BigNumber;
           }>(
             (acc, event) => {
-              // find and process each dex NewDeposit message created by this user
+              // find and process each dex Deposit message created by this user
               if (
                 event.type === 'message' &&
                 event.attributes.find(
                   ({ key, value }) => key === 'module' && value === 'dex'
                 ) &&
                 event.attributes.find(
-                  ({ key, value }) => key === 'action' && value === 'NewDeposit'
+                  ({ key, value }) => key === 'action' && value === 'Deposit'
                 ) &&
                 event.attributes.find(
-                  ({ key, value }) => key === 'sender' && value === web3.address
+                  ({ key, value }) =>
+                    key === 'Creator' && value === web3.address
                 )
               ) {
                 // collect into more usable format for parsing
@@ -311,19 +310,18 @@ export function useDeposit([tokenA, tokenB]: [
                   Fee: string;
                   Token0: string;
                   Token1: string;
-                  OldReserves0: string;
-                  OldReserves1: string;
-                  NewReserves0: string;
-                  NewReserves1: string;
+                  SharesMinted: string;
+                  Reserves0Deposited: string;
+                  Reserves1Deposited: string;
                 };
 
                 // accumulate share values
                 // ('NewReserves' is the difference between previous and next share value)
                 const shareIncrease0 = new BigNumber(
-                  attributes['NewReserves0']
+                  attributes['Reserves0Deposited']
                 );
                 const shareIncrease1 = new BigNumber(
-                  attributes['NewReserves1']
+                  attributes['Reserves1Deposited']
                 );
                 if (
                   tokenA.address === attributes['Token0'] &&
