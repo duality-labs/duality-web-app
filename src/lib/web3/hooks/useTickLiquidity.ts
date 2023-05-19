@@ -10,7 +10,6 @@ import { useLcdClientPromise } from '../lcdClient';
 import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tick_liquidity';
 
 import { defaultPaginationParams, getNextPaginationKey } from './utils';
-import { feeTypes } from '../utils/fees';
 
 import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useTokens';
 import BigNumber from 'bignumber.js';
@@ -110,8 +109,7 @@ function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
     } = {},
   }) {
     const tickIndex = Number(tickIndexString);
-    const fee = Number(feeString) / 10000 || 0;
-    const feeIndex = feeTypes.findIndex((feeType) => feeType.fee === fee);
+    const fee = feeString && Number(feeString);
     if (
       !isNaN(tickIndex) &&
       tokenIn &&
@@ -121,7 +119,8 @@ function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
       tokenMap[token0] &&
       tokenMap[token1] &&
       !isNaN(Number(reservesString)) &&
-      feeIndex >= 0
+      !isNaN(Number(fee)) &&
+      fee !== undefined
     ) {
       // calculate price from tickIndex, try to keep price values consistent:
       //   JS rounding may be inconsistent with API's rounding
@@ -134,7 +133,6 @@ function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
           token1: tokenMap[token1],
           tickIndex: bigTickIndex,
           price: bigPrice,
-          feeIndex: new BigNumber(feeIndex),
           fee: new BigNumber(fee),
           reserve0: new BigNumber(reservesString || 0),
           reserve1: new BigNumber(0),
@@ -145,7 +143,6 @@ function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
           token1: tokenMap[token1],
           tickIndex: bigTickIndex,
           price: bigPrice,
-          feeIndex: new BigNumber(feeIndex),
           fee: new BigNumber(fee),
           reserve0: new BigNumber(0),
           reserve1: new BigNumber(reservesString || 0),

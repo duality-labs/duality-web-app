@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
-import Long from 'long';
 import { useQueries } from '@tanstack/react-query';
 import { createRpcQueryHooks } from '@duality-labs/dualityjs';
 import {
@@ -139,8 +138,7 @@ function ShareValuesPage({
   const lcdClient = useLcdClient();
   const queryHooks = createRpcQueryHooks({ rpc });
 
-  const { useGetUserPositions, useFeeTierAll } =
-    queryHooks.dualitylabs.duality.dex;
+  const { useGetUserPositions } = queryHooks.dualitylabs.duality.dex;
 
   const { data: { UserPositions: userPositions } = {} } =
     useGetUserPositions<QueryGetUserPositionsResponseSDKType>({
@@ -151,10 +149,10 @@ function ShareValuesPage({
   const allUserPositionTotalShares = useQueries({
     queries: [
       ...(poolDeposits || [])?.flatMap(
-        ({ pairId: { token0, token1 } = {}, centerTickIndex, feeIndex }) => {
+        ({ pairId: { token0, token1 } = {}, centerTickIndex, fee }) => {
           if (token0 && token1) {
             const params: QuerySupplyOfRequest = {
-              denom: `DualityPoolShares-${token0}-${token1}-t${centerTickIndex}-f${feeIndex}`,
+              denom: `DualityPoolShares-${token0}-${token1}-t${centerTickIndex}-f${fee}`,
             };
             return {
               queryKey: ['cosmos.bank.v1beta1.supplyOf', params],
@@ -169,14 +167,6 @@ function ShareValuesPage({
     ],
   });
 
-  const { data: { FeeTier: feeTiers } = {} } = useFeeTierAll({});
-  const feeIndexToFeeMap = useMemo(() => {
-    return feeTiers?.reduce<Map<number, number>>((acc, { id, fee }) => {
-      acc.set(id.toNumber(), fee.toNumber());
-      return acc;
-    }, new Map());
-  }, [feeTiers]);
-
   const allUserPositionTotalReserves = useQueries({
     queries: [
       ...(poolDeposits || [])?.flatMap(
@@ -184,10 +174,9 @@ function ShareValuesPage({
           pairId: { token0, token1 } = {},
           lowerTickIndex,
           upperTickIndex,
-          feeIndex,
+          fee,
         }) => {
           const pairId = getPairID(token0, token1);
-          const fee = feeIndexToFeeMap?.get(feeIndex.toNumber());
           if (token0 && token1 && pairId && fee !== undefined) {
             // return both upper and lower tick pools
             return [
@@ -200,7 +189,7 @@ function ShareValuesPage({
                 pairId,
                 tokenIn,
                 tickIndex,
-                fee: Long.fromNumber(fee),
+                fee,
               };
               return {
                 queryKey: ['dualitylabs.duality.dex.poolReserves', params],
@@ -251,8 +240,7 @@ function ShareValuesPage({
             data?.poolReserves?.pairId?.token1 === deposit.pairId?.token1 &&
             data?.poolReserves?.tickIndex.toString() ===
               deposit.lowerTickIndex.toString() &&
-            data?.poolReserves?.fee.toString() ===
-              feeIndexToFeeMap?.get(deposit.feeIndex.toNumber())?.toString()
+            data?.poolReserves?.fee.toString() === deposit.fee.toString()
           );
         }
       );
@@ -264,8 +252,7 @@ function ShareValuesPage({
             data?.poolReserves?.pairId?.token1 === deposit.pairId?.token1 &&
             data?.poolReserves?.tickIndex.toString() ===
               deposit.upperTickIndex.toString() &&
-            data?.poolReserves?.fee.toString() ===
-              feeIndexToFeeMap?.get(deposit.feeIndex.toNumber())?.toString()
+            data?.poolReserves?.fee.toString() === deposit.fee.toString()
           );
         }
       );
@@ -343,7 +330,6 @@ function ShareValuesPage({
     });
   }, [
     tokenList,
-    feeIndexToFeeMap,
     poolDeposits,
     allUserPositionTotalShares,
     allUserPositionTotalReserves,
