@@ -179,8 +179,7 @@ function Swap() {
             amountIn:
               getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
             tokenIn: result.tokenIn,
-            tokenA: result.tokenIn,
-            tokenB: result.tokenOut,
+            tokenOut: result.tokenOut,
             creator: address,
             receiver: address,
             // todo: use limit orders to respect user's slippage tolerance

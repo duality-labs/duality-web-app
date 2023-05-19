@@ -32,10 +32,10 @@ async function sendSwap(
     wallet: OfflineSigner;
     address: string;
   },
-  { amountIn, tokenIn, tokenA, tokenB, creator, receiver }: MsgSwapSDKType,
+  { amountIn, tokenIn, tokenOut, creator, receiver }: MsgSwapSDKType,
   gasEstimate: number
 ): Promise<MsgSwapResponseSDKType> {
-  if (!amountIn || !amountIn || !tokenIn || !tokenA || !tokenB || !creator) {
+  if (!amountIn || !amountIn || !tokenIn || !tokenOut || !creator) {
     throw new Error('Invalid Input');
   }
 
@@ -44,7 +44,6 @@ async function sendSwap(
     throw new Error('Invalid Input (0 value)');
   }
 
-  const tokenOut = tokenIn === tokenA ? tokenB : tokenA;
   const tokenOutToken = addressableTokenMap[tokenOut];
   if (!tokenOutToken) {
     throw new Error('Invalid Output (token address not found)');
@@ -64,8 +63,7 @@ async function sendSwap(
         dualitylabs.duality.dex.MessageComposer.withTypeUrl.swap({
           amountIn,
           tokenIn,
-          tokenA,
-          tokenB,
+          tokenOut,
           creator,
           receiver,
         }),
@@ -160,8 +158,8 @@ export function useSwap(): [
     (request: MsgSwapSDKType, gasEstimate: number) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
-      const { amountIn, tokenIn, tokenA, tokenB, creator, receiver } = request;
-      if (!amountIn || !tokenIn || !tokenA || !tokenB || !creator || !receiver)
+      const { amountIn, tokenIn, tokenOut, creator, receiver } = request;
+      if (!amountIn || !tokenIn || !tokenOut || !creator || !receiver)
         return onError('Invalid input');
       setValidating(true);
       setError(undefined);
