@@ -333,10 +333,10 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     // subscribe to messages for this address only
     if (address) {
       subscriber.subscribeMessage(onDexUpdateMessage, {
-        message: { action: 'NewDeposit', Receiver: address },
+        message: { action: 'Deposit', Receiver: address },
       });
       subscriber.subscribeMessage(onDexUpdateMessage, {
-        message: { action: 'NewWithdraw', Receiver: address },
+        message: { action: 'Withdrawal', Receiver: address },
       });
       return () => {
         subscriber.unsubscribeMessage(onDexUpdateMessage);
