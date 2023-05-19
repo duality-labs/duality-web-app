@@ -110,7 +110,7 @@ export function useEditLiquidity(): [
                     // I'm not certain that non-100% withdrawals work in all cases.
                     tickDiff0.isLessThan(0) && tickDiff1.isLessThan(0)
                     ? [
-                        dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                        dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
                           {
                             creator: web3Address,
                             tokenA: token0.address,
@@ -158,7 +158,7 @@ export function useEditLiquidity(): [
                                       Options: [{ autoswap: true }],
                                     }
                                   )
-                                : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                                : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
                                     {
                                       creator: web3Address,
                                       tokenA: token0.address,
@@ -207,7 +207,7 @@ export function useEditLiquidity(): [
                                       Options: [{ autoswap: true }],
                                     }
                                   )
-                                : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                                : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
                                     {
                                       creator: web3Address,
                                       tokenA: token0.address,

@@ -33,7 +33,7 @@ export default function useTickLiquidity({
   query: QueryAllTickLiquidityRequest | null;
   queryClient?: string;
 }): QueryAllTickLiquidityState {
-  if (queryConfig && !queryConfig?.pairId) {
+  if (queryConfig && !queryConfig?.pairID) {
     throw new Error('Cannot fetch liquidity: no pair ID given');
   }
   if (queryConfig && !queryConfig?.tokenIn) {
@@ -101,7 +101,7 @@ export default function useTickLiquidity({
 function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
   return ticks.map<TickInfo>(function ({
     poolReserves: {
-      pairId: { token0 = '', token1 = '' } = {},
+      pairID: { token0 = '', token1 = '' } = {},
       tokenIn,
       tickIndex: tickIndexString,
       fee: feeString,
@@ -163,12 +163,12 @@ export function useTokenPairTickLiquidity([tokenA, tokenB]: [
   error: unknown;
 } {
   const [token0, token1] = useOrderedTokenPair([tokenA, tokenB]) || [];
-  const pairId = token0 && token1 ? getPairID(token0, token1) : null;
+  const pairID = token0 && token1 ? getPairID(token0, token1) : null;
   const token0TicksState = useTickLiquidity({
-    query: pairId && token0 ? { pairId, tokenIn: token0 } : null,
+    query: pairID && token0 ? { pairID, tokenIn: token0 } : null,
   });
   const token1TicksState = useTickLiquidity({
-    query: pairId && token1 ? { pairId, tokenIn: token1 } : null,
+    query: pairID && token1 ? { pairID, tokenIn: token1 } : null,
   });
   return {
     data: [token0TicksState.data, token1TicksState.data],
