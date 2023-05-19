@@ -95,8 +95,9 @@ export function useEditLiquidity(): [
                 userReserves0,
                 userReserves1,
               }) => {
-                return share.tickIndex &&
-                  share.feeIndex &&
+                return share.tickIndex !== undefined &&
+                  share.fee !== undefined &&
+                  !isNaN(Number(share.fee)) &&
                   share.sharesOwned &&
                   token0.address &&
                   token1.address &&
@@ -116,7 +117,7 @@ export function useEditLiquidity(): [
                             tokenB: token1.address,
                             receiver: web3Address,
                             tickIndexes: [Long.fromString(share.tickIndex)],
-                            feeIndexes: [Long.fromString(share.feeIndex)],
+                            fees: [Long.fromString(share.fee)],
                             // approximate removal using percentages
                             // todo: this probably has a bug when withdrawing from a tick
                             // that has both token0 and token1 as this only takes into account one side
@@ -144,9 +145,7 @@ export function useEditLiquidity(): [
                                       tickIndexes: [
                                         Long.fromString(share.tickIndex),
                                       ],
-                                      feeIndexes: [
-                                        Long.fromString(share.feeIndex),
-                                      ],
+                                      fees: [Long.fromString(share.fee)],
                                       amountsA: [
                                         getAmountInDenom(
                                           token0,
@@ -168,9 +167,7 @@ export function useEditLiquidity(): [
                                       tickIndexes: [
                                         Long.fromString(share.tickIndex),
                                       ],
-                                      feeIndexes: [
-                                        Long.fromString(share.feeIndex),
-                                      ],
+                                      fees: [Long.fromString(share.fee)],
                                       // approximate removal using percentages
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
@@ -197,9 +194,7 @@ export function useEditLiquidity(): [
                                       tickIndexes: [
                                         Long.fromString(share.tickIndex),
                                       ],
-                                      feeIndexes: [
-                                        Long.fromString(share.feeIndex),
-                                      ],
+                                      fees: [Long.fromString(share.fee)],
                                       amountsA: ['0'],
                                       amountsB: [
                                         getAmountInDenom(
@@ -221,9 +216,7 @@ export function useEditLiquidity(): [
                                       tickIndexes: [
                                         Long.fromString(share.tickIndex),
                                       ],
-                                      feeIndexes: [
-                                        Long.fromString(share.feeIndex),
-                                      ],
+                                      fees: [Long.fromString(share.fee)],
                                       // approximate removal using percentages
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
