@@ -132,7 +132,7 @@ export function useDeposit([tokenA, tokenB]: [
             // converting from virtual to real ticks (not real to virual)
             const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
               tick.tickIndex,
-              tick.feeIndex
+              tick.fee
             );
 
             if (tickIndex0 === undefined || tickIndex1 === undefined) {
@@ -172,7 +172,7 @@ export function useDeposit([tokenA, tokenB]: [
             const foundTickIndex = ticks.findIndex((searchTick) => {
               return (
                 searchTick.tickIndex === tick.tickIndex &&
-                searchTick.feeIndex === tick.feeIndex &&
+                searchTick.fee === tick.fee &&
                 searchTick.tokenA === tick.tokenA &&
                 searchTick.tokenB === tick.tokenB
               );
@@ -206,7 +206,7 @@ export function useDeposit([tokenA, tokenB]: [
         const gasEstimate = filteredUserTicks.reduce((gasEstimate, tick) => {
           const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
             tick.tickIndex,
-            tick.feeIndex
+            tick.fee
           );
           const existingTick =
             tickIndex0 !== undefined && tickIndex1 !== undefined
@@ -244,8 +244,8 @@ export function useDeposit([tokenA, tokenB]: [
                 tickIndexes: filteredUserTicks.map((tick) =>
                   Long.fromNumber(tick.tickIndex)
                 ),
-                feeIndexes: filteredUserTicks.map((tick) =>
-                  Long.fromNumber(tick.feeIndex)
+                fees: filteredUserTicks.map((tick) =>
+                  Long.fromNumber(tick.fee)
                 ),
                 amountsA: filteredUserTicks.map(
                   ({ reserveA }) =>
@@ -308,7 +308,7 @@ export function useDeposit([tokenA, tokenB]: [
                   {}
                 ) as {
                   TickIndex: string;
-                  FeeIndex: string;
+                  Fee: string;
                   Token0: string;
                   Token1: string;
                   OldReserves0: string;

@@ -33,7 +33,7 @@ export default function useFeeLiquidityMap(
         const shares = calculateShares({ price, reserve0, reserve1 });
         if (shares.isGreaterThan(0)) {
           const feeString = fee.toFixed();
-          result[feeString] = result[feeString].plus(shares);
+          result[feeString] = shares.plus(result[feeString] ?? 0);
         }
         return result;
       },
