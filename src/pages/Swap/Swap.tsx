@@ -176,13 +176,15 @@ function Swap() {
 
         swapRequest(
           {
-            amountIn:
+            maxAmountIn:
               getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
             tokenIn: result.tokenIn,
             tokenOut: result.tokenOut,
             creator: address,
             receiver: address,
-            // todo: use limit orders to respect user's slippage tolerance
+            maxAmountOut:
+              getAmountInDenom(tokenB, result.amountOut, tokenB?.display) ||
+              '0',
           },
           gasEstimate
         );
