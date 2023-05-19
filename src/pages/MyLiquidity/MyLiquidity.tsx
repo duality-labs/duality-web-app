@@ -149,7 +149,7 @@ function ShareValuesPage({
   const allUserPositionTotalShares = useQueries({
     queries: [
       ...(poolDeposits || [])?.flatMap(
-        ({ pairId: { token0, token1 } = {}, centerTickIndex, fee }) => {
+        ({ pairID: { token0, token1 } = {}, centerTickIndex, fee }) => {
           if (token0 && token1) {
             const params: QuerySupplyOfRequest = {
               denom: `DualityPoolShares-${token0}-${token1}-t${centerTickIndex}-f${fee}`,
@@ -171,13 +171,13 @@ function ShareValuesPage({
     queries: [
       ...(poolDeposits || [])?.flatMap(
         ({
-          pairId: { token0, token1 } = {},
+          pairID: { token0, token1 } = {},
           lowerTickIndex,
           upperTickIndex,
           fee,
         }) => {
-          const pairId = getPairID(token0, token1);
-          if (token0 && token1 && pairId && fee !== undefined) {
+          const pairID = getPairID(token0, token1);
+          if (token0 && token1 && pairID && fee !== undefined) {
             // return both upper and lower tick pools
             return [
               { tokenIn: token0, tickIndex: lowerTickIndex.negate() },
@@ -186,7 +186,7 @@ function ShareValuesPage({
               { tokenIn: token1, tickIndex: lowerTickIndex },
             ].map(({ tokenIn, tickIndex }) => {
               const params: QueryGetPoolReservesRequest = {
-                pairId,
+                pairID,
                 tokenIn,
                 tickIndex,
                 fee,
@@ -235,9 +235,9 @@ function ShareValuesPage({
       const lowerReserveResponse = allUserPositionTotalReserves.find(
         ({ data }) => {
           return (
-            data?.poolReserves?.tokenIn === deposit.pairId?.token0 &&
-            data?.poolReserves?.pairId?.token0 === deposit.pairId?.token0 &&
-            data?.poolReserves?.pairId?.token1 === deposit.pairId?.token1 &&
+            data?.poolReserves?.tokenIn === deposit.pairID?.token0 &&
+            data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
+            data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
             data?.poolReserves?.tickIndex.toString() ===
               deposit.lowerTickIndex.toString() &&
             data?.poolReserves?.fee.toString() === deposit.fee.toString()
@@ -247,9 +247,9 @@ function ShareValuesPage({
       const upperReserveResponse = allUserPositionTotalReserves.find(
         ({ data }) => {
           return (
-            data?.poolReserves?.tokenIn === deposit.pairId?.token1 &&
-            data?.poolReserves?.pairId?.token0 === deposit.pairId?.token0 &&
-            data?.poolReserves?.pairId?.token1 === deposit.pairId?.token1 &&
+            data?.poolReserves?.tokenIn === deposit.pairID?.token1 &&
+            data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
+            data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
             data?.poolReserves?.tickIndex.toString() ===
               deposit.upperTickIndex.toString() &&
             data?.poolReserves?.fee.toString() === deposit.fee.toString()
