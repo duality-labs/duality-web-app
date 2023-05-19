@@ -16,15 +16,12 @@ import {
 
 import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import {
-  DexSwapEvent,
-  getEventAttributeMap,
-} from '../../../lib/web3/utils/events';
+import { getEventAttributeMap } from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
 import { dualitylabs } from '@duality-labs/dualityjs';
 import {
-  MsgSwapResponseSDKType,
-  MsgSwapSDKType,
+  MsgPlaceLimitOrderResponseSDKType,
+  MsgPlaceLimitOrder,
 } from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
 
 async function sendSwap(
@@ -36,24 +33,22 @@ async function sendSwap(
     address: string;
   },
   {
-    maxAmountIn,
-    maxAmountOut,
+    orderType,
+    tickIndex,
+    amountIn,
     tokenIn,
     tokenOut,
     creator,
     receiver,
-  }: MsgSwapSDKType,
+  }: MsgPlaceLimitOrder,
   gasEstimate: number
-): Promise<MsgSwapResponseSDKType> {
-  if (!maxAmountIn || !maxAmountOut || !tokenIn || !tokenOut || !creator) {
+): Promise<void> {
+  if (!amountIn || !orderType || !tokenIn || !tokenOut || !creator) {
     throw new Error('Invalid Input');
   }
 
-  if (!new BigNumber(maxAmountIn).isGreaterThan(0)) {
+  if (!new BigNumber(amountIn).isGreaterThan(0)) {
     throw new Error('Invalid Input (0 value)');
-  }
-  if (!new BigNumber(maxAmountOut).isGreaterThan(0)) {
-    throw new Error('Invalid Output (0 value)');
   }
 
   const tokenOutToken = addressableTokenMap[tokenOut];
@@ -72,9 +67,10 @@ async function sendSwap(
     .signAndBroadcast(
       address,
       [
-        dualitylabs.duality.dex.MessageComposer.withTypeUrl.swap({
-          maxAmountIn,
-          maxAmountOut,
+        dualitylabs.duality.dex.MessageComposer.withTypeUrl.placeLimitOrder({
+          orderType,
+          tickIndex,
+          amountIn,
           tokenIn,
           tokenOut,
           creator,
@@ -86,7 +82,7 @@ async function sendSwap(
         amount: [{ amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' }],
       }
     )
-    .then(function (res): MsgSwapResponseSDKType {
+    .then(function (res): void {
       if (!res) {
         throw new Error('No response');
       }
@@ -94,20 +90,22 @@ async function sendSwap(
 
       const amountOut = res.events.reduce<BigNumber>((result, event) => {
         if (
-          event.type === 'message' &&
+          event.type === 'coin_received' &&
           event.attributes.find(
-            ({ key, value }) => key === 'module' && value === 'dex'
-          ) &&
-          event.attributes.find(
-            ({ key, value }) => key === 'action' && value === 'Swap'
-          ) &&
-          event.attributes.find(
-            ({ key, value }) => key === 'Creator' && value === address
+            ({ key, value }) => key === 'receiver' && value === address
           )
         ) {
           // collect into more usable format for parsing
-          const attributes = getEventAttributeMap<DexSwapEvent>(event);
-          return result.plus(attributes.AmountOut || 0);
+          const attributes = getEventAttributeMap<{
+            amount: string;
+            receiver: string;
+          }>(event);
+          // parse coin string for matching tokens
+          const [, amount, denom] =
+            attributes.amount.match(/^(\d+)(.*)$/) || [];
+          if (denom === tokenOut) {
+            return result.plus(amount);
+          }
         }
         return result;
       }, new BigNumber(0));
@@ -130,18 +128,6 @@ async function sendSwap(
         error.response = res;
         throw error;
       }
-      return {
-        coinOut: {
-          amount:
-            getAmountInDenom(
-              tokenOutToken,
-              amountOut?.toFixed() || '0',
-              tokenOutToken.address,
-              tokenOutToken.display
-            ) || '0',
-          denom: tokenOutToken.display,
-        },
-      };
     })
     .catch(function (err: Error & { response?: DeliverTxResponse }) {
       // catch transaction errors
@@ -162,32 +148,34 @@ async function sendSwap(
  */
 export function useSwap(): [
   {
-    data?: MsgSwapResponseSDKType;
+    data?: MsgPlaceLimitOrderResponseSDKType;
     isValidating: boolean;
     error?: string;
   },
-  (request: MsgSwapSDKType, gasEstimate: number) => void
+  (request: MsgPlaceLimitOrder, gasEstimate: number) => void
 ] {
-  const [data, setData] = useState<MsgSwapResponseSDKType>();
+  const [data, setData] = useState<MsgPlaceLimitOrderResponseSDKType>();
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
   const web3 = useWeb3();
 
   const sendRequest = useCallback(
-    (request: MsgSwapSDKType, gasEstimate: number) => {
+    (request: MsgPlaceLimitOrder, gasEstimate: number) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
       const {
-        maxAmountIn,
-        maxAmountOut,
+        orderType,
+        tickIndex,
+        amountIn,
         tokenIn,
         tokenOut,
         creator,
         receiver,
       } = request;
       if (
-        !maxAmountIn ||
-        !maxAmountOut ||
+        !orderType ||
+        !tickIndex ||
+        !amountIn ||
         !tokenIn ||
         !tokenOut ||
         !creator ||
@@ -202,9 +190,8 @@ export function useSwap(): [
       if (!wallet || !address) return onError('Client has no wallet');
 
       sendSwap({ wallet, address }, request, gasEstimate)
-        .then(function (result: MsgSwapResponseSDKType) {
+        .then(function () {
           setValidating(false);
-          setData(result);
         })
         .catch(function (err: Error) {
           onError(err?.message ?? 'Unknown error');

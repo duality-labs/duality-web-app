@@ -50,16 +50,3 @@ export interface DexWithdrawalEvent {
   Reserves1Withdrawn: string;
   SharesRemoved: string;
 }
-
-export interface DexSwapEvent {
-  module: 'dex';
-  action: 'Swap';
-  Creator: string;
-  Receiver: string;
-  Token0: string;
-  Token1: string;
-  TokenIn: string;
-  TokenOut: string;
-  AmountIn: string;
-  AmountOut: string;
-}
