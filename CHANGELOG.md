@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.109](https://github.com/duality-labs/duality-web-app/compare/v0.1.108...v0.1.109) (2023-05-23)
+
+
+### Features
+
+* switch to external typescript client dependency ([#374](https://github.com/duality-labs/duality-web-app/issues/374)) ([ac5c18c](https://github.com/duality-labs/duality-web-app/commit/ac5c18c95fc1b313e4f6790ba6deabc249ecaae9))
+
 ## [0.1.108](https://github.com/duality-labs/duality-web-app/compare/v0.1.107...v0.1.108) (2023-05-16)
 
 
