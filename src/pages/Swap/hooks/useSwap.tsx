@@ -5,7 +5,6 @@ import { BigNumber } from 'bignumber.js';
 
 import { formatAmount } from '../../../lib/utils/number';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
-import apiClient from '../../../lib/web3/apiClient';
 
 import {
   checkMsgErrorToast,
@@ -15,19 +14,35 @@ import {
   createLoadingToast,
 } from '../../../components/Notifications/common';
 
-import {
-  MsgSwap,
-  MsgSwapResponse,
-} from '../../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/types/duality/dex/tx';
 import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 import { readEvents } from '../../../lib/web3/utils/txs';
+import rpcClient from '../../../lib/web3/rpcMsgClient';
+import { nicholasdotsol } from '@duality-labs/dualityjs';
+import {
+  MsgSwapResponseSDKType,
+  MsgSwapSDKType,
+} from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
 
 async function sendSwap(
-  wallet: OfflineSigner,
-  { amountIn, tokenIn, tokenA, tokenB, minOut, creator, receiver }: MsgSwap,
+  {
+    wallet,
+    address,
+  }: {
+    wallet: OfflineSigner;
+    address: string;
+  },
+  {
+    amountIn,
+    tokenIn,
+    tokenA,
+    tokenB,
+    minOut,
+    creator,
+    receiver,
+  }: MsgSwapSDKType,
   gasEstimate: number
-): Promise<MsgSwapResponse> {
+): Promise<MsgSwapResponseSDKType> {
   if (
     !amountIn ||
     !amountIn ||
@@ -52,35 +67,33 @@ async function sendSwap(
     throw new Error('Invalid Output (token address not found)');
   }
 
-  const client = apiClient(wallet);
   // send message to chain
 
   const id = `${Date.now()}.${Math.random}`;
 
   createLoadingToast({ id, description: 'Executing your trade' });
 
+  const client = await rpcClient(wallet);
   return client
     .signAndBroadcast(
+      address,
       [
-        client.NicholasdotsolDualityDex.tx.msgSwap({
-          value: {
-            amountIn,
-            tokenIn,
-            tokenA,
-            tokenB,
-            minOut,
-            creator,
-            receiver,
-          },
+        nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.swap({
+          amountIn,
+          tokenIn,
+          tokenA,
+          tokenB,
+          minOut,
+          creator,
+          receiver,
         }),
       ],
       {
         gas: gasEstimate.toFixed(0),
         amount: [{ amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' }],
-      },
-      ''
+      }
     )
-    .then(function (res): MsgSwapResponse {
+    .then(function (res): MsgSwapResponseSDKType {
       if (!res) {
         throw new Error('No response');
       }
@@ -150,19 +163,19 @@ async function sendSwap(
  */
 export function useSwap(): [
   {
-    data?: MsgSwapResponse;
+    data?: MsgSwapResponseSDKType;
     isValidating: boolean;
     error?: string;
   },
-  (request: MsgSwap, gasEstimate: number) => void
+  (request: MsgSwapSDKType, gasEstimate: number) => void
 ] {
-  const [data, setData] = useState<MsgSwapResponse>();
+  const [data, setData] = useState<MsgSwapResponseSDKType>();
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
   const web3 = useWeb3();
 
   const sendRequest = useCallback(
-    (request: MsgSwap, gasEstimate: number) => {
+    (request: MsgSwapSDKType, gasEstimate: number) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
       const { amountIn, tokenIn, tokenA, tokenB, minOut, creator, receiver } =
@@ -181,11 +194,11 @@ export function useSwap(): [
       setError(undefined);
       setData(undefined);
 
-      const { wallet } = web3;
-      if (!wallet) return onError('Client has no wallet');
+      const { wallet, address } = web3;
+      if (!wallet || !address) return onError('Client has no wallet');
 
-      sendSwap(wallet, request, gasEstimate)
-        .then(function (result: MsgSwapResponse) {
+      sendSwap({ wallet, address }, request, gasEstimate)
+        .then(function (result: MsgSwapResponseSDKType) {
           setValidating(false);
           setData(result);
         })

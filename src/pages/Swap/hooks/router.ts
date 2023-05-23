@@ -1,10 +1,9 @@
 import {
+  PairMap,
   getPairID,
   hasMatchingPairOfOrder,
-  PairMap,
-  TickInfo,
-} from '../../../lib/web3/indexerProvider';
-import { tickIndexToPrice } from '../../../lib/web3/utils/ticks';
+} from '../../../lib/web3/utils/pairs';
+import { TickInfo, tickIndexToPrice } from '../../../lib/web3/utils/ticks';
 import { RouterResult } from './index';
 import { BigNumber } from 'bignumber.js';
 

@@ -2,8 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import TokenPicker from '../TokenPicker';
-
-import { Token } from '../TokenPicker/hooks';
+import { Token } from '../../lib/web3/utils/tokens';
 
 import NumberInput from '../inputs/NumberInput';
 import { useBankBalance } from '../../lib/web3/indexerProvider';

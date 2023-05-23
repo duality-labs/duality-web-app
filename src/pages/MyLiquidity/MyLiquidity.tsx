@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
-import { Coin } from '@cosmjs/launchpad';
+import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import { useBankBalances } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
@@ -9,7 +9,6 @@ import { useSimplePrice } from '../../lib/tokenPrices';
 import useShareValueMap, { TickShareValueMap } from './useShareValueMap';
 
 import {
-  Token,
   useFilteredTokenList,
   useTokens,
 } from '../../components/TokenPicker/hooks';
@@ -17,7 +16,7 @@ import {
 import { formatAmount } from '../../lib/utils/number';
 
 import './MyLiquidity.scss';
-import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import TableCard from '../../components/cards/TableCard';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -28,7 +27,7 @@ function matchTokenDenom(denom: string) {
     !!token.denom_units.find((unit) => unit.denom === denom);
 }
 
-type TokenCoin = Coin & {
+type TokenCoin = CoinSDKType & {
   token: Token;
   value: BigNumber | undefined;
 };
@@ -70,7 +69,7 @@ function ShareValuesPage({
   setSelectedTokens,
 }: {
   shareValueMap?: TickShareValueMap;
-  balances?: Coin[];
+  balances?: CoinSDKType[];
   setSelectedTokens: React.Dispatch<
     React.SetStateAction<[Token, Token] | undefined>
   >;

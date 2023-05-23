@@ -1,17 +1,14 @@
 import { useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
-import {
-  useIndexerData,
-  useShares,
-  hasInvertedOrder,
-} from '../../lib/web3/indexerProvider';
+import { useIndexerData, useShares } from '../../lib/web3/indexerProvider';
 import { feeTypes } from '../../lib/web3/utils/fees';
 
-import { Token, useDualityTokens } from '../../components/TokenPicker/hooks';
+import { useDualityTokens } from '../../components/TokenPicker/hooks';
 
-import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { calculateShares } from '../../lib/web3/utils/ticks';
+import { hasInvertedOrder } from '../../lib/web3/utils/pairs';
 import { IndexedShare } from '../../lib/web3/utils/shares';
 
 export interface ShareValue {

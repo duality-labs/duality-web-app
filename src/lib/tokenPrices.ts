@@ -1,8 +1,8 @@
 import useSWR from 'swr';
 import { useEffect, useMemo } from 'react';
 
-import { Token } from '../components/TokenPicker/hooks';
 import { ObservableList, useObservableList } from './utils/observableList';
+import { Token } from './web3/utils/tokens';
 
 const { REACT_APP__DEV_TOKEN_DENOMS } = process.env;
 

@@ -1,68 +1,62 @@
 import { SWRConfiguration, SWRResponse } from 'swr';
 import useSWRInfinite from 'swr/infinite';
 
-import { queryClient } from '../generated/ts-client/nicholasdotsol.duality.dex/module';
 import {
-  DexTokens,
-  Api,
-} from '../generated/ts-client/nicholasdotsol.duality.dex/rest';
+  QueryAllTokensRequest,
+  QueryAllTokensResponseSDKType,
+} from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+import { useLcdClientPromise } from '../lcdClient';
+import { TokensSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tokens';
 
-import {
-  defaultFetchParams,
-  defaultQueryClientConfig,
-  getNextPaginationKey,
-} from './utils';
+import { defaultPaginationParams, getNextPaginationKey } from './utils';
 
-type QueryTokensAll = Awaited<ReturnType<Api<unknown>['queryTokensAll']>>;
-type QueryTokensAllList = QueryTokensAll['data']['Tokens'];
-type QueryTokensAllState = {
-  data: QueryTokensAllList;
+type QueryAllTokensList = QueryAllTokensResponseSDKType['Tokens'];
+type QueryAllTokensState = {
+  data: QueryAllTokensList | undefined;
   isValidating: SWRResponse['isValidating'];
   error: SWRResponse['error'];
 };
 
-export default function useTokens({
+export default function useTokenPairs({
   swr: swrConfig,
   query: queryConfig,
   queryClient: queryClientConfig,
 }: {
   swr?: SWRConfiguration;
-  query?: Parameters<Api<unknown>['queryTokensAll']>[0];
-  queryClient?: Parameters<typeof queryClient>[0];
-} = {}): QueryTokensAllState {
+  query?: QueryAllTokensRequest;
+  queryClient?: string;
+} = {}): QueryAllTokensState {
+  const params: QueryAllTokensRequest = {
+    ...queryConfig,
+    pagination: {
+      ...defaultPaginationParams,
+      ...queryConfig?.pagination,
+    },
+  };
+
+  const lcdClientPromise = useLcdClientPromise(queryClientConfig);
+
   const {
     data: pages,
     isValidating,
     error,
     size,
     setSize,
-  } = useSWRInfinite<QueryTokensAll>(
-    getNextPaginationKey,
-    async (paginationKey: string) => {
-      const client = queryClient({
-        ...defaultQueryClientConfig,
-        ...queryClientConfig,
-      });
-      const response: QueryTokensAll = await client.queryTokensAll({
-        ...defaultFetchParams,
-        ...queryConfig,
-        'pagination.key': paginationKey,
-      });
-      if (response.status === 200) {
-        return response;
-      } else {
-        // remove API error details from public view
-        throw new Error(
-          `API error code: ${response.status} ${response.statusText}`
-        );
-      }
-      // default to persisting the current size so the list is only resized by 'setSize'
+  } = useSWRInfinite<QueryAllTokensResponseSDKType>(
+    getNextPaginationKey<QueryAllTokensRequest>(
+      // set unique cache key for this client method
+      'nicholasdotsol.duality.dex.tokensAll',
+      params
+    ),
+    async (_: string, params: QueryAllTokensRequest) => {
+      const client = await lcdClientPromise;
+      return await client.nicholasdotsol.duality.dex.tokensAll(params);
     },
     { persistSize: true, ...swrConfig }
   );
   // set number of pages to latest total
-  const pageItemCount = Number(pages?.[0]?.data.Tokens?.length);
-  const totalItemCount = Number(pages?.[0]?.data.pagination?.total);
+  const pageItemCount = Number(pages?.[0]?.Tokens?.length);
+  const totalItemCount = Number(pages?.[0]?.pagination?.total);
   if (pageItemCount > 0 && totalItemCount > pageItemCount) {
     const pageCount = Math.ceil(totalItemCount / pageItemCount);
     if (size !== pageCount) {
@@ -70,8 +64,8 @@ export default function useTokens({
     }
   }
   // place pages of data into the same list
-  const tokens = pages?.reduce<DexTokens[]>((acc, page) => {
-    return acc.concat(page.data.Tokens || []);
+  const tradingPairs = pages?.reduce<TokensSDKType[]>((acc, page) => {
+    return acc.concat(page.Tokens || []);
   }, []);
-  return { data: tokens, isValidating, error };
+  return { data: tradingPairs, isValidating, error };
 }

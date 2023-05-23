@@ -1,5 +1,5 @@
 import { useHasPriceData } from '../lib/tokenPrices';
-import { Token } from './TokenPicker/hooks';
+import { Token } from '../lib/web3/utils/tokens';
 
 export default function PriceDataDisclaimer({
   tokenA,

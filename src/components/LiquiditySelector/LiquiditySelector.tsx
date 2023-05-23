@@ -18,12 +18,16 @@ import {
   roundToSignificantDigits,
 } from '../../lib/utils/number';
 import { feeTypes } from '../../lib/web3/utils/fees';
-import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { Token } from '../../lib/web3/utils/tokens';
+import {
+  TickInfo,
+  priceToTickIndex,
+  tickIndexToPrice,
+} from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
-import { Token } from '../TokenPicker/hooks';
-import { TickInfo, useIndexerPairData } from '../../lib/web3/indexerProvider';
+import { useIndexerPairData } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
 
