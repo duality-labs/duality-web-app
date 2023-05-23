@@ -8,30 +8,21 @@ import {
 } from 'react';
 
 import { OfflineSigner } from '@cosmjs/proto-signing';
-import { ProtobufRpcClient } from '@cosmjs/stargate';
-
-import { useRpcPromise } from './rpcQueryClient';
 import {
   getKeplrWallet,
   getKeplrWalletAccount,
   useSyncKeplrState,
 } from './wallets/keplr';
-import { useLcdClientPromise } from './lcdClient';
 
-type LcdClient = Awaited<ReturnType<typeof useLcdClientPromise>>;
 export interface Web3ContextValue {
   connectWallet?: () => void;
   wallet: OfflineSigner | null;
   address: string | null;
-  rpcBaseClient?: ProtobufRpcClient;
-  lcdClient?: LcdClient;
 }
 
 const Web3Context = createContext<Web3ContextValue>({
   wallet: null,
   address: null,
-  rpcBaseClient: undefined,
-  lcdClient: undefined,
 });
 
 interface Web3ContextProps {
@@ -100,20 +91,6 @@ export function Web3Provider({ children }: Web3ContextProps) {
     localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY) === 'keplr'
   );
 
-  // persist an activated RPC client
-  const [rpc, setRpc] = useState<ProtobufRpcClient>();
-  const rpcPromise = useRpcPromise();
-  useEffect(() => {
-    rpcPromise.then(setRpc);
-  }, [rpcPromise]);
-
-  // persist an activated LCD client
-  const [lcd, setLcd] = useState<LcdClient>();
-  const lcdPromise = useLcdClientPromise();
-  useEffect(() => {
-    lcdPromise.then(setLcd);
-  }, [lcdPromise]);
-
   return (
     <Web3Context.Provider
       value={{
@@ -124,8 +101,6 @@ export function Web3Provider({ children }: Web3ContextProps) {
         ),
         wallet,
         address,
-        rpcBaseClient: rpc,
-        lcdClient: lcd,
       }}
     >
       {children}
