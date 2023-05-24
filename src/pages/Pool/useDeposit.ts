@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import BigNumber from 'bignumber.js';
 import Long from 'long';
-import { nicholasdotsol } from '@duality-labs/dualityjs';
+import { dualitylabs } from '@duality-labs/dualityjs';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import rpcClient from '../../lib/web3/rpcMsgClient';
@@ -15,10 +15,13 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
-import { readEvents } from '../../lib/web3/utils/txs';
-import { useIndexerData } from '../../lib/web3/indexerProvider';
+import {
+  DexDepositEvent,
+  getEventAttributeMap,
+} from '../../lib/web3/utils/events';
 import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
-import { getPairID, hasMatchingPairOfOrder } from '../../lib/web3/utils/pairs';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -26,7 +29,10 @@ interface SendDepositResponse {
   receivedTokenB: string;
 }
 
-export function useDeposit(): [
+export function useDeposit([tokenA, tokenB]: [
+  Token | undefined,
+  Token | undefined
+]): [
   {
     data?: SendDepositResponse;
     isValidating?: boolean;
@@ -40,7 +46,11 @@ export function useDeposit(): [
   ) => Promise<void>
 ] {
   // get previous ticks context
-  const { data: pairs } = useIndexerData();
+  const [token0, token1] =
+    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
+  const {
+    data: [token0Ticks, token1Ticks],
+  } = useTokenPairTickLiquidity([token0, token1]);
 
   const [data, setData] = useState<SendDepositResponse | undefined>(undefined);
   const [isValidating, setIsValidating] = useState(false);
@@ -79,8 +89,8 @@ export function useDeposit(): [
           );
         }
 
-        const forward = pairs?.[getPairID(tokenA.address, tokenB.address)];
-        const reverse = pairs?.[getPairID(tokenB.address, tokenA.address)];
+        const forward = token0 === tokenA.address && token1 === tokenB.address;
+        const reverse = token0 === tokenB.address && token1 === tokenA.address;
         const pairTicks = forward || reverse;
 
         // if (!pairs || !pairTicks) {
@@ -125,18 +135,12 @@ export function useDeposit(): [
             // converting from virtual to real ticks (not real to virual)
             const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
               tick.tickIndex,
-              tick.feeIndex
+              tick.fee
             );
 
             if (tickIndex0 === undefined || tickIndex1 === undefined) {
               return [];
             }
-
-            const [forward] = hasMatchingPairOfOrder(
-              pairs || {},
-              tick.tokenA.address || '',
-              tick.tokenB.address || ''
-            );
 
             const ticks: TickGroup = [];
 
@@ -171,7 +175,7 @@ export function useDeposit(): [
             const foundTickIndex = ticks.findIndex((searchTick) => {
               return (
                 searchTick.tickIndex === tick.tickIndex &&
-                searchTick.feeIndex === tick.feeIndex &&
+                searchTick.fee === tick.fee &&
                 searchTick.tokenA === tick.tokenA &&
                 searchTick.tokenB === tick.tokenB
               );
@@ -205,14 +209,14 @@ export function useDeposit(): [
         const gasEstimate = filteredUserTicks.reduce((gasEstimate, tick) => {
           const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
             tick.tickIndex,
-            tick.feeIndex
+            tick.fee
           );
           const existingTick =
-            pairTicks && tickIndex0 !== undefined && tickIndex1 !== undefined
-              ? !!pairTicks.token0Ticks.find((pairTick) => {
+            tickIndex0 !== undefined && tickIndex1 !== undefined
+              ? !!token0Ticks?.find((pairTick) => {
                   return pairTick.tickIndex.isEqualTo(tickIndex0);
                 }) &&
-                !!pairTicks.token1Ticks.find((pairTick) => {
+                !!token1Ticks?.find((pairTick) => {
                   return pairTick.tickIndex.isEqualTo(tickIndex1);
                 })
               : undefined;
@@ -232,7 +236,7 @@ export function useDeposit(): [
           const res = await client.signAndBroadcast(
             web3.address,
             [
-              nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.deposit({
+              dualitylabs.duality.dex.MessageComposer.withTypeUrl.deposit({
                 creator: web3Address,
                 tokenA: tokenA.address,
                 tokenB: tokenB.address,
@@ -240,11 +244,11 @@ export function useDeposit(): [
                 // note: tick indexes must be in the form of "token0/1 index"
                 // not "tokenA/B" index, so inverted order indexes should be reversed
                 // check this commit for changes if this behavior changes
-                tickIndexes: filteredUserTicks.map((tick) =>
-                  Long.fromNumber(tick.tickIndex)
+                tickIndexesAToB: filteredUserTicks.map((tick) =>
+                  Long.fromNumber(tick.tickIndex).negate()
                 ),
-                feeIndexes: filteredUserTicks.map((tick) =>
-                  Long.fromNumber(tick.feeIndex)
+                fees: filteredUserTicks.map((tick) =>
+                  Long.fromNumber(tick.fee)
                 ),
                 amountsA: filteredUserTicks.map(
                   ({ reserveA }) =>
@@ -254,6 +258,10 @@ export function useDeposit(): [
                   ({ reserveB }) =>
                     getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
                 ),
+                // todo: allow user to specify autoswap behavior
+                Options: filteredUserTicks.map(() => ({
+                  disableAutoswap: false,
+                })),
               }),
             ],
             {
@@ -280,47 +288,35 @@ export function useDeposit(): [
           }
 
           // calculate received tokens
-          const foundEvents = readEvents(res.rawLog) || [];
-          const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
+          const { receivedTokenA, receivedTokenB } = res.events.reduce<{
             receivedTokenA: BigNumber;
             receivedTokenB: BigNumber;
           }>(
             (acc, event) => {
-              // find and process each dex NewDeposit message created by this user
+              // find and process each dex Deposit message created by this user
               if (
                 event.type === 'message' &&
                 event.attributes.find(
                   ({ key, value }) => key === 'module' && value === 'dex'
                 ) &&
                 event.attributes.find(
-                  ({ key, value }) => key === 'action' && value === 'NewDeposit'
+                  ({ key, value }) => key === 'action' && value === 'Deposit'
                 ) &&
                 event.attributes.find(
-                  ({ key, value }) => key === 'sender' && value === web3.address
+                  ({ key, value }) =>
+                    key === 'Creator' && value === web3.address
                 )
               ) {
                 // collect into more usable format for parsing
-                const attributes = event.attributes.reduce(
-                  (acc, { key, value }) => ({ ...acc, [key]: value }),
-                  {}
-                ) as {
-                  TickIndex: string;
-                  FeeIndex: string;
-                  Token0: string;
-                  Token1: string;
-                  OldReserves0: string;
-                  OldReserves1: string;
-                  NewReserves0: string;
-                  NewReserves1: string;
-                };
+                const attributes = getEventAttributeMap<DexDepositEvent>(event);
 
                 // accumulate share values
                 // ('NewReserves' is the difference between previous and next share value)
                 const shareIncrease0 = new BigNumber(
-                  attributes['NewReserves0']
+                  attributes['Reserves0Deposited']
                 );
                 const shareIncrease1 = new BigNumber(
-                  attributes['NewReserves1']
+                  attributes['Reserves1Deposited']
                 );
                 if (
                   tokenA.address === attributes['Token0'] &&
@@ -403,7 +399,7 @@ export function useDeposit(): [
         console.error(e);
       }
     },
-    [web3.address, web3.wallet, pairs]
+    [web3.address, web3.wallet, token0, token1, token0Ticks, token1Ticks]
   );
 
   return [{ data, isValidating, error }, sendDepositRequest];

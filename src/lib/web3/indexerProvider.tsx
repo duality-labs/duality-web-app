@@ -8,35 +8,28 @@ import {
 } from 'react';
 import Long from 'long';
 import { BigNumber } from 'bignumber.js';
-import { cosmos, nicholasdotsol } from '@duality-labs/dualityjs';
+import { cosmos } from '@duality-labs/dualityjs';
 
 import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
 import { useRpcPromise } from './rpcQueryClient';
-import useTokens from './hooks/useTokens';
+import useTokens from '../../lib/web3/hooks/useTokens';
 import useTokenPairs from './hooks/useTokenPairs';
-
-import { addressableTokenMap as tokenMap } from '../../components/TokenPicker/hooks';
 
 import { feeTypes } from './utils/fees';
 
 import { Token, TokenAddress, getAmountInDenom } from './utils/tokens';
-import { calculateShares, tickIndexToPrice } from './utils/ticks';
+import { calculateShares } from './utils/ticks';
 import { IndexedShare, getShareInfo } from './utils/shares';
-import { PairInfo, PairMap, getPairID } from './utils/pairs';
+import { getPairID } from './utils/pairs';
 
-import { ProtobufRpcClient } from '@cosmjs/stargate';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
-import { TokensSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tokens';
-import { TradingPairSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/trading_pair';
-import { TickSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tick';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 
 const bankClientImpl = cosmos.bank.v1beta1.QueryClientImpl;
-const queryClientImpl = nicholasdotsol.duality.dex.QueryClientImpl;
 
 interface UserBankBalance {
   balances: Array<CoinSDKType>;
@@ -57,18 +50,13 @@ interface IndexerContextType {
     error?: string;
     isValidating: boolean;
   };
-  indexer: {
-    data?: PairMap;
-    error?: string;
-    isValidating: boolean;
-  };
   tokens: {
-    data?: TokensSDKType[];
+    data?: Token[];
     error?: string;
     isValidating: boolean;
   };
   tokenPairs: {
-    data?: TradingPairSDKType[];
+    data?: [TokenAddress, TokenAddress][];
     error?: string;
     isValidating: boolean;
   };
@@ -87,9 +75,6 @@ const IndexerContext = createContext<IndexerContextType>({
   shares: {
     isValidating: true,
   },
-  indexer: {
-    isValidating: true,
-  },
   tokens: {
     isValidating: true,
   },
@@ -103,134 +88,13 @@ const defaultFetchParams: Partial<PageRequest> = {
   countTotal: true,
 };
 
-async function getFullData(
-  rpcPromise: Promise<ProtobufRpcClient>
-): Promise<PairMap> {
-  const rpc = await rpcPromise;
-  return new Promise(function (resolve, reject) {
-    if (!rpc) {
-      reject(new Error('Undefined rest api base URL'));
-    } else {
-      Promise.resolve()
-        .then(async () => {
-          const queryClient = new queryClientImpl(rpc);
-          let nextKey: Uint8Array | undefined;
-          let tickMap: Array<TickSDKType> = [];
-          do {
-            const res = await queryClient.tickAll({
-              ...defaultFetchParams,
-              pagination: {
-                offset: Long.fromNumber(0),
-                ...defaultFetchParams,
-                key: nextKey || [],
-              } as PageRequest,
-            });
-            tickMap = tickMap.concat(res.Tick || []);
-            nextKey = res.pagination?.nextKey;
-          } while (nextKey && nextKey.length > 0);
-          return {
-            tickMap: tickMap,
-          };
-        })
-        .then((data) => transformData(data.tickMap || []))
-        .then(resolve)
-        .catch(reject);
-    }
-  });
-}
-
-function transformData(ticks: Array<TickSDKType>): PairMap {
-  const intermediate = ticks.reduce<PairMap>(function (
-    result,
-    { pairId = '', tickIndex, tickData }
-  ) {
-    // token0 and token1 are sorted by the back end
-    const [token0, token1] = pairId.split('<>');
-    if (token0 && token1 && tokenMap[token0] && tokenMap[token1] && tickData) {
-      result[pairId] =
-        result[pairId] ||
-        ({
-          token0: token0,
-          token1: token1,
-          token0Ticks: [],
-          token1Ticks: [],
-        } as PairInfo);
-
-      // calculate price from tickIndex, try to keep price values consistent:
-      //   JS rounding may be inconsistent with API's rounding
-      const bigTickIndex = new BigNumber(tickIndex.toNumber() || 0);
-      const bigPrice = tickIndexToPrice(bigTickIndex);
-
-      feeTypes.forEach(({ fee }, feeIndex) => {
-        if (!bigTickIndex.isNaN() && bigPrice.isGreaterThan(0)) {
-          if (tickData.reserve0 && Number(tickData.reserve0[feeIndex]) > 0) {
-            result[pairId].token0Ticks.push({
-              token0: tokenMap[token0],
-              token1: tokenMap[token1],
-              tickIndex: bigTickIndex,
-              price: bigPrice,
-              feeIndex: new BigNumber(feeIndex),
-              fee: new BigNumber(fee || 0),
-              reserve0: new BigNumber(tickData.reserve0?.[feeIndex] || 0),
-              reserve1: new BigNumber(0),
-            });
-          }
-          if (tickData.reserve1 && Number(tickData.reserve1[feeIndex]) > 0) {
-            result[pairId].token1Ticks.push({
-              token0: tokenMap[token0],
-              token1: tokenMap[token1],
-              tickIndex: bigTickIndex,
-              price: bigPrice,
-              feeIndex: new BigNumber(feeIndex),
-              fee: new BigNumber(fee || 0),
-              reserve0: new BigNumber(0),
-              reserve1: new BigNumber(tickData.reserve1?.[feeIndex] || 0),
-            });
-          }
-        }
-      });
-    }
-    return result;
-  },
-  {});
-
-  // sort all ticks
-  return Object.entries(intermediate).reduce<PairMap>(
-    (result, [pairId, pairInfo]) => {
-      result[pairId] = {
-        ...pairInfo,
-        // sort each pair's ticks
-        token0Ticks: pairInfo.token0Ticks.sort((a, b) => {
-          // sort by decreasing tickIndex (price) then feeIndex
-          return (
-            b.tickIndex.comparedTo(a.tickIndex) ||
-            b.feeIndex.comparedTo(a.feeIndex)
-          );
-        }),
-        token1Ticks: pairInfo.token1Ticks.sort((a, b) => {
-          // sort by increasing tickIndex (price) then feeIndex
-          return (
-            a.tickIndex.comparedTo(b.tickIndex) ||
-            a.feeIndex.comparedTo(b.feeIndex)
-          );
-        }),
-      };
-      return result;
-    },
-    {}
-  );
-}
-
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
-  const [indexerData, setIndexerData] = useState<PairMap>();
   const seconds = 1000;
   const minutes = 60 * seconds;
 
   const [bankData, setBankData] = useState<UserBankBalance>();
   const [shareData, setShareData] = useState<UserShares>();
-  const { data: tokensData } = useTokens({
-    swr: { refreshInterval: 10 * minutes },
-  });
+  const tokensData = useTokens();
   const { data: tokenPairsData } = useTokenPairs({
     swr: { refreshInterval: 10 * minutes },
   });
@@ -238,8 +102,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const rpcPromise = useRpcPromise();
 
   const [error, setError] = useState<string>();
-  // avoid sending more than once
-  const [, setRequestedFlag] = useState(false);
   const [result, setResult] = useState<IndexerContextType>({
     bank: {
       data: bankData,
@@ -248,11 +110,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     },
     shares: {
       data: shareData,
-      error: error,
-      isValidating: true,
-    },
-    indexer: {
-      data: indexerData,
       error: error,
       isValidating: true,
     },
@@ -291,17 +148,17 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                     token0Address: token0,
                     token1Address: token1,
                     tickIndexString: tickIndex,
-                    feeIndexString: feeIndex,
+                    feeString: fee,
                   } = getShareInfo(coin) || {};
                   // transform tokenized shares into shares
-                  if (token0 && token1 && tickIndex && feeIndex) {
+                  if (token0 && token1 && tickIndex && fee) {
                     // add tokenized share if everything is fine
                     if (address) {
                       const tokenizedShare = {
                         address,
                         pairId: getPairID(token0, token1),
                         tickIndex,
-                        feeIndex,
+                        fee,
                         sharesOwned: coin.amount,
                       };
                       return [tokens, [...tokenizedShares, tokenizedShare]];
@@ -313,7 +170,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                         `Received unknown denomination in tokenized shares: ${coin.denom}`,
                         {
                           feeTypes,
-                          feeIndex,
+                          fee,
                           address,
                         }
                       );
@@ -405,13 +262,12 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   }, [updateBankData, address]);
 
   useEffect(() => {
-    let lastRequested = 0;
     const onDexUpdateMessage = function (event: MessageActionEvent) {
       const Receiver = event['message.Receiver'];
       const Token0 = event['message.Token0'];
       const Token1 = event['message.Token1'];
       const TickIndex = event['message.TickIndex'];
-      const FeeIndex = event['message.FeeIndex'];
+      const Fee = event['message.Fee'];
       const NewReserves0 = event['message.NewReserves0'];
       const NewReserves1 = event['message.NewReserves1'];
 
@@ -420,7 +276,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         !Token0 ||
         !Token1 ||
         !TickIndex ||
-        !FeeIndex ||
+        !Fee ||
         !NewReserves0 ||
         !NewReserves1
       ) {
@@ -440,7 +296,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           (share) =>
             share.pairId === pairId &&
             share.tickIndex === TickIndex &&
-            share.feeIndex === FeeIndex
+            share.fee === Fee
         );
         const sharesOwned = calculateShares({
           tickIndex: new BigNumber(TickIndex),
@@ -452,7 +308,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           const newShare = {
             pairId,
             address,
-            feeIndex: FeeIndex,
+            fee: Fee,
             tickIndex: TickIndex,
             sharesOwned: sharesOwned.toFixed(),
           };
@@ -472,26 +328,11 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         }
         return { shares: data };
       });
-
-      // update the indexer data (not a high priority, each block that contains changes to listened pairs should update the indexer state)
-      const now = Date.now();
-      if (now - lastRequested > 1000) {
-        lastRequested = Date.now();
-        getFullData(rpcPromise)
-          .then(function (res) {
-            setIndexerData(res);
-          })
-          .catch(function (err: Error) {
-            setError(err?.message ?? 'Unknown Error');
-          });
-      }
-      // todo: do a partial update of indexer data?
-      // see this commit for previous work done on this
     };
     // subscribe to messages for this address only
     if (address) {
       subscriber.subscribeMessage(onDexUpdateMessage, {
-        message: { action: 'NewDeposit', Receiver: address },
+        message: { action: 'Deposit', Receiver: address },
       });
       subscriber.subscribeMessage(onDexUpdateMessage, {
         message: { action: 'NewWithdraw', Receiver: address },
@@ -505,17 +346,15 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const onRouterUpdateMessage = function (event: MessageActionEvent) {
       const Creator = event['message.Creator'];
-      const Token0 = event['message.Token0'];
-      const Token1 = event['message.Token1'];
       const TokenIn = event['message.TokenIn'];
+      const TokenOut = event['message.TokenOut'];
       const AmountIn = event['message.AmountIn'];
       const AmountOut = event['message.AmountOut'];
       const MinOut = event['message.MinOut'];
       if (
         !Creator ||
         !TokenIn ||
-        !Token0 ||
-        !Token1 ||
+        !TokenOut ||
         !AmountIn ||
         !AmountOut ||
         !MinOut
@@ -526,26 +365,10 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         setError(undefined);
       }
 
-      const forward = TokenIn === Token0;
-      const reverse = TokenIn === Token1;
-      if (!forward && !reverse) {
-        setError('Unknown error occurred. Incorrect tokens');
-        return;
-      }
-
       // todo: update something without refetching?
       // may not be possible or helpful
       // bank balance update will be caught already by the bank event watcher
       // it's too complicated to update indexer state with the event detail's
-
-      // fetch new indexer data as the trade would have caused changes in ticks
-      getFullData(rpcPromise)
-        .then(function (res) {
-          setIndexerData(res);
-        })
-        .catch(function (err: Error) {
-          setError(err?.message ?? 'Unknown Error');
-        });
     };
     subscriber.subscribeMessage(onRouterUpdateMessage, {
       message: { action: 'NewSwap' },
@@ -561,11 +384,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         data: bankData,
         error: error,
         isValidating: !bankData && !error,
-      },
-      indexer: {
-        data: indexerData,
-        error: error,
-        isValidating: !indexerData && !error,
       },
       shares: {
         data: shareData,
@@ -583,21 +401,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         isValidating: !shareData && !error,
       },
     });
-  }, [bankData, indexerData, shareData, error]);
-
-  useEffect(() => {
-    setRequestedFlag((oldValue) => {
-      if (oldValue) return true;
-      getFullData(rpcPromise)
-        .then(function (res) {
-          setIndexerData(res);
-        })
-        .catch(function (err: Error) {
-          setError(err?.message ?? 'Unknown Error');
-        });
-      return true;
-    });
-  }, [rpcPromise]);
+  }, [bankData, shareData, error]);
 
   return (
     <IndexerContext.Provider value={result}>{children}</IndexerContext.Provider>
@@ -645,26 +449,6 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
     return shares;
   }, [tokens, data]);
   return { data: shares, error, isValidating };
-}
-
-export function useIndexerData() {
-  return useContext(IndexerContext).indexer;
-}
-
-export function useIndexerPairData(
-  tokenA?: TokenAddress,
-  tokenB?: TokenAddress
-) {
-  const { data: pairs, isValidating, error } = useIndexerData();
-  const pair =
-    pairs && tokenA && tokenB
-      ? pairs[getPairID(tokenA, tokenB)] || pairs[getPairID(tokenB, tokenA)]
-      : undefined;
-  return {
-    data: pair,
-    error,
-    isValidating,
-  };
 }
 
 export function getBalance(

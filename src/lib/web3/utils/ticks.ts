@@ -23,7 +23,6 @@ export interface TickInfo {
   reserve0: BigNumber;
   reserve1: BigNumber;
   fee: BigNumber;
-  feeIndex: BigNumber; // feeIndex is the index of a certain predefined fee
   tickIndex: BigNumber; // tickIndex is the exact price ratio in the form: 1.0001^[tickIndex]
   price: BigNumber; // price is an approximate decimal (to 18 places) ratio of price1/price0
 }

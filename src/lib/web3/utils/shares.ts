@@ -4,7 +4,7 @@ export interface IndexedShare {
   address: string;
   pairId: string;
   tickIndex: string;
-  feeIndex: string;
+  fee: string;
   sharesOwned: string;
 }
 
@@ -13,15 +13,14 @@ export function getShareInfo(coin: CoinSDKType) {
     /^DualityPoolShares-([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/
   );
   if (match) {
-    const [, token0Address, token1Address, tickIndexString, feeIndexString] =
-      match;
+    const [, token0Address, token1Address, tickIndexString, feeString] = match;
     return {
       token0Address,
       token1Address,
       tickIndexString,
-      feeIndexString,
+      feeString,
       tickIndex: Number(tickIndexString),
-      feeIndex: Number(feeIndexString),
+      fee: Number(feeString),
     };
   }
 }

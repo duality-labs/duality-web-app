@@ -17,8 +17,9 @@ import {
   formatMaximumSignificantDecimals,
   roundToSignificantDigits,
 } from '../../lib/utils/number';
-import { feeTypes } from '../../lib/web3/utils/fees';
 import { Token } from '../../lib/web3/utils/tokens';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import {
   TickInfo,
   priceToTickIndex,
@@ -26,8 +27,6 @@ import {
 } from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
-
-import { useIndexerPairData } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
 
@@ -40,7 +39,7 @@ const [
 export interface LiquiditySelectorProps {
   tokenA: Token;
   tokenB: Token;
-  feeTier: number | undefined;
+  fee: number | undefined;
   userTickSelected: number | undefined;
   setUserTickSelected: (index: number) => void;
   rangeMin: string;
@@ -67,8 +66,7 @@ export interface Tick {
   reserveB: BigNumber;
   tickIndex: number;
   price: BigNumber;
-  fee: BigNumber;
-  feeIndex: number;
+  fee: number;
   tokenA: Token;
   tokenB: Token;
 }
@@ -78,8 +76,7 @@ interface TokenTick {
   reserve: BigNumber;
   tickIndex: number;
   price: BigNumber;
-  fee: BigNumber;
-  feeIndex: number;
+  fee: number;
   token: Token;
 }
 type TokenTickGroup = Array<TokenTick>;
@@ -122,7 +119,7 @@ const poleWidth = 8;
 export default function LiquiditySelector({
   tokenA,
   tokenB,
-  feeTier,
+  fee,
   userTickSelected = -1,
   setUserTickSelected,
   rangeMin,
@@ -208,14 +205,11 @@ export default function LiquiditySelector({
       [setRangeMax]
     );
 
+  const [token0Address, token1Address] =
+    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
   const {
-    data: {
-      token0Ticks = [],
-      token1Ticks = [],
-      token0: token0Address,
-      token1: token1Address,
-    } = {},
-  } = useIndexerPairData(tokenA?.address, tokenB?.address);
+    data: [token0Ticks = [], token1Ticks = []],
+  } = useTokenPairTickLiquidity([token0Address, token1Address]);
 
   const [forward, reverse] = [
     token0Address === tokenA?.address && token1Address === tokenB?.address,
@@ -234,15 +228,13 @@ export default function LiquiditySelector({
           tickIndex,
           price,
           fee,
-          feeIndex,
         }: TickInfo): TokenTick => {
           return {
             token: isToken1 ? token1 : token0,
             reserve: isToken1 ? reserve1 : reserve0,
             tickIndex: (forward ? tickIndex : tickIndex.negated()).toNumber(),
             price: forward ? price : new BigNumber(1).dividedBy(price),
-            fee,
-            feeIndex: feeIndex.toNumber(),
+            fee: fee.toNumber(),
           };
         };
       }
@@ -257,13 +249,12 @@ export default function LiquiditySelector({
 
   // collect tick information in a more useable form
   const feeTicks: [TokenTickGroup, TokenTickGroup] = useMemo(() => {
-    const feeTierFilter = (tick: TokenTick) =>
-      feeTypes[tick.feeIndex]?.fee === feeTier;
-    return !feeTier
+    const feeTierFilter = (tick: TokenTick) => tick.fee === fee;
+    return fee === undefined
       ? [tokenATicks, tokenBTicks]
       : // filter to only fee tier ticks
         [tokenATicks.filter(feeTierFilter), tokenBTicks.filter(feeTierFilter)];
-  }, [tokenATicks, tokenBTicks, feeTier]);
+  }, [tokenATicks, tokenBTicks, fee]);
 
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)

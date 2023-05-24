@@ -6,21 +6,33 @@ import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v
 import { useBankBalances } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import useShareValueMap, { TickShareValueMap } from './useShareValueMap';
+import useShareValueMap, { ShareValueMap } from './useShareValueMap';
 
-import {
-  useFilteredTokenList,
-  useTokens,
-} from '../../components/TokenPicker/hooks';
+import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
+
+import useTokens from '../../lib/web3/hooks/useTokens';
 
 import { formatAmount } from '../../lib/utils/number';
 
 import './MyLiquidity.scss';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  TokenAddress,
+  getAmountInDenom,
+} from '../../lib/web3/utils/tokens';
 import TableCard from '../../components/cards/TableCard';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
+import { createRpcQueryHooks } from '@duality-labs/dualityjs';
+import { useQueries } from '@tanstack/react-query';
+import { getPairID } from '../../lib/web3/utils/pairs';
+import {
+  QueryGetPoolReservesRequest,
+  QueryGetUserPositionsResponseSDKType,
+} from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
+import { UserPositionsSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/user_positions';
 
 function matchTokenDenom(denom: string) {
   return (token: Token) =>
@@ -68,7 +80,7 @@ function ShareValuesPage({
   balances = [],
   setSelectedTokens,
 }: {
-  shareValueMap?: TickShareValueMap;
+  shareValueMap?: ShareValueMap;
   balances?: CoinSDKType[];
   setSelectedTokens: React.Dispatch<
     React.SetStateAction<[Token, Token] | undefined>
@@ -106,31 +118,223 @@ function ShareValuesPage({
 
   const { data: allUserTokenPrices } = useSimplePrice(allUserTokensList);
 
-  const allUserSharesValue = Object.values(shareValueMap || {}).reduce(
-    (result, shareValues) => {
-      const sharePairValue = shareValues.reduce((result2, shareValue) => {
-        if (shareValue.userReserves0?.isGreaterThan(0)) {
-          const token0Index = allUserTokensList.indexOf(shareValue.token0);
-          result2 = result2.plus(
-            shareValue.userReserves0.multipliedBy(
-              allUserTokenPrices[token0Index] || 0
-            )
+  const allUserTokenPricesMap = useMemo(() => {
+    return allUserTokensList.reduce<{
+      [tokenAddress: string]: number | undefined;
+    }>((acc, token, index) => {
+      if (token.address) {
+        acc[token.address] = allUserTokenPrices[index];
+      }
+      return acc;
+    }, {});
+  }, [allUserTokensList, allUserTokenPrices]);
+
+  const { address, rpcBaseClient: rpc, lcdClient } = useWeb3();
+  const queryHooks = createRpcQueryHooks({ rpc });
+
+  const { useGetUserPositions } = queryHooks.dualitylabs.duality.dex;
+
+  const { data: { UserPositions: userPositions } = {} } =
+    useGetUserPositions<QueryGetUserPositionsResponseSDKType>({
+      request: { address: address || '' },
+    });
+  const poolDeposits = userPositions?.PoolDeposits;
+
+  const allUserPositionTotalShares = useQueries({
+    queries: [
+      ...(poolDeposits || [])?.flatMap(
+        ({ pairID: { token0, token1 } = {}, centerTickIndex, fee }) => {
+          if (token0 && token1) {
+            const params: QuerySupplyOfRequest = {
+              denom: `DualityPoolShares-${token0}-${token1}-t${centerTickIndex}-f${fee}`,
+            };
+            return {
+              queryKey: ['cosmos.bank.v1beta1.supplyOf', params],
+              queryFn: async () =>
+                lcdClient?.cosmos.bank.v1beta1.supplyOf(params),
+              staleTime: 10e3,
+            };
+          }
+          return [];
+        }
+      ),
+    ],
+  });
+
+  const allUserPositionTotalReserves = useQueries({
+    queries: [
+      ...(poolDeposits || [])?.flatMap(
+        ({
+          pairID: { token0, token1 } = {},
+          lowerTickIndex,
+          upperTickIndex,
+          fee,
+        }) => {
+          const pairID = getPairID(token0, token1);
+          if (token0 && token1 && pairID && fee !== undefined) {
+            // return both upper and lower tick pools
+            return [
+              { tokenIn: token0, tickIndex: lowerTickIndex.negate() },
+              { tokenIn: token0, tickIndex: upperTickIndex.negate() },
+              { tokenIn: token1, tickIndex: upperTickIndex },
+              { tokenIn: token1, tickIndex: lowerTickIndex },
+            ].map(({ tokenIn, tickIndex }) => {
+              const params: QueryGetPoolReservesRequest = {
+                pairID,
+                tokenIn,
+                tickIndex,
+                fee,
+              };
+              return {
+                queryKey: ['dualitylabs.duality.dex.poolReserves', params],
+                queryFn: async () =>
+                  lcdClient?.dualitylabs.duality.dex.poolReserves(params),
+                // don't retry, a 404 means there is 0 liquidity there
+                retry: false,
+                // refetch not that often
+                staleTime: 60 * 1e3,
+              };
+            });
+          }
+          return [];
+        }
+      ),
+    ],
+  });
+
+  interface ShareValueContext {
+    sharesOwned: BigNumber;
+    totalShares: BigNumber;
+    token: TokenAddress;
+    tickIndex: BigNumber;
+    reserves: BigNumber;
+  }
+  interface ShareValueDepositContext {
+    deposit: UserPositionsSDKType['PoolDeposits'][0];
+    context: ShareValueContext;
+    value?: BigNumber;
+  }
+  const tokenList = useTokens();
+
+  // compute the value of all the user's shares
+  const allUserSharesValues = useMemo(() => {
+    return (poolDeposits || []).flatMap<ShareValueDepositContext>((deposit) => {
+      const totalSharesResponse = allUserPositionTotalShares.find(
+        ({ data }) => {
+          return !!data;
+        }
+      );
+
+      // find the upper and lower reserves that match this position
+      const lowerReserveResponse = allUserPositionTotalReserves.find(
+        ({ data }) => {
+          return (
+            data?.poolReserves?.tokenIn === deposit.pairID?.token0 &&
+            data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
+            data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
+            data?.poolReserves?.tickIndex.toString() ===
+              deposit.lowerTickIndex.toString() &&
+            data?.poolReserves?.fee.toString() === deposit.fee.toString()
           );
         }
-        if (shareValue.userReserves1?.isGreaterThan(0)) {
-          const token1Index = allUserTokensList.indexOf(shareValue.token1);
-          result2 = result2.plus(
-            shareValue.userReserves1.multipliedBy(
-              allUserTokenPrices[token1Index] || 0
-            )
+      );
+      const upperReserveResponse = allUserPositionTotalReserves.find(
+        ({ data }) => {
+          return (
+            data?.poolReserves?.tokenIn === deposit.pairID?.token1 &&
+            data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
+            data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
+            data?.poolReserves?.tickIndex.toString() ===
+              deposit.upperTickIndex.toString() &&
+            data?.poolReserves?.fee.toString() === deposit.fee.toString()
           );
         }
-        return result2;
-      }, new BigNumber(0));
-      return result.plus(sharePairValue);
-    },
-    new BigNumber(0)
-  );
+      );
+      // collect context of both side of the liquidity
+      return [
+        ...(totalSharesResponse && lowerReserveResponse
+          ? [
+              {
+                deposit,
+                context: {
+                  sharesOwned: new BigNumber(deposit.sharesOwned),
+                  totalShares: new BigNumber(
+                    totalSharesResponse?.data?.amount?.amount ?? 0
+                  ),
+                  token: lowerReserveResponse.data?.poolReserves?.tokenIn ?? '',
+                  tickIndex: new BigNumber(
+                    lowerReserveResponse.data?.poolReserves?.tickIndex.toString() ??
+                      0
+                  ),
+                  reserves: new BigNumber(
+                    lowerReserveResponse.data?.poolReserves?.reserves ?? 0
+                  ),
+                },
+              },
+            ]
+          : []),
+        ...(totalSharesResponse && upperReserveResponse
+          ? [
+              {
+                deposit,
+                context: {
+                  sharesOwned: new BigNumber(deposit.sharesOwned),
+                  totalShares: new BigNumber(
+                    totalSharesResponse?.data?.amount?.amount ?? 0
+                  ),
+                  token: upperReserveResponse.data?.poolReserves?.tokenIn ?? '',
+                  tickIndex: new BigNumber(
+                    upperReserveResponse.data?.poolReserves?.tickIndex.toString() ??
+                      0
+                  ),
+                  reserves: new BigNumber(
+                    upperReserveResponse.data?.poolReserves?.reserves ?? 0
+                  ),
+                },
+              },
+            ]
+          : []),
+      ].map(({ deposit, context }) => {
+        const {
+          reserves,
+          sharesOwned,
+          totalShares,
+          token: tokenAddress,
+        } = context;
+        // what is the price per token?
+        const token = tokenList.find(({ address }) => address === tokenAddress);
+        const price = allUserTokenPricesMap[tokenAddress];
+        if (token && price && !isNaN(price)) {
+          // how many tokens does the user have?
+          const reserve = reserves
+            .multipliedBy(sharesOwned)
+            .dividedBy(totalShares);
+          const amount = getAmountInDenom(
+            token,
+            reserve,
+            token.address,
+            token.display
+          );
+          // how much are those tokens worth?
+          const value = new BigNumber(amount || 0).multipliedBy(price);
+          return { deposit, context, value };
+        }
+        return { deposit, context };
+      });
+    });
+  }, [
+    tokenList,
+    poolDeposits,
+    allUserPositionTotalShares,
+    allUserPositionTotalReserves,
+    allUserTokenPricesMap,
+  ]);
+
+  const allUserSharesValue = useMemo(() => {
+    return allUserSharesValues.reduce<BigNumber>((acc, { value }) => {
+      return value ? acc.plus(value) : acc;
+    }, new BigNumber(0));
+  }, [allUserSharesValues]);
 
   const allUserBankAssets = useMemo<Array<TokenCoin>>(() => {
     return (balances || [])
@@ -163,7 +367,6 @@ function ShareValuesPage({
 
   const [searchValue, setSearchValue] = useState<string>('');
 
-  const tokenList = useTokens();
   const userList = useMemo(() => {
     return balances
       ? tokenList.filter((token) =>

@@ -4,6 +4,7 @@ import { ThemeProvider } from '../../lib/themeProvider';
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Navigate } from 'react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Header from '../../components/Header';
 import Notifications from '../../components/Notifications';
@@ -16,6 +17,8 @@ import MyLiquidity from '../MyLiquidity';
 
 import './App.scss';
 
+const queryClient = new QueryClient();
+
 function MyLiquidityOrTrade() {
   const { address } = useWeb3();
   return address ? <MyLiquidity /> : <Navigate to="/trade" />;
@@ -26,21 +29,23 @@ function App() {
     <Web3Provider>
       <IndexerProvider>
         <ThemeProvider>
-          <BrowserRouter>
-            <Header />
-            <Stars />
-            <Planets />
-            <main>
-              <Routes>
-                <Route index element={<MyLiquidityOrTrade />} />
-                <Route path="trade" element={<Swap />} />
-                <Route path="liquidity" element={<Pool />} />
-                <Route path="stake" element={<div>Coming soon</div>} />
-                <Route path="*" element={<div>Not found</div>} />
-              </Routes>
-              <Notifications />
-            </main>
-          </BrowserRouter>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <Header />
+              <Stars />
+              <Planets />
+              <main>
+                <Routes>
+                  <Route index element={<MyLiquidityOrTrade />} />
+                  <Route path="trade" element={<Swap />} />
+                  <Route path="liquidity" element={<Pool />} />
+                  <Route path="stake" element={<div>Coming soon</div>} />
+                  <Route path="*" element={<div>Not found</div>} />
+                </Routes>
+                <Notifications />
+              </main>
+            </BrowserRouter>
+          </QueryClientProvider>
         </ThemeProvider>
       </IndexerProvider>
     </Web3Provider>
