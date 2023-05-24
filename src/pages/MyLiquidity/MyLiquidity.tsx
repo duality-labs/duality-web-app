@@ -33,6 +33,8 @@ import {
 } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { UserPositionsSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/user_positions';
+import { useRpc } from '../../lib/web3/rpcQueryClient';
+import { useLcdClient } from '../../lib/web3/lcdClient';
 
 function matchTokenDenom(denom: string) {
   return (token: Token) =>
@@ -129,7 +131,9 @@ function ShareValuesPage({
     }, {});
   }, [allUserTokensList, allUserTokenPrices]);
 
-  const { address, rpcBaseClient: rpc, lcdClient } = useWeb3();
+  const { address } = useWeb3();
+  const rpc = useRpc();
+  const lcdClient = useLcdClient();
   const queryHooks = createRpcQueryHooks({ rpc });
 
   const { useGetUserPositions } = queryHooks.dualitylabs.duality.dex;
