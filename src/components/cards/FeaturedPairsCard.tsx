@@ -7,7 +7,7 @@ import TokenPairLogos from '../TokenPairLogos/TokenPairLogos';
 import TableCard from '../../components/cards/TableCard';
 import { Link } from 'react-router-dom';
 import { useSimplePrices } from '../../lib/tokenPrices';
-import { useTokens } from '../TokenPicker/hooks';
+import useTokens from '../../lib/web3/hooks/useTokens';
 import { useTokenPairsList } from '../../lib/web3/indexerProvider';
 
 export default function FeaturedPairsCard({
