@@ -98,7 +98,7 @@ export function useTickShareValues(
 
   return (
     shareValues
-      .map<TickShareValue | undefined>((shareValue) => {
+      .map<TickShareValue | undefined>((shareValue: ShareValue) => {
         const { tickIndex, feeIndex, sharesOwned } = shareValue.share;
         const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
           tickIndex,
@@ -146,7 +146,11 @@ export function useTickShareValues(
           .plus(tick1Shares || 0);
 
         // add optional tick data from indexer
-        if (totalShares.isGreaterThan(0)) {
+        if (
+          tickIndex0 !== undefined &&
+          tickIndex1 !== undefined &&
+          totalShares.isGreaterThan(0)
+        ) {
           const shareFraction = new BigNumber(sharesOwned ?? 0).dividedBy(
             totalShares
           );
