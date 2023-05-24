@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import useShareValueMap, {
-  TickShareValue,
+  ShareValue,
 } from '../../pages/MyLiquidity/useShareValueMap';
 
 import TokenPairLogos from '../TokenPairLogos/TokenPairLogos';
@@ -17,7 +17,7 @@ export default function OrdersCard({
   const shareValueMap = useShareValueMap();
 
   // todo: fetch real limit orders from tx history
-  const limitOrders = useMemo<TickShareValue[]>(() => {
+  const limitOrders = useMemo<ShareValue[]>(() => {
     // collect all tokens noted in each share
     const list = Object.values(shareValueMap || {}).flat();
     // return unique tokens
