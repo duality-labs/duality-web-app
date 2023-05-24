@@ -1,7 +1,7 @@
 import { HttpEndpoint } from '@cosmjs/tendermint-rpc';
 
 import { dualitylabs } from '@duality-labs/dualityjs';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const { REACT_APP__REST_API = '' } = process.env;
 
@@ -58,4 +58,15 @@ export function useLcdClientPromise(
   return useMemo(() => {
     return getLcdClient(restEndpoint);
   }, [restEndpoint]);
+}
+
+export function useLcdClient(
+  restEndpoint = REACT_APP__REST_API
+): LcdClient | undefined {
+  const lcdClientPromise = useLcdClientPromise(restEndpoint);
+  const [lcdClient, setLcdClient] = useState<LcdClient>();
+  useEffect(() => {
+    lcdClientPromise.then((lcdClient) => setLcdClient(lcdClient));
+  }, [lcdClientPromise]);
+  return lcdClient;
 }
