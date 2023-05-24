@@ -96,13 +96,15 @@ export default function SwapPage() {
       const liquidity = [];
       do {
         const response = await fetch(
-          `http://localhost:8000/timeseries/price/token/stake?pagination.key=${next}&pagination.limit=5`
+          next
+            ? `http://localhost:8000/timeseries/price/token/stake?pagination.key=${next}`
+            : 'http://localhost:8000/timeseries/price/token/stake'
         );
         const { data = [], pagination = {} } = await response.json();
         // add data into current context
         liquidity.push(...data);
         // fetch again if necessary
-        next = pagination['next-key'];
+        next = pagination['next_key'];
       } while (next);
       timeout = setTimeout(poller.poll, 25000);
 
