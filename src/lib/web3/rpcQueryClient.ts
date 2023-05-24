@@ -5,7 +5,7 @@ import {
 } from '@cosmjs/stargate';
 import { Tendermint34Client, HttpEndpoint } from '@cosmjs/tendermint-rpc';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const { REACT_APP__RPC_API = '' } = process.env;
 
@@ -51,4 +51,15 @@ export function useRpcPromise(
   return useMemo(() => {
     return getRpcClient(rpcURL);
   }, [rpcURL]);
+}
+
+export function useRpc(
+  rpcURL = REACT_APP__RPC_API
+): ProtobufRpcClient | undefined {
+  const rpcPromise = useRpcPromise(rpcURL);
+  const [rpc, setRpc] = useState<ProtobufRpcClient>();
+  useEffect(() => {
+    rpcPromise.then((rpc) => setRpc(rpc));
+  }, [rpcPromise]);
+  return rpc;
 }
