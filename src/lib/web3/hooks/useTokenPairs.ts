@@ -45,7 +45,7 @@ export default function useTokenPairs({
     isValidating,
     error,
     size,
-    setSize
+    setSize,
   } = useSWRInfinite<QueryTotalSupplyResponseSDKType>(
     getNextPaginationKey<QueryTotalSupplyRequest>(
       'cosmos.bank.v1beta1.totalSupply',
@@ -58,8 +58,8 @@ export default function useTokenPairs({
     { persistSize: true, ...swrConfig }
   );
   // set number of pages to latest total
-  const pageItemCount = Number(pages?.[0]?.data.TradingPair?.length);
-  const totalItemCount = Number(pages?.[0]?.data.pagination?.total);
+  const pageItemCount = Number(pages?.[0]?.supply.length);
+  const totalItemCount = Number(pages?.[0]?.pagination?.total);
   if (pageItemCount > 0 && totalItemCount > pageItemCount) {
     const pageCount = Math.ceil(totalItemCount / pageItemCount);
     if (size !== pageCount) {
@@ -68,23 +68,22 @@ export default function useTokenPairs({
   }
   // place pages of data into the same list
   const data = useMemo(() => {
-    const tradingPairMap = pages?.reduce<Map<string, [TokenAddress, TokenAddress]>>(
-      (acc, page) => {
-        page.supply.forEach((coin) => {
-          const match = getShareInfo(coin);
-          if (match) {
-            const { token0Address, token1Address } = match;
-            acc.set(getPairID(token0Address, token1Address), [
-              token0Address,
-              token1Address,
-            ]);
-          }
-        });
+    const tradingPairMap = pages?.reduce<
+      Map<string, [TokenAddress, TokenAddress]>
+    >((acc, page) => {
+      page.supply.forEach((coin) => {
+        const match = getShareInfo(coin);
+        if (match) {
+          const { token0Address, token1Address } = match;
+          acc.set(getPairID(token0Address, token1Address), [
+            token0Address,
+            token1Address,
+          ]);
+        }
+      });
 
-        return acc;
-      },
-      new Map<string, [TokenAddress, TokenAddress]>()
-    );
+      return acc;
+    }, new Map<string, [TokenAddress, TokenAddress]>());
     return tradingPairMap && Array.from(tradingPairMap.values());
   }, [pages]);
 
