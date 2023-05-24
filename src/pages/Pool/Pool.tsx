@@ -17,11 +17,7 @@ import {
   faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
 
-import {
-  getBalance,
-  getPairID,
-  useBankBalances,
-} from '../../lib/web3/indexerProvider';
+import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 
 import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -60,6 +56,7 @@ import {
   EditedTickShareValue,
   useEditLiquidity,
 } from '../MyLiquidity/useEditLiquidity';
+import { getPairID } from '../../lib/web3/utils/pairs';
 
 // the default resolution for a number in 18 decimal places
 const {
