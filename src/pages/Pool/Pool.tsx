@@ -1499,8 +1499,13 @@ function Pair({
                                     deposit.centerTickIndex.toNumber()
                                   )
                             );
-                            return price.isGreaterThanOrEqualTo(rangeMin) &&
-                              price.isLessThanOrEqualTo(rangeMax) ? (
+                            // note: fix these restrictions, they are a bit off
+                            return price
+                              .multipliedBy(1.01)
+                              .isGreaterThanOrEqualTo(rangeMin) &&
+                              price
+                                .dividedBy(1.01)
+                                .isLessThanOrEqualTo(rangeMax) ? (
                               <tr key={index} className="pt-2">
                                 <td>{index + 1}</td>
                                 <td>
@@ -1630,8 +1635,13 @@ function Pair({
                     )
                   ) : (
                     userTicks.map((tick, index) => {
-                      return tick.price.isGreaterThanOrEqualTo(rangeMin) &&
-                        tick.price.isLessThanOrEqualTo(rangeMax) ? (
+                      // note: fix these restrictions, they are a bit off
+                      return tick.price
+                        .multipliedBy(1.01)
+                        .isGreaterThanOrEqualTo(rangeMin) &&
+                        tick.price
+                          .dividedBy(1.01)
+                          .isLessThanOrEqualTo(rangeMax) ? (
                         <tr key={index} className="pt-2">
                           <td>{index + 1}</td>
                           <td>
