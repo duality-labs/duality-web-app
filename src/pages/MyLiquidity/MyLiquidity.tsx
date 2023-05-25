@@ -5,9 +5,11 @@ import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v
 
 import { useBankBalances } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { useSimplePrice } from '../../lib/tokenPrices';
-import useShareValueMap, { ShareValueMap } from './useShareValueMap';
 import { useUserPositionsShareValue } from '../../lib/web3/hooks/useUserShareValues';
+import {
+  useUserBankValue,
+  useUserBankValues,
+} from '../../lib/web3/hooks/useUserBankValues';
 
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 
@@ -23,11 +25,6 @@ import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
 
 import './MyLiquidity.scss';
 
-function matchTokenDenom(denom: string) {
-  return (token: Token) =>
-    !!token.denom_units.find((unit) => unit.denom === denom);
-}
-
 type TokenCoin = CoinSDKType & {
   token: Token;
   value: BigNumber | undefined;
@@ -35,11 +32,8 @@ type TokenCoin = CoinSDKType & {
 
 export default function MyLiquidity() {
   const { wallet } = useWeb3();
-  const { data: balances } = useBankBalances();
 
   const [, setSelectedTokens] = useState<[Token, Token]>();
-
-  const shareValueMap = useShareValueMap();
 
   // show connect page
   if (!wallet) {
@@ -55,86 +49,22 @@ export default function MyLiquidity() {
     );
   }
 
-  return (
-    <ShareValuesPage
-      shareValueMap={shareValueMap}
-      balances={balances}
-      setSelectedTokens={setSelectedTokens}
-    />
-  );
+  return <ShareValuesPage setSelectedTokens={setSelectedTokens} />;
 }
 
 function ShareValuesPage({
-  shareValueMap,
-  balances = [],
   setSelectedTokens,
 }: {
-  shareValueMap?: ShareValueMap;
-  balances?: CoinSDKType[];
   setSelectedTokens: React.Dispatch<
     React.SetStateAction<[Token, Token] | undefined>
   >;
 }) {
-  const allUserSharesTokensList = useMemo<Token[]>(() => {
-    // collect all tokens noted in each share
-    const list = Object.values(shareValueMap || {}).reduce<Token[]>(
-      (result, shareValues) => {
-        shareValues.forEach((shareValue) => {
-          result.push(shareValue.token0, shareValue.token1);
-        });
-        return result;
-      },
-      []
-    );
-    // return unique tokens
-    return Array.from(new Set(list));
-  }, [shareValueMap]);
-
-  const allTokensList = useTokens();
-  const allUserBankTokensList = useMemo<Token[]>(() => {
-    return (balances || []).reduce<Token[]>((result, balance) => {
-      const token = allTokensList.find(matchTokenDenom(balance.denom));
-      if (token) {
-        result.push(token);
-      }
-      return result;
-    }, []);
-  }, [balances, allTokensList]);
-
-  const allUserTokensList = useMemo(() => {
-    return [...allUserSharesTokensList, ...allUserBankTokensList];
-  }, [allUserSharesTokensList, allUserBankTokensList]);
-
-  const { data: allUserTokenPrices } = useSimplePrice(allUserTokensList);
-
+  const { data: balances } = useBankBalances();
   const tokenList = useTokens();
 
   const allUserSharesValue = useUserPositionsShareValue();
-
-  const allUserBankAssets = useMemo<Array<TokenCoin>>(() => {
-    return (balances || [])
-      .map(({ amount, denom }) => {
-        const tokenIndex = allUserTokensList.findIndex(matchTokenDenom(denom));
-        const token = allUserTokensList[tokenIndex] as Token | undefined;
-        const price = allUserTokenPrices[tokenIndex];
-        const value =
-          token &&
-          new BigNumber(
-            getAmountInDenom(token, amount, denom, token.display) || 0
-          ).multipliedBy(price || 0);
-        return token ? { amount, denom, token, value } : null;
-      })
-      .filter((v): v is TokenCoin => !!v);
-  }, [balances, allUserTokensList, allUserTokenPrices]);
-
-  const allUserBankValue = useMemo(
-    () =>
-      (allUserBankAssets || []).reduce((result, { value }) => {
-        if (!value) return result;
-        return result.plus(value);
-      }, new BigNumber(0)),
-    [allUserBankAssets]
-  );
+  const allUserBankAssets = useUserBankValues();
+  const allUserBankValue = useUserBankValue();
 
   const [selectedAssetList, setSelectedAssetList] = useState<
     'my-assets' | 'all-assets'
