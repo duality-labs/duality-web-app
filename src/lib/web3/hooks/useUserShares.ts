@@ -4,7 +4,6 @@ import { useQueries } from '@tanstack/react-query';
 import { createRpcQueryHooks } from '@duality-labs/dualityjs';
 import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
-import { UserPositionsSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/user_positions';
 import {
   QueryGetPoolReservesRequest,
   QueryGetUserPositionsResponseSDKType,
@@ -147,7 +146,7 @@ interface ShareValueContext {
   userReserves: BigNumber;
 }
 export interface UserPositionDepositContext {
-  deposit: UserPositionsSDKType['PoolDeposits'][0];
+  deposit: DepositRecord;
   context: ShareValueContext;
 }
 
