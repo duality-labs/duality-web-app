@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import Long from 'long';
 import { useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { createRpcQueryHooks } from '@duality-labs/dualityjs';
@@ -21,13 +22,15 @@ import {
   getTokenAddressPair,
 } from '../utils/tokens';
 import useTokens from './useTokens';
+import { useShares } from '../indexerProvider';
 
 // default useUserPositionsTotalShares filter to all user's deposits
 export type UserDepositFilter = (poolDeposit: DepositRecord) => boolean;
 const defaultFilter: UserDepositFilter = () => true;
 
+// todo: use this function when the endpoint is fixed
 // select all (or optional token pair list of) user shares
-export function useUserDeposits(
+export function useUserDepositsFromPositionsEndpoint(
   poolDepositFilter: UserDepositFilter = defaultFilter
 ): Required<DepositRecord>[] | undefined {
   const { address } = useWeb3();
@@ -48,6 +51,34 @@ export function useUserDeposits(
   return filteredDeposits?.filter(
     (deposit): deposit is Required<DepositRecord> => !!deposit.pairID
   );
+}
+
+// select all (or optional token pair list of) user shares
+export function useUserDeposits(
+  poolDepositFilter: UserDepositFilter = defaultFilter
+): Required<DepositRecord>[] | undefined {
+  const { data: shares } = useShares();
+  return useMemo(() => {
+    const deposits = shares?.map<DepositRecord>(
+      ({ fee, pairId, sharesOwned, tickIndex }) => {
+        const [token0Address, token1Address] = pairId.split('<>');
+        return {
+          pairID: { token0: token0Address, token1: token1Address },
+          sharesOwned,
+          centerTickIndex: Long.fromString(tickIndex),
+          lowerTickIndex: Long.fromString(tickIndex).sub(fee),
+          upperTickIndex: Long.fromString(tickIndex).add(fee),
+          fee: Long.fromString(fee),
+        };
+      }
+    );
+    // return filtered list of deposits
+    const filteredDeposits = deposits?.filter(poolDepositFilter);
+    // only accept deposits with pairID properties attached (should be always)
+    return filteredDeposits?.filter(
+      (deposit): deposit is Required<DepositRecord> => !!deposit.pairID
+    );
+  }, [shares, poolDepositFilter]);
 }
 
 // select all (or optional token pair list of) user shares
