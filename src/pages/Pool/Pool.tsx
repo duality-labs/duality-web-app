@@ -104,23 +104,23 @@ const restrictPriceRangeValues = (
   return '1';
 };
 
-export default function PairsPage() {
+export default function PoolsPage() {
   return (
     <div className="container row flex py-5">
       <div className="page col flex">
-        <Pairs />
+        <Pools />
       </div>
     </div>
   );
 }
 
-function Pairs() {
+function Pools() {
   const navigate = useNavigate();
   const [[tokenA, tokenB], setTokens] = useState<[Token?, Token?]>([]);
 
   // change tokens to match pathname
   const tokenList = useTokens();
-  const match = useMatch('/pairs/:tokenA/:tokenB');
+  const match = useMatch('/pools/:tokenA/:tokenB');
   useEffect(() => {
     if (match) {
       const foundTokenA = tokenList.find(
@@ -142,9 +142,9 @@ function Pairs() {
   const setTokensPath = useCallback(
     ([tokenA, tokenB]: [Token?, Token?]) => {
       if (tokenA && tokenB) {
-        navigate(`/pairs/${tokenA.symbol}/${tokenB.symbol}`);
+        navigate(`/pools/${tokenA.symbol}/${tokenB.symbol}`);
       } else {
-        navigate('/pairs');
+        navigate('/pools');
       }
     },
     [navigate]
@@ -170,17 +170,17 @@ function Pairs() {
     return (
       <div className="pool-page col gap-5 mt-5">
         <div>
-          <h1 className="h1">Pairs</h1>
+          <h1 className="h1">Pools</h1>
           <div>Provide liquidity and earn fees.</div>
         </div>
-        <Link to={`/pairs/${defaultTokenA}/${defaultTokenB}`}>
+        <Link to={`/pools/${defaultTokenA}/${defaultTokenB}`}>
           <button className="button button-primary py-3 px-md">
             Create New Position
           </button>
         </Link>
         <PoolsTableCard
           className="flex mt-5"
-          title="All Pairs"
+          title="All Pools"
           switchValue={selectedPoolsList}
           switchOnChange={setSelectedPoolsList}
           onTokenPairClick={setTokensPath}
@@ -1094,8 +1094,8 @@ function Pair({
               className={`chart-card col chart-type--${chartTypeSelected.toLowerCase()}`}
             >
               <div className="chart-breadcrumbs row flow-wrap gap-3 mb-5">
-                <Link className="text-light-alt" to="/pairs">
-                  Pairs
+                <Link className="text-light-alt" to="/pools">
+                  Pools
                 </Link>
                 {'>'}
                 <span>
