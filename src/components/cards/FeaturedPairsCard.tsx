@@ -1,7 +1,4 @@
 import { useMemo } from 'react';
-import useShareValueMap, {
-  TickShareValue,
-} from '../../pages/MyLiquidity/useShareValueMap';
 
 import TokenPairLogos from '../TokenPairLogos/TokenPairLogos';
 import TableCard from '../../components/cards/TableCard';
