@@ -778,20 +778,14 @@ function Pair({
 
   const [userReserveATotal, userReserveBTotal] = useMemo(() => {
     return [
-      userPositionsContext?.reduce((acc, { context }) => {
-        if (context.token === tokenA.address) {
-          acc.plus(context.userReserves);
-        }
-        return acc;
+      userPositionsContext?.reduce((acc, { token0Context }) => {
+        return acc.plus(token0Context?.userReserves || 0);
       }, new BigNumber(0)),
-      userPositionsContext?.reduce((acc, { context }) => {
-        if (context.token === tokenB.address) {
-          acc.plus(context.userReserves);
-        }
-        return acc;
+      userPositionsContext?.reduce((acc, { token1Context }) => {
+        return acc.plus(token1Context?.userReserves || 0);
       }, new BigNumber(0)),
     ];
-  }, [userPositionsContext, tokenA.address, tokenB.address]);
+  }, [userPositionsContext]);
 
   const [{ isValidating: isValidatingEdit }, sendEditRequest] =
     useEditLiquidity();
@@ -801,7 +795,10 @@ function Pair({
   const getTickShareValueFromContext = useCallback(
     ({
       deposit,
-      context,
+      token0,
+      token1,
+      token0Context,
+      token1Context,
     }: UserPositionDepositContext): EditedTickShareValue => {
       return {
         share: {
@@ -811,23 +808,21 @@ function Pair({
           fee: deposit.fee.toNumber().toFixed(0),
           sharesOwned: deposit.sharesOwned,
         },
-        token0: deposit.pairID.token0 === tokenA.address ? tokenA : tokenB,
-        token1: deposit.pairID.token1 === tokenA.address ? tokenA : tokenB,
+        token0,
+        token1,
         tickIndex0: deposit.lowerTickIndex.toNumber(),
         tickIndex1: deposit.upperTickIndex.toNumber(),
-        userReserves0:
-          deposit.pairID.token0 === context.token
-            ? context.userReserves
-            : new BigNumber(0),
-        userReserves1:
-          deposit.pairID.token1 === context.token
-            ? context.userReserves
-            : new BigNumber(0),
+        userReserves0: token0Context?.userReserves
+          ? token0Context.userReserves
+          : new BigNumber(0),
+        userReserves1: token1Context?.userReserves
+          ? token1Context.userReserves
+          : new BigNumber(0),
         tickDiff0: new BigNumber(0),
         tickDiff1: new BigNumber(0),
       };
     },
-    [tokenA, tokenB]
+    []
   );
 
   const [editedUserTicks, setEditedUserTicks] = useState<
