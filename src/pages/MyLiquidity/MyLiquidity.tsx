@@ -33,8 +33,6 @@ type TokenCoin = CoinSDKType & {
 export default function MyLiquidity() {
   const { wallet } = useWeb3();
 
-  const [, setSelectedTokens] = useState<[Token, Token]>();
-
   // show connect page
   if (!wallet) {
     return (
@@ -49,16 +47,10 @@ export default function MyLiquidity() {
     );
   }
 
-  return <ShareValuesPage setSelectedTokens={setSelectedTokens} />;
+  return <ShareValuesPage />;
 }
 
-function ShareValuesPage({
-  setSelectedTokens,
-}: {
-  setSelectedTokens: React.Dispatch<
-    React.SetStateAction<[Token, Token] | undefined>
-  >;
-}) {
+function ShareValuesPage() {
   const { data: balances } = useBankBalances();
   const tokenList = useTokens();
 
