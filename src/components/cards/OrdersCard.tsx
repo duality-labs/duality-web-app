@@ -1,11 +1,9 @@
-import { useMemo } from 'react';
-import useShareValueMap, {
-  ShareValue,
-} from '../../pages/MyLiquidity/useShareValueMap';
-
 import TokenPairLogos from '../TokenPairLogos/TokenPairLogos';
 import TableCard from '../../components/cards/TableCard';
 import { Link } from 'react-router-dom';
+
+import useTokens from '../../lib/web3/hooks/useTokens';
+import { useUserDeposits } from '../../lib/web3/hooks/useUserShares';
 
 export default function OrdersCard({
   size = 'large',
@@ -14,15 +12,8 @@ export default function OrdersCard({
   size?: 'small' | 'large';
   limit?: number;
 }) {
-  const shareValueMap = useShareValueMap();
-
-  // todo: fetch real limit orders from tx history
-  const limitOrders = useMemo<ShareValue[]>(() => {
-    // collect all tokens noted in each share
-    const list = Object.values(shareValueMap || {}).flat();
-    // return unique tokens
-    return list;
-  }, [shareValueMap]);
+  const allTokens = useTokens();
+  const limitOrders = useUserDeposits() || [];
 
   // show loken list cards
   return (
@@ -37,7 +28,16 @@ export default function OrdersCard({
           {limitOrders.length > 0 ? (
             limitOrders
               .slice(0, limit || undefined)
-              .map(({ token0, token1 }, index) => {
+              .map(({ pairID }, index) => {
+                const token0 = allTokens.find(
+                  (token) => token.address === pairID.token0
+                );
+                const token1 = allTokens.find(
+                  (token) => token.address === pairID.token1
+                );
+                if (!token0 || !token1) {
+                  return null;
+                }
                 return (
                   <tr key={index}>
                     <td>
