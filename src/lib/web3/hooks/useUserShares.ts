@@ -22,11 +22,12 @@ import {
 } from '../utils/tokens';
 
 // default useUserPositionsTotalShares filter to all user's deposits
-const defaultFilter = () => true;
+export type UserDepositFilter = (poolDeposit: DepositRecord) => boolean;
+const defaultFilter: UserDepositFilter = () => true;
 
 // select all (or optional token pair list of) user shares
 export function useUserDeposits(
-  poolDepositFilter: (poolDeposit: DepositRecord) => boolean = defaultFilter
+  poolDepositFilter: UserDepositFilter = defaultFilter
 ) {
   const { address } = useWeb3();
   const rpc = useRpc();
@@ -45,7 +46,7 @@ export function useUserDeposits(
 
 // select all (or optional token pair list of) user shares
 export function useUserPositionsTotalShares(
-  poolDepositFilter: (poolDeposit: DepositRecord) => boolean = defaultFilter
+  poolDepositFilter: UserDepositFilter = defaultFilter
 ) {
   const lcdClient = useLcdClient();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter) || [];
@@ -92,7 +93,7 @@ export function useUserPositionsTotalSharesPair(
 
 // select all (or optional token pair list of) user reserves
 export function useUserPositionsTotalReserves(
-  poolDepositFilter: (poolDeposit: DepositRecord) => boolean = defaultFilter
+  poolDepositFilter?: UserDepositFilter
 ) {
   const lcdClient = useLcdClient();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter) || [];
@@ -151,7 +152,7 @@ export interface UserPositionDepositContext {
 
 // collect all the context about the user's positions together
 export function useUserPositionsContext(
-  poolDepositFilter: (poolDeposit: DepositRecord) => boolean = defaultFilter
+  poolDepositFilter?: UserDepositFilter
 ): UserPositionDepositContext[] {
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
   const userPositionsTotalShares =
