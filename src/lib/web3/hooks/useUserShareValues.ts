@@ -4,6 +4,7 @@ import useTokens from './useTokens';
 import { useSimplePrice } from '../../tokenPrices';
 import { Token, getAmountInDenom } from '../utils/tokens';
 import {
+  ShareValueContext,
   UserDepositFilter,
   UserPositionDepositContext,
   useUserDeposits,
@@ -11,7 +12,8 @@ import {
 } from './useUserShares';
 
 interface ValuedUserPositionDepositContext extends UserPositionDepositContext {
-  value?: BigNumber;
+  token0Value?: BigNumber;
+  token1Value?: BigNumber;
 }
 
 export function useUserPositionsShareValues(
@@ -61,28 +63,37 @@ export function useUserPositionsShareValues(
 
   return useMemo<ValuedUserPositionDepositContext[]>(() => {
     return userPositionDepositContext.map<ValuedUserPositionDepositContext>(
-      ({ deposit, context }) => {
-        const { token: tokenAddress, userReserves } = context;
-        // what is the price per token?
-        const token = selectedTokens.find(
-          ({ address }) => address === tokenAddress
-        );
-        const price = selectedTokensPriceMap[tokenAddress];
-        if (token && price && !isNaN(price)) {
-          // how many tokens does the user have?
-          const amount = getAmountInDenom(
-            token,
-            userReserves,
-            token.address,
-            token.display
-          );
-          // how much are those tokens worth?
-          const value = new BigNumber(amount || 0).multipliedBy(price);
-          return { deposit, context, value };
-        }
-        return { deposit, context };
+      ({ token0Context, token1Context, ...rest }) => {
+        return {
+          ...rest,
+          token0Value: token0Context && getValueOfContext(token0Context),
+          token1Value: token1Context && getValueOfContext(token1Context),
+        };
       }
     );
+
+    function getValueOfContext(
+      context: ShareValueContext
+    ): BigNumber | undefined {
+      const { token: tokenAddress, userReserves } = context;
+      // what is the price per token?
+      const token = selectedTokens.find(
+        ({ address }) => address === tokenAddress
+      );
+      const price = selectedTokensPriceMap[tokenAddress];
+      if (token && price && !isNaN(price)) {
+        // how many tokens does the user have?
+        const amount = getAmountInDenom(
+          token,
+          userReserves,
+          token.address,
+          token.display
+        );
+        // how much are those tokens worth?
+        const value = new BigNumber(amount || 0).multipliedBy(price);
+        return value;
+      }
+    }
   }, [selectedTokens, selectedTokensPriceMap, userPositionDepositContext]);
 }
 
@@ -94,8 +105,11 @@ export function useUserPositionsShareValue(
     useUserPositionsShareValues(poolDepositFilter);
 
   return useMemo(() => {
-    return userPositionsShareValues.reduce<BigNumber>((acc, { value }) => {
-      return value ? acc.plus(value) : acc;
-    }, new BigNumber(0));
+    return userPositionsShareValues.reduce<BigNumber>(
+      (acc, { token0Value, token1Value }) => {
+        return acc.plus(token0Value || 0).plus(token1Value || 0);
+      },
+      new BigNumber(0)
+    );
   }, [userPositionsShareValues]);
 }
