@@ -19,7 +19,6 @@ import {
   DexDepositEvent,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
-import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 
@@ -27,6 +26,20 @@ interface SendDepositResponse {
   gasUsed: string;
   receivedTokenA: string;
   receivedTokenB: string;
+}
+
+// this is a function that exists in the backend
+// but is not easily queried from here
+// perhaps the backend could return these values on each Share object
+function getVirtualTickIndexes(
+  tickIndex: number | string | undefined,
+  fee: number | string | undefined
+): [number, number] | [] {
+  const feePoints = Number(fee);
+  const middleIndex = Number(tickIndex);
+  return feePoints && !isNaN(feePoints) && !isNaN(middleIndex)
+    ? [middleIndex + feePoints, middleIndex - feePoints]
+    : [];
 }
 
 export function useDeposit([tokenA, tokenB]: [
