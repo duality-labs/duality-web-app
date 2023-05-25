@@ -15,7 +15,7 @@ export default function Planets() {
   return (
     <>
       <Planet name="swap" bottom={0} width={947} right={0} />
-      <Planet name="pairs" top="10vh" width={774} right={0} />
+      <Planet name="pools" top="10vh" width={774} right={0} />
     </>
   );
 }
