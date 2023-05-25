@@ -51,12 +51,11 @@ import { Token } from '../../lib/web3/utils/tokens';
 import './Pool.scss';
 import TokenPairLogos from '../../components/TokenPairLogos';
 import RadioInput from '../../components/RadioInput';
-import useShareValueMap from '../MyLiquidity/useShareValueMap';
 import {
   EditedTickShareValue,
   useEditLiquidity,
 } from '../MyLiquidity/useEditLiquidity';
-import { getPairID } from '../../lib/web3/utils/pairs';
+import { getPairID, guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import {
   UserPositionDepositContext,
   useUserPositionsContext,
@@ -768,15 +767,6 @@ function Pair({
     ];
   }, [userTicks]);
 
-  const userShareValueMap = useShareValueMap();
-  const forward =
-    userShareValueMap?.[
-      getPairID(tokenA?.address || '', tokenB?.address || '')
-    ];
-  const reverse =
-    userShareValueMap?.[
-      getPairID(tokenB?.address || '', tokenA?.address || '')
-    ];
   const userPositionsContext = useUserPositionsContext((deposit) => {
     const tokenAddresses = [tokenA.address, tokenB.address];
     return (
@@ -806,7 +796,7 @@ function Pair({
   const [{ isValidating: isValidatingEdit }, sendEditRequest] =
     useEditLiquidity();
 
-  const invertedTokenOrder = !!reverse;
+  const invertedTokenOrder = guessInvertedOrder(tokenA.address, tokenB.address);
 
   const getTickShareValueFromContext = useCallback(
     ({
@@ -1493,7 +1483,7 @@ function Pair({
                       editedUserTicks
                         // sort by price
                         .sort((a, b) => {
-                          return forward
+                          return !invertedTokenOrder
                             ? Number(b.share.tickIndex) -
                                 Number(a.share.tickIndex)
                             : Number(a.share.tickIndex) -
@@ -1510,16 +1500,14 @@ function Pair({
                             },
                             index
                           ) => {
-                            // const tokenA = forward ? token0 : token1;
-                            // const tokenB = forward ? token1 : token0;
-                            const reserveA = forward
+                            const reserveA = !invertedTokenOrder
                               ? userReserves0.plus(tickDiff0)
                               : userReserves1.plus(tickDiff1);
-                            const reserveB = forward
+                            const reserveB = !invertedTokenOrder
                               ? userReserves1.plus(tickDiff1)
                               : userReserves0.plus(tickDiff0);
                             const price = tickIndexToPrice(
-                              forward
+                              !invertedTokenOrder
                                 ? new BigNumber(share.tickIndex).negated()
                                 : new BigNumber(share.tickIndex)
                             );
