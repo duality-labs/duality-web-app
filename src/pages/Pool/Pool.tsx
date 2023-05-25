@@ -46,7 +46,7 @@ import {
 import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 import './Pool.scss';
 import TokenPairLogos from '../../components/TokenPairLogos';
@@ -1534,12 +1534,24 @@ function Pair({
                                 </td>
                                 <td>
                                   {reserveA.isGreaterThan(1e-5)
-                                    ? reserveA.toFixed(3)
+                                    ? getAmountInDenom(
+                                        tokenA,
+                                        reserveA,
+                                        tokenA.address,
+                                        tokenA.display,
+                                        3
+                                      )
                                     : ''}
                                 </td>
                                 <td>
                                   {reserveB.isGreaterThan(1e-5)
-                                    ? reserveB.toFixed(3)
+                                    ? getAmountInDenom(
+                                        tokenB,
+                                        reserveB,
+                                        tokenB.address,
+                                        tokenB.display,
+                                        3
+                                      )
                                     : ''}
                                 </td>
                                 <td className="row gap-2 ml-4">
