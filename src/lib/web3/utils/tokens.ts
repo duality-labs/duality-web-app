@@ -30,7 +30,8 @@ export function getAmountInDenom(
   // default to minimum denomination output
   outputDenom: string = token.denom_units
     .slice()
-    .sort((a, b) => a.exponent - b.exponent)[0].denom
+    .sort((a, b) => a.exponent - b.exponent)[0].denom,
+  toFixed?: number
 ): string | undefined {
   const { denom_units } = token;
   const inputDenomUnit = denom_units.find(({ denom }) => denom === inputDenom);
@@ -40,6 +41,6 @@ export function getAmountInDenom(
   if (inputDenomUnit && outputDenomUnit) {
     return new BigNumber(amount)
       .shiftedBy(inputDenomUnit.exponent - outputDenomUnit.exponent)
-      .toFixed(outputDenomUnit.exponent, BigNumber.ROUND_DOWN);
+      .toFixed(toFixed ?? outputDenomUnit.exponent, BigNumber.ROUND_DOWN);
   }
 }
