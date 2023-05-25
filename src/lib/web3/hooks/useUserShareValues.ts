@@ -11,7 +11,8 @@ import {
   useUserPositionsContext,
 } from './useUserShares';
 
-interface ValuedUserPositionDepositContext extends UserPositionDepositContext {
+export interface ValuedUserPositionDepositContext
+  extends UserPositionDepositContext {
   token0Value?: BigNumber;
   token1Value?: BigNumber;
 }
