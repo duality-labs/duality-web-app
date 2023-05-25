@@ -99,7 +99,7 @@ export function useUserPositionsTotalShares(
             return {
               queryKey: ['cosmos.bank.v1beta1.supplyOf', params],
               queryFn: async () =>
-                lcdClient?.cosmos.bank.v1beta1.supplyOf(params),
+                lcdClient?.cosmos.bank.v1beta1.supplyOf(params) ?? null,
               staleTime: 10e3,
             };
           }
@@ -160,7 +160,8 @@ export function useUserPositionsTotalReserves(
               return {
                 queryKey: ['dualitylabs.duality.dex.poolReserves', params],
                 queryFn: async () =>
-                  lcdClient?.dualitylabs.duality.dex.poolReserves(params),
+                  lcdClient?.dualitylabs.duality.dex.poolReserves(params) ??
+                  null,
                 // don't retry, a 404 means there is 0 liquidity there
                 retry: false,
                 // refetch not that often
