@@ -57,6 +57,7 @@ import {
 } from '../MyLiquidity/useEditLiquidity';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { useUserPositionsContext } from '../../lib/web3/hooks/useUserShares';
+import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
 
 // the default resolution for a number in 18 decimal places
 const {
@@ -764,14 +765,19 @@ function Pair({
     ];
   }, [userTicks]);
 
-  const userPositionsContext = useUserPositionsContext((deposit) => {
-    const tokenAddresses = [tokenA.address, tokenB.address];
-    return (
-      !!deposit.pairID &&
-      tokenAddresses.includes(deposit.pairID?.token0) &&
-      tokenAddresses.includes(deposit.pairID?.token1)
-    );
-  });
+  const userPositionsContext = useUserPositionsContext(
+    useCallback(
+      (deposit: DepositRecord) => {
+        const tokenAddresses = [tokenA.address, tokenB.address];
+        return (
+          !!deposit.pairID &&
+          tokenAddresses.includes(deposit.pairID?.token0) &&
+          tokenAddresses.includes(deposit.pairID?.token1)
+        );
+      },
+      [tokenA.address, tokenB.address]
+    )
+  );
 
   const [userReserveATotal, userReserveBTotal] = useMemo(() => {
     return [
