@@ -27,7 +27,7 @@ const defaultFilter: UserDepositFilter = () => true;
 // select all (or optional token pair list of) user shares
 export function useUserDeposits(
   poolDepositFilter: UserDepositFilter = defaultFilter
-) {
+): Required<DepositRecord>[] | undefined {
   const { address } = useWeb3();
   const rpc = useRpc();
   const queryHooks = createRpcQueryHooks({ rpc });
@@ -40,7 +40,12 @@ export function useUserDeposits(
     });
 
   // return filtered list of deposits
-  return userPositions?.PoolDeposits?.filter(poolDepositFilter);
+  const filteredDeposits =
+    userPositions?.PoolDeposits?.filter(poolDepositFilter);
+  // only accept deposits with pairID properties attached (should be always)
+  return filteredDeposits?.filter(
+    (deposit): deposit is Required<DepositRecord> => !!deposit.pairID
+  );
 }
 
 // select all (or optional token pair list of) user shares
@@ -146,7 +151,7 @@ interface ShareValueContext {
   userReserves: BigNumber;
 }
 export interface UserPositionDepositContext {
-  deposit: DepositRecord;
+  deposit: Required<DepositRecord>;
   context: ShareValueContext;
 }
 
