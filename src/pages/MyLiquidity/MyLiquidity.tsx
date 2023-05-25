@@ -1,13 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
-import { useQueries } from '@tanstack/react-query';
 import { createRpcQueryHooks } from '@duality-labs/dualityjs';
-import {
-  QueryGetPoolReservesRequest,
-  QueryGetUserPositionsResponseSDKType,
-} from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
-import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
+import { QueryGetUserPositionsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { UserPositionsSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/user_positions';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
@@ -31,10 +26,11 @@ import TableCard from '../../components/cards/TableCard';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
-
-import { getPairID } from '../../lib/web3/utils/pairs';
 import { useRpc } from '../../lib/web3/rpcQueryClient';
-import { useLcdClient } from '../../lib/web3/lcdClient';
+import {
+  useUserPositionsTotalReserves,
+  useUserPositionsTotalShares,
+} from '../../lib/web3/hooks/useUserShares';
 
 import './MyLiquidity.scss';
 
@@ -135,7 +131,6 @@ function ShareValuesPage({
 
   const { address } = useWeb3();
   const rpc = useRpc();
-  const lcdClient = useLcdClient();
   const queryHooks = createRpcQueryHooks({ rpc });
 
   const { useGetUserPositions } = queryHooks.dualitylabs.duality.dex;
@@ -146,67 +141,9 @@ function ShareValuesPage({
     });
   const poolDeposits = userPositions?.PoolDeposits;
 
-  const allUserPositionTotalShares = useQueries({
-    queries: [
-      ...(poolDeposits || [])?.flatMap(
-        ({ pairID: { token0, token1 } = {}, centerTickIndex, fee }) => {
-          if (token0 && token1) {
-            const params: QuerySupplyOfRequest = {
-              denom: `DualityPoolShares-${token0}-${token1}-t${centerTickIndex}-f${fee}`,
-            };
-            return {
-              queryKey: ['cosmos.bank.v1beta1.supplyOf', params],
-              queryFn: async () =>
-                lcdClient?.cosmos.bank.v1beta1.supplyOf(params),
-              staleTime: 10e3,
-            };
-          }
-          return [];
-        }
-      ),
-    ],
-  });
+  const allUserPositionTotalShares = useUserPositionsTotalShares();
 
-  const allUserPositionTotalReserves = useQueries({
-    queries: [
-      ...(poolDeposits || [])?.flatMap(
-        ({
-          pairID: { token0, token1 } = {},
-          lowerTickIndex,
-          upperTickIndex,
-          fee,
-        }) => {
-          const pairID = getPairID(token0, token1);
-          if (token0 && token1 && pairID && fee !== undefined) {
-            // return both upper and lower tick pools
-            return [
-              { tokenIn: token0, tickIndex: lowerTickIndex.negate() },
-              { tokenIn: token0, tickIndex: upperTickIndex.negate() },
-              { tokenIn: token1, tickIndex: upperTickIndex },
-              { tokenIn: token1, tickIndex: lowerTickIndex },
-            ].map(({ tokenIn, tickIndex }) => {
-              const params: QueryGetPoolReservesRequest = {
-                pairID,
-                tokenIn,
-                tickIndex,
-                fee,
-              };
-              return {
-                queryKey: ['dualitylabs.duality.dex.poolReserves', params],
-                queryFn: async () =>
-                  lcdClient?.dualitylabs.duality.dex.poolReserves(params),
-                // don't retry, a 404 means there is 0 liquidity there
-                retry: false,
-                // refetch not that often
-                staleTime: 60 * 1e3,
-              };
-            });
-          }
-          return [];
-        }
-      ),
-    ],
-  });
+  const allUserPositionTotalReserves = useUserPositionsTotalReserves();
 
   interface ShareValueContext {
     sharesOwned: BigNumber;
