@@ -57,6 +57,10 @@ import {
   useEditLiquidity,
 } from '../MyLiquidity/useEditLiquidity';
 import { getPairID } from '../../lib/web3/utils/pairs';
+import {
+  UserPositionDepositContext,
+  useUserPositionsContext,
+} from '../../lib/web3/hooks/useUserShares';
 
 // the default resolution for a number in 18 decimal places
 const {
@@ -773,47 +777,85 @@ function Pair({
     userShareValueMap?.[
       getPairID(tokenB?.address || '', tokenA?.address || '')
     ];
-  const userShareValues = forward || reverse;
+  const userPositionsContext = useUserPositionsContext((deposit) => {
+    const tokenAddresses = [tokenA.address, tokenB.address];
+    return (
+      !!deposit.pairID &&
+      tokenAddresses.includes(deposit.pairID?.token0) &&
+      tokenAddresses.includes(deposit.pairID?.token1)
+    );
+  });
 
   const [userReserveATotal, userReserveBTotal] = useMemo(() => {
-    const token0Reserves = userShareValues?.reduce(
-      (acc, { userReserves0 }) => acc.plus(userReserves0),
-      new BigNumber(0)
-    );
-    const token1Reserves = userShareValues?.reduce(
-      (acc, { userReserves1 }) => acc.plus(userReserves1),
-      new BigNumber(0)
-    );
-    return forward
-      ? [token0Reserves, token1Reserves]
-      : [token1Reserves, token0Reserves];
-  }, [userShareValues, forward]);
+    return [
+      userPositionsContext?.reduce((acc, { context }) => {
+        if (context.token === tokenA.address) {
+          acc.plus(context.userReserves);
+        }
+        return acc;
+      }, new BigNumber(0)),
+      userPositionsContext?.reduce((acc, { context }) => {
+        if (context.token === tokenB.address) {
+          acc.plus(context.userReserves);
+        }
+        return acc;
+      }, new BigNumber(0)),
+    ];
+  }, [userPositionsContext, tokenA.address, tokenB.address]);
 
   const [{ isValidating: isValidatingEdit }, sendEditRequest] =
     useEditLiquidity();
 
   const invertedTokenOrder = !!reverse;
 
+  const getTickShareValueFromContext = useCallback(
+    ({
+      deposit,
+      context,
+    }: UserPositionDepositContext): EditedTickShareValue => {
+      return {
+        share: {
+          address: '[web3address]',
+          pairId: getPairID(deposit.pairID.token0, deposit.pairID.token1),
+          tickIndex: deposit.centerTickIndex.toNumber().toFixed(0),
+          fee: deposit.fee.toNumber().toFixed(0),
+          sharesOwned: deposit.sharesOwned,
+        },
+        token0: deposit.pairID.token0 === tokenA.address ? tokenA : tokenB,
+        token1: deposit.pairID.token1 === tokenA.address ? tokenA : tokenB,
+        tickIndex0: deposit.lowerTickIndex.toNumber(),
+        tickIndex1: deposit.upperTickIndex.toNumber(),
+        userReserves0:
+          deposit.pairID.token0 === context.token
+            ? context.userReserves
+            : new BigNumber(0),
+        userReserves1:
+          deposit.pairID.token1 === context.token
+            ? context.userReserves
+            : new BigNumber(0),
+        tickDiff0: new BigNumber(0),
+        tickDiff1: new BigNumber(0),
+      };
+    },
+    [tokenA, tokenB]
+  );
+
   const [editedUserTicks, setEditedUserTicks] = useState<
     Array<EditedTickShareValue>
   >(
     () =>
-      userShareValues?.map<EditedTickShareValue>((userShareValue) => ({
-        ...userShareValue,
-        tickDiff0: new BigNumber(0),
-        tickDiff1: new BigNumber(0),
-      })) || []
+      userPositionsContext?.map<EditedTickShareValue>(
+        getTickShareValueFromContext
+      ) || []
   );
 
   useEffect(() => {
     setEditedUserTicks(
-      userShareValues?.map<EditedTickShareValue>((userShareValue) => ({
-        ...userShareValue,
-        tickDiff0: new BigNumber(0),
-        tickDiff1: new BigNumber(0),
-      })) || []
+      userPositionsContext?.map<EditedTickShareValue>(
+        getTickShareValueFromContext
+      ) || []
     );
-  }, [userShareValues]);
+  }, [userPositionsContext, getTickShareValueFromContext]);
 
   const diffTokenA = useMemo(
     () =>
