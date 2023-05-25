@@ -9,6 +9,7 @@ import stkLogo from '../../../assets/tokens/STK.svg';
 const {
   REACT_APP__CHAIN_NAME = '[chain_name]',
   REACT_APP__CHAIN_ID = '[chain_id]',
+  REACT_APP__IS_MAINNET = 'mainnet',
 } = process.env;
 
 interface AddressableToken extends Token {
@@ -77,6 +78,59 @@ const dualityStakeToken: Token = {
   chain: dualityChain,
 };
 
+const testnetTokens = REACT_APP__IS_MAINNET === 'testnet' && [
+  dualityMainToken,
+  dualityStakeToken,
+  // add a copy of some tokens onto the Duality chain for development
+  ...assets.flatMap(({ chain_name, assets }) => {
+    const dualityTestAssetsAddressMap: { [key: string]: string } = {
+      'cosmoshub:ATOM': 'tokenA',
+      'ethereum:USDC': 'tokenB',
+      'ethereum:ETH': 'tokenC',
+      'osmosis:OSMO': 'tokenD',
+      'juno:JUNO': 'tokenE',
+      'stride:STRD': 'tokenF',
+      'stargaze:STARS': 'tokenG',
+      'crescent:CRE': 'tokenH',
+      'chihuahua:HUAHUA': 'tokenI',
+    };
+
+    return assets.flatMap((asset) => {
+      const address =
+        dualityTestAssetsAddressMap[`${chain_name}:${asset.symbol}`];
+      if (address) {
+        const base = asset.base;
+        return [
+          {
+            chain: dualityChain,
+            ...asset,
+            // replace base address with dev token name
+            address,
+            base: address,
+            denom_units: asset.denom_units.map((unit) => {
+              // replace base unit with dev token name
+              if (unit.denom === base) {
+                return {
+                  ...unit,
+                  denom: address,
+                };
+              }
+              // make test tokens look more expensive in testing
+              else {
+                return {
+                  ...unit,
+                  exponent: 21,
+                };
+              }
+            }),
+          },
+        ];
+      }
+      return [];
+    });
+  }),
+];
+
 // transform AssetList into TokenList
 // for easier filtering/ordering by token attributes
 function getTokens(condition: (chain: Chain) => boolean) {
@@ -94,8 +148,8 @@ function getTokens(condition: (chain: Chain) => boolean) {
           ? result.concat(knownAssets.map((asset) => ({ ...asset, chain })))
           : result;
       }, [])
-      // add Duality chain tokens
-      .concat([dualityMainToken, dualityStakeToken])
+      // add testnet Duality chain tokens
+      .concat(testnetTokens || [])
   );
 }
 
@@ -132,10 +186,10 @@ export function useMainnetTokens(sortFunction = defaultSort) {
   );
 }
 
-const dualityTokens = (chain: Chain) => chain?.chain_id === 'duality';
+const dualityTokensFilter = (chain: Chain) => chain?.chain_id === 'duality';
 export function useDualityTokens(sortFunction = defaultSort) {
   tokenListCache['dualityTokens'] =
-    tokenListCache['dualityTokens'] || getTokens(dualityTokens);
+    tokenListCache['dualityTokens'] || getTokens(dualityTokensFilter);
   return useMemo(
     () => tokenListCache['dualityTokens'].slice().sort(sortFunction).reverse(),
     [sortFunction]
