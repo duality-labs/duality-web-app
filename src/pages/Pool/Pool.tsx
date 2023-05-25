@@ -1064,7 +1064,7 @@ function Pair({
             );
             return (
               <Fragment
-                key={`${userTick.share.tickIndex}-${userTick.share.feeIndex}`}
+                key={`${userTick.share.tickIndex}-${userTick.share.fee}`}
               >
                 {depositA}
                 {depositB}
@@ -1203,7 +1203,7 @@ function Pair({
                       setSignificantDecimals={setSignificantDecimals}
                       userTickSelected={userTickSelected}
                       setUserTickSelected={setUserTickSelected}
-                      feeTier={feeType?.fee}
+                      fee={feeType?.fee}
                       userTicksBase={
                         editMode
                           ? editedUserTicks?.map(
@@ -1227,13 +1227,7 @@ function Pair({
                                   price: tickIndexToPrice(
                                     new BigNumber(share.tickIndex).negated()
                                   ),
-                                  fee: new BigNumber(
-                                    feeTypes.find(
-                                      (_, index) =>
-                                        index === Number(share.feeIndex)
-                                    )?.fee || 0
-                                  ),
-                                  feeIndex: Number(share.feeIndex),
+                                  fee: Number(share.fee),
                                   tokenA: invertedTokenOrder ? token1 : token0,
                                   tokenB: invertedTokenOrder ? token0 : token1,
                                 };
@@ -1260,13 +1254,7 @@ function Pair({
                                   price: tickIndexToPrice(
                                     new BigNumber(share.tickIndex)
                                   ),
-                                  fee: new BigNumber(
-                                    feeTypes.find(
-                                      (_, index) =>
-                                        index === Number(share.feeIndex)
-                                    )?.fee || 0
-                                  ),
-                                  feeIndex: Number(share.feeIndex),
+                                  fee: Number(share.fee),
                                   tokenA: invertedTokenOrder ? token1 : token0,
                                   tokenB: invertedTokenOrder ? token0 : token1,
                                 };
@@ -1594,8 +1582,7 @@ function Pair({
                                             return ticks.map((tick) => {
                                               return tick.share.tickIndex ===
                                                 share.tickIndex &&
-                                                tick.share.feeIndex ===
-                                                  share.feeIndex
+                                                tick.share.fee === share.fee
                                                 ? {
                                                     ...tick,
                                                     tickDiff0:
@@ -1621,8 +1608,7 @@ function Pair({
                                           return ticks.map((tick) => {
                                             return tick.share.tickIndex ===
                                               share.tickIndex &&
-                                              tick.share.feeIndex ===
-                                                share.feeIndex
+                                              tick.share.fee === share.fee
                                               ? {
                                                   ...tick,
                                                   tickDiff0: new BigNumber(0),
