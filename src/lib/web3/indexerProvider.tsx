@@ -156,6 +156,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                     // add tokenized share if everything is fine
                     if (address) {
                       const tokenizedShare = {
+                        // todo: remove address from here
                         address,
                         pairId: getPairID(token0, token1),
                         tickIndex,

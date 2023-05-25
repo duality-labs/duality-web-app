@@ -52,14 +52,11 @@ import './Pool.scss';
 import TokenPairLogos from '../../components/TokenPairLogos';
 import RadioInput from '../../components/RadioInput';
 import {
-  EditedTickShareValue,
+  EditedPosition,
   useEditLiquidity,
 } from '../MyLiquidity/useEditLiquidity';
-import { getPairID, guessInvertedOrder } from '../../lib/web3/utils/pairs';
-import {
-  UserPositionDepositContext,
-  useUserPositionsContext,
-} from '../../lib/web3/hooks/useUserShares';
+import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
+import { useUserPositionsContext } from '../../lib/web3/hooks/useUserShares';
 
 // the default resolution for a number in 18 decimal places
 const {
@@ -792,55 +789,24 @@ function Pair({
 
   const invertedTokenOrder = guessInvertedOrder(tokenA.address, tokenB.address);
 
-  const getTickShareValueFromContext = useCallback(
-    ({
-      deposit,
-      token0,
-      token1,
-      token0Context,
-      token1Context,
-    }: UserPositionDepositContext): EditedTickShareValue => {
-      return {
-        share: {
-          address: '[web3address]',
-          pairId: getPairID(deposit.pairID.token0, deposit.pairID.token1),
-          tickIndex: deposit.centerTickIndex.toNumber().toFixed(0),
-          fee: deposit.fee.toNumber().toFixed(0),
-          sharesOwned: deposit.sharesOwned,
-        },
-        token0,
-        token1,
-        tickIndex0: deposit.lowerTickIndex.toNumber(),
-        tickIndex1: deposit.upperTickIndex.toNumber(),
-        userReserves0: token0Context?.userReserves
-          ? token0Context.userReserves
-          : new BigNumber(0),
-        userReserves1: token1Context?.userReserves
-          ? token1Context.userReserves
-          : new BigNumber(0),
+  const [editedUserTicks, setEditedUserTicks] = useState<Array<EditedPosition>>(
+    () =>
+      userPositionsContext?.map<EditedPosition>((userPosition) => ({
+        ...userPosition,
         tickDiff0: new BigNumber(0),
         tickDiff1: new BigNumber(0),
-      };
-    },
-    []
-  );
-
-  const [editedUserTicks, setEditedUserTicks] = useState<
-    Array<EditedTickShareValue>
-  >(
-    () =>
-      userPositionsContext?.map<EditedTickShareValue>(
-        getTickShareValueFromContext
-      ) || []
+      })) || []
   );
 
   useEffect(() => {
     setEditedUserTicks(
-      userPositionsContext?.map<EditedTickShareValue>(
-        getTickShareValueFromContext
-      ) || []
+      userPositionsContext?.map<EditedPosition>((userPosition) => ({
+        ...userPosition,
+        tickDiff0: new BigNumber(0),
+        tickDiff1: new BigNumber(0),
+      })) || []
     );
-  }, [userPositionsContext, getTickShareValueFromContext]);
+  }, [userPositionsContext]);
 
   const diffTokenA = useMemo(
     () =>
@@ -1002,7 +968,7 @@ function Pair({
               : [userTick.token0, userTick.token1];
             const price = formatPrice(
               tickIndexToPrice(
-                new BigNumber(userTick.share.tickIndex)
+                new BigNumber(userTick.deposit.centerTickIndex.toNumber())
               ).toNumber()
             );
             const withdrawA = diffA.isLessThan(0) && (
@@ -1047,7 +1013,7 @@ function Pair({
             );
             return (
               <Fragment
-                key={`${userTick.share.tickIndex}-${userTick.share.fee}`}
+                key={`${userTick.deposit.centerTickIndex}-${userTick.deposit.fee}`}
               >
                 {depositA}
                 {depositB}
@@ -1193,24 +1159,30 @@ function Pair({
                               ({
                                 token0,
                                 token1,
-                                share,
-                                userReserves0,
-                                userReserves1,
+                                deposit,
+                                token0Context,
+                                token1Context,
                               }) => {
                                 return {
-                                  reserveA: invertedTokenOrder
-                                    ? userReserves1
-                                    : userReserves0,
-                                  reserveB: invertedTokenOrder
-                                    ? userReserves0
-                                    : userReserves1,
+                                  reserveA: new BigNumber(0).plus(
+                                    invertedTokenOrder
+                                      ? token1Context?.userReserves || 0
+                                      : token0Context?.userReserves || 0
+                                  ),
+                                  reserveB: new BigNumber(0).plus(
+                                    invertedTokenOrder
+                                      ? token0Context?.userReserves || 0
+                                      : token1Context?.userReserves || 0
+                                  ),
                                   tickIndex:
                                     (invertedTokenOrder ? -1 : 1) *
-                                    Number(share.tickIndex),
+                                    deposit.centerTickIndex.toNumber(),
                                   price: tickIndexToPrice(
-                                    new BigNumber(share.tickIndex).negated()
+                                    new BigNumber(
+                                      deposit.centerTickIndex.toNumber()
+                                    ).negated()
                                   ),
-                                  fee: Number(share.fee),
+                                  fee: deposit.fee.toNumber(),
                                   tokenA: invertedTokenOrder ? token1 : token0,
                                   tokenB: invertedTokenOrder ? token0 : token1,
                                 };
@@ -1226,18 +1198,24 @@ function Pair({
                                 token1,
                                 tickDiff0,
                                 tickDiff1,
-                                share,
-                                userReserves0,
-                                userReserves1,
+                                deposit,
+                                token0Context,
+                                token1Context,
                               }) => {
                                 return {
-                                  reserveA: userReserves0.plus(tickDiff0),
-                                  reserveB: userReserves1.plus(tickDiff1),
-                                  tickIndex: Number(share.tickIndex),
-                                  price: tickIndexToPrice(
-                                    new BigNumber(share.tickIndex)
+                                  reserveA: tickDiff0.plus(
+                                    token0Context?.userReserves || 0
                                   ),
-                                  fee: Number(share.fee),
+                                  reserveB: tickDiff1.plus(
+                                    token1Context?.userReserves || 0
+                                  ),
+                                  tickIndex: deposit.centerTickIndex.toNumber(),
+                                  price: tickIndexToPrice(
+                                    new BigNumber(
+                                      deposit.centerTickIndex.toNumber()
+                                    ).negated()
+                                  ),
+                                  fee: deposit.fee.toNumber(),
                                   tokenA: invertedTokenOrder ? token1 : token0,
                                   tokenB: invertedTokenOrder ? token0 : token1,
                                 };
@@ -1479,32 +1457,41 @@ function Pair({
                         // sort by price
                         .sort((a, b) => {
                           return !invertedTokenOrder
-                            ? Number(b.share.tickIndex) -
-                                Number(a.share.tickIndex)
-                            : Number(a.share.tickIndex) -
-                                Number(b.share.tickIndex);
+                            ? b.deposit.centerTickIndex.toNumber() -
+                                a.deposit.centerTickIndex.toNumber()
+                            : a.deposit.centerTickIndex.toNumber() -
+                                b.deposit.centerTickIndex.toNumber();
                         })
                         .map(
                           (
                             {
-                              share,
                               tickDiff0,
                               tickDiff1,
-                              userReserves0,
-                              userReserves1,
+                              deposit,
+                              token0Context,
+                              token1Context,
                             },
                             index
                           ) => {
                             const reserveA = !invertedTokenOrder
-                              ? userReserves0.plus(tickDiff0)
-                              : userReserves1.plus(tickDiff1);
+                              ? tickDiff0.plus(token0Context?.userReserves || 0)
+                              : tickDiff1.plus(
+                                  token1Context?.userReserves || 0
+                                );
                             const reserveB = !invertedTokenOrder
-                              ? userReserves1.plus(tickDiff1)
-                              : userReserves0.plus(tickDiff0);
+                              ? tickDiff1.plus(token1Context?.userReserves || 0)
+                              : tickDiff0.plus(
+                                  token0Context?.userReserves || 0
+                                );
+
                             const price = tickIndexToPrice(
                               !invertedTokenOrder
-                                ? new BigNumber(share.tickIndex).negated()
-                                : new BigNumber(share.tickIndex)
+                                ? new BigNumber(
+                                    deposit.centerTickIndex.toNumber()
+                                  ).negated()
+                                : new BigNumber(
+                                    deposit.centerTickIndex.toNumber()
+                                  )
                             );
                             return price.isGreaterThanOrEqualTo(rangeMin) &&
                               price.isLessThanOrEqualTo(rangeMax) ? (
@@ -1561,15 +1548,18 @@ function Pair({
                                         onClick={() => {
                                           setEditedUserTicks((ticks) => {
                                             return ticks.map((tick) => {
-                                              return tick.share.tickIndex ===
-                                                share.tickIndex &&
-                                                tick.share.fee === share.fee
+                                              return tick.deposit.centerTickIndex.toNumber() ===
+                                                deposit.centerTickIndex.toNumber() &&
+                                                tick.deposit.fee.toNumber() ===
+                                                  deposit.fee.toNumber()
                                                 ? {
                                                     ...tick,
                                                     tickDiff0:
-                                                      tick.userReserves0.negated(),
+                                                      tick.token0Context?.userReserves.negated() ||
+                                                      new BigNumber(0),
                                                     tickDiff1:
-                                                      tick.userReserves1.negated(),
+                                                      tick.token1Context?.userReserves.negated() ||
+                                                      new BigNumber(0),
                                                   }
                                                 : tick;
                                             });
@@ -1587,9 +1577,10 @@ function Pair({
                                       onClick={() => {
                                         setEditedUserTicks((ticks) => {
                                           return ticks.map((tick) => {
-                                            return tick.share.tickIndex ===
-                                              share.tickIndex &&
-                                              tick.share.fee === share.fee
+                                            return tick.deposit.centerTickIndex.toNumber() ===
+                                              deposit.centerTickIndex.toNumber() &&
+                                              tick.deposit.fee.toNumber() ===
+                                                deposit.fee.toNumber()
                                               ? {
                                                   ...tick,
                                                   tickDiff0: new BigNumber(0),
