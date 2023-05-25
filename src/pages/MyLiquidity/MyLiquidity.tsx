@@ -1,14 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
-import { createRpcQueryHooks } from '@duality-labs/dualityjs';
-import { QueryGetUserPositionsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import { useBankBalances } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import useShareValueMap, { ShareValueMap } from './useShareValueMap';
+import { useUserPositionsShareValue } from '../../lib/web3/hooks/useUserShareValues';
 
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 
@@ -21,11 +20,6 @@ import TableCard from '../../components/cards/TableCard';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
-import { useRpc } from '../../lib/web3/rpcQueryClient';
-import {
-  UserPositionDepositContext,
-  useUserPositionsContext,
-} from '../../lib/web3/hooks/useUserShares';
 
 import './MyLiquidity.scss';
 
@@ -113,74 +107,9 @@ function ShareValuesPage({
 
   const { data: allUserTokenPrices } = useSimplePrice(allUserTokensList);
 
-  const allUserTokenPricesMap = useMemo(() => {
-    return allUserTokensList.reduce<{
-      [tokenAddress: string]: number | undefined;
-    }>((acc, token, index) => {
-      if (token.address) {
-        acc[token.address] = allUserTokenPrices[index];
-      }
-      return acc;
-    }, {});
-  }, [allUserTokensList, allUserTokenPrices]);
-
-  const { address } = useWeb3();
-  const rpc = useRpc();
-  const queryHooks = createRpcQueryHooks({ rpc });
-
-  const { useGetUserPositions } = queryHooks.dualitylabs.duality.dex;
-
-  const { data: { UserPositions: userPositions } = {} } =
-    useGetUserPositions<QueryGetUserPositionsResponseSDKType>({
-      request: { address: address || '' },
-    });
-  const poolDeposits = userPositions?.PoolDeposits;
-
-  const allUserPositionsContext = useUserPositionsContext();
-
-  interface ShareValueDepositContext extends UserPositionDepositContext {
-    value?: BigNumber;
-  }
   const tokenList = useTokens();
 
-  // compute the value of all the user's shares
-  const allUserSharesValues = useMemo(() => {
-    return (poolDeposits || []).flatMap<ShareValueDepositContext>((deposit) => {
-      return allUserPositionsContext.map(({ deposit, context }) => {
-        const {
-          reserves,
-          sharesOwned,
-          totalShares,
-          token: tokenAddress,
-        } = context;
-        // what is the price per token?
-        const token = tokenList.find(({ address }) => address === tokenAddress);
-        const price = allUserTokenPricesMap[tokenAddress];
-        if (token && price && !isNaN(price)) {
-          // how many tokens does the user have?
-          const reserve = reserves
-            .multipliedBy(sharesOwned)
-            .dividedBy(totalShares);
-          const amount = getAmountInDenom(
-            token,
-            reserve,
-            token.address,
-            token.display
-          );
-          // how much are those tokens worth?
-          const value = new BigNumber(amount || 0).multipliedBy(price);
-          return { deposit, context, value };
-        }
-        return { deposit, context };
-      });
-    });
-  }, [tokenList, poolDeposits, allUserPositionsContext, allUserTokenPricesMap]);
-
-  const allUserSharesValue = useMemo(() => {
-    return allUserSharesValues.reduce<BigNumber>((acc, { value }) => {
-      return value ? acc.plus(value) : acc;
-    }, new BigNumber(0));
-  }, [allUserSharesValues]);
+  const allUserSharesValue = useUserPositionsShareValue();
 
   const allUserBankAssets = useMemo<Array<TokenCoin>>(() => {
     return (balances || [])
