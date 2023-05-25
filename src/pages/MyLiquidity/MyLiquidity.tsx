@@ -15,22 +15,17 @@ import useTokens from '../../lib/web3/hooks/useTokens';
 import { formatAmount } from '../../lib/utils/number';
 
 import './MyLiquidity.scss';
-import {
-  Token,
-  TokenAddress,
-  getAmountInDenom,
-} from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import TableCard from '../../components/cards/TableCard';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import { createRpcQueryHooks } from '@duality-labs/dualityjs';
 import { QueryGetUserPositionsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
-import { UserPositionsSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/user_positions';
 import { useRpc } from '../../lib/web3/rpcQueryClient';
 import {
-  useUserPositionsTotalReserves,
-  useUserPositionsTotalShares,
+  UserPositionDepositContext,
+  useUserPositionsContext,
 } from '../../lib/web3/hooks/useUserShares';
 
 function matchTokenDenom(denom: string) {
@@ -140,20 +135,9 @@ function ShareValuesPage({
     });
   const poolDeposits = userPositions?.PoolDeposits;
 
-  const allUserPositionTotalShares = useUserPositionsTotalShares();
+  const allUserPositionsContext = useUserPositionsContext();
 
-  const allUserPositionTotalReserves = useUserPositionsTotalReserves();
-
-  interface ShareValueContext {
-    sharesOwned: BigNumber;
-    totalShares: BigNumber;
-    token: TokenAddress;
-    tickIndex: BigNumber;
-    reserves: BigNumber;
-  }
-  interface ShareValueDepositContext {
-    deposit: UserPositionsSDKType['PoolDeposits'][0];
-    context: ShareValueContext;
+  interface ShareValueDepositContext extends UserPositionDepositContext {
     value?: BigNumber;
   }
   const tokenList = useTokens();
@@ -161,82 +145,7 @@ function ShareValuesPage({
   // compute the value of all the user's shares
   const allUserSharesValues = useMemo(() => {
     return (poolDeposits || []).flatMap<ShareValueDepositContext>((deposit) => {
-      const totalSharesResponse = allUserPositionTotalShares.find(
-        ({ data }) => {
-          return !!data;
-        }
-      );
-
-      // find the upper and lower reserves that match this position
-      const lowerReserveResponse = allUserPositionTotalReserves.find(
-        ({ data }) => {
-          return (
-            data?.poolReserves?.tokenIn === deposit.pairID?.token0 &&
-            data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
-            data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
-            data?.poolReserves?.tickIndex.toString() ===
-              deposit.lowerTickIndex.toString() &&
-            data?.poolReserves?.fee.toString() === deposit.fee.toString()
-          );
-        }
-      );
-      const upperReserveResponse = allUserPositionTotalReserves.find(
-        ({ data }) => {
-          return (
-            data?.poolReserves?.tokenIn === deposit.pairID?.token1 &&
-            data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
-            data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
-            data?.poolReserves?.tickIndex.toString() ===
-              deposit.upperTickIndex.toString() &&
-            data?.poolReserves?.fee.toString() === deposit.fee.toString()
-          );
-        }
-      );
-      // collect context of both side of the liquidity
-      return [
-        ...(totalSharesResponse && lowerReserveResponse
-          ? [
-              {
-                deposit,
-                context: {
-                  sharesOwned: new BigNumber(deposit.sharesOwned),
-                  totalShares: new BigNumber(
-                    totalSharesResponse?.data?.amount?.amount ?? 0
-                  ),
-                  token: lowerReserveResponse.data?.poolReserves?.tokenIn ?? '',
-                  tickIndex: new BigNumber(
-                    lowerReserveResponse.data?.poolReserves?.tickIndex.toString() ??
-                      0
-                  ),
-                  reserves: new BigNumber(
-                    lowerReserveResponse.data?.poolReserves?.reserves ?? 0
-                  ),
-                },
-              },
-            ]
-          : []),
-        ...(totalSharesResponse && upperReserveResponse
-          ? [
-              {
-                deposit,
-                context: {
-                  sharesOwned: new BigNumber(deposit.sharesOwned),
-                  totalShares: new BigNumber(
-                    totalSharesResponse?.data?.amount?.amount ?? 0
-                  ),
-                  token: upperReserveResponse.data?.poolReserves?.tokenIn ?? '',
-                  tickIndex: new BigNumber(
-                    upperReserveResponse.data?.poolReserves?.tickIndex.toString() ??
-                      0
-                  ),
-                  reserves: new BigNumber(
-                    upperReserveResponse.data?.poolReserves?.reserves ?? 0
-                  ),
-                },
-              },
-            ]
-          : []),
-      ].map(({ deposit, context }) => {
+      return allUserPositionsContext.map(({ deposit, context }) => {
         const {
           reserves,
           sharesOwned,
@@ -264,13 +173,7 @@ function ShareValuesPage({
         return { deposit, context };
       });
     });
-  }, [
-    tokenList,
-    poolDeposits,
-    allUserPositionTotalShares,
-    allUserPositionTotalReserves,
-    allUserTokenPricesMap,
-  ]);
+  }, [tokenList, poolDeposits, allUserPositionsContext, allUserTokenPricesMap]);
 
   const allUserSharesValue = useMemo(() => {
     return allUserSharesValues.reduce<BigNumber>((acc, { value }) => {
