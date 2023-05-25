@@ -1,5 +1,10 @@
 import { TickInfo } from './ticks';
-import { TokenAddress } from './tokens';
+import {
+  TokenAddress,
+  TokenAddressPair,
+  TokenPair,
+  getTokenAddressPair,
+} from './tokens';
 
 export interface PairInfo {
   token0: string;
@@ -12,6 +17,8 @@ export interface PairMap {
   [pairID: string]: PairInfo;
 }
 
+export type PairIdString = string;
+
 /**
  * Gets the pair id for a sorted pair of tokens
  * @param token0 address of token 0
@@ -21,8 +28,14 @@ export interface PairMap {
 export function getPairID(
   token0: TokenAddress = '',
   token1: TokenAddress = ''
-) {
+): PairIdString {
   return token0 && token1 ? `${token0}<>${token1}` : '';
+}
+export function getTokenAddressPairID(
+  tokenPair: TokenPair | TokenAddressPair
+): PairIdString {
+  const tokenAddressPair = getTokenAddressPair(tokenPair);
+  return getPairID(...tokenAddressPair);
 }
 
 /**
