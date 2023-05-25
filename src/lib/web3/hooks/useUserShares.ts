@@ -139,11 +139,12 @@ export function useUserPositionsTotalReserves(
 }
 
 interface ShareValueContext {
-  sharesOwned: BigNumber;
-  totalShares: BigNumber;
+  userShares: BigNumber;
+  dexTotalShares: BigNumber;
   token: TokenAddress;
   tickIndex: BigNumber;
-  reserves: BigNumber;
+  dexTotalReserves: BigNumber;
+  userReserves: BigNumber;
 }
 export interface UserPositionDepositContext {
   deposit: UserPositionsSDKType['PoolDeposits'][0];
@@ -161,86 +162,105 @@ export function useUserPositionsContext(
     useUserPositionsTotalReserves(poolDepositFilter);
 
   return useMemo<UserPositionDepositContext[]>(() => {
-    return (selectedPoolDeposits || []).flatMap<UserPositionDepositContext>(
-      (deposit) => {
-        const totalSharesResponse = userPositionsTotalShares.find(
-          ({ data }) => {
-            return !!data;
-          }
-        );
+    const userPositionsContext = (
+      selectedPoolDeposits || []
+    ).flatMap<UserPositionDepositContext>((deposit) => {
+      const totalSharesResponse = userPositionsTotalShares.find(({ data }) => {
+        return !!data;
+      });
 
-        // find the upper and lower reserves that match this position
-        const lowerReserveResponse = userPositionsTotalReserves.find(
-          ({ data }) => {
-            return (
-              data?.poolReserves?.tokenIn === deposit.pairID?.token0 &&
-              data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
-              data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
-              data?.poolReserves?.tickIndex.toString() ===
-                deposit.lowerTickIndex.toString() &&
-              data?.poolReserves?.fee.toString() === deposit.fee.toString()
-            );
-          }
-        );
-        const upperReserveResponse = userPositionsTotalReserves.find(
-          ({ data }) => {
-            return (
-              data?.poolReserves?.tokenIn === deposit.pairID?.token1 &&
-              data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
-              data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
-              data?.poolReserves?.tickIndex.toString() ===
-                deposit.upperTickIndex.toString() &&
-              data?.poolReserves?.fee.toString() === deposit.fee.toString()
-            );
-          }
-        );
-        // collect context of both side of the liquidity
-        return [
-          ...(totalSharesResponse && lowerReserveResponse
-            ? [
-                {
-                  deposit,
-                  context: {
-                    sharesOwned: new BigNumber(deposit.sharesOwned),
-                    totalShares: new BigNumber(
-                      totalSharesResponse?.data?.amount?.amount ?? 0
-                    ),
-                    token:
-                      lowerReserveResponse.data?.poolReserves?.tokenIn ?? '',
-                    tickIndex: new BigNumber(
-                      lowerReserveResponse.data?.poolReserves?.tickIndex.toString() ??
-                        0
-                    ),
-                    reserves: new BigNumber(
-                      lowerReserveResponse.data?.poolReserves?.reserves ?? 0
-                    ),
-                  },
+      // find the upper and lower reserves that match this position
+      const lowerReserveResponse = userPositionsTotalReserves.find(
+        ({ data }) => {
+          return (
+            data?.poolReserves?.tokenIn === deposit.pairID?.token0 &&
+            data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
+            data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
+            data?.poolReserves?.tickIndex.toString() ===
+              deposit.lowerTickIndex.toString() &&
+            data?.poolReserves?.fee.toString() === deposit.fee.toString()
+          );
+        }
+      );
+      const upperReserveResponse = userPositionsTotalReserves.find(
+        ({ data }) => {
+          return (
+            data?.poolReserves?.tokenIn === deposit.pairID?.token1 &&
+            data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
+            data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
+            data?.poolReserves?.tickIndex.toString() ===
+              deposit.upperTickIndex.toString() &&
+            data?.poolReserves?.fee.toString() === deposit.fee.toString()
+          );
+        }
+      );
+      // collect context of both side of the liquidity
+      return [
+        ...(totalSharesResponse && lowerReserveResponse
+          ? [
+              {
+                deposit,
+                context: {
+                  userShares: new BigNumber(deposit.sharesOwned),
+                  dexTotalShares: new BigNumber(
+                    totalSharesResponse?.data?.amount?.amount ?? 0
+                  ),
+                  token: lowerReserveResponse.data?.poolReserves?.tokenIn ?? '',
+                  tickIndex: new BigNumber(
+                    lowerReserveResponse.data?.poolReserves?.tickIndex.toString() ??
+                      0
+                  ),
+                  userReserves: new BigNumber(0),
+                  dexTotalReserves: new BigNumber(
+                    lowerReserveResponse.data?.poolReserves?.reserves ?? 0
+                  ),
                 },
-              ]
-            : []),
-          ...(totalSharesResponse && upperReserveResponse
-            ? [
-                {
-                  deposit,
-                  context: {
-                    sharesOwned: new BigNumber(deposit.sharesOwned),
-                    totalShares: new BigNumber(
-                      totalSharesResponse?.data?.amount?.amount ?? 0
-                    ),
-                    token:
-                      upperReserveResponse.data?.poolReserves?.tokenIn ?? '',
-                    tickIndex: new BigNumber(
-                      upperReserveResponse.data?.poolReserves?.tickIndex.toString() ??
-                        0
-                    ),
-                    reserves: new BigNumber(
-                      upperReserveResponse.data?.poolReserves?.reserves ?? 0
-                    ),
-                  },
+              } as UserPositionDepositContext,
+            ]
+          : []),
+        ...(totalSharesResponse && upperReserveResponse
+          ? [
+              {
+                deposit,
+                context: {
+                  userShares: new BigNumber(deposit.sharesOwned),
+                  dexTotalShares: new BigNumber(
+                    totalSharesResponse?.data?.amount?.amount ?? 0
+                  ),
+                  token: upperReserveResponse.data?.poolReserves?.tokenIn ?? '',
+                  tickIndex: new BigNumber(
+                    upperReserveResponse.data?.poolReserves?.tickIndex.toString() ??
+                      0
+                  ),
+                  userReserves: new BigNumber(0),
+                  dexTotalReserves: new BigNumber(
+                    upperReserveResponse.data?.poolReserves?.reserves ?? 0
+                  ),
                 },
-              ]
-            : []),
-        ];
+              } as UserPositionDepositContext,
+            ]
+          : []),
+      ];
+    });
+
+    // calculate the user's reserves
+    return userPositionsContext.map<UserPositionDepositContext>(
+      (positionContext: UserPositionDepositContext) => {
+        const { userShares, dexTotalShares, dexTotalReserves } =
+          positionContext.context;
+        // user owns the fraction of reserves
+        // proportional to their fraction of shares
+        const userReserves = dexTotalReserves
+          .multipliedBy(userShares)
+          .dividedBy(dexTotalShares);
+        // append correct value into the output
+        return {
+          ...positionContext,
+          context: {
+            ...positionContext.context,
+            userReserves,
+          },
+        };
       }
     );
   }, [

@@ -62,12 +62,7 @@ export function useUserPositionsShareValues(
   return useMemo<ValuedUserPositionDepositContext[]>(() => {
     return userPositionDepositContext.map<ValuedUserPositionDepositContext>(
       ({ deposit, context }) => {
-        const {
-          reserves,
-          sharesOwned,
-          totalShares,
-          token: tokenAddress,
-        } = context;
+        const { token: tokenAddress, userReserves } = context;
         // what is the price per token?
         const token = selectedTokens.find(
           ({ address }) => address === tokenAddress
@@ -75,12 +70,9 @@ export function useUserPositionsShareValues(
         const price = selectedTokensPriceMap[tokenAddress];
         if (token && price && !isNaN(price)) {
           // how many tokens does the user have?
-          const reserve = reserves
-            .multipliedBy(sharesOwned)
-            .dividedBy(totalShares);
           const amount = getAmountInDenom(
             token,
-            reserve,
+            userReserves,
             token.address,
             token.display
           );
