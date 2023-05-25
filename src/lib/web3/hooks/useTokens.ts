@@ -86,8 +86,12 @@ function getTokens(condition: (chain: Chain) => boolean) {
       .reduce<TokenList>((result, { chain_name, assets }) => {
         // add each asset with the parent chain details
         const chain = chains.find((chain) => chain.chain_name === chain_name);
+        // only show assets that have a known address
+        const knownAssets = assets.filter(
+          (asset): asset is Token => !!asset.address
+        );
         return chain && condition(chain)
-          ? result.concat(assets.map((asset) => ({ ...asset, chain })))
+          ? result.concat(knownAssets.map((asset) => ({ ...asset, chain })))
           : result;
       }, [])
       // add Duality chain tokens
