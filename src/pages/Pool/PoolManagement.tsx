@@ -8,11 +8,9 @@ import {
   useMemo,
   Fragment,
 } from 'react';
-import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowRightArrowLeft,
   faMagnifyingGlassPlus,
   faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
@@ -48,7 +46,6 @@ import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 import './Pool.scss';
-import TokenPairLogos from '../../components/TokenPairLogos';
 import RadioInput from '../../components/RadioInput';
 import {
   EditedPosition,
@@ -57,6 +54,7 @@ import {
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { useUserPositionsContext } from '../../lib/web3/hooks/useUserShares';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
+import PoolLayout from './PoolLayout';
 
 // the default resolution for a number in 18 decimal places
 const {
@@ -101,7 +99,7 @@ const restrictPriceRangeValues = (
   return '1';
 };
 
-export default function PoolPage({
+export default function PoolManagement({
   tokenA,
   tokenB,
   setTokenA,
@@ -988,48 +986,18 @@ export default function PoolPage({
   );
 
   return (
-    <div
-      className={[isValidatingDeposit && 'disabled'].filter(Boolean).join(' ')}
+    <PoolLayout
+      tokenA={tokenA}
+      tokenB={tokenB}
+      swap={swapAll}
+      disabled={!!isValidatingDeposit}
     >
-      <div className="pool-page">
+      <div>
         <div className="row gap-4">
           <div className="col flex gap-4">
             <div
               className={`chart-card col chart-type--${chartTypeSelected.toLowerCase()}`}
             >
-              <div className="chart-breadcrumbs row flow-wrap gap-3 mb-5">
-                <Link className="text-light-alt" to="/pools">
-                  Pools
-                </Link>
-                {'>'}
-                <span>
-                  {tokenA.symbol}/{tokenB.symbol}
-                </span>
-              </div>
-              <div className="chart-header row flow-wrap">
-                <div className="col">
-                  <div className="chart-header row my-4">
-                    <TokenPairLogos
-                      className="h3"
-                      tokenA={tokenA}
-                      tokenB={tokenB}
-                    />
-                    <h2 className="h3">
-                      {tokenA.symbol} {tokenB.symbol} Pool
-                    </h2>
-                    <button
-                      type="button"
-                      className="ml-auto icon-button"
-                      onClick={swapAll}
-                    >
-                      <FontAwesomeIcon
-                        icon={faArrowRightArrowLeft}
-                      ></FontAwesomeIcon>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <hr className="mt-3 mb-4" />
               <div className="flex col row-lg gapx-lg">
                 <div className="flex col col--right">
                   <div className="chart-header row flow-wrap my-4">
@@ -1608,8 +1576,7 @@ export default function PoolPage({
           </div>
         </div>
       </div>
-      <div className="spacer"></div>
-    </div>
+    </PoolLayout>
   );
 }
 

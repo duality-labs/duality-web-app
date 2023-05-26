@@ -5,7 +5,7 @@ import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import useTokens from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 
-import PoolPage from './Pool';
+import PoolManagement from './PoolManagement';
 
 const defaultTokenA = 'TKN';
 const defaultTokenB = 'STK';
@@ -72,7 +72,17 @@ function Pools() {
     'all'
   );
 
-  if (!tokenA || !tokenB) {
+  if (tokenA && tokenB) {
+    return (
+      <PoolManagement
+        tokenA={tokenA}
+        tokenB={tokenB}
+        setTokenA={setTokenAPath}
+        setTokenB={setTokenBPath}
+        setTokens={setTokensPath}
+      />
+    );
+  } else {
     return (
       <div className="col gap-5 mt-5">
         <div>
@@ -94,13 +104,4 @@ function Pools() {
       </div>
     );
   }
-  return (
-    <PoolPage
-      tokenA={tokenA}
-      tokenB={tokenB}
-      setTokenA={setTokenAPath}
-      setTokenB={setTokenBPath}
-      setTokens={setTokensPath}
-    />
-  );
 }
