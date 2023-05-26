@@ -74,7 +74,7 @@ const priceMax = tickIndexToPrice(new BigNumber(priceMaxIndex)).toNumber();
 const priceRangeLimits: [number, number] = [priceMin, priceMax];
 const defaultFee = '0.30%';
 const defaultLiquidityShape =
-  liquidityShapes.find(({ value }) => value === 'flat') ?? liquidityShapes[0];
+  liquidityShapes.find(({ value }) => value === 'normal') ?? liquidityShapes[0];
 
 const defaultPrecision = '30';
 const defaultTokenA = 'TKN';
