@@ -118,11 +118,12 @@
     stroke: var(--error);
   }
   .pole-stick {
-    stroke-width: 8px;
+    stroke-width: 1px;
+    fill: url(#flag-pole-fade);
     stroke: hsla(165, 83%, 57%, 0.5);
   }
   .pole-flag {
-    fill: hsla(165, 83%, 57%, 0.5);
+    fill: hsla(165, 83%, 57%, 1);
   }
   .pole-flag-stripe {
     fill: transparent;
