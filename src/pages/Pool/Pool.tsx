@@ -76,7 +76,7 @@ const defaultFee = '0.30%';
 const defaultLiquidityShape =
   liquidityShapes.find(({ value }) => value === 'flat') ?? liquidityShapes[0];
 
-const defaultPrecision = '6';
+const defaultPrecision = '30';
 const defaultTokenA = 'TKN';
 const defaultTokenB = 'STK';
 
@@ -922,7 +922,7 @@ function Pair({
             min={
               rangeMin === rangeMax ? 1 : !isValueAZero && !isValueBZero ? 2 : 1
             }
-            max={rangeMin === rangeMax ? 1 : 10}
+            max={rangeMin === rangeMax ? 1 : 40}
             value={rangeMin === rangeMax ? '1' : precision}
             onChange={setPrecision}
             minSignificantDigits={1}
