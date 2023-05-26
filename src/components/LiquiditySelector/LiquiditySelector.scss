@@ -117,9 +117,16 @@
   .flag-joiner--price-warning {
     stroke: var(--error);
   }
-  .pole-stick {
+  .pole-stick-left {
     stroke-width: 1px;
-    fill: url(#flag-pole-fade);
+    fill: url(#flag-pole-fade-left);
+  }
+  .pole-stick-right {
+    stroke-width: 1px;
+    fill: url(#flag-pole-fade-right);
+  }
+  .pole-stick-edge {
+    stroke-width: 1px;
     stroke: hsla(165, 83%, 57%, 0.5);
   }
   .pole-flag {
