@@ -685,6 +685,14 @@ export default function LiquiditySelector({
             stopOpacity="0.1"
           />
         </linearGradient>
+        <linearGradient id="flag-pole-fade" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="15%" stopColor="hsla(165, 83%, 57%)" stopOpacity="1" />
+          <stop
+            offset="50%"
+            stopColor="hsla(165, 83%, 57%)"
+            stopOpacity="0.075"
+          />
+        </linearGradient>
       </defs>
       <g className="axis x-axis">
         <rect
@@ -1186,12 +1194,16 @@ function TicksArea({
           .filter(Boolean)
           .join(' ')}
       >
-        <line
-          className="line pole-stick"
-          x1={(plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
-          x2={(plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
-          y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
-          y2={plotY(new BigNumber(1)).toFixed(3)}
+        <rect
+          className="pole-stick"
+          x={(plotX(rangeMinIndex) - poleWidth).toFixed(3)}
+          width={poleWidth}
+          y={plotY(new BigNumber(1)).toFixed(3)}
+          height={(
+            plotY(new BigNumber(0)) -
+            plotY(new BigNumber(1)) +
+            8
+          ).toFixed(3)}
         />
         <rect
           className="pole-flag"
@@ -1287,12 +1299,16 @@ function TicksArea({
           .filter(Boolean)
           .join(' ')}
       >
-        <line
-          className="line pole-stick"
-          x1={(plotX(rangeMaxIndex) + poleWidth / 2).toFixed(3)}
-          x2={(plotX(rangeMaxIndex) + poleWidth / 2).toFixed(3)}
-          y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
-          y2={plotY(new BigNumber(1)).toFixed(3)}
+        <rect
+          className="pole-stick"
+          x={plotX(rangeMaxIndex).toFixed(3)}
+          width={poleWidth}
+          y={plotY(new BigNumber(1)).toFixed(3)}
+          height={(
+            plotY(new BigNumber(0)) -
+            plotY(new BigNumber(1)) +
+            8
+          ).toFixed(3)}
         />
         <rect
           className="pole-flag"
