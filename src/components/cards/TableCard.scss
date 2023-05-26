@@ -1,6 +1,10 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
 @use '../../styles/font/size.scss' as font-size;
 
+.page-card.table-card {
+  overflow: hidden;
+}
+
 .table-card {
   display: flex;
   background-color: var(--page-card);
