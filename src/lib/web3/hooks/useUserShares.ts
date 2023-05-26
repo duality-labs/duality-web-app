@@ -88,7 +88,7 @@ export function useUserPositionsTotalShares(
   const lcdClient = useLcdClient();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter) || [];
 
-  return useQueries({
+  const { data } = useQueries({
     queries: [
       ...selectedPoolDeposits.flatMap(
         ({ pairID: { token0, token1 } = {}, centerTickIndex, fee }) => {
@@ -107,7 +107,15 @@ export function useUserPositionsTotalShares(
         }
       ),
     ],
+    combine(results) {
+      return {
+        data: results.map((result) => result.data),
+        pending: results.some((result) => result.isPending),
+      };
+    },
   });
+
+  return data;
 }
 
 // select a single token pair of user shares
@@ -135,7 +143,7 @@ export function useUserPositionsTotalReserves(
   const lcdClient = useLcdClient();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter) || [];
 
-  return useQueries({
+  const { data } = useQueries({
     queries: [
       ...selectedPoolDeposits.flatMap(
         ({
@@ -173,7 +181,15 @@ export function useUserPositionsTotalReserves(
         }
       ),
     ],
+    combine(results) {
+      return {
+        data: results.map((result) => result.data),
+        pending: results.some((result) => result.isPending),
+      };
+    },
   });
+
+  return data;
 }
 
 export interface ShareValueContext {
@@ -207,15 +223,17 @@ export function useUserPositionsContext(
   return useMemo<UserPositionDepositContext[]>(() => {
     return (selectedPoolDeposits || []).flatMap<UserPositionDepositContext>(
       (deposit) => {
-        const totalSharesResponse = userPositionsTotalShares.find(
-          ({ data }) => {
-            return !!data;
-          }
-        );
+        const totalSharesResponse =
+          userPositionsTotalShares?.find(
+            // todo: FIX
+            (data) => {
+              return !!data;
+            }
+          ) ?? undefined;
 
         // find the upper and lower reserves that match this position
-        const lowerReserveResponse = userPositionsTotalReserves.find(
-          ({ data }) => {
+        const lowerReserveResponse =
+          userPositionsTotalReserves?.find((data) => {
             return (
               data?.poolReserves?.tokenIn === deposit.pairID?.token0 &&
               data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
@@ -224,10 +242,9 @@ export function useUserPositionsContext(
                 deposit.lowerTickIndex.toString() &&
               data?.poolReserves?.fee.toString() === deposit.fee.toString()
             );
-          }
-        );
-        const upperReserveResponse = userPositionsTotalReserves.find(
-          ({ data }) => {
+          }) ?? undefined;
+        const upperReserveResponse =
+          userPositionsTotalReserves?.find((data) => {
             return (
               data?.poolReserves?.tokenIn === deposit.pairID?.token1 &&
               data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
@@ -236,8 +253,7 @@ export function useUserPositionsContext(
                 deposit.upperTickIndex.toString() &&
               data?.poolReserves?.fee.toString() === deposit.fee.toString()
             );
-          }
-        );
+          }) ?? undefined;
         const token0 = allTokens.find(
           (token) => token.address === deposit.pairID.token0
         );
@@ -250,38 +266,36 @@ export function useUserPositionsContext(
           const token0Context: ShareValueContext | undefined = deposit &&
             totalSharesResponse &&
             lowerReserveResponse && {
-              token: lowerReserveResponse.data?.poolReserves?.tokenIn ?? '',
+              token: lowerReserveResponse.poolReserves?.tokenIn ?? '',
               tickIndex: new BigNumber(
-                lowerReserveResponse.data?.poolReserves?.tickIndex.toString() ??
-                  0
+                lowerReserveResponse.poolReserves?.tickIndex.toString() ?? 0
               ),
               userShares: new BigNumber(deposit.sharesOwned),
               dexTotalShares: new BigNumber(
-                totalSharesResponse?.data?.amount?.amount ?? 0
+                totalSharesResponse.amount?.amount ?? 0
               ),
               // start with empty value, will be filled in next step
               userReserves: new BigNumber(0),
               dexTotalReserves: new BigNumber(
-                lowerReserveResponse.data?.poolReserves?.reserves ?? 0
+                lowerReserveResponse.poolReserves?.reserves ?? 0
               ),
             };
 
           const token1Context: ShareValueContext | undefined = deposit &&
             totalSharesResponse &&
             upperReserveResponse && {
-              token: upperReserveResponse.data?.poolReserves?.tokenIn ?? '',
+              token: upperReserveResponse.poolReserves?.tokenIn ?? '',
               tickIndex: new BigNumber(
-                upperReserveResponse.data?.poolReserves?.tickIndex.toString() ??
-                  0
+                upperReserveResponse.poolReserves?.tickIndex.toString() ?? 0
               ),
               userShares: new BigNumber(deposit.sharesOwned),
               dexTotalShares: new BigNumber(
-                totalSharesResponse?.data?.amount?.amount ?? 0
+                totalSharesResponse?.amount?.amount ?? 0
               ),
               // start with empty value, will be filled in next step
               userReserves: new BigNumber(0),
               dexTotalReserves: new BigNumber(
-                upperReserveResponse.data?.poolReserves?.reserves ?? 0
+                upperReserveResponse.poolReserves?.reserves ?? 0
               ),
             };
           return [
