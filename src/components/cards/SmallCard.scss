@@ -1,0 +1,23 @@
+.small-card {
+  display: flex;
+  background-color: var(--page-card);
+  border: 1px solid hsla(217, 19%, 27%, 1);
+  border-radius: 0.5rem;
+  box-shadow: 0px 3px 6px rgba(15, 15, 15, 0.25);
+  overflow: hidden;
+
+  color: #e3e3e3;
+
+  .small-card__header {
+    color: #bfbfbf;
+    font-size: 0.85rem;
+  }
+  .small-card__body {
+    font-weight: 500;
+    font-size: 1.15rem;
+  }
+  .small-card__footer {
+    font-weight: 500;
+    font-size: 0.85rem;
+  }
+}
