@@ -1632,7 +1632,7 @@ function TicksGroup({
         ? backgroundValue
         : totalValue;
 
-      return (
+      return !cumulativeTokenValues ? null : (
         <g
           key={index}
           className={[
