@@ -737,10 +737,12 @@ function Pair({
   ]);
 
   const { data: balances } = useBankBalances();
-  const balanceTokenA =
-    tokenA && balances && new BigNumber(getBalance(tokenA, balances));
-  const balanceTokenB =
-    tokenB && balances && new BigNumber(getBalance(tokenB, balances));
+  const balanceTokenA = useMemo(() => {
+    return tokenA && balances && new BigNumber(getBalance(tokenA, balances));
+  }, [tokenA, balances]);
+  const balanceTokenB = useMemo(() => {
+    return tokenB && balances && new BigNumber(getBalance(tokenB, balances));
+  }, [tokenB, balances]);
 
   const hasSufficientFundsA =
     balanceTokenA?.isGreaterThanOrEqualTo(values[0] || 0) || false;
