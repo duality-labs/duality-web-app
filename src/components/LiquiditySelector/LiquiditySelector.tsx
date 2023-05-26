@@ -685,30 +685,10 @@ export default function LiquiditySelector({
             stopOpacity="0.1"
           />
         </linearGradient>
-        <linearGradient
-          id="flag-pole-fade-left"
-          x1="0.5"
-          x2="0"
-          y1="0"
-          y2="2.5"
-        >
-          <stop offset="8%" stopColor="hsla(165, 83%, 57%)" stopOpacity="1" />
+        <linearGradient id="flag-pole-fade" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="15%" stopColor="hsla(165, 83%, 57%)" stopOpacity="1" />
           <stop
-            offset="13%"
-            stopColor="hsla(165, 83%, 57%)"
-            stopOpacity="0.15"
-          />
-        </linearGradient>
-        <linearGradient
-          id="flag-pole-fade-right"
-          x1="1"
-          x2="1.5"
-          y1="0"
-          y2="2.5"
-        >
-          <stop offset="5%" stopColor="hsla(165, 83%, 57%)" stopOpacity="1" />
-          <stop
-            offset="10%"
+            offset="40%"
             stopColor="hsla(165, 83%, 57%)"
             stopOpacity="0.15"
           />
@@ -1222,7 +1202,7 @@ function TicksArea({
           y2={(plotY(new BigNumber(0)) + 8).toFixed(3)}
         />
         <rect
-          className="pole-stick-left"
+          className="pole-stick"
           x={(plotX(rangeMinIndex) - poleWidth).toFixed(3)}
           width={poleWidth}
           y={plotY(new BigNumber(1)).toFixed(3)}
@@ -1334,7 +1314,7 @@ function TicksArea({
           y2={(plotY(new BigNumber(0)) + 8).toFixed(3)}
         />
         <rect
-          className="pole-stick-right"
+          className="pole-stick"
           x={plotX(rangeMaxIndex).toFixed(3)}
           width={poleWidth}
           y={plotY(new BigNumber(1)).toFixed(3)}
