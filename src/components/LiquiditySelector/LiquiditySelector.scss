@@ -117,13 +117,8 @@
   .flag-joiner--price-warning {
     stroke: var(--error);
   }
-  .pole-stick-left {
-    stroke-width: 1px;
-    fill: url(#flag-pole-fade-left);
-  }
-  .pole-stick-right {
-    stroke-width: 1px;
-    fill: url(#flag-pole-fade-right);
+  .pole-stick {
+    fill: url(#flag-pole-fade);
   }
   .pole-stick-edge {
     stroke-width: 1px;
