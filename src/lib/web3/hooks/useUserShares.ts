@@ -23,6 +23,7 @@ import {
 } from '../utils/tokens';
 import useTokens from './useTokens';
 import { useShares } from '../indexerProvider';
+import { getShareInfo } from '../utils/shares';
 
 // default useUserPositionsTotalShares filter to all user's deposits
 export type UserDepositFilter = (poolDeposit: DepositRecord) => boolean;
@@ -257,12 +258,19 @@ export function useUserPositionsContext(
     return (selectedPoolDeposits || []).flatMap<UserPositionDepositContext>(
       (deposit) => {
         const totalSharesResponse =
-          userPositionsTotalShares?.find(
-            // todo: FIX
-            (data) => {
-              return !!data;
+          userPositionsTotalShares?.find((data) => {
+            const shareInfo = data?.amount && getShareInfo(data.amount);
+            if (shareInfo) {
+              return (
+                shareInfo.token0Address === deposit.pairID?.token0 &&
+                shareInfo.token1Address === deposit.pairID?.token1 &&
+                shareInfo.tickIndexString ===
+                  deposit.centerTickIndex.toString() &&
+                shareInfo.feeString === deposit.fee.toString()
+              );
             }
-          ) ?? undefined;
+            return false;
+          }) ?? undefined;
 
         // find the upper and lower reserves that match this position
         const lowerReserveResponse =
