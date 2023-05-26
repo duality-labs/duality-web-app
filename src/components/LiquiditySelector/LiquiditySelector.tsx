@@ -685,12 +685,32 @@ export default function LiquiditySelector({
             stopOpacity="0.1"
           />
         </linearGradient>
-        <linearGradient id="flag-pole-fade" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="15%" stopColor="hsla(165, 83%, 57%)" stopOpacity="1" />
+        <linearGradient
+          id="flag-pole-fade-left"
+          x1="0.5"
+          x2="0"
+          y1="0"
+          y2="2.5"
+        >
+          <stop offset="8%" stopColor="hsla(165, 83%, 57%)" stopOpacity="1" />
           <stop
-            offset="50%"
+            offset="13%"
             stopColor="hsla(165, 83%, 57%)"
-            stopOpacity="0.075"
+            stopOpacity="0.15"
+          />
+        </linearGradient>
+        <linearGradient
+          id="flag-pole-fade-right"
+          x1="1"
+          x2="1.5"
+          y1="0"
+          y2="2.5"
+        >
+          <stop offset="5%" stopColor="hsla(165, 83%, 57%)" stopOpacity="1" />
+          <stop
+            offset="10%"
+            stopColor="hsla(165, 83%, 57%)"
+            stopOpacity="0.15"
           />
         </linearGradient>
       </defs>
@@ -1194,8 +1214,15 @@ function TicksArea({
           .filter(Boolean)
           .join(' ')}
       >
+        <line
+          className="line pole-stick-edge"
+          x1={plotX(rangeMinIndex).toFixed(3)}
+          x2={plotX(rangeMinIndex).toFixed(3)}
+          y1={plotY(new BigNumber(1)).toFixed(3)}
+          y2={(plotY(new BigNumber(0)) + 8).toFixed(3)}
+        />
         <rect
-          className="pole-stick"
+          className="pole-stick-left"
           x={(plotX(rangeMinIndex) - poleWidth).toFixed(3)}
           width={poleWidth}
           y={plotY(new BigNumber(1)).toFixed(3)}
@@ -1299,8 +1326,15 @@ function TicksArea({
           .filter(Boolean)
           .join(' ')}
       >
+        <line
+          className="line pole-stick-edge"
+          x1={plotX(rangeMaxIndex).toFixed(3)}
+          x2={plotX(rangeMaxIndex).toFixed(3)}
+          y1={plotY(new BigNumber(1)).toFixed(3)}
+          y2={(plotY(new BigNumber(0)) + 8).toFixed(3)}
+        />
         <rect
-          className="pole-stick"
+          className="pole-stick-right"
           x={plotX(rangeMaxIndex).toFixed(3)}
           width={poleWidth}
           y={plotY(new BigNumber(1)).toFixed(3)}
