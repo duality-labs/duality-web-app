@@ -82,6 +82,9 @@ export function useUserDeposits(
   }, [shares, poolDepositFilter]);
 }
 
+// a referentially stable empty array
+const emptyArray: never[] = [];
+
 // select all (or optional token pair list of) user shares
 export function useUserPositionsTotalShares(
   poolDepositFilter: UserDepositFilter = defaultFilter
@@ -110,7 +113,10 @@ export function useUserPositionsTotalShares(
     ],
     combine(results) {
       return {
-        data: results.map((result) => result.data),
+        data:
+          results.length > 0
+            ? results.map((result) => result.data)
+            : emptyArray,
         pending: results.some((result) => result.isPending),
       };
     },
@@ -186,7 +192,10 @@ export function useUserPositionsTotalReserves(
     ],
     combine(results) {
       return {
-        data: results.map((result) => result.data),
+        data:
+          results.length > 0
+            ? results.map((result) => result.data)
+            : emptyArray,
         pending: results.some((result) => result.isPending),
       };
     },
