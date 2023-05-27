@@ -523,6 +523,11 @@ export default function PoolManagement({
           });
 
         const shapeFactor = (() => {
+          // for a single tick it should have a weight of 1
+          if (tickPrices.length === 1) {
+            return [1];
+          }
+          // determine weighting for different shapes
           return (() => {
             switch (liquidityShape.value) {
               case 'increasing':
