@@ -49,7 +49,7 @@ export default function useTokenPairs({
       'nicholasdotsol.duality.dex.tradingPairAll',
       params
     ),
-    async (_: string, params: QueryAllTradingPairRequest) => {
+    async ([, params]: [paths: string, params: QueryAllTradingPairRequest]) => {
       const client = await lcdClientPromise;
       return await client.nicholasdotsol.duality.dex.tradingPairAll(params);
     },
