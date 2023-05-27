@@ -1421,7 +1421,10 @@ export default function PoolManagement({
                                         reserveA,
                                         tokenA.address,
                                         tokenA.display,
-                                        3
+                                        {
+                                          fractionalDigits: 3,
+                                          significantDigits: 3,
+                                        }
                                       )
                                     : ''}
                                 </td>
@@ -1432,7 +1435,10 @@ export default function PoolManagement({
                                         reserveB,
                                         tokenB.address,
                                         tokenB.display,
-                                        3
+                                        {
+                                          fractionalDigits: 3,
+                                          significantDigits: 3,
+                                        }
                                       )
                                     : ''}
                                 </td>

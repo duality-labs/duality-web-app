@@ -31,7 +31,15 @@ export function getAmountInDenom(
   outputDenom: string = token.denom_units
     .slice()
     .sort((a, b) => a.exponent - b.exponent)[0].denom,
-  toFixed?: number
+  {
+    fractionalDigits,
+    // so digits forcibly past fractional digits
+    significantDigits,
+  }: {
+    fractionalDigits?: number;
+    // should we display more digits if there is not enough resolution to see?
+    significantDigits?: number;
+  } = {}
 ): string | undefined {
   const { denom_units } = token;
   const inputDenomUnit = denom_units.find(({ denom }) => denom === inputDenom);
@@ -39,8 +47,19 @@ export function getAmountInDenom(
     ({ denom }) => denom === outputDenom
   );
   if (inputDenomUnit && outputDenomUnit) {
-    return new BigNumber(amount)
-      .shiftedBy(inputDenomUnit.exponent - outputDenomUnit.exponent)
-      .toFixed(toFixed ?? outputDenomUnit.exponent, BigNumber.ROUND_DOWN);
+    const outputValue = new BigNumber(amount).shiftedBy(
+      inputDenomUnit.exponent - outputDenomUnit.exponent
+    );
+    const outputString = outputValue.toFixed(
+      fractionalDigits ?? outputDenomUnit.exponent,
+      BigNumber.ROUND_DOWN
+    );
+    // return output modified to have more digits if asked for
+    return significantDigits &&
+      // calculate output significant digits and if this is less than asked
+      new BigNumber(outputString).sd(true) < significantDigits
+      ? outputValue.sd(significantDigits).toFixed()
+      : // extend digits
+        outputString;
   }
 }
