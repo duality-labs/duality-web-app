@@ -51,7 +51,6 @@ export default function PoolLayout({
             </div>
           </div>
         </div>
-        <hr className="mt-3 mb-4" />
       </div>
       {children}
     </div>
