@@ -993,7 +993,7 @@ export default function PoolManagement({
       disabled={!!isValidatingDeposit}
     >
       <div>
-        <div className="row gap-4">
+        <div className="row gap-4 my-3">
           <div className="col flex gap-4">
             <div
               className={`chart-card col chart-type--${chartTypeSelected.toLowerCase()}`}
