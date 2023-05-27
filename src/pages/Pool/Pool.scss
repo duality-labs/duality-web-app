@@ -48,6 +48,11 @@
     }
   }
 
+  .pool-page__header {
+    align-items: center;
+    gap: 1rem;
+  }
+
   table {
     th,
     td {
@@ -60,7 +65,7 @@
     min-height: paddings.$p-xl;
   }
 
-  .chart-breadcrumbs {
+  .pool-page__breadcrumbs {
     a {
       color: var(--token-search-placeholder);
     }
@@ -115,18 +120,6 @@
   .chart-card {
     align-self: stretch;
 
-    > .row {
-      gap: 1.5rem;
-    }
-
-    .chart-header {
-      align-items: center;
-      gap: 1rem;
-
-      .tokens-badge {
-        border-radius: 0.5rem;
-      }
-    }
     .chart-highlight {
       font-weight: 500;
       color: hsla(165, 83%, 57%, 1);
