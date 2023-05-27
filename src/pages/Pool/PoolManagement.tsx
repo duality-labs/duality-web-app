@@ -465,8 +465,8 @@ export default function PoolManagement({
   const tickCount = Number(precision || 1);
   useLayoutEffect(() => {
     function getUserTicks(): TickGroup {
-      const indexMin = rangeMinIndex;
-      const indexMax = rangeMaxIndex;
+      const indexMin = Math.ceil(rangeMinIndex);
+      const indexMax = Math.floor(rangeMaxIndex);
       // set multiple ticks across the range
       const fee = feeType?.fee;
       if (
