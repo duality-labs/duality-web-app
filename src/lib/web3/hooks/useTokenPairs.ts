@@ -51,7 +51,7 @@ export default function useTokenPairs({
       'cosmos.bank.v1beta1.totalSupply',
       params
     ),
-    async (_: string, params: QueryTotalSupplyRequest) => {
+    async ([, params]: [paths: string, params: QueryTotalSupplyRequest]) => {
       const client = await lcdClientPromise;
       return await client.cosmos.bank.v1beta1.totalSupply(params);
     },

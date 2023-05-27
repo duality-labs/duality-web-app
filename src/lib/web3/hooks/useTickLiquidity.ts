@@ -72,12 +72,16 @@ export default function useTickLiquidity({
         ),
     !params
       ? null
-      : async (_: string, params: QueryAllTickLiquidityRequest) => {
+      : async ([, params]: [
+          _: string,
+          params: QueryAllTickLiquidityRequest
+        ]) => {
           const client = await lcdClientPromise;
           return await client.dualitylabs.duality.dex.tickLiquidityAll(params);
         },
     { persistSize: true, ...swrConfig }
   );
+
   // set number of pages to latest total
   const pageItemCount = Number(pages?.[0]?.tickLiquidity?.length);
   const totalItemCount = Number(pages?.[0]?.pagination?.total);
