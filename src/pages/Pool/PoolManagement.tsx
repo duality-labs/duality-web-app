@@ -759,6 +759,30 @@ export default function PoolManagement({
         disabled={editMode || isValidatingDeposit}
       >
         <div className="chart-header row h4">Add Liquidity</div>
+        <div className="card-row my-3">
+          <TokenInputGroup
+            className="flex"
+            variant={tokenA && !hasSufficientFundsA && 'error'}
+            onValueChanged={setInputValueA}
+            onTokenChanged={setTokenA}
+            tokenList={tokenList}
+            token={tokenA}
+            value={inputValueA}
+            exclusion={tokenB}
+          />
+        </div>
+        <div className="card-row my-3">
+          <TokenInputGroup
+            className="flex"
+            variant={tokenB && !hasSufficientFundsB && 'error'}
+            onValueChanged={setInputValueB}
+            onTokenChanged={setTokenB}
+            tokenList={tokenList}
+            token={tokenB}
+            value={inputValueB}
+            exclusion={tokenA}
+          />
+        </div>
         <div className="row">
           <SelectInput<FeeType>
             className="col flex select-fee-tier"
@@ -784,35 +808,11 @@ export default function PoolManagement({
             }
           />
         </div>
-        <div className="card-row my-3">
-          <TokenInputGroup
-            className="flex"
-            variant={tokenA && !hasSufficientFundsA && 'error'}
-            onValueChanged={setInputValueA}
-            onTokenChanged={setTokenA}
-            tokenList={tokenList}
-            token={tokenA}
-            value={inputValueA}
-            exclusion={tokenB}
-          />
-        </div>
-        <div className="card-row my-3">
-          <TokenInputGroup
-            className="flex"
-            variant={tokenB && !hasSufficientFundsB && 'error'}
-            onValueChanged={setInputValueB}
-            onTokenChanged={setTokenB}
-            tokenList={tokenList}
-            token={tokenB}
-            value={inputValueB}
-            exclusion={tokenA}
-          />
-        </div>
-        <div className="row liquidity-shape">
+        <div className="liquidity-shape">
           <div className="col flex">
-            <h4 className="mt-4">Liquidity Shape</h4>
+            <h4 className="mt-2">Liquidity Shape</h4>
             <RadioInput<LiquidityShape>
-              className="col flex"
+              className="col flex mb-0"
               maxColumnCount={4}
               list={liquidityShapes}
               value={liquidityShape}
@@ -820,8 +820,6 @@ export default function PoolManagement({
               OptionComponent={LiquidityShapeOptionComponent}
             />
           </div>
-        </div>
-        <div className="row precision-card">
           <StepNumberInput
             title="Number of Ticks"
             min={
