@@ -14,11 +14,13 @@ export default function PoolLayout({
   children,
   disabled = false,
   swap = () => undefined,
+  isManagementPath = false,
 }: {
   tokenA: Token;
   tokenB: Token;
   disabled?: boolean;
   swap?: () => void;
+  isManagementPath?: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -28,10 +30,23 @@ export default function PoolLayout({
           <Link className="text-light-alt" to="/pools">
             Pools
           </Link>
-          {'>'}
-          <span>
-            {tokenA.symbol}/{tokenB.symbol}
-          </span>
+          <span>{'>'}</span>
+          {isManagementPath ? (
+            <>
+              <Link
+                className="text-light-alt"
+                to={`/pools/${tokenA.symbol}/${tokenB.symbol}`}
+              >
+                {tokenA.symbol}/{tokenB.symbol}
+              </Link>
+              <span>{'>'}</span>
+              <span>Manage</span>
+            </>
+          ) : (
+            <span>
+              {tokenA.symbol}/{tokenB.symbol}
+            </span>
+          )}
         </div>
         <div className="row flow-wrap">
           <div className="col">
