@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Link, useMatch, useNavigate } from 'react-router-dom';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 
@@ -23,7 +23,6 @@ export default function PoolsPage() {
 
 function Pools() {
   const navigate = useNavigate();
-  const [[tokenA, tokenB], setTokens] = useState<[Token?, Token?]>([]);
 
   // change tokens to match pathname
   const tokenList = useTokens();
@@ -31,20 +30,16 @@ function Pools() {
   const matchTokenManagement = useMatch('/pools/:tokenA/:tokenB/manage');
   const isManagementPath = !!matchTokenManagement;
   const match = matchTokens || matchTokenManagement;
-  useEffect(() => {
+
+  const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
     if (match) {
-      const foundTokenA = tokenList.find(
-        (t) => t.symbol === match.params['tokenA']
-      );
-      const foundTokenB = tokenList.find(
-        (t) => t.symbol === match.params['tokenB']
-      );
-      if (foundTokenA && foundTokenB) {
-        setTokens([foundTokenA, foundTokenB]);
-        return;
+      const tokenA = tokenList.find((t) => t.symbol === match.params['tokenA']);
+      const tokenB = tokenList.find((t) => t.symbol === match.params['tokenB']);
+      if (tokenA && tokenB) {
+        return [tokenA, tokenB];
       }
     }
-    setTokens([]);
+    return [];
   }, [tokenList, match]);
 
   // don't change tokens directly:
