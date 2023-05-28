@@ -994,6 +994,7 @@ export default function PoolManagement({
       tokenB={tokenB}
       swap={swapAll}
       disabled={!!isValidatingDeposit}
+      isManagementPath
     >
       <div>
         <div className="row gap-4 my-3">
