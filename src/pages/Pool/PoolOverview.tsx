@@ -29,11 +29,22 @@ export default function PoolOverview({
           </PriceCardRow>
         </div>
         <div className="col ml-auto">
-          <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/manage`}>
-            <button className="button button-primary py-3 px-md">
-              New Position
-            </button>
-          </Link>
+          <div className="row gap-lg">
+            <div className="col">
+              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/manage`}>
+                <button className="button button-primary py-3 px-md">
+                  New Position
+                </button>
+              </Link>
+            </div>
+            <div className="col">
+              <Link to={`/swap/${tokenA.symbol}/${tokenB.symbol}`}>
+                <button className="button button-primary-outline py-3 px-md">
+                  Trade
+                </button>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
       <div className="row gap-4 my-3">
