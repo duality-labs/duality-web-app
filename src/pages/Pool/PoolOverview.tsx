@@ -32,14 +32,14 @@ export default function PoolOverview({
           <div className="row gap-lg">
             <div className="col">
               <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/manage`}>
-                <button className="button button-primary py-3 px-md">
+                <button className="button button-primary py-3 px-4">
                   New Position
                 </button>
               </Link>
             </div>
             <div className="col">
               <Link to={`/swap/${tokenA.symbol}/${tokenB.symbol}`}>
-                <button className="button button-primary-outline py-3 px-md">
+                <button className="button button-primary-outline py-3 px-4">
                   Trade
                 </button>
               </Link>
