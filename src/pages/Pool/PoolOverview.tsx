@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import PoolLayout from './PoolLayout';
 import { Token } from '../../lib/web3/utils/tokens';
-import { useCurrentPriceFromTicks } from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
+import PriceCard, { PriceCardRow } from '../../components/cards/PriceCard';
 
 import './Pool.scss';
 import { Link } from 'react-router-dom';
@@ -19,22 +19,22 @@ export default function PoolOverview({
     setTokens([tokenB, tokenA]);
   }, [tokenA, tokenB, setTokens]);
 
-  const currentPriceFromTicks = useCurrentPriceFromTicks(
-    tokenA?.address,
-    tokenB?.address
-  );
-
-  const edgePrice = currentPriceFromTicks;
-
   return (
     <PoolLayout tokenA={tokenA} tokenB={tokenB} swap={swap}>
-      <div>
-        Subheader price: {edgePrice?.toNumber() || '1'}
-        <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/manage`}>
-          <button className="button button-primary py-3 px-md">
-            New Position
-          </button>
-        </Link>
+      <div className="row mt-3 mb-xl">
+        <div className="col">
+          <PriceCardRow>
+            <PriceCard tokenA={tokenA} tokenB={tokenB} />
+            <PriceCard tokenA={tokenB} tokenB={tokenA} />
+          </PriceCardRow>
+        </div>
+        <div className="col ml-auto">
+          <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/manage`}>
+            <button className="button button-primary py-3 px-md">
+              New Position
+            </button>
+          </Link>
+        </div>
       </div>
       <div className="row gap-4 my-3">
         <div className="col flex gap-4">
