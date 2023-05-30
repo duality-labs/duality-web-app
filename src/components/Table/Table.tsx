@@ -22,7 +22,7 @@ export default function Table<DataRow>({
               // wrap strings in the expected element
               return (
                 <Fragment key={index}>
-                  {typeof heading !== 'function' ? <th>{heading}</th> : heading}
+                  {typeof heading !== 'object' ? <th>{heading}</th> : heading}
                 </Fragment>
               );
             }
@@ -38,7 +38,7 @@ export default function Table<DataRow>({
                 // wrap strings in the expected element
                 return (
                   <Fragment key={index}>
-                    {typeof cell !== 'function' ? <td>{cell}</td> : cell}
+                    {typeof cell !== 'object' ? <td>{cell}</td> : cell}
                   </Fragment>
                 );
               })}
