@@ -11,7 +11,6 @@
   "plugins": ["jsx-a11y"],
   "rules": {
     "no-console": "warn",
-    "quotes": ["warn", "single"],
     "react/react-in-jsx-scope": "off"
   }
 }
