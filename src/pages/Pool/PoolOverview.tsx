@@ -273,21 +273,9 @@ function DepositColumn({
           .filter(Boolean)
           .join(' and ')}`;
       case 'Token A Amount':
-        return getAmountInDenom(
-          tokenA,
-          getTokenAReserves(),
-          tokenA.base,
-          tokenA.display,
-          { fractionalDigits: 3, significantDigits: 3 }
-        );
+        return getTokenReservesInDenom(tokenA, getTokenAReserves());
       case 'Token B Amount':
-        return getAmountInDenom(
-          tokenB,
-          getTokenBReserves(),
-          tokenB.base,
-          tokenB.display,
-          { fractionalDigits: 3, significantDigits: 3 }
-        );
+        return getTokenReservesInDenom(tokenB, getTokenBReserves());
       case 'Total Value':
         return '[compute value here]';
       case 'Time':
@@ -313,6 +301,13 @@ function DepositColumn({
       return getHasInvertedOrder()
         ? event?.Reserves0Deposited
         : event?.Reserves1Deposited;
+    }
+
+    function getTokenReservesInDenom(token: Token, reserves: string) {
+      return getAmountInDenom(token, reserves, token.base, token.display, {
+        fractionalDigits: 3,
+        significantDigits: 3,
+      });
     }
   })();
 
