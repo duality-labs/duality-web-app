@@ -1,26 +1,12 @@
-import { useMemo } from 'react';
-
-import TokenPairLogos from '../TokenPairLogos/TokenPairLogos';
 import TableCard from '../../components/cards/TableCard';
 import { Link } from 'react-router-dom';
-import { useSimplePrices } from '../../lib/tokenPrices';
-import useTokens from '../../lib/web3/hooks/useTokens';
-import { useTokenPairsList } from '../../lib/web3/indexerProvider';
 
 export default function FeaturedPairsCard({
   size = 'large',
-  limit = size === 'small' ? 5 : 0,
 }: {
   size?: 'small' | 'large';
   limit?: number;
 }) {
-  const tokenList = useTokens();
-  const pairsList = useTokenPairsList();
-//   console.log('pairsList', pairsList)
-
-  // todo: fetch real limit orders from tx history
-  const limitOrders = [];
-
   // show loken list cards
   return (
     <TableCard

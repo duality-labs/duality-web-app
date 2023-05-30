@@ -22,7 +22,10 @@ import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity
 import { getPairID } from '../../lib/web3/utils/pairs';
 
 import { UserPositionDepositContext } from '../../lib/web3/hooks/useUserShares';
-import { ValuedUserPositionDepositContext, useUserPositionsShareValues } from '../../lib/web3/hooks/useUserShareValues';
+import {
+  ValuedUserPositionDepositContext,
+  useUserPositionsShareValues,
+} from '../../lib/web3/hooks/useUserShareValues';
 
 import './PoolsTableCard.scss';
 
@@ -78,28 +81,41 @@ export default function PoolsTableCard({
   const userPositionsShareValues = useUserPositionsShareValues();
 
   const myPoolsList = useMemo<
-    Array<[pairID: string, token0: Token, token1: Token, userPositions: UserPositionDepositContext[] | undefined]>
+    Array<
+      [
+        pairID: string,
+        token0: Token,
+        token1: Token,
+        userPositions: UserPositionDepositContext[] | undefined
+      ]
+    >
   >(() => {
-
     // collect positions into token pair groups
-    const userPositionsShareValueMap = userPositionsShareValues.reduce<{ [pairID: string]: { token0: Token, token1: Token, userPositions: UserPositionDepositContext[] }}>((map, userPosition) => {
-        const { token0: token0Address, token1: token1Address } = userPosition.deposit.pairID;
-        const pairID = getPairID(token0Address, token1Address);
-        const token0 = tokenList.find(token => token.address === token0Address);
-        const token1 = tokenList.find(token => token.address === token1Address);
-        if (pairID && token0 && token1) {
-          map[pairID] = map[pairID] || { token0, token1, userPositions: [] };
-          map[pairID].userPositions.push(userPosition);  
-        }
-        return map;
-      }, {});
+    const userPositionsShareValueMap = userPositionsShareValues.reduce<{
+      [pairID: string]: {
+        token0: Token;
+        token1: Token;
+        userPositions: UserPositionDepositContext[];
+      };
+    }>((map, userPosition) => {
+      const { token0: token0Address, token1: token1Address } =
+        userPosition.deposit.pairID;
+      const pairID = getPairID(token0Address, token1Address);
+      const token0 = tokenList.find((token) => token.address === token0Address);
+      const token1 = tokenList.find((token) => token.address === token1Address);
+      if (pairID && token0 && token1) {
+        map[pairID] = map[pairID] || { token0, token1, userPositions: [] };
+        map[pairID].userPositions.push(userPosition);
+      }
+      return map;
+    }, {});
 
     return userPositionsShareValueMap
-      ? Object.entries(userPositionsShareValueMap).map<[string, Token, Token, UserPositionDepositContext[]]>(
-          ([pairId, { token0, token1, userPositions }]) => {
-            return [pairId, token0, token1, userPositions];
-          }
-        )
+      ? Object.entries(userPositionsShareValueMap).map<
+          [string, Token, Token, UserPositionDepositContext[]]
+        >(([pairId, { token0, token1, userPositions }]) => {
+          return [pairId, token0, token1, userPositions];
+        })
       : [];
   }, [userPositionsShareValues, tokenList]);
 
@@ -130,8 +146,7 @@ export default function PoolsTableCard({
       switchOnChange={switchOnChange}
       {...props}
     >
-      {switchValue === 'all' ||
-      (myPoolsList.length > 0) ? (
+      {switchValue === 'all' || myPoolsList.length > 0 ? (
         filteredPoolsList.length > 0 ? (
           <table>
             <thead>
@@ -289,32 +304,19 @@ function PositionRow({
   userPositions: Array<ValuedUserPositionDepositContext>;
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
+  const total0 = userPositions.reduce<BigNumber>((acc, { token0Context }) => {
+    return acc.plus(token0Context?.userReserves || 0);
+  }, new BigNumber(0));
+  const total1 = userPositions.reduce<BigNumber>((acc, { token1Context }) => {
+    return acc.plus(token1Context?.userReserves || 0);
+  }, new BigNumber(0));
 
-  const total0 = userPositions.reduce<BigNumber>(
-    (acc, { token0Context }) => {
-      return acc.plus(token0Context?.userReserves || 0);
-    },
-    new BigNumber(0)
-  );
-  const total1 = userPositions.reduce<BigNumber>(
-    (acc, { token1Context }) => {
-      return acc.plus(token1Context?.userReserves || 0);
-    },
-    new BigNumber(0)
-  );
-
-  const value0 = userPositions.reduce<BigNumber>(
-    (acc, { token0Value }) => {
-      return acc.plus(token0Value || 0);
-    },
-    new BigNumber(0)
-  );
-  const value1 = userPositions.reduce<BigNumber>(
-    (acc, { token1Value }) => {
-      return acc.plus(token1Value || 0);
-    },
-    new BigNumber(0)
-  );
+  const value0 = userPositions.reduce<BigNumber>((acc, { token0Value }) => {
+    return acc.plus(token0Value || 0);
+  }, new BigNumber(0));
+  const value1 = userPositions.reduce<BigNumber>((acc, { token1Value }) => {
+    return acc.plus(token1Value || 0);
+  }, new BigNumber(0));
 
   const [{ isValidating }, sendEditRequest] = useEditLiquidity();
 
@@ -329,8 +331,12 @@ function PositionRow({
             return {
               ...userPosition,
               // remove user's reserves if found
-              tickDiff0: userPosition.token0Context?.userReserves.negated() ?? new BigNumber(0),
-              tickDiff1: userPosition.token1Context?.userReserves.negated() ?? new BigNumber(0),
+              tickDiff0:
+                userPosition.token0Context?.userReserves.negated() ??
+                new BigNumber(0),
+              tickDiff1:
+                userPosition.token1Context?.userReserves.negated() ??
+                new BigNumber(0),
             };
           }
         );
@@ -342,9 +348,7 @@ function PositionRow({
   );
 
   const withdraw: MouseEventHandler<HTMLButtonElement> | undefined =
-    userPositions.length > 0
-      ? () => withdrawPair(userPositions)
-      : undefined;
+    userPositions.length > 0 ? () => withdrawPair(userPositions) : undefined;
 
   if (total0 && total1) {
     return (

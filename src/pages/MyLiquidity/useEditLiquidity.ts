@@ -87,10 +87,7 @@ export function useEditLiquidity(): [
             sharesDiff.flatMap(
               ({
                 deposit: {
-                  pairID: {
-                    token0: token0Address,
-                    token1: token1Address,
-                  },
+                  pairID: { token0: token0Address, token1: token1Address },
                   centerTickIndex,
                   fee,
                   sharesOwned: userShares,
@@ -102,7 +99,10 @@ export function useEditLiquidity(): [
                 tickDiff0,
                 tickDiff1,
               }) => {
-                const userTotalReserves = BigNumber.sum(token0Context?.userReserves || 0, token1Context?.userReserves || 0);
+                const userTotalReserves = BigNumber.sum(
+                  token0Context?.userReserves || 0,
+                  token1Context?.userReserves || 0
+                );
                 return centerTickIndex !== undefined &&
                   fee !== undefined &&
                   !isNaN(Number(fee)) &&
@@ -173,14 +173,17 @@ export function useEditLiquidity(): [
                                       // approximate removal using percentages
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
-                                      sharesToRemove: token0Context ? [
-                                        tickDiff0
-                                          .negated()
-                                          .dividedBy(token0Context.userReserves)
-                                          .multipliedBy(userShares)
-                                          .toFixed(0)
-                                          ,
-                                      ] : ['0'],
+                                      sharesToRemove: token0Context
+                                        ? [
+                                            tickDiff0
+                                              .negated()
+                                              .dividedBy(
+                                                token0Context.userReserves
+                                              )
+                                              .multipliedBy(userShares)
+                                              .toFixed(0),
+                                          ]
+                                        : ['0'],
                                     }
                                   ),
                             ]
@@ -219,13 +222,17 @@ export function useEditLiquidity(): [
                                       // approximate removal using percentages
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
-                                      sharesToRemove: token1Context ? [
-                                        tickDiff1
-                                          .negated()
-                                          .dividedBy(token1Context.userReserves)
-                                          .multipliedBy(userShares)
-                                          .toFixed(0),
-                                      ] : ['0'],
+                                      sharesToRemove: token1Context
+                                        ? [
+                                            tickDiff1
+                                              .negated()
+                                              .dividedBy(
+                                                token1Context.userReserves
+                                              )
+                                              .multipliedBy(userShares)
+                                              .toFixed(0),
+                                          ]
+                                        : ['0'],
                                     }
                                   ),
                             ]
