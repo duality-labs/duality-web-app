@@ -1,13 +1,18 @@
 import { Event } from '@cosmjs/stargate';
 import { EventSDKType } from '@duality-labs/dualityjs/types/codegen/tendermint/abci/types';
 
-export function getEventAttributeMap<T extends { action: DexMessageAction }>({
-  attributes,
-}: Event): T {
-  return attributes.reduce<{ [key: string]: string }>((acc, { key, value }) => {
-    acc[key] = value;
-    return acc;
-  }, {}) as T;
+export function mapEventAttributes<T = ChainEvent>(event: Event): T {
+  return {
+    ...event,
+    attributes: event.attributes.reduce<{ [key: string]: string }>(
+      (acc, { key, value }) => {
+        acc[key] = value;
+        return acc;
+      },
+      {}
+    ),
+    // these attributes should but may not match the expected types
+  } as unknown as T;
 }
 
 export function decodeEvent(event: Event | EventSDKType): Event {
@@ -30,44 +35,91 @@ export type DexMessageAction =
   | 'Withdraw'
   | 'TickUpdate';
 
+export type ChainEvent = CosmosEvent | DexEvent;
+
+export type CosmosEvent =
+  | CoinTransferEvent
+  | CoinSpentEvent
+  | CoinReceivedEvent;
+
+export type DexEvent =
+  | DexPlaceLimitOrderEvent
+  | DexDepositEvent
+  | DexWithdrawalEvent;
+
 export interface DexDepositEvent {
-  module: 'dex';
-  action: 'Deposit';
-  Creator: string;
-  Receiver: string;
-  Token0: string;
-  Token1: string;
-  TickIndex: string;
-  Fee: string;
-  SharesMinted: string;
-  Reserves0Deposited: string;
-  Reserves1Deposited: string;
+  type: 'message';
+  attributes: {
+    module: 'dex';
+    action: 'Deposit';
+    Creator: string;
+    Receiver: string;
+    Token0: string;
+    Token1: string;
+    TickIndex: string;
+    Fee: string;
+    SharesMinted: string;
+    Reserves0Deposited: string;
+    Reserves1Deposited: string;
+  };
 }
 
 export interface DexWithdrawalEvent {
-  module: 'dex';
-  action: 'Withdraw';
-  Creator: string;
-  Receiver: string;
-  Token0: string;
-  Token1: string;
-  TickIndex: string;
-  Fee: string;
-  Reserves0Withdrawn: string;
-  Reserves1Withdrawn: string;
-  SharesRemoved: string;
+  type: 'message';
+  attributes: {
+    module: 'dex';
+    action: 'Withdraw';
+    Creator: string;
+    Receiver: string;
+    Token0: string;
+    Token1: string;
+    TickIndex: string;
+    Fee: string;
+    Reserves0Withdrawn: string;
+    Reserves1Withdrawn: string;
+    SharesRemoved: string;
+  };
 }
 
 export interface DexPlaceLimitOrderEvent {
-  module: 'dex';
-  action: 'PlaceLimitOrder';
-  Creator: string;
-  Receiver: string;
-  Token0: string;
-  Token1: string;
-  TickIndex: string;
-  Fee: string;
-  Reserves0Withdrawn: string;
-  Reserves1Withdrawn: string;
-  SharesRemoved: string;
+  type: 'message';
+  attributes: {
+    module: 'dex';
+    action: 'PlaceLimitOrder';
+    Creator: string;
+    Receiver: string;
+    Token0: string;
+    Token1: string;
+    TokenIn: string;
+    AmountIn: string;
+    LimitTick: string;
+    OrderType: string;
+    Shares: string;
+    TrancheKey: string;
+  };
+}
+
+export interface CoinReceivedEvent {
+  type: 'coin_received';
+  attributes: {
+    amount: string;
+    receiver: string;
+  };
+}
+
+export interface CoinSpentEvent {
+  type: 'coin_spent';
+  attributes: {
+    amount: string;
+    spender: string;
+  };
+}
+
+export interface CoinTransferEvent {
+  type: 'transfer';
+  attributes: {
+    amount: string;
+    recipient: string;
+    sender: string;
+  };
 }

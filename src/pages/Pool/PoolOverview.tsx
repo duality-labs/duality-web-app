@@ -17,10 +17,11 @@ import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { getPairID, hasInvertedOrder } from '../../lib/web3/utils/pairs';
 import {
   DexDepositEvent,
+  DexEvent,
   DexMessageAction,
   DexWithdrawalEvent,
   decodeEvent,
-  getEventAttributeMap,
+  mapEventAttributes,
 } from '../../lib/web3/utils/events';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
@@ -211,11 +212,14 @@ function TransactionsTable({
         }: {
           row: TxResponseSDKType;
         }) {
-          const events = tx.events.map(decodeEvent).map(getEventAttributeMap);
+          const events = tx.events
+            .map(decodeEvent)
+            .map((event) => mapEventAttributes<DexEvent>(event));
 
           // try deposit event
           const depositEvent = events.find(
-            (event): event is DexDepositEvent => event.action === 'Deposit'
+            (event): event is DexDepositEvent =>
+              event.attributes.action === 'Deposit'
           );
           if (depositEvent) {
             return (
@@ -231,7 +235,8 @@ function TransactionsTable({
 
           // try withdrawal event
           const withdrawalEvent = events.find(
-            (event): event is DexWithdrawalEvent => event.action === 'Withdraw'
+            (event): event is DexWithdrawalEvent =>
+              event.attributes.action === 'Withdraw'
           );
           if (withdrawalEvent) {
             return (
@@ -270,7 +275,7 @@ function TransactionsTable({
 
 function DepositColumn({
   tx,
-  event,
+  event: { attributes },
   heading,
   tokenA,
   tokenB,
@@ -289,7 +294,7 @@ function DepositColumn({
   const content = (() => {
     switch (heading) {
       case 'Wallet':
-        return formatAddress(event?.Creator);
+        return formatAddress(attributes.Creator);
       case 'Type':
         return `Add ${[
           Number(getTokenAReserves()) > 0 && tokenA.symbol,
@@ -334,7 +339,7 @@ function DepositColumn({
 
     function getHasInvertedOrder(): boolean {
       return hasInvertedOrder(
-        getPairID(event.Token0, event.Token1),
+        getPairID(attributes.Token0, attributes.Token1),
         tokenA.address,
         tokenB.address
       );
@@ -342,14 +347,14 @@ function DepositColumn({
 
     function getTokenAReserves() {
       return getHasInvertedOrder()
-        ? event?.Reserves1Deposited
-        : event?.Reserves0Deposited;
+        ? attributes.Reserves1Deposited
+        : attributes.Reserves0Deposited;
     }
 
     function getTokenBReserves() {
       return getHasInvertedOrder()
-        ? event?.Reserves0Deposited
-        : event?.Reserves1Deposited;
+        ? attributes.Reserves0Deposited
+        : attributes.Reserves1Deposited;
     }
 
     function getTokenReservesInDenom(token: Token, reserves: string) {
@@ -373,7 +378,7 @@ function DepositColumn({
 
 function WithdrawalColumn({
   tx,
-  event,
+  event: { attributes },
   heading,
   tokenA,
   tokenB,
@@ -392,7 +397,7 @@ function WithdrawalColumn({
   const content = (() => {
     switch (heading) {
       case 'Wallet':
-        return formatAddress(event?.Creator);
+        return formatAddress(attributes.Creator);
       case 'Type':
         return `Remove ${[
           Number(getTokenAReserves()) > 0 && tokenA.symbol,
@@ -437,7 +442,7 @@ function WithdrawalColumn({
 
     function getHasInvertedOrder(): boolean {
       return hasInvertedOrder(
-        getPairID(event.Token0, event.Token1),
+        getPairID(attributes.Token0, attributes.Token1),
         tokenA.address,
         tokenB.address
       );
@@ -445,14 +450,14 @@ function WithdrawalColumn({
 
     function getTokenAReserves() {
       return getHasInvertedOrder()
-        ? event?.Reserves1Withdrawn
-        : event?.Reserves0Withdrawn;
+        ? attributes.Reserves1Withdrawn
+        : attributes.Reserves0Withdrawn;
     }
 
     function getTokenBReserves() {
       return getHasInvertedOrder()
-        ? event?.Reserves0Withdrawn
-        : event?.Reserves1Withdrawn;
+        ? attributes.Reserves0Withdrawn
+        : attributes.Reserves1Withdrawn;
     }
 
     function getTokenReservesInDenom(token: Token, reserves: string) {
