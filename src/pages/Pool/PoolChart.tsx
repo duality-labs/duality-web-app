@@ -1,9 +1,13 @@
+import BigNumber from 'bignumber.js';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
-import { Token } from '../../lib/web3/utils/tokens';
 import BarChart from '../../components/charts/BarChart';
 import ButtonGroup from '../../components/ButtonGroup/ButtonGroup';
+
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { formatCurrency } from '../../lib/utils/number';
+import { useSimplePrice } from '../../lib/tokenPrices';
 
 import './PoolChart.scss';
 
@@ -43,6 +47,10 @@ export default function PoolChart({
 }) {
   const [chartIndex, setChartIndex] = useState<number>(0);
   const [timePeriodIndex, setTimePeriodIndex] = useState<number>(0);
+
+  const {
+    data: [tokenAPrice, tokenBPrice],
+  } = useSimplePrice([tokenA, tokenB]);
 
   const { data } = useQuery({
     queryKey: [tokenA.address, tokenB.address],
@@ -100,6 +108,8 @@ export default function PoolChart({
     }
   }, [dataPeriod, timePeriodIndex]);
 
+  const [lastChartData] = dataPeriod?.data ?? [];
+
   return (
     <div className="pool-chart-area bar-chart-area">
       <div className="bar-chart__nav flex row">
@@ -126,9 +136,38 @@ export default function PoolChart({
           />
         </div>
       </div>
-      {chartData ? (
+      {chartData && lastChartData ? (
         // plot chart
         <div className="bar-chart">
+          <div className="bar-chart__header mt-lg">
+            {tokenAPrice && tokenBPrice
+              ? formatCurrency(
+                  BigNumber.sum(
+                    getAmountInDenom(
+                      tokenA,
+                      lastChartData.tokenA * tokenAPrice,
+                      tokenA.base,
+                      tokenA.display
+                    ) || 0,
+                    getAmountInDenom(
+                      tokenB,
+                      lastChartData.tokenB * tokenBPrice,
+                      tokenB.base,
+                      tokenB.display
+                    ) || 0
+                  ).toFixed()
+                )
+              : '...'}
+          </div>
+          <div className="bar-chart__subheader">
+            {lastChartData ? (
+              new Date(lastChartData.timestamp).toLocaleDateString(undefined, {
+                dateStyle: 'long',
+              })
+            ) : (
+              <>&nbsp;</>
+            )}
+          </div>
           <BarChart width={500} height={300} data={chartData} />
         </div>
       ) : (

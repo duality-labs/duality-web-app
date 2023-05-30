@@ -20,4 +20,12 @@
       }
     }
   }
+
+  .bar-chart__header {
+    font-size: 1.5rem;
+    color: hsla(210, 20%, 98%, 1);
+  }
+  .bar-chart__subheader {
+    color: hsla(0, 0%, 50%, 1);
+  }
 }
