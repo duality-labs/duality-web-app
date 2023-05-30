@@ -1,10 +1,27 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { TxResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/abci/v1beta1/abci';
+import type { GetTxsEventResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/tx/v1beta1/service';
+
 import PoolLayout from './PoolLayout';
-import { Token } from '../../lib/web3/utils/tokens';
 import PriceCard, { PriceCardRow } from '../../components/cards/PriceCard';
+import Table from '../../components/Table';
+import TableCard from '../../components/cards/TableCard';
+import Tabs from '../../components/Tabs/Tabs';
+
+import { useLcdClientPromise } from '../../lib/web3/lcdClient';
+import { formatAddress } from '../../lib/web3/utils/address';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { getPairID, hasInvertedOrder } from '../../lib/web3/utils/pairs';
+import {
+  DexDepositEvent,
+  DexMessageAction,
+  decodeEvent,
+  getEventAttributeMap,
+} from '../../lib/web3/utils/events';
 
 import './Pool.scss';
-import { Link } from 'react-router-dom';
 
 export default function PoolOverview({
   tokenA,
@@ -51,11 +68,261 @@ export default function PoolOverview({
         <div className="col flex gap-4">
           <div className={'overview-card col'}>Body</div>
           <div className="col pt-lg col-lg-hide">Sidebar 1a</div>
-          <div className="page-card">Table</div>
+          <div>
+            <PoolOverviewTable tokenA={tokenA} tokenB={tokenB} />
+          </div>
           <div className="col pt-lg col-lg-hide">Sidebar 1b</div>
         </div>
         <div className="col col-lg col--left gap-4">Sidebar 2</div>
       </div>
     </PoolLayout>
+  );
+}
+
+function PoolOverviewTable({
+  tokenA,
+  tokenB,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+}) {
+  const tabs = useMemo(() => {
+    return [
+      {
+        nav: 'All',
+        Tab: () => <TokenTransactionTable />,
+      },
+      {
+        nav: 'Swaps',
+        Tab: () => <TokenTransactionTable action="PlaceLimitOrder" />,
+      },
+      {
+        nav: 'Adds',
+        Tab: () => <TokenTransactionTable action="Deposit" />,
+      },
+      {
+        nav: 'Removes',
+        Tab: () => <TokenTransactionTable action="Withdraw" />,
+      },
+    ];
+    // intermediary component to avoid repeating tokenA={tokenA} tokenB={tokenB}
+    function TokenTransactionTable({ action }: { action?: DexMessageAction }) {
+      return (
+        <TransactionsTable tokenA={tokenA} tokenB={tokenB} action={action} />
+      );
+    }
+  }, [tokenA, tokenB]);
+
+  return (
+    <TableCard title="Transactions" scrolling={false}>
+      <Tabs tabs={tabs} />
+    </TableCard>
+  );
+}
+
+const transactionTableHeadings = [
+  'Type',
+  'Total Value',
+  'Token A Amount',
+  'Token B Amount',
+  'Wallet',
+  'Time',
+] as const;
+type TransactionTableColumnKey = typeof transactionTableHeadings[number];
+
+function TransactionTableHeading({
+  heading,
+  tokenA,
+  tokenB,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  heading: TransactionTableColumnKey;
+}) {
+  switch (heading) {
+    case 'Token A Amount':
+      return <th>{tokenA.symbol}&nbsp;Amount</th>;
+    case 'Token B Amount':
+      return <th>{tokenB.symbol}&nbsp;Amount</th>;
+  }
+  return <th>{heading}</th>;
+}
+
+const pageSize = 10;
+function TransactionsTable({
+  tokenA,
+  tokenB,
+  action,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  action?: DexMessageAction;
+}) {
+  const lcdClientPromise = useLcdClientPromise();
+  const [pageKey] = useState<string>();
+  const query = useQuery({
+    queryKey: ['events', action, pageKey],
+    queryFn: async (): Promise<GetTxsEventResponseSDKType> => {
+      const lcd = await lcdClientPromise;
+      /*
+       * note: you would expect the follow to work, but it mangles the query
+       * parameters into a form that isn't accepted by the API:
+       *
+       *   lcd.cosmos.tx.v1beta1.getTxsEvent({
+       *     events: [filter],
+       *     orderBy: 2 as OrderBy.ORDER_BY_DESC,
+       *     pagination: { limit: Long.fromNumber(10) , countTotal: true},
+       *   })
+       *
+       * instead we will create the query string ourself and add the return type
+       */
+
+      return await lcd.cosmos.tx.v1beta1.req.get(
+        `cosmos/tx/v1beta1/txs?${
+          // create Query string (with all appropriate characters escaped)
+          new URLSearchParams({
+            events: [
+              "message.module='dex'",
+              action && `message.action='${action}'`,
+            ]
+              .filter(Boolean)
+              .join(' AND '),
+            order_by: 'ORDER_BY_DESC',
+            'pagination.limit': `${pageSize || 10}`,
+            // add page key if it exists
+            ...(pageKey && {
+              'pagination.key': pageKey,
+            }),
+          })
+        }`
+      );
+    },
+  });
+
+  const columns = useMemo(() => {
+    return transactionTableHeadings.map(
+      (heading: TransactionTableColumnKey) => {
+        return function TransactionTableColumn({
+          row: tx,
+        }: {
+          row: TxResponseSDKType;
+        }) {
+          const events = tx.events.map(decodeEvent).map(getEventAttributeMap);
+          const depositEvent = events.find(
+            (event): event is DexDepositEvent => event.action === 'Deposit'
+          );
+
+          // return function component that accepts row as data prop
+          if (depositEvent) {
+            return (
+              <DepositColumn
+                tx={tx}
+                event={depositEvent}
+                heading={heading}
+                tokenA={tokenA}
+                tokenB={tokenB}
+              />
+            );
+          }
+          return null;
+        };
+      }
+    );
+  }, [tokenA, tokenB]);
+
+  return (
+    <div>
+      <Table<TxResponseSDKType>
+        data={query.data?.tx_responses}
+        headings={transactionTableHeadings.map((heading) => (
+          <TransactionTableHeading
+            key={heading}
+            tokenA={tokenA}
+            tokenB={tokenB}
+            heading={heading}
+          />
+        ))}
+        columns={columns}
+      />
+    </div>
+  );
+}
+
+function DepositColumn({
+  tx,
+  event,
+  heading,
+  tokenA,
+  tokenB,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  tx: TxResponseSDKType;
+  event: DexDepositEvent;
+  heading: TransactionTableColumnKey;
+}) {
+  const content = (() => {
+    switch (heading) {
+      case 'Wallet':
+        return formatAddress(event?.Creator);
+      case 'Type':
+        return `Add ${[
+          Number(getTokenAReserves()) > 0 && tokenA.symbol,
+          Number(getTokenBReserves()) > 0 && tokenB.symbol,
+        ]
+          .filter(Boolean)
+          .join(' and ')}`;
+      case 'Token A Amount':
+        return getAmountInDenom(
+          tokenA,
+          getTokenAReserves(),
+          tokenA.base,
+          tokenA.display,
+          { fractionalDigits: 3, significantDigits: 3 }
+        );
+      case 'Token B Amount':
+        return getAmountInDenom(
+          tokenB,
+          getTokenBReserves(),
+          tokenB.base,
+          tokenB.display,
+          { fractionalDigits: 3, significantDigits: 3 }
+        );
+      case 'Total Value':
+        return '[compute value here]';
+      case 'Time':
+        return tx.timestamp;
+    }
+    return null;
+
+    function getHasInvertedOrder(): boolean {
+      return hasInvertedOrder(
+        getPairID(event.Token0, event.Token1),
+        tokenA.address,
+        tokenB.address
+      );
+    }
+
+    function getTokenAReserves() {
+      return getHasInvertedOrder()
+        ? event?.Reserves1Deposited
+        : event?.Reserves0Deposited;
+    }
+
+    function getTokenBReserves() {
+      return getHasInvertedOrder()
+        ? event?.Reserves0Deposited
+        : event?.Reserves1Deposited;
+    }
+  })();
+
+  return (
+    <td
+      className={
+        heading === 'Wallet' || heading === 'Type' ? 'cell-highlighted' : ''
+      }
+    >
+      {content}
+    </td>
   );
 }
