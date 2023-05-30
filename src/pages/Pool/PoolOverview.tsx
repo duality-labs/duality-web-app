@@ -10,6 +10,7 @@ import PriceCard, { PriceCardRow } from '../../components/cards/PriceCard';
 import Table from '../../components/Table';
 import TableCard from '../../components/cards/TableCard';
 import Tabs from '../../components/Tabs/Tabs';
+import PoolChart from './PoolChart';
 
 import { useLcdClientPromise } from '../../lib/web3/lcdClient';
 import { formatAddress } from '../../lib/web3/utils/address';
@@ -82,7 +83,9 @@ export default function PoolOverview({
       </div>
       <div className="row gap-4 my-3">
         <div className="col flex gap-4">
-          <div className={'overview-card col'}>Body</div>
+          <div className={'overview-card col'}>
+            <PoolChart tokenA={tokenA} tokenB={tokenB} />
+          </div>
           <div className="col pt-lg col-lg-hide">Sidebar 1a</div>
           <div>
             <PoolOverviewTable tokenA={tokenA} tokenB={tokenB} />
