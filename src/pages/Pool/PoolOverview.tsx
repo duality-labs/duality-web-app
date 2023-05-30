@@ -11,6 +11,7 @@ import Table from '../../components/Table';
 import TableCard from '../../components/cards/TableCard';
 import Tabs from '../../components/Tabs/Tabs';
 import PoolChart from './PoolChart';
+import SmallCard, { SmallCardRow } from '../../components/cards/SmallCard';
 
 import { useLcdClientPromise } from '../../lib/web3/lcdClient';
 import { formatAddress } from '../../lib/web3/utils/address';
@@ -84,6 +85,34 @@ export default function PoolOverview({
       <div className="row gap-4 my-3">
         <div className="col flex gap-4">
           <div className={'overview-card col'}>
+            <div className="row gap-4 mb-5">
+              <SmallCardRow>
+                <SmallCard header="TVL" footer="+3.42%" footerVariant="success">
+                  $970.25K
+                </SmallCard>
+                <SmallCard
+                  header="Volume (24H)"
+                  footer="-3.42%"
+                  footerVariant="danger"
+                >
+                  $665.37K
+                </SmallCard>
+                <SmallCard
+                  header="Fees"
+                  footer="+35.25%"
+                  footerVariant="success"
+                >
+                  $78.98K
+                </SmallCard>
+                <SmallCard
+                  header="Volatility"
+                  footer="+3.42%"
+                  footerVariant="success"
+                >
+                  6.0%
+                </SmallCard>
+              </SmallCardRow>
+            </div>
             <PoolChart tokenA={tokenA} tokenB={tokenB} />
           </div>
           <div className="col pt-lg col-lg-hide">Sidebar 1a</div>
