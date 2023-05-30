@@ -1,0 +1,23 @@
+.pool-chart-area {
+  .bar-chart__nav {
+    border-bottom: 1px solid hsla(217, 19%, 27%, 1);
+  }
+  .bar-chart__nav-left {
+    button {
+      & {
+        color: hsla(218, 11%, 65%, 1);
+        border-radius: 0;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -1px;
+      }
+      &:hover {
+        color: hsla(210, 20%, 98%, 1);
+      }
+      &.active {
+        color: hsla(210, 20%, 98%, 1);
+        font-weight: 600;
+        border-bottom-color: #38ecbf;
+      }
+    }
+  }
+}
