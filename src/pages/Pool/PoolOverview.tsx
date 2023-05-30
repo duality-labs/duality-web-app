@@ -181,24 +181,23 @@ function TransactionsTable({
        * instead we will create the query string ourself and add the return type
        */
 
+      // create Query string (with all appropriate characters escaped)
+      const queryParams = new URLSearchParams({
+        events: "message.module='dex'",
+        order_by: 'ORDER_BY_DESC',
+        'pagination.limit': `${pageSize || 10}`,
+        // add page key if it exists
+        ...(pageKey && {
+          'pagination.key': pageKey,
+        }),
+      });
+      // append multiple event keys
+      if (action) {
+        queryParams.append('events', `message.action='${action}'`);
+      }
+
       return await lcd.cosmos.tx.v1beta1.req.get(
-        `cosmos/tx/v1beta1/txs?${
-          // create Query string (with all appropriate characters escaped)
-          new URLSearchParams({
-            events: [
-              "message.module='dex'",
-              action && `message.action='${action}'`,
-            ]
-              .filter(Boolean)
-              .join(' AND '),
-            order_by: 'ORDER_BY_DESC',
-            'pagination.limit': `${pageSize || 10}`,
-            // add page key if it exists
-            ...(pageKey && {
-              'pagination.key': pageKey,
-            }),
-          })
-        }`
+        `cosmos/tx/v1beta1/txs?${queryParams}`
       );
     },
   });
