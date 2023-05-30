@@ -372,6 +372,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       // it's too complicated to update indexer state with the event detail's
     };
     subscriber.subscribeMessage(onRouterUpdateMessage, {
+      // todo: this doesn't exist anymore
       message: { action: 'NewSwap' },
     });
     return () => {
