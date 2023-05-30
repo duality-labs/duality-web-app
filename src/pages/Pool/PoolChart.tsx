@@ -52,7 +52,7 @@ export default function PoolChart({
     data: [tokenAPrice, tokenBPrice],
   } = useSimplePrice([tokenA, tokenB]);
 
-  const { data } = useQuery({
+  const { data, isFetching } = useQuery({
     queryKey: [tokenA.address, tokenB.address],
     queryFn: async (): Promise<DataPeriodsResponse> => {
       const response = await fetch(
@@ -172,7 +172,12 @@ export default function PoolChart({
         </div>
       ) : (
         // show skeleton
-        <div className="bar-chart--empty">loading...</div>
+        <div
+          className="bar-chart--empty mt-6 mb-xl flex flex-centered row"
+          style={{ height: 300 }}
+        >
+          {isFetching ? 'loading...' : 'no data'}
+        </div>
       )}
     </div>
   );
