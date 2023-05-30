@@ -8,6 +8,7 @@ import './TableCard.scss';
 export default function TableCard<T extends string | number>({
   className,
   title,
+  scrolling = true,
   headerActions,
   switchValues,
   switchValue,
@@ -18,6 +19,7 @@ export default function TableCard<T extends string | number>({
 }: {
   className?: string;
   title: ReactNode;
+  scrolling?: boolean;
   headerActions?: ReactNode;
   switchValues?: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
   switchValue?: T;
@@ -63,7 +65,13 @@ export default function TableCard<T extends string | number>({
           </div>
         )}
         <div className="table-card__table_container page-card__footer relative row flex mt-lg">
-          <div className="table-card__table col flex absolute filled pb-4 page-card__padding-width">
+          <div
+            className={
+              scrolling
+                ? 'table-card__table col flex absolute filled pb-4 page-card__padding-width'
+                : 'table-card__table col flex pb-4 page-card__padding-width'
+            }
+          >
             {children}
           </div>
         </div>
