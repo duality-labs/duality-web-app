@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
+import { Fragment, ReactNode } from 'react';
 
-export default function Table<DataRow extends Record<string, unknown>>({
+export default function Table<DataRow>({
   data = [],
   columns = [],
   headings = [],
@@ -16,18 +16,34 @@ export default function Table<DataRow extends Record<string, unknown>>({
   return (
     <table className="simple-table" style={{ width: '100%' }}>
       <thead>
-        {(Array.isArray(headings) ? headings : headings()).map((heading) => {
-          // wrap strings in the expected element
-          return typeof heading !== 'function' ? <th>{heading}</th> : heading;
-        })}
+        <tr>
+          {(Array.isArray(headings) ? headings : headings()).map(
+            (heading, index) => {
+              // wrap strings in the expected element
+              return (
+                <Fragment key={index}>
+                  {typeof heading !== 'function' ? <th>{heading}</th> : heading}
+                </Fragment>
+              );
+            }
+          )}
+        </tr>
       </thead>
       <tbody>
-        {data.map((row) => {
-          return columns.map((column) => {
-            const cell = column(row);
-            // wrap strings in the expected element
-            return typeof cell !== 'function' ? <td>{cell}</td> : cell;
-          });
+        {data.map((row, index) => {
+          return (
+            <tr key={index}>
+              {columns.map((column, index) => {
+                const cell = column(row);
+                // wrap strings in the expected element
+                return (
+                  <Fragment key={index}>
+                    {typeof cell !== 'function' ? <td>{cell}</td> : cell}
+                  </Fragment>
+                );
+              })}
+            </tr>
+          );
         })}
       </tbody>
     </table>
