@@ -1,7 +1,7 @@
 import { Event } from '@cosmjs/stargate';
 import { EventSDKType } from '@duality-labs/dualityjs/types/codegen/tendermint/abci/types';
 
-export function getEventAttributeMap<T extends object>({
+export function getEventAttributeMap<T extends { action: DexMessageAction }>({
   attributes,
 }: Event): T {
   return attributes.reduce<{ [key: string]: string }>((acc, { key, value }) => {
@@ -24,6 +24,12 @@ export function decodeEvent(event: Event | EventSDKType): Event {
   };
 }
 
+export type DexMessageAction =
+  | 'PlaceLimitOrder'
+  | 'Deposit'
+  | 'Withdraw'
+  | 'TickUpdate';
+
 export interface DexDepositEvent {
   module: 'dex';
   action: 'Deposit';
@@ -41,6 +47,20 @@ export interface DexDepositEvent {
 export interface DexWithdrawalEvent {
   module: 'dex';
   action: 'Withdraw';
+  Creator: string;
+  Receiver: string;
+  Token0: string;
+  Token1: string;
+  TickIndex: string;
+  Fee: string;
+  Reserves0Withdrawn: string;
+  Reserves1Withdrawn: string;
+  SharesRemoved: string;
+}
+
+export interface DexPlaceLimitOrderEvent {
+  module: 'dex';
+  action: 'PlaceLimitOrder';
   Creator: string;
   Receiver: string;
   Token0: string;

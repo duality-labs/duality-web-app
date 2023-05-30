@@ -97,6 +97,7 @@ async function sendSwap(
         ) {
           // collect into more usable format for parsing
           const attributes = getEventAttributeMap<{
+            action: 'PlaceLimitOrder';
             amount: string;
             receiver: string;
           }>(event);
