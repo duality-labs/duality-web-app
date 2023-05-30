@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { Event } from '@cosmjs/stargate';
 import { EventSDKType } from '@duality-labs/dualityjs/types/codegen/tendermint/abci/types';
 import { TokenAddress } from './tokens';
@@ -124,4 +125,15 @@ export interface CoinTransferEvent {
     recipient: TokenAddress;
     sender: TokenAddress;
   };
+}
+
+export function parseAmountDenomString(
+  amountDenom: AmountDenomString
+): [amount: BigNumber, denom: string] {
+  const [, amountString, denom] = amountDenom.match(/^(\d+)(.*)$/) || [];
+  const amount = new BigNumber(amountString);
+  if (amount.isNaN()) {
+    throw new Error(`Invalid token amount: ${amountString}`);
+  }
+  return [amount, denom];
 }
