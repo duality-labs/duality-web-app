@@ -1,0 +1,13 @@
+.button-group {
+  .button-group-button {
+    & {
+      color: hsla(0, 0%, 50%, 1);
+    }
+    &:hover {
+      color: hsla(210, 20%, 98%, 0.8);
+    }
+    &.active {
+      color: hsla(165, 83%, 57%, 1);
+    }
+  }
+}
