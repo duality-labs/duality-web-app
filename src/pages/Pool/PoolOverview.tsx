@@ -14,7 +14,11 @@ import Tabs from '../../components/Tabs/Tabs';
 import { useLcdClientPromise } from '../../lib/web3/lcdClient';
 import { formatAddress } from '../../lib/web3/utils/address';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
-import { getPairID, hasInvertedOrder } from '../../lib/web3/utils/pairs';
+import {
+  getPairID,
+  guessInvertedOrder,
+  hasInvertedOrder,
+} from '../../lib/web3/utils/pairs';
 import {
   DexDepositEvent,
   DexEvent,
@@ -193,7 +197,19 @@ function TransactionsTable({
           'pagination.offset': (pageOffset * pageSize).toFixed(),
         }),
       });
+
+      const invertedOrder = guessInvertedOrder(tokenA.address, tokenB.address);
+
       // append multiple event keys
+      // search specific token types
+      if (!invertedOrder) {
+        queryParams.append('events', `message.Token0='${tokenA.address}'`);
+        queryParams.append('events', `message.Token1='${tokenB.address}'`);
+      } else {
+        queryParams.append('events', `message.Token0='${tokenB.address}'`);
+        queryParams.append('events', `message.Token1='${tokenA.address}'`);
+      }
+      // search specific action types
       if (action) {
         queryParams.append('events', `message.action='${action}'`);
       }
