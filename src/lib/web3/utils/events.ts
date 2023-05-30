@@ -1,5 +1,6 @@
 import { Event } from '@cosmjs/stargate';
 import { EventSDKType } from '@duality-labs/dualityjs/types/codegen/tendermint/abci/types';
+import { TokenAddress } from './tokens';
 
 export function mapEventAttributes<T = ChainEvent>(event: Event): T {
   return {
@@ -52,8 +53,8 @@ export interface DexDepositEvent {
   attributes: {
     module: 'dex';
     action: 'Deposit';
-    Creator: string;
-    Receiver: string;
+    Creator: TokenAddress;
+    Receiver: TokenAddress;
     Token0: string;
     Token1: string;
     TickIndex: string;
@@ -69,8 +70,8 @@ export interface DexWithdrawalEvent {
   attributes: {
     module: 'dex';
     action: 'Withdraw';
-    Creator: string;
-    Receiver: string;
+    Creator: TokenAddress;
+    Receiver: TokenAddress;
     Token0: string;
     Token1: string;
     TickIndex: string;
@@ -86,8 +87,8 @@ export interface DexPlaceLimitOrderEvent {
   attributes: {
     module: 'dex';
     action: 'PlaceLimitOrder';
-    Creator: string;
-    Receiver: string;
+    Creator: TokenAddress;
+    Receiver: TokenAddress;
     Token0: string;
     Token1: string;
     TokenIn: string;
@@ -99,27 +100,28 @@ export interface DexPlaceLimitOrderEvent {
   };
 }
 
+type AmountDenomString = string;
 export interface CoinReceivedEvent {
   type: 'coin_received';
   attributes: {
-    amount: string;
-    receiver: string;
+    amount: AmountDenomString;
+    receiver: TokenAddress;
   };
 }
 
 export interface CoinSpentEvent {
   type: 'coin_spent';
   attributes: {
-    amount: string;
-    spender: string;
+    amount: AmountDenomString;
+    spender: TokenAddress;
   };
 }
 
 export interface CoinTransferEvent {
   type: 'transfer';
   attributes: {
-    amount: string;
-    recipient: string;
-    sender: string;
+    amount: AmountDenomString;
+    recipient: TokenAddress;
+    sender: TokenAddress;
   };
 }
