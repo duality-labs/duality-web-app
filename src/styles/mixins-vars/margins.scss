@@ -106,39 +106,110 @@ $sizes: (
   }
 }
 
+@mixin gutter($type, $size, $important: false) {
+  $value: map-get($sizes, #{$size});
+
+  $abbrs: (
+    'x': (
+      'right',
+      'left',
+    ),
+    'r': (
+      'right',
+    ),
+    'l': (
+      'left',
+    ),
+    'y': (
+      'bottom',
+      'top',
+    ),
+    'b': (
+      'bottom',
+    ),
+    't': (
+      'top',
+    ),
+    '*': (
+      '',
+    ),
+  );
+
+  $direction-list: map-get($abbrs, $type);
+
+  @if not $value {
+    @error "Invalid size #{$size}";
+  }
+
+  @if not $direction-list {
+    @error "Invalid gutter type #{$type}.";
+  }
+
+  @each $direction in $direction-list {
+    $property-name: if($direction== '', 'margin', 'margin-#{$direction}');
+
+    @if $important {
+      #{$property-name}: -$value !important;
+    } @else {
+      #{$property-name}: -$value;
+    }
+  }
+}
+
 @each $name, $size in $sizes {
   .m-#{$name} {
     @include margin('*', $name, $important: true);
+  }
+  .gutter-#{$name} {
+    @include gutter('*', $name, $important: true);
   }
 }
 @each $name, $size in $sizes {
   .mx-#{$name} {
     @include margin('x', $name, $important: true);
   }
+  .gutter-x-#{$name} {
+    @include gutter('x', $name, $important: true);
+  }
 }
 @each $name, $size in $sizes {
   .mr-#{$name} {
     @include margin('r', $name, $important: true);
+  }
+  .gutter-r-#{$name} {
+    @include gutter('r', $name, $important: true);
   }
 }
 @each $name, $size in $sizes {
   .ml-#{$name} {
     @include margin('l', $name, $important: true);
   }
+  .gutter-l-#{$name} {
+    @include gutter('l', $name, $important: true);
+  }
 }
 @each $name, $size in $sizes {
   .my-#{$name} {
     @include margin('y', $name, $important: true);
+  }
+  .gutter-y-#{$name} {
+    @include gutter('y', $name, $important: true);
   }
 }
 @each $name, $size in $sizes {
   .mb-#{$name} {
     @include margin('b', $name, $important: true);
   }
+  .gutter-b-#{$name} {
+    @include gutter('b', $name, $important: true);
+  }
 }
 @each $name, $size in $sizes {
   .mt-#{$name} {
     @include margin('t', $name, $important: true);
+  }
+  .gutter-t-#{$name} {
+    @include gutter('t', $name, $important: true);
   }
 }
 @each $name, $size in $sizes {
