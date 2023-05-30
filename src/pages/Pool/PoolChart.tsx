@@ -64,12 +64,41 @@ export default function PoolChart({
 
   // map data to chart
   const chartData = useMemo(() => {
-    return dataPeriod?.data
-      .map(({ timestamp, tokenA, tokenB }: DataRow) => {
-        return { x: timestamp, y: tokenA + tokenB };
-      })
-      .reverse();
-  }, [dataPeriod]);
+    const timePeriodKey = timePeriodKeys[timePeriodIndex];
+    if (dataPeriod) {
+      const length = (() => {
+        switch (true) {
+          case dataPeriod.resolution === 'hour' && timePeriodKey === '24H':
+            return 24;
+          case dataPeriod.resolution === 'hour' && timePeriodKey === '1W':
+            return 24 * 7;
+          case dataPeriod.resolution === 'day' && timePeriodKey === '1M':
+            return 28;
+          case dataPeriod.resolution === 'week' && timePeriodKey === '1Y':
+            return 52;
+          case dataPeriod.resolution === 'hour':
+            return 24;
+          case dataPeriod.resolution === 'day':
+            return 28;
+          case dataPeriod.resolution === 'week':
+            return 52;
+          default:
+            return 1;
+        }
+      })();
+      return Array.from({ length })
+        .map((_, index) => {
+          const dataRow = dataPeriod.data[index];
+          // todo: find data for expected timestamps
+          if (dataRow) {
+            const { timestamp, tokenA, tokenB }: DataRow = dataRow;
+            return { x: timestamp, y: tokenA + tokenB };
+          }
+          return { x: `empty-${index}`, y: 0 };
+        })
+        .reverse();
+    }
+  }, [dataPeriod, timePeriodIndex]);
 
   return (
     <div className="pool-chart-area bar-chart-area">
