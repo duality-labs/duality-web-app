@@ -20,12 +20,17 @@ import {
   hasInvertedOrder,
 } from '../../lib/web3/utils/pairs';
 import {
+  ChainEvent,
   DexDepositEvent,
   DexEvent,
+  CoinReceivedEvent,
   DexMessageAction,
+  DexPlaceLimitOrderEvent,
   DexWithdrawalEvent,
   decodeEvent,
   mapEventAttributes,
+  CoinSpentEvent,
+  parseAmountDenomString,
 } from '../../lib/web3/utils/events';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
@@ -231,6 +236,24 @@ function TransactionsTable({
           const events = tx.events
             .map(decodeEvent)
             .map((event) => mapEventAttributes<DexEvent>(event));
+
+          // try swap event
+          const swapEvent = events.find(
+            (event): event is DexPlaceLimitOrderEvent =>
+              event.attributes.action === 'PlaceLimitOrder'
+          );
+          if (swapEvent) {
+            return (
+              <SwapColumn
+                tx={tx}
+                event={swapEvent}
+                events={events as ChainEvent[]}
+                heading={heading}
+                tokenA={tokenA}
+                tokenB={tokenB}
+              />
+            );
+          }
 
           // try deposit event
           const depositEvent = events.find(
@@ -474,6 +497,133 @@ function WithdrawalColumn({
       return getHasInvertedOrder()
         ? attributes.Reserves0Withdrawn
         : attributes.Reserves1Withdrawn;
+    }
+
+    function getTokenReservesInDenom(token: Token, reserves: string) {
+      return getAmountInDenom(token, reserves, token.base, token.display, {
+        fractionalDigits: 3,
+        significantDigits: 3,
+      });
+    }
+  })();
+
+  return (
+    <td
+      className={
+        heading === 'Wallet' || heading === 'Type' ? 'cell-highlighted' : ''
+      }
+    >
+      {content}
+    </td>
+  );
+}
+
+function SwapColumn({
+  tx,
+  event: { attributes },
+  events,
+  heading,
+  tokenA,
+  tokenB,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  tx: TxResponseSDKType;
+  event: DexPlaceLimitOrderEvent;
+  events: ChainEvent[];
+  heading: TransactionTableColumnKey;
+}) {
+  const {
+    data: [tokenAPrice, tokenBPrice],
+    isValidating,
+  } = useSimplePrice([tokenA, tokenB]);
+
+  const content = (() => {
+    switch (heading) {
+      case 'Wallet':
+        return formatAddress(attributes.Creator);
+      case 'Type':
+        return `Swap ${[
+          Number(getTokenAReserves()) > 0 && tokenA.symbol,
+          Number(getTokenBReserves()) > 0 && tokenB.symbol,
+        ]
+          .filter(Boolean)
+          .join(' and ')}`;
+      case 'Token A Amount':
+        return getTokenReservesInDenom(tokenA, getTokenAReserves());
+      case 'Token B Amount':
+        return getTokenReservesInDenom(tokenB, getTokenBReserves());
+      case 'Total Value':
+        const values = [
+          new BigNumber(
+            getAmountInDenom(
+              tokenA,
+              getTokenAReserves(),
+              tokenA.base,
+              tokenA.display
+            ) || 0
+          ).multipliedBy(tokenAPrice || 0),
+          new BigNumber(
+            getAmountInDenom(
+              tokenB,
+              getTokenBReserves(),
+              tokenB.base,
+              tokenB.display
+            ) || 0
+          ).multipliedBy(tokenBPrice || 0),
+        ];
+        const value = values[0].plus(values[1]);
+        // return loading start or calculated value
+        return !tokenA && !tokenB && isValidating
+          ? '...'
+          : value.isLessThan(0.005)
+          ? `< ${formatCurrency(0.01)}`
+          : formatCurrency(values[0].plus(values[1]).toNumber());
+      case 'Time':
+        return tx.timestamp;
+    }
+    return null;
+
+    function getTokenAReserves() {
+      const tokenEvent =
+        attributes.TokenIn === tokenA.address
+          ? // find tokens spent
+            events.find(
+              (event): event is CoinSpentEvent =>
+                event.type === 'coin_spent' &&
+                event.attributes.spender === attributes.Receiver
+            )
+          : // find tokens received
+            events.find(
+              (event): event is CoinReceivedEvent =>
+                event.type === 'coin_received' &&
+                event.attributes.receiver === attributes.Receiver
+            );
+      const [amount] = tokenEvent
+        ? parseAmountDenomString(tokenEvent.attributes.amount)
+        : [];
+      return amount?.toFixed() || '0';
+    }
+
+    function getTokenBReserves() {
+      const tokenEvent =
+        attributes.TokenIn === tokenB.address
+          ? // find tokens spent
+            events.find(
+              (event): event is CoinSpentEvent =>
+                event.type === 'coin_spent' &&
+                event.attributes.spender === attributes.Receiver
+            )
+          : // find tokens received
+            events.find(
+              (event): event is CoinReceivedEvent =>
+                event.type === 'coin_received' &&
+                event.attributes.receiver === attributes.Receiver
+            );
+      const [amount] = tokenEvent
+        ? parseAmountDenomString(tokenEvent.attributes.amount)
+        : [];
+      return amount?.toFixed() || '0';
     }
 
     function getTokenReservesInDenom(token: Token, reserves: string) {
