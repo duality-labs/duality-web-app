@@ -1,5 +1,7 @@
 import { ReactNode, useState } from 'react';
 
+import './Tabs.scss';
+
 interface Tab {
   nav: ReactNode;
   Tab: React.FunctionComponent;
@@ -16,7 +18,7 @@ export default function Tabs({
 
   return (
     <div className={['tabs col gap-4', className].filter(Boolean).join(' ')}>
-      <div className="tabs__nav flex row gutter-x-3 gutter-t-2">
+      <div className="tabs__nav flex row gutter-x-3">
         {tabs.map((tab, index) => {
           return (
             <button

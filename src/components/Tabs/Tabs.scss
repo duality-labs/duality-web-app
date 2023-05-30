@@ -1,0 +1,21 @@
+.tabs {
+  .tabs__nav {
+    .tabs__nav-button {
+      & {
+        color: hsla(218, 11%, 65%, 1);
+      }
+      &.active {
+        color: hsla(210, 20%, 98%, 1);
+      }
+      &:hover {
+        background-color: hsla(210, 20%, 98%, 0.1);
+      }
+    }
+  }
+
+  .tabs__tab {
+    .cell-highlighted {
+      color: hsla(165, 83%, 57%, 1);
+    }
+  }
+}
