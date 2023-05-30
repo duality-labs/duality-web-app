@@ -1,4 +1,5 @@
 import { Event } from '@cosmjs/stargate';
+import { EventSDKType } from '@duality-labs/dualityjs/types/codegen/tendermint/abci/types';
 
 export function getEventAttributeMap<T extends object>({
   attributes,
@@ -9,15 +10,15 @@ export function getEventAttributeMap<T extends object>({
   }, {}) as T;
 }
 
-export function decodeEvent(event: Event) {
+export function decodeEvent(event: Event | EventSDKType): Event {
   return {
     ...event,
     // change base64 encoded objects into plain string values
     attributes: event.attributes.map(({ key, value, ...rest }) => {
       return {
         ...rest,
-        key: Buffer.from(key, 'base64').toString(),
-        value: Buffer.from(value, 'base64').toString(),
+        key: Buffer.from(`${key}`, 'base64').toString(),
+        value: Buffer.from(`${value}`, 'base64').toString(),
       };
     }),
   };
