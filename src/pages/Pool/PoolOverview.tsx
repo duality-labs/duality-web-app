@@ -35,6 +35,7 @@ import {
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { formatCurrency } from '../../lib/utils/number';
+import { formatRelativeTime } from '../../lib/utils/time';
 
 import './Pool.scss';
 
@@ -372,7 +373,7 @@ function DepositColumn({
           ? `< ${formatCurrency(0.01)}`
           : formatCurrency(values[0].plus(values[1]).toNumber());
       case 'Time':
-        return tx.timestamp;
+        return formatRelativeTime(tx.timestamp);
     }
     return null;
 
@@ -475,7 +476,7 @@ function WithdrawalColumn({
           ? `< ${formatCurrency(0.01)}`
           : formatCurrency(values[0].plus(values[1]).toNumber());
       case 'Time':
-        return tx.timestamp;
+        return formatRelativeTime(tx.timestamp);
     }
     return null;
 
@@ -580,7 +581,7 @@ function SwapColumn({
           ? `< ${formatCurrency(0.01)}`
           : formatCurrency(values[0].plus(values[1]).toNumber());
       case 'Time':
-        return tx.timestamp;
+        return formatRelativeTime(tx.timestamp);
     }
     return null;
 
