@@ -6,7 +6,7 @@ export default function Table<DataRow>({
   headings = [],
 }: {
   data?: DataRow[];
-  columns?: Array<(row: DataRow) => ReactNode>;
+  columns?: Array<React.FunctionComponent<{ row: DataRow; rows: DataRow[] }>>;
   headings?: Array<ReactNode> | (() => Array<ReactNode>);
 }) {
   if (columns.length !== headings.length) {
@@ -30,17 +30,12 @@ export default function Table<DataRow>({
         </tr>
       </thead>
       <tbody>
-        {data.map((row, index) => {
+        {data.map((row, index, rows) => {
           return (
             <tr key={index}>
-              {columns.map((column, index) => {
-                const cell = column(row);
-                // wrap strings in the expected element
-                return (
-                  <Fragment key={index}>
-                    {typeof cell !== 'object' ? <td>{cell}</td> : cell}
-                  </Fragment>
-                );
+              {columns.map((Column, index) => {
+                // allow component to handle setting of <td>
+                return <Column key={index} row={row} rows={rows} />;
               })}
             </tr>
           );
