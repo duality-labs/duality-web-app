@@ -15,8 +15,8 @@ export default function Tabs({
   const { Tab } = tabs[tabIndex];
 
   return (
-    <div className={['tabs', className].filter(Boolean).join(' ')}>
-      <div className="tabs__nav flex row gutter-x-3">
+    <div className={['tabs col gap-4', className].filter(Boolean).join(' ')}>
+      <div className="tabs__nav flex row gutter-x-3 gutter-t-2">
         {tabs.map((tab, index) => {
           return (
             <button
