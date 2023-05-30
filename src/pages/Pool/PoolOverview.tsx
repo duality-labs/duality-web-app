@@ -40,6 +40,7 @@ import { formatCurrency } from '../../lib/utils/number';
 import { formatRelativeTime } from '../../lib/utils/time';
 
 import './Pool.scss';
+import { addressableTokenMap } from '../../lib/web3/hooks/useTokens';
 
 export default function PoolOverview({
   tokenA,
@@ -115,15 +116,106 @@ export default function PoolOverview({
             </div>
             <PoolChart tokenA={tokenA} tokenB={tokenB} />
           </div>
-          <div className="col pt-lg col-lg-hide">Sidebar 1a</div>
+          <div className="col pt-lg col-lg-hide">
+            <PairComposition tokenA={tokenA} tokenB={tokenB} />
+          </div>
           <div>
             <PoolOverviewTable tokenA={tokenA} tokenB={tokenB} />
           </div>
-          <div className="col pt-lg col-lg-hide">Sidebar 1b</div>
+          <div className="col pt-lg col-lg-hide">
+            <Incentives />
+          </div>
         </div>
-        <div className="col col-lg col--left gap-4">Sidebar 2</div>
+        <div className="col col-lg col--left gap-4" style={{ width: 300 }}>
+          <PairComposition tokenA={tokenA} tokenB={tokenB} />
+          <Incentives />
+        </div>
       </div>
     </PoolLayout>
+  );
+}
+
+function PairComposition({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
+  const { columns, headings, data } = useMemo(() => {
+    return {
+      headings: ['Token', 'Amount', 'Value'],
+      columns: [
+        function TokenCell1({ row }: { row: Token }) {
+          return (
+            <td
+              className=" flex row gap-3"
+              style={{ alignItems: 'center', justifyContent: 'flex-start' }}
+            >
+              <div className="price-card__token-logo col my-2">
+                <img
+                  className="token-logo token-current"
+                  alt={`${row.symbol} logo`}
+                  src={row.logo_URIs?.svg ?? row.logo_URIs?.png}
+                />
+              </div>
+
+              {row.symbol}
+            </td>
+          );
+        },
+        function TokenCell2({ row }: { row: Token }) {
+          return <td>todo</td>;
+        },
+        function TokenCell3({ row }: { row: Token }) {
+          return <td>todo</td>;
+        },
+      ],
+      data: [tokenA, tokenB],
+    };
+  }, [tokenA, tokenB]);
+
+  return (
+    <TableCard title="Pair Composition" className="pb-5" scrolling={false}>
+      <Table<Token> data={data} columns={columns} headings={headings} />
+    </TableCard>
+  );
+}
+
+function Incentives() {
+  const tokenA = addressableTokenMap['tokenA'];
+  const tokenB = addressableTokenMap['tokenF'];
+
+  const { columns, headings, data } = useMemo(() => {
+    return {
+      headings: ['Token', 'Range', 'Reward'],
+      columns: [
+        function TokenCell1({ row }: { row: Token }) {
+          return (
+            <td
+              className=" flex row gap-3"
+              style={{ alignItems: 'center', justifyContent: 'flex-start' }}
+            >
+              <div className="price-card__token-logo col my-2">
+                <img
+                  className="token-logo token-current"
+                  alt={`${row.symbol} logo`}
+                  src={row.logo_URIs?.svg ?? row.logo_URIs?.png}
+                />
+              </div>
+              {row.symbol}
+            </td>
+          );
+        },
+        function TokenCell2({ row }: { row: Token }) {
+          return <td>todo</td>;
+        },
+        function TokenCell3({ row }: { row: Token }) {
+          return <td>todo</td>;
+        },
+      ],
+      data: [tokenA, tokenB],
+    };
+  }, [tokenA, tokenB]);
+
+  return (
+    <TableCard title="Incentives" className="pb-5" scrolling={false}>
+      <Table<Token> data={data} columns={columns} headings={headings} />
+    </TableCard>
   );
 }
 
