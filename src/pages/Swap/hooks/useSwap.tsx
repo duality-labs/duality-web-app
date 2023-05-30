@@ -16,7 +16,10 @@ import {
 
 import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import { getEventAttributeMap } from '../../../lib/web3/utils/events';
+import {
+  mapEventAttributes,
+  CoinReceivedEvent,
+} from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
 import { dualitylabs } from '@duality-labs/dualityjs';
 import {
@@ -96,11 +99,7 @@ async function sendSwap(
           )
         ) {
           // collect into more usable format for parsing
-          const attributes = getEventAttributeMap<{
-            action: 'PlaceLimitOrder';
-            amount: string;
-            receiver: string;
-          }>(event);
+          const { attributes } = mapEventAttributes<CoinReceivedEvent>(event);
           // parse coin string for matching tokens
           const [, amount, denom] =
             attributes.amount.match(/^(\d+)(.*)$/) || [];
