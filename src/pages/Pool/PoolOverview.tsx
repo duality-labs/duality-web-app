@@ -163,9 +163,9 @@ function TransactionsTable({
   action?: DexMessageAction;
 }) {
   const lcdClientPromise = useLcdClientPromise();
-  const [pageKey] = useState<string>();
+  const [pageOffset] = useState<number>(0);
   const query = useQuery({
-    queryKey: ['events', action, pageKey],
+    queryKey: ['events', action, pageOffset],
     queryFn: async (): Promise<GetTxsEventResponseSDKType> => {
       const lcd = await lcdClientPromise;
       /*
@@ -186,9 +186,9 @@ function TransactionsTable({
         events: `message.module='${'dex'}'`,
         order_by: 'ORDER_BY_DESC',
         'pagination.limit': `${pageSize || 10}`,
-        // add page key if it exists
-        ...(pageKey && {
-          'pagination.key': pageKey,
+        // add page offset if it is non-zero
+        ...(pageOffset && {
+          'pagination.offset': (pageOffset * pageSize).toFixed(),
         }),
       });
       // append multiple event keys
