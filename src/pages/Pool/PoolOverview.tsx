@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -20,6 +21,9 @@ import {
   decodeEvent,
   getEventAttributeMap,
 } from '../../lib/web3/utils/events';
+
+import { useSimplePrice } from '../../lib/tokenPrices';
+import { formatCurrency } from '../../lib/utils/number';
 
 import './Pool.scss';
 
@@ -261,6 +265,11 @@ function DepositColumn({
   event: DexDepositEvent;
   heading: TransactionTableColumnKey;
 }) {
+  const {
+    data: [tokenAPrice, tokenBPrice],
+    isValidating,
+  } = useSimplePrice([tokenA, tokenB]);
+
   const content = (() => {
     switch (heading) {
       case 'Wallet':
@@ -277,7 +286,28 @@ function DepositColumn({
       case 'Token B Amount':
         return getTokenReservesInDenom(tokenB, getTokenBReserves());
       case 'Total Value':
-        return '[compute value here]';
+        const values = [
+          new BigNumber(
+            getAmountInDenom(
+              tokenA,
+              getTokenAReserves(),
+              tokenA.base,
+              tokenA.display
+            ) || 0
+          ).multipliedBy(tokenAPrice || 0),
+          new BigNumber(
+            getAmountInDenom(
+              tokenB,
+              getTokenBReserves(),
+              tokenB.base,
+              tokenB.display
+            ) || 0
+          ).multipliedBy(tokenBPrice || 0),
+        ];
+        // return loading start or calculated value
+        return !tokenA && !tokenB && isValidating
+          ? '...'
+          : formatCurrency(values[0].plus(values[1]).toNumber());
       case 'Time':
         return tx.timestamp;
     }
