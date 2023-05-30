@@ -19,6 +19,7 @@ import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 import {
   mapEventAttributes,
   CoinReceivedEvent,
+  parseAmountDenomString,
 } from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
 import { dualitylabs } from '@duality-labs/dualityjs';
@@ -101,8 +102,7 @@ async function sendSwap(
           // collect into more usable format for parsing
           const { attributes } = mapEventAttributes<CoinReceivedEvent>(event);
           // parse coin string for matching tokens
-          const [, amount, denom] =
-            attributes.amount.match(/^(\d+)(.*)$/) || [];
+          const [amount, denom] = parseAmountDenomString(attributes.amount);
           if (denom === tokenOut) {
             return result.plus(amount);
           }
