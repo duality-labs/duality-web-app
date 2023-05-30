@@ -54,7 +54,7 @@ export default function TableCard<T extends string | number>({
           {headerActions}
         </div>
         {setSearchValue && (
-          <div className="table-card__search row mt-lg">
+          <div className="table-card__search row mt-lg mb-4">
             <div className="col flex">
               <SearchInput
                 placeholder="Search token name or paste address"
@@ -64,7 +64,7 @@ export default function TableCard<T extends string | number>({
             </div>
           </div>
         )}
-        <div className="table-card__table_container page-card__footer relative row flex mt-lg">
+        <div className="table-card__table_container page-card__footer relative row flex mt-3">
           <div
             className={
               scrolling
