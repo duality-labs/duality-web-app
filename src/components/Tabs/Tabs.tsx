@@ -16,12 +16,18 @@ export default function Tabs({
 
   return (
     <div className={['tabs', className].filter(Boolean).join(' ')}>
-      <div className="tabs__nav flex row">
+      <div className="tabs__nav flex row gutter-x-3">
         {tabs.map((tab, index) => {
           return (
             <button
               key={index}
-              className={index === tabIndex ? 'active' : ''}
+              className={[
+                'tabs__nav-button',
+                'px-3',
+                index === tabIndex && 'active',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               onClick={() => setTabIndex(index)}
             >
               {tab.nav}
