@@ -177,7 +177,7 @@ function TransactionsTable({
   const lcdClientPromise = useLcdClientPromise();
   const [pageOffset] = useState<number>(0);
   const query = useQuery({
-    queryKey: ['events', action, pageOffset],
+    queryKey: ['events', action, tokenA.address, tokenB.address, pageOffset],
     queryFn: async (): Promise<GetTxsEventResponseSDKType> => {
       const lcd = await lcdClientPromise;
       /*
