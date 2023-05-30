@@ -16,7 +16,7 @@ export default function Tabs({
 
   return (
     <div className={['tabs', className].filter(Boolean).join(' ')}>
-      <div className="tabs__nav row">
+      <div className="tabs__nav flex row">
         {tabs.map((tab, index) => {
           return (
             <button
@@ -29,8 +29,8 @@ export default function Tabs({
           );
         })}
       </div>
-      <div className="tabs__tab row">
-        <div className="col">
+      <div className="tabs__tab flex row">
+        <div className="flex col">
           <Tab />
         </div>
       </div>
