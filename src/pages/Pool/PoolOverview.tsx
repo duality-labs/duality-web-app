@@ -381,15 +381,15 @@ function TransactionsTable({
           }
 
           // try deposit event
-          const depositEvent = events.find(
+          const depositEvents = events.filter(
             (event): event is DexDepositEvent =>
               event.attributes.action === 'Deposit'
           );
-          if (depositEvent) {
+          if (depositEvents.length > 0) {
             return (
               <DepositColumn
                 tx={tx}
-                event={depositEvent}
+                events={depositEvents}
                 heading={heading}
                 tokenA={tokenA}
                 tokenB={tokenB}
@@ -439,7 +439,7 @@ function TransactionsTable({
 
 function DepositColumn({
   tx,
-  event: { attributes },
+  events,
   heading,
   tokenA,
   tokenB,
@@ -447,18 +447,24 @@ function DepositColumn({
   tokenA: Token;
   tokenB: Token;
   tx: TxResponseSDKType;
-  event: DexDepositEvent;
+  events: DexDepositEvent[];
   heading: TransactionTableColumnKey;
 }) {
   const {
     data: [tokenAPrice, tokenBPrice],
     isValidating,
   } = useSimplePrice([tokenA, tokenB]);
+  // get common attributes from first event
+  const [
+    {
+      attributes: { Creator, Token0, Token1 },
+    },
+  ] = events;
 
   const content = (() => {
     switch (heading) {
       case 'Wallet':
-        return formatAddress(attributes.Creator);
+        return formatAddress(Creator);
       case 'Type':
         return `Add ${[
           Number(getTokenAReserves()) > 0 && tokenA.symbol,
@@ -467,9 +473,9 @@ function DepositColumn({
           .filter(Boolean)
           .join(' and ')}`;
       case 'Token A Amount':
-        return getTokenReservesInDenom(tokenA, getTokenAReserves());
+        return getTokenReservesInDenom(tokenA, getTokenAReserves().toFixed());
       case 'Token B Amount':
-        return getTokenReservesInDenom(tokenB, getTokenBReserves());
+        return getTokenReservesInDenom(tokenB, getTokenBReserves().toFixed());
       case 'Total Value':
         const values = [
           new BigNumber(
@@ -503,7 +509,7 @@ function DepositColumn({
 
     function getHasInvertedOrder(): boolean {
       return hasInvertedOrder(
-        getPairID(attributes.Token0, attributes.Token1),
+        getPairID(Token0, Token1),
         tokenA.address,
         tokenB.address
       );
@@ -511,14 +517,26 @@ function DepositColumn({
 
     function getTokenAReserves() {
       return getHasInvertedOrder()
-        ? attributes.Reserves1Deposited
-        : attributes.Reserves0Deposited;
+        ? events
+            .map(({ attributes }) => attributes.Reserves1Deposited)
+            .reduce(sumBigNumber, new BigNumber(0))
+        : events
+            .map(({ attributes }) => attributes.Reserves0Deposited)
+            .reduce(sumBigNumber, new BigNumber(0));
     }
 
     function getTokenBReserves() {
       return getHasInvertedOrder()
-        ? attributes.Reserves0Deposited
-        : attributes.Reserves1Deposited;
+        ? events
+            .map(({ attributes }) => attributes.Reserves0Deposited)
+            .reduce(sumBigNumber, new BigNumber(0))
+        : events
+            .map(({ attributes }) => attributes.Reserves1Deposited)
+            .reduce(sumBigNumber, new BigNumber(0));
+    }
+
+    function sumBigNumber(acc: BigNumber, value: string) {
+      return acc.plus(value);
     }
 
     function getTokenReservesInDenom(token: Token, reserves: string) {
