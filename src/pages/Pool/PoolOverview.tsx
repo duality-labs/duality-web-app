@@ -398,15 +398,15 @@ function TransactionsTable({
           }
 
           // try withdrawal event
-          const withdrawalEvent = events.find(
+          const withdrawalEvents = events.filter(
             (event): event is DexWithdrawalEvent =>
               event.attributes.action === 'Withdraw'
           );
-          if (withdrawalEvent) {
+          if (withdrawalEvents.length > 0) {
             return (
               <WithdrawalColumn
                 tx={tx}
-                event={withdrawalEvent}
+                events={withdrawalEvents}
                 heading={heading}
                 tokenA={tokenA}
                 tokenB={tokenB}
@@ -437,19 +437,27 @@ function TransactionsTable({
   );
 }
 
-function DepositColumn({
+interface EventColumnProps<T> {
+  tokenA: Token;
+  tokenB: Token;
+  tx: TxResponseSDKType;
+  events: T[];
+  heading: TransactionTableColumnKey;
+}
+interface GenericEventColumnProps<T> extends EventColumnProps<T> {
+  getToken0Reserves: (event: T) => string;
+  getToken1Reserves: (event: T) => string;
+}
+
+function EventColumn<T extends DexEvent>({
   tx,
   events,
   heading,
   tokenA,
   tokenB,
-}: {
-  tokenA: Token;
-  tokenB: Token;
-  tx: TxResponseSDKType;
-  events: DexDepositEvent[];
-  heading: TransactionTableColumnKey;
-}) {
+  getToken0Reserves,
+  getToken1Reserves,
+}: GenericEventColumnProps<T>) {
   const {
     data: [tokenAPrice, tokenBPrice],
     isValidating,
@@ -517,22 +525,14 @@ function DepositColumn({
 
     function getTokenAReserves() {
       return getHasInvertedOrder()
-        ? events
-            .map(({ attributes }) => attributes.Reserves1Deposited)
-            .reduce(sumBigNumber, new BigNumber(0))
-        : events
-            .map(({ attributes }) => attributes.Reserves0Deposited)
-            .reduce(sumBigNumber, new BigNumber(0));
+        ? events.map(getToken1Reserves).reduce(sumBigNumber, new BigNumber(0))
+        : events.map(getToken0Reserves).reduce(sumBigNumber, new BigNumber(0));
     }
 
     function getTokenBReserves() {
       return getHasInvertedOrder()
-        ? events
-            .map(({ attributes }) => attributes.Reserves0Deposited)
-            .reduce(sumBigNumber, new BigNumber(0))
-        : events
-            .map(({ attributes }) => attributes.Reserves1Deposited)
-            .reduce(sumBigNumber, new BigNumber(0));
+        ? events.map(getToken0Reserves).reduce(sumBigNumber, new BigNumber(0))
+        : events.map(getToken1Reserves).reduce(sumBigNumber, new BigNumber(0));
     }
 
     function sumBigNumber(acc: BigNumber, value: string) {
@@ -558,106 +558,43 @@ function DepositColumn({
   );
 }
 
-function WithdrawalColumn({
-  tx,
-  event: { attributes },
-  heading,
-  tokenA,
-  tokenB,
-}: {
-  tokenA: Token;
-  tokenB: Token;
-  tx: TxResponseSDKType;
-  event: DexWithdrawalEvent;
-  heading: TransactionTableColumnKey;
-}) {
-  const {
-    data: [tokenAPrice, tokenBPrice],
-    isValidating,
-  } = useSimplePrice([tokenA, tokenB]);
-
-  const content = (() => {
-    switch (heading) {
-      case 'Wallet':
-        return formatAddress(attributes.Creator);
-      case 'Type':
-        return `Remove ${[
-          Number(getTokenAReserves()) > 0 && tokenA.symbol,
-          Number(getTokenBReserves()) > 0 && tokenB.symbol,
-        ]
-          .filter(Boolean)
-          .join(' and ')}`;
-      case 'Token A Amount':
-        return getTokenReservesInDenom(tokenA, getTokenAReserves());
-      case 'Token B Amount':
-        return getTokenReservesInDenom(tokenB, getTokenBReserves());
-      case 'Total Value':
-        const values = [
-          new BigNumber(
-            getAmountInDenom(
-              tokenA,
-              getTokenAReserves(),
-              tokenA.address,
-              tokenA.display
-            ) || 0
-          ).multipliedBy(tokenAPrice || 0),
-          new BigNumber(
-            getAmountInDenom(
-              tokenB,
-              getTokenBReserves(),
-              tokenB.address,
-              tokenB.display
-            ) || 0
-          ).multipliedBy(tokenBPrice || 0),
-        ];
-        const value = values[0].plus(values[1]);
-        // return loading start or calculated value
-        return !tokenA && !tokenB && isValidating
-          ? '...'
-          : value.isLessThan(0.005)
-          ? `< ${formatCurrency(0.01)}`
-          : formatCurrency(values[0].plus(values[1]).toNumber());
-      case 'Time':
-        return formatRelativeTime(tx.timestamp);
-    }
-    return null;
-
-    function getHasInvertedOrder(): boolean {
-      return hasInvertedOrder(
-        getPairID(attributes.Token0, attributes.Token1),
-        tokenA.address,
-        tokenB.address
-      );
-    }
-
-    function getTokenAReserves() {
-      return getHasInvertedOrder()
-        ? attributes.Reserves1Withdrawn
-        : attributes.Reserves0Withdrawn;
-    }
-
-    function getTokenBReserves() {
-      return getHasInvertedOrder()
-        ? attributes.Reserves0Withdrawn
-        : attributes.Reserves1Withdrawn;
-    }
-
-    function getTokenReservesInDenom(token: Token, reserves: string) {
-      return getAmountInDenom(token, reserves, token.address, token.display, {
-        fractionalDigits: 3,
-        significantDigits: 3,
-      });
-    }
-  })();
+function DepositColumn(props: EventColumnProps<DexDepositEvent>) {
+  const getToken0Reserves = useCallback(({ attributes }: DexDepositEvent) => {
+    return attributes.Reserves0Deposited;
+  }, []);
+  const getToken1Reserves = useCallback(({ attributes }: DexDepositEvent) => {
+    return attributes.Reserves1Deposited;
+  }, []);
 
   return (
-    <td
-      className={
-        heading === 'Wallet' || heading === 'Type' ? 'cell-highlighted' : ''
-      }
-    >
-      {content}
-    </td>
+    <EventColumn<DexDepositEvent>
+      {...props}
+      getToken0Reserves={getToken0Reserves}
+      getToken1Reserves={getToken1Reserves}
+    />
+  );
+}
+
+function WithdrawalColumn(props: EventColumnProps<DexWithdrawalEvent>) {
+  const getToken0Reserves = useCallback(
+    ({ attributes }: DexWithdrawalEvent) => {
+      return attributes.Reserves0Withdrawn;
+    },
+    []
+  );
+  const getToken1Reserves = useCallback(
+    ({ attributes }: DexWithdrawalEvent) => {
+      return attributes.Reserves1Withdrawn;
+    },
+    []
+  );
+
+  return (
+    <EventColumn<DexWithdrawalEvent>
+      {...props}
+      getToken0Reserves={getToken0Reserves}
+      getToken1Reserves={getToken1Reserves}
+    />
   );
 }
 
