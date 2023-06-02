@@ -482,7 +482,7 @@ function DepositColumn({
             getAmountInDenom(
               tokenA,
               getTokenAReserves(),
-              tokenA.base,
+              tokenA.address,
               tokenA.display
             ) || 0
           ).multipliedBy(tokenAPrice || 0),
@@ -490,7 +490,7 @@ function DepositColumn({
             getAmountInDenom(
               tokenB,
               getTokenBReserves(),
-              tokenB.base,
+              tokenB.address,
               tokenB.display
             ) || 0
           ).multipliedBy(tokenBPrice || 0),
@@ -540,7 +540,7 @@ function DepositColumn({
     }
 
     function getTokenReservesInDenom(token: Token, reserves: string) {
-      return getAmountInDenom(token, reserves, token.base, token.display, {
+      return getAmountInDenom(token, reserves, token.address, token.display, {
         fractionalDigits: 3,
         significantDigits: 3,
       });
@@ -597,7 +597,7 @@ function WithdrawalColumn({
             getAmountInDenom(
               tokenA,
               getTokenAReserves(),
-              tokenA.base,
+              tokenA.address,
               tokenA.display
             ) || 0
           ).multipliedBy(tokenAPrice || 0),
@@ -605,7 +605,7 @@ function WithdrawalColumn({
             getAmountInDenom(
               tokenB,
               getTokenBReserves(),
-              tokenB.base,
+              tokenB.address,
               tokenB.display
             ) || 0
           ).multipliedBy(tokenBPrice || 0),
@@ -643,7 +643,7 @@ function WithdrawalColumn({
     }
 
     function getTokenReservesInDenom(token: Token, reserves: string) {
-      return getAmountInDenom(token, reserves, token.base, token.display, {
+      return getAmountInDenom(token, reserves, token.address, token.display, {
         fractionalDigits: 3,
         significantDigits: 3,
       });
@@ -702,7 +702,7 @@ function SwapColumn({
             getAmountInDenom(
               tokenA,
               getTokenAReserves(),
-              tokenA.base,
+              tokenA.address,
               tokenA.display
             ) || 0
           ).multipliedBy(tokenAPrice || 0),
@@ -710,7 +710,7 @@ function SwapColumn({
             getAmountInDenom(
               tokenB,
               getTokenBReserves(),
-              tokenB.base,
+              tokenB.address,
               tokenB.display
             ) || 0
           ).multipliedBy(tokenBPrice || 0),
@@ -770,7 +770,7 @@ function SwapColumn({
     }
 
     function getTokenReservesInDenom(token: Token, reserves: string) {
-      return getAmountInDenom(token, reserves, token.base, token.display, {
+      return getAmountInDenom(token, reserves, token.address, token.display, {
         fractionalDigits: 3,
         significantDigits: 3,
       });
