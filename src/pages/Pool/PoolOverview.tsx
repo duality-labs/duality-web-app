@@ -320,7 +320,7 @@ function TransactionsTable({
       // create Query string (with all appropriate characters escaped)
       const queryParams = new URLSearchParams({
         events: "message.module='dex'",
-        'pagination.reverse': 'true',
+        order_by: 'ORDER_BY_DESC',
         'pagination.limit': `${pageSize || 10}`,
         // add page offset if it is non-zero
         ...(pageOffset && {
