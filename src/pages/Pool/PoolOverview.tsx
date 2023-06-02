@@ -665,45 +665,51 @@ function SwapColumn({
     return null;
 
     function getTokenAReserves() {
-      const tokenEvent =
+      const tokenEvents =
         attributes.TokenIn === tokenA.address
-          ? // find tokens spent
-            events.find(
+          ? // filter tokens spent
+            events.filter(
               (event): event is CoinSpentEvent =>
                 event.type === 'coin_spent' &&
                 event.attributes.spender === attributes.Receiver
             )
-          : // find tokens received
-            events.find(
+          : // filter tokens received
+            events.filter(
               (event): event is CoinReceivedEvent =>
                 event.type === 'coin_received' &&
                 event.attributes.receiver === attributes.Receiver
             );
-      const [amount] = tokenEvent
-        ? parseAmountDenomString(tokenEvent.attributes.amount)
-        : [];
-      return amount?.toFixed() || '0';
+      return tokenEvents
+        .map(({ attributes }) => parseAmountDenomString(attributes.amount))
+        .reduce(
+          (acc: BigNumber, [value]: [BigNumber, string]) => acc.plus(value),
+          new BigNumber(0)
+        )
+        .toFixed();
     }
 
     function getTokenBReserves() {
-      const tokenEvent =
+      const tokenEvents =
         attributes.TokenIn === tokenB.address
-          ? // find tokens spent
-            events.find(
+          ? // filter tokens spent
+            events.filter(
               (event): event is CoinSpentEvent =>
                 event.type === 'coin_spent' &&
                 event.attributes.spender === attributes.Receiver
             )
-          : // find tokens received
-            events.find(
+          : // filter tokens received
+            events.filter(
               (event): event is CoinReceivedEvent =>
                 event.type === 'coin_received' &&
                 event.attributes.receiver === attributes.Receiver
             );
-      const [amount] = tokenEvent
-        ? parseAmountDenomString(tokenEvent.attributes.amount)
-        : [];
-      return amount?.toFixed() || '0';
+      return tokenEvents
+        .map(({ attributes }) => parseAmountDenomString(attributes.amount))
+        .reduce(
+          (acc: BigNumber, [value]: [BigNumber, string]) => acc.plus(value),
+          new BigNumber(0)
+        )
+        .toFixed();
     }
 
     function getTokenReservesInDenom(token: Token, reserves: string) {
