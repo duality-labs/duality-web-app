@@ -1,11 +1,11 @@
 const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
 
-const milliseconds = 1;
-const seconds = 1000 * milliseconds;
-const minutes = 60 * seconds;
-const hours = 60 * minutes;
-const days = 24 * hours;
-const weeks = 7 * days;
+export const milliseconds = 1;
+export const seconds = 1000 * milliseconds;
+export const minutes = 60 * seconds;
+export const hours = 60 * minutes;
+export const days = 24 * hours;
+export const weeks = 7 * days;
 
 export function formatRelativeTime(timestamp: string) {
   const now = new Date();
