@@ -36,7 +36,7 @@ interface DataPeriodsResponse {
   ALL: DataPeriod;
 }
 
-const chartKeys = ['TVL', 'Volume', 'Fees', 'Volatility'];
+const chartKeys = ['TVL', 'Volume', 'Fees', 'Volatility'] as const;
 
 export default function PoolChart({
   tokenA,
@@ -48,6 +48,64 @@ export default function PoolChart({
   const [chartIndex, setChartIndex] = useState<number>(0);
   const [timePeriodIndex, setTimePeriodIndex] = useState<number>(0);
 
+  return (
+    <div className="pool-chart-area bar-chart-area">
+      <div className="bar-chart__nav flex row">
+        <div className="bar-chart__nav-left row gap-5">
+          {chartKeys.map((chartKey, index) => {
+            return (
+              <button
+                key={index}
+                className={['pb-4 px-0', index === chartIndex && 'active']
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => setChartIndex(index)}
+              >
+                {chartKey}
+              </button>
+            );
+          })}
+        </div>
+        <div className="bar-chart__nav-right ml-auto">
+          <ButtonGroup
+            buttonGroup={timePeriodKeys}
+            tabIndex={timePeriodIndex}
+            setTabIndex={setTimePeriodIndex}
+          />
+        </div>
+      </div>
+      {chartKeys[chartIndex] === 'TVL' ? (
+        // plot line chart type
+        <PoolBarChart
+          tokenA={tokenA}
+          tokenB={tokenB}
+          chartKey={chartKeys[chartIndex]}
+          timePeriodKey={timePeriodKeys[timePeriodIndex]}
+        />
+      ) : (
+        // plot bar chart type
+        <PoolBarChart
+          tokenA={tokenA}
+          tokenB={tokenB}
+          chartKey={chartKeys[chartIndex]}
+          timePeriodKey={timePeriodKeys[timePeriodIndex]}
+        />
+      )}
+    </div>
+  );
+}
+
+function PoolBarChart({
+  chartKey,
+  timePeriodKey,
+  tokenA,
+  tokenB,
+}: {
+  chartKey: typeof chartKeys[number];
+  timePeriodKey: TimePeriodKey;
+  tokenA: Token;
+  tokenB: Token;
+}) {
   const {
     data: [tokenAPrice, tokenBPrice],
   } = useSimplePrice([tokenA, tokenB]);
@@ -55,24 +113,28 @@ export default function PoolChart({
   const { data, isFetching } = useQuery({
     queryKey: [tokenA.address, tokenB.address],
     queryFn: async (): Promise<DataPeriodsResponse> => {
-      const response = await fetch(
-        `${REACT_APP__INDEXER_API}/timeseries/volume/${tokenA.address}/${tokenB.address}`
-      );
+      const requestPath = (() => {
+        switch (chartKey) {
+          case 'Volume':
+            return `/timeseries/volume/${tokenA.address}/${tokenB.address}`;
+          default:
+            return `/timeseries/volume/${tokenA.address}/${tokenB.address}`;
+        }
+      })();
+      const response = await fetch(`${REACT_APP__INDEXER_API}${requestPath}`);
       return await response.json();
     },
   });
 
   const dataPeriod = useMemo<DataPeriod | null>(() => {
-    const timePeriodKey = timePeriodKeys[timePeriodIndex];
     if (data && timePeriodKey) {
       return data[timePeriodKey];
     }
     return null;
-  }, [data, timePeriodIndex]);
+  }, [data, timePeriodKey]);
 
   // map data to chart
   const chartData = useMemo(() => {
-    const timePeriodKey = timePeriodKeys[timePeriodIndex];
     if (dataPeriod) {
       const length = (() => {
         switch (true) {
@@ -107,79 +169,51 @@ export default function PoolChart({
         })
         .reverse();
     }
-  }, [dataPeriod, timePeriodIndex]);
+  }, [dataPeriod, timePeriodKey]);
 
   const [lastChartData] = dataPeriod?.data ?? [];
 
-  return (
-    <div className="pool-chart-area bar-chart-area">
-      <div className="bar-chart__nav flex row">
-        <div className="bar-chart__nav-left row gap-5">
-          {chartKeys.map((chartKey, index) => {
-            return (
-              <button
-                key={index}
-                className={['pb-4 px-0', index === chartIndex && 'active']
-                  .filter(Boolean)
-                  .join(' ')}
-                onClick={() => setChartIndex(index)}
-              >
-                {chartKey}
-              </button>
-            );
-          })}
-        </div>
-        <div className="bar-chart__nav-right ml-auto">
-          <ButtonGroup
-            buttonGroup={timePeriodKeys}
-            tabIndex={timePeriodIndex}
-            setTabIndex={setTimePeriodIndex}
-          />
-        </div>
+  return chartData ? (
+    // plot chart
+    <div className="bar-chart">
+      <div className="bar-chart__header mt-lg">
+        {tokenAPrice && tokenBPrice && lastChartData
+          ? formatCurrency(
+              BigNumber.sum(
+                getAmountInDenom(
+                  tokenA,
+                  lastChartData.tokenA * tokenAPrice,
+                  tokenA.address,
+                  tokenA.display
+                ) || 0,
+                getAmountInDenom(
+                  tokenB,
+                  lastChartData.tokenB * tokenBPrice,
+                  tokenB.address,
+                  tokenB.display
+                ) || 0
+              ).toFixed()
+            )
+          : '...'}
       </div>
-      {chartData && lastChartData ? (
-        // plot chart
-        <div className="bar-chart">
-          <div className="bar-chart__header mt-lg">
-            {tokenAPrice && tokenBPrice
-              ? formatCurrency(
-                  BigNumber.sum(
-                    getAmountInDenom(
-                      tokenA,
-                      lastChartData.tokenA * tokenAPrice,
-                      tokenA.address,
-                      tokenA.display
-                    ) || 0,
-                    getAmountInDenom(
-                      tokenB,
-                      lastChartData.tokenB * tokenBPrice,
-                      tokenB.address,
-                      tokenB.display
-                    ) || 0
-                  ).toFixed()
-                )
-              : '...'}
-          </div>
-          <div className="bar-chart__subheader">
-            {lastChartData ? (
-              new Date(lastChartData.timestamp).toLocaleDateString(undefined, {
-                dateStyle: 'long',
-              })
-            ) : (
-              <>&nbsp;</>
-            )}
-          </div>
-          <BarChart width={500} height={300} data={chartData} />
-        </div>
-      ) : (
-        // show skeleton
-        <div
-          className="bar-chart--empty mt-6 mb-xl flex flex-centered row"
-          style={{ height: 300 }}
-        >
-          {isFetching ? 'loading...' : 'no data'}
-        </div>
-      )}
+      <div className="bar-chart__subheader">
+        {lastChartData ? (
+          new Date(lastChartData.timestamp).toLocaleDateString(undefined, {
+            dateStyle: 'long',
+          })
+        ) : (
+          <>&nbsp;</>
+        )}
+      </div>
+      <BarChart width={500} height={300} data={chartData} />
+    </div>
+  ) : (
+    // show skeleton
+    <div
+      className="bar-chart--empty mt-6 mb-xl flex flex-centered row"
+      style={{ height: 300 }}
+    >
+      {isFetching ? 'loading...' : 'no data'}
     </div>
   );
 }
