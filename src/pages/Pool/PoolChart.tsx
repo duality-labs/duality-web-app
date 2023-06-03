@@ -146,13 +146,13 @@ export default function PoolChart({
                     getAmountInDenom(
                       tokenA,
                       lastChartData.tokenA * tokenAPrice,
-                      tokenA.base,
+                      tokenA.address,
                       tokenA.display
                     ) || 0,
                     getAmountInDenom(
                       tokenB,
                       lastChartData.tokenB * tokenBPrice,
-                      tokenB.base,
+                      tokenB.address,
                       tokenB.display
                     ) || 0
                   ).toFixed()
