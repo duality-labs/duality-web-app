@@ -100,6 +100,7 @@ export default function PoolChart({
           // todo: find data for expected timestamps
           if (dataRow) {
             const { timestamp, tokenA, tokenB }: DataRow = dataRow;
+            // add values here properly with price data
             return { x: timestamp, y: tokenA + tokenB };
           }
           return { x: `empty-${index}`, y: 0 };
