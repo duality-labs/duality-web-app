@@ -1,8 +1,8 @@
 .pool-chart-area {
-  .bar-chart__nav {
+  .chart__nav {
     border-bottom: 1px solid hsla(217, 19%, 27%, 1);
   }
-  .bar-chart__nav-left {
+  .chart__nav-left {
     button {
       & {
         color: hsla(218, 11%, 65%, 1);
@@ -21,11 +21,11 @@
     }
   }
 
-  .bar-chart__header {
+  .chart__header {
     font-size: 1.5rem;
     color: hsla(210, 20%, 98%, 1);
   }
-  .bar-chart__subheader {
+  .chart__subheader {
     color: hsla(0, 0%, 50%, 1);
   }
 }
