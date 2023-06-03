@@ -49,9 +49,9 @@ export default function PoolChart({
   const [timePeriodIndex, setTimePeriodIndex] = useState<number>(0);
 
   return (
-    <div className="pool-chart-area bar-chart-area">
-      <div className="bar-chart__nav flex row">
-        <div className="bar-chart__nav-left row gap-5">
+    <div className="pool-chart-area chart-area">
+      <div className="chart__nav flex row">
+        <div className="chart__nav-left row gap-5">
           {chartKeys.map((chartKey, index) => {
             return (
               <button
@@ -66,7 +66,7 @@ export default function PoolChart({
             );
           })}
         </div>
-        <div className="bar-chart__nav-right ml-auto">
+        <div className="chart__nav-right ml-auto">
           <ButtonGroup
             buttonGroup={timePeriodKeys}
             tabIndex={timePeriodIndex}
@@ -176,7 +176,7 @@ function PoolBarChart({
   return chartData ? (
     // plot chart
     <div className="bar-chart">
-      <div className="bar-chart__header mt-lg">
+      <div className="chart__header mt-lg">
         {tokenAPrice && tokenBPrice && lastChartData
           ? formatCurrency(
               BigNumber.sum(
@@ -196,7 +196,7 @@ function PoolBarChart({
             )
           : '...'}
       </div>
-      <div className="bar-chart__subheader">
+      <div className="chart__subheader">
         {lastChartData ? (
           new Date(lastChartData.timestamp).toLocaleDateString(undefined, {
             dateStyle: 'long',
@@ -210,7 +210,7 @@ function PoolBarChart({
   ) : (
     // show skeleton
     <div
-      className="bar-chart--empty mt-6 mb-xl flex flex-centered row"
+      className="chart--empty mt-6 mb-xl flex flex-centered row"
       style={{ height: 300 }}
     >
       {isFetching ? 'loading...' : 'no data'}
