@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { SWRConfiguration, SWRResponse } from 'swr';
 import useSWRInfinite from 'swr/infinite';
 
@@ -60,7 +60,6 @@ export default function useTickLiquidity({
     data: pages,
     isValidating,
     error,
-    size,
     setSize,
   } = useSWRInfinite<QueryAllTickLiquidityResponseSDKType>(
     !params
@@ -82,14 +81,15 @@ export default function useTickLiquidity({
     { persistSize: true, ...swrConfig }
   );
   // set number of pages to latest total
-  const pageItemCount = Number(pages?.[0]?.tickLiquidity?.length);
-  const totalItemCount = Number(pages?.[0]?.pagination?.total);
-  if (pageItemCount > 0 && totalItemCount > pageItemCount) {
-    const pageCount = Math.ceil(totalItemCount / pageItemCount);
-    if (size !== pageCount) {
+  useEffect(() => {
+    const pageItemCount = Number(pages?.[0]?.tickLiquidity?.length);
+    const totalItemCount = Number(pages?.[0]?.pagination?.total);
+    if (pageItemCount > 0 && totalItemCount > pageItemCount) {
+      const pageCount = Math.ceil(totalItemCount / pageItemCount);
       setSize(pageCount);
     }
-  }
+  }, [pages, setSize]);
+
   // place pages of data into the same list
   const tradingPairs = useMemo(() => {
     const liquidity = pages?.flatMap((page) => page.tickLiquidity);
