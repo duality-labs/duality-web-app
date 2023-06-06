@@ -19,6 +19,7 @@ const resolutions = ['hour', 'day', 'week'] as const;
 const timePeriodKeys: TimePeriodKey[] = ['24H', '1W', '1M', '1Y', 'ALL'];
 
 type TimePeriodKey = '24H' | '1W' | '1M' | '1Y' | 'ALL';
+type DataResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
 
 interface DataRow {
   timestamp: string;
@@ -120,6 +121,21 @@ function getPaginationLimit(timePeriodKey: TimePeriodKey): number | undefined {
   }
 }
 
+function getDataResolution(
+  timePeriodKey: TimePeriodKey
+): DataResolution | undefined {
+  switch (timePeriodKey) {
+    case '24H':
+      return 'minute';
+    case '1W':
+      return 'hour';
+    case '1M':
+      return 'day';
+    case '1Y':
+      return 'day';
+  }
+}
+
 function PoolLineChart({
   chartKey,
   timePeriodKey,
@@ -135,13 +151,15 @@ function PoolLineChart({
     data: [tokenAPrice, tokenBPrice],
   } = useSimplePrice([tokenA, tokenB]);
 
+  const resolution = getDataResolution(timePeriodKey);
+
   const {
     data: resultData,
     isFetching,
     hasNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
-    queryKey: [tokenA.address, tokenB.address],
+    queryKey: [tokenA.address, tokenB.address, resolution],
     queryFn: async ({ pageParam: pageKey }): Promise<TimeSeriesPage> => {
       const requestPath = (() => {
         const queryParams = new URLSearchParams();
@@ -160,9 +178,9 @@ function PoolLineChart({
         const query = queryParams ? `?${queryParams}` : '';
         switch (chartKey) {
           case 'TVL':
-            return `/timeseries/tvl/${tokenA.address}/${tokenB.address}${query}`;
+            return `/timeseries/tvl/${tokenA.address}/${tokenB.address}/${resolution}${query}`;
           default:
-            return `/timeseries/tvl/${tokenA.address}/${tokenB.address}`;
+            return `/timeseries/tvl/${tokenA.address}/${tokenB.address}/${resolution}`;
         }
       })();
       const response = await fetch(`${REACT_APP__INDEXER_API}${requestPath}`);
