@@ -105,6 +105,21 @@ type TimeSeriesPage = {
   };
 };
 
+function getPaginationLimit(timePeriodKey: TimePeriodKey): number | undefined {
+  // add time restriction
+  const now = Date.now();
+  switch (timePeriodKey) {
+    case '24H':
+      return now - hours * 24;
+    case '1W':
+      return now - weeks * 1;
+    case '1M':
+      return now - weeks * 4;
+    case '1Y':
+      return now - days * 365;
+  }
+}
+
 function PoolLineChart({
   chartKey,
   timePeriodKey,
@@ -134,21 +149,7 @@ function PoolLineChart({
           queryParams.append('pagination.key', pageKey);
         } else {
           // add time restriction
-          const startTimeMs = (() => {
-            const now = Date.now();
-            switch (timePeriodKey) {
-              case '24H':
-                return now - hours * 24;
-              case '1W':
-                return now - weeks * 1;
-              case '1M':
-                return now - weeks * 4;
-              case '1Y':
-                return now - days * 365;
-                return undefined;
-            }
-            return;
-          })();
+          const startTimeMs = getPaginationLimit(timePeriodKey);
           if (startTimeMs) {
             queryParams.append(
               'pagination.after',
