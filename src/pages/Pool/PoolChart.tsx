@@ -175,7 +175,7 @@ function PoolLineChart({
             );
           }
         }
-        const query = queryParams ? `?${queryParams}` : '';
+        const query = queryParams.toString() ? `?${queryParams}` : '';
         switch (chartKey) {
           case 'TVL':
             return `/timeseries/tvl/${tokenA.address}/${tokenB.address}/${
