@@ -178,9 +178,13 @@ function PoolLineChart({
         const query = queryParams ? `?${queryParams}` : '';
         switch (chartKey) {
           case 'TVL':
-            return `/timeseries/tvl/${tokenA.address}/${tokenB.address}/${resolution}${query}`;
+            return `/timeseries/tvl/${tokenA.address}/${tokenB.address}/${
+              resolution || ''
+            }${query}`;
           default:
-            return `/timeseries/tvl/${tokenA.address}/${tokenB.address}/${resolution}`;
+            return `/timeseries/tvl/${tokenA.address}/${tokenB.address}/${
+              resolution || ''
+            }`;
         }
       })();
       const response = await fetch(`${REACT_APP__INDEXER_API}${requestPath}`);
