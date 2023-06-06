@@ -9,6 +9,7 @@ import { days, hours, weeks } from '../../lib/utils/time';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatCurrency } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
+import { TimeSeriesPage, TimeSeriesRow, getLastDataValues } from './utils';
 
 import './PoolChart.scss';
 
@@ -77,15 +78,6 @@ export default function PoolChart({
     </div>
   );
 }
-
-type TimeSeriesRow = [unixTime: number, values: number[]];
-type TimeSeriesPage = {
-  shape: Array<string>;
-  data: Array<TimeSeriesRow>;
-  pagination?: {
-    next_key?: string | null;
-  };
-};
 
 function getPaginationLimit(timePeriodKey: TimePeriodKey): number | undefined {
   // add time restriction
@@ -256,16 +248,4 @@ function PoolBarChart({
       {isFetching ? 'loading...' : 'no data'}
     </div>
   );
-}
-
-function getLastDataValues(data: TimeSeriesRow[] = [], index = 0): number[] {
-  // if data exists and there are values at the index then return them
-  if (data?.[index]) {
-    const [, values] = data[index];
-    // protect against non-numbers (such as null)
-    if (values.every((value) => !isNaN(value))) {
-      return values;
-    }
-  }
-  return [];
 }
