@@ -97,7 +97,7 @@ export default function PoolChart({
   );
 }
 
-type TimeSeriesRow = [unixTime: number, amountA: number, amountB: number];
+type TimeSeriesRow = [unixTime: number, values: number[]];
 type TimeSeriesPage = {
   shape: Array<string>;
   data: Array<TimeSeriesRow>;
@@ -208,14 +208,15 @@ function PoolLineChart({
   // map data to chart
   const chartData = useMemo(() => {
     return data
-      ?.map(([unixTime, amountA, amountB]) => {
+      ?.map(([unixTime, [amountA, amountB]]) => {
         // add values here properly with price data
         return { x: unixTime.toFixed(), y: Number(amountA) + Number(amountB) };
       })
       .reverse();
   }, [data]);
 
-  const [[unixTime, lastAmountA, lastAmountB]] = data ?? [[]];
+  const unixTime = data?.[0]?.[0];
+  const [lastAmountA, lastAmountB] = getLastDataValues(data);
 
   return chartData ? (
     // plot chart
@@ -263,6 +264,18 @@ function PoolLineChart({
       {isFetching ? 'loading...' : 'no data'}
     </div>
   );
+}
+
+function getLastDataValues(data: TimeSeriesRow[] = [], index = 0): number[] {
+  // if data exists and there are values at the index then return them
+  if (data?.[index]) {
+    const [, values] = data[index];
+    // protect against non-numbers (such as null)
+    if (values.every((value) => !isNaN(value))) {
+      return values;
+    }
+  }
+  return [];
 }
 
 function PoolBarChart({
