@@ -78,6 +78,21 @@ export function formatAmount(
     : '-';
 }
 
+export function formatPercentage(
+  amount: number | string,
+  opts: Intl.NumberFormatOptions = {}
+) {
+  const numericAmount = Number(amount) * 100;
+  return !isNaN(numericAmount)
+    ? `${numericAmount.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        useGrouping: true,
+        ...opts,
+      })}%`
+    : '-';
+}
+
 export function formatPrice(
   amount: number | string,
   opts: Intl.NumberFormatOptions = {}
