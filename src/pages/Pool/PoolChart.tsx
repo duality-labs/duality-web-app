@@ -159,7 +159,7 @@ function PoolLineChart({
     hasNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
-    queryKey: [tokenA.address, tokenB.address, resolution],
+    queryKey: [tokenA.address, tokenB.address, chartKey, resolution],
     queryFn: async ({ pageParam: pageKey }): Promise<TimeSeriesPage> => {
       const requestPath = (() => {
         const queryParams = new URLSearchParams();
@@ -181,10 +181,17 @@ function PoolLineChart({
             return `/timeseries/tvl/${tokenA.address}/${tokenB.address}/${
               resolution || ''
             }${query}`;
-          default:
-            return `/timeseries/tvl/${tokenA.address}/${tokenB.address}/${
+          case 'Volume':
+          case 'Fees':
+            return `/timeseries/volume/${tokenA.address}/${tokenB.address}/${
               resolution || ''
-            }`;
+            }${query}`;
+          case 'Volatility':
+            return `/timeseries/price/${tokenA.address}/${tokenB.address}/${
+              resolution || ''
+            }${query}`;
+          default:
+            return null;
         }
       })();
       const response = await fetch(`${REACT_APP__INDEXER_API}${requestPath}`);
