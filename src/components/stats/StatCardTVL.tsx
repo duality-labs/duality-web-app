@@ -2,12 +2,12 @@ import BigNumber from 'bignumber.js';
 import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import SmallCard from '../cards/SmallCard';
+import StatCard from '../cards/StatCard';
 
 import { TimeSeriesPage, getLastDataChanges, getLastDataValues } from './utils';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { formatCurrency, formatPercentage } from '../../lib/utils/number';
+import { formatCurrency } from '../../lib/utils/number';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
@@ -64,14 +64,8 @@ export default function StatCardTVL({
       ? valueDiffA + valueDiffB
       : undefined;
   return (
-    <SmallCard
-      header="TVL"
-      footer={
-        valueDiffTotal !== undefined ? formatPercentage(valueDiffTotal) : '...'
-      }
-      footerVariant="success"
-    >
+    <StatCard header="TVL" change={valueDiffTotal}>
       {valueTotal !== undefined ? formatCurrency(valueTotal) : '...'}
-    </SmallCard>
+    </StatCard>
   );
 }

@@ -19,12 +19,5 @@
   .small-card__footer {
     font-weight: 500;
     font-size: 0.85rem;
-
-    &.text-success {
-      color: hsla(158, 60%, 48%, 1);
-    }
-    &.text-danger {
-      color: hsla(0, 84%, 63%, 1);
-    }
   }
 }
