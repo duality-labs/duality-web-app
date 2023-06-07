@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
+import useSWR from 'swr';
 import { useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
 
 import StatCard from '../cards/StatCard';
 
@@ -18,15 +18,13 @@ export default function StatCardTVL({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const { data } = useQuery<TimeSeriesPage>({
-    queryKey: [tokenA?.address, tokenB?.address],
-    queryFn: async () => {
-      const response = await fetch(
-        `${REACT_APP__INDEXER_API}/stats/tvl/${tokenA?.address}/${tokenB?.address}`
-      );
-      return await response.json();
-    },
-  });
+  const { data } = useSWR<TimeSeriesPage>(
+    `${REACT_APP__INDEXER_API}/stats/tvl/${tokenA?.address}/${tokenB?.address}`,
+    async (url) => {
+      const response = await fetch(url);
+      return response.json();
+    }
+  );
 
   const {
     data: [priceA, priceB],
