@@ -11,7 +11,8 @@ import Table from '../../components/Table';
 import TableCard from '../../components/cards/TableCard';
 import Tabs from '../../components/Tabs/Tabs';
 import PoolChart from './PoolChart';
-import SmallCard, { SmallCardRow } from '../../components/cards/SmallCard';
+import { SmallCardRow } from '../../components/cards/SmallCard';
+import StatCard from '../../components/cards/StatCard';
 import StatCardTVL from '../../components/stats/StatCardTVL';
 
 import { useLcdClientPromise } from '../../lib/web3/lcdClient';
@@ -90,27 +91,15 @@ export default function PoolOverview({
             <div className="row gap-4 mb-5">
               <SmallCardRow>
                 <StatCardTVL tokenA={tokenA} tokenB={tokenB} />
-                <SmallCard
-                  header="Volume (24H)"
-                  footer="-3.42%"
-                  footerVariant="danger"
-                >
+                <StatCard header="Volume (24H)" change="-0.0342">
                   $665.37K
-                </SmallCard>
-                <SmallCard
-                  header="Fees"
-                  footer="+35.25%"
-                  footerVariant="success"
-                >
+                </StatCard>
+                <StatCard header="Fees" change="+0.352">
                   $78.98K
-                </SmallCard>
-                <SmallCard
-                  header="Volatility"
-                  footer="+3.42%"
-                  footerVariant="success"
-                >
+                </StatCard>
+                <StatCard header="Volatility" change="+0.0342">
                   6.0%
-                </SmallCard>
+                </StatCard>
               </SmallCardRow>
             </div>
             <PoolChart tokenA={tokenA} tokenB={tokenB} />
