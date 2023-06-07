@@ -43,6 +43,7 @@ import { formatRelativeTime } from '../../lib/utils/time';
 
 import './Pool.scss';
 import { addressableTokenMap } from '../../lib/web3/hooks/useTokens';
+import StatCardVolume from '../../components/stats/StatCardVolume';
 
 export default function PoolOverview({
   tokenA,
@@ -91,9 +92,7 @@ export default function PoolOverview({
             <div className="row gap-4 mb-5">
               <SmallCardRow>
                 <StatCardTVL tokenA={tokenA} tokenB={tokenB} />
-                <StatCard header="Volume (24H)" change="-0.0342">
-                  $665.37K
-                </StatCard>
+                <StatCardVolume tokenA={tokenA} tokenB={tokenB} />
                 <StatCard header="Fees" change="+0.352">
                   $78.98K
                 </StatCard>
