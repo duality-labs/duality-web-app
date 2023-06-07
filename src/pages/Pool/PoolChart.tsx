@@ -9,7 +9,11 @@ import { days, hours, weeks } from '../../lib/utils/time';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatCurrency } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { TimeSeriesPage, TimeSeriesRow, getLastDataValues } from './utils';
+import {
+  TimeSeriesPage,
+  TimeSeriesRow,
+  getLastDataValues,
+} from '../../components/stats/utils';
 
 import './PoolChart.scss';
 
