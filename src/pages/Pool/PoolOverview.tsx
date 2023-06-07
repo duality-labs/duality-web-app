@@ -12,6 +12,7 @@ import TableCard from '../../components/cards/TableCard';
 import Tabs from '../../components/Tabs/Tabs';
 import PoolChart from './PoolChart';
 import SmallCard, { SmallCardRow } from '../../components/cards/SmallCard';
+import StatCardTVL from '../../components/stats/StatCardTVL';
 
 import { useLcdClientPromise } from '../../lib/web3/lcdClient';
 import { formatAddress } from '../../lib/web3/utils/address';
@@ -36,14 +37,11 @@ import {
 } from '../../lib/web3/utils/events';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { formatCurrency, formatPercentage } from '../../lib/utils/number';
+import { formatCurrency } from '../../lib/utils/number';
 import { formatRelativeTime } from '../../lib/utils/time';
-import { TimeSeriesPage, getLastDataChanges, getLastDataValues } from './utils';
 
 import './Pool.scss';
 import { addressableTokenMap } from '../../lib/web3/hooks/useTokens';
-
-const { REACT_APP__INDEXER_API = '' } = process.env;
 
 export default function PoolOverview({
   tokenA,
@@ -133,65 +131,6 @@ export default function PoolOverview({
         </div>
       </div>
     </PoolLayout>
-  );
-}
-
-function StatCardTVL({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
-  const { data } = useQuery<TimeSeriesPage>({
-    queryKey: [tokenA?.address, tokenB?.address],
-    queryFn: async () => {
-      const response = await fetch(
-        `${REACT_APP__INDEXER_API}/stats/tvl/${tokenA?.address}/${tokenB?.address}`
-      );
-      return await response.json();
-    },
-  });
-
-  const {
-    data: [priceA, priceB],
-  } = useSimplePrice([tokenA, tokenB]);
-
-  const getValue = useCallback(function getValue(
-    token: Token,
-    amount?: BigNumber.Value,
-    price?: number
-  ): number | undefined {
-    if (amount === undefined || price === undefined) {
-      return undefined;
-    }
-    return new BigNumber(
-      getAmountInDenom(token, amount, token.address, token.display) || 0
-    )
-      .multipliedBy(price || 0)
-      .toNumber();
-  },
-  []);
-
-  const [amountA, amountB] = getLastDataValues(data?.data);
-
-  const valueA = getValue(tokenA, amountA, priceA);
-  const valueB = getValue(tokenB, amountB, priceB);
-  const valueTotal =
-    valueA !== undefined && valueB !== undefined ? valueA + valueB : undefined;
-
-  const [amountDiffA, amountDiffB] = getLastDataChanges(data?.data);
-
-  const valueDiffA = getValue(tokenA, amountDiffA, priceA);
-  const valueDiffB = getValue(tokenB, amountDiffB, priceB);
-  const valueDiffTotal =
-    valueDiffA !== undefined && valueDiffB !== undefined
-      ? valueDiffA + valueDiffB
-      : undefined;
-  return (
-    <SmallCard
-      header="TVL"
-      footer={
-        valueDiffTotal !== undefined ? formatPercentage(valueDiffTotal) : '...'
-      }
-      footerVariant="success"
-    >
-      {valueTotal !== undefined ? formatCurrency(valueTotal) : '...'}
-    </SmallCard>
   );
 }
 
