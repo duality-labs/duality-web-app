@@ -1,21 +1,23 @@
 import BigNumber from 'bignumber.js';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 
 import BarChart from '../../components/charts/BarChart';
 import ButtonGroup from '../../components/ButtonGroup/ButtonGroup';
 
 import { days, hours, weeks } from '../../lib/utils/time';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
-import { formatCurrency } from '../../lib/utils/number';
+import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import {
   TimeSeriesPage,
   TimeSeriesRow,
-  getLastDataValues,
+  TokenValue,
+  formatStatPercentageValue,
+  formatStatTokenValue,
 } from '../../components/stats/utils';
 
 import './PoolChart.scss';
+import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
@@ -113,65 +115,41 @@ function getDataResolution(
   }
 }
 
-function PoolBarChart({
-  chartKey,
-  timePeriodKey,
-  tokenA,
-  tokenB,
-}: {
-  chartKey: typeof chartKeys[number];
-  timePeriodKey: TimePeriodKey;
-  tokenA: Token;
-  tokenB: Token;
-}) {
-  const {
-    data: [tokenAPrice, tokenBPrice],
-  } = useSimplePrice([tokenA, tokenB]);
-
-  const resolution = getDataResolution(timePeriodKey);
-
+export function useTimeSeriesData(
+  tokenA: Token,
+  tokenB: Token,
+  timePeriodKey: TimePeriodKey,
+  getIndexerPath: (tokenA: Token, tokenB: Token) => string,
+  getValues?: (values: number[]) => number[]
+) {
+  const resolution = getDataResolution(timePeriodKey) || 'day';
+  const indexerPath = getIndexerPath(tokenA, tokenB);
   const {
     data: resultData,
+    error,
     isFetching,
     hasNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
-    queryKey: [tokenA.address, tokenB.address, chartKey, resolution],
+    queryKey: [indexerPath, resolution],
     queryFn: async ({ pageParam: pageKey }): Promise<TimeSeriesPage> => {
-      const requestPath = (() => {
-        const queryParams = new URLSearchParams();
-        if (pageKey) {
-          queryParams.append('pagination.key', pageKey);
-        } else {
-          // add time restriction
-          const startTimeMs = getPaginationLimit(timePeriodKey);
-          if (startTimeMs) {
-            queryParams.append(
-              'pagination.after',
-              (startTimeMs / 1000).toFixed(0)
-            );
-          }
+      const queryParams = new URLSearchParams();
+      if (pageKey) {
+        queryParams.append('pagination.key', pageKey);
+      } else {
+        // add time restriction
+        const startTimeMs = getPaginationLimit(timePeriodKey);
+        if (startTimeMs) {
+          queryParams.append(
+            'pagination.after',
+            (startTimeMs / 1000).toFixed(0)
+          );
         }
-        const query = queryParams.toString() ? `?${queryParams}` : '';
-        switch (chartKey) {
-          case 'TVL':
-            return `/timeseries/tvl/${tokenA.address}/${tokenB.address}/${
-              resolution || ''
-            }${query}`;
-          case 'Volume':
-          case 'Fees':
-            return `/timeseries/volume/${tokenA.address}/${tokenB.address}/${
-              resolution || ''
-            }${query}`;
-          case 'Volatility':
-            return `/timeseries/price/${tokenA.address}/${tokenB.address}/${
-              resolution || ''
-            }${query}`;
-          default:
-            return null;
-        }
-      })();
-      const response = await fetch(`${REACT_APP__INDEXER_API}${requestPath}`);
+      }
+      const query = queryParams.toString() ? `?${queryParams}` : '';
+      const response = await fetch(
+        `${REACT_APP__INDEXER_API}/${indexerPath}/${resolution}${query}`
+      );
       return await response.json();
     },
     defaultPageParam: '',
@@ -188,60 +166,314 @@ function PoolBarChart({
     }
   }, [fetchNextPage, resultData, hasNextPage]);
 
-  // collect pages together
-  const data = useMemo<TimeSeriesRow[] | undefined>(() => {
-    return resultData?.pages?.flatMap((page) => page.data);
-  }, [resultData?.pages]);
+  // collect page data together
+  return useMemo<TimeSeriesRow[] | null | undefined>(() => {
+    const { pages } = resultData || {};
+    // return error state as null
+    if (error) {
+      return null;
+    }
+    if (!pages) {
+      if (!isFetching) {
+        return undefined;
+      }
+      return pages;
+    }
+    // return success state as loading or data
+    return pages && getValues
+      ? pages?.flatMap<TimeSeriesRow>(({ data: rows = [] }) =>
+          rows.map<TimeSeriesRow>(([timeUnix, values]) => [
+            timeUnix,
+            getValues(values),
+          ])
+        )
+      : pages?.flatMap<TimeSeriesRow>(({ data: rows = [] }) =>
+          rows.map<TimeSeriesRow>(([timeUnix, values]) => [timeUnix, values])
+        );
+  }, [resultData, isFetching, error, getValues]);
+}
 
+// if data is in the form [timeUnix, [amountA, amountB]]
+// then transform the data using price data to [timeUnix, [valueA, valueB]]
+export function useTimeSeriesTokenValues(
+  tokenA: Token,
+  tokenB: Token,
+  timePeriodKey: TimePeriodKey,
+  getIndexerPath: (tokenA: Token, tokenB: Token) => string,
+  getValues?: (values: number[]) => number[]
+): TimeSeriesRow[] | null | undefined {
+  const data = useTimeSeriesData(
+    tokenA,
+    tokenB,
+    timePeriodKey,
+    getIndexerPath,
+    getValues
+  );
+  const {
+    data: [priceA, priceB],
+  } = useSimplePrice([tokenA, tokenB]);
+
+  return useMemo(() => {
+    if (!data) {
+      return data;
+    }
+    if (priceA === undefined || priceB === undefined) {
+      return undefined;
+    }
+
+    return data.map<TimeSeriesRow>(([timeUnix, [amountA, amountB]]) => {
+      return [
+        timeUnix,
+        [
+          getTokenValue(tokenA, amountA, priceA) || 0,
+          getTokenValue(tokenB, amountB, priceB) || 0,
+        ],
+      ];
+    });
+  }, [tokenA, tokenB, priceA, priceB, data]);
+}
+
+function getTimeSeriesTvlPath(tokenA: Token, tokenB: Token): string {
+  return `timeseries/tvl/${tokenA.address}/${tokenB.address}`;
+}
+function getStatTvlValues([amountA, amountB]: number[]): number[] {
+  return [amountA, amountB];
+}
+export function useTimeSeriesTVL(
+  tokenA: Token,
+  tokenB: Token,
+  timePeriodKey: TimePeriodKey
+): TimeSeriesRow[] | null | undefined {
+  return useTimeSeriesTokenValues(
+    tokenA,
+    tokenB,
+    timePeriodKey,
+    getTimeSeriesTvlPath,
+    getStatTvlValues
+  );
+}
+
+function getTimeSeriesVolumePath(tokenA: Token, tokenB: Token): string {
+  return `timeseries/volume/${tokenA.address}/${tokenB.address}`;
+}
+function getStatVolumeValues([amountA, amountB]: number[]): number[] {
+  return [amountA, amountB];
+}
+export function useTimeSeriesVolume(
+  tokenA: Token,
+  tokenB: Token,
+  timePeriodKey: TimePeriodKey
+): TimeSeriesRow[] | null | undefined {
+  return useTimeSeriesTokenValues(
+    tokenA,
+    tokenB,
+    timePeriodKey,
+    getTimeSeriesVolumePath,
+    getStatVolumeValues
+  );
+}
+function getStatFeeValues([, , amountA, amountB]: number[]): number[] {
+  return [amountA, amountB];
+}
+export function useTimeSeriesFees(
+  tokenA: Token,
+  tokenB: Token,
+  timePeriodKey: TimePeriodKey
+): TimeSeriesRow[] | null | undefined {
+  return useTimeSeriesTokenValues(
+    tokenA,
+    tokenB,
+    timePeriodKey,
+    getTimeSeriesVolumePath,
+    getStatFeeValues
+  );
+}
+
+function getTimeSeriesVolatilityPath(tokenA: Token, tokenB: Token): string {
+  return `timeseries/price/${tokenA.address}/${tokenB.address}`;
+}
+function getStatVolatilityValues([open, high, low, close]: number[]): number[] {
+  return [tickIndexToPrice(new BigNumber(close)).toNumber()];
+}
+export function useTimeSeriesVolatility(
+  tokenA: Token,
+  tokenB: Token,
+  timePeriodKey: TimePeriodKey
+): TimeSeriesRow[] | null | undefined {
+  return useTimeSeriesData(
+    tokenA,
+    tokenB,
+    timePeriodKey,
+    getTimeSeriesVolatilityPath,
+    getStatVolatilityValues
+  );
+}
+
+function PoolBarChart({
+  chartKey,
+  timePeriodKey,
+  tokenA,
+  tokenB,
+}: {
+  chartKey: typeof chartKeys[number];
+  timePeriodKey: TimePeriodKey;
+  tokenA: Token;
+  tokenB: Token;
+}) {
+  const ChartComponent = chartComponents[chartKey];
+
+  return (
+    // plot chart
+    <ChartComponent
+      tokenA={tokenA}
+      tokenB={tokenB}
+      timePeriodKey={timePeriodKey}
+    />
+  );
+}
+
+const chartComponents = {
+  TVL: ChartTVL,
+  Volume: ChartVolume,
+  Fees: ChartFees,
+  Volatility: ChartVolatility,
+};
+
+function useChartData(data: TimeSeriesRow[] | undefined) {
   // map data to chart
-  const chartData = useMemo(() => {
+  return useMemo(() => {
     return data
-      ?.map(([unixTime, [amountA, amountB]]) => {
+      ?.map(([unixTime, values]) => {
         // add values here properly with price data
-        return { x: unixTime.toFixed(), y: Number(amountA) + Number(amountB) };
+        return {
+          x: unixTime.toFixed(),
+          y: values.reduce((acc, value) => acc + value, 0),
+        };
       })
       .reverse();
   }, [data]);
+}
 
-  const unixTime = data?.[0]?.[0];
-  const [lastAmountA, lastAmountB] = getLastDataValues(data);
+function sum(values: number[]): number | undefined {
+  if (values.length === 0) {
+    return undefined;
+  }
+  return values.reduce((acc, value) => acc + value, 0);
+}
 
+function ChartTVL({
+  tokenA,
+  tokenB,
+  timePeriodKey,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  timePeriodKey: TimePeriodKey;
+}) {
+  const data = useTimeSeriesTVL(tokenA, tokenB, timePeriodKey);
+  const [[timeUnix, lastValues = []] = []] = data || [];
+  return (
+    <BarChartBase
+      loading={data === undefined}
+      header={formatStatTokenValue(sum(lastValues))}
+      timeUnix={timeUnix}
+      chartData={useChartData(data || undefined)}
+    />
+  );
+}
+
+function ChartVolume({
+  tokenA,
+  tokenB,
+  timePeriodKey,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  timePeriodKey: TimePeriodKey;
+}) {
+  const data = useTimeSeriesVolume(tokenA, tokenB, timePeriodKey);
+  const [[timeUnix, lastValues = []] = []] = data || [];
+  return (
+    <BarChartBase
+      loading={data === undefined}
+      header={formatStatTokenValue(sum(lastValues))}
+      timeUnix={timeUnix}
+      chartData={useChartData(data || undefined)}
+    />
+  );
+}
+
+function ChartFees({
+  tokenA,
+  tokenB,
+  timePeriodKey,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  timePeriodKey: TimePeriodKey;
+}) {
+  const data = useTimeSeriesFees(tokenA, tokenB, timePeriodKey);
+  const [[timeUnix, lastValues = []] = []] = data || [];
+  return (
+    <BarChartBase
+      loading={data === undefined}
+      header={formatStatTokenValue(sum(lastValues))}
+      timeUnix={timeUnix}
+      chartData={useChartData(data || undefined)}
+    />
+  );
+}
+
+function ChartVolatility({
+  tokenA,
+  tokenB,
+  timePeriodKey,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  timePeriodKey: TimePeriodKey;
+}) {
+  const data = useTimeSeriesVolatility(tokenA, tokenB, timePeriodKey);
+  const [[timeUnix, lastValues = []] = []] = data || [];
+  return (
+    <BarChartBase
+      loading={data === undefined}
+      header={formatStatPercentageValue(sum(lastValues))}
+      timeUnix={timeUnix}
+      chartData={useChartData(data || undefined)}
+    />
+  );
+}
+
+interface DataTuple {
+  x: string;
+  y: number;
+}
+
+function BarChartBase({
+  loading,
+  header,
+  timeUnix,
+  chartData,
+}: {
+  loading: boolean;
+  header: ReactNode;
+  timeUnix: TokenValue;
+  chartData?: DataTuple[];
+}) {
   return chartData ? (
-    // plot chart
     <div className="line-chart">
-      <div className="chart__header mt-lg">
-        {tokenAPrice &&
-        tokenBPrice &&
-        Number(lastAmountA) >= 0 &&
-        Number(lastAmountB) >= 0
-          ? formatCurrency(
-              BigNumber.sum(
-                getAmountInDenom(
-                  tokenA,
-                  Number(lastAmountA) * tokenAPrice,
-                  tokenA.address,
-                  tokenA.display
-                ) || 0,
-                getAmountInDenom(
-                  tokenB,
-                  Number(lastAmountB) * tokenBPrice,
-                  tokenB.address,
-                  tokenB.display
-                ) || 0
-              ).toFixed()
-            )
-          : '...'}
-      </div>
+      <div className="chart__header mt-lg">{header}</div>
       <div className="chart__subheader">
-        {unixTime ? (
-          new Date(unixTime * 1000).toLocaleDateString(undefined, {
+        {timeUnix ? (
+          new Date(timeUnix * 1000).toLocaleDateString(undefined, {
             dateStyle: 'long',
           })
         ) : (
           <>&nbsp;</>
         )}
       </div>
-      <BarChart width={500} height={300} data={chartData} />
+      <BarChart width={500} height={300} data={chartData || []} />
     </div>
   ) : (
     // show skeleton
@@ -249,7 +481,7 @@ function PoolBarChart({
       className="chart--empty mt-6 mb-xl flex flex-centered row"
       style={{ height: 300 }}
     >
-      {isFetching ? 'loading...' : 'no data'}
+      {loading ? 'loading...' : 'no data'}
     </div>
   );
 }
