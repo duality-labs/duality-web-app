@@ -53,15 +53,22 @@ export function useStatData(
   tokenB: Token,
   getIndexerPath: (tokenA: Token, tokenB: Token) => string,
   getValues?: (values: number[]) => number[]
-) {
+): [
+  number | null | undefined,
+  number[] | null | undefined,
+  number[] | null | undefined
+] {
   const data = useTimeSeriesData(tokenA, tokenB, getIndexerPath, getValues);
 
-  const values = data && getLastDataValues(data);
+  const [timeUnix, values] = data
+    ? getLastDataValues(data) || [null, null]
+    : [data, data];
   const valueDiffs = data && getLastDataChanges(data);
 
   // expect values to exist, if an empty array is found consider the stat to be
   // in an error state not a loading state
   return [
+    timeUnix,
     values && (values.length > 0 ? values : null),
     valueDiffs && (valueDiffs.length > 0 ? valueDiffs : null),
   ];
@@ -73,7 +80,7 @@ export function useStatTokenValue(
   getIndexerPath: (tokenA: Token, tokenB: Token) => string,
   getValues?: (values: number[]) => number[]
 ): TokenValuePair {
-  const [amounts, amountDiffs] = useStatData(
+  const [timeUnix, amounts, amountDiffs] = useStatData(
     tokenA,
     tokenB,
     getIndexerPath,
@@ -89,7 +96,7 @@ export function useStatTokenValue(
     [tokenB, amountDiffB]
   );
 
-  return [valueTotal, valueDiffTotal];
+  return [timeUnix, valueTotal, valueDiffTotal];
 }
 
 // TVL
@@ -136,12 +143,12 @@ export function useStatVolatility(
   tokenA: Token,
   tokenB: Token
 ): TokenValuePair {
-  const [amounts, amountDiffs] = useStatData(
+  const [timeUnix, amounts, amountDiffs] = useStatData(
     tokenA,
     tokenB,
     getStatVolatilityPath,
     getStatVolatilityValues
   );
   // return single values from data
-  return [amounts && amounts[0], amountDiffs && amountDiffs[0]];
+  return [timeUnix, amounts && amounts[0], amountDiffs && amountDiffs[0]];
 }

@@ -11,7 +11,7 @@ export default function StatCardTVL({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const [valueTotal, valueDiffTotal] = useStatTVL(tokenA, tokenB);
+  const [, valueTotal, valueDiffTotal] = useStatTVL(tokenA, tokenB);
   return (
     <StatCard
       loading={valueTotal === undefined}
