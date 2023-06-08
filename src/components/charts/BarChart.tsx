@@ -5,6 +5,7 @@ import { Group } from '@visx/group';
 import { scaleBand, scaleLinear } from '@visx/scale';
 
 import './BarChart.scss';
+import { TimeSeriesRow } from '../stats/utils';
 
 const verticalMargin = 40;
 
@@ -18,16 +19,21 @@ interface DataTuple {
 }
 
 type BarChartProps = {
-  data: DataTuple[];
+  data: TimeSeriesRow[];
   events?: boolean;
 };
 
 interface ChartProps extends BarChartProps {
   width: number;
   height: number;
+  onHover: (data?: TimeSeriesRow) => void;
 }
 
-export default function BarChart({ data, height }: Omit<ChartProps, 'width'>) {
+export default function BarChart({
+  data,
+  height,
+  onHover,
+}: Omit<ChartProps, 'width'>) {
   // find container size to fit
   const chartContainer = useRef<HTMLDivElement>(null);
   const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
@@ -45,15 +51,38 @@ export default function BarChart({ data, height }: Omit<ChartProps, 'width'>) {
         width={chartSize.width || 0}
         height={chartSize.height || 0}
         data={data}
+        onHover={onHover}
       />
     </div>
   );
 }
 
-function BarChartContent({ data, height, width }: ChartProps) {
+function useChartData(data: TimeSeriesRow[] | undefined) {
+  // map data to chart
+  return useMemo(() => {
+    return data
+      ?.map(([unixTime, values]) => {
+        // add values here properly with price data
+        return {
+          x: unixTime.toFixed(),
+          y: values.reduce((acc, value) => acc + value, 0),
+        };
+      })
+      .reverse();
+  }, [data]);
+}
+
+function BarChartContent({
+  data: timeSeries,
+  height,
+  width,
+  onHover,
+}: ChartProps) {
   // bounds
   const xMax = width;
   const yMax = height - verticalMargin;
+
+  const data = useChartData(timeSeries || undefined);
 
   // scales, memoize for performance
   const xScale = useMemo(
@@ -61,7 +90,7 @@ function BarChartContent({ data, height, width }: ChartProps) {
       scaleBand<string>({
         range: [0, xMax],
         round: true,
-        domain: data.map(getX),
+        domain: (data || []).map(getX),
         padding: 0.4,
       }),
     [xMax, data]
@@ -71,7 +100,7 @@ function BarChartContent({ data, height, width }: ChartProps) {
       scaleLinear<number>({
         range: [yMax, 0],
         round: true,
-        domain: [0, Math.max(...data.map(getY))],
+        domain: [0, Math.max(...(data || []).map(getY))],
       }),
     [yMax, data]
   );
@@ -79,7 +108,13 @@ function BarChartContent({ data, height, width }: ChartProps) {
   return width < 10 ? null : (
     <svg width={width} height={height}>
       <Group top={verticalMargin / 2}>
-        {data.map((d) => {
+        {timeSeries.reverse().map((data) => {
+          const [unixTime, values] = data;
+          // add values here properly with price data
+          const d = {
+            x: unixTime.toFixed(),
+            y: values.reduce((acc, value) => acc + value, 0),
+          };
           const x = getX(d);
           const barWidth = xScale.bandwidth();
           const barHeight = yMax - (yScale(getY(d)) ?? 0);
@@ -93,6 +128,8 @@ function BarChartContent({ data, height, width }: ChartProps) {
               width={barWidth}
               height={barHeight}
               fill="rgba(23, 233, 217, .5)"
+              onMouseOver={() => onHover(data)}
+              onMouseOut={() => onHover()}
             />
           );
         })}
