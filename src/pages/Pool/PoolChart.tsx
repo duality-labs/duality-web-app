@@ -364,6 +364,7 @@ function ChartTVL({
       loading={data === undefined}
       header={formatStatTokenValue(sum(lastValues))}
       timeUnix={timeUnix}
+      timePeriodKey={timePeriodKey}
       chartData={data || []}
       onHover={setHighlightedData}
     />
@@ -388,6 +389,7 @@ function ChartVolume({
       loading={data === undefined}
       header={formatStatTokenValue(sum(lastValues))}
       timeUnix={timeUnix}
+      timePeriodKey={timePeriodKey}
       chartData={data || []}
       onHover={setHighlightedData}
     />
@@ -412,6 +414,7 @@ function ChartFees({
       loading={data === undefined}
       header={formatStatTokenValue(sum(lastValues))}
       timeUnix={timeUnix}
+      timePeriodKey={timePeriodKey}
       chartData={data || []}
       onHover={setHighlightedData}
     />
@@ -437,33 +440,55 @@ function ChartVolatility({
       loading={data === undefined}
       header={formatStatPercentageValue(sum(lastValues))}
       timeUnix={timeUnix}
+      timePeriodKey={timePeriodKey}
       chartData={data || []}
       onHover={setHighlightedData}
     />
   );
 }
 
+const dateFormats = {
+  '24H': new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'long',
+    timeStyle: 'short',
+  }),
+  '1W': new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'long',
+    timeStyle: 'short',
+  }),
+  '1M': new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'long',
+  }),
+  '1Y': new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'long',
+  }),
+  ALL: new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'long',
+  }),
+};
+
 function BarChartBase({
   loading,
   header,
   timeUnix,
+  timePeriodKey,
   chartData,
   onHover,
 }: {
   loading: boolean;
   header: ReactNode;
   timeUnix: TokenValue;
+  timePeriodKey: TimePeriodKey;
   chartData?: TimeSeriesRow[];
   onHover: (data?: TimeSeriesRow) => void;
 }) {
+  const timeFormatter = dateFormats[timePeriodKey] || dateFormats['ALL'];
   return chartData ? (
     <div className="line-chart">
       <div className="chart__header mt-lg">{header}</div>
       <div className="chart__subheader">
         {timeUnix ? (
-          new Date(timeUnix * 1000).toLocaleDateString(undefined, {
-            dateStyle: 'long',
-          })
+          timeFormatter.format(new Date(timeUnix * 1000))
         ) : (
           <>&nbsp;</>
         )}
