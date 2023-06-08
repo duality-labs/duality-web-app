@@ -473,7 +473,7 @@ function BarChartBase({
           <>&nbsp;</>
         )}
       </div>
-      <BarChart width={500} height={300} data={chartData || []} />
+      <BarChart height={300} data={chartData || []} />
     </div>
   ) : (
     // show skeleton
