@@ -1380,7 +1380,7 @@ export default function PoolManagement({
                       editedUserTicks
                         // sort by price
                         .sort((a, b) => {
-                          return !invertedTokenOrder
+                          return !!invertedTokenOrder
                             ? b.deposit.centerTickIndex.toNumber() -
                                 a.deposit.centerTickIndex.toNumber()
                             : a.deposit.centerTickIndex.toNumber() -
@@ -1427,7 +1427,7 @@ export default function PoolManagement({
                               <tr key={index} className="pt-2">
                                 <td>{index + 1}</td>
                                 <td>
-                                  {new BigNumber(price.toFixed(5)).toFixed(5)}
+                                  {new BigNumber(1).div(price).toFixed(5)}
                                 </td>
                                 <td>
                                   {userReserveATotal &&
