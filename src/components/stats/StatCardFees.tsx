@@ -11,7 +11,7 @@ export default function StatCardFees({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const [valueTotal, valueDiffTotal] = useStatFee(tokenA, tokenB);
+  const [, valueTotal, valueDiffTotal] = useStatFee(tokenA, tokenB);
   return (
     <StatCard
       loading={valueTotal === undefined}
