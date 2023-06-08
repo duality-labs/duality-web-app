@@ -10,26 +10,30 @@ export type TimeSeriesPage = {
 };
 
 export function getLastDataValues(
-  data: TimeSeriesRow[] = [],
+  data: TimeSeriesRow[] | undefined,
   index = 0
-): number[] {
+): TimeSeriesRow | null | undefined {
+  if (data === undefined) {
+    return undefined;
+  }
   // if data exists and there are values at the index then return them
-  if (data?.[index]) {
-    const [, values] = data[index];
+  if (data[index]) {
+    const [timeUnix, values] = data[index];
     // protect against non-numbers (such as null)
-    if (values.every((value) => !isNaN(value))) {
-      return values;
+    if (values.length > 0 && values.every((value) => !isNaN(value))) {
+      return [timeUnix, values];
     }
   }
-  return [];
+  // consider existing timeseries data, but no data point to be an error state
+  return null;
 }
 export function getLastDataChanges(data: TimeSeriesRow[] = []): number[] {
-  const lastDataValues = getLastDataValues(data);
-  const previousDataValues = getLastDataValues(data, 1);
-  return lastDataValues &&
-    previousDataValues &&
-    previousDataValues.length === lastDataValues.length &&
-    previousDataValues.length > 0
+  const [, lastDataValues] = getLastDataValues(data) || [];
+  const [, previousDataValues] = getLastDataValues(data, 1) || [];
+  if (!lastDataValues || !previousDataValues) {
+    return [];
+  }
+  return previousDataValues.length === lastDataValues.length
     ? previousDataValues.map((previousDataValue, index) => {
         return lastDataValues[index] - previousDataValue;
       })
@@ -37,7 +41,11 @@ export function getLastDataChanges(data: TimeSeriesRow[] = []): number[] {
 }
 
 export type TokenValue = number | null | undefined;
-export type TokenValuePair = [TokenValue, TokenValue];
+export type TokenValuePair = [
+  timeUnix: TokenValue,
+  valueTotal: TokenValue,
+  valueDiffTotal: TokenValue
+];
 
 export function formatStatTokenValue(value: TokenValue) {
   return typeof value === 'number' ? formatCurrency(value) : value;

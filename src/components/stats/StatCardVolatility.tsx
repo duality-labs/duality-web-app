@@ -11,7 +11,7 @@ export default function StatCardVolatility({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const [volatility, volatilityDiff] = useStatVolatility(tokenA, tokenB);
+  const [, volatility, volatilityDiff] = useStatVolatility(tokenA, tokenB);
   return (
     <StatCard
       loading={volatility === undefined}
