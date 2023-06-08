@@ -80,13 +80,17 @@ export function formatAmount(
 
 export function formatPercentage(
   amount: number | string,
-  opts: Intl.NumberFormatOptions = {}
+  opts: Intl.NumberFormatOptions = {},
+  maximumSignificantDecimals = 3
 ) {
-  const numericAmount = Number(amount) * 100;
+  const percentage = Number(amount) * 100;
+  const roundedAmount = formatMaximumSignificantDecimals(
+    percentage,
+    maximumSignificantDecimals
+  );
+  const numericAmount = Number(roundedAmount);
   return !isNaN(numericAmount)
     ? `${numericAmount.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
         useGrouping: true,
         ...opts,
       })}%`
