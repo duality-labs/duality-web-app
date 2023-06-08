@@ -9,6 +9,20 @@ export type TimeSeriesPage = {
   };
 };
 
+export function getLastDataValue(
+  data: TimeSeriesRow[] | undefined,
+  // optional reducing function
+  getValue: (values: number[]) => number = (values) =>
+    values.reduce((acc, value) => acc + value, 0),
+  index = 0
+): [unixTime: number, value: number] | null | undefined {
+  const lastDataValues = getLastDataValues(data, index);
+  if (!lastDataValues) {
+    return lastDataValues;
+  }
+  const [timeUnix, values] = lastDataValues;
+  return [timeUnix, getValue(values)];
+}
 export function getLastDataValues(
   data: TimeSeriesRow[] | undefined,
   index = 0
