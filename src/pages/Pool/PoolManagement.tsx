@@ -288,11 +288,7 @@ export default function PoolManagement({
       // current tokens with maybe new price
       else if (state.tokenA === tokenA && state.tokenB === tokenB) {
         // set range on first price after switching tokens
-        if (
-          !state.price ||
-          state.isValueAZero !== isValueAZero ||
-          state.isValueBZero !== isValueBZero
-        ) {
+        if (!state.price) {
           setRangeForNewPriceData(edgePrice);
         }
         return {
