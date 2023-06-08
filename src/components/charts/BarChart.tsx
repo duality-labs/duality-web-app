@@ -46,7 +46,13 @@ export default function BarChart({
     })
   );
   return (
-    <div className="visx-chart-area" ref={chartContainer} style={{ height }}>
+    <div
+      className="visx-chart-area"
+      ref={chartContainer}
+      style={{ height }}
+      onMouseLeave={() => onHover()}
+      onBlur={() => onHover()}
+    >
       <BarChartContent
         width={chartSize.width || 0}
         height={chartSize.height || 0}
@@ -129,7 +135,6 @@ function BarChartContent({
               height={barHeight}
               fill="rgba(23, 233, 217, .5)"
               onMouseOver={() => onHover(data)}
-              onMouseOut={() => onHover()}
             />
           );
         })}
