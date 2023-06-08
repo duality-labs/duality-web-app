@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 import { assets, chains } from 'chain-registry';
 import { Chain } from '@chain-registry/types';
-import { Token, getAmountInDenom } from '../utils/tokens';
+import { Token, getTokenValue } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
 
 import tknLogo from '../../../assets/tokens/TKN.svg';
@@ -220,11 +220,7 @@ export function useTokenValueTotal(
 
   const values = tokenAmounts.map(([token, amount], index) => {
     const price = prices[index];
-    return new BigNumber(
-      getAmountInDenom(token, amount, token.address, token.display) || 0
-    )
-      .multipliedBy(price || 0)
-      .toNumber();
+    return getTokenValue(token, amount, price);
   });
 
   // if any values are still resolving then return that we don't know the value
@@ -235,7 +231,7 @@ export function useTokenValueTotal(
   // sum values if they are all found
   // (don't return half the )
   if (values.every((value) => value !== undefined)) {
-    return values.reduce((acc, value) => acc + value, 0);
+    return (values as number[]).reduce((acc, value) => acc + value, 0);
   }
   // else return an error state
   else {

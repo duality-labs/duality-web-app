@@ -63,3 +63,19 @@ export function getAmountInDenom(
         outputString;
   }
 }
+
+// get how much a utoken amount is worth in USD
+export function getTokenValue(
+  token: Token,
+  amount: BigNumber.Value | undefined,
+  price: number | undefined
+): number | undefined {
+  if (price === undefined || amount === undefined) {
+    return undefined;
+  }
+  return new BigNumber(
+    getAmountInDenom(token, amount, token.address, token.display) || 0
+  )
+    .multipliedBy(price || 0)
+    .toNumber();
+}
