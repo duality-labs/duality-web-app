@@ -229,7 +229,7 @@ export function useTokenValueTotal(
   }
 
   // sum values if they are all found
-  // (don't return half the )
+  // (don't return a total value if only half the token amounts are present)
   if (values.every((value) => value !== undefined)) {
     return (values as number[]).reduce((acc, value) => acc + value, 0);
   }
