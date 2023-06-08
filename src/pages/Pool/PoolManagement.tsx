@@ -890,7 +890,15 @@ export default function PoolManagement({
                   Withdraw @ {price} {tokenB.symbol}/{tokenA.symbol}
                 </div>
                 <div className="col ml-auto">
-                  {formatAmount(diffA.negated().toNumber())} {tokenA.symbol}
+                  {formatAmount(
+                    getAmountInDenom(
+                      tokenA,
+                      diffA.negated().toNumber(),
+                      tokenA.address,
+                      tokenA.display
+                    ) || 0
+                  )}{' '}
+                  {tokenA.symbol}
                 </div>
               </div>
             );
@@ -900,7 +908,15 @@ export default function PoolManagement({
                   Withdraw @ {price} {tokenB.symbol}/{tokenA.symbol}
                 </div>
                 <div className="col ml-auto">
-                  {formatAmount(diffB.negated().toNumber())} {tokenB.symbol}
+                  {formatAmount(
+                    getAmountInDenom(
+                      tokenB,
+                      diffB.negated().toNumber(),
+                      tokenB.address,
+                      tokenB.display
+                    ) || 0
+                  )}{' '}
+                  {tokenB.symbol}
                 </div>
               </div>
             );
@@ -910,7 +926,15 @@ export default function PoolManagement({
                   Deposit @ {price} {tokenB.symbol}/{tokenA.symbol}
                 </div>
                 <div className="col ml-auto">
-                  {formatAmount(diffA.toNumber())} {tokenA.symbol}
+                  {formatAmount(
+                    getAmountInDenom(
+                      tokenA,
+                      diffA.toNumber(),
+                      tokenA.address,
+                      tokenA.display
+                    ) || 0
+                  )}{' '}
+                  {tokenA.symbol}
                 </div>
               </div>
             );
@@ -920,7 +944,15 @@ export default function PoolManagement({
                   Deposit @ {price} {tokenB.symbol}/{tokenA.symbol}
                 </div>
                 <div className="col ml-auto">
-                  {formatAmount(diffB.toNumber())} {tokenB.symbol}
+                  {formatAmount(
+                    getAmountInDenom(
+                      tokenB,
+                      diffB.toNumber(),
+                      tokenB.address,
+                      tokenB.display
+                    ) || 0
+                  )}{' '}
+                  {tokenB.symbol}
                 </div>
               </div>
             );
@@ -945,13 +977,27 @@ export default function PoolManagement({
               <div className="h4">You will receive:</div>
               {!diffTokenA.isZero() && (
                 <div className="ml-auto">
-                  {formatAmount(diffTokenA.negated().toNumber())}{' '}
+                  {formatAmount(
+                    getAmountInDenom(
+                      tokenA,
+                      diffTokenA.negated().toNumber(),
+                      tokenA.address,
+                      tokenA.display
+                    ) || 0
+                  )}{' '}
                   {tokenA.symbol}
                 </div>
               )}
               {!diffTokenB.isZero() && (
                 <div className="ml-auto">
-                  {formatAmount(diffTokenB.negated().toNumber())}{' '}
+                  {formatAmount(
+                    getAmountInDenom(
+                      tokenB,
+                      diffTokenB.negated().toNumber(),
+                      tokenB.address,
+                      tokenB.display
+                    ) || 0
+                  )}{' '}
                   {tokenB.symbol}
                 </div>
               )}
