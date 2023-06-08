@@ -37,14 +37,18 @@ import {
 } from '../../lib/web3/utils/events';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { formatCurrency } from '../../lib/utils/number';
+import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { formatRelativeTime } from '../../lib/utils/time';
 
 import './Pool.scss';
-import { addressableTokenMap } from '../../lib/web3/hooks/useTokens';
+import {
+  addressableTokenMap,
+  useTokenValue,
+} from '../../lib/web3/hooks/useTokens';
 import StatCardVolume from '../../components/stats/StatCardVolume';
 import StatCardFees from '../../components/stats/StatCardFees';
 import StatCardVolatility from '../../components/stats/StatCardVolatility';
+import { useStatComposition } from '../../components/stats/hooks';
 
 export default function PoolOverview({
   tokenA,
@@ -120,6 +124,12 @@ export default function PoolOverview({
 }
 
 function PairComposition({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
+  const [, amounts] = useStatComposition(tokenA, tokenB);
+  const [amountA, amountB] = amounts || [];
+
+  const valueA = useTokenValue(tokenA, amountA);
+  const valueB = useTokenValue(tokenB, amountB);
+
   const { columns, headings, data } = useMemo(() => {
     return {
       headings: ['Token', 'Amount', 'Value'],
@@ -142,16 +152,29 @@ function PairComposition({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
             </td>
           );
         },
-        function TokenCell2({ row }: { row: Token }) {
-          return <td>todo</td>;
+        function TokenCell2({ row: token }: { row: Token }) {
+          return (
+            <td>
+              {formatAmount(
+                getAmountInDenom(
+                  token,
+                  token === tokenA ? amountA : amountB,
+                  token.address,
+                  token.display
+                ) || 0
+              )}
+            </td>
+          );
         },
-        function TokenCell3({ row }: { row: Token }) {
-          return <td>todo</td>;
+        function TokenCell3({ row: token }: { row: Token }) {
+          return (
+            <td>{formatCurrency((token === tokenA ? valueA : valueB) || 0)}</td>
+          );
         },
       ],
       data: [tokenA, tokenB],
     };
-  }, [tokenA, tokenB]);
+  }, [amountA, amountB, tokenA, tokenB, valueA, valueB]);
 
   return (
     <TableCard title="Pair Composition" className="pb-5" scrolling={false}>
