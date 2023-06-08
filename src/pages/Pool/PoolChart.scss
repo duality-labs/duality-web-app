@@ -32,4 +32,7 @@
   .visx-bar {
     fill: #4eb1e8;
   }
+  rect:hover {
+    fill: lighten($color: #4eb1e8, $amount: 10);
+  }
 }

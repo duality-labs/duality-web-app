@@ -339,21 +339,6 @@ const chartComponents = {
   Volatility: ChartVolatility,
 };
 
-function useChartData(data: TimeSeriesRow[] | undefined) {
-  // map data to chart
-  return useMemo(() => {
-    return data
-      ?.map(([unixTime, values]) => {
-        // add values here properly with price data
-        return {
-          x: unixTime.toFixed(),
-          y: values.reduce((acc, value) => acc + value, 0),
-        };
-      })
-      .reverse();
-  }, [data]);
-}
-
 function sum(values: number[]): number | undefined {
   if (values.length === 0) {
     return undefined;
@@ -371,13 +356,16 @@ function ChartTVL({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesTVL(tokenA, tokenB, timePeriodKey);
-  const [[timeUnix, lastValues = []] = []] = data || [];
+  const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
+  const [[timeUnix, lastValues = []] = []] =
+    (highlightedData && [highlightedData]) || data || [];
   return (
     <BarChartBase
       loading={data === undefined}
       header={formatStatTokenValue(sum(lastValues))}
       timeUnix={timeUnix}
-      chartData={useChartData(data || undefined)}
+      chartData={data || []}
+      onHover={setHighlightedData}
     />
   );
 }
@@ -392,13 +380,16 @@ function ChartVolume({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesVolume(tokenA, tokenB, timePeriodKey);
-  const [[timeUnix, lastValues = []] = []] = data || [];
+  const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
+  const [[timeUnix, lastValues = []] = []] =
+    (highlightedData && [highlightedData]) || data || [];
   return (
     <BarChartBase
       loading={data === undefined}
       header={formatStatTokenValue(sum(lastValues))}
       timeUnix={timeUnix}
-      chartData={useChartData(data || undefined)}
+      chartData={data || []}
+      onHover={setHighlightedData}
     />
   );
 }
@@ -413,13 +404,16 @@ function ChartFees({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesFees(tokenA, tokenB, timePeriodKey);
-  const [[timeUnix, lastValues = []] = []] = data || [];
+  const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
+  const [[timeUnix, lastValues = []] = []] =
+    (highlightedData && [highlightedData]) || data || [];
   return (
     <BarChartBase
       loading={data === undefined}
       header={formatStatTokenValue(sum(lastValues))}
       timeUnix={timeUnix}
-      chartData={useChartData(data || undefined)}
+      chartData={data || []}
+      onHover={setHighlightedData}
     />
   );
 }
@@ -434,20 +428,19 @@ function ChartVolatility({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesVolatility(tokenA, tokenB, timePeriodKey);
-  const [[timeUnix, lastValues = []] = []] = data || [];
+  const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
+  const [[timeUnix, lastValues = []] = []] =
+    (highlightedData && [highlightedData]) || data || [];
+
   return (
     <BarChartBase
       loading={data === undefined}
       header={formatStatPercentageValue(sum(lastValues))}
       timeUnix={timeUnix}
-      chartData={useChartData(data || undefined)}
+      chartData={data || []}
+      onHover={setHighlightedData}
     />
   );
-}
-
-interface DataTuple {
-  x: string;
-  y: number;
 }
 
 function BarChartBase({
@@ -455,11 +448,13 @@ function BarChartBase({
   header,
   timeUnix,
   chartData,
+  onHover,
 }: {
   loading: boolean;
   header: ReactNode;
   timeUnix: TokenValue;
-  chartData?: DataTuple[];
+  chartData?: TimeSeriesRow[];
+  onHover: (data?: TimeSeriesRow) => void;
 }) {
   return chartData ? (
     <div className="line-chart">
@@ -473,7 +468,7 @@ function BarChartBase({
           <>&nbsp;</>
         )}
       </div>
-      <BarChart height={300} data={chartData || []} />
+      <BarChart height={300} data={chartData || []} onHover={onHover} />
     </div>
   ) : (
     // show skeleton
