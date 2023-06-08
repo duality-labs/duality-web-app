@@ -11,7 +11,7 @@ export default function StatCardVolume({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const [valueTotal, valueDiffTotal] = useStatVolume(tokenA, tokenB);
+  const [, valueTotal, valueDiffTotal] = useStatVolume(tokenA, tokenB);
   return (
     <StatCard
       loading={valueTotal === undefined}
