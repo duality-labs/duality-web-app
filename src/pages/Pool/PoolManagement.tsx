@@ -1326,9 +1326,6 @@ export default function PoolManagement({
                     <th style={{ width: '20%' }}>
                       {tokenB.display.toUpperCase()}
                     </th>
-                    {!(isValueAZero && isValueBZero) && (
-                      <th style={{ width: '12.5%' }}>Actions</th>
-                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -1561,14 +1558,6 @@ export default function PoolManagement({
                             {tick.reserveB.isGreaterThan(1e-5)
                               ? tick.reserveB.toFixed(3)
                               : ''}
-                          </td>
-                          <td className="row gap-2 ml-4">
-                            <button
-                              type="button"
-                              className="button button-light my-3"
-                            >
-                              Edit
-                            </button>
                           </td>
                         </tr>
                       ) : null;
