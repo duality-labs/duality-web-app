@@ -207,6 +207,10 @@ export function useStatTVL(tokenA: Token, tokenB: Token) {
   return useStatTokenValue(tokenA, tokenB, getStatTvlPath, getStatTvlValues);
 }
 
+export function useStatComposition(tokenA: Token, tokenB: Token) {
+  return useStatData(tokenA, tokenB, getStatTvlPath, getStatTvlValues);
+}
+
 // volume and fees
 function getStatVolumePath(tokenA: Token, tokenB: Token) {
   return `stats/volume/${tokenA.address}/${tokenB.address}`;
