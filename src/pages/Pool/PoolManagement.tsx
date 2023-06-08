@@ -1111,7 +1111,6 @@ export default function PoolManagement({
                       advanced={editMode}
                       canMoveUp
                       canMoveDown
-                      canMoveX
                       oneSidedLiquidity={isValueAZero || isValueBZero}
                       ControlsComponent={ChartControls}
                     ></LiquiditySelector>
