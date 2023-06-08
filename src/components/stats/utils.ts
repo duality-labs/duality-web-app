@@ -1,3 +1,5 @@
+import { formatCurrency, formatPercentage } from '../../lib/utils/number';
+
 export type TimeSeriesRow = [unixTime: number, values: number[]];
 export type TimeSeriesPage = {
   shape: Array<string>;
@@ -32,4 +34,14 @@ export function getLastDataChanges(data: TimeSeriesRow[] = []): number[] {
         return lastDataValues[index] - previousDataValue;
       })
     : [];
+}
+
+export type TokenValue = number | null | undefined;
+export type TokenValuePair = [TokenValue, TokenValue];
+
+export function formatStatTokenValue(value: TokenValue) {
+  return typeof value === 'number' ? formatCurrency(value) : value;
+}
+export function formatStatPercentageValue(value: TokenValue) {
+  return typeof value === 'number' ? formatPercentage(value) : value;
 }
