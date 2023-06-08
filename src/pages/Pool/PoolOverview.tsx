@@ -12,7 +12,6 @@ import TableCard from '../../components/cards/TableCard';
 import Tabs from '../../components/Tabs/Tabs';
 import PoolChart from './PoolChart';
 import { SmallCardRow } from '../../components/cards/SmallCard';
-import StatCard from '../../components/cards/StatCard';
 import StatCardTVL from '../../components/stats/StatCardTVL';
 
 import { useLcdClientPromise } from '../../lib/web3/lcdClient';
@@ -45,6 +44,7 @@ import './Pool.scss';
 import { addressableTokenMap } from '../../lib/web3/hooks/useTokens';
 import StatCardVolume from '../../components/stats/StatCardVolume';
 import StatCardFees from '../../components/stats/StatCardFees';
+import StatCardVolatility from '../../components/stats/StatCardVolatility';
 
 export default function PoolOverview({
   tokenA,
@@ -95,9 +95,7 @@ export default function PoolOverview({
                 <StatCardTVL tokenA={tokenA} tokenB={tokenB} />
                 <StatCardVolume tokenA={tokenA} tokenB={tokenB} />
                 <StatCardFees tokenA={tokenA} tokenB={tokenB} />
-                <StatCard header="Volatility" change="+0.0342">
-                  6.0%
-                </StatCard>
+                <StatCardVolatility tokenA={tokenA} tokenB={tokenB} />
               </SmallCardRow>
             </div>
             <PoolChart tokenA={tokenA} tokenB={tokenB} />

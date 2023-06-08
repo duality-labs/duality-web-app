@@ -62,8 +62,8 @@ export default function StatCardVolume({
       ? valueDiffA + valueDiffB
       : undefined;
   return (
-    <StatCard header="Volume (24H)" change={valueDiffTotal}>
-      {valueTotal !== undefined ? formatCurrency(valueTotal) : '...'}
+    <StatCard loading={!data} header="Volume (24H)" change={valueDiffTotal}>
+      {valueTotal !== undefined ? formatCurrency(valueTotal) : undefined}
     </StatCard>
   );
 }

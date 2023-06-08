@@ -8,15 +8,28 @@ type SmallCardProps = Parameters<typeof SmallCard>[0];
 export default function StatCard({
   change,
   className,
-  ...props
+  loading = false,
+  header,
+  children,
+  body = children,
 }: {
+  loading?: boolean;
   change: number | string | undefined;
 } & Omit<SmallCardProps, 'footer'>) {
+  const customClassName = ['stat-card', className].filter(Boolean).join(' ');
+  if (loading) {
+    return (
+      <SmallCard className={customClassName} header={header} footer="&nbsp;">
+        ...
+      </SmallCard>
+    );
+  }
   return (
     <SmallCard
-      {...props}
-      className={['stat-card', className].filter(Boolean).join(' ')}
-      footer={change !== undefined ? formatPercentage(change) : '...'}
+      className={customClassName}
+      header={header}
+      body={body ?? 'N/A'}
+      footer={change !== undefined ? formatPercentage(change) : 'N/A'}
       footerClassName={getFooterClassName(change)}
     />
   );
