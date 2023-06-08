@@ -62,8 +62,8 @@ export default function StatCardTVL({
       ? valueDiffA + valueDiffB
       : undefined;
   return (
-    <StatCard header="TVL" change={valueDiffTotal}>
-      {valueTotal !== undefined ? formatCurrency(valueTotal) : '...'}
+    <StatCard loading={!data} header="TVL" change={valueDiffTotal}>
+      {valueTotal !== undefined ? formatCurrency(valueTotal) : undefined}
     </StatCard>
   );
 }

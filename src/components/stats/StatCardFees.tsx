@@ -62,8 +62,8 @@ export default function StatCardFees({
       ? valueDiffA + valueDiffB
       : undefined;
   return (
-    <StatCard header="Fees (24H)" change={valueDiffTotal}>
-      {valueTotal !== undefined ? formatCurrency(valueTotal) : '...'}
+    <StatCard loading={!data} header="Fees (24H)" change={valueDiffTotal}>
+      {valueTotal !== undefined ? formatCurrency(valueTotal) : undefined}
     </StatCard>
   );
 }
