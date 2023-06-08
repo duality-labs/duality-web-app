@@ -14,7 +14,7 @@ export default function StatCard({
   body = children,
 }: {
   loading?: boolean;
-  change: number | string | undefined;
+  change: number | string | null | undefined;
 } & Omit<SmallCardProps, 'footer'>) {
   const customClassName = ['stat-card', className].filter(Boolean).join(' ');
   if (loading) {
@@ -28,14 +28,23 @@ export default function StatCard({
     <SmallCard
       className={customClassName}
       header={header}
-      body={body ?? 'N/A'}
-      footer={change !== undefined ? formatPercentage(change) : 'N/A'}
+      // handling `undefined` (loading state) and `null` (error state)
+      body={body !== undefined ? (body !== null ? body : 'N/A') : '...'}
+      footer={
+        change !== undefined
+          ? change !== null
+            ? formatPercentage(change)
+            : 'N/A'
+          : '...'
+      }
       footerClassName={getFooterClassName(change)}
     />
   );
 }
 
-function getFooterClassName(change: string | number = 0): string | undefined {
+function getFooterClassName(
+  change: string | number | null = 0
+): string | undefined {
   const changeValue = Number(change);
   if (changeValue > 0) {
     return 'text-success';
