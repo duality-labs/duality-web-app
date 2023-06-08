@@ -42,9 +42,16 @@ export function useTimeSeriesData(
     if (error && !pages) {
       return null;
     }
+    if (!pages || !pages.data) {
+      return undefined;
+    }
     // return success state as loading or data
     return pages && getValues
-      ? pages.data.map(([timeUnix, values]) => [timeUnix, getValues(values)])
+      ? pages.data
+          .filter(Boolean) // row may be `null`
+          .map(([timeUnix, values = []]) => {
+            return [timeUnix, getValues(values)];
+          })
       : pages?.data;
   }, [error, pages, getValues]);
 }
