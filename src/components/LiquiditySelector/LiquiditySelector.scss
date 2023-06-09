@@ -25,7 +25,10 @@
     opacity: 0.75;
   }
 
-  .token-a,
+  .token-a {
+    fill: hsl(0, 58%, 33%);
+    stroke: hsl(0, 58%, 33%);
+  }
   .token-b {
     fill: hsl(202deg 58% 33%);
     stroke: hsl(202deg 58% 33%);
