@@ -361,11 +361,15 @@ function ChartTVL({
   const [[timeUnix, lastValues = []] = []] =
     (highlightedData && [highlightedData]) || data || [];
   return (
-    <BarChartBase
+    <ChartBase
       loading={data === undefined}
-      header={formatStatTokenValue(sum(lastValues))}
-      timeUnix={timeUnix}
-      timePeriodKey={timePeriodKey}
+      header={
+        <ChartHeader
+          header={formatStatTokenValue(sum(lastValues))}
+          timeUnix={timeUnix}
+          timePeriodKey={timePeriodKey}
+        />
+      }
       chartData={data || []}
       onHover={setHighlightedData}
     />
@@ -386,11 +390,15 @@ function ChartVolume({
   const [[timeUnix, lastValues = []] = []] =
     (highlightedData && [highlightedData]) || data || [];
   return (
-    <BarChartBase
+    <ChartBase
       loading={data === undefined}
-      header={formatStatTokenValue(sum(lastValues))}
-      timeUnix={timeUnix}
-      timePeriodKey={timePeriodKey}
+      header={
+        <ChartHeader
+          header={formatStatTokenValue(sum(lastValues))}
+          timeUnix={timeUnix}
+          timePeriodKey={timePeriodKey}
+        />
+      }
       chartData={data || []}
       onHover={setHighlightedData}
     />
@@ -411,11 +419,15 @@ function ChartFees({
   const [[timeUnix, lastValues = []] = []] =
     (highlightedData && [highlightedData]) || data || [];
   return (
-    <BarChartBase
+    <ChartBase
       loading={data === undefined}
-      header={formatStatTokenValue(sum(lastValues))}
-      timeUnix={timeUnix}
-      timePeriodKey={timePeriodKey}
+      header={
+        <ChartHeader
+          header={formatStatTokenValue(sum(lastValues))}
+          timeUnix={timeUnix}
+          timePeriodKey={timePeriodKey}
+        />
+      }
       chartData={data || []}
       onHover={setHighlightedData}
     />
@@ -437,11 +449,15 @@ function ChartVolatility({
     (highlightedData && [highlightedData]) || data || [];
 
   return (
-    <BarChartBase
+    <ChartBase
       loading={data === undefined}
-      header={formatStatPercentageValue(sum(lastValues))}
-      timeUnix={timeUnix}
-      timePeriodKey={timePeriodKey}
+      header={
+        <ChartHeader
+          header={formatStatPercentageValue(sum(lastValues))}
+          timeUnix={timeUnix}
+          timePeriodKey={timePeriodKey}
+        />
+      }
       chartData={data || []}
       onHover={setHighlightedData}
     />
@@ -468,32 +484,20 @@ const dateFormats = {
   }),
 };
 
-function BarChartBase({
+function ChartBase({
   loading,
   header,
-  timeUnix,
-  timePeriodKey,
   chartData,
   onHover,
 }: {
   loading: boolean;
   header: ReactNode;
-  timeUnix: TokenValue;
-  timePeriodKey: TimePeriodKey;
   chartData?: TimeSeriesRow[];
   onHover: (data?: TimeSeriesRow) => void;
 }) {
-  const timeFormatter = dateFormats[timePeriodKey] || dateFormats['ALL'];
   return chartData ? (
     <div className="line-chart">
-      <div className="chart__header mt-lg">{header}</div>
-      <div className="chart__subheader">
-        {timeUnix ? (
-          timeFormatter.format(new Date(timeUnix * 1000))
-        ) : (
-          <>&nbsp;</>
-        )}
-      </div>
+      {header}
       <Chart
         height={300}
         ChartComponent={TimeSeriesBarChart}
@@ -509,5 +513,29 @@ function BarChartBase({
     >
       {loading ? 'loading...' : 'no data'}
     </div>
+  );
+}
+
+function ChartHeader({
+  header,
+  timeUnix,
+  timePeriodKey,
+}: {
+  header: ReactNode;
+  timeUnix: TokenValue;
+  timePeriodKey: TimePeriodKey;
+}) {
+  const timeFormatter = dateFormats[timePeriodKey] || dateFormats['ALL'];
+  return (
+    <>
+      <div className="chart__header mt-lg">{header}</div>
+      <div className="chart__subheader">
+        {timeUnix ? (
+          timeFormatter.format(new Date(timeUnix * 1000))
+        ) : (
+          <>&nbsp;</>
+        )}
+      </div>
+    </>
   );
 }
