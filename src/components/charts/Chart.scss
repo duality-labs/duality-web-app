@@ -1,7 +1,7 @@
 .visx-chart-area {
   position: relative;
 
-  svg {
+  & > svg {
     position: absolute;
     top: 0;
     bottom: 0;

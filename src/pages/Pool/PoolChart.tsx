@@ -2,7 +2,8 @@ import BigNumber from 'bignumber.js';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
-import BarChart from '../../components/charts/BarChart';
+import Chart from '../../components/charts/Chart';
+import TimeSeriesBarChart from '../../components/charts/TimeSeriesBarChart';
 import ButtonGroup from '../../components/ButtonGroup/ButtonGroup';
 
 import { days, hours, weeks } from '../../lib/utils/time';
@@ -493,7 +494,12 @@ function BarChartBase({
           <>&nbsp;</>
         )}
       </div>
-      <BarChart height={300} data={chartData || []} onHover={onHover} />
+      <Chart
+        height={300}
+        ChartComponent={TimeSeriesBarChart}
+        data={chartData}
+        onHover={onHover}
+      />
     </div>
   ) : (
     // show skeleton

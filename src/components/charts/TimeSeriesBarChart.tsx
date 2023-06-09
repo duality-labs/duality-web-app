@@ -1,10 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
-import useResizeObserver from '@react-hook/resize-observer';
+import { useMemo } from 'react';
 import { Bar } from '@visx/shape';
 import { Group } from '@visx/group';
 import { scaleBand, scaleLinear } from '@visx/scale';
 
-import './BarChart.scss';
+import { ChartProps } from './Chart';
 import { TimeSeriesRow } from '../stats/utils';
 
 const verticalMargin = 40;
@@ -18,49 +17,10 @@ interface DataTuple {
   y: number;
 }
 
-type BarChartProps = {
-  data: TimeSeriesRow[];
-  events?: boolean;
-};
-
-interface ChartProps extends BarChartProps {
+interface TimeSeriesBarChartProps extends ChartProps<TimeSeriesRow> {
   width: number;
   height: number;
   onHover: (data?: TimeSeriesRow) => void;
-}
-
-export default function BarChart({
-  data,
-  height,
-  onHover,
-}: Omit<ChartProps, 'width'>) {
-  // find container size to fit
-  const chartContainer = useRef<HTMLDivElement>(null);
-  const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
-
-  // redraw canvas when the screen size changes
-  useResizeObserver(chartContainer, (container) =>
-    setChartSize({
-      width: container.contentRect.width,
-      height: container.contentRect.height,
-    })
-  );
-  return (
-    <div
-      className="visx-chart-area"
-      ref={chartContainer}
-      style={{ height }}
-      onMouseLeave={() => onHover()}
-      onBlur={() => onHover()}
-    >
-      <BarChartContent
-        width={chartSize.width || 0}
-        height={chartSize.height || 0}
-        data={data}
-        onHover={onHover}
-      />
-    </div>
-  );
 }
 
 function useChartData(data: TimeSeriesRow[] | undefined) {
@@ -78,12 +38,12 @@ function useChartData(data: TimeSeriesRow[] | undefined) {
   }, [data]);
 }
 
-function BarChartContent({
+export default function TimeSeriesBarChart({
   data: timeSeries,
   height,
   width,
   onHover,
-}: ChartProps) {
+}: TimeSeriesBarChartProps) {
   // bounds
   const xMax = width;
   const yMax = height - verticalMargin;
