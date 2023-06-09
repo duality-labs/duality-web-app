@@ -3,16 +3,20 @@ import Long from 'long';
 import { useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { createRpcQueryHooks } from '@duality-labs/dualityjs';
-import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
+import {
+  QuerySupplyOfRequest,
+  QuerySupplyOfResponseSDKType,
+} from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
 import {
   QueryGetPoolReservesRequest,
+  QueryGetPoolReservesResponseSDKType,
   QueryGetUserPositionsResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 
 import { useWeb3 } from '../useWeb3';
 import { useRpc } from '../rpcQueryClient';
-import { useLcdClient } from '../lcdClient';
+import { useLcdClientPromise } from '../lcdClient';
 import { getPairID } from '../utils/pairs';
 import {
   Token,
@@ -88,12 +92,12 @@ const emptyArray: never[] = [];
 export function useUserPositionsTotalShares(
   poolDepositFilter: UserDepositFilter = defaultFilter
 ) {
-  const lcdClient = useLcdClient();
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter) || [];
+  const lcdClientPromise = useLcdClientPromise();
+  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
 
   const { data } = useQueries({
-    queries: [
-      ...selectedPoolDeposits.flatMap(
+    queries: useMemo(() => {
+      return (selectedPoolDeposits || []).flatMap(
         ({ pairID: { token0, token1 } = {}, centerTickIndex, fee }) => {
           if (token0 && token1) {
             const params: QuerySupplyOfRequest = {
@@ -101,20 +105,26 @@ export function useUserPositionsTotalShares(
             };
             return {
               queryKey: ['cosmos.bank.v1beta1.supplyOf', params],
-              queryFn: async () =>
-                lcdClient?.cosmos.bank.v1beta1.supplyOf(params) ?? null,
+              queryFn: async () => {
+                const lcdClient = await lcdClientPromise;
+                return lcdClient
+                  ? lcdClient.cosmos.bank.v1beta1.supplyOf(params)
+                  : null;
+              },
               staleTime: 10e3,
             };
           }
           return [];
         }
-      ),
-    ],
+      );
+    }, [lcdClientPromise, selectedPoolDeposits]),
     combine(results) {
       return {
         data:
           results.length > 0
-            ? results.map((result) => result.data)
+            ? results
+                .map((result) => result.data)
+                .filter((data): data is QuerySupplyOfResponseSDKType => !!data)
             : emptyArray,
         pending: results.some((result) => result.isPending),
       };
@@ -146,12 +156,12 @@ export function useUserPositionsTotalSharesPair(
 export function useUserPositionsTotalReserves(
   poolDepositFilter?: UserDepositFilter
 ) {
-  const lcdClient = useLcdClient();
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter) || [];
+  const lcdClientPromise = useLcdClientPromise();
+  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
 
   const { data } = useQueries({
-    queries: [
-      ...selectedPoolDeposits.flatMap(
+    queries: useMemo(() => {
+      return (selectedPoolDeposits || []).flatMap(
         ({
           pairID: { token0, token1 } = {},
           lowerTickIndex,
@@ -173,9 +183,12 @@ export function useUserPositionsTotalReserves(
               };
               return {
                 queryKey: ['dualitylabs.duality.dex.poolReserves', params],
-                queryFn: async () =>
-                  lcdClient?.dualitylabs.duality.dex.poolReserves(params) ??
-                  null,
+                queryFn: async () => {
+                  const lcdClient = await lcdClientPromise;
+                  return lcdClient
+                    ? lcdClient.dualitylabs.duality.dex.poolReserves(params)
+                    : null;
+                },
                 // don't retry, a 404 means there is 0 liquidity there
                 retry: false,
                 // refetch not that often
@@ -185,13 +198,20 @@ export function useUserPositionsTotalReserves(
           }
           return [];
         }
-      ),
-    ],
+      );
+    }, [lcdClientPromise, selectedPoolDeposits]),
     combine(results) {
       return {
         data:
           results.length > 0
-            ? results.map((result) => result.data)
+            ? // the results may contain a lot of null data
+              // because we request both sides of a tick for each deposit
+              // without knowing which side the reserves lay upon
+              results
+                .map((result) => result.data)
+                .filter(
+                  (data): data is QueryGetPoolReservesResponseSDKType => !!data
+                )
             : emptyArray,
         pending: results.some((result) => result.isPending),
       };
