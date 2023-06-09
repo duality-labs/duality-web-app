@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import Long from 'long';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { createRpcQueryHooks } from '@duality-labs/dualityjs';
 import {
@@ -85,9 +85,6 @@ export function useUserDeposits(
   }, [shares, poolDepositFilter]);
 }
 
-// a referentially stable empty array
-const emptyArray: never[] = [];
-
 // select all (or optional token pair list of) user shares
 export function useUserPositionsTotalShares(
   poolDepositFilter: UserDepositFilter = defaultFilter
@@ -95,6 +92,7 @@ export function useUserPositionsTotalShares(
   const lcdClientPromise = useLcdClientPromise();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
 
+  const memoizedData = useRef<QuerySupplyOfResponseSDKType[]>([]);
   const { data } = useQueries({
     queries: useMemo(() => {
       return (selectedPoolDeposits || []).flatMap(
@@ -119,13 +117,28 @@ export function useUserPositionsTotalShares(
       );
     }, [lcdClientPromise, selectedPoolDeposits]),
     combine(results) {
+      // only process data from successfully resolved queries
+      const data = results
+        .map((result) => result.data)
+        .filter((data): data is QuerySupplyOfResponseSDKType => !!data);
+
+      if (data.length === memoizedData.current.length) {
+        // let isSame: boolean = true;
+        for (let i = 0; i < data.length; i++) {
+          const supply1 = data[i];
+          const supply2 = memoizedData.current[i];
+          if (!(supply1.amount === supply2.amount)) {
+            // an item has changed, update data
+            memoizedData.current = data;
+            break;
+          }
+        }
+      } else {
+        // the data array has changed, update data
+        memoizedData.current = data;
+      }
       return {
-        data:
-          results.length > 0
-            ? results
-                .map((result) => result.data)
-                .filter((data): data is QuerySupplyOfResponseSDKType => !!data)
-            : emptyArray,
+        data: memoizedData.current,
         pending: results.some((result) => result.isPending),
       };
     },
@@ -159,6 +172,7 @@ export function useUserPositionsTotalReserves(
   const lcdClientPromise = useLcdClientPromise();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
 
+  const memoizedData = useRef<QueryGetPoolReservesResponseSDKType[]>([]);
   const { data } = useQueries({
     queries: useMemo(() => {
       return (selectedPoolDeposits || []).flatMap(
@@ -201,18 +215,37 @@ export function useUserPositionsTotalReserves(
       );
     }, [lcdClientPromise, selectedPoolDeposits]),
     combine(results) {
+      // only process data from successfully resolved queries
+      const data = results
+        .map((result) => result.data)
+        .filter((data): data is QueryGetPoolReservesResponseSDKType => !!data);
+
+      if (data.length === memoizedData.current.length) {
+        // let isSame: boolean = true;
+        for (let i = 0; i < data.length; i++) {
+          const poolReserves1 = data[i].poolReserves;
+          const poolReserves2 = memoizedData.current[i].poolReserves;
+          if (
+            !(
+              poolReserves1?.tickIndex === poolReserves2?.tickIndex &&
+              poolReserves1?.fee === poolReserves2?.fee &&
+              poolReserves1?.reserves === poolReserves2?.reserves &&
+              poolReserves1?.pairID?.token0 === poolReserves2?.pairID?.token0 &&
+              poolReserves1?.pairID?.token1 === poolReserves2?.pairID?.token1 &&
+              poolReserves1?.tokenIn === poolReserves2?.tokenIn
+            )
+          ) {
+            // an item has changed, update data
+            memoizedData.current = data;
+            break;
+          }
+        }
+      } else {
+        // the data array has changed, update data
+        memoizedData.current = data;
+      }
       return {
-        data:
-          results.length > 0
-            ? // the results may contain a lot of null data
-              // because we request both sides of a tick for each deposit
-              // without knowing which side the reserves lay upon
-              results
-                .map((result) => result.data)
-                .filter(
-                  (data): data is QueryGetPoolReservesResponseSDKType => !!data
-                )
-            : emptyArray,
+        data: memoizedData.current,
         pending: results.some((result) => result.isPending),
       };
     },
