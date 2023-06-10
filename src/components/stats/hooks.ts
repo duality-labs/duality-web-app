@@ -27,7 +27,7 @@ function useIndexerData(
   );
 }
 
-export function useTimeSeriesData(
+function useTimeSeriesData(
   tokenA: Token,
   tokenB: Token,
   getIndexerPath: (tokenA: Token, tokenB: Token) => string,
@@ -55,7 +55,7 @@ export function useTimeSeriesData(
   }, [error, pages, getValues]);
 }
 
-export function useStatData(
+function useStatData(
   tokenA: Token,
   tokenB: Token,
   getIndexerPath: (tokenA: Token, tokenB: Token) => string,
@@ -81,7 +81,7 @@ export function useStatData(
   ];
 }
 
-export function useStatTokenValue(
+function useStatTokenValue(
   tokenA: Token,
   tokenB: Token,
   getIndexerPath: (tokenA: Token, tokenB: Token) => string,
