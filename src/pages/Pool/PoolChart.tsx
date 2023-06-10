@@ -352,10 +352,9 @@ function ChartTVL({
   const data = useTimeSeriesTVL(tokenA, tokenB, timePeriodKey);
   return (
     <ChartBase
-      loading={data === undefined}
+      chartData={data}
       timeFormatter={dateFormats[timePeriodKey]}
       valueFormatter={formatStatTokenValue}
-      chartData={data || []}
     />
   );
 }
@@ -372,10 +371,9 @@ function ChartVolume({
   const data = useTimeSeriesVolume(tokenA, tokenB, timePeriodKey);
   return (
     <ChartBase
-      loading={data === undefined}
+      chartData={data}
       timeFormatter={dateFormats[timePeriodKey]}
       valueFormatter={formatStatTokenValue}
-      chartData={data || []}
     />
   );
 }
@@ -392,10 +390,9 @@ function ChartFees({
   const data = useTimeSeriesFees(tokenA, tokenB, timePeriodKey);
   return (
     <ChartBase
-      loading={data === undefined}
+      chartData={data}
       timeFormatter={dateFormats[timePeriodKey]}
       valueFormatter={formatStatTokenValue}
-      chartData={data || []}
     />
   );
 }
@@ -412,10 +409,9 @@ function ChartVolatility({
   const data = useTimeSeriesVolatility(tokenA, tokenB, timePeriodKey);
   return (
     <ChartBase
-      loading={data === undefined}
+      chartData={data}
       timeFormatter={dateFormats[timePeriodKey]}
       valueFormatter={formatStatPercentageValue}
-      chartData={data || []}
     />
   );
 }
@@ -441,13 +437,11 @@ const dateFormats = {
 };
 
 function ChartBase({
-  loading,
   chartData,
   timeFormatter,
   valueFormatter,
 }: {
-  loading: boolean;
-  chartData?: TimeSeriesRow[];
+  chartData: TimeSeriesRow[] | null | undefined;
   valueFormatter?: (values: number) => string | null | undefined;
   timeFormatter?: Intl.DateTimeFormat;
 }) {
@@ -472,7 +466,8 @@ function ChartBase({
       className="chart--empty mt-6 mb-xl flex flex-centered row"
       style={{ height: 300 }}
     >
-      {loading ? 'loading...' : 'no data'}
+      {/* only and undefined data object is pending, it may resolve to null */}
+      {chartData === undefined ? 'loading...' : 'no data'}
     </div>
   );
 }
