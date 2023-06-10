@@ -17,7 +17,7 @@ interface DataTuple {
   y: number;
 }
 
-interface TimeSeriesBarChartProps extends ChartProps<TimeSeriesRow> {
+interface TimeSeriesLineChartProps extends ChartProps<TimeSeriesRow> {
   width: number;
   height: number;
   onHover: (data?: TimeSeriesRow) => void;
@@ -38,12 +38,12 @@ function useChartData(data: TimeSeriesRow[] | undefined) {
   }, [data]);
 }
 
-export default function TimeSeriesBarChart({
+export default function TimeSeriesLineChart({
   data: timeSeries,
   height,
   width,
   onHover,
-}: TimeSeriesBarChartProps) {
+}: TimeSeriesLineChartProps) {
   // bounds
   const xMax = width;
   const yMax = height - verticalMargin;
@@ -72,7 +72,7 @@ export default function TimeSeriesBarChart({
   );
 
   return width < 10 ? null : (
-    <svg className="visx-bar-chart" width={width} height={height}>
+    <svg className="visx-line-chart" width={width} height={height}>
       <Group top={verticalMargin / 2}>
         {timeSeries.reverse().map((data) => {
           const [unixTime, values] = data;

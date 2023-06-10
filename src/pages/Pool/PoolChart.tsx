@@ -2,8 +2,9 @@ import BigNumber from 'bignumber.js';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
-import Chart from '../../components/charts/Chart';
+import Chart, { ChartProps } from '../../components/charts/Chart';
 import TimeSeriesBarChart from '../../components/charts/TimeSeriesBarChart';
+import TimeSeriesLineChart from '../../components/charts/TimeSeriesLineChart';
 import ButtonGroup from '../../components/ButtonGroup/ButtonGroup';
 
 import { days, hours, weeks } from '../../lib/utils/time';
@@ -250,6 +251,7 @@ function ChartTVL({
   );
   return (
     <ChartBase
+      ChartComponent={TimeSeriesLineChart}
       chartData={data}
       timeFormatter={dateFormats[timePeriodKey]}
       valueFormatter={formatStatTokenValue}
@@ -278,6 +280,7 @@ function ChartVolume({
   );
   return (
     <ChartBase
+      ChartComponent={TimeSeriesBarChart}
       chartData={data}
       timeFormatter={dateFormats[timePeriodKey]}
       valueFormatter={formatStatTokenValue}
@@ -306,6 +309,7 @@ function ChartFees({
   );
   return (
     <ChartBase
+      ChartComponent={TimeSeriesBarChart}
       chartData={data}
       timeFormatter={dateFormats[timePeriodKey]}
       valueFormatter={formatStatTokenValue}
@@ -334,6 +338,7 @@ function ChartVolatility({
   );
   return (
     <ChartBase
+      ChartComponent={TimeSeriesLineChart}
       chartData={data}
       timeFormatter={dateFormats[timePeriodKey]}
       valueFormatter={formatStatPercentageValue}
@@ -362,17 +367,19 @@ const dateFormats = {
 };
 
 function ChartBase({
+  ChartComponent,
   chartData,
   timeFormatter,
   valueFormatter,
 }: {
+  ChartComponent: React.FunctionComponent<ChartProps<TimeSeriesRow>>;
   chartData: TimeSeriesRow[] | null | undefined;
   valueFormatter?: (values: number) => string | null | undefined;
   timeFormatter?: Intl.DateTimeFormat;
 }) {
   const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
   return chartData ? (
-    <div className="line-chart">
+    <div className="chart">
       <ChartHeader
         dataRow={highlightedData || chartData?.[0]}
         timeFormatter={timeFormatter}
@@ -380,7 +387,7 @@ function ChartBase({
       />
       <Chart
         height={300}
-        ChartComponent={TimeSeriesBarChart}
+        ChartComponent={ChartComponent}
         data={chartData}
         onHover={setHighlightedData}
       />
