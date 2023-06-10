@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import Chart from '../../components/charts/Chart';
 import TimeSeriesBarChart from '../../components/charts/TimeSeriesBarChart';
@@ -350,19 +350,12 @@ function ChartTVL({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesTVL(tokenA, tokenB, timePeriodKey);
-  const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
   return (
     <ChartBase
       loading={data === undefined}
-      header={
-        <ChartHeader
-          dataRow={highlightedData || data?.[0]}
-          timeFormatter={dateFormats[timePeriodKey]}
-          valueFormatter={formatStatTokenValue}
-        />
-      }
+      timeFormatter={dateFormats[timePeriodKey]}
+      valueFormatter={formatStatTokenValue}
       chartData={data || []}
-      onHover={setHighlightedData}
     />
   );
 }
@@ -377,19 +370,12 @@ function ChartVolume({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesVolume(tokenA, tokenB, timePeriodKey);
-  const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
   return (
     <ChartBase
       loading={data === undefined}
-      header={
-        <ChartHeader
-          dataRow={highlightedData || data?.[0]}
-          timeFormatter={dateFormats[timePeriodKey]}
-          valueFormatter={formatStatTokenValue}
-        />
-      }
+      timeFormatter={dateFormats[timePeriodKey]}
+      valueFormatter={formatStatTokenValue}
       chartData={data || []}
-      onHover={setHighlightedData}
     />
   );
 }
@@ -404,19 +390,12 @@ function ChartFees({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesFees(tokenA, tokenB, timePeriodKey);
-  const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
   return (
     <ChartBase
       loading={data === undefined}
-      header={
-        <ChartHeader
-          dataRow={highlightedData || data?.[0]}
-          timeFormatter={dateFormats[timePeriodKey]}
-          valueFormatter={formatStatTokenValue}
-        />
-      }
+      timeFormatter={dateFormats[timePeriodKey]}
+      valueFormatter={formatStatTokenValue}
       chartData={data || []}
-      onHover={setHighlightedData}
     />
   );
 }
@@ -431,19 +410,12 @@ function ChartVolatility({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesVolatility(tokenA, tokenB, timePeriodKey);
-  const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
   return (
     <ChartBase
       loading={data === undefined}
-      header={
-        <ChartHeader
-          dataRow={highlightedData || data?.[0]}
-          timeFormatter={dateFormats[timePeriodKey]}
-          valueFormatter={formatStatPercentageValue}
-        />
-      }
+      timeFormatter={dateFormats[timePeriodKey]}
+      valueFormatter={formatStatPercentageValue}
       chartData={data || []}
-      onHover={setHighlightedData}
     />
   );
 }
@@ -470,23 +442,28 @@ const dateFormats = {
 
 function ChartBase({
   loading,
-  header,
   chartData,
-  onHover,
+  timeFormatter,
+  valueFormatter,
 }: {
   loading: boolean;
-  header: ReactNode;
   chartData?: TimeSeriesRow[];
-  onHover: (data?: TimeSeriesRow) => void;
+  valueFormatter?: (values: number) => string | null | undefined;
+  timeFormatter?: Intl.DateTimeFormat;
 }) {
+  const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
   return chartData ? (
     <div className="line-chart">
-      {header}
+      <ChartHeader
+        dataRow={highlightedData || chartData?.[0]}
+        timeFormatter={timeFormatter}
+        valueFormatter={valueFormatter}
+      />
       <Chart
         height={300}
         ChartComponent={TimeSeriesBarChart}
         data={chartData}
-        onHover={onHover}
+        onHover={setHighlightedData}
       />
     </div>
   ) : (
