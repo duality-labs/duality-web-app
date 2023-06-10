@@ -120,11 +120,11 @@ function useTimeSeriesData(
   tokenA: Token,
   tokenB: Token,
   timePeriodKey: TimePeriodKey,
-  getIndexerPath: (tokenA: Token, tokenB: Token) => string,
+  basePath: string,
   getValues?: (values: number[]) => number[]
 ) {
   const resolution = getDataResolution(timePeriodKey) || 'day';
-  const indexerPath = getIndexerPath(tokenA, tokenB);
+  const path = `${basePath}/${tokenA.address}/${tokenB.address}/${resolution}`;
   const {
     data: resultData,
     error,
@@ -132,7 +132,7 @@ function useTimeSeriesData(
     hasNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
-    queryKey: [indexerPath, resolution],
+    queryKey: [path],
     queryFn: async ({ pageParam: pageKey }): Promise<TimeSeriesPage> => {
       const queryParams = new URLSearchParams();
       if (pageKey) {
@@ -148,9 +148,7 @@ function useTimeSeriesData(
         }
       }
       const query = queryParams.toString() ? `?${queryParams}` : '';
-      const response = await fetch(
-        `${REACT_APP__INDEXER_API}/${indexerPath}/${resolution}${query}`
-      );
+      const response = await fetch(`${REACT_APP__INDEXER_API}/${path}${query}`);
       return await response.json();
     },
     defaultPageParam: '',
@@ -200,14 +198,14 @@ function useTimeSeriesTokenValues(
   tokenA: Token,
   tokenB: Token,
   timePeriodKey: TimePeriodKey,
-  getIndexerPath: (tokenA: Token, tokenB: Token) => string,
+  basePath: string,
   getValues?: (values: number[]) => number[]
 ): TimeSeriesRow[] | null | undefined {
   const data = useTimeSeriesData(
     tokenA,
     tokenB,
     timePeriodKey,
-    getIndexerPath,
+    basePath,
     getValues
   );
   const {
@@ -263,9 +261,6 @@ const chartComponents = {
   Volatility: ChartVolatility,
 };
 
-function getTimeSeriesTvlPath(tokenA: Token, tokenB: Token): string {
-  return `timeseries/tvl/${tokenA.address}/${tokenB.address}`;
-}
 function getStatTvlValues([amountA, amountB]: number[]): number[] {
   return [amountA, amountB];
 }
@@ -282,7 +277,7 @@ function ChartTVL({
     tokenA,
     tokenB,
     timePeriodKey,
-    getTimeSeriesTvlPath,
+    'timeseries/tvl',
     getStatTvlValues
   );
   return (
@@ -294,9 +289,6 @@ function ChartTVL({
   );
 }
 
-function getTimeSeriesVolumePath(tokenA: Token, tokenB: Token): string {
-  return `timeseries/volume/${tokenA.address}/${tokenB.address}`;
-}
 function getStatVolumeValues([amountA, amountB]: number[]): number[] {
   return [amountA, amountB];
 }
@@ -313,7 +305,7 @@ function ChartVolume({
     tokenA,
     tokenB,
     timePeriodKey,
-    getTimeSeriesVolumePath,
+    'timeseries/volume',
     getStatVolumeValues
   );
   return (
@@ -341,7 +333,7 @@ function ChartFees({
     tokenA,
     tokenB,
     timePeriodKey,
-    getTimeSeriesVolumePath,
+    'timeseries/volume',
     getStatFeeValues
   );
   return (
@@ -353,9 +345,6 @@ function ChartFees({
   );
 }
 
-function getTimeSeriesVolatilityPath(tokenA: Token, tokenB: Token): string {
-  return `timeseries/price/${tokenA.address}/${tokenB.address}`;
-}
 function getStatVolatilityValues([open, high, low, close]: number[]): number[] {
   return [tickIndexToPrice(new BigNumber(close)).toNumber()];
 }
@@ -372,7 +361,7 @@ function ChartVolatility({
     tokenA,
     tokenB,
     timePeriodKey,
-    getTimeSeriesVolatilityPath,
+    'timeseries/price',
     getStatVolatilityValues
   );
   return (
