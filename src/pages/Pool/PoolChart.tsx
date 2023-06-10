@@ -116,7 +116,7 @@ function getDataResolution(
   }
 }
 
-export function useTimeSeriesData(
+function useTimeSeriesData(
   tokenA: Token,
   tokenB: Token,
   timePeriodKey: TimePeriodKey,
@@ -196,7 +196,7 @@ export function useTimeSeriesData(
 
 // if data is in the form [timeUnix, [amountA, amountB]]
 // then transform the data using price data to [timeUnix, [valueA, valueB]]
-export function useTimeSeriesTokenValues(
+function useTimeSeriesTokenValues(
   tokenA: Token,
   tokenB: Token,
   timePeriodKey: TimePeriodKey,
