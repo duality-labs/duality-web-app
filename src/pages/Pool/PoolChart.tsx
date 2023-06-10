@@ -28,6 +28,12 @@ type TimePeriodKey = '24H' | '1W' | '1M' | '1Y' | 'ALL';
 type DataResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
 
 const chartKeys = ['TVL', 'Volume', 'Fees', 'Volatility'] as const;
+const chartComponents = {
+  TVL: ChartTVL,
+  Volume: ChartVolume,
+  Fees: ChartFees,
+  Volatility: ChartVolatility,
+};
 
 export default function PoolChart({
   tokenA,
@@ -38,6 +44,9 @@ export default function PoolChart({
 }) {
   const [chartIndex, setChartIndex] = useState<number>(0);
   const [timePeriodIndex, setTimePeriodIndex] = useState<number>(0);
+  const chartKey = chartKeys[chartIndex];
+  const timePeriodKey = timePeriodKeys[timePeriodIndex];
+  const ChartComponent = chartComponents[chartKey];
 
   return (
     <div className="pool-chart-area chart-area">
@@ -65,23 +74,11 @@ export default function PoolChart({
           />
         </div>
       </div>
-      {chartKeys[chartIndex] === 'TVL' ? (
-        // plot line chart type
-        <PoolBarChart
-          tokenA={tokenA}
-          tokenB={tokenB}
-          chartKey={chartKeys[chartIndex]}
-          timePeriodKey={timePeriodKeys[timePeriodIndex]}
-        />
-      ) : (
-        // plot bar chart type
-        <PoolBarChart
-          tokenA={tokenA}
-          tokenB={tokenB}
-          chartKey={chartKeys[chartIndex]}
-          timePeriodKey={timePeriodKeys[timePeriodIndex]}
-        />
-      )}
+      <ChartComponent
+        tokenA={tokenA}
+        tokenB={tokenB}
+        timePeriodKey={timePeriodKey}
+      />
     </div>
   );
 }
@@ -231,35 +228,6 @@ function useTimeSeriesTokenValues(
     });
   }, [tokenA, tokenB, priceA, priceB, data]);
 }
-
-function PoolBarChart({
-  chartKey,
-  timePeriodKey,
-  tokenA,
-  tokenB,
-}: {
-  chartKey: typeof chartKeys[number];
-  timePeriodKey: TimePeriodKey;
-  tokenA: Token;
-  tokenB: Token;
-}) {
-  const ChartComponent = chartComponents[chartKey];
-  return (
-    // plot chart
-    <ChartComponent
-      tokenA={tokenA}
-      tokenB={tokenB}
-      timePeriodKey={timePeriodKey}
-    />
-  );
-}
-
-const chartComponents = {
-  TVL: ChartTVL,
-  Volume: ChartVolume,
-  Fees: ChartFees,
-  Volatility: ChartVolatility,
-};
 
 function getStatTvlValues([amountA, amountB]: number[]): number[] {
   return [amountA, amountB];
