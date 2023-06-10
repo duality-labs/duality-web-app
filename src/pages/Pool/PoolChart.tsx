@@ -12,10 +12,10 @@ import { useSimplePrice } from '../../lib/tokenPrices';
 import {
   TimeSeriesPage,
   TimeSeriesRow,
-  TokenValue,
   formatStatPercentageValue,
   formatStatTokenValue,
 } from '../../components/stats/utils';
+import { formatAmount } from '../../lib/utils/number';
 
 import './PoolChart.scss';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
@@ -340,13 +340,6 @@ const chartComponents = {
   Volatility: ChartVolatility,
 };
 
-function sum(values: number[]): number | undefined {
-  if (values.length === 0) {
-    return undefined;
-  }
-  return values.reduce((acc, value) => acc + value, 0);
-}
-
 function ChartTVL({
   tokenA,
   tokenB,
@@ -358,16 +351,14 @@ function ChartTVL({
 }) {
   const data = useTimeSeriesTVL(tokenA, tokenB, timePeriodKey);
   const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
-  const [[timeUnix, lastValues = []] = []] =
-    (highlightedData && [highlightedData]) || data || [];
   return (
     <ChartBase
       loading={data === undefined}
       header={
         <ChartHeader
-          header={formatStatTokenValue(sum(lastValues))}
-          timeUnix={timeUnix}
-          timePeriodKey={timePeriodKey}
+          dataRow={highlightedData || data?.[0]}
+          timeFormatter={dateFormats[timePeriodKey]}
+          valueFormatter={formatStatTokenValue}
         />
       }
       chartData={data || []}
@@ -387,16 +378,14 @@ function ChartVolume({
 }) {
   const data = useTimeSeriesVolume(tokenA, tokenB, timePeriodKey);
   const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
-  const [[timeUnix, lastValues = []] = []] =
-    (highlightedData && [highlightedData]) || data || [];
   return (
     <ChartBase
       loading={data === undefined}
       header={
         <ChartHeader
-          header={formatStatTokenValue(sum(lastValues))}
-          timeUnix={timeUnix}
-          timePeriodKey={timePeriodKey}
+          dataRow={highlightedData || data?.[0]}
+          timeFormatter={dateFormats[timePeriodKey]}
+          valueFormatter={formatStatTokenValue}
         />
       }
       chartData={data || []}
@@ -416,16 +405,14 @@ function ChartFees({
 }) {
   const data = useTimeSeriesFees(tokenA, tokenB, timePeriodKey);
   const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
-  const [[timeUnix, lastValues = []] = []] =
-    (highlightedData && [highlightedData]) || data || [];
   return (
     <ChartBase
       loading={data === undefined}
       header={
         <ChartHeader
-          header={formatStatTokenValue(sum(lastValues))}
-          timeUnix={timeUnix}
-          timePeriodKey={timePeriodKey}
+          dataRow={highlightedData || data?.[0]}
+          timeFormatter={dateFormats[timePeriodKey]}
+          valueFormatter={formatStatTokenValue}
         />
       }
       chartData={data || []}
@@ -445,17 +432,14 @@ function ChartVolatility({
 }) {
   const data = useTimeSeriesVolatility(tokenA, tokenB, timePeriodKey);
   const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
-  const [[timeUnix, lastValues = []] = []] =
-    (highlightedData && [highlightedData]) || data || [];
-
   return (
     <ChartBase
       loading={data === undefined}
       header={
         <ChartHeader
-          header={formatStatPercentageValue(sum(lastValues))}
-          timeUnix={timeUnix}
-          timePeriodKey={timePeriodKey}
+          dataRow={highlightedData || data?.[0]}
+          timeFormatter={dateFormats[timePeriodKey]}
+          valueFormatter={formatStatPercentageValue}
         />
       }
       chartData={data || []}
@@ -517,18 +501,22 @@ function ChartBase({
 }
 
 function ChartHeader({
-  header,
-  timeUnix,
-  timePeriodKey,
+  dataRow,
+  valueFormatter = formatAmount,
+  timeFormatter = dateFormats['ALL'],
 }: {
-  header: ReactNode;
-  timeUnix: TokenValue;
-  timePeriodKey: TimePeriodKey;
+  dataRow: TimeSeriesRow | undefined;
+  valueFormatter?: (values: number) => string | null | undefined;
+  timeFormatter?: Intl.DateTimeFormat;
 }) {
-  const timeFormatter = dateFormats[timePeriodKey] || dateFormats['ALL'];
+  const [timeUnix, lastValues = []] = dataRow || [undefined, []];
+  // sum last row values as the value to use in the header
+  const value = lastValues.reduce((acc, value) => acc + value, 0);
   return (
     <>
-      <div className="chart__header mt-lg">{header}</div>
+      <div className="chart__header mt-lg">
+        {value !== undefined ? valueFormatter(value) : <>&nbsp;</>}
+      </div>
       <div className="chart__subheader">
         {timeUnix ? (
           timeFormatter.format(new Date(timeUnix * 1000))
