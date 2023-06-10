@@ -234,82 +234,6 @@ export function useTimeSeriesTokenValues(
   }, [tokenA, tokenB, priceA, priceB, data]);
 }
 
-function getTimeSeriesTvlPath(tokenA: Token, tokenB: Token): string {
-  return `timeseries/tvl/${tokenA.address}/${tokenB.address}`;
-}
-function getStatTvlValues([amountA, amountB]: number[]): number[] {
-  return [amountA, amountB];
-}
-export function useTimeSeriesTVL(
-  tokenA: Token,
-  tokenB: Token,
-  timePeriodKey: TimePeriodKey
-): TimeSeriesRow[] | null | undefined {
-  return useTimeSeriesTokenValues(
-    tokenA,
-    tokenB,
-    timePeriodKey,
-    getTimeSeriesTvlPath,
-    getStatTvlValues
-  );
-}
-
-function getTimeSeriesVolumePath(tokenA: Token, tokenB: Token): string {
-  return `timeseries/volume/${tokenA.address}/${tokenB.address}`;
-}
-function getStatVolumeValues([amountA, amountB]: number[]): number[] {
-  return [amountA, amountB];
-}
-export function useTimeSeriesVolume(
-  tokenA: Token,
-  tokenB: Token,
-  timePeriodKey: TimePeriodKey
-): TimeSeriesRow[] | null | undefined {
-  return useTimeSeriesTokenValues(
-    tokenA,
-    tokenB,
-    timePeriodKey,
-    getTimeSeriesVolumePath,
-    getStatVolumeValues
-  );
-}
-function getStatFeeValues([, , amountA, amountB]: number[]): number[] {
-  return [amountA, amountB];
-}
-export function useTimeSeriesFees(
-  tokenA: Token,
-  tokenB: Token,
-  timePeriodKey: TimePeriodKey
-): TimeSeriesRow[] | null | undefined {
-  return useTimeSeriesTokenValues(
-    tokenA,
-    tokenB,
-    timePeriodKey,
-    getTimeSeriesVolumePath,
-    getStatFeeValues
-  );
-}
-
-function getTimeSeriesVolatilityPath(tokenA: Token, tokenB: Token): string {
-  return `timeseries/price/${tokenA.address}/${tokenB.address}`;
-}
-function getStatVolatilityValues([open, high, low, close]: number[]): number[] {
-  return [tickIndexToPrice(new BigNumber(close)).toNumber()];
-}
-export function useTimeSeriesVolatility(
-  tokenA: Token,
-  tokenB: Token,
-  timePeriodKey: TimePeriodKey
-): TimeSeriesRow[] | null | undefined {
-  return useTimeSeriesData(
-    tokenA,
-    tokenB,
-    timePeriodKey,
-    getTimeSeriesVolatilityPath,
-    getStatVolatilityValues
-  );
-}
-
 function PoolBarChart({
   chartKey,
   timePeriodKey,
@@ -322,7 +246,6 @@ function PoolBarChart({
   tokenB: Token;
 }) {
   const ChartComponent = chartComponents[chartKey];
-
   return (
     // plot chart
     <ChartComponent
@@ -340,6 +263,12 @@ const chartComponents = {
   Volatility: ChartVolatility,
 };
 
+function getTimeSeriesTvlPath(tokenA: Token, tokenB: Token): string {
+  return `timeseries/tvl/${tokenA.address}/${tokenB.address}`;
+}
+function getStatTvlValues([amountA, amountB]: number[]): number[] {
+  return [amountA, amountB];
+}
 function ChartTVL({
   tokenA,
   tokenB,
@@ -349,7 +278,13 @@ function ChartTVL({
   tokenB: Token;
   timePeriodKey: TimePeriodKey;
 }) {
-  const data = useTimeSeriesTVL(tokenA, tokenB, timePeriodKey);
+  const data = useTimeSeriesTokenValues(
+    tokenA,
+    tokenB,
+    timePeriodKey,
+    getTimeSeriesTvlPath,
+    getStatTvlValues
+  );
   return (
     <ChartBase
       chartData={data}
@@ -359,6 +294,12 @@ function ChartTVL({
   );
 }
 
+function getTimeSeriesVolumePath(tokenA: Token, tokenB: Token): string {
+  return `timeseries/volume/${tokenA.address}/${tokenB.address}`;
+}
+function getStatVolumeValues([amountA, amountB]: number[]): number[] {
+  return [amountA, amountB];
+}
 function ChartVolume({
   tokenA,
   tokenB,
@@ -368,7 +309,13 @@ function ChartVolume({
   tokenB: Token;
   timePeriodKey: TimePeriodKey;
 }) {
-  const data = useTimeSeriesVolume(tokenA, tokenB, timePeriodKey);
+  const data = useTimeSeriesTokenValues(
+    tokenA,
+    tokenB,
+    timePeriodKey,
+    getTimeSeriesVolumePath,
+    getStatVolumeValues
+  );
   return (
     <ChartBase
       chartData={data}
@@ -378,6 +325,9 @@ function ChartVolume({
   );
 }
 
+function getStatFeeValues([, , amountA, amountB]: number[]): number[] {
+  return [amountA, amountB];
+}
 function ChartFees({
   tokenA,
   tokenB,
@@ -387,7 +337,13 @@ function ChartFees({
   tokenB: Token;
   timePeriodKey: TimePeriodKey;
 }) {
-  const data = useTimeSeriesFees(tokenA, tokenB, timePeriodKey);
+  const data = useTimeSeriesTokenValues(
+    tokenA,
+    tokenB,
+    timePeriodKey,
+    getTimeSeriesVolumePath,
+    getStatFeeValues
+  );
   return (
     <ChartBase
       chartData={data}
@@ -397,6 +353,12 @@ function ChartFees({
   );
 }
 
+function getTimeSeriesVolatilityPath(tokenA: Token, tokenB: Token): string {
+  return `timeseries/price/${tokenA.address}/${tokenB.address}`;
+}
+function getStatVolatilityValues([open, high, low, close]: number[]): number[] {
+  return [tickIndexToPrice(new BigNumber(close)).toNumber()];
+}
 function ChartVolatility({
   tokenA,
   tokenB,
@@ -406,7 +368,13 @@ function ChartVolatility({
   tokenB: Token;
   timePeriodKey: TimePeriodKey;
 }) {
-  const data = useTimeSeriesVolatility(tokenA, tokenB, timePeriodKey);
+  const data = useTimeSeriesData(
+    tokenA,
+    tokenB,
+    timePeriodKey,
+    getTimeSeriesVolatilityPath,
+    getStatVolatilityValues
+  );
   return (
     <ChartBase
       chartData={data}
