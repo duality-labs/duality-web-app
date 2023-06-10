@@ -8,9 +8,8 @@ import {
   getLastDataChanges,
   getLastDataValues,
 } from './utils';
-import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
+import { Token } from '../../lib/web3/utils/tokens';
 import { useTokenValueTotal } from '../../lib/web3/hooks/useTokens';
-import { useSimplePrice } from '../../lib/tokenPrices';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
@@ -54,95 +53,6 @@ export function useTimeSeriesData(
           })
       : pages?.data;
   }, [error, pages, getValues]);
-}
-
-// if data is in the form [timeUnix, [amountA, amountB]]
-// then transform the data using price data to [timeUnix, [valueA, valueB]]
-export function useTimeSeriesTokenValues(
-  tokenA: Token,
-  tokenB: Token,
-  getIndexerPath: (tokenA: Token, tokenB: Token) => string,
-  getValues?: (values: number[]) => number[]
-): TimeSeriesRow[] | null | undefined {
-  const data = useTimeSeriesData(tokenA, tokenB, getIndexerPath, getValues);
-  const {
-    data: [priceA, priceB],
-  } = useSimplePrice([tokenA, tokenB]);
-
-  return useMemo(() => {
-    if (!data) {
-      return data;
-    }
-    if (priceA === undefined || priceB === undefined) {
-      return undefined;
-    }
-
-    return data.map<TimeSeriesRow>(([timeUnix, [amountA, amountB]]) => {
-      return [
-        timeUnix,
-        [
-          getTokenValue(tokenA, amountA, priceA) || 0,
-          getTokenValue(tokenB, amountB, priceB) || 0,
-        ],
-      ];
-    });
-  }, [tokenA, tokenB, priceA, priceB, data]);
-}
-
-function getTimeSeriesTvlPath(tokenA: Token, tokenB: Token): string {
-  return `stats/tvl/${tokenA.address}/${tokenB.address}`;
-}
-export function useTimeSeriesTVL(
-  tokenA: Token,
-  tokenB: Token
-): TimeSeriesRow[] | null | undefined {
-  return useTimeSeriesTokenValues(
-    tokenA,
-    tokenB,
-    getTimeSeriesTvlPath,
-    getStatTvlValues
-  );
-}
-
-function getTimeSeriesVolumePath(tokenA: Token, tokenB: Token): string {
-  return `stats/volume/${tokenA.address}/${tokenB.address}`;
-}
-export function useTimeSeriesVolume(
-  tokenA: Token,
-  tokenB: Token
-): TimeSeriesRow[] | null | undefined {
-  return useTimeSeriesTokenValues(
-    tokenA,
-    tokenB,
-    getTimeSeriesVolumePath,
-    getStatVolumeValues
-  );
-}
-export function useTimeSeriesFees(
-  tokenA: Token,
-  tokenB: Token
-): TimeSeriesRow[] | null | undefined {
-  return useTimeSeriesTokenValues(
-    tokenA,
-    tokenB,
-    getTimeSeriesVolumePath,
-    getStatFeeValues
-  );
-}
-
-function getTimeSeriesVolatilityPath(tokenA: Token, tokenB: Token): string {
-  return `stats/volatility/${tokenA.address}/${tokenB.address}`;
-}
-export function useTimeSeriesVolatility(
-  tokenA: Token,
-  tokenB: Token
-): TimeSeriesRow[] | null | undefined {
-  return useTimeSeriesData(
-    tokenA,
-    tokenB,
-    getTimeSeriesVolatilityPath,
-    getStatVolatilityValues
-  );
 }
 
 export function useStatData(
