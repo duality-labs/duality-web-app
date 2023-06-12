@@ -389,6 +389,7 @@ function ChartBase({
       {chartData && chartData.length > 0 ? (
         // show chart
         <Chart
+          className="fade-in-fast"
           height={height}
           ChartComponent={ChartComponent}
           data={chartData}
@@ -396,7 +397,10 @@ function ChartBase({
         />
       ) : (
         // show empty or loading state
-        <div className="chart--empty flex flex-centered row" style={{ height }}>
+        <div
+          className="chart--empty flex flex-centered row fade-in-fast"
+          style={{ height }}
+        >
           {chartData === undefined
             ? // only an undefined data object represents a loading state
               'Loading...'
