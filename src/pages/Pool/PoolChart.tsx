@@ -378,28 +378,32 @@ function ChartBase({
   timeFormatter?: Intl.DateTimeFormat;
 }) {
   const [highlightedData, setHighlightedData] = useState<TimeSeriesRow>();
-  return chartData ? (
+  const height = 300;
+  return (
     <div className="chart">
       <ChartHeader
         dataRow={highlightedData || chartData?.[0]}
         timeFormatter={timeFormatter}
         valueFormatter={valueFormatter}
       />
-      <Chart
-        height={300}
-        ChartComponent={ChartComponent}
-        data={chartData}
-        onHover={setHighlightedData}
-      />
-    </div>
-  ) : (
-    // show skeleton
-    <div
-      className="chart--empty mt-6 mb-xl flex flex-centered row"
-      style={{ height: 300 }}
-    >
-      {/* only and undefined data object is pending, it may resolve to null */}
-      {chartData === undefined ? 'loading...' : 'no data'}
+      {chartData && chartData.length > 0 ? (
+        // show chart
+        <Chart
+          height={height}
+          ChartComponent={ChartComponent}
+          data={chartData}
+          onHover={setHighlightedData}
+        />
+      ) : (
+        // show empty or loading state
+        <div className="chart--empty flex flex-centered row" style={{ height }}>
+          {chartData === undefined
+            ? // only an undefined data object represents a loading state
+              'Loading...'
+            : // data may be empty [] or null (on error or something unexpected)
+              'No data available for this time period'}
+        </div>
+      )}
     </div>
   );
 }
@@ -419,7 +423,11 @@ function ChartHeader({
   return (
     <>
       <div className="chart__header mt-lg">
-        {value !== undefined ? valueFormatter(value) : <>&nbsp;</>}
+        {timeUnix && timeUnix !== undefined ? (
+          valueFormatter(value)
+        ) : (
+          <>&nbsp;</>
+        )}
       </div>
       <div className="chart__subheader">
         {timeUnix ? (
