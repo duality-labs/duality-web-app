@@ -32,16 +32,24 @@ export default function TimeSeriesBarChart({
   const innerWidth = width - horizontalMargin;
   const innerHeight = height - verticalMargin;
 
+  // sort data ascending (data arrives in reverse-chronological order)
+  const sortedData = useMemo(() => {
+    return data
+      .slice(0)
+      .reverse()
+      .sort(([unixTimeA], [unixTimeB]) => unixTimeA - unixTimeB);
+  }, [data]);
+
   // scales, memoize for performance
   const xScale = useMemo(
     () =>
       scaleBand<string>({
         range: [0, innerWidth],
         round: true,
-        domain: data.map(getX),
+        domain: sortedData.map(getX),
         padding: 0.4,
       }),
-    [innerWidth, data]
+    [innerWidth, sortedData]
   );
   const yScale = useMemo(
     () =>
@@ -56,8 +64,7 @@ export default function TimeSeriesBarChart({
   return width < 10 ? null : (
     <svg className="visx-bar-chart" width={width} height={height}>
       <Group top={verticalMargin / 2}>
-        {/* data arrives in reverse-chronological order */}
-        {data.reverse().map((datum) => {
+        {sortedData.map((datum) => {
           const x = getX(datum);
           const barWidth = xScale.bandwidth();
           const barHeight = innerHeight - (yScale(getY(datum)) ?? 0);
