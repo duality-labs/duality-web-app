@@ -12,13 +12,9 @@ const verticalMargin = 40;
 const horizontalMargin = 0;
 
 // accessors
-const getX = (d: DataTuple) => d.x;
-const getY = (d: DataTuple) => d.y;
-
-interface DataTuple {
-  x: string;
-  y: number;
-}
+const getX = ([unixTime]: TimeSeriesRow) => unixTime.toFixed();
+const getY = ([, values]: TimeSeriesRow) =>
+  values.reduce((acc, value) => acc + value, 0);
 
 interface TimeSeriesBarChartProps extends ChartProps<TimeSeriesRow> {
   width: number;
@@ -26,23 +22,8 @@ interface TimeSeriesBarChartProps extends ChartProps<TimeSeriesRow> {
   onHover: (data?: TimeSeriesRow) => void;
 }
 
-function useChartData(data: TimeSeriesRow[] | undefined) {
-  // map data to chart
-  return useMemo(() => {
-    return data
-      ?.map(([unixTime, values]) => {
-        // add values here properly with price data
-        return {
-          x: unixTime.toFixed(),
-          y: values.reduce((acc, value) => acc + value, 0),
-        };
-      })
-      .reverse();
-  }, [data]);
-}
-
 export default function TimeSeriesBarChart({
-  data: timeSeries,
+  data,
   height,
   width,
   onHover,
@@ -50,8 +31,6 @@ export default function TimeSeriesBarChart({
   // bounds
   const innerWidth = width - horizontalMargin;
   const innerHeight = height - verticalMargin;
-
-  const data = useChartData(timeSeries || undefined);
 
   // scales, memoize for performance
   const xScale = useMemo(
@@ -77,16 +56,11 @@ export default function TimeSeriesBarChart({
   return width < 10 ? null : (
     <svg className="visx-bar-chart" width={width} height={height}>
       <Group top={verticalMargin / 2}>
-        {timeSeries.reverse().map((data) => {
-          const [unixTime, values] = data;
-          // add values here properly with price data
-          const d = {
-            x: unixTime.toFixed(),
-            y: values.reduce((acc, value) => acc + value, 0),
-          };
-          const x = getX(d);
+        {/* data arrives in reverse-chronological order */}
+        {data.reverse().map((datum) => {
+          const x = getX(datum);
           const barWidth = xScale.bandwidth();
-          const barHeight = innerHeight - (yScale(getY(d)) ?? 0);
+          const barHeight = innerHeight - (yScale(getY(datum)) ?? 0);
           const barX = xScale(x);
           const barY = innerHeight - barHeight;
           return (
@@ -97,7 +71,7 @@ export default function TimeSeriesBarChart({
               width={barWidth}
               height={barHeight}
               fill="rgba(23, 233, 217, .5)"
-              onMouseOver={() => onHover(data)}
+              onMouseOver={() => onHover(datum)}
             />
           );
         })}
