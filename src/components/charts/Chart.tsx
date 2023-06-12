@@ -11,11 +11,13 @@ export interface ChartProps<DataRow> {
 }
 
 export default function Chart<DataRow>({
+  className,
   data,
   height,
   onHover,
   ChartComponent,
 }: {
+  className?: string;
   height: number;
   data: DataRow[];
   onHover: (data?: DataRow) => void;
@@ -34,7 +36,7 @@ export default function Chart<DataRow>({
   );
   return (
     <div
-      className="visx-chart-area"
+      className={['visx-chart-area', className].filter(Boolean).join(' ')}
       ref={chartContainer}
       style={{ height }}
       onMouseLeave={() => onHover()}
