@@ -38,7 +38,7 @@ export default function TimeSeriesBarChart({
       scaleBand<string>({
         range: [0, innerWidth],
         round: true,
-        domain: (data || []).map(getX),
+        domain: data.map(getX),
         padding: 0.4,
       }),
     [innerWidth, data]
@@ -48,7 +48,7 @@ export default function TimeSeriesBarChart({
       scaleLinear<number>({
         range: [innerHeight, 0],
         round: true,
-        domain: [0, Math.max(...(data || []).map(getY))],
+        domain: [0, Math.max(...data.map(getY))],
       }),
     [innerHeight, data]
   );
