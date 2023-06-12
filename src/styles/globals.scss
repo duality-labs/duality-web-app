@@ -250,3 +250,18 @@ hr {
 .token-logo {
   filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.1));
 }
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+.fade-in-fast {
+  animation: fadeIn 0.2s ease-in;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
