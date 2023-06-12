@@ -6,6 +6,8 @@ import { scaleBand, scaleLinear } from '@visx/scale';
 import { ChartProps } from './Chart';
 import { TimeSeriesRow } from '../stats/utils';
 
+import './TimeSeriesBarChart.scss';
+
 const verticalMargin = 40;
 
 // accessors

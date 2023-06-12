@@ -28,11 +28,4 @@
   .chart__subheader {
     color: hsla(0, 0%, 50%, 1);
   }
-
-  .visx-bar {
-    fill: #4eb1e8;
-  }
-  rect:hover {
-    fill: lighten($color: #4eb1e8, $amount: 10);
-  }
 }
