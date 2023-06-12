@@ -9,6 +9,7 @@ import { TimeSeriesRow } from '../stats/utils';
 import './TimeSeriesBarChart.scss';
 
 const verticalMargin = 40;
+const horizontalMargin = 0;
 
 // accessors
 const getX = (d: DataTuple) => d.x;
@@ -47,8 +48,8 @@ export default function TimeSeriesBarChart({
   onHover,
 }: TimeSeriesBarChartProps) {
   // bounds
-  const xMax = width;
-  const yMax = height - verticalMargin;
+  const innerWidth = width - horizontalMargin;
+  const innerHeight = height - verticalMargin;
 
   const data = useChartData(timeSeries || undefined);
 
@@ -56,21 +57,21 @@ export default function TimeSeriesBarChart({
   const xScale = useMemo(
     () =>
       scaleBand<string>({
-        range: [0, xMax],
+        range: [0, innerWidth],
         round: true,
         domain: (data || []).map(getX),
         padding: 0.4,
       }),
-    [xMax, data]
+    [innerWidth, data]
   );
   const yScale = useMemo(
     () =>
       scaleLinear<number>({
-        range: [yMax, 0],
+        range: [innerHeight, 0],
         round: true,
         domain: [0, Math.max(...(data || []).map(getY))],
       }),
-    [yMax, data]
+    [innerHeight, data]
   );
 
   return width < 10 ? null : (
@@ -85,9 +86,9 @@ export default function TimeSeriesBarChart({
           };
           const x = getX(d);
           const barWidth = xScale.bandwidth();
-          const barHeight = yMax - (yScale(getY(d)) ?? 0);
+          const barHeight = innerHeight - (yScale(getY(d)) ?? 0);
           const barX = xScale(x);
-          const barY = yMax - barHeight;
+          const barY = innerHeight - barHeight;
           return (
             <Bar
               key={`bar-${x}`}
