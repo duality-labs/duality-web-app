@@ -1,0 +1,10 @@
+.visx-bar-chart {
+  .visx-bar {
+    & {
+      fill: #4eb1e8;
+    }
+    &:hover {
+      fill: lighten($color: #4eb1e8, $amount: 10);
+    }
+  }
+}
