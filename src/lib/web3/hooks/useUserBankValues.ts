@@ -22,6 +22,10 @@ export function useUserBankValues(): TokenCoin[] {
 
   const allTokens = useTokens();
   const selectedTokens = useMemo<Token[]>(() => {
+    // note: this could be better: we are just finding the first match in the chain registry
+    // with that denom, but really it needs to check for chain id too
+    // ibc tokens will need to be checked here too
+    // this should probably live in the indexerData as we'll always want the filtered balances
     return (balances || []).reduce<Token[]>((result, balance) => {
       const token = allTokens.find(matchTokenDenom(balance.denom));
       if (token) {
