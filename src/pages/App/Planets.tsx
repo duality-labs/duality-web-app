@@ -1,14 +1,14 @@
 import { useMatch } from 'react-router-dom';
 import React, { useMemo } from 'react';
 
-import planetTradeSVG from '../../assets/planets/planet-trade.svg';
+import planetSwapSVG from '../../assets/planets/planet-swap.svg';
 import planetLiquiditySVG from '../../assets/planets/planet-liquidity.svg';
 
 import './Planets.scss';
 
 const planets: { [planetName: string]: string | undefined } = {
-  swap: planetTradeSVG,
-  pairs: planetLiquiditySVG,
+  swap: planetSwapSVG,
+  pools: planetLiquiditySVG,
 };
 
 export default function Planets() {
