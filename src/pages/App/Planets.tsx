@@ -1,20 +1,20 @@
 import { useMatch } from 'react-router-dom';
 import React, { useMemo } from 'react';
 
-import planetTradeSVG from '../../assets/planets/planet-trade.svg';
+import planetSwapSVG from '../../assets/planets/planet-swap.svg';
 import planetLiquiditySVG from '../../assets/planets/planet-liquidity.svg';
 
 import './Planets.scss';
 
 const planets: { [planetName: string]: string | undefined } = {
-  trade: planetTradeSVG,
+  swap: planetSwapSVG,
   pools: planetLiquiditySVG,
 };
 
 export default function Planets() {
   return (
     <>
-      <Planet name="trade" bottom={0} width={947} right={0} />
+      <Planet name="swap" bottom={0} width={947} right={0} />
       <Planet name="pools" top="10vh" width={774} right={0} />
     </>
   );
