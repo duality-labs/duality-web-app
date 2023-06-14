@@ -48,6 +48,9 @@ export interface LiquiditySelectorProps {
   setRangeMin: React.Dispatch<React.SetStateAction<string>>;
   setRangeMax: React.Dispatch<React.SetStateAction<string>>;
   setSignificantDecimals?: React.Dispatch<React.SetStateAction<number>>;
+  setViewableIndexes: React.Dispatch<
+    React.SetStateAction<[number, number] | undefined>
+  >;
   userTicksBase?: Array<Tick | undefined>;
   userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
@@ -128,6 +131,7 @@ export default function LiquiditySelector({
   setRangeMin,
   setRangeMax,
   setSignificantDecimals,
+  setViewableIndexes,
   userTicks = [],
   userTicksBase = userTicks,
   setUserTicks,
@@ -464,6 +468,10 @@ export default function LiquiditySelector({
       graphMaxIndex + (spread * rightPadding) / width,
     ];
   }, [graphMinIndex, graphMaxIndex, containerSize.width]);
+
+  useEffect(() => {
+    setViewableIndexes([viewableMinIndex, viewableMaxIndex]);
+  }, [setViewableIndexes, viewableMinIndex, viewableMaxIndex]);
 
   // calculate bucket extents
   const getEmptyBuckets = useCallback<
