@@ -868,10 +868,14 @@ function fillBuckets(
   );
 }
 
+// merge buckets takes buckets of form TickGroupBucketsFilled
+//  - Array<[lowerIndexBound: number, upperIndexBound: number, reserve: BigNumber]>
+// and merges them into one list of form TickGroupMergedBucketsFilled
+//  - Array<[lowerIndexBound: number, upperIndexBound: number, reserveA: BigNumber, reserveB: BigNumber]>
 function mergeBuckets(
   tokenABuckets: TickGroupBucketsFilled,
   tokenBBuckets: TickGroupBucketsFilled
-) {
+): TickGroupMergedBucketsFilled {
   const mergedTokenABuckets: TickGroupMergedBucketsFilled = tokenABuckets.map(
     ([lowerBoundIndex, upperBoundIndex, valueA]) => {
       return [lowerBoundIndex, upperBoundIndex, valueA, new BigNumber(0)];
