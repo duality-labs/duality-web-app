@@ -247,15 +247,6 @@ export default function LiquiditySelector({
         : [[], []];
     }, [token0Ticks, token1Ticks, forward, reverse]);
 
-  // collect tick information in a more useable form
-  const feeTicks: [TokenTickGroup, TokenTickGroup] = useMemo(() => {
-    const feeTierFilter = (tick: TokenTick) => tick.fee === fee;
-    return fee === undefined
-      ? [tokenATicks, tokenBTicks]
-      : // filter to only fee tier ticks
-        [tokenATicks.filter(feeTierFilter), tokenBTicks.filter(feeTierFilter)];
-  }, [tokenATicks, tokenBTicks, fee]);
-
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
@@ -545,41 +536,14 @@ export default function LiquiditySelector({
   }, [getEmptyBuckets, viewableMinIndex, viewableMaxIndex]);
 
   // calculate histogram values
-  const feeTickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
+  const tickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
     if (edgePriceIndex === undefined) {
       return [];
     }
     const edgePrice = tickIndexToPrice(new BigNumber(edgePriceIndex));
     return mergeBuckets(
-      fillBuckets(emptyBuckets[0], feeTicks[0], 'upper', getReserveAValue),
-      fillBuckets(emptyBuckets[1], feeTicks[1], 'lower', getReserveBValue)
-    );
-    function getReserveAValue(reserve: BigNumber): BigNumber {
-      return reserve.multipliedBy(edgePrice);
-    }
-    function getReserveBValue(reserve: BigNumber): BigNumber {
-      return reserve;
-    }
-  }, [emptyBuckets, feeTicks, edgePriceIndex]);
-
-  // calculate highest value to plot on the chart
-  const yMaxValue = useMemo(() => {
-    if (edgePriceIndex === undefined) {
-      return 0;
-    }
-    const edgePrice = tickIndexToPrice(new BigNumber(edgePriceIndex));
-    const allFeesTickBuckets = [
       fillBuckets(emptyBuckets[0], tokenATicks, 'upper', getReserveAValue),
-      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower', getReserveBValue),
-    ];
-    return mergeBuckets(allFeesTickBuckets[0], allFeesTickBuckets[1]).reduce(
-      (
-        result,
-        [lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue]
-      ) => {
-        return Math.max(result, tokenAValue.toNumber(), tokenBValue.toNumber());
-      },
-      0
+      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower', getReserveBValue)
     );
     function getReserveAValue(reserve: BigNumber): BigNumber {
       return reserve.multipliedBy(edgePrice);
@@ -588,6 +552,19 @@ export default function LiquiditySelector({
       return reserve;
     }
   }, [emptyBuckets, tokenATicks, tokenBTicks, edgePriceIndex]);
+
+  // calculate highest value to plot on the chart
+  const yMaxValue = useMemo(() => {
+    return tickBuckets.reduce(
+      (
+        result,
+        [lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue]
+      ) => {
+        return Math.max(result, tokenAValue.toNumber(), tokenBValue.toNumber());
+      },
+      0
+    );
+  }, [tickBuckets]);
 
   // get plotting functions
   const [plotWidth, plotHeight] = useMemo(() => {
@@ -714,7 +691,7 @@ export default function LiquiditySelector({
         />
       )}
       <TickBucketsGroup
-        tickBuckets={feeTickBuckets}
+        tickBuckets={tickBuckets}
         plotX={plotX}
         plotY={plotYBigNumber}
       />
