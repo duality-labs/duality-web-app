@@ -538,8 +538,14 @@ export default function LiquiditySelector({
   // calculate histogram values
   const tickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
     return mergeBuckets(
-      fillBuckets(emptyBuckets[0], tokenATicks, 'upper'),
+      fillBuckets(emptyBuckets[0], tokenATicks, 'upper')
+        // add behind-enemy-lines tokenA ticks
+        .concat(fillBuckets(emptyBuckets[1], tokenATicks, 'lower')),
       fillBuckets(emptyBuckets[1], tokenBTicks, 'lower')
+        // add behind-enemy-lines tokenB ticks
+        .concat(fillBuckets(emptyBuckets[0], tokenBTicks, 'upper')),
+      // stack the buckets or not?
+      true
     );
   }, [emptyBuckets, tokenATicks, tokenBTicks]);
 
@@ -868,7 +874,8 @@ function fillBuckets(
 //  - Array<[lowerIndexBound: number, upperIndexBound: number, reserveA: BigNumber, reserveB: BigNumber]>
 function mergeBuckets(
   tokenABuckets: TickGroupBucketsFilled,
-  tokenBBuckets: TickGroupBucketsFilled
+  tokenBBuckets: TickGroupBucketsFilled,
+  stackBuckets: boolean
 ): TickGroupMergedBucketsFilled {
   const mergedTokenABuckets: TickGroupMergedBucketsFilled = tokenABuckets.map(
     ([lowerBoundIndex, upperBoundIndex, reserve]) => {
@@ -880,6 +887,29 @@ function mergeBuckets(
       return [lowerBoundIndex, upperBoundIndex, new BigNumber(0), reserve];
     }
   );
+
+  if (stackBuckets) {
+    const mergedTokenBucketsByKey = ([] as TickGroupMergedBucketsFilled)
+      .concat(mergedTokenABuckets, mergedTokenBBuckets)
+      .reduce<{
+        [bucketKey: string]: TickGroupMergedBucketsFilled[number];
+      }>((acc, [lowerBoundIndex, upperBoundIndex, reserveA, reserveB]) => {
+        const key = [lowerBoundIndex, upperBoundIndex].join('-');
+        // merge bucket
+        if (acc[key]) {
+          // add reserves together
+          acc[key][2] = acc[key][2].plus(reserveA);
+          acc[key][3] = acc[key][3].plus(reserveB);
+        }
+        // add bucket
+        else {
+          acc[key] = [lowerBoundIndex, upperBoundIndex, reserveA, reserveB];
+        }
+        return acc;
+      }, {});
+    // return the merged buckets as a single array
+    return Object.values(mergedTokenBucketsByKey);
+  }
 
   const middleABucket = mergedTokenABuckets.shift();
   const middleBBucket = mergedTokenBBuckets.shift();
