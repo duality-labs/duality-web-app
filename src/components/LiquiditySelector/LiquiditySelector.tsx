@@ -85,14 +85,14 @@ type TickGroupBucketsEmpty = Array<
   [lowerIndexBound: number, upperIndexBound: number]
 >;
 type TickGroupBucketsFilled = Array<
-  [lowerIndexBound: number, upperIndexBound: number, reserve: BigNumber]
+  [lowerIndexBound: number, upperIndexBound: number, reserveValue: BigNumber]
 >;
 type TickGroupMergedBucketsFilled = Array<
   [
     lowerIndexBound: number,
     upperIndexBound: number,
-    reserveA: BigNumber,
-    reserveB: BigNumber
+    reserveValueA: BigNumber,
+    reserveValueB: BigNumber
   ]
 >;
 
@@ -537,17 +537,31 @@ export default function LiquiditySelector({
 
   // calculate histogram values
   const tickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
+    if (edgePriceIndex === undefined) {
+      return [];
+    }
+    const edgePrice = tickIndexToPrice(new BigNumber(edgePriceIndex));
     return mergeBuckets(
-      fillBuckets(emptyBuckets[0], tokenATicks, 'upper')
+      fillBuckets(emptyBuckets[0], tokenATicks, 'upper', getReserveAValue)
         // add behind-enemy-lines tokenA ticks
-        .concat(fillBuckets(emptyBuckets[1], tokenATicks, 'lower')),
-      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower')
+        .concat(
+          fillBuckets(emptyBuckets[1], tokenATicks, 'lower', getReserveAValue)
+        ),
+      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower', getReserveBValue)
         // add behind-enemy-lines tokenB ticks
-        .concat(fillBuckets(emptyBuckets[0], tokenBTicks, 'upper')),
+        .concat(
+          fillBuckets(emptyBuckets[0], tokenBTicks, 'upper', getReserveBValue)
+        ),
       // stack the buckets or not?
       true
     );
-  }, [emptyBuckets, tokenATicks, tokenBTicks]);
+    function getReserveAValue(reserve: BigNumber): BigNumber {
+      return reserve;
+    }
+    function getReserveBValue(reserve: BigNumber): BigNumber {
+      return reserve.multipliedBy(edgePrice);
+    }
+  }, [emptyBuckets, tokenATicks, tokenBTicks, edgePriceIndex]);
 
   // calculate highest value to plot on the chart
   const yMaxValue = useMemo(() => {
@@ -837,8 +851,9 @@ export default function LiquiditySelector({
 function fillBuckets(
   emptyBuckets: TickGroupBucketsEmpty,
   originalTicks: TokenTick[],
-  matchSide: 'upper' | 'lower'
-) {
+  matchSide: 'upper' | 'lower',
+  getReserveValue: (reserve: BigNumber) => BigNumber
+): TickGroupBucketsFilled {
   const sideLower = matchSide === 'lower';
   const ticks = originalTicks.filter(({ reserve }) => !reserve.isZero());
   return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
@@ -860,7 +875,11 @@ function fillBuckets(
       );
       // place tokenA buckets to the left of the current price
       if (reserve.isGreaterThan(0)) {
-        result.push([lowerIndexBound, upperIndexBound, reserve]);
+        result.push([
+          lowerIndexBound,
+          upperIndexBound,
+          getReserveValue(reserve),
+        ]);
       }
       return result;
     },
@@ -878,13 +897,13 @@ function mergeBuckets(
   stackBuckets: boolean
 ): TickGroupMergedBucketsFilled {
   const mergedTokenABuckets: TickGroupMergedBucketsFilled = tokenABuckets.map(
-    ([lowerBoundIndex, upperBoundIndex, reserve]) => {
-      return [lowerBoundIndex, upperBoundIndex, reserve, new BigNumber(0)];
+    ([lowerBoundIndex, upperBoundIndex, valueA]) => {
+      return [lowerBoundIndex, upperBoundIndex, valueA, new BigNumber(0)];
     }
   );
   const mergedTokenBBuckets: TickGroupMergedBucketsFilled = tokenBBuckets.map(
-    ([lowerBoundIndex, upperBoundIndex, reserve]) => {
-      return [lowerBoundIndex, upperBoundIndex, new BigNumber(0), reserve];
+    ([lowerBoundIndex, upperBoundIndex, valueB]) => {
+      return [lowerBoundIndex, upperBoundIndex, new BigNumber(0), valueB];
     }
   );
 
@@ -893,17 +912,17 @@ function mergeBuckets(
       .concat(mergedTokenABuckets, mergedTokenBBuckets)
       .reduce<{
         [bucketKey: string]: TickGroupMergedBucketsFilled[number];
-      }>((acc, [lowerBoundIndex, upperBoundIndex, reserveA, reserveB]) => {
+      }>((acc, [lowerBoundIndex, upperBoundIndex, valueA, valueB]) => {
         const key = [lowerBoundIndex, upperBoundIndex].join('-');
         // merge bucket
         if (acc[key]) {
-          // add reserves together
-          acc[key][2] = acc[key][2].plus(reserveA);
-          acc[key][3] = acc[key][3].plus(reserveB);
+          // add reserve values together
+          acc[key][2] = acc[key][2].plus(valueA);
+          acc[key][3] = acc[key][3].plus(valueB);
         }
         // add bucket
         else {
-          acc[key] = [lowerBoundIndex, upperBoundIndex, reserveA, reserveB];
+          acc[key] = [lowerBoundIndex, upperBoundIndex, valueA, valueB];
         }
         return acc;
       }, {});
