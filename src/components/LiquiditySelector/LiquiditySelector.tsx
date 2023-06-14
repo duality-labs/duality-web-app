@@ -544,10 +544,14 @@ export default function LiquiditySelector({
     return mergeBuckets(
       fillBuckets(emptyBuckets[0], tokenATicks, 'upper', getReserveAValue)
         // add behind-enemy-lines tokenA ticks
-        .concat(fillBuckets(emptyBuckets[1], tokenATicks, 'lower', getReserveAValue)),
+        .concat(
+          fillBuckets(emptyBuckets[1], tokenATicks, 'lower', getReserveAValue)
+        ),
       fillBuckets(emptyBuckets[1], tokenBTicks, 'lower', getReserveBValue)
         // add behind-enemy-lines tokenB ticks
-        .concat(fillBuckets(emptyBuckets[0], tokenBTicks, 'upper', getReserveBValue)),
+        .concat(
+          fillBuckets(emptyBuckets[0], tokenBTicks, 'upper', getReserveBValue)
+        ),
       // stack the buckets or not?
       true
     );
@@ -899,17 +903,17 @@ function mergeBuckets(
       .concat(mergedTokenABuckets, mergedTokenBBuckets)
       .reduce<{
         [bucketKey: string]: TickGroupMergedBucketsFilled[number];
-      }>((acc, [lowerBoundIndex, upperBoundIndex, reserveA, reserveB]) => {
+      }>((acc, [lowerBoundIndex, upperBoundIndex, valueA, valueB]) => {
         const key = [lowerBoundIndex, upperBoundIndex].join('-');
         // merge bucket
         if (acc[key]) {
-          // add reserves together
-          acc[key][2] = acc[key][2].plus(reserveA);
-          acc[key][3] = acc[key][3].plus(reserveB);
+          // add reserve values together
+          acc[key][2] = acc[key][2].plus(valueA);
+          acc[key][3] = acc[key][3].plus(valueB);
         }
         // add bucket
         else {
-          acc[key] = [lowerBoundIndex, upperBoundIndex, reserveA, reserveB];
+          acc[key] = [lowerBoundIndex, upperBoundIndex, valueA, valueB];
         }
         return acc;
       }, {});
