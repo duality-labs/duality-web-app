@@ -1816,51 +1816,53 @@ function TickBucketsGroup({
         .filter(Boolean)
         .join(' ')}
     >
-      {tickBuckets.flatMap((bucket) => {
-        const [lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue] =
-          bucket;
-        const leftSide = lowerBoundIndex < roundedCurrentPriceIndex;
-        // offset the reserve value Y position if stacking buckets
-        const [tokenAOffset, tokenBOffset]: (BigNumber | number)[] =
-          stack === 'stack-above'
-            ? // place "behind enemy lines" tokens above main liquiidty tokens
-              leftSide
-              ? [0, tokenAValue]
-              : [tokenBValue, 0]
-            : stack === 'stack-below'
-            ? !leftSide
-              ? [0, tokenAValue]
-              : [tokenBValue, 0]
-            : [0, 0];
-        const buckets = [
-          <Bucket
-            key={`${lowerBoundIndex}-a`}
-            className={['token-a', !leftSide && 'behind-enemy-lines']
-              .filter(Boolean)
-              .join(' ')}
-            lowerBoundIndex={lowerBoundIndex}
-            upperBoundIndex={upperBoundIndex}
-            reserveValue={tokenAValue}
-            offsetValue={tokenAOffset}
-            plotX={plotX}
-            plotY={plotY}
-          />,
-          <Bucket
-            key={`${lowerBoundIndex}-b`}
-            className={['token-b', leftSide && 'behind-enemy-lines']
-              .filter(Boolean)
-              .join(' ')}
-            lowerBoundIndex={lowerBoundIndex}
-            upperBoundIndex={upperBoundIndex}
-            reserveValue={tokenBValue}
-            offsetValue={tokenBOffset}
-            plotX={plotX}
-            plotY={plotY}
-          />,
-        ];
-        // pick the rendering order
-        return leftSide ? buckets : buckets.reverse();
-      })}
+      {tickBuckets
+        .sort((a, b) => a[0] - b[0])
+        .flatMap((bucket, index) => {
+          const [lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue] =
+            bucket;
+          const leftSide = lowerBoundIndex < roundedCurrentPriceIndex;
+          // offset the reserve value Y position if stacking buckets
+          const [tokenAOffset, tokenBOffset]: (BigNumber | number)[] =
+            stack === 'stack-above'
+              ? // place "behind enemy lines" tokens above main liquiidty tokens
+                leftSide
+                ? [0, tokenAValue]
+                : [tokenBValue, 0]
+              : stack === 'stack-below'
+              ? !leftSide
+                ? [0, tokenAValue]
+                : [tokenBValue, 0]
+              : [0, 0];
+          const buckets = [
+            <Bucket
+              key={`${index}-a`}
+              className={['token-a', !leftSide && 'behind-enemy-lines']
+                .filter(Boolean)
+                .join(' ')}
+              lowerBoundIndex={lowerBoundIndex}
+              upperBoundIndex={upperBoundIndex}
+              reserveValue={tokenAValue}
+              offsetValue={tokenAOffset}
+              plotX={plotX}
+              plotY={plotY}
+            />,
+            <Bucket
+              key={`${index}-b`}
+              className={['token-b', leftSide && 'behind-enemy-lines']
+                .filter(Boolean)
+                .join(' ')}
+              lowerBoundIndex={lowerBoundIndex}
+              upperBoundIndex={upperBoundIndex}
+              reserveValue={tokenBValue}
+              offsetValue={tokenBOffset}
+              plotX={plotX}
+              plotY={plotY}
+            />,
+          ];
+          // pick the rendering order
+          return leftSide ? buckets : buckets.reverse();
+        })}
     </g>
   );
 }
