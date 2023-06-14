@@ -88,14 +88,14 @@ type TickGroupBucketsEmpty = Array<
   [lowerIndexBound: number, upperIndexBound: number]
 >;
 type TickGroupBucketsFilled = Array<
-  [lowerIndexBound: number, upperIndexBound: number, reserve: BigNumber]
+  [lowerIndexBound: number, upperIndexBound: number, reserveValue: BigNumber]
 >;
 type TickGroupMergedBucketsFilled = Array<
   [
     lowerIndexBound: number,
     upperIndexBound: number,
-    reserveA: BigNumber,
-    reserveB: BigNumber
+    reserveValueA: BigNumber,
+    reserveValueB: BigNumber
   ]
 >;
 
@@ -555,17 +555,31 @@ export default function LiquiditySelector({
 
   // calculate histogram values
   const feeTickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
+    if (edgePriceIndex === undefined) {
+      return [];
+    }
+    const edgePrice = tickIndexToPrice(new BigNumber(edgePriceIndex));
     return mergeBuckets(
-      fillBuckets(emptyBuckets[0], feeTicks[0], 'upper'),
-      fillBuckets(emptyBuckets[1], feeTicks[1], 'lower')
+      fillBuckets(emptyBuckets[0], feeTicks[0], 'upper', getReserveAValue),
+      fillBuckets(emptyBuckets[1], feeTicks[1], 'lower', getReserveBValue)
     );
-  }, [emptyBuckets, feeTicks]);
+    function getReserveAValue(reserve: BigNumber): BigNumber {
+      return reserve;
+    }
+    function getReserveBValue(reserve: BigNumber): BigNumber {
+      return reserve.multipliedBy(edgePrice);
+    }
+  }, [emptyBuckets, feeTicks, edgePriceIndex]);
 
   // calculate highest value to plot on the chart
   const yMaxValue = useMemo(() => {
+    if (edgePriceIndex === undefined) {
+      return 0;
+    }
+    const edgePrice = tickIndexToPrice(new BigNumber(edgePriceIndex));
     const allFeesTickBuckets = [
-      fillBuckets(emptyBuckets[0], tokenATicks, 'upper'),
-      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower'),
+      fillBuckets(emptyBuckets[0], tokenATicks, 'upper', getReserveAValue),
+      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower', getReserveBValue),
     ];
     return mergeBuckets(allFeesTickBuckets[0], allFeesTickBuckets[1]).reduce(
       (
@@ -576,7 +590,13 @@ export default function LiquiditySelector({
       },
       0
     );
-  }, [emptyBuckets, tokenATicks, tokenBTicks]);
+    function getReserveAValue(reserve: BigNumber): BigNumber {
+      return reserve;
+    }
+    function getReserveBValue(reserve: BigNumber): BigNumber {
+      return reserve.multipliedBy(edgePrice);
+    }
+  }, [emptyBuckets, tokenATicks, tokenBTicks, edgePriceIndex]);
 
   // get plotting functions
   const [plotWidth, plotHeight] = useMemo(() => {
@@ -843,8 +863,9 @@ export default function LiquiditySelector({
 function fillBuckets(
   emptyBuckets: TickGroupBucketsEmpty,
   originalTicks: TokenTick[],
-  matchSide: 'upper' | 'lower'
-) {
+  matchSide: 'upper' | 'lower',
+  getReserveValue: (reserve: BigNumber) => BigNumber
+): TickGroupBucketsFilled {
   const sideLower = matchSide === 'lower';
   const ticks = originalTicks.filter(({ reserve }) => !reserve.isZero());
   return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
@@ -866,7 +887,11 @@ function fillBuckets(
       );
       // place tokenA buckets to the left of the current price
       if (reserve.isGreaterThan(0)) {
-        result.push([lowerIndexBound, upperIndexBound, reserve]);
+        result.push([
+          lowerIndexBound,
+          upperIndexBound,
+          getReserveValue(reserve),
+        ]);
       }
       return result;
     },
@@ -879,13 +904,13 @@ function mergeBuckets(
   tokenBBuckets: TickGroupBucketsFilled
 ) {
   const mergedTokenABuckets: TickGroupMergedBucketsFilled = tokenABuckets.map(
-    ([lowerBoundIndex, upperBoundIndex, reserve]) => {
-      return [lowerBoundIndex, upperBoundIndex, reserve, new BigNumber(0)];
+    ([lowerBoundIndex, upperBoundIndex, valueA]) => {
+      return [lowerBoundIndex, upperBoundIndex, valueA, new BigNumber(0)];
     }
   );
   const mergedTokenBBuckets: TickGroupMergedBucketsFilled = tokenBBuckets.map(
-    ([lowerBoundIndex, upperBoundIndex, reserve]) => {
-      return [lowerBoundIndex, upperBoundIndex, new BigNumber(0), reserve];
+    ([lowerBoundIndex, upperBoundIndex, valueB]) => {
+      return [lowerBoundIndex, upperBoundIndex, new BigNumber(0), valueB];
     }
   );
 
