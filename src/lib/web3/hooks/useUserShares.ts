@@ -106,8 +106,8 @@ export function useUserPositionsTotalReserves(
           if (token0 && token1 && pairID && fee !== undefined) {
             // return both upper and lower tick pools
             return [
-              { tokenIn: token0, tickIndex: lowerTickIndex.negate() },
-              { tokenIn: token0, tickIndex: upperTickIndex.negate() },
+              { tokenIn: token0, tickIndex: lowerTickIndex },
+              { tokenIn: token0, tickIndex: upperTickIndex },
               { tokenIn: token1, tickIndex: upperTickIndex },
               { tokenIn: token1, tickIndex: lowerTickIndex },
             ].map(({ tokenIn, tickIndex }) => {
