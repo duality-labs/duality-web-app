@@ -61,9 +61,11 @@ export default function useMidTickIndexFromTicks(
     if (highestTick0.tickIndex === lowestTick1.tickIndex) {
       return highestTick0.tickIndex;
     }
-    // linearly interpolate an answer
+    // linearly interpolate an answer based off value (in reserveA units)
     const highestTick0Value = highestTick0.reserve0;
-    const lowestTick1Value = lowestTick1.reserve1;
+    const lowestTick1Value = lowestTick1.reserve1.multipliedBy(
+      tickIndexToPrice(highestTick0.tickIndex)
+    );
     // calculate the mid point
     const linearPercentage = lowestTick1Value.dividedBy(
       highestTick0Value.plus(lowestTick1Value)
