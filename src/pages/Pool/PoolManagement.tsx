@@ -698,6 +698,9 @@ export default function PoolManagement({
 
   const invertedTokenOrder = guessInvertedOrder(tokenA.address, tokenB.address);
 
+  const [[viewableMinIndex, viewableMaxIndex] = [], setViewableIndexes] =
+    useState<[number, number] | undefined>();
+
   const [editedUserTicks, setEditedUserTicks] = useState<Array<EditedPosition>>(
     () =>
       userPositionsContext?.map<EditedPosition>((userPosition) => ({
@@ -1074,6 +1077,7 @@ export default function PoolManagement({
                       setRangeMin={setRangeMin}
                       setRangeMax={setRangeMax}
                       setSignificantDecimals={setSignificantDecimals}
+                      setViewableIndexes={setViewableIndexes}
                       userTickSelected={userTickSelected}
                       setUserTickSelected={setUserTickSelected}
                       fee={feeType?.fee}
@@ -1404,22 +1408,24 @@ export default function PoolManagement({
                                   token0Context?.userReserves || 0
                                 );
 
-                            const price = tickIndexToPrice(
-                              !invertedTokenOrder
-                                ? new BigNumber(
-                                    deposit.centerTickIndex.toNumber()
-                                  ).negated()
-                                : new BigNumber(
-                                    deposit.centerTickIndex.toNumber()
-                                  )
-                            );
-                            // note: fix these restrictions, they are a bit off
-                            return price
-                              .multipliedBy(1.01)
-                              .isGreaterThanOrEqualTo(rangeMin) &&
-                              price
-                                .dividedBy(1.01)
-                                .isLessThanOrEqualTo(rangeMax) ? (
+                            const tickIndex = !invertedTokenOrder
+                              ? new BigNumber(
+                                  deposit.centerTickIndex.toNumber()
+                                )
+                              : new BigNumber(
+                                  deposit.centerTickIndex.toNumber()
+                                ).negated();
+
+                            const price = tickIndexToPrice(tickIndex.negated());
+                            // show only those ticks that are in the currently visible range
+                            return viewableMinIndex !== undefined &&
+                              viewableMaxIndex !== undefined &&
+                              tickIndex.isGreaterThanOrEqualTo(
+                                viewableMinIndex
+                              ) &&
+                              tickIndex.isLessThanOrEqualTo(
+                                viewableMaxIndex
+                              ) ? (
                               <tr key={index} className="pt-2">
                                 <td>{index + 1}</td>
                                 <td>
