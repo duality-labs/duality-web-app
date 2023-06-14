@@ -1240,7 +1240,7 @@ function TicksArea({
         <text
           className="pole-value-text"
           filter="url(#text-solid-background)"
-          x={(4 + 1.8 + plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
+          x={(4 + plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
           y={plotY(new BigNumber(0)) + 4 + 8}
           dominantBaseline="middle"
           textAnchor="end"
@@ -1352,7 +1352,7 @@ function TicksArea({
         <text
           className="pole-value-text"
           filter="url(#text-solid-background)"
-          x={(4 + 1.8 + plotX(rangeMaxIndex) - poleWidth / 2).toFixed(3)}
+          x={(4 + plotX(rangeMaxIndex) - poleWidth / 2).toFixed(3)}
           y={plotY(new BigNumber(0)) + 4 + 8}
           dominantBaseline="middle"
           textAnchor="start"
