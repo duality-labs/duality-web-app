@@ -247,15 +247,6 @@ export default function LiquiditySelector({
         : [[], []];
     }, [token0Ticks, token1Ticks, forward, reverse]);
 
-  // collect tick information in a more useable form
-  const feeTicks: [TokenTickGroup, TokenTickGroup] = useMemo(() => {
-    const feeTierFilter = (tick: TokenTick) => tick.fee === fee;
-    return fee === undefined
-      ? [tokenATicks, tokenBTicks]
-      : // filter to only fee tier ticks
-        [tokenATicks.filter(feeTierFilter), tokenBTicks.filter(feeTierFilter)];
-  }, [tokenATicks, tokenBTicks, fee]);
-
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
@@ -545,20 +536,16 @@ export default function LiquiditySelector({
   }, [getEmptyBuckets, viewableMinIndex, viewableMaxIndex]);
 
   // calculate histogram values
-  const feeTickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
+  const tickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
     return mergeBuckets(
-      fillBuckets(emptyBuckets[0], feeTicks[0], 'upper'),
-      fillBuckets(emptyBuckets[1], feeTicks[1], 'lower')
+      fillBuckets(emptyBuckets[0], tokenATicks, 'upper'),
+      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower')
     );
-  }, [emptyBuckets, feeTicks]);
+  }, [emptyBuckets, tokenATicks, tokenBTicks]);
 
   // calculate highest value to plot on the chart
   const yMaxValue = useMemo(() => {
-    const allFeesTickBuckets = [
-      fillBuckets(emptyBuckets[0], tokenATicks, 'upper'),
-      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower'),
-    ];
-    return mergeBuckets(allFeesTickBuckets[0], allFeesTickBuckets[1]).reduce(
+    return tickBuckets.reduce(
       (
         result,
         [lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue]
@@ -567,7 +554,7 @@ export default function LiquiditySelector({
       },
       0
     );
-  }, [emptyBuckets, tokenATicks, tokenBTicks]);
+  }, [tickBuckets]);
 
   // get plotting functions
   const [plotWidth, plotHeight] = useMemo(() => {
@@ -705,7 +692,7 @@ export default function LiquiditySelector({
         />
       )}
       <TickBucketsGroup
-        tickBuckets={feeTickBuckets}
+        tickBuckets={tickBuckets}
         plotX={plotX}
         plotY={plotYBigNumber}
       />
