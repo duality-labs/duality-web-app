@@ -542,16 +542,20 @@ export default function LiquiditySelector({
     }
     const edgePrice = tickIndexToPrice(new BigNumber(edgePriceIndex));
     return mergeBuckets(
-      fillBuckets(emptyBuckets[0], tokenATicks, 'upper', getReserveAValue)
-        // add behind-enemy-lines tokenA ticks
-        .concat(
-          fillBuckets(emptyBuckets[1], tokenATicks, 'lower', getReserveAValue)
-        ),
-      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower', getReserveBValue)
-        // add behind-enemy-lines tokenB ticks
-        .concat(
-          fillBuckets(emptyBuckets[0], tokenBTicks, 'upper', getReserveBValue)
-        ),
+      fillBuckets(
+        emptyBuckets.flat(),
+        tokenATicks,
+        'upper',
+        edgePriceIndex,
+        getReserveAValue
+      ),
+      fillBuckets(
+        emptyBuckets.flat(),
+        tokenBTicks,
+        'lower',
+        edgePriceIndex,
+        getReserveBValue
+      ),
       // stack the buckets or not?
       true
     );
@@ -843,17 +847,28 @@ function fillBuckets(
   emptyBuckets: TickGroupBucketsEmpty,
   originalTicks: TokenTick[],
   matchSide: 'upper' | 'lower',
+  edgePriceIndex: number,
   getReserveValue: (reserve: BigNumber) => BigNumber
 ): TickGroupBucketsFilled {
-  const sideLower = matchSide === 'lower';
   const ticks = originalTicks.filter(({ reserve }) => !reserve.isZero());
   return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
     (result, [lowerIndexBound, upperIndexBound]) => {
       const reserve = ticks.reduceRight(
         (result, { tickIndex, reserve }, index, ticks) => {
+          // match buckets differently above and below the current pair price
+          // the bucket matching starts from the current price and extends
+          // outward in both directions so left buckets match for < bucket edge
+          // and right buckets match for > bucket edge
+          const sideLower =
+            tickIndex === edgePriceIndex
+              ? // for ticks exactly on current price side with the direction of given token
+                matchSide === 'lower'
+              : tickIndex > edgePriceIndex;
           const matchToken = sideLower
-            ? tickIndex >= lowerIndexBound && tickIndex < upperIndexBound
-            : tickIndex > lowerIndexBound && tickIndex <= upperIndexBound;
+            ? // match from lower bound
+              tickIndex >= lowerIndexBound && tickIndex < upperIndexBound
+            : // match from upper bound
+              tickIndex > lowerIndexBound && tickIndex <= upperIndexBound;
           // remove tick so it doesn't need to be iterated on again in next bucket
           if (matchToken) {
             ticks.splice(index, 1);
