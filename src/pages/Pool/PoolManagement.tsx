@@ -1207,7 +1207,11 @@ export default function PoolManagement({
                       ControlsComponent={ChartControls}
                     ></LiquiditySelector>
                   </div>
-                  <div className="price-card mt-4">
+                  <div
+                    className={['price-card mt-4', editMode && 'hide']
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
                     <div className="card-row">
                       <StepNumberInput<number>
                         title="MIN PRICE"
