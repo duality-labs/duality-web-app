@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import Long from 'long';
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { createRpcQueryHooks } from '@duality-labs/dualityjs';
 import {
@@ -32,6 +32,26 @@ import { getShareInfo } from '../utils/shares';
 // default useUserPositionsTotalShares filter to all user's deposits
 export type UserDepositFilter = (poolDeposit: DepositRecord) => boolean;
 const defaultFilter: UserDepositFilter = () => true;
+
+export function usePoolDepositFilterForPair(
+  tokenPair: TokenPair | TokenAddressPair
+): (poolDeposit: DepositRecord) => boolean {
+  const [tokenAddressA, tokenAddressB] = getTokenAddressPair(tokenPair);
+  const poolDepositFilter = useCallback(
+    (poolDeposit: DepositRecord) => {
+      const addresses = [tokenAddressA, tokenAddressB];
+      return (
+        !!tokenAddressA &&
+        !!tokenAddressB &&
+        !!poolDeposit.pairID &&
+        addresses.includes(poolDeposit.pairID.token0) &&
+        addresses.includes(poolDeposit.pairID.token1)
+      );
+    },
+    [tokenAddressA, tokenAddressB]
+  );
+  return poolDepositFilter;
+}
 
 // todo: use this function when the endpoint is fixed
 // select all (or optional token pair list of) user shares
@@ -146,24 +166,6 @@ export function useUserPositionsTotalShares(
   });
 
   return data;
-}
-
-// select a single token pair of user shares
-export function useUserPositionsTotalSharesPair(
-  tokenPair: TokenPair | TokenAddressPair
-) {
-  const [token0Address, token1Address] = getTokenAddressPair(tokenPair);
-  const userShares = useUserPositionsTotalShares(
-    (poolDeposit: DepositRecord) => {
-      return (
-        !!token0Address &&
-        !!token1Address &&
-        poolDeposit.pairID?.token0 === token0Address &&
-        poolDeposit.pairID?.token1 === token1Address
-      );
-    }
-  );
-  return userShares[0];
 }
 
 // select all (or optional token pair list of) user reserves
