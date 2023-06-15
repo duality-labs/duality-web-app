@@ -1106,9 +1106,13 @@ export default function PoolManagement({
                                     (invertedTokenOrder ? -1 : 1) *
                                     deposit.centerTickIndex.toNumber(),
                                   price: tickIndexToPrice(
-                                    new BigNumber(
-                                      deposit.centerTickIndex.toNumber()
-                                    ).negated()
+                                    invertedTokenOrder
+                                      ? new BigNumber(
+                                          deposit.centerTickIndex.toNumber()
+                                        ).negated()
+                                      : new BigNumber(
+                                          deposit.centerTickIndex.toNumber()
+                                        )
                                   ),
                                   fee: deposit.fee.toNumber(),
                                   tokenA: invertedTokenOrder ? token1 : token0,
@@ -1137,11 +1141,17 @@ export default function PoolManagement({
                                   reserveB: tickDiff1.plus(
                                     token1Context?.userReserves || 0
                                   ),
-                                  tickIndex: deposit.centerTickIndex.toNumber(),
+                                  tickIndex:
+                                    (invertedTokenOrder ? -1 : 1) *
+                                    deposit.centerTickIndex.toNumber(),
                                   price: tickIndexToPrice(
-                                    new BigNumber(
-                                      deposit.centerTickIndex.toNumber()
-                                    ).negated()
+                                    invertedTokenOrder
+                                      ? new BigNumber(
+                                          deposit.centerTickIndex.toNumber()
+                                        ).negated()
+                                      : new BigNumber(
+                                          deposit.centerTickIndex.toNumber()
+                                        )
                                   ),
                                   fee: deposit.fee.toNumber(),
                                   tokenA: invertedTokenOrder ? token1 : token0,
