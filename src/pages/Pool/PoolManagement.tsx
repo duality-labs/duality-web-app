@@ -1200,8 +1200,9 @@ export default function PoolManagement({
                           : setUserTicks
                       }
                       advanced={editMode}
-                      canMoveUp
-                      canMoveDown
+                      // todo: fix dragging of edit mode ticks
+                      canMoveUp={!editMode}
+                      canMoveDown={!editMode}
                       oneSidedLiquidity={isValueAZero || isValueBZero}
                       ControlsComponent={ChartControls}
                     ></LiquiditySelector>
