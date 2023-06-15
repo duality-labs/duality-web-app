@@ -823,33 +823,35 @@ export default function PoolManagement({
             minSignificantDigits={1}
           />
         </div>
-        <div className="row gap-3">
-          <div className="col flex">
-            <button
-              className="button button-dark submit-button text-medium mt-4 p-3"
-              type="button"
-              onClick={() => {
-                setInputValueA('');
-                setInputValueB('');
-              }}
-              disabled={isValueAZero && isValueBZero}
-            >
-              Cancel
-            </button>
+        {!hasEdits && (
+          <div className="row gap-3">
+            <div className="col flex">
+              <button
+                className="button button-dark submit-button text-medium mt-4 p-3"
+                type="button"
+                onClick={() => {
+                  setInputValueA('');
+                  setInputValueB('');
+                }}
+                disabled={isValueAZero && isValueBZero}
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="col flex">
+              <input
+                className="button-primary text-medium mt-4 p-3"
+                type="submit"
+                disabled={
+                  (isValueAZero && isValueBZero) ||
+                  !hasSufficientFundsA ||
+                  !hasSufficientFundsB
+                }
+                value="Confirm"
+              />
+            </div>
           </div>
-          <div className="col flex">
-            <input
-              className="button-primary text-medium mt-4 p-3"
-              type="submit"
-              disabled={
-                (isValueAZero && isValueBZero) ||
-                !hasSufficientFundsA ||
-                !hasSufficientFundsB
-              }
-              value="Confirm"
-            />
-          </div>
-        </div>
+        )}
         <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
       </fieldset>
     </form>
