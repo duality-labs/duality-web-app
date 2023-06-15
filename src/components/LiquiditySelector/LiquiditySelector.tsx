@@ -763,7 +763,9 @@ export default function LiquiditySelector({
         />
       )}
       <TicksGroup
-        className="new-ticks"
+        className={['new-ticks', advanced && 'edit-ticks']
+          .filter(Boolean)
+          .join(' ')}
         currentPriceIndex={edgePriceIndex}
         tokenAWarningPriceIndex={tokenAWarningPriceIndex}
         tokenBWarningPriceIndex={tokenBWarningPriceIndex}
@@ -1698,6 +1700,7 @@ function TicksGroup({
       );
     })
     .map(([tick, index]) => {
+      const tickIsSelected = userTickSelected === index;
       const backgroundTick = backgroundTicks[index] || tick;
       const background = {
         tickIndex: backgroundTick.tickIndex,
@@ -1742,7 +1745,7 @@ function TicksGroup({
           className={[
             'tick',
             totalValue.isZero() && 'tick--is-zero',
-            userTickSelected === index && 'tick--selected',
+            tickIsSelected && 'tick--selected',
             reserveA.isGreaterThan(0) ? 'token-a' : 'token-b',
             !totalValue.isEqualTo(backgroundValue) &&
               (totalValue.isLessThan(backgroundValue)
