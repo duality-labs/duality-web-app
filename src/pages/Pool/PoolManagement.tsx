@@ -808,6 +808,32 @@ export default function PoolManagement({
     [invertedTokenOrder, editedUserPosition]
   );
 
+  // use the callback originally intender for setUserTicks
+  // to instead set the diff of the editedUserPosition
+  const setEditedUserTicksWithUserTicks = useCallback<
+    React.Dispatch<React.SetStateAction<TickGroup>>
+  >((userTicksOrCallback) => {
+    return setEditedUserPosition((editedUserPosition) => {
+      const userTicks = editedUserPosition.map(getEditedPositionTick());
+      // get changes made to the given user ticks
+      const modifiedUserTicks =
+        typeof userTicksOrCallback === 'function'
+          ? userTicksOrCallback(userTicks)
+          : userTicksOrCallback;
+      // add these changes to the
+      return editedUserPosition.map((editedUserPosition, index) => {
+        const userTick = userTicks[index];
+        const modifiedUserTick = modifiedUserTicks[index];
+        return {
+          ...editedUserPosition,
+          // derive diffs
+          tickDiff0: modifiedUserTick.reserveA.minus(userTick.reserveA),
+          tickDiff1: modifiedUserTick.reserveB.minus(userTick.reserveB),
+        };
+      });
+    });
+  }, []);
+
   const onSubmitEditLiquidity = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -1156,7 +1182,11 @@ export default function PoolManagement({
                       fee={feeType?.fee}
                       userTicksBase={editMode ? editedUserTicksBase : userTicks}
                       userTicks={editMode ? editedUserTicks : userTicks}
-                      setUserTicks={setUserTicks}
+                      setUserTicks={
+                        editMode
+                          ? setEditedUserTicksWithUserTicks
+                          : setUserTicks
+                      }
                       advanced={editMode}
                       canMoveUp
                       canMoveDown
