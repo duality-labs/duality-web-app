@@ -852,7 +852,9 @@ export default function PoolManagement({
             </div>
           </div>
         )}
-        <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
+        {(!isValueAZero || !isValueBZero) && (
+          <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
+        )}
       </fieldset>
     </form>
   );
