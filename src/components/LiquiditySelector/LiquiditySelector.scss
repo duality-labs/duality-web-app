@@ -147,6 +147,9 @@
       fill: var(--error);
     }
     .pole-stick {
+      fill: url(#flag-pole-fade-error);
+    }
+    .pole-stick-edge {
       stroke: var(--error);
     }
   }
