@@ -749,13 +749,14 @@ export default function PoolManagement({
     },
     [sendEditRequest, editedUserTicks]
   );
-  const editMode = !diffTokenA.isZero() || !diffTokenB.isZero();
+  const editMode = isValueAZero && isValueBZero && editedUserTicks.length > 0;
+  const hasEdits = !diffTokenA.isZero() || !diffTokenB.isZero();
 
   const addLiquidityForm = (
     <form onSubmit={onSubmitAddLiquidity}>
       <fieldset
         className="page-card"
-        disabled={editMode || isValidatingDeposit}
+        disabled={hasEdits || isValidatingDeposit}
       >
         <div className="chart-header row h4">Add Liquidity</div>
         <div className="card-row my-3">
@@ -864,7 +865,7 @@ export default function PoolManagement({
   const editLiquidityForm = (
     <form onSubmit={onSubmitEditLiquidity}>
       <fieldset
-        className={['page-card', !editMode && 'hide'].filter(Boolean).join(' ')}
+        className={['page-card', !hasEdits && 'hide'].filter(Boolean).join(' ')}
         disabled={isValidatingEdit}
       >
         <div className="chart-header row h4">Edit Liquidity</div>
