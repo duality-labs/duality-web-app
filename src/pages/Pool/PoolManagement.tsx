@@ -102,6 +102,43 @@ const restrictPriceRangeValues = (
   return '1';
 };
 
+// map a way to get standard user ticks from and Edited Position object
+function getEditedPositionTick(
+  includeTickDiff = true,
+  invertedTokenOrder = false
+) {
+  return ({
+    token0,
+    token1,
+    deposit,
+    token0Context,
+    token1Context,
+    tickDiff0,
+    tickDiff1,
+  }: EditedPosition): Tick => {
+    const maybeTickDiff0 = includeTickDiff ? tickDiff0 : new BigNumber(0);
+    const maybeTickDiff1 = includeTickDiff ? tickDiff1 : new BigNumber(0);
+    return {
+      reserveA: !invertedTokenOrder
+        ? maybeTickDiff0.plus(token0Context?.userReserves || 0)
+        : maybeTickDiff1.plus(token1Context?.userReserves || 0),
+      reserveB: !invertedTokenOrder
+        ? maybeTickDiff1.plus(token1Context?.userReserves || 0)
+        : maybeTickDiff0.plus(token0Context?.userReserves || 0),
+      tickIndex:
+        (!invertedTokenOrder ? 1 : -1) * deposit.centerTickIndex.toNumber(),
+      price: tickIndexToPrice(
+        !invertedTokenOrder
+          ? new BigNumber(deposit.centerTickIndex.toNumber())
+          : new BigNumber(deposit.centerTickIndex.toNumber()).negated()
+      ),
+      fee: deposit.fee.toNumber(),
+      tokenA: !invertedTokenOrder ? token0 : token1,
+      tokenB: !invertedTokenOrder ? token1 : token0,
+    };
+  };
+}
+
 export default function PoolManagement({
   tokenA,
   tokenB,
@@ -714,6 +751,13 @@ export default function PoolManagement({
     );
   }, [userPositionsContext]);
 
+  const [editedUserTicksBase, editedUserTicks] = useMemo(() => {
+    return [
+      editedUserPosition.map(getEditedPositionTick(false, invertedTokenOrder)),
+      editedUserPosition.map(getEditedPositionTick(true, invertedTokenOrder)),
+    ];
+  }, [editedUserPosition, invertedTokenOrder]);
+
   const diffTokenA = useMemo(
     () =>
       editedUserPosition.reduce(
@@ -1081,86 +1125,8 @@ export default function PoolManagement({
                       userTickSelected={userTickSelected}
                       setUserTickSelected={setUserTickSelected}
                       fee={feeType?.fee}
-                      userTicksBase={
-                        editMode
-                          ? editedUserPosition?.map(
-                              ({
-                                token0,
-                                token1,
-                                deposit,
-                                token0Context,
-                                token1Context,
-                              }) => {
-                                return {
-                                  reserveA: new BigNumber(0).plus(
-                                    invertedTokenOrder
-                                      ? token1Context?.userReserves || 0
-                                      : token0Context?.userReserves || 0
-                                  ),
-                                  reserveB: new BigNumber(0).plus(
-                                    invertedTokenOrder
-                                      ? token0Context?.userReserves || 0
-                                      : token1Context?.userReserves || 0
-                                  ),
-                                  tickIndex:
-                                    (invertedTokenOrder ? -1 : 1) *
-                                    deposit.centerTickIndex.toNumber(),
-                                  price: tickIndexToPrice(
-                                    invertedTokenOrder
-                                      ? new BigNumber(
-                                          deposit.centerTickIndex.toNumber()
-                                        ).negated()
-                                      : new BigNumber(
-                                          deposit.centerTickIndex.toNumber()
-                                        )
-                                  ),
-                                  fee: deposit.fee.toNumber(),
-                                  tokenA: invertedTokenOrder ? token1 : token0,
-                                  tokenB: invertedTokenOrder ? token0 : token1,
-                                };
-                              }
-                            ) || []
-                          : userTicks
-                      }
-                      userTicks={
-                        editMode
-                          ? editedUserPosition.map(
-                              ({
-                                token0,
-                                token1,
-                                tickDiff0,
-                                tickDiff1,
-                                deposit,
-                                token0Context,
-                                token1Context,
-                              }) => {
-                                return {
-                                  reserveA: tickDiff0.plus(
-                                    token0Context?.userReserves || 0
-                                  ),
-                                  reserveB: tickDiff1.plus(
-                                    token1Context?.userReserves || 0
-                                  ),
-                                  tickIndex:
-                                    (invertedTokenOrder ? -1 : 1) *
-                                    deposit.centerTickIndex.toNumber(),
-                                  price: tickIndexToPrice(
-                                    invertedTokenOrder
-                                      ? new BigNumber(
-                                          deposit.centerTickIndex.toNumber()
-                                        ).negated()
-                                      : new BigNumber(
-                                          deposit.centerTickIndex.toNumber()
-                                        )
-                                  ),
-                                  fee: deposit.fee.toNumber(),
-                                  tokenA: invertedTokenOrder ? token1 : token0,
-                                  tokenB: invertedTokenOrder ? token0 : token1,
-                                };
-                              }
-                            )
-                          : userTicks
-                      }
+                      userTicksBase={editMode ? editedUserTicksBase : userTicks}
+                      userTicks={editMode ? editedUserTicks : userTicks}
                       setUserTicks={setUserTicks}
                       advanced={editMode}
                       canMoveUp
