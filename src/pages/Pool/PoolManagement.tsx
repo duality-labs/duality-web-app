@@ -780,11 +780,21 @@ export default function PoolManagement({
     });
   }, [userPositionsContext]);
 
-  const [editedUserTicksBase, editedUserTicks] = useMemo(() => {
-    return [
-      editedUserPosition.map(getEditedPositionTick(false, invertedTokenOrder)),
-      editedUserPosition.map(getEditedPositionTick(true, invertedTokenOrder)),
-    ];
+  const editedUserTicksBase = useMemo(() => {
+    return userPositionsContext
+      .map<EditedPosition>((userPosition) => ({
+        ...userPosition,
+        tickDiff0: new BigNumber(0),
+        tickDiff1: new BigNumber(0),
+      }))
+      .map(getEditedPositionTick(true, invertedTokenOrder))
+      .sort((a, b) => a.tickIndex - b.tickIndex);
+  }, [userPositionsContext, invertedTokenOrder]);
+
+  const editedUserTicks = useMemo(() => {
+    return editedUserPosition
+      .map(getEditedPositionTick(true, invertedTokenOrder))
+      .sort((a, b) => a.tickIndex - b.tickIndex);
   }, [editedUserPosition, invertedTokenOrder]);
 
   const diffTokenA = useMemo(
