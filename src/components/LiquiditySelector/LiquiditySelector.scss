@@ -83,14 +83,6 @@
   .tick--selected text {
     display: block;
   }
-  &.edit-ticks {
-    .tick text {
-      display: block;
-    }
-    .tick--selected text {
-      fill: var(--submit-button-bg);
-    }
-  }
   .line--diff {
     stroke-dasharray: 3px;
   }
