@@ -704,6 +704,10 @@ export default function LiquiditySelector({
             stopOpacity="0.15"
           />
         </linearGradient>
+        <linearGradient id="flag-pole-fade-error" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="15%" stopColor="var(--error)" stopOpacity="1" />
+          <stop offset="40%" stopColor="var(--error)" stopOpacity="0.15" />
+        </linearGradient>
       </defs>
       <g className="axis x-axis">
         <rect
