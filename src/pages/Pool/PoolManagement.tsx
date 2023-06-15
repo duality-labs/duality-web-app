@@ -695,7 +695,9 @@ export default function PoolManagement({
   const [[viewableMinIndex, viewableMaxIndex] = [], setViewableIndexes] =
     useState<[number, number] | undefined>();
 
-  const [editedUserTicks, setEditedUserTicks] = useState<Array<EditedPosition>>(
+  const [editedUserPosition, setEditedUserPosition] = useState<
+    Array<EditedPosition>
+  >(
     () =>
       userPositionsContext?.map<EditedPosition>((userPosition) => ({
         ...userPosition,
@@ -705,7 +707,7 @@ export default function PoolManagement({
   );
 
   useEffect(() => {
-    setEditedUserTicks(
+    setEditedUserPosition(
       userPositionsContext?.map<EditedPosition>((userPosition) => ({
         ...userPosition,
         tickDiff0: new BigNumber(0),
@@ -716,34 +718,35 @@ export default function PoolManagement({
 
   const diffTokenA = useMemo(
     () =>
-      editedUserTicks.reduce(
+      editedUserPosition.reduce(
         !invertedTokenOrder
           ? (acc, shareDiff) => acc.plus(shareDiff.tickDiff0)
           : (acc, shareDiff) => acc.plus(shareDiff.tickDiff1),
         new BigNumber(0)
       ),
-    [invertedTokenOrder, editedUserTicks]
+    [invertedTokenOrder, editedUserPosition]
   );
   const diffTokenB = useMemo(
     () =>
-      editedUserTicks.reduce(
+      editedUserPosition.reduce(
         !invertedTokenOrder
           ? (acc, shareDiff) => acc.plus(shareDiff.tickDiff1)
           : (acc, shareDiff) => acc.plus(shareDiff.tickDiff0),
         new BigNumber(0)
       ),
-    [invertedTokenOrder, editedUserTicks]
+    [invertedTokenOrder, editedUserPosition]
   );
 
   const onSubmitEditLiquidity = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       // get relevant tick diffs
-      await sendEditRequest(editedUserTicks);
+      await sendEditRequest(editedUserPosition);
     },
-    [sendEditRequest, editedUserTicks]
+    [sendEditRequest, editedUserPosition]
   );
-  const editMode = isValueAZero && isValueBZero && editedUserTicks.length > 0;
+  const editMode =
+    isValueAZero && isValueBZero && editedUserPosition.length > 0;
   const hasEdits = !diffTokenA.isZero() || !diffTokenB.isZero();
 
   const addLiquidityForm = (
@@ -868,16 +871,16 @@ export default function PoolManagement({
       >
         <div className="chart-header row h4">Edit Liquidity</div>
         <div className="col my-3">
-          {editedUserTicks.map((userTick) => {
+          {editedUserPosition.map((userPosition) => {
             const [diffA, diffB] = invertTokenOrder
-              ? [userTick.tickDiff1, userTick.tickDiff0]
-              : [userTick.tickDiff0, userTick.tickDiff1];
+              ? [userPosition.tickDiff1, userPosition.tickDiff0]
+              : [userPosition.tickDiff0, userPosition.tickDiff1];
             const [tokenA, tokenB] = invertTokenOrder
-              ? [userTick.token1, userTick.token0]
-              : [userTick.token0, userTick.token1];
+              ? [userPosition.token1, userPosition.token0]
+              : [userPosition.token0, userPosition.token1];
             const price = formatPrice(
               tickIndexToPrice(
-                new BigNumber(userTick.deposit.centerTickIndex.toNumber())
+                new BigNumber(userPosition.deposit.centerTickIndex.toNumber())
               ).toNumber()
             );
             const withdrawA = diffA.isLessThan(0) && (
@@ -954,7 +957,7 @@ export default function PoolManagement({
             );
             return (
               <Fragment
-                key={`${userTick.deposit.centerTickIndex}-${userTick.deposit.fee}`}
+                key={`${userPosition.deposit.centerTickIndex}-${userPosition.deposit.fee}`}
               >
                 {depositA}
                 {depositB}
@@ -964,7 +967,7 @@ export default function PoolManagement({
             );
           })}
         </div>
-        {editedUserTicks.filter(
+        {editedUserPosition.filter(
           (tick) => !tick.tickDiff0.isZero() || !tick.tickDiff1.isZero()
         ).length > 1 && (
           <>
@@ -1006,7 +1009,7 @@ export default function PoolManagement({
               className="button button-dark submit-button text-medium mt-4 p-3"
               type="button"
               onClick={() => {
-                setEditedUserTicks((ticks) =>
+                setEditedUserPosition((ticks) =>
                   ticks.map((tick) => ({
                     ...tick,
                     tickDiff0: new BigNumber(0),
@@ -1082,7 +1085,7 @@ export default function PoolManagement({
                       fee={feeType?.fee}
                       userTicksBase={
                         editMode
-                          ? editedUserTicks?.map(
+                          ? editedUserPosition?.map(
                               ({
                                 token0,
                                 token1,
@@ -1123,7 +1126,7 @@ export default function PoolManagement({
                       }
                       userTicks={
                         editMode
-                          ? editedUserTicks.map(
+                          ? editedUserPosition.map(
                               ({
                                 token0,
                                 token1,
@@ -1385,8 +1388,8 @@ export default function PoolManagement({
                 </thead>
                 <tbody>
                   {isValueAZero && isValueBZero ? (
-                    editedUserTicks ? (
-                      editedUserTicks
+                    editedUserPosition ? (
+                      editedUserPosition
                         // sort by price
                         .sort((a, b) => {
                           return !!invertedTokenOrder
@@ -1504,7 +1507,7 @@ export default function PoolManagement({
                                         type="button"
                                         className="button button-light my-3"
                                         onClick={() => {
-                                          setEditedUserTicks((ticks) => {
+                                          setEditedUserPosition((ticks) => {
                                             return ticks.map((tick) => {
                                               return tick.deposit.centerTickIndex.toNumber() ===
                                                 deposit.centerTickIndex.toNumber() &&
@@ -1533,7 +1536,7 @@ export default function PoolManagement({
                                       type="button"
                                       className="button button-default my-3"
                                       onClick={() => {
-                                        setEditedUserTicks((ticks) => {
+                                        setEditedUserPosition((ticks) => {
                                           return ticks.map((tick) => {
                                             return tick.deposit.centerTickIndex.toNumber() ===
                                               deposit.centerTickIndex.toNumber() &&
