@@ -45,6 +45,10 @@ import {
   addressableTokenMap,
   useTokenValue,
 } from '../../lib/web3/hooks/useTokens';
+import {
+  usePoolDepositFilterForPair,
+  useUserDeposits,
+} from '../../lib/web3/hooks/useUserShares';
 import StatCardVolume from '../../components/stats/StatCardVolume';
 import StatCardFees from '../../components/stats/StatCardFees';
 import StatCardVolatility from '../../components/stats/StatCardVolatility';
@@ -63,6 +67,9 @@ export default function PoolOverview({
     setTokens([tokenB, tokenA]);
   }, [tokenA, tokenB, setTokens]);
 
+  const pairPoolDepositFilter = usePoolDepositFilterForPair([tokenA, tokenB]);
+  const userPairDeposits = useUserDeposits(pairPoolDepositFilter);
+
   return (
     <PoolLayout tokenA={tokenA} tokenB={tokenB} swap={swap}>
       <div className="row mt-3 mb-xl">
@@ -77,7 +84,11 @@ export default function PoolOverview({
             <div className="col">
               <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/manage`}>
                 <button className="button button-primary py-3 px-4">
-                  New Position
+                  {userPairDeposits && userPairDeposits.length > 0 ? (
+                    <>Edit Position</>
+                  ) : (
+                    <>New Position</>
+                  )}
                 </button>
               </Link>
             </div>
