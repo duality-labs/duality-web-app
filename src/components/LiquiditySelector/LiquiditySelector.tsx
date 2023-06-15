@@ -1646,12 +1646,34 @@ function TicksGroup({
           tick,
           index,
         };
+        startDragTick(e);
       }
-
-      startDragTick(e);
     },
     [userTicks, startDragTick, setUserTickSelected]
   );
+
+  // register that clicking anywhere else in the liquidity chart will de-select the tick
+  useEffect(() => {
+    const charts = getCharts();
+    charts.forEach((chart) => {
+      chart.addEventListener('mousedown', handleClick);
+    });
+    return () => {
+      charts.concat(getCharts());
+      charts.forEach((chart) => {
+        chart.addEventListener('mousedown', handleClick);
+      });
+    };
+    function getCharts(): SVGSVGElement[] {
+      return document
+        ? Array.from(document.querySelectorAll('svg.chart-liquidity'))
+        : [];
+    }
+    function handleClick() {
+      setUserTickSelected(-1);
+      lastSelectedTick.current = undefined;
+    }
+  }, [setUserTickSelected]);
 
   const tickPart = userTicks
     .filter(
