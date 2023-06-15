@@ -73,14 +73,23 @@
     cursor: move;
     pointer-events: visible;
   }
-  .tick text {
-    fill: hsla(202, 50%, 84%, 1);
-  }
   .tick--selected {
     stroke: var(--submit-button-bg);
   }
+  .tick text {
+    display: none;
+    fill: hsla(202, 50%, 84%, 1);
+  }
   .tick--selected text {
-    fill: var(--submit-button-bg);
+    display: block;
+  }
+  &.edit-ticks {
+    .tick text {
+      display: block;
+    }
+    .tick--selected text {
+      fill: var(--submit-button-bg);
+    }
   }
   .line--diff {
     stroke-dasharray: 3px;
