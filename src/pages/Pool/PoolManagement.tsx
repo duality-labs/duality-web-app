@@ -732,23 +732,52 @@ export default function PoolManagement({
 
   const [editedUserPosition, setEditedUserPosition] = useState<
     Array<EditedPosition>
-  >(
-    () =>
-      userPositionsContext?.map<EditedPosition>((userPosition) => ({
-        ...userPosition,
-        tickDiff0: new BigNumber(0),
-        tickDiff1: new BigNumber(0),
-      })) || []
-  );
+  >([]);
 
   useEffect(() => {
-    setEditedUserPosition(
-      userPositionsContext?.map<EditedPosition>((userPosition) => ({
-        ...userPosition,
-        tickDiff0: new BigNumber(0),
-        tickDiff1: new BigNumber(0),
-      })) || []
-    );
+    setEditedUserPosition((editedUserPosition) => {
+      let isEqual = editedUserPosition.length === userPositionsContext.length;
+      if (isEqual) {
+        for (let i = 0; i < editedUserPosition.length; i++) {
+          const deposit = editedUserPosition[i].deposit;
+          const updatedDeposit = userPositionsContext[i].deposit;
+          if (
+            // check if the user's deposits have changed at all
+            !(
+              deposit.pairID.token0 === updatedDeposit.pairID.token0 &&
+              deposit.pairID.token1 === updatedDeposit.pairID.token1 &&
+              deposit.sharesOwned === updatedDeposit.sharesOwned &&
+              deposit.lowerTickIndex.equals(updatedDeposit.lowerTickIndex) &&
+              deposit.centerTickIndex.equals(updatedDeposit.centerTickIndex) &&
+              deposit.upperTickIndex.equals(updatedDeposit.upperTickIndex) &&
+              deposit.fee.equals(updatedDeposit.fee)
+            )
+            // todo: check if the reserves have changed side
+          ) {
+            isEqual = false;
+            break;
+          }
+        }
+      }
+
+      if (isEqual) {
+        // merge context updates into the edited position
+        return editedUserPosition.map((editedUserPosition, i) => {
+          return {
+            ...editedUserPosition,
+            token0Context: userPositionsContext[i].token0Context,
+            token1Context: userPositionsContext[i].token1Context,
+          };
+        });
+      } else {
+        // reset the position as it has changed
+        return userPositionsContext.map<EditedPosition>((userPosition) => ({
+          ...userPosition,
+          tickDiff0: new BigNumber(0),
+          tickDiff1: new BigNumber(0),
+        }));
+      }
+    });
   }, [userPositionsContext]);
 
   const [editedUserTicksBase, editedUserTicks] = useMemo(() => {
