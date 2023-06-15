@@ -1404,13 +1404,6 @@ export default function PoolManagement({
                 </div>
               </div>
             </div>
-            <div
-              className={['col pt-lg col-lg-hide', editMode && 'hide']
-                .filter(Boolean)
-                .join(' ')}
-            >
-              {addLiquidityForm}
-            </div>
             <div className="page-card">
               <table className="my-position-table" style={{ width: '100%' }}>
                 <thead>
@@ -1666,7 +1659,9 @@ export default function PoolManagement({
                 </tbody>
               </table>
             </div>
-            <div className="col pt-lg col-lg-hide">{editLiquidityForm}</div>
+            <div className="col pt-lg col-lg-hide">
+              {hasEdits ? editLiquidityForm : addLiquidityForm}
+            </div>
           </div>
           <div className="col col-lg col--left gap-4">
             {addLiquidityForm}
