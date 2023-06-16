@@ -15,7 +15,7 @@ import {
   faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { getBigBalance, useBankBalances } from '../../lib/web3/indexerProvider';
+import { useBankBigBalance } from '../../lib/web3/indexerProvider';
 
 import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -681,18 +681,13 @@ export default function PoolManagement({
     setUserTicks,
   ]);
 
-  const { data: balances } = useBankBalances();
-  const balanceTokenA = useMemo(() => {
-    return tokenA && balances && new BigNumber(getBigBalance(tokenA, balances));
-  }, [tokenA, balances]);
-  const balanceTokenB = useMemo(() => {
-    return tokenB && balances && new BigNumber(getBigBalance(tokenB, balances));
-  }, [tokenB, balances]);
+  const { data: balanceTokenA } = useBankBigBalance(tokenA);
+  const { data: balanceTokenB } = useBankBigBalance(tokenB);
 
   const hasSufficientFundsA =
-    balanceTokenA?.isGreaterThanOrEqualTo(values[0] || 0) || false;
+    (balanceTokenA && Number(balanceTokenA) > Number(values[0])) || false;
   const hasSufficientFundsB =
-    balanceTokenB?.isGreaterThanOrEqualTo(values[1] || 0) || false;
+    (balanceTokenB && Number(balanceTokenB) > Number(values[1])) || false;
 
   const { data: feeLiquidityMap } = useFeeLiquidityMap(
     tokenA?.address,

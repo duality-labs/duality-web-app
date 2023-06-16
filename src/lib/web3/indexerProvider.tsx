@@ -435,7 +435,21 @@ export function useBankBalance(token: Token | undefined) {
 export function useBankBigBalance(token: Token | undefined) {
   const { data: balances, error, isValidating } = useBankBalances();
   const balance = useMemo(() => {
-    return token && balances && getBigBalance(token, balances);
+    const foundBalance =
+      token &&
+      balances?.find((balance) => {
+        return token.denom_units.find((unit) => unit.denom === balance.denom);
+      });
+    return (
+      token &&
+      foundBalance &&
+      getAmountInDenom(
+        token,
+        foundBalance.amount,
+        foundBalance.denom,
+        token.display
+      )
+    );
   }, [balances, token]);
   return { data: balance, error, isValidating };
 }
@@ -464,28 +478,6 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
     return shares;
   }, [tokens, data]);
   return { data: shares, error, isValidating };
-}
-
-export function getBigBalance(
-  token: Token,
-  userBalances: UserBankBalance['balances']
-): string {
-  const denomUnits = token.denom_units;
-  const balanceObject = userBalances?.find((balance) => {
-    return denomUnits?.find((unit) => unit.denom === balance.denom);
-  });
-  return (
-    (!!balanceObject &&
-      balanceObject.amount &&
-      Number(balanceObject.amount) > 0 &&
-      getAmountInDenom(
-        token,
-        balanceObject.amount,
-        balanceObject.denom,
-        token.display
-      )) ||
-    '0'
-  );
 }
 
 export function useTokensList() {
