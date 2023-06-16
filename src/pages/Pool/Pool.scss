@@ -53,18 +53,6 @@
     gap: 1rem;
   }
 
-  table {
-    th,
-    td {
-      text-align: right;
-      justify-content: flex-end;
-    }
-  }
-
-  .my-position-table td {
-    min-height: paddings.$p-xl;
-  }
-
   .pool-page__breadcrumbs {
     a {
       color: var(--token-search-placeholder);
