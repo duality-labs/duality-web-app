@@ -106,8 +106,6 @@
   }
 
   .chart-card {
-    align-self: stretch;
-
     .chart-highlight {
       font-weight: 500;
       color: hsla(165, 83%, 57%, 1);
@@ -118,6 +116,7 @@
       width: 100%;
       max-width: 50rem;
       min-height: 20rem;
+      max-height: 20rem;
       .svg-container svg {
         height: 20rem;
       }
