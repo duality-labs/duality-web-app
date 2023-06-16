@@ -14,7 +14,7 @@ import BigNumber from 'bignumber.js';
 import { useFilteredTokenList } from './hooks';
 import { useDualityTokens } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
-import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
+import { getBigBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 import { useSimplePrices } from '../../lib/tokenPrices';
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 
@@ -299,7 +299,7 @@ export default function TokenPicker({
     const logos = token?.token?.logo_URIs;
     const isDisabled = !!exclusion?.address && exclusion?.address === address;
     const balance =
-      token?.token && balances ? getBalance(token.token, balances) : '0';
+      token?.token && balances ? getBigBalance(token.token, balances) : '0';
 
     const price = userListPrices?.[token?.token.coingecko_id || '']?.['usd'];
 
