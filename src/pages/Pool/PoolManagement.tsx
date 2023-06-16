@@ -838,11 +838,11 @@ export default function PoolManagement({
     isValueAZero && isValueBZero && editedUserPosition.length > 0;
   const hasEdits = !diffTokenA.isZero() || !diffTokenB.isZero();
 
-  const addLiquidityForm = (
+  const addLiquidityForm = !hasEdits ? (
     <form onSubmit={onSubmitAddLiquidity}>
       <fieldset
         className="page-card page-card--col"
-        disabled={hasEdits || isValidatingDeposit}
+        disabled={isValidatingDeposit}
       >
         <div className="chart-header row h4">Add Liquidity</div>
         <div className="card-row my-3">
@@ -917,47 +917,42 @@ export default function PoolManagement({
             minSignificantDigits={1}
           />
         </div>
-        {!hasEdits && (
-          <div className="row gap-3">
-            <div className="col flex">
-              <button
-                className="button button-dark submit-button text-medium mt-4 p-3"
-                type="button"
-                onClick={() => {
-                  setInputValueA('');
-                  setInputValueB('');
-                }}
-                disabled={isValueAZero && isValueBZero}
-              >
-                Cancel
-              </button>
-            </div>
-            <div className="col flex">
-              <input
-                className="button-primary text-medium mt-4 p-3"
-                type="submit"
-                disabled={
-                  (isValueAZero && isValueBZero) ||
-                  !hasSufficientFundsA ||
-                  !hasSufficientFundsB
-                }
-                value="Confirm"
-              />
-            </div>
+        <div className="row gap-3">
+          <div className="col flex">
+            <button
+              className="button button-dark submit-button text-medium mt-4 p-3"
+              type="button"
+              onClick={() => {
+                setInputValueA('');
+                setInputValueB('');
+              }}
+              disabled={isValueAZero && isValueBZero}
+            >
+              Cancel
+            </button>
           </div>
-        )}
+          <div className="col flex">
+            <input
+              className="button-primary text-medium mt-4 p-3"
+              type="submit"
+              disabled={
+                (isValueAZero && isValueBZero) ||
+                !hasSufficientFundsA ||
+                !hasSufficientFundsB
+              }
+              value="Confirm"
+            />
+          </div>
+        </div>
         {(!isValueAZero || !isValueBZero) && (
           <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
         )}
       </fieldset>
     </form>
-  );
-  const editLiquidityForm = (
+  ) : null;
+  const editLiquidityForm = hasEdits ? (
     <form onSubmit={onSubmitEditLiquidity}>
-      <fieldset
-        className={['page-card', !hasEdits && 'hide'].filter(Boolean).join(' ')}
-        disabled={isValidatingEdit}
-      >
+      <fieldset className="page-card" disabled={isValidatingEdit}>
         <div className="chart-header row h4">Edit Liquidity</div>
         <div className="col my-3">
           {editedUserPosition.map((userPosition) => {
@@ -1122,7 +1117,7 @@ export default function PoolManagement({
         </div>
       </fieldset>
     </form>
-  );
+  ) : null;
 
   return (
     <PoolLayout
@@ -1132,13 +1127,14 @@ export default function PoolManagement({
       disabled={!!isValidatingDeposit}
       isManagementPath
     >
-      <div>
-        <div className="row gap-4 my-3">
-          <div className="col flex gap-4">
-            <div className="chart-card col">
-              <div className="flex col row-lg gapx-lg">
-                <div className="flex col col--right">
-                  <div className="chart-header row flow-wrap my-4">
+      <div className="mt-3">
+        <div className="col flex gap-lg">
+          <div className="col row-lg gap-4">
+            {addLiquidityForm}
+            <div className="col flex">
+              <div className="page-card chart-card col row-lg gapx-lg">
+                <div className="col">
+                  <div className="chart-header row flow-wrap mb-4">
                     <div className="col">
                       <h3 className="h3">Liquidity Distribution</h3>
                     </div>
@@ -1186,7 +1182,7 @@ export default function PoolManagement({
                     ></LiquiditySelector>
                   </div>
                   <div
-                    className={['price-card mt-4', editMode && 'hide']
+                    className={['price-card mt-4', hasEdits && 'hide']
                       .filter(Boolean)
                       .join(' ')}
                   >
@@ -1382,6 +1378,9 @@ export default function PoolManagement({
                 </div>
               </div>
             </div>
+            {hasEdits && <div className="col col-lg">{editLiquidityForm}</div>}
+          </div>
+          <div className="col col--left gap-4">
             {editMode ? (
               <MyEditedPositionTableCard
                 tokenA={tokenA}
@@ -1398,14 +1397,10 @@ export default function PoolManagement({
                 userTicks={userTicks}
               />
             )}
-            <div className="col pt-lg col-lg-hide">
-              {hasEdits ? editLiquidityForm : addLiquidityForm}
-            </div>
           </div>
-          <div className="col col-lg col--left gap-4">
-            {addLiquidityForm}
-            {editLiquidityForm}
-          </div>
+          {hasEdits && (
+            <div className="col col-lg-hide">{editLiquidityForm}</div>
+          )}
         </div>
       </div>
     </PoolLayout>
