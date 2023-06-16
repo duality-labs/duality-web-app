@@ -15,7 +15,7 @@ import {
   faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { useBankBigBalance } from '../../lib/web3/indexerProvider';
+import { useBankBalance } from '../../lib/web3/indexerProvider';
 
 import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -163,9 +163,13 @@ export default function PoolManagement({
 
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
   const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
+  // convert input value text to correct denom values
   const values = useMemo(
-    (): [string, string] => [valueA, valueB],
-    [valueA, valueB]
+    (): [string, string] => [
+      getAmountInDenom(tokenA, valueA, tokenA.display, tokenA.address) || '0',
+      getAmountInDenom(tokenB, valueB, tokenB.display, tokenB.address) || '0',
+    ],
+    [tokenA, tokenB, valueA, valueB]
   );
 
   const isValueAZero = new BigNumber(valueA).isZero();
@@ -681,13 +685,14 @@ export default function PoolManagement({
     setUserTicks,
   ]);
 
-  const { data: balanceTokenA } = useBankBigBalance(tokenA);
-  const { data: balanceTokenB } = useBankBigBalance(tokenB);
+  const { data: balanceTokenA } = useBankBalance(tokenA);
+  const { data: balanceTokenB } = useBankBalance(tokenB);
 
+  // compare with BigNumber to avoid float imprecision
   const hasSufficientFundsA =
-    (balanceTokenA && Number(balanceTokenA) > Number(values[0])) || false;
+    (balanceTokenA && new BigNumber(balanceTokenA).gte(values[0])) || false;
   const hasSufficientFundsB =
-    (balanceTokenB && Number(balanceTokenB) > Number(values[1])) || false;
+    (balanceTokenB && new BigNumber(balanceTokenB).gte(values[1])) || false;
 
   const { data: feeLiquidityMap } = useFeeLiquidityMap(
     tokenA?.address,
