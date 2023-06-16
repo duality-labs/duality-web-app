@@ -15,7 +15,7 @@ import {
   faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
+import { getBigBalance, useBankBalances } from '../../lib/web3/indexerProvider';
 
 import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -683,10 +683,10 @@ export default function PoolManagement({
 
   const { data: balances } = useBankBalances();
   const balanceTokenA = useMemo(() => {
-    return tokenA && balances && new BigNumber(getBalance(tokenA, balances));
+    return tokenA && balances && new BigNumber(getBigBalance(tokenA, balances));
   }, [tokenA, balances]);
   const balanceTokenB = useMemo(() => {
-    return tokenB && balances && new BigNumber(getBalance(tokenB, balances));
+    return tokenB && balances && new BigNumber(getBigBalance(tokenB, balances));
   }, [tokenB, balances]);
 
   const hasSufficientFundsA =
