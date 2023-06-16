@@ -2,19 +2,20 @@ import { ReactNode, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 import { Tick } from '../../components/LiquiditySelector/LiquiditySelector';
 
-import { formatCurrency } from '../../lib/utils/number';
+import { formatCurrency, formatPercentage } from '../../lib/utils/number';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 import { EditedPosition } from '../MyLiquidity/useEditLiquidity';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
+import { useSimplePrice } from '../../lib/tokenPrices';
 import {
+  UserPositionDepositContext,
   usePoolDepositFilterForPair,
   useUserPositionsContext,
 } from '../../lib/web3/hooks/useUserShares';
 
 import TableCard from '../../components/cards/TableCard';
-import { useUserPositionsShareValue } from '../../lib/web3/hooks/useUserShareValues';
 
 function MyPositionTableCard({
   tokenA,
@@ -69,7 +70,7 @@ export function MyNewPositionTableCard({
   tokenB: Token;
   userTicks: Tick[];
 }) {
-  const [newReserveATotal, newReserveBTotal] = useMemo(() => {
+  const [reserveATotal, reserveBTotal] = useMemo(() => {
     return [
       userTicks.reduce(
         (acc, tick) => acc.plus(tick.reserveA),
@@ -82,7 +83,35 @@ export function MyNewPositionTableCard({
     ];
   }, [userTicks]);
 
-  const data = !(newReserveATotal.isZero() && newReserveBTotal.isZero())
+  const {
+    data: [priceA, priceB],
+  } = useSimplePrice([tokenA, tokenB]);
+  const valueTotal = useMemo(() => {
+    if (priceA && priceB && reserveATotal && reserveBTotal) {
+      return BigNumber.sum(
+        priceA *
+          Number(
+            getAmountInDenom(
+              tokenA,
+              reserveATotal,
+              tokenA.address,
+              tokenA.display
+            )
+          ),
+        priceB *
+          Number(
+            getAmountInDenom(
+              tokenB,
+              reserveBTotal,
+              tokenB.address,
+              tokenB.display
+            )
+          )
+      );
+    }
+  }, [priceA, priceB, reserveATotal, reserveBTotal, tokenA, tokenB]);
+
+  const data = !(reserveATotal.isZero() && reserveBTotal.isZero())
     ? userTicks.map((tick, index) => {
         // note: fix these restrictions, they are a bit off
         return (
@@ -91,31 +120,11 @@ export function MyNewPositionTableCard({
             <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
             <td>{formatReserveAmount(tokenA, tick.reserveA)}</td>
             <td className="text-left">
-              {tick.reserveA.isGreaterThan(1e-5)
-                ? `(${
-                    newReserveATotal.isGreaterThan(0)
-                      ? new BigNumber(
-                          tick.reserveA
-                            .multipliedBy(100)
-                            .dividedBy(newReserveATotal)
-                        ).toFixed(1)
-                      : 0
-                  }%)`
-                : ''}
+              {formatValuePercentage(valueTotal, tokenA, tick.reserveA, priceA)}
             </td>
             <td>{formatReserveAmount(tokenB, tick.reserveB)}</td>
             <td className="text-left">
-              {tick.reserveB.isGreaterThan(1e-5)
-                ? `(${
-                    newReserveBTotal.isGreaterThan(0)
-                      ? new BigNumber(
-                          tick.reserveB
-                            .multipliedBy(100)
-                            .dividedBy(newReserveBTotal)
-                        ).toFixed(1)
-                      : 0
-                  }%)`
-                : ''}
+              {formatValuePercentage(valueTotal, tokenB, tick.reserveB, priceB)}
             </td>
           </tr>
         );
@@ -156,20 +165,57 @@ export function MyEditedPositionTableCard({
   const pairPoolDepositFilter = usePoolDepositFilterForPair([tokenA, tokenB]);
   const userPositionsContext = useUserPositionsContext(pairPoolDepositFilter);
 
-  const [userReserveATotal, userReserveBTotal] = useMemo(() => {
-    return [
-      userPositionsContext?.reduce((acc, { token0Context }) => {
-        return acc.plus(token0Context?.userReserves || 0);
-      }, new BigNumber(0)),
-      userPositionsContext?.reduce((acc, { token1Context }) => {
-        return acc.plus(token1Context?.userReserves || 0);
-      }, new BigNumber(0)),
-    ];
-  }, [userPositionsContext]);
-
   const invertedTokenOrder = guessInvertedOrder(tokenA.address, tokenB.address);
 
-  const totalPairValue = useUserPositionsShareValue(pairPoolDepositFilter);
+  const [userReserveATotal, userReserveBTotal] = useMemo(() => {
+    return [
+      userPositionsContext?.reduce(
+        !invertedTokenOrder ? sumToken0Reserves : sumToken1Reserves,
+        new BigNumber(0)
+      ),
+      userPositionsContext?.reduce(
+        !invertedTokenOrder ? sumToken1Reserves : sumToken0Reserves,
+        new BigNumber(0)
+      ),
+    ];
+    function sumToken0Reserves(
+      acc: BigNumber,
+      { token0Context }: UserPositionDepositContext
+    ) {
+      return acc.plus(token0Context?.userReserves || 0);
+    }
+    function sumToken1Reserves(
+      acc: BigNumber,
+      { token1Context }: UserPositionDepositContext
+    ) {
+      return acc.plus(token1Context?.userReserves || 0);
+    }
+  }, [userPositionsContext, invertedTokenOrder]);
+
+  const {
+    data: [priceA, priceB],
+  } = useSimplePrice([tokenA, tokenB]);
+  const valueTotal = useMemo(() => {
+    if (priceA && priceB && userReserveATotal && userReserveBTotal) {
+      const reserveATotal = getAmountInDenom(
+        tokenA,
+        userReserveATotal,
+        tokenA.address,
+        tokenA.display
+      );
+      const reserveBTotal = getAmountInDenom(
+        tokenB,
+        userReserveBTotal,
+        tokenB.address,
+        tokenB.display
+      );
+
+      return BigNumber.sum(
+        priceA * Number(reserveATotal),
+        priceB * Number(reserveBTotal)
+      );
+    }
+  }, [priceA, priceB, userReserveATotal, userReserveBTotal, tokenA, tokenB]);
 
   const data = editedUserPosition
     ? editedUserPosition
@@ -208,31 +254,11 @@ export function MyEditedPositionTableCard({
                 <td>{new BigNumber(1).div(price).toFixed(5)}</td>
                 <td>{formatReserveAmount(tokenA, reserveA)}</td>
                 <td>
-                  {userReserveATotal && reserveA.isGreaterThan(1e-5)
-                    ? `${
-                        userReserveATotal.isGreaterThan(0)
-                          ? new BigNumber(
-                              reserveA
-                                .multipliedBy(100)
-                                .dividedBy(userReserveATotal)
-                            ).toFixed(1)
-                          : 0
-                      }%`
-                    : ''}
+                  {formatValuePercentage(valueTotal, tokenA, reserveA, priceA)}
                 </td>
                 <td>{formatReserveAmount(tokenB, reserveB)}</td>
                 <td>
-                  {userReserveBTotal && reserveB.isGreaterThan(1e-5)
-                    ? `${
-                        userReserveBTotal.isGreaterThan(0)
-                          ? new BigNumber(
-                              reserveB
-                                .multipliedBy(100)
-                                .dividedBy(userReserveBTotal)
-                            ).toFixed(1)
-                          : 0
-                      }%`
-                    : ''}
+                  {formatValuePercentage(valueTotal, tokenB, reserveB, priceB)}
                 </td>
                 <td className="row gap-2 ml-4">
                   {reserveA?.plus(reserveB || 0).isGreaterThan(0) &&
@@ -302,7 +328,9 @@ export function MyEditedPositionTableCard({
       header={
         <>
           <span className="text-muted">Total Assets</span>
-          <strong>{formatCurrency(totalPairValue.toFixed())}</strong>
+          <strong>
+            {valueTotal ? formatCurrency(valueTotal.toFixed()) : '...'}
+          </strong>
         </>
       }
       data={data}
@@ -328,4 +356,32 @@ function formatReserveAmount(
         fractionalDigits,
       })
     : '';
+}
+
+function formatValuePercentage(
+  valueTotal: BigNumber | undefined,
+  token: Token,
+  reserve: BigNumber,
+  price: number | undefined
+) {
+  return valueTotal && price && reserve.isGreaterThan(1e-5)
+    ? `(${formatPercentage(
+        valueTotal.isGreaterThan(0)
+          ? new BigNumber(
+              price *
+                Number(
+                  getAmountInDenom(
+                    token,
+                    reserve,
+                    token.address,
+                    token.display
+                  ) || 0
+                )
+            )
+              .dividedBy(valueTotal)
+              .toFixed()
+          : 0
+      )})`
+    : // don't display zeros everywhere
+      '';
 }
