@@ -41,11 +41,14 @@ function MyPositionTableCard({
       <table className="my-position-table" style={{ width: '100%' }}>
         <thead>
           <tr>
-            <th style={{ width: '7.5%' }}></th>
+            <th style={{ width: '7.5%' }}>Tick</th>
             <th style={{ width: '20%' }}>Price</th>
-            <th style={{ width: '20%' }}>Percent</th>
-            <th style={{ width: '20%' }}>{tokenA.display.toUpperCase()}</th>
-            <th style={{ width: '20%' }}>{tokenB.display.toUpperCase()}</th>
+            <th style={{ width: '20%' }} colSpan={2}>
+              {tokenA.display.toUpperCase()} Amount
+            </th>
+            <th style={{ width: '20%' }} colSpan={2}>
+              {tokenB.display.toUpperCase()} Amount
+            </th>
             {actionColumn !== undefined && (
               <th style={{ width: '12.5%' }}>{actionColumn}</th>
             )}
@@ -88,7 +91,12 @@ export function MyNewPositionTableCard({
             <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
             <td>
               {tick.reserveA.isGreaterThan(1e-5)
-                ? `${
+                ? tick.reserveA.toFixed(3)
+                : ''}
+            </td>
+            <td className="text-left">
+              {tick.reserveA.isGreaterThan(1e-5)
+                ? `(${
                     newReserveATotal.isGreaterThan(0)
                       ? new BigNumber(
                           tick.reserveA
@@ -96,10 +104,17 @@ export function MyNewPositionTableCard({
                             .dividedBy(newReserveATotal)
                         ).toFixed(1)
                       : 0
-                  }%`
+                  }%)`
                 : ''}
+            </td>
+            <td>
               {tick.reserveB.isGreaterThan(1e-5)
-                ? `${
+                ? tick.reserveB.toFixed(3)
+                : ''}
+            </td>
+            <td className="text-left">
+              {tick.reserveB.isGreaterThan(1e-5)
+                ? `(${
                     newReserveBTotal.isGreaterThan(0)
                       ? new BigNumber(
                           tick.reserveB
@@ -107,17 +122,7 @@ export function MyNewPositionTableCard({
                             .dividedBy(newReserveBTotal)
                         ).toFixed(1)
                       : 0
-                  }%`
-                : ''}
-            </td>
-            <td>
-              {tick.reserveA.isGreaterThan(1e-5)
-                ? tick.reserveA.toFixed(3)
-                : ''}
-            </td>
-            <td>
-              {tick.reserveB.isGreaterThan(1e-5)
-                ? tick.reserveB.toFixed(3)
+                  }%)`
                 : ''}
             </td>
           </tr>
@@ -210,30 +215,6 @@ export function MyEditedPositionTableCard({
                 <td>{index + 1}</td>
                 <td>{new BigNumber(1).div(price).toFixed(5)}</td>
                 <td>
-                  {userReserveATotal && reserveA.isGreaterThan(1e-5)
-                    ? `${
-                        userReserveATotal.isGreaterThan(0)
-                          ? new BigNumber(
-                              reserveA
-                                .multipliedBy(100)
-                                .dividedBy(userReserveATotal)
-                            ).toFixed(1)
-                          : 0
-                      }%`
-                    : ''}
-                  {userReserveBTotal && reserveB.isGreaterThan(1e-5)
-                    ? `${
-                        userReserveBTotal.isGreaterThan(0)
-                          ? new BigNumber(
-                              reserveB
-                                .multipliedBy(100)
-                                .dividedBy(userReserveBTotal)
-                            ).toFixed(1)
-                          : 0
-                      }%`
-                    : ''}
-                </td>
-                <td>
                   {reserveA.isGreaterThan(1e-5)
                     ? getAmountInDenom(
                         tokenA,
@@ -248,6 +229,19 @@ export function MyEditedPositionTableCard({
                     : ''}
                 </td>
                 <td>
+                  {userReserveATotal && reserveA.isGreaterThan(1e-5)
+                    ? `${
+                        userReserveATotal.isGreaterThan(0)
+                          ? new BigNumber(
+                              reserveA
+                                .multipliedBy(100)
+                                .dividedBy(userReserveATotal)
+                            ).toFixed(1)
+                          : 0
+                      }%`
+                    : ''}
+                </td>
+                <td>
                   {reserveB.isGreaterThan(1e-5)
                     ? getAmountInDenom(
                         tokenB,
@@ -259,6 +253,19 @@ export function MyEditedPositionTableCard({
                           significantDigits: 3,
                         }
                       )
+                    : ''}
+                </td>
+                <td>
+                  {userReserveBTotal && reserveB.isGreaterThan(1e-5)
+                    ? `${
+                        userReserveBTotal.isGreaterThan(0)
+                          ? new BigNumber(
+                              reserveB
+                                .multipliedBy(100)
+                                .dividedBy(userReserveBTotal)
+                            ).toFixed(1)
+                          : 0
+                      }%`
                     : ''}
                 </td>
                 <td className="row gap-2 ml-4">
