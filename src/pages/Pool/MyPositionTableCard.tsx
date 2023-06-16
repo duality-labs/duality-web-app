@@ -89,11 +89,7 @@ export function MyNewPositionTableCard({
           <tr key={index} className="pt-2">
             <td>{index + 1}</td>
             <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
-            <td>
-              {tick.reserveA.isGreaterThan(1e-5)
-                ? tick.reserveA.toFixed(3)
-                : ''}
-            </td>
+            <td>{formatReserveAmount(tokenA, tick.reserveA)}</td>
             <td className="text-left">
               {tick.reserveA.isGreaterThan(1e-5)
                 ? `(${
@@ -107,11 +103,7 @@ export function MyNewPositionTableCard({
                   }%)`
                 : ''}
             </td>
-            <td>
-              {tick.reserveB.isGreaterThan(1e-5)
-                ? tick.reserveB.toFixed(3)
-                : ''}
-            </td>
+            <td>{formatReserveAmount(tokenB, tick.reserveB)}</td>
             <td className="text-left">
               {tick.reserveB.isGreaterThan(1e-5)
                 ? `(${
@@ -214,20 +206,7 @@ export function MyEditedPositionTableCard({
               <tr key={index} className="pt-2">
                 <td>{index + 1}</td>
                 <td>{new BigNumber(1).div(price).toFixed(5)}</td>
-                <td>
-                  {reserveA.isGreaterThan(1e-5)
-                    ? getAmountInDenom(
-                        tokenA,
-                        reserveA,
-                        tokenA.address,
-                        tokenA.display,
-                        {
-                          fractionalDigits: 3,
-                          significantDigits: 3,
-                        }
-                      )
-                    : ''}
-                </td>
+                <td>{formatReserveAmount(tokenA, reserveA)}</td>
                 <td>
                   {userReserveATotal && reserveA.isGreaterThan(1e-5)
                     ? `${
@@ -241,20 +220,7 @@ export function MyEditedPositionTableCard({
                       }%`
                     : ''}
                 </td>
-                <td>
-                  {reserveB.isGreaterThan(1e-5)
-                    ? getAmountInDenom(
-                        tokenB,
-                        reserveB,
-                        tokenB.address,
-                        tokenB.display,
-                        {
-                          fractionalDigits: 3,
-                          significantDigits: 3,
-                        }
-                      )
-                    : ''}
-                </td>
+                <td>{formatReserveAmount(tokenB, reserveB)}</td>
                 <td>
                   {userReserveBTotal && reserveB.isGreaterThan(1e-5)
                     ? `${
@@ -350,4 +316,16 @@ export function MyEditedPositionTableCard({
       actionColumn=""
     />
   );
+}
+
+function formatReserveAmount(
+  token: Token,
+  reserve: BigNumber,
+  fractionalDigits = 3
+) {
+  return reserve.isGreaterThan(1e-5)
+    ? getAmountInDenom(token, reserve, token.address, token.display, {
+        fractionalDigits,
+      })
+    : '';
 }
