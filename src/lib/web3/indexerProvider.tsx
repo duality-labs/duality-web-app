@@ -423,7 +423,19 @@ export function useBankBalances() {
 export function useBankBalance(token: Token | undefined) {
   const { data: balances, error, isValidating } = useBankBalances();
   const balance = useMemo(() => {
-    return token && balances && getBalance(token, balances);
+    return (
+      (token &&
+        balances?.find((balance) => balance.denom === token.address)?.amount) ||
+      '0'
+    );
+  }, [balances, token]);
+  return { data: balance, error, isValidating };
+}
+
+export function useBankBigBalance(token: Token | undefined) {
+  const { data: balances, error, isValidating } = useBankBalances();
+  const balance = useMemo(() => {
+    return token && balances && getBigBalance(token, balances);
   }, [balances, token]);
   return { data: balance, error, isValidating };
 }
@@ -454,7 +466,7 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
   return { data: shares, error, isValidating };
 }
 
-export function getBalance(
+export function getBigBalance(
   token: Token,
   userBalances: UserBankBalance['balances']
 ): string {
