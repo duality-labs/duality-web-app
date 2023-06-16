@@ -839,7 +839,7 @@ export default function PoolManagement({
   const addLiquidityForm = (
     <form onSubmit={onSubmitAddLiquidity}>
       <fieldset
-        className="page-card"
+        className="page-card page-card--col"
         disabled={hasEdits || isValidatingDeposit}
       >
         <div className="chart-header row h4">Add Liquidity</div>
