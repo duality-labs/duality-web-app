@@ -906,8 +906,13 @@ export default function PoolManagement({
     isValueAZero && isValueBZero && editedUserPosition.length > 0;
   const hasEdits = !diffTokenA.isZero() || !diffTokenB.isZero();
 
-  const addLiquidityForm = !hasEdits ? (
-    <form onSubmit={onSubmitAddLiquidity}>
+  const addLiquidityForm = (
+    <form
+      className={['col--sidebar', hasEdits ? 'collapsed' : 'expanded'].join(
+        ' '
+      )}
+      onSubmit={onSubmitAddLiquidity}
+    >
       <fieldset
         className="page-card page-card--col"
         disabled={isValidatingDeposit}
@@ -1019,10 +1024,18 @@ export default function PoolManagement({
         )}
       </fieldset>
     </form>
-  ) : null;
-  const editLiquidityForm = hasEdits ? (
-    <form onSubmit={onSubmitEditLiquidity}>
-      <fieldset className="page-card" disabled={isValidatingEdit}>
+  );
+  const editLiquidityForm = (
+    <form
+      className={['col--sidebar', hasEdits ? 'expanded' : 'collapsed'].join(
+        ' '
+      )}
+      onSubmit={onSubmitEditLiquidity}
+    >
+      <fieldset
+        className="page-card page-card--col"
+        disabled={isValidatingEdit}
+      >
         <div className="chart-header row h4">Edit Liquidity</div>
         <div className="col my-3">
           {editedUserPosition.map((userPosition) => {
@@ -1187,7 +1200,7 @@ export default function PoolManagement({
         </div>
       </fieldset>
     </form>
-  ) : null;
+  );
 
   const estimatedPairPriceResponse = usePairPrice(tokenA, tokenB);
   const estimatedPairPriceString = estimatedPairPriceResponse.data
@@ -1206,7 +1219,7 @@ export default function PoolManagement({
     >
       <div className="mt-3">
         <div className="col flex gap-lg">
-          <div className="col row-lg gap-4">
+          <div className="col row-lg gap-4 col-slide-container">
             {addLiquidityForm}
             <div className="col flex gap-4">
               {tokenA && tokenB && currentPriceFromTicks === undefined && (
@@ -1503,7 +1516,7 @@ export default function PoolManagement({
                 </div>
               </div>
             </div>
-            {hasEdits && <div className="col col-lg">{editLiquidityForm}</div>}
+            {editLiquidityForm}
           </div>
           <div className="col col--left gap-4">
             {tokenA && tokenB && editMode ? (
