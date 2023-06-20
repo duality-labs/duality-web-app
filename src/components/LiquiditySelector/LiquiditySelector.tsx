@@ -8,6 +8,7 @@ import React, {
   useRef,
   useEffect,
   ComponentType,
+  ReactNode,
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
 import { useLocation } from 'react-router-dom';
@@ -789,6 +790,17 @@ export default function LiquiditySelector({
         canMoveDown={canMoveDown}
         canMoveX={canMoveX}
       />
+      <EmptyState
+        warnings={[
+          // warn is no current price is set
+          edgePriceIndex === undefined &&
+            'Add a starting price to create a new position',
+          // warn if no token values are set
+          isUserTicksAZero &&
+            isUserTicksBZero &&
+            'Add tokens to create a new position',
+        ]}
+      />
     </svg>
   );
 
@@ -876,6 +888,24 @@ export default function LiquiditySelector({
       )}
     </>
   );
+}
+
+function EmptyState({ warnings }: { warnings: ReactNode[] }) {
+  const warning = warnings.filter(Boolean).shift();
+  return warning ? (
+    <g className="empty-state" transform="translate(0, -100)">
+      <text
+        x="50%"
+        dominantBaseline="middle"
+        textAnchor="middle"
+        filter="url(#text-solid-background)"
+      >
+        <>&nbsp;</>
+        {warning}
+        <>&nbsp;</>
+      </text>
+    </g>
+  ) : null;
 }
 
 function fillBuckets(
