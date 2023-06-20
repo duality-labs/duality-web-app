@@ -1168,7 +1168,7 @@ export default function PoolManagement({
   const estimatedPairPriceResponse = usePairPrice(tokenA, tokenB);
   const estimatedPairPriceString = estimatedPairPriceResponse.data
     ? formatPrice(estimatedPairPriceResponse.data, {
-        minimumSignificantDigits: 3,
+        maximumSignificantDigits: 5,
       })
     : '';
 
