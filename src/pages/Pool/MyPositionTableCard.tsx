@@ -20,6 +20,7 @@ import TableCard from '../../components/cards/TableCard';
 function MyPositionTableCard({
   tokenA,
   tokenB,
+  title = 'My Position',
   header,
   data,
   emptyState,
@@ -27,6 +28,7 @@ function MyPositionTableCard({
 }: {
   tokenA: Token;
   tokenB: Token;
+  title?: string;
   header?: ReactNode;
   data: ReactNode;
   emptyState?: ReactNode;
@@ -35,7 +37,7 @@ function MyPositionTableCard({
   return (
     <TableCard
       className="my-position-table"
-      title="My Position"
+      title={title}
       headerActions={header}
       scrolling={false}
     >
@@ -134,6 +136,17 @@ export function MyNewPositionTableCard({
     <MyPositionTableCard
       tokenA={tokenA}
       tokenB={tokenB}
+      title="New Position"
+      header={
+        data ? (
+          <>
+            <span className="text-muted">Total Assets</span>
+            <strong>
+              {valueTotal ? formatCurrency(valueTotal.toFixed()) : '...'}
+            </strong>
+          </>
+        ) : null
+      }
       data={data}
       emptyState={
         <tr>
