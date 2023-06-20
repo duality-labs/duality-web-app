@@ -16,8 +16,8 @@ export default function PoolLayout({
   swap = () => undefined,
   isManagementPath = false,
 }: {
-  tokenA: Token;
-  tokenB: Token;
+  tokenA?: Token;
+  tokenB?: Token;
   disabled?: boolean;
   swap?: () => void;
   isManagementPath?: boolean;
@@ -31,7 +31,7 @@ export default function PoolLayout({
             Pools
           </Link>
           <span>{'>'}</span>
-          {isManagementPath ? (
+          {isManagementPath && tokenA && tokenB ? (
             <>
               <Link
                 className="text-light-alt"
@@ -42,10 +42,12 @@ export default function PoolLayout({
               <span>{'>'}</span>
               <span>Manage</span>
             </>
-          ) : (
+          ) : tokenA && tokenB ? (
             <span>
               {tokenA.symbol}/{tokenB.symbol}
             </span>
+          ) : (
+            <span>Create New Position</span>
           )}
         </div>
         <div className="row flow-wrap">
@@ -53,7 +55,7 @@ export default function PoolLayout({
             <div className="pool-page__header row my-4">
               <TokenPairLogos className="h3" tokenA={tokenA} tokenB={tokenB} />
               <h2 className="h3">
-                {tokenA.symbol} {tokenB.symbol} Pool
+                {tokenA?.symbol} {tokenB?.symbol} Pool
               </h2>
               <button
                 type="button"
