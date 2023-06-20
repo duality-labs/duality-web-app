@@ -66,6 +66,16 @@ export function PriceUSDCard({ token }: { token: Token }) {
 }
 
 // simple optional row layout container
-export function PriceCardRow({ children }: { children: ReactNode }) {
-  return <div className="flex row gap-2">{children}</div>;
+export function PriceCardRow({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={['flex row gap-2', className].filter(Boolean).join(' ')}>
+      {children}
+    </div>
+  );
 }
