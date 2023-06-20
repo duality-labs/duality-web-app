@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useMatch } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
@@ -11,18 +11,20 @@ import './Pool.scss';
 export default function PoolLayout({
   tokenA,
   tokenB,
+  header,
   children,
   disabled = false,
   swap = () => undefined,
-  isManagementPath = false,
 }: {
   tokenA?: Token;
   tokenB?: Token;
+  header?: ReactNode;
   disabled?: boolean;
   swap?: () => void;
-  isManagementPath?: boolean;
   children?: ReactNode;
 }) {
+  const matchTokenManagement = useMatch('/pools/:tokenA/:tokenB/:addOrEdit');
+  const addOrEdit = matchTokenManagement?.params['addOrEdit'];
   return (
     <div className="pool-page">
       <div className="col">
@@ -31,7 +33,7 @@ export default function PoolLayout({
             Pools
           </Link>
           <span>{'>'}</span>
-          {isManagementPath && tokenA && tokenB ? (
+          {addOrEdit && tokenA && tokenB ? (
             <>
               <Link
                 className="text-light-alt"
@@ -40,7 +42,9 @@ export default function PoolLayout({
                 {tokenA.symbol}/{tokenB.symbol}
               </Link>
               <span>{'>'}</span>
-              <span>Manage</span>
+              <span>
+                {addOrEdit === 'add' ? 'Create New Position' : 'Edit Position'}
+              </span>
             </>
           ) : tokenA && tokenB ? (
             <span>
@@ -50,7 +54,7 @@ export default function PoolLayout({
             <span>Create New Position</span>
           )}
         </div>
-        <div className="row flow-wrap">
+        <div className="row flow-wrap flex-centered">
           <div className="col">
             <div className="pool-page__header row my-4">
               <TokenPairLogos className="h3" tokenA={tokenA} tokenB={tokenB} />
@@ -67,6 +71,7 @@ export default function PoolLayout({
               </button>
             </div>
           </div>
+          <div className="col ml-auto">{header}</div>
         </div>
       </div>
       {children}
