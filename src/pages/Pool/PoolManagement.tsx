@@ -646,19 +646,34 @@ export default function PoolManagement({
         })();
 
         // normalise the tick amounts given
-        return tickPrices.map((tick, index) => {
+        const shapedTicks = tickPrices.map((tick, index) => {
           return {
             ...tick,
             reserveA: tickCounts[0]
-              ? tokenAmountA
-                  .multipliedBy(shapeFactor[index])
-                  .multipliedBy(tick.reserveA)
+              ? tick.reserveA.multipliedBy(shapeFactor[index])
               : new BigNumber(0),
             reserveB: tickCounts[1]
-              ? tokenAmountB
-                  .multipliedBy(shapeFactor[index])
-                  .multipliedBy(tick.reserveB)
+              ? tick.reserveB.multipliedBy(shapeFactor[index])
               : new BigNumber(0),
+          };
+        });
+
+        const shapedTickTotalReserveA = shapedTicks.reduce((acc, tick) => {
+          return acc.plus(tick.reserveA);
+        }, new BigNumber(0));
+        const shapedTickTotalReserveB = shapedTicks.reduce((acc, tick) => {
+          return acc.plus(tick.reserveB);
+        }, new BigNumber(0));
+
+        return shapedTicks.map((tick) => {
+          return {
+            ...tick,
+            reserveA: tick.reserveA
+              .dividedBy(shapedTickTotalReserveA)
+              .multipliedBy(tokenAmountA),
+            reserveB: tick.reserveB
+              .dividedBy(shapedTickTotalReserveB)
+              .multipliedBy(tokenAmountB),
           };
         });
       }
