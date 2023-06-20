@@ -6,15 +6,15 @@ import { formatPrice } from '../../lib/utils/number';
 
 import './PriceCard.scss';
 
-export default function PriceCard({
+function PriceCard({
   tokenA,
   tokenB,
+  price,
 }: {
   tokenA: Token;
   tokenB: Token;
+  price: number | undefined;
 }) {
-  const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
-
   return (
     <div className="price-card row flex-centered gap-3 px-4 py-2">
       <div className="price-card__token-logo col my-2">
@@ -29,8 +29,8 @@ export default function PriceCard({
           <span>{tokenA.symbol}</span>
           <span>=</span>
           <span>
-            {currentPrice && !currentPrice.isNaN()
-              ? formatPrice(currentPrice.toNumber(), {
+            {price !== undefined && !isNaN(price)
+              ? formatPrice(price, {
                   minimumSignificantDigits: 3,
                 })
               : '-'}
@@ -39,6 +39,23 @@ export default function PriceCard({
         </div>
       </div>
     </div>
+  );
+}
+
+export function PairPriceCard({
+  tokenA,
+  tokenB,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+}) {
+  const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+  return (
+    <PriceCard
+      tokenA={tokenA}
+      tokenB={tokenB}
+      price={currentPrice?.toNumber()}
+    />
   );
 }
 
