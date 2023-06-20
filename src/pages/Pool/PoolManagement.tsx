@@ -153,8 +153,8 @@ export default function PoolManagement({
   setTokenB,
   setTokens,
 }: {
-  tokenA: Token;
-  tokenB: Token;
+  tokenA: Token | undefined;
+  tokenB: Token | undefined;
   setTokenA: (tokenA: Token | undefined) => void;
   setTokenB: (tokenB: Token | undefined) => void;
   setTokens: ([tokenA, tokenB]: [Token?, Token?]) => void;
@@ -169,8 +169,12 @@ export default function PoolManagement({
   // convert input value text to correct denom values
   const values = useMemo(
     (): [string, string] => [
-      getAmountInDenom(tokenA, valueA, tokenA.display, tokenA.address) || '0',
-      getAmountInDenom(tokenB, valueB, tokenB.display, tokenB.address) || '0',
+      (tokenA &&
+        getAmountInDenom(tokenA, valueA, tokenA.display, tokenA.address)) ||
+        '0',
+      (tokenB &&
+        getAmountInDenom(tokenB, valueB, tokenB.display, tokenB.address)) ||
+        '0',
     ],
     [tokenA, tokenB, valueA, valueB]
   );
@@ -760,13 +764,18 @@ export default function PoolManagement({
     tokenB?.address
   );
 
-  const pairPoolDepositFilter = usePoolDepositFilterForPair([tokenA, tokenB]);
+  const pairPoolDepositFilter = usePoolDepositFilterForPair(
+    tokenA && tokenB ? [tokenA, tokenB] : ['', '']
+  );
   const userPositionsContext = useUserPositionsContext(pairPoolDepositFilter);
 
   const [{ isValidating: isValidatingEdit }, sendEditRequest] =
     useEditLiquidity();
 
-  const invertedTokenOrder = guessInvertedOrder(tokenA.address, tokenB.address);
+  const invertedTokenOrder = guessInvertedOrder(
+    tokenA?.address ?? '',
+    tokenB?.address ?? ''
+  );
 
   const [[viewableMinIndex, viewableMaxIndex] = [], setViewableIndexes] =
     useState<[number, number] | undefined>();
@@ -1119,7 +1128,7 @@ export default function PoolManagement({
             <hr />
             <div className="col my-3">
               <div className="h4">You will receive:</div>
-              {!diffTokenA.isZero() && (
+              {tokenA && !diffTokenA.isZero() && (
                 <div className="ml-auto">
                   {formatAmount(
                     getAmountInDenom(
@@ -1132,7 +1141,7 @@ export default function PoolManagement({
                   {tokenA.symbol}
                 </div>
               )}
-              {!diffTokenB.isZero() && (
+              {tokenB && !diffTokenB.isZero() && (
                 <div className="ml-auto">
                   {formatAmount(
                     getAmountInDenom(
@@ -1200,7 +1209,7 @@ export default function PoolManagement({
           <div className="col row-lg gap-4">
             {addLiquidityForm}
             <div className="col flex gap-4">
-              {currentPriceFromTicks === undefined && (
+              {tokenA && tokenB && currentPriceFromTicks === undefined && (
                 <div className="page-card col">
                   <div className="h4">Select Starting Price</div>
                   <div className="panel panel-primary col my-3 gap-2">
@@ -1496,7 +1505,7 @@ export default function PoolManagement({
             {hasEdits && <div className="col col-lg">{editLiquidityForm}</div>}
           </div>
           <div className="col col--left gap-4">
-            {editMode ? (
+            {tokenA && tokenB && editMode ? (
               <MyEditedPositionTableCard
                 tokenA={tokenA}
                 tokenB={tokenB}
