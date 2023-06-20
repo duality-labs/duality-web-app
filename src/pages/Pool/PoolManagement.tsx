@@ -972,7 +972,9 @@ export default function PoolManagement({
               disabled={
                 (isValueAZero && isValueBZero) ||
                 !hasSufficientFundsA ||
-                !hasSufficientFundsB
+                !hasSufficientFundsB ||
+                // ensure that user has agreed on an initial price if no data exists
+                edgePrice === undefined
               }
               value="Confirm"
             />
