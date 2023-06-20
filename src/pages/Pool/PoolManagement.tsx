@@ -1227,6 +1227,7 @@ export default function PoolManagement({
                     <LiquiditySelector
                       tokenA={tokenA}
                       tokenB={tokenB}
+                      initialPrice={initialPrice}
                       rangeMin={fractionalRangeMin}
                       rangeMax={fractionalRangeMax}
                       setRangeMin={setRangeMin}
