@@ -39,8 +39,8 @@ const [
 ] = REACT_APP__MAX_TICK_INDEXES.split(',').map(Number).filter(Boolean);
 
 export interface LiquiditySelectorProps {
-  tokenA: Token;
-  tokenB: Token;
+  tokenA?: Token;
+  tokenB?: Token;
   fee: number | undefined;
   userTickSelected: number | undefined;
   setUserTickSelected: (index: number) => void;
@@ -259,8 +259,8 @@ export default function LiquiditySelector({
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
   const currentPriceIndexFromTicks = useCurrentPriceIndexFromTicks(
-    tokenA.address,
-    tokenB.address
+    tokenA?.address,
+    tokenB?.address
   );
 
   const isUserTicksAZero =
@@ -792,6 +792,8 @@ export default function LiquiditySelector({
       />
       <EmptyState
         warnings={[
+          // warn if tokens are not set
+          !(tokenA && tokenB) && 'Add a token pair to create a new position',
           // warn is no current price is set
           edgePriceIndex === undefined &&
             'Add a starting price to create a new position',

@@ -8,9 +8,6 @@ import { Token } from '../../lib/web3/utils/tokens';
 import PoolOverview from './PoolOverview';
 import PoolManagement from './PoolManagement';
 
-const defaultTokenA = 'TKN';
-const defaultTokenB = 'STK';
-
 export default function PoolsPage() {
   return (
     <div className="container row flex py-5">
@@ -35,9 +32,7 @@ function Pools() {
     if (match) {
       const tokenA = tokenList.find((t) => t.symbol === match.params['tokenA']);
       const tokenB = tokenList.find((t) => t.symbol === match.params['tokenB']);
-      if (tokenA && tokenB) {
-        return [tokenA, tokenB];
-      }
+      return [tokenA, tokenB];
     }
     return [];
   }, [tokenList, match]);
@@ -46,10 +41,10 @@ function Pools() {
   // change the path name which will in turn update the tokens selected
   const setTokensPath = useCallback(
     ([tokenA, tokenB]: [Token?, Token?]) => {
-      if (tokenA && tokenB) {
+      if (tokenA || tokenB) {
         const path = [
-          tokenA.symbol,
-          tokenB.symbol,
+          tokenA?.symbol ?? '-',
+          tokenB?.symbol ?? '-',
           isManagementPath ? 'manage' : '',
         ];
         navigate(`/pools/${path.filter(Boolean).join('/')}`);
@@ -76,26 +71,20 @@ function Pools() {
     'all'
   );
 
-  if (tokenA && tokenB) {
-    if (isManagementPath) {
-      return (
-        <PoolManagement
-          tokenA={tokenA}
-          tokenB={tokenB}
-          setTokenA={setTokenAPath}
-          setTokenB={setTokenBPath}
-          setTokens={setTokensPath}
-        />
-      );
-    } else {
-      return (
-        <PoolOverview
-          tokenA={tokenA}
-          tokenB={tokenB}
-          setTokens={setTokensPath}
-        />
-      );
-    }
+  if (isManagementPath) {
+    return (
+      <PoolManagement
+        tokenA={tokenA}
+        tokenB={tokenB}
+        setTokenA={setTokenAPath}
+        setTokenB={setTokenBPath}
+        setTokens={setTokensPath}
+      />
+    );
+  } else if (tokenA && tokenB) {
+    return (
+      <PoolOverview tokenA={tokenA} tokenB={tokenB} setTokens={setTokensPath} />
+    );
   } else {
     return (
       <div className="col gap-5 mt-5">
@@ -104,7 +93,7 @@ function Pools() {
           <div>Provide liquidity and earn fees.</div>
         </div>
         {/* todo: link to an empty (no selected tokens) new position page */}
-        <Link to={`/pools/${defaultTokenA}/${defaultTokenB}/manage`}>
+        <Link to={'/pools/-/-/manage'}>
           <button className="button button-primary py-3 px-md">
             Create New Position
           </button>
