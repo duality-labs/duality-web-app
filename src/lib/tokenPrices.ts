@@ -208,15 +208,19 @@ function useDevTokenPrices(
 ) {
   const tokens = Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
   // declare dev tokens for each environment
+  const devPrice = 1;
+  const devTokenPrices = Array.isArray(tokenOrTokens)
+    ? tokens.map(() => devPrice)
+    : devPrice;
   try {
     const devTokens = JSON.parse(
       REACT_APP__DEV_TOKEN_DENOMS || '[]'
     ) as string[];
     if (tokens.every((token) => token && devTokens.includes(token.base))) {
-      return Array.isArray(tokenOrTokens) ? tokens.map(() => 1) : 1;
+      return devTokenPrices;
     }
   } catch {
-    return Array.isArray(tokenOrTokens) ? tokens.map(() => 1) : 1;
+    return devTokenPrices;
   }
 }
 
