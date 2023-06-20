@@ -52,7 +52,7 @@ $page-card-padding-width: paddings.$p-lg;
 
   .attribution {
     width: fit-content;
-    margin-top: $page-card-padding-width;
+    margin-top: calc($page-card-padding-width / 2);
     margin-bottom: -$page-card-padding-width;
     margin-left: auto;
     margin-right: auto;
