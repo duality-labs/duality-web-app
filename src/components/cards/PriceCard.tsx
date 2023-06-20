@@ -3,16 +3,17 @@ import { ReactNode } from 'react';
 import { Token } from '../../lib/web3/utils/tokens';
 import { useCurrentPriceFromTicks } from '../LiquiditySelector/useCurrentPriceFromTicks';
 import { formatPrice } from '../../lib/utils/number';
+import { useSimplePrice } from '../../lib/tokenPrices';
 
 import './PriceCard.scss';
 
-function PriceCard({
+export function PriceCard({
   tokenA,
   tokenB,
   price,
 }: {
   tokenA: Token;
-  tokenB: Token;
+  tokenB: Token | string;
   price: number | undefined;
 }) {
   return (
@@ -35,7 +36,7 @@ function PriceCard({
                 })
               : '-'}
           </span>
-          <span>{tokenB.symbol}</span>
+          <span>{typeof tokenB === 'string' ? tokenB : tokenB.symbol}</span>
         </div>
       </div>
     </div>
@@ -57,6 +58,11 @@ export function PairPriceCard({
       price={currentPrice?.toNumber()}
     />
   );
+}
+
+export function PriceUSDCard({ token }: { token: Token }) {
+  const { data: currentPrice } = useSimplePrice(token);
+  return <PriceCard tokenA={token} tokenB="USD" price={currentPrice} />;
 }
 
 // simple optional row layout container
