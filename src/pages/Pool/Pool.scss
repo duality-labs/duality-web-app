@@ -48,6 +48,25 @@
     }
   }
 
+  .col-slide-container {
+    width: calc(100% + 1rem);
+  }
+
+  .page-card--col {
+    min-width: 30rem;
+  }
+  .col--sidebar {
+    transition: width ease 0.5s;
+    overflow: hidden;
+    &.collapsed {
+      width: 0rem;
+      height: 0;
+    }
+    &.expanded {
+      width: 30rem;
+    }
+  }
+
   .pool-page__header {
     align-items: center;
     gap: 1rem;
