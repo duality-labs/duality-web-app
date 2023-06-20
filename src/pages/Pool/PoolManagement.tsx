@@ -1256,6 +1256,7 @@ export default function PoolManagement({
                       onChange={handleSetInitialPrice}
                     />
                   </div>
+                  <PriceDataDisclaimer tokenA={tokenA} tokenB={tokenB} />
                 </div>
               )}
               <div className="page-card chart-card col row-lg gapx-lg">
