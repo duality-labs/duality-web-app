@@ -723,6 +723,7 @@ export default function LiquiditySelector({
       {advanced ? (
         <TicksGroup
           className="new-ticks"
+          currentPriceIndex={edgePriceIndex}
           tokenAWarningPriceIndex={tokenAWarningPriceIndex}
           tokenBWarningPriceIndex={tokenBWarningPriceIndex}
           userTicks={userTicks}
@@ -1446,6 +1447,7 @@ function TicksArea({
 }
 
 function TicksGroup({
+  currentPriceIndex,
   tokenAWarningPriceIndex,
   tokenBWarningPriceIndex,
   userTicks,
@@ -1461,6 +1463,7 @@ function TicksGroup({
   canMoveX = false,
   ...rest
 }: {
+  currentPriceIndex: number | undefined;
   tokenAWarningPriceIndex: number | undefined;
   tokenBWarningPriceIndex: number | undefined;
   userTicks: Array<Tick | undefined>;
@@ -1477,26 +1480,29 @@ function TicksGroup({
   canMoveX?: boolean;
   className?: string;
 }) {
+  const currentPrice = tickIndexToPrice(new BigNumber(currentPriceIndex || 1));
   // collect reserve height to calculate stats to use
-  const tickNumbers = userTicks.flatMap((tick) =>
-    [tick?.reserveA.toNumber(), tick?.reserveB.toNumber()].filter(
-      (reserve): reserve is number => Boolean(reserve)
-    )
+  const tickValues = userTicks.flatMap((tick) =>
+    [
+      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
+      tick?.reserveB.toNumber(),
+    ].filter((reserve): reserve is number => Boolean(reserve))
   );
-  const backgroundTickNumbers = backgroundTicks.flatMap((tick) =>
-    [tick?.reserveA.toNumber(), tick?.reserveB.toNumber()].filter(
-      (reserve): reserve is number => Boolean(reserve)
-    )
+  const backgroundTickValues = backgroundTicks.flatMap((tick) =>
+    [
+      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
+      tick?.reserveB.toNumber(),
+    ].filter((reserve): reserve is number => Boolean(reserve))
   );
 
   // find max cumulative value of either the current ticks or background ticks
   const cumulativeTokenValues: number = Math.max(
-    tickNumbers.reduce((acc, v) => acc + v, 0),
-    backgroundTickNumbers.reduce((acc, v) => acc + v, 0)
+    tickValues.reduce((acc, v) => acc + v, 0),
+    backgroundTickValues.reduce((acc, v) => acc + v, 0)
   );
 
-  const maxValue = Math.max(...tickNumbers, ...backgroundTickNumbers);
-  const minMaxHeight = getMinYHeight(backgroundTickNumbers.length);
+  const maxValue = Math.max(...tickValues, ...backgroundTickValues);
+  const minMaxHeight = getMinYHeight(backgroundTickValues.length);
 
   // add a scaling factor if the maximum tick is very short (scale up to minMaxHeight)
   const scalingFactor =
@@ -1653,6 +1659,7 @@ function TicksGroup({
           ? cumulativeTokenValues &&
             reserveA
               .multipliedBy(scalingFactor)
+              .multipliedBy(currentPrice)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
             reserveB
@@ -1663,6 +1670,7 @@ function TicksGroup({
           ? cumulativeTokenValues &&
             background.reserveA
               .multipliedBy(scalingFactor)
+              .multipliedBy(currentPrice)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
             background.reserveB
