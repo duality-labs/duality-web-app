@@ -26,8 +26,8 @@ function MyPositionTableCard({
   emptyState,
   actionColumn,
 }: {
-  tokenA: Token;
-  tokenB: Token;
+  tokenA?: Token;
+  tokenB?: Token;
   title?: string;
   header?: ReactNode;
   data: ReactNode;
@@ -47,10 +47,10 @@ function MyPositionTableCard({
             <th style={{ width: '7.5%' }}>Tick</th>
             <th style={{ width: '20%' }}>Price</th>
             <th style={{ width: '20%' }} colSpan={2}>
-              {tokenA.display.toUpperCase()} Amount
+              {tokenA?.display.toUpperCase()} Amount
             </th>
             <th style={{ width: '20%' }} colSpan={2}>
-              {tokenB.display.toUpperCase()} Amount
+              {tokenB?.display.toUpperCase()} Amount
             </th>
             {actionColumn !== undefined && (
               <th style={{ width: '12.5%' }}>{actionColumn}</th>
@@ -68,8 +68,8 @@ export function MyNewPositionTableCard({
   tokenB,
   userTicks,
 }: {
-  tokenA: Token;
-  tokenB: Token;
+  tokenA?: Token;
+  tokenB?: Token;
   userTicks: Tick[];
 }) {
   const [reserveATotal, reserveBTotal] = useMemo(() => {
@@ -88,7 +88,14 @@ export function MyNewPositionTableCard({
   const { data: priceA } = useSimplePrice(tokenA);
   const { data: priceB } = useSimplePrice(tokenB);
   const valueTotal = useMemo(() => {
-    if (priceA && priceB && reserveATotal && reserveBTotal) {
+    if (
+      tokenA &&
+      tokenB &&
+      priceA &&
+      priceB &&
+      reserveATotal &&
+      reserveBTotal
+    ) {
       return BigNumber.sum(
         priceA *
           Number(
@@ -112,25 +119,36 @@ export function MyNewPositionTableCard({
     }
   }, [priceA, priceB, reserveATotal, reserveBTotal, tokenA, tokenB]);
 
-  const data = !(reserveATotal.isZero() && reserveBTotal.isZero())
-    ? userTicks.map((tick, index) => {
-        // note: fix these restrictions, they are a bit off
-        return (
-          <tr key={index} className="pt-2">
-            <td>{index + 1}</td>
-            <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
-            <td>{formatReserveAmount(tokenA, tick.reserveA)}</td>
-            <td className="text-left">
-              {formatValuePercentage(valueTotal, tokenA, tick.reserveA, priceA)}
-            </td>
-            <td>{formatReserveAmount(tokenB, tick.reserveB)}</td>
-            <td className="text-left">
-              {formatValuePercentage(valueTotal, tokenB, tick.reserveB, priceB)}
-            </td>
-          </tr>
-        );
-      })
-    : null;
+  const data =
+    tokenA && tokenB && !(reserveATotal.isZero() && reserveBTotal.isZero())
+      ? userTicks.map((tick, index) => {
+          // note: fix these restrictions, they are a bit off
+          return (
+            <tr key={index} className="pt-2">
+              <td>{index + 1}</td>
+              <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
+              <td>{formatReserveAmount(tokenA, tick.reserveA)}</td>
+              <td className="text-left">
+                {formatValuePercentage(
+                  valueTotal,
+                  tokenA,
+                  tick.reserveA,
+                  priceA
+                )}
+              </td>
+              <td>{formatReserveAmount(tokenB, tick.reserveB)}</td>
+              <td className="text-left">
+                {formatValuePercentage(
+                  valueTotal,
+                  tokenB,
+                  tick.reserveB,
+                  priceB
+                )}
+              </td>
+            </tr>
+          );
+        })
+      : null;
 
   return (
     <MyPositionTableCard
