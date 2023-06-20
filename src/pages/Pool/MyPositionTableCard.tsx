@@ -41,7 +41,7 @@ function MyPositionTableCard({
     >
       <table className="my-position-table" style={{ width: '100%' }}>
         <thead>
-          <tr>
+          <tr className={[!data && 'hide'].filter(Boolean).join(' ')}>
             <th style={{ width: '7.5%' }}>Tick</th>
             <th style={{ width: '20%' }}>Price</th>
             <th style={{ width: '20%' }} colSpan={2}>
