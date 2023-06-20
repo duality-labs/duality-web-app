@@ -1,3 +1,5 @@
+@use '../../../styles/mixins-vars/paddings.scss' as paddings;
+
 .number-input {
   outline: none;
   white-space: nowrap;
@@ -5,4 +7,19 @@
   text-overflow: ellipsis;
   padding: 0px;
   text-align: right;
+
+  &.number-input--field-rounded {
+    color: white;
+    background-color: var(--token-search-bg);
+    border: 1px solid hsla(215, 14%, 34%, 1);
+    padding: paddings.$p-md paddings.$p-4;
+    border-radius: paddings.$p-3;
+    width: 6ch;
+    box-sizing: content-box;
+    text-align: right;
+    font-size: 1rem;
+    &:focus {
+      border-color: var(--primary);
+    }
+  }
 }
