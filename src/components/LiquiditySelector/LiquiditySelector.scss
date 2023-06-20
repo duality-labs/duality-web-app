@@ -11,9 +11,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-}
-
-.chart-type--advanced {
   // restrict pointer events, only certain parts require interaction
   pointer-events: none;
 }
@@ -37,14 +34,6 @@
   // make behind-enemy-lines buckets placed over main buckets a little less opaque
   &.tick-buckets--merged .tick-bucket.behind-enemy-lines {
     fill-opacity: 0.75;
-  }
-}
-.chart-type--amm {
-  .tick-bucket {
-    cursor: pointer;
-    &:hover {
-      opacity: 1;
-    }
   }
 }
 
@@ -142,6 +131,7 @@
     stroke: transparent;
     stroke-width: 10px;
     cursor: pointer;
+    pointer-events: all;
   }
   .pole--price-warning {
     .pole-flag {

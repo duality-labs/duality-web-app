@@ -661,9 +661,7 @@ export default function LiquiditySelector({
 
   const svg = (
     <svg
-      className={['chart-liquidity', advanced && 'chart-type--advanced']
-        .filter(Boolean)
-        .join(' ')}
+      className="chart-liquidity"
       viewBox={`0 -${containerSize.height} ${containerSize.width} ${containerSize.height}`}
     >
       <defs>
