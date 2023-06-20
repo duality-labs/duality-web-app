@@ -6,7 +6,7 @@ import { TxResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/
 import type { GetTxsEventResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/tx/v1beta1/service';
 
 import PoolLayout from './PoolLayout';
-import PriceCard, { PriceCardRow } from '../../components/cards/PriceCard';
+import { PriceCardRow, PairPriceCard } from '../../components/cards/PriceCard';
 import Table from '../../components/Table';
 import TableCard from '../../components/cards/TableCard';
 import Tabs from '../../components/Tabs/Tabs';
@@ -75,8 +75,8 @@ export default function PoolOverview({
       <div className="row mt-3 mb-xl">
         <div className="col">
           <PriceCardRow>
-            <PriceCard tokenA={tokenA} tokenB={tokenB} />
-            <PriceCard tokenA={tokenB} tokenB={tokenA} />
+            <PairPriceCard tokenA={tokenA} tokenB={tokenB} />
+            <PairPriceCard tokenA={tokenB} tokenB={tokenA} />
           </PriceCardRow>
         </div>
         <div className="col ml-auto">
