@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Token } from '../../lib/web3/utils/tokens';
+import emptyToken from '../../assets/tokens/_empty.svg';
 
 import './TokenPairLogos.scss';
 
@@ -9,20 +10,24 @@ function TokenLogo({
   previousToken = token,
 }: {
   className: string;
-  token: Token;
+  token?: Token;
   previousToken?: Token;
 }) {
   return (
     <div className={`${className} token-pair-logo`}>
       <img
         className="token-logo token-current"
-        alt={`${token.symbol} logo`}
-        src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
+        alt={`${token?.symbol ?? 'token'} logo`}
+        src={token ? token.logo_URIs?.svg ?? token.logo_URIs?.png : emptyToken}
       />
       <img
         className="token-logo token-previous"
-        alt={`${previousToken.symbol} logo`}
-        src={previousToken.logo_URIs?.svg ?? previousToken.logo_URIs?.png}
+        alt={`${previousToken?.symbol ?? 'token'} logo`}
+        src={
+          previousToken
+            ? previousToken.logo_URIs?.svg ?? previousToken.logo_URIs?.png
+            : emptyToken
+        }
       />
     </div>
   );
@@ -35,8 +40,8 @@ export default function TokenPairLogos({
   tokenB,
 }: {
   className?: string;
-  tokenA: Token;
-  tokenB: Token;
+  tokenA?: Token;
+  tokenB?: Token;
 }) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [previousTokenA, setPreviousTokenA] = useState(tokenA);
