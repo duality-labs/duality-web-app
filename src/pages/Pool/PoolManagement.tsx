@@ -61,6 +61,7 @@ import {
   usePoolDepositFilterForPair,
   useUserPositionsContext,
 } from '../../lib/web3/hooks/useUserShares';
+import { usePairPrice } from '../../lib/tokenPrices';
 
 import PoolLayout from './PoolLayout';
 import NumberInput from '../../components/inputs/NumberInput/NumberInput';
@@ -1156,6 +1157,13 @@ export default function PoolManagement({
     </form>
   ) : null;
 
+  const estimatedPairPriceResponse = usePairPrice(tokenA, tokenB);
+  const estimatedPairPriceString = estimatedPairPriceResponse.data
+    ? formatPrice(estimatedPairPriceResponse.data, {
+        minimumSignificantDigits: 3,
+      })
+    : '';
+
   return (
     <PoolLayout
       tokenA={tokenA}
@@ -1190,9 +1198,16 @@ export default function PoolManagement({
                       initialization transaction
                     </div>
                   </div>
-                  <PriceCardRow className="gutter-l-4 flex-centered">
+                  <PriceCardRow className="gutter-l-4 flow-wrap flex-centered">
                     <PriceUSDCard token={tokenA} />
                     <PriceUSDCard token={tokenB} />
+                    <div className="row flex-centered px-4">
+                      {estimatedPairPriceString
+                        ? `~${estimatedPairPriceString} ${tokenA.symbol}/${tokenB.symbol}`
+                        : estimatedPairPriceResponse.isValidating
+                        ? '...'
+                        : ''}
+                    </div>
                   </PriceCardRow>
                   <div className="row mt-2 gap-md">
                     <div className="mt-2 pt-3">
@@ -1201,6 +1216,7 @@ export default function PoolManagement({
                     <NumberInput
                       type="text"
                       className="flex number-input--field-rounded"
+                      placeholder={estimatedPairPriceString || '0'}
                       value={initialPrice}
                       onChange={handleSetInitialPrice}
                     />
