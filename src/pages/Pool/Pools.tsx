@@ -24,8 +24,11 @@ function Pools() {
   // change tokens to match pathname
   const tokenList = useTokens();
   const matchTokens = useMatch('/pools/:tokenA/:tokenB');
-  const matchTokenManagement = useMatch('/pools/:tokenA/:tokenB/manage');
-  const isManagementPath = !!matchTokenManagement;
+  const matchTokenManagement = useMatch('/pools/:tokenA/:tokenB/:addOrEdit');
+  const isManagementPath =
+    !!matchTokenManagement &&
+    (matchTokenManagement.params['addOrEdit'] === 'add' ||
+      matchTokenManagement.params['addOrEdit'] === 'edit');
   const match = matchTokens || matchTokenManagement;
 
   const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
@@ -45,14 +48,14 @@ function Pools() {
         const path = [
           tokenA?.symbol ?? '-',
           tokenB?.symbol ?? '-',
-          isManagementPath ? 'manage' : '',
+          isManagementPath ? matchTokenManagement.params['addOrEdit'] : '',
         ];
         navigate(`/pools/${path.filter(Boolean).join('/')}`);
       } else {
         navigate('/pools');
       }
     },
-    [navigate, isManagementPath]
+    [navigate, isManagementPath, matchTokenManagement]
   );
   const setTokenAPath = useCallback(
     (tokenA: Token | undefined) => {
@@ -93,7 +96,7 @@ function Pools() {
           <div>Provide liquidity and earn fees.</div>
         </div>
         {/* todo: link to an empty (no selected tokens) new position page */}
-        <Link to={'/pools/-/-/manage'}>
+        <Link to={'/pools/-/-/add'}>
           <button className="button button-primary py-3 px-md">
             Create New Position
           </button>
