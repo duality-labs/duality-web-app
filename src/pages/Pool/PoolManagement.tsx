@@ -279,7 +279,7 @@ export default function PoolManagement({
   const [{ isValidating: isValidatingDeposit }, sendDepositRequest] =
     useDeposit([tokenA, tokenB]);
 
-  const [userTicks, setUserTicksUnprotected] = useState<TickGroup>([]);
+  const [maybeUserTicks, setUserTicksUnprotected] = useState<TickGroup>([]);
   // ensure that setting of user ticks never goes outside our prescribed bounds
   const setUserTicks = useCallback<
     React.Dispatch<React.SetStateAction<TickGroup>>
@@ -329,6 +329,14 @@ export default function PoolManagement({
     const userTicks = userTicksOrCallback;
     setUserTicksUnprotected(userTicks.map(restrictTickPrices));
   }, []);
+
+  // don't map out ticks if the edge price is not yet set
+  const userTicks = useMemo(() => {
+    if (!edgePrice) {
+      return [];
+    }
+    return maybeUserTicks;
+  }, [maybeUserTicks, edgePrice]);
 
   const [invertTokenOrder, setInvertTokenOrder] = useState<boolean>(() => {
     return edgePrice?.isLessThan(1) || false;
