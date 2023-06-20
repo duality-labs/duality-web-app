@@ -51,6 +51,7 @@ import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 import './Pool.scss';
 import RadioInput from '../../components/RadioInput';
+import { PriceCardRow, PriceUSDCard } from '../../components/cards/PriceCard';
 import {
   EditedPosition,
   useEditLiquidity,
@@ -1189,6 +1190,10 @@ export default function PoolManagement({
                       initialization transaction
                     </div>
                   </div>
+                  <PriceCardRow className="gutter-l-4 flex-centered">
+                    <PriceUSDCard token={tokenA} />
+                    <PriceUSDCard token={tokenB} />
+                  </PriceCardRow>
                   <div className="row mt-2 gap-md">
                     <div className="mt-2 pt-3">
                       Starting {tokenA.symbol}/{tokenB.symbol} price
