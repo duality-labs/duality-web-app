@@ -62,6 +62,7 @@ import {
 } from '../../lib/web3/hooks/useUserShares';
 
 import PoolLayout from './PoolLayout';
+import NumberInput from '../../components/inputs/NumberInput/NumberInput';
 
 // the default resolution for a number in 18 decimal places
 const {
@@ -183,7 +184,22 @@ export default function PoolManagement({
     tokenB?.address
   );
 
-  const edgePrice = currentPriceFromTicks;
+  const [initialPrice, setInitialPrice] = useState<string>('');
+  // set price to price from ticks or user supplied value
+  const edgePrice = useMemo(() => {
+    if (currentPriceFromTicks) {
+      return currentPriceFromTicks;
+    }
+    const initialPriceNumber = Number(initialPrice);
+    return initialPriceNumber > 0
+      ? new BigNumber(initialPriceNumber)
+      : undefined;
+  }, [currentPriceFromTicks, initialPrice]);
+
+  // reset initial price whenever selected tokens are changed
+  useEffect(() => {
+    setInitialPrice('');
+  }, [tokenA, tokenB]);
 
   // start with a default range of nothing, but is should be quickly set
   // after price information becomes available
@@ -232,6 +248,18 @@ export default function PoolManagement({
       setRangeMaxUnprotected(restrictValue(value));
     },
     [pairPriceMin, pairPriceMax]
+  );
+
+  const handleSetInitialPrice = useCallback(
+    (price: string): void => {
+      const priceNumber = Number(price);
+      if (priceNumber > 0) {
+        setRangeMinUnprotected(new BigNumber(priceNumber / 100).toFixed());
+        setRangeMaxUnprotected(new BigNumber(priceNumber * 100).toFixed());
+      }
+      setInitialPrice(price);
+    },
+    [setRangeMinUnprotected, setRangeMaxUnprotected]
   );
 
   const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
@@ -488,6 +516,13 @@ export default function PoolManagement({
     setInputValueA(inputValueB);
     setInputValueB(inputValueA);
     setTokens([tokenB, tokenA]);
+    setInitialPrice((price) => {
+      const priceNumber = Number(price);
+      if (priceNumber > 0) {
+        return formatAmount(1 / priceNumber);
+      }
+      return price;
+    });
   }, [
     tokenA,
     tokenB,
@@ -500,6 +535,7 @@ export default function PoolManagement({
     inputValueB,
     setInputValueA,
     setInputValueB,
+    setInitialPrice,
     formatSignificantDecimalRangeString,
   ]);
 
@@ -1129,7 +1165,41 @@ export default function PoolManagement({
         <div className="col flex gap-lg">
           <div className="col row-lg gap-4">
             {addLiquidityForm}
-            <div className="col flex">
+            <div className="col flex gap-4">
+              {currentPriceFromTicks === undefined && (
+                <div className="page-card col">
+                  <div className="h4">Select Starting Price</div>
+                  <div className="panel panel-primary col my-3 gap-2">
+                    <div>
+                      This pool must be initialized before you can add
+                      liquidity.
+                    </div>
+                    <div>
+                      <strong>To initialize:</strong>
+                      <ul className="pl-5">
+                        <li>Set Starting Price</li>
+                        <li>Enter Liquidity Price Range</li>
+                        <li>Deposit Amount</li>
+                      </ul>
+                    </div>
+                    <div className="text-secondary">
+                      Gas fees will be higher than usual due to the
+                      initialization transaction
+                    </div>
+                  </div>
+                  <div className="row mt-2 gap-md">
+                    <div className="mt-2 pt-3">
+                      Starting {tokenA.symbol}/{tokenB.symbol} price
+                    </div>
+                    <NumberInput
+                      type="text"
+                      className="flex number-input--field-rounded"
+                      value={initialPrice}
+                      onChange={handleSetInitialPrice}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="page-card chart-card col row-lg gapx-lg">
                 <div className="col">
                   <div className="chart-header row flow-wrap mb-4">
