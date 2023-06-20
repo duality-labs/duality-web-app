@@ -83,9 +83,8 @@ export function MyNewPositionTableCard({
     ];
   }, [userTicks]);
 
-  const {
-    data: [priceA, priceB],
-  } = useSimplePrice([tokenA, tokenB]);
+  const { data: priceA } = useSimplePrice(tokenA);
+  const { data: priceB } = useSimplePrice(tokenB);
   const valueTotal = useMemo(() => {
     if (priceA && priceB && reserveATotal && reserveBTotal) {
       return BigNumber.sum(
