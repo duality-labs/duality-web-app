@@ -8,6 +8,7 @@ import {
   useMemo,
   Fragment,
 } from 'react';
+import { Link, useMatch } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -905,13 +906,15 @@ export default function PoolManagement({
     },
     [sendEditRequest, editedUserPosition]
   );
-  const editMode =
-    isValueAZero && isValueBZero && editedUserPosition.length > 0;
+  const matchTokenManagement = useMatch('/pools/:tokenA/:tokenB/:addOrEdit');
+  const addOrEdit = matchTokenManagement?.params['addOrEdit'];
+
+  const editMode = addOrEdit === 'edit';
   const hasEdits = !diffTokenA.isZero() || !diffTokenB.isZero();
 
   const addLiquidityForm = (
     <form
-      className={['col--sidebar', hasEdits ? 'collapsed' : 'expanded'].join(
+      className={['col--sidebar', editMode ? 'collapsed' : 'expanded'].join(
         ' '
       )}
       onSubmit={onSubmitAddLiquidity}
@@ -1030,14 +1033,15 @@ export default function PoolManagement({
   );
   const editLiquidityForm = (
     <form
-      className={['col--sidebar', hasEdits ? 'expanded' : 'collapsed'].join(
-        ' '
-      )}
+      className={[
+        'col--sidebar ml-auto',
+        editMode ? 'expanded' : 'collapsed',
+      ].join(' ')}
       onSubmit={onSubmitEditLiquidity}
     >
       <fieldset
         className="page-card page-card--col"
-        disabled={isValidatingEdit}
+        disabled={!hasEdits || isValidatingEdit}
       >
         <div className="chart-header row h4">Edit Liquidity</div>
         <div className="col my-3">
@@ -1139,7 +1143,7 @@ export default function PoolManagement({
         </div>
         {editedUserPosition.filter(
           (tick) => !tick.tickDiff0.isZero() || !tick.tickDiff1.isZero()
-        ).length > 1 && (
+        ).length > 1 ? (
           <>
             <hr />
             <div className="col my-3">
@@ -1172,6 +1176,8 @@ export default function PoolManagement({
               )}
             </div>
           </>
+        ) : (
+          <div className="m-auto">No edits made</div>
         )}
         <div className="row gap-3">
           <div className="col flex">
@@ -1217,8 +1223,31 @@ export default function PoolManagement({
       tokenA={tokenA}
       tokenB={tokenB}
       swap={swapAll}
+      header={
+        tokenA && tokenB && editMode ? (
+          <div className="col">
+            <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
+              <button className="button button-primary py-3 px-4">
+                Add Position
+              </button>
+            </Link>
+          </div>
+        ) : (
+          tokenA &&
+          tokenB &&
+          editedUserPosition &&
+          editedUserPosition.length > 0 && (
+            <div className="col">
+              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/edit`}>
+                <button className="button button-primary py-3 px-4">
+                  Edit Position
+                </button>
+              </Link>
+            </div>
+          )
+        )
+      }
       disabled={!!isValidatingDeposit}
-      isManagementPath
     >
       <div className="mt-3">
         <div className="col flex gap-lg">
@@ -1323,7 +1352,7 @@ export default function PoolManagement({
                     ></LiquiditySelector>
                   </div>
                   <div
-                    className={['price-card mt-4', hasEdits && 'hide']
+                    className={['price-card mt-4', editMode && 'hide']
                       .filter(Boolean)
                       .join(' ')}
                   >
@@ -1539,9 +1568,6 @@ export default function PoolManagement({
               />
             )}
           </div>
-          {hasEdits && (
-            <div className="col col-lg-hide">{editLiquidityForm}</div>
-          )}
         </div>
       </div>
     </PoolLayout>
