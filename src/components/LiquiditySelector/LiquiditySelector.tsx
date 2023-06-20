@@ -43,6 +43,7 @@ export interface LiquiditySelectorProps {
   fee: number | undefined;
   userTickSelected: number | undefined;
   setUserTickSelected: (index: number) => void;
+  initialPrice?: string;
   rangeMin: string;
   rangeMax: string;
   setRangeMin: React.Dispatch<React.SetStateAction<string>>;
@@ -126,6 +127,7 @@ export default function LiquiditySelector({
   fee,
   userTickSelected = -1,
   setUserTickSelected,
+  initialPrice = '',
   rangeMin,
   rangeMax,
   setRangeMin,
@@ -268,7 +270,16 @@ export default function LiquiditySelector({
     userTicks.every((tick) => tick?.reserveB.isZero() ?? true);
 
   // note edge price, the price of the edge of one-sided liquidity
-  const edgePriceIndex = currentPriceIndexFromTicks;
+  const edgePriceIndex = useMemo(() => {
+    if (currentPriceIndexFromTicks !== undefined) {
+      return currentPriceIndexFromTicks;
+    }
+    // return calculated price index
+    if (Number(initialPrice) > 0) {
+      return priceToTickIndex(new BigNumber(initialPrice)).toNumber();
+    }
+    return undefined;
+  }, [currentPriceIndexFromTicks, initialPrice]);
 
   // note warning price, the price at which warning states should be shown
   const [tokenAWarningPriceIndex, tokenBWarningPriceIndex] = useMemo(() => {
