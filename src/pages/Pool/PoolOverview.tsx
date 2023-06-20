@@ -82,16 +82,21 @@ export default function PoolOverview({
         <div className="col ml-auto">
           <div className="row gap-lg">
             <div className="col">
-              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/manage`}>
+              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
                 <button className="button button-primary py-3 px-4">
-                  {userPairDeposits && userPairDeposits.length > 0 ? (
-                    <>Edit Position</>
-                  ) : (
-                    <>New Position</>
-                  )}
+                  New Position
                 </button>
               </Link>
             </div>
+            {userPairDeposits && userPairDeposits.length > 0 && (
+              <div className="col">
+                <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/edit`}>
+                  <button className="button button-primary py-3 px-4">
+                    Edit Position
+                  </button>
+                </Link>
+              </div>
+            )}
             <div className="col">
               <Link to={`/swap/${tokenA.symbol}/${tokenB.symbol}`}>
                 <button className="button button-primary-outline py-3 px-4">
