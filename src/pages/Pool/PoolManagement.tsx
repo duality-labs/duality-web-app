@@ -22,6 +22,7 @@ import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
 import { useNumericInputState } from '../../components/inputs/NumberInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
+import TokenPicker from '../../components/TokenPicker/TokenPicker';
 import LiquiditySelector from '../../components/LiquiditySelector';
 import {
   TickGroup,
@@ -922,38 +923,48 @@ export default function PoolManagement({
       >
         <div className="chart-header row h4">Add Liquidity</div>
         <div className="card-row my-3">
-          <TokenInputGroup
-            className="flex"
-            variant={
-              tokenA
-                ? !hasSufficientFundsA && 'error'
-                : // highlight the empty token group
-                  'primary'
-            }
-            onValueChanged={setInputValueA}
-            onTokenChanged={setTokenA}
-            tokenList={tokenList}
-            token={tokenA}
-            value={inputValueA}
-            exclusion={tokenB}
-          />
+          {tokenA ? (
+            <TokenInputGroup
+              className="flex"
+              variant={!hasSufficientFundsA && 'error'}
+              onValueChanged={setInputValueA}
+              onTokenChanged={setTokenA}
+              tokenList={tokenList}
+              token={tokenA}
+              value={inputValueA}
+              exclusion={tokenB}
+            />
+          ) : (
+            <TokenPicker
+              className="flex button-primary p-4"
+              tokenList={tokenList}
+              value={tokenA}
+              onChange={setTokenA}
+              exclusion={tokenB}
+            />
+          )}
         </div>
         <div className="card-row my-3">
-          <TokenInputGroup
-            className="flex"
-            variant={
-              tokenB
-                ? !hasSufficientFundsB && 'error'
-                : // highlight the empty token group
-                  'primary'
-            }
-            onValueChanged={setInputValueB}
-            onTokenChanged={setTokenB}
-            tokenList={tokenList}
-            token={tokenB}
-            value={inputValueB}
-            exclusion={tokenA}
-          />
+          {tokenB ? (
+            <TokenInputGroup
+              className="flex"
+              variant={!hasSufficientFundsB && 'error'}
+              onValueChanged={setInputValueB}
+              onTokenChanged={setTokenB}
+              tokenList={tokenList}
+              token={tokenB}
+              value={inputValueB}
+              exclusion={tokenA}
+            />
+          ) : (
+            <TokenPicker
+              className="flex button-primary p-4"
+              tokenList={tokenList}
+              value={tokenB}
+              onChange={setTokenB}
+              exclusion={tokenA}
+            />
+          )}
         </div>
         <div className="row">
           <SelectInput<FeeType>

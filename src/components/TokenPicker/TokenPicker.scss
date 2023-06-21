@@ -171,6 +171,7 @@ $min-body-height: 150px;
   &.no-selected-token {
     .token-symbol {
       font-weight: lighter;
+      text-align: left;
       align-self: center;
     }
     .token-chain {
