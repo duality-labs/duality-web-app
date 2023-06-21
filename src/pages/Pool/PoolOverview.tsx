@@ -84,7 +84,11 @@ export default function PoolOverview({
             <div className="col">
               <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
                 <button className="button button-primary py-3 px-4">
-                  New Position
+                  {userPairDeposits && userPairDeposits.length > 0 ? (
+                    <>Add To Position</>
+                  ) : (
+                    <>Create New Position</>
+                  )}
                 </button>
               </Link>
             </div>
