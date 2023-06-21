@@ -213,6 +213,12 @@ a {
 .hide {
   display: none !important;
 }
+.invisible {
+  visibility: hidden !important;
+  * {
+    visibility: hidden !important;
+  }
+}
 .relative {
   position: relative;
 }
