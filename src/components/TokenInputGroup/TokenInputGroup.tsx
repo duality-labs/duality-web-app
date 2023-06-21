@@ -22,7 +22,7 @@ const maxSignificantDigits = 20;
 const placeholder = '0';
 
 interface InputGroupProps {
-  variant?: 'primary' | 'success' | 'error' | false;
+  variant?: 'success' | 'error' | false;
   onTokenChanged?: (token?: Token) => void;
   onValueChanged?: (value: string) => void;
   tokenList: Array<Token>;
