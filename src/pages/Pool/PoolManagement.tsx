@@ -1225,7 +1225,7 @@ export default function PoolManagement({
           <div className="col">
             <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
               <button className="button button-primary py-3 px-4">
-                Add Position
+                Add To Position
               </button>
             </Link>
           </div>
