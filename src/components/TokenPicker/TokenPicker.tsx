@@ -209,7 +209,9 @@ export default function TokenPicker({
             className="token-image token-image-not-found"
           ></FontAwesomeIcon>
         )}
-        <span className="token-symbol">{value?.symbol ?? 'Choose...'}</span>
+        <span className="token-symbol">
+          {value?.symbol ?? 'Select A Token'}
+        </span>
         <span className="token-chain">
           {value?.chain.pretty_name ?? value?.chain.chain_name}
         </span>
