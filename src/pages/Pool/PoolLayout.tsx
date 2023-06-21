@@ -54,7 +54,14 @@ export default function PoolLayout({
             <span>Create New Position</span>
           )}
         </div>
-        <div className="row flow-wrap flex-centered">
+        <div
+          className={[
+            'row flow-wrap flex-centered',
+            !(tokenA && tokenB) && 'invisible',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
           <div className="col">
             <div className="pool-page__header row my-4">
               <TokenPairLogos className="h3" tokenA={tokenA} tokenB={tokenB} />
