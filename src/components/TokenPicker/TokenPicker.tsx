@@ -27,6 +27,7 @@ import SearchInput from '../inputs/SearchInput/SearchInput';
 import './TokenPicker.scss';
 
 interface TokenPickerProps {
+  className?: string;
   onChange: (newToken: Token | undefined) => void;
   exclusion: Token | undefined;
   value: Token | undefined;
@@ -77,6 +78,7 @@ function useSelectedButtonBackgroundMove(
 }
 
 export default function TokenPicker({
+  className,
   value,
   onChange,
   exclusion,
@@ -187,6 +189,7 @@ export default function TokenPicker({
         className={[
           'my-1',
           'token-picker-toggle',
+          className,
           isOpen && 'open',
           !value?.symbol && 'no-selected-token',
         ]
