@@ -13,7 +13,7 @@
     display: inline-block;
     vertical-align: middle;
 
-    img {
+    .token-logo {
       position: absolute;
       top: 0;
       left: 0;
@@ -30,24 +30,24 @@
    */
 
   // start at these positions
-  .token-a img {
+  .token-a .token-logo {
     margin-left: 0em;
   }
-  .token-b img {
+  .token-b .token-logo {
     margin-left: 1.3em;
   }
   &.token-pair-transition-active {
     // go to these positions
-    &.token-pair-transition-start .token-a img {
+    &.token-pair-transition-start .token-a .token-logo {
       margin-left: 1.3em;
     }
-    &.token-pair-transition-start .token-b img {
+    &.token-pair-transition-start .token-b .token-logo {
       margin-left: 0em;
     }
-    .token-pair-logo img {
+    .token-pair-logo .token-logo {
       transition: margin-left cubic-bezier(0.5, -0.8, 1, 1) 0.8s;
     }
-    &.token-pair-transition-end .token-pair-logo img {
+    &.token-pair-transition-end .token-pair-logo .token-logo {
       transition: margin-left cubic-bezier(0, 0, 0.5, 1.8) 0.8s;
     }
   }
