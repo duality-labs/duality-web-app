@@ -128,6 +128,7 @@ export default function TokenInputGroup({
         </span>
       )}
       <TokenPicker
+        className="gutter-l-3"
         value={token}
         onChange={onPickerChange}
         tokenList={tokenList}
