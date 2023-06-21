@@ -174,6 +174,12 @@ export function useUserPositionsTotalReserves(
 ) {
   const lcdClientPromise = useLcdClientPromise();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
+  // to work correctly for multiple token pairs this needs to use useQueries
+  // and fetch the tick length list for each token pair before making a decision
+  // on whether to fetch the reserve context from the tick liquidity / pool reserves list or
+  // from the pool reserves paths available
+  // const { data: [token0TickListLength, token1TickListLength] } = useTokenPairTickLiquidityLength([]);
+  // console.log('token TickListLengths', [token0TickListLength, token1TickListLength])
 
   const memoizedData = useRef<QueryGetPoolReservesResponseSDKType[]>([]);
   const { data } = useQueries({

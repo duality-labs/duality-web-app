@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { SWRConfiguration, SWRResponse } from 'swr';
+import Long from 'long';
 import useSWRInfinite from 'swr/infinite';
 
 import {
@@ -24,7 +25,7 @@ type QueryAllTickLiquidityState = {
   error: SWRResponse['error'];
 };
 
-export default function useTickLiquidity({
+function useTickLiquidityPages({
   swr: swrConfig,
   query: queryConfig,
   queryClient: queryClientConfig,
@@ -32,7 +33,7 @@ export default function useTickLiquidity({
   swr?: SWRConfiguration;
   query: QueryAllTickLiquidityRequest | null;
   queryClient?: string;
-}): QueryAllTickLiquidityState {
+}): SWRResponse<QueryAllTickLiquidityResponseSDKType[]> {
   if (queryConfig && !queryConfig?.pairID) {
     throw new Error('Cannot fetch liquidity: no pair ID given');
   }
@@ -61,6 +62,8 @@ export default function useTickLiquidity({
     isValidating,
     error,
     setSize,
+    mutate,
+    isLoading,
   } = useSWRInfinite<QueryAllTickLiquidityResponseSDKType>(
     !params
       ? () => ''
@@ -90,6 +93,29 @@ export default function useTickLiquidity({
       setSize(pageCount);
     }
   }, [pages, setSize]);
+
+  return { data: pages, isValidating, error, mutate, isLoading };
+}
+
+function useTickLiquidity({
+  swr: swrConfig,
+  query: queryConfig,
+  queryClient: queryClientConfig,
+}: {
+  swr?: SWRConfiguration;
+  query: QueryAllTickLiquidityRequest | null;
+  queryClient?: string;
+}): QueryAllTickLiquidityState {
+  // get pages
+  const {
+    data: pages,
+    isValidating,
+    error,
+  } = useTickLiquidityPages({
+    swr: swrConfig,
+    query: queryConfig,
+    queryClient: queryClientConfig,
+  });
 
   // place pages of data into the same list
   const tradingPairs = useMemo(() => {
@@ -173,6 +199,41 @@ export function useTokenPairTickLiquidity([tokenA, tokenB]: [
   });
   return {
     data: [token0TicksState.data, token1TicksState.data],
+    isValidating:
+      token0TicksState.isValidating && token1TicksState.isValidating,
+    error: token0TicksState.error || token1TicksState.error,
+  };
+}
+
+// add convenience method to fetch number of ticks in a pair
+export function useTokenPairTickLiquidityLength([tokenA, tokenB]: [
+  TokenAddress?,
+  TokenAddress?
+]): {
+  data: [number | undefined, number | undefined];
+  isValidating: boolean;
+  error: unknown;
+} {
+  const [token0, token1] = useOrderedTokenPair([tokenA, tokenB]) || [];
+  const pairID = token0 && token1 ? getPairID(token0, token1) : null;
+  const token0TicksState = useTickLiquidityPages({
+    query:
+      pairID && token0
+        ? {
+            pairID,
+            tokenIn: token0,
+            pagination: { countTotal: true, limit: Long.fromNumber(1) },
+          }
+        : null,
+  });
+  const token1TicksState = useTickLiquidityPages({
+    query: pairID && token1 ? { pairID, tokenIn: token1 } : null,
+  });
+  return {
+    data: [
+      token0TicksState.data?.[0]?.pagination?.total.toNumber(),
+      token1TicksState.data?.[0]?.pagination?.total.toNumber(),
+    ],
     isValidating:
       token0TicksState.isValidating && token1TicksState.isValidating,
     error: token0TicksState.error || token1TicksState.error,
