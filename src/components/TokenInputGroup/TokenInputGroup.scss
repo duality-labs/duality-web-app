@@ -16,6 +16,13 @@
     row-gap: 2px;
   }
 
+  &.token-input-group--primary {
+    background-color: var(--primary);
+    input {
+      visibility: hidden;
+    }
+  }
+
   &.token-input-group--error {
     color: var(--error);
     background-color: hsla(0, 73%, 97%, 1);
