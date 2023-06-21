@@ -257,6 +257,7 @@ export default function TokenPicker({
             filteredList.map(({ chain, symbol, token }, index) => {
               return token ? (
                 <TokenPickerItem
+                  key={`${token.base}:${token.chain.chain_name}`}
                   token={token}
                   chain={chain}
                   symbol={symbol}
@@ -336,7 +337,7 @@ function TokenPickerItem({
   }
 
   return (
-    <li key={`${token.base}:${token.chain.chain_name}`}>
+    <li>
       <data value={address}>
         <button
           type="button"
