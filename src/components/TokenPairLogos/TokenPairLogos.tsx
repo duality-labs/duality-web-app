@@ -1,8 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+
 import { Token } from '../../lib/web3/utils/tokens';
-import emptyToken from '../../assets/tokens/_empty.svg';
 
 import './TokenPairLogos.scss';
+
+function TokenImage({
+  className,
+  token,
+}: {
+  className: string;
+  token?: Token;
+}) {
+  return token?.logo_URIs ? (
+    <img
+      className={['token-logo', className].join(' ')}
+      alt={`${token.symbol ?? 'token'} logo`}
+      // in this context (large images) prefer SVGs over PNGs for better images
+      src={token.logo_URIs.svg || token.logo_URIs.png}
+    />
+  ) : (
+    <FontAwesomeIcon
+      icon={faQuestionCircle}
+      className={['token-logo', 'token-image-not-found', className].join(' ')}
+    ></FontAwesomeIcon>
+  );
+}
 
 function TokenLogo({
   className,
@@ -15,20 +39,8 @@ function TokenLogo({
 }) {
   return (
     <div className={`${className} token-pair-logo`}>
-      <img
-        className="token-logo token-current"
-        alt={`${token?.symbol ?? 'token'} logo`}
-        src={token ? token.logo_URIs?.svg ?? token.logo_URIs?.png : emptyToken}
-      />
-      <img
-        className="token-logo token-previous"
-        alt={`${previousToken?.symbol ?? 'token'} logo`}
-        src={
-          previousToken
-            ? previousToken.logo_URIs?.svg ?? previousToken.logo_URIs?.png
-            : emptyToken
-        }
-      />
+      <TokenImage className="token-current" token={token} />
+      <TokenImage className="token-previous" token={previousToken} />
     </div>
   );
 }
