@@ -924,7 +924,12 @@ export default function PoolManagement({
         <div className="card-row my-3">
           <TokenInputGroup
             className="flex"
-            variant={tokenA && !hasSufficientFundsA && 'error'}
+            variant={
+              tokenA
+                ? !hasSufficientFundsA && 'error'
+                : // highlight the empty token group
+                  'primary'
+            }
             onValueChanged={setInputValueA}
             onTokenChanged={setTokenA}
             tokenList={tokenList}
@@ -936,7 +941,12 @@ export default function PoolManagement({
         <div className="card-row my-3">
           <TokenInputGroup
             className="flex"
-            variant={tokenB && !hasSufficientFundsB && 'error'}
+            variant={
+              tokenB
+                ? !hasSufficientFundsB && 'error'
+                : // highlight the empty token group
+                  'primary'
+            }
             onValueChanged={setInputValueB}
             onTokenChanged={setTokenB}
             tokenList={tokenList}
