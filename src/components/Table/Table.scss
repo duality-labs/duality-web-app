@@ -1,8 +1,20 @@
+@use '../../styles/font/weight.scss' as font-weight;
+
 .simple-table {
   table-layout: fixed;
   width: 100%;
   th,
   td {
     text-align: left;
+  }
+}
+
+.hero-table {
+  th {
+    font-weight: font-weight.$regular;
+  }
+  td {
+    font-size: 2rem;
+    font-weight: font-weight.$bold;
   }
 }
