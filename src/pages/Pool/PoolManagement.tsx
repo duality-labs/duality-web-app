@@ -1323,7 +1323,7 @@ export default function PoolManagement({
                 <div className="col">
                   <div className="chart-header row flow-wrap mb-4">
                     <div className="col">
-                      <h3 className="h3">Liquidity Distribution</h3>
+                      <div className="h4">Liquidity Distribution</div>
                     </div>
                     <div className="col flex-centered ml-auto text-muted">
                       <div className="row gap-2">
