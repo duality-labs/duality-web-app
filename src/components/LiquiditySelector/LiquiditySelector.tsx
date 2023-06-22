@@ -797,10 +797,6 @@ export default function LiquiditySelector({
           // warn is no current price is set
           edgePriceIndex === undefined &&
             'Add a starting price to create a new position',
-          // warn if no token values are set
-          isUserTicksAZero &&
-            isUserTicksBZero &&
-            'Add tokens to create a new position',
         ]}
       />
     </svg>
