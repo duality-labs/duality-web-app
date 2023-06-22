@@ -1,4 +1,5 @@
 import { Fragment, ReactNode } from 'react';
+import './Table.scss';
 
 export default function Table<DataRow>({
   data = [],
