@@ -88,22 +88,19 @@ function ShareValuesPage() {
         <table className="hero-table simple-table gutter-b-1">
           <thead>
             <tr>
-              <th style={{ width: '40%' }}>Total Assets</th>
-              <th style={{ width: '30%' }}>Position Value</th>
-              <th style={{ width: '30%' }}>Earned Incentives</th>
+              <th style={{ width: '35%' }}>Total Assets</th>
+              <th style={{ width: '35%' }}>Position Value</th>
+              <th style={{ width: '25%' }}>Earned Incentives</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td>
                 $
-                {allUserSharesValue
-                  .plus(allUserBankValue)
-                  .toNumber()
-                  .toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                {allUserBankValue.toNumber().toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </td>
               <td>
                 $
@@ -112,13 +109,7 @@ function ShareValuesPage() {
                   maximumFractionDigits: 2,
                 })}
               </td>
-              <td>
-                $
-                {allUserBankValue.toNumber().toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </td>
+              <td>$0</td>
             </tr>
           </tbody>
         </table>
