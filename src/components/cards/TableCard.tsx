@@ -19,7 +19,7 @@ export default function TableCard<T extends string | number>({
   children,
 }: {
   className?: string;
-  title: ReactNode;
+  title?: ReactNode;
   searchDisabled?: boolean;
   scrolling?: boolean;
   headerActions?: ReactNode;
@@ -38,23 +38,25 @@ export default function TableCard<T extends string | number>({
         .join(' ')}
     >
       <div className="col flex">
-        <div className="table-card__header row flex-centered gap-3">
-          <div className="col flex">
-            <div className="table-card__hero-title h4">{title}</div>
-          </div>
-          {switchOnChange && switchValues && switchValue && (
-            <div className="col">
-              <div className="table-card__asset-toggle">
-                <RadioButtonGroupInput<T>
-                  values={switchValues}
-                  value={switchValue}
-                  onChange={switchOnChange}
-                />
-              </div>
+        {title && (
+          <div className="table-card__header row flex-centered gap-3">
+            <div className="col flex">
+              <div className="table-card__hero-title h4">{title}</div>
             </div>
-          )}
-          {headerActions}
-        </div>
+            {switchOnChange && switchValues && switchValue && (
+              <div className="col">
+                <div className="table-card__asset-toggle">
+                  <RadioButtonGroupInput<T>
+                    values={switchValues}
+                    value={switchValue}
+                    onChange={switchOnChange}
+                  />
+                </div>
+              </div>
+            )}
+            {headerActions}
+          </div>
+        )}
         {setSearchValue && (
           <div className="table-card__search row mt-lg mb-4">
             <div className="col flex">
