@@ -38,7 +38,7 @@ export default function TableCard<T extends string | number>({
       <div className="col flex">
         <div className="table-card__header row flex-centered gap-3">
           <div className="col flex">
-            <h2 className="table-card__hero-title">{title}</h2>
+            <div className="table-card__hero-title h4">{title}</div>
           </div>
           {switchOnChange && switchValues && switchValue && (
             <div className="col">
