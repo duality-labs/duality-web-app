@@ -31,26 +31,7 @@ type TokenCoin = CoinSDKType & {
 };
 
 export default function MyLiquidity() {
-  const { wallet } = useWeb3();
-
-  // show connect page
-  if (!wallet) {
-    return (
-      <div className="no-liquidity col">
-        <h3 className="h2 mb-4 text-center"> No liquidity positions found</h3>
-        <Link to="/liquidity">
-          <button className="button button-info add-liquidity p-3 px-4">
-            Add new liquidity
-          </button>
-        </Link>
-      </div>
-    );
-  }
-
-  return <ShareValuesPage />;
-}
-
-function ShareValuesPage() {
+  const { wallet, connectWallet } = useWeb3();
   const { data: balances } = useBankBalances();
   const tokenList = useTokens();
 
@@ -83,7 +64,21 @@ function ShareValuesPage() {
   // show loken list cards
   return (
     <div className="my-liquidity-page container col flex gap-5 py-6">
-      <h1 className="h1 hero-text">Portfolio</h1>
+      <div className="row gap-5">
+        <div className="col">
+          <h1 className="h1 hero-text">Portfolio</h1>
+        </div>
+        {!wallet && (
+          <div className="col flex-centered mt-2 pt-1">
+            <button
+              className="connect-wallet button-primary p-3 px-4"
+              onClick={connectWallet}
+            >
+              Connect Wallet
+            </button>
+          </div>
+        )}
+      </div>
       <div className="page-card">
         <table className="hero-table simple-table gutter-b-1">
           <thead>
@@ -96,20 +91,22 @@ function ShareValuesPage() {
           <tbody>
             <tr>
               <td>
-                $
-                {allUserBankValue.toNumber().toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                {wallet
+                  ? `$${allUserBankValue.toNumber().toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
+                  : '-'}
               </td>
               <td>
-                $
-                {allUserSharesValue.toNumber().toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                {wallet
+                  ? `$${allUserSharesValue.toNumber().toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
+                  : '-'}
               </td>
-              <td>$0</td>
+              <td>{wallet ? '$0' : '-'}</td>
             </tr>
           </tbody>
         </table>

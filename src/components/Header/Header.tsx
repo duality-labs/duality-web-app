@@ -16,6 +16,7 @@ const keplrLogoURI =
 const pageLinkMap = {
   '/swap': 'Swap',
   '/pools': 'Pools',
+  '/portfolio': 'Portfolio',
 };
 
 export default function Header() {
@@ -79,7 +80,11 @@ export default function Header() {
       <div className="container py-5">
         <nav className="row gap-4">
           <div className="col">
-            <NavLink className="logo" to="/" onClick={closeMenuAndScrollToTop}>
+            <NavLink
+              className="logo"
+              to="/swap"
+              onClick={closeMenuAndScrollToTop}
+            >
               <h1 className="font-brand">
                 <img
                   src={logoWithText}
