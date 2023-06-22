@@ -82,37 +82,46 @@ function ShareValuesPage() {
 
   // show loken list cards
   return (
-    <div className="my-liquidity-page container col flex gap-6 py-6">
-      <div className="home-hero-section row gapx-4 gapy-5 flow-wrap">
-        <div className="hero-card ml-auto grid gapx-5 gapy-3 p-4">
-          <h2 className="hero-card__hero-title">Portfolio Value</h2>
-          <h3 className="hero-card__hero-title">My Liquidity</h3>
-          <h3 className="hero-card__hero-title">Available Tokens</h3>
-          <div className="hero-card__hero-value">
-            $
-            {allUserSharesValue
-              .plus(allUserBankValue)
-              .toNumber()
-              .toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-          </div>
-          <div className="hero-card__hero-value">
-            $
-            {allUserSharesValue.toNumber().toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </div>
-          <div className="hero-card__hero-value">
-            $
-            {allUserBankValue.toNumber().toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </div>
-        </div>
+    <div className="my-liquidity-page container col flex gap-5 py-6">
+      <h1 className="h1 hero-text">Portfolio</h1>
+      <div className="page-card">
+        <table className="hero-table simple-table gutter-b-1">
+          <thead>
+            <tr>
+              <th style={{ width: '40%' }}>Total Assets</th>
+              <th style={{ width: '30%' }}>Position Value</th>
+              <th style={{ width: '30%' }}>Earned Incentives</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                $
+                {allUserSharesValue
+                  .plus(allUserBankValue)
+                  .toNumber()
+                  .toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+              </td>
+              <td>
+                $
+                {allUserSharesValue.toNumber().toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </td>
+              <td>
+                $
+                {allUserBankValue.toNumber().toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
       <div className="row flex gapx-4 gapy-5 flow-wrap">
         <div className="col flex">
