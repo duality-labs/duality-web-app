@@ -1,6 +1,7 @@
 $regular: 400;
 $medium: 500;
 $bold: 600;
+$heavy: 700;
 
 .text-regular {
   font-weight: $regular !important;
@@ -12,4 +13,8 @@ $bold: 600;
 
 .text-bold {
   font-weight: $bold !important;
+}
+
+.text-heavy {
+  font-weight: $heavy !important;
 }
