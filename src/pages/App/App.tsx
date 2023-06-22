@@ -17,15 +17,14 @@ import MyLiquidity from '../MyLiquidity';
 // you would think the import order here doesn't matter, but you would be wrong
 // Trade must be imported after Pool so that .table-card styles
 // aren't overridden by page-card styles :(
-import Trade from '../Trade';
 
 import './App.scss';
 
 const queryClient = new QueryClient();
 
-function MyLiquidityOrTrade() {
+function MyLiquidityOrSwap() {
   const { address } = useWeb3();
-  return address ? <MyLiquidity /> : <Navigate to="/trade" />;
+  return address ? <MyLiquidity /> : <Navigate to="/swap" />;
 }
 
 function App() {
@@ -40,9 +39,8 @@ function App() {
               <Planets />
               <main>
                 <Routes>
-                  <Route index element={<MyLiquidityOrTrade />} />
+                  <Route index element={<MyLiquidityOrSwap />} />
                   <Route path="swap" element={<Swap />} />
-                  <Route path="trade" element={<Trade />} />
                   <Route path="pools/*" element={<Pool />} />
                   <Route path="stake" element={<div>Coming soon</div>} />
                   <Route path="*" element={<div>Not found</div>} />
