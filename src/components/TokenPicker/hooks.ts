@@ -2,7 +2,15 @@ import { useMemo } from 'react';
 import { Chain } from '@chain-registry/types';
 import { Token } from '../../lib/web3/utils/tokens';
 
-export function useFilteredTokenList(list: Token[], searchQuery: string) {
+export interface FilteredTokenContext {
+  chain: string[];
+  symbol: string[];
+  token: Token;
+}
+export function useFilteredTokenList(
+  list: Token[],
+  searchQuery: string
+): FilteredTokenContext[] {
   // update the filtered list whenever the query or the list changes
   return useMemo(
     function () {
