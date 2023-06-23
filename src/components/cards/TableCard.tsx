@@ -8,6 +8,7 @@ import './TableCard.scss';
 export interface TableCardProps<T extends string | number> {
   className?: string;
   title?: ReactNode;
+  searchDisabled?: boolean;
   scrolling?: boolean;
   headerActions?: ReactNode;
   switchValues?: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
@@ -20,6 +21,7 @@ export interface TableCardProps<T extends string | number> {
 export default function TableCard<T extends string | number>({
   className,
   title,
+  searchDisabled = false,
   scrolling = true,
   headerActions,
   switchValues,
@@ -62,6 +64,7 @@ export default function TableCard<T extends string | number>({
               <SearchInput
                 placeholder="Search token name or paste address"
                 value={searchValue}
+                disabled={searchDisabled}
                 onInput={setSearchValue}
               />
             </div>
