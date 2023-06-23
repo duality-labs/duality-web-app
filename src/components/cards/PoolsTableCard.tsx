@@ -35,7 +35,7 @@ interface PoolsTableCardOptions {
 
 export default function PoolsTableCard<T extends string | number>({
   className,
-  title = 'All Pairs',
+  title = 'All Pools',
   onTokenPairClick,
   ...tableCardProps
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
@@ -87,7 +87,7 @@ export default function PoolsTableCard<T extends string | number>({
         <table>
           <thead>
             <tr>
-              <th>Pair</th>
+              <th>Pool</th>
               <th>TVL</th>
               <th>Volume (7 days)</th>
               <th>Volatility (7 days)</th>
@@ -204,7 +204,7 @@ function PairRow({
 
 export function MyPoolsTableCard<T extends string | number>({
   className,
-  title = 'My Pairs',
+  title = 'My Pools',
   onTokenPairClick,
   ...tableCardProps
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
@@ -278,7 +278,7 @@ export function MyPoolsTableCard<T extends string | number>({
           <table>
             <thead>
               <tr>
-                <th>Pair</th>
+                <th>Pool</th>
                 <th>Value</th>
                 <th>Composition</th>
                 <th>Withdraw</th>
