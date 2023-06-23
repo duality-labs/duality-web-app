@@ -19,10 +19,14 @@ type TokenCoin = CoinSDKType & {
   token: Token;
   value: BigNumber | undefined;
 };
+interface AssetsTableCardOptions {
+  tokenList?: Token[];
+}
 
-export default function AssetsTableCard(
-  tableCardProps: Partial<TableCardProps<string>>
-) {
+export default function AssetsTableCard({
+  tokenList: givenTokenList,
+  ...tableCardProps
+}: AssetsTableCardOptions & Partial<TableCardProps<string>>) {
   const tokenList = useTokens();
   const allUserBankAssets = useUserBankValues();
 
@@ -42,8 +46,8 @@ export default function AssetsTableCard(
 
   // sort tokens
   const sortedList = useMemo(() => {
-    return [...tokenList].sort(sortByValue);
-  }, [tokenList, sortByValue]);
+    return (givenTokenList || [...tokenList]).sort(sortByValue);
+  }, [tokenList, givenTokenList, sortByValue]);
 
   const [searchValue, setSearchValue] = useState<string>('');
 
