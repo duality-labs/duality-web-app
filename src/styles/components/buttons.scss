@@ -41,6 +41,9 @@ button,
 .button-primary-outline {
   border: 1px solid #4eb1e8;
 }
+.button-outline {
+  border: 1px solid #ffffffcc;
+}
 
 .text-button {
   @extend .button;

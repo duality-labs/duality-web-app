@@ -4,7 +4,7 @@
     th,
     td {
       text-align: left;
-      width: 50%;
+      width: 60%;
       min-width: 7em;
     }
     // style second and third columns
@@ -12,13 +12,13 @@
     td + td {
       min-width: auto;
       text-align: right;
-      width: 30%;
+      width: 10%;
     }
     th + th + th,
     td + td + td {
       text-align: right;
-      width: 20%;
-      min-width: 5em;
+      width: 30%;
+      min-width: 10em;
     }
   }
 }
