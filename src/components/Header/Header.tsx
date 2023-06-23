@@ -16,7 +16,8 @@ const keplrLogoURI =
 const pageLinkMap = {
   '/swap': 'Swap',
   '/pools': 'Pool',
-  '/portfolio': 'Portfolio'
+  '/portfolio': 'Portfolio',
+  '/bridge': 'Bridge',
 };
 
 export default function Header() {
