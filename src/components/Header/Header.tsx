@@ -141,7 +141,7 @@ export default function Header() {
               </div>
               <div className="col ml-auto">
                 {address ? (
-                  <Link to="/" className="button user-profile">
+                  <Link to="/portfolio" className="button user-profile">
                     <img src={keplrLogoURI} className="logo mr-3" alt="logo" />
                     <div className="text-truncate">{address}</div>
                   </Link>
