@@ -277,61 +277,53 @@ export function MyPoolsTableCard<T extends string | number>({
       setSearchValue={setSearchValue}
       {...tableCardProps}
     >
-      {myPoolsList.length > 0 ? (
-        filteredPoolsList.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Pair</th>
-                <th>Value</th>
-                <th>Composition</th>
-                <th>Withdraw</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPoolsList.map(
-                ([pairId, token0, token1, userPositions]) => {
-                  const onRowClick:
-                    | MouseEventHandler<HTMLButtonElement>
-                    | undefined = onTokenPairClick
-                    ? () => onTokenPairClick([token0, token1])
-                    : undefined;
-                  return (
-                    // show user's positions
-                    <PositionRow
-                      key={pairId}
-                      token0={token0}
-                      token1={token1}
-                      userPositions={userPositions}
-                      onClick={onRowClick}
-                    />
-                  );
-                }
-              )}
-            </tbody>
-          </table>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Pool</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td align="center">
-                  No {!!searchValue ? 'Matching' : ''} Pools Found
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        )
+      {filteredPoolsList.length > 0 ? (
+        <table>
+          <thead>
+            <tr>
+              <th>Pair</th>
+              <th>Value</th>
+              <th>Composition</th>
+              <th>Withdraw</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredPoolsList.map(
+              ([pairId, token0, token1, userPositions]) => {
+                const onRowClick:
+                  | MouseEventHandler<HTMLButtonElement>
+                  | undefined = onTokenPairClick
+                  ? () => onTokenPairClick([token0, token1])
+                  : undefined;
+                return (
+                  // show user's positions
+                  <PositionRow
+                    key={pairId}
+                    token0={token0}
+                    token1={token1}
+                    userPositions={userPositions}
+                    onClick={onRowClick}
+                  />
+                );
+              }
+            )}
+          </tbody>
+        </table>
       ) : (
-        <Link to="/liquidity" className="m-auto">
-          <button className="button-primary text-medium px-4 py-4 mb-lg">
-            Add Liquidity
-          </button>
-        </Link>
+        <table>
+          <thead>
+            <tr>
+              <th>Pool</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td align="center">
+                No {!!searchValue ? 'Matching' : ''} Pools Found
+              </td>
+            </tr>
+          </tbody>
+        </table>
       )}
     </TableCard>
   );

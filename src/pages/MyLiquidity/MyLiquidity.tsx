@@ -89,16 +89,22 @@ function Tables() {
         <AssetsTableCard
           tokenList={userTokenList}
           headerActions={
-            <Link to="/bridge">
-              <button className="button button-primary p-3 px-4">
-                Bridge Assets
-              </button>
+            <Link to="/bridge" className="button button-primary p-3 px-4">
+              Bridge Assets
             </Link>
           }
         />
       </div>
       <div className="col flex">
-        <MyPoolsTableCard className="flex" title="My Pools" />
+        <MyPoolsTableCard
+          className="flex"
+          title="My Pools"
+          headerActions={
+            <Link to="/pools" className="button button-primary p-3 px-4">
+              Add Liquidity
+            </Link>
+          }
+        />
       </div>
     </div>
   );
