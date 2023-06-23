@@ -240,7 +240,7 @@ function Incentives() {
   }, [tokenA, tokenB]);
 
   return (
-    <TableCard title="Incentives" className="pb-5" scrolling={false}>
+    <TableCard title="Incentives" className="pb-5 hide" scrolling={false}>
       <Table<Token> data={data} columns={columns} headings={headings} />
     </TableCard>
   );
