@@ -1,4 +1,4 @@
-import PoolsTableCard from '../../components/cards/PoolsTableCard';
+import { MyPoolsTableCard } from '../../components/cards/PoolsTableCard';
 import AssetsTableCard from '../../components/cards/AssetsTableCard';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
@@ -85,7 +85,7 @@ function Tables() {
         <AssetsTableCard />
       </div>
       <div className="col flex">
-        <PoolsTableCard className="flex" title="My Pools" />
+        <MyPoolsTableCard className="flex" title="My Pools" />
       </div>
     </div>
   );
