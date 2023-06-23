@@ -1,8 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
@@ -168,11 +166,11 @@ function AssetRow({
       </td>
       {showActions && (
         <td>
-          <Link to="/">
-            <button className="button text-action-button nowrap">
-              {token.display.toUpperCase()}
-              <FontAwesomeIcon icon={faArrowDown} className="ml-3" />
-            </button>
+          <Link to="" className="button button-primary-outline nowrap mx-0">
+            Deposit
+          </Link>
+          <Link to="" className="button button-outline nowrap mx-0 ml-3">
+            Withdraw
           </Link>
         </td>
       )}
