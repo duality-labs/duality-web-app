@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
-import TableCard from './TableCard';
+import TableCard, { TableCardProps } from './TableCard';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import {
@@ -34,6 +34,25 @@ const switchValues = {
   mine: 'My Positions',
 };
 
+// customize the passed TableCardProps
+interface PoolsTableCardProps
+  extends Partial<
+    Omit<
+      TableCardProps<string>,
+      'switchValues' | 'switchValue' | 'switchOnChange'
+    >
+  > {
+  switchValues?: typeof switchValues;
+  switchValue?: keyof typeof switchValues;
+  switchOnChange?: React.Dispatch<
+    React.SetStateAction<keyof typeof switchValues>
+  >;
+}
+
+interface PoolsTableCardOptions {
+  onTokenPairClick?: (tokens: [token0: Token, token1: Token]) => void;
+}
+
 export default function PoolsTableCard({
   className,
   title = 'All Pools',
@@ -41,15 +60,7 @@ export default function PoolsTableCard({
   switchOnChange: givenSwitchOnChange,
   onTokenPairClick,
   ...props
-}: {
-  className?: string;
-  title?: string;
-  switchValue?: keyof typeof switchValues;
-  switchOnChange?: React.Dispatch<
-    React.SetStateAction<keyof typeof switchValues>
-  >;
-  onTokenPairClick?: (tokens: [token0: Token, token1: Token]) => void;
-}) {
+}: PoolsTableCardProps & PoolsTableCardOptions) {
   const [searchValue, setSearchValue] = useState<string>('');
 
   const tokenList = useTokens();
