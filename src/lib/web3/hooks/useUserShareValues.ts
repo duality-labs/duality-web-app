@@ -66,6 +66,8 @@ export function useUserPositionsShareValues(
       ({ token0Context, token1Context, ...rest }) => {
         return {
           ...rest,
+          token0Context,
+          token1Context,
           token0Value: token0Context && getValueOfContext(token0Context),
           token1Value: token1Context && getValueOfContext(token1Context),
         };

@@ -321,16 +321,32 @@ function PositionRow({
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
         <td>
           <span className="token-compositions">
-            {formatAmount(total0.toFixed())}&nbsp;{token0.symbol}
+            {formatAmount(
+              getAmountInDenom(
+                token0,
+                total0,
+                token0.address,
+                token0.display
+              ) || 0
+            )}
+            &nbsp;{token0.symbol}
             {' / '}
-            {formatAmount(total1.toFixed())}&nbsp;{token1.symbol}
+            {formatAmount(
+              getAmountInDenom(
+                token1,
+                total1,
+                token1.address,
+                token1.display
+              ) || 0
+            )}
+            &nbsp;{token1.symbol}
           </span>
         </td>
         <td>
           <button type="button" onClick={withdraw} className="button nowrap">
             {[
-              value0.isGreaterThan(0) && token0.display.toUpperCase(),
-              value1.isGreaterThan(0) && token1.display.toUpperCase(),
+              total0.isGreaterThan(0) && token0.display.toUpperCase(),
+              total1.isGreaterThan(0) && token1.display.toUpperCase(),
             ]
               .filter(Boolean)
               .join(' / ')}
