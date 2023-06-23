@@ -6,6 +6,7 @@ import { useUserPositionsShareValue } from '../../lib/web3/hooks/useUserShareVal
 import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
 
 import './MyLiquidity.scss';
+import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 
 export default function MyLiquidity() {
   return (
@@ -79,10 +80,11 @@ function HeroCard() {
 }
 
 function Tables() {
+  const userTokenList = useUserTokens();
   return (
     <div className="row flex gapx-4 gapy-5 flow-wrap">
       <div className="col flex">
-        <AssetsTableCard />
+        <AssetsTableCard tokenList={userTokenList} />
       </div>
       <div className="col flex">
         <MyPoolsTableCard className="flex" title="My Pools" />
