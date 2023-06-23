@@ -28,43 +28,21 @@ import {
 
 import './PoolsTableCard.scss';
 
-const switchValues = {
-  all: 'Show All',
-  mine: 'My Positions',
-};
-
-// customize the passed TableCardProps
-interface PoolsTableCardProps
-  extends Partial<
-    Omit<
-      TableCardProps<string>,
-      'switchValues' | 'switchValue' | 'switchOnChange'
-    >
-  > {
-  switchValues?: typeof switchValues;
-  switchValue?: keyof typeof switchValues;
-  switchOnChange?: React.Dispatch<
-    React.SetStateAction<keyof typeof switchValues>
-  >;
-}
-
 interface PoolsTableCardOptions {
   onTokenPairClick?: (tokens: [token0: Token, token1: Token]) => void;
 }
 
-export default function PoolsTableCard({
+export default function PoolsTableCard<T extends string | number>({
   className,
   title = 'All Pools',
-  switchValue: givenSwitchValue = 'mine',
-  switchOnChange: givenSwitchOnChange,
   onTokenPairClick,
-  ...props
-}: PoolsTableCardProps & PoolsTableCardOptions) {
+  ...tableCardProps
+}: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
   const [searchValue, setSearchValue] = useState<string>('');
 
   const tokenList = useTokens();
   const { data: tokenPairs } = useTokenPairs();
-  const allPairsList = useMemo<Array<[string, Token, Token, undefined]>>(() => {
+  const allPairsList = useMemo<Array<[string, Token, Token]>>(() => {
     const tokenListByAddress = tokenList.reduce<{ [address: string]: Token }>(
       (acc, token) => {
         if (token.address) {
@@ -76,74 +54,25 @@ export default function PoolsTableCard({
     );
     return tokenPairs
       ? tokenPairs
-          .map<[string, Token, Token, undefined]>(([token0, token1]) => {
+          .map<[string, Token, Token]>(([token0, token1]) => {
             return [
               getPairID(token0, token1),
               tokenListByAddress[token0],
               tokenListByAddress[token1],
-              undefined,
             ];
           })
           .filter(([, token0, token1]) => token0 && token1)
       : [];
   }, [tokenList, tokenPairs]);
 
-  const userPositionsShareValues = useUserPositionsShareValues();
-
-  const myPoolsList = useMemo<
-    Array<
-      [
-        pairID: string,
-        token0: Token,
-        token1: Token,
-        userPositions: UserPositionDepositContext[] | undefined
-      ]
-    >
-  >(() => {
-    // collect positions into token pair groups
-    const userPositionsShareValueMap = userPositionsShareValues.reduce<{
-      [pairID: string]: {
-        token0: Token;
-        token1: Token;
-        userPositions: UserPositionDepositContext[];
-      };
-    }>((map, userPosition) => {
-      const { token0: token0Address, token1: token1Address } =
-        userPosition.deposit.pairID;
-      const pairID = getPairID(token0Address, token1Address);
-      const token0 = tokenList.find((token) => token.address === token0Address);
-      const token1 = tokenList.find((token) => token.address === token1Address);
-      if (pairID && token0 && token1) {
-        map[pairID] = map[pairID] || { token0, token1, userPositions: [] };
-        map[pairID].userPositions.push(userPosition);
-      }
-      return map;
-    }, {});
-
-    return userPositionsShareValueMap
-      ? Object.entries(userPositionsShareValueMap).map<
-          [string, Token, Token, UserPositionDepositContext[]]
-        >(([pairId, { token0, token1, userPositions }]) => {
-          return [pairId, token0, token1, userPositions];
-        })
-      : [];
-  }, [userPositionsShareValues, tokenList]);
-
-  // enforce switch state and non-interactivity if the user has no pools
-  // fix this with useState, it switches on updates sometimes
-  const switchValue = !myPoolsList.length ? 'all' : givenSwitchValue;
-  const switchOnChange = !myPoolsList.length ? undefined : givenSwitchOnChange;
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
 
-  const filteredPoolsList = useMemo<
-    Array<[string, Token, Token, UserPositionDepositContext[] | undefined]>
-  >(() => {
+  const filteredPoolsList = useMemo<Array<[string, Token, Token]>>(() => {
     const tokenList = filteredPoolTokenList.map(({ token }) => token);
-    const poolList = switchValue === 'mine' ? myPoolsList : allPairsList;
-    return poolList.filter(([, token0, token1]) => {
+    return allPairsList.filter(([, token0, token1]) => {
       return tokenList.includes(token0) || tokenList.includes(token1);
     });
-  }, [switchValue, myPoolsList, allPairsList, filteredPoolTokenList]);
+  }, [allPairsList, filteredPoolTokenList]);
 
   return (
     <TableCard
@@ -151,58 +80,35 @@ export default function PoolsTableCard({
       title={title}
       searchValue={searchValue}
       setSearchValue={setSearchValue}
-      switchValues={switchValues}
-      switchValue={switchValue}
-      switchOnChange={switchOnChange}
-      {...props}
+      {...tableCardProps}
     >
       {filteredPoolsList.length > 0 ? (
         <table>
           <thead>
-            {switchValue === 'mine' ? (
-              <tr>
-                <th>Pool</th>
-                <th>Value</th>
-                <th>Composition</th>
-                <th>Withdraw</th>
-              </tr>
-            ) : (
-              <tr>
-                <th>Pool</th>
-                <th>TVL</th>
-                <th>Volume (7 days)</th>
-                <th>Volatility (7 days)</th>
-              </tr>
-            )}
+            <tr>
+              <th>Pool</th>
+              <th>TVL</th>
+              <th>Volume (7 days)</th>
+              <th>Volatility (7 days)</th>
+            </tr>
           </thead>
           <tbody>
-            {filteredPoolsList.map(
-              ([pairId, token0, token1, userPositions]) => {
-                const onRowClick:
-                  | MouseEventHandler<HTMLButtonElement>
-                  | undefined = onTokenPairClick
-                  ? () => onTokenPairClick([token0, token1])
-                  : undefined;
-                return userPositions ? (
-                  // show user's positions
-                  <PositionRow
-                    key={pairId}
-                    token0={token0}
-                    token1={token1}
-                    userPositions={userPositions}
-                    onClick={onRowClick}
-                  />
-                ) : (
-                  // show general pair data
-                  <PairRow
-                    key={pairId}
-                    token0={token0}
-                    token1={token1}
-                    onClick={onRowClick}
-                  />
-                );
-              }
-            )}
+            {filteredPoolsList.map(([pairId, token0, token1]) => {
+              const onRowClick:
+                | MouseEventHandler<HTMLButtonElement>
+                | undefined = onTokenPairClick
+                ? () => onTokenPairClick([token0, token1])
+                : undefined;
+              return (
+                // show general pair data
+                <PairRow
+                  key={pairId}
+                  token0={token0}
+                  token1={token1}
+                  onClick={onRowClick}
+                />
+              );
+            })}
           </tbody>
         </table>
       ) : (
@@ -292,6 +198,128 @@ function PairRow({
     <tr>
       <td colSpan={100}>Fetching price data ...</td>
     </tr>
+  );
+}
+
+export function MyPoolsTableCard<T extends string | number>({
+  className,
+  title = 'My Pools',
+  onTokenPairClick,
+  ...tableCardProps
+}: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
+  const [searchValue, setSearchValue] = useState<string>('');
+
+  const tokenList = useTokens();
+
+  const userPositionsShareValues = useUserPositionsShareValues();
+
+  const myPoolsList = useMemo<
+    Array<
+      [
+        pairID: string,
+        token0: Token,
+        token1: Token,
+        userPositions: UserPositionDepositContext[]
+      ]
+    >
+  >(() => {
+    // collect positions into token pair groups
+    const userPositionsShareValueMap = userPositionsShareValues.reduce<{
+      [pairID: string]: {
+        token0: Token;
+        token1: Token;
+        userPositions: UserPositionDepositContext[];
+      };
+    }>((map, userPosition) => {
+      const { token0: token0Address, token1: token1Address } =
+        userPosition.deposit.pairID;
+      const pairID = getPairID(token0Address, token1Address);
+      const token0 = tokenList.find((token) => token.address === token0Address);
+      const token1 = tokenList.find((token) => token.address === token1Address);
+      if (pairID && token0 && token1) {
+        map[pairID] = map[pairID] || { token0, token1, userPositions: [] };
+        map[pairID].userPositions.push(userPosition);
+      }
+      return map;
+    }, {});
+
+    return userPositionsShareValueMap
+      ? Object.entries(userPositionsShareValueMap).map<
+          [string, Token, Token, UserPositionDepositContext[]]
+        >(([pairId, { token0, token1, userPositions }]) => {
+          return [pairId, token0, token1, userPositions];
+        })
+      : [];
+  }, [userPositionsShareValues, tokenList]);
+
+  const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
+
+  const filteredPoolsList = useMemo<
+    Array<[string, Token, Token, UserPositionDepositContext[]]>
+  >(() => {
+    const tokenList = filteredPoolTokenList.map(({ token }) => token);
+    return myPoolsList.filter(([, token0, token1]) => {
+      return tokenList.includes(token0) || tokenList.includes(token1);
+    });
+  }, [myPoolsList, filteredPoolTokenList]);
+
+  return (
+    <TableCard
+      className={['pool-list-card', className].filter(Boolean).join(' ')}
+      title={title}
+      searchValue={searchValue}
+      setSearchValue={setSearchValue}
+      {...tableCardProps}
+    >
+      {filteredPoolsList.length > 0 ? (
+        <table>
+          <thead>
+            <tr>
+              <th>Pair</th>
+              <th>Value</th>
+              <th>Composition</th>
+              <th>Withdraw</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredPoolsList.map(
+              ([pairId, token0, token1, userPositions]) => {
+                const onRowClick:
+                  | MouseEventHandler<HTMLButtonElement>
+                  | undefined = onTokenPairClick
+                  ? () => onTokenPairClick([token0, token1])
+                  : undefined;
+                return (
+                  // show user's positions
+                  <PositionRow
+                    key={pairId}
+                    token0={token0}
+                    token1={token1}
+                    userPositions={userPositions}
+                    onClick={onRowClick}
+                  />
+                );
+              }
+            )}
+          </tbody>
+        </table>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Pool</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td align="center">
+                No {!!searchValue ? 'Matching' : ''} Pools Found
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      )}
+    </TableCard>
   );
 }
 
