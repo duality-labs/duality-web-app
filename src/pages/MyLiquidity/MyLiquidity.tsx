@@ -8,6 +8,7 @@ import { useUserPositionsShareValue } from '../../lib/web3/hooks/useUserShareVal
 import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
 
 import './MyLiquidity.scss';
+import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 
 export default function MyLiquidity() {
   return (
@@ -81,10 +82,13 @@ function HeroCard() {
 }
 
 function Tables() {
+  const userTokenList = useUserTokens();
   return (
     <div className="row flex gapx-4 gapy-5 flow-wrap">
       <div className="col flex">
         <AssetsTableCard
+          searchDisabled={!userTokenList.length}
+          tokenList={userTokenList}
           headerActions={
             <Link to="/bridge">
               <button className="button button-primary p-3 px-4">
