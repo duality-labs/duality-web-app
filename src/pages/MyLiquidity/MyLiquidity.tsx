@@ -152,6 +152,13 @@ function Tables() {
             switchValue={subPage}
             switchValues={subPages}
             switchOnChange={setSubPage}
+            headerActions={
+              <Link to="/bridge">
+                <button className="button button-primary p-3 px-4">
+                  Bridge Assets
+                </button>
+              </Link>
+            }
           />
         )}
         {subPage === 'pools' &&

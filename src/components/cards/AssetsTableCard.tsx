@@ -1,5 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
@@ -18,9 +21,11 @@ type TokenCoin = CoinSDKType & {
 };
 interface AssetsTableCardOptions {
   tokenList?: Token[];
+  showActions?: boolean;
 }
 
 export default function AssetsTableCard({
+  showActions,
   tokenList: givenTokenList,
   ...tableCardProps
 }: AssetsTableCardOptions & Partial<TableCardProps<string>>) {
@@ -71,6 +76,7 @@ export default function AssetsTableCard({
           <tr>
             <th>Token + Chain</th>
             <th>Balance</th>
+            {showActions && <th>Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -86,6 +92,7 @@ export default function AssetsTableCard({
                   token={token}
                   amount={foundUserAsset.amount}
                   value={foundUserAsset.value}
+                  showActions={showActions}
                 />
               ) : (
                 <AssetRow
@@ -94,6 +101,7 @@ export default function AssetsTableCard({
                   denom={''}
                   amount="0"
                   value={new BigNumber(0)}
+                  showActions={showActions}
                 />
               );
             })
@@ -110,7 +118,12 @@ export default function AssetsTableCard({
   );
 }
 
-function AssetRow({ token, amount, value }: TokenCoin) {
+function AssetRow({
+  token,
+  amount,
+  value,
+  showActions,
+}: TokenCoin & AssetsTableCardOptions) {
   return (
     <tr>
       <td>
@@ -153,6 +166,16 @@ function AssetRow({ token, amount, value }: TokenCoin) {
           })}`}
         </div>
       </td>
+      {showActions && (
+        <td>
+          <Link to="/">
+            <button className="button text-action-button nowrap">
+              {token.display.toUpperCase()}
+              <FontAwesomeIcon icon={faArrowDown} className="ml-3" />
+            </button>
+          </Link>
+        </td>
+      )}
     </tr>
   );
 }

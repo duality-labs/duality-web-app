@@ -17,6 +17,7 @@ const pageLinkMap = {
   '/swap': 'Swap',
   '/pools': 'Pools',
   '/portfolio': 'Portfolio',
+  '/bridge': 'Bridge',
 };
 
 export default function Header() {
