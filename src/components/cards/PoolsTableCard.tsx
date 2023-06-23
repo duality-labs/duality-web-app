@@ -36,7 +36,7 @@ const switchValues = {
 
 export default function PoolsTableCard({
   className,
-  title = 'All Pairs',
+  title = 'All Pools',
   switchValue: givenSwitchValue = 'mine',
   switchOnChange: givenSwitchOnChange,
   onTokenPairClick,
@@ -152,14 +152,14 @@ export default function PoolsTableCard({
             <thead>
               {switchValue === 'mine' ? (
                 <tr>
-                  <th>Pair</th>
+                  <th>Pool</th>
                   <th>Value</th>
                   <th>Composition</th>
                   <th>Withdraw</th>
                 </tr>
               ) : (
                 <tr>
-                  <th>Pair</th>
+                  <th>Pool</th>
                   <th>TVL</th>
                   <th>Volume (7 days)</th>
                   <th>Volatility (7 days)</th>
