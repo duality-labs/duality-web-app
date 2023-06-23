@@ -5,6 +5,19 @@ import SearchInput from '../inputs/SearchInput/SearchInput';
 
 import './TableCard.scss';
 
+export interface TableCardProps<T extends string | number> {
+  className?: string;
+  title?: ReactNode;
+  searchDisabled?: boolean;
+  scrolling?: boolean;
+  headerActions?: ReactNode;
+  switchValues?: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
+  switchValue?: T;
+  switchOnChange?: React.Dispatch<React.SetStateAction<T>>;
+  searchValue?: string;
+  setSearchValue?: React.Dispatch<React.SetStateAction<string>>;
+  children: ReactNode;
+}
 export default function TableCard<T extends string | number>({
   className,
   title,
@@ -17,19 +30,7 @@ export default function TableCard<T extends string | number>({
   searchValue = '',
   setSearchValue,
   children,
-}: {
-  className?: string;
-  title?: ReactNode;
-  searchDisabled?: boolean;
-  scrolling?: boolean;
-  headerActions?: ReactNode;
-  switchValues?: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
-  switchValue?: T;
-  switchOnChange?: React.Dispatch<React.SetStateAction<T>>;
-  searchValue?: string;
-  setSearchValue?: React.Dispatch<React.SetStateAction<string>>;
-  children: ReactNode;
-}) {
+}: TableCardProps<T>) {
   // show loken list cards
   return (
     <div
