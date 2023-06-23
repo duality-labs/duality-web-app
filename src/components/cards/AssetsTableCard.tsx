@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
@@ -7,7 +7,6 @@ import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v
 
 import TableCard from '../../components/cards/TableCard';
 import useTokens from '../../lib/web3/hooks/useTokens';
-import { useBankBalances } from '../../lib/web3/indexerProvider';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 
@@ -22,31 +21,32 @@ type TokenCoin = CoinSDKType & {
 };
 
 export default function AssetsTableCard() {
-  const { data: balances } = useBankBalances();
   const tokenList = useTokens();
   const allUserBankAssets = useUserBankValues();
 
-  const [selectedAssetList, setSelectedAssetList] = useState<
-    'my-assets' | 'all-assets'
-  >('my-assets');
+  // define sorting rows by token value
+  const sortByValue = useCallback(
+    (a: Token, b: Token) => {
+      return getTokenValue(b).minus(getTokenValue(a)).toNumber();
+      function getTokenValue(token: Token) {
+        const foundUserAsset = allUserBankAssets.find((userToken) => {
+          return userToken.token === token;
+        });
+        return foundUserAsset?.value || new BigNumber(0);
+      }
+    },
+    [allUserBankAssets]
+  );
+
+  // sort tokens
+  const sortedList = useMemo(() => {
+    return [...tokenList].sort(sortByValue);
+  }, [tokenList, sortByValue]);
 
   const [searchValue, setSearchValue] = useState<string>('');
 
-  const userList = useMemo(() => {
-    return balances
-      ? tokenList.filter((token) =>
-          balances.find((balance) =>
-            token.denom_units.find((token) => token.denom === balance.denom)
-          )
-        )
-      : [];
-  }, [tokenList, balances]);
-
   // update the filtered list whenever the query or the list changes
-  const filteredList = useFilteredTokenList(
-    selectedAssetList === 'my-assets' ? userList : tokenList,
-    searchValue
-  );
+  const filteredList = useFilteredTokenList(sortedList, searchValue);
 
   return (
     <TableCard
@@ -59,8 +59,6 @@ export default function AssetsTableCard() {
         }),
         []
       )}
-      switchValue={selectedAssetList}
-      switchOnChange={setSelectedAssetList}
       searchValue={searchValue}
       setSearchValue={setSearchValue}
     >
