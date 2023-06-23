@@ -213,11 +213,25 @@ export default function PoolsTableCard({
           </table>
         )
       ) : (
-        <Link to="/liquidity" className="m-auto">
-          <button className="button-primary text-medium px-4 py-4 mb-lg">
-            Add Liquidity
-          </button>
-        </Link>
+        <table>
+          <thead>
+            <tr>
+              <th>Pool</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="text-center p-5" style={{ textAlign: 'center' }}>
+                <Link
+                  to="/pools"
+                  className="button button-primary text-medium px-4 py-4 m-lg"
+                >
+                  Add Liquidity
+                </Link>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       )}
     </TableCard>
   );
