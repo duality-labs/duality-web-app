@@ -1,5 +1,4 @@
 import { MouseEventHandler, useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -146,72 +145,55 @@ export default function PoolsTableCard({
       switchOnChange={switchOnChange}
       {...props}
     >
-      {switchValue === 'all' || myPoolsList.length > 0 ? (
-        filteredPoolsList.length > 0 ? (
-          <table>
-            <thead>
-              {switchValue === 'mine' ? (
-                <tr>
-                  <th>Pool</th>
-                  <th>Value</th>
-                  <th>Composition</th>
-                  <th>Withdraw</th>
-                </tr>
-              ) : (
-                <tr>
-                  <th>Pool</th>
-                  <th>TVL</th>
-                  <th>Volume (7 days)</th>
-                  <th>Volatility (7 days)</th>
-                </tr>
-              )}
-            </thead>
-            <tbody>
-              {filteredPoolsList.map(
-                ([pairId, token0, token1, userPositions]) => {
-                  const onRowClick:
-                    | MouseEventHandler<HTMLButtonElement>
-                    | undefined = onTokenPairClick
-                    ? () => onTokenPairClick([token0, token1])
-                    : undefined;
-                  return userPositions ? (
-                    // show user's positions
-                    <PositionRow
-                      key={pairId}
-                      token0={token0}
-                      token1={token1}
-                      userPositions={userPositions}
-                      onClick={onRowClick}
-                    />
-                  ) : (
-                    // show general pair data
-                    <PairRow
-                      key={pairId}
-                      token0={token0}
-                      token1={token1}
-                      onClick={onRowClick}
-                    />
-                  );
-                }
-              )}
-            </tbody>
-          </table>
-        ) : (
-          <table>
-            <thead>
+      {filteredPoolsList.length > 0 ? (
+        <table>
+          <thead>
+            {switchValue === 'mine' ? (
               <tr>
                 <th>Pool</th>
+                <th>Value</th>
+                <th>Composition</th>
+                <th>Withdraw</th>
               </tr>
-            </thead>
-            <tbody>
+            ) : (
               <tr>
-                <td align="center">
-                  No {!!searchValue ? 'Matching' : ''} Pools Found
-                </td>
+                <th>Pool</th>
+                <th>TVL</th>
+                <th>Volume (7 days)</th>
+                <th>Volatility (7 days)</th>
               </tr>
-            </tbody>
-          </table>
-        )
+            )}
+          </thead>
+          <tbody>
+            {filteredPoolsList.map(
+              ([pairId, token0, token1, userPositions]) => {
+                const onRowClick:
+                  | MouseEventHandler<HTMLButtonElement>
+                  | undefined = onTokenPairClick
+                  ? () => onTokenPairClick([token0, token1])
+                  : undefined;
+                return userPositions ? (
+                  // show user's positions
+                  <PositionRow
+                    key={pairId}
+                    token0={token0}
+                    token1={token1}
+                    userPositions={userPositions}
+                    onClick={onRowClick}
+                  />
+                ) : (
+                  // show general pair data
+                  <PairRow
+                    key={pairId}
+                    token0={token0}
+                    token1={token1}
+                    onClick={onRowClick}
+                  />
+                );
+              }
+            )}
+          </tbody>
+        </table>
       ) : (
         <table>
           <thead>
@@ -221,13 +203,8 @@ export default function PoolsTableCard({
           </thead>
           <tbody>
             <tr>
-              <td className="text-center p-5" style={{ textAlign: 'center' }}>
-                <Link
-                  to="/pools"
-                  className="button button-primary text-medium px-4 py-4 m-lg"
-                >
-                  Add Liquidity
-                </Link>
+              <td align="center">
+                No {!!searchValue ? 'Matching' : ''} Pools Found
               </td>
             </tr>
           </tbody>
