@@ -31,13 +31,93 @@ type TokenCoin = CoinSDKType & {
 };
 
 export default function MyLiquidity() {
+  return (
+    <div className="my-liquidity-page container col flex gap-5 py-6">
+      <Heading />
+      <HeroCard />
+      <Tables />
+    </div>
+  );
+}
+
+function Heading() {
   const { wallet, connectWallet } = useWeb3();
+  return (
+    <div className="row gap-5">
+      <div className="col">
+        <h1 className="h1 hero-text">Portfolio</h1>
+      </div>
+      {!wallet && (
+        <div className="col flex-centered mt-2 pt-1">
+          <button
+            className="connect-wallet button-primary p-3 px-4"
+            onClick={connectWallet}
+          >
+            Connect Wallet
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HeroCard() {
+  const { wallet } = useWeb3();
+  const allUserSharesValue = useUserPositionsShareValue();
+  const allUserBankValue = useUserBankValue();
+  return (
+    <div className="page-card">
+      <table className="hero-table simple-table gutter-b-1">
+        <thead>
+          <tr>
+            <th style={{ width: '35%' }}>Total Assets</th>
+            <th style={{ width: '35%' }}>Position Value</th>
+            <th style={{ width: '25%' }}>Earned Incentives</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              {wallet
+                ? `$${allUserBankValue.toNumber().toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
+                : '-'}
+            </td>
+            <td>
+              {wallet
+                ? `$${allUserSharesValue.toNumber().toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
+                : '-'}
+            </td>
+            <td>{wallet ? '$0' : '-'}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Tables() {
+  return (
+    <div className="row flex gapx-4 gapy-5 flow-wrap">
+      <div className="col flex">
+        <AssetsTableCard />
+      </div>
+      <div className="col flex">
+        <PoolsTableCard className="flex" title="My Pools" />
+      </div>
+    </div>
+  );
+}
+
+function AssetsTableCard() {
   const { data: balances } = useBankBalances();
   const tokenList = useTokens();
-
-  const allUserSharesValue = useUserPositionsShareValue();
   const allUserBankAssets = useUserBankValues();
-  const allUserBankValue = useUserBankValue();
 
   const [selectedAssetList, setSelectedAssetList] = useState<
     'my-assets' | 'all-assets'
@@ -61,123 +141,64 @@ export default function MyLiquidity() {
     searchValue
   );
 
-  // show loken list cards
   return (
-    <div className="my-liquidity-page container col flex gap-5 py-6">
-      <div className="row gap-5">
-        <div className="col">
-          <h1 className="h1 hero-text">Portfolio</h1>
-        </div>
-        {!wallet && (
-          <div className="col flex-centered mt-2 pt-1">
-            <button
-              className="connect-wallet button-primary p-3 px-4"
-              onClick={connectWallet}
-            >
-              Connect Wallet
-            </button>
-          </div>
-        )}
-      </div>
-      <div className="page-card">
-        <table className="hero-table simple-table gutter-b-1">
-          <thead>
+    <TableCard
+      className="asset-list-card flex"
+      title="Assets"
+      switchValues={useMemo(
+        () => ({
+          'my-assets': 'My Assets',
+          'all-assets': 'All Assets',
+        }),
+        []
+      )}
+      switchValue={selectedAssetList}
+      switchOnChange={setSelectedAssetList}
+      searchValue={searchValue}
+      setSearchValue={setSearchValue}
+    >
+      <table>
+        <thead>
+          <tr>
+            <th>Token + Chain</th>
+            <th>Balance</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredList.length > 0 ? (
+            filteredList.map(({ chain, symbol, token }) => {
+              const foundUserAsset = allUserBankAssets.find((userToken) => {
+                return userToken.token === token;
+              });
+              return foundUserAsset ? (
+                <AssetRow
+                  key={`${token.base}-${token.chain.chain_name}`}
+                  {...foundUserAsset}
+                  token={token}
+                  amount={foundUserAsset.amount}
+                  value={foundUserAsset.value}
+                />
+              ) : (
+                <AssetRow
+                  key={`${token.base}-${token.chain.chain_name}`}
+                  token={token}
+                  denom={''}
+                  amount="0"
+                  value={new BigNumber(0)}
+                />
+              );
+            })
+          ) : (
             <tr>
-              <th style={{ width: '35%' }}>Total Assets</th>
-              <th style={{ width: '35%' }}>Position Value</th>
-              <th style={{ width: '25%' }}>Earned Incentives</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                {wallet
-                  ? `$${allUserBankValue.toNumber().toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}`
-                  : '-'}
+              <td colSpan={3} align="center">
+                No {!!searchValue ? 'Matching' : ''} Assets Found
               </td>
-              <td>
-                {wallet
-                  ? `$${allUserSharesValue.toNumber().toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}`
-                  : '-'}
-              </td>
-              <td>{wallet ? '$0' : '-'}</td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-      <div className="row flex gapx-4 gapy-5 flow-wrap">
-        <div className="col flex">
-          <TableCard
-            className="asset-list-card flex"
-            title="Assets"
-            switchValues={useMemo(
-              () => ({
-                'my-assets': 'My Assets',
-                'all-assets': 'All Assets',
-              }),
-              []
-            )}
-            switchValue={selectedAssetList}
-            switchOnChange={setSelectedAssetList}
-            searchValue={searchValue}
-            setSearchValue={setSearchValue}
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th>Token + Chain</th>
-                  <th>Balance</th>
-                  <th>Deposit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredList.length > 0 ? (
-                  filteredList.map(({ chain, symbol, token }) => {
-                    const foundUserAsset = allUserBankAssets.find(
-                      (userToken) => {
-                        return userToken.token === token;
-                      }
-                    );
-                    return foundUserAsset ? (
-                      <AssetRow
-                        key={`${token.base}-${token.chain.chain_name}`}
-                        {...foundUserAsset}
-                        token={token}
-                        amount={foundUserAsset.amount}
-                        value={foundUserAsset.value}
-                      />
-                    ) : (
-                      <AssetRow
-                        key={`${token.base}-${token.chain.chain_name}`}
-                        token={token}
-                        denom={''}
-                        amount="0"
-                        value={new BigNumber(0)}
-                      />
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={3} align="center">
-                      No {!!searchValue ? 'Matching' : ''} Assets Found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </TableCard>
-        </div>
-        <div className="col flex">
-          <PoolsTableCard className="flex" title="My Pools" />
-        </div>
-      </div>
-    </div>
+          )}
+        </tbody>
+      </table>
+    </TableCard>
   );
 }
 
