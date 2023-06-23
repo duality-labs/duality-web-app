@@ -1,9 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Link, useMatch, useNavigate } from 'react-router-dom';
-import PoolsTableCard from '../../components/cards/PoolsTableCard';
+import PoolsTableCard, {
+  MyPoolsTableCard,
+} from '../../components/cards/PoolsTableCard';
 
 import useTokens from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
+import { useUserPositionsShareValues } from '../../lib/web3/hooks/useUserShareValues';
 
 import PoolOverview from './PoolOverview';
 import PoolManagement from './PoolManagement';
@@ -70,10 +73,6 @@ function Pools() {
     [setTokensPath, tokenA]
   );
 
-  const [selectedPoolsList, setSelectedPoolsList] = useState<'all' | 'mine'>(
-    'all'
-  );
-
   if (isManagementPath) {
     return (
       <PoolManagement
@@ -101,14 +100,44 @@ function Pools() {
             Create New Position
           </button>
         </Link>
-        <PoolsTableCard
-          className="flex mt-5"
-          title="All Pools"
-          switchValue={selectedPoolsList}
-          switchOnChange={setSelectedPoolsList}
-          onTokenPairClick={setTokensPath}
-        />
+        <PoolTableCards setTokens={setTokensPath} />
       </div>
     );
   }
+}
+
+const switchValues = {
+  all: 'Show All',
+  mine: 'My Positions',
+};
+
+function PoolTableCards({
+  setTokens,
+}: {
+  setTokens: ([tokenA, tokenB]: [Token?, Token?]) => void;
+}) {
+  const [selectedPoolsList, setSelectedPoolsList] =
+    useState<keyof typeof switchValues>('all');
+
+  const userHasPositions = useUserPositionsShareValues().length > 0;
+
+  return userHasPositions && selectedPoolsList === 'mine' ? (
+    <MyPoolsTableCard<keyof typeof switchValues>
+      className="flex mt-5"
+      title="My Pools"
+      switchValues={switchValues}
+      switchValue={selectedPoolsList}
+      switchOnChange={setSelectedPoolsList}
+      onTokenPairClick={setTokens}
+    />
+  ) : (
+    <PoolsTableCard<keyof typeof switchValues>
+      className="flex mt-5"
+      title="All Pools"
+      switchValues={userHasPositions ? switchValues : undefined}
+      switchValue={selectedPoolsList}
+      switchOnChange={setSelectedPoolsList}
+      onTokenPairClick={setTokens}
+    />
+  );
 }
