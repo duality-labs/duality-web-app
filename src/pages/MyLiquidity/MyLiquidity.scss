@@ -22,31 +22,6 @@
     }
   }
 
-  .asset-list-card {
-    .table-card__table {
-      // style first column
-      th,
-      td {
-        text-align: left;
-        width: 50%;
-        min-width: 7em;
-      }
-      // style second and third columns
-      th + th,
-      td + td {
-        min-width: auto;
-        text-align: right;
-        width: 30%;
-      }
-      th + th + th,
-      td + td + td {
-        text-align: right;
-        width: 20%;
-        min-width: 5em;
-      }
-    }
-  }
-
   .asset-list-card,
   .pool-list-card {
     // ensure enough space to read current list without scrolling horizontally
