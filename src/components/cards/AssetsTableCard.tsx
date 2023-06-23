@@ -18,10 +18,12 @@ type TokenCoin = CoinSDKType & {
 };
 interface AssetsTableCardOptions {
   showActions?: boolean;
+  tokenList?: Token[];
 }
 
 export default function AssetsTableCard({
   showActions,
+  tokenList: givenTokenList,
   ...tableCardProps
 }: AssetsTableCardOptions & Partial<TableCardProps<string>>) {
   const tokenList = useTokens();
@@ -43,8 +45,8 @@ export default function AssetsTableCard({
 
   // sort tokens
   const sortedList = useMemo(() => {
-    return [...tokenList].sort(sortByValue);
-  }, [tokenList, sortByValue]);
+    return (givenTokenList || [...tokenList]).sort(sortByValue);
+  }, [tokenList, givenTokenList, sortByValue]);
 
   const [searchValue, setSearchValue] = useState<string>('');
 
