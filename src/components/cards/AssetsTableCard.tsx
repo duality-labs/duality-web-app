@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
-import TableCard from '../../components/cards/TableCard';
+import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import useTokens from '../../lib/web3/hooks/useTokens';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
@@ -20,7 +20,9 @@ type TokenCoin = CoinSDKType & {
   value: BigNumber | undefined;
 };
 
-export default function AssetsTableCard() {
+export default function AssetsTableCard(
+  tableCardProps: Partial<TableCardProps<string>>
+) {
   const tokenList = useTokens();
   const allUserBankAssets = useUserBankValues();
 
@@ -50,6 +52,7 @@ export default function AssetsTableCard() {
 
   return (
     <TableCard
+      {...tableCardProps}
       className="asset-list-card flex"
       title="Assets"
       switchValues={useMemo(
