@@ -21,7 +21,7 @@ const queryClient = new QueryClient();
 
 function MyLiquidityOrTrade() {
   const { address } = useWeb3();
-  return address ? <MyLiquidity /> : <Navigate to="/trade" />;
+  return address ? <MyLiquidity /> : <Navigate to="/swap" />;
 }
 
 function App() {
@@ -37,7 +37,7 @@ function App() {
               <main>
                 <Routes>
                   <Route index element={<MyLiquidityOrTrade />} />
-                  <Route path="trade" element={<Swap />} />
+                  <Route path="swap" element={<Swap />} />
                   <Route path="liquidity" element={<Pool />} />
                   <Route path="stake" element={<div>Coming soon</div>} />
                   <Route path="*" element={<div>Not found</div>} />
