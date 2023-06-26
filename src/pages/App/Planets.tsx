@@ -7,14 +7,14 @@ import planetLiquiditySVG from '../../assets/planets/planet-liquidity.svg';
 import './Planets.scss';
 
 const planets: { [planetName: string]: string | undefined } = {
-  trade: planetTradeSVG,
+  swap: planetTradeSVG,
   liquidity: planetLiquiditySVG,
 };
 
 export default function Planets() {
   return (
     <>
-      <Planet name="trade" bottom={0} width={947} right={0} />
+      <Planet name="swap" bottom={0} width={947} right={0} />
       <Planet name="liquidity" top="10vh" width={774} right={0} />
     </>
   );
