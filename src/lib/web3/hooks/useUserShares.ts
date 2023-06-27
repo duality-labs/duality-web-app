@@ -2,7 +2,6 @@ import BigNumber from 'bignumber.js';
 import Long from 'long';
 import { useMemo, useRef } from 'react';
 import { useQueries } from '@tanstack/react-query';
-import { createRpcQueryHooks } from '@duality-labs/dualityjs';
 import {
   QuerySupplyOfRequest,
   QuerySupplyOfResponseSDKType,
@@ -11,11 +10,8 @@ import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex
 import {
   QueryGetPoolReservesRequest,
   QueryGetPoolReservesResponseSDKType,
-  QueryGetUserPositionsResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 
-import { useWeb3 } from '../useWeb3';
-import { useRpc } from '../rpcQueryClient';
 import { useLcdClientPromise } from '../lcdClient';
 import { getPairID } from '../utils/pairs';
 import {
@@ -31,31 +27,6 @@ import { useShares } from '../indexerProvider';
 // default useUserPositionsTotalShares filter to all user's deposits
 export type UserDepositFilter = (poolDeposit: DepositRecord) => boolean;
 const defaultFilter: UserDepositFilter = () => true;
-
-// todo: use this function when the endpoint is fixed
-// select all (or optional token pair list of) user shares
-export function useUserDepositsFromPositionsEndpoint(
-  poolDepositFilter: UserDepositFilter = defaultFilter
-): Required<DepositRecord>[] | undefined {
-  const { address } = useWeb3();
-  const rpc = useRpc();
-  const queryHooks = createRpcQueryHooks({ rpc });
-
-  const { useGetUserPositions } = queryHooks.dualitylabs.duality.dex;
-
-  const { data: { UserPositions: userPositions } = {} } =
-    useGetUserPositions<QueryGetUserPositionsResponseSDKType>({
-      request: { address: address || '' },
-    });
-
-  // return filtered list of deposits
-  const filteredDeposits =
-    userPositions?.PoolDeposits?.filter(poolDepositFilter);
-  // only accept deposits with pairID properties attached (should be always)
-  return filteredDeposits?.filter(
-    (deposit): deposit is Required<DepositRecord> => !!deposit.pairID
-  );
-}
 
 // select all (or optional token pair list of) user shares
 export function useUserDeposits(
