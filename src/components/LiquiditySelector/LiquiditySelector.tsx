@@ -1489,14 +1489,14 @@ function TicksGroup({
   // collect reserve height to calculate stats to use
   const tickValues = userTicks.flatMap((tick) =>
     [
-      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
-      tick?.reserveB.toNumber(),
+      tick?.reserveA.toNumber(),
+      tick?.reserveB.multipliedBy(currentPrice).toNumber(),
     ].filter((reserve): reserve is number => Boolean(reserve))
   );
   const backgroundTickValues = backgroundTicks.flatMap((tick) =>
     [
-      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
-      tick?.reserveB.toNumber(),
+      tick?.reserveA.toNumber(),
+      tick?.reserveB.multipliedBy(currentPrice).toNumber(),
     ].filter((reserve): reserve is number => Boolean(reserve))
   );
 
@@ -1664,22 +1664,22 @@ function TicksGroup({
           ? cumulativeTokenValues &&
             reserveA
               .multipliedBy(scalingFactor)
-              .multipliedBy(currentPrice)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
             reserveB
               .multipliedBy(scalingFactor)
+              .multipliedBy(currentPrice)
               .dividedBy(cumulativeTokenValues)) || new BigNumber(0);
       const backgroundValue =
         (background.reserveA.isGreaterThan(0)
           ? cumulativeTokenValues &&
             background.reserveA
               .multipliedBy(scalingFactor)
-              .multipliedBy(currentPrice)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
             background.reserveB
               .multipliedBy(scalingFactor)
+              .multipliedBy(currentPrice)
               .dividedBy(cumulativeTokenValues)) || new BigNumber(0);
 
       const minValue = totalValue.isLessThan(backgroundValue)
