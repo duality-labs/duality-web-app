@@ -5,7 +5,7 @@ import { useShares } from '../../lib/web3/indexerProvider';
 
 import { useDualityTokens } from '../../lib/web3/hooks/useTokens';
 
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token } from '../../lib/web3/utils/tokens';
 import { calculateShares } from '../../lib/web3/utils/ticks';
 import { hasInvertedOrder } from '../../lib/web3/utils/pairs';
 import { IndexedShare } from '../../lib/web3/utils/shares';
@@ -163,28 +163,14 @@ export function useTickShareValues(
           );
           return {
             ...shareValue,
-            userReserves0: tick0
-              ? shareFraction.multipliedBy(
-                  // convert to big tokens
-                  getAmountInDenom(
-                    tick0.token0,
-                    tick0.reserve0,
-                    tick0.token0.address,
-                    tick0.token0.display
-                  ) || '0'
-                )
-              : new BigNumber(0),
-            userReserves1: tick1
-              ? shareFraction.multipliedBy(
-                  // convert to big tokens
-                  getAmountInDenom(
-                    tick1.token1,
-                    tick1.reserve1,
-                    tick1.token1.address,
-                    tick1.token1.display
-                  ) || '0'
-                )
-              : new BigNumber(0),
+            userReserves0:
+              tick0 && tick0.reserve0.isGreaterThan(0)
+                ? shareFraction.multipliedBy(tick0.reserve0)
+                : new BigNumber(0),
+            userReserves1:
+              tick1 && tick1.reserve1.isGreaterThan(0)
+                ? shareFraction.multipliedBy(tick1.reserve1)
+                : new BigNumber(0),
           };
         }
         return undefined;
