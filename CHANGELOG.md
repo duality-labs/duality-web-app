@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.110](https://github.com/duality-labs/duality-web-app/compare/v0.1.109...v0.1.110) (2023-06-28)
+
+
+### Fixes
+
+* calculate chart series heights by approximate value ([#376](https://github.com/duality-labs/duality-web-app/issues/376)) ([7dfdb93](https://github.com/duality-labs/duality-web-app/commit/7dfdb93d2f0abdca97391163684a386854154eaf))
+
 ## [0.1.109](https://github.com/duality-labs/duality-web-app/compare/v0.1.108...v0.1.109) (2023-05-23)
 
 
