@@ -193,8 +193,9 @@ export default function Stars() {
   },
   []);
 
-  const route = useLocation()?.pathname;
-  useTransitionAnimation(hyperjumpAnimation, [route], displacementMs);
+  // play the transition when we change the top-level page: eg. /, /swap, /pools
+  const mainRoute = useLocation()?.pathname.split('/').filter(Boolean)[0] || '';
+  useTransitionAnimation(hyperjumpAnimation, [mainRoute], displacementMs);
 
   return <canvas className="stars-bg" ref={getCanvasRef}></canvas>;
 }

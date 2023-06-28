@@ -48,7 +48,7 @@ export default function useTokenPairs({
       'nicholasdotsol.duality.dex.tokensAll',
       params
     ),
-    async (_: string, params: QueryAllTokensRequest) => {
+    async ([, params]: [paths: string, params: QueryAllTokensRequest]) => {
       const client = await lcdClientPromise;
       return await client.nicholasdotsol.duality.dex.tokensAll(params);
     },
