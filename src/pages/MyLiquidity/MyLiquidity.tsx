@@ -9,6 +9,7 @@ import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
 
 import './MyLiquidity.scss';
 import useUserTokens from '../../lib/web3/hooks/useUserTokens';
+import { Token } from '../../lib/web3/utils/tokens';
 
 export default function MyLiquidity() {
   return (
@@ -117,6 +118,13 @@ function Tables() {
     [navigate]
   );
 
+  const goToPositionManagementPage = useCallback(
+    ([token0, token1]: [Token, Token]) => {
+      return navigate(`/pools/${token0.symbol}/${token1.symbol}/edit`);
+    },
+    [navigate]
+  );
+
   return (
     <div className="row flex gapx-4 gapy-5 flow-wrap">
       <div className="col flex">
@@ -135,6 +143,7 @@ function Tables() {
             switchValue={subPage}
             switchValues={subPages}
             switchOnChange={setSubPage}
+            onTokenPairClick={goToPositionManagementPage}
           />
         )}
       </div>
