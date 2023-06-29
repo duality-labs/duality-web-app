@@ -1,6 +1,9 @@
 import { useMatch, useNavigate } from 'react-router-dom';
-import { useCallback } from 'react';
-import { MyPoolsTableCard } from '../../components/cards/PoolsTableCard';
+import { useCallback, useMemo } from 'react';
+import {
+  Actions,
+  MyPoolsTableCard,
+} from '../../components/cards/PoolsTableCard';
 import AssetsTableCard from '../../components/cards/AssetsTableCard';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
@@ -10,6 +13,9 @@ import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
 import './MyLiquidity.scss';
 import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { Token } from '../../lib/web3/utils/tokens';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowAltCircleRight } from '@fortawesome/free-solid-svg-icons';
+import useTokens from '../../lib/web3/hooks/useTokens';
 
 export default function MyLiquidity() {
   return (
@@ -118,6 +124,19 @@ function Tables() {
     [navigate]
   );
 
+  const tokenList = useTokens();
+  const matchTokens = useMatch('/portfolio/pools/:tokenA/:tokenB');
+
+  const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
+    if (matchTokens) {
+      const params = matchTokens.params;
+      const tokenA = tokenList.find((t) => t.symbol === params['tokenA']);
+      const tokenB = tokenList.find((t) => t.symbol === params['tokenB']);
+      return [tokenA, tokenB];
+    }
+    return [];
+  }, [tokenList, matchTokens]);
+
   const goToPositionManagementPage = useCallback(
     ([token0, token1]: [Token, Token]) => {
       return navigate(`/pools/${token0.symbol}/${token1.symbol}/edit`);
@@ -136,17 +155,56 @@ function Tables() {
             switchOnChange={setSubPage}
           />
         )}
-        {subPage === 'pools' && (
-          <MyPoolsTableCard
-            className="flex"
-            title="My Positions"
-            switchValue={subPage}
-            switchValues={subPages}
-            switchOnChange={setSubPage}
-            onTokenPairClick={goToPositionManagementPage}
-          />
-        )}
+        {subPage === 'pools' &&
+          (tokenA && tokenB ? (
+            <MyPoolsTableCard
+              className="flex"
+              title={
+                <div className="row gap-3">
+                  <span>My Positions</span>
+                  <span>&gt;</span>
+                  <span>{tokenA.symbol}</span>
+                  <span>/</span>
+                  <span>{tokenB.symbol}</span>
+                </div>
+              }
+              switchValue={subPage}
+              switchValues={subPages}
+              switchOnChange={setSubPage}
+              onTokenPairClick={goToPositionManagementPage}
+              userPositionActions={userPositionActions}
+            />
+          ) : (
+            <MyPoolsTableCard
+              className="flex"
+              title="My Positions"
+              switchValue={subPage}
+              switchValues={subPages}
+              switchOnChange={setSubPage}
+              onTokenPairClick={goToPositionManagementPage}
+              userPositionActions={userPositionActions}
+            />
+          ))}
       </div>
     </div>
   );
 }
+
+const userPositionActions: Actions = {
+  manage: {
+    title: 'Manage',
+    className: 'button-light m-0',
+    action: ({ navigate, token0, token1 }) =>
+      navigate(`/pools/${token0.symbol}/${token1.symbol}/edit`),
+  },
+  stake: {
+    title: (
+      <>
+        Stake <FontAwesomeIcon icon={faArrowAltCircleRight} />
+      </>
+    ),
+    className: 'button-primary m-0',
+    action: ({ navigate, token0, token1 }) =>
+      navigate(`/portfolio/pools/${token0.symbol}/${token1.symbol}`),
+  },
+};
