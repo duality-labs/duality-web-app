@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import { useShares } from '../../lib/web3/indexerProvider';
 import { feeTypes } from '../../lib/web3/utils/fees';
 
-import { useDualityTokens } from '../../components/TokenPicker/hooks';
+import { useDualityTokens } from '../../lib/web3/hooks/useTokens';
 
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { calculateShares } from '../../lib/web3/utils/ticks';
