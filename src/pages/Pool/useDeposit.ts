@@ -14,7 +14,7 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token } from '../../lib/web3/utils/tokens';
 import {
   DexDepositEvent,
   mapEventAttributes,
@@ -263,13 +263,11 @@ export function useDeposit([tokenA, tokenB]: [
                 fees: filteredUserTicks.map((tick) =>
                   Long.fromNumber(tick.fee)
                 ),
-                amountsA: filteredUserTicks.map(
-                  ({ reserveA }) =>
-                    getAmountInDenom(tokenA, reserveA, tokenA.display) || '0'
+                amountsA: filteredUserTicks.map((tick) =>
+                  tick.reserveA.toFixed(0)
                 ),
-                amountsB: filteredUserTicks.map(
-                  ({ reserveB }) =>
-                    getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
+                amountsB: filteredUserTicks.map((tick) =>
+                  tick.reserveB.toFixed(0)
                 ),
                 // todo: allow user to specify autoswap behavior
                 Options: filteredUserTicks.map(() => ({
