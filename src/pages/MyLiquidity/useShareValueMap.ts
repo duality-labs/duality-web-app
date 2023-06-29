@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import { useShares } from '../../lib/web3/indexerProvider';
-import { feeTypes } from '../../lib/web3/utils/fees';
 
 import { useDualityTokens } from '../../lib/web3/hooks/useTokens';
 
@@ -30,11 +29,11 @@ export interface ShareValueMap {
 // perhaps the backend could return these values on each Share object
 export function getVirtualTickIndexes(
   tickIndex: number | string | undefined,
-  feeIndex: number | string | undefined
+  fee: number | string | undefined
 ): [number, number] | [] {
-  const feePoints = feeTypes[Number(feeIndex)].fee * 10000;
+  const feePoints = Number(fee);
   const middleIndex = Number(tickIndex);
-  return feePoints && !isNaN(middleIndex)
+  return feePoints && !isNaN(feePoints) && !isNaN(middleIndex)
     ? [middleIndex + feePoints, middleIndex - feePoints]
     : [];
 }
@@ -46,11 +45,10 @@ export default function useShareValueMap() {
   return useMemo(() => {
     if (shares) {
       return shares.reduce<ShareValueMap>((result, share) => {
-        const { pairId = '', feeIndex, sharesOwned } = share;
+        const { pairId = '', fee, sharesOwned } = share;
         // skip this share object if there are no shares owned
-        if (feeIndex === undefined || !(Number(sharesOwned) > 0)) return result;
+        if (fee === undefined || !(Number(sharesOwned) > 0)) return result;
         const [tokenA, tokenB] = dualityTokens;
-        const fee = feeTypes[Number(feeIndex)].fee;
         if (
           tokenA &&
           tokenA.address &&
@@ -99,11 +97,8 @@ export function useTickShareValues(
   return (
     shareValues
       .map<TickShareValue | undefined>((shareValue: ShareValue) => {
-        const { tickIndex, feeIndex, sharesOwned } = shareValue.share;
-        const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
-          tickIndex,
-          feeIndex
-        );
+        const { tickIndex, fee, sharesOwned } = shareValue.share;
+        const [tickIndex1, tickIndex0] = getVirtualTickIndexes(tickIndex, fee);
 
         // the reason that we fetch the reserve0 and reserve1 context
         // from the indexed ticks is because these reserves indicated
@@ -118,15 +113,13 @@ export function useTickShareValues(
           tickIndex0 &&
           token0Ticks?.find(
             (tick) =>
-              tick.feeIndex.isEqualTo(feeIndex) &&
-              tick.tickIndex.isEqualTo(tickIndex0)
+              tick.fee.isEqualTo(fee) && tick.tickIndex.isEqualTo(tickIndex0)
           );
         const tick1 =
           tickIndex1 &&
           token1Ticks?.find(
             (tick) =>
-              tick.feeIndex.isEqualTo(feeIndex) &&
-              tick.tickIndex.isEqualTo(tickIndex1)
+              tick.fee.isEqualTo(fee) && tick.tickIndex.isEqualTo(tickIndex1)
           );
         const tick0Shares =
           tick0 &&

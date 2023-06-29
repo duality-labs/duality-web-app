@@ -95,8 +95,9 @@ export function useEditLiquidity(): [
                 userReserves0,
                 userReserves1,
               }) => {
-                return share.tickIndex &&
-                  share.feeIndex &&
+                return share.tickIndex !== undefined &&
+                  share.fee !== undefined &&
+                  !isNaN(Number(share.fee)) &&
                   share.sharesOwned &&
                   token0.address &&
                   token1.address &&
@@ -109,14 +110,14 @@ export function useEditLiquidity(): [
                     // I'm not certain that non-100% withdrawals work in all cases.
                     tickDiff0.isLessThan(0) && tickDiff1.isLessThan(0)
                     ? [
-                        dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                        dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
                           {
                             creator: web3Address,
                             tokenA: token0.address,
                             tokenB: token1.address,
                             receiver: web3Address,
-                            tickIndexes: [Long.fromString(share.tickIndex)],
-                            feeIndexes: [Long.fromString(share.feeIndex)],
+                            tickIndexesAToB: [Long.fromString(share.tickIndex)],
+                            fees: [Long.fromString(share.fee)],
                             // approximate removal using percentages
                             // todo: this probably has a bug when withdrawing from a tick
                             // that has both token0 and token1 as this only takes into account one side
@@ -141,12 +142,10 @@ export function useEditLiquidity(): [
                                       tokenA: token0.address,
                                       tokenB: token1.address,
                                       receiver: web3Address,
-                                      tickIndexes: [
+                                      tickIndexesAToB: [
                                         Long.fromString(share.tickIndex),
                                       ],
-                                      feeIndexes: [
-                                        Long.fromString(share.feeIndex),
-                                      ],
+                                      fees: [Long.fromString(share.fee)],
                                       amountsA: [
                                         getAmountInDenom(
                                           token0,
@@ -159,18 +158,16 @@ export function useEditLiquidity(): [
                                       Options: [{ autoswap: true }],
                                     }
                                   )
-                                : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                                : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
                                     {
                                       creator: web3Address,
                                       tokenA: token0.address,
                                       tokenB: token1.address,
                                       receiver: web3Address,
-                                      tickIndexes: [
+                                      tickIndexesAToB: [
                                         Long.fromString(share.tickIndex),
                                       ],
-                                      feeIndexes: [
-                                        Long.fromString(share.feeIndex),
-                                      ],
+                                      fees: [Long.fromString(share.fee)],
                                       // approximate removal using percentages
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
@@ -194,12 +191,10 @@ export function useEditLiquidity(): [
                                       tokenA: token0.address,
                                       tokenB: token1.address,
                                       receiver: web3Address,
-                                      tickIndexes: [
+                                      tickIndexesAToB: [
                                         Long.fromString(share.tickIndex),
                                       ],
-                                      feeIndexes: [
-                                        Long.fromString(share.feeIndex),
-                                      ],
+                                      fees: [Long.fromString(share.fee)],
                                       amountsA: ['0'],
                                       amountsB: [
                                         getAmountInDenom(
@@ -212,18 +207,16 @@ export function useEditLiquidity(): [
                                       Options: [{ autoswap: true }],
                                     }
                                   )
-                                : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawl(
+                                : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
                                     {
                                       creator: web3Address,
                                       tokenA: token0.address,
                                       tokenB: token1.address,
                                       receiver: web3Address,
-                                      tickIndexes: [
+                                      tickIndexesAToB: [
                                         Long.fromString(share.tickIndex),
                                       ],
-                                      feeIndexes: [
-                                        Long.fromString(share.feeIndex),
-                                      ],
+                                      fees: [Long.fromString(share.fee)],
                                       // approximate removal using percentages
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side

@@ -15,7 +15,10 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
-import { readEvents } from '../../lib/web3/utils/txs';
+import {
+  DexDepositEvent,
+  getEventAttributeMap,
+} from '../../lib/web3/utils/events';
 import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
@@ -132,7 +135,7 @@ export function useDeposit([tokenA, tokenB]: [
             // converting from virtual to real ticks (not real to virual)
             const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
               tick.tickIndex,
-              tick.feeIndex
+              tick.fee
             );
 
             if (tickIndex0 === undefined || tickIndex1 === undefined) {
@@ -172,7 +175,7 @@ export function useDeposit([tokenA, tokenB]: [
             const foundTickIndex = ticks.findIndex((searchTick) => {
               return (
                 searchTick.tickIndex === tick.tickIndex &&
-                searchTick.feeIndex === tick.feeIndex &&
+                searchTick.fee === tick.fee &&
                 searchTick.tokenA === tick.tokenA &&
                 searchTick.tokenB === tick.tokenB
               );
@@ -206,7 +209,7 @@ export function useDeposit([tokenA, tokenB]: [
         const gasEstimate = filteredUserTicks.reduce((gasEstimate, tick) => {
           const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
             tick.tickIndex,
-            tick.feeIndex
+            tick.fee
           );
           const existingTick =
             tickIndex0 !== undefined && tickIndex1 !== undefined
@@ -241,11 +244,11 @@ export function useDeposit([tokenA, tokenB]: [
                 // note: tick indexes must be in the form of "token0/1 index"
                 // not "tokenA/B" index, so inverted order indexes should be reversed
                 // check this commit for changes if this behavior changes
-                tickIndexes: filteredUserTicks.map((tick) =>
-                  Long.fromNumber(tick.tickIndex)
+                tickIndexesAToB: filteredUserTicks.map((tick) =>
+                  Long.fromNumber(tick.tickIndex).negate()
                 ),
-                feeIndexes: filteredUserTicks.map((tick) =>
-                  Long.fromNumber(tick.feeIndex)
+                fees: filteredUserTicks.map((tick) =>
+                  Long.fromNumber(tick.fee)
                 ),
                 amountsA: filteredUserTicks.map(
                   ({ reserveA }) =>
@@ -283,47 +286,35 @@ export function useDeposit([tokenA, tokenB]: [
           }
 
           // calculate received tokens
-          const foundEvents = readEvents(res.rawLog) || [];
-          const { receivedTokenA, receivedTokenB } = foundEvents.reduce<{
+          const { receivedTokenA, receivedTokenB } = res.events.reduce<{
             receivedTokenA: BigNumber;
             receivedTokenB: BigNumber;
           }>(
             (acc, event) => {
-              // find and process each dex NewDeposit message created by this user
+              // find and process each dex Deposit message created by this user
               if (
                 event.type === 'message' &&
                 event.attributes.find(
                   ({ key, value }) => key === 'module' && value === 'dex'
                 ) &&
                 event.attributes.find(
-                  ({ key, value }) => key === 'action' && value === 'NewDeposit'
+                  ({ key, value }) => key === 'action' && value === 'Deposit'
                 ) &&
                 event.attributes.find(
-                  ({ key, value }) => key === 'sender' && value === web3.address
+                  ({ key, value }) =>
+                    key === 'Creator' && value === web3.address
                 )
               ) {
                 // collect into more usable format for parsing
-                const attributes = event.attributes.reduce(
-                  (acc, { key, value }) => ({ ...acc, [key]: value }),
-                  {}
-                ) as {
-                  TickIndex: string;
-                  FeeIndex: string;
-                  Token0: string;
-                  Token1: string;
-                  OldReserves0: string;
-                  OldReserves1: string;
-                  NewReserves0: string;
-                  NewReserves1: string;
-                };
+                const attributes = getEventAttributeMap<DexDepositEvent>(event);
 
                 // accumulate share values
                 // ('NewReserves' is the difference between previous and next share value)
                 const shareIncrease0 = new BigNumber(
-                  attributes['NewReserves0']
+                  attributes['Reserves0Deposited']
                 );
                 const shareIncrease1 = new BigNumber(
-                  attributes['NewReserves1']
+                  attributes['Reserves1Deposited']
                 );
                 if (
                   tokenA.address === attributes['Token0'] &&
