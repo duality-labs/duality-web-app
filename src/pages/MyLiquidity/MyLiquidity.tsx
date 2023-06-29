@@ -16,6 +16,7 @@ import { Token } from '../../lib/web3/utils/tokens';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowAltCircleRight } from '@fortawesome/free-solid-svg-icons';
 import useTokens from '../../lib/web3/hooks/useTokens';
+import MyPoolStakesTableCard from '../../components/cards/PoolStakesTableCard';
 
 export default function MyLiquidity() {
   return (
@@ -157,7 +158,7 @@ function Tables() {
         )}
         {subPage === 'pools' &&
           (tokenA && tokenB ? (
-            <MyPoolsTableCard
+            <MyPoolStakesTableCard
               className="flex"
               title={
                 <div className="row gap-3">
@@ -168,11 +169,8 @@ function Tables() {
                   <span>{tokenB.symbol}</span>
                 </div>
               }
-              switchValue={subPage}
-              switchValues={subPages}
-              switchOnChange={setSubPage}
-              onTokenPairClick={goToPositionManagementPage}
-              userPositionActions={userPositionActions}
+              tokenA={tokenA}
+              tokenB={tokenB}
             />
           ) : (
             <MyPoolsTableCard
