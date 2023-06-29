@@ -131,7 +131,7 @@ function Tables() {
         {subPage === 'pools' && (
           <MyPoolsTableCard
             className="flex"
-            title="My Pools"
+            title="My Positions"
             switchValue={subPage}
             switchValues={subPages}
             switchOnChange={setSubPage}
