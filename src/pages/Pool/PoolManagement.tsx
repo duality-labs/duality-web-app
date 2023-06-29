@@ -912,9 +912,11 @@ export default function PoolManagement({
 
   const addLiquidityForm = (
     <form
-      className={['col--sidebar', editMode ? 'collapsed' : 'expanded'].join(
-        ' '
-      )}
+      className={[
+        'col--sidebar',
+        editMode ? 'collapsed' : 'expanded',
+        editMode ? 'ml-0' : 'ml-4',
+      ].join(' ')}
       onSubmit={onSubmitAddLiquidity}
     >
       <fieldset
@@ -1054,6 +1056,7 @@ export default function PoolManagement({
       className={[
         'col--sidebar ml-auto',
         editMode ? 'expanded' : 'collapsed',
+        editMode ? 'mr-4' : 'mr-0',
       ].join(' ')}
       onSubmit={onSubmitEditLiquidity}
     >
@@ -1269,7 +1272,7 @@ export default function PoolManagement({
     >
       <div className="mt-3">
         <div className="col flex gap-lg">
-          <div className="col row-lg gap-4 col-slide-container">
+          <div className="col row-lg gap-4 col-slide-container gutter-x-4">
             {addLiquidityForm}
             <div className="col flex gap-4">
               {tokenA && tokenB && currentPriceFromTicks === undefined && (
