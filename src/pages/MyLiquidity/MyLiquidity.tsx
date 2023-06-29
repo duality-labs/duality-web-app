@@ -1,3 +1,5 @@
+import { useMatch, useNavigate } from 'react-router-dom';
+import { useCallback } from 'react';
 import { MyPoolsTableCard } from '../../components/cards/PoolsTableCard';
 import AssetsTableCard from '../../components/cards/AssetsTableCard';
 
@@ -79,15 +81,62 @@ function HeroCard() {
   );
 }
 
+const subPages = {
+  pools: 'Positions',
+  assets: 'Assets',
+};
+const subPagePaths = Object.keys(subPages) as (keyof typeof subPages)[];
+type SubPagePath = typeof subPagePaths[number];
+
+function getSubPage(maybeSubPage = ''): SubPagePath | undefined {
+  return [maybeSubPage]
+    .filter((path): path is SubPagePath => {
+      return subPagePaths.includes(path as SubPagePath);
+    })
+    .pop();
+}
+
 function Tables() {
   const userTokenList = useUserTokens();
+  const match = useMatch('/portfolio/:subPage');
+  // ensure subPage is a known path
+  const subPage = getSubPage(match?.params['subPage']) || subPagePaths[0];
+
+  const navigate = useNavigate();
+  const setSubPage = useCallback(
+    (value: ((prevState: string) => string) | string) => {
+      if (typeof value === 'string') {
+        const subPage = getSubPage(value);
+        if (subPage) {
+          navigate(`/portfolio/${subPage}`);
+        } else {
+          navigate('/portfolio');
+        }
+      }
+    },
+    [navigate]
+  );
+
   return (
     <div className="row flex gapx-4 gapy-5 flow-wrap">
       <div className="col flex">
-        <AssetsTableCard tokenList={userTokenList} />
-      </div>
-      <div className="col flex">
-        <MyPoolsTableCard className="flex" title="My Pools" />
+        {subPage === 'assets' && (
+          <AssetsTableCard
+            tokenList={userTokenList}
+            switchValue={subPage}
+            switchValues={subPages}
+            switchOnChange={setSubPage}
+          />
+        )}
+        {subPage === 'pools' && (
+          <MyPoolsTableCard
+            className="flex"
+            title="My Pools"
+            switchValue={subPage}
+            switchValues={subPages}
+            switchOnChange={setSubPage}
+          />
+        )}
       </div>
     </div>
   );
