@@ -323,7 +323,7 @@ export function MyPoolsTableCard<T extends string | number>({
   );
 }
 
-interface Actions {
+export interface Actions {
   [actionKey: string]: {
     title: ReactNode;
     className?: string;

@@ -74,6 +74,9 @@
         &:hover {
           background-color: var(--token-search-bg);
         }
+        &.button-primary:hover {
+          background-color: var(--primary);
+        }
       }
     }
   }
