@@ -56,7 +56,6 @@ export default function AssetsTableCard({
 
   return (
     <TableCard
-      {...tableCardProps}
       className="asset-list-card flex"
       title="Assets"
       switchValues={useMemo(
@@ -68,6 +67,7 @@ export default function AssetsTableCard({
       )}
       searchValue={searchValue}
       setSearchValue={setSearchValue}
+      {...tableCardProps}
     >
       <table>
         <thead>
