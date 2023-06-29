@@ -1,16 +1,11 @@
-import { MouseEventHandler, useCallback, useMemo, useState } from 'react';
+import { MouseEventHandler, ReactNode, useMemo, useState } from 'react';
+import { NavigateFunction, useNavigate } from 'react-router-dom';
 
 import BigNumber from 'bignumber.js';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
 import TableCard, { TableCardProps } from './TableCard';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
-import {
-  useEditLiquidity,
-  EditedPosition,
-} from '../../pages/MyLiquidity/useEditLiquidity';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import useTokens from '../../lib/web3/hooks/useTokens';
 
@@ -30,6 +25,7 @@ import './PoolsTableCard.scss';
 
 interface PoolsTableCardOptions {
   onTokenPairClick?: (tokens: [token0: Token, token1: Token]) => void;
+  userPositionActions?: Actions;
 }
 
 export default function PoolsTableCard<T extends string | number>({
@@ -205,6 +201,7 @@ export function MyPoolsTableCard<T extends string | number>({
   className,
   title = 'My Pools',
   onTokenPairClick,
+  userPositionActions = defaultActions,
   ...tableCardProps
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
   const [searchValue, setSearchValue] = useState<string>('');
@@ -278,7 +275,9 @@ export function MyPoolsTableCard<T extends string | number>({
               <th>Pair</th>
               <th>Value</th>
               <th>Composition</th>
-              <th>Withdraw</th>
+              {Object.keys(userPositionActions || {}).length > 0 && (
+                <th>Action</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -297,6 +296,7 @@ export function MyPoolsTableCard<T extends string | number>({
                     token1={token1}
                     userPositions={userPositions}
                     onClick={onRowClick}
+                    actions={userPositionActions}
                   />
                 );
               }
@@ -323,17 +323,43 @@ export function MyPoolsTableCard<T extends string | number>({
   );
 }
 
+interface Actions {
+  [actionKey: string]: {
+    title: ReactNode;
+    className?: string;
+    action: (action: {
+      token0: Token;
+      token1: Token;
+      userPositions: Array<ValuedUserPositionDepositContext>;
+      navigate: NavigateFunction;
+    }) => void;
+  };
+}
+
+const defaultActions: Actions = {
+  manage: {
+    title: 'Manage',
+    className: 'button-light m-0',
+    action: ({ navigate, token0, token1 }) =>
+      navigate(`/pools/${token0.symbol}/${token1.symbol}/edit`),
+  },
+};
+
 function PositionRow({
   token0,
   token1,
   userPositions,
   onClick,
+  actions = {},
 }: {
   token0: Token;
   token1: Token;
   userPositions: Array<ValuedUserPositionDepositContext>;
   onClick?: MouseEventHandler<HTMLButtonElement>;
+  actions?: Actions;
 }) {
+  const navigate = useNavigate();
+
   const total0 = userPositions.reduce<BigNumber>((acc, { token0Context }) => {
     return acc.plus(token0Context?.userReserves || 0);
   }, new BigNumber(0));
@@ -347,38 +373,6 @@ function PositionRow({
   const value1 = userPositions.reduce<BigNumber>((acc, { token1Value }) => {
     return acc.plus(token1Value || 0);
   }, new BigNumber(0));
-
-  const [{ isValidating }, sendEditRequest] = useEditLiquidity();
-
-  const withdrawPair = useCallback<
-    Awaited<(shareValues: Array<ValuedUserPositionDepositContext>) => void>
-  >(
-    async (userPositions: Array<ValuedUserPositionDepositContext>) => {
-      if (!isValidating) {
-        // get relevant tick diffs
-        const sharesDiff: Array<EditedPosition> = userPositions.flatMap(
-          (userPosition: ValuedUserPositionDepositContext) => {
-            return {
-              ...userPosition,
-              // remove user's reserves if found
-              tickDiff0:
-                userPosition.token0Context?.userReserves.negated() ??
-                new BigNumber(0),
-              tickDiff1:
-                userPosition.token1Context?.userReserves.negated() ??
-                new BigNumber(0),
-            };
-          }
-        );
-
-        await sendEditRequest(sharesDiff);
-      }
-    },
-    [isValidating, sendEditRequest]
-  );
-
-  const withdraw: MouseEventHandler<HTMLButtonElement> | undefined =
-    userPositions.length > 0 ? () => withdrawPair(userPositions) : undefined;
 
   if (total0 && total1) {
     return (
@@ -410,17 +404,30 @@ function PositionRow({
             &nbsp;{token1.symbol}
           </span>
         </td>
-        <td>
-          <button type="button" onClick={withdraw} className="button nowrap">
-            {[
-              total0.isGreaterThan(0) && token0.display.toUpperCase(),
-              total1.isGreaterThan(0) && token1.display.toUpperCase(),
-            ]
-              .filter(Boolean)
-              .join(' / ')}
-            <FontAwesomeIcon icon={faArrowUp} className="ml-3" />
-          </button>
-        </td>
+        {Object.keys(actions).length > 0 && (
+          <td>
+            <div className="col">
+              <div className="row gap-3 ml-auto">
+                {Object.entries(actions).map(
+                  ([actionKey, { action, className, title }]) => (
+                    <button
+                      key={actionKey}
+                      type="button"
+                      onClick={() => {
+                        action({ token0, token1, userPositions, navigate });
+                      }}
+                      className={['button nowrap', className]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      {title}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </td>
+        )}
       </tr>
     );
   }
