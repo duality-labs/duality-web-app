@@ -5,7 +5,7 @@ import { useShares } from '../../lib/web3/indexerProvider';
 
 import { useDualityTokens } from '../../lib/web3/hooks/useTokens';
 
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token } from '../../lib/web3/utils/tokens';
 import { calculateShares } from '../../lib/web3/utils/ticks';
 import { hasInvertedOrder } from '../../lib/web3/utils/pairs';
 import { IndexedShare } from '../../lib/web3/utils/shares';
@@ -38,7 +38,8 @@ export function getVirtualTickIndexes(
     : [];
 }
 
-export default function useShareValueMap() {
+// get share values of all shares or just one shares pair
+export default function useShareValueMap(givenTokenPair?: [Token, Token]) {
   const { data: shares } = useShares();
   const dualityTokens = useDualityTokens();
 
@@ -46,9 +47,22 @@ export default function useShareValueMap() {
     if (shares) {
       return shares.reduce<ShareValueMap>((result, share) => {
         const { pairId = '', fee, sharesOwned } = share;
+        const [shareToken0, shareToken1] = pairId.split('<>');
         // skip this share object if there are no shares owned
         if (fee === undefined || !(Number(sharesOwned) > 0)) return result;
-        const [tokenA, tokenB] = dualityTokens;
+        const [tokenA, tokenB] = givenTokenPair
+          ? [
+              givenTokenPair.find((token) => token.address === shareToken0),
+              givenTokenPair.find((token) => token.address === shareToken1),
+            ]
+          : [
+              shareToken0
+                ? dualityTokens.find((token) => token.address === shareToken0)
+                : undefined,
+              shareToken1
+                ? dualityTokens.find((token) => token.address === shareToken1)
+                : undefined,
+            ];
         if (
           tokenA &&
           tokenA.address &&
@@ -72,7 +86,7 @@ export default function useShareValueMap() {
         return result;
       }, {});
     }
-  }, [shares, dualityTokens]);
+  }, [shares, givenTokenPair, dualityTokens]);
 }
 
 export function useTickShareValue(
@@ -149,28 +163,14 @@ export function useTickShareValues(
           );
           return {
             ...shareValue,
-            userReserves0: tick0
-              ? shareFraction.multipliedBy(
-                  // convert to big tokens
-                  getAmountInDenom(
-                    tick0.token0,
-                    tick0.reserve0,
-                    tick0.token0.address,
-                    tick0.token0.display
-                  ) || '0'
-                )
-              : new BigNumber(0),
-            userReserves1: tick1
-              ? shareFraction.multipliedBy(
-                  // convert to big tokens
-                  getAmountInDenom(
-                    tick1.token1,
-                    tick1.reserve1,
-                    tick1.token1.address,
-                    tick1.token1.display
-                  ) || '0'
-                )
-              : new BigNumber(0),
+            userReserves0:
+              tick0 && tick0.reserve0.isGreaterThan(0)
+                ? shareFraction.multipliedBy(tick0.reserve0)
+                : new BigNumber(0),
+            userReserves1:
+              tick1 && tick1.reserve1.isGreaterThan(0)
+                ? shareFraction.multipliedBy(tick1.reserve1)
+                : new BigNumber(0),
           };
         }
         return undefined;

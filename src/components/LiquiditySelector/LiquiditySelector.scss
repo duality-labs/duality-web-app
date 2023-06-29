@@ -20,7 +20,7 @@
 
 .tick-buckets {
   .tick-bucket {
-    transition: opacity 0.15s ease-in-out, d 0.15s ease-in-out;
+    transition: opacity 0.15s ease-in-out, y 0.1s ease, height 0.1s ease;
     stroke-width: 0.125;
     opacity: 0.75;
   }
@@ -29,6 +29,11 @@
   .token-b {
     fill: hsl(202deg 58% 33%);
     stroke: hsl(202deg 58% 33%);
+  }
+
+  // make behind-enemy-lines buckets placed over main buckets a little less opaque
+  &.tick-buckets--merged .tick-bucket.behind-enemy-lines {
+    fill-opacity: 0.75;
   }
 }
 .chart-type--amm {

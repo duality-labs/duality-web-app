@@ -321,16 +321,32 @@ function PositionRow({
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
         <td>
           <span className="token-compositions">
-            {formatAmount(total0.toFixed())}&nbsp;{token0.symbol}
+            {formatAmount(
+              getAmountInDenom(
+                token0,
+                total0,
+                token0.address,
+                token0.display
+              ) || 0
+            )}
+            &nbsp;{token0.symbol}
             {' / '}
-            {formatAmount(total1.toFixed())}&nbsp;{token1.symbol}
+            {formatAmount(
+              getAmountInDenom(
+                token1,
+                total1,
+                token1.address,
+                token1.display
+              ) || 0
+            )}
+            &nbsp;{token1.symbol}
           </span>
         </td>
         <td>
           <button type="button" onClick={withdraw} className="button nowrap">
             {[
-              value0.isGreaterThan(0) && token0.display.toUpperCase(),
-              value1.isGreaterThan(0) && token1.display.toUpperCase(),
+              total0.isGreaterThan(0) && token0.display.toUpperCase(),
+              total1.isGreaterThan(0) && token1.display.toUpperCase(),
             ]
               .filter(Boolean)
               .join(' / ')}
@@ -432,14 +448,18 @@ function useUserReserves(shareValues: Array<TickShareValue>) {
 }
 
 function useUserReservesNominalValues(shareValues: Array<TickShareValue>) {
-  const tokens = getShareTokens(shareValues);
+  const [token0, token1] = getShareTokens(shareValues);
   const {
     data: [price0, price1],
-  } = useSimplePrice(tokens);
+  } = useSimplePrice([token0, token1]);
   const [total0, total1] = useUserReserves(shareValues);
   if (price0 && price1 && total0 && total1) {
-    const value0 = total0.multipliedBy(price0);
-    const value1 = total1.multipliedBy(price1);
+    const value0 = new BigNumber(
+      getAmountInDenom(token0, total0, token0.address, token0.display) || 0
+    ).multipliedBy(price0);
+    const value1 = new BigNumber(
+      getAmountInDenom(token1, total1, token1.address, token1.display) || 0
+    ).multipliedBy(price1);
     return [value0, value1];
   }
   return [new BigNumber(0), new BigNumber(0)];
