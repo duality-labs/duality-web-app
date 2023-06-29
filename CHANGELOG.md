@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.112](https://github.com/duality-labs/duality-web-app/compare/v0.1.111...v0.1.112) (2023-06-29)
+
+
+### Fixes
+
+* Liquidity chart y-axis token value calculations were swapped ([#386](https://github.com/duality-labs/duality-web-app/issues/386)) ([1cb65f9](https://github.com/duality-labs/duality-web-app/commit/1cb65f99a63cab3fe0dc051dcdc49a9d4c83004e))
+
 ## [0.1.111](https://github.com/duality-labs/duality-web-app/compare/v0.1.110...v0.1.111) (2023-06-28)
 
 

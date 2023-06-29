@@ -561,10 +561,10 @@ export default function LiquiditySelector({
       fillBuckets(emptyBuckets[1], feeTicks[1], 'lower', getReserveBValue)
     );
     function getReserveAValue(reserve: BigNumber): BigNumber {
-      return reserve;
+      return reserve.multipliedBy(edgePrice);
     }
     function getReserveBValue(reserve: BigNumber): BigNumber {
-      return reserve.multipliedBy(edgePrice);
+      return reserve;
     }
   }, [emptyBuckets, feeTicks, edgePriceIndex]);
 
@@ -588,10 +588,10 @@ export default function LiquiditySelector({
       0
     );
     function getReserveAValue(reserve: BigNumber): BigNumber {
-      return reserve;
+      return reserve.multipliedBy(edgePrice);
     }
     function getReserveBValue(reserve: BigNumber): BigNumber {
-      return reserve.multipliedBy(edgePrice);
+      return reserve;
     }
   }, [emptyBuckets, tokenATicks, tokenBTicks, edgePriceIndex]);
 
@@ -1486,14 +1486,14 @@ function TicksGroup({
   // collect reserve height to calculate stats to use
   const tickValues = userTicks.flatMap((tick) =>
     [
-      tick?.reserveA.toNumber(),
-      tick?.reserveB.multipliedBy(currentPrice).toNumber(),
+      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
+      tick?.reserveB.toNumber(),
     ].filter((reserve): reserve is number => Boolean(reserve))
   );
   const backgroundTickValues = backgroundTicks.flatMap((tick) =>
     [
-      tick?.reserveA.toNumber(),
-      tick?.reserveB.multipliedBy(currentPrice).toNumber(),
+      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
+      tick?.reserveB.toNumber(),
     ].filter((reserve): reserve is number => Boolean(reserve))
   );
 
@@ -1660,23 +1660,23 @@ function TicksGroup({
         (reserveA.isGreaterThan(0)
           ? cumulativeTokenValues &&
             reserveA
+              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
             reserveB
               .multipliedBy(scalingFactor)
-              .multipliedBy(currentPrice)
               .dividedBy(cumulativeTokenValues)) || new BigNumber(0);
       const backgroundValue =
         (background.reserveA.isGreaterThan(0)
           ? cumulativeTokenValues &&
             background.reserveA
+              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
             background.reserveB
               .multipliedBy(scalingFactor)
-              .multipliedBy(currentPrice)
               .dividedBy(cumulativeTokenValues)) || new BigNumber(0);
 
       const minValue = totalValue.isLessThan(backgroundValue)
