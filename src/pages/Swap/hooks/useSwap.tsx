@@ -18,7 +18,7 @@ import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 import { readEvents } from '../../../lib/web3/utils/txs';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
-import { nicholasdotsol } from '@duality-labs/dualityjs';
+import { dualitylabs } from '@duality-labs/dualityjs';
 import {
   MsgSwapResponseSDKType,
   MsgSwapSDKType,
@@ -40,6 +40,7 @@ async function sendSwap(
     minOut,
     creator,
     receiver,
+    limitPrice,
   }: MsgSwapSDKType,
   gasEstimate: number
 ): Promise<MsgSwapResponseSDKType> {
@@ -51,7 +52,8 @@ async function sendSwap(
     !tokenB ||
     !minOut ||
     !creator ||
-    !creator
+    !creator ||
+    !limitPrice
   ) {
     throw new Error('Invalid Input');
   }
@@ -78,7 +80,7 @@ async function sendSwap(
     .signAndBroadcast(
       address,
       [
-        nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.swap({
+        dualitylabs.duality.dex.MessageComposer.withTypeUrl.swap({
           amountIn,
           tokenIn,
           tokenA,
@@ -86,6 +88,7 @@ async function sendSwap(
           minOut,
           creator,
           receiver,
+          limitPrice,
         }),
       ],
       {

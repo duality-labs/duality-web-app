@@ -17,7 +17,7 @@ type QueryAllTokensState = {
   error: SWRResponse['error'];
 };
 
-export default function useTokenPairs({
+export default function useTokens({
   swr: swrConfig,
   query: queryConfig,
   queryClient: queryClientConfig,
@@ -45,12 +45,12 @@ export default function useTokenPairs({
   } = useSWRInfinite<QueryAllTokensResponseSDKType>(
     getNextPaginationKey<QueryAllTokensRequest>(
       // set unique cache key for this client method
-      'nicholasdotsol.duality.dex.tokensAll',
+      'dualitylabs.duality.dex.tokensAll',
       params
     ),
     async ([, params]: [paths: string, params: QueryAllTokensRequest]) => {
       const client = await lcdClientPromise;
-      return await client.nicholasdotsol.duality.dex.tokensAll(params);
+      return await client.dualitylabs.duality.dex.tokensAll(params);
     },
     { persistSize: true, ...swrConfig }
   );

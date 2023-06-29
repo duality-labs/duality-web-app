@@ -1,16 +1,16 @@
 import { HttpEndpoint } from '@cosmjs/tendermint-rpc';
 
-import { nicholasdotsol } from '@duality-labs/dualityjs';
-import { useMemo } from 'react';
+import { dualitylabs } from '@duality-labs/dualityjs';
+import { useEffect, useMemo, useState } from 'react';
 
 const { REACT_APP__REST_API = '' } = process.env;
 
 export function lcdClient(rpcURL = REACT_APP__REST_API) {
-  return nicholasdotsol.ClientFactory.createLCDClient({ restEndpoint: rpcURL });
+  return dualitylabs.ClientFactory.createLCDClient({ restEndpoint: rpcURL });
 }
 
 type LcdClient = Awaited<
-  ReturnType<typeof nicholasdotsol.ClientFactory.createLCDClient>
+  ReturnType<typeof dualitylabs.ClientFactory.createLCDClient>
 >;
 
 const _lcdClients: Record<string, LcdClient> = {};
@@ -33,7 +33,7 @@ const getLcdClient = async (
   if (_lcdClients.hasOwnProperty(key)) {
     return _lcdClients[key];
   }
-  const lcd = await nicholasdotsol.ClientFactory.createLCDClient({
+  const lcd = await dualitylabs.ClientFactory.createLCDClient({
     restEndpoint: key,
   });
   _lcdClients[key] = lcd;
@@ -58,4 +58,15 @@ export function useLcdClientPromise(
   return useMemo(() => {
     return getLcdClient(restEndpoint);
   }, [restEndpoint]);
+}
+
+export function useLcdClient(
+  restEndpoint = REACT_APP__REST_API
+): LcdClient | undefined {
+  const lcdClientPromise = useLcdClientPromise(restEndpoint);
+  const [lcdClient, setLcdClient] = useState<LcdClient>();
+  useEffect(() => {
+    lcdClientPromise.then((lcdClient) => setLcdClient(lcdClient));
+  }, [lcdClientPromise]);
+  return lcdClient;
 }

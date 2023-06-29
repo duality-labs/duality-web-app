@@ -18,8 +18,11 @@ export interface PairMap {
  * @param token1 address of token 1
  * @returns pair id for tokens
  */
-export function getPairID(token0: TokenAddress, token1: TokenAddress) {
-  return `${token0}<>${token1}`;
+export function getPairID(
+  token0: TokenAddress = '',
+  token1: TokenAddress = ''
+) {
+  return token0 && token1 ? `${token0}<>${token1}` : '';
 }
 
 /**
