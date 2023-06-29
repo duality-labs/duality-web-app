@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useMatch, useNavigate } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 import Long from 'long';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -49,11 +50,49 @@ export default function SwapPage() {
 
 function Swap() {
   const { address, connectWallet } = useWeb3();
+
+  const navigate = useNavigate();
+
+  // change tokens to match pathname
   const tokenList = useTokens();
-  const [tokenA, setTokenA] = useState(
-    tokenList.find((token) => token.symbol === 'TKN') as Token | undefined
+  const match = useMatch('/swap/:tokenA/:tokenB');
+
+  const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
+    if (match) {
+      const tokenA = tokenList.find((t) => t.symbol === match.params['tokenA']);
+      const tokenB = tokenList.find((t) => t.symbol === match.params['tokenB']);
+      return [tokenA, tokenB];
+    }
+    return [];
+  }, [tokenList, match]);
+
+  // don't change tokens directly:
+  // change the path name which will in turn update the tokens selected
+  const setTokensPath = useCallback(
+    ([tokenA, tokenB]: [Token?, Token?]) => {
+      if (tokenA || tokenB) {
+        const path = [tokenA?.symbol ?? '-', tokenB?.symbol ?? '-'];
+        navigate(`/swap/${path.filter(Boolean).join('/')}`);
+      } else {
+        navigate('/swap');
+      }
+    },
+    [navigate]
   );
-  const [tokenB, setTokenB] = useState(undefined as Token | undefined);
+  const setTokenA = useCallback(
+    (tokenA: Token | undefined) => {
+      setTokensPath([tokenA, tokenB]);
+    },
+    [setTokensPath, tokenB]
+  );
+  const setTokenB = useCallback(
+    (tokenB: Token | undefined) => {
+      setTokensPath([tokenA, tokenB]);
+    },
+    [setTokensPath, tokenA]
+  );
+
+  // use input number values (as native HTML string values)
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
   const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
@@ -82,8 +121,7 @@ function Swap() {
 
   const swapTokens = useCallback(
     function () {
-      setTokenA(tokenB);
-      setTokenB(tokenA);
+      setTokensPath([tokenB, tokenA]);
       setInputValueA(valueBConverted || '');
       setInputValueB(valueAConverted || '');
       setLastUpdatedA((flag) => !flag);
@@ -91,6 +129,7 @@ function Swap() {
     [
       tokenA,
       tokenB,
+      setTokensPath,
       valueAConverted,
       valueBConverted,
       setInputValueA,
