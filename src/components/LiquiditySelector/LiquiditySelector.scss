@@ -30,11 +30,6 @@
     fill: hsl(202deg 58% 33%);
     stroke: hsl(202deg 58% 33%);
   }
-
-  // make behind-enemy-lines buckets placed over main buckets a little less opaque
-  &.tick-buckets--merged .tick-bucket.behind-enemy-lines {
-    fill-opacity: 0.75;
-  }
 }
 
 .new-ticks {

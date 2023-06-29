@@ -11,7 +11,6 @@ import React, {
   ReactNode,
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
-import { useLocation } from 'react-router-dom';
 
 import {
   formatAmount,
@@ -1892,19 +1891,13 @@ function TickBucketsGroup({
   plotY: (y: BigNumber) => number;
   className?: string;
 }) {
-  const queryParams = new URLSearchParams(useLocation().search);
-  const stack = queryParams.get('buckets') || 'merge';
   // buckets have integer bounds but the edgePriceIndex comes as a float for
   // maximum accuracy, make sure we can compare them easily here
   const roundedCurrentPriceIndex = Math.round(edgePriceIndex);
 
   return (
     <g
-      className={[
-        'tick-buckets',
-        `tick-buckets--${stack === 'merge' ? 'merged' : 'stacked'}`,
-        className,
-      ]
+      className={['tick-buckets', 'tick-buckets--stacked', className]
         .filter(Boolean)
         .join(' ')}
     >
@@ -1916,16 +1909,8 @@ function TickBucketsGroup({
           const leftSide = lowerBoundIndex < roundedCurrentPriceIndex;
           // offset the reserve value Y position if stacking buckets
           const [tokenAOffset, tokenBOffset]: (BigNumber | number)[] =
-            stack === 'stack-above'
-              ? // place "behind enemy lines" tokens above main liquiidty tokens
-                leftSide
-                ? [0, tokenAValue]
-                : [tokenBValue, 0]
-              : stack === 'stack-below'
-              ? !leftSide
-                ? [0, tokenAValue]
-                : [tokenBValue, 0]
-              : [0, 0];
+            // place "behind enemy lines" tokens below main liquiidty tokens
+            !leftSide ? [0, tokenAValue] : [tokenBValue, 0];
           const buckets = [
             <Bucket
               key={`${index}-a`}
