@@ -11,13 +11,13 @@ export type TokenAddress = string; // a valid hex address, eg. 0x01
 
 export type TokenPair = [Token, Token];
 export type TokenAddressPair = [TokenAddress, TokenAddress];
+export function getTokenAddress(token: Token | TokenAddress): TokenAddress {
+  return typeof token === 'string' ? token : token.address;
+}
 export function getTokenAddressPair([token0, token1]:
   | TokenPair
   | TokenAddressPair): TokenAddressPair {
-  return [
-    typeof token0 === 'string' ? token0 : token0.address,
-    typeof token1 === 'string' ? token1 : token1.address,
-  ];
+  return [getTokenAddress(token0), getTokenAddress(token1)];
 }
 
 export function getAmountInDenom(
