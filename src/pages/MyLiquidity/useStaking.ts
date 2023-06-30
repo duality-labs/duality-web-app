@@ -104,24 +104,26 @@ export function useStake(): [
                 ? [
                     duality.incentives.MessageComposer.withTypeUrl.unstake({
                       owner: web3Address,
-                      unstakes: unstakePositions.flatMap(({ deposit }) => {
-                        const denom = getShareDenom(
-                          [deposit.pairID.token0, deposit.pairID.token1],
-                          deposit.centerTickIndex.toNumber(),
-                          deposit.fee.toNumber()
-                        );
-                        return denom
-                          ? {
-                              ID: Long.fromString('wat'),
-                              coins: [
-                                {
-                                  denom,
-                                  amount: deposit.sharesOwned,
-                                },
-                              ],
-                            }
-                          : [];
-                      }),
+                      unstakes: unstakePositions.flatMap(
+                        ({ deposit, stakeContext }) => {
+                          const denom = getShareDenom(
+                            [deposit.pairID.token0, deposit.pairID.token1],
+                            deposit.centerTickIndex.toNumber(),
+                            deposit.fee.toNumber()
+                          );
+                          return denom
+                            ? {
+                                ID: Long.fromString(stakeContext?.ID || ''),
+                                coins: [
+                                  {
+                                    denom,
+                                    amount: deposit.sharesOwned,
+                                  },
+                                ],
+                              }
+                            : [];
+                        }
+                      ),
                     }),
                   ]
                 : []),
