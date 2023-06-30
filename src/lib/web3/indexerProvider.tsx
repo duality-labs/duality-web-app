@@ -41,7 +41,7 @@ interface UserBankBalance {
 interface UserShares {
   shares: Array<IndexedShare>;
 }
-interface UserStakedShare extends IndexedShare {
+export interface UserStakedShare extends IndexedShare {
   ID: string;
   owner: string;
   start_time?: string;
@@ -496,7 +496,7 @@ export function useShares({
   staked = false,
 }: { tokens?: [tokenA: Token, tokenB: Token]; staked?: boolean } = {}) {
   const { data, error, isValidating } = useShareData();
-  const shares = useMemo(() => {
+  const shares = useMemo((): IndexedShare[] | UserStakedShare[] | undefined => {
     // filter to specific tokens if asked for
     const shares = data?.shares.filter(
       (share) => Number(share.sharesOwned) > 0
