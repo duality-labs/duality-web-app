@@ -63,7 +63,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
 
   // derive future state from starting state and selected changes
   const futureStakes = useMemo<ValuedUserPositionDepositContext[]>(() => {
-    const futureStakes = [...currentStakes];
+    let futureStakes = [...currentStakes];
 
     // add new stakes
     selectedStakes.forEach((selectedStake) => {
@@ -80,7 +80,9 @@ export default function MyPoolStakesTableCard<T extends string | number>({
     // remove new unstakes
     selectedUnstakes.forEach((selectedUnstake) => {
       if (futureStakes.find((stake) => isStakeEqual(stake, selectedUnstake))) {
-        futureStakes.filter((stake) => !isStakeEqual(stake, selectedUnstake));
+        futureStakes = futureStakes.filter(
+          (stake) => !isStakeEqual(stake, selectedUnstake)
+        );
       }
     });
     return futureStakes;
