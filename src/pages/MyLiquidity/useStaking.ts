@@ -44,7 +44,10 @@ export function useStake(): [
   const web3 = useWeb3();
 
   const sendRequest = useCallback(
-    async function (stakePositions: Array<ValuedUserPositionDepositContext>) {
+    async function (
+      stakePositions: Array<ValuedUserPositionDepositContext>,
+      unstakePositions: Array<ValuedUserPositionDepositContext>
+    ) {
       try {
         // check for correct inputs
         if (!web3.address || !web3.wallet) {
@@ -52,8 +55,10 @@ export function useStake(): [
         }
         const web3Address = web3.address;
 
-        if (stakePositions.length === 0) {
-          throw new Error('Ticks not set');
+        const stakeChangeCount =
+          stakePositions.length + unstakePositions.length;
+        if (stakeChangeCount === 0) {
+          throw new Error('Stakes not set');
         }
 
         setData(undefined);
@@ -63,7 +68,7 @@ export function useStake(): [
         const id = `${Date.now()}.${Math.random}`;
         createLoadingToast({ id, description: 'Staking...' });
 
-        const gasEstimate = 50000 + 100000 * stakePositions.length;
+        const gasEstimate = 50000 + 100000 * stakeChangeCount;
 
         // wrap transaction logic
         try {
@@ -75,6 +80,8 @@ export function useStake(): [
           const res = await client.signAndBroadcast(
             web3.address,
             [
+              ...(stakePositions.length > 0
+                ? [
                     duality.incentives.MessageComposer.withTypeUrl.stake({
                       owner: web3Address,
                       coins: stakePositions.flatMap(({ deposit }) => {
@@ -91,6 +98,33 @@ export function useStake(): [
                           : [];
                       }),
                     }),
+                  ]
+                : []),
+              ...(unstakePositions.length > 0
+                ? [
+                    duality.incentives.MessageComposer.withTypeUrl.unstake({
+                      owner: web3Address,
+                      unstakes: unstakePositions.flatMap(({ deposit }) => {
+                        const denom = getShareDenom(
+                          [deposit.pairID.token0, deposit.pairID.token1],
+                          deposit.centerTickIndex.toNumber(),
+                          deposit.fee.toNumber()
+                        );
+                        return denom
+                          ? {
+                              ID: Long.fromString('wat'),
+                              coins: [
+                                {
+                                  denom,
+                                  amount: deposit.sharesOwned,
+                                },
+                              ],
+                            }
+                          : [];
+                      }),
+                    }),
+                  ]
+                : []),
             ],
             {
               gas: gasEstimate.toFixed(0),
