@@ -22,7 +22,7 @@ import {
   getTokenAddressPair,
 } from '../utils/tokens';
 import useTokens from './useTokens';
-import { useShares } from '../indexerProvider';
+import { UserStakedShare, useShares } from '../indexerProvider';
 import { getShareInfo } from '../utils/shares';
 
 // default useUserPositionsTotalShares filter to all user's deposits
@@ -49,33 +49,37 @@ export function usePoolDepositFilterForPair(
   return poolDepositFilter;
 }
 
+interface ExtendedDepositRecord extends DepositRecord {
+  stakeContext?: { ID: string; owner: string; start_time?: string };
+}
 // select all (or optional token pair list of) user shares
 export function useUserDeposits(
   poolDepositFilter: UserDepositFilter = defaultFilter,
   staked?: boolean
-): Required<DepositRecord>[] | undefined {
+): Required<ExtendedDepositRecord>[] | undefined {
   const { data: shares } = useShares({ staked });
   return useMemo(() => {
-    const deposits = shares?.map<DepositRecord>(
-      ({ fee, pairId, sharesOwned, tickIndex }) => {
-        const [token0Address, token1Address] = pairId.split('<>');
-        return {
-          pairID: { token0: token0Address, token1: token1Address },
-          sharesOwned,
-          centerTickIndex: Long.fromString(tickIndex),
-          lowerTickIndex: Long.fromString(tickIndex).sub(fee),
-          upperTickIndex: Long.fromString(tickIndex).add(fee),
-          fee: Long.fromString(fee),
-        };
-      }
-    );
+    const deposits = shares?.map<ExtendedDepositRecord>((share) => {
+      const { fee, pairId, sharesOwned, tickIndex } = share;
+      const { ID, owner, start_time } = share as UserStakedShare;
+      const [token0Address, token1Address] = pairId.split('<>');
+      return {
+        pairID: { token0: token0Address, token1: token1Address },
+        sharesOwned,
+        centerTickIndex: Long.fromString(tickIndex),
+        lowerTickIndex: Long.fromString(tickIndex).sub(fee),
+        upperTickIndex: Long.fromString(tickIndex).add(fee),
+        fee: Long.fromString(fee),
+        stakeContext: staked ? { ID, owner, start_time } : undefined,
+      };
+    });
     // return filtered list of deposits
     const filteredDeposits = deposits?.filter(poolDepositFilter);
     // only accept deposits with pairID properties attached (should be always)
     return filteredDeposits?.filter(
-      (deposit): deposit is Required<DepositRecord> => !!deposit.pairID
+      (deposit): deposit is Required<ExtendedDepositRecord> => !!deposit.pairID
     );
-  }, [shares, poolDepositFilter]);
+  }, [shares, poolDepositFilter, staked]);
 }
 
 // select all (or optional token pair list of) user shares
@@ -245,6 +249,11 @@ export interface UserPositionDepositContext {
   token0Context?: ShareValueContext;
   token1: Token;
   token1Context?: ShareValueContext;
+  stakeContext?: {
+    ID: string;
+    owner: string;
+    start_time?: string;
+  };
 }
 
 // collect all the context about the user's positions together
@@ -362,6 +371,9 @@ export function useUserPositionsContext(
               token1Context: token1Context && {
                 ...token1Context,
                 userReserves: getReservesFromShareValueContext(token1Context),
+              },
+              stakeContext: deposit.stakeContext && {
+                ...deposit.stakeContext,
               },
             },
           ];
