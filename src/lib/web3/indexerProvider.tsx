@@ -491,17 +491,25 @@ export function useShareData() {
   return useContext(IndexerContext).shares;
 }
 
-export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
+export function useShares({
+  tokens,
+  staked = false,
+}: { tokens?: [tokenA: Token, tokenB: Token]; staked?: boolean } = {}) {
   const { data, error, isValidating } = useShareData();
   const shares = useMemo(() => {
     // filter to specific tokens if asked for
     const shares = data?.shares.filter(
       (share) => Number(share.sharesOwned) > 0
     );
+    const stakedShares = data?.stakedShares.filter(
+      (share) => Number(share.sharesOwned) > 0
+    );
     if (tokens) {
-      return shares?.filter(tokensFilter(tokens));
+      return !staked
+        ? shares?.filter(tokensFilter(tokens))
+        : stakedShares?.filter(tokensFilter(tokens));
     }
-    return shares;
+    return !staked ? shares : stakedShares;
 
     function tokensFilter(tokens: [tokenA: Token, tokenB: Token]) {
       const [addressA, addressB] = tokens.map((token) => token.address);
@@ -513,7 +521,7 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
         );
       };
     }
-  }, [tokens, data]);
+  }, [data?.shares, data?.stakedShares, tokens, staked]);
   return { data: shares, error, isValidating };
 }
 
