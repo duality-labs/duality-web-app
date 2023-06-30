@@ -51,9 +51,10 @@ export function usePoolDepositFilterForPair(
 
 // select all (or optional token pair list of) user shares
 export function useUserDeposits(
-  poolDepositFilter: UserDepositFilter = defaultFilter
+  poolDepositFilter: UserDepositFilter = defaultFilter,
+  staked?: boolean
 ): Required<DepositRecord>[] | undefined {
-  const { data: shares } = useShares();
+  const { data: shares } = useShares({ staked });
   return useMemo(() => {
     const deposits = shares?.map<DepositRecord>(
       ({ fee, pairId, sharesOwned, tickIndex }) => {
@@ -79,10 +80,11 @@ export function useUserDeposits(
 
 // select all (or optional token pair list of) user shares
 export function useUserPositionsTotalShares(
-  poolDepositFilter: UserDepositFilter = defaultFilter
+  poolDepositFilter: UserDepositFilter = defaultFilter,
+  staked?: boolean
 ) {
   const lcdClientPromise = useLcdClientPromise();
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
+  const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
 
   const memoizedData = useRef<QuerySupplyOfResponseSDKType[]>([]);
   const { data } = useQueries({
@@ -141,10 +143,11 @@ export function useUserPositionsTotalShares(
 
 // select all (or optional token pair list of) user reserves
 export function useUserPositionsTotalReserves(
-  poolDepositFilter?: UserDepositFilter
+  poolDepositFilter?: UserDepositFilter,
+  staked?: boolean
 ) {
   const lcdClientPromise = useLcdClientPromise();
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
+  const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
 
   const memoizedData = useRef<QueryGetPoolReservesResponseSDKType[]>([]);
   const { data } = useQueries({
@@ -246,13 +249,18 @@ export interface UserPositionDepositContext {
 
 // collect all the context about the user's positions together
 export function useUserPositionsContext(
-  poolDepositFilter?: UserDepositFilter
+  poolDepositFilter?: UserDepositFilter,
+  staked?: boolean
 ): UserPositionDepositContext[] {
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
-  const userPositionsTotalShares =
-    useUserPositionsTotalShares(poolDepositFilter);
-  const userPositionsTotalReserves =
-    useUserPositionsTotalReserves(poolDepositFilter);
+  const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
+  const userPositionsTotalShares = useUserPositionsTotalShares(
+    poolDepositFilter,
+    staked
+  );
+  const userPositionsTotalReserves = useUserPositionsTotalReserves(
+    poolDepositFilter,
+    staked
+  );
 
   const allTokens = useTokens();
 
