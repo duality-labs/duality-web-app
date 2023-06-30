@@ -8,7 +8,7 @@ import {
 } from 'react';
 import Long from 'long';
 import { BigNumber } from 'bignumber.js';
-import { cosmos } from '@duality-labs/dualityjs';
+import { cosmos, duality } from '@duality-labs/dualityjs';
 
 import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
@@ -26,8 +26,11 @@ import { IndexedShare, getShareInfo } from './utils/shares';
 import { getPairID } from './utils/pairs';
 
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { StakeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/stake';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
+
+const { REACT_APP__REST_API = '' } = process.env;
 
 const bankClientImpl = cosmos.bank.v1beta1.QueryClientImpl;
 
@@ -38,6 +41,14 @@ interface UserBankBalance {
 interface UserShares {
   shares: Array<IndexedShare>;
 }
+interface UserStakedShare extends IndexedShare {
+  ID: string;
+  owner: string;
+  start_time?: string;
+}
+interface UserStakedShares {
+  stakedShares: Array<UserStakedShare>;
+}
 
 interface IndexerContextType {
   bank: {
@@ -46,7 +57,7 @@ interface IndexerContextType {
     isValidating: boolean;
   };
   shares: {
-    data?: UserShares;
+    data?: UserShares & UserStakedShares;
     error?: string;
     isValidating: boolean;
   };
@@ -93,7 +104,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const minutes = 60 * seconds;
 
   const [bankData, setBankData] = useState<UserBankBalance>();
-  const [shareData, setShareData] = useState<UserShares>();
+  const [shareData, setShareData] = useState<UserShares & UserStakedShares>();
   const tokensData = useTokens();
   const { data: tokenPairsData, isValidating: isTokenPairsValidating } =
     useTokenPairs({
@@ -117,9 +128,9 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           // todo: clean up this effect when address has changed
           // see: https://github.com/duality-labs/duality-web-app/issues/290
           fetchBankData()
-            .then((data = []) => {
+            .then(([coins = [], stakedCoins] = [[], []]) => {
               // separate out 'normal' and 'share' tokens from the bank balance
-              const [tokens, tokenizedShares] = data.reduce<
+              const [tokens, tokenizedShares] = coins.reduce<
                 [Array<CoinSDKType>, Array<IndexedShare>]
               >(
                 ([tokens, tokenizedShares], coin) => {
@@ -162,8 +173,35 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 },
                 [[], []]
               );
+              // collect stakedShares in a similar format
+              const stakedShares: UserStakedShare[] = stakedCoins.reduce<
+                UserStakedShare[]
+              >((stakedShares, stakedCoin) => {
+                const { ID, coins, owner, start_time } = stakedCoin;
+                coins.forEach((coin) => {
+                  const {
+                    token0Address: token0,
+                    token1Address: token1,
+                    tickIndexString: tickIndex = '',
+                    feeString: fee = '',
+                  } = getShareInfo(coin) || {};
+                  const stakedShare = {
+                    // todo: remove address from here
+                    address: address || '',
+                    pairId: getPairID(token0, token1),
+                    tickIndex,
+                    fee,
+                    sharesOwned: coin.amount,
+                    ID: `${ID}`,
+                    owner,
+                    start_time: start_time && `${start_time}`,
+                  };
+                  stakedShares.push(stakedShare);
+                });
+                return stakedShares;
+              }, []);
               setBankData({ balances: tokens });
-              setShareData({ shares: tokenizedShares });
+              setShareData({ shares: tokenizedShares, stakedShares });
             })
             .catch((e) => {
               setFetchBankDataState((state) => ({
@@ -175,7 +213,9 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         return fetchState;
       });
 
-      async function fetchBankData() {
+      async function fetchBankData(): Promise<
+        [CoinSDKType[], StakeSDKType[]] | undefined
+      > {
         const rpc = await rpcPromise;
         if (address && rpc) {
           const client = new bankClientImpl(rpc);
@@ -183,6 +223,11 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           let nextKey: Uint8Array | undefined;
           let balances: Array<CoinSDKType> = [];
           let res: QueryAllBalancesResponse;
+          const stakedPositionsPromise = duality.ClientFactory.createLCDClient({
+            restEndpoint: REACT_APP__REST_API,
+          }).then((lcdClient) => {
+            return lcdClient.duality.incentives.getStakes({ owner: address });
+          });
           do {
             try {
               res = await client.allBalances({
@@ -209,7 +254,10 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             nextKey = res.pagination?.nextKey;
           } while (nextKey && nextKey.length > 0);
           setFetchBankDataState(() => ({ fetching: false, fetched: true }));
-          return balances || [];
+          // combine regular and staked balances together
+          return await stakedPositionsPromise.then((stakedPositions) => {
+            return [balances, stakedPositions.stakes || []];
+          });
         } else if (!rpc) {
           throw new Error('Could not connect to RPC endpoint');
         }
@@ -269,7 +317,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       setShareData((state) => {
         if (!state) return state;
         // find matched data
-        const { shares = [] } = state || {};
+        const { shares = [], stakedShares = [] } = state || {};
         const data = shares.slice();
         const pairId = getPairID(Token0, Token1);
         const shareFoundIndex = shares.findIndex(
@@ -306,7 +354,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             data.splice(shareFoundIndex, 1);
           }
         }
-        return { shares: data };
+        return { shares: data, stakedShares };
       });
     };
     // subscribe to messages for this address only
