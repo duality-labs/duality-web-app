@@ -37,11 +37,19 @@ export default function MyPoolStakesTableCard<T extends string | number>({
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
   const filterForPair = usePoolDepositFilterForPair([tokenA, tokenB]);
   const userPositionsShareValues = useUserPositionsShareValues(filterForPair);
+  const userStakedShareValues = useUserPositionsShareValues(
+    filterForPair,
+    true
+  );
 
   // find all positions that have been staked
+  const allShareValues: ValuedUserPositionDepositContext[] = useMemo(() => {
+    return [...userPositionsShareValues, ...userStakedShareValues];
+  }, [userPositionsShareValues, userStakedShareValues]);
+
   const currentStakes: ValuedUserPositionDepositContext[] = useMemo(() => {
-    return userPositionsShareValues.filter(() => false);
-  }, [userPositionsShareValues]);
+    return [...userStakedShareValues];
+  }, [userStakedShareValues]);
 
   //
   const [selectedStakes, setSelectedStakes] = useState<
@@ -128,7 +136,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
       }
       {...tableCardProps}
     >
-      {userPositionsShareValues.length > 0 ? (
+      {allShareValues.length > 0 ? (
         <table>
           <thead>
             <tr>
@@ -143,7 +151,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
             </tr>
           </thead>
           <tbody>
-            {userPositionsShareValues
+            {allShareValues
               .sort((a, b) => {
                 return !guessInvertedOrder(tokenA.address, tokenB.address)
                   ? a.deposit.centerTickIndex
