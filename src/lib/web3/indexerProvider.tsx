@@ -499,16 +499,20 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
       (share) => Number(share.sharesOwned) > 0
     );
     if (tokens) {
+      return shares?.filter(tokensFilter(tokens));
+    }
+    return shares;
+
+    function tokensFilter(tokens: [tokenA: Token, tokenB: Token]) {
       const [addressA, addressB] = tokens.map((token) => token.address);
-      return shares?.filter(({ pairId = '' }) => {
+      return function tokenFilter({ pairId = '' }: IndexedShare): boolean {
         const [address0, address1] = pairId.split('/');
         return (
           (addressA === address0 && addressB === address1) ||
           (addressA === address1 && addressB === address0)
         );
-      });
+      };
     }
-    return shares;
   }, [tokens, data]);
   return { data: shares, error, isValidating };
 }
