@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import BigNumber from 'bignumber.js';
 
 import TableCard, { TableCardProps } from './TableCard';
@@ -20,6 +20,7 @@ import {
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 import './PoolsTableCard.scss';
+import { useStake } from '../../pages/MyLiquidity/useStaking';
 
 interface PoolsTableCardOptions {
   tokenA: Token;
@@ -36,16 +37,75 @@ export default function MyPoolStakesTableCard<T extends string | number>({
   const filterForPair = usePoolDepositFilterForPair([tokenA, tokenB]);
   const userPositionsShareValues = useUserPositionsShareValues(filterForPair);
 
+  // find all positions that have been staked
+  const currentStakes: ValuedUserPositionDepositContext[] = useMemo(() => {
+    return userPositionsShareValues.filter(() => false);
+  }, [userPositionsShareValues]);
+
+  //
+  const [selectedStakes, setSelectedStakes] = useState<
+    ValuedUserPositionDepositContext[]
+  >([]);
+  const [selectedUnstakes, setSelectedUnstakes] = useState<
+    ValuedUserPositionDepositContext[]
+  >([]);
+
+  // update future stakes if current stakes change
+
+  // derive future state from starting state and selected changes
+  const futureStakes = useMemo<ValuedUserPositionDepositContext[]>(() => {
+    const futureStakes = [...currentStakes];
+
+    // add new stakes
+    selectedStakes.forEach((selectedStake) => {
+      if (!futureStakes.find((stake) => isStakeEqual(stake, selectedStake))) {
+        // add up-to-date position object
+        const userPosition = userPositionsShareValues.find((position) =>
+          isStakeEqual(position, selectedStake)
+        );
+        if (userPosition) {
+          futureStakes.push(userPosition);
+        }
+      }
+    });
+    // remove new unstakes
+    selectedUnstakes.forEach((selectedUnstake) => {
+      if (futureStakes.find((stake) => isStakeEqual(stake, selectedUnstake))) {
+        futureStakes.filter((stake) => !isStakeEqual(stake, selectedUnstake));
+      }
+    });
+    return futureStakes;
+  }, [
+    userPositionsShareValues,
+    currentStakes,
+    selectedStakes,
+    selectedUnstakes,
+  ]);
+
   const onStake = useCallback(
     (userPosition: ValuedUserPositionDepositContext) => {
-      return;
+      setSelectedStakes((selectedStakes) => {
+        return [...selectedStakes, userPosition];
+      });
+      setSelectedUnstakes((selectedUnstakes) => {
+        return selectedUnstakes.filter(
+          (unstake) => !isStakeEqual(unstake, userPosition)
+        );
+      });
     },
     []
   );
 
   const onUnStake = useCallback(
     (userPosition: ValuedUserPositionDepositContext) => {
-      return;
+      setSelectedStakes((selectedStakes) => {
+        return selectedStakes.filter(
+          (stake) => !isStakeEqual(stake, userPosition)
+        );
+      });
+      setSelectedUnstakes((selectedUnstakes) => {
+        return [...selectedUnstakes, userPosition];
+      });
     },
     []
   );
@@ -55,9 +115,15 @@ export default function MyPoolStakesTableCard<T extends string | number>({
       className={['pool-list-card', className].filter(Boolean).join(' ')}
       title={title}
       headerActions={
-        <Link to="/portfolio/pools">
-          <button className="button text-action-button nowrap">Back</button>
-        </Link>
+        <div className="row gap-3">
+          <Link to="/portfolio/pools">
+            <button className="button text-action-button nowrap">Back</button>
+          </Link>
+          <ConfirmStake
+            currentStakes={currentStakes}
+            futureStakes={futureStakes}
+          />
+        </div>
       }
       {...tableCardProps}
     >
@@ -77,6 +143,9 @@ export default function MyPoolStakesTableCard<T extends string | number>({
           </thead>
           <tbody>
             {userPositionsShareValues.map((userPosition) => {
+              const isStaked = !!futureStakes.find((stake) =>
+                isStakeEqual(stake, userPosition)
+              );
               return (
                 // show user's positions
                 <StakingRow
@@ -84,8 +153,8 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                   tokenA={tokenA}
                   tokenB={tokenB}
                   userPosition={userPosition}
-                  onStake={onStake}
-                  onUnstake={onUnStake}
+                  onStake={isStaked ? undefined : onStake}
+                  onUnstake={isStaked ? onUnStake : undefined}
                 />
               );
             })}
@@ -109,17 +178,78 @@ export default function MyPoolStakesTableCard<T extends string | number>({
   );
 }
 
+function isStakeEqual(
+  stakeA: ValuedUserPositionDepositContext,
+  stakeB: ValuedUserPositionDepositContext
+): boolean {
+  return (
+    stakeA.deposit.centerTickIndex.equals(stakeB.deposit.centerTickIndex) &&
+    stakeA.deposit.fee.equals(stakeB.deposit.fee) &&
+    stakeA.deposit.pairID.token0 === stakeB.deposit.pairID.token0 &&
+    stakeA.deposit.pairID.token1 === stakeB.deposit.pairID.token1 &&
+    stakeA.deposit.sharesOwned === stakeB.deposit.sharesOwned
+  );
+}
+
+function isStakesEqual(
+  stakesA: ValuedUserPositionDepositContext[],
+  stakesB: ValuedUserPositionDepositContext[]
+): boolean {
+  return (
+    stakesA.length === stakesB.length &&
+    stakesA.every((stakeA, index) => {
+      return isStakeEqual(stakeA, stakesB[index]);
+    })
+  );
+}
+
+function ConfirmStake({
+  currentStakes,
+  futureStakes,
+}: {
+  currentStakes: ValuedUserPositionDepositContext[];
+  futureStakes: ValuedUserPositionDepositContext[];
+}) {
+  const [{ isValidating }, sendStakeRequest] = useStake();
+  const stakesEqual = isStakesEqual(currentStakes, futureStakes);
+  const onClick = useCallback(() => {
+    const stakePositions = futureStakes.filter(
+      (futureStake) =>
+        !currentStakes.find((currentStake) =>
+          isStakeEqual(futureStake, currentStake)
+        )
+    );
+    const unstakePositions = currentStakes.filter(
+      (currentStake) =>
+        !futureStakes.find((futureStake) =>
+          isStakeEqual(futureStake, currentStake)
+        )
+    );
+    sendStakeRequest(stakePositions, unstakePositions);
+  }, [currentStakes, futureStakes, sendStakeRequest]);
+  return !stakesEqual ? (
+    <button
+      className="button button-primary"
+      disabled={isValidating}
+      onClick={onClick}
+    >
+      Confirm stake change
+    </button>
+  ) : null;
+}
+
 function StakingRow({
   tokenA,
   tokenB,
   userPosition,
   onStake,
+  onUnstake,
 }: {
   tokenA: Token;
   tokenB: Token;
   userPosition: ValuedUserPositionDepositContext;
-  onStake: (userPosition: ValuedUserPositionDepositContext) => void;
-  onUnstake: (userPosition: ValuedUserPositionDepositContext) => void;
+  onStake?: (userPosition: ValuedUserPositionDepositContext) => void;
+  onUnstake?: (userPosition: ValuedUserPositionDepositContext) => void;
 }) {
   const tokensInverted = tokenA.address !== userPosition.token0.address;
 
@@ -183,13 +313,24 @@ function StakingRow({
         <td>
           <div className="col">
             <div className="row gap-3 ml-auto">
-              <button
-                type="button"
-                className="button nowrap button-primary m-0"
-                onClick={() => onStake(userPosition)}
-              >
-                Stake
-              </button>
+              {onStake && (
+                <button
+                  type="button"
+                  className="button nowrap button-primary m-0"
+                  onClick={() => onStake(userPosition)}
+                >
+                  Stake
+                </button>
+              )}
+              {onUnstake && (
+                <button
+                  type="button"
+                  className="button nowrap button-primary-outline m-0"
+                  onClick={() => onUnstake(userPosition)}
+                >
+                  Unstake
+                </button>
+              )}
             </div>
           </div>
         </td>
