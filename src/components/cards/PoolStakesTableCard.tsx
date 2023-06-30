@@ -149,6 +149,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
               <th>Value</th>
               <th>{tokenA.symbol} Amount</th>
               <th>{tokenB.symbol} Amount</th>
+              <th>Staked Time</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -259,6 +260,10 @@ function ConfirmStake({
   ) : null;
 }
 
+const relativeTimeFormatter = new Intl.RelativeTimeFormat('en', {
+  style: 'short',
+});
+
 function StakingRow({
   tokenA,
   tokenB,
@@ -329,6 +334,17 @@ function StakingRow({
                 tokenB.address,
                 tokenB.display
               ) || 0
+            )}
+        </td>
+        <td>
+          {userPosition.stakeContext?.start_time &&
+            relativeTimeFormatter.format(
+              (new Date(userPosition.stakeContext.start_time).valueOf() -
+                Date.now()) /
+                1000 /
+                60 /
+                60,
+              'hours'
             )}
         </td>
         <td>
