@@ -22,6 +22,8 @@ import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 
 import './PoolsTableCard.scss';
 import { useStake } from '../../pages/MyLiquidity/useStaking';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck } from '@fortawesome/free-solid-svg-icons';
 
 interface PoolsTableCardOptions {
   tokenA: Token;
@@ -149,6 +151,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
               <th>Value</th>
               <th>{tokenA.symbol} Amount</th>
               <th>{tokenB.symbol} Amount</th>
+              <th>Staked</th>
               <th>Staked Time</th>
               <th>Action</th>
             </tr>
@@ -335,6 +338,11 @@ function StakingRow({
                 tokenB.display
               ) || 0
             )}
+        </td>
+        <td>
+          {userPosition.stakeContext?.start_time ? (
+            <FontAwesomeIcon icon={faCheck} />
+          ) : null}
         </td>
         <td>
           {userPosition.stakeContext?.start_time &&
