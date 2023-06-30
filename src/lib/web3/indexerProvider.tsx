@@ -103,28 +103,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const rpcPromise = useRpcPromise();
 
   const [error, setError] = useState<string>();
-  const [result, setResult] = useState<IndexerContextType>({
-    bank: {
-      data: bankData,
-      error: error,
-      isValidating: true,
-    },
-    shares: {
-      data: shareData,
-      error: error,
-      isValidating: true,
-    },
-    tokens: {
-      data: tokensData,
-      error: error,
-      isValidating: true,
-    },
-    tokenPairs: {
-      data: tokenPairsData,
-      error: error,
-      isValidating: true,
-    },
-  });
 
   const { address } = useWeb3();
   const [, setFetchBankDataState] = useState<FetchState>({
@@ -381,8 +359,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     };
   }, [rpcPromise]);
 
-  useEffect(() => {
-    setResult({
+  const result = useMemo(() => {
+    return {
       bank: {
         data: bankData,
         error: error,
@@ -394,7 +372,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         isValidating: !shareData && !error,
       },
       tokens: {
-        data: undefined,
+        data: tokensData,
         error: error,
         isValidating: !shareData && !error,
       },
@@ -403,8 +381,15 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         error: error,
         isValidating: isTokenPairsValidating,
       },
-    });
-  }, [bankData, shareData, tokenPairsData, error, isTokenPairsValidating]);
+    };
+  }, [
+    bankData,
+    shareData,
+    tokensData,
+    tokenPairsData,
+    error,
+    isTokenPairsValidating,
+  ]);
 
   return (
     <IndexerContext.Provider value={result}>{children}</IndexerContext.Provider>
