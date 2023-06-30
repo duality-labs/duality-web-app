@@ -18,6 +18,7 @@ import {
 } from '../../lib/web3/hooks/useUserShareValues';
 
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 
 import './PoolsTableCard.scss';
 import { useStake } from '../../pages/MyLiquidity/useStaking';
@@ -142,22 +143,32 @@ export default function MyPoolStakesTableCard<T extends string | number>({
             </tr>
           </thead>
           <tbody>
-            {userPositionsShareValues.map((userPosition) => {
-              const isStaked = !!futureStakes.find((stake) =>
-                isStakeEqual(stake, userPosition)
-              );
-              return (
-                // show user's positions
-                <StakingRow
-                  key={`${userPosition.deposit.centerTickIndex}-${userPosition.deposit.fee}`}
-                  tokenA={tokenA}
-                  tokenB={tokenB}
-                  userPosition={userPosition}
-                  onStake={isStaked ? undefined : onStake}
-                  onUnstake={isStaked ? onUnStake : undefined}
-                />
-              );
-            })}
+            {userPositionsShareValues
+              .sort((a, b) => {
+                return !guessInvertedOrder(tokenA.address, tokenB.address)
+                  ? a.deposit.centerTickIndex
+                      .subtract(b.deposit.centerTickIndex)
+                      .toNumber()
+                  : b.deposit.centerTickIndex
+                      .subtract(a.deposit.centerTickIndex)
+                      .toNumber();
+              })
+              .map((userPosition) => {
+                const isStaked = !!futureStakes.find((stake) =>
+                  isStakeEqual(stake, userPosition)
+                );
+                return (
+                  // show user's positions
+                  <StakingRow
+                    key={`${userPosition.deposit.centerTickIndex}-${userPosition.deposit.fee}`}
+                    tokenA={tokenA}
+                    tokenB={tokenB}
+                    userPosition={userPosition}
+                    onStake={isStaked ? undefined : onStake}
+                    onUnstake={isStaked ? onUnStake : undefined}
+                  />
+                );
+              })}
           </tbody>
         </table>
       ) : (
