@@ -11,9 +11,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-}
-
-.chart-type--advanced {
   // restrict pointer events, only certain parts require interaction
   pointer-events: none;
 }
@@ -25,23 +22,13 @@
     opacity: 0.75;
   }
 
-  .token-a,
+  .token-a {
+    fill: hsl(0, 58%, 33%);
+    stroke: hsl(0, 58%, 33%);
+  }
   .token-b {
     fill: hsl(202deg 58% 33%);
     stroke: hsl(202deg 58% 33%);
-  }
-
-  // make behind-enemy-lines buckets placed over main buckets a little less opaque
-  &.tick-buckets--merged .tick-bucket.behind-enemy-lines {
-    fill-opacity: 0.75;
-  }
-}
-.chart-type--amm {
-  .tick-bucket {
-    cursor: pointer;
-    &:hover {
-      opacity: 1;
-    }
   }
 }
 
@@ -70,14 +57,15 @@
     cursor: move;
     pointer-events: visible;
   }
-  .tick text {
-    fill: hsl(202deg 58% 33%);
-  }
   .tick--selected {
     stroke: var(--submit-button-bg);
   }
+  .tick text {
+    display: none;
+    fill: hsla(202, 50%, 84%, 1);
+  }
   .tick--selected text {
-    fill: var(--submit-button-bg);
+    display: block;
   }
   .line--diff {
     stroke-dasharray: 3px;
@@ -118,11 +106,13 @@
     stroke: var(--error);
   }
   .pole-stick {
-    stroke-width: 8px;
-    stroke: hsla(165, 83%, 57%, 1);
+    fill: url(#flag-pole-fade);
   }
-  .pole-flag,
-  .pole-to-flag {
+  .pole-stick-edge {
+    stroke-width: 1px;
+    stroke: hsla(165, 83%, 57%, 0.5);
+  }
+  .pole-flag {
     fill: hsla(165, 83%, 57%, 1);
   }
   .pole-flag-stripe {
@@ -136,13 +126,16 @@
     stroke: transparent;
     stroke-width: 10px;
     cursor: pointer;
+    pointer-events: all;
   }
   .pole--price-warning {
-    .pole-to-flag,
     .pole-flag {
       fill: var(--error);
     }
     .pole-stick {
+      fill: url(#flag-pole-fade-error);
+    }
+    .pole-stick-edge {
       stroke: var(--error);
     }
   }
@@ -165,6 +158,9 @@
     stroke-width: 0;
     fill: hsl(216, 12%, 84%);
     font-size: 12px;
+  }
+  .empty-state text {
+    font-size: 20px;
   }
   line.line--success {
     stroke: hsl(165, 83%, 57%);

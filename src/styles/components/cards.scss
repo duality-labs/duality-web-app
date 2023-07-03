@@ -17,12 +17,10 @@
   border-radius: paddings.$p-3;
 }
 
-$page-card-padding-width: 1.65rem;
+$page-card-padding-width: paddings.$p-lg;
 
 .page-card {
-  margin-top: margins.$m-4;
-  margin-bottom: margins.$m-4;
-  padding: 2rem $page-card-padding-width;
+  padding: $page-card-padding-width;
   border-radius: 1rem;
   border: 1px solid hsla(217, 19%, 27%, 1);
   background-color: var(--page-card);
@@ -53,12 +51,11 @@ $page-card-padding-width: 1.65rem;
   }
 
   .attribution {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: fit-content;
-    margin: 0 auto;
+    margin-top: calc($page-card-padding-width / 2);
+    margin-bottom: -$page-card-padding-width;
+    margin-left: auto;
+    margin-right: auto;
     justify-content: center;
     padding: paddings.$p-1 paddings.$p-4;
     background-color: rgba(white, 0.1);

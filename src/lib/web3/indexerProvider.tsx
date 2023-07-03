@@ -156,6 +156,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                     // add tokenized share if everything is fine
                     if (address) {
                       const tokenizedShare = {
+                        // todo: remove address from here
                         address,
                         pairId: getPairID(token0, token1),
                         tickIndex,
@@ -422,7 +423,33 @@ export function useBankBalances() {
 export function useBankBalance(token: Token | undefined) {
   const { data: balances, error, isValidating } = useBankBalances();
   const balance = useMemo(() => {
-    return token && balances && getBalance(token, balances);
+    return (
+      (token &&
+        balances?.find((balance) => balance.denom === token.address)?.amount) ||
+      '0'
+    );
+  }, [balances, token]);
+  return { data: balance, error, isValidating };
+}
+
+export function useBankBigBalance(token: Token | undefined) {
+  const { data: balances, error, isValidating } = useBankBalances();
+  const balance = useMemo(() => {
+    const foundBalance =
+      token &&
+      balances?.find((balance) => {
+        return token.denom_units.find((unit) => unit.denom === balance.denom);
+      });
+    return (
+      token &&
+      foundBalance &&
+      getAmountInDenom(
+        token,
+        foundBalance.amount,
+        foundBalance.denom,
+        token.display
+      )
+    );
   }, [balances, token]);
   return { data: balance, error, isValidating };
 }
@@ -451,28 +478,6 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
     return shares;
   }, [tokens, data]);
   return { data: shares, error, isValidating };
-}
-
-export function getBalance(
-  token: Token,
-  userBalances: UserBankBalance['balances']
-): string {
-  const denomUnits = token.denom_units;
-  const balanceObject = userBalances?.find((balance) => {
-    return denomUnits?.find((unit) => unit.denom === balance.denom);
-  });
-  return (
-    (!!balanceObject &&
-      balanceObject.amount &&
-      Number(balanceObject.amount) > 0 &&
-      getAmountInDenom(
-        token,
-        balanceObject.amount,
-        balanceObject.denom,
-        token.display
-      )) ||
-    '0'
-  );
 }
 
 export function useTokensList() {

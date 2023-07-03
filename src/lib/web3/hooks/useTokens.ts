@@ -1,7 +1,9 @@
+import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 import { assets, chains } from 'chain-registry';
 import { Chain } from '@chain-registry/types';
-import { Token } from '../utils/tokens';
+import { Token, getTokenValue } from '../utils/tokens';
+import { useSimplePrice } from '../../tokenPrices';
 
 import tknLogo from '../../../assets/tokens/TKN.svg';
 import stkLogo from '../../../assets/tokens/STK.svg';
@@ -199,4 +201,40 @@ export function useDualityTokens(sortFunction = defaultSort) {
 function defaultSort(a: Token, b: Token) {
   // compare by symbol name
   return a.symbol.localeCompare(b.symbol);
+}
+
+// utility function to get value of token amount in USD
+export function useTokenValue(
+  token: Token,
+  amount: BigNumber.Value
+): number | null | undefined {
+  return useTokenValueTotal([token, amount]);
+}
+
+// utility function to get value of token amounts in USD
+export function useTokenValueTotal(
+  ...tokenAmounts: Array<[token: Token, amount: BigNumber.Value]>
+): number | null | undefined {
+  const tokens = tokenAmounts.map(([token]) => token);
+  const { data: prices, isValidating } = useSimplePrice(tokens);
+
+  const values = tokenAmounts.map(([token, amount], index) => {
+    const price = prices[index];
+    return getTokenValue(token, amount, price);
+  });
+
+  // if any values are still resolving then return that we don't know the value
+  if (isValidating && values.some((value) => value === undefined)) {
+    return undefined;
+  }
+
+  // sum values if they are all found
+  // (don't return a total value if only half the token amounts are present)
+  if (values.every((value) => value !== undefined)) {
+    return (values as number[]).reduce((acc, value) => acc + value, 0);
+  }
+  // else return an error state
+  else {
+    return null;
+  }
 }

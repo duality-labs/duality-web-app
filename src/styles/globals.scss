@@ -214,6 +214,12 @@ a {
 .hide {
   display: none !important;
 }
+.invisible {
+  visibility: hidden !important;
+  * {
+    visibility: hidden !important;
+  }
+}
 .relative {
   position: relative;
 }
@@ -229,11 +235,15 @@ a {
 
 input[disabled],
 button[disabled],
-form.disabled input,
-form.disabled button {
+fieldset:disabled input,
+fieldset:disabled button,
+fieldset:disabled label {
   opacity: 0.5;
   cursor: not-allowed !important;
   pointer-events: none;
+}
+fieldset:disabled *:not(:has(> *)) {
+  opacity: 0.5;
 }
 
 hr {
@@ -245,4 +255,19 @@ hr {
 // this helps if a token image background matches the surrounding area
 .token-logo {
   filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.1));
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+.fade-in-fast {
+  animation: fadeIn 0.2s ease-in;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

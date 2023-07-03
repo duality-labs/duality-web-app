@@ -101,3 +101,26 @@ $border-width: 2px;
     }
   }
 }
+
+.page-card--col .range-step-input {
+  padding: paddings.$p-2 paddings.$p-4;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  .range-step-title {
+    font-size: font-size.$text-m;
+    color: var(--primary-alt);
+    margin-right: auto;
+    width: auto;
+  }
+  input,
+  span {
+    font-size: font-size.$text-m;
+  }
+  button {
+    font-size: font-size.$input;
+    color: var(--primary);
+    background-color: transparent;
+  }
+}

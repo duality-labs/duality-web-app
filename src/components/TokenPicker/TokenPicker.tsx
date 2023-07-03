@@ -14,8 +14,11 @@ import BigNumber from 'bignumber.js';
 import { useFilteredTokenList } from './hooks';
 import { useDualityTokens } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
-import { getBalance, useBankBalances } from '../../lib/web3/indexerProvider';
-import { useSimplePrices } from '../../lib/tokenPrices';
+import {
+  useBankBalances,
+  useBankBigBalance,
+} from '../../lib/web3/indexerProvider';
+import { useSimplePrice } from '../../lib/tokenPrices';
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 
 import Dialog from '../Dialog/Dialog';
@@ -23,13 +26,8 @@ import SearchInput from '../inputs/SearchInput/SearchInput';
 
 import './TokenPicker.scss';
 
-interface TokenResult {
-  symbol: Array<string>;
-  chain: Array<string>;
-  token: Token;
-}
-
 interface TokenPickerProps {
+  className?: string;
   onChange: (newToken: Token | undefined) => void;
   exclusion: Token | undefined;
   value: Token | undefined;
@@ -80,6 +78,7 @@ function useSelectedButtonBackgroundMove(
 }
 
 export default function TokenPicker({
+  className,
   value,
   onChange,
   exclusion,
@@ -95,9 +94,7 @@ export default function TokenPicker({
   const userList = useMemo(() => {
     return balances
       ? tokenList.filter((token) =>
-          balances.find((balance) =>
-            token.denom_units.find((token) => token.denom === balance.denom)
-          )
+          balances.find((balance) => balance.denom === token.address)
         )
       : [];
   }, [tokenList, balances]); // Todo: actually filter list to tokens in User's wallet
@@ -183,8 +180,6 @@ export default function TokenPicker({
     [filteredList, close, exclusion?.address, selectToken]
   );
 
-  const { data: userListPrices } = useSimplePrices(userList);
-
   const [movingAssetRef, createRefForValue] =
     useSelectedButtonBackgroundMove(assetMode);
   return (
@@ -194,6 +189,7 @@ export default function TokenPicker({
         className={[
           'my-1',
           'token-picker-toggle',
+          className,
           isOpen && 'open',
           !value?.symbol && 'no-selected-token',
         ]
@@ -216,7 +212,9 @@ export default function TokenPicker({
             className="token-image token-image-not-found"
           ></FontAwesomeIcon>
         )}
-        <span className="token-symbol">{value?.symbol ?? 'Choose...'}</span>
+        <span className="token-symbol">
+          {value?.symbol ?? 'Select A Token'}
+        </span>
         <span className="token-chain">
           {value?.chain.pretty_name ?? value?.chain.chain_name}
         </span>
@@ -261,7 +259,21 @@ export default function TokenPicker({
         </div>
         <ul className="token-picker-body duality-scrollbar" ref={bodyRef}>
           {filteredList.length > 0 ? (
-            filteredList.map(showListItem)
+            filteredList.map(({ chain, symbol, token }, index) => {
+              return token ? (
+                <TokenPickerItem
+                  key={`${token.base}:${token.chain.chain_name}`}
+                  token={token}
+                  chain={chain}
+                  symbol={symbol}
+                  index={index}
+                  exclusion={exclusion}
+                  selectedIndex={selectedIndex}
+                  selectToken={selectToken}
+                  setSelectedIndex={setSelectedIndex}
+                />
+              ) : null;
+            })
           ) : assetMode === 'User' ? (
             <div>
               <p>Your wallet contains no tradable tokens</p>
@@ -292,86 +304,97 @@ export default function TokenPicker({
       </div>
     );
   }
+}
 
-  function showListItem(token: TokenResult | null, index: number) {
-    const address = token?.token?.address;
-    const symbol = token?.token?.symbol;
-    const logos = token?.token?.logo_URIs;
-    const isDisabled = !!exclusion?.address && exclusion?.address === address;
-    const balance =
-      token?.token && balances ? getBalance(token.token, balances) : '0';
+function TokenPickerItem({
+  token,
+  chain = [],
+  symbol = [],
+  index,
+  exclusion,
+  selectedIndex,
+  selectToken,
+  setSelectedIndex,
+}: {
+  token: Token;
+  chain: string[];
+  symbol: string[];
+  index: number;
+  exclusion?: Token;
+  selectedIndex: number;
+  selectToken: (token?: Token) => void;
+  setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  const address = token.address;
+  const logos = token.logo_URIs;
+  const isDisabled = !!exclusion?.address && exclusion?.address === address;
+  const { data: balance = 0 } = useBankBigBalance(token);
+  const {
+    data: [price = 0],
+  } = useSimplePrice(Number(balance) ? [token] : []);
 
-    const price = userListPrices?.[token?.token.coingecko_id || '']?.['usd'];
-
-    function onClick() {
-      selectToken(token?.token);
-    }
-
-    function onFocus() {
-      setSelectedIndex(index);
-    }
-
-    return (
-      <li key={`${token?.token?.base}:${token?.token.chain.chain_name}`}>
-        <data value={address}>
-          <button
-            type="button"
-            disabled={isDisabled}
-            className={[
-              isDisabled && 'disabled',
-              index === selectedIndex && ' selected',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={onClick}
-            onFocus={onFocus}
-          >
-            {logos ? (
-              <img
-                // in this context (small images) prefer PNGs over SVGs
-                // for reduced number of elements to be drawn in list
-                src={logos.svg || logos.png}
-                alt={`${symbol || 'Token'} logo`}
-                className="token-image"
-              />
-            ) : (
-              <FontAwesomeIcon
-                icon={faQuestionCircle}
-                size="2x"
-                className="token-image token-image-not-found"
-              ></FontAwesomeIcon>
-            )}
-            <span className="token-symbol">
-              <abbr title={address}>
-                {textListWithMark(token?.symbol || [])}
-              </abbr>
-            </span>
-            <span className="chain-name">
-              {textListWithMark(token?.chain || [])}
-            </span>
-            {new BigNumber(balance).isZero() ? (
-              <span className="token-zero-balance">
-                {formatAmount(balance)}
-              </span>
-            ) : (
-              <>
-                <span className="token-balance">
-                  {formatAmount(balance, { useGrouping: true })}
-                </span>
-                <span className="token-value">
-                  {price
-                    ? formatCurrency(
-                        new BigNumber(price).multipliedBy(balance).toNumber()
-                      )
-                    : null}
-                </span>
-              </>
-            )}
-          </button>
-        </data>
-      </li>
-    );
+  function onClick() {
+    selectToken(token);
   }
+
+  function onFocus() {
+    setSelectedIndex(index);
+  }
+
+  return (
+    <li>
+      <data value={address}>
+        <button
+          type="button"
+          disabled={isDisabled}
+          className={[
+            isDisabled && 'disabled',
+            index === selectedIndex && ' selected',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={onClick}
+          onFocus={onFocus}
+        >
+          {logos ? (
+            <img
+              // in this context (small images) prefer PNGs over SVGs
+              // for reduced number of elements to be drawn in list
+              src={logos.svg || logos.png}
+              alt={`${symbol || 'Token'} logo`}
+              className="token-image"
+            />
+          ) : (
+            <FontAwesomeIcon
+              icon={faQuestionCircle}
+              size="2x"
+              className="token-image token-image-not-found"
+            ></FontAwesomeIcon>
+          )}
+          <span className="token-symbol">
+            <abbr title={address}>{textListWithMark(symbol)}</abbr>
+          </span>
+          <span className="chain-name">{textListWithMark(chain)}</span>
+          {new BigNumber(balance).isZero() ? (
+            <span className="token-zero-balance">{formatAmount(balance)}</span>
+          ) : (
+            <>
+              <span className="token-balance">
+                {formatAmount(balance, { useGrouping: true })}
+              </span>
+              <span className="token-value">
+                {price
+                  ? formatCurrency(
+                      new BigNumber(price).multipliedBy(balance).toNumber()
+                    )
+                  : null}
+              </span>
+            </>
+          )}
+        </button>
+      </data>
+    </li>
+  );
 }
 
 function textListWithMark(textList: Array<string>) {

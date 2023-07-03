@@ -1,5 +1,4 @@
 import { MouseEventHandler, useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 
 import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -8,14 +7,9 @@ import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 import TableCard from './TableCard';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
-import useShareValueMap, {
-  ShareValue,
-  TickShareValue,
-  useTickShareValues,
-} from '../../pages/MyLiquidity/useShareValueMap';
 import {
   useEditLiquidity,
-  EditedTickShareValue,
+  EditedPosition,
 } from '../../pages/MyLiquidity/useEditLiquidity';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import useTokens from '../../lib/web3/hooks/useTokens';
@@ -26,16 +20,22 @@ import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { getPairID } from '../../lib/web3/utils/pairs';
 
+import { UserPositionDepositContext } from '../../lib/web3/hooks/useUserShares';
+import {
+  ValuedUserPositionDepositContext,
+  useUserPositionsShareValues,
+} from '../../lib/web3/hooks/useUserShareValues';
+
 import './PoolsTableCard.scss';
 
 const switchValues = {
-  all: 'All Pools',
-  mine: 'My Pools',
+  all: 'Show All',
+  mine: 'My Positions',
 };
 
 export default function PoolsTableCard({
   className,
-  title = 'Pools',
+  title = 'All Pools',
   switchValue: givenSwitchValue = 'mine',
   switchOnChange: givenSwitchOnChange,
   onTokenPairClick,
@@ -76,27 +76,56 @@ export default function PoolsTableCard({
           .filter(([, token0, token1]) => token0 && token1)
       : [];
   }, [tokenList, tokenPairs]);
-  const shareValueMap = useShareValueMap();
+
+  const userPositionsShareValues = useUserPositionsShareValues();
+
   const myPoolsList = useMemo<
-    Array<[string, Token, Token, ShareValue[] | undefined]>
+    Array<
+      [
+        pairID: string,
+        token0: Token,
+        token1: Token,
+        userPositions: UserPositionDepositContext[] | undefined
+      ]
+    >
   >(() => {
-    return shareValueMap
-      ? Object.entries(shareValueMap).map<[string, Token, Token, ShareValue[]]>(
-          ([pairId, shareValues]) => {
-            const [{ token0, token1 }] = shareValues;
-            return [pairId, token0, token1, shareValues];
-          }
-        )
+    // collect positions into token pair groups
+    const userPositionsShareValueMap = userPositionsShareValues.reduce<{
+      [pairID: string]: {
+        token0: Token;
+        token1: Token;
+        userPositions: UserPositionDepositContext[];
+      };
+    }>((map, userPosition) => {
+      const { token0: token0Address, token1: token1Address } =
+        userPosition.deposit.pairID;
+      const pairID = getPairID(token0Address, token1Address);
+      const token0 = tokenList.find((token) => token.address === token0Address);
+      const token1 = tokenList.find((token) => token.address === token1Address);
+      if (pairID && token0 && token1) {
+        map[pairID] = map[pairID] || { token0, token1, userPositions: [] };
+        map[pairID].userPositions.push(userPosition);
+      }
+      return map;
+    }, {});
+
+    return userPositionsShareValueMap
+      ? Object.entries(userPositionsShareValueMap).map<
+          [string, Token, Token, UserPositionDepositContext[]]
+        >(([pairId, { token0, token1, userPositions }]) => {
+          return [pairId, token0, token1, userPositions];
+        })
       : [];
-  }, [shareValueMap]);
+  }, [userPositionsShareValues, tokenList]);
 
   // enforce switch state and non-interactivity if the user has no pools
+  // fix this with useState, it switches on updates sometimes
   const switchValue = !myPoolsList.length ? 'all' : givenSwitchValue;
   const switchOnChange = !myPoolsList.length ? undefined : givenSwitchOnChange;
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
 
   const filteredPoolsList = useMemo<
-    Array<[string, Token, Token, ShareValue[] | undefined]>
+    Array<[string, Token, Token, UserPositionDepositContext[] | undefined]>
   >(() => {
     const tokenList = filteredPoolTokenList.map(({ token }) => token);
     const poolList = switchValue === 'mine' ? myPoolsList : allPairsList;
@@ -116,80 +145,70 @@ export default function PoolsTableCard({
       switchOnChange={switchOnChange}
       {...props}
     >
-      {switchValue === 'all' ||
-      (shareValueMap && Object.entries(shareValueMap).length > 0) ? (
-        filteredPoolsList.length > 0 ? (
-          <table>
-            <thead>
-              {switchValue === 'mine' ? (
-                <tr>
-                  <th>Pool</th>
-                  <th>Value</th>
-                  <th>Composition</th>
-                  <th>Withdraw</th>
-                </tr>
-              ) : (
-                <tr>
-                  <th>Pool</th>
-                  <th>APR</th>
-                  <th>TVL</th>
-                  <th>Fee (24h)</th>
-                  <th>Volume (24h)</th>
-                </tr>
-              )}
-            </thead>
-            <tbody>
-              {filteredPoolsList.map(
-                ([pairId, token0, token1, shareValues]) => {
-                  const onRowClick:
-                    | MouseEventHandler<HTMLButtonElement>
-                    | undefined = onTokenPairClick
-                    ? () => onTokenPairClick([token0, token1])
-                    : undefined;
-                  return shareValues ? (
-                    // show user's positions
-                    <PositionRow
-                      key={pairId}
-                      token0={token0}
-                      token1={token1}
-                      shareValues={shareValues}
-                      onClick={onRowClick}
-                    />
-                  ) : (
-                    // show general pair data
-                    <PairRow
-                      key={pairId}
-                      token0={token0}
-                      token1={token1}
-                      onClick={onRowClick}
-                    />
-                  );
-                }
-              )}
-            </tbody>
-          </table>
-        ) : (
-          <table>
-            <thead>
+      {filteredPoolsList.length > 0 ? (
+        <table>
+          <thead>
+            {switchValue === 'mine' ? (
               <tr>
                 <th>Pool</th>
+                <th>Value</th>
+                <th>Composition</th>
+                <th>Withdraw</th>
               </tr>
-            </thead>
-            <tbody>
+            ) : (
               <tr>
-                <td align="center">
-                  No {!!searchValue ? 'Matching' : ''} Pools Found
-                </td>
+                <th>Pool</th>
+                <th>TVL</th>
+                <th>Volume (7 days)</th>
+                <th>Volatility (7 days)</th>
               </tr>
-            </tbody>
-          </table>
-        )
+            )}
+          </thead>
+          <tbody>
+            {filteredPoolsList.map(
+              ([pairId, token0, token1, userPositions]) => {
+                const onRowClick:
+                  | MouseEventHandler<HTMLButtonElement>
+                  | undefined = onTokenPairClick
+                  ? () => onTokenPairClick([token0, token1])
+                  : undefined;
+                return userPositions ? (
+                  // show user's positions
+                  <PositionRow
+                    key={pairId}
+                    token0={token0}
+                    token1={token1}
+                    userPositions={userPositions}
+                    onClick={onRowClick}
+                  />
+                ) : (
+                  // show general pair data
+                  <PairRow
+                    key={pairId}
+                    token0={token0}
+                    token1={token1}
+                    onClick={onRowClick}
+                  />
+                );
+              }
+            )}
+          </tbody>
+        </table>
       ) : (
-        <Link to="/liquidity" className="m-auto">
-          <button className="button-primary text-medium px-4 py-4 mb-lg">
-            Add Liquidity
-          </button>
-        </Link>
+        <table>
+          <thead>
+            <tr>
+              <th>Pool</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td align="center">
+                No {!!searchValue ? 'Matching' : ''} Pools Found
+              </td>
+            </tr>
+          </tbody>
+        </table>
       )}
     </TableCard>
   );
@@ -249,13 +268,11 @@ function PairRow({
         <td>
           <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
-        {/* APR col */}
-        <td>-</td>
         {/* TVL col */}
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
-        {/* Fee (24h) col */}
+        {/* Volume (7 days) col */}
         <td>-</td>
-        {/* Volume (24h) col */}
+        {/* Volatility (7 days) col */}
         <td>-</td>
       </tr>
     );
@@ -270,33 +287,47 @@ function PairRow({
 function PositionRow({
   token0,
   token1,
-  shareValues,
+  userPositions,
   onClick,
 }: {
   token0: Token;
   token1: Token;
-  shareValues: Array<ShareValue>;
+  userPositions: Array<ValuedUserPositionDepositContext>;
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
-  const tickShareValues = useTickShareValues(shareValues) || [];
-  const [total0, total1] = useUserReserves(tickShareValues);
-  const [value0, value1] = useUserReservesNominalValues(tickShareValues);
+  const total0 = userPositions.reduce<BigNumber>((acc, { token0Context }) => {
+    return acc.plus(token0Context?.userReserves || 0);
+  }, new BigNumber(0));
+  const total1 = userPositions.reduce<BigNumber>((acc, { token1Context }) => {
+    return acc.plus(token1Context?.userReserves || 0);
+  }, new BigNumber(0));
+
+  const value0 = userPositions.reduce<BigNumber>((acc, { token0Value }) => {
+    return acc.plus(token0Value || 0);
+  }, new BigNumber(0));
+  const value1 = userPositions.reduce<BigNumber>((acc, { token1Value }) => {
+    return acc.plus(token1Value || 0);
+  }, new BigNumber(0));
 
   const [{ isValidating }, sendEditRequest] = useEditLiquidity();
 
   const withdrawPair = useCallback<
-    Awaited<(shareValues: Array<TickShareValue>) => void>
+    Awaited<(shareValues: Array<ValuedUserPositionDepositContext>) => void>
   >(
-    async (shareValues: Array<TickShareValue>) => {
+    async (userPositions: Array<ValuedUserPositionDepositContext>) => {
       if (!isValidating) {
         // get relevant tick diffs
-        const sharesDiff: Array<EditedTickShareValue> = shareValues.flatMap(
-          (share: TickShareValue) => {
+        const sharesDiff: Array<EditedPosition> = userPositions.flatMap(
+          (userPosition: ValuedUserPositionDepositContext) => {
             return {
-              ...share,
+              ...userPosition,
               // remove user's reserves if found
-              tickDiff0: share.userReserves0?.negated() ?? new BigNumber(0),
-              tickDiff1: share.userReserves1?.negated() ?? new BigNumber(0),
+              tickDiff0:
+                userPosition.token0Context?.userReserves.negated() ??
+                new BigNumber(0),
+              tickDiff1:
+                userPosition.token1Context?.userReserves.negated() ??
+                new BigNumber(0),
             };
           }
         );
@@ -308,9 +339,7 @@ function PositionRow({
   );
 
   const withdraw: MouseEventHandler<HTMLButtonElement> | undefined =
-    tickShareValues.length > 0
-      ? () => withdrawPair(tickShareValues)
-      : undefined;
+    userPositions.length > 0 ? () => withdrawPair(userPositions) : undefined;
 
   if (total0 && total1) {
     return (
@@ -429,44 +458,4 @@ function TokenPair({
       </div>
     </BaseElement>
   );
-}
-
-function useUserReserves(shareValues: Array<TickShareValue>) {
-  return useMemo(
-    () =>
-      shareValues.reduce<[BigNumber, BigNumber]>(
-        ([total0, total1], shareValue) => {
-          return [
-            total0.plus(shareValue.userReserves0 || 0),
-            total1.plus(shareValue.userReserves1 || 0),
-          ];
-        },
-        [new BigNumber(0), new BigNumber(0)]
-      ),
-    [shareValues]
-  );
-}
-
-function useUserReservesNominalValues(shareValues: Array<TickShareValue>) {
-  const [token0, token1] = getShareTokens(shareValues);
-  const {
-    data: [price0, price1],
-  } = useSimplePrice([token0, token1]);
-  const [total0, total1] = useUserReserves(shareValues);
-  if (price0 && price1 && total0 && total1) {
-    const value0 = new BigNumber(
-      getAmountInDenom(token0, total0, token0.address, token0.display) || 0
-    ).multipliedBy(price0);
-    const value1 = new BigNumber(
-      getAmountInDenom(token1, total1, token1.address, token1.display) || 0
-    ).multipliedBy(price1);
-    return [value0, value1];
-  }
-  return [new BigNumber(0), new BigNumber(0)];
-}
-
-function getShareTokens(
-  shareValues: Array<ShareValue>
-): [token0: Token, token1: Token] {
-  return [shareValues[0]?.token0, shareValues[0]?.token1];
 }
