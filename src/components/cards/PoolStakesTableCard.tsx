@@ -168,9 +168,13 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                       .toNumber();
               })
               .map((userPosition) => {
-                const isStaked = !!futureStakes.find((stake) =>
+                const isStaked = !!currentStakes.find((stake) =>
                   isStakeEqual(stake, userPosition)
                 );
+                const willStake = !!futureStakes.find((stake) =>
+                  isStakeEqual(stake, userPosition)
+                );
+
                 return (
                   // show user's positions
                   <StakingRow
@@ -178,8 +182,17 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                     tokenA={tokenA}
                     tokenB={tokenB}
                     userPosition={userPosition}
-                    onStake={isStaked ? undefined : onStake}
-                    onUnstake={isStaked ? onUnStake : undefined}
+                    onCancel={
+                      isStaked
+                        ? willStake
+                          ? undefined
+                          : onStake
+                        : willStake
+                        ? onUnStake
+                        : undefined
+                    }
+                    onStake={willStake ? undefined : onStake}
+                    onUnstake={willStake ? onUnStake : undefined}
                   />
                 );
               })}
@@ -273,12 +286,14 @@ function StakingRow({
   userPosition,
   onStake,
   onUnstake,
+  onCancel,
 }: {
   tokenA: Token;
   tokenB: Token;
   userPosition: ValuedUserPositionDepositContext;
   onStake?: (userPosition: ValuedUserPositionDepositContext) => void;
   onUnstake?: (userPosition: ValuedUserPositionDepositContext) => void;
+  onCancel?: (userPosition: ValuedUserPositionDepositContext) => void;
 }) {
   const tokensInverted = tokenA.address !== userPosition.token0.address;
 
@@ -358,7 +373,20 @@ function StakingRow({
         <td>
           <div className="col">
             <div className="row gap-3 ml-auto">
-              {onStake && (
+              {onCancel ? (
+                <div className="row flex-centered gap-3">
+                  <span className="text-action-button">
+                    {onStake ? <>Will unstake</> : <>Will stake</>}
+                  </span>
+                  <button
+                    type="button"
+                    className="button nowrap m-0"
+                    onClick={() => onCancel(userPosition)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : onStake ? (
                 <button
                   type="button"
                   className="button nowrap button-primary m-0"
@@ -366,8 +394,7 @@ function StakingRow({
                 >
                   Stake
                 </button>
-              )}
-              {onUnstake && (
+              ) : onUnstake ? (
                 <button
                   type="button"
                   className="button nowrap button-primary-outline m-0"
@@ -375,7 +402,7 @@ function StakingRow({
                 >
                   Unstake
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         </td>
