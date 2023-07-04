@@ -24,6 +24,7 @@ import './PoolsTableCard.scss';
 import { useStake } from '../../pages/MyLiquidity/useStaking';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
+import { useMatchIncentives } from '../../lib/web3/hooks/useIncentives';
 
 interface PoolsTableCardOptions {
   tokenA: Token;
@@ -316,19 +317,33 @@ function StakingRow({
         tokenBValue: userPosition.token0Value,
       };
 
+  const incentives = useMatchIncentives(userPosition);
+
   if (tokenAValue.isGreaterThan(0) || tokenBValue.isGreaterThan(0)) {
     return (
       <tr>
         <td>
-          {formatLongPrice(
-            tickIndexToPrice(
-              !tokensInverted
-                ? new BigNumber(userPosition.deposit.centerTickIndex.toNumber())
-                : new BigNumber(
-                    userPosition.deposit.centerTickIndex.toNumber()
-                  ).negated()
-            ).toFixed()
-          )}
+          <div className="row gap-3">
+            <div className="col">
+              {formatLongPrice(
+                tickIndexToPrice(
+                  !tokensInverted
+                    ? new BigNumber(
+                        userPosition.deposit.centerTickIndex.toNumber()
+                      )
+                    : new BigNumber(
+                        userPosition.deposit.centerTickIndex.toNumber()
+                      ).negated()
+                ).toFixed()
+              )}
+            </div>
+            {incentives && incentives.length > 0 && (
+              <div className="col">
+                Incentivized{' '}
+                {incentives.length > 1 && <>x{incentives.length}</>}
+              </div>
+            )}
+          </div>
         </td>
         <td>{formatPercentage(userPosition.deposit.fee.toNumber() / 10000)}</td>
         <td>${tokenAValue.plus(tokenBValue).toFixed(2)}</td>
