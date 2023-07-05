@@ -536,6 +536,9 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
           : paramQueryMap
       )
         // convert map-of-map to map.map notation
+        // note: query may contain AND keyword but not OR keyword
+        // link: https://github.com/cometbft/cometbft/blob/v0.34.27/libs/pubsub/query/query.peg#L27
+        // more: https://pkg.go.dev/github.com/cometbft/cometbft@v0.34.27-alpha.1/libs/pubsub/query
         .flatMap(([section, sectionMap]) => {
           return Object.entries(sectionMap).map(([attr, value]) => {
             return [`${section}.${attr}`, value];
