@@ -39,10 +39,15 @@ export default function useIncentiveGauges({
     const createGaugeMsgMatch = {
       message: { action: '/duality.incentives.MsgCreateGauge' },
     };
+    const updatedGaugeMsgMatch = {
+      message: { action: '/duality.incentives.MsgAddToGauge' },
+    };
     subscriber.subscribeMessage(updateGauges, createGaugeMsgMatch);
+    subscriber.subscribeMessage(updateGauges, updatedGaugeMsgMatch);
 
     return () => {
       subscriber.unsubscribeMessage(updateGauges, createGaugeMsgMatch);
+      subscriber.unsubscribeMessage(updateGauges, updatedGaugeMsgMatch);
     };
 
     function updateGauges() {
