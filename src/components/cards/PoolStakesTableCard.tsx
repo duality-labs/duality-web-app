@@ -23,7 +23,7 @@ import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import './PoolsTableCard.scss';
 import { useStake } from '../../pages/MyLiquidity/useStaking';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faFire } from '@fortawesome/free-solid-svg-icons';
 import { useMatchIncentives } from '../../lib/web3/hooks/useIncentives';
 
 interface PoolsTableCardOptions {
@@ -338,9 +338,16 @@ function StakingRow({
               )}
             </div>
             {incentives && incentives.length > 0 && (
-              <div className="col">
-                Incentivized{' '}
-                {incentives.length > 1 && <>x{incentives.length}</>}
+              <div className="col flex-centered gutter-t-1">
+                <span>
+                  <FontAwesomeIcon
+                    icon={faFire}
+                    flip="horizontal"
+                    className="text-secondary"
+                    size="lg"
+                  />
+                  {incentives.length > 1 && <> x{incentives.length}</>}
+                </span>
               </div>
             )}
           </div>
