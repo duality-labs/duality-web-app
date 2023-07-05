@@ -8,6 +8,7 @@ import type {
 import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
 
 import { ValuedUserPositionDepositContext } from './useUserShareValues';
+import { minutes } from '../../utils/time';
 
 const { REACT_APP__REST_API = '' } = process.env;
 
@@ -29,6 +30,7 @@ export default function useIncentiveGauges({
       // denom string is required but we will not use it in the app
       return lcd.duality.incentives.getGauges({ status, denom: '' });
     },
+    refetchInterval: 5 * minutes,
   });
 }
 
