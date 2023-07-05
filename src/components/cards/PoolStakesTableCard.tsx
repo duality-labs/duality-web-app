@@ -145,7 +145,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
         <table>
           <thead>
             <tr>
-              <th>
+              <th colSpan={2}>
                 Price {tokenA.symbol}/{tokenB.symbol}
               </th>
               <th>Fee</th>
@@ -323,34 +323,31 @@ function StakingRow({
     return (
       <tr>
         <td>
-          <div className="row gap-3">
-            <div className="col">
-              {formatLongPrice(
-                tickIndexToPrice(
-                  !tokensInverted
-                    ? new BigNumber(
-                        userPosition.deposit.centerTickIndex.toNumber()
-                      )
-                    : new BigNumber(
-                        userPosition.deposit.centerTickIndex.toNumber()
-                      ).negated()
-                ).toFixed()
-              )}
+          {formatLongPrice(
+            tickIndexToPrice(
+              !tokensInverted
+                ? new BigNumber(userPosition.deposit.centerTickIndex.toNumber())
+                : new BigNumber(
+                    userPosition.deposit.centerTickIndex.toNumber()
+                  ).negated()
+            ).toFixed()
+          )}
+        </td>
+        <td>
+          {incentives && incentives.length > 0 && (
+            <div className="row">
+              <FontAwesomeIcon
+                icon={faFire}
+                flip="horizontal"
+                className="text-secondary"
+                size="lg"
+              />
+              <span>
+                &nbsp;
+                {incentives.length > 1 && <> x{incentives.length}</>}
+              </span>
             </div>
-            {incentives && incentives.length > 0 && (
-              <div className="col flex-centered gutter-t-1">
-                <span>
-                  <FontAwesomeIcon
-                    icon={faFire}
-                    flip="horizontal"
-                    className="text-secondary"
-                    size="lg"
-                  />
-                  {incentives.length > 1 && <> x{incentives.length}</>}
-                </span>
-              </div>
-            )}
-          </div>
+          )}
         </td>
         <td>{formatPercentage(userPosition.deposit.fee.toNumber() / 10000)}</td>
         <td>${tokenAValue.plus(tokenBValue).toFixed(2)}</td>
