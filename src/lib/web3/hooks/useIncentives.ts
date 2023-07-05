@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { UseQueryResult, useQuery } from '@tanstack/react-query';
 import { duality } from '@duality-labs/dualityjs';
 import type {
@@ -7,6 +8,7 @@ import type {
 } from '@duality-labs/dualityjs/types/codegen/duality/incentives/query';
 import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
 
+import subscriber from '../subscriptionManager';
 import { ValuedUserPositionDepositContext } from './useUserShareValues';
 import { minutes } from '../../utils/time';
 
@@ -19,7 +21,7 @@ export default function useIncentiveGauges({
   Partial<GetGaugesRequest>,
   'status'
 > = {}): UseQueryResult<GetGaugesResponseSDKType> {
-  return useQuery({
+  const result = useQuery({
     queryKey: ['incentives', status],
     queryFn: async (): Promise<GetGaugesResponseSDKType> => {
       // get incentives LCD client
@@ -32,6 +34,23 @@ export default function useIncentiveGauges({
     },
     refetchInterval: 5 * minutes,
   });
+
+  useEffect(() => {
+    const createGaugeMsgMatch = {
+      message: { action: '/duality.incentives.MsgCreateGauge' },
+    };
+    subscriber.subscribeMessage(updateGauges, createGaugeMsgMatch);
+
+    return () => {
+      subscriber.unsubscribeMessage(updateGauges, createGaugeMsgMatch);
+    };
+
+    function updateGauges() {
+      result.refetch();
+    }
+  }, [result]);
+
+  return result;
 }
 
 function isIncentiveMatch(
