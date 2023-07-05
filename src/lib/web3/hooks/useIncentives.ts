@@ -12,7 +12,10 @@ import subscriber from '../subscriptionManager';
 import { ValuedUserPositionDepositContext } from './useUserShareValues';
 import { minutes } from '../../utils/time';
 
-const { REACT_APP__REST_API = '' } = process.env;
+const {
+  REACT_APP__REST_API = '',
+  REACT_APP__WEBSOCKET_SUBSCRIPTION_LIMIT = '',
+} = process.env;
 
 export default function useIncentiveGauges({
   // convert string to enum due to not being able to import enum directly
@@ -42,13 +45,18 @@ export default function useIncentiveGauges({
     const updatedGaugeMsgMatch = {
       message: { action: '/duality.incentives.MsgAddToGauge' },
     };
-    subscriber.subscribeMessage(updateGauges, createGaugeMsgMatch);
-    subscriber.subscribeMessage(updateGauges, updatedGaugeMsgMatch);
 
-    return () => {
-      subscriber.unsubscribeMessage(updateGauges, createGaugeMsgMatch);
-      subscriber.unsubscribeMessage(updateGauges, updatedGaugeMsgMatch);
-    };
+    // don't always update in real-time due to max_subscriptions_per_client
+    // concerns of websocket subscriptions
+    if (Number(REACT_APP__WEBSOCKET_SUBSCRIPTION_LIMIT) > 5) {
+      subscriber.subscribeMessage(updateGauges, createGaugeMsgMatch);
+      subscriber.subscribeMessage(updateGauges, updatedGaugeMsgMatch);
+
+      return () => {
+        subscriber.unsubscribeMessage(updateGauges, createGaugeMsgMatch);
+        subscriber.unsubscribeMessage(updateGauges, updatedGaugeMsgMatch);
+      };
+    }
 
     function updateGauges() {
       result.refetch();
