@@ -129,6 +129,7 @@ function PoolTableCards({
       switchValue={selectedPoolsList}
       switchOnChange={setSelectedPoolsList}
       onTokenPairClick={setTokens}
+      scrolling={false}
     />
   ) : (
     <PoolsTableCard<keyof typeof switchValues>
@@ -138,6 +139,7 @@ function PoolTableCards({
       switchValue={selectedPoolsList}
       switchOnChange={setSelectedPoolsList}
       onTokenPairClick={setTokens}
+      scrolling={false}
     />
   );
 }

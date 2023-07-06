@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { ReactNode, useCallback, useMemo, useState } from 'react';
+import { Fragment, ReactNode, useCallback, useMemo, useState } from 'react';
 import {
+  FloatingPortal,
   useClick,
   useFloating,
   useHover,
@@ -610,14 +611,16 @@ function StakingRow({
   return null;
 }
 
-function IncentivesButton({
+export function IncentivesButton({
   children,
   className,
   incentives,
+  floating = false,
 }: {
   children: ReactNode;
   className?: string;
   incentives: GaugeSDKType[];
+  floating?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const { context, refs, floatingStyles } = useFloating({
@@ -631,6 +634,8 @@ function IncentivesButton({
     hover,
     click,
   ]);
+
+  const Floating = floating ? FloatingPortal : Fragment;
   return (
     // allow row to hold open the popover if the popover is already open
     <div
@@ -646,14 +651,16 @@ function IncentivesButton({
         {children}
       </button>
       {isOpen && (
-        <div
-          ref={refs.setFloating}
-          className="ml-auto"
-          style={floatingStyles}
-          {...getFloatingProps()}
-        >
-          <IncentivesCard incentives={incentives} className="popover" />
-        </div>
+        <Floating>
+          <div
+            ref={refs.setFloating}
+            className="ml-auto"
+            style={{ ...floatingStyles, zIndex: 1 }}
+            {...getFloatingProps()}
+          >
+            <IncentivesCard incentives={incentives} className="popover" />
+          </div>
+        </Floating>
       )}
     </div>
   );
