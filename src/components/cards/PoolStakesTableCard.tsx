@@ -136,7 +136,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
       headerActions={
         <div className="row gap-3">
           <Link to="/portfolio/pools">
-            <button className="button text-action-button nowrap">Back</button>
+            <button className="button button-light">Back</button>
           </Link>
           <ConfirmStake
             currentStakes={currentStakes}
