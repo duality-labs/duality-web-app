@@ -157,8 +157,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
               <th>Value</th>
               <th>{tokenA.symbol} Amount</th>
               <th>{tokenB.symbol} Amount</th>
-              <th>Staked</th>
-              <th>Staked Time</th>
+              <th colSpan={2}>Staked</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -383,7 +382,7 @@ function StakingRow({
             <FontAwesomeIcon icon={faCheck} />
           ) : null}
         </td>
-        <td>
+        <td className="min-width">
           {userPosition.stakeContext?.start_time &&
             relativeTimeFormatter.format(
               (new Date(userPosition.stakeContext.start_time).valueOf() -
@@ -394,7 +393,7 @@ function StakingRow({
               'hours'
             )}
         </td>
-        <td>
+        <td className="min-width">
           <div className="col">
             <div className="row gap-3 ml-auto">
               {onCancel ? (
