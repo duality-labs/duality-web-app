@@ -107,6 +107,18 @@ export function useMatchIncentives(
   return undefined;
 }
 
+/**
+ * Example usage:
+  const { address } = useWeb3();
+  const stakeIDs = useMemo(() => {
+    const stakeIDs = currentStakes
+      .map((stake) => stake.stakeContext?.ID)
+      .map((stakeID) => Number(stakeID))
+      .filter((stakeID): stakeID is number => stakeID > 0);
+    return Array.from(new Set(stakeIDs));
+  }, [currentStakes]);
+  const futureRewards = useFutureRewardsEstimate(address, stakeIDs);
+ */
 export function useFutureRewardsEstimate(
   web3Address: string | null,
   stakeIDs: number[],
