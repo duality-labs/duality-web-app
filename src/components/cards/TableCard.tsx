@@ -36,7 +36,12 @@ export default function TableCard<T extends string | number>({
   // show loken list cards
   return (
     <div
-      className={['table-card', 'page-card', className]
+      className={[
+        'table-card',
+        'page-card',
+        className,
+        scrolling && 'scrollable',
+      ]
         .filter(Boolean)
         .join(' ')}
     >

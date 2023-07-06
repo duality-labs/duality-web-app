@@ -10,7 +10,9 @@
   background-color: var(--page-card);
   border-radius: 1rem;
   overflow: hidden;
-  min-height: 21em;
+  &.scrollable {
+    min-height: 22.5em;
+  }
 
   .table-card__header {
     // be as tall as the switch component
