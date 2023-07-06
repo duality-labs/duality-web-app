@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
 import { ReactNode, useCallback, useMemo, useState } from 'react';
-import { useFloating, useHover, useInteractions } from '@floating-ui/react';
+import {
+  useClick,
+  useFloating,
+  useHover,
+  useInteractions,
+} from '@floating-ui/react';
 import BigNumber from 'bignumber.js';
 import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
 
@@ -585,8 +590,12 @@ function IncentivesButton({
     onOpenChange: setIsOpen,
     placement: 'right',
   });
-  const hover = useHover(context);
-  const { getReferenceProps, getFloatingProps } = useInteractions([hover]);
+  const hover = useHover(context, { mouseOnly: true });
+  const click = useClick(context, { ignoreMouse: true, toggle: true });
+  const { getReferenceProps, getFloatingProps } = useInteractions([
+    hover,
+    click,
+  ]);
   return (
     // allow row to hold open the popover if the popover is already open
     <div
