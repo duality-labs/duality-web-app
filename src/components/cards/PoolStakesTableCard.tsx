@@ -31,7 +31,11 @@ import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import './PoolsTableCard.scss';
 import { useStake } from '../../pages/MyLiquidity/useStaking';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faFire } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowRightArrowLeft,
+  faCheck,
+  faFire,
+} from '@fortawesome/free-solid-svg-icons';
 import { useMatchIncentives } from '../../lib/web3/hooks/useIncentives';
 import { RelativeTime } from '../Time';
 
@@ -236,7 +240,16 @@ export default function MyPoolStakesTableCard<T extends string | number>({
       className={['pool-stakes-list-card', 'pool-list-card', className]
         .filter(Boolean)
         .join(' ')}
-      title={title}
+      title={
+        <div className="row gap-3">
+          <span>{title}</span>
+          <Link to={`/portfolio/pools/${tokenB.symbol}/${tokenA.symbol}`}>
+            <button className="button px-1 py-0">
+              <FontAwesomeIcon icon={faArrowRightArrowLeft} />
+            </button>
+          </Link>
+        </div>
+      }
       headerActions={
         <div className="row gap-3">
           <Link to="/portfolio/pools">
