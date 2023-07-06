@@ -1,4 +1,4 @@
-import { useMatch, useNavigate } from 'react-router-dom';
+import { Link, useMatch, useNavigate } from 'react-router-dom';
 import { useCallback, useMemo } from 'react';
 import {
   Actions,
@@ -162,7 +162,7 @@ function Tables() {
               className="flex"
               title={
                 <div className="row gap-3">
-                  <span>My Positions</span>
+                  <Link to="/portfolio/pools"> My Positions</Link>
                   <span>&gt;</span>
                   <span>{tokenA.symbol}</span>
                   <span>/</span>
