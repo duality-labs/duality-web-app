@@ -262,7 +262,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
           <thead>
             <tr>
               <th className="min-width">
-                Price:&nbsp;{tokenA.symbol}/{tokenB.symbol}
+                Price: {tokenA.symbol}/{tokenB.symbol}
               </th>
               <th></th>
               <th>Fee</th>
