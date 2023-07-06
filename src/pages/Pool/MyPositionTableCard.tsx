@@ -323,7 +323,7 @@ export function MyEditedPositionTableCard({
                   {(!tickDiff0.isZero() || !tickDiff1.isZero()) && (
                     <button
                       type="button"
-                      className="button button-default my-3"
+                      className="button button-muted my-3"
                       onClick={() => {
                         setEditedUserPosition((ticks) => {
                           return ticks.map((tick) => {

@@ -143,7 +143,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
       headerActions={
         <div className="row gap-3">
           <Link to="/portfolio/pools">
-            <button className="button button-light">Back</button>
+            <button className="button button-muted">Back</button>
           </Link>
           {!stakesEqual && (
             <>
@@ -416,7 +416,7 @@ function StakingRow({
                   </span>
                   <button
                     type="button"
-                    className="button nowrap m-0"
+                    className="button button-muted nowrap m-0"
                     onClick={() => onCancel(userPosition)}
                   >
                     Reset

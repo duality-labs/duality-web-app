@@ -38,6 +38,12 @@ button,
   background-color: hsla(212, 28%, 17%, 1);
   color: white;
 }
+.button-muted {
+  background-color: #374151;
+  &:hover {
+    background-color: #4b5563 !important;
+  }
+}
 .button-primary-outline {
   border: 1px solid #4eb1e8;
 }
