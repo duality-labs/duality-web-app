@@ -6,6 +6,7 @@ import SearchInput from '../inputs/SearchInput/SearchInput';
 import './TableCard.scss';
 
 export interface TableCardProps<T extends string | number> {
+  as?: keyof JSX.IntrinsicElements;
   className?: string;
   title?: ReactNode;
   subtitle?: ReactNode;
@@ -20,6 +21,7 @@ export interface TableCardProps<T extends string | number> {
   children: ReactNode;
 }
 export default function TableCard<T extends string | number>({
+  as: RootComponent = 'div',
   className,
   title,
   subtitle,
@@ -35,7 +37,7 @@ export default function TableCard<T extends string | number>({
 }: TableCardProps<T>) {
   // show loken list cards
   return (
-    <div
+    <RootComponent
       className={[
         'table-card',
         'page-card',
@@ -90,6 +92,6 @@ export default function TableCard<T extends string | number>({
           </div>
         </div>
       </div>
-    </div>
+    </RootComponent>
   );
 }
