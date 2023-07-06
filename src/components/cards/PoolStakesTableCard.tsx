@@ -440,6 +440,9 @@ function StakingRow({
 
   const incentives = useMatchIncentives(userPosition);
 
+  const isStaked = userPosition.stakeContext?.start_time;
+  const isIncentivized = !!incentives && incentives?.length > 0;
+
   if (tokenAValue.isGreaterThan(0) || tokenBValue.isGreaterThan(0)) {
     return (
       <tr>
@@ -482,7 +485,9 @@ function StakingRow({
         <td>{formatCurrency(tokenAValue.plus(tokenBValue).toFixed(2))}</td>
         <td className="min-width">
           <div
-            className="blue-value-bar"
+            className={
+              isStaked && isIncentivized ? 'green-value-bar' : 'blue-value-bar'
+            }
             style={{
               width: tokenAValue
                 .plus(tokenBValue)
@@ -522,11 +527,7 @@ function StakingRow({
               }
             )} ${tokenB.symbol}`}
         </td>
-        <td>
-          {userPosition.stakeContext?.start_time ? (
-            <FontAwesomeIcon icon={faCheck} />
-          ) : null}
-        </td>
+        <td>{isStaked ? <FontAwesomeIcon icon={faCheck} /> : null}</td>
         <td className="min-width">
           {userPosition.stakeContext?.start_time &&
             relativeTimeFormatter.format(
