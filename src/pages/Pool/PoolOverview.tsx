@@ -355,6 +355,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
         data={filteredGauges}
         columns={columns}
         headings={headings}
+        rowDescription="Incentives"
       />
     </TableCard>
   );
@@ -573,6 +574,7 @@ function TransactionsTable({
           />
         ))}
         columns={columns}
+        rowDescription="Transactions"
       />
     </div>
   );
