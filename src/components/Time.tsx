@@ -4,7 +4,8 @@ import { days, hours, minutes, weeks } from '../lib/utils/time';
 export function RelativeTime({
   timestamp,
   options: { localeMatcher, numeric = 'auto', style = 'long' } = {},
-}: {
+  ...timeElementOptions
+}: JSX.IntrinsicElements['time'] & {
   timestamp?: string | number | Date;
   options?: Partial<Intl.RelativeTimeFormatOptions>;
 }) {
@@ -37,7 +38,7 @@ export function RelativeTime({
   }, [timestamp]);
 
   return timestamp !== undefined ? (
-    <time dateTime={new Date(timestamp).toISOString()}>
+    <time dateTime={new Date(timestamp).toISOString()} {...timeElementOptions}>
       {relativeTimeFormatter.format(Math.round(displayValue), displayUnits)}
     </time>
   ) : null;
