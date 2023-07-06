@@ -1246,12 +1246,21 @@ export default function PoolManagement({
       swap={swapAll}
       header={
         tokenA && tokenB && editMode ? (
-          <div className="col">
-            <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
-              <button className="button button-primary py-3 px-4">
-                Add To Position
-              </button>
-            </Link>
+          <div className="row gap-3">
+            <div className="col">
+              <Link to={`/portfolio/pools/${tokenA.symbol}/${tokenB.symbol}`}>
+                <button className="button button-primary py-3 px-4">
+                  Stake Position
+                </button>
+              </Link>
+            </div>
+            <div className="col">
+              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
+                <button className="button button-primary py-3 px-4">
+                  Add To Position
+                </button>
+              </Link>
+            </div>
           </div>
         ) : (
           tokenA &&
