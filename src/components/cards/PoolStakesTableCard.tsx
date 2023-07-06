@@ -269,7 +269,8 @@ export default function MyPoolStakesTableCard<T extends string | number>({
               <th>Value</th>
               <th></th>
               <th>Token Amount</th>
-              <th>Token Amount</th>
+              <th className="min-width">Token Amount</th>
+              <th></th>
               <th>Staked</th>
               <th>Action</th>
             </tr>
@@ -524,7 +525,7 @@ function StakingRow({
             </>
           )}
         </td>
-        <td>
+        <td className="min-width">
           {tokenBContext?.userReserves.isGreaterThan(0) && (
             <>
               <span>
@@ -545,10 +546,11 @@ function StakingRow({
             </>
           )}
         </td>
+        <td>&nbsp;</td>
         <td className="min-width">
           {isStaked ? (
             <>
-              <FontAwesomeIcon className="ml-5 mr-3" icon={faCheck} />
+              <FontAwesomeIcon className="mr-3" icon={faCheck} />
               <RelativeTime timestamp={userPosition.stakeContext?.start_time} />
             </>
           ) : null}
