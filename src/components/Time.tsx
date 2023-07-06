@@ -1,5 +1,56 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { days, hours, minutes, weeks } from '../lib/utils/time';
+import {
+  useClick,
+  useFloating,
+  useHover,
+  useInteractions,
+} from '@floating-ui/react';
+
+import './Tooltip/Tooltip.scss';
+
+function TimeWithTooltip({
+  dateTime,
+  ...timeElementOptions
+}: JSX.IntrinsicElements['time']) {
+  const [isOpen, setIsOpen] = useState(false);
+  const { context, refs, floatingStyles } = useFloating({
+    open: isOpen,
+    onOpenChange: setIsOpen,
+    placement: 'top',
+  });
+  const hover = useHover(context, { mouseOnly: true });
+  const click = useClick(context, { ignoreMouse: true, toggle: true });
+  const { getReferenceProps, getFloatingProps } = useInteractions([
+    hover,
+    click,
+  ]);
+  return (
+    <>
+      <time
+        dateTime={dateTime}
+        {...timeElementOptions}
+        ref={refs.setReference}
+        {...getReferenceProps()}
+      />
+      {isOpen && (
+        <div
+          className="popover page-card py-2 px-3"
+          ref={refs.setFloating}
+          style={{ ...floatingStyles, borderRadius: '0.25rem' }}
+          {...getFloatingProps()}
+        >
+          {dateTime
+            ? new Date(dateTime).toLocaleString('en', {
+                dateStyle: 'long',
+                timeStyle: 'medium',
+              })
+            : ''}
+        </div>
+      )}
+    </>
+  );
+}
 
 export function RelativeTime({
   timestamp,
@@ -38,8 +89,11 @@ export function RelativeTime({
   }, [timestamp]);
 
   return timestamp !== undefined ? (
-    <time dateTime={new Date(timestamp).toISOString()} {...timeElementOptions}>
+    <TimeWithTooltip
+      dateTime={new Date(timestamp).toISOString()}
+      {...timeElementOptions}
+    >
       {relativeTimeFormatter.format(Math.round(displayValue), displayUnits)}
-    </time>
+    </TimeWithTooltip>
   ) : null;
 }
