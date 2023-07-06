@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
-import { useCallback, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useMemo, useState } from 'react';
+import { useFloating, useHover, useInteractions } from '@floating-ui/react';
 import BigNumber from 'bignumber.js';
+import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
 
 import TableCard, { TableCardProps } from './TableCard';
 
@@ -16,6 +18,7 @@ import {
   ValuedUserPositionDepositContext,
   useUserPositionsShareValues,
 } from '../../lib/web3/hooks/useUserShareValues';
+import IncentivesCard from './IncentivesCard';
 
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
@@ -335,7 +338,7 @@ function StakingRow({
         </td>
         <td>
           {incentives && incentives.length > 0 && (
-            <div className="row">
+            <IncentivesButton className="row" incentives={incentives}>
               <FontAwesomeIcon
                 icon={faFire}
                 flip="horizontal"
@@ -346,7 +349,7 @@ function StakingRow({
                 &nbsp;
                 {incentives.length > 1 && <> x{incentives.length}</>}
               </span>
-            </div>
+            </IncentivesButton>
           )}
         </td>
         <td>{formatPercentage(userPosition.deposit.fee.toNumber() / 10000)}</td>
@@ -429,4 +432,49 @@ function StakingRow({
     );
   }
   return null;
+}
+
+function IncentivesButton({
+  children,
+  className,
+  incentives,
+}: {
+  children: ReactNode;
+  className?: string;
+  incentives: GaugeSDKType[];
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const { context, refs, floatingStyles } = useFloating({
+    open: isOpen,
+    onOpenChange: setIsOpen,
+    placement: 'right',
+  });
+  const hover = useHover(context);
+  const { getReferenceProps, getFloatingProps } = useInteractions([hover]);
+  return (
+    // allow row to hold open the popover if the popover is already open
+    <div
+      key={Number(isOpen)}
+      className="row"
+      ref={isOpen ? refs.setReference : refs.setPositionReference}
+    >
+      <button
+        className={['button', className].filter(Boolean).join(' ')}
+        ref={refs.setReference}
+        {...getReferenceProps()}
+      >
+        {children}
+      </button>
+      {isOpen && (
+        <div
+          ref={refs.setFloating}
+          className="ml-auto"
+          style={floatingStyles}
+          {...getFloatingProps()}
+        >
+          <IncentivesCard incentives={incentives} className="popover" />
+        </div>
+      )}
+    </div>
+  );
 }
