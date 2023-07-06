@@ -28,6 +28,7 @@ import { useStake } from '../../pages/MyLiquidity/useStaking';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faFire } from '@fortawesome/free-solid-svg-icons';
 import { useMatchIncentives } from '../../lib/web3/hooks/useIncentives';
+import { RelativeTime } from '../Time';
 
 interface PoolsTableCardOptions {
   tokenA: Token;
@@ -388,10 +389,6 @@ function ConfirmStake({
   );
 }
 
-const relativeTimeFormatter = new Intl.RelativeTimeFormat('en', {
-  style: 'short',
-});
-
 function StakingRow({
   tokenA,
   tokenB,
@@ -529,15 +526,7 @@ function StakingRow({
         </td>
         <td>{isStaked ? <FontAwesomeIcon icon={faCheck} /> : null}</td>
         <td className="min-width">
-          {userPosition.stakeContext?.start_time &&
-            relativeTimeFormatter.format(
-              (new Date(userPosition.stakeContext.start_time).valueOf() -
-                Date.now()) /
-                1000 /
-                60 /
-                60,
-              'hours'
-            )}
+          <RelativeTime timestamp={userPosition.stakeContext?.start_time} />
         </td>
         <td className="min-width">
           <div className="col">
