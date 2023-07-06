@@ -7,8 +7,8 @@ import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/ince
 import TableCard, { TableCardProps } from './TableCard';
 
 import {
-  formatAmount,
-  formatLongPrice,
+  formatCurrency,
+  formatDecimalPlaces,
   formatPercentage,
 } from '../../lib/utils/number';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
@@ -52,6 +52,86 @@ export default function MyPoolStakesTableCard<T extends string | number>({
   const allShareValues: ValuedUserPositionDepositContext[] = useMemo(() => {
     return [...userPositionsShareValues, ...userStakedShareValues];
   }, [userPositionsShareValues, userStakedShareValues]);
+
+  const columnDecimalPlaces = useMemo(() => {
+    const values = allShareValues.reduce<{
+      price: number[];
+      amountA: number[];
+      amountB: number[];
+    }>(
+      (acc, userPosition) => {
+        const tokensInverted = tokenA.address !== userPosition.token0.address;
+
+        const { tokenAContext, tokenBContext } = !tokensInverted
+          ? {
+              tokenAContext: userPosition.token0Context,
+              tokenBContext: userPosition.token1Context,
+            }
+          : {
+              tokenAContext: userPosition.token1Context,
+              tokenBContext: userPosition.token0Context,
+            };
+        // add price
+        if (!isNaN(userPosition.deposit.centerTickIndex?.toNumber())) {
+          const tickIndex = userPosition.deposit.centerTickIndex.toNumber();
+          acc.price.push(tickIndexToPrice(new BigNumber(tickIndex)).toNumber());
+        }
+        // add amount A
+        const amountA = Number(
+          getAmountInDenom(
+            tokenA,
+            tokenAContext?.userReserves || 0,
+            tokenA.address,
+            tokenA.display
+          ) || 0
+        );
+        if (!isNaN(amountA) && amountA > 0) {
+          acc.amountA.push(amountA);
+        }
+        // add amount B
+        const amountB = Number(
+          getAmountInDenom(
+            tokenB,
+            tokenBContext?.userReserves || 0,
+            tokenB.address,
+            tokenB.display
+          ) || 0
+        );
+        if (!isNaN(amountB) && amountB > 0) {
+          acc.amountB.push(amountB);
+        }
+        return acc;
+      },
+      {
+        price: [],
+        amountA: [],
+        amountB: [],
+      }
+    );
+
+    return {
+      price: dp(values.price.sort(asc).at(0)),
+      fee: 2,
+      value: 2,
+      amountA: dp(values.amountA.sort(asc).at(0)),
+      amountB: dp(values.amountB.sort(asc).at(0)),
+    };
+
+    function asc(a: number, b: number) {
+      return a - b;
+    }
+
+    // get decimal places when 2 significant figures are required
+    function dp(value?: number, precision = 2): number {
+      if (!value) {
+        return 2;
+      }
+      return (
+        new BigNumber(value).toPrecision(precision).split('.').pop()?.length ||
+        0
+      );
+    }
+  }, [allShareValues, tokenA, tokenB]);
 
   const currentStakes: ValuedUserPositionDepositContext[] = useMemo(() => {
     return [...userStakedShareValues];
@@ -201,6 +281,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                     tokenA={tokenA}
                     tokenB={tokenB}
                     userPosition={userPosition}
+                    columnDecimalPlaces={columnDecimalPlaces}
                     onCancel={
                       isStaked
                         ? willStake
@@ -302,6 +383,7 @@ function StakingRow({
   tokenA,
   tokenB,
   userPosition,
+  columnDecimalPlaces,
   onStake,
   onUnstake,
   onCancel,
@@ -309,6 +391,13 @@ function StakingRow({
   tokenA: Token;
   tokenB: Token;
   userPosition: ValuedUserPositionDepositContext;
+  columnDecimalPlaces: {
+    price: number;
+    fee: number;
+    value: number;
+    amountA: number;
+    amountB: number;
+  };
   onStake?: (userPosition: ValuedUserPositionDepositContext) => void;
   onUnstake?: (userPosition: ValuedUserPositionDepositContext) => void;
   onCancel?: (userPosition: ValuedUserPositionDepositContext) => void;
@@ -340,14 +429,18 @@ function StakingRow({
     return (
       <tr>
         <td>
-          {formatLongPrice(
+          {formatDecimalPlaces(
             tickIndexToPrice(
               !tokensInverted
                 ? new BigNumber(userPosition.deposit.centerTickIndex.toNumber())
                 : new BigNumber(
                     userPosition.deposit.centerTickIndex.toNumber()
                   ).negated()
-            ).toFixed()
+            ).toFixed(),
+            columnDecimalPlaces.price,
+            {
+              useGrouping: true,
+            }
           )}
         </td>
         <td>
@@ -366,28 +459,40 @@ function StakingRow({
             </IncentivesButton>
           )}
         </td>
-        <td>{formatPercentage(userPosition.deposit.fee.toNumber() / 10000)}</td>
-        <td>${tokenAValue.plus(tokenBValue).toFixed(2)}</td>
+        <td>
+          {formatPercentage(userPosition.deposit.fee.toNumber() / 10000, {
+            minimumFractionDigits: 2,
+          })}
+        </td>
+        <td>{formatCurrency(tokenAValue.plus(tokenBValue).toFixed(2))}</td>
         <td>
           {tokenAContext?.userReserves.isGreaterThan(0) &&
-            formatAmount(
+            formatDecimalPlaces(
               getAmountInDenom(
                 tokenA,
                 tokenAContext?.userReserves || 0,
                 tokenA.address,
                 tokenA.display
-              ) || 0
+              ) || 0,
+              columnDecimalPlaces.amountA,
+              {
+                useGrouping: true,
+              }
             )}
         </td>
         <td>
           {tokenBContext?.userReserves.isGreaterThan(0) &&
-            formatAmount(
+            formatDecimalPlaces(
               getAmountInDenom(
                 tokenB,
                 tokenBContext?.userReserves || 0,
                 tokenB.address,
                 tokenB.display
-              ) || 0
+              ) || 0,
+              columnDecimalPlaces.amountB,
+              {
+                useGrouping: true,
+              }
             )}
         </td>
         <td>
