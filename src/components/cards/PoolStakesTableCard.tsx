@@ -261,8 +261,8 @@ export default function MyPoolStakesTableCard<T extends string | number>({
               <th>Fee</th>
               <th>Value</th>
               <th></th>
-              <th>{tokenA.symbol} Amount</th>
-              <th>{tokenB.symbol} Amount</th>
+              <th>Token Amount</th>
+              <th>Token Amount</th>
               <th colSpan={2}>Staked</th>
               <th>Action</th>
             </tr>
@@ -482,11 +482,7 @@ function StakingRow({
         <td>{formatCurrency(tokenAValue.plus(tokenBValue).toFixed(2))}</td>
         <td className="min-width">
           <div
-            className={
-              tokenBValue.isGreaterThan(0)
-                ? 'blue-value-bar'
-                : 'green-value-bar'
-            }
+            className="blue-value-bar"
             style={{
               width: tokenAValue
                 .plus(tokenBValue)
@@ -498,7 +494,7 @@ function StakingRow({
         </td>
         <td>
           {tokenAContext?.userReserves.isGreaterThan(0) &&
-            formatDecimalPlaces(
+            `${formatDecimalPlaces(
               getAmountInDenom(
                 tokenA,
                 tokenAContext?.userReserves || 0,
@@ -509,11 +505,11 @@ function StakingRow({
               {
                 useGrouping: true,
               }
-            )}
+            )} ${tokenA.symbol}`}
         </td>
         <td>
           {tokenBContext?.userReserves.isGreaterThan(0) &&
-            formatDecimalPlaces(
+            `${formatDecimalPlaces(
               getAmountInDenom(
                 tokenB,
                 tokenBContext?.userReserves || 0,
@@ -524,7 +520,7 @@ function StakingRow({
               {
                 useGrouping: true,
               }
-            )}
+            )} ${tokenB.symbol}`}
         </td>
         <td>
           {userPosition.stakeContext?.start_time ? (
