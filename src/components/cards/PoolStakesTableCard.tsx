@@ -269,7 +269,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
               <th></th>
               <th>Token Amount</th>
               <th>Token Amount</th>
-              <th colSpan={2}>Staked</th>
+              <th>Staked</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -529,9 +529,13 @@ function StakingRow({
               }
             )} ${tokenB.symbol}`}
         </td>
-        <td>{isStaked ? <FontAwesomeIcon icon={faCheck} /> : null}</td>
         <td className="min-width">
-          <RelativeTime timestamp={userPosition.stakeContext?.start_time} />
+          {isStaked ? (
+            <>
+              <FontAwesomeIcon className="ml-5 mr-3" icon={faCheck} />
+              <RelativeTime timestamp={userPosition.stakeContext?.start_time} />
+            </>
+          ) : null}
         </td>
         <td className="min-width">
           <div className="col">
