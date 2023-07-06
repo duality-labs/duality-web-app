@@ -261,9 +261,10 @@ export default function MyPoolStakesTableCard<T extends string | number>({
         <table>
           <thead>
             <tr>
-              <th colSpan={2}>
-                Price {tokenA.symbol}/{tokenB.symbol}
+              <th className="min-width">
+                Price:&nbsp;{tokenA.symbol}/{tokenB.symbol}
               </th>
+              <th></th>
               <th>Fee</th>
               <th>Value</th>
               <th></th>
@@ -461,7 +462,10 @@ function StakingRow({
             {
               useGrouping: true,
             }
-          )}
+          )}{' '}
+          <span className="text-muted">
+            {tokenA.symbol}/{tokenB.symbol}
+          </span>
         </td>
         <td>
           {incentives && incentives.length > 0 && (
@@ -500,34 +504,46 @@ function StakingRow({
           ></div>
         </td>
         <td>
-          {tokenAContext?.userReserves.isGreaterThan(0) &&
-            `${formatDecimalPlaces(
-              getAmountInDenom(
-                tokenA,
-                tokenAContext?.userReserves || 0,
-                tokenA.address,
-                tokenA.display
-              ) || 0,
-              columnDecimalPlaces.amountA,
-              {
-                useGrouping: true,
-              }
-            )} ${tokenA.symbol}`}
+          {tokenAContext?.userReserves.isGreaterThan(0) && (
+            <>
+              <span>
+                {formatDecimalPlaces(
+                  getAmountInDenom(
+                    tokenA,
+                    tokenAContext?.userReserves || 0,
+                    tokenA.address,
+                    tokenA.display
+                  ) || 0,
+                  columnDecimalPlaces.amountA,
+                  {
+                    useGrouping: true,
+                  }
+                )}
+              </span>{' '}
+              <span className="text-muted">{tokenA.symbol}</span>
+            </>
+          )}
         </td>
         <td>
-          {tokenBContext?.userReserves.isGreaterThan(0) &&
-            `${formatDecimalPlaces(
-              getAmountInDenom(
-                tokenB,
-                tokenBContext?.userReserves || 0,
-                tokenB.address,
-                tokenB.display
-              ) || 0,
-              columnDecimalPlaces.amountB,
-              {
-                useGrouping: true,
-              }
-            )} ${tokenB.symbol}`}
+          {tokenBContext?.userReserves.isGreaterThan(0) && (
+            <>
+              <span>
+                {formatDecimalPlaces(
+                  getAmountInDenom(
+                    tokenB,
+                    tokenBContext?.userReserves || 0,
+                    tokenB.address,
+                    tokenB.display
+                  ) || 0,
+                  columnDecimalPlaces.amountB,
+                  {
+                    useGrouping: true,
+                  }
+                )}
+              </span>{' '}
+              <span className="text-muted">{tokenB.symbol}</span>
+            </>
+          )}
         </td>
         <td className="min-width">
           {isStaked ? (
