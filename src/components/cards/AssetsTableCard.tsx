@@ -1,8 +1,5 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
@@ -74,7 +71,6 @@ export default function AssetsTableCard({
           <tr>
             <th>Token + Chain</th>
             <th>Balance</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -156,14 +152,6 @@ function AssetRow({ token, amount, value }: TokenCoin) {
             useGrouping: true,
           })}`}
         </div>
-      </td>
-      <td>
-        <Link to="/">
-          <button className="button text-action-button nowrap">
-            {token.display.toUpperCase()}
-            <FontAwesomeIcon icon={faArrowDown} className="ml-3" />
-          </button>
-        </Link>
       </td>
     </tr>
   );
