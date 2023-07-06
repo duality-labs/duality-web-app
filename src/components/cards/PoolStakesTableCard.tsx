@@ -129,7 +129,9 @@ export default function MyPoolStakesTableCard<T extends string | number>({
 
   return (
     <TableCard
-      className={['pool-list-card', className].filter(Boolean).join(' ')}
+      className={['pool-stakes-list-card', 'pool-list-card', className]
+        .filter(Boolean)
+        .join(' ')}
       title={title}
       headerActions={
         <div className="row gap-3">
@@ -338,17 +340,17 @@ function StakingRow({
         </td>
         <td>
           {incentives && incentives.length > 0 && (
-            <IncentivesButton className="row" incentives={incentives}>
+            <IncentivesButton
+              className="row gap-sm flex-centered"
+              incentives={incentives}
+            >
               <FontAwesomeIcon
                 icon={faFire}
                 flip="horizontal"
                 className="text-secondary"
                 size="lg"
               />
-              <span>
-                &nbsp;
-                {incentives.length > 1 && <> x{incentives.length}</>}
-              </span>
+              {incentives.length > 1 && <span>x{incentives.length}</span>}
             </IncentivesButton>
           )}
         </td>
