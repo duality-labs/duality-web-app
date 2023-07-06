@@ -448,7 +448,7 @@ function StakingRow({
   if (tokenAValue.isGreaterThan(0) || tokenBValue.isGreaterThan(0)) {
     return (
       <tr>
-        <td>
+        <td className="min-width text-right">
           {formatDecimalPlaces(
             tickIndexToPrice(
               !tokensInverted
