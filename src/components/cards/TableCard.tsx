@@ -8,6 +8,7 @@ import './TableCard.scss';
 export interface TableCardProps<T extends string | number> {
   className?: string;
   title?: ReactNode;
+  subtitle?: ReactNode;
   searchDisabled?: boolean;
   scrolling?: boolean;
   headerActions?: ReactNode;
@@ -21,6 +22,7 @@ export interface TableCardProps<T extends string | number> {
 export default function TableCard<T extends string | number>({
   className,
   title,
+  subtitle,
   searchDisabled = false,
   scrolling = true,
   headerActions,
@@ -58,6 +60,7 @@ export default function TableCard<T extends string | number>({
             {headerActions}
           </div>
         )}
+        {subtitle && <div className="table-card__subtitle">{subtitle}</div>}
         {setSearchValue && (
           <div className="table-card__search row mt-lg mb-4">
             <div className="col flex">
