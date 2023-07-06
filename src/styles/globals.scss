@@ -251,6 +251,15 @@ hr {
   opacity: 0.5;
 }
 
+.green-value-bar {
+  height: 1rem;
+  background-color: #38ecbf;
+}
+.blue-value-bar {
+  height: 1rem;
+  background-color: #4eb1e8;
+}
+
 // add a tiny faint shadow to all token logos
 // this helps if a token image background matches the surrounding area
 .token-logo {
