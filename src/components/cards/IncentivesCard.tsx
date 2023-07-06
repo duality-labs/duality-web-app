@@ -1,5 +1,5 @@
 import { DetailedHTMLProps, HTMLAttributes } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useMatch } from 'react-router-dom';
 import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
 
 import TableCard from './TableCard';
@@ -14,20 +14,26 @@ export default function IncentivesCard({
 }: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> & {
   incentives?: GaugeSDKType[];
 }) {
+  const isOnPortfolioPage = useMatch('/portfolio');
   const tokens = useTokens();
   return (
     <TableCard
       title="Incentives"
       subtitle={
         <>
-          Bond your LPs tokens from the{' '}
-          <Link
-            className="text-secondary"
-            style={{ textDecoration: 'underline' }}
-            to="/portfolio"
-          >
-            portfolio page
-          </Link>{' '}
+          Bond your LPs tokens{' '}
+          {isOnPortfolioPage ? (
+            <>
+              from the{' '}
+              <Link
+                className="text-secondary"
+                style={{ textDecoration: 'underline' }}
+                to="/portfolio"
+              >
+                portfolio page
+              </Link>{' '}
+            </>
+          ) : null}
           to qualify for incentives provided by external sources.
         </>
       }
