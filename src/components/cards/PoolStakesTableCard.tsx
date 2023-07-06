@@ -53,6 +53,17 @@ export default function MyPoolStakesTableCard<T extends string | number>({
     return [...userPositionsShareValues, ...userStakedShareValues];
   }, [userPositionsShareValues, userStakedShareValues]);
 
+  const maxPoolValue = useMemo(() => {
+    return allShareValues.reduce<number>(
+      (acc, { token0Value, token1Value }) => {
+        const value =
+          (token0Value?.toNumber() || 0) + (token1Value?.toNumber() || 0);
+        return value > acc ? value : acc;
+      },
+      0
+    );
+  }, [allShareValues]);
+
   const columnDecimalPlaces = useMemo(() => {
     const values = allShareValues.reduce<{
       price: number[];
@@ -249,6 +260,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
               </th>
               <th>Fee</th>
               <th>Value</th>
+              <th></th>
               <th>{tokenA.symbol} Amount</th>
               <th>{tokenB.symbol} Amount</th>
               <th colSpan={2}>Staked</th>
@@ -281,6 +293,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                     tokenA={tokenA}
                     tokenB={tokenB}
                     userPosition={userPosition}
+                    maxPoolValue={maxPoolValue}
                     columnDecimalPlaces={columnDecimalPlaces}
                     onCancel={
                       isStaked
@@ -383,6 +396,7 @@ function StakingRow({
   tokenA,
   tokenB,
   userPosition,
+  maxPoolValue = 1,
   columnDecimalPlaces,
   onStake,
   onUnstake,
@@ -391,6 +405,7 @@ function StakingRow({
   tokenA: Token;
   tokenB: Token;
   userPosition: ValuedUserPositionDepositContext;
+  maxPoolValue: number;
   columnDecimalPlaces: {
     price: number;
     fee: number;
@@ -465,6 +480,22 @@ function StakingRow({
           })}
         </td>
         <td>{formatCurrency(tokenAValue.plus(tokenBValue).toFixed(2))}</td>
+        <td className="min-width">
+          <div
+            className={
+              tokenBValue.isGreaterThan(0)
+                ? 'blue-value-bar'
+                : 'green-value-bar'
+            }
+            style={{
+              width: tokenAValue
+                .plus(tokenBValue)
+                .dividedBy(maxPoolValue)
+                .multipliedBy(50)
+                .toNumber(),
+            }}
+          ></div>
+        </td>
         <td>
           {tokenAContext?.userReserves.isGreaterThan(0) &&
             formatDecimalPlaces(
