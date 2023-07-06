@@ -127,6 +127,13 @@ export default function MyPoolStakesTableCard<T extends string | number>({
     []
   );
 
+  const stakesEqual = isStakesEqual(currentStakes, futureStakes);
+
+  const onReset = useCallback(() => {
+    setSelectedStakes([]);
+    setSelectedUnstakes([]);
+  }, []);
+
   return (
     <TableCard
       className={['pool-stakes-list-card', 'pool-list-card', className]
@@ -138,10 +145,17 @@ export default function MyPoolStakesTableCard<T extends string | number>({
           <Link to="/portfolio/pools">
             <button className="button button-light">Back</button>
           </Link>
-          <ConfirmStake
-            currentStakes={currentStakes}
-            futureStakes={futureStakes}
-          />
+          {!stakesEqual && (
+            <>
+              <button className="button" onClick={onReset}>
+                Reset
+              </button>
+              <ConfirmStake
+                currentStakes={currentStakes}
+                futureStakes={futureStakes}
+              />
+            </>
+          )}
         </div>
       }
       {...tableCardProps}
@@ -254,7 +268,6 @@ function ConfirmStake({
   futureStakes: ValuedUserPositionDepositContext[];
 }) {
   const [{ isValidating }, sendStakeRequest] = useStake();
-  const stakesEqual = isStakesEqual(currentStakes, futureStakes);
   const onClick = useCallback(() => {
     const stakePositions = futureStakes.filter(
       (futureStake) =>
@@ -270,7 +283,7 @@ function ConfirmStake({
     );
     sendStakeRequest(stakePositions, unstakePositions);
   }, [currentStakes, futureStakes, sendStakeRequest]);
-  return !stakesEqual ? (
+  return (
     <button
       className="button button-primary"
       disabled={isValidating}
@@ -278,7 +291,7 @@ function ConfirmStake({
     >
       Confirm stake change
     </button>
-  ) : null;
+  );
 }
 
 const relativeTimeFormatter = new Intl.RelativeTimeFormat('en', {
@@ -406,7 +419,7 @@ function StakingRow({
                     className="button nowrap m-0"
                     onClick={() => onCancel(userPosition)}
                   >
-                    Cancel
+                    Reset
                   </button>
                 </div>
               ) : onStake ? (
