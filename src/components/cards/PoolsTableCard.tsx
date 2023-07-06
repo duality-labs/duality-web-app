@@ -22,6 +22,11 @@ import {
 } from '../../lib/web3/hooks/useUserShareValues';
 
 import './PoolsTableCard.scss';
+import useIncentiveGauges from '../../lib/web3/hooks/useIncentives';
+import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
+import { IncentivesButton } from './PoolStakesTableCard';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFire } from '@fortawesome/free-solid-svg-icons';
 
 interface PoolsTableCardOptions {
   onTokenPairClick?: (tokens: [token0: Token, token1: Token]) => void;
@@ -82,7 +87,7 @@ export default function PoolsTableCard<T extends string | number>({
         <table>
           <thead>
             <tr>
-              <th>Pool</th>
+              <th colSpan={2}>Pool</th>
               <th>TVL</th>
               <th>Volume (7 days)</th>
               <th>Volatility (7 days)</th>
@@ -175,11 +180,47 @@ function PairRow({
     return initialValues;
   }, [token0Ticks, token1Ticks, token0, token1, price0, price1]);
 
+  const { data: { gauges } = {} } = useIncentiveGauges();
+  const incentives = useMemo<GaugeSDKType[]>(() => {
+    const tokenAddresses = [token0.address, token1.address].filter(
+      (address): address is string => !!address
+    );
+    return gauges && gauges.length > 0
+      ? gauges.filter((gauge) => {
+          return tokenAddresses.length > 0
+            ? tokenAddresses.every((address) => {
+                return (
+                  address === gauge.distribute_to?.pairID?.token0 ||
+                  address === gauge.distribute_to?.pairID?.token1
+                );
+              })
+            : true;
+        })
+      : [];
+  }, [gauges, token0, token1]);
+
   if (token0 && token1 && price0 && price1) {
     return (
       <tr>
-        <td>
+        <td className="min-width">
           <TokenPair token0={token0} token1={token1} onClick={onClick} />
+        </td>
+        <td>
+          {incentives && incentives.length > 0 && (
+            <IncentivesButton
+              className="row ml-2 gap-sm flex-centered"
+              incentives={incentives}
+              floating={true}
+            >
+              <FontAwesomeIcon
+                icon={faFire}
+                flip="horizontal"
+                className="text-secondary"
+                size="lg"
+              />
+              {incentives.length > 1 && <span>x{incentives.length}</span>}
+            </IncentivesButton>
+          )}
         </td>
         {/* TVL col */}
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
