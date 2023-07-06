@@ -3,10 +3,12 @@ import { UseQueryResult, useQuery } from '@tanstack/react-query';
 import { duality } from '@duality-labs/dualityjs';
 import type {
   GaugeStatus,
+  GetFutureRewardEstimateResponseSDKType,
   GetGaugesRequest,
   GetGaugesResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/duality/incentives/query';
 import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
+import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import subscriber from '../subscriptionManager';
 import { ValuedUserPositionDepositContext } from './useUserShareValues';
@@ -103,4 +105,53 @@ export function useMatchIncentives(
   }
 
   return undefined;
+}
+
+export function useFutureRewardsEstimate(
+  web3Address: string | null,
+  stakeIDs: number[],
+  endEpoch = 365
+): CoinSDKType[] | undefined {
+  const { data } = useQuery({
+    queryKey: ['future-rewards-estimate', web3Address, stakeIDs, endEpoch],
+    queryFn: async (): Promise<
+      GetFutureRewardEstimateResponseSDKType | undefined
+    > => {
+      // get incentives LCD client
+      const lcd = await duality.ClientFactory.createLCDClient({
+        restEndpoint: REACT_APP__REST_API,
+      });
+      /*
+       * note: you would expect the follow to work, but it mangles the query
+       * parameters into a form that isn't accepted by the API:
+       *
+       *   lcd.duality.incentives.getFutureRewardEstimate({
+       *    owner: web3Address,
+       *    stakeIDs: stakeIDs.map((stakeID) => Long.fromNumber(stakeID)),
+       *    endEpoch: Long.fromNumber(endEpoch),
+       *  })
+       *
+       * instead we will create the query string ourself and add the return type
+       */
+
+      // create Query string (with all appropriate characters escaped)
+      const queryParams = new URLSearchParams({
+        endEpoch: endEpoch.toFixed(0),
+      });
+
+      stakeIDs.forEach((stakeID) => {
+        queryParams.append('stakeIDs', stakeID.toFixed(0));
+      });
+
+      // get estimate
+      return web3Address
+        ? lcd.duality.incentives.req.get(
+            `dualitylabs/duality/incentives/v1beta1/future_rewards_estimate/${web3Address}?${queryParams}`
+          )
+        : undefined;
+    },
+    refetchInterval: 5 * minutes,
+  });
+
+  return data?.coins;
 }
