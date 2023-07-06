@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { FormEventHandler, ReactNode } from 'react';
 
 import RadioButtonGroupInput from '../RadioButtonGroupInput/RadioButtonGroupInput';
 import SearchInput from '../inputs/SearchInput/SearchInput';
@@ -6,7 +6,7 @@ import SearchInput from '../inputs/SearchInput/SearchInput';
 import './TableCard.scss';
 
 export interface TableCardProps<T extends string | number> {
-  as?: keyof JSX.IntrinsicElements;
+  as?: 'div' | 'form';
   className?: string;
   title?: ReactNode;
   subtitle?: ReactNode;
@@ -18,6 +18,7 @@ export interface TableCardProps<T extends string | number> {
   switchOnChange?: React.Dispatch<React.SetStateAction<T>>;
   searchValue?: string;
   setSearchValue?: React.Dispatch<React.SetStateAction<string>>;
+  onSubmit?: FormEventHandler<HTMLFormElement>;
   children: ReactNode;
 }
 export default function TableCard<T extends string | number>({
@@ -33,20 +34,12 @@ export default function TableCard<T extends string | number>({
   switchOnChange,
   searchValue = '',
   setSearchValue,
+  onSubmit,
   children,
 }: TableCardProps<T>) {
   // show loken list cards
-  return (
-    <RootComponent
-      className={[
-        'table-card',
-        'page-card',
-        className,
-        scrolling && 'scrollable',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
+  const content = (
+    <>
       <div className="col flex">
         {title && (
           <div className="table-card__header row flex-centered gap-3">
@@ -92,6 +85,21 @@ export default function TableCard<T extends string | number>({
           </div>
         </div>
       </div>
+    </>
+  );
+
+  const classNames = [
+    'table-card',
+    'page-card',
+    className,
+    scrolling && 'scrollable',
+  ].filter(Boolean);
+  // add onSubmit handler to only forms
+  return RootComponent === 'form' ? (
+    <RootComponent className={classNames.join(' ')} onSubmit={onSubmit}>
+      {content}
     </RootComponent>
+  ) : (
+    <RootComponent className={classNames.join(' ')}>{content}</RootComponent>
   );
 }
