@@ -4,6 +4,6 @@
 
 .popover {
   & {
-    border-radius: paddings.size(3);
+    border-radius: paddings.size(3) !important;
   }
 }
