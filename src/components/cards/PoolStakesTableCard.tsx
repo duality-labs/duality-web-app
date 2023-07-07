@@ -293,7 +293,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
             }
             onClick={onUnstake}
           >
-            UnStake All
+            Unstake All
           </button>
         </div>
       }
