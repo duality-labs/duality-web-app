@@ -57,7 +57,7 @@ import StatCardFees from '../../components/stats/StatCardFees';
 import StatCardVolatility from '../../components/stats/StatCardVolatility';
 import { useStatComposition } from '../../components/stats/hooks';
 import useIncentiveGauges from '../../lib/web3/hooks/useIncentives';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
+import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 export default function PoolOverview({

@@ -17,7 +17,7 @@ import {
   useInteractions,
 } from '@floating-ui/react';
 import BigNumber from 'bignumber.js';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
+import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
 
 import TableCard, { TableCardProps } from './TableCard';
 

@@ -5,9 +5,9 @@ import useSWRInfinite from 'swr/infinite';
 import {
   QueryAllTickLiquidityRequest,
   QueryAllTickLiquidityResponseSDKType,
-} from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+} from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
 import { useLcdClientPromise } from '../lcdClient';
-import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tick_liquidity';
+import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
 
 import { defaultPaginationParams, getNextPaginationKey } from './utils';
 

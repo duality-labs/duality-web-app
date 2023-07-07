@@ -6,11 +6,11 @@ import {
   QuerySupplyOfRequest,
   QuerySupplyOfResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
-import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
+import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/deposit_record';
 import {
   QueryGetPoolReservesRequest,
   QueryGetPoolReservesResponseSDKType,
-} from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+} from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
 
 import { useLcdClientPromise } from '../lcdClient';
 import { getPairID } from '../utils/pairs';

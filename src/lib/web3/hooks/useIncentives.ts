@@ -1,13 +1,13 @@
 import { useEffect } from 'react';
 import { UseQueryResult, useQuery } from '@tanstack/react-query';
-import { duality } from '@duality-labs/dualityjs';
+import { dualitylabs } from '@duality-labs/dualityjs';
 import type {
   GaugeStatus,
   GetFutureRewardEstimateResponseSDKType,
   GetGaugesRequest,
   GetGaugesResponseSDKType,
-} from '@duality-labs/dualityjs/types/codegen/duality/incentives/query';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
+} from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/query';
+import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import subscriber from '../subscriptionManager';
@@ -30,12 +30,15 @@ export default function useIncentiveGauges({
     queryKey: ['incentives', status],
     queryFn: async (): Promise<GetGaugesResponseSDKType> => {
       // get incentives LCD client
-      const lcd = await duality.ClientFactory.createLCDClient({
+      const lcd = await dualitylabs.ClientFactory.createLCDClient({
         restEndpoint: REACT_APP__REST_API,
       });
       // get gauges
       // denom string is required but we will not use it in the app
-      return lcd.duality.incentives.getGauges({ status, denom: '' });
+      return lcd.dualitylabs.duality.incentives.getGauges({
+        status,
+        denom: '',
+      });
     },
     refetchInterval: 5 * minutes,
   });
@@ -130,7 +133,7 @@ export function useFutureRewardsEstimate(
       GetFutureRewardEstimateResponseSDKType | undefined
     > => {
       // get incentives LCD client
-      const lcd = await duality.ClientFactory.createLCDClient({
+      const lcd = await dualitylabs.ClientFactory.createLCDClient({
         restEndpoint: REACT_APP__REST_API,
       });
       /*
@@ -157,7 +160,7 @@ export function useFutureRewardsEstimate(
 
       // get estimate
       return web3Address
-        ? lcd.duality.incentives.req.get(
+        ? lcd.dualitylabs.duality.incentives.req.get(
             `dualitylabs/duality/incentives/v1beta1/future_rewards_estimate/${web3Address}?${queryParams}`
           )
         : undefined;

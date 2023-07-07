@@ -23,7 +23,7 @@ import {
 
 import './PoolsTableCard.scss';
 import useIncentiveGauges from '../../lib/web3/hooks/useIncentives';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
+import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
 import { IncentivesButton } from './PoolStakesTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFire } from '@fortawesome/free-solid-svg-icons';
