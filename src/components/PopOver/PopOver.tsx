@@ -1,6 +1,7 @@
 import { ReactElement, cloneElement, useState } from 'react';
 import {
   offset,
+  shift,
   useClick,
   useFloating,
   useHover,
@@ -21,7 +22,7 @@ export default function PopOver({
     open: isOpen,
     onOpenChange: setIsOpen,
     placement: 'top',
-    middleware: [offset({ mainAxis: 4 })],
+    middleware: [offset(4), shift({ padding: 4 })],
   });
   const hover = useHover(context, { mouseOnly: true });
   const click = useClick(context, { ignoreMouse: true, toggle: true });
