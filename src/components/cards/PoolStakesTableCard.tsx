@@ -274,17 +274,6 @@ export default function MyPoolStakesTableCard<T extends string | number>({
             </>
           )}
           <button
-            className="button button-primary"
-            // check if validating or action wil produce a result
-            disabled={
-              isValidating ||
-              !selectedPools.some((pool) => !pool.stakeContext?.ID)
-            }
-            onClick={onStake}
-          >
-            Stake All
-          </button>
-          <button
             className="button button-primary-outline"
             // check if validating or action wil produce a result
             disabled={
@@ -294,6 +283,17 @@ export default function MyPoolStakesTableCard<T extends string | number>({
             onClick={onUnstake}
           >
             Unstake All
+          </button>
+          <button
+            className="button button-primary"
+            // check if validating or action wil produce a result
+            disabled={
+              isValidating ||
+              !selectedPools.some((pool) => !pool.stakeContext?.ID)
+            }
+            onClick={onStake}
+          >
+            Stake All
           </button>
         </div>
       }
