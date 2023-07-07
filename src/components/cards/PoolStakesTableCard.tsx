@@ -313,8 +313,6 @@ export default function MyPoolStakesTableCard<T extends string | number>({
               <th>Value</th>
               <th></th>
               <th>Token Amount</th>
-              <th className="min-width">Token Amount</th>
-              <th></th>
               <th>Staked</th>
             </tr>
           </thead>
@@ -520,7 +518,7 @@ function StakingRow({
         </td>
         <td>
           {tokenAContext?.userReserves.isGreaterThan(0) && (
-            <>
+            <div>
               <span>
                 {formatDecimalPlaces(
                   getAmountInDenom(
@@ -536,12 +534,10 @@ function StakingRow({
                 )}
               </span>{' '}
               <span className="text-muted">{tokenA.symbol}</span>
-            </>
+            </div>
           )}
-        </td>
-        <td className="min-width">
           {tokenBContext?.userReserves.isGreaterThan(0) && (
-            <>
+            <div>
               <span>
                 {formatDecimalPlaces(
                   getAmountInDenom(
@@ -557,11 +553,10 @@ function StakingRow({
                 )}
               </span>{' '}
               <span className="text-muted">{tokenB.symbol}</span>
-            </>
+            </div>
           )}
         </td>
-        <td>&nbsp;</td>
-        <td className="min-width">
+        <td>
           {isStaked ? (
             <>
               <FontAwesomeIcon className="mr-3" icon={faCheck} />
