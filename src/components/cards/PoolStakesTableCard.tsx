@@ -285,7 +285,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
             Stake All
           </button>
           <button
-            className="button button-primary"
+            className="button button-primary-outline"
             // check if validating or action wil produce a result
             disabled={
               isValidating ||
