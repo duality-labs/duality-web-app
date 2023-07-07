@@ -482,7 +482,7 @@ function StakingRow({
             {tokenA.symbol}/{tokenB.symbol}
           </span>
         </td>
-        <td>
+        <td className="py-0">
           {incentives && incentives.length > 0 && (
             <IncentivesButton
               className="row gap-sm flex-centered"
