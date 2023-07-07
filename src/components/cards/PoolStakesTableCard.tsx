@@ -1,5 +1,14 @@
 import { Link } from 'react-router-dom';
-import { Fragment, ReactNode, useCallback, useMemo, useState } from 'react';
+import {
+  ChangeEventHandler,
+  FormEventHandler,
+  Fragment,
+  ReactElement,
+  ReactNode,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 import {
   FloatingPortal,
   useClick,
@@ -155,89 +164,81 @@ export default function MyPoolStakesTableCard<T extends string | number>({
     }
   }, [allShareValues, tokenA, tokenB]);
 
-  const currentStakes: ValuedUserPositionDepositContext[] = useMemo(() => {
-    return [...userStakedShareValues];
-  }, [userStakedShareValues]);
-
-  //
-  const [selectedStakes, setSelectedStakes] = useState<
-    ValuedUserPositionDepositContext[]
-  >([]);
-  const [selectedUnstakes, setSelectedUnstakes] = useState<
+  // control pool selection through a selected list
+  const [selectedPools, setSelectedPools] = useState<
     ValuedUserPositionDepositContext[]
   >([]);
 
-  // update future stakes if current stakes change
+  const [selectedAll, setSelectedAll] = useState(false);
 
-  // derive future state from starting state and selected changes
-  const futureStakes = useMemo<ValuedUserPositionDepositContext[]>(() => {
-    let futureStakes = [...currentStakes];
+  const onReset = useCallback<FormEventHandler<HTMLInputElement>>(() => {
+    setSelectedAll(false);
+    setSelectedPools([]);
+  }, []);
 
-    // add new stakes
-    selectedStakes.forEach((selectedStake) => {
-      if (!futureStakes.find((stake) => isStakeEqual(stake, selectedStake))) {
-        // add up-to-date position object
-        const userPosition = userPositionsShareValues.find((position) =>
-          isStakeEqual(position, selectedStake)
-        );
-        if (userPosition) {
-          futureStakes.push(userPosition);
-        }
+  const toggleAll = useCallback<ChangeEventHandler<HTMLInputElement>>(
+    (event) => {
+      if (event.target.checked) {
+        setSelectedAll(true);
+        setSelectedPools([
+          ...userStakedShareValues,
+          ...userPositionsShareValues,
+        ]);
+      } else {
+        setSelectedAll(false);
+        setSelectedPools([]);
       }
-    });
-    // remove new unstakes
-    selectedUnstakes.forEach((selectedUnstake) => {
-      if (futureStakes.find((stake) => isStakeEqual(stake, selectedUnstake))) {
-        futureStakes = futureStakes.filter(
-          (stake) => !isStakeEqual(stake, selectedUnstake)
-        );
-      }
-    });
-    return futureStakes;
-  }, [
-    userPositionsShareValues,
-    currentStakes,
-    selectedStakes,
-    selectedUnstakes,
-  ]);
-
-  const onStake = useCallback(
-    (userPosition: ValuedUserPositionDepositContext) => {
-      setSelectedStakes((selectedStakes) => {
-        return [...selectedStakes, userPosition];
-      });
-      setSelectedUnstakes((selectedUnstakes) => {
-        return selectedUnstakes.filter(
-          (unstake) => !isStakeEqual(unstake, userPosition)
-        );
-      });
     },
-    []
+    [userPositionsShareValues, userStakedShareValues]
   );
 
-  const onUnStake = useCallback(
-    (userPosition: ValuedUserPositionDepositContext) => {
-      setSelectedStakes((selectedStakes) => {
-        return selectedStakes.filter(
-          (stake) => !isStakeEqual(stake, userPosition)
-        );
-      });
-      setSelectedUnstakes((selectedUnstakes) => {
-        return [...selectedUnstakes, userPosition];
-      });
+  const onChange = useCallback<ChangeEventHandler<HTMLInputElement>>(
+    (event) => {
+      const selectedPool = getUserPositionFromID(
+        selectedPools,
+        event.target.value
+      );
+      if (selectedPool) {
+        setSelectedPools((selectedPools) => {
+          return selectedPools.filter((pool) => pool !== selectedPool);
+        });
+      } else {
+        setSelectedPools((selectedPools) => {
+          const newPool =
+            // add staked pool
+            getUserPositionFromID(userStakedShareValues, event.target.value) ||
+            // or add unstaked pool
+            getUserPositionFromID(userPositionsShareValues, event.target.value);
+          return newPool ? [...selectedPools, newPool] : selectedPools;
+        });
+      }
     },
-    []
+    [selectedPools, userPositionsShareValues, userStakedShareValues]
   );
 
-  const stakesEqual = isStakesEqual(currentStakes, futureStakes);
-
-  const onReset = useCallback(() => {
-    setSelectedStakes([]);
-    setSelectedUnstakes([]);
+  // create form submission methods and state
+  const [{ isValidating }, sendStakeRequest] = useStake();
+  const onStake = useCallback(() => {
+    const stakePositions = selectedPools.filter(
+      (pool) => pool.stakeContext?.ID
+    );
+    sendStakeRequest(stakePositions, []);
+  }, [selectedPools, sendStakeRequest]);
+  const onUnstake = useCallback(() => {
+    const unstakePositions = selectedPools.filter(
+      (pool) => !pool.stakeContext?.ID
+    );
+    sendStakeRequest([], unstakePositions);
+  }, [selectedPools, sendStakeRequest]);
+  const onSubmit = useCallback<FormEventHandler<HTMLFormElement>>((event) => {
+    // don't execute default behavior, we have two action buttons not one
+    // and need to decide which to do, there is no default
+    event.preventDefault();
   }, []);
 
   return (
     <TableCard
+      as={'form'}
       className={['pool-stakes-list-card', 'pool-list-card', className]
         .filter(Boolean)
         .join(' ')}
@@ -256,25 +257,54 @@ export default function MyPoolStakesTableCard<T extends string | number>({
           <Link to="/portfolio/pools">
             <button className="button button-muted">Back</button>
           </Link>
-          {!stakesEqual && (
+          {selectedPools.length > 0 && (
             <>
-              <button className="button" onClick={onReset}>
-                Reset
-              </button>
-              <ConfirmStake
-                currentStakes={currentStakes}
-                futureStakes={futureStakes}
+              <input
+                type="reset"
+                className="button"
+                value="Reset"
+                onClick={onReset}
               />
             </>
           )}
+          <button
+            className="button button-primary"
+            // check if validating or action wil produce a result
+            disabled={
+              isValidating ||
+              !selectedPools.some((pool) => !pool.stakeContext?.ID)
+            }
+            onClick={onStake}
+          >
+            Stake All
+          </button>
+          <button
+            className="button button-primary"
+            // check if validating or action wil produce a result
+            disabled={
+              isValidating ||
+              !selectedPools.some((pool) => pool.stakeContext?.ID)
+            }
+            onClick={onUnstake}
+          >
+            UnStake All
+          </button>
         </div>
       }
+      onSubmit={onSubmit}
       {...tableCardProps}
     >
       {allShareValues.length > 0 ? (
         <table>
           <thead>
             <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  checked={selectedAll}
+                  onChange={toggleAll}
+                />
+              </th>
               <th className="min-width">
                 Price: {tokenA.symbol}/{tokenB.symbol}
               </th>
@@ -286,7 +316,6 @@ export default function MyPoolStakesTableCard<T extends string | number>({
               <th className="min-width">Token Amount</th>
               <th></th>
               <th>Staked</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -301,13 +330,19 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                       .toNumber();
               })
               .map((userPosition) => {
-                const isStaked = !!currentStakes.find((stake) =>
-                  isStakeEqual(stake, userPosition)
-                );
-                const willStake = !!futureStakes.find((stake) =>
+                const isSelected = !!selectedPools.find((stake) =>
                   isStakeEqual(stake, userPosition)
                 );
 
+                const checkbox = (
+                  <input
+                    type="checkbox"
+                    name="selected-pool-ids"
+                    value={getUserPositionID(userPosition)}
+                    checked={isSelected}
+                    onChange={onChange}
+                  />
+                );
                 return (
                   // show user's positions
                   <StakingRow
@@ -317,17 +352,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                     userPosition={userPosition}
                     maxPoolValue={maxPoolValue}
                     columnDecimalPlaces={columnDecimalPlaces}
-                    onCancel={
-                      isStaked
-                        ? willStake
-                          ? undefined
-                          : onStake
-                        : willStake
-                        ? onUnStake
-                        : undefined
-                    }
-                    onStake={willStake ? undefined : onStake}
-                    onUnstake={willStake ? onUnStake : undefined}
+                    checkbox={checkbox}
                   />
                 );
               })}
@@ -364,50 +389,25 @@ function isStakeEqual(
   );
 }
 
-function isStakesEqual(
-  stakesA: ValuedUserPositionDepositContext[],
-  stakesB: ValuedUserPositionDepositContext[]
-): boolean {
-  return (
-    stakesA.length === stakesB.length &&
-    stakesA.every((stakeA, index) => {
-      return isStakeEqual(stakeA, stakesB[index]);
-    })
-  );
+function getUserPositionID(
+  userPosition: ValuedUserPositionDepositContext
+): string {
+  return [
+    userPosition.deposit.centerTickIndex.toString(),
+    userPosition.deposit.fee.toString(),
+    userPosition.stakeContext?.ID,
+  ]
+    .filter((string) => string !== undefined)
+    .join(',');
 }
 
-function ConfirmStake({
-  currentStakes,
-  futureStakes,
-}: {
-  currentStakes: ValuedUserPositionDepositContext[];
-  futureStakes: ValuedUserPositionDepositContext[];
-}) {
-  const [{ isValidating }, sendStakeRequest] = useStake();
-  const onClick = useCallback(() => {
-    const stakePositions = futureStakes.filter(
-      (futureStake) =>
-        !currentStakes.find((currentStake) =>
-          isStakeEqual(futureStake, currentStake)
-        )
-    );
-    const unstakePositions = currentStakes.filter(
-      (currentStake) =>
-        !futureStakes.find((futureStake) =>
-          isStakeEqual(futureStake, currentStake)
-        )
-    );
-    sendStakeRequest(stakePositions, unstakePositions);
-  }, [currentStakes, futureStakes, sendStakeRequest]);
-  return (
-    <button
-      className="button button-primary"
-      disabled={isValidating}
-      onClick={onClick}
-    >
-      Confirm stake change
-    </button>
-  );
+function getUserPositionFromID(
+  userPositions: ValuedUserPositionDepositContext[],
+  userPositionID: string
+): ValuedUserPositionDepositContext | undefined {
+  return userPositions.find((userPosition) => {
+    return getUserPositionID(userPosition) === userPositionID;
+  });
 }
 
 function StakingRow({
@@ -416,9 +416,7 @@ function StakingRow({
   userPosition,
   maxPoolValue = 1,
   columnDecimalPlaces,
-  onStake,
-  onUnstake,
-  onCancel,
+  checkbox,
 }: {
   tokenA: Token;
   tokenB: Token;
@@ -431,9 +429,7 @@ function StakingRow({
     amountA: number;
     amountB: number;
   };
-  onStake?: (userPosition: ValuedUserPositionDepositContext) => void;
-  onUnstake?: (userPosition: ValuedUserPositionDepositContext) => void;
-  onCancel?: (userPosition: ValuedUserPositionDepositContext) => void;
+  checkbox?: ReactElement;
 }) {
   const tokensInverted = tokenA.address !== userPosition.token0.address;
 
@@ -464,7 +460,11 @@ function StakingRow({
   if (tokenAValue.isGreaterThan(0) || tokenBValue.isGreaterThan(0)) {
     return (
       <tr>
-        <td className="min-width text-right">
+        <td className="min-width">
+          {/* use label to extend to click area */}
+          <label className="pt-0 pb-2 pr-3">{checkbox}</label>
+        </td>
+        <td className="min-width pl-3">
           {formatDecimalPlaces(
             tickIndexToPrice(
               !tokensInverted
@@ -568,42 +568,6 @@ function StakingRow({
               <RelativeTime timestamp={userPosition.stakeContext?.start_time} />
             </>
           ) : null}
-        </td>
-        <td className="min-width">
-          <div className="col">
-            <div className="row gap-3 ml-auto">
-              {onCancel ? (
-                <div className="row flex-centered gap-3">
-                  <span className="text-action-button">
-                    {onStake ? <>Will unstake</> : <>Will stake</>}
-                  </span>
-                  <button
-                    type="button"
-                    className="button button-muted nowrap m-0"
-                    onClick={() => onCancel(userPosition)}
-                  >
-                    Reset
-                  </button>
-                </div>
-              ) : onStake ? (
-                <button
-                  type="button"
-                  className="button nowrap button-primary m-0"
-                  onClick={() => onStake(userPosition)}
-                >
-                  Stake
-                </button>
-              ) : onUnstake ? (
-                <button
-                  type="button"
-                  className="button nowrap button-primary-outline m-0"
-                  onClick={() => onUnstake(userPosition)}
-                >
-                  Unstake
-                </button>
-              ) : null}
-            </div>
-          </div>
         </td>
       </tr>
     );
