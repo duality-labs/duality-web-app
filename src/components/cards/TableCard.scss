@@ -94,3 +94,9 @@
     object-fit: contain;
   }
 }
+
+form.table-card {
+  input[type='checkbox'] {
+    appearance: auto;
+  }
+}
