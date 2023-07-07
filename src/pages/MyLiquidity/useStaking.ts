@@ -14,7 +14,10 @@ import {
 
 import { UserPositionDepositContext } from '../../lib/web3/hooks/useUserShares';
 import { signingRpcClient } from '../../lib/web3/rpcMsgClient';
-import { duality, getSigningDualityClient } from '@duality-labs/dualityjs';
+import {
+  dualitylabs,
+  getSigningDualitylabsClient,
+} from '@duality-labs/dualityjs';
 import { ValuedUserPositionDepositContext } from '../../lib/web3/hooks/useUserShareValues';
 import { getShareDenom } from '../../lib/web3/utils/shares';
 
@@ -74,7 +77,7 @@ export function useStake(): [
         try {
           // add each tick message into a signed broadcast
           const client = await signingRpcClient(
-            getSigningDualityClient,
+            getSigningDualitylabsClient,
             web3.wallet
           );
           const res = await client.signAndBroadcast(
@@ -82,30 +85,10 @@ export function useStake(): [
             [
               ...(stakePositions.length > 0
                 ? [
-                    duality.incentives.MessageComposer.withTypeUrl.stake({
-                      owner: web3Address,
-                      coins: stakePositions.flatMap(({ deposit }) => {
-                        const denom = getShareDenom(
-                          [deposit.pairID.token0, deposit.pairID.token1],
-                          deposit.centerTickIndex.toNumber(),
-                          deposit.fee.toNumber()
-                        );
-                        return denom
-                          ? {
-                              denom,
-                              amount: deposit.sharesOwned,
-                            }
-                          : [];
-                      }),
-                    }),
-                  ]
-                : []),
-              ...(unstakePositions.length > 0
-                ? [
-                    duality.incentives.MessageComposer.withTypeUrl.unstake({
-                      owner: web3Address,
-                      unstakes: unstakePositions.flatMap(
-                        ({ deposit, stakeContext }) => {
+                    dualitylabs.duality.incentives.MessageComposer.withTypeUrl.stake(
+                      {
+                        owner: web3Address,
+                        coins: stakePositions.flatMap(({ deposit }) => {
                           const denom = getShareDenom(
                             [deposit.pairID.token0, deposit.pairID.token1],
                             deposit.centerTickIndex.toNumber(),
@@ -113,18 +96,42 @@ export function useStake(): [
                           );
                           return denom
                             ? {
-                                ID: Long.fromString(stakeContext?.ID || ''),
-                                coins: [
-                                  {
-                                    denom,
-                                    amount: deposit.sharesOwned,
-                                  },
-                                ],
+                                denom,
+                                amount: deposit.sharesOwned,
                               }
                             : [];
-                        }
-                      ),
-                    }),
+                        }),
+                      }
+                    ),
+                  ]
+                : []),
+              ...(unstakePositions.length > 0
+                ? [
+                    dualitylabs.duality.incentives.MessageComposer.withTypeUrl.unstake(
+                      {
+                        owner: web3Address,
+                        unstakes: unstakePositions.flatMap(
+                          ({ deposit, stakeContext }) => {
+                            const denom = getShareDenom(
+                              [deposit.pairID.token0, deposit.pairID.token1],
+                              deposit.centerTickIndex.toNumber(),
+                              deposit.fee.toNumber()
+                            );
+                            return denom
+                              ? {
+                                  ID: Long.fromString(stakeContext?.ID || ''),
+                                  coins: [
+                                    {
+                                      denom,
+                                      amount: deposit.sharesOwned,
+                                    },
+                                  ],
+                                }
+                              : [];
+                          }
+                        ),
+                      }
+                    ),
                   ]
                 : []),
             ],

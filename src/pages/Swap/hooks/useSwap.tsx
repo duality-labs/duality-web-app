@@ -26,7 +26,7 @@ import { dualitylabs } from '@duality-labs/dualityjs';
 import {
   MsgPlaceLimitOrderResponseSDKType,
   MsgPlaceLimitOrder,
-} from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
+} from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
 
 async function sendSwap(
   {
