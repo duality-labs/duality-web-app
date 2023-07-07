@@ -236,6 +236,12 @@ export default function MyPoolStakesTableCard<T extends string | number>({
     event.preventDefault();
   }, []);
 
+  const hasContext = useMemo<boolean>(() => {
+    return allShareValues.some(
+      (share) => share.token0Context || share.token1Context
+    );
+  }, [allShareValues]);
+
   return (
     <TableCard
       as={'form'}
@@ -294,10 +300,10 @@ export default function MyPoolStakesTableCard<T extends string | number>({
       onSubmit={onSubmit}
       {...tableCardProps}
     >
-      {allShareValues.length > 0 ? (
-        <table>
-          <thead>
-            <tr>
+      <table>
+        <thead>
+          <tr>
+            {hasContext && (
               <th>
                 <input
                   type="checkbox"
@@ -305,19 +311,21 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                   onChange={toggleAll}
                 />
               </th>
-              <th className="min-width">
-                Price: {tokenA.symbol}/{tokenB.symbol}
-              </th>
-              <th></th>
-              <th>Fee</th>
-              <th>Value</th>
-              <th></th>
-              <th>Token Amount</th>
-              <th>Staked</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allShareValues
+            )}
+            <th className="min-width">
+              Price: {tokenA.symbol}/{tokenB.symbol}
+            </th>
+            <th></th>
+            <th>Fee</th>
+            <th>Value</th>
+            <th></th>
+            <th>Token Amount</th>
+            <th>Staked</th>
+          </tr>
+        </thead>
+        <tbody>
+          {hasContext ? (
+            allShareValues
               .sort((a, b) => {
                 return !guessInvertedOrder(tokenA.address, tokenB.address)
                   ? a.deposit.centerTickIndex
@@ -353,23 +361,14 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                     checkbox={checkbox}
                   />
                 );
-              })}
-          </tbody>
-        </table>
-      ) : (
-        <table>
-          <thead>
+              })
+          ) : (
             <tr>
-              <th>Pool</th>
+              <td colSpan={7}>No Position Found</td>
             </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td align="center">No Positions Found</td>
-            </tr>
-          </tbody>
-        </table>
-      )}
+          )}
+        </tbody>
+      </table>
     </TableCard>
   );
 }
