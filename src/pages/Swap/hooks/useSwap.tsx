@@ -40,6 +40,7 @@ async function sendSwap(
     orderType,
     tickIndex,
     amountIn,
+    maxAmountOut,
     tokenIn,
     tokenOut,
     creator,
@@ -75,6 +76,7 @@ async function sendSwap(
           orderType,
           tickIndex,
           amountIn,
+          maxAmountOut,
           tokenIn,
           tokenOut,
           creator,
@@ -167,6 +169,7 @@ export function useSwap(): [
         orderType,
         tickIndex,
         amountIn,
+        maxAmountOut,
         tokenIn,
         tokenOut,
         creator,
@@ -176,6 +179,7 @@ export function useSwap(): [
         !orderType ||
         !tickIndex ||
         !amountIn ||
+        !maxAmountOut ||
         !tokenIn ||
         !tokenOut ||
         !creator ||
