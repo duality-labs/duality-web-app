@@ -17,7 +17,7 @@
   "dependencies": {
     "@cosmjs/proto-signing": "0.31.0",
     "@cosmjs/stargate": "0.31.0",
-    "@duality-labs/dualityjs": "^0.3.1",
+    "@duality-labs/dualityjs": "^0.3.3",
     "@floating-ui/react": "^0.24.5",
     "@fortawesome/fontawesome-svg-core": "^6.1.2",
     "@fortawesome/free-solid-svg-icons": "^6.1.2",
