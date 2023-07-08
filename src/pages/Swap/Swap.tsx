@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
+import Long from 'long';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBolt,
@@ -120,7 +121,16 @@ function Swap() {
       // set tiny minimum of tolerance as the frontend calculations
       // don't always exactly align with the backend calculations
       const tolerance = Math.max(1e-12, parseFloat(slippage) / 100);
-      if (address && routerResult && tokenA && tokenB && !isNaN(tolerance)) {
+      const tickIndexLimit = routerResult?.tickIndexOut?.toNumber();
+      if (
+        address &&
+        routerResult &&
+        tokenA &&
+        tokenB &&
+        !isNaN(tolerance) &&
+        tickIndexLimit &&
+        !isNaN(tickIndexLimit)
+      ) {
         // convert to swap request format
         const result = routerResult;
         // Cosmos requires tokens in integer format of smallest denomination
@@ -176,15 +186,22 @@ function Swap() {
 
         swapRequest(
           {
-            maxAmountIn:
+            amountIn:
               getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
             tokenIn: result.tokenIn,
             tokenOut: result.tokenOut,
             creator: address,
             receiver: address,
-            maxAmountOut:
-              getAmountInDenom(tokenB, result.amountOut, tokenB?.display) ||
-              '0',
+            // see LimitOrderType in types repo (cannot import at runtime)
+            // https://github.com/duality-labs/dualityjs/blob/2cf50a7af7bf7c6b1490a590a4e1756b848096dd/src/codegen/duality/dex/tx.ts#L6-L13
+            // using type IMMEDIATE_OR_CANCEL so that partially filled requests
+            // succeed (in testing when swapping 1e18 utokens, often the order
+            // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
+            // todo: use type FILL_OR_KILL: order must be filled completely
+            orderType: 2,
+            // todo: set tickIndex to allow for a tolerance:
+            //   the below function is a tolerance of 0
+            tickIndex: Long.fromNumber(tickIndexLimit * (forward ? -1 : 1)),
           },
           gasEstimate
         );
