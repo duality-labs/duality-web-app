@@ -287,7 +287,7 @@ export function MyEditedPositionTableCard({
                 )}
               </td>
               <td className="min-width">
-                {poolValues[index][0] > 0 && (
+                {reserveA.isGreaterThan(0) && (
                   <div
                     className="green-value-bar"
                     style={{
@@ -298,8 +298,7 @@ export function MyEditedPositionTableCard({
                     }}
                   ></div>
                 )}
-
-                {poolValues[index][1] > 0 && (
+                {reserveB.isGreaterThan(0) && (
                   <div
                     className="blue-value-bar"
                     style={{
