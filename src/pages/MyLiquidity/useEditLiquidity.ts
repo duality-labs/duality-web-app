@@ -265,6 +265,8 @@ export function useEditLiquidity(): [
             throw error;
           }
 
+          // todo: parse and update toast with information about the trade
+
           // set new information
           setData({
             gasUsed: gasUsed.toString(),

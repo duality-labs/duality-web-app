@@ -120,7 +120,7 @@ async function sendSwap(
               tokenOutToken.address,
               tokenOutToken.display
             ) || '0'
-          )} ${tokenOut} (click for more details)`
+          )} ${tokenOutToken.symbol} (click for more details)`
         : undefined;
 
       if (!checkMsgSuccessToast(res, { id, description })) {
