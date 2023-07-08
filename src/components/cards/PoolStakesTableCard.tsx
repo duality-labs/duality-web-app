@@ -505,7 +505,11 @@ function StakingRow({
         <td className="min-width">
           <div
             className={
-              isStaked && isIncentivized ? 'green-value-bar' : 'blue-value-bar'
+              isStaked && isIncentivized
+                ? 'green-value-bar'
+                : tokenAValue.isGreaterThan(0)
+                ? 'red-value-bar'
+                : 'blue-value-bar'
             }
             style={{
               width: tokenAValue
