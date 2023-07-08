@@ -9,10 +9,6 @@ import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { EditedPosition } from '../MyLiquidity/useEditLiquidity';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import {
-  usePoolDepositFilterForPair,
-  useUserPositionsContext,
-} from '../../lib/web3/hooks/useUserShares';
 
 import TableCard from '../../components/cards/TableCard';
 
@@ -188,17 +184,28 @@ export function MyEditedPositionTableCard({
   viewableMinIndex: number | undefined;
   viewableMaxIndex: number | undefined;
 }) {
-  const pairPoolDepositFilter = usePoolDepositFilterForPair([tokenA, tokenB]);
-  const userPositionsContext = useUserPositionsContext(pairPoolDepositFilter);
-
   const invertedTokenOrder = guessInvertedOrder(tokenA.address, tokenB.address);
 
   const {
     data: [priceA, priceB],
   } = useSimplePrice([tokenA, tokenB]);
 
+  const sortedPosition = useMemo(() => {
+    return (
+      editedUserPosition
+        // sort by price
+        .sort((a, b) => {
+          return !!invertedTokenOrder
+            ? b.deposit.centerTickIndex.toNumber() -
+                a.deposit.centerTickIndex.toNumber()
+            : a.deposit.centerTickIndex.toNumber() -
+                b.deposit.centerTickIndex.toNumber();
+        })
+    );
+  }, [editedUserPosition, invertedTokenOrder]);
+
   const poolValues = useMemo(() => {
-    return userPositionsContext.map<[number, number]>(
+    return sortedPosition.map<[number, number]>(
       ({ token0, token0Context, token1Context }) => {
         const tokenAContext = tokenA === token0 ? token0Context : token1Context;
         const tokenBContext = tokenB === token0 ? token0Context : token1Context;
@@ -229,7 +236,7 @@ export function MyEditedPositionTableCard({
         return [valueA, valueB];
       }
     );
-  }, [priceA, priceB, tokenA, tokenB, userPositionsContext]);
+  }, [priceA, priceB, tokenA, tokenB, sortedPosition]);
 
   const maxPoolValue = useMemo(() => {
     return poolValues.reduce(
@@ -246,126 +253,89 @@ export function MyEditedPositionTableCard({
   }, [poolValues]);
 
   const data = editedUserPosition
-    ? editedUserPosition
-        // sort by price
-        .sort((a, b) => {
-          return !!invertedTokenOrder
-            ? b.deposit.centerTickIndex.toNumber() -
-                a.deposit.centerTickIndex.toNumber()
-            : a.deposit.centerTickIndex.toNumber() -
-                b.deposit.centerTickIndex.toNumber();
-        })
-        .map(
-          (
-            { tickDiff0, tickDiff1, deposit, token0Context, token1Context },
-            index
-          ) => {
-            const reserveA = !invertedTokenOrder
-              ? tickDiff0.plus(token0Context?.userReserves || 0)
-              : tickDiff1.plus(token1Context?.userReserves || 0);
-            const reserveB = !invertedTokenOrder
-              ? tickDiff1.plus(token1Context?.userReserves || 0)
-              : tickDiff0.plus(token0Context?.userReserves || 0);
+    ? sortedPosition.map(
+        (
+          { tickDiff0, tickDiff1, deposit, token0Context, token1Context },
+          index
+        ) => {
+          const reserveA = !invertedTokenOrder
+            ? tickDiff0.plus(token0Context?.userReserves || 0)
+            : tickDiff1.plus(token1Context?.userReserves || 0);
+          const reserveB = !invertedTokenOrder
+            ? tickDiff1.plus(token1Context?.userReserves || 0)
+            : tickDiff0.plus(token0Context?.userReserves || 0);
 
-            const tickIndex = !invertedTokenOrder
-              ? new BigNumber(deposit.centerTickIndex.toNumber())
-              : new BigNumber(deposit.centerTickIndex.toNumber()).negated();
+          const tickIndex = !invertedTokenOrder
+            ? new BigNumber(deposit.centerTickIndex.toNumber())
+            : new BigNumber(deposit.centerTickIndex.toNumber()).negated();
 
-            const price = tickIndexToPrice(tickIndex.negated());
-            // show only those ticks that are in the currently visible range
-            return viewableMinIndex !== undefined &&
-              viewableMaxIndex !== undefined &&
-              tickIndex.isGreaterThanOrEqualTo(viewableMinIndex) &&
-              tickIndex.isLessThanOrEqualTo(viewableMaxIndex) ? (
-              <tr key={index} className="pt-2">
-                <td>{index + 1}</td>
-                <td>{new BigNumber(1).div(price).toFixed(5)}</td>
-                <td>
-                  {reserveA.isGreaterThan(0) && (
-                    <div>
-                      {priceA ? formatCurrency(poolValues[index][0]) : '-'}
-                    </div>
-                  )}
-                  {reserveB.isGreaterThan(0) && (
-                    <div>
-                      {priceB ? formatCurrency(poolValues[index][1]) : '-'}
-                    </div>
-                  )}
-                </td>
-                <td className="min-width">
-                  {poolValues[index][0] > 0 && (
-                    <div
-                      className="green-value-bar"
-                      style={{
-                        width: new BigNumber(poolValues[index][0])
-                          .dividedBy(maxPoolValue)
-                          .multipliedBy(50)
-                          .toNumber(),
-                      }}
-                    ></div>
-                  )}
+          const price = tickIndexToPrice(tickIndex.negated());
+          // show only those ticks that are in the currently visible range
+          return viewableMinIndex !== undefined &&
+            viewableMaxIndex !== undefined &&
+            tickIndex.isGreaterThanOrEqualTo(viewableMinIndex) &&
+            tickIndex.isLessThanOrEqualTo(viewableMaxIndex) ? (
+            <tr key={index} className="pt-2">
+              <td>{index + 1}</td>
+              <td>{new BigNumber(1).div(price).toFixed(5)}</td>
+              <td>
+                {reserveA.isGreaterThan(0) && (
+                  <div>
+                    {priceA ? formatCurrency(poolValues[index][0]) : '-'}
+                  </div>
+                )}
+                {reserveB.isGreaterThan(0) && (
+                  <div>
+                    {priceB ? formatCurrency(poolValues[index][1]) : '-'}
+                  </div>
+                )}
+              </td>
+              <td className="min-width">
+                {poolValues[index][0] > 0 && (
+                  <div
+                    className="green-value-bar"
+                    style={{
+                      width: new BigNumber(poolValues[index][0])
+                        .dividedBy(maxPoolValue)
+                        .multipliedBy(50)
+                        .toNumber(),
+                    }}
+                  ></div>
+                )}
 
-                  {poolValues[index][1] > 0 && (
-                    <div
-                      className="blue-value-bar"
-                      style={{
-                        width: new BigNumber(poolValues[index][1])
-                          .dividedBy(maxPoolValue)
-                          .multipliedBy(50)
-                          .toNumber(),
-                      }}
-                    ></div>
-                  )}
-                </td>
+                {poolValues[index][1] > 0 && (
+                  <div
+                    className="blue-value-bar"
+                    style={{
+                      width: new BigNumber(poolValues[index][1])
+                        .dividedBy(maxPoolValue)
+                        .multipliedBy(50)
+                        .toNumber(),
+                    }}
+                  ></div>
+                )}
+              </td>
 
-                <td>
-                  {reserveA.isGreaterThan(0) && (
-                    <div>
-                      <span>{formatReserveAmount(tokenA, reserveA)}</span>{' '}
-                      <span className="text-muted">{tokenA.symbol}</span>
-                    </div>
-                  )}
-                  {reserveB.isGreaterThan(0) && (
-                    <div>
-                      <span>{formatReserveAmount(tokenB, reserveB)}</span>{' '}
-                      <span className="text-muted">{tokenB.symbol}</span>
-                    </div>
-                  )}
-                </td>
-                <td className="row gap-2 ml-3 mr-3">
-                  {reserveA?.plus(reserveB || 0).isGreaterThan(0) &&
-                    (reserveA.isZero() || reserveB.isZero()) && (
-                      <button
-                        type="button"
-                        className="button button-light ml-auto"
-                        onClick={() => {
-                          setEditedUserPosition((ticks) => {
-                            return ticks.map((tick) => {
-                              return tick.deposit.centerTickIndex.toNumber() ===
-                                deposit.centerTickIndex.toNumber() &&
-                                tick.deposit.fee.toNumber() ===
-                                  deposit.fee.toNumber()
-                                ? {
-                                    ...tick,
-                                    tickDiff0:
-                                      tick.token0Context?.userReserves.negated() ||
-                                      new BigNumber(0),
-                                    tickDiff1:
-                                      tick.token1Context?.userReserves.negated() ||
-                                      new BigNumber(0),
-                                  }
-                                : tick;
-                            });
-                          });
-                        }}
-                      >
-                        Withdraw
-                      </button>
-                    )}
-                  {(!tickDiff0.isZero() || !tickDiff1.isZero()) && (
+              <td>
+                {reserveA.isGreaterThan(0) && (
+                  <div>
+                    <span>{formatReserveAmount(tokenA, reserveA)}</span>{' '}
+                    <span className="text-muted">{tokenA.symbol}</span>
+                  </div>
+                )}
+                {reserveB.isGreaterThan(0) && (
+                  <div>
+                    <span>{formatReserveAmount(tokenB, reserveB)}</span>{' '}
+                    <span className="text-muted">{tokenB.symbol}</span>
+                  </div>
+                )}
+              </td>
+              <td className="row gap-2 ml-3 mr-3">
+                {reserveA?.plus(reserveB || 0).isGreaterThan(0) &&
+                  (reserveA.isZero() || reserveB.isZero()) && (
                     <button
                       type="button"
-                      className="button button-muted ml-auto"
+                      className="button button-light ml-auto"
                       onClick={() => {
                         setEditedUserPosition((ticks) => {
                           return ticks.map((tick) => {
@@ -375,22 +345,50 @@ export function MyEditedPositionTableCard({
                                 deposit.fee.toNumber()
                               ? {
                                   ...tick,
-                                  tickDiff0: new BigNumber(0),
-                                  tickDiff1: new BigNumber(0),
+                                  tickDiff0:
+                                    tick.token0Context?.userReserves.negated() ||
+                                    new BigNumber(0),
+                                  tickDiff1:
+                                    tick.token1Context?.userReserves.negated() ||
+                                    new BigNumber(0),
                                 }
                               : tick;
                           });
                         });
                       }}
                     >
-                      Reset
+                      Withdraw
                     </button>
                   )}
-                </td>
-              </tr>
-            ) : null;
-          }
-        )
+                {(!tickDiff0.isZero() || !tickDiff1.isZero()) && (
+                  <button
+                    type="button"
+                    className="button button-muted ml-auto"
+                    onClick={() => {
+                      setEditedUserPosition((ticks) => {
+                        return ticks.map((tick) => {
+                          return tick.deposit.centerTickIndex.toNumber() ===
+                            deposit.centerTickIndex.toNumber() &&
+                            tick.deposit.fee.toNumber() ===
+                              deposit.fee.toNumber()
+                            ? {
+                                ...tick,
+                                tickDiff0: new BigNumber(0),
+                                tickDiff1: new BigNumber(0),
+                              }
+                            : tick;
+                        });
+                      });
+                    }}
+                  >
+                    Reset
+                  </button>
+                )}
+              </td>
+            </tr>
+          ) : null;
+        }
+      )
     : null;
 
   return (
