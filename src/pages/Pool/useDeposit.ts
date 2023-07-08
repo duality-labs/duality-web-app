@@ -17,7 +17,7 @@ import {
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import {
   DexDepositEvent,
-  getEventAttributeMap,
+  mapEventAttributes,
 } from '../../lib/web3/utils/events';
 import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
@@ -308,7 +308,8 @@ export function useDeposit([tokenA, tokenB]: [
                 )
               ) {
                 // collect into more usable format for parsing
-                const attributes = getEventAttributeMap<DexDepositEvent>(event);
+                const { attributes } =
+                  mapEventAttributes<DexDepositEvent>(event);
 
                 // accumulate share values
                 // ('NewReserves' is the difference between previous and next share value)
