@@ -14,13 +14,14 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import {
   DexDepositEvent,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
+import { formatAmount } from '../../lib/utils/number';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -370,6 +371,32 @@ export function useDeposit([tokenA, tokenB]: [
             receivedTokenA.isGreaterThanOrEqualTo(0) &&
             receivedTokenB.isGreaterThanOrEqualTo(0)
           ) {
+            // update toast
+            checkMsgSuccessToast(res, {
+              id,
+              description: `Deposited ${[
+                receivedTokenA.isGreaterThan(0) &&
+                  `${formatAmount(
+                    getAmountInDenom(
+                      tokenA,
+                      receivedTokenA,
+                      tokenA.address,
+                      tokenA.display
+                    ) || 0
+                  )} ${tokenA.symbol}`,
+                receivedTokenB.isGreaterThan(0) &&
+                  `${formatAmount(
+                    getAmountInDenom(
+                      tokenB,
+                      receivedTokenB,
+                      tokenB.address,
+                      tokenB.display
+                    ) || 0
+                  )} ${tokenB.symbol}`,
+              ]
+                .filter(Boolean)
+                .join(' and ')} (click for more details)`,
+            });
             // set new information
             setData({
               gasUsed: gasUsed.toString(),
