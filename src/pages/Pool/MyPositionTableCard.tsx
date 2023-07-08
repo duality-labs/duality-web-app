@@ -10,7 +10,6 @@ import { EditedPosition } from '../MyLiquidity/useEditLiquidity';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import {
-  UserPositionDepositContext,
   usePoolDepositFilterForPair,
   useUserPositionsContext,
 } from '../../lib/web3/hooks/useUserShares';
@@ -193,55 +192,50 @@ export function MyEditedPositionTableCard({
 
   const invertedTokenOrder = guessInvertedOrder(tokenA.address, tokenB.address);
 
-  const [userReserveATotal, userReserveBTotal] = useMemo(() => {
-    return [
-      userPositionsContext?.reduce(
-        !invertedTokenOrder ? sumToken0Reserves : sumToken1Reserves,
-        new BigNumber(0)
-      ),
-      userPositionsContext?.reduce(
-        !invertedTokenOrder ? sumToken1Reserves : sumToken0Reserves,
-        new BigNumber(0)
-      ),
-    ];
-    function sumToken0Reserves(
-      acc: BigNumber,
-      { token0Context }: UserPositionDepositContext
-    ) {
-      return acc.plus(token0Context?.userReserves || 0);
-    }
-    function sumToken1Reserves(
-      acc: BigNumber,
-      { token1Context }: UserPositionDepositContext
-    ) {
-      return acc.plus(token1Context?.userReserves || 0);
-    }
-  }, [userPositionsContext, invertedTokenOrder]);
-
   const {
     data: [priceA, priceB],
   } = useSimplePrice([tokenA, tokenB]);
-  const valueTotal = useMemo(() => {
-    if (priceA && priceB && userReserveATotal && userReserveBTotal) {
-      const reserveATotal = getAmountInDenom(
-        tokenA,
-        userReserveATotal,
-        tokenA.address,
-        tokenA.display
-      );
-      const reserveBTotal = getAmountInDenom(
-        tokenB,
-        userReserveBTotal,
-        tokenB.address,
-        tokenB.display
-      );
 
-      return BigNumber.sum(
-        priceA * Number(reserveATotal),
-        priceB * Number(reserveBTotal)
-      );
-    }
-  }, [priceA, priceB, userReserveATotal, userReserveBTotal, tokenA, tokenB]);
+  const poolValues = useMemo(() => {
+    return userPositionsContext.map<[number, number]>(
+      ({ token0, token0Context, token1Context }) => {
+        const tokenAContext = tokenA === token0 ? token0Context : token1Context;
+        const tokenBContext = tokenB === token0 ? token0Context : token1Context;
+        const valueA =
+          (priceA || 0) *
+          new BigNumber(
+            (tokenAContext?.userReserves &&
+              getAmountInDenom(
+                tokenA,
+                tokenAContext?.userReserves || 0,
+                tokenA.address,
+                tokenA.display
+              )) ||
+              0
+          ).toNumber();
+        const valueB =
+          (priceB || 0) *
+          new BigNumber(
+            (tokenBContext?.userReserves &&
+              getAmountInDenom(
+                tokenB,
+                tokenBContext?.userReserves || 0,
+                tokenB.address,
+                tokenB.display
+              )) ||
+              0
+          ).toNumber();
+        return [valueA, valueB];
+      }
+    );
+  }, [priceA, priceB, tokenA, tokenB, userPositionsContext]);
+
+  const valueTotal = useMemo(() => {
+    return poolValues.reduce(
+      (acc, [valueA, valueB]) => acc + valueA + valueB,
+      0
+    );
+  }, [poolValues]);
 
   const data = editedUserPosition
     ? editedUserPosition
@@ -269,19 +263,6 @@ export function MyEditedPositionTableCard({
               ? new BigNumber(deposit.centerTickIndex.toNumber())
               : new BigNumber(deposit.centerTickIndex.toNumber()).negated();
 
-            const bigReserveA = getAmountInDenom(
-              tokenA,
-              reserveA,
-              tokenA.address,
-              tokenA.display
-            );
-            const bigReserveB = getAmountInDenom(
-              tokenB,
-              reserveB,
-              tokenB.address,
-              tokenB.display
-            );
-
             const price = tickIndexToPrice(tickIndex.negated());
             // show only those ticks that are in the currently visible range
             return viewableMinIndex !== undefined &&
@@ -294,16 +275,12 @@ export function MyEditedPositionTableCard({
                 <td>
                   {reserveA.isGreaterThan(0) && (
                     <div>
-                      {priceA
-                        ? formatCurrency(priceA * Number(bigReserveA))
-                        : '-'}
+                      {priceA ? formatCurrency(poolValues[index][0]) : '-'}
                     </div>
                   )}
                   {reserveB.isGreaterThan(0) && (
                     <div>
-                      {priceB
-                        ? formatCurrency(priceB * Number(bigReserveB))
-                        : '-'}
+                      {priceB ? formatCurrency(poolValues[index][1]) : '-'}
                     </div>
                   )}
                 </td>
