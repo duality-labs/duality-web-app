@@ -2,17 +2,7 @@
 
 The code for the Duality front-end web app.
 
-This version of the front end is intended to work with this release of the backend:
-
-- Release [v0.1.2] https://github.com/duality-labs/duality/releases/tag/v0.1.2
-- run with Docker:
-  - checkout tag [v0.1.2](https://github.com/duality-labs/duality/releases/tag/v0.1.2) (commit [5051af9](https://github.com/duality-labs/duality/commit/5051af98fb0db8eefcd3a2d546e5a5a44ae9ee65))
-  - `$ docker build . -t localnet`
-  - `$ docker run -it --rm -p 26657:26657 -p 1317:1317 -e MODE=new localnet`
-- run with Docker Compose:
-  - checkout [4dd6d4b](https://github.com/duality-labs/duality/commit/4dd6d4b4e289cd7cc99fd8f459a7c938bff154e3) part of Docker Compose setup
-  - merge [v0.1.2](https://github.com/duality-labs/duality/tree/v0.1.2) or [5051af9](https://github.com/duality-labs/duality/commit/5051af98fb0db8eefcd3a2d546e5a5a44ae9ee65)
-  - `$ docker-compose ...` (see Docker Compose setup section below)
+This version of the front end is intended to work with the release of the backend that is noted in the [@duality-labs/dualityjs](https://www.npmjs.com/package/@duality-labs/dualityjs) dependency in package.json
 
 ## Setting up the dev environment
 
