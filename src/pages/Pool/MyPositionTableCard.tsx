@@ -46,6 +46,7 @@ function MyPositionTableCard({
             <th style={{ width: '7.5%' }}>Tick</th>
             <th style={{ width: '20%' }}>Price</th>
             <th style={{ width: '20%' }}>Value</th>
+            <th style={{ width: '5%' }}></th>
             <th style={{ width: '20%' }}>Token Amount</th>
             {actionColumn !== undefined && (
               <th style={{ width: '12.5%' }}>{actionColumn}</th>
@@ -230,6 +231,13 @@ export function MyEditedPositionTableCard({
     );
   }, [priceA, priceB, tokenA, tokenB, userPositionsContext]);
 
+  const maxPoolValue = useMemo(() => {
+    return poolValues.reduce(
+      (acc, [valueA, valueB]) => Math.max(acc, valueA, valueB),
+      0
+    );
+  }, [poolValues]);
+
   const valueTotal = useMemo(() => {
     return poolValues.reduce(
       (acc, [valueA, valueB]) => acc + valueA + valueB,
@@ -284,6 +292,32 @@ export function MyEditedPositionTableCard({
                     </div>
                   )}
                 </td>
+                <td className="min-width">
+                  {poolValues[index][0] > 0 && (
+                    <div
+                      className="green-value-bar"
+                      style={{
+                        width: new BigNumber(poolValues[index][0])
+                          .dividedBy(maxPoolValue)
+                          .multipliedBy(50)
+                          .toNumber(),
+                      }}
+                    ></div>
+                  )}
+
+                  {poolValues[index][1] > 0 && (
+                    <div
+                      className="blue-value-bar"
+                      style={{
+                        width: new BigNumber(poolValues[index][1])
+                          .dividedBy(maxPoolValue)
+                          .multipliedBy(50)
+                          .toNumber(),
+                      }}
+                    ></div>
+                  )}
+                </td>
+
                 <td>
                   {reserveA.isGreaterThan(0) && (
                     <div>
