@@ -280,14 +280,10 @@ export function MyEditedPositionTableCard({
               <td>{new BigNumber(1).div(price).toFixed(5)}</td>
               <td>
                 {reserveA.isGreaterThan(0) && (
-                  <div>
-                    {priceA ? formatCurrency(poolValues[index][0]) : '-'}
-                  </div>
+                  <div>{formatCurrency(poolValues[index][0])}</div>
                 )}
                 {reserveB.isGreaterThan(0) && (
-                  <div>
-                    {priceB ? formatCurrency(poolValues[index][1]) : '-'}
-                  </div>
+                  <div>{formatCurrency(poolValues[index][1])}</div>
                 )}
               </td>
               <td className="min-width">
