@@ -220,13 +220,13 @@ export default function MyPoolStakesTableCard<T extends string | number>({
   const [{ isValidating }, sendStakeRequest] = useStake();
   const onStake = useCallback(() => {
     const stakePositions = selectedPools.filter(
-      (pool) => pool.stakeContext?.ID
+      (pool) => !pool.stakeContext?.ID
     );
     sendStakeRequest(stakePositions, []);
   }, [selectedPools, sendStakeRequest]);
   const onUnstake = useCallback(() => {
     const unstakePositions = selectedPools.filter(
-      (pool) => !pool.stakeContext?.ID
+      (pool) => pool.stakeContext?.ID
     );
     sendStakeRequest([], unstakePositions);
   }, [selectedPools, sendStakeRequest]);
