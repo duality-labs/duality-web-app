@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/duality-labs/duality-web-app/compare/v0.2.3...v0.2.4) (2023-07-08)
+
+
+### Features
+
+* update new my liquidity portfolio page designs ([#385](https://github.com/duality-labs/duality-web-app/issues/385)) ([937cc6f](https://github.com/duality-labs/duality-web-app/commit/937cc6fe7a2c2ba8ae5f96aa0aa2da541367aaf6))
+
 ## [0.2.3](https://github.com/duality-labs/duality-web-app/compare/v0.2.2...v0.2.3) (2023-07-08)
 
 
