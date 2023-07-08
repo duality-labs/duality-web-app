@@ -2,7 +2,7 @@ import { ReactNode, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 import { Tick } from '../../components/LiquiditySelector/LiquiditySelector';
 
-import { formatCurrency, formatPercentage } from '../../lib/utils/number';
+import { formatCurrency } from '../../lib/utils/number';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 
@@ -79,62 +79,106 @@ export function MyNewPositionTableCard({
 
   const { data: priceA } = useSimplePrice(tokenA);
   const { data: priceB } = useSimplePrice(tokenB);
+
+  const poolValues = useMemo(() => {
+    return userTicks.map<[number, number]>(
+      ({ reserveA, reserveB, tokenA, tokenB }) => {
+        const valueA =
+          (priceA || 0) *
+          new BigNumber(
+            (reserveA &&
+              getAmountInDenom(
+                tokenA,
+                reserveA || 0,
+                tokenA.address,
+                tokenA.display
+              )) ||
+              0
+          ).toNumber();
+        const valueB =
+          (priceB || 0) *
+          new BigNumber(
+            (reserveB &&
+              getAmountInDenom(
+                tokenB,
+                reserveB || 0,
+                tokenB.address,
+                tokenB.display
+              )) ||
+              0
+          ).toNumber();
+        return [valueA, valueB];
+      }
+    );
+  }, [userTicks, priceA, priceB]);
+
+  const maxPoolValue = useMemo(() => {
+    return poolValues.reduce(
+      (acc, [valueA, valueB]) => Math.max(acc, valueA, valueB),
+      0
+    );
+  }, [poolValues]);
+
   const valueTotal = useMemo(() => {
-    if (
-      tokenA &&
-      tokenB &&
-      priceA &&
-      priceB &&
-      reserveATotal &&
-      reserveBTotal
-    ) {
-      return BigNumber.sum(
-        priceA *
-          Number(
-            getAmountInDenom(
-              tokenA,
-              reserveATotal,
-              tokenA.address,
-              tokenA.display
-            )
-          ),
-        priceB *
-          Number(
-            getAmountInDenom(
-              tokenB,
-              reserveBTotal,
-              tokenB.address,
-              tokenB.display
-            )
-          )
-      );
-    }
-  }, [priceA, priceB, reserveATotal, reserveBTotal, tokenA, tokenB]);
+    return poolValues.reduce(
+      (acc, [valueA, valueB]) => acc + valueA + valueB,
+      0
+    );
+  }, [poolValues]);
 
   const data =
     tokenA && tokenB && !(reserveATotal.isZero() && reserveBTotal.isZero())
-      ? userTicks.map((tick, index) => {
+      ? userTicks.map(({ price, reserveA, reserveB }, index) => {
           // note: fix these restrictions, they are a bit off
           return (
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
-              <td>{new BigNumber(tick.price.toFixed(5)).toFixed(5)}</td>
-              <td>{formatReserveAmount(tokenA, tick.reserveA)}</td>
-              <td className="text-left">
-                {formatValuePercentage(
-                  valueTotal,
-                  tokenA,
-                  tick.reserveA,
-                  priceA
+              <td>{new BigNumber(price.toFixed(5)).toFixed(5)}</td>
+              <td>
+                {reserveA.isGreaterThan(0) && (
+                  <div>{formatCurrency(poolValues[index][0])}</div>
+                )}
+                {reserveB.isGreaterThan(0) && (
+                  <div>{formatCurrency(poolValues[index][1])}</div>
                 )}
               </td>
-              <td>{formatReserveAmount(tokenB, tick.reserveB)}</td>
-              <td className="text-left">
-                {formatValuePercentage(
-                  valueTotal,
-                  tokenB,
-                  tick.reserveB,
-                  priceB
+              <td className="min-width">
+                {reserveA.isGreaterThan(0) && (
+                  <div
+                    className="green-value-bar"
+                    style={{
+                      width: new BigNumber(poolValues[index][0])
+                        .dividedBy(maxPoolValue)
+                        .multipliedBy(50)
+                        .toNumber(),
+                    }}
+                  ></div>
+                )}
+                {reserveB.isGreaterThan(0) && (
+                  <div
+                    className="blue-value-bar"
+                    style={{
+                      width: new BigNumber(poolValues[index][1])
+                        .dividedBy(maxPoolValue)
+                        .multipliedBy(50)
+                        .toNumber(),
+                    }}
+                  ></div>
+                )}
+              </td>
+
+              <td>
+                {reserveA.isGreaterThan(0) && (
+                  <div>
+                    <span>{formatReserveAmount(tokenA, reserveA)}</span>{' '}
+                    <span className="text-muted">{tokenA.symbol}</span>
+                  </div>
+                )}
+                {reserveB.isGreaterThan(0) && (
+                  <div>
+                    <span>{formatReserveAmount(tokenB, reserveB)}</span>{' '}
+                    <span className="text-muted">{tokenB.symbol}</span>
+                  </div>
                 )}
               </td>
             </tr>
@@ -421,32 +465,4 @@ function formatReserveAmount(
         fractionalDigits,
       })
     : '';
-}
-
-function formatValuePercentage(
-  valueTotal: BigNumber | undefined,
-  token: Token,
-  reserve: BigNumber,
-  price: number | undefined
-) {
-  return valueTotal && price && reserve.isGreaterThan(1e-5)
-    ? `(${formatPercentage(
-        valueTotal.isGreaterThan(0)
-          ? new BigNumber(
-              price *
-                Number(
-                  getAmountInDenom(
-                    token,
-                    reserve,
-                    token.address,
-                    token.display
-                  ) || 0
-                )
-            )
-              .dividedBy(valueTotal)
-              .toFixed()
-          : 0
-      )})`
-    : // don't display zeros everywhere
-      '';
 }
