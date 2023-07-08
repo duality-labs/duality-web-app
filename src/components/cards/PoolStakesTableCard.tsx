@@ -48,6 +48,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useMatchIncentives } from '../../lib/web3/hooks/useIncentives';
 import { RelativeTime } from '../Time';
+import PopOver from '../PopOver/PopOver';
 
 interface PoolsTableCardOptions {
   tokenA: Token;
@@ -320,7 +321,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
             <th>Value</th>
             <th></th>
             <th>Token Amount</th>
-            <th>Staked</th>
+            <th className="pl-lg">Staked</th>
           </tr>
         </thead>
         <tbody>
@@ -555,12 +556,17 @@ function StakingRow({
             </div>
           )}
         </td>
-        <td>
+        <td className="min-width">
           {isStaked ? (
-            <>
+            <PopOver
+              floating={
+                <RelativeTime
+                  timestamp={userPosition.stakeContext?.start_time}
+                />
+              }
+            >
               <FontAwesomeIcon className="mr-3" icon={faCheck} />
-              <RelativeTime timestamp={userPosition.stakeContext?.start_time} />
-            </>
+            </PopOver>
           ) : null}
         </td>
       </tr>
