@@ -1,0 +1,9 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/font/size.scss' as font-size;
+
+.popover {
+  & {
+    border-radius: paddings.size(3) !important;
+  }
+}

@@ -1,0 +1,37 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+
+.incentives-card {
+  * {
+    text-align: left !important;
+  }
+  &.popover {
+    width: 24em;
+  }
+  .table-card__table_container {
+    min-width: auto !important;
+  }
+  &.table-card .table-card__table table {
+    border-spacing: 0 paddings.size(md);
+    tr.striped {
+      position: relative;
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #4b5563;
+        border-radius: paddings.size(3);
+      }
+      td {
+        position: relative;
+        width: fit-content;
+        white-space: nowrap;
+        &.spacer {
+          width: 100%;
+        }
+      }
+    }
+  }
+}

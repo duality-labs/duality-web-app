@@ -3,18 +3,13 @@ import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 import { Token, getAmountInDenom } from '../utils/tokens';
 import { useBankBalances } from '../indexerProvider';
-import useTokens from './useTokens';
+import useTokens, { matchTokenByDenom } from './useTokens';
 import { useSimplePrice } from '../../tokenPrices';
 
 type TokenCoin = CoinSDKType & {
   token: Token;
   value: BigNumber | undefined;
 };
-
-function matchTokenDenom(denom: string) {
-  return (token: Token) =>
-    !!token.denom_units.find((unit) => unit.denom === denom);
-}
 
 // get all the user's bank values (tokens that are not Duality Dex shares)
 export function useUserBankValues(): TokenCoin[] {
@@ -27,7 +22,7 @@ export function useUserBankValues(): TokenCoin[] {
     // ibc tokens will need to be checked here too
     // this should probably live in the indexerData as we'll always want the filtered balances
     return (balances || []).reduce<Token[]>((result, balance) => {
-      const token = allTokens.find(matchTokenDenom(balance.denom));
+      const token = allTokens.find(matchTokenByDenom(balance.denom));
       if (token) {
         result.push(token);
       }
@@ -40,7 +35,7 @@ export function useUserBankValues(): TokenCoin[] {
   return useMemo<TokenCoin[]>(() => {
     return (balances || [])
       .map(({ amount, denom }) => {
-        const tokenIndex = selectedTokens.findIndex(matchTokenDenom(denom));
+        const tokenIndex = selectedTokens.findIndex(matchTokenByDenom(denom));
         const token = selectedTokens[tokenIndex] as Token | undefined;
         const price = selectedTokensPrices[tokenIndex];
         const value =

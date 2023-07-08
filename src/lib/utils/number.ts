@@ -78,6 +78,21 @@ export function formatAmount(
     : '-';
 }
 
+export function formatDecimalPlaces(
+  amount: number | string,
+  fractionDigits = 2,
+  opts: Intl.NumberFormatOptions = {}
+) {
+  const numericAmount = Number(amount);
+  return !isNaN(numericAmount)
+    ? numericAmount.toLocaleString('en-US', {
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits,
+        ...opts,
+      })
+    : '-';
+}
+
 export function formatPercentage(
   amount: number | string,
   opts: Intl.NumberFormatOptions = {},

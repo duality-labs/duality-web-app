@@ -10,7 +10,9 @@
   background-color: var(--page-card);
   border-radius: 1rem;
   overflow: hidden;
-  min-height: 21em;
+  &.scrollable {
+    min-height: 22.5em;
+  }
 
   .table-card__header {
     // be as tall as the switch component
@@ -20,6 +22,10 @@
   }
   .table-card__hero-title {
     font-size: font-size.$h4;
+  }
+  .table-card__subtitle {
+    color: #bfbfbf;
+    font-size: 0.85rem;
   }
   .table-card__asset-toggle {
     font-size: font-size.$button;
@@ -74,6 +80,9 @@
         &:hover {
           background-color: var(--token-search-bg);
         }
+        &.button-primary:hover {
+          background-color: var(--primary);
+        }
       }
     }
   }
@@ -83,5 +92,11 @@
     height: 2em;
     width: 2em;
     object-fit: contain;
+  }
+}
+
+form.table-card {
+  input[type='checkbox'] {
+    appearance: auto;
   }
 }

@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useMatch } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { TxResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/abci/v1beta1/abci';
 import type { GetTxsEventResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/tx/v1beta1/service';
@@ -37,12 +37,16 @@ import {
 } from '../../lib/web3/utils/events';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { formatAmount, formatCurrency } from '../../lib/utils/number';
+import {
+  formatAmount,
+  formatCurrency,
+  formatPrice,
+} from '../../lib/utils/number';
 import { formatRelativeTime } from '../../lib/utils/time';
 
 import './Pool.scss';
-import {
-  addressableTokenMap,
+import useTokens, {
+  matchTokenByAddress,
   useTokenValue,
 } from '../../lib/web3/hooks/useTokens';
 import {
@@ -53,6 +57,9 @@ import StatCardVolume from '../../components/stats/StatCardVolume';
 import StatCardFees from '../../components/stats/StatCardFees';
 import StatCardVolatility from '../../components/stats/StatCardVolatility';
 import { useStatComposition } from '../../components/stats/hooks';
+import useIncentiveGauges from '../../lib/web3/hooks/useIncentives';
+import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
+import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 export default function PoolOverview({
   tokenA,
@@ -127,16 +134,15 @@ export default function PoolOverview({
           <div className="col pt-lg col-lg-hide">
             <PairComposition tokenA={tokenA} tokenB={tokenB} />
           </div>
+          <div className="col pt-lg">
+            <Incentives tokenA={tokenA} tokenB={tokenB} />
+          </div>
           <div>
             <PoolOverviewTable tokenA={tokenA} tokenB={tokenB} />
-          </div>
-          <div className="col pt-lg col-lg-hide">
-            <Incentives />
           </div>
         </div>
         <div className="col col-lg col--left gap-4" style={{ width: 300 }}>
           <PairComposition tokenA={tokenA} tokenB={tokenB} />
-          <Incentives />
         </div>
       </div>
     </PoolLayout>
@@ -203,45 +209,154 @@ function PairComposition({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   );
 }
 
-function Incentives() {
-  const tokenA = addressableTokenMap['tokenA'];
-  const tokenB = addressableTokenMap['tokenF'];
+function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
+  const tokens = useTokens();
 
-  const { columns, headings, data } = useMemo(() => {
+  const { data: { gauges } = {} } = useIncentiveGauges();
+  const filteredGauges = useMemo(() => {
+    const tokenAddresses = [tokenA?.address, tokenB?.address].filter(
+      (address): address is string => !!address
+    );
+    return tokenAddresses.length > 0
+      ? gauges?.filter((gauge) => {
+          return tokenAddresses.every((address) => {
+            return (
+              address === gauge.distribute_to?.pairID?.token0 ||
+              address === gauge.distribute_to?.pairID?.token1
+            );
+          });
+        })
+      : gauges;
+  }, [gauges, tokenA, tokenB]);
+
+  const { columns, headings } = useMemo(() => {
     return {
       headings: ['Token', 'Range', 'Reward'],
       columns: [
-        function TokenCell1({ row }: { row: Token }) {
+        function TokenCellLogo({ row }: { row: GaugeSDKType }) {
           return (
             <td
               className=" flex row gap-3"
               style={{ alignItems: 'center', justifyContent: 'flex-start' }}
             >
-              <div className="price-card__token-logo col my-2">
-                <img
-                  className="token-logo token-current"
-                  alt={`${row.symbol} logo`}
-                  src={row.logo_URIs?.svg ?? row.logo_URIs?.png}
-                />
+              <div className="row gap-4">
+                {row.coins.map((coin) => {
+                  const token = tokens.find(matchTokenByAddress(coin.denom));
+                  return token ? (
+                    <div
+                      key={coin.denom}
+                      className="price-card__token-logo row flex-centered gap-2 my-2"
+                    >
+                      <img
+                        className="token-logo token-current"
+                        alt={`${coin.denom} logo`}
+                        src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
+                      />{' '}
+                      {token.name}
+                    </div>
+                  ) : null;
+                })}
               </div>
-              {row.symbol}
             </td>
           );
         },
-        function TokenCell2({ row }: { row: Token }) {
-          return <td>todo</td>;
+        function TokenCellRange({ row }: { row: GaugeSDKType }) {
+          if (row.distribute_to?.pairID) {
+            const Token0 = tokens.find(
+              matchTokenByAddress(row.distribute_to.pairID.token0)
+            );
+            const Token1 = tokens.find(
+              matchTokenByAddress(row.distribute_to.pairID.token1)
+            );
+            return (
+              <td>
+                {row.distribute_to && Token0 && Token1 && (
+                  <div className="row gap-2">
+                    <div className="col ml-auto">
+                      {formatPrice(
+                        tickIndexToPrice(
+                          new BigNumber(`${row.distribute_to.startTick}`) || 0
+                        ).toNumber(),
+                        { useGrouping: true, minimumSignificantDigits: 2 }
+                      )}
+                      &nbsp;-&nbsp;
+                      {formatPrice(
+                        tickIndexToPrice(
+                          new BigNumber(`${row.distribute_to.endTick}`) || 0
+                        ).toNumber(),
+                        {
+                          useGrouping: true,
+                          minimumSignificantDigits: 2,
+                        }
+                      )}
+                    </div>
+                    <div className="col text-muted">
+                      {Token0.symbol}/{Token1.symbol}
+                    </div>
+                  </div>
+                )}
+              </td>
+            );
+          } else {
+            return <td></td>;
+          }
         },
-        function TokenCell3({ row }: { row: Token }) {
-          return <td>todo</td>;
+        function TokenCellReward({ row }: { row: GaugeSDKType }) {
+          return (
+            <td>
+              {row.coins.map((coin) => {
+                const token = tokens.find(matchTokenByAddress(coin.denom));
+                return token ? (
+                  <div key={coin.denom} className="row gap-2">
+                    <div className="col ml-auto">
+                      {formatAmount(
+                        Number(coin.amount) / Number(row.num_epochs_paid_over)
+                      )}
+                    </div>
+                    <div className="col text-muted">{token.symbol} Per Day</div>
+                  </div>
+                ) : null;
+              })}
+            </td>
+          );
         },
       ],
       data: [tokenA, tokenB],
     };
-  }, [tokenA, tokenB]);
+  }, [tokenA, tokenB, tokens]);
+
+  const isOnPortfolioPage = useMatch('/portfolio');
 
   return (
-    <TableCard title="Incentives" className="pb-5" scrolling={false}>
-      <Table<Token> data={data} columns={columns} headings={headings} />
+    <TableCard
+      title="Incentives"
+      subtitle={
+        <>
+          Bond your LPs tokens{' '}
+          {!isOnPortfolioPage ? (
+            <>
+              from the{' '}
+              <Link
+                className="text-secondary"
+                style={{ textDecoration: 'underline' }}
+                to="/portfolio"
+              >
+                portfolio page
+              </Link>{' '}
+            </>
+          ) : null}
+          to qualify for incentives provided by external sources.
+        </>
+      }
+      className="pb-5"
+      scrolling={filteredGauges && filteredGauges.length > 3}
+    >
+      <Table<GaugeSDKType>
+        data={filteredGauges}
+        columns={columns}
+        headings={headings}
+        rowDescription="Incentives"
+      />
     </TableCard>
   );
 }
@@ -459,6 +574,7 @@ function TransactionsTable({
           />
         ))}
         columns={columns}
+        rowDescription="Transactions"
       />
     </div>
   );

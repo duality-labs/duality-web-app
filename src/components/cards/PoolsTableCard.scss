@@ -27,4 +27,10 @@
   .table-card__table_container {
     min-width: 30em;
   }
+
+  td.min-width,
+  th.min-width {
+    width: 0;
+    white-space: nowrap;
+  }
 }

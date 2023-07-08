@@ -3,12 +3,14 @@ import React, { useMemo } from 'react';
 
 import planetSwapSVG from '../../assets/planets/planet-swap.svg';
 import planetLiquiditySVG from '../../assets/planets/planet-liquidity.svg';
+import planetPortfolioSVG from '../../assets/planets/planet-portfolio.svg';
 
 import './Planets.scss';
 
 const planets: { [planetName: string]: string | undefined } = {
   swap: planetSwapSVG,
   pools: planetLiquiditySVG,
+  portfolio: planetPortfolioSVG,
 };
 
 export default function Planets() {
@@ -16,6 +18,7 @@ export default function Planets() {
     <>
       <Planet name="swap" bottom={0} width={947} right={0} />
       <Planet name="pools" top="10vh" width={774} right={0} />
+      <Planet name="portfolio" top="10vh" width={1200} right={0} />
     </>
   );
 }

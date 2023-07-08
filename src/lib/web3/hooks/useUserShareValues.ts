@@ -18,10 +18,14 @@ export interface ValuedUserPositionDepositContext
 }
 
 export function useUserPositionsShareValues(
-  poolDepositFilter?: UserDepositFilter
+  poolDepositFilter?: UserDepositFilter,
+  staked?: boolean
 ): ValuedUserPositionDepositContext[] {
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
-  const userPositionDepositContext = useUserPositionsContext(poolDepositFilter);
+  const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
+  const userPositionDepositContext = useUserPositionsContext(
+    poolDepositFilter,
+    staked
+  );
 
   const allTokens = useTokens();
   const selectedTokens = useMemo<Token[]>(() => {
@@ -102,10 +106,13 @@ export function useUserPositionsShareValues(
 
 // calculate total
 export function useUserPositionsShareValue(
-  poolDepositFilter?: UserDepositFilter
+  poolDepositFilter?: UserDepositFilter,
+  staked?: boolean
 ): BigNumber {
-  const userPositionsShareValues =
-    useUserPositionsShareValues(poolDepositFilter);
+  const userPositionsShareValues = useUserPositionsShareValues(
+    poolDepositFilter,
+    staked
+  );
 
   return useMemo(() => {
     return userPositionsShareValues.reduce<BigNumber>(

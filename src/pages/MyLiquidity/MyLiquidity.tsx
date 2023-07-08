@@ -1,240 +1,208 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import BigNumber from 'bignumber.js';
-import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { Link, useMatch, useNavigate } from 'react-router-dom';
+import { useCallback, useMemo } from 'react';
+import {
+  Actions,
+  MyPoolsTableCard,
+} from '../../components/cards/PoolsTableCard';
+import AssetsTableCard from '../../components/cards/AssetsTableCard';
 
-import { useBankBalances } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserPositionsShareValue } from '../../lib/web3/hooks/useUserShareValues';
-import {
-  useUserBankValue,
-  useUserBankValues,
-} from '../../lib/web3/hooks/useUserBankValues';
-
-import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
-
-import useTokens from '../../lib/web3/hooks/useTokens';
-
-import { formatAmount } from '../../lib/utils/number';
-
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
-import TableCard from '../../components/cards/TableCard';
-import PoolsTableCard from '../../components/cards/PoolsTableCard';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
+import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
 
 import './MyLiquidity.scss';
-
-type TokenCoin = CoinSDKType & {
-  token: Token;
-  value: BigNumber | undefined;
-};
+import useUserTokens from '../../lib/web3/hooks/useUserTokens';
+import { Token } from '../../lib/web3/utils/tokens';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowAltCircleRight } from '@fortawesome/free-solid-svg-icons';
+import useTokens from '../../lib/web3/hooks/useTokens';
+import MyPoolStakesTableCard from '../../components/cards/PoolStakesTableCard';
 
 export default function MyLiquidity() {
-  const { wallet } = useWeb3();
-
-  // show connect page
-  if (!wallet) {
-    return (
-      <div className="no-liquidity col">
-        <h3 className="h2 mb-4 text-center"> No liquidity positions found</h3>
-        <Link to="/liquidity">
-          <button className="button button-info add-liquidity p-3 px-4">
-            Add new liquidity
-          </button>
-        </Link>
-      </div>
-    );
-  }
-
-  return <ShareValuesPage />;
+  return (
+    <div className="my-liquidity-page container col flex gap-5 py-6">
+      <Heading />
+      <HeroCard />
+      <Tables />
+    </div>
+  );
 }
 
-function ShareValuesPage() {
-  const { data: balances } = useBankBalances();
-  const tokenList = useTokens();
+function Heading() {
+  const { wallet, connectWallet } = useWeb3();
+  return (
+    <div className="row gap-5">
+      <div className="col">
+        <h1 className="h1 hero-text">Portfolio</h1>
+      </div>
+      {!wallet && (
+        <div className="col flex-centered mt-2 pt-1">
+          <button
+            className="connect-wallet button-primary p-3 px-4"
+            onClick={connectWallet}
+          >
+            Connect Wallet
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
+function HeroCard() {
+  const { wallet } = useWeb3();
   const allUserSharesValue = useUserPositionsShareValue();
-  const allUserBankAssets = useUserBankValues();
   const allUserBankValue = useUserBankValue();
+  return (
+    <div className="page-card">
+      <table className="hero-table simple-table gutter-b-1">
+        <thead>
+          <tr>
+            <th style={{ width: '35%' }}>Total Assets</th>
+            <th style={{ width: '35%' }}>Position Value</th>
+            <th style={{ width: '25%' }}>Earned Incentives</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              {wallet
+                ? `$${allUserBankValue.toNumber().toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
+                : '-'}
+            </td>
+            <td>
+              {wallet
+                ? `$${allUserSharesValue.toNumber().toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
+                : '-'}
+            </td>
+            <td>{wallet ? '$0' : '-'}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-  const [selectedAssetList, setSelectedAssetList] = useState<
-    'my-assets' | 'all-assets'
-  >('my-assets');
+const subPages = {
+  pools: 'Positions',
+  assets: 'Assets',
+};
+const subPagePaths = Object.keys(subPages) as (keyof typeof subPages)[];
+type SubPagePath = typeof subPagePaths[number];
 
-  const [searchValue, setSearchValue] = useState<string>('');
+function getSubPage(maybeSubPage = ''): SubPagePath | undefined {
+  return [maybeSubPage]
+    .filter((path): path is SubPagePath => {
+      return subPagePaths.includes(path as SubPagePath);
+    })
+    .pop();
+}
 
-  const userList = useMemo(() => {
-    return balances
-      ? tokenList.filter((token) =>
-          balances.find((balance) =>
-            token.denom_units.find((token) => token.denom === balance.denom)
-          )
-        )
-      : [];
-  }, [tokenList, balances]);
+function Tables() {
+  const userTokenList = useUserTokens();
+  const match = useMatch('/portfolio/:subPage');
+  // ensure subPage is a known path
+  const subPage = getSubPage(match?.params['subPage']) || subPagePaths[0];
 
-  // update the filtered list whenever the query or the list changes
-  const filteredList = useFilteredTokenList(
-    selectedAssetList === 'my-assets' ? userList : tokenList,
-    searchValue
+  const navigate = useNavigate();
+  const setSubPage = useCallback(
+    (value: ((prevState: string) => string) | string) => {
+      if (typeof value === 'string') {
+        const subPage = getSubPage(value);
+        if (subPage) {
+          navigate(`/portfolio/${subPage}`);
+        } else {
+          navigate('/portfolio');
+        }
+      }
+    },
+    [navigate]
   );
 
-  // show loken list cards
+  const tokenList = useTokens();
+  const matchTokens = useMatch('/portfolio/pools/:tokenA/:tokenB');
+
+  const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
+    if (matchTokens) {
+      const params = matchTokens.params;
+      const tokenA = tokenList.find((t) => t.symbol === params['tokenA']);
+      const tokenB = tokenList.find((t) => t.symbol === params['tokenB']);
+      return [tokenA, tokenB];
+    }
+    return [];
+  }, [tokenList, matchTokens]);
+
+  const goToPositionManagementPage = useCallback(
+    ([token0, token1]: [Token, Token]) => {
+      return navigate(`/pools/${token0.symbol}/${token1.symbol}/edit`);
+    },
+    [navigate]
+  );
+
   return (
-    <div className="my-liquidity-page container col flex gap-6 py-6">
-      <div className="home-hero-section row gapx-4 gapy-5 flow-wrap">
-        <div className="hero-card ml-auto grid gapx-5 gapy-3 p-4">
-          <h2 className="hero-card__hero-title">Portfolio Value</h2>
-          <h3 className="hero-card__hero-title">My Liquidity</h3>
-          <h3 className="hero-card__hero-title">Available Tokens</h3>
-          <div className="hero-card__hero-value">
-            $
-            {allUserSharesValue
-              .plus(allUserBankValue)
-              .toNumber()
-              .toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-          </div>
-          <div className="hero-card__hero-value">
-            $
-            {allUserSharesValue.toNumber().toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </div>
-          <div className="hero-card__hero-value">
-            $
-            {allUserBankValue.toNumber().toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </div>
-        </div>
-      </div>
-      <div className="row flex gapx-4 gapy-5 flow-wrap">
-        <div className="col flex">
-          <TableCard
-            className="asset-list-card flex"
-            title="Assets"
-            switchValues={useMemo(
-              () => ({
-                'my-assets': 'My Assets',
-                'all-assets': 'All Assets',
-              }),
-              []
-            )}
-            switchValue={selectedAssetList}
-            switchOnChange={setSelectedAssetList}
-            searchValue={searchValue}
-            setSearchValue={setSearchValue}
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th>Token + Chain</th>
-                  <th>Balance</th>
-                  <th>Deposit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredList.length > 0 ? (
-                  filteredList.map(({ chain, symbol, token }) => {
-                    const foundUserAsset = allUserBankAssets.find(
-                      (userToken) => {
-                        return userToken.token === token;
-                      }
-                    );
-                    return foundUserAsset ? (
-                      <AssetRow
-                        key={`${token.base}-${token.chain.chain_name}`}
-                        {...foundUserAsset}
-                        token={token}
-                        amount={foundUserAsset.amount}
-                        value={foundUserAsset.value}
-                      />
-                    ) : (
-                      <AssetRow
-                        key={`${token.base}-${token.chain.chain_name}`}
-                        token={token}
-                        denom={''}
-                        amount="0"
-                        value={new BigNumber(0)}
-                      />
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={3} align="center">
-                      No {!!searchValue ? 'Matching' : ''} Assets Found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </TableCard>
-        </div>
-        <div className="col flex">
-          <PoolsTableCard className="flex" title="My Pools" />
-        </div>
+    <div className="row flex gapx-4 gapy-5 flow-wrap">
+      <div className="col flex">
+        {subPage === 'assets' && (
+          <AssetsTableCard
+            tokenList={userTokenList}
+            switchValue={subPage}
+            switchValues={subPages}
+            switchOnChange={setSubPage}
+          />
+        )}
+        {subPage === 'pools' &&
+          (tokenA && tokenB ? (
+            <MyPoolStakesTableCard
+              className="flex"
+              title={
+                <div className="row gap-3">
+                  <Link to="/portfolio/pools"> My Positions</Link>
+                  <span>&gt;</span>
+                  <span>{tokenA.symbol}</span>
+                  <span>/</span>
+                  <span>{tokenB.symbol}</span>
+                </div>
+              }
+              tokenA={tokenA}
+              tokenB={tokenB}
+            />
+          ) : (
+            <MyPoolsTableCard
+              className="flex"
+              title="My Positions"
+              switchValue={subPage}
+              switchValues={subPages}
+              switchOnChange={setSubPage}
+              onTokenPairClick={goToPositionManagementPage}
+              userPositionActions={userPositionActions}
+            />
+          ))}
       </div>
     </div>
   );
 }
 
-function AssetRow({ token, amount, value }: TokenCoin) {
-  return (
-    <tr>
-      <td>
-        <div className="row gap-3 token-and-chain">
-          <div className="col flex-centered">
-            <img
-              className="token-logo"
-              src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
-              alt={`${token.symbol} logo`}
-            />
-          </div>
-          <div className="col">
-            <div className="row">
-              <div className="col token-denom">
-                {token.display.toUpperCase()}
-              </div>
-            </div>
-            <div className="row">
-              <div className="col subtext">
-                {token.chain.chain_name
-                  .split('')
-                  .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </td>
-      <td>
-        <div>
-          {`${formatAmount(
-            getAmountInDenom(token, amount, token.address, token.display) || '',
-            {
-              useGrouping: true,
-            }
-          )}`}
-        </div>
-        <div className="subtext">
-          {`$${formatAmount(value?.toFixed() || '', {
-            useGrouping: true,
-          })}`}
-        </div>
-      </td>
-      <td>
-        <Link to="/">
-          <button className="button text-action-button nowrap">
-            {token.display.toUpperCase()}
-            <FontAwesomeIcon icon={faArrowDown} className="ml-3" />
-          </button>
-        </Link>
-      </td>
-    </tr>
-  );
-}
+const userPositionActions: Actions = {
+  manage: {
+    title: 'Manage',
+    className: 'button-light m-0',
+    action: ({ navigate, token0, token1 }) =>
+      navigate(`/pools/${token0.symbol}/${token1.symbol}/edit`),
+  },
+  stake: {
+    title: (
+      <>
+        Stake <FontAwesomeIcon icon={faArrowAltCircleRight} />
+      </>
+    ),
+    className: 'button-primary m-0',
+    action: ({ navigate, token0, token1 }) =>
+      navigate(`/portfolio/pools/${token0.symbol}/${token1.symbol}`),
+  },
+};

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 import { assets, chains } from 'chain-registry';
 import { Chain } from '@chain-registry/types';
-import { Token, getTokenValue } from '../utils/tokens';
+import { Token, TokenAddress, getTokenValue } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
 
 import tknLogo from '../../../assets/tokens/TKN.svg';
@@ -201,6 +201,15 @@ export function useDualityTokens(sortFunction = defaultSort) {
 function defaultSort(a: Token, b: Token) {
   // compare by symbol name
   return a.symbol.localeCompare(b.symbol);
+}
+
+// utility functions to get a matching token from a list
+export function matchTokenByAddress(address: TokenAddress) {
+  return (token: Token) => token.address === address;
+}
+export function matchTokenByDenom(denom: string) {
+  return (token: Token) =>
+    !!token.denom_units.find((unit) => unit.denom === denom);
 }
 
 // utility function to get value of token amount in USD
