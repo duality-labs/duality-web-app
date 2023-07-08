@@ -321,12 +321,12 @@ export function MyEditedPositionTableCard({
                     </div>
                   )}
                 </td>
-                <td className="row gap-2 ml-4">
+                <td className="row gap-2 ml-3 mr-3">
                   {reserveA?.plus(reserveB || 0).isGreaterThan(0) &&
                     (reserveA.isZero() || reserveB.isZero()) && (
                       <button
                         type="button"
-                        className="button button-light my-3"
+                        className="button button-light ml-auto"
                         onClick={() => {
                           setEditedUserPosition((ticks) => {
                             return ticks.map((tick) => {
@@ -354,7 +354,7 @@ export function MyEditedPositionTableCard({
                   {(!tickDiff0.isZero() || !tickDiff1.isZero()) && (
                     <button
                       type="button"
-                      className="button button-default my-3"
+                      className="button button-muted ml-auto"
                       onClick={() => {
                         setEditedUserPosition((ticks) => {
                           return ticks.map((tick) => {
@@ -402,7 +402,7 @@ export function MyEditedPositionTableCard({
           </td>
         </tr>
       }
-      actionColumn=""
+      actionColumn="Actions"
     />
   );
 }
