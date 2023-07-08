@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.3](https://github.com/duality-labs/duality-web-app/compare/v0.2.2...v0.2.3) (2023-07-08)
+
+
+### Features
+
+* update new liquidity pool page designs  ([#383](https://github.com/duality-labs/duality-web-app/issues/383)) ([3230d08](https://github.com/duality-labs/duality-web-app/commit/3230d08fc28a7b8be1d3a96495f2f83fffa007f1))
+
+
+### Other
+
+* update setup instructions to use new Docker services repo ([#370](https://github.com/duality-labs/duality-web-app/issues/370)) ([76673b4](https://github.com/duality-labs/duality-web-app/commit/76673b450c131a56e26308164c72402d37660c9e))
+
 ## [0.2.2](https://github.com/duality-labs/duality-web-app/compare/v0.2.1...v0.2.2) (2023-07-08)
 
 
