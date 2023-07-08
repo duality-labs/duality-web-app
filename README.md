@@ -2,17 +2,7 @@
 
 The code for the Duality front-end web app.
 
-This version of the front end is intended to work with this release of the backend:
-
-- Release [v0.1.2] https://github.com/duality-labs/duality/releases/tag/v0.1.2
-- run with Docker:
-  - checkout tag [v0.1.2](https://github.com/duality-labs/duality/releases/tag/v0.1.2) (commit [5051af9](https://github.com/duality-labs/duality/commit/5051af98fb0db8eefcd3a2d546e5a5a44ae9ee65))
-  - `$ docker build . -t localnet`
-  - `$ docker run -it --rm -p 26657:26657 -p 1317:1317 -e MODE=new localnet`
-- run with Docker Compose:
-  - checkout [4dd6d4b](https://github.com/duality-labs/duality/commit/4dd6d4b4e289cd7cc99fd8f459a7c938bff154e3) part of Docker Compose setup
-  - merge [v0.1.2](https://github.com/duality-labs/duality/tree/v0.1.2) or [5051af9](https://github.com/duality-labs/duality/commit/5051af98fb0db8eefcd3a2d546e5a5a44ae9ee65)
-  - `$ docker-compose ...` (see Docker Compose setup section below)
+This version of the front end is intended to work with the release of the backend that is noted in the [@duality-labs/dualityjs](https://www.npmjs.com/package/@duality-labs/dualityjs) dependency in package.json
 
 ## Setting up the dev environment
 
@@ -32,34 +22,17 @@ To set up the front end locally, connected to the current online testnet:
 
 ### Connecting to a local backend with Docker Compose
 
-Note: the Docker Compose setup files for this setup process exist in PR
-https://github.com/duality-labs/duality/pull/53 and may not yet be merged in.
-You can merge these changes into main locally to use them
-
-1. Clone the Duality Cosmos repository: https://github.com/duality-labs/duality
-   alongside this repository: (eg. to ../duality)
-2. Use Docker Compose to run a local testnet
-
-   - `$ docker-compose up --build` (for 1 leader, 4 follower and 1 test nodes) or
-   - `$ docker-compose up --build dualityleader` (to start only the lead node) or
-   - `$ docker-compose up --build dualityleader dualitynode0` (for 2 nodes) or
-   - `$ docker-compose up --build --scale dualitytester=0` (for no test node)
-
-   for a simple create and remove Docker container action you can combine the
-   `--abort-on-container-exit` flag with any of the above, eg:
-
-   - `$ docker-compose up --build --abort-on-container-exit dualityleader dualitynode0 || true && docker-compose down`
-
-   the local testnet should be accessible at the ports specified in the
-   docker-compose.yml file (eg. http://localhost:26657)
-
+1. Clone the [Duality Docker services repo](https://github.com/duality-labs/dualityd-docker-services) locally
+   - this will also require cloning the main [Duality chain repo](https://github.com/duality-labs/duality)
+2. Run the `docker compose up` commands as recommended there to bring up a locally running chain with exposed RPC and API ports
+   - using the flag `--profile simulation` when composing this service should create a locally running chain cluster with simulated trading activity: this can help provide mock data for UI development
 3. Edit your own .env.development.local file to change the backend ENV vars
 
    - `REACT_APP__REST_API=http://localhost:1317`
    - `REACT_APP__RPC_API=http://localhost:26657`
    - `REACT_APP__WEBSOCKET_URL=ws://localhost:26657/websocket`
 
-   or similar (each node runs in a Docker container with its own unique ports)
+   match these endpoints to your locally running chain cluster to develop against it.
 
    You can also use one of the MNENOMIC env vars in the Docker Compose file
    to add a new Keplr account (select "Import existing account") for local
