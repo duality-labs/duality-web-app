@@ -1,12 +1,17 @@
 import useSWR from 'swr';
 import { useEffect, useMemo } from 'react';
 
-import { Token } from '../components/TokenPicker/hooks';
 import { ObservableList, useObservableList } from './utils/observableList';
+import { Token } from './web3/utils/tokens';
 
 const { REACT_APP__DEV_TOKEN_DENOMS } = process.env;
 
 const baseAPI = 'https://api.coingecko.com/api/v3';
+
+const devTokens = JSON.parse(REACT_APP__DEV_TOKEN_DENOMS || '[]') as string[];
+function isDevToken(token?: Token) {
+  return !!token && devTokens.includes(token.base);
+}
 
 class FetchError extends Error {
   info?: object;
@@ -120,7 +125,7 @@ export function useSimplePrices(
     // note Coin Gecko ID warning for developers
     if (token && !token.coingecko_id) {
       const tokenID = `${token?.base}:${token?.chain.chain_name}`;
-      if (!warned.has(tokenID)) {
+      if (!warned.has(tokenID) && !isDevToken(token)) {
         // eslint-disable-next-line no-console
         console.warn(
           `Token ${token.name} (${token.symbol}) has no CoinGecko ID`
@@ -164,15 +169,14 @@ export function useSimplePrice(
   const cachedResults = useMemo(() => {
     // return found results as numbers
     return tokens.map(
-      (token) => data?.[token?.coingecko_id ?? '']?.[currencyID]
+      (token) =>
+        !isDevToken(token) ? data?.[token?.coingecko_id ?? '']?.[currencyID] : 1 // fake dev token price
     );
   }, [tokens, data, currencyID]);
 
   return {
     // return array of results or singular result depending on how it was asked
-    data:
-      useDevTokenPrices(tokenOrTokens) ||
-      (Array.isArray(tokenOrTokens) ? cachedResults : cachedResults[0]),
+    data: Array.isArray(tokenOrTokens) ? cachedResults : cachedResults[0],
     error,
     isValidating,
   };

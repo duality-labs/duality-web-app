@@ -1,4 +1,3 @@
-import { useIndexerData, PairMap } from '../../../lib/web3/indexerProvider';
 import { useEffect, useState } from 'react';
 import { PairRequest, PairResult, RouterResult } from './index';
 import { routerAsync, calculateFee, SwapError } from './router';
@@ -6,24 +5,38 @@ import { formatAmount } from '../../../lib/utils/number';
 
 import BigNumber from 'bignumber.js';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
+import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
+
+import { useTokenPairTickLiquidity } from '../../../lib/web3/hooks/useTickLiquidity';
+import { useOrderedTokenPair } from '../../../lib/web3/hooks/useTokenPairs';
+import { TickInfo } from '../../../lib/web3/utils/ticks';
+import { getPairID } from '../../../lib/web3/utils/pairs';
 
 const cachedRequests: {
   [token0: string]: { [token1: string]: PairResult };
 } = {};
 
 async function getRouterResult(
-  state: PairMap,
+  alteredValue: string,
   tokenA: string,
   tokenB: string,
-  alteredValue: string,
+  token0: string,
+  token0Ticks: TickInfo[] = [],
+  token1Ticks: TickInfo[] = [],
   reverseSwap: boolean
 ): Promise<RouterResult> {
   if (reverseSwap) {
     // The router can't calculate the value of the buying token based on the value of the selling token (yet)
     throw new Error('Cannot calculate the reverse value');
   } else {
-    return await routerAsync(state, tokenA, tokenB, alteredValue);
+    return await routerAsync(
+      alteredValue,
+      tokenA,
+      tokenB,
+      token0,
+      token0Ticks,
+      token1Ticks
+    );
   }
 }
 
@@ -40,14 +53,23 @@ export function useRouterResult(pairRequest: PairRequest): {
   const [data, setData] = useState<RouterResult>();
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<SwapError>();
-  const { data: pairs } = useIndexerData();
+
+  const [token0, token1] =
+    useOrderedTokenPair([pairRequest.tokenA, pairRequest.tokenB]) || [];
+
+  const pairId = token0 && token1 ? getPairID(token0, token1) : null;
+  const {
+    data: [token0Ticks, token1Ticks],
+  } = useTokenPairTickLiquidity([token0, token1]);
 
   useEffect(() => {
     if (
       !pairRequest.tokenA ||
       !pairRequest.tokenB ||
       (!pairRequest.valueA && !pairRequest.valueB) ||
-      !pairs
+      !token0 ||
+      !token1 ||
+      !pairId
     ) {
       return;
     }
@@ -83,10 +105,12 @@ export function useRouterResult(pairRequest: PairRequest): {
     // this could be useRouterResult for much better usage
     // replacing the above useEffect with probably a useMemo
     getRouterResult(
-      pairs,
+      alteredValue,
       pairRequest.tokenA,
       pairRequest.tokenB,
-      alteredValue,
+      token0,
+      token0Ticks,
+      token1Ticks,
       reverseSwap
     )
       .then(function (result) {
@@ -121,7 +145,11 @@ export function useRouterResult(pairRequest: PairRequest): {
     pairRequest.tokenB,
     pairRequest.valueA,
     pairRequest.valueB,
-    pairs,
+    pairId,
+    token0,
+    token1,
+    token0Ticks,
+    token1Ticks,
   ]);
 
   return { data, isValidating, error };
@@ -137,6 +165,7 @@ export function getRouterEstimates(
   pairRequest: PairRequest,
   routerResult: RouterResult | undefined
 ): PairResult | undefined {
+  // note: this sorting on the frontend may differ from the sorting on the backend
   const [token0, token1] = [pairRequest.tokenA, pairRequest.tokenB].sort();
   if (token0 && token1) {
     // return estimate from current result

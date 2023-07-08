@@ -16,8 +16,8 @@ module.exports = {
         preset: 'conventionalcommits',
         // see default rules: https://github.com/semantic-release/commit-analyzer/blob/master/lib/default-release-rules.js
         releaseRules: [
-          // while in "alpha" mode don't increment anything but the patch version
-          { breaking: true, release: 'patch' },
+          // while in "alpha" mode don't increment the major version
+          { breaking: true, release: 'minor' },
           { type: 'feat', release: 'patch' },
           { type: 'fix', release: 'patch' },
           { type: 'perf', release: 'patch' },

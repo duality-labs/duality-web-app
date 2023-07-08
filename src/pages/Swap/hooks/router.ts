@@ -1,10 +1,4 @@
-import {
-  getPairID,
-  hasMatchingPairOfOrder,
-  PairMap,
-  TickInfo,
-} from '../../../lib/web3/indexerProvider';
-import { tickIndexToPrice } from '../../../lib/web3/utils/ticks';
+import { TickInfo, tickIndexToPrice } from '../../../lib/web3/utils/ticks';
 import { RouterResult } from './index';
 import { BigNumber } from 'bignumber.js';
 
@@ -16,24 +10,24 @@ export type SwapError = Error & {
 
 // mock implementation of router (no hop)
 export function router(
-  state: PairMap,
+  valueA: string,
   tokenA: string,
   tokenB: string,
-  valueA: string
+  token0: string,
+  token0Ticks: TickInfo[] = [],
+  token1Ticks: TickInfo[] = []
 ): RouterResult {
   let error: SwapError | false = false;
 
   // find pair by searching both directions in the current state
-  const [forward, reverse] = hasMatchingPairOfOrder(state, tokenA, tokenB);
+  const forward = token0 === tokenA;
+  const reverse = !forward;
 
-  if (!forward && !reverse) {
+  if (!(token0Ticks.length + token1Ticks.length > 0)) {
     error = new Error('There are no ticks for the supplied token pair');
     error.insufficientLiquidity = true;
     throw error;
   } else {
-    const { token0Ticks, token1Ticks } = forward
-      ? state[getPairID(tokenA, tokenB)]
-      : state[getPairID(tokenB, tokenA)];
     // todo: the calculateOut can be done more efficiently using separated tick lists
     const sortedTicks = token0Ticks
       .concat(token1Ticks)
@@ -96,12 +90,14 @@ export function router(
 }
 
 export async function routerAsync(
-  state: PairMap,
+  valueA: string,
   tokenA: string,
   tokenB: string,
-  valueA: string
+  token0: string,
+  token0Ticks: TickInfo[] = [],
+  token1Ticks: TickInfo[] = []
 ): Promise<RouterResult> {
-  return await router(state, tokenA, tokenB, valueA);
+  return router(valueA, tokenA, tokenB, token0, token0Ticks, token1Ticks);
 }
 
 /**

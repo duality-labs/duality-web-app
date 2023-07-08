@@ -1,5 +1,79 @@
 # Changelog
 
+## [0.2.2](https://github.com/duality-labs/duality-web-app/compare/v0.2.1...v0.2.2) (2023-07-08)
+
+
+### Features
+
+* upgrade API to backend v0.1.2-v0.2.1 fixes ([#382](https://github.com/duality-labs/duality-web-app/issues/382)) ([bc02e13](https://github.com/duality-labs/duality-web-app/commit/bc02e13c6f914da99012bf7ebeda21eefd2d6c47))
+
+## [0.2.1](https://github.com/duality-labs/duality-web-app/compare/v0.2.0...v0.2.1) (2023-07-08)
+
+
+### Features
+
+* upgrade API to backend v0.2.1 ([#371](https://github.com/duality-labs/duality-web-app/issues/371)) ([a85b5b7](https://github.com/duality-labs/duality-web-app/commit/a85b5b73ab9b20210a30efcac5487f789f4a2ff2))
+
+## [0.2.0](https://github.com/duality-labs/duality-web-app/compare/v0.1.114...v0.2.0) (2023-07-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* upgrade API to backend v0.2.0 (#381)
+
+### Features
+
+* upgrade API to backend v0.2.0 ([#381](https://github.com/duality-labs/duality-web-app/issues/381)) ([123bda6](https://github.com/duality-labs/duality-web-app/commit/123bda629b4befbc9bd57ad7d5c2027cbff8f953))
+
+## [0.1.114](https://github.com/duality-labs/duality-web-app/compare/v0.1.113...v0.1.114) (2023-07-08)
+
+
+### Features
+
+* upgrade API to backend v0.1.5 ([#380](https://github.com/duality-labs/duality-web-app/issues/380)) ([32f5272](https://github.com/duality-labs/duality-web-app/commit/32f5272156be11f932ed7d570b1232f9ea03a149)), closes [#305](https://github.com/duality-labs/duality-web-app/issues/305) [#303](https://github.com/duality-labs/duality-web-app/issues/303) [#310](https://github.com/duality-labs/duality-web-app/issues/310) [#314](https://github.com/duality-labs/duality-web-app/issues/314) [#302](https://github.com/duality-labs/duality-web-app/issues/302) [#304](https://github.com/duality-labs/duality-web-app/issues/304) [#307](https://github.com/duality-labs/duality-web-app/issues/307) [#308](https://github.com/duality-labs/duality-web-app/issues/308) [#309](https://github.com/duality-labs/duality-web-app/issues/309) [#311](https://github.com/duality-labs/duality-web-app/issues/311) [#321](https://github.com/duality-labs/duality-web-app/issues/321)
+
+## [0.1.113](https://github.com/duality-labs/duality-web-app/compare/v0.1.112...v0.1.113) (2023-07-08)
+
+
+### Features
+
+* upgrade API to backend v0.1.3 / v0.1.4 ([#378](https://github.com/duality-labs/duality-web-app/issues/378)) ([fc48123](https://github.com/duality-labs/duality-web-app/commit/fc48123e6100e35d819dc8aec2140e961af799bc)), closes [#297](https://github.com/duality-labs/duality-web-app/issues/297) [#300](https://github.com/duality-labs/duality-web-app/issues/300) [#301](https://github.com/duality-labs/duality-web-app/issues/301)
+
+## [0.1.112](https://github.com/duality-labs/duality-web-app/compare/v0.1.111...v0.1.112) (2023-06-29)
+
+
+### Fixes
+
+* Liquidity chart y-axis token value calculations were swapped ([#386](https://github.com/duality-labs/duality-web-app/issues/386)) ([1cb65f9](https://github.com/duality-labs/duality-web-app/commit/1cb65f99a63cab3fe0dc051dcdc49a9d4c83004e))
+
+## [0.1.111](https://github.com/duality-labs/duality-web-app/compare/v0.1.110...v0.1.111) (2023-06-28)
+
+
+### Fixes
+
+* various fixes before upgrade api to backend v0.1.3-v0.2.1 ([#377](https://github.com/duality-labs/duality-web-app/issues/377)) ([7f4eead](https://github.com/duality-labs/duality-web-app/commit/7f4eead4a272440ba0da75db5d9d47fb79a07891))
+
+## [0.1.110](https://github.com/duality-labs/duality-web-app/compare/v0.1.109...v0.1.110) (2023-06-28)
+
+
+### Fixes
+
+* calculate chart series heights by approximate value ([#376](https://github.com/duality-labs/duality-web-app/issues/376)) ([7dfdb93](https://github.com/duality-labs/duality-web-app/commit/7dfdb93d2f0abdca97391163684a386854154eaf))
+
+## [0.1.109](https://github.com/duality-labs/duality-web-app/compare/v0.1.108...v0.1.109) (2023-05-23)
+
+
+### Features
+
+* switch to external typescript client dependency ([#374](https://github.com/duality-labs/duality-web-app/issues/374)) ([ac5c18c](https://github.com/duality-labs/duality-web-app/commit/ac5c18c95fc1b313e4f6790ba6deabc249ecaae9))
+
+## [0.1.108](https://github.com/duality-labs/duality-web-app/compare/v0.1.107...v0.1.108) (2023-05-16)
+
+
+### Fixes
+
+* tests of upgrade api to backend v0.1.3 (part 1)  ([#348](https://github.com/duality-labs/duality-web-app/issues/348)) ([74ed626](https://github.com/duality-labs/duality-web-app/commit/74ed62616728c24d4df55bfcb0c58c8459976696))
+
 ## [0.1.107](https://github.com/duality-labs/duality-web-app/compare/v0.1.106...v0.1.107) (2023-05-01)
 
 

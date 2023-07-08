@@ -1,45 +1,37 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
-import { Coin } from '@cosmjs/launchpad';
+import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import { useBankBalances } from '../../lib/web3/indexerProvider';
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { useSimplePrice } from '../../lib/tokenPrices';
-import useShareValueMap, { TickShareValueMap } from './useShareValueMap';
-
+import { useUserPositionsShareValue } from '../../lib/web3/hooks/useUserShareValues';
 import {
-  Token,
-  useFilteredTokenList,
-  useTokens,
-} from '../../components/TokenPicker/hooks';
+  useUserBankValue,
+  useUserBankValues,
+} from '../../lib/web3/hooks/useUserBankValues';
+
+import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
+
+import useTokens from '../../lib/web3/hooks/useTokens';
 
 import { formatAmount } from '../../lib/utils/number';
 
-import './MyLiquidity.scss';
-import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import TableCard from '../../components/cards/TableCard';
 import PoolsTableCard from '../../components/cards/PoolsTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown } from '@fortawesome/free-solid-svg-icons';
 
-function matchTokenDenom(denom: string) {
-  return (token: Token) =>
-    !!token.denom_units.find((unit) => unit.denom === denom);
-}
+import './MyLiquidity.scss';
 
-type TokenCoin = Coin & {
+type TokenCoin = CoinSDKType & {
   token: Token;
   value: BigNumber | undefined;
 };
 
 export default function MyLiquidity() {
   const { wallet } = useWeb3();
-  const { data: balances } = useBankBalances();
-
-  const [, setSelectedTokens] = useState<[Token, Token]>();
-
-  const shareValueMap = useShareValueMap();
 
   // show connect page
   if (!wallet) {
@@ -55,108 +47,16 @@ export default function MyLiquidity() {
     );
   }
 
-  return (
-    <ShareValuesPage
-      shareValueMap={shareValueMap}
-      balances={balances}
-      setSelectedTokens={setSelectedTokens}
-    />
-  );
+  return <ShareValuesPage />;
 }
 
-function ShareValuesPage({
-  shareValueMap,
-  balances = [],
-  setSelectedTokens,
-}: {
-  shareValueMap?: TickShareValueMap;
-  balances?: Coin[];
-  setSelectedTokens: React.Dispatch<
-    React.SetStateAction<[Token, Token] | undefined>
-  >;
-}) {
-  const allUserSharesTokensList = useMemo<Token[]>(() => {
-    // collect all tokens noted in each share
-    const list = Object.values(shareValueMap || {}).reduce<Token[]>(
-      (result, shareValues) => {
-        shareValues.forEach((shareValue) => {
-          result.push(shareValue.token0, shareValue.token1);
-        });
-        return result;
-      },
-      []
-    );
-    // return unique tokens
-    return Array.from(new Set(list));
-  }, [shareValueMap]);
+function ShareValuesPage() {
+  const { data: balances } = useBankBalances();
+  const tokenList = useTokens();
 
-  const allTokensList = useTokens();
-  const allUserBankTokensList = useMemo<Token[]>(() => {
-    return (balances || []).reduce<Token[]>((result, balance) => {
-      const token = allTokensList.find(matchTokenDenom(balance.denom));
-      if (token) {
-        result.push(token);
-      }
-      return result;
-    }, []);
-  }, [balances, allTokensList]);
-
-  const allUserTokensList = useMemo(() => {
-    return [...allUserSharesTokensList, ...allUserBankTokensList];
-  }, [allUserSharesTokensList, allUserBankTokensList]);
-
-  const { data: allUserTokenPrices } = useSimplePrice(allUserTokensList);
-
-  const allUserSharesValue = Object.values(shareValueMap || {}).reduce(
-    (result, shareValues) => {
-      const sharePairValue = shareValues.reduce((result2, shareValue) => {
-        if (shareValue.userReserves0?.isGreaterThan(0)) {
-          const token0Index = allUserTokensList.indexOf(shareValue.token0);
-          result2 = result2.plus(
-            shareValue.userReserves0.multipliedBy(
-              allUserTokenPrices[token0Index] || 0
-            )
-          );
-        }
-        if (shareValue.userReserves1?.isGreaterThan(0)) {
-          const token1Index = allUserTokensList.indexOf(shareValue.token1);
-          result2 = result2.plus(
-            shareValue.userReserves1.multipliedBy(
-              allUserTokenPrices[token1Index] || 0
-            )
-          );
-        }
-        return result2;
-      }, new BigNumber(0));
-      return result.plus(sharePairValue);
-    },
-    new BigNumber(0)
-  );
-
-  const allUserBankAssets = useMemo<Array<TokenCoin>>(() => {
-    return (balances || [])
-      .map(({ amount, denom }) => {
-        const tokenIndex = allUserTokensList.findIndex(matchTokenDenom(denom));
-        const token = allUserTokensList[tokenIndex] as Token | undefined;
-        const price = allUserTokenPrices[tokenIndex];
-        const value =
-          token &&
-          new BigNumber(
-            getAmountInDenom(token, amount, denom, token.display) || 0
-          ).multipliedBy(price || 0);
-        return token ? { amount, denom, token, value } : null;
-      })
-      .filter((v): v is TokenCoin => !!v);
-  }, [balances, allUserTokensList, allUserTokenPrices]);
-
-  const allUserBankValue = useMemo(
-    () =>
-      (allUserBankAssets || []).reduce((result, { value }) => {
-        if (!value) return result;
-        return result.plus(value);
-      }, new BigNumber(0)),
-    [allUserBankAssets]
-  );
+  const allUserSharesValue = useUserPositionsShareValue();
+  const allUserBankAssets = useUserBankValues();
+  const allUserBankValue = useUserBankValue();
 
   const [selectedAssetList, setSelectedAssetList] = useState<
     'my-assets' | 'all-assets'
@@ -164,7 +64,6 @@ function ShareValuesPage({
 
   const [searchValue, setSearchValue] = useState<string>('');
 
-  const tokenList = useTokens();
   const userList = useMemo(() => {
     return balances
       ? tokenList.filter((token) =>

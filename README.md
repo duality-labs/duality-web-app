@@ -54,21 +54,20 @@ To set up the front end locally, connected to the current online testnet:
 
    your development should now be making requests to your local backend
 
-The current backend repository commit to use for any branch in the frontend
-should be defined in the file:
-[src/lib/web3/generated/readme.md](https://github.com/duality-labs/duality-web-app/tree/main/src/lib/web3/generated/readme.md),
-which describes the state at which the generated API files were made.
-
 ## Generated API types
 
 The frontend connects to the backend through the backend API.
 We use TypeScript types and API client code generated from the backend repo
-using [Ignite CLI](https://docs.ignite.com/cli#ignite-generate) to help define
-the shape of the API for the frontend code base. These files exist at
-[src/lib/web3/generated](https://github.com/duality-labs/duality-web-app/tree/main/src/lib/web3/generated/)
+.proto files and the
+[@osmonauts/telescope](https://www.npmjs.com/package/@osmonauts/telescope)
+package to help define the shape of the API for the frontend code base.
+These files exist at https://github.com/duality-labs/dualityjs
 
-Instructions on how to update these generated types should exist at
-[src/lib/web3/generated/readme.md](https://github.com/duality-labs/duality-web-app/tree/main/src/lib/web3/generated/readme.md)
+The current backend repository version to use with the frontend
+should be defined in the package.json file: here the version number of the
+https://github.com/duality-labs/dualityjs dependency should represent
+the corresponding backend API version number to use, see
+https://github.com/duality-labs/duality/releases
 
 ## Deployed At
 

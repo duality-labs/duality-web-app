@@ -5,7 +5,6 @@ import { BigNumber } from 'bignumber.js';
 
 import { formatAmount } from '../../../lib/utils/number';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
-import apiClient from '../../../lib/web3/apiClient';
 
 import {
   checkMsgErrorToast,
@@ -15,91 +14,102 @@ import {
   createLoadingToast,
 } from '../../../components/Notifications/common';
 
-import {
-  MsgSwap,
-  MsgSwapResponse,
-} from '../../../lib/web3/generated/ts-client/nicholasdotsol.duality.dex/types/duality/dex/tx';
-import { addressableTokenMap } from '../../../components/TokenPicker/hooks';
+import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import { readEvents } from '../../../lib/web3/utils/txs';
+import {
+  mapEventAttributes,
+  CoinReceivedEvent,
+  parseAmountDenomString,
+} from '../../../lib/web3/utils/events';
+import rpcClient from '../../../lib/web3/rpcMsgClient';
+import { dualitylabs } from '@duality-labs/dualityjs';
+import {
+  MsgPlaceLimitOrderResponseSDKType,
+  MsgPlaceLimitOrder,
+} from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
 
 async function sendSwap(
-  wallet: OfflineSigner,
-  { amountIn, tokenIn, tokenA, tokenB, minOut, creator, receiver }: MsgSwap,
+  {
+    wallet,
+    address,
+  }: {
+    wallet: OfflineSigner;
+    address: string;
+  },
+  {
+    orderType,
+    tickIndex,
+    amountIn,
+    tokenIn,
+    tokenOut,
+    creator,
+    receiver,
+  }: MsgPlaceLimitOrder,
   gasEstimate: number
-): Promise<MsgSwapResponse> {
-  if (
-    !amountIn ||
-    !amountIn ||
-    !tokenIn ||
-    !tokenA ||
-    !tokenB ||
-    !minOut ||
-    !creator ||
-    !creator
-  ) {
+): Promise<void> {
+  if (!amountIn || !orderType || !tokenIn || !tokenOut || !creator) {
     throw new Error('Invalid Input');
   }
 
-  const totalBigInt = new BigNumber(amountIn);
-  if (!totalBigInt.isGreaterThan(0)) {
+  if (!new BigNumber(amountIn).isGreaterThan(0)) {
     throw new Error('Invalid Input (0 value)');
   }
 
-  const tokenOut = tokenIn === tokenA ? tokenB : tokenA;
   const tokenOutToken = addressableTokenMap[tokenOut];
   if (!tokenOutToken) {
     throw new Error('Invalid Output (token address not found)');
   }
 
-  const client = apiClient(wallet);
   // send message to chain
 
   const id = `${Date.now()}.${Math.random}`;
 
   createLoadingToast({ id, description: 'Executing your trade' });
 
+  const client = await rpcClient(wallet);
   return client
     .signAndBroadcast(
+      address,
       [
-        client.NicholasdotsolDualityDex.tx.msgSwap({
-          value: {
-            amountIn,
-            tokenIn,
-            tokenA,
-            tokenB,
-            minOut,
-            creator,
-            receiver,
-          },
+        dualitylabs.duality.dex.MessageComposer.withTypeUrl.placeLimitOrder({
+          orderType,
+          tickIndex,
+          amountIn,
+          tokenIn,
+          tokenOut,
+          creator,
+          receiver,
         }),
       ],
       {
         gas: gasEstimate.toFixed(0),
         amount: [{ amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' }],
-      },
-      ''
+      }
     )
-    .then(function (res): MsgSwapResponse {
+    .then(function (res): void {
       if (!res) {
         throw new Error('No response');
       }
       const { code } = res;
 
-      const amountOut = readEvents(res.rawLog)
-        ?.find(({ type }: { type: string }) => type === 'message')
-        ?.attributes?.reduceRight(
-          (
-            result: BigNumber,
-            { key, value }: { key: string; value: string }
-          ) => {
-            if (result.isZero() && key === 'AmountOut') {
-              return result.plus(value);
-            }
-            return result;
-          },
-          new BigNumber(0)
-        ) as BigNumber | undefined;
+      const amountOut = res.events.reduce<BigNumber>((result, event) => {
+        if (
+          event.type === 'coin_received' &&
+          event.attributes.find(
+            ({ key, value }) => key === 'receiver' && value === address
+          )
+        ) {
+          // collect into more usable format for parsing
+          const { attributes } = mapEventAttributes<CoinReceivedEvent>(event);
+          // parse coin string for matching tokens
+          const [amount, denom] = parseAmountDenomString(attributes.amount);
+          if (denom === tokenOut) {
+            return result.plus(amount);
+          }
+        }
+        return result;
+      }, new BigNumber(0));
+
       const description = amountOut
         ? `Received ${formatAmount(
             getAmountInDenom(
@@ -118,18 +128,6 @@ async function sendSwap(
         error.response = res;
         throw error;
       }
-      return {
-        coinOut: {
-          amount:
-            getAmountInDenom(
-              tokenOutToken,
-              amountOut?.toFixed() || '0',
-              tokenOutToken.address,
-              tokenOutToken.display
-            ) || '0',
-          denom: tokenOutToken.display,
-        },
-      };
     })
     .catch(function (err: Error & { response?: DeliverTxResponse }) {
       // catch transaction errors
@@ -150,29 +148,36 @@ async function sendSwap(
  */
 export function useSwap(): [
   {
-    data?: MsgSwapResponse;
+    data?: MsgPlaceLimitOrderResponseSDKType;
     isValidating: boolean;
     error?: string;
   },
-  (request: MsgSwap, gasEstimate: number) => void
+  (request: MsgPlaceLimitOrder, gasEstimate: number) => void
 ] {
-  const [data, setData] = useState<MsgSwapResponse>();
+  const [data, setData] = useState<MsgPlaceLimitOrderResponseSDKType>();
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
   const web3 = useWeb3();
 
   const sendRequest = useCallback(
-    (request: MsgSwap, gasEstimate: number) => {
+    (request: MsgPlaceLimitOrder, gasEstimate: number) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
-      const { amountIn, tokenIn, tokenA, tokenB, minOut, creator, receiver } =
-        request;
+      const {
+        orderType,
+        tickIndex,
+        amountIn,
+        tokenIn,
+        tokenOut,
+        creator,
+        receiver,
+      } = request;
       if (
+        !orderType ||
+        !tickIndex ||
         !amountIn ||
         !tokenIn ||
-        !tokenA ||
-        !tokenB ||
-        !minOut ||
+        !tokenOut ||
         !creator ||
         !receiver
       )
@@ -181,13 +186,12 @@ export function useSwap(): [
       setError(undefined);
       setData(undefined);
 
-      const { wallet } = web3;
-      if (!wallet) return onError('Client has no wallet');
+      const { wallet, address } = web3;
+      if (!wallet || !address) return onError('Client has no wallet');
 
-      sendSwap(wallet, request, gasEstimate)
-        .then(function (result: MsgSwapResponse) {
+      sendSwap({ wallet, address }, request, gasEstimate)
+        .then(function () {
           setValidating(false);
-          setData(result);
         })
         .catch(function (err: Error) {
           onError(err?.message ?? 'Unknown error');

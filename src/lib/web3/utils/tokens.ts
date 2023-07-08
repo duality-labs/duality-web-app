@@ -1,5 +1,24 @@
 import BigNumber from 'bignumber.js';
-import { Token } from '../../../components/TokenPicker/hooks';
+import { Asset, Chain } from '@chain-registry/types';
+
+export interface Token extends Asset {
+  chain: Chain;
+  // enforce that an address exists
+  address: TokenAddress;
+}
+
+export type TokenAddress = string; // a valid hex address, eg. 0x01
+
+export type TokenPair = [Token, Token];
+export type TokenAddressPair = [TokenAddress, TokenAddress];
+export function getTokenAddressPair([token0, token1]:
+  | TokenPair
+  | TokenAddressPair): TokenAddressPair {
+  return [
+    typeof token0 === 'string' ? token0 : token0.address,
+    typeof token1 === 'string' ? token1 : token1.address,
+  ];
+}
 
 export function getAmountInDenom(
   token: Token,

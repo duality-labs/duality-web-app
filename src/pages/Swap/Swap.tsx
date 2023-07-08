@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
+import Long from 'long';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBolt,
@@ -10,7 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import { useTokens, Token } from '../../components/TokenPicker/hooks';
+import useTokens from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import NumberInput, {
   useNumericInputState,
@@ -18,16 +19,15 @@ import NumberInput, {
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import {
-  useBankBalance,
-  useIndexerPairData,
-} from '../../lib/web3/indexerProvider';
+import { useBankBalance } from '../../lib/web3/indexerProvider';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import { formatAmount } from '../../lib/utils/number';
-import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 
 import './Swap.scss';
@@ -73,6 +73,7 @@ function Swap() {
     valueA: lastUpdatedA ? valueA : undefined,
     valueB: lastUpdatedA ? undefined : valueB,
   });
+
   const rateData = getRouterEstimates(pairRequest, routerResult);
   const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap();
 
@@ -107,7 +108,11 @@ function Swap() {
   const [inputSlippage, setInputSlippage, slippage = '0'] =
     useNumericInputState(defaultSlippage);
 
-  const { data: pair } = useIndexerPairData(tokenA?.address, tokenB?.address);
+  const [token0, token1] =
+    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
+  const {
+    data: [token0Ticks, token1Ticks],
+  } = useTokenPairTickLiquidity([token0, token1]);
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -116,12 +121,19 @@ function Swap() {
       // set tiny minimum of tolerance as the frontend calculations
       // don't always exactly align with the backend calculations
       const tolerance = Math.max(1e-12, parseFloat(slippage) / 100);
-      if (address && routerResult && tokenA && tokenB && !isNaN(tolerance)) {
+      const tickIndexLimit = routerResult?.tickIndexOut?.toNumber();
+      if (
+        address &&
+        routerResult &&
+        tokenA &&
+        tokenB &&
+        !isNaN(tolerance) &&
+        tickIndexLimit &&
+        !isNaN(tickIndexLimit)
+      ) {
         // convert to swap request format
         const result = routerResult;
         // Cosmos requires tokens in integer format of smallest denomination
-        // add slippage tolerance
-        const minOut = result.amountOut.multipliedBy(1 - tolerance);
         // calculate gas estimate
         const tickMin =
           routerResult.tickIndexIn &&
@@ -137,7 +149,6 @@ function Swap() {
             routerResult.tickIndexIn.negated().toNumber(),
             routerResult.tickIndexOut.negated().toNumber()
           );
-        const { token0Ticks, token1Ticks, token0 } = pair || {};
         const forward = result.tokenIn === token0;
         const ticks = forward ? token1Ticks : token0Ticks;
         const ticksPassed =
@@ -178,17 +189,35 @@ function Swap() {
             amountIn:
               getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
             tokenIn: result.tokenIn,
-            tokenA: result.tokenIn,
-            tokenB: result.tokenOut,
-            minOut: getAmountInDenom(tokenB, minOut, tokenB?.display) || '0',
+            tokenOut: result.tokenOut,
             creator: address,
             receiver: address,
+            // see LimitOrderType in types repo (cannot import at runtime)
+            // https://github.com/duality-labs/dualityjs/blob/2cf50a7af7bf7c6b1490a590a4e1756b848096dd/src/codegen/duality/dex/tx.ts#L6-L13
+            // using type IMMEDIATE_OR_CANCEL so that partially filled requests
+            // succeed (in testing when swapping 1e18 utokens, often the order
+            // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
+            // todo: use type FILL_OR_KILL: order must be filled completely
+            orderType: 2,
+            // todo: set tickIndex to allow for a tolerance:
+            //   the below function is a tolerance of 0
+            tickIndex: Long.fromNumber(tickIndexLimit * (forward ? -1 : 1)),
           },
           gasEstimate
         );
       }
     },
-    [address, routerResult, pair, tokenA, tokenB, slippage, swapRequest]
+    [
+      address,
+      routerResult,
+      tokenA,
+      tokenB,
+      token0,
+      token0Ticks,
+      token1Ticks,
+      slippage,
+      swapRequest,
+    ]
   );
 
   const onValueAChanged = useCallback(

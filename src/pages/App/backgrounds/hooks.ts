@@ -115,17 +115,19 @@ function usePrefersMotion() {
     number | false
   >(false);
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mediaQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     // execute immediately
     onPrefersMotionChange();
-    // execute on change
-    mediaQuery.addEventListener('change', onPrefersMotionChange);
-    // remove when no longer needed
-    return () =>
-      mediaQuery.removeEventListener('change', onPrefersMotionChange);
+    if (mediaQuery) {
+      // execute on change
+      mediaQuery.addEventListener('change', onPrefersMotionChange);
+      // remove when no longer needed
+      return () =>
+        mediaQuery.removeEventListener('change', onPrefersMotionChange);
+    }
 
     function onPrefersMotionChange() {
-      setUserPrefersMotion(mediaQuery.matches ? false : Date.now());
+      setUserPrefersMotion(mediaQuery?.matches ? false : Date.now());
     }
   }, []);
 

@@ -1,5 +1,31 @@
 import BigNumber from 'bignumber.js';
-import { TickInfo } from '../indexerProvider';
+import { Token } from './tokens';
+
+/**
+ * TickMap contains a mapping from tickIDs to tick indexes inside poolsZeroToOne and poolsOneToZero
+ */
+export interface TickMap {
+  [tickID: string]: PoolTicks;
+}
+
+type PoolTicks = [
+  index0to1: TickInfo | undefined,
+  index1to0: TickInfo | undefined
+];
+
+/**
+ * TickInfo is a reflection of the backend structue "DexPool"
+ * but utilising BigNumber type instead of BigNumberString type properties
+ */
+export interface TickInfo {
+  token0: Token;
+  token1: Token;
+  reserve0: BigNumber;
+  reserve1: BigNumber;
+  fee: BigNumber;
+  tickIndex: BigNumber; // tickIndex is the exact price ratio in the form: 1.0001^[tickIndex]
+  price: BigNumber; // price is an approximate decimal (to 18 places) ratio of price1/price0
+}
 
 export function tickIndexToPrice(tickIndex: BigNumber): BigNumber {
   return new BigNumber(Math.pow(1.0001, tickIndex.toNumber()));

@@ -6,79 +6,33 @@ import {
   useMemo,
   useCallback,
 } from 'react';
+import Long from 'long';
 import { BigNumber } from 'bignumber.js';
-import { Coin } from '@cosmjs/launchpad';
+import { cosmos } from '@duality-labs/dualityjs';
 
 import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
-import { queryClient as bankClient } from './generated/ts-client/cosmos.bank.v1beta1/module';
-import { Api as BankApi } from './generated/ts-client/cosmos.bank.v1beta1/rest';
-import { queryClient } from './generated/ts-client/nicholasdotsol.duality.dex/module';
-import {
-  DexTick,
-  DexTokens,
-  DexTradingPair,
-  Api,
-} from './generated/ts-client/nicholasdotsol.duality.dex/rest';
-import useTokens from './hooks/useTokens';
+import { useRpcPromise } from './rpcQueryClient';
+import useTokens from '../../lib/web3/hooks/useTokens';
 import useTokenPairs from './hooks/useTokenPairs';
 
-import {
-  addressableTokenMap as tokenMap,
-  Token,
-} from '../../components/TokenPicker/hooks';
-
 import { feeTypes } from './utils/fees';
-import { getAmountInDenom } from './utils/tokens';
+
+import { Token, TokenAddress, getAmountInDenom } from './utils/tokens';
 import { calculateShares } from './utils/ticks';
-import { IndexedShare } from './utils/shares';
+import { IndexedShare, getShareInfo } from './utils/shares';
+import { getPairID } from './utils/pairs';
 
-const { REACT_APP__REST_API } = process.env;
+import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
+import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 
-export type TokenAddress = string; // a valid hex address, eg. 0x01
-
-export interface PairInfo {
-  token0: string;
-  token1: string;
-  token0Ticks: TickInfo[];
-  token1Ticks: TickInfo[];
-}
-
-/**
- * TickMap contains a mapping from tickIDs to tick indexes inside poolsZeroToOne and poolsOneToZero
- */
-export interface TickMap {
-  [tickID: string]: PoolTicks;
-}
-
-type PoolTicks = [
-  index0to1: TickInfo | undefined,
-  index1to0: TickInfo | undefined
-];
-
-/**
- * TickInfo is a reflection of the backend structue "DexPool"
- * but utilising BigNumber type instead of BigNumberString type properties
- */
-export interface TickInfo {
-  token0: Token;
-  token1: Token;
-  reserve0: BigNumber;
-  reserve1: BigNumber;
-  fee: BigNumber;
-  feeIndex: BigNumber; // feeIndex is the index of a certain predefined fee
-  tickIndex: BigNumber; // tickIndex is the exact price ratio in the form: 1.0001^[tickIndex]
-  price: BigNumber; // price is an approximate decimal (to 18 places) ratio of price1/price0
-}
-
-export interface PairMap {
-  [pairID: string]: PairInfo;
-}
+const bankClientImpl = cosmos.bank.v1beta1.QueryClientImpl;
 
 interface UserBankBalance {
-  balances: Array<Coin>;
+  balances: Array<CoinSDKType>;
 }
 
 interface UserShares {
@@ -96,18 +50,13 @@ interface IndexerContextType {
     error?: string;
     isValidating: boolean;
   };
-  indexer: {
-    data?: PairMap;
-    error?: string;
-    isValidating: boolean;
-  };
   tokens: {
-    data?: DexTokens[];
+    data?: Token[];
     error?: string;
     isValidating: boolean;
   };
   tokenPairs: {
-    data?: DexTradingPair[];
+    data?: [TokenAddress, TokenAddress][];
     error?: string;
     isValidating: boolean;
   };
@@ -126,9 +75,6 @@ const IndexerContext = createContext<IndexerContextType>({
   shares: {
     isValidating: true,
   },
-  indexer: {
-    isValidating: true,
-  },
   tokens: {
     isValidating: true,
   },
@@ -137,190 +83,26 @@ const IndexerContext = createContext<IndexerContextType>({
   },
 });
 
-const defaultFetchParams = {
-  'pagination.limit': '1000',
-  'pagination.count_total': true,
+const defaultFetchParams: Partial<PageRequest> = {
+  limit: Long.fromNumber(1000),
+  countTotal: true,
 };
 
-function getFullData(): Promise<PairMap> {
-  return new Promise(function (resolve, reject) {
-    if (!REACT_APP__REST_API) {
-      reject(new Error('Undefined rest api base URL'));
-    } else {
-      new Promise<Api<unknown>>((resolve) =>
-        resolve(queryClient({ addr: REACT_APP__REST_API }))
-      )
-        .then(async (client) => {
-          let nextKey: string | undefined;
-          let tickMap: Array<DexTick> = [];
-          let res: Awaited<ReturnType<Api<unknown>['queryTickAll']>>;
-          do {
-            res = await client.queryTickAll({
-              ...defaultFetchParams,
-              'pagination.key': nextKey,
-            });
-            if (res.status === 200) {
-              tickMap = tickMap.concat(res.data.Tick || []);
-            } else {
-              // remove API error details from public view
-              throw new Error(
-                `API error code: ${res.status} ${res.statusText}`
-              );
-            }
-            nextKey = res.data.pagination?.next_key;
-          } while (nextKey);
-          return {
-            ...res.data,
-            tickMap: tickMap,
-          };
-        })
-        .then((data) => transformData(data.tickMap || []))
-        .then(resolve)
-        .catch(reject);
-    }
-  });
-}
-
-/**
- * Gets the pair id for a sorted pair of tokens
- * @param token0 address of token 0
- * @param token1 address of token 1
- * @returns pair id for tokens
- */
-export function getPairID(token0: TokenAddress, token1: TokenAddress) {
-  return `${token0}<>${token1}`;
-}
-
-/**
- * Check if the current TokenA/TokenB pair is in the same order as Token0/1
- * @param pairID pair id for tokens
- * @param tokenA address of token A
- * @param tokenB address of token B
- * @returns bool for inverted order
- */
-export function hasInvertedOrder(
-  pairID: string,
-  tokenA: string,
-  tokenB: string
-): boolean {
-  return getPairID(tokenA, tokenB) !== pairID;
-}
-
-/**
- * Checks given token pair against stored data to determine
- * if the current TokenA/TokenB pair exists and is in the same order as Token0/1
- * @param pairMap pair map of stored tokens
- * @param tokenA address of token A
- * @param tokenB address of token B
- * @returns [isSorted, isInverseSorted] array for determining sort order (both may be `false` if pair is not found)
- */
-export function hasMatchingPairOfOrder(
-  pairMap: PairMap,
-  tokenA: string,
-  tokenB: string
-): [boolean, boolean] {
-  const forward = !!pairMap?.[getPairID(tokenA, tokenB)];
-  const reverse = !!pairMap?.[getPairID(tokenB, tokenA)];
-  return [forward, reverse];
-}
-
-function transformData(ticks: Array<DexTick>): PairMap {
-  const intermediate = ticks.reduce<PairMap>(function (
-    result,
-    { pairId = '', tickIndex, price0To1, tickData }
-  ) {
-    // token0 and token1 are sorted by the back end
-    const [token0, token1] = pairId.split('<>');
-    if (token0 && token1 && tokenMap[token0] && tokenMap[token1] && tickData) {
-      result[pairId] =
-        result[pairId] ||
-        ({
-          token0: token0,
-          token1: token1,
-          token0Ticks: [],
-          token1Ticks: [],
-        } as PairInfo);
-
-      feeTypes.forEach(({ fee }, feeIndex) => {
-        if (
-          !isNaN(parseInt(tickIndex || '')) &&
-          parseFloat(price0To1 || '') > 0
-        ) {
-          if (tickData.reserve0 && Number(tickData.reserve0[feeIndex]) > 0) {
-            result[pairId].token0Ticks.push({
-              token0: tokenMap[token0],
-              token1: tokenMap[token1],
-              tickIndex: new BigNumber(tickIndex || 0),
-              price: new BigNumber(1).dividedBy(price0To1 || 0),
-              feeIndex: new BigNumber(feeIndex),
-              fee: new BigNumber(fee || 0),
-              reserve0: new BigNumber(tickData.reserve0?.[feeIndex] || 0),
-              reserve1: new BigNumber(0),
-            });
-          }
-          if (tickData.reserve1 && Number(tickData.reserve1[feeIndex]) > 0) {
-            result[pairId].token1Ticks.push({
-              token0: tokenMap[token0],
-              token1: tokenMap[token1],
-              tickIndex: new BigNumber(tickIndex || 0),
-              price: new BigNumber(1).dividedBy(price0To1 || 0),
-              feeIndex: new BigNumber(feeIndex),
-              fee: new BigNumber(fee || 0),
-              reserve0: new BigNumber(0),
-              reserve1: new BigNumber(tickData.reserve1?.[feeIndex] || 0),
-            });
-          }
-        }
-      });
-    }
-    return result;
-  },
-  {});
-
-  // sort all ticks
-  return Object.entries(intermediate).reduce<PairMap>(
-    (result, [pairId, pairInfo]) => {
-      result[pairId] = {
-        ...pairInfo,
-        // sort each pair's ticks
-        token0Ticks: pairInfo.token0Ticks.sort((a, b) => {
-          // sort by decreasing tickIndex (price) then feeIndex
-          return (
-            b.tickIndex.comparedTo(a.tickIndex) ||
-            b.feeIndex.comparedTo(a.feeIndex)
-          );
-        }),
-        token1Ticks: pairInfo.token1Ticks.sort((a, b) => {
-          // sort by increasing tickIndex (price) then feeIndex
-          return (
-            a.tickIndex.comparedTo(b.tickIndex) ||
-            a.feeIndex.comparedTo(b.feeIndex)
-          );
-        }),
-      };
-      return result;
-    },
-    {}
-  );
-}
-
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
-  const [indexerData, setIndexerData] = useState<PairMap>();
   const seconds = 1000;
   const minutes = 60 * seconds;
 
   const [bankData, setBankData] = useState<UserBankBalance>();
   const [shareData, setShareData] = useState<UserShares>();
-  const { data: tokensData } = useTokens({
-    swr: { refreshInterval: 10 * minutes },
-  });
-  const { data: tokenPairsData } = useTokenPairs({
-    swr: { refreshInterval: 10 * minutes },
-  });
+  const tokensData = useTokens();
+  const { data: tokenPairsData, isValidating: isTokenPairsValidating } =
+    useTokenPairs({
+      swr: { refreshInterval: 10 * minutes },
+    });
+
+  const rpcPromise = useRpcPromise();
 
   const [error, setError] = useState<string>();
-  // avoid sending more than once
-  const [, setRequestedFlag] = useState(false);
   const [result, setResult] = useState<IndexerContextType>({
     bank: {
       data: bankData,
@@ -329,11 +111,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     },
     shares: {
       data: shareData,
-      error: error,
-      isValidating: true,
-    },
-    indexer: {
-      data: indexerData,
       error: error,
       isValidating: true,
     },
@@ -365,22 +142,24 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             .then((data = []) => {
               // separate out 'normal' and 'share' tokens from the bank balance
               const [tokens, tokenizedShares] = data.reduce<
-                [Array<Coin>, Array<IndexedShare>]
+                [Array<CoinSDKType>, Array<IndexedShare>]
               >(
                 ([tokens, tokenizedShares], coin) => {
-                  const [, token0, token1, tickIndex, feeIndex] =
-                    coin.denom.match(
-                      /^DualityPoolShares-([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/
-                    ) || [];
+                  const {
+                    token0Address: token0,
+                    token1Address: token1,
+                    tickIndexString: tickIndex,
+                    feeString: fee,
+                  } = getShareInfo(coin) || {};
                   // transform tokenized shares into shares
-                  if (token0 && token1 && tickIndex && feeIndex) {
+                  if (token0 && token1 && tickIndex && fee) {
                     // add tokenized share if everything is fine
                     if (address) {
                       const tokenizedShare = {
                         address,
                         pairId: getPairID(token0, token1),
                         tickIndex,
-                        feeIndex,
+                        fee,
                         sharesOwned: coin.amount,
                       };
                       return [tokens, [...tokenizedShares, tokenizedShare]];
@@ -392,7 +171,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                         `Received unknown denomination in tokenized shares: ${coin.denom}`,
                         {
                           feeTypes,
-                          feeIndex,
+                          fee,
                           address,
                         }
                       );
@@ -418,43 +197,46 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       });
 
       async function fetchBankData() {
-        if (address && REACT_APP__REST_API) {
-          const client = bankClient({ addr: REACT_APP__REST_API });
+        const rpc = await rpcPromise;
+        if (address && rpc) {
+          const client = new bankClientImpl(rpc);
           setFetchBankDataState(({ fetched }) => ({ fetching: true, fetched }));
-          let nextKey: string | undefined;
-          let balances: Array<Coin> = [];
-          let res: Awaited<ReturnType<BankApi<unknown>['queryAllBalances']>>;
-          // let res: HttpResponse<BalancesResponse, RpcStatus>;
+          let nextKey: Uint8Array | undefined;
+          let balances: Array<CoinSDKType> = [];
+          let res: QueryAllBalancesResponse;
           do {
-            res = await client.queryAllBalances(address, {
-              ...defaultFetchParams,
-              'pagination.key': nextKey,
-            });
-            if (res.status === 200) {
-              const nonZeroBalances = res.data.balances?.filter(
-                (balance): balance is Coin => balance.amount !== undefined
+            try {
+              res = await client.allBalances({
+                address,
+                pagination: {
+                  offset: Long.fromNumber(0),
+                  ...defaultFetchParams,
+                  key: nextKey || [],
+                } as PageRequest,
+              });
+              const nonZeroBalances = res.balances?.filter(
+                (balance: CoinSDKType): balance is CoinSDKType =>
+                  balance.amount !== undefined
               );
               balances = balances.concat(nonZeroBalances || []);
-            } else {
+            } catch (err) {
               setFetchBankDataState(({ fetched }) => ({
                 fetching: false,
                 fetched,
               }));
               // remove API error details from public view
-              throw new Error(
-                `API error code: ${res.status} ${res.statusText}`
-              );
+              throw new Error(`API error: ${err}`);
             }
-            nextKey = res.data.pagination?.next_key;
-          } while (nextKey);
+            nextKey = res.pagination?.nextKey;
+          } while (nextKey && nextKey.length > 0);
           setFetchBankDataState(() => ({ fetching: false, fetched: true }));
           return balances || [];
-        } else if (!REACT_APP__REST_API) {
-          throw new Error('Undefined rest api base URL');
+        } else if (!rpc) {
+          throw new Error('Could not connect to RPC endpoint');
         }
       }
     },
-    [address]
+    [rpcPromise, address]
   );
 
   // update bank data whenever wallet address is updated
@@ -481,13 +263,12 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   }, [updateBankData, address]);
 
   useEffect(() => {
-    let lastRequested = 0;
     const onDexUpdateMessage = function (event: MessageActionEvent) {
       const Receiver = event['message.Receiver'];
       const Token0 = event['message.Token0'];
       const Token1 = event['message.Token1'];
       const TickIndex = event['message.TickIndex'];
-      const FeeIndex = event['message.FeeIndex'];
+      const Fee = event['message.Fee'];
       const NewReserves0 = event['message.NewReserves0'];
       const NewReserves1 = event['message.NewReserves1'];
 
@@ -496,7 +277,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         !Token0 ||
         !Token1 ||
         !TickIndex ||
-        !FeeIndex ||
+        !Fee ||
         !NewReserves0 ||
         !NewReserves1
       ) {
@@ -516,7 +297,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           (share) =>
             share.pairId === pairId &&
             share.tickIndex === TickIndex &&
-            share.feeIndex === FeeIndex
+            share.fee === Fee
         );
         const sharesOwned = calculateShares({
           tickIndex: new BigNumber(TickIndex),
@@ -528,7 +309,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           const newShare = {
             pairId,
             address,
-            feeIndex: FeeIndex,
+            fee: Fee,
             tickIndex: TickIndex,
             sharesOwned: sharesOwned.toFixed(),
           };
@@ -548,50 +329,33 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         }
         return { shares: data };
       });
-
-      // update the indexer data (not a high priority, each block that contains changes to listened pairs should update the indexer state)
-      const now = Date.now();
-      if (now - lastRequested > 1000) {
-        lastRequested = Date.now();
-        getFullData()
-          .then(function (res) {
-            setIndexerData(res);
-          })
-          .catch(function (err: Error) {
-            setError(err?.message ?? 'Unknown Error');
-          });
-      }
-      // todo: do a partial update of indexer data?
-      // see this commit for previous work done on this
     };
     // subscribe to messages for this address only
     if (address) {
       subscriber.subscribeMessage(onDexUpdateMessage, {
-        message: { action: 'NewDeposit', Receiver: address },
+        message: { action: 'Deposit', Receiver: address },
       });
       subscriber.subscribeMessage(onDexUpdateMessage, {
-        message: { action: 'NewWithdraw', Receiver: address },
+        message: { action: 'Withdrawal', Receiver: address },
       });
       return () => {
         subscriber.unsubscribeMessage(onDexUpdateMessage);
       };
     }
-  }, [address]);
+  }, [rpcPromise, address]);
 
   useEffect(() => {
     const onRouterUpdateMessage = function (event: MessageActionEvent) {
       const Creator = event['message.Creator'];
-      const Token0 = event['message.Token0'];
-      const Token1 = event['message.Token1'];
       const TokenIn = event['message.TokenIn'];
+      const TokenOut = event['message.TokenOut'];
       const AmountIn = event['message.AmountIn'];
       const AmountOut = event['message.AmountOut'];
       const MinOut = event['message.MinOut'];
       if (
         !Creator ||
         !TokenIn ||
-        !Token0 ||
-        !Token1 ||
+        !TokenOut ||
         !AmountIn ||
         !AmountOut ||
         !MinOut
@@ -602,34 +366,19 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         setError(undefined);
       }
 
-      const forward = TokenIn === Token0;
-      const reverse = TokenIn === Token1;
-      if (!forward && !reverse) {
-        setError('Unknown error occurred. Incorrect tokens');
-        return;
-      }
-
       // todo: update something without refetching?
       // may not be possible or helpful
       // bank balance update will be caught already by the bank event watcher
       // it's too complicated to update indexer state with the event detail's
-
-      // fetch new indexer data as the trade would have caused changes in ticks
-      getFullData()
-        .then(function (res) {
-          setIndexerData(res);
-        })
-        .catch(function (err: Error) {
-          setError(err?.message ?? 'Unknown Error');
-        });
     };
     subscriber.subscribeMessage(onRouterUpdateMessage, {
+      // todo: this doesn't exist anymore
       message: { action: 'NewSwap' },
     });
     return () => {
       subscriber.unsubscribeMessage(onRouterUpdateMessage);
     };
-  }, []);
+  }, [rpcPromise]);
 
   useEffect(() => {
     setResult({
@@ -637,11 +386,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         data: bankData,
         error: error,
         isValidating: !bankData && !error,
-      },
-      indexer: {
-        data: indexerData,
-        error: error,
-        isValidating: !indexerData && !error,
       },
       shares: {
         data: shareData,
@@ -654,26 +398,12 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         isValidating: !shareData && !error,
       },
       tokenPairs: {
-        data: undefined,
+        data: tokenPairsData,
         error: error,
-        isValidating: !shareData && !error,
+        isValidating: isTokenPairsValidating,
       },
     });
-  }, [bankData, indexerData, shareData, error]);
-
-  useEffect(() => {
-    setRequestedFlag((oldValue) => {
-      if (oldValue) return true;
-      getFullData()
-        .then(function (res) {
-          setIndexerData(res);
-        })
-        .catch(function (err: Error) {
-          setError(err?.message ?? 'Unknown Error');
-        });
-      return true;
-    });
-  }, []);
+  }, [bankData, shareData, tokenPairsData, error, isTokenPairsValidating]);
 
   return (
     <IndexerContext.Provider value={result}>{children}</IndexerContext.Provider>
@@ -721,26 +451,6 @@ export function useShares(tokens?: [tokenA: Token, tokenB: Token]) {
     return shares;
   }, [tokens, data]);
   return { data: shares, error, isValidating };
-}
-
-export function useIndexerData() {
-  return useContext(IndexerContext).indexer;
-}
-
-export function useIndexerPairData(
-  tokenA?: TokenAddress,
-  tokenB?: TokenAddress
-) {
-  const { data: pairs, isValidating, error } = useIndexerData();
-  const pair =
-    pairs && tokenA && tokenB
-      ? pairs[getPairID(tokenA, tokenB)] || pairs[getPairID(tokenB, tokenA)]
-      : undefined;
-  return {
-    data: pair,
-    error,
-    isValidating,
-  };
 }
 
 export function getBalance(

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Token } from '../TokenPicker/hooks';
+import { Token } from '../../lib/web3/utils/tokens';
 
 import './TokenPairLogos.scss';
 

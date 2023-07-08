@@ -1,6 +1,15 @@
 @use './font/size.scss' as font-size;
 @use './font/weight.scss' as font-weight;
 
+// force "light" color scheme:
+//   while we only have one color scheme I'm going to add this flag
+//   so that I can use auto dark mode in Chrome and save my eyes from
+//   blinding lights while I work overnight and also preserve our site colors
+//   https://developer.chrome.com/blog/auto-dark-theme/
+:root {
+  color-scheme: only light;
+}
+
 h1,
 h2,
 h3,
@@ -13,6 +22,7 @@ h6 {
 
 .h1 {
   font-size: font-size.$h1;
+  font-weight: font-weight.$heavy;
 }
 
 .h2 {

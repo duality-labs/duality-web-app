@@ -10,6 +10,7 @@ import React, {
   ComponentType,
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
+import { useLocation } from 'react-router-dom';
 
 import {
   formatAmount,
@@ -17,13 +18,16 @@ import {
   formatMaximumSignificantDecimals,
   roundToSignificantDigits,
 } from '../../lib/utils/number';
-import { feeTypes } from '../../lib/web3/utils/fees';
-import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { Token } from '../../lib/web3/utils/tokens';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
+import {
+  TickInfo,
+  priceToTickIndex,
+  tickIndexToPrice,
+} from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
-
-import { Token } from '../TokenPicker/hooks';
-import { TickInfo, useIndexerPairData } from '../../lib/web3/indexerProvider';
 
 import './LiquiditySelector.scss';
 
@@ -36,7 +40,7 @@ const [
 export interface LiquiditySelectorProps {
   tokenA: Token;
   tokenB: Token;
-  feeTier: number | undefined;
+  fee: number | undefined;
   userTickSelected: number | undefined;
   setUserTickSelected: (index: number) => void;
   rangeMin: string;
@@ -63,8 +67,7 @@ export interface Tick {
   reserveB: BigNumber;
   tickIndex: number;
   price: BigNumber;
-  fee: BigNumber;
-  feeIndex: number;
+  fee: number;
   tokenA: Token;
   tokenB: Token;
 }
@@ -74,8 +77,7 @@ interface TokenTick {
   reserve: BigNumber;
   tickIndex: number;
   price: BigNumber;
-  fee: BigNumber;
-  feeIndex: number;
+  fee: number;
   token: Token;
 }
 type TokenTickGroup = Array<TokenTick>;
@@ -84,14 +86,14 @@ type TickGroupBucketsEmpty = Array<
   [lowerIndexBound: number, upperIndexBound: number]
 >;
 type TickGroupBucketsFilled = Array<
-  [lowerIndexBound: number, upperIndexBound: number, reserve: BigNumber]
+  [lowerIndexBound: number, upperIndexBound: number, reserveValue: BigNumber]
 >;
 type TickGroupMergedBucketsFilled = Array<
   [
     lowerIndexBound: number,
     upperIndexBound: number,
-    reserveA: BigNumber,
-    reserveB: BigNumber
+    reserveValueA: BigNumber,
+    reserveValueB: BigNumber
   ]
 >;
 
@@ -118,7 +120,7 @@ const poleWidth = 8;
 export default function LiquiditySelector({
   tokenA,
   tokenB,
-  feeTier,
+  fee,
   userTickSelected = -1,
   setUserTickSelected,
   rangeMin,
@@ -204,14 +206,11 @@ export default function LiquiditySelector({
       [setRangeMax]
     );
 
+  const [token0Address, token1Address] =
+    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
   const {
-    data: {
-      token0Ticks = [],
-      token1Ticks = [],
-      token0: token0Address,
-      token1: token1Address,
-    } = {},
-  } = useIndexerPairData(tokenA?.address, tokenB?.address);
+    data: [token0Ticks = [], token1Ticks = []],
+  } = useTokenPairTickLiquidity([token0Address, token1Address]);
 
   const [forward, reverse] = [
     token0Address === tokenA?.address && token1Address === tokenB?.address,
@@ -230,15 +229,13 @@ export default function LiquiditySelector({
           tickIndex,
           price,
           fee,
-          feeIndex,
         }: TickInfo): TokenTick => {
           return {
             token: isToken1 ? token1 : token0,
             reserve: isToken1 ? reserve1 : reserve0,
             tickIndex: (forward ? tickIndex : tickIndex.negated()).toNumber(),
             price: forward ? price : new BigNumber(1).dividedBy(price),
-            fee,
-            feeIndex: feeIndex.toNumber(),
+            fee: fee.toNumber(),
           };
         };
       }
@@ -250,16 +247,6 @@ export default function LiquiditySelector({
           ]
         : [[], []];
     }, [token0Ticks, token1Ticks, forward, reverse]);
-
-  // collect tick information in a more useable form
-  const feeTicks: [TokenTickGroup, TokenTickGroup] = useMemo(() => {
-    const feeTierFilter = (tick: TokenTick) =>
-      feeTypes[tick.feeIndex]?.fee === feeTier;
-    return !feeTier
-      ? [tokenATicks, tokenBTicks]
-      : // filter to only fee tier ticks
-        [tokenATicks.filter(feeTierFilter), tokenBTicks.filter(feeTierFilter)];
-  }, [tokenATicks, tokenBTicks, feeTier]);
 
   // todo: base graph start and end on existing ticks and current price
   //       (if no existing ticks exist only cuurent price can indicate start and end)
@@ -550,20 +537,38 @@ export default function LiquiditySelector({
   }, [getEmptyBuckets, viewableMinIndex, viewableMaxIndex]);
 
   // calculate histogram values
-  const feeTickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
+  const tickBuckets = useMemo<TickGroupMergedBucketsFilled>(() => {
+    if (edgePriceIndex === undefined) {
+      return [];
+    }
+    const edgePrice = tickIndexToPrice(new BigNumber(edgePriceIndex));
     return mergeBuckets(
-      fillBuckets(emptyBuckets[0], feeTicks[0], 'upper'),
-      fillBuckets(emptyBuckets[1], feeTicks[1], 'lower')
+      fillBuckets(
+        emptyBuckets.flat(),
+        tokenATicks,
+        'upper',
+        edgePriceIndex,
+        getReserveAValue
+      ),
+      fillBuckets(
+        emptyBuckets.flat(),
+        tokenBTicks,
+        'lower',
+        edgePriceIndex,
+        getReserveBValue
+      )
     );
-  }, [emptyBuckets, feeTicks]);
+    function getReserveAValue(reserve: BigNumber): BigNumber {
+      return reserve.multipliedBy(edgePrice);
+    }
+    function getReserveBValue(reserve: BigNumber): BigNumber {
+      return reserve;
+    }
+  }, [emptyBuckets, tokenATicks, tokenBTicks, edgePriceIndex]);
 
   // calculate highest value to plot on the chart
   const yMaxValue = useMemo(() => {
-    const allFeesTickBuckets = [
-      fillBuckets(emptyBuckets[0], tokenATicks, 'upper'),
-      fillBuckets(emptyBuckets[1], tokenBTicks, 'lower'),
-    ];
-    return mergeBuckets(allFeesTickBuckets[0], allFeesTickBuckets[1]).reduce(
+    return tickBuckets.reduce(
       (
         result,
         [lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue]
@@ -572,7 +577,7 @@ export default function LiquiditySelector({
       },
       0
     );
-  }, [emptyBuckets, tokenATicks, tokenBTicks]);
+  }, [tickBuckets]);
 
   // get plotting functions
   const [plotWidth, plotHeight] = useMemo(() => {
@@ -698,11 +703,14 @@ export default function LiquiditySelector({
           plotY={percentYBigNumber}
         />
       )}
-      <TickBucketsGroup
-        tickBuckets={feeTickBuckets}
-        plotX={plotX}
-        plotY={plotYBigNumber}
-      />
+      {edgePriceIndex !== undefined && (
+        <TickBucketsGroup
+          tickBuckets={tickBuckets}
+          edgePriceIndex={edgePriceIndex}
+          plotX={plotX}
+          plotY={plotYBigNumber}
+        />
+      )}
       <Axis
         className="x-axis"
         tickMarkIndex={edgePriceIndex || 0}
@@ -715,6 +723,7 @@ export default function LiquiditySelector({
       {advanced ? (
         <TicksGroup
           className="new-ticks"
+          currentPriceIndex={edgePriceIndex}
           tokenAWarningPriceIndex={tokenAWarningPriceIndex}
           tokenBWarningPriceIndex={tokenBWarningPriceIndex}
           userTicks={userTicks}
@@ -839,17 +848,29 @@ export default function LiquiditySelector({
 function fillBuckets(
   emptyBuckets: TickGroupBucketsEmpty,
   originalTicks: TokenTick[],
-  matchSide: 'upper' | 'lower'
-) {
-  const sideLower = matchSide === 'lower';
+  matchSide: 'upper' | 'lower',
+  edgePriceIndex: number,
+  getReserveValue: (reserve: BigNumber) => BigNumber
+): TickGroupBucketsFilled {
   const ticks = originalTicks.filter(({ reserve }) => !reserve.isZero());
   return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
     (result, [lowerIndexBound, upperIndexBound]) => {
       const reserve = ticks.reduceRight(
         (result, { tickIndex, reserve }, index, ticks) => {
+          // match buckets differently above and below the current pair price
+          // the bucket matching starts from the current price and extends
+          // outward in both directions so left buckets match for < bucket edge
+          // and right buckets match for > bucket edge
+          const sideLower =
+            tickIndex === edgePriceIndex
+              ? // for ticks exactly on current price side with the direction of given token
+                matchSide === 'lower'
+              : tickIndex > edgePriceIndex;
           const matchToken = sideLower
-            ? tickIndex >= lowerIndexBound && tickIndex < upperIndexBound
-            : tickIndex > lowerIndexBound && tickIndex <= upperIndexBound;
+            ? // match from lower bound
+              tickIndex >= lowerIndexBound && tickIndex < upperIndexBound
+            : // match from upper bound
+              tickIndex > lowerIndexBound && tickIndex <= upperIndexBound;
           // remove tick so it doesn't need to be iterated on again in next bucket
           if (matchToken) {
             ticks.splice(index, 1);
@@ -862,7 +883,11 @@ function fillBuckets(
       );
       // place tokenA buckets to the left of the current price
       if (reserve.isGreaterThan(0)) {
-        result.push([lowerIndexBound, upperIndexBound, reserve]);
+        result.push([
+          lowerIndexBound,
+          upperIndexBound,
+          getReserveValue(reserve),
+        ]);
       }
       return result;
     },
@@ -870,46 +895,46 @@ function fillBuckets(
   );
 }
 
+// merge buckets takes buckets of form TickGroupBucketsFilled
+//  - Array<[lowerIndexBound: number, upperIndexBound: number, reserve: BigNumber]>
+// and merges them into one list of form TickGroupMergedBucketsFilled
+//  - Array<[lowerIndexBound: number, upperIndexBound: number, reserveA: BigNumber, reserveB: BigNumber]>
 function mergeBuckets(
   tokenABuckets: TickGroupBucketsFilled,
   tokenBBuckets: TickGroupBucketsFilled
-) {
+): TickGroupMergedBucketsFilled {
   const mergedTokenABuckets: TickGroupMergedBucketsFilled = tokenABuckets.map(
-    ([lowerBoundIndex, upperBoundIndex, reserve]) => {
-      return [lowerBoundIndex, upperBoundIndex, reserve, new BigNumber(0)];
+    ([lowerBoundIndex, upperBoundIndex, valueA]) => {
+      return [lowerBoundIndex, upperBoundIndex, valueA, new BigNumber(0)];
     }
   );
   const mergedTokenBBuckets: TickGroupMergedBucketsFilled = tokenBBuckets.map(
-    ([lowerBoundIndex, upperBoundIndex, reserve]) => {
-      return [lowerBoundIndex, upperBoundIndex, new BigNumber(0), reserve];
+    ([lowerBoundIndex, upperBoundIndex, valueB]) => {
+      return [lowerBoundIndex, upperBoundIndex, new BigNumber(0), valueB];
     }
   );
 
-  const middleABucket = mergedTokenABuckets.shift();
-  const middleBBucket = mergedTokenBBuckets.shift();
-
-  // find if there is a bucket of bounds that does contain reserves of A and B
-  if (
-    middleABucket &&
-    middleBBucket &&
-    middleABucket[0] === middleBBucket[0] &&
-    middleABucket[1] === middleBBucket[1]
-  ) {
-    // merge the one bucket that has reserves of both tokenA and tokenB
-    const middleBuckets: TickGroupMergedBucketsFilled = [
-      [middleABucket[0], middleABucket[1], middleABucket[2], middleBBucket[3]],
-    ];
-    return middleBuckets.concat(mergedTokenABuckets, mergedTokenBBuckets);
-  }
-  // else just return all parts as they are
-  else {
-    return ([] as TickGroupMergedBucketsFilled).concat(
-      middleABucket ? [middleABucket] : [],
-      mergedTokenABuckets,
-      middleBBucket ? [middleBBucket] : [],
-      mergedTokenBBuckets
-    );
-  }
+  // merge all buckets by their bounds
+  const mergedTokenBucketsByKey = ([] as TickGroupMergedBucketsFilled)
+    .concat(mergedTokenABuckets, mergedTokenBBuckets)
+    .reduce<{
+      [bucketKey: string]: TickGroupMergedBucketsFilled[number];
+    }>((acc, [lowerBoundIndex, upperBoundIndex, valueA, valueB]) => {
+      const key = [lowerBoundIndex, upperBoundIndex].join('-');
+      // merge bucket
+      if (acc[key]) {
+        // add reserve values together
+        acc[key][2] = acc[key][2].plus(valueA);
+        acc[key][3] = acc[key][3].plus(valueB);
+      }
+      // add bucket
+      else {
+        acc[key] = [lowerBoundIndex, upperBoundIndex, valueA, valueB];
+      }
+      return acc;
+    }, {});
+  // return the merged buckets as a single array
+  return Object.values(mergedTokenBucketsByKey);
 }
 
 function getRangePositions(
@@ -1422,6 +1447,7 @@ function TicksArea({
 }
 
 function TicksGroup({
+  currentPriceIndex,
   tokenAWarningPriceIndex,
   tokenBWarningPriceIndex,
   userTicks,
@@ -1437,6 +1463,7 @@ function TicksGroup({
   canMoveX = false,
   ...rest
 }: {
+  currentPriceIndex: number | undefined;
   tokenAWarningPriceIndex: number | undefined;
   tokenBWarningPriceIndex: number | undefined;
   userTicks: Array<Tick | undefined>;
@@ -1453,26 +1480,29 @@ function TicksGroup({
   canMoveX?: boolean;
   className?: string;
 }) {
+  const currentPrice = tickIndexToPrice(new BigNumber(currentPriceIndex || 1));
   // collect reserve height to calculate stats to use
-  const tickNumbers = userTicks.flatMap((tick) =>
-    [tick?.reserveA.toNumber(), tick?.reserveB.toNumber()].filter(
-      (reserve): reserve is number => Boolean(reserve)
-    )
+  const tickValues = userTicks.flatMap((tick) =>
+    [
+      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
+      tick?.reserveB.toNumber(),
+    ].filter((reserve): reserve is number => Boolean(reserve))
   );
-  const backgroundTickNumbers = backgroundTicks.flatMap((tick) =>
-    [tick?.reserveA.toNumber(), tick?.reserveB.toNumber()].filter(
-      (reserve): reserve is number => Boolean(reserve)
-    )
+  const backgroundTickValues = backgroundTicks.flatMap((tick) =>
+    [
+      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
+      tick?.reserveB.toNumber(),
+    ].filter((reserve): reserve is number => Boolean(reserve))
   );
 
   // find max cumulative value of either the current ticks or background ticks
   const cumulativeTokenValues: number = Math.max(
-    tickNumbers.reduce((acc, v) => acc + v, 0),
-    backgroundTickNumbers.reduce((acc, v) => acc + v, 0)
+    tickValues.reduce((acc, v) => acc + v, 0),
+    backgroundTickValues.reduce((acc, v) => acc + v, 0)
   );
 
-  const maxValue = Math.max(...tickNumbers, ...backgroundTickNumbers);
-  const minMaxHeight = getMinYHeight(backgroundTickNumbers.length);
+  const maxValue = Math.max(...tickValues, ...backgroundTickValues);
+  const minMaxHeight = getMinYHeight(backgroundTickValues.length);
 
   // add a scaling factor if the maximum tick is very short (scale up to minMaxHeight)
   const scalingFactor =
@@ -1628,6 +1658,7 @@ function TicksGroup({
         (reserveA.isGreaterThan(0)
           ? cumulativeTokenValues &&
             reserveA
+              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
@@ -1638,6 +1669,7 @@ function TicksGroup({
         (background.reserveA.isGreaterThan(0)
           ? cumulativeTokenValues &&
             background.reserveA
+              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
@@ -1757,55 +1789,110 @@ function TicksGroup({
 
 function TickBucketsGroup({
   tickBuckets,
+  edgePriceIndex,
   plotX,
   plotY,
   className,
-  ...rest
 }: {
   tickBuckets: TickGroupMergedBucketsFilled;
+  edgePriceIndex: number;
   plotX: (x: number) => number;
   plotY: (y: BigNumber) => number;
   className?: string;
 }) {
+  const queryParams = new URLSearchParams(useLocation().search);
+  const stack = queryParams.get('buckets') || 'merge';
+  // buckets have integer bounds but the edgePriceIndex comes as a float for
+  // maximum accuracy, make sure we can compare them easily here
+  const roundedCurrentPriceIndex = Math.round(edgePriceIndex);
+
   return (
-    <g className={['tick-buckets', className].filter(Boolean).join(' ')}>
-      {tickBuckets.flatMap(
-        ([lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue], index) =>
-          [
-            tokenAValue?.isGreaterThan(0) && (
-              <rect
-                key={`${index}-0`}
-                className="tick-bucket token-a"
-                {...rest}
-                x={plotX(lowerBoundIndex).toFixed(3)}
-                width={(
-                  plotX(upperBoundIndex) - plotX(lowerBoundIndex)
-                ).toFixed(3)}
-                y={plotY(tokenAValue).toFixed(3)}
-                height={(plotY(new BigNumber(0)) - plotY(tokenAValue)).toFixed(
-                  3
-                )}
-              />
-            ),
-            tokenBValue?.isGreaterThan(0) && (
-              <rect
-                key={`${index}-1`}
-                className="tick-bucket token-b"
-                {...rest}
-                x={plotX(lowerBoundIndex).toFixed(3)}
-                width={(
-                  plotX(upperBoundIndex) - plotX(lowerBoundIndex)
-                ).toFixed(3)}
-                y={plotY(tokenAValue.plus(tokenBValue)).toFixed(3)}
-                height={(plotY(new BigNumber(0)) - plotY(tokenBValue)).toFixed(
-                  3
-                )}
-              />
-            ),
-          ].filter(Boolean)
-      )}
+    <g
+      className={[
+        'tick-buckets',
+        `tick-buckets--${stack === 'merge' ? 'merged' : 'stacked'}`,
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {tickBuckets
+        .sort((a, b) => a[0] - b[0])
+        .flatMap((bucket, index) => {
+          const [lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue] =
+            bucket;
+          const leftSide = lowerBoundIndex < roundedCurrentPriceIndex;
+          // offset the reserve value Y position if stacking buckets
+          const [tokenAOffset, tokenBOffset]: (BigNumber | number)[] =
+            stack === 'stack-above'
+              ? // place "behind enemy lines" tokens above main liquiidty tokens
+                leftSide
+                ? [0, tokenAValue]
+                : [tokenBValue, 0]
+              : stack === 'stack-below'
+              ? !leftSide
+                ? [0, tokenAValue]
+                : [tokenBValue, 0]
+              : [0, 0];
+          const buckets = [
+            <Bucket
+              key={`${index}-a`}
+              className={['token-a', !leftSide && 'behind-enemy-lines']
+                .filter(Boolean)
+                .join(' ')}
+              lowerBoundIndex={lowerBoundIndex}
+              upperBoundIndex={upperBoundIndex}
+              reserveValue={tokenAValue}
+              offsetValue={tokenAOffset}
+              plotX={plotX}
+              plotY={plotY}
+            />,
+            <Bucket
+              key={`${index}-b`}
+              className={['token-b', leftSide && 'behind-enemy-lines']
+                .filter(Boolean)
+                .join(' ')}
+              lowerBoundIndex={lowerBoundIndex}
+              upperBoundIndex={upperBoundIndex}
+              reserveValue={tokenBValue}
+              offsetValue={tokenBOffset}
+              plotX={plotX}
+              plotY={plotY}
+            />,
+          ];
+          // pick the rendering order
+          return leftSide ? buckets : buckets.reverse();
+        })}
     </g>
   );
+}
+
+function Bucket({
+  className,
+  lowerBoundIndex,
+  upperBoundIndex,
+  reserveValue,
+  offsetValue,
+  plotX,
+  plotY,
+}: {
+  lowerBoundIndex: number;
+  upperBoundIndex: number;
+  reserveValue: BigNumber;
+  offsetValue: BigNumber | number;
+  className: string;
+  plotX: (x: number) => number;
+  plotY: (y: BigNumber) => number;
+}) {
+  return reserveValue.isGreaterThan(0) ? (
+    <rect
+      className={`tick-bucket ${className}`}
+      x={plotX(lowerBoundIndex).toFixed(3)}
+      width={(plotX(upperBoundIndex) - plotX(lowerBoundIndex)).toFixed(3)}
+      y={plotY(reserveValue.plus(offsetValue)).toFixed(3)}
+      height={(plotY(new BigNumber(0)) - plotY(reserveValue)).toFixed(3)}
+    />
+  ) : null;
 }
 
 function Axis({

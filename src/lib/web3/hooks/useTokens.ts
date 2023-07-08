@@ -1,77 +1,202 @@
-import { SWRConfiguration, SWRResponse } from 'swr';
-import useSWRInfinite from 'swr/infinite';
+import { useMemo } from 'react';
+import { assets, chains } from 'chain-registry';
+import { Chain } from '@chain-registry/types';
+import { Token } from '../utils/tokens';
 
-import { queryClient } from '../generated/ts-client/nicholasdotsol.duality.dex/module';
-import {
-  DexTokens,
-  Api,
-} from '../generated/ts-client/nicholasdotsol.duality.dex/rest';
+import tknLogo from '../../../assets/tokens/TKN.svg';
+import stkLogo from '../../../assets/tokens/STK.svg';
 
-import {
-  defaultFetchParams,
-  defaultQueryClientConfig,
-  getNextPaginationKey,
-} from './utils';
+const {
+  REACT_APP__CHAIN_NAME = '[chain_name]',
+  REACT_APP__CHAIN_ID = '[chain_id]',
+  REACT_APP__IS_MAINNET = 'mainnet',
+} = process.env;
 
-type QueryTokensAll = Awaited<ReturnType<Api<unknown>['queryTokensAll']>>;
-type QueryTokensAllList = QueryTokensAll['data']['Tokens'];
-type QueryTokensAllState = {
-  data: QueryTokensAllList;
-  isValidating: SWRResponse['isValidating'];
-  error: SWRResponse['error'];
+interface AddressableToken extends Token {
+  address: string; // only accept routeable tokens in lists
+}
+
+type TokenList = Array<Token>;
+
+const dualityChain = {
+  chain_name: REACT_APP__CHAIN_NAME,
+  status: 'upcoming',
+  network_type: 'testnet',
+  pretty_name: 'Duality Chain',
+  chain_id: REACT_APP__CHAIN_ID,
+  bech32_prefix: 'cosmos',
+  slip44: 330,
 };
 
-export default function useTokens({
-  swr: swrConfig,
-  query: queryConfig,
-  queryClient: queryClientConfig,
-}: {
-  swr?: SWRConfiguration;
-  query?: Parameters<Api<unknown>['queryTokensAll']>[0];
-  queryClient?: Parameters<typeof queryClient>[0];
-} = {}): QueryTokensAllState {
-  const {
-    data: pages,
-    isValidating,
-    error,
-    size,
-    setSize,
-  } = useSWRInfinite<QueryTokensAll>(
-    getNextPaginationKey,
-    async (paginationKey: string) => {
-      const client = queryClient({
-        ...defaultQueryClientConfig,
-        ...queryClientConfig,
-      });
-      const response: QueryTokensAll = await client.queryTokensAll({
-        ...defaultFetchParams,
-        ...queryConfig,
-        'pagination.key': paginationKey,
-      });
-      if (response.status === 200) {
-        return response;
-      } else {
-        // remove API error details from public view
-        throw new Error(
-          `API error code: ${response.status} ${response.statusText}`
-        );
-      }
-      // default to persisting the current size so the list is only resized by 'setSize'
+const dualityMainToken: Token = {
+  description: 'SDK default token',
+  address: 'token',
+  denom_units: [
+    {
+      denom: 'token',
+      exponent: 0,
+      aliases: [],
     },
-    { persistSize: true, ...swrConfig }
+    {
+      denom: 'tkn',
+      exponent: 18,
+      aliases: ['duality', 'TOKEN'],
+    },
+  ],
+  base: 'sdk.coin:token',
+  name: 'Duality',
+  display: 'tkn',
+  symbol: 'TKN',
+  logo_URIs: {
+    svg: tknLogo,
+  },
+  chain: dualityChain,
+};
+
+const dualityStakeToken: Token = {
+  description: 'SDK default token',
+  address: 'stake',
+  denom_units: [
+    {
+      denom: 'stake',
+      exponent: 0,
+      aliases: [],
+    },
+    {
+      denom: 'stk',
+      exponent: 18,
+      aliases: ['duality-stake', 'STAKE'],
+    },
+  ],
+  base: 'sdk.coin:stake',
+  name: 'Duality Stake',
+  display: 'stk',
+  symbol: 'STK',
+  logo_URIs: {
+    svg: stkLogo,
+  },
+  chain: dualityChain,
+};
+
+const testnetTokens = REACT_APP__IS_MAINNET === 'testnet' && [
+  dualityMainToken,
+  dualityStakeToken,
+  // add a copy of some tokens onto the Duality chain for development
+  ...assets.flatMap(({ chain_name, assets }) => {
+    const dualityTestAssetsAddressMap: { [key: string]: string } = {
+      'cosmoshub:ATOM': 'tokenA',
+      'ethereum:USDC': 'tokenB',
+      'ethereum:ETH': 'tokenC',
+      'osmosis:OSMO': 'tokenD',
+      'juno:JUNO': 'tokenE',
+      'stride:STRD': 'tokenF',
+      'stargaze:STARS': 'tokenG',
+      'crescent:CRE': 'tokenH',
+      'chihuahua:HUAHUA': 'tokenI',
+    };
+
+    return assets.flatMap((asset) => {
+      const address =
+        dualityTestAssetsAddressMap[`${chain_name}:${asset.symbol}`];
+      if (address) {
+        const base = asset.base;
+        return [
+          {
+            chain: dualityChain,
+            ...asset,
+            // replace base address with dev token name
+            address,
+            base: address,
+            denom_units: asset.denom_units.map((unit) => {
+              // replace base unit with dev token name
+              if (unit.denom === base) {
+                return {
+                  ...unit,
+                  denom: address,
+                };
+              }
+              // make test tokens look more expensive in testing
+              else {
+                return {
+                  ...unit,
+                  exponent: 21,
+                };
+              }
+            }),
+          },
+        ];
+      }
+      return [];
+    });
+  }),
+];
+
+// transform AssetList into TokenList
+// for easier filtering/ordering by token attributes
+function getTokens(condition: (chain: Chain) => boolean) {
+  // go through each chain
+  return (
+    assets
+      .reduce<TokenList>((result, { chain_name, assets }) => {
+        // add each asset with the parent chain details
+        const chain = chains.find((chain) => chain.chain_name === chain_name);
+        // only show assets that have a known address
+        const knownAssets = assets.filter(
+          (asset): asset is Token => !!asset.address
+        );
+        return chain && condition(chain)
+          ? result.concat(knownAssets.map((asset) => ({ ...asset, chain })))
+          : result;
+      }, [])
+      // add testnet Duality chain tokens
+      .concat(testnetTokens || [])
   );
-  // set number of pages to latest total
-  const pageItemCount = Number(pages?.[0]?.data.Tokens?.length);
-  const totalItemCount = Number(pages?.[0]?.data.pagination?.total);
-  if (pageItemCount > 0 && totalItemCount > pageItemCount) {
-    const pageCount = Math.ceil(totalItemCount / pageItemCount);
-    if (size !== pageCount) {
-      setSize(pageCount);
-    }
+}
+
+export const addressableTokenMap = getTokens(Boolean).reduce<{
+  [tickAddress: string]: AddressableToken;
+}>((result, asset) => {
+  if (asset.address) {
+    result[asset.address] = asset as AddressableToken;
   }
-  // place pages of data into the same list
-  const tokens = pages?.reduce<DexTokens[]>((acc, page) => {
-    return acc.concat(page.data.Tokens || []);
-  }, []);
-  return { data: tokens, isValidating, error };
+  return result;
+}, {});
+
+const tokenListCache: {
+  [key: string]: TokenList;
+} = {};
+
+const allTokens = () => true;
+export default function useTokens(sortFunction = defaultSort) {
+  tokenListCache['allTokens'] =
+    tokenListCache['allTokens'] || getTokens(allTokens);
+  return useMemo(
+    () => tokenListCache['allTokens'].slice().sort(sortFunction),
+    [sortFunction]
+  );
+}
+
+const mainnetTokens = (chain: Chain) => chain?.network_type === 'mainnet';
+export function useMainnetTokens(sortFunction = defaultSort) {
+  tokenListCache['mainnetTokens'] =
+    tokenListCache['mainnetTokens'] || getTokens(mainnetTokens);
+  return useMemo(
+    () => tokenListCache['mainnetTokens'].slice().sort(sortFunction),
+    [sortFunction]
+  );
+}
+
+const dualityTokensFilter = (chain: Chain) => chain?.chain_id === 'duality';
+export function useDualityTokens(sortFunction = defaultSort) {
+  tokenListCache['dualityTokens'] =
+    tokenListCache['dualityTokens'] || getTokens(dualityTokensFilter);
+  return useMemo(
+    () => tokenListCache['dualityTokens'].slice().sort(sortFunction).reverse(),
+    [sortFunction]
+  );
+}
+
+function defaultSort(a: Token, b: Token) {
+  // compare by symbol name
+  return a.symbol.localeCompare(b.symbol);
 }

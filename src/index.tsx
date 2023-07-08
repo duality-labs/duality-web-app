@@ -9,6 +9,10 @@ import './index.scss';
 import App from './pages/App';
 import reportWebVitals from './reportWebVitals';
 
+// add Buffer.from support for '@duality-labs/dualityjs'
+import { Buffer } from 'buffer';
+global.Buffer = Buffer;
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
