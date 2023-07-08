@@ -1,15 +1,21 @@
-import { useMemo } from 'react';
+import { Ref, forwardRef, useMemo } from 'react';
 import { days, hours, minutes, weeks } from '../lib/utils/time';
 import PopOver from './PopOver/PopOver';
 
-export function RelativeTime({
-  timestamp,
-  options: { localeMatcher, numeric = 'auto', style = 'long' } = {},
-  ...timeElementOptions
-}: JSX.IntrinsicElements['time'] & {
+type RelativeTimeProps = JSX.IntrinsicElements['time'] & {
   timestamp?: string | number | Date;
   options?: Partial<Intl.RelativeTimeFormatOptions>;
-}) {
+  ref?: Ref<HTMLTimeElement>;
+};
+
+export const RelativeTime = forwardRef(function RelativeTimeComponent(
+  {
+    timestamp,
+    options: { localeMatcher, numeric = 'auto', style = 'long' } = {},
+    ...timeElementOptions
+  }: RelativeTimeProps,
+  ref: Ref<HTMLTimeElement>
+) {
   const relativeTimeFormatter = useMemo(() => {
     return new Intl.RelativeTimeFormat('en', {
       localeMatcher,
@@ -39,6 +45,21 @@ export function RelativeTime({
   }, [timestamp]);
 
   return timestamp !== undefined ? (
+    <time
+      ref={ref}
+      dateTime={new Date(timestamp).toISOString()}
+      {...timeElementOptions}
+    >
+      {relativeTimeFormatter.format(Math.round(displayValue), displayUnits)}
+    </time>
+  ) : null;
+});
+
+export function RelativeAndAbsoluteTime({
+  timestamp,
+  ...relativeTimeProps
+}: RelativeTimeProps) {
+  return timestamp !== undefined ? (
     <PopOver
       floating={
         <div className="popover page-card py-2 px-3">
@@ -51,12 +72,7 @@ export function RelativeTime({
         </div>
       }
     >
-      <time
-        dateTime={new Date(timestamp).toISOString()}
-        {...timeElementOptions}
-      >
-        {relativeTimeFormatter.format(Math.round(displayValue), displayUnits)}
-      </time>
+      <RelativeTime timestamp={timestamp} {...relativeTimeProps} />
     </PopOver>
   ) : null;
 }
