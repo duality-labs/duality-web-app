@@ -46,12 +46,8 @@ function MyPositionTableCard({
           <tr className={[!data && 'hide'].filter(Boolean).join(' ')}>
             <th style={{ width: '7.5%' }}>Tick</th>
             <th style={{ width: '20%' }}>Price</th>
-            <th style={{ width: '20%' }} colSpan={2}>
-              {tokenA?.display.toUpperCase()} Amount
-            </th>
-            <th style={{ width: '20%' }} colSpan={2}>
-              {tokenB?.display.toUpperCase()} Amount
-            </th>
+            <th style={{ width: '20%' }}>Value</th>
+            <th style={{ width: '20%' }}>Token Amount</th>
             {actionColumn !== undefined && (
               <th style={{ width: '12.5%' }}>{actionColumn}</th>
             )}
@@ -273,6 +269,19 @@ export function MyEditedPositionTableCard({
               ? new BigNumber(deposit.centerTickIndex.toNumber())
               : new BigNumber(deposit.centerTickIndex.toNumber()).negated();
 
+            const bigReserveA = getAmountInDenom(
+              tokenA,
+              reserveA,
+              tokenA.address,
+              tokenA.display
+            );
+            const bigReserveB = getAmountInDenom(
+              tokenB,
+              reserveB,
+              tokenB.address,
+              tokenB.display
+            );
+
             const price = tickIndexToPrice(tickIndex.negated());
             // show only those ticks that are in the currently visible range
             return viewableMinIndex !== undefined &&
@@ -282,13 +291,35 @@ export function MyEditedPositionTableCard({
               <tr key={index} className="pt-2">
                 <td>{index + 1}</td>
                 <td>{new BigNumber(1).div(price).toFixed(5)}</td>
-                <td>{formatReserveAmount(tokenA, reserveA)}</td>
                 <td>
-                  {formatValuePercentage(valueTotal, tokenA, reserveA, priceA)}
+                  {reserveA.isGreaterThan(0) && (
+                    <div>
+                      {priceA
+                        ? formatCurrency(priceA * Number(bigReserveA))
+                        : '-'}
+                    </div>
+                  )}
+                  {reserveB.isGreaterThan(0) && (
+                    <div>
+                      {priceB
+                        ? formatCurrency(priceB * Number(bigReserveB))
+                        : '-'}
+                    </div>
+                  )}
                 </td>
-                <td>{formatReserveAmount(tokenB, reserveB)}</td>
                 <td>
-                  {formatValuePercentage(valueTotal, tokenB, reserveB, priceB)}
+                  {reserveA.isGreaterThan(0) && (
+                    <div>
+                      <span>{formatReserveAmount(tokenA, reserveA)}</span>{' '}
+                      <span className="text-muted">{tokenA.symbol}</span>
+                    </div>
+                  )}
+                  {reserveB.isGreaterThan(0) && (
+                    <div>
+                      <span>{formatReserveAmount(tokenB, reserveB)}</span>{' '}
+                      <span className="text-muted">{tokenB.symbol}</span>
+                    </div>
+                  )}
                 </td>
                 <td className="row gap-2 ml-4">
                   {reserveA?.plus(reserveB || 0).isGreaterThan(0) &&
