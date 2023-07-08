@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import BigNumber from 'bignumber.js';
 import Long from 'long';
-import { nicholasdotsol } from '@duality-labs/dualityjs';
+import { dualitylabs } from '@duality-labs/dualityjs';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import rpcClient from '../../lib/web3/rpcMsgClient';
@@ -16,9 +16,9 @@ import {
 } from '../../components/Notifications/common';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { readEvents } from '../../lib/web3/utils/txs';
-import { useIndexerData } from '../../lib/web3/indexerProvider';
 import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
-import { getPairID, hasMatchingPairOfOrder } from '../../lib/web3/utils/pairs';
+import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -26,7 +26,10 @@ interface SendDepositResponse {
   receivedTokenB: string;
 }
 
-export function useDeposit(): [
+export function useDeposit([tokenA, tokenB]: [
+  Token | undefined,
+  Token | undefined
+]): [
   {
     data?: SendDepositResponse;
     isValidating?: boolean;
@@ -40,7 +43,11 @@ export function useDeposit(): [
   ) => Promise<void>
 ] {
   // get previous ticks context
-  const { data: pairs } = useIndexerData();
+  const [token0, token1] =
+    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
+  const {
+    data: [token0Ticks, token1Ticks],
+  } = useTokenPairTickLiquidity([token0, token1]);
 
   const [data, setData] = useState<SendDepositResponse | undefined>(undefined);
   const [isValidating, setIsValidating] = useState(false);
@@ -79,8 +86,8 @@ export function useDeposit(): [
           );
         }
 
-        const forward = pairs?.[getPairID(tokenA.address, tokenB.address)];
-        const reverse = pairs?.[getPairID(tokenB.address, tokenA.address)];
+        const forward = token0 === tokenA.address && token1 === tokenB.address;
+        const reverse = token0 === tokenB.address && token1 === tokenA.address;
         const pairTicks = forward || reverse;
 
         // if (!pairs || !pairTicks) {
@@ -131,12 +138,6 @@ export function useDeposit(): [
             if (tickIndex0 === undefined || tickIndex1 === undefined) {
               return [];
             }
-
-            const [forward] = hasMatchingPairOfOrder(
-              pairs || {},
-              tick.tokenA.address || '',
-              tick.tokenB.address || ''
-            );
 
             const ticks: TickGroup = [];
 
@@ -208,11 +209,11 @@ export function useDeposit(): [
             tick.feeIndex
           );
           const existingTick =
-            pairTicks && tickIndex0 !== undefined && tickIndex1 !== undefined
-              ? !!pairTicks.token0Ticks.find((pairTick) => {
+            tickIndex0 !== undefined && tickIndex1 !== undefined
+              ? !!token0Ticks?.find((pairTick) => {
                   return pairTick.tickIndex.isEqualTo(tickIndex0);
                 }) &&
-                !!pairTicks.token1Ticks.find((pairTick) => {
+                !!token1Ticks?.find((pairTick) => {
                   return pairTick.tickIndex.isEqualTo(tickIndex1);
                 })
               : undefined;
@@ -232,7 +233,7 @@ export function useDeposit(): [
           const res = await client.signAndBroadcast(
             web3.address,
             [
-              nicholasdotsol.duality.dex.MessageComposer.withTypeUrl.deposit({
+              dualitylabs.duality.dex.MessageComposer.withTypeUrl.deposit({
                 creator: web3Address,
                 tokenA: tokenA.address,
                 tokenB: tokenB.address,
@@ -254,6 +255,8 @@ export function useDeposit(): [
                   ({ reserveB }) =>
                     getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
                 ),
+                // todo: allow user to specify autoswap behavior
+                Options: filteredUserTicks.map(() => ({ autoswap: true })),
               }),
             ],
             {
@@ -403,7 +406,7 @@ export function useDeposit(): [
         console.error(e);
       }
     },
-    [web3.address, web3.wallet, pairs]
+    [web3.address, web3.wallet, token0, token1, token0Ticks, token1Ticks]
   );
 
   return [{ data, isValidating, error }, sendDepositRequest];
