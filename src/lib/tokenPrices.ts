@@ -182,21 +182,45 @@ export function useSimplePrice(
   };
 }
 
+export function usePairPrice(
+  tokenA: Token | undefined,
+  tokenB: Token | undefined,
+  currencyID?: string
+) {
+  const tokenAResponse = useSimplePrice(tokenA, currencyID);
+  const tokenBResponse = useSimplePrice(tokenB, currencyID);
+  const { data: tokenAPrice } = tokenAResponse;
+  const { data: tokenBPrice } = tokenBResponse;
+  const price =
+    tokenAPrice !== undefined && tokenBPrice !== undefined
+      ? tokenAPrice / tokenBPrice
+      : undefined;
+  return {
+    data: price,
+    isValidating: tokenAResponse.isValidating || tokenBResponse.isValidating,
+    error: tokenAResponse.error || tokenBResponse.error,
+  };
+}
+
 // add dev logic for assuming dev tokens TKN and STK are worth ~USD1
 function useDevTokenPrices(
   tokenOrTokens: (Token | undefined) | (Token | undefined)[]
 ) {
   const tokens = Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
   // declare dev tokens for each environment
+  const devPrice = 1;
+  const devTokenPrices = Array.isArray(tokenOrTokens)
+    ? tokens.map(() => devPrice)
+    : devPrice;
   try {
     const devTokens = JSON.parse(
       REACT_APP__DEV_TOKEN_DENOMS || '[]'
     ) as string[];
     if (tokens.every((token) => token && devTokens.includes(token.base))) {
-      return Array.isArray(tokenOrTokens) ? tokens.map(() => 1) : 1;
+      return devTokenPrices;
     }
   } catch {
-    return Array.isArray(tokenOrTokens) ? tokens.map(() => 1) : 1;
+    return devTokenPrices;
   }
 }
 

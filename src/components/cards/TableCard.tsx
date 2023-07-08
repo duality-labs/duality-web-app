@@ -8,6 +8,9 @@ import './TableCard.scss';
 export default function TableCard<T extends string | number>({
   className,
   title,
+  searchDisabled = false,
+  scrolling = true,
+  headerActions,
   switchValues,
   switchValue,
   switchOnChange,
@@ -17,6 +20,9 @@ export default function TableCard<T extends string | number>({
 }: {
   className?: string;
   title: ReactNode;
+  searchDisabled?: boolean;
+  scrolling?: boolean;
+  headerActions?: ReactNode;
   switchValues?: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
   switchValue?: T;
   switchOnChange?: React.Dispatch<React.SetStateAction<T>>;
@@ -34,7 +40,7 @@ export default function TableCard<T extends string | number>({
       <div className="col flex">
         <div className="table-card__header row flex-centered gap-3">
           <div className="col flex">
-            <h2 className="table-card__hero-title">{title}</h2>
+            <div className="table-card__hero-title h4">{title}</div>
           </div>
           {switchOnChange && switchValues && switchValue && (
             <div className="col">
@@ -47,20 +53,28 @@ export default function TableCard<T extends string | number>({
               </div>
             </div>
           )}
+          {headerActions}
         </div>
         {setSearchValue && (
-          <div className="table-card__search row mt-lg">
+          <div className="table-card__search row mt-lg mb-4">
             <div className="col flex">
               <SearchInput
                 placeholder="Search token name or paste address"
                 value={searchValue}
+                disabled={searchDisabled}
                 onInput={setSearchValue}
               />
             </div>
           </div>
         )}
-        <div className="table-card__table_container page-card__footer relative row flex mt-lg">
-          <div className="table-card__table col flex absolute filled pb-4 page-card__padding-width">
+        <div className="table-card__table_container page-card__footer relative row flex mt-3">
+          <div
+            className={
+              scrolling
+                ? 'table-card__table col flex absolute filled pb-4 page-card__padding-width'
+                : 'table-card__table col flex pb-4 page-card__padding-width'
+            }
+          >
             {children}
           </div>
         </div>

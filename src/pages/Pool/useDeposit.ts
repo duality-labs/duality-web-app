@@ -14,12 +14,11 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token } from '../../lib/web3/utils/tokens';
 import {
   DexDepositEvent,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
-import { getVirtualTickIndexes } from '../MyLiquidity/useShareValueMap';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 
@@ -27,6 +26,20 @@ interface SendDepositResponse {
   gasUsed: string;
   receivedTokenA: string;
   receivedTokenB: string;
+}
+
+// this is a function that exists in the backend
+// but is not easily queried from here
+// perhaps the backend could return these values on each Share object
+function getVirtualTickIndexes(
+  tickIndex: number | string | undefined,
+  fee: number | string | undefined
+): [number, number] | [] {
+  const feePoints = Number(fee);
+  const middleIndex = Number(tickIndex);
+  return feePoints && !isNaN(feePoints) && !isNaN(middleIndex)
+    ? [middleIndex + feePoints, middleIndex - feePoints]
+    : [];
 }
 
 export function useDeposit([tokenA, tokenB]: [
@@ -250,13 +263,11 @@ export function useDeposit([tokenA, tokenB]: [
                 fees: filteredUserTicks.map((tick) =>
                   Long.fromNumber(tick.fee)
                 ),
-                amountsA: filteredUserTicks.map(
-                  ({ reserveA }) =>
-                    getAmountInDenom(tokenA, reserveA, tokenA.display) || '0'
+                amountsA: filteredUserTicks.map((tick) =>
+                  tick.reserveA.toFixed(0)
                 ),
-                amountsB: filteredUserTicks.map(
-                  ({ reserveB }) =>
-                    getAmountInDenom(tokenB, reserveB, tokenB.display) || '0'
+                amountsB: filteredUserTicks.map((tick) =>
+                  tick.reserveB.toFixed(0)
                 ),
                 // todo: allow user to specify autoswap behavior
                 Options: filteredUserTicks.map(() => ({

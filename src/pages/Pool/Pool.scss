@@ -48,6 +48,32 @@
     }
   }
 
+  .page-card--col {
+    min-width: 30rem;
+  }
+  .col--sidebar {
+    transition: width ease 0.5s;
+    overflow: hidden;
+    &.collapsed {
+      width: 0rem;
+      height: 0;
+    }
+    &.expanded {
+      width: 30rem;
+    }
+  }
+
+  .pool-page__header {
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .pool-page__breadcrumbs {
+    a {
+      color: var(--token-search-placeholder);
+    }
+  }
+
   .card-header {
     @include margins.margin('b', 2);
     @include margins.margin('t', 0);
@@ -95,28 +121,20 @@
   }
 
   .chart-card {
-    align-self: stretch;
-
-    > .row {
-      gap: 1.5rem;
-    }
-
-    .chart-header {
-      align-items: center;
-      gap: 1rem;
-
-      .tokens-badge {
-        border-radius: 0.5rem;
-      }
-    }
     .chart-highlight {
       font-weight: 500;
       color: hsla(165, 83%, 57%, 1);
     }
 
     .chart-area {
-      min-height: 12rem;
+      margin: 0 auto;
+      width: 100%;
+      max-width: 50rem;
+      min-height: 20rem;
       max-height: 20rem;
+      .svg-container svg {
+        height: 20rem;
+      }
     }
   }
 
@@ -236,12 +254,6 @@
       font-size: 1.5rem;
     }
 
-    .range-step-input {
-      border: 0px none transparent;
-      border-radius: 0;
-      padding: 0;
-    }
-
     .autobalance-card {
       .autobalance-allocation {
         background-color: transparent;
@@ -257,7 +269,7 @@
 
 @media (min-width: 768px) {
   .liquidity-shape {
-    min-width: 27.5em;
+    min-width: 25em;
   }
 }
 

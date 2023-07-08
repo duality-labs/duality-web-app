@@ -78,6 +78,25 @@ export function formatAmount(
     : '-';
 }
 
+export function formatPercentage(
+  amount: number | string,
+  opts: Intl.NumberFormatOptions = {},
+  maximumSignificantDecimals = 3
+) {
+  const percentage = Number(amount) * 100;
+  const roundedAmount = formatMaximumSignificantDecimals(
+    percentage,
+    maximumSignificantDecimals
+  );
+  const numericAmount = Number(roundedAmount);
+  return !isNaN(numericAmount)
+    ? `${numericAmount.toLocaleString('en-US', {
+        useGrouping: true,
+        ...opts,
+      })}%`
+    : '-';
+}
+
 export function formatPrice(
   amount: number | string,
   opts: Intl.NumberFormatOptions = {}

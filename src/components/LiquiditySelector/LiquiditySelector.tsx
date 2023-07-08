@@ -8,9 +8,9 @@ import React, {
   useRef,
   useEffect,
   ComponentType,
+  ReactNode,
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
-import { useLocation } from 'react-router-dom';
 
 import {
   formatAmount,
@@ -38,16 +38,20 @@ const [
 ] = REACT_APP__MAX_TICK_INDEXES.split(',').map(Number).filter(Boolean);
 
 export interface LiquiditySelectorProps {
-  tokenA: Token;
-  tokenB: Token;
+  tokenA?: Token;
+  tokenB?: Token;
   fee: number | undefined;
   userTickSelected: number | undefined;
   setUserTickSelected: (index: number) => void;
+  initialPrice?: string;
   rangeMin: string;
   rangeMax: string;
   setRangeMin: React.Dispatch<React.SetStateAction<string>>;
   setRangeMax: React.Dispatch<React.SetStateAction<string>>;
   setSignificantDecimals?: React.Dispatch<React.SetStateAction<number>>;
+  setViewableIndexes: React.Dispatch<
+    React.SetStateAction<[number, number] | undefined>
+  >;
   userTicksBase?: Array<Tick | undefined>;
   userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
@@ -123,11 +127,13 @@ export default function LiquiditySelector({
   fee,
   userTickSelected = -1,
   setUserTickSelected,
+  initialPrice = '',
   rangeMin,
   rangeMax,
   setRangeMin,
   setRangeMax,
   setSignificantDecimals,
+  setViewableIndexes,
   userTicks = [],
   userTicksBase = userTicks,
   setUserTicks,
@@ -252,8 +258,8 @@ export default function LiquiditySelector({
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
   const currentPriceIndexFromTicks = useCurrentPriceIndexFromTicks(
-    tokenA.address,
-    tokenB.address
+    tokenA?.address,
+    tokenB?.address
   );
 
   const isUserTicksAZero =
@@ -264,7 +270,16 @@ export default function LiquiditySelector({
     userTicks.every((tick) => tick?.reserveB.isZero() ?? true);
 
   // note edge price, the price of the edge of one-sided liquidity
-  const edgePriceIndex = currentPriceIndexFromTicks;
+  const edgePriceIndex = useMemo(() => {
+    if (currentPriceIndexFromTicks !== undefined) {
+      return currentPriceIndexFromTicks;
+    }
+    // return calculated price index
+    if (Number(initialPrice) > 0) {
+      return priceToTickIndex(new BigNumber(initialPrice)).toNumber();
+    }
+    return undefined;
+  }, [currentPriceIndexFromTicks, initialPrice]);
 
   // note warning price, the price at which warning states should be shown
   const [tokenAWarningPriceIndex, tokenBWarningPriceIndex] = useMemo(() => {
@@ -465,6 +480,10 @@ export default function LiquiditySelector({
     ];
   }, [graphMinIndex, graphMaxIndex, containerSize.width]);
 
+  useEffect(() => {
+    setViewableIndexes([viewableMinIndex, viewableMaxIndex]);
+  }, [setViewableIndexes, viewableMinIndex, viewableMaxIndex]);
+
   // calculate bucket extents
   const getEmptyBuckets = useCallback<
     (
@@ -626,33 +645,34 @@ export default function LiquiditySelector({
     [percentY]
   );
 
-  function TextRoundedBackgroundFilter({
-    id,
-    floodColor,
-  }: {
-    id: string;
-    floodColor: string;
-  }) {
-    return (
-      <filter x="0" y="-0.4" width="1" height="1.8" id={id}>
-        <feFlood floodColor={floodColor} />
-        <feGaussianBlur stdDeviation="3.5" />
-        <feComponentTransfer>
-          <feFuncA type="table" tableValues="0 0 0 1" />
-        </feComponentTransfer>
-        <feComponentTransfer>
-          <feFuncA type="table" tableValues="0 1 1 1 1 1 1 1" />
-        </feComponentTransfer>
-        <feComposite operator="over" in="SourceGraphic" />
-      </filter>
-    );
-  }
+  const TextRoundedBackgroundFilter = useCallback(
+    function TextRoundedBackgroundFilter({
+      id,
+      floodColor,
+    }: {
+      id: string;
+      floodColor: string;
+    }) {
+      return (
+        <filter x="0" y="-0.4" width="1" height="1.8" id={id}>
+          <feFlood floodColor={floodColor} />
+          <feGaussianBlur stdDeviation="3.5" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0 0 1" />
+          </feComponentTransfer>
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 1 1 1 1 1 1 1" />
+          </feComponentTransfer>
+          <feComposite operator="over" in="SourceGraphic" />
+        </filter>
+      );
+    },
+    []
+  );
 
   const svg = (
     <svg
-      className={['chart-liquidity', advanced && 'chart-type--advanced']
-        .filter(Boolean)
-        .join(' ')}
+      className="chart-liquidity"
       viewBox={`0 -${containerSize.height} ${containerSize.width} ${containerSize.height}`}
     >
       <defs>
@@ -684,6 +704,18 @@ export default function LiquiditySelector({
             stopColor="hsl(220, 44%, 45%)"
             stopOpacity="0.1"
           />
+        </linearGradient>
+        <linearGradient id="flag-pole-fade" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="15%" stopColor="hsla(165, 83%, 57%)" stopOpacity="1" />
+          <stop
+            offset="40%"
+            stopColor="hsla(165, 83%, 57%)"
+            stopOpacity="0.15"
+          />
+        </linearGradient>
+        <linearGradient id="flag-pole-fade-error" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="15%" stopColor="var(--error)" stopOpacity="1" />
+          <stop offset="40%" stopColor="var(--error)" stopOpacity="0.15" />
         </linearGradient>
       </defs>
       <g className="axis x-axis">
@@ -720,24 +752,7 @@ export default function LiquiditySelector({
         plotY={plotY}
         percentY={percentY}
       />
-      {advanced ? (
-        <TicksGroup
-          className="new-ticks"
-          currentPriceIndex={edgePriceIndex}
-          tokenAWarningPriceIndex={tokenAWarningPriceIndex}
-          tokenBWarningPriceIndex={tokenBWarningPriceIndex}
-          userTicks={userTicks}
-          backgroundTicks={userTicksBase}
-          setUserTicks={setUserTicks}
-          userTickSelected={userTickSelected}
-          setUserTickSelected={setUserTickSelected}
-          plotX={plotX}
-          percentY={percentYBigNumber}
-          canMoveUp={canMoveUp}
-          canMoveDown={canMoveDown}
-          canMoveX={canMoveX}
-        />
-      ) : (
+      {!advanced && (
         <TicksArea
           className="new-ticks-area"
           currentPriceIndex={edgePriceIndex}
@@ -756,6 +771,33 @@ export default function LiquiditySelector({
           significantDecimals={dynamicSignificantDigits}
         />
       )}
+      <TicksGroup
+        className={['new-ticks', advanced && 'edit-ticks']
+          .filter(Boolean)
+          .join(' ')}
+        currentPriceIndex={edgePriceIndex}
+        tokenAWarningPriceIndex={tokenAWarningPriceIndex}
+        tokenBWarningPriceIndex={tokenBWarningPriceIndex}
+        userTicks={userTicks}
+        backgroundTicks={userTicksBase}
+        setUserTicks={setUserTicks}
+        userTickSelected={userTickSelected}
+        setUserTickSelected={setUserTickSelected}
+        plotX={plotX}
+        percentY={percentYBigNumber}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
+        canMoveX={canMoveX}
+      />
+      <EmptyState
+        warnings={[
+          // warn if tokens are not set
+          !(tokenA && tokenB) && 'Add a token pair to create a new position',
+          // warn is no current price is set
+          edgePriceIndex === undefined &&
+            'Add a starting price to create a new position',
+        ]}
+      />
     </svg>
   );
 
@@ -843,6 +885,24 @@ export default function LiquiditySelector({
       )}
     </>
   );
+}
+
+function EmptyState({ warnings }: { warnings: ReactNode[] }) {
+  const warning = warnings.filter(Boolean).shift();
+  return warning ? (
+    <g className="empty-state" transform="translate(0, -100)">
+      <text
+        x="50%"
+        dominantBaseline="middle"
+        textAnchor="middle"
+        filter="url(#text-solid-background)"
+      >
+        <>&nbsp;</>
+        {warning}
+        <>&nbsp;</>
+      </text>
+    </g>
+  ) : null;
 }
 
 function fillBuckets(
@@ -1188,18 +1248,22 @@ function TicksArea({
           .join(' ')}
       >
         <line
-          className="line pole-stick"
-          x1={(plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
-          x2={(plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
-          y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
-          y2={plotY(new BigNumber(1)).toFixed(3)}
+          className="line pole-stick-edge"
+          x1={plotX(rangeMinIndex).toFixed(3)}
+          x2={plotX(rangeMinIndex).toFixed(3)}
+          y1={plotY(new BigNumber(1)).toFixed(3)}
+          y2={(plotY(new BigNumber(0)) + 8).toFixed(3)}
         />
         <rect
-          className="pole-to-flag"
-          x={(plotX(rangeMinIndex) - rounding).toFixed(3)}
-          width={rounding}
+          className="pole-stick"
+          x={(plotX(rangeMinIndex) - poleWidth).toFixed(3)}
+          width={poleWidth}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height="40"
+          height={(
+            plotY(new BigNumber(0)) -
+            plotY(new BigNumber(1)) +
+            8
+          ).toFixed(3)}
         />
         <rect
           className="pole-flag"
@@ -1226,7 +1290,7 @@ function TicksArea({
         <text
           className="pole-value-text"
           filter="url(#text-solid-background)"
-          x={(4 + 1.8 + plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
+          x={(4 + plotX(rangeMinIndex) - poleWidth / 2).toFixed(3)}
           y={plotY(new BigNumber(0)) + 4 + 8}
           dominantBaseline="middle"
           textAnchor="end"
@@ -1296,18 +1360,22 @@ function TicksArea({
           .join(' ')}
       >
         <line
-          className="line pole-stick"
-          x1={(plotX(rangeMaxIndex) + poleWidth / 2).toFixed(3)}
-          x2={(plotX(rangeMaxIndex) + poleWidth / 2).toFixed(3)}
-          y1={(plotY(new BigNumber(0)) + 8).toFixed(3)}
-          y2={plotY(new BigNumber(1)).toFixed(3)}
+          className="line pole-stick-edge"
+          x1={plotX(rangeMaxIndex).toFixed(3)}
+          x2={plotX(rangeMaxIndex).toFixed(3)}
+          y1={plotY(new BigNumber(1)).toFixed(3)}
+          y2={(plotY(new BigNumber(0)) + 8).toFixed(3)}
         />
         <rect
-          className="pole-to-flag"
+          className="pole-stick"
           x={plotX(rangeMaxIndex).toFixed(3)}
-          width={rounding}
+          width={poleWidth}
           y={plotY(new BigNumber(1)).toFixed(3)}
-          height="40"
+          height={(
+            plotY(new BigNumber(0)) -
+            plotY(new BigNumber(1)) +
+            8
+          ).toFixed(3)}
         />
         <rect
           className="pole-flag"
@@ -1334,7 +1402,7 @@ function TicksArea({
         <text
           className="pole-value-text"
           filter="url(#text-solid-background)"
-          x={(4 + 1.8 + plotX(rangeMaxIndex) - poleWidth / 2).toFixed(3)}
+          x={(4 + plotX(rangeMaxIndex) - poleWidth / 2).toFixed(3)}
           y={plotY(new BigNumber(0)) + 4 + 8}
           dominantBaseline="middle"
           textAnchor="start"
@@ -1620,12 +1688,34 @@ function TicksGroup({
           tick,
           index,
         };
+        startDragTick(e);
       }
-
-      startDragTick(e);
     },
     [userTicks, startDragTick, setUserTickSelected]
   );
+
+  // register that clicking anywhere else in the liquidity chart will de-select the tick
+  useEffect(() => {
+    const charts = getCharts();
+    charts.forEach((chart) => {
+      chart.addEventListener('mousedown', handleClick);
+    });
+    return () => {
+      charts.concat(getCharts());
+      charts.forEach((chart) => {
+        chart.addEventListener('mousedown', handleClick);
+      });
+    };
+    function getCharts(): SVGSVGElement[] {
+      return document
+        ? Array.from(document.querySelectorAll('svg.chart-liquidity'))
+        : [];
+    }
+    function handleClick() {
+      setUserTickSelected(-1);
+      lastSelectedTick.current = undefined;
+    }
+  }, [setUserTickSelected]);
 
   const tickPart = userTicks
     .filter(
@@ -1646,6 +1736,7 @@ function TicksGroup({
       );
     })
     .map(([tick, index]) => {
+      const tickIsSelected = userTickSelected === index;
       const backgroundTick = backgroundTicks[index] || tick;
       const background = {
         tickIndex: backgroundTick.tickIndex,
@@ -1684,13 +1775,13 @@ function TicksGroup({
         ? backgroundValue
         : totalValue;
 
-      return (
+      return !cumulativeTokenValues ? null : (
         <g
           key={index}
           className={[
             'tick',
             totalValue.isZero() && 'tick--is-zero',
-            userTickSelected === index && 'tick--selected',
+            tickIsSelected && 'tick--selected',
             reserveA.isGreaterThan(0) ? 'token-a' : 'token-b',
             !totalValue.isEqualTo(backgroundValue) &&
               (totalValue.isLessThan(backgroundValue)
@@ -1800,19 +1891,13 @@ function TickBucketsGroup({
   plotY: (y: BigNumber) => number;
   className?: string;
 }) {
-  const queryParams = new URLSearchParams(useLocation().search);
-  const stack = queryParams.get('buckets') || 'merge';
   // buckets have integer bounds but the edgePriceIndex comes as a float for
   // maximum accuracy, make sure we can compare them easily here
   const roundedCurrentPriceIndex = Math.round(edgePriceIndex);
 
   return (
     <g
-      className={[
-        'tick-buckets',
-        `tick-buckets--${stack === 'merge' ? 'merged' : 'stacked'}`,
-        className,
-      ]
+      className={['tick-buckets', 'tick-buckets--stacked', className]
         .filter(Boolean)
         .join(' ')}
     >
@@ -1824,16 +1909,8 @@ function TickBucketsGroup({
           const leftSide = lowerBoundIndex < roundedCurrentPriceIndex;
           // offset the reserve value Y position if stacking buckets
           const [tokenAOffset, tokenBOffset]: (BigNumber | number)[] =
-            stack === 'stack-above'
-              ? // place "behind enemy lines" tokens above main liquiidty tokens
-                leftSide
-                ? [0, tokenAValue]
-                : [tokenBValue, 0]
-              : stack === 'stack-below'
-              ? !leftSide
-                ? [0, tokenAValue]
-                : [tokenBValue, 0]
-              : [0, 0];
+            // place "behind enemy lines" tokens below main liquiidty tokens
+            !leftSide ? [0, tokenAValue] : [tokenBValue, 0];
           const buckets = [
             <Bucket
               key={`${index}-a`}
