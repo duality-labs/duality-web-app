@@ -16,7 +16,10 @@ import {
 
 import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import { readEvents } from '../../../lib/web3/utils/txs';
+import {
+  DexSwapEvent,
+  getEventAttributeMap,
+} from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
 import { dualitylabs } from '@duality-labs/dualityjs';
 import {
@@ -32,19 +35,27 @@ async function sendSwap(
     wallet: OfflineSigner;
     address: string;
   },
-  { amountIn, tokenIn, tokenA, tokenB, creator, receiver }: MsgSwapSDKType,
+  {
+    maxAmountIn,
+    maxAmountOut,
+    tokenIn,
+    tokenOut,
+    creator,
+    receiver,
+  }: MsgSwapSDKType,
   gasEstimate: number
 ): Promise<MsgSwapResponseSDKType> {
-  if (!amountIn || !amountIn || !tokenIn || !tokenA || !tokenB || !creator) {
+  if (!maxAmountIn || !maxAmountOut || !tokenIn || !tokenOut || !creator) {
     throw new Error('Invalid Input');
   }
 
-  const totalBigInt = new BigNumber(amountIn);
-  if (!totalBigInt.isGreaterThan(0)) {
+  if (!new BigNumber(maxAmountIn).isGreaterThan(0)) {
     throw new Error('Invalid Input (0 value)');
   }
+  if (!new BigNumber(maxAmountOut).isGreaterThan(0)) {
+    throw new Error('Invalid Output (0 value)');
+  }
 
-  const tokenOut = tokenIn === tokenA ? tokenB : tokenA;
   const tokenOutToken = addressableTokenMap[tokenOut];
   if (!tokenOutToken) {
     throw new Error('Invalid Output (token address not found)');
@@ -62,10 +73,10 @@ async function sendSwap(
       address,
       [
         dualitylabs.duality.dex.MessageComposer.withTypeUrl.swap({
-          amountIn,
+          maxAmountIn,
+          maxAmountOut,
           tokenIn,
-          tokenA,
-          tokenB,
+          tokenOut,
           creator,
           receiver,
         }),
@@ -81,20 +92,26 @@ async function sendSwap(
       }
       const { code } = res;
 
-      const amountOut = readEvents(res.rawLog)
-        ?.find(({ type }: { type: string }) => type === 'message')
-        ?.attributes?.reduceRight(
-          (
-            result: BigNumber,
-            { key, value }: { key: string; value: string }
-          ) => {
-            if (result.isZero() && key === 'AmountOut') {
-              return result.plus(value);
-            }
-            return result;
-          },
-          new BigNumber(0)
-        ) as BigNumber | undefined;
+      const amountOut = res.events.reduce<BigNumber>((result, event) => {
+        if (
+          event.type === 'message' &&
+          event.attributes.find(
+            ({ key, value }) => key === 'module' && value === 'dex'
+          ) &&
+          event.attributes.find(
+            ({ key, value }) => key === 'action' && value === 'Swap'
+          ) &&
+          event.attributes.find(
+            ({ key, value }) => key === 'Creator' && value === address
+          )
+        ) {
+          // collect into more usable format for parsing
+          const attributes = getEventAttributeMap<DexSwapEvent>(event);
+          return result.plus(attributes.AmountOut || 0);
+        }
+        return result;
+      }, new BigNumber(0));
+
       const description = amountOut
         ? `Received ${formatAmount(
             getAmountInDenom(
@@ -160,8 +177,22 @@ export function useSwap(): [
     (request: MsgSwapSDKType, gasEstimate: number) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
-      const { amountIn, tokenIn, tokenA, tokenB, creator, receiver } = request;
-      if (!amountIn || !tokenIn || !tokenA || !tokenB || !creator || !receiver)
+      const {
+        maxAmountIn,
+        maxAmountOut,
+        tokenIn,
+        tokenOut,
+        creator,
+        receiver,
+      } = request;
+      if (
+        !maxAmountIn ||
+        !maxAmountOut ||
+        !tokenIn ||
+        !tokenOut ||
+        !creator ||
+        !receiver
+      )
         return onError('Invalid input');
       setValidating(true);
       setError(undefined);
