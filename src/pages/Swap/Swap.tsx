@@ -10,7 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import { useTokens } from '../../components/TokenPicker/hooks';
+import useTokens from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import NumberInput, {
   useNumericInputState,
@@ -124,8 +124,6 @@ function Swap() {
         // convert to swap request format
         const result = routerResult;
         // Cosmos requires tokens in integer format of smallest denomination
-        // add slippage tolerance
-        const minOut = result.amountOut.multipliedBy(1 - tolerance);
         // calculate gas estimate
         const tickMin =
           routerResult.tickIndexIn &&
@@ -183,11 +181,9 @@ function Swap() {
             tokenIn: result.tokenIn,
             tokenA: result.tokenIn,
             tokenB: result.tokenOut,
-            minOut: getAmountInDenom(tokenB, minOut, tokenB?.display) || '0',
             creator: address,
             receiver: address,
-            // todo: allow custom limit price to be set by the user
-            limitPrice: '0',
+            // todo: use limit orders to respect user's slippage tolerance
           },
           gasEstimate
         );

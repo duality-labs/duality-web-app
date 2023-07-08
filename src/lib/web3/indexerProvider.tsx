@@ -15,7 +15,7 @@ import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
 import { useRpcPromise } from './rpcQueryClient';
-import useTokens from './hooks/useTokens';
+import useTokens from '../../lib/web3/hooks/useTokens';
 import useTokenPairs from './hooks/useTokenPairs';
 
 import { feeTypes } from './utils/fees';
@@ -26,7 +26,6 @@ import { IndexedShare, getShareInfo } from './utils/shares';
 import { getPairID } from './utils/pairs';
 
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
-import { TokensSDKType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tokens';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 
@@ -52,7 +51,7 @@ interface IndexerContextType {
     isValidating: boolean;
   };
   tokens: {
-    data?: TokensSDKType[];
+    data?: Token[];
     error?: string;
     isValidating: boolean;
   };
@@ -95,9 +94,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   const [bankData, setBankData] = useState<UserBankBalance>();
   const [shareData, setShareData] = useState<UserShares>();
-  const { data: tokensData } = useTokens({
-    swr: { refreshInterval: 10 * minutes },
-  });
+  const tokensData = useTokens();
   const { data: tokenPairsData, isValidating: isTokenPairsValidating } =
     useTokenPairs({
       swr: { refreshInterval: 10 * minutes },
