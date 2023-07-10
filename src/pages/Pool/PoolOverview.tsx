@@ -16,11 +16,7 @@ import StatCardTVL from '../../components/stats/StatCardTVL';
 
 import { useLcdClientPromise } from '../../lib/web3/lcdClient';
 import { formatAddress } from '../../lib/web3/utils/address';
-import {
-  Token,
-  TokenAddress,
-  getAmountInDenom,
-} from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import {
   getPairID,
   guessInvertedOrder,
@@ -30,16 +26,13 @@ import {
   ChainEvent,
   DexDepositEvent,
   DexEvent,
-  CoinReceivedEvent,
   DexMessageAction,
   DexPlaceLimitOrderEvent,
   DexWithdrawalEvent,
   decodeEvent,
   mapEventAttributes,
-  CoinSpentEvent,
-  parseAmountDenomString,
-  TxFeeEvent,
-  CoinTransferEvent,
+  getSpentTokenAmount,
+  getReceivedTokenAmount,
 } from '../../lib/web3/utils/events';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
@@ -813,98 +806,21 @@ function SwapColumn({
     }
     return null;
 
-    function getFeeEvents(events: ChainEvent[], feePayer: TokenAddress) {
-      const feeTxEvent = events.find((event): event is TxFeeEvent => {
-        return event.type === 'tx' && event.attributes.fee_payer === feePayer;
-      });
-      const feeTransferEvent =
-        feeTxEvent &&
-        events.find((event): event is CoinTransferEvent => {
-          return (
-            event.type === 'coin_spent' &&
-            event.attributes.amount === feeTxEvent.attributes.fee &&
-            event.attributes.spender === feeTxEvent.attributes.fee_payer
-          );
-        });
-      const feeSpentEvent =
-        feeTransferEvent &&
-        events.find((event): event is CoinSpentEvent => {
-          return (
-            event.type === 'coin_spent' &&
-            event.attributes.amount === feeTransferEvent.attributes.amount &&
-            event.attributes.spender === feeTransferEvent.attributes.sender
-          );
-        });
-      const feeReceivedEvent =
-        feeTransferEvent &&
-        events.find((event): event is CoinReceivedEvent => {
-          return (
-            event.type === 'coin_received' &&
-            event.attributes.amount === feeTransferEvent.attributes.amount &&
-            event.attributes.receiver === feeTransferEvent.attributes.recipient
-          );
-        });
-      return [
-        feeTxEvent,
-        feeTransferEvent,
-        feeSpentEvent,
-        feeReceivedEvent,
-      ].flatMap((event) => (event ? [event] : []));
-    }
-
     function getTokenAReserves() {
-      const feeEvents: ChainEvent[] = getFeeEvents(events, attributes.Receiver);
-      const nonFeeEvents = events.filter((event) => !feeEvents.includes(event));
-      const tokenEvents =
-        attributes.TokenIn === tokenA.address
-          ? // find tokens spent
-            nonFeeEvents.filter(
-              (event): event is CoinSpentEvent =>
-                event.type === 'coin_spent' &&
-                event.attributes.amount.endsWith(tokenA.address) &&
-                event.attributes.spender === attributes.Receiver
-            )
-          : // find tokens received
-            nonFeeEvents.filter(
-              (event): event is CoinReceivedEvent =>
-                event.type === 'coin_received' &&
-                event.attributes.amount.endsWith(tokenA.address) &&
-                event.attributes.receiver === attributes.Receiver
-            );
-      // sum non-fee token amounts of the requested denom
-      const amount = tokenEvents
-        .map(({ attributes }) => parseAmountDenomString(attributes.amount))
-        .reduce((acc, [amount]) => acc.plus(amount), new BigNumber(0));
-      return amount.toFixed();
+      const address = attributes.Creator;
+      return attributes.TokenIn === tokenA.address
+        ? getSpentTokenAmount(events, address, { matchToken: tokenA })
+        : getReceivedTokenAmount(events, address, { matchToken: tokenA });
     }
 
     function getTokenBReserves() {
-      const feeEvents: ChainEvent[] = getFeeEvents(events, attributes.Receiver);
-      const nonFeeEvents = events.filter((event) => !feeEvents.includes(event));
-      const tokenEvents =
-        attributes.TokenIn === tokenB.address
-          ? // find tokens spent
-            nonFeeEvents.filter(
-              (event): event is CoinSpentEvent =>
-                event.type === 'coin_spent' &&
-                event.attributes.amount.endsWith(tokenB.address) &&
-                event.attributes.spender === attributes.Receiver
-            )
-          : // find tokens received
-            nonFeeEvents.filter(
-              (event): event is CoinReceivedEvent =>
-                event.type === 'coin_received' &&
-                event.attributes.amount.endsWith(tokenB.address) &&
-                event.attributes.receiver === attributes.Receiver
-            );
-      // sum non-fee token amounts of the requested denom
-      const amount = tokenEvents
-        .map(({ attributes }) => parseAmountDenomString(attributes.amount))
-        .reduce((acc, [amount]) => acc.plus(amount), new BigNumber(0));
-      return amount.toFixed();
+      const address = attributes.Creator;
+      return attributes.TokenIn === tokenB.address
+        ? getSpentTokenAmount(events, address, { matchToken: tokenB })
+        : getReceivedTokenAmount(events, address, { matchToken: tokenB });
     }
 
-    function getTokenReservesInDenom(token: Token, reserves: string) {
+    function getTokenReservesInDenom(token: Token, reserves: BigNumber.Value) {
       return getAmountInDenom(token, reserves, token.address, token.display, {
         fractionalDigits: 3,
         significantDigits: 3,
