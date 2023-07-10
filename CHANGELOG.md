@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/duality-labs/duality-web-app/compare/v0.3.0...v0.3.1) (2023-07-10)
+
+
+### Fixes
+
+* update chain IDs to new devnet ([#391](https://github.com/duality-labs/duality-web-app/issues/391)) ([9b9b404](https://github.com/duality-labs/duality-web-app/commit/9b9b404e610207cc593dfcfbd5dec6c0e7ea60a5))
+
 ## [0.3.0](https://github.com/duality-labs/duality-web-app/compare/v0.2.5...v0.3.0) (2023-07-10)
 
 
