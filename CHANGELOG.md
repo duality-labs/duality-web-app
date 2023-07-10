@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/duality-labs/duality-web-app/compare/v0.2.4...v0.2.5) (2023-07-10)
+
+
+### Fixes
+
+* swap transaction events should display swap token amounts ([#390](https://github.com/duality-labs/duality-web-app/issues/390)) ([8406411](https://github.com/duality-labs/duality-web-app/commit/840641195a75a201eab6414a67ca74781d085847))
+
 ## [0.2.4](https://github.com/duality-labs/duality-web-app/compare/v0.2.3...v0.2.4) (2023-07-08)
 
 
