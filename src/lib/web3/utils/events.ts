@@ -40,6 +40,7 @@ export type DexMessageAction =
 export type ChainEvent = CosmosEvent | DexEvent;
 
 export type CosmosEvent =
+  | TxFeeEvent
   | CoinTransferEvent
   | CoinSpentEvent
   | CoinReceivedEvent;
@@ -124,6 +125,14 @@ export interface CoinTransferEvent {
     amount: AmountDenomString;
     recipient: TokenAddress;
     sender: TokenAddress;
+  };
+}
+
+export interface TxFeeEvent {
+  type: 'tx';
+  attributes: {
+    fee: AmountDenomString;
+    fee_payer: TokenAddress;
   };
 }
 
