@@ -117,11 +117,12 @@ const testnetTokens = REACT_APP__IS_MAINNET === 'testnet' && [
                   denom: address,
                 };
               }
-              // make test tokens look more expensive in testing
+              // make test token amounts more consistent in dev
+              // the different exponents really throws off
               else {
                 return {
                   ...unit,
-                  exponent: 21,
+                  exponent: 18,
                 };
               }
             }),
