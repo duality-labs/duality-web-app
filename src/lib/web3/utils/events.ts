@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { Event } from '@cosmjs/stargate';
 import { EventSDKType } from '@duality-labs/dualityjs/types/codegen/tendermint/abci/types';
-import { Token, TokenAddress } from './tokens';
+import { WalletAddress } from './address';
+import { Token } from './tokens';
 
 export function mapEventAttributes<T = ChainEvent>(event: Event): T {
   return {
@@ -55,8 +56,8 @@ export interface DexDepositEvent {
   attributes: {
     module: 'dex';
     action: 'Deposit';
-    Creator: TokenAddress;
-    Receiver: TokenAddress;
+    Creator: WalletAddress;
+    Receiver: WalletAddress;
     Token0: string;
     Token1: string;
     TickIndex: string;
@@ -72,8 +73,8 @@ export interface DexWithdrawalEvent {
   attributes: {
     module: 'dex';
     action: 'Withdraw';
-    Creator: TokenAddress;
-    Receiver: TokenAddress;
+    Creator: WalletAddress;
+    Receiver: WalletAddress;
     Token0: string;
     Token1: string;
     TickIndex: string;
@@ -89,8 +90,8 @@ export interface DexPlaceLimitOrderEvent {
   attributes: {
     module: 'dex';
     action: 'PlaceLimitOrder';
-    Creator: TokenAddress;
-    Receiver: TokenAddress;
+    Creator: WalletAddress;
+    Receiver: WalletAddress;
     Token0: string;
     Token1: string;
     TokenIn: string;
@@ -107,7 +108,7 @@ export interface CoinReceivedEvent {
   type: 'coin_received';
   attributes: {
     amount: AmountDenomString;
-    receiver: TokenAddress;
+    receiver: WalletAddress;
   };
 }
 
@@ -115,7 +116,7 @@ export interface CoinSpentEvent {
   type: 'coin_spent';
   attributes: {
     amount: AmountDenomString;
-    spender: TokenAddress;
+    spender: WalletAddress;
   };
 }
 
@@ -123,8 +124,8 @@ export interface CoinTransferEvent {
   type: 'transfer';
   attributes: {
     amount: AmountDenomString;
-    recipient: TokenAddress;
-    sender: TokenAddress;
+    recipient: WalletAddress;
+    sender: WalletAddress;
   };
 }
 
@@ -132,7 +133,7 @@ export interface TxFeeEvent {
   type: 'tx';
   attributes: {
     fee: AmountDenomString;
-    fee_payer: TokenAddress;
+    fee_payer: WalletAddress;
   };
 }
 
@@ -149,7 +150,7 @@ export function parseAmountDenomString(
 
 export function getSpentTokenAmount(
   events: ChainEvent[],
-  spender: TokenAddress,
+  spender: WalletAddress,
   {
     matchToken,
     includeFees,
@@ -172,7 +173,7 @@ export function getSpentTokenAmount(
 
 export function getReceivedTokenAmount(
   events: ChainEvent[],
-  receiver: TokenAddress,
+  receiver: WalletAddress,
   {
     matchToken,
     includeFees,
@@ -194,7 +195,7 @@ export function getReceivedTokenAmount(
 }
 
 // find the fee events in a list of ChainEvents, eg. for excluding from a search
-function getFeeEvents(events: ChainEvent[], feePayer: TokenAddress) {
+function getFeeEvents(events: ChainEvent[], feePayer: WalletAddress) {
   const feeTxEvent = events.find((event): event is TxFeeEvent => {
     return event.type === 'tx' && event.attributes.fee_payer === feePayer;
   });
