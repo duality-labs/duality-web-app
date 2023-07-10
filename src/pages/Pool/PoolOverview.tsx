@@ -808,49 +808,53 @@ function SwapColumn({
     return null;
 
     function getTokenAReserves() {
-      const tokenEvent =
+      const tokenEvents =
         attributes.TokenIn === tokenA.address
           ? // find tokens spent
-            events.find(
+            events.filter(
               (event): event is CoinSpentEvent =>
                 event.type === 'coin_spent' &&
                 event.attributes.amount.endsWith(tokenA.address) &&
                 event.attributes.spender === attributes.Receiver
             )
           : // find tokens received
-            events.find(
+            events.filter(
               (event): event is CoinReceivedEvent =>
                 event.type === 'coin_received' &&
                 event.attributes.amount.endsWith(tokenA.address) &&
                 event.attributes.receiver === attributes.Receiver
             );
-      const [amount] = tokenEvent
-        ? parseAmountDenomString(tokenEvent.attributes.amount)
-        : [];
-      return amount?.toFixed() || '0';
+      // select highest amount of the requested denom (exclude the fee event)
+      const tokenEvent = tokenEvents
+        .map(({ attributes }) => parseAmountDenomString(attributes.amount))
+        .sort(([amountA], [amountB]) => amountB.toNumber() - amountA.toNumber())
+        .at(0);
+      return tokenEvent?.[0]?.toFixed() || '0';
     }
 
     function getTokenBReserves() {
-      const tokenEvent =
+      const tokenEvents =
         attributes.TokenIn === tokenB.address
           ? // find tokens spent
-            events.find(
+            events.filter(
               (event): event is CoinSpentEvent =>
                 event.type === 'coin_spent' &&
                 event.attributes.amount.endsWith(tokenB.address) &&
                 event.attributes.spender === attributes.Receiver
             )
           : // find tokens received
-            events.find(
+            events.filter(
               (event): event is CoinReceivedEvent =>
                 event.type === 'coin_received' &&
                 event.attributes.amount.endsWith(tokenB.address) &&
                 event.attributes.receiver === attributes.Receiver
             );
-      const [amount] = tokenEvent
-        ? parseAmountDenomString(tokenEvent.attributes.amount)
-        : [];
-      return amount?.toFixed() || '0';
+      // select highest amount of the requested denom (exclude the fee event)
+      const tokenEvent = tokenEvents
+        .map(({ attributes }) => parseAmountDenomString(attributes.amount))
+        .sort(([amountA], [amountB]) => amountB.toNumber() - amountA.toNumber())
+        .at(0);
+      return tokenEvent?.[0]?.toFixed() || '0';
     }
 
     function getTokenReservesInDenom(token: Token, reserves: string) {
