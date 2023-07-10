@@ -814,12 +814,14 @@ function SwapColumn({
             events.find(
               (event): event is CoinSpentEvent =>
                 event.type === 'coin_spent' &&
+                event.attributes.amount.endsWith(tokenA.address) &&
                 event.attributes.spender === attributes.Receiver
             )
           : // find tokens received
             events.find(
               (event): event is CoinReceivedEvent =>
                 event.type === 'coin_received' &&
+                event.attributes.amount.endsWith(tokenA.address) &&
                 event.attributes.receiver === attributes.Receiver
             );
       const [amount] = tokenEvent
@@ -835,12 +837,14 @@ function SwapColumn({
             events.find(
               (event): event is CoinSpentEvent =>
                 event.type === 'coin_spent' &&
+                event.attributes.amount.endsWith(tokenB.address) &&
                 event.attributes.spender === attributes.Receiver
             )
           : // find tokens received
             events.find(
               (event): event is CoinReceivedEvent =>
                 event.type === 'coin_received' &&
+                event.attributes.amount.endsWith(tokenB.address) &&
                 event.attributes.receiver === attributes.Receiver
             );
       const [amount] = tokenEvent
