@@ -37,6 +37,7 @@ import {
   formatCurrency,
   formatPrice,
 } from '../../lib/utils/number';
+import { formatRelativeTime } from '../../lib/utils/time';
 
 import './Pool.scss';
 import useTokens, {
@@ -404,7 +405,7 @@ const transactionTableHeadings = [
   'Token A Amount',
   'Token B Amount',
   'Wallet',
-  'Block',
+  'Time',
 ] as const;
 type TransactionTableColumnKey = typeof transactionTableHeadings[number];
 
@@ -433,6 +434,7 @@ interface Tx {
   hash: Hash;
   height: NumericString;
   index: 0;
+  timestamp?: string; // this should be added to making a block height data lookup
   tx_result: {
     code: 0;
     data: EncodedData;
@@ -460,6 +462,8 @@ interface GetTxsEventResponseManuallyType {
     total_count: NumericString;
   };
 }
+
+const blockTimestamps: { [height: string]: string } = {};
 
 const pageSize = 10;
 function TransactionsTable({
@@ -520,8 +524,38 @@ function TransactionsTable({
         )}"&per_page=${pageSize}&page=${pageOffset + 1}`
       );
       const result = (await response.json()) as GetTxsEventResponseManuallyType;
+      const { total_count, txs } = result['result'];
 
-      return result['result'];
+      // mutate the txs to contain block height timestamps
+      const txsWithTimestamps = await Promise.all(
+        txs.map(async (tx) => {
+          if (!blockTimestamps[tx.height]) {
+            const response = await fetch(
+              `${REACT_APP__RPC_API}/header?height=${tx.height}`
+            );
+            if (response.status === 200) {
+              const { result } = (await response.json()) as {
+                result: {
+                  header: {
+                    height: string;
+                    time: string;
+                  };
+                };
+              };
+              blockTimestamps[tx.height] = result.header.time;
+            }
+          }
+          return {
+            ...tx,
+            timestamp: blockTimestamps[tx.height],
+          };
+        })
+      );
+
+      return {
+        total_count,
+        txs: txsWithTimestamps,
+      };
     },
   });
 
@@ -682,8 +716,10 @@ function EventColumn<T extends DexEvent>({
           : value.isLessThan(0.005)
           ? `< ${formatCurrency(0.01)}`
           : formatCurrency(values[0].plus(values[1]).toNumber());
-      case 'Block':
-        return tx.height;
+      case 'Time':
+        return tx.timestamp
+          ? formatRelativeTime(tx.timestamp)
+          : `Block: ${tx.height}`;
     }
     return null;
 
@@ -831,8 +867,10 @@ function SwapColumn({
           : value.isLessThan(0.005)
           ? `< ${formatCurrency(0.01)}`
           : formatCurrency(values[0].plus(values[1]).toNumber());
-      case 'Block':
-        return tx.height;
+      case 'Time':
+        return tx.timestamp
+          ? formatRelativeTime(tx.timestamp)
+          : `Block: ${tx.height}`;
     }
     return null;
 
