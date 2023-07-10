@@ -241,6 +241,9 @@ function Swap() {
             // todo: set tickIndex to allow for a tolerance:
             //   the below function is a tolerance of 0
             tickIndex: Long.fromNumber(tickIndexLimit * (forward ? -1 : 1)),
+            maxAmountOut:
+              getAmountInDenom(tokenB, result.amountOut, tokenB?.display) ||
+              '0',
           },
           gasEstimate
         );

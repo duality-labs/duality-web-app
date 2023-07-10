@@ -8,7 +8,7 @@ import {
 } from 'react';
 import Long from 'long';
 import { BigNumber } from 'bignumber.js';
-import { cosmos, duality } from '@duality-labs/dualityjs';
+import { cosmos, dualitylabs } from '@duality-labs/dualityjs';
 
 import { MessageActionEvent } from './events';
 import subscriber from './subscriptionManager';
@@ -26,7 +26,7 @@ import { IndexedShare, getShareInfo } from './utils/shares';
 import { getPairID } from './utils/pairs';
 
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
-import { StakeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/stake';
+import { StakeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/stake';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 
@@ -223,11 +223,14 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           let nextKey: Uint8Array | undefined;
           let balances: Array<CoinSDKType> = [];
           let res: QueryAllBalancesResponse;
-          const stakedPositionsPromise = duality.ClientFactory.createLCDClient({
-            restEndpoint: REACT_APP__REST_API,
-          }).then((lcdClient) => {
-            return lcdClient.duality.incentives.getStakes({ owner: address });
-          });
+          const stakedPositionsPromise =
+            dualitylabs.ClientFactory.createLCDClient({
+              restEndpoint: REACT_APP__REST_API,
+            }).then((lcdClient) => {
+              return lcdClient.dualitylabs.duality.incentives.getStakes({
+                owner: address,
+              });
+            });
           do {
             try {
               res = await client.allBalances({

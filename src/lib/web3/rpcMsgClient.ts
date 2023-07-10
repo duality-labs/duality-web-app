@@ -4,7 +4,6 @@ import { OfflineAminoSigner } from '@cosmjs/amino';
 import {
   getSigningCosmosClient,
   getSigningDualitylabsClient,
-  getSigningDualityClient,
 } from '@duality-labs/dualityjs';
 
 const { REACT_APP__RPC_API = '' } = process.env;
@@ -22,8 +21,7 @@ export default function rpcClient(
 export function signingRpcClient(
   getSigningClientFunction:
     | typeof getSigningCosmosClient
-    | typeof getSigningDualitylabsClient
-    | typeof getSigningDualityClient,
+    | typeof getSigningDualitylabsClient,
   wallet?: OfflineSigner,
   rpcURL = REACT_APP__RPC_API
 ) {

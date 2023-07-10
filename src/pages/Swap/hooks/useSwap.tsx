@@ -26,7 +26,7 @@ import { dualitylabs } from '@duality-labs/dualityjs';
 import {
   MsgPlaceLimitOrderResponseSDKType,
   MsgPlaceLimitOrder,
-} from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
+} from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
 
 async function sendSwap(
   {
@@ -40,6 +40,7 @@ async function sendSwap(
     orderType,
     tickIndex,
     amountIn,
+    maxAmountOut,
     tokenIn,
     tokenOut,
     creator,
@@ -75,6 +76,7 @@ async function sendSwap(
           orderType,
           tickIndex,
           amountIn,
+          maxAmountOut,
           tokenIn,
           tokenOut,
           creator,
@@ -118,7 +120,7 @@ async function sendSwap(
               tokenOutToken.address,
               tokenOutToken.display
             ) || '0'
-          )} ${tokenOut} (click for more details)`
+          )} ${tokenOutToken.symbol} (click for more details)`
         : undefined;
 
       if (!checkMsgSuccessToast(res, { id, description })) {
@@ -167,6 +169,7 @@ export function useSwap(): [
         orderType,
         tickIndex,
         amountIn,
+        maxAmountOut,
         tokenIn,
         tokenOut,
         creator,
@@ -176,6 +179,7 @@ export function useSwap(): [
         !orderType ||
         !tickIndex ||
         !amountIn ||
+        !maxAmountOut ||
         !tokenIn ||
         !tokenOut ||
         !creator ||

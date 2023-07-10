@@ -2,8 +2,6 @@ import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useMatch } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { TxResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/abci/v1beta1/abci';
-import type { GetTxsEventResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/tx/v1beta1/service';
 
 import PoolLayout from './PoolLayout';
 import { PriceCardRow, PairPriceCard } from '../../components/cards/PriceCard';
@@ -14,7 +12,6 @@ import PoolChart from './PoolChart';
 import { SmallCardRow } from '../../components/cards/SmallCard';
 import StatCardTVL from '../../components/stats/StatCardTVL';
 
-import { useLcdClientPromise } from '../../lib/web3/lcdClient';
 import { formatAddress } from '../../lib/web3/utils/address';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import {
@@ -29,7 +26,6 @@ import {
   DexMessageAction,
   DexPlaceLimitOrderEvent,
   DexWithdrawalEvent,
-  decodeEvent,
   mapEventAttributes,
   getSpentTokenAmount,
   getReceivedTokenAmount,
@@ -57,8 +53,10 @@ import StatCardFees from '../../components/stats/StatCardFees';
 import StatCardVolatility from '../../components/stats/StatCardVolatility';
 import { useStatComposition } from '../../components/stats/hooks';
 import useIncentiveGauges from '../../lib/web3/hooks/useIncentives';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/duality/incentives/gauge';
+import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+
+const { REACT_APP__RPC_API = '' } = process.env;
 
 export default function PoolOverview({
   tokenA,
@@ -429,6 +427,44 @@ function TransactionTableHeading({
   return <th>{heading}</th>;
 }
 
+type Hash = string;
+type EncodedData = string;
+type NumericString = string;
+interface Tx {
+  hash: Hash;
+  height: NumericString;
+  index: 0;
+  timestamp?: string; // this should be added to making a block height data lookup
+  tx_result: {
+    code: 0;
+    data: EncodedData;
+    log: EncodedData;
+    info: string;
+    gas_wanted: NumericString;
+    gas_used: NumericString;
+    events: Array<{
+      type: string;
+      attributes: Array<{
+        key: string;
+        value: string;
+        index: boolean;
+      }>;
+    }>;
+    codespace: string;
+  };
+  tx: EncodedData;
+}
+interface GetTxsEventResponseManuallyType {
+  jsonrpc: '2.0';
+  id: -1;
+  result: {
+    txs: Array<Tx>;
+    total_count: NumericString;
+  };
+}
+
+const blockTimestamps: { [height: string]: string } = {};
+
 const pageSize = 10;
 function TransactionsTable({
   tokenA,
@@ -439,69 +475,97 @@ function TransactionsTable({
   tokenB: Token;
   action?: DexMessageAction;
 }) {
-  const lcdClientPromise = useLcdClientPromise();
   const [pageOffset] = useState<number>(0);
   const query = useQuery({
     queryKey: ['events', action, tokenA.address, tokenB.address, pageOffset],
-    queryFn: async (): Promise<GetTxsEventResponseSDKType> => {
-      const lcd = await lcdClientPromise;
+    queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
+      const invertedOrder = guessInvertedOrder(tokenA.address, tokenB.address);
+
       /*
-       * note: you would expect the follow to work, but it mangles the query
-       * parameters into a form that isn't accepted by the API:
+       * note: you would expect the following to work, but the ABCI query check
+       * fails the event query of attribute Token0 and Token1 for numeric chars
+       * see: https://github.com/cosmos/cosmos-sdk/commit/18da0e9c15e0210fdd289e3f1f0f5fefe3f6b72a#diff-53f84248611b4e705fd4106d3f6f46eed9258656b0b3db22bd56fdde5628cebdR47
        *
-       *   lcd.cosmos.tx.v1beta1.getTxsEvent({
-       *     events: [filter],
-       *     orderBy: 2 as OrderBy.ORDER_BY_DESC,
-       *     pagination: { limit: Long.fromNumber(10) , countTotal: true},
-       *   })
+       * const QueryClientImpl = cosmos.tx.v1beta1.ServiceClientImpl;
+       * const dualityClient = new QueryClientImpl(rpc);
+       * const response = await dualityClient.getTxsEvent({
+       *   events: [
+       *     `message.module='${'dex'}'`,
+       *     !invertedOrder
+       *       ? `message.Token='${tokenA.address}'`
+       *       : `message.Token0='${tokenB.address}'`,
+       *     !invertedOrder
+       *       ? `message.Token='${tokenB.address}'`
+       *       : `message.Token1='${tokenA.address}'`,
+       *     action ? `message.action='${action}'` : '',
+       *   ].filter(Boolean),
+       *   orderBy: cosmos.tx.v1beta1.OrderBySDKType.ORDER_BY_ASC,
+       *   page: Long.fromString(pageOffset + 1),
+       *   limit: Long.fromString(pageSize),
+       * });
        *
        * instead we will create the query string ourself and add the return type
        */
 
-      // create Query string (with all appropriate characters escaped)
-      const queryParams = new URLSearchParams({
-        events: `message.module='${'dex'}'`,
-        order_by: 'ORDER_BY_DESC',
-        'pagination.limit': `${pageSize || 10}`,
-        // add page offset if it is non-zero
-        ...(pageOffset && {
-          'pagination.offset': (pageOffset * pageSize).toFixed(),
-        }),
-      });
-
-      const invertedOrder = guessInvertedOrder(tokenA.address, tokenB.address);
-
-      // append multiple event keys
-      // search specific token types
-      if (!invertedOrder) {
-        queryParams.append('events', `message.Token0='${tokenA.address}'`);
-        queryParams.append('events', `message.Token1='${tokenB.address}'`);
-      } else {
-        queryParams.append('events', `message.Token0='${tokenB.address}'`);
-        queryParams.append('events', `message.Token1='${tokenA.address}'`);
-      }
-      // search specific action types
-      if (action) {
-        queryParams.append('events', `message.action='${action}'`);
-      }
-
-      return await lcd.cosmos.tx.v1beta1.req.get(
-        `cosmos/tx/v1beta1/txs?${queryParams}`
+      const response = await fetch(
+        `${REACT_APP__RPC_API}/tx_search?query="${encodeURIComponent(
+          [
+            `message.module='${'dex'}'`,
+            !invertedOrder
+              ? `message.Token0='${tokenA.address}'`
+              : `message.Token0='${tokenB.address}'`,
+            !invertedOrder
+              ? `message.Token1='${tokenB.address}'`
+              : `message.Token1='${tokenA.address}'`,
+            action ? `message.action='${action}'` : '',
+          ]
+            .filter(Boolean)
+            .join(' AND ')
+        )}"&per_page=${pageSize}&page=${pageOffset + 1}`
       );
+      const result = (await response.json()) as GetTxsEventResponseManuallyType;
+      const { total_count, txs } = result['result'];
+
+      // mutate the txs to contain block height timestamps
+      const txsWithTimestamps = await Promise.all(
+        txs.map(async (tx) => {
+          if (!blockTimestamps[tx.height]) {
+            const response = await fetch(
+              `${REACT_APP__RPC_API}/header?height=${tx.height}`
+            );
+            if (response.status === 200) {
+              const { result } = (await response.json()) as {
+                result: {
+                  header: {
+                    height: string;
+                    time: string;
+                  };
+                };
+              };
+              blockTimestamps[tx.height] = result.header.time;
+            }
+          }
+          return {
+            ...tx,
+            timestamp: blockTimestamps[tx.height],
+          };
+        })
+      );
+
+      return {
+        total_count,
+        txs: txsWithTimestamps,
+      };
     },
   });
 
   const columns = useMemo(() => {
     return transactionTableHeadings.map(
       (heading: TransactionTableColumnKey) => {
-        return function TransactionTableColumn({
-          row: tx,
-        }: {
-          row: TxResponseSDKType;
-        }) {
-          const events = tx.events
-            .map(decodeEvent)
-            .map((event) => mapEventAttributes<DexEvent>(event));
+        return function TransactionTableColumn({ row: tx }: { row: Tx }) {
+          const events = tx.tx_result.events.map((event) =>
+            mapEventAttributes<DexEvent>(event)
+          );
 
           // try swap event
           const swapEvent = events.find(
@@ -562,8 +626,8 @@ function TransactionsTable({
 
   return (
     <div>
-      <Table<TxResponseSDKType>
-        data={query.data?.tx_responses}
+      <Table<Tx>
+        data={query.data?.txs}
         headings={transactionTableHeadings.map((heading) => (
           <TransactionTableHeading
             key={heading}
@@ -582,7 +646,7 @@ function TransactionsTable({
 interface EventColumnProps<T> {
   tokenA: Token;
   tokenB: Token;
-  tx: TxResponseSDKType;
+  tx: Tx;
   events: T[];
   heading: TransactionTableColumnKey;
 }
@@ -653,7 +717,9 @@ function EventColumn<T extends DexEvent>({
           ? `< ${formatCurrency(0.01)}`
           : formatCurrency(values[0].plus(values[1]).toNumber());
       case 'Time':
-        return formatRelativeTime(tx.timestamp);
+        return tx.timestamp
+          ? formatRelativeTime(tx.timestamp)
+          : `Block: ${tx.height}`;
     }
     return null;
 
@@ -750,7 +816,7 @@ function SwapColumn({
 }: {
   tokenA: Token;
   tokenB: Token;
-  tx: TxResponseSDKType;
+  tx: Tx;
   event: DexPlaceLimitOrderEvent;
   events: ChainEvent[];
   heading: TransactionTableColumnKey;
@@ -802,7 +868,9 @@ function SwapColumn({
           ? `< ${formatCurrency(0.01)}`
           : formatCurrency(values[0].plus(values[1]).toNumber());
       case 'Time':
-        return formatRelativeTime(tx.timestamp);
+        return tx.timestamp
+          ? formatRelativeTime(tx.timestamp)
+          : `Block: ${tx.height}`;
     }
     return null;
 
