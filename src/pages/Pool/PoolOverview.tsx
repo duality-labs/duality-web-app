@@ -26,14 +26,13 @@ import {
   ChainEvent,
   DexDepositEvent,
   DexEvent,
-  CoinReceivedEvent,
   DexMessageAction,
   DexPlaceLimitOrderEvent,
   DexWithdrawalEvent,
   decodeEvent,
   mapEventAttributes,
-  CoinSpentEvent,
-  parseAmountDenomString,
+  getSpentTokenAmount,
+  getReceivedTokenAmount,
 } from '../../lib/web3/utils/events';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
@@ -808,48 +807,20 @@ function SwapColumn({
     return null;
 
     function getTokenAReserves() {
-      const tokenEvent =
-        attributes.TokenIn === tokenA.address
-          ? // find tokens spent
-            events.find(
-              (event): event is CoinSpentEvent =>
-                event.type === 'coin_spent' &&
-                event.attributes.spender === attributes.Receiver
-            )
-          : // find tokens received
-            events.find(
-              (event): event is CoinReceivedEvent =>
-                event.type === 'coin_received' &&
-                event.attributes.receiver === attributes.Receiver
-            );
-      const [amount] = tokenEvent
-        ? parseAmountDenomString(tokenEvent.attributes.amount)
-        : [];
-      return amount?.toFixed() || '0';
+      const address = attributes.Creator;
+      return attributes.TokenIn === tokenA.address
+        ? getSpentTokenAmount(events, address, { matchToken: tokenA })
+        : getReceivedTokenAmount(events, address, { matchToken: tokenA });
     }
 
     function getTokenBReserves() {
-      const tokenEvent =
-        attributes.TokenIn === tokenB.address
-          ? // find tokens spent
-            events.find(
-              (event): event is CoinSpentEvent =>
-                event.type === 'coin_spent' &&
-                event.attributes.spender === attributes.Receiver
-            )
-          : // find tokens received
-            events.find(
-              (event): event is CoinReceivedEvent =>
-                event.type === 'coin_received' &&
-                event.attributes.receiver === attributes.Receiver
-            );
-      const [amount] = tokenEvent
-        ? parseAmountDenomString(tokenEvent.attributes.amount)
-        : [];
-      return amount?.toFixed() || '0';
+      const address = attributes.Creator;
+      return attributes.TokenIn === tokenB.address
+        ? getSpentTokenAmount(events, address, { matchToken: tokenB })
+        : getReceivedTokenAmount(events, address, { matchToken: tokenB });
     }
 
-    function getTokenReservesInDenom(token: Token, reserves: string) {
+    function getTokenReservesInDenom(token: Token, reserves: BigNumber.Value) {
       return getAmountInDenom(token, reserves, token.address, token.display, {
         fractionalDigits: 3,
         significantDigits: 3,
