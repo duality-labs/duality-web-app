@@ -212,6 +212,8 @@ export function getTokenBySymbol(symbol: string | undefined) {
       (token) => token.symbol === symbol
     );
   } else {
+    // todo: in mainnet find the best way to differentiate between symbols
+    // maybe use addresses instead or as a fallback to be more specific?
     tokenListCache['mainnetTokens'] =
       tokenListCache['mainnetTokens'] || getTokens(mainnetTokens);
     return tokenListCache['mainnetTokens'].find(
