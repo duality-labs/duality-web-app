@@ -4,7 +4,7 @@ import PoolsTableCard, {
   MyPoolsTableCard,
 } from '../../components/cards/PoolsTableCard';
 
-import useTokens from '../../lib/web3/hooks/useTokens';
+import { getTokenBySymbol } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 import { useUserPositionsShareValues } from '../../lib/web3/hooks/useUserShareValues';
 
@@ -25,7 +25,6 @@ function Pools() {
   const navigate = useNavigate();
 
   // change tokens to match pathname
-  const tokenList = useTokens();
   const matchTokens = useMatch('/pools/:tokenA/:tokenB');
   const matchTokenManagement = useMatch('/pools/:tokenA/:tokenB/:addOrEdit');
   const isManagementPath =
@@ -36,12 +35,12 @@ function Pools() {
 
   const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
     if (match) {
-      const tokenA = tokenList.find((t) => t.symbol === match.params['tokenA']);
-      const tokenB = tokenList.find((t) => t.symbol === match.params['tokenB']);
+      const tokenA = getTokenBySymbol(match.params['tokenA']);
+      const tokenB = getTokenBySymbol(match.params['tokenB']);
       return [tokenA, tokenB];
     }
     return [];
-  }, [tokenList, match]);
+  }, [match]);
 
   // don't change tokens directly:
   // change the path name which will in turn update the tokens selected
