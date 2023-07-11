@@ -14,6 +14,8 @@ const {
   REACT_APP__IS_MAINNET = 'mainnet',
 } = process.env;
 
+const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
+
 interface AddressableToken extends Token {
   address: string; // only accept routeable tokens in lists
 }
@@ -80,7 +82,7 @@ const dualityStakeToken: Token = {
   chain: dualityChain,
 };
 
-const testnetTokens = REACT_APP__IS_MAINNET === 'testnet' && [
+const testnetTokens = isTestnet && [
   dualityMainToken,
   dualityStakeToken,
   // add a copy of some tokens onto the Duality chain for development
@@ -117,11 +119,12 @@ const testnetTokens = REACT_APP__IS_MAINNET === 'testnet' && [
                   denom: address,
                 };
               }
-              // make test tokens look more expensive in testing
+              // make test token amounts more consistent in dev
+              // the different exponents really throws off
               else {
                 return {
                   ...unit,
-                  exponent: 21,
+                  exponent: 18,
                 };
               }
             }),
@@ -196,6 +199,27 @@ export function useDualityTokens(sortFunction = defaultSort) {
     () => tokenListCache['dualityTokens'].slice().sort(sortFunction).reverse(),
     [sortFunction]
   );
+}
+
+export function getTokenBySymbol(symbol: string | undefined) {
+  if (!symbol) {
+    return undefined;
+  }
+  if (isTestnet) {
+    tokenListCache['dualityTokens'] =
+      tokenListCache['dualityTokens'] || getTokens(dualityTokensFilter);
+    return tokenListCache['dualityTokens'].find(
+      (token) => token.symbol === symbol
+    );
+  } else {
+    // todo: in mainnet find the best way to differentiate between symbols
+    // maybe use addresses instead or as a fallback to be more specific?
+    tokenListCache['mainnetTokens'] =
+      tokenListCache['mainnetTokens'] || getTokens(mainnetTokens);
+    return tokenListCache['mainnetTokens'].find(
+      (token) => token.symbol === symbol
+    );
+  }
 }
 
 function defaultSort(a: Token, b: Token) {

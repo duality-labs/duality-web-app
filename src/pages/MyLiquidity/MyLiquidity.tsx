@@ -15,7 +15,7 @@ import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowAltCircleRight } from '@fortawesome/free-solid-svg-icons';
-import useTokens from '../../lib/web3/hooks/useTokens';
+import { getTokenBySymbol } from '../../lib/web3/hooks/useTokens';
 import MyPoolStakesTableCard from '../../components/cards/PoolStakesTableCard';
 
 export default function MyLiquidity() {
@@ -125,18 +125,16 @@ function Tables() {
     [navigate]
   );
 
-  const tokenList = useTokens();
   const matchTokens = useMatch('/portfolio/pools/:tokenA/:tokenB');
 
   const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
     if (matchTokens) {
-      const params = matchTokens.params;
-      const tokenA = tokenList.find((t) => t.symbol === params['tokenA']);
-      const tokenB = tokenList.find((t) => t.symbol === params['tokenB']);
+      const tokenA = getTokenBySymbol(matchTokens.params['tokenA']);
+      const tokenB = getTokenBySymbol(matchTokens.params['tokenB']);
       return [tokenA, tokenB];
     }
     return [];
-  }, [tokenList, matchTokens]);
+  }, [matchTokens]);
 
   const goToPositionManagementPage = useCallback(
     ([token0, token1]: [Token, Token]) => {
