@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/duality-labs/duality-web-app/compare/v0.3.1...v0.3.2) (2023-07-11)
+
+
+### Features
+
+* update testnet denom display ([#392](https://github.com/duality-labs/duality-web-app/issues/392)) ([1de82b0](https://github.com/duality-labs/duality-web-app/commit/1de82b0790f4b00e5265efa2987c721ddd99fe64))
+
 ## [0.3.1](https://github.com/duality-labs/duality-web-app/compare/v0.3.0...v0.3.1) (2023-07-10)
 
 
