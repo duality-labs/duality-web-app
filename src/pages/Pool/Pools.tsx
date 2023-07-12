@@ -93,12 +93,13 @@ function Pools() {
           <h1 className="h1">Pools</h1>
           <div>Provide liquidity and earn fees.</div>
         </div>
-        {/* todo: link to an empty (no selected tokens) new position page */}
-        <Link to={'/pools/-/-/add'}>
-          <button className="button button-primary py-3 px-md">
-            Create New Position
-          </button>
-        </Link>
+        <div className="row">
+          <Link to={'/pools/-/-/add'} className="hi">
+            <button className="button button-primary py-3 px-md">
+              Create New Position
+            </button>
+          </Link>
+        </div>
         <PoolTableCards setTokens={setTokensPath} />
       </div>
     );
