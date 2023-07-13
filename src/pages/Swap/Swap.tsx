@@ -23,11 +23,12 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBigBalance } from '../../lib/web3/indexerProvider';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
-import { useCurrentPriceFromTicks } from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
+import useMidTickIndexFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
+import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { formatAmount } from '../../lib/utils/number';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
@@ -324,17 +325,20 @@ function Swap() {
     }
   }, [tokenA, tokenB]);
 
-  const currentPrice = useCurrentPriceFromTicks(
+  const currentMidIndex = useMidTickIndexFromTicks(
     tokenA?.address,
     tokenB?.address
   );
+  const currentRoundedPrice = currentMidIndex
+    ? tickIndexToPrice(new BigNumber(currentMidIndex.toFixed(0)))
+    : undefined;
   const priceImpact =
     routerResult &&
-    currentPrice?.isGreaterThan(0) &&
+    currentRoundedPrice?.isGreaterThan(0) &&
     routerResult.priceOut?.isGreaterThan(0)
       ? new BigNumber(
           new BigNumber(routerResult.priceOut)
-            .dividedBy(new BigNumber(currentPrice))
+            .dividedBy(new BigNumber(currentRoundedPrice))
             .multipliedBy(100)
         ).minus(100)
       : undefined;
