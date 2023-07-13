@@ -6,6 +6,7 @@ export type SwapError = Error & {
   insufficientLiquidity?: boolean;
   insufficientLiquidityIn?: boolean;
   insufficientLiquidityOut?: boolean;
+  result?: RouterResult;
 };
 
 // mock implementation of router (no hop)
@@ -181,6 +182,7 @@ export function calculateOut({
         );
         error.insufficientLiquidity = true;
         error.insufficientLiquidityIn = true;
+        error.result = getLastState();
         throw error;
       }
       // if amountLeft is greater that zero then proceed to next tick
@@ -191,12 +193,26 @@ export function calculateOut({
     const error: SwapError = new Error('Could not swap all tokens given');
     error.insufficientLiquidity = true;
     error.insufficientLiquidityOut = true;
+    error.result = getLastState();
     throw error;
   }
   // somehow we have looped through all ticks and exactly satisfied the needed swap
   // yet did not match the positive exiting condition
   // this can happen if the amountIn is zero and there are no ticks in the pair
   return { amountOut, priceIn, priceOut, tickIndexIn, tickIndexOut };
+
+  function getLastState(): RouterResult {
+    return {
+      amountIn,
+      tokenIn,
+      tokenOut,
+      amountOut,
+      priceIn,
+      priceOut,
+      tickIndexIn,
+      tickIndexOut,
+    };
+  }
 }
 
 // mock implementation of fee calculation
