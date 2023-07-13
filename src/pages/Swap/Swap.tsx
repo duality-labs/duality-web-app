@@ -23,6 +23,7 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBigBalance } from '../../lib/web3/indexerProvider';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
+import { useCurrentPriceFromTicks } from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -323,13 +324,17 @@ function Swap() {
     }
   }, [tokenA, tokenB]);
 
+  const currentPrice = useCurrentPriceFromTicks(
+    tokenA?.address,
+    tokenB?.address
+  );
   const priceImpact =
     routerResult &&
-    routerResult.priceIn?.isGreaterThan(0) &&
+    currentPrice?.isGreaterThan(0) &&
     routerResult.priceOut?.isGreaterThan(0)
       ? new BigNumber(
           new BigNumber(routerResult.priceOut)
-            .dividedBy(new BigNumber(routerResult.priceIn))
+            .dividedBy(new BigNumber(currentPrice))
             .multipliedBy(100)
         ).minus(100)
       : undefined;
