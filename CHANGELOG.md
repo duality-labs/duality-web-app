@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/duality-labs/duality-web-app/compare/v0.3.3...v0.3.4) (2023-07-14)
+
+
+### Fixes
+
+* CI builds require dependency update ([#400](https://github.com/duality-labs/duality-web-app/issues/400)) ([1a560cc](https://github.com/duality-labs/duality-web-app/commit/1a560cc34358a5ed86297458acc4d9e5870d25bc))
+
 ## [0.3.3](https://github.com/duality-labs/duality-web-app/compare/v0.3.2...v0.3.3) (2023-07-13)
 
 
