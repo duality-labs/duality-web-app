@@ -11,16 +11,16 @@ import { Token } from './tokens';
  * $ totalAmount0 = amount0 + amount1 * price1To0
  *
  * we can explain further with an example across a few orders of magnitude:
- *  - take token0 as ETH
- *  - take token1 as USDC
- *  - take price0 = 1000USD/ETH
- *  - take price1 = 1USD/USDC
+ *  - take token0 as ATOM
+ *  - take token1 as ETH
+ *  - take price0 = 10USD/ATOM
+ *  - take price1 = 1000USD/ETH
  *
  * $ totalAmount0 = amount0 + amount1 * price1To0
- * $ totalAmountETH = amountETH + amountUSDC * priceUSDCToETH
- * $ totalAmountETH = amountETH + amountUSDC * (priceUSD/USDC / priceUSD/ETH)
- * $ totalAmountETH = amountETH + amountUSDC * (price1 / price0)ETH/USDC
- * $ totalAmountETH = amountETH + amountUSDC * 0.001ETH/USDC
+ * $ totalAmountATOM = amountATOM + amountETH * priceATOMToETH
+ * $ totalAmountATOM = amountATOM + amountETH * (priceUSD/ETH / priceUSD/ATOM)
+ * $ totalAmountATOM = amountATOM + amountETH * (price1 / price0)ATOM/ETH
+ * $ totalAmountATOM = amountATOM + amountETH * 100ATOM/ETH
  *
  * therefore: price1To0 = price1 / price0
  */
@@ -35,9 +35,9 @@ type Price = BigNumber;
  *  # for direction 1To0 that means:
  * price1To0 = 1.0001^[tickIndex1To0] and
  * tickIndex1To0 = log(price1To0) / log(1.0001)
- *  # from our example token pair ETH<>USDC:
- * tickIndex1To0 = log(0.001) / log(1.0001)
- * tickIndex1To0 = -69081 (always rounded to an integer)
+ *  # from our example token pair ATOM<>ETH:
+ * tickIndex1To0 = log(200) / log(1.0001)
+ * tickIndex1To0 = 46054 (always rounded to an integer)
 
  * importantly the API will usually return tickIndex1To0 as tickIndex
  */
