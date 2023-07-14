@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/duality-labs/duality-web-app/compare/v0.3.2...v0.3.3) (2023-07-13)
+
+
+### Fixes
+
+* token amount width to minimum width ([#398](https://github.com/duality-labs/duality-web-app/issues/398)) ([75d7107](https://github.com/duality-labs/duality-web-app/commit/75d7107e2ae8a35b9df98fb9feb2c31c6f5e8a4b))
+
 ## [0.3.2](https://github.com/duality-labs/duality-web-app/compare/v0.3.1...v0.3.2) (2023-07-11)
 
 
