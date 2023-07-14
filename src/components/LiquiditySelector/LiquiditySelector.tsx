@@ -582,10 +582,10 @@ export default function LiquiditySelector({
       )
     );
     function getReserveAValue(reserve: BigNumber): BigNumber {
-      return reserve.multipliedBy(edgePrice);
+      return reserve;
     }
     function getReserveBValue(reserve: BigNumber): BigNumber {
-      return reserve;
+      return reserve.multipliedBy(edgePrice);
     }
   }, [emptyBuckets, tokenATicks, tokenBTicks, edgePriceIndex]);
 
@@ -1558,14 +1558,14 @@ function TicksGroup({
   // collect reserve height to calculate stats to use
   const tickValues = userTicks.flatMap((tick) =>
     [
-      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
-      tick?.reserveB.toNumber(),
+      tick?.reserveA.toNumber(),
+      tick?.reserveB.multipliedBy(currentPrice).toNumber(),
     ].filter((reserve): reserve is number => Boolean(reserve))
   );
   const backgroundTickValues = backgroundTicks.flatMap((tick) =>
     [
-      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
-      tick?.reserveB.toNumber(),
+      tick?.reserveA.toNumber(),
+      tick?.reserveB.multipliedBy(currentPrice).toNumber(),
     ].filter((reserve): reserve is number => Boolean(reserve))
   );
 
@@ -1755,22 +1755,22 @@ function TicksGroup({
         (reserveA.isGreaterThan(0)
           ? cumulativeTokenValues &&
             reserveA
-              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
             reserveB
+              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)) || new BigNumber(0);
       const backgroundValue =
         (background.reserveA.isGreaterThan(0)
           ? cumulativeTokenValues &&
             background.reserveA
-              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
             background.reserveB
+              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)) || new BigNumber(0);
 
