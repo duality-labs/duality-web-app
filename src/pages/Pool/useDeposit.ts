@@ -228,10 +228,10 @@ export function useDeposit([tokenA, tokenB]: [
           const existingTick =
             tickIndex0 !== undefined && tickIndex1 !== undefined
               ? !!token0Ticks?.find((pairTick) => {
-                  return pairTick.tickIndex.isEqualTo(tickIndex0);
+                  return pairTick.tickIndex1To0.isEqualTo(tickIndex0);
                 }) &&
                 !!token1Ticks?.find((pairTick) => {
-                  return pairTick.tickIndex.isEqualTo(tickIndex1);
+                  return pairTick.tickIndex1To0.isEqualTo(tickIndex1);
                 })
               : undefined;
           // add 60000 for existing ticks

@@ -197,8 +197,8 @@ function Swap() {
             tickMax !== undefined &&
             ticks?.filter((tick) => {
               return (
-                tick.tickIndex.isGreaterThanOrEqualTo(tickMin) &&
-                tick.tickIndex.isLessThanOrEqualTo(tickMax)
+                tick.tickIndex1To0.isGreaterThanOrEqualTo(tickMin) &&
+                tick.tickIndex1To0.isLessThanOrEqualTo(tickMax)
               );
             })) ||
           [];
@@ -210,7 +210,8 @@ function Swap() {
           ).length || 0;
         const ticksUnused =
           new Set<number>([
-            ...(ticksPassed?.map((tick) => tick.tickIndex.toNumber()) || []),
+            ...(ticksPassed?.map((tick) => tick.tickIndex1To0.toNumber()) ||
+              []),
           ]).size - ticksUsed;
         const gasEstimate = ticksUsed
           ? // 120000 base

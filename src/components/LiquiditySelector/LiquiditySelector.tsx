@@ -232,15 +232,15 @@ export default function LiquiditySelector({
           token1,
           reserve0,
           reserve1,
-          tickIndex,
-          price,
+          tickIndex1To0,
+          price1To0,
           fee,
         }: TickInfo): TokenTick => {
           return {
             token: isToken1 ? token1 : token0,
             reserve: isToken1 ? reserve1 : reserve0,
-            tickIndex: (forward ? tickIndex : tickIndex.negated()).toNumber(),
-            price: forward ? price : new BigNumber(1).dividedBy(price),
+            tickIndex: tickIndex1To0.multipliedBy(forward ? 1 : -1).toNumber(),
+            price: forward ? price1To0 : new BigNumber(1).dividedBy(price1To0),
             fee: fee.toNumber(),
           };
         };

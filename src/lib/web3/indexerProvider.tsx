@@ -330,7 +330,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             share.fee === Fee
         );
         const sharesOwned = calculateShares({
-          tickIndex: new BigNumber(TickIndex),
+          tickIndex1To0: new BigNumber(TickIndex),
           reserve0: new BigNumber(NewReserves0),
           reserve1: new BigNumber(NewReserves1),
         });

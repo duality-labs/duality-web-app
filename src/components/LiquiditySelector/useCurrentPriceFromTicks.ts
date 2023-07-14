@@ -7,10 +7,11 @@ import { TickInfo, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 // current price of A to B is given in price B/A
 // eg. price of ATOM in USDC is given in USDC/ATOM units
+type PriceBToA = BigNumber;
 export function useCurrentPriceFromTicks(
   tokenA?: string,
   tokenB?: string
-): BigNumber | undefined {
+): PriceBToA | undefined {
   const midIndex = useMidTickIndexFromTicks(tokenA, tokenB);
   return useMemo(() => {
     return midIndex !== undefined
@@ -19,10 +20,11 @@ export function useCurrentPriceFromTicks(
   }, [midIndex]);
 }
 
+type TickIndexBToA = number;
 export default function useMidTickIndexFromTicks(
   tokenA?: string,
   tokenB?: string
-): number | undefined {
+): TickIndexBToA | undefined {
   const [token0, token1] = useOrderedTokenPair([tokenA, tokenB]) || [];
   const {
     data: [token0Ticks = [], token1Ticks = []],
@@ -41,16 +43,16 @@ export default function useMidTickIndexFromTicks(
     return;
   }
 
-  const midTickIndex =
+  const midTickIndex1To0 =
     token0Ticks.length > 0 && token1Ticks.length > 0
       ? // calculate mid point
-        getMidIndex(token0Ticks, token1Ticks)
+        getMidIndex1To0(token0Ticks, token1Ticks)
       : // or return only found side of liquidity
-        token0Ticks[0]?.tickIndex ?? token1Ticks[0]?.tickIndex;
+        token0Ticks[0]?.tickIndex1To0 ?? token1Ticks[0]?.tickIndex1To0;
 
-  return (reverse ? midTickIndex?.negated() : midTickIndex)?.toNumber();
+  return (reverse ? midTickIndex1To0?.negated() : midTickIndex1To0)?.toNumber();
 
-  function getMidIndex(
+  function getMidIndex1To0(
     token0Ticks: TickInfo[],
     token1Ticks: TickInfo[]
   ): BigNumber {
@@ -60,7 +62,9 @@ export default function useMidTickIndexFromTicks(
     let lowestTick1 = token1Ticks[lowestTick1Index];
     // let behindEnemyLinesValue0 = new BigNumber(0);
     // let behindEnemyLinesValue1 = new BigNumber(0);
-    while (highestTick0.tickIndex.isGreaterThan(lowestTick1.tickIndex)) {
+    while (
+      highestTick0.tickIndex1To0.isGreaterThan(lowestTick1.tickIndex1To0)
+    ) {
       const nextTick0 = token0Ticks[highestTick0Index + 1];
       const nextTick1 = token1Ticks[lowestTick1Index + 1];
       // if both tick sides have liquidity, figure out which one to isolate
@@ -74,7 +78,9 @@ export default function useMidTickIndexFromTicks(
         let behindEnemyLinesValue0 = new BigNumber(0);
         for (let i = highestTick0Index; i < token0Ticks.length; i++) {
           const token0Tick = token0Ticks[i];
-          if (token0Tick.tickIndex.isGreaterThan(lowestTick1.tickIndex)) {
+          if (
+            token0Tick.tickIndex1To0.isGreaterThan(lowestTick1.tickIndex1To0)
+          ) {
             behindEnemyLinesValue0 = behindEnemyLinesValue0.plus(
               // get value in units of reserve0
               token0Tick.reserve0
@@ -88,11 +94,11 @@ export default function useMidTickIndexFromTicks(
         let behindEnemyLinesValue1 = new BigNumber(0);
         for (let i = lowestTick1Index; i < token1Ticks.length; i++) {
           const token1Tick = token1Ticks[i];
-          if (token1Tick.tickIndex.isLessThan(highestTick0.tickIndex)) {
+          if (token1Tick.tickIndex1To0.isLessThan(highestTick0.tickIndex1To0)) {
             behindEnemyLinesValue1 = behindEnemyLinesValue1.plus(
               // get value in units of reserve0
               token1Tick.reserve1.multipliedBy(
-                tickIndexToPrice(token1Tick.tickIndex)
+                tickIndexToPrice(token1Tick.tickIndex1To0)
               )
             );
           } else {
@@ -123,21 +129,21 @@ export default function useMidTickIndexFromTicks(
       lowestTick1 = token1Ticks[lowestTick1Index];
     }
     // if they are the same tick, no need to interpolate
-    if (highestTick0.tickIndex === lowestTick1.tickIndex) {
-      return highestTick0.tickIndex;
+    if (highestTick0.tickIndex1To0 === lowestTick1.tickIndex1To0) {
+      return highestTick0.tickIndex1To0;
     }
     // linearly interpolate an answer based off value (in reserveA units)
     const highestTick0Value = highestTick0.reserve0;
     const lowestTick1Value = lowestTick1.reserve1.multipliedBy(
-      tickIndexToPrice(highestTick0.tickIndex)
+      tickIndexToPrice(highestTick0.tickIndex1To0)
     );
     // calculate the mid point
     const linearPercentage = lowestTick1Value.dividedBy(
       highestTick0Value.plus(lowestTick1Value)
     );
-    return highestTick0.tickIndex.plus(
+    return highestTick0.tickIndex1To0.plus(
       linearPercentage.multipliedBy(
-        lowestTick1.tickIndex.minus(highestTick0.tickIndex)
+        lowestTick1.tickIndex1To0.minus(highestTick0.tickIndex1To0)
       )
     );
   }

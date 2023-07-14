@@ -35,8 +35,8 @@ export function router(
       .filter((tick) => !tick.reserve0.isZero() || !tick.reserve1.isZero())
       .sort(
         forward
-          ? (a, b) => Number(a.tickIndex) - Number(b.tickIndex)
-          : (a, b) => Number(b.tickIndex) - Number(a.tickIndex)
+          ? (a, b) => Number(a.tickIndex1To0) - Number(b.tickIndex1To0)
+          : (a, b) => Number(b.tickIndex1To0) - Number(a.tickIndex1To0)
       );
     const amountIn = new BigNumber(valueA);
 
@@ -140,8 +140,8 @@ export function calculateOut({
       // find price in the right direction
       const isSameOrder = tokens[0] === tokenPath[pairIndex];
       const price = isSameOrder
-        ? sortedTicks[tickIndex].price
-        : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price);
+        ? sortedTicks[tickIndex].price1To0
+        : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price1To0);
       // the reserves of tokenOut available at this tick
       const reservesOut = isSameOrder
         ? sortedTicks[tickIndex].reserve1
@@ -149,8 +149,8 @@ export function calculateOut({
       if (reservesOut.isGreaterThan(0)) {
         priceIn = priceIn || price;
         priceOut = price;
-        tickIndexIn = tickIndexIn || sortedTicks[tickIndex].tickIndex;
-        tickIndexOut = sortedTicks[tickIndex].tickIndex;
+        tickIndexIn = tickIndexIn || sortedTicks[tickIndex].tickIndex1To0;
+        tickIndexOut = sortedTicks[tickIndex].tickIndex1To0;
       }
       // the reserves of tokenOut available at this tick
       const maxOut = amountLeft
