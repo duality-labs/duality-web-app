@@ -134,12 +134,12 @@ function getEditedPositionTick(
       reserveB: !invertedTokenOrder
         ? maybeTickDiff1.plus(token1Context?.userReserves || 0)
         : maybeTickDiff0.plus(token0Context?.userReserves || 0),
-      tickIndex:
-        (!invertedTokenOrder ? 1 : -1) * deposit.centerTickIndex.toNumber(),
-      price: tickIndexToPrice(
+      tickIndexBToA:
+        (!invertedTokenOrder ? 1 : -1) * deposit.centerTickIndex1To0.toNumber(),
+      priceBToA: tickIndexToPrice(
         !invertedTokenOrder
-          ? new BigNumber(deposit.centerTickIndex.toNumber())
-          : new BigNumber(deposit.centerTickIndex.toNumber()).negated()
+          ? new BigNumber(deposit.centerTickIndex1To0.toNumber())
+          : new BigNumber(deposit.centerTickIndex1To0.toNumber()).negated()
       ),
       fee: deposit.fee.toNumber(),
       tokenA: !invertedTokenOrder ? token0 : token1,
@@ -291,7 +291,7 @@ export default function PoolManagement({
     React.Dispatch<React.SetStateAction<TickGroup>>
   >((userTicksOrCallback) => {
     function restrictTickPrices(tick: Tick): Tick {
-      const { reserveA, reserveB, price } = tick;
+      const { reserveA, reserveB, priceBToA } = tick;
       // restrict values to equal to or greater than 0
       const newReserveA = reserveA.isGreaterThan(0)
         ? reserveA
@@ -300,24 +300,24 @@ export default function PoolManagement({
         ? reserveB
         : new BigNumber(0);
 
-      if (price.isLessThan(priceMin)) {
+      if (priceBToA.isLessThan(priceMin)) {
         const newPrice = new BigNumber(priceMin);
         return {
           ...tick,
           reserveA: newReserveA,
           reserveB: newReserveB,
-          price: new BigNumber(priceMin),
-          tickIndex: priceToTickIndex(newPrice).toNumber(),
+          priceBToA: new BigNumber(priceMin),
+          tickIndexBToA: priceToTickIndex(newPrice).toNumber(),
         };
       }
-      if (price.isGreaterThan(priceMax)) {
+      if (priceBToA.isGreaterThan(priceMax)) {
         const newPrice = new BigNumber(priceMax);
         return {
           ...tick,
           reserveA: newReserveA,
           reserveB: newReserveB,
-          price: new BigNumber(priceMax),
-          tickIndex: priceToTickIndex(newPrice).toNumber(),
+          priceBToA: new BigNumber(priceMax),
+          tickIndexBToA: priceToTickIndex(newPrice).toNumber(),
         };
       }
       return {
@@ -582,17 +582,17 @@ export default function PoolManagement({
         // space ticks across unique tick indexes
         const tickPrices = Array.from({ length: tickCount })
           .reduce<number[]>((result, _, index) => {
-            const tickIndex = Math.round(
+            const tickIndexBToA = Math.round(
               indexMin +
                 (index * (indexMax - indexMin)) / Math.max(1, tickCount - 1)
             );
             // add index only if it is unique
-            return !result.includes(tickIndex)
-              ? [...result, tickIndex]
+            return !result.includes(tickIndexBToA)
+              ? [...result, tickIndexBToA]
               : result;
           }, [])
-          .map<Tick>((tickIndex, index, tickIndexes) => {
-            const price = tickIndexToPrice(new BigNumber(tickIndex));
+          .map<Tick>((tickIndexBToA, index, tickIndexes) => {
+            const priceBToA = tickIndexToPrice(new BigNumber(tickIndexBToA));
 
             // choose whether token A or B should be added for the tick at this price
             const invertToken =
@@ -602,7 +602,7 @@ export default function PoolManagement({
                 : // for double-sided liquidity split the ticks somewhere
                 edgePrice
                 ? // split the ticks at the current price if it exists
-                  price.isLessThan(edgePrice)
+                  priceBToA.isLessThan(edgePrice)
                 : // split the ticks by index if no price exists yet
                   index < tickIndexes.length / 2;
             // add to count
@@ -610,8 +610,8 @@ export default function PoolManagement({
             return {
               reserveA: new BigNumber(invertToken ? 1 : 0),
               reserveB: new BigNumber(invertToken ? 0 : 1),
-              price: price,
-              tickIndex: tickIndex,
+              priceBToA: priceBToA,
+              tickIndexBToA: tickIndexBToA,
               fee: fee,
               tokenA: tokenA,
               tokenB: tokenB,
@@ -693,14 +693,14 @@ export default function PoolManagement({
         feeType &&
         fee !== undefined
       ) {
-        const tickIndex = Math.round((indexMin + indexMax) / 2);
-        const price = tickIndexToPrice(new BigNumber(tickIndex));
+        const tickIndexBToA = Math.round((indexMin + indexMax) / 2);
+        const priceBToA = tickIndexToPrice(new BigNumber(tickIndexBToA));
         return [
           {
             reserveA: new BigNumber(!isValueAZero ? 1 : 0),
             reserveB: new BigNumber(!isValueBZero ? 1 : 0),
-            price: price,
-            tickIndex: tickIndex,
+            priceBToA: priceBToA,
+            tickIndexBToA: tickIndexBToA,
             fee: fee,
             tokenA: tokenA,
             tokenB: tokenB,
@@ -723,7 +723,7 @@ export default function PoolManagement({
           const userTick = userTicks[ticksIndex];
           return (
             newUserTick.fee === userTick.fee &&
-            newUserTick.tickIndex === userTick.tickIndex &&
+            newUserTick.tickIndexBToA === userTick.tickIndexBToA &&
             newUserTick.reserveA.isEqualTo(userTick.reserveA) &&
             newUserTick.reserveB.isEqualTo(userTick.reserveB)
           );
@@ -799,9 +799,15 @@ export default function PoolManagement({
               deposit.pairID.token0 === updatedDeposit.pairID.token0 &&
               deposit.pairID.token1 === updatedDeposit.pairID.token1 &&
               deposit.sharesOwned === updatedDeposit.sharesOwned &&
-              deposit.lowerTickIndex.equals(updatedDeposit.lowerTickIndex) &&
-              deposit.centerTickIndex.equals(updatedDeposit.centerTickIndex) &&
-              deposit.upperTickIndex.equals(updatedDeposit.upperTickIndex) &&
+              deposit.lowerTickIndex1To0.equals(
+                updatedDeposit.lowerTickIndex1To0
+              ) &&
+              deposit.centerTickIndex1To0.equals(
+                updatedDeposit.centerTickIndex1To0
+              ) &&
+              deposit.upperTickIndex1To0.equals(
+                updatedDeposit.upperTickIndex1To0
+              ) &&
               deposit.fee.equals(updatedDeposit.fee)
             )
             // todo: check if the reserves have changed side
@@ -840,13 +846,13 @@ export default function PoolManagement({
         tickDiff1: new BigNumber(0),
       }))
       .map(getEditedPositionTick(true, invertedTokenOrder))
-      .sort((a, b) => a.tickIndex - b.tickIndex);
+      .sort((a, b) => a.tickIndexBToA - b.tickIndexBToA);
   }, [userPositionsContext, invertedTokenOrder]);
 
   const editedUserTicks = useMemo(() => {
     return editedUserPosition
       .map(getEditedPositionTick(true, invertedTokenOrder))
-      .sort((a, b) => a.tickIndex - b.tickIndex);
+      .sort((a, b) => a.tickIndexBToA - b.tickIndexBToA);
   }, [editedUserPosition, invertedTokenOrder]);
 
   const diffTokenA = useMemo(
@@ -1075,7 +1081,9 @@ export default function PoolManagement({
               : [userPosition.token0, userPosition.token1];
             const price = formatPrice(
               tickIndexToPrice(
-                new BigNumber(userPosition.deposit.centerTickIndex.toNumber())
+                new BigNumber(
+                  userPosition.deposit.centerTickIndex1To0.toNumber()
+                )
               ).toNumber()
             );
             const withdrawA = diffA.isLessThan(0) && (
@@ -1152,7 +1160,7 @@ export default function PoolManagement({
             );
             return (
               <Fragment
-                key={`${userPosition.deposit.centerTickIndex}-${userPosition.deposit.fee}`}
+                key={`${userPosition.deposit.centerTickIndex1To0}-${userPosition.deposit.fee}`}
               >
                 {depositA}
                 {depositB}
@@ -1540,7 +1548,7 @@ export default function PoolManagement({
                                 stepFunction={logarithmStep}
                                 value={userTicks[
                                   userTickSelected
-                                ].price.toNumber()}
+                                ].priceBToA.toNumber()}
                                 onChange={(value) => {
                                   setUserTicks((userTicks) => {
                                     // skip non-update
@@ -1548,22 +1556,24 @@ export default function PoolManagement({
                                     if (
                                       userTicks[
                                         userTickSelected
-                                      ].price.isEqualTo(newValue)
+                                      ].priceBToA.isEqualTo(newValue)
                                     )
                                       return userTicks;
                                     // replace singular tick price
-                                    return userTicks.map((userTick, index) => {
-                                      return index === userTickSelected
-                                        ? {
-                                            ...userTick,
-                                            price: newValue,
-                                            tickIndex:
-                                              priceToTickIndex(
-                                                newValue
-                                              ).toNumber(),
-                                          }
-                                        : userTick;
-                                    });
+                                    return userTicks.map(
+                                      (userTick, index): Tick => {
+                                        return index === userTickSelected
+                                          ? {
+                                              ...userTick,
+                                              priceBToA: newValue,
+                                              tickIndexBToA:
+                                                priceToTickIndex(
+                                                  newValue
+                                                ).toNumber(),
+                                            }
+                                          : userTick;
+                                      }
+                                    );
                                   });
                                 }}
                                 maxSignificantDigits={maxFractionDigits + 1}

@@ -103,15 +103,15 @@ function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
     poolReserves: {
       pairID: { token0 = '', token1 = '' } = {},
       tokenIn,
-      tickIndex: tickIndexString,
+      tickIndex: tickIndex1To0String,
       fee: feeString,
       reserves: reservesString,
     } = {},
   }) {
-    const tickIndex = Number(tickIndexString);
+    const tickIndex1To0 = Number(tickIndex1To0String);
     const fee = feeString && Number(feeString);
     if (
-      !isNaN(tickIndex) &&
+      !isNaN(tickIndex1To0) &&
       tokenIn &&
       token0 &&
       token1 &&
@@ -122,17 +122,17 @@ function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
       !isNaN(Number(fee)) &&
       fee !== undefined
     ) {
-      // calculate price from tickIndex, try to keep price values consistent:
+      // calculate price from tickIndex1To0, try to keep price values consistent:
       //   JS rounding may be inconsistent with API's rounding
-      const bigTickIndex = new BigNumber(tickIndex || 0);
-      const bigPrice = tickIndexToPrice(bigTickIndex);
+      const bigTickIndex1To0 = new BigNumber(tickIndex1To0 || 0);
+      const bigPrice1To0 = tickIndexToPrice(bigTickIndex1To0);
 
       if (tokenIn === token0) {
         return {
           token0: tokenMap[token0],
           token1: tokenMap[token1],
-          tickIndex: bigTickIndex,
-          price: bigPrice,
+          tickIndex1To0: bigTickIndex1To0,
+          price1To0: bigPrice1To0,
           fee: new BigNumber(fee),
           reserve0: new BigNumber(reservesString || 0),
           reserve1: new BigNumber(0),
@@ -141,8 +141,8 @@ function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
         return {
           token0: tokenMap[token0],
           token1: tokenMap[token1],
-          tickIndex: bigTickIndex,
-          price: bigPrice,
+          tickIndex1To0: bigTickIndex1To0,
+          price1To0: bigPrice1To0,
           fee: new BigNumber(fee),
           reserve0: new BigNumber(0),
           reserve1: new BigNumber(reservesString || 0),

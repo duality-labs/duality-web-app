@@ -178,15 +178,15 @@ function Swap() {
           routerResult.tickIndexIn &&
           routerResult.tickIndexOut &&
           Math.min(
-            routerResult.tickIndexIn.negated().toNumber(),
-            routerResult.tickIndexOut.negated().toNumber()
+            routerResult.tickIndexIn.toNumber(),
+            routerResult.tickIndexOut.toNumber()
           );
         const tickMax =
           routerResult.tickIndexIn &&
           routerResult.tickIndexOut &&
           Math.max(
-            routerResult.tickIndexIn.negated().toNumber(),
-            routerResult.tickIndexOut.negated().toNumber()
+            routerResult.tickIndexIn.toNumber(),
+            routerResult.tickIndexOut.toNumber()
           );
         const forward = result.tokenIn === token0;
         const ticks = forward ? token1Ticks : token0Ticks;
@@ -195,8 +195,8 @@ function Swap() {
             tickMax !== undefined &&
             ticks?.filter((tick) => {
               return (
-                tick.tickIndex.isGreaterThanOrEqualTo(tickMin) &&
-                tick.tickIndex.isLessThanOrEqualTo(tickMax)
+                tick.tickIndex1To0.isGreaterThanOrEqualTo(tickMin) &&
+                tick.tickIndex1To0.isLessThanOrEqualTo(tickMax)
               );
             })) ||
           [];
@@ -208,7 +208,8 @@ function Swap() {
           ).length || 0;
         const ticksUnused =
           new Set<number>([
-            ...(ticksPassed?.map((tick) => tick.tickIndex.toNumber()) || []),
+            ...(ticksPassed?.map((tick) => tick.tickIndex1To0.toNumber()) ||
+              []),
           ]).size - ticksUsed;
         const gasEstimate = ticksUsed
           ? // 120000 base
@@ -240,7 +241,7 @@ function Swap() {
             orderType: 2,
             // todo: set tickIndex to allow for a tolerance:
             //   the below function is a tolerance of 0
-            tickIndex: Long.fromNumber(tickIndexLimit * (forward ? -1 : 1)),
+            tickIndex: Long.fromNumber(tickIndexLimit * (forward ? 1 : -1)),
             maxAmountOut:
               getAmountInDenom(tokenB, result.amountOut, tokenB?.display) ||
               '0',
@@ -325,11 +326,11 @@ function Swap() {
 
   const priceImpact =
     routerResult &&
-    routerResult.priceIn?.isGreaterThan(0) &&
-    routerResult.priceOut?.isGreaterThan(0)
+    routerResult.priceBToAIn?.isGreaterThan(0) &&
+    routerResult.priceBToAOut?.isGreaterThan(0)
       ? new BigNumber(
-          new BigNumber(routerResult.priceOut)
-            .dividedBy(new BigNumber(routerResult.priceIn))
+          new BigNumber(routerResult.priceBToAIn)
+            .dividedBy(new BigNumber(routerResult.priceBToAOut))
             .multipliedBy(100)
         ).minus(100)
       : undefined;

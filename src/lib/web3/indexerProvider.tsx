@@ -137,18 +137,18 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                   const {
                     token0Address: token0,
                     token1Address: token1,
-                    tickIndexString: tickIndex,
+                    tickIndex1To0String: tickIndex1To0,
                     feeString: fee,
                   } = getShareInfo(coin) || {};
                   // transform tokenized shares into shares
-                  if (token0 && token1 && tickIndex && fee) {
+                  if (token0 && token1 && tickIndex1To0 && fee) {
                     // add tokenized share if everything is fine
                     if (address) {
                       const tokenizedShare = {
                         // todo: remove address from here
                         address,
                         pairId: getPairID(token0, token1),
-                        tickIndex,
+                        tickIndex1To0,
                         fee,
                         sharesOwned: coin.amount,
                       };
@@ -182,14 +182,14 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                   const {
                     token0Address: token0,
                     token1Address: token1,
-                    tickIndexString: tickIndex = '',
+                    tickIndex1To0String: tickIndex1To0 = '',
                     feeString: fee = '',
                   } = getShareInfo(coin) || {};
                   const stakedShare = {
                     // todo: remove address from here
                     address: address || '',
                     pairId: getPairID(token0, token1),
-                    tickIndex,
+                    tickIndex1To0,
                     fee,
                     sharesOwned: coin.amount,
                     ID: `${ID}`,
@@ -297,7 +297,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       const Receiver = event['message.Receiver'];
       const Token0 = event['message.Token0'];
       const Token1 = event['message.Token1'];
-      const TickIndex = event['message.TickIndex'];
+      const TickIndex1To0 = event['message.TickIndex'];
       const Fee = event['message.Fee'];
       const NewReserves0 = event['message.NewReserves0'];
       const NewReserves1 = event['message.NewReserves1'];
@@ -306,7 +306,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         Receiver !== address ||
         !Token0 ||
         !Token1 ||
-        !TickIndex ||
+        !TickIndex1To0 ||
         !Fee ||
         !NewReserves0 ||
         !NewReserves1
@@ -326,11 +326,11 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         const shareFoundIndex = shares.findIndex(
           (share) =>
             share.pairId === pairId &&
-            share.tickIndex === TickIndex &&
+            share.tickIndex1To0 === TickIndex1To0 &&
             share.fee === Fee
         );
         const sharesOwned = calculateShares({
-          tickIndex: new BigNumber(TickIndex),
+          tickIndex1To0: new BigNumber(TickIndex1To0),
           reserve0: new BigNumber(NewReserves0),
           reserve1: new BigNumber(NewReserves1),
         });
@@ -340,7 +340,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             pairId,
             address,
             fee: Fee,
-            tickIndex: TickIndex,
+            tickIndex1To0: TickIndex1To0,
             sharesOwned: sharesOwned.toFixed(),
           };
           if (shareFoundIndex >= 0) {

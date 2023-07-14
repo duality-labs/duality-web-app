@@ -193,7 +193,7 @@ export function usePairPrice(
   const { data: tokenBPrice } = tokenBResponse;
   const price =
     tokenAPrice !== undefined && tokenBPrice !== undefined
-      ? tokenAPrice / tokenBPrice
+      ? tokenBPrice / tokenAPrice
       : undefined;
   return {
     data: price,

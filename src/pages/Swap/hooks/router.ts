@@ -1,4 +1,4 @@
-import { TickInfo, tickIndexToPrice } from '../../../lib/web3/utils/ticks';
+import { TickInfo } from '../../../lib/web3/utils/ticks';
 import { RouterResult } from './index';
 import { BigNumber } from 'bignumber.js';
 
@@ -6,6 +6,7 @@ export type SwapError = Error & {
   insufficientLiquidity?: boolean;
   insufficientLiquidityIn?: boolean;
   insufficientLiquidityOut?: boolean;
+  result?: RouterResult;
 };
 
 // mock implementation of router (no hop)
@@ -34,28 +35,24 @@ export function router(
       .filter((tick) => !tick.reserve0.isZero() || !tick.reserve1.isZero())
       .sort(
         forward
-          ? (a, b) => Number(a.tickIndex) - Number(b.tickIndex)
-          : (a, b) => Number(b.tickIndex) - Number(a.tickIndex)
-      )
-      .map((tick) => {
-        const tickIndex = tick.tickIndex.negated();
-        const price = tickIndexToPrice(tickIndex);
-        return {
-          ...tick,
-          price,
-          tickIndex,
-        };
-      });
+          ? (a, b) => Number(a.tickIndex1To0) - Number(b.tickIndex1To0)
+          : (a, b) => Number(b.tickIndex1To0) - Number(a.tickIndex1To0)
+      );
     const amountIn = new BigNumber(valueA);
 
     try {
-      const { amountOut, priceIn, priceOut, tickIndexIn, tickIndexOut } =
-        calculateOut({
-          tokenIn: tokenA,
-          tokenOut: tokenB,
-          amountIn: amountIn,
-          sortedTicks,
-        });
+      const {
+        amountOut,
+        priceBToAIn,
+        priceBToAOut,
+        tickIndexIn,
+        tickIndexOut,
+      } = calculateOut({
+        tokenIn: tokenA,
+        tokenOut: tokenB,
+        amountIn: amountIn,
+        sortedTicks,
+      });
       const ticksOut = reverse ? token0Ticks : token1Ticks;
       const maxOut = ticksOut.reduce((result, tick) => {
         return result.plus(reverse ? tick.reserve0 : tick.reserve1);
@@ -78,8 +75,8 @@ export function router(
         tokenIn: tokenA,
         tokenOut: tokenB,
         amountOut,
-        priceIn,
-        priceOut,
+        priceBToAIn,
+        priceBToAOut,
         tickIndexIn,
         tickIndexOut,
       };
@@ -118,8 +115,8 @@ export function calculateOut({
   sortedTicks: Array<TickInfo>;
 }): {
   amountOut: BigNumber;
-  priceIn: BigNumber | undefined;
-  priceOut: BigNumber | undefined;
+  priceBToAIn: BigNumber | undefined;
+  priceBToAOut: BigNumber | undefined;
   tickIndexIn: BigNumber | undefined;
   tickIndexOut: BigNumber | undefined;
 } {
@@ -147,22 +144,22 @@ export function calculateOut({
     for (let tickIndex = 0; tickIndex < sortedTicks.length; tickIndex++) {
       // find price in the right direction
       const isSameOrder = tokens[0] === tokenPath[pairIndex];
-      const price = isSameOrder
-        ? sortedTicks[tickIndex].price
-        : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price);
+      const priceBToA = isSameOrder
+        ? sortedTicks[tickIndex].price1To0
+        : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price1To0);
       // the reserves of tokenOut available at this tick
       const reservesOut = isSameOrder
         ? sortedTicks[tickIndex].reserve1
         : sortedTicks[tickIndex].reserve0;
       if (reservesOut.isGreaterThan(0)) {
-        priceIn = priceIn || price;
-        priceOut = price;
-        tickIndexIn = tickIndexIn || sortedTicks[tickIndex].tickIndex;
-        tickIndexOut = sortedTicks[tickIndex].tickIndex;
+        priceIn = priceIn || priceBToA;
+        priceOut = priceBToA;
+        tickIndexIn = tickIndexIn || sortedTicks[tickIndex].tickIndex1To0;
+        tickIndexOut = sortedTicks[tickIndex].tickIndex1To0;
       }
       // the reserves of tokenOut available at this tick
       const maxOut = amountLeft
-        .multipliedBy(price)
+        .dividedBy(priceBToA)
         .decimalPlaces(0, BigNumber.ROUND_DOWN);
 
       // if there is enough liquidity in this tick, then exit with this amount
@@ -175,13 +172,13 @@ export function calculateOut({
         amountOut = amountOut.plus(reservesOut);
         // calculate how much amountIn is still needed to be satisfied
         const amountInTraded = reservesOut
-          .dividedBy(price)
+          .multipliedBy(priceBToA)
           .decimalPlaces(0, BigNumber.ROUND_UP);
         amountLeft = amountLeft.minus(amountInTraded);
       }
       // if amount in has all been swapped, the exit successfully
       if (amountLeft.isZero()) {
-        return { amountOut, priceIn, priceOut, tickIndexIn, tickIndexOut };
+        return getLastState();
       }
       // if somehow the amount left to take out is over-satisfied the error
       else if (amountLeft.isLessThan(0)) {
@@ -190,6 +187,7 @@ export function calculateOut({
         );
         error.insufficientLiquidity = true;
         error.insufficientLiquidityIn = true;
+        error.result = getLastState();
         throw error;
       }
       // if amountLeft is greater that zero then proceed to next tick
@@ -200,12 +198,26 @@ export function calculateOut({
     const error: SwapError = new Error('Could not swap all tokens given');
     error.insufficientLiquidity = true;
     error.insufficientLiquidityOut = true;
+    error.result = getLastState();
     throw error;
   }
   // somehow we have looped through all ticks and exactly satisfied the needed swap
   // yet did not match the positive exiting condition
   // this can happen if the amountIn is zero and there are no ticks in the pair
-  return { amountOut, priceIn, priceOut, tickIndexIn, tickIndexOut };
+  return getLastState();
+
+  function getLastState(): RouterResult {
+    return {
+      amountIn,
+      tokenIn,
+      tokenOut,
+      amountOut,
+      priceBToAIn: priceIn,
+      priceBToAOut: priceOut,
+      tickIndexIn,
+      tickIndexOut,
+    };
+  }
 }
 
 // mock implementation of fee calculation
