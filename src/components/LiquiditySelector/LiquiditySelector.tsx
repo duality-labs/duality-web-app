@@ -79,8 +79,8 @@ export type TickGroup = Array<Tick>;
 
 interface TokenTick {
   reserve: BigNumber;
-  tickIndex: number;
-  price: BigNumber;
+  tickIndexBToA: number;
+  priceBToA: BigNumber;
   fee: number;
   token: Token;
 }
@@ -239,8 +239,12 @@ export default function LiquiditySelector({
           return {
             token: isToken1 ? token1 : token0,
             reserve: isToken1 ? reserve1 : reserve0,
-            tickIndex: tickIndex1To0.multipliedBy(forward ? 1 : -1).toNumber(),
-            price: forward ? price1To0 : new BigNumber(1).dividedBy(price1To0),
+            tickIndexBToA: tickIndex1To0
+              .multipliedBy(forward ? 1 : -1)
+              .toNumber(),
+            priceBToA: forward
+              ? price1To0
+              : new BigNumber(1).dividedBy(price1To0),
             fee: fee.toNumber(),
           };
         };
@@ -288,8 +292,8 @@ export default function LiquiditySelector({
     return oneSidedLiquidity
       ? // for one-sided liquidity this is the behind enemy lines check
         [
-          !isUserTicksAZero ? tokenBEdgeTick?.tickIndex : undefined,
-          !isUserTicksBZero ? tokenAEdgeTick?.tickIndex : undefined,
+          !isUserTicksAZero ? tokenBEdgeTick?.tickIndexBToA : undefined,
+          !isUserTicksBZero ? tokenAEdgeTick?.tickIndexBToA : undefined,
         ]
       : // for double-sided liquidity we switch on the current price
         [edgePriceIndex, edgePriceIndex];
@@ -317,8 +321,8 @@ export default function LiquiditySelector({
   // allow user ticks to reset the boundary of the graph
   const [dataMinIndex, dataMaxIndex] = useMemo<(number | undefined)[]>(() => {
     return [
-      (tokenATicks[tokenATicks.length - 1] || tokenBTicks[0])?.tickIndex,
-      (tokenBTicks[tokenBTicks.length - 1] || tokenATicks[0])?.tickIndex,
+      (tokenATicks[tokenATicks.length - 1] || tokenBTicks[0])?.tickIndexBToA,
+      (tokenBTicks[tokenBTicks.length - 1] || tokenATicks[0])?.tickIndexBToA,
     ];
   }, [tokenATicks, tokenBTicks]);
 
@@ -916,21 +920,23 @@ function fillBuckets(
   return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
     (result, [lowerIndexBound, upperIndexBound]) => {
       const reserve = ticks.reduceRight(
-        (result, { tickIndex, reserve }, index, ticks) => {
+        (result, { tickIndexBToA, reserve }, index, ticks) => {
           // match buckets differently above and below the current pair price
           // the bucket matching starts from the current price and extends
           // outward in both directions so left buckets match for < bucket edge
           // and right buckets match for > bucket edge
           const sideLower =
-            tickIndex === edgePriceIndex
+            tickIndexBToA === edgePriceIndex
               ? // for ticks exactly on current price side with the direction of given token
                 matchSide === 'lower'
-              : tickIndex > edgePriceIndex;
+              : tickIndexBToA > edgePriceIndex;
           const matchToken = sideLower
             ? // match from lower bound
-              tickIndex >= lowerIndexBound && tickIndex < upperIndexBound
+              tickIndexBToA >= lowerIndexBound &&
+              tickIndexBToA < upperIndexBound
             : // match from upper bound
-              tickIndex > lowerIndexBound && tickIndex <= upperIndexBound;
+              tickIndexBToA > lowerIndexBound &&
+              tickIndexBToA <= upperIndexBound;
           // remove tick so it doesn't need to be iterated on again in next bucket
           if (matchToken) {
             ticks.splice(index, 1);
