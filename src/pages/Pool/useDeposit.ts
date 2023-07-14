@@ -124,8 +124,8 @@ export function useDeposit([tokenA, tokenB]: [
         // check all user ticks and filter to non-zero ticks
         // also compbine any equivalent deposits into the same Msg
         const filteredUserTicks = userTicks
-          .filter(({ price, reserveA, reserveB }) => {
-            if (!price || price.isLessThan(0)) {
+          .filter(({ priceBToA, reserveA, reserveB }) => {
+            if (!priceBToA || priceBToA.isLessThan(0)) {
               throw new Error('Price not set');
             }
             if (
@@ -147,12 +147,12 @@ export function useDeposit([tokenA, tokenB]: [
 
             // the order of tick indexes appears reversed here because we are
             // converting from virtual to real ticks (not real to virual)
-            const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
-              tick.tickIndex,
+            const [tickIndexB, tickIndexA] = getVirtualTickIndexes(
+              tick.tickIndexBToA,
               tick.fee
             );
 
-            if (tickIndex0 === undefined || tickIndex1 === undefined) {
+            if (tickIndexA === undefined || tickIndexB === undefined) {
               return [];
             }
 
@@ -162,10 +162,8 @@ export function useDeposit([tokenA, tokenB]: [
             if (hasA) {
               ticks.push({
                 ...tick,
-                // tick indexes must be in form of "token0/1" not "tokenA/B":
-                // we invert the indexes because we work with price1to0
-                // and the backend works on the basis of price0to1
-                tickIndex: forward ? -tickIndex0 : -tickIndex1,
+                // select the tick index where we will add liquidity
+                tickIndexBToA: forward ? tickIndexA : tickIndexB,
                 reserveB: new BigNumber(0),
               });
             }
@@ -174,10 +172,8 @@ export function useDeposit([tokenA, tokenB]: [
             if (hasB) {
               ticks.push({
                 ...tick,
-                // tick indexes must be in form of "token0/1" not "tokenA/B":
-                // we invert the indexes because we work with price1to0
-                // and the backend works on the basis of price0to1
-                tickIndex: forward ? -tickIndex1 : -tickIndex0,
+                // select the tick index where we will add liquidity
+                tickIndexBToA: forward ? tickIndexB : tickIndexA,
                 reserveA: new BigNumber(0),
               });
             }
@@ -188,7 +184,7 @@ export function useDeposit([tokenA, tokenB]: [
             // find equivalent tick
             const foundTickIndex = ticks.findIndex((searchTick) => {
               return (
-                searchTick.tickIndex === tick.tickIndex &&
+                searchTick.tickIndexBToA === tick.tickIndexBToA &&
                 searchTick.fee === tick.fee &&
                 searchTick.tokenA === tick.tokenA &&
                 searchTick.tokenB === tick.tokenB
@@ -222,16 +218,16 @@ export function useDeposit([tokenA, tokenB]: [
 
         const gasEstimate = filteredUserTicks.reduce((gasEstimate, tick) => {
           const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
-            tick.tickIndex,
+            tick.tickIndexBToA,
             tick.fee
           );
           const existingTick =
             tickIndex0 !== undefined && tickIndex1 !== undefined
               ? !!token0Ticks?.find((pairTick) => {
-                  return pairTick.tickIndex.isEqualTo(tickIndex0);
+                  return pairTick.tickIndex1To0.isEqualTo(tickIndex0);
                 }) &&
                 !!token1Ticks?.find((pairTick) => {
-                  return pairTick.tickIndex.isEqualTo(tickIndex1);
+                  return pairTick.tickIndex1To0.isEqualTo(tickIndex1);
                 })
               : undefined;
           // add 60000 for existing ticks
@@ -255,11 +251,11 @@ export function useDeposit([tokenA, tokenB]: [
                 tokenA: tokenA.address,
                 tokenB: tokenB.address,
                 receiver: web3Address,
-                // note: tick indexes must be in the form of "token0/1 index"
-                // not "tokenA/B" index, so inverted order indexes should be reversed
-                // check this commit for changes if this behavior changes
+                // note: tick indexes must be in the form of "A to B"
+                // as that is what is noted by the key sent to the API
+                // but that seems to be we have defined as "B to A"
                 tickIndexesAToB: filteredUserTicks.map((tick) =>
-                  Long.fromNumber(tick.tickIndex).negate()
+                  Long.fromNumber(tick.tickIndexBToA)
                 ),
                 fees: filteredUserTicks.map((tick) =>
                   Long.fromNumber(tick.fee)

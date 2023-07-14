@@ -69,8 +69,8 @@ export interface LiquiditySelectorProps {
 export interface Tick {
   reserveA: BigNumber;
   reserveB: BigNumber;
-  tickIndex: number;
-  price: BigNumber;
+  tickIndexBToA: number;
+  priceBToA: BigNumber;
   fee: number;
   tokenA: Token;
   tokenB: Token;
@@ -79,8 +79,8 @@ export type TickGroup = Array<Tick>;
 
 interface TokenTick {
   reserve: BigNumber;
-  tickIndex: number;
-  price: BigNumber;
+  tickIndexBToA: number;
+  priceBToA: BigNumber;
   fee: number;
   token: Token;
 }
@@ -232,15 +232,19 @@ export default function LiquiditySelector({
           token1,
           reserve0,
           reserve1,
-          tickIndex,
-          price,
+          tickIndex1To0,
+          price1To0,
           fee,
         }: TickInfo): TokenTick => {
           return {
             token: isToken1 ? token1 : token0,
             reserve: isToken1 ? reserve1 : reserve0,
-            tickIndex: (forward ? tickIndex : tickIndex.negated()).toNumber(),
-            price: forward ? price : new BigNumber(1).dividedBy(price),
+            tickIndexBToA: tickIndex1To0
+              .multipliedBy(forward ? 1 : -1)
+              .toNumber(),
+            priceBToA: forward
+              ? price1To0
+              : new BigNumber(1).dividedBy(price1To0),
             fee: fee.toNumber(),
           };
         };
@@ -288,8 +292,8 @@ export default function LiquiditySelector({
     return oneSidedLiquidity
       ? // for one-sided liquidity this is the behind enemy lines check
         [
-          !isUserTicksAZero ? tokenBEdgeTick?.tickIndex : undefined,
-          !isUserTicksBZero ? tokenAEdgeTick?.tickIndex : undefined,
+          !isUserTicksAZero ? tokenBEdgeTick?.tickIndexBToA : undefined,
+          !isUserTicksBZero ? tokenAEdgeTick?.tickIndexBToA : undefined,
         ]
       : // for double-sided liquidity we switch on the current price
         [edgePriceIndex, edgePriceIndex];
@@ -317,8 +321,8 @@ export default function LiquiditySelector({
   // allow user ticks to reset the boundary of the graph
   const [dataMinIndex, dataMaxIndex] = useMemo<(number | undefined)[]>(() => {
     return [
-      (tokenATicks[tokenATicks.length - 1] || tokenBTicks[0])?.tickIndex,
-      (tokenBTicks[tokenBTicks.length - 1] || tokenATicks[0])?.tickIndex,
+      (tokenATicks[tokenATicks.length - 1] || tokenBTicks[0])?.tickIndexBToA,
+      (tokenBTicks[tokenBTicks.length - 1] || tokenATicks[0])?.tickIndexBToA,
     ];
   }, [tokenATicks, tokenBTicks]);
 
@@ -401,7 +405,7 @@ export default function LiquiditySelector({
   // allow user ticks to reset the boundary of the graph
   const [graphMinIndex, graphMaxIndex] = useMemo<[number, number]>(() => {
     const allValues = [
-      ...userTicks.map<number | undefined>((tick) => tick?.tickIndex),
+      ...userTicks.map<number | undefined>((tick) => tick?.tickIndexBToA),
       rangeMinIndex,
       rangeMaxIndex,
       zoomedDataMinIndex,
@@ -578,10 +582,10 @@ export default function LiquiditySelector({
       )
     );
     function getReserveAValue(reserve: BigNumber): BigNumber {
-      return reserve.multipliedBy(edgePrice);
+      return reserve;
     }
     function getReserveBValue(reserve: BigNumber): BigNumber {
-      return reserve;
+      return reserve.multipliedBy(edgePrice);
     }
   }, [emptyBuckets, tokenATicks, tokenBTicks, edgePriceIndex]);
 
@@ -916,21 +920,23 @@ function fillBuckets(
   return emptyBuckets.reduceRight<TickGroupBucketsFilled>(
     (result, [lowerIndexBound, upperIndexBound]) => {
       const reserve = ticks.reduceRight(
-        (result, { tickIndex, reserve }, index, ticks) => {
+        (result, { tickIndexBToA, reserve }, index, ticks) => {
           // match buckets differently above and below the current pair price
           // the bucket matching starts from the current price and extends
           // outward in both directions so left buckets match for < bucket edge
           // and right buckets match for > bucket edge
           const sideLower =
-            tickIndex === edgePriceIndex
+            tickIndexBToA === edgePriceIndex
               ? // for ticks exactly on current price side with the direction of given token
                 matchSide === 'lower'
-              : tickIndex > edgePriceIndex;
+              : tickIndexBToA > edgePriceIndex;
           const matchToken = sideLower
             ? // match from lower bound
-              tickIndex >= lowerIndexBound && tickIndex < upperIndexBound
+              tickIndexBToA >= lowerIndexBound &&
+              tickIndexBToA < upperIndexBound
             : // match from upper bound
-              tickIndex > lowerIndexBound && tickIndex <= upperIndexBound;
+              tickIndexBToA > lowerIndexBound &&
+              tickIndexBToA <= upperIndexBound;
           // remove tick so it doesn't need to be iterated on again in next bucket
           if (matchToken) {
             ticks.splice(index, 1);
@@ -1552,14 +1558,14 @@ function TicksGroup({
   // collect reserve height to calculate stats to use
   const tickValues = userTicks.flatMap((tick) =>
     [
-      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
-      tick?.reserveB.toNumber(),
+      tick?.reserveA.toNumber(),
+      tick?.reserveB.multipliedBy(currentPrice).toNumber(),
     ].filter((reserve): reserve is number => Boolean(reserve))
   );
   const backgroundTickValues = backgroundTicks.flatMap((tick) =>
     [
-      tick?.reserveA.multipliedBy(currentPrice).toNumber(),
-      tick?.reserveB.toNumber(),
+      tick?.reserveA.toNumber(),
+      tick?.reserveB.multipliedBy(currentPrice).toNumber(),
     ].filter((reserve): reserve is number => Boolean(reserve))
   );
 
@@ -1596,17 +1602,17 @@ function TicksGroup({
             return userTicks?.map((userTick, index) => {
               // modify price
               if (userTickSelected === index) {
-                const newIndex =
-                  tick.tickIndex + displacement.x / pixelsPerIndex;
+                const newIndexBToA =
+                  tick.tickIndexBToA + displacement.x / pixelsPerIndex;
                 const roundedPrice = new BigNumber(
                   formatPrice(
-                    tickIndexToPrice(new BigNumber(newIndex)).toFixed()
+                    tickIndexToPrice(new BigNumber(newIndexBToA)).toFixed()
                   )
                 );
                 return {
                   ...userTick,
                   price: roundedPrice,
-                  tickIndex: newIndex,
+                  tickIndexBToA: newIndexBToA,
                 };
               } else {
                 return userTick;
@@ -1739,32 +1745,32 @@ function TicksGroup({
       const tickIsSelected = userTickSelected === index;
       const backgroundTick = backgroundTicks[index] || tick;
       const background = {
-        tickIndex: backgroundTick.tickIndex,
+        tickIndexBToA: backgroundTick.tickIndexBToA,
         reserveA: backgroundTick.reserveA,
         reserveB: backgroundTick.reserveB,
       };
-      const { tickIndex, reserveA, reserveB } = tick;
+      const { tickIndexBToA, reserveA, reserveB } = tick;
       // todo: display cumulative value of both side of ticks, not just one side
       const totalValue =
         (reserveA.isGreaterThan(0)
           ? cumulativeTokenValues &&
             reserveA
-              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
             reserveB
+              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)) || new BigNumber(0);
       const backgroundValue =
         (background.reserveA.isGreaterThan(0)
           ? cumulativeTokenValues &&
             background.reserveA
-              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)
           : cumulativeTokenValues &&
             background.reserveB
+              .multipliedBy(currentPrice)
               .multipliedBy(scalingFactor)
               .dividedBy(cumulativeTokenValues)) || new BigNumber(0);
 
@@ -1790,10 +1796,10 @@ function TicksGroup({
             // warn user if this seems to be a bad trade
             reserveA.isGreaterThan(0)
               ? tokenAWarningPriceIndex &&
-                tickIndex > tokenAWarningPriceIndex &&
+                tickIndexBToA > tokenAWarningPriceIndex &&
                 'tick--price-warning'
               : tokenBWarningPriceIndex &&
-                tickIndex < tokenBWarningPriceIndex &&
+                tickIndexBToA < tokenBWarningPriceIndex &&
                 'tick--price-warning',
           ]
             .filter(Boolean)
@@ -1801,8 +1807,8 @@ function TicksGroup({
         >
           <line
             {...rest}
-            x1={plotX(tickIndex).toFixed(3)}
-            x2={plotX(tickIndex).toFixed(3)}
+            x1={plotX(tickIndexBToA).toFixed(3)}
+            x2={plotX(tickIndexBToA).toFixed(3)}
             y1={percentY(new BigNumber(0)).toFixed(3)}
             y2={percentY(minValue).toFixed(3)}
             className="line"
@@ -1810,29 +1816,29 @@ function TicksGroup({
           {tick !== backgroundTick && (
             <line
               {...rest}
-              x1={plotX(tickIndex).toFixed(3)}
-              x2={plotX(tickIndex).toFixed(3)}
+              x1={plotX(tickIndexBToA).toFixed(3)}
+              x2={plotX(tickIndexBToA).toFixed(3)}
               y1={percentY(minValue).toFixed(3)}
               y2={percentY(maxValue).toFixed(3)}
               className="line line--diff"
             />
           )}
           <circle
-            cx={plotX(tickIndex).toFixed(3)}
+            cx={plotX(tickIndexBToA).toFixed(3)}
             cy={percentY(backgroundValue).toFixed(3)}
             r="5"
             className="tip"
           />
           {tick !== backgroundTick && (
             <circle
-              cx={plotX(tickIndex).toFixed(3)}
+              cx={plotX(tickIndexBToA).toFixed(3)}
               cy={percentY(totalValue).toFixed(3)}
               r="5"
               className="tip tip--diff"
             />
           )}
           <text
-            x={plotX(tickIndex).toFixed(3)}
+            x={plotX(tickIndexBToA).toFixed(3)}
             y={(percentY(maxValue) - 28).toFixed(3)}
             dy="12"
             dominantBaseline="middle"
@@ -1851,7 +1857,7 @@ function TicksGroup({
                   height: '1000',
                 }
               : {
-                  x: (plotX(tickIndex) - 7.5).toFixed(3),
+                  x: (plotX(tickIndexBToA) - 7.5).toFixed(3),
                   y: (percentY(maxValue) - 25).toFixed(3),
                   rx: 7.5,
                   width: 15,

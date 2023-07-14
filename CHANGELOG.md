@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.5](https://github.com/duality-labs/duality-web-app/compare/v0.3.4...v0.3.5) (2023-07-14)
+
+
+### Fixes
+
+* price direction issues ([#396](https://github.com/duality-labs/duality-web-app/issues/396)) ([8043be9](https://github.com/duality-labs/duality-web-app/commit/8043be9b71075f936db7f6d7f589bf1c9c71365d))
+
+## [0.3.4](https://github.com/duality-labs/duality-web-app/compare/v0.3.3...v0.3.4) (2023-07-14)
+
+
+### Fixes
+
+* CI builds require dependency update ([#400](https://github.com/duality-labs/duality-web-app/issues/400)) ([1a560cc](https://github.com/duality-labs/duality-web-app/commit/1a560cc34358a5ed86297458acc4d9e5870d25bc))
+
 ## [0.3.3](https://github.com/duality-labs/duality-web-app/compare/v0.3.2...v0.3.3) (2023-07-13)
 
 

@@ -5,7 +5,7 @@ import { guessInvertedOrder } from './pairs';
 export interface IndexedShare {
   address: string;
   pairId: string;
-  tickIndex: string;
+  tickIndex1To0: string;
   fee: string;
   sharesOwned: string;
 }
@@ -19,9 +19,9 @@ export function getShareInfo(coin: CoinSDKType) {
     return {
       token0Address,
       token1Address,
-      tickIndexString,
+      tickIndex1To0String: tickIndexString,
       feeString,
-      tickIndex: Number(tickIndexString),
+      tickIndex1To0: Number(tickIndexString),
       fee: Number(feeString),
     };
   }
@@ -29,7 +29,7 @@ export function getShareInfo(coin: CoinSDKType) {
 
 export function getShareDenom(
   tokens: TokenPair | TokenAddressPair,
-  tickIndex: number,
+  tickIndex1To0: number,
   fee: number
 ): string | undefined {
   const tokenAddresses = getTokenAddressPair(tokens);
@@ -39,8 +39,8 @@ export function getShareDenom(
   )
     ? [tokenAddresses[1], tokenAddresses[0]]
     : tokenAddresses;
-  if (token0Address && token1Address && !isNaN(tickIndex) && !isNaN(fee)) {
-    return `DualityPoolShares-${token0Address}-${token1Address}-t${tickIndex.toFixed(
+  if (token0Address && token1Address && !isNaN(tickIndex1To0) && !isNaN(fee)) {
+    return `DualityPoolShares-${token0Address}-${token1Address}-t${tickIndex1To0.toFixed(
       0
     )}-f${fee.toFixed(0)}`;
   }

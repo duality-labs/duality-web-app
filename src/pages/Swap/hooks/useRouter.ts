@@ -117,29 +117,38 @@ export function useRouterResult(pairRequest: PairRequest): {
         if (cancelled) return;
         setIsValidating(false);
         // convert token result back into display denom
-        setData({
-          ...result,
-          amountIn: new BigNumber(pairRequest.valueA || 0),
-          amountOut: new BigNumber(
-            getAmountInDenom(
-              tokenB,
-              result.amountOut.decimalPlaces(0, BigNumber.ROUND_DOWN),
-              tokenB.address,
-              tokenB.display
-            ) || 0
-          ),
-        });
+        setData(convertToDisplayDenom(result));
       })
       .catch(function (err: SwapError) {
         if (cancelled) return;
         setIsValidating(false);
         setError(err);
-        setData(undefined);
+        if (err.result) {
+          setData(convertToDisplayDenom(err.result));
+        } else {
+          setData(undefined);
+        }
       });
 
     return () => {
       cancelled = true;
     };
+
+    // todo: this function should deal with uToken values only and not be concerned with conversions
+    function convertToDisplayDenom(result: RouterResult): RouterResult {
+      return {
+        ...result,
+        amountIn: new BigNumber(pairRequest.valueA || 0),
+        amountOut: new BigNumber(
+          getAmountInDenom(
+            tokenB,
+            result.amountOut.decimalPlaces(0, BigNumber.ROUND_DOWN),
+            tokenB.address,
+            tokenB.display
+          ) || 0
+        ),
+      };
+    }
   }, [
     pairRequest.tokenA,
     pairRequest.tokenB,
