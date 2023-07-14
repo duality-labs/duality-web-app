@@ -178,15 +178,15 @@ function Swap() {
           routerResult.tickIndexIn &&
           routerResult.tickIndexOut &&
           Math.min(
-            routerResult.tickIndexIn.negated().toNumber(),
-            routerResult.tickIndexOut.negated().toNumber()
+            routerResult.tickIndexIn.toNumber(),
+            routerResult.tickIndexOut.toNumber()
           );
         const tickMax =
           routerResult.tickIndexIn &&
           routerResult.tickIndexOut &&
           Math.max(
-            routerResult.tickIndexIn.negated().toNumber(),
-            routerResult.tickIndexOut.negated().toNumber()
+            routerResult.tickIndexIn.toNumber(),
+            routerResult.tickIndexOut.toNumber()
           );
         const forward = result.tokenIn === token0;
         const ticks = forward ? token1Ticks : token0Ticks;
