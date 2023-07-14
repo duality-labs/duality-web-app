@@ -139,7 +139,7 @@ export function calculateOut({
     for (let tickIndex = 0; tickIndex < sortedTicks.length; tickIndex++) {
       // find price in the right direction
       const isSameOrder = tokens[0] === tokenPath[pairIndex];
-      const price = isSameOrder
+      const priceBToA = isSameOrder
         ? sortedTicks[tickIndex].price1To0
         : new BigNumber(1).dividedBy(sortedTicks[tickIndex].price1To0);
       // the reserves of tokenOut available at this tick
@@ -147,14 +147,14 @@ export function calculateOut({
         ? sortedTicks[tickIndex].reserve1
         : sortedTicks[tickIndex].reserve0;
       if (reservesOut.isGreaterThan(0)) {
-        priceIn = priceIn || price;
-        priceOut = price;
+        priceIn = priceIn || priceBToA;
+        priceOut = priceBToA;
         tickIndexIn = tickIndexIn || sortedTicks[tickIndex].tickIndex1To0;
         tickIndexOut = sortedTicks[tickIndex].tickIndex1To0;
       }
       // the reserves of tokenOut available at this tick
       const maxOut = amountLeft
-        .multipliedBy(price)
+        .dividedBy(priceBToA)
         .decimalPlaces(0, BigNumber.ROUND_DOWN);
 
       // if there is enough liquidity in this tick, then exit with this amount
@@ -167,7 +167,7 @@ export function calculateOut({
         amountOut = amountOut.plus(reservesOut);
         // calculate how much amountIn is still needed to be satisfied
         const amountInTraded = reservesOut
-          .dividedBy(price)
+          .multipliedBy(priceBToA)
           .decimalPlaces(0, BigNumber.ROUND_UP);
         amountLeft = amountLeft.minus(amountInTraded);
       }
