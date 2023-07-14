@@ -104,9 +104,12 @@ export default function MyPoolStakesTableCard<T extends string | number>({
               tokenBContext: userPosition.token0Context,
             };
         // add price
-        if (!isNaN(userPosition.deposit.centerTickIndex?.toNumber())) {
-          const tickIndex = userPosition.deposit.centerTickIndex.toNumber();
-          acc.price.push(tickIndexToPrice(new BigNumber(tickIndex)).toNumber());
+        if (!isNaN(userPosition.deposit.centerTickIndex1To0?.toNumber())) {
+          const tickIndex1To0 =
+            userPosition.deposit.centerTickIndex1To0.toNumber();
+          acc.price.push(
+            tickIndexToPrice(new BigNumber(tickIndex1To0)).toNumber()
+          );
         }
         // add amount A
         const amountA = Number(
@@ -329,11 +332,11 @@ export default function MyPoolStakesTableCard<T extends string | number>({
             allShareValues
               .sort((a, b) => {
                 return !guessInvertedOrder(tokenA.address, tokenB.address)
-                  ? a.deposit.centerTickIndex
-                      .subtract(b.deposit.centerTickIndex)
+                  ? a.deposit.centerTickIndex1To0
+                      .subtract(b.deposit.centerTickIndex1To0)
                       .toNumber()
-                  : b.deposit.centerTickIndex
-                      .subtract(a.deposit.centerTickIndex)
+                  : b.deposit.centerTickIndex1To0
+                      .subtract(a.deposit.centerTickIndex1To0)
                       .toNumber();
               })
               .map((userPosition) => {
@@ -353,7 +356,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                 return (
                   // show user's positions
                   <StakingRow
-                    key={`${userPosition.deposit.centerTickIndex}-${userPosition.deposit.fee}`}
+                    key={`${userPosition.deposit.centerTickIndex1To0}-${userPosition.deposit.fee}`}
                     tokenA={tokenA}
                     tokenB={tokenB}
                     userPosition={userPosition}
@@ -379,7 +382,9 @@ function isStakeEqual(
   stakeB: ValuedUserPositionDepositContext
 ): boolean {
   return (
-    stakeA.deposit.centerTickIndex.equals(stakeB.deposit.centerTickIndex) &&
+    stakeA.deposit.centerTickIndex1To0.equals(
+      stakeB.deposit.centerTickIndex1To0
+    ) &&
     stakeA.deposit.fee.equals(stakeB.deposit.fee) &&
     stakeA.deposit.pairID.token0 === stakeB.deposit.pairID.token0 &&
     stakeA.deposit.pairID.token1 === stakeB.deposit.pairID.token1 &&
@@ -391,7 +396,7 @@ function getUserPositionID(
   userPosition: ValuedUserPositionDepositContext
 ): string {
   return [
-    userPosition.deposit.centerTickIndex.toString(),
+    userPosition.deposit.centerTickIndex1To0.toString(),
     userPosition.deposit.fee.toString(),
     userPosition.stakeContext?.ID,
   ]
@@ -466,9 +471,11 @@ function StakingRow({
           {formatDecimalPlaces(
             tickIndexToPrice(
               !tokensInverted
-                ? new BigNumber(userPosition.deposit.centerTickIndex.toNumber())
+                ? new BigNumber(
+                    userPosition.deposit.centerTickIndex1To0.toNumber()
+                  )
                 : new BigNumber(
-                    userPosition.deposit.centerTickIndex.toNumber()
+                    userPosition.deposit.centerTickIndex1To0.toNumber()
                   ).negated()
             ).toFixed(),
             columnDecimalPlaces.price,

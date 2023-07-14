@@ -88,7 +88,7 @@ export function useEditLiquidity(): [
               ({
                 deposit: {
                   pairID: { token0: token0Address, token1: token1Address },
-                  centerTickIndex,
+                  centerTickIndex1To0,
                   fee,
                   sharesOwned: userShares,
                 },
@@ -103,7 +103,7 @@ export function useEditLiquidity(): [
                   token0Context?.userReserves || 0,
                   token1Context?.userReserves || 0
                 );
-                return centerTickIndex !== undefined &&
+                return centerTickIndex1To0 !== undefined &&
                   fee !== undefined &&
                   !isNaN(Number(fee)) &&
                   token0Address &&
@@ -122,7 +122,7 @@ export function useEditLiquidity(): [
                             tokenA: token0Address,
                             tokenB: token1Address,
                             receiver: web3Address,
-                            tickIndexesAToB: [centerTickIndex],
+                            tickIndexesAToB: [centerTickIndex1To0],
                             fees: [fee],
                             // approximate removal using percentages
                             // todo: this probably has a bug when withdrawing from a tick
@@ -148,7 +148,7 @@ export function useEditLiquidity(): [
                                       tokenA: token0Address,
                                       tokenB: token1Address,
                                       receiver: web3Address,
-                                      tickIndexesAToB: [centerTickIndex],
+                                      tickIndexesAToB: [centerTickIndex1To0],
                                       fees: [fee],
                                       amountsA: [
                                         getAmountInDenom(
@@ -168,7 +168,7 @@ export function useEditLiquidity(): [
                                       tokenA: token0Address,
                                       tokenB: token1Address,
                                       receiver: web3Address,
-                                      tickIndexesAToB: [centerTickIndex],
+                                      tickIndexesAToB: [centerTickIndex1To0],
                                       fees: [fee],
                                       // approximate removal using percentages
                                       // todo: this probably has a bug when withdrawing from a tick
@@ -197,7 +197,7 @@ export function useEditLiquidity(): [
                                       tokenA: token0Address,
                                       tokenB: token1Address,
                                       receiver: web3Address,
-                                      tickIndexesAToB: [centerTickIndex],
+                                      tickIndexesAToB: [centerTickIndex1To0],
                                       fees: [fee],
                                       amountsA: ['0'],
                                       amountsB: [
@@ -217,7 +217,7 @@ export function useEditLiquidity(): [
                                       tokenA: token0Address,
                                       tokenB: token1Address,
                                       receiver: web3Address,
-                                      tickIndexesAToB: [centerTickIndex],
+                                      tickIndexesAToB: [centerTickIndex1To0],
                                       fees: [fee],
                                       // approximate removal using percentages
                                       // todo: this probably has a bug when withdrawing from a tick

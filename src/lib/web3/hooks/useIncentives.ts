@@ -82,8 +82,8 @@ function isIncentiveMatch(
       pairID.token0 === userPosition.token0.address &&
       pairID.token1 === userPosition.token1.address &&
       // are ticks within bounds?
-      userPosition.deposit.lowerTickIndex.greaterThanOrEqual(startTick) &&
-      userPosition.deposit.upperTickIndex.lessThanOrEqual(endTick)
+      userPosition.deposit.lowerTickIndex1To0.greaterThanOrEqual(startTick) &&
+      userPosition.deposit.upperTickIndex1To0.lessThanOrEqual(endTick)
     );
   }
   return false;

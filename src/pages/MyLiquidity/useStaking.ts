@@ -91,7 +91,7 @@ export function useStake(): [
                         coins: stakePositions.flatMap(({ deposit }) => {
                           const denom = getShareDenom(
                             [deposit.pairID.token0, deposit.pairID.token1],
-                            deposit.centerTickIndex.toNumber(),
+                            deposit.centerTickIndex1To0.toNumber(),
                             deposit.fee.toNumber()
                           );
                           return denom
@@ -114,7 +114,7 @@ export function useStake(): [
                           ({ deposit, stakeContext }) => {
                             const denom = getShareDenom(
                               [deposit.pairID.token0, deposit.pairID.token1],
-                              deposit.centerTickIndex.toNumber(),
+                              deposit.centerTickIndex1To0.toNumber(),
                               deposit.fee.toNumber()
                             );
                             return denom

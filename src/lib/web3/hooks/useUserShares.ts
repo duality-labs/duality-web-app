@@ -25,16 +25,28 @@ import useTokens from './useTokens';
 import { UserStakedShare, useShares } from '../indexerProvider';
 import { getShareInfo } from '../utils/shares';
 
+interface DirectionalDepositRecord
+  extends Omit<
+    DepositRecord,
+    'centerTickIndex' | 'lowerTickIndex' | 'upperTickIndex'
+  > {
+  centerTickIndex1To0: DepositRecord['centerTickIndex'];
+  lowerTickIndex1To0: DepositRecord['lowerTickIndex'];
+  upperTickIndex1To0: DepositRecord['upperTickIndex'];
+}
+
 // default useUserPositionsTotalShares filter to all user's deposits
-export type UserDepositFilter = (poolDeposit: DepositRecord) => boolean;
+export type UserDepositFilter = (
+  poolDeposit: DirectionalDepositRecord
+) => boolean;
 const defaultFilter: UserDepositFilter = () => true;
 
 export function usePoolDepositFilterForPair(
   tokenPair: TokenPair | TokenAddressPair
-): (poolDeposit: DepositRecord) => boolean {
+): (poolDeposit: DirectionalDepositRecord) => boolean {
   const [tokenAddressA, tokenAddressB] = getTokenAddressPair(tokenPair);
   const poolDepositFilter = useCallback(
-    (poolDeposit: DepositRecord) => {
+    (poolDeposit: DirectionalDepositRecord) => {
       const addresses = [tokenAddressA, tokenAddressB];
       return (
         !!tokenAddressA &&
@@ -49,7 +61,7 @@ export function usePoolDepositFilterForPair(
   return poolDepositFilter;
 }
 
-interface ExtendedDepositRecord extends DepositRecord {
+interface ExtendedDepositRecord extends DirectionalDepositRecord {
   stakeContext?: { ID: string; owner: string; start_time?: string };
 }
 // select all (or optional token pair list of) user shares
@@ -60,15 +72,15 @@ export function useUserDeposits(
   const { data: shares } = useShares({ staked });
   return useMemo(() => {
     const deposits = shares?.map<ExtendedDepositRecord>((share) => {
-      const { fee, pairId, sharesOwned, tickIndex } = share;
+      const { fee, pairId, sharesOwned, tickIndex1To0 } = share;
       const { ID, owner, start_time } = share as UserStakedShare;
       const [token0Address, token1Address] = pairId.split('<>');
       return {
         pairID: { token0: token0Address, token1: token1Address },
         sharesOwned,
-        centerTickIndex: Long.fromString(tickIndex),
-        lowerTickIndex: Long.fromString(tickIndex).sub(fee),
-        upperTickIndex: Long.fromString(tickIndex).add(fee),
+        centerTickIndex1To0: Long.fromString(tickIndex1To0),
+        lowerTickIndex1To0: Long.fromString(tickIndex1To0).sub(fee),
+        upperTickIndex1To0: Long.fromString(tickIndex1To0).add(fee),
         fee: Long.fromString(fee),
         stakeContext: staked ? { ID, owner, start_time } : undefined,
       };
@@ -94,10 +106,10 @@ export function useUserPositionsTotalShares(
   const { data } = useQueries({
     queries: useMemo(() => {
       return (selectedPoolDeposits || []).flatMap(
-        ({ pairID: { token0, token1 } = {}, centerTickIndex, fee }) => {
+        ({ pairID: { token0, token1 } = {}, centerTickIndex1To0, fee }) => {
           if (token0 && token1) {
             const params: QuerySupplyOfRequest = {
-              denom: `DualityPoolShares-${token0}-${token1}-t${centerTickIndex}-f${fee}`,
+              denom: `DualityPoolShares-${token0}-${token1}-t${centerTickIndex1To0}-f${fee}`,
             };
             return {
               queryKey: ['cosmos.bank.v1beta1.supplyOf', params],
@@ -159,21 +171,21 @@ export function useUserPositionsTotalReserves(
       return (selectedPoolDeposits || []).flatMap(
         ({
           pairID: { token0, token1 } = {},
-          lowerTickIndex,
-          upperTickIndex,
+          lowerTickIndex1To0,
+          upperTickIndex1To0,
           fee,
         }) => {
           const pairID = getPairID(token0, token1);
           if (token0 && token1 && pairID && fee !== undefined) {
             // return both upper and lower tick pools
             return [
-              { tokenIn: token0, tickIndex: lowerTickIndex },
-              { tokenIn: token1, tickIndex: upperTickIndex },
-            ].map(({ tokenIn, tickIndex }) => {
+              { tokenIn: token0, tickIndex1To0: lowerTickIndex1To0 },
+              { tokenIn: token1, tickIndex1To0: upperTickIndex1To0 },
+            ].map(({ tokenIn, tickIndex1To0 }) => {
               const params: QueryGetPoolReservesRequest = {
                 pairID,
                 tokenIn,
-                tickIndex,
+                tickIndex: tickIndex1To0,
                 fee,
               };
               return {
@@ -239,12 +251,12 @@ export interface ShareValueContext {
   userShares: BigNumber;
   dexTotalShares: BigNumber;
   token: TokenAddress;
-  tickIndex: BigNumber;
+  tickIndex1To0: BigNumber;
   dexTotalReserves: BigNumber;
   userReserves: BigNumber;
 }
 export interface UserPositionDepositContext {
-  deposit: Required<DepositRecord>;
+  deposit: Required<DirectionalDepositRecord>;
   token0: Token;
   token0Context?: ShareValueContext;
   token1: Token;
@@ -283,8 +295,8 @@ export function useUserPositionsContext(
               return (
                 shareInfo.token0Address === deposit.pairID?.token0 &&
                 shareInfo.token1Address === deposit.pairID?.token1 &&
-                shareInfo.tickIndexString ===
-                  deposit.centerTickIndex.toString() &&
+                shareInfo.tickIndex1To0String ===
+                  deposit.centerTickIndex1To0.toString() &&
                 shareInfo.feeString === deposit.fee.toString()
               );
             }
@@ -299,7 +311,7 @@ export function useUserPositionsContext(
               data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
               data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
               data?.poolReserves?.tickIndex.toString() ===
-                deposit.lowerTickIndex.toString() &&
+                deposit.lowerTickIndex1To0.toString() &&
               data?.poolReserves?.fee.toString() === deposit.fee.toString()
             );
           }) ?? undefined;
@@ -310,7 +322,7 @@ export function useUserPositionsContext(
               data?.poolReserves?.pairID?.token0 === deposit.pairID?.token0 &&
               data?.poolReserves?.pairID?.token1 === deposit.pairID?.token1 &&
               data?.poolReserves?.tickIndex.toString() ===
-                deposit.upperTickIndex.toString() &&
+                deposit.upperTickIndex1To0.toString() &&
               data?.poolReserves?.fee.toString() === deposit.fee.toString()
             );
           }) ?? undefined;
@@ -327,7 +339,7 @@ export function useUserPositionsContext(
             totalSharesResponse &&
             lowerReserveResponse && {
               token: lowerReserveResponse.poolReserves?.tokenIn ?? '',
-              tickIndex: new BigNumber(
+              tickIndex1To0: new BigNumber(
                 lowerReserveResponse.poolReserves?.tickIndex.toString() ?? 0
               ),
               userShares: new BigNumber(deposit.sharesOwned),
@@ -345,7 +357,7 @@ export function useUserPositionsContext(
             totalSharesResponse &&
             upperReserveResponse && {
               token: upperReserveResponse.poolReserves?.tokenIn ?? '',
-              tickIndex: new BigNumber(
+              tickIndex1To0: new BigNumber(
                 upperReserveResponse.poolReserves?.tickIndex.toString() ?? 0
               ),
               userShares: new BigNumber(deposit.sharesOwned),

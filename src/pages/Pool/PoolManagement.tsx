@@ -135,11 +135,11 @@ function getEditedPositionTick(
         ? maybeTickDiff1.plus(token1Context?.userReserves || 0)
         : maybeTickDiff0.plus(token0Context?.userReserves || 0),
       tickIndexBToA:
-        (!invertedTokenOrder ? 1 : -1) * deposit.centerTickIndex.toNumber(),
+        (!invertedTokenOrder ? 1 : -1) * deposit.centerTickIndex1To0.toNumber(),
       priceBToA: tickIndexToPrice(
         !invertedTokenOrder
-          ? new BigNumber(deposit.centerTickIndex.toNumber())
-          : new BigNumber(deposit.centerTickIndex.toNumber()).negated()
+          ? new BigNumber(deposit.centerTickIndex1To0.toNumber())
+          : new BigNumber(deposit.centerTickIndex1To0.toNumber()).negated()
       ),
       fee: deposit.fee.toNumber(),
       tokenA: !invertedTokenOrder ? token0 : token1,
@@ -799,9 +799,15 @@ export default function PoolManagement({
               deposit.pairID.token0 === updatedDeposit.pairID.token0 &&
               deposit.pairID.token1 === updatedDeposit.pairID.token1 &&
               deposit.sharesOwned === updatedDeposit.sharesOwned &&
-              deposit.lowerTickIndex.equals(updatedDeposit.lowerTickIndex) &&
-              deposit.centerTickIndex.equals(updatedDeposit.centerTickIndex) &&
-              deposit.upperTickIndex.equals(updatedDeposit.upperTickIndex) &&
+              deposit.lowerTickIndex1To0.equals(
+                updatedDeposit.lowerTickIndex1To0
+              ) &&
+              deposit.centerTickIndex1To0.equals(
+                updatedDeposit.centerTickIndex1To0
+              ) &&
+              deposit.upperTickIndex1To0.equals(
+                updatedDeposit.upperTickIndex1To0
+              ) &&
               deposit.fee.equals(updatedDeposit.fee)
             )
             // todo: check if the reserves have changed side
@@ -1075,7 +1081,9 @@ export default function PoolManagement({
               : [userPosition.token0, userPosition.token1];
             const price = formatPrice(
               tickIndexToPrice(
-                new BigNumber(userPosition.deposit.centerTickIndex.toNumber())
+                new BigNumber(
+                  userPosition.deposit.centerTickIndex1To0.toNumber()
+                )
               ).toNumber()
             );
             const withdrawA = diffA.isLessThan(0) && (
@@ -1152,7 +1160,7 @@ export default function PoolManagement({
             );
             return (
               <Fragment
-                key={`${userPosition.deposit.centerTickIndex}-${userPosition.deposit.fee}`}
+                key={`${userPosition.deposit.centerTickIndex1To0}-${userPosition.deposit.fee}`}
               >
                 {depositA}
                 {depositB}

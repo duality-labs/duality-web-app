@@ -240,10 +240,10 @@ export function MyEditedPositionTableCard({
         // sort by price
         .sort((a, b) => {
           return !!invertedTokenOrder
-            ? b.deposit.centerTickIndex.toNumber() -
-                a.deposit.centerTickIndex.toNumber()
-            : a.deposit.centerTickIndex.toNumber() -
-                b.deposit.centerTickIndex.toNumber();
+            ? b.deposit.centerTickIndex1To0.toNumber() -
+                a.deposit.centerTickIndex1To0.toNumber()
+            : a.deposit.centerTickIndex1To0.toNumber() -
+                b.deposit.centerTickIndex1To0.toNumber();
         })
     );
   }, [editedUserPosition, invertedTokenOrder]);
@@ -309,19 +309,19 @@ export function MyEditedPositionTableCard({
             ? tickDiff1.plus(token1Context?.userReserves || 0)
             : tickDiff0.plus(token0Context?.userReserves || 0);
 
-          const tickIndex = !invertedTokenOrder
-            ? new BigNumber(deposit.centerTickIndex.toNumber())
-            : new BigNumber(deposit.centerTickIndex.toNumber()).negated();
+          const tickIndexBToA = !invertedTokenOrder
+            ? new BigNumber(deposit.centerTickIndex1To0.toNumber())
+            : new BigNumber(deposit.centerTickIndex1To0.toNumber()).negated();
 
-          const price = tickIndexToPrice(tickIndex.negated());
+          const priceBToA = tickIndexToPrice(tickIndexBToA.negated());
           // show only those ticks that are in the currently visible range
           return viewableMinIndex !== undefined &&
             viewableMaxIndex !== undefined &&
-            tickIndex.isGreaterThanOrEqualTo(viewableMinIndex) &&
-            tickIndex.isLessThanOrEqualTo(viewableMaxIndex) ? (
+            tickIndexBToA.isGreaterThanOrEqualTo(viewableMinIndex) &&
+            tickIndexBToA.isLessThanOrEqualTo(viewableMaxIndex) ? (
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
-              <td>{new BigNumber(1).div(price).toFixed(5)}</td>
+              <td>{new BigNumber(1).div(priceBToA).toFixed(5)}</td>
               <td>
                 {reserveA.isGreaterThan(0) && (
                   <div>{formatCurrency(poolValues[index][0])}</div>
@@ -378,8 +378,8 @@ export function MyEditedPositionTableCard({
                       onClick={() => {
                         setEditedUserPosition((ticks) => {
                           return ticks.map((tick) => {
-                            return tick.deposit.centerTickIndex.toNumber() ===
-                              deposit.centerTickIndex.toNumber() &&
+                            return tick.deposit.centerTickIndex1To0.toNumber() ===
+                              deposit.centerTickIndex1To0.toNumber() &&
                               tick.deposit.fee.toNumber() ===
                                 deposit.fee.toNumber()
                               ? {
@@ -406,8 +406,8 @@ export function MyEditedPositionTableCard({
                     onClick={() => {
                       setEditedUserPosition((ticks) => {
                         return ticks.map((tick) => {
-                          return tick.deposit.centerTickIndex.toNumber() ===
-                            deposit.centerTickIndex.toNumber() &&
+                          return tick.deposit.centerTickIndex1To0.toNumber() ===
+                            deposit.centerTickIndex1To0.toNumber() &&
                             tick.deposit.fee.toNumber() ===
                               deposit.fee.toNumber()
                             ? {
