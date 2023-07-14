@@ -2,18 +2,6 @@ import BigNumber from 'bignumber.js';
 import { Token } from './tokens';
 
 /**
- * TickMap contains a mapping from tickIDs to tick indexes inside poolsZeroToOne and poolsOneToZero
- */
-export interface TickMap {
-  [tickID: string]: PoolTicks;
-}
-
-type PoolTicks = [
-  index0to1: TickInfo | undefined,
-  index1to0: TickInfo | undefined
-];
-
-/**
  * TickInfo is a reflection of the backend structue "DexPool"
  * but utilising BigNumber type instead of BigNumberString type properties
  */
