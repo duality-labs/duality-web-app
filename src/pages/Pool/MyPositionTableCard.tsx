@@ -128,12 +128,12 @@ export function MyNewPositionTableCard({
 
   const data =
     tokenA && tokenB && !(reserveATotal.isZero() && reserveBTotal.isZero())
-      ? userTicks.map(({ price, reserveA, reserveB }, index) => {
+      ? userTicks.map(({ priceBToA, reserveA, reserveB }, index) => {
           // note: fix these restrictions, they are a bit off
           return (
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
-              <td>{new BigNumber(price.toFixed(5)).toFixed(5)}</td>
+              <td>{new BigNumber(priceBToA.toFixed(5)).toFixed(5)}</td>
               <td>
                 {reserveA.isGreaterThan(0) && (
                   <div>{formatCurrency(poolValues[index][0])}</div>

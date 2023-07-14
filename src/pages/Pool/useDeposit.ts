@@ -124,8 +124,8 @@ export function useDeposit([tokenA, tokenB]: [
         // check all user ticks and filter to non-zero ticks
         // also compbine any equivalent deposits into the same Msg
         const filteredUserTicks = userTicks
-          .filter(({ price, reserveA, reserveB }) => {
-            if (!price || price.isLessThan(0)) {
+          .filter(({ priceBToA, reserveA, reserveB }) => {
+            if (!priceBToA || priceBToA.isLessThan(0)) {
               throw new Error('Price not set');
             }
             if (
@@ -148,7 +148,7 @@ export function useDeposit([tokenA, tokenB]: [
             // the order of tick indexes appears reversed here because we are
             // converting from virtual to real ticks (not real to virual)
             const [tickIndex1, tickIndex0] = getVirtualTickIndexes(
-              tick.tickIndex,
+              tick.tickIndexBToA,
               tick.fee
             );
 
@@ -165,7 +165,7 @@ export function useDeposit([tokenA, tokenB]: [
                 // tick indexes must be in form of "token0/1" not "tokenA/B":
                 // we invert the indexes because we work with price1to0
                 // and the backend works on the basis of price0to1
-                tickIndex: forward ? -tickIndex0 : -tickIndex1,
+                tickIndexBToA: forward ? -tickIndex0 : -tickIndex1,
                 reserveB: new BigNumber(0),
               });
             }
@@ -177,7 +177,7 @@ export function useDeposit([tokenA, tokenB]: [
                 // tick indexes must be in form of "token0/1" not "tokenA/B":
                 // we invert the indexes because we work with price1to0
                 // and the backend works on the basis of price0to1
-                tickIndex: forward ? -tickIndex1 : -tickIndex0,
+                tickIndexBToA: forward ? -tickIndex1 : -tickIndex0,
                 reserveA: new BigNumber(0),
               });
             }
@@ -188,7 +188,7 @@ export function useDeposit([tokenA, tokenB]: [
             // find equivalent tick
             const foundTickIndex = ticks.findIndex((searchTick) => {
               return (
-                searchTick.tickIndex === tick.tickIndex &&
+                searchTick.tickIndexBToA === tick.tickIndexBToA &&
                 searchTick.fee === tick.fee &&
                 searchTick.tokenA === tick.tokenA &&
                 searchTick.tokenB === tick.tokenB
@@ -222,7 +222,7 @@ export function useDeposit([tokenA, tokenB]: [
 
         const gasEstimate = filteredUserTicks.reduce((gasEstimate, tick) => {
           const [tickIndex0, tickIndex1] = getVirtualTickIndexes(
-            tick.tickIndex,
+            tick.tickIndexBToA,
             tick.fee
           );
           const existingTick =
@@ -259,7 +259,7 @@ export function useDeposit([tokenA, tokenB]: [
                 // not "tokenA/B" index, so inverted order indexes should be reversed
                 // check this commit for changes if this behavior changes
                 tickIndexesAToB: filteredUserTicks.map((tick) =>
-                  Long.fromNumber(tick.tickIndex).negate()
+                  Long.fromNumber(tick.tickIndexBToA).negate()
                 ),
                 fees: filteredUserTicks.map((tick) =>
                   Long.fromNumber(tick.fee)
