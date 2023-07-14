@@ -1164,7 +1164,7 @@ export default function PoolManagement({
         </div>
         {editedUserPosition.filter(
           (tick) => !tick.tickDiff0.isZero() || !tick.tickDiff1.isZero()
-        ).length > 1 ? (
+        ).length > 0 ? (
           <>
             <hr />
             <div className="col my-3">
