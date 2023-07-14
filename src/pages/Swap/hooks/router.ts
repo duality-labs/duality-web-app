@@ -41,13 +41,18 @@ export function router(
     const amountIn = new BigNumber(valueA);
 
     try {
-      const { amountOut, priceIn, priceOut, tickIndexIn, tickIndexOut } =
-        calculateOut({
-          tokenIn: tokenA,
-          tokenOut: tokenB,
-          amountIn: amountIn,
-          sortedTicks,
-        });
+      const {
+        amountOut,
+        priceBToAIn,
+        priceBToAOut,
+        tickIndexIn,
+        tickIndexOut,
+      } = calculateOut({
+        tokenIn: tokenA,
+        tokenOut: tokenB,
+        amountIn: amountIn,
+        sortedTicks,
+      });
       const ticksOut = reverse ? token0Ticks : token1Ticks;
       const maxOut = ticksOut.reduce((result, tick) => {
         return result.plus(reverse ? tick.reserve0 : tick.reserve1);
@@ -70,8 +75,8 @@ export function router(
         tokenIn: tokenA,
         tokenOut: tokenB,
         amountOut,
-        priceIn,
-        priceOut,
+        priceBToAIn,
+        priceBToAOut,
         tickIndexIn,
         tickIndexOut,
       };
@@ -110,8 +115,8 @@ export function calculateOut({
   sortedTicks: Array<TickInfo>;
 }): {
   amountOut: BigNumber;
-  priceIn: BigNumber | undefined;
-  priceOut: BigNumber | undefined;
+  priceBToAIn: BigNumber | undefined;
+  priceBToAOut: BigNumber | undefined;
   tickIndexIn: BigNumber | undefined;
   tickIndexOut: BigNumber | undefined;
 } {
@@ -173,7 +178,7 @@ export function calculateOut({
       }
       // if amount in has all been swapped, the exit successfully
       if (amountLeft.isZero()) {
-        return { amountOut, priceIn, priceOut, tickIndexIn, tickIndexOut };
+        return getLastState();
       }
       // if somehow the amount left to take out is over-satisfied the error
       else if (amountLeft.isLessThan(0)) {
@@ -199,7 +204,7 @@ export function calculateOut({
   // somehow we have looped through all ticks and exactly satisfied the needed swap
   // yet did not match the positive exiting condition
   // this can happen if the amountIn is zero and there are no ticks in the pair
-  return { amountOut, priceIn, priceOut, tickIndexIn, tickIndexOut };
+  return getLastState();
 
   function getLastState(): RouterResult {
     return {
@@ -207,8 +212,8 @@ export function calculateOut({
       tokenIn,
       tokenOut,
       amountOut,
-      priceIn,
-      priceOut,
+      priceBToAIn: priceIn,
+      priceBToAOut: priceOut,
       tickIndexIn,
       tickIndexOut,
     };

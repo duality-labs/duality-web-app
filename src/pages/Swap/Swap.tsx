@@ -326,20 +326,20 @@ function Swap() {
     }
   }, [tokenA, tokenB]);
 
-  const currentMidIndex = useMidTickIndexFromTicks(
+  const currentMidIndexBToA = useMidTickIndexFromTicks(
     tokenA?.address,
     tokenB?.address
   );
-  const currentRoundedPrice = currentMidIndex
-    ? tickIndexToPrice(new BigNumber(currentMidIndex.toFixed(0)))
+  const currentRoundedPriceBToA = currentMidIndexBToA
+    ? tickIndexToPrice(new BigNumber(currentMidIndexBToA.toFixed(0)))
     : undefined;
   const priceImpact =
     routerResult &&
-    currentRoundedPrice?.isGreaterThan(0) &&
-    routerResult.priceOut?.isGreaterThan(0)
+    currentRoundedPriceBToA?.isGreaterThan(0) &&
+    routerResult.priceBToAOut?.isGreaterThan(0)
       ? new BigNumber(
-          new BigNumber(routerResult.priceOut)
-            .dividedBy(new BigNumber(currentRoundedPrice))
+          new BigNumber(currentRoundedPriceBToA)
+            .dividedBy(new BigNumber(routerResult.priceBToAOut))
             .multipliedBy(100)
         ).minus(100)
       : undefined;
