@@ -18,7 +18,6 @@ import './TokenInputGroup.scss';
 const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
-const maxSignificantDigits = 20;
 const placeholder = '0';
 
 interface InputGroupProps {
@@ -147,14 +146,11 @@ export default function TokenInputGroup({
         disabled={disabledInput}
         style={useMemo(() => {
           return {
-            // set width of input based on current values but restrained to max characters
+            // set width as minimum amount available
             minWidth: '100%',
-            maxWidth: `${
-              maxSignificantDigits + (value?.includes('.') ? 1 : 0)
-            }ch`,
-            width: `${(value || placeholder).length}ch`,
+            width: 0,
           };
-        }, [value])}
+        }, [])}
       />
       <span className="token-group-value">{secondaryValue}</span>
     </div>
