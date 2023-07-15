@@ -215,41 +215,6 @@ export default function PoolManagement({
     useState(['1', '1']);
   const [significantDecimals, setSignificantDecimals] = useState(3);
 
-  const [pairPriceMin, pairPriceMax] = useMemo<[number, number]>(() => {
-    const spreadFactor = 1000;
-    return edgePrice
-      ? [
-          edgePrice.dividedBy(spreadFactor).toNumber(),
-          edgePrice.multipliedBy(spreadFactor).toNumber(),
-        ]
-      : [priceMin, priceMax];
-  }, [edgePrice]);
-  // protect price range extents
-  const setRange = useCallback<
-    React.Dispatch<React.SetStateAction<[string, string]>>
-  >(
-    (valueOrCallback) => {
-      const restrictValues = ([min, max]: [string, string]): [
-        string,
-        string
-      ] => {
-        return [
-          restrictPriceRangeValues(min, [pairPriceMin, pairPriceMax]),
-          restrictPriceRangeValues(max, [pairPriceMin, pairPriceMax]),
-        ];
-      };
-      if (typeof valueOrCallback === 'function') {
-        const callback = valueOrCallback;
-        return setRangeUnprotected((values) => {
-          return restrictValues(callback(values));
-        });
-      }
-      const value = valueOrCallback;
-      setRangeUnprotected(restrictValues(value));
-    },
-    [pairPriceMin, pairPriceMax]
-  );
-
   const handleSetInitialPrice = useCallback(
     (price: string): void => {
       const priceNumber = Number(price);
@@ -341,72 +306,6 @@ export default function PoolManagement({
   const [invertTokenOrder, setInvertTokenOrder] = useState<boolean>(() => {
     return edgePrice?.isLessThan(1) || false;
   });
-
-  const [, setFirstCurrentPrice] = useState<{
-    tokenA?: Token;
-    tokenB?: Token;
-    price?: number | BigNumber;
-    isValueAZero?: boolean;
-    isValueBZero?: boolean;
-  }>({ tokenA, tokenB });
-  // remove price on token change
-  useEffect(() => {
-    const setRangeForNewPriceData = (price: number | BigNumber) => {
-      setRange([
-        isValueAZero && !isValueBZero
-          ? new BigNumber(price).multipliedBy(1.1).toFixed()
-          : new BigNumber(price).multipliedBy(0.5).toFixed(),
-        isValueBZero && !isValueAZero
-          ? new BigNumber(price).multipliedBy(0.9).toFixed()
-          : new BigNumber(price).multipliedBy(2).toFixed(),
-      ]);
-    };
-    setFirstCurrentPrice((state) => {
-      // if there is no currentPriceFromTicks yet, then wait until there is
-      if (!edgePrice) {
-        // set decent looking example range for an unknown price
-        setRange(['0.01', '100']);
-        return state;
-      }
-      // current tokens with maybe new price
-      else if (state.tokenA === tokenA && state.tokenB === tokenB) {
-        // set range on first price after switching tokens
-        if (!state.price) {
-          setRangeForNewPriceData(edgePrice);
-        }
-        return {
-          price: edgePrice,
-          ...state,
-          isValueAZero,
-          isValueBZero,
-        };
-      }
-      // reverse of current tokens
-      else if (state.tokenA === tokenB && state.tokenB === tokenA) {
-        return {
-          tokenA,
-          tokenB,
-          isValueAZero,
-          isValueBZero,
-          price: new BigNumber(1).dividedBy(edgePrice),
-        };
-      }
-      // new pair
-      else {
-        // set range on immediately known current price
-        if (edgePrice) {
-          setRangeForNewPriceData(edgePrice);
-        }
-        return {
-          tokenA,
-          tokenB,
-          isValueAZero,
-          isValueBZero,
-          price: edgePrice,
-        };
-      }
-    });
-  }, [tokenA, tokenB, isValueAZero, isValueBZero, edgePrice, setRange]);
 
   const onSubmitAddLiquidity = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
@@ -501,6 +400,108 @@ export default function PoolManagement({
     () => tickIndexToPrice(new BigNumber(rangeMaxIndex)).toNumber(),
     [rangeMaxIndex]
   );
+
+  const [pairPriceMin, pairPriceMax] = useMemo<[number, number]>(() => {
+    const spreadFactor = 1000;
+    return edgePrice
+      ? [
+          edgePrice.dividedBy(spreadFactor).toNumber(),
+          edgePrice.multipliedBy(spreadFactor).toNumber(),
+        ]
+      : [priceMin, priceMax];
+  }, [edgePrice]);
+
+  // protect price range extents
+  const setRange = useCallback<
+    React.Dispatch<React.SetStateAction<[string, string]>>
+  >(
+    (valueOrCallback) => {
+      const restrictValues = ([min, max]: [string, string]): [
+        string,
+        string
+      ] => {
+        return [
+          restrictPriceRangeValues(min, [pairPriceMin, pairPriceMax]),
+          restrictPriceRangeValues(max, [pairPriceMin, pairPriceMax]),
+        ];
+      };
+      if (typeof valueOrCallback === 'function') {
+        const callback = valueOrCallback;
+        return setRangeUnprotected((values) => {
+          return restrictValues(callback(values));
+        });
+      }
+      const value = valueOrCallback;
+      setRangeUnprotected(restrictValues(value));
+    },
+    [pairPriceMin, pairPriceMax]
+  );
+
+  const [, setFirstCurrentPrice] = useState<{
+    tokenA?: Token;
+    tokenB?: Token;
+    price?: number | BigNumber;
+    isValueAZero?: boolean;
+    isValueBZero?: boolean;
+  }>({ tokenA, tokenB });
+  // remove price on token change
+  useEffect(() => {
+    const setRangeForNewPriceData = (price: number | BigNumber) => {
+      setRange([
+        isValueAZero && !isValueBZero
+          ? new BigNumber(price).multipliedBy(1.1).toFixed()
+          : new BigNumber(price).multipliedBy(0.5).toFixed(),
+        isValueBZero && !isValueAZero
+          ? new BigNumber(price).multipliedBy(0.9).toFixed()
+          : new BigNumber(price).multipliedBy(2).toFixed(),
+      ]);
+    };
+    setFirstCurrentPrice((state) => {
+      // if there is no currentPriceFromTicks yet, then wait until there is
+      if (!edgePrice) {
+        // set decent looking example range for an unknown price
+        setRange(['0.01', '100']);
+        return state;
+      }
+      // current tokens with maybe new price
+      else if (state.tokenA === tokenA && state.tokenB === tokenB) {
+        // set range on first price after switching tokens
+        if (!state.price) {
+          setRangeForNewPriceData(edgePrice);
+        }
+        return {
+          price: edgePrice,
+          ...state,
+          isValueAZero,
+          isValueBZero,
+        };
+      }
+      // reverse of current tokens
+      else if (state.tokenA === tokenB && state.tokenB === tokenA) {
+        return {
+          tokenA,
+          tokenB,
+          isValueAZero,
+          isValueBZero,
+          price: new BigNumber(1).dividedBy(edgePrice),
+        };
+      }
+      // new pair
+      else {
+        // set range on immediately known current price
+        if (edgePrice) {
+          setRangeForNewPriceData(edgePrice);
+        }
+        return {
+          tokenA,
+          tokenB,
+          isValueAZero,
+          isValueBZero,
+          price: edgePrice,
+        };
+      }
+    });
+  }, [tokenA, tokenB, isValueAZero, isValueBZero, edgePrice, setRange]);
 
   const swapAll = useCallback(() => {
     const flipAroundCurrentPriceSwap = (value: BigNumber.Value) => {
