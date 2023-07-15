@@ -1,78 +1,73 @@
 import { useEffect, useMemo } from 'react';
-import { SWRConfiguration, SWRResponse } from 'swr';
-import useSWRInfinite from 'swr/infinite';
 
 import { useLcdClientPromise } from '../lcdClient';
 
-import { defaultPaginationParams, getNextPaginationKey } from './utils';
-
 import {
-  QueryTotalSupplyRequest,
   QueryTotalSupplyRequestSDKType,
   QueryTotalSupplyResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { getShareInfo } from '../utils/shares';
 import { getPairID } from '../utils/pairs';
 import { TokenAddress } from '../utils/tokens';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 type QueryAllTokenMapState = {
   data: [TokenAddress, TokenAddress][] | undefined;
-  isValidating: SWRResponse['isValidating'];
-  error: SWRResponse['error'];
+  isValidating: boolean;
+  error: Error | null;
 };
 
 export default function useTokenPairs({
-  swr: swrConfig,
+  queryOptions,
   query: queryConfig,
   queryClient: queryClientConfig,
 }: {
-  swr?: SWRConfiguration;
+  // todo: pass entire useQuery options set here
+  queryOptions?: { refetchInterval: number | false };
   query?: QueryTotalSupplyRequestSDKType;
   queryClient?: string;
 } = {}): QueryAllTokenMapState {
-  const params: QueryTotalSupplyRequest = {
-    ...queryConfig,
-    pagination: {
-      ...defaultPaginationParams,
-      ...queryConfig?.pagination,
-    },
-  };
-
   const lcdClientPromise = useLcdClientPromise(queryClientConfig);
 
   const {
-    data: pages,
-    isValidating,
+    data,
     error,
-    setSize,
-  } = useSWRInfinite<QueryTotalSupplyResponseSDKType>(
-    getNextPaginationKey<QueryTotalSupplyRequest>(
-      'cosmos.bank.v1beta1.totalSupply',
-      params
-    ),
-    async ([, params]: [paths: string, params: QueryTotalSupplyRequest]) => {
+    isFetching: isValidating,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    ...queryOptions,
+    queryKey: ['cosmos.bank.v1beta1.totalSupply'],
+    queryFn: async ({
+      pageParam: nextKey,
+    }): Promise<QueryTotalSupplyResponseSDKType | undefined> => {
       const client = await lcdClientPromise;
-      return await client.cosmos.bank.v1beta1.totalSupply(params);
+      return await client.cosmos.bank.v1beta1.totalSupply({
+        ...queryConfig,
+        pagination: nextKey ? { key: nextKey } : queryConfig?.pagination,
+      });
     },
-    { persistSize: true, ...swrConfig }
-  );
+    defaultPageParam: undefined,
+    getNextPageParam: (
+      lastPage: QueryTotalSupplyResponseSDKType | undefined
+    ) => {
+      return lastPage?.pagination?.next_key ?? undefined;
+    },
+  });
 
-  // set number of pages to latest total
+  // fetch more data if data has changed but there are still more pages to get
   useEffect(() => {
-    const pageItemCount = Number(pages?.[0]?.supply?.length);
-    const totalItemCount = Number(pages?.[0]?.pagination?.total);
-    if (pageItemCount > 0 && totalItemCount > pageItemCount) {
-      const pageCount = Math.ceil(totalItemCount / pageItemCount);
-      setSize(pageCount);
+    if (fetchNextPage && hasNextPage) {
+      fetchNextPage();
     }
-  }, [pages, setSize]);
+  }, [data, fetchNextPage, hasNextPage]);
 
   // place pages of data into the same list
-  const data = useMemo(() => {
-    const tradingPairMap = pages?.reduce<
+  const tradingPairs = useMemo(() => {
+    const tradingPairMap = data?.pages?.reduce<
       Map<string, [TokenAddress, TokenAddress]>
     >((acc, page) => {
-      page.supply.forEach((coin) => {
+      page?.supply.forEach((coin) => {
         const match = getShareInfo(coin);
         if (match) {
           const { token0Address, token1Address } = match;
@@ -86,10 +81,10 @@ export default function useTokenPairs({
       return acc;
     }, new Map<string, [TokenAddress, TokenAddress]>());
     return tradingPairMap && Array.from(tradingPairMap.values());
-  }, [pages]);
+  }, [data]);
 
   // return state
-  return { data, isValidating, error };
+  return { data: tradingPairs, isValidating, error };
 }
 
 // add convenience method to fetch ticks in a pair

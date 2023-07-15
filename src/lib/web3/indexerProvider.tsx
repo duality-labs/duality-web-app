@@ -107,7 +107,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const tokensData = useTokens();
   const { data: tokenPairsData, isValidating: isTokenPairsValidating } =
     useTokenPairs({
-      swr: { refreshInterval: 10 * minutes },
+      queryOptions: { refetchInterval: 10 * minutes },
     });
 
   const rpcPromise = useRpcPromise();
