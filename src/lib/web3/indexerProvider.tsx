@@ -21,7 +21,6 @@ import useTokenPairs from './hooks/useTokenPairs';
 import { feeTypes } from './utils/fees';
 
 import { Token, TokenAddress, getAmountInDenom } from './utils/tokens';
-import { calculateShares } from './utils/ticks';
 import { IndexedShare, getShareInfo } from './utils/shares';
 import { getPairID } from './utils/pairs';
 
@@ -299,8 +298,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       const Token1 = event['message.Token1'];
       const TickIndex1To0 = event['message.TickIndex'];
       const Fee = event['message.Fee'];
-      const NewReserves0 = event['message.NewReserves0'];
-      const NewReserves1 = event['message.NewReserves1'];
+      const SharesMinted = event['message.SharesMinted'];
 
       if (
         Receiver !== address ||
@@ -308,8 +306,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         !Token1 ||
         !TickIndex1To0 ||
         !Fee ||
-        !NewReserves0 ||
-        !NewReserves1
+        !SharesMinted
       ) {
         setError('Invalid event response from server');
         return;
@@ -329,11 +326,10 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             share.tickIndex1To0 === TickIndex1To0 &&
             share.fee === Fee
         );
-        const sharesOwned = calculateShares({
-          tickIndex1To0: new BigNumber(TickIndex1To0),
-          reserve0: new BigNumber(NewReserves0),
-          reserve1: new BigNumber(NewReserves1),
-        });
+        const shareFound = shares[shareFoundIndex];
+        const sharesOwned = new BigNumber(shareFound?.sharesOwned || 0).plus(
+          SharesMinted
+        );
         // upsert new share
         if (sharesOwned.isGreaterThan(0)) {
           const newShare = {
