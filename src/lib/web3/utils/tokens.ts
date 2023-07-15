@@ -11,12 +11,17 @@ export type TokenAddress = string; // a valid hex address, eg. 0x01
 
 export type TokenPair = [Token, Token];
 export type TokenAddressPair = [TokenAddress, TokenAddress];
-export function getTokenAddress(token: Token | TokenAddress): TokenAddress {
-  return typeof token === 'string' ? token : token.address;
+export function getTokenAddress(
+  token: Token | TokenAddress | undefined
+): TokenAddress | undefined {
+  return typeof token === 'string' ? token : token?.address;
 }
-export function getTokenAddressPair([token0, token1]:
-  | TokenPair
-  | TokenAddressPair): TokenAddressPair {
+export function getTokenAddressPair(
+  [token0, token1]: TokenPair | TokenAddressPair | [undefined, undefined] = [
+    undefined,
+    undefined,
+  ]
+): [TokenAddress | undefined, TokenAddress | undefined] {
   return [getTokenAddress(token0), getTokenAddress(token1)];
 }
 

@@ -53,11 +53,16 @@ export function hasInvertedOrder(
   return getPairID(tokenA, tokenB) !== pairID;
 }
 
-export function guessInvertedOrder(tokenA: string, tokenB: string) {
+export function guessInvertedOrder(
+  tokenA?: string,
+  tokenB?: string
+): boolean | undefined {
   // assume that Array.sort is equivalent to the sorting function in Golang
   // for all known token address values
   const pairID = getPairID(...[tokenA, tokenB].sort());
-  return hasInvertedOrder(pairID, tokenA, tokenB);
+  return tokenA && tokenB
+    ? hasInvertedOrder(pairID, tokenA, tokenB)
+    : undefined;
 }
 
 /**
