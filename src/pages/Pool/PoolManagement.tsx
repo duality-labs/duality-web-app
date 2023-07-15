@@ -403,13 +403,14 @@ export default function PoolManagement({
 
   const [pairPriceMin, pairPriceMax] = useMemo<[number, number]>(() => {
     const spreadFactor = 1000;
+    // expand adjustment min and max to take into account current values
     return edgePrice
       ? [
-          edgePrice.dividedBy(spreadFactor).toNumber(),
-          edgePrice.multipliedBy(spreadFactor).toNumber(),
+          Math.min(rangeMin, edgePrice.dividedBy(spreadFactor).toNumber()),
+          Math.max(rangeMax, edgePrice.multipliedBy(spreadFactor).toNumber()),
         ]
       : [priceMin, priceMax];
-  }, [edgePrice]);
+  }, [edgePrice, rangeMin, rangeMax]);
 
   // protect price range extents
   const setRange = useCallback<
@@ -511,7 +512,7 @@ export default function PoolManagement({
       return formatSignificantDecimalRangeString(newValue);
     };
     setInvertTokenOrder((order) => !order);
-    setRange([
+    setRangeUnprotected([
       flipAroundCurrentPriceSwap(rangeMax),
       flipAroundCurrentPriceSwap(rangeMin),
     ]);
@@ -531,7 +532,7 @@ export default function PoolManagement({
     setTokens,
     rangeMin,
     rangeMax,
-    setRange,
+    setRangeUnprotected,
     inputValueA,
     inputValueB,
     setInputValueA,
