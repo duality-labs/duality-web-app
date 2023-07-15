@@ -12,6 +12,8 @@ import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useToke
 import BigNumber from 'bignumber.js';
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
+import { usePoolDepositFilterForPair, useUserDeposits } from './useUserShares';
+
 import { TokenAddress } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
 
@@ -37,9 +39,23 @@ export default function useTickLiquidity({
 
   const lcdClientPromise = useLcdClientPromise(queryClientConfig);
 
-  // todo: add a subscription listener here or above here to invalidate the
-  // following request cache keys a refetch new data (recommend passing block ID
-  // into the cache key to only refetch at most once per block)
+  const [token0Address, token1Address] = queryConfig
+    ? queryConfig.pairID.split('<>')
+    : [undefined, undefined];
+
+  const poolFilter = usePoolDepositFilterForPair(
+    token0Address && token1Address ? [token0Address, token1Address] : undefined
+  );
+
+  // a subscription listener listens to share change events and updates
+  // our stored shares, which is reflected in new userShares objects here
+  const userShares = useUserDeposits(poolFilter);
+  const userSharesState = useMemo(() => {
+    return userShares?.map((share) => [
+      share.centerTickIndex1To0.toNumber(),
+      share.sharesOwned,
+    ]);
+  }, [userShares]);
 
   const {
     data,
@@ -48,7 +64,11 @@ export default function useTickLiquidity({
     hasNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
-    queryKey: ['dualitylabs.duality.dex.tickLiquidityAll', queryConfig],
+    queryKey: [
+      'dualitylabs.duality.dex.tickLiquidityAll',
+      queryConfig,
+      userSharesState,
+    ],
     queryFn: async ({
       pageParam: nextKey,
     }): Promise<QueryAllTickLiquidityResponseSDKType | undefined> => {
