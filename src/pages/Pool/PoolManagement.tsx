@@ -7,6 +7,7 @@ import {
   ReactNode,
   useMemo,
   Fragment,
+  useRef,
 } from 'react';
 import { Link, useMatch } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
@@ -446,9 +447,12 @@ export default function PoolManagement({
     isValueBZero?: boolean;
   }>({ tokenA, tokenB });
   // remove price on token change
+  const lastEdgePrice = useRef<BigNumber>();
+  lastEdgePrice.current = edgePrice;
   useEffect(() => {
+    const edgePrice = lastEdgePrice.current;
     const setRangeForNewPriceData = (price: number | BigNumber) => {
-      setRange([
+      setRangeUnprotected([
         isValueAZero && !isValueBZero
           ? new BigNumber(price).multipliedBy(1.1).toFixed()
           : new BigNumber(price).multipliedBy(0.5).toFixed(),
@@ -461,7 +465,7 @@ export default function PoolManagement({
       // if there is no currentPriceFromTicks yet, then wait until there is
       if (!edgePrice) {
         // set decent looking example range for an unknown price
-        setRange(['0.01', '100']);
+        setRangeUnprotected(['0.01', '100']);
         return state;
       }
       // current tokens with maybe new price
@@ -502,7 +506,7 @@ export default function PoolManagement({
         };
       }
     });
-  }, [tokenA, tokenB, isValueAZero, isValueBZero, edgePrice, setRange]);
+  }, [tokenA, tokenB, isValueAZero, isValueBZero, setRangeUnprotected]);
 
   const swapAll = useCallback(() => {
     const flipAroundCurrentPriceSwap = (value: BigNumber.Value) => {
