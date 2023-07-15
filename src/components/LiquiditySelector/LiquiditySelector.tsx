@@ -161,24 +161,13 @@ export default function LiquiditySelector({
     useCallback(
       (valueOrCallback) => {
         setRange(([min, max]) => {
-          // process as a callback
-          if (typeof valueOrCallback === 'function') {
-            const callback = valueOrCallback;
-            // convert price to index
-            const fractionalRangeMinIndex = priceToTickIndex(
-              new BigNumber(min)
-            ).toNumber();
-            // process as index
-            const value = callback(fractionalRangeMinIndex);
-            // convert index back to price
-            return [tickIndexToPrice(new BigNumber(value)).toFixed(), max];
-          }
-          // process as a value
-          else {
-            const value = valueOrCallback;
-            // convert index to price
-            return [tickIndexToPrice(new BigNumber(value)).toFixed(), max];
-          }
+          // get new min index value value
+          const newMinIndex =
+            typeof valueOrCallback === 'function'
+              ? valueOrCallback(priceToTickIndex(new BigNumber(min)).toNumber())
+              : valueOrCallback;
+          // convert index to price
+          return [tickIndexToPrice(new BigNumber(newMinIndex)).toFixed(), max];
         });
       },
       [setRange]
@@ -187,24 +176,13 @@ export default function LiquiditySelector({
     useCallback(
       (valueOrCallback) => {
         setRange(([min, max]) => {
-          // process as a callback
-          if (typeof valueOrCallback === 'function') {
-            const callback = valueOrCallback;
-            // convert price to index
-            const fractionalRangeMaxIndex = priceToTickIndex(
-              new BigNumber(max)
-            ).toNumber();
-            // process as index
-            const value = callback(fractionalRangeMaxIndex);
-            // convert index back to price
-            return [min, tickIndexToPrice(new BigNumber(value)).toFixed()];
-          }
-          // process as a value
-          else {
-            const value = valueOrCallback;
-            // convert index to price
-            return [min, tickIndexToPrice(new BigNumber(value)).toFixed()];
-          }
+          // get new max index value value
+          const newMaxIndex =
+            typeof valueOrCallback === 'function'
+              ? valueOrCallback(priceToTickIndex(new BigNumber(max)).toNumber())
+              : valueOrCallback;
+          // convert index to price
+          return [min, tickIndexToPrice(new BigNumber(newMaxIndex)).toFixed()];
         });
       },
       [setRange]
