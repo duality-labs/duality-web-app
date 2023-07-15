@@ -1,5 +1,3 @@
-import { Buffer } from 'buffer';
-
 enum QueryStatus {
   Disconnecting,
   Disconnected,
@@ -633,11 +631,8 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
         const event = originalEvent.attributes.reduce<{
           [key: string]: string;
         }>(function (result, { key, value }) {
-          const keyParts = [
-            originalEvent.type,
-            Buffer.from(key, 'base64').toString(),
-          ];
-          result[keyParts.join('.')] = Buffer.from(value, 'base64').toString();
+          const keyParts = [originalEvent.type, key];
+          result[keyParts.join('.')] = value;
           return result;
         }, {});
         listenerGroup.callBacks.forEach(function (wrapper) {
