@@ -211,8 +211,8 @@ export default function PoolManagement({
 
   // start with a default range of nothing, but is should be quickly set
   // after price information becomes available
-  const [fractionalRangeMin, setRangeMinUnprotected] = useState('1');
-  const [fractionalRangeMax, setRangeMaxUnprotected] = useState('1');
+  const [[fractionalRangeMin, fractionalRangeMax], setRangeUnprotected] =
+    useState(['1', '1']);
   const [significantDecimals, setSignificantDecimals] = useState(3);
 
   const [pairPriceMin, pairPriceMax] = useMemo<[number, number]>(() => {
@@ -225,35 +225,27 @@ export default function PoolManagement({
       : [priceMin, priceMax];
   }, [edgePrice]);
   // protect price range extents
-  const setRangeMin = useCallback<React.Dispatch<React.SetStateAction<string>>>(
+  const setRange = useCallback<
+    React.Dispatch<React.SetStateAction<[string, string]>>
+  >(
     (valueOrCallback) => {
-      const restrictValue = (value: string) => {
-        return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
+      const restrictValues = ([min, max]: [string, string]): [
+        string,
+        string
+      ] => {
+        return [
+          restrictPriceRangeValues(min, [pairPriceMin, pairPriceMax]),
+          restrictPriceRangeValues(max, [pairPriceMin, pairPriceMax]),
+        ];
       };
       if (typeof valueOrCallback === 'function') {
         const callback = valueOrCallback;
-        return setRangeMinUnprotected((value) => {
-          return restrictValue(callback(value));
+        return setRangeUnprotected((values) => {
+          return restrictValues(callback(values));
         });
       }
       const value = valueOrCallback;
-      setRangeMinUnprotected(restrictValue(value));
-    },
-    [pairPriceMin, pairPriceMax]
-  );
-  const setRangeMax = useCallback<React.Dispatch<React.SetStateAction<string>>>(
-    (valueOrCallback) => {
-      const restrictValue = (value: string) => {
-        return restrictPriceRangeValues(value, [pairPriceMin, pairPriceMax]);
-      };
-      if (typeof valueOrCallback === 'function') {
-        const callback = valueOrCallback;
-        return setRangeMaxUnprotected((value) => {
-          return restrictValue(callback(value));
-        });
-      }
-      const value = valueOrCallback;
-      setRangeMaxUnprotected(restrictValue(value));
+      setRangeUnprotected(restrictValues(value));
     },
     [pairPriceMin, pairPriceMax]
   );
@@ -262,12 +254,14 @@ export default function PoolManagement({
     (price: string): void => {
       const priceNumber = Number(price);
       if (priceNumber > 0) {
-        setRangeMinUnprotected(new BigNumber(priceNumber / 100).toFixed());
-        setRangeMaxUnprotected(new BigNumber(priceNumber * 100).toFixed());
+        setRangeUnprotected([
+          new BigNumber(priceNumber / 100).toFixed(),
+          new BigNumber(priceNumber * 100).toFixed(),
+        ]);
       }
       setInitialPrice(price);
     },
-    [setRangeMinUnprotected, setRangeMaxUnprotected]
+    [setRangeUnprotected]
   );
 
   const [liquidityShape, setLiquidityShape] = useState<LiquidityShape>(
@@ -358,23 +352,20 @@ export default function PoolManagement({
   // remove price on token change
   useEffect(() => {
     const setRangeForNewPriceData = (price: number | BigNumber) => {
-      setRangeMin(
+      setRange([
         isValueAZero && !isValueBZero
           ? new BigNumber(price).multipliedBy(1.1).toFixed()
-          : new BigNumber(price).multipliedBy(0.5).toFixed()
-      );
-      setRangeMax(
+          : new BigNumber(price).multipliedBy(0.5).toFixed(),
         isValueBZero && !isValueAZero
           ? new BigNumber(price).multipliedBy(0.9).toFixed()
-          : new BigNumber(price).multipliedBy(2).toFixed()
-      );
+          : new BigNumber(price).multipliedBy(2).toFixed(),
+      ]);
     };
     setFirstCurrentPrice((state) => {
       // if there is no currentPriceFromTicks yet, then wait until there is
       if (!edgePrice) {
         // set decent looking example range for an unknown price
-        setRangeMin('0.01');
-        setRangeMax('100');
+        setRange(['0.01', '100']);
         return state;
       }
       // current tokens with maybe new price
@@ -415,15 +406,7 @@ export default function PoolManagement({
         };
       }
     });
-  }, [
-    tokenA,
-    tokenB,
-    isValueAZero,
-    isValueBZero,
-    edgePrice,
-    setRangeMin,
-    setRangeMax,
-  ]);
+  }, [tokenA, tokenB, isValueAZero, isValueBZero, edgePrice, setRange]);
 
   const onSubmitAddLiquidity = useCallback(
     async function (e: FormEvent<HTMLFormElement>) {
@@ -527,8 +510,10 @@ export default function PoolManagement({
       return formatSignificantDecimalRangeString(newValue);
     };
     setInvertTokenOrder((order) => !order);
-    setRangeMin(() => flipAroundCurrentPriceSwap(rangeMax));
-    setRangeMax(() => flipAroundCurrentPriceSwap(rangeMin));
+    setRange([
+      flipAroundCurrentPriceSwap(rangeMax),
+      flipAroundCurrentPriceSwap(rangeMin),
+    ]);
     setInputValueA(inputValueB);
     setInputValueB(inputValueA);
     setTokens([tokenB, tokenA]);
@@ -545,8 +530,7 @@ export default function PoolManagement({
     setTokens,
     rangeMin,
     rangeMax,
-    setRangeMin,
-    setRangeMax,
+    setRange,
     inputValueA,
     inputValueB,
     setInputValueA,
@@ -1367,8 +1351,7 @@ export default function PoolManagement({
                       initialPrice={initialPrice}
                       rangeMin={fractionalRangeMin}
                       rangeMax={fractionalRangeMax}
-                      setRangeMin={setRangeMin}
-                      setRangeMax={setRangeMax}
+                      setRange={setRange}
                       setSignificantDecimals={setSignificantDecimals}
                       setViewableIndexes={setViewableIndexes}
                       userTickSelected={userTickSelected}
@@ -1399,7 +1382,7 @@ export default function PoolManagement({
                         title="MIN PRICE"
                         value={rangeMin}
                         onChange={(value: BigNumber.Value) => {
-                          setRangeMin(() => {
+                          setRange(([, max]) => {
                             const newIndex = priceToTickIndex(
                               new BigNumber(value),
                               'round'
@@ -1408,17 +1391,18 @@ export default function PoolManagement({
                             // of the desired tick index bucket (remember these are rounded
                             // away from zero on a split-token chart) so when the user
                             // drags the limit controls we are not 1px from an index change
-                            if (edgePriceIndex !== undefined) {
-                              const offset = newIndex.isGreaterThanOrEqualTo(
-                                Math.round(edgePriceIndex)
-                              )
-                                ? +0.5
-                                : -0.5;
-                              return tickIndexToPrice(
-                                newIndex.plus(offset)
-                              ).toFixed();
-                            }
-                            return tickIndexToPrice(newIndex).toFixed();
+                            const offset =
+                              edgePriceIndex !== undefined
+                                ? newIndex.isGreaterThanOrEqualTo(
+                                    Math.round(edgePriceIndex)
+                                  )
+                                  ? +0.5
+                                  : -0.5
+                                : 0;
+                            return [
+                              tickIndexToPrice(newIndex.plus(offset)).toFixed(),
+                              max,
+                            ];
                           });
                         }}
                         stepFunction={logarithmStep}
@@ -1441,7 +1425,7 @@ export default function PoolManagement({
                         title="MAX PRICE"
                         value={rangeMax}
                         onChange={(value: BigNumber.Value) => {
-                          setRangeMax(() => {
+                          setRange(([min]) => {
                             const newIndex = priceToTickIndex(
                               new BigNumber(value),
                               'round'
@@ -1450,17 +1434,18 @@ export default function PoolManagement({
                             // of the desired tick index bucket (remember these are rounded
                             // away from zero on a split-token chart) so when the user
                             // drags the limit controls we are not 1px from an index change
-                            if (edgePriceIndex !== undefined) {
-                              const offset = newIndex.isLessThanOrEqualTo(
-                                Math.round(edgePriceIndex)
-                              )
-                                ? -0.5
-                                : +0.5;
-                              return tickIndexToPrice(
-                                newIndex.plus(offset)
-                              ).toFixed();
-                            }
-                            return tickIndexToPrice(newIndex).toFixed();
+                            const offset =
+                              edgePriceIndex !== undefined
+                                ? newIndex.isLessThanOrEqualTo(
+                                    Math.round(edgePriceIndex)
+                                  )
+                                  ? -0.5
+                                  : +0.5
+                                : 0;
+                            return [
+                              min,
+                              tickIndexToPrice(newIndex.plus(offset)).toFixed(),
+                            ];
                           });
                         }}
                         stepFunction={logarithmStep}
