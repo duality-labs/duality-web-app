@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.6](https://github.com/duality-labs/duality-web-app/compare/v0.3.5...v0.3.6) (2023-07-15)
+
+
+### Fixes
+
+* switching token order can cause a crash ([#402](https://github.com/duality-labs/duality-web-app/issues/402)) ([47cfe13](https://github.com/duality-labs/duality-web-app/commit/47cfe1328917bc470fc79b06d33cde399d1dba6f))
+
 ## [0.3.5](https://github.com/duality-labs/duality-web-app/compare/v0.3.4...v0.3.5) (2023-07-14)
 
 
