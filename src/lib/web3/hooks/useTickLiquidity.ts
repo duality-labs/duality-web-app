@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { SWRConfiguration, SWRResponse } from 'swr';
-import useSWRInfinite from 'swr/infinite';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 import {
   QueryAllTickLiquidityRequest,
@@ -8,8 +7,6 @@ import {
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
 import { useLcdClientPromise } from '../lcdClient';
 import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
-
-import { defaultPaginationParams, getNextPaginationKey } from './utils';
 
 import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useTokens';
 import BigNumber from 'bignumber.js';
@@ -20,16 +17,14 @@ import { getPairID } from '../utils/pairs';
 
 type QueryAllTickLiquidityState = {
   data: Array<TickInfo> | undefined;
-  isValidating: SWRResponse['isValidating'];
-  error: SWRResponse['error'];
+  isValidating: boolean;
+  error: Error | null;
 };
 
 export default function useTickLiquidity({
-  swr: swrConfig,
   query: queryConfig,
   queryClient: queryClientConfig,
 }: {
-  swr?: SWRConfiguration;
   query: QueryAllTickLiquidityRequest | null;
   queryClient?: string;
 }): QueryAllTickLiquidityState {
@@ -40,16 +35,6 @@ export default function useTickLiquidity({
     throw new Error('Cannot fetch liquidity: no token ID given');
   }
 
-  const params: QueryAllTickLiquidityRequest | null = !queryConfig
-    ? null
-    : {
-        ...queryConfig,
-        pagination: {
-          ...defaultPaginationParams,
-          ...queryConfig?.pagination,
-        },
-      };
-
   const lcdClientPromise = useLcdClientPromise(queryClientConfig);
 
   // todo: add a subscription listener here or above here to invalidate the
@@ -57,44 +42,44 @@ export default function useTickLiquidity({
   // into the cache key to only refetch at most once per block)
 
   const {
-    data: pages,
-    isValidating,
+    data,
     error,
-    setSize,
-  } = useSWRInfinite<QueryAllTickLiquidityResponseSDKType>(
-    !params
-      ? () => ''
-      : getNextPaginationKey<QueryAllTickLiquidityRequest>(
-          // set unique cache key for this client method
-          'dualitylabs.duality.dex.tickLiquidityAll',
-          params
-        ),
-    !params
-      ? null
-      : async ([, params]: [
-          _: string,
-          params: QueryAllTickLiquidityRequest
-        ]) => {
-          const client = await lcdClientPromise;
-          return await client.dualitylabs.duality.dex.tickLiquidityAll(params);
-        },
-    { persistSize: true, ...swrConfig }
-  );
-  // set number of pages to latest total
+    isFetching: isValidating,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['dualitylabs.duality.dex.tickLiquidityAll', queryConfig],
+    queryFn: async ({
+      pageParam: nextKey,
+    }): Promise<QueryAllTickLiquidityResponseSDKType | undefined> => {
+      if (queryConfig) {
+        const client = await lcdClientPromise;
+        return await client.dualitylabs.duality.dex.tickLiquidityAll({
+          ...queryConfig,
+          pagination: nextKey ? { key: nextKey } : undefined,
+        });
+      }
+    },
+    defaultPageParam: undefined,
+    getNextPageParam: (
+      lastPage: QueryAllTickLiquidityResponseSDKType | undefined
+    ) => {
+      return lastPage?.pagination?.next_key ?? undefined;
+    },
+  });
+
+  // fetch more data if data has changed but there are still more pages to get
   useEffect(() => {
-    const pageItemCount = Number(pages?.[0]?.tickLiquidity?.length);
-    const totalItemCount = Number(pages?.[0]?.pagination?.total);
-    if (pageItemCount > 0 && totalItemCount > pageItemCount) {
-      const pageCount = Math.ceil(totalItemCount / pageItemCount);
-      setSize(pageCount);
+    if (fetchNextPage && hasNextPage) {
+      fetchNextPage();
     }
-  }, [pages, setSize]);
+  }, [data, fetchNextPage, hasNextPage]);
 
   // place pages of data into the same list
   const tradingPairs = useMemo(() => {
-    const liquidity = pages?.flatMap((page) => page.tickLiquidity);
+    const liquidity = data?.pages?.flatMap((page) => page?.tickLiquidity ?? []);
     return liquidity && transformData(liquidity);
-  }, [pages]);
+  }, [data]);
   return { data: tradingPairs, isValidating, error };
 }
 
