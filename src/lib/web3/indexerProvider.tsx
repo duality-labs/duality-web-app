@@ -52,22 +52,18 @@ interface UserStakedShares {
 interface IndexerContextType {
   bank: {
     data?: UserBankBalance;
-    error?: string;
     isValidating: boolean;
   };
   shares: {
     data?: UserShares & UserStakedShares;
-    error?: string;
     isValidating: boolean;
   };
   tokens: {
     data?: Token[];
-    error?: string;
     isValidating: boolean;
   };
   tokenPairs: {
     data?: [TokenAddress, TokenAddress][];
-    error?: string;
     isValidating: boolean;
   };
 }
@@ -111,8 +107,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     });
 
   const rpcPromise = useRpcPromise();
-
-  const [error, setError] = useState<string>();
 
   const { address } = useWeb3();
   const [, setFetchBankDataState] = useState<FetchState>({
@@ -308,10 +302,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         !Fee ||
         !SharesMinted
       ) {
-        setError('Invalid event response from server');
+        // skip
         return;
-      } else {
-        setError(undefined);
       }
       // update user's share state
       setShareData((state) => {
@@ -386,10 +378,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         !AmountOut ||
         !MinOut
       ) {
-        setError('Invalid event response from server');
+        // skip
         return;
-      } else {
-        setError(undefined);
       }
 
       // todo: update something without refetching?
@@ -408,35 +398,25 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   const result = useMemo(() => {
     return {
+      // todo: pass whole query responses here
       bank: {
         data: bankData,
-        error: error,
-        isValidating: !bankData && !error,
+        isValidating: !bankData,
       },
       shares: {
         data: shareData,
-        error: error,
-        isValidating: !shareData && !error,
+        isValidating: !shareData,
       },
       tokens: {
         data: tokensData,
-        error: error,
-        isValidating: !shareData && !error,
+        isValidating: !shareData,
       },
       tokenPairs: {
         data: tokenPairsData,
-        error: error,
         isValidating: isTokenPairsValidating,
       },
     };
-  }, [
-    bankData,
-    shareData,
-    tokensData,
-    tokenPairsData,
-    error,
-    isTokenPairsValidating,
-  ]);
+  }, [bankData, shareData, tokensData, tokenPairsData, isTokenPairsValidating]);
 
   return (
     <IndexerContext.Provider value={result}>{children}</IndexerContext.Provider>
@@ -448,12 +428,12 @@ export function useBankData() {
 }
 
 export function useBankBalances() {
-  const { data, error, isValidating } = useBankData();
-  return { data: data?.balances, error, isValidating };
+  const { data, isValidating } = useBankData();
+  return { data: data?.balances, isValidating };
 }
 
 export function useBankBalance(token: Token | undefined) {
-  const { data: balances, error, isValidating } = useBankBalances();
+  const { data: balances, isValidating } = useBankBalances();
   const balance = useMemo(() => {
     return (
       (token &&
@@ -461,11 +441,11 @@ export function useBankBalance(token: Token | undefined) {
       '0'
     );
   }, [balances, token]);
-  return { data: balance, error, isValidating };
+  return { data: balance, isValidating };
 }
 
 export function useBankBigBalance(token: Token | undefined) {
-  const { data: balances, error, isValidating } = useBankBalances();
+  const { data: balances, isValidating } = useBankBalances();
   const balance = useMemo(() => {
     const foundBalance =
       token &&
@@ -483,7 +463,7 @@ export function useBankBigBalance(token: Token | undefined) {
       )
     );
   }, [balances, token]);
-  return { data: balance, error, isValidating };
+  return { data: balance, isValidating };
 }
 
 export function useShareData() {
@@ -494,7 +474,7 @@ export function useShares({
   tokens,
   staked = false,
 }: { tokens?: [tokenA: Token, tokenB: Token]; staked?: boolean } = {}) {
-  const { data, error, isValidating } = useShareData();
+  const { data, isValidating } = useShareData();
   const shares = useMemo((): IndexedShare[] | UserStakedShare[] | undefined => {
     // filter to specific tokens if asked for
     const shares = data?.shares.filter(
@@ -521,7 +501,7 @@ export function useShares({
       };
     }
   }, [data?.shares, data?.stakedShares, tokens, staked]);
-  return { data: shares, error, isValidating };
+  return { data: shares, isValidating };
 }
 
 export function useTokensList() {
