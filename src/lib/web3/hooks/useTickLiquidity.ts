@@ -12,7 +12,7 @@ import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useToke
 import BigNumber from 'bignumber.js';
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
-import { usePoolDepositFilterForPair, useUserDeposits } from './useUserShares';
+import { usePairUpdateHeight } from '../indexerProvider';
 
 import { TokenAddress } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
@@ -39,23 +39,12 @@ export default function useTickLiquidity({
 
   const lcdClientPromise = useLcdClientPromise(queryClientConfig);
 
-  const [token0Address, token1Address] = queryConfig
-    ? queryConfig.pairID.split('<>')
-    : [undefined, undefined];
-
-  const poolFilter = usePoolDepositFilterForPair(
-    token0Address && token1Address ? [token0Address, token1Address] : undefined
-  );
-
-  // a subscription listener listens to share change events and updates
-  // our stored shares, which is reflected in new userShares objects here
-  const userShares = useUserDeposits(poolFilter);
-  const userSharesState = useMemo(() => {
-    return userShares?.map((share) => [
-      share.centerTickIndex1To0.toNumber(),
-      share.sharesOwned,
-    ]);
-  }, [userShares]);
+  // on swap the user shares hasn't changed, the user may not be a liquidity provider
+  // a CosmosSDK websocket subscription updates our pair update height store
+  // whenever the user has a successful transaction against the chain
+  // todo: this value should update on any liquidity change within the pair
+  // not just changes from the current user
+  const pairUpdateHeight = usePairUpdateHeight(queryConfig?.pairID);
 
   const {
     data,
@@ -67,7 +56,7 @@ export default function useTickLiquidity({
     queryKey: [
       'dualitylabs.duality.dex.tickLiquidityAll',
       queryConfig,
-      userSharesState,
+      pairUpdateHeight,
     ],
     queryFn: async ({
       pageParam: nextKey,

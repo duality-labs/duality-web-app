@@ -10,7 +10,8 @@ import Long from 'long';
 import { BigNumber } from 'bignumber.js';
 import { cosmos, dualitylabs } from '@duality-labs/dualityjs';
 
-import { MessageActionEvent } from './events';
+import { MessageActionEvent, TendermintTxData } from './events';
+import { DexTickUpdateEvent, mapEventAttributes } from './utils/events';
 import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
@@ -22,7 +23,7 @@ import { feeTypes } from './utils/fees';
 
 import { Token, TokenAddress, getAmountInDenom } from './utils/tokens';
 import { IndexedShare, getShareInfo } from './utils/shares';
-import { getPairID } from './utils/pairs';
+import { PairIdString, getPairID } from './utils/pairs';
 
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 import { StakeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/stake';
@@ -49,6 +50,10 @@ interface UserStakedShares {
   stakedShares: Array<UserStakedShare>;
 }
 
+interface PairUpdateHeightData {
+  [pairID: string]: number; // block height
+}
+
 interface IndexerContextType {
   bank: {
     data?: UserBankBalance;
@@ -66,6 +71,7 @@ interface IndexerContextType {
     data?: [TokenAddress, TokenAddress][];
     isValidating: boolean;
   };
+  pairUpdateHeight: PairUpdateHeightData;
 }
 
 interface FetchState {
@@ -87,6 +93,7 @@ const IndexerContext = createContext<IndexerContextType>({
   tokenPairs: {
     isValidating: true,
   },
+  pairUpdateHeight: {},
 });
 
 const defaultFetchParams: Partial<PageRequest> = {
@@ -100,6 +107,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   const [bankData, setBankData] = useState<UserBankBalance>();
   const [shareData, setShareData] = useState<UserShares & UserStakedShares>();
+  const [poolUpdateHeightData, setPoolUpdateHeightData] =
+    useState<PairUpdateHeightData>({});
   const tokensData = useTokens();
   const { data: tokenPairsData, isValidating: isTokenPairsValidating } =
     useTokenPairs({
@@ -137,7 +146,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                   if (token0 && token1 && tickIndex1To0 && fee) {
                     // add tokenized share if everything is fine
                     if (address) {
-                      const tokenizedShare = {
+                      const tokenizedShare: IndexedShare = {
                         // todo: remove address from here
                         address,
                         pairId: getPairID(token0, token1),
@@ -267,11 +276,19 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     updateBankData();
   }, [updateBankData, address]);
 
-  // update bank balance whenever bank transfers are detected
+  // update bank balance and pool height whenever the user completes a Tx
   useEffect(() => {
     if (address) {
-      const onTxBalanceUpdate = () => {
+      const onTxBalanceUpdate = (
+        event: MessageActionEvent,
+        tx: TendermintTxData
+      ) => {
+        // update bank
         updateBankData();
+        // update pool heights for pages to fetch nex data for
+        if (tx?.value?.TxResult) {
+          updatePairUpdateHeightData(tx.value.TxResult);
+        }
       };
       subscriber.subscribeMessage(onTxBalanceUpdate, {
         transfer: { recipient: address },
@@ -282,6 +299,40 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       return () => {
         subscriber.unsubscribeMessage(onTxBalanceUpdate);
       };
+    }
+    function updatePairUpdateHeightData(
+      txResult: TendermintTxData['value']['TxResult']
+    ) {
+      const height = Number(txResult.height);
+      const events = txResult.result.events;
+      if (events && events.length > 0 && !isNaN(height)) {
+        // find tick Update events
+        const tickUpdateEvents = events
+          .map(mapEventAttributes)
+          .filter((event): event is DexTickUpdateEvent => {
+            return (
+              (event as DexTickUpdateEvent).attributes.action === 'TickUpdate'
+            );
+          });
+        // collect token heights to change
+        if (tickUpdateEvents.length > 0) {
+          setPoolUpdateHeightData((poolUpdateHeightData) => {
+            return tickUpdateEvents.reduce(
+              (poolUpdateHeightData, event) => {
+                const pairID = getPairID(
+                  event.attributes.Token0,
+                  event.attributes.Token1
+                );
+                poolUpdateHeightData[pairID] = height;
+                return poolUpdateHeightData;
+              },
+              {
+                ...poolUpdateHeightData,
+              }
+            );
+          });
+        }
+      }
     }
   }, [updateBankData, address]);
 
@@ -415,8 +466,16 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         data: tokenPairsData,
         isValidating: isTokenPairsValidating,
       },
+      pairUpdateHeight: poolUpdateHeightData,
     };
-  }, [bankData, shareData, tokensData, tokenPairsData, isTokenPairsValidating]);
+  }, [
+    bankData,
+    shareData,
+    tokensData,
+    tokenPairsData,
+    poolUpdateHeightData,
+    isTokenPairsValidating,
+  ]);
 
   return (
     <IndexerContext.Provider value={result}>{children}</IndexerContext.Provider>
@@ -510,4 +569,10 @@ export function useTokensList() {
 
 export function useTokenPairsList() {
   return useContext(IndexerContext).tokenPairs;
+}
+
+export function usePairUpdateHeight(
+  pairID: PairIdString = ''
+): number | undefined {
+  return useContext(IndexerContext).pairUpdateHeight[pairID];
 }
