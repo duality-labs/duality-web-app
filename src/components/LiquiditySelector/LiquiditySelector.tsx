@@ -118,7 +118,7 @@ const zoomMaxIndexLimit = priceMaxIndex * 2;
 
 const rightMargin = 66;
 const leftPadding = 85;
-const rightPadding = 85 + rightMargin;
+const rightPadding = 85;
 const topPadding = 33;
 const bottomPadding = 26; // height of axis-ticks element
 
@@ -459,7 +459,10 @@ export default function LiquiditySelector({
   const [viewableMinIndex, viewableMaxIndex] = useMemo<[number, number]>(() => {
     // get bounds
     const spread = graphMaxIndex - graphMinIndex;
-    const width = Math.max(1, containerSize.width - leftPadding - rightPadding);
+    const width = Math.max(
+      1,
+      containerSize.width - leftPadding - rightPadding - rightMargin
+    );
     return [
       graphMinIndex - (spread * leftPadding) / width,
       graphMaxIndex + (spread * rightPadding) / width,
@@ -607,7 +610,10 @@ export default function LiquiditySelector({
   const [plotWidth, plotHeight] = useMemo(() => {
     return [
       // width
-      Math.max(0, containerSize.width - leftPadding - rightPadding),
+      Math.max(
+        0,
+        containerSize.width - leftPadding - rightPadding - rightMargin
+      ),
       // height
       Math.max(0, containerSize.height - topPadding - bottomPadding),
     ];
@@ -823,6 +829,8 @@ export default function LiquiditySelector({
         <TickBucketsGroup
           tickBuckets={tickBuckets}
           edgePriceIndex={edgePriceIndex}
+          minIndex={viewableMinIndex}
+          maxIndex={viewableMaxIndex}
           plotX={plotX}
           plotY={plotYBigNumber}
         />
@@ -1967,12 +1975,16 @@ function TicksGroup({
 function TickBucketsGroup({
   tickBuckets,
   edgePriceIndex,
+  minIndex,
+  maxIndex,
   plotX,
   plotY,
   className,
 }: {
   tickBuckets: TickGroupMergedBucketsFilled;
   edgePriceIndex: number;
+  minIndex: number;
+  maxIndex: number;
   plotX: (x: number) => number;
   plotY: (y: BigNumber) => number;
   className?: string;
@@ -2003,8 +2015,8 @@ function TickBucketsGroup({
               className={['token-a', !leftSide && 'behind-enemy-lines']
                 .filter(Boolean)
                 .join(' ')}
-              lowerBoundIndex={lowerBoundIndex}
-              upperBoundIndex={upperBoundIndex}
+              lowerBoundIndex={Math.max(minIndex, lowerBoundIndex)}
+              upperBoundIndex={Math.min(maxIndex, upperBoundIndex)}
               reserveValue={tokenAValue}
               offsetValue={tokenAOffset}
               plotX={plotX}
@@ -2015,8 +2027,8 @@ function TickBucketsGroup({
               className={['token-b', leftSide && 'behind-enemy-lines']
                 .filter(Boolean)
                 .join(' ')}
-              lowerBoundIndex={lowerBoundIndex}
-              upperBoundIndex={upperBoundIndex}
+              lowerBoundIndex={Math.max(minIndex, lowerBoundIndex)}
+              upperBoundIndex={Math.min(maxIndex, upperBoundIndex)}
               reserveValue={tokenBValue}
               offsetValue={tokenBOffset}
               plotX={plotX}
