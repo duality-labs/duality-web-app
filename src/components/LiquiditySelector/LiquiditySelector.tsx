@@ -602,10 +602,11 @@ export default function LiquiditySelector({
   );
   const plotY = useCallback(
     (y: number): number => {
-      const height = plotHeight;
+      const aboveBaseline = plotHeight * 0.42;
+      const height = plotHeight - aboveBaseline;
       return yMaxValue === 0
-        ? -bottomPadding // pin to bottom
-        : -bottomPadding - (height * y) / yMaxValue;
+        ? -aboveBaseline - bottomPadding // pin to bottom
+        : -aboveBaseline - bottomPadding - (height * y) / yMaxValue;
     },
     [yMaxValue, plotHeight]
   );
@@ -622,6 +623,10 @@ export default function LiquiditySelector({
   );
   const percentYBigNumber = useCallback(
     (y: BigNumber) => percentY(y.toNumber()),
+    [percentY]
+  );
+  const halfPercentYBigNumber = useCallback(
+    (y: BigNumber) => percentY(y.dividedBy(3.2).toNumber()),
     [percentY]
   );
 
@@ -703,6 +708,14 @@ export default function LiquiditySelector({
           x="0"
           width={containerSize.width}
           y={plotY(0).toFixed(0)}
+          height="2"
+        />
+      </g>
+      <g className="axis x-axis">
+        <rect
+          x="0"
+          width={containerSize.width}
+          y={percentY(0).toFixed(0)}
           height="8"
         />
       </g>
@@ -764,7 +777,7 @@ export default function LiquiditySelector({
         userTickSelected={userTickSelected}
         setUserTickSelected={setUserTickSelected}
         plotX={plotX}
-        percentY={percentYBigNumber}
+        percentY={halfPercentYBigNumber}
         canMoveUp={canMoveUp}
         canMoveDown={canMoveDown}
         canMoveX={canMoveX}
@@ -1987,7 +2000,7 @@ function Axis({
             className="line--success"
             x1={plotX(tickMarkIndex).toFixed(3)}
             x2={plotX(tickMarkIndex).toFixed(3)}
-            y1={plotY(0) + 8}
+            y1={percentY(0) + 8}
             y2={percentY(1)}
           />
         )}
@@ -1997,7 +2010,7 @@ function Axis({
             tickMarkIndex === highlightedTickIndex ? 'text--success' : ''
           }
           x={plotX(tickMarkIndex).toFixed(3)}
-          y={plotY(0) + 4 + 8}
+          y={percentY(0) + 4 + 8}
           dominantBaseline="middle"
           textAnchor="middle"
           alignmentBaseline="text-before-edge"
