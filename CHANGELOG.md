@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8](https://github.com/duality-labs/duality-web-app/compare/v0.3.7...v0.3.8) (2023-07-18)
+
+
+### Fixes
+
+* small UI fixes ([#399](https://github.com/duality-labs/duality-web-app/issues/399)) ([5df8429](https://github.com/duality-labs/duality-web-app/commit/5df84294ecf4a7bc9f61f42bd71d33578b3e35c0))
+
 ## [0.3.7](https://github.com/duality-labs/duality-web-app/compare/v0.3.6...v0.3.7) (2023-07-18)
 
 
