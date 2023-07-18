@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.7](https://github.com/duality-labs/duality-web-app/compare/v0.3.6...v0.3.7) (2023-07-18)
+
+
+### Fixes
+
+* ensure the page state updates after Msgs succeed ([#403](https://github.com/duality-labs/duality-web-app/issues/403)) ([6d8abd8](https://github.com/duality-labs/duality-web-app/commit/6d8abd81185e08b0b8960465a07d5d9946594cc6))
+
 ## [0.3.6](https://github.com/duality-labs/duality-web-app/compare/v0.3.5...v0.3.6) (2023-07-15)
 
 
