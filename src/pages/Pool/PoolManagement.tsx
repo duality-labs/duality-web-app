@@ -616,7 +616,7 @@ export default function PoolManagement({
       // calculate the used tick indexes
       const tickIndexValues = shapeUnitValueArray.map(
         (value, index, ticks): [tickIndex: number, value: number] => {
-          const xPercent = index / (ticks.length - 1);
+          const xPercent = index / Math.max(1, ticks.length - 1);
           // interpolate the whole tick index nearest to the array index
           const tickIndex = Math.round(
             rangeMinIndex + xPercent * (rangeMaxIndex - rangeMinIndex)
