@@ -1557,8 +1557,8 @@ function TicksGroup({
   // add a scaling factor if the maximum tick is very short (scale up to minMaxHeight)
   const scalingFactor =
     cumulativeTokenValues && maxValue / cumulativeTokenValues > minMaxHeight
-      ? 0.925
-      : (0.925 / (maxValue / cumulativeTokenValues)) * minMaxHeight;
+      ? 0.7
+      : 0.7 * minMaxHeight / (maxValue / cumulativeTokenValues);
 
   const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
 
@@ -2023,6 +2023,10 @@ function Axis({
   }
 }
 
+// scales user tick heights
+// 1 tick = 100%
+// 10 ticks = 90%
+// 100 ticks = 80%
 function getMinYHeight(tickCount: number): number {
-  return 1 / ((tickCount - 2) / 6 + 2) + 0.4;
+  return 1 - Math.log(tickCount) / Math.log(10) / 10;
 }
