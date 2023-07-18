@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9](https://github.com/duality-labs/duality-web-app/compare/v0.3.8...v0.3.9) (2023-07-18)
+
+
+### Features
+
+* preserve intended liquidity shape on chart in add position page ([#405](https://github.com/duality-labs/duality-web-app/issues/405)) ([8e44fad](https://github.com/duality-labs/duality-web-app/commit/8e44fadf3203d0598c79a77e418adc860a970c55))
+
 ## [0.3.8](https://github.com/duality-labs/duality-web-app/compare/v0.3.7...v0.3.8) (2023-07-18)
 
 
