@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import {
@@ -85,9 +85,20 @@ export default function useTickLiquidity({
   }, [data, fetchNextPage, hasNextPage]);
 
   // place pages of data into the same list
+  const lastLiquidity = useRef<TickInfo[]>();
   const tickSideLiquidity = useMemo(() => {
-    const liquidity = data?.pages?.flatMap((page) => page?.tickLiquidity ?? []);
-    return liquidity && transformData(liquidity);
+    // when refetching, the library sets `data` to `undefined`
+    // I think this is unintuitive. we should only "empty" the data here
+    // if a response comes back with an empty array, otherwise we keep the state
+    if (data) {
+      const liquidity = data?.pages?.flatMap(
+        (page) => page?.tickLiquidity ?? []
+      );
+      if (liquidity) {
+        lastLiquidity.current = transformData(liquidity);
+      }
+    }
+    return lastLiquidity.current;
   }, [data]);
   return { data: tickSideLiquidity, isValidating, error };
 }
