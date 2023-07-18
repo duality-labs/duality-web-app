@@ -712,6 +712,9 @@ export default function LiquiditySelector({
         />
       </g>
       <g className="axis x-axis">
+        <text x="0" y={percentY(0.03)}>
+          Your position
+        </text>
         <rect
           x="0"
           width={containerSize.width}
