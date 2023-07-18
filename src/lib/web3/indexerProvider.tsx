@@ -7,7 +7,6 @@ import {
   useCallback,
 } from 'react';
 import Long from 'long';
-import { BigNumber } from 'bignumber.js';
 import { cosmos, dualitylabs } from '@duality-labs/dualityjs';
 
 import { MessageActionEvent, TendermintTxData } from './events';
@@ -335,117 +334,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [updateBankData, address]);
-
-  useEffect(() => {
-    const onDexUpdateMessage = function (event: MessageActionEvent) {
-      const Receiver = event['message.Receiver'];
-      const Token0 = event['message.Token0'];
-      const Token1 = event['message.Token1'];
-      const TickIndex1To0 = event['message.TickIndex'];
-      const Fee = event['message.Fee'];
-      const SharesMinted = event['message.SharesMinted'];
-
-      if (
-        Receiver !== address ||
-        !Token0 ||
-        !Token1 ||
-        !TickIndex1To0 ||
-        !Fee ||
-        !SharesMinted
-      ) {
-        // skip
-        return;
-      }
-      // update user's share state
-      setShareData((state) => {
-        if (!state) return state;
-        // find matched data
-        const { shares = [], stakedShares = [] } = state || {};
-        const data = shares.slice();
-        const pairId = getPairID(Token0, Token1);
-        const shareFoundIndex = shares.findIndex(
-          (share) =>
-            share.pairId === pairId &&
-            share.tickIndex1To0 === TickIndex1To0 &&
-            share.fee === Fee
-        );
-        const shareFound = shares[shareFoundIndex];
-        const sharesOwned = new BigNumber(shareFound?.sharesOwned || 0).plus(
-          SharesMinted
-        );
-        // upsert new share
-        if (sharesOwned.isGreaterThan(0)) {
-          const newShare = {
-            pairId,
-            address,
-            fee: Fee,
-            tickIndex1To0: TickIndex1To0,
-            sharesOwned: sharesOwned.toFixed(),
-          };
-          if (shareFoundIndex >= 0) {
-            // update share
-            data.splice(shareFoundIndex, 1, newShare);
-          } else {
-            // add share
-            data.push(newShare);
-          }
-        }
-        // else remove share
-        else {
-          if (shareFoundIndex >= 0) {
-            data.splice(shareFoundIndex, 1);
-          }
-        }
-        return { shares: data, stakedShares };
-      });
-    };
-    // subscribe to messages for this address only
-    if (address) {
-      subscriber.subscribeMessage(onDexUpdateMessage, {
-        message: { action: 'Deposit', Receiver: address },
-      });
-      subscriber.subscribeMessage(onDexUpdateMessage, {
-        message: { action: 'Withdrawal', Receiver: address },
-      });
-      return () => {
-        subscriber.unsubscribeMessage(onDexUpdateMessage);
-      };
-    }
-  }, [rpcPromise, address]);
-
-  useEffect(() => {
-    const onRouterUpdateMessage = function (event: MessageActionEvent) {
-      const Creator = event['message.Creator'];
-      const TokenIn = event['message.TokenIn'];
-      const TokenOut = event['message.TokenOut'];
-      const AmountIn = event['message.AmountIn'];
-      const AmountOut = event['message.AmountOut'];
-      const MinOut = event['message.MinOut'];
-      if (
-        !Creator ||
-        !TokenIn ||
-        !TokenOut ||
-        !AmountIn ||
-        !AmountOut ||
-        !MinOut
-      ) {
-        // skip
-        return;
-      }
-
-      // todo: update something without refetching?
-      // may not be possible or helpful
-      // bank balance update will be caught already by the bank event watcher
-      // it's too complicated to update indexer state with the event detail's
-    };
-    subscriber.subscribeMessage(onRouterUpdateMessage, {
-      // todo: this doesn't exist anymore
-      message: { action: 'NewSwap' },
-    });
-    return () => {
-      subscriber.unsubscribeMessage(onRouterUpdateMessage);
-    };
-  }, [rpcPromise]);
 
   const result = useMemo(() => {
     return {
