@@ -85,11 +85,11 @@ export default function useTickLiquidity({
   }, [data, fetchNextPage, hasNextPage]);
 
   // place pages of data into the same list
-  const tradingPairs = useMemo(() => {
+  const tickSideLiquidity = useMemo(() => {
     const liquidity = data?.pages?.flatMap((page) => page?.tickLiquidity ?? []);
     return liquidity && transformData(liquidity);
   }, [data]);
-  return { data: tradingPairs, isValidating, error };
+  return { data: tickSideLiquidity, isValidating, error };
 }
 
 function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
