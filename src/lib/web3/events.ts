@@ -1,5 +1,3 @@
-import { Buffer } from 'buffer';
-
 enum QueryStatus {
   Disconnecting,
   Disconnected,
@@ -96,7 +94,7 @@ export type MessageListener = (
 
 interface CallBackWrapper {
   genericListener?: MessageListener;
-  messageListener?: (event: MessageActionEvent) => void;
+  messageListener?: (event: MessageActionEvent, tx: TendermintTxData) => void;
   // to compare with the action of each event and filter out those that don't match
   paramQueryMap?: ParamQueryMap;
 }
@@ -160,7 +158,7 @@ export interface SubscriptionManager {
    * @param eventType the event type listening to (when/how the event will get emitted)
    */
   readonly subscribeMessage: (
-    onMessage: (event: MessageActionEvent) => void,
+    onMessage: (event: MessageActionEvent, tx: TendermintTxData) => void,
     paramQueryMap: ParamQueryMap,
     eventType?: EventType
   ) => void;
@@ -172,7 +170,7 @@ export interface SubscriptionManager {
    * @param eventType the event type listening to (when/how the event will get emitted)
    */
   readonly unsubscribeMessage: (
-    onMessage?: (event: MessageActionEvent) => void,
+    onMessage?: (event: MessageActionEvent, tx: TendermintTxData) => void,
     paramQueryMap?: ParamQueryMap,
     eventType?: EventType
   ) => void;
@@ -427,7 +425,7 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
   }
 
   function subscribeMessage(
-    onMessage: (event: MessageActionEvent) => void,
+    onMessage: (event: MessageActionEvent, tx: TendermintTxData) => void,
     paramQueryMap: ParamQueryMap = {},
     // default to a Tx message type
     eventType: EventType = EventType.EventTxValue
@@ -439,7 +437,7 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
   }
 
   function unsubscribeMessage(
-    onMessage?: (event: MessageActionEvent) => void,
+    onMessage?: (event: MessageActionEvent, tx: TendermintTxData) => void,
     paramQueryMap?: ParamQueryMap,
     eventType: EventType = EventType.EventTxValue
   ) {
@@ -633,11 +631,8 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
         const event = originalEvent.attributes.reduce<{
           [key: string]: string;
         }>(function (result, { key, value }) {
-          const keyParts = [
-            originalEvent.type,
-            Buffer.from(key, 'base64').toString(),
-          ];
-          result[keyParts.join('.')] = Buffer.from(value, 'base64').toString();
+          const keyParts = [originalEvent.type, key];
+          result[keyParts.join('.')] = value;
           return result;
         }, {});
         listenerGroup.callBacks.forEach(function (wrapper) {
@@ -652,7 +647,7 @@ export function createSubscriptionManager(url: string): SubscriptionManager {
               }
             )
           )
-            wrapper.messageListener(event);
+            wrapper.messageListener(event, data);
         });
       });
     }

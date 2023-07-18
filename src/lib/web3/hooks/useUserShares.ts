@@ -42,7 +42,7 @@ export type UserDepositFilter = (
 const defaultFilter: UserDepositFilter = () => true;
 
 export function usePoolDepositFilterForPair(
-  tokenPair: TokenPair | TokenAddressPair
+  tokenPair: TokenPair | TokenAddressPair | undefined
 ): (poolDeposit: DirectionalDepositRecord) => boolean {
   const [tokenAddressA, tokenAddressB] = getTokenAddressPair(tokenPair);
   const poolDepositFilter = useCallback(
