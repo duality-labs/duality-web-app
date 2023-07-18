@@ -600,15 +600,16 @@ export default function LiquiditySelector({
     },
     [graphMinIndex, graphMaxIndex, plotWidth]
   );
+  const hasUserTicks = userTicks.length > 0;
   const plotY = useCallback(
     (y: number): number => {
-      const aboveBaseline = plotHeight * 0.42;
+      const aboveBaseline = plotHeight * (hasUserTicks ? 0.42 : 0);
       const height = plotHeight - aboveBaseline;
       return yMaxValue === 0
         ? -aboveBaseline - bottomPadding // pin to bottom
         : -aboveBaseline - bottomPadding - (height * y) / yMaxValue;
     },
-    [yMaxValue, plotHeight]
+    [yMaxValue, plotHeight, hasUserTicks]
   );
   const percentY = useCallback(
     (y: number): number => {
@@ -626,8 +627,8 @@ export default function LiquiditySelector({
     [percentY]
   );
   const halfPercentYBigNumber = useCallback(
-    (y: BigNumber) => percentY(y.dividedBy(3.2).toNumber()),
-    [percentY]
+    (y: BigNumber) => percentY(y.dividedBy(hasUserTicks ? 3.2 : 1).toNumber()),
+    [percentY, hasUserTicks]
   );
 
   const TextRoundedBackgroundFilter = useCallback(
