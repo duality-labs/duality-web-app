@@ -169,6 +169,7 @@ export default function PoolManagement({
 
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
   const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
+  const [lastUsedInput, setLastUsedInput] = useState<'A' | 'B'>();
   // convert input value text to correct denom values
   const values = useMemo(
     (): [string, string] => [
@@ -522,6 +523,13 @@ export default function PoolManagement({
     ]);
     setInputValueA(inputValueB);
     setInputValueB(inputValueA);
+    setLastUsedInput((lastUsedInput) => {
+      return lastUsedInput !== undefined
+        ? lastUsedInput === 'A'
+          ? 'B'
+          : 'A'
+        : undefined;
+    });
     setTokens([tokenB, tokenA]);
     setInitialPrice((price) => {
       const priceNumber = Number(price);
@@ -541,205 +549,199 @@ export default function PoolManagement({
     inputValueB,
     setInputValueA,
     setInputValueB,
+    setLastUsedInput,
     setInitialPrice,
     formatSignificantDecimalRangeString,
   ]);
 
   const [chartTypeSelected] = useState<'AMM' | 'Orderbook'>('AMM');
 
-  // todo: this effect should be replaced with a better calculation for ticks
-  const tickCount = Number(precision || 1);
-  useLayoutEffect(() => {
-    function getUserTicks(): TickGroup {
-      const indexMin = Math.ceil(rangeMinIndex);
-      const indexMax = Math.floor(rangeMaxIndex);
-      // set multiple ticks across the range
-      const fee = feeType?.fee;
-      if (
-        tokenA &&
-        tokenB &&
-        tickCount > 1 &&
-        indexMin !== undefined &&
-        indexMax !== undefined &&
-        indexMax >= indexMin &&
-        fee !== undefined
-      ) {
-        const tokenAmountA = new BigNumber(values[0]);
-        const tokenAmountB = new BigNumber(values[1]);
+  // get the shape function we will use to calculate the ticks
+  const shapeFunction = useMemo((): ((xPercent: number) => number) => {
+    switch (liquidityShape.value) {
+      case 'increasing':
+        // linearly increase from -1/3 to +1/3 (or 2 to 4 before normalization)
+        return (xPercent) => 2 + 2 * xPercent;
+      case 'decreasing':
+        // linearly decrease from +1/3 to -1/3 (or 4 to 2 before normalization)
+        return (xPercent) => 4 - 2 * xPercent;
+      case 'normal':
+        // normal distribution curve
+        return (xPercent) => {
+          return (
+            (1 / Math.sqrt(2 * Math.PI)) *
+            Math.exp(-(1 / 2) * Math.pow((xPercent - 0.5) / 0.25, 2))
+          );
+        };
+      case 'flat':
+      default:
+        // uniform
+        return () => 1;
+    }
+  }, [liquidityShape]);
 
-        // space new ticks linearly across tick (which is exponentially across price)
-        const tickCounts: [number, number] = [0, 0];
-        // space ticks across unique tick indexes
-        const tickPrices = Array.from({ length: tickCount })
-          .reduce<number[]>((result, _, index) => {
-            const tickIndexBToA = Math.round(
-              indexMin +
-                (index * (indexMax - indexMin)) / Math.max(1, tickCount - 1)
-            );
-            // add index only if it is unique
-            return !result.includes(tickIndexBToA)
-              ? [...result, tickIndexBToA]
-              : result;
-          }, [])
-          .map<Tick>((tickIndexBToA, index, tickIndexes) => {
-            const priceBToA = tickIndexToPrice(new BigNumber(tickIndexBToA));
+  // this is a simple calculation to doesn't really need a memo
+  // its just here to group the logic
+  const tickCount = useMemo(() => {
+    // how many ticks did the user ask for
+    const userDesiredTickCount = Number(precision) || 1;
+    // how many ticks can they have?
+    const possibleTickCount = rangeMaxIndex - rangeMinIndex + 1;
+    // the number of ticks we will use
+    return Math.min(userDesiredTickCount, possibleTickCount);
+  }, [precision, rangeMaxIndex, rangeMinIndex]);
 
-            // choose whether token A or B should be added for the tick at this price
-            const invertToken =
-              isValueAZero || isValueBZero
-                ? // enforce singe-sided liquidity has single ticks
-                  isValueBZero
-                : // for double-sided liquidity split the ticks somewhere
-                edgePrice
-                ? // split the ticks at the current price if it exists
-                  priceBToA.isLessThan(edgePrice)
-                : // split the ticks by index if no price exists yet
-                  index < tickIndexes.length / 2;
-            // add to count
-            tickCounts[invertToken ? 0 : 1] += 1;
-            return {
-              reserveA: new BigNumber(invertToken ? 1 : 0),
-              reserveB: new BigNumber(invertToken ? 0 : 1),
-              priceBToA: priceBToA,
-              tickIndexBToA: tickIndexBToA,
-              fee: fee,
-              tokenA: tokenA,
-              tokenB: tokenB,
-            };
-          });
+  // determine the normalized values for each tick
+  const shapeUnitValueArray = useMemo(() => {
+    const unitValues =
+      tickCount > 1
+        ? // calculate the relative value heights for each tick index
+          Array.from({ length: tickCount }).map((_, index, ticks) => {
+            const xPercent = index / (ticks.length - 1);
+            return shapeFunction(xPercent);
+          })
+        : // return single point
+          [1];
+    const unitValuesTotal = unitValues.reduce((acc, v) => acc + v, 0) || 1;
+    // return normalized shape values (values add to 1)
+    return unitValues.map((value) => value / unitValuesTotal);
+  }, [tickCount, shapeFunction]);
 
-        const shapeFactor = (() => {
-          // for a single tick it should have a weight of 1
-          if (tickPrices.length === 1) {
-            return [1];
-          }
-          // determine weighting for different shapes
-          return (() => {
-            switch (liquidityShape.value) {
-              case 'increasing':
-                return tickPrices.map((_, index, tickPrices) => {
-                  const percent = index / (tickPrices.length - 1);
-                  return 1 + percent;
-                });
-              case 'normal':
-                return tickPrices.map((_, index, tickPrices) => {
-                  const percent = index / (tickPrices.length - 1);
-                  return (
-                    (1 / Math.sqrt(2 * Math.PI)) *
-                    Math.exp(-(1 / 2) * Math.pow((percent - 0.5) / 0.25, 2))
-                  );
-                });
-              case 'decreasing':
-                return tickPrices.map((_, index, tickPrices) => {
-                  const percent = 1 - index / (tickPrices.length - 1);
-                  return 1 + percent;
-                });
-              case 'flat':
-              default:
-                return tickPrices.map(() => 1);
-            }
-          })();
-        })();
-
-        // normalise the tick amounts given
-        const shapedTicks = tickPrices.map((tick, index) => {
-          return {
-            ...tick,
-            reserveA: tickCounts[0]
-              ? tick.reserveA.multipliedBy(shapeFactor[index])
-              : new BigNumber(0),
-            reserveB: tickCounts[1]
-              ? tick.reserveB.multipliedBy(shapeFactor[index])
-              : new BigNumber(0),
-          };
+  const shapeReservesArray = useMemo((): Array<
+    [tickIndex: number, reservesA: BigNumber, reservesB: BigNumber]
+  > => {
+    const amountA = new BigNumber(values[0] || 0);
+    const amountB = new BigNumber(values[1] || 0);
+    if (lastUsedInput && edgePriceIndex) {
+      // calculate the used tick indexes
+      const tickIndexValues = shapeUnitValueArray.map(
+        (value, index, ticks): [tickIndex: number, value: number] => {
+          const xPercent = index / Math.max(1, ticks.length - 1);
+          // interpolate the whole tick index nearest to the array index
+          const tickIndex = Math.round(
+            rangeMinIndex + xPercent * (rangeMaxIndex - rangeMinIndex)
+          );
+          return [tickIndex, value];
+        }
+      );
+      // // split values into tokenA and tokenB values
+      // find what mode we will be in:
+      if (lastUsedInput === 'A') {
+        // split values into different tokens
+        const tokenUnitValues = tickIndexValues.map(([tickIndex, value]) => {
+          return edgePriceIndex <= rangeMinIndex || edgePriceIndex > tickIndex
+            ? [tickIndex, value, 0]
+            : [tickIndex, 0, value];
         });
-
-        const shapedTickTotalReserveA = shapedTicks.reduce((acc, tick) => {
-          return acc.plus(tick.reserveA);
-        }, new BigNumber(0));
-        const shapedTickTotalReserveB = shapedTicks.reduce((acc, tick) => {
-          return acc.plus(tick.reserveB);
-        }, new BigNumber(0));
-
-        return shapedTicks.map((tick) => {
-          return {
-            ...tick,
-            reserveA: tick.reserveA
-              .dividedBy(shapedTickTotalReserveA)
-              .multipliedBy(tokenAmountA),
-            reserveB: tick.reserveB
-              .dividedBy(shapedTickTotalReserveB)
-              .multipliedBy(tokenAmountB),
-          };
+        // find factor to adjust by
+        const totalUnitValueA =
+          edgePriceIndex > rangeMinIndex
+            ? tokenUnitValues.reduce((acc, [, value]) => acc + value, 0) || 1
+            : 1;
+        // adjust to last value given
+        const adjustmentFactor = amountA.dividedBy(totalUnitValueA || 1);
+        return tokenUnitValues.map(([tickIndex, valueA, valueB]) => {
+          return [
+            tickIndex,
+            adjustmentFactor.multipliedBy(valueA),
+            // convert other token reserves using equivalent value
+            // totalAmount0 = amount0 + amount1 * price1To0
+            adjustmentFactor
+              .multipliedBy(valueB)
+              .dividedBy(tickIndexToPrice(new BigNumber(edgePriceIndex))),
+          ];
         });
       }
-      // set 1 tick in the middle of the range given
-      else if (
-        tokenA &&
-        tokenB &&
-        indexMin !== undefined &&
-        indexMax !== undefined &&
-        indexMin === indexMax &&
-        feeType &&
-        fee !== undefined
-      ) {
-        const tickIndexBToA = Math.round((indexMin + indexMax) / 2);
-        const priceBToA = tickIndexToPrice(new BigNumber(tickIndexBToA));
-        return [
-          {
-            reserveA: new BigNumber(!isValueAZero ? 1 : 0),
-            reserveB: new BigNumber(!isValueBZero ? 1 : 0),
-            priceBToA: priceBToA,
-            tickIndexBToA: tickIndexBToA,
-            fee: fee,
-            tokenA: tokenA,
-            tokenB: tokenB,
-          },
-        ];
-      }
-      // or set no ticks
-      else {
-        return [];
+      if (lastUsedInput === 'B') {
+        // split values into different tokens
+        const tokenUnitValues = tickIndexValues.map(([tickIndex, value]) => {
+          return edgePriceIndex >= rangeMaxIndex || edgePriceIndex < tickIndex
+            ? [tickIndex, 0, value]
+            : [tickIndex, value, 0];
+        });
+        // find factor to adjust by
+        const totalUnitValueB =
+          edgePriceIndex < rangeMaxIndex
+            ? tokenUnitValues.reduce((acc, [, , value]) => acc + value, 0) || 1
+            : 1;
+        // adjust to last value given
+        const adjustmentFactor = amountB.dividedBy(totalUnitValueB || 1);
+        return tokenUnitValues.map(([tickIndex, valueA, valueB]) => {
+          return [
+            tickIndex,
+            // convert other token reserves using equivalent value
+            // totalAmount0 = amount0 + amount1 * price1To0
+            adjustmentFactor
+              .multipliedBy(valueA)
+              .multipliedBy(tickIndexToPrice(new BigNumber(edgePriceIndex))),
+            adjustmentFactor.multipliedBy(valueB),
+          ];
+        });
       }
     }
-
-    setUserTicks?.((userTicks) => {
-      const newUserTicks = getUserTicks();
-
-      // check if number of ticks are equal or value in ticks are equal
-      if (
-        userTicks.length !== newUserTicks.length ||
-        !newUserTicks.every((newUserTick, ticksIndex) => {
-          const userTick = userTicks[ticksIndex];
-          return (
-            newUserTick.fee === userTick.fee &&
-            newUserTick.tickIndexBToA === userTick.tickIndexBToA &&
-            newUserTick.reserveA.isEqualTo(userTick.reserveA) &&
-            newUserTick.reserveB.isEqualTo(userTick.reserveB)
-          );
-        })
-      ) {
-        // return changed values
-        return newUserTicks;
-      } else {
-        // return same values
-        return userTicks;
-      }
-    });
+    // don't compute it an input was not touched
+    return [];
   }, [
-    values,
-    isValueAZero,
-    isValueBZero,
-    feeType,
-    tokenA,
-    tokenB,
-    liquidityShape,
+    shapeUnitValueArray,
+    edgePriceIndex,
     rangeMinIndex,
     rangeMaxIndex,
-    tickCount,
-    edgePrice,
-    invertTokenOrder,
+    values,
+    lastUsedInput,
+  ]);
+
+  // overwrite the input field for the token amount not set
+  useLayoutEffect(() => {
+    if (tokenA && tokenB && feeType) {
+      if (lastUsedInput === 'A') {
+        // convert back to display units
+        const amountB = getAmountInDenom(
+          tokenB,
+          shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
+            return acc.plus(reserveB);
+          }, new BigNumber(0)),
+          tokenB.address,
+          tokenB.display
+        );
+        setInputValueB(amountB ? formatAmount(amountB) : '');
+      } else if (lastUsedInput === 'B') {
+        // convert back to display units
+        const amountA = getAmountInDenom(
+          tokenA,
+          shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
+            return acc.plus(reserveA);
+          }, new BigNumber(0)),
+          tokenA.address,
+          tokenA.display
+        );
+        setInputValueA(amountA ? formatAmount(amountA) : '');
+      }
+      // if either side is set then calculate the new user ticks
+      if (lastUsedInput) {
+        setUserTicks(
+          shapeReservesArray.map(([tickIndex, reserveA, reserveB]) => {
+            return {
+              reserveA,
+              reserveB,
+              priceBToA: tickIndexToPrice(new BigNumber(tickIndex)),
+              tickIndexBToA: tickIndex,
+              fee: feeType.fee,
+              tokenA,
+              tokenB,
+            };
+          })
+        );
+      }
+    }
+  }, [
+    shapeReservesArray,
+    lastUsedInput,
+    tokenB,
+    tokenA,
+    setInputValueA,
+    setInputValueB,
     setUserTicks,
+    feeType,
   ]);
 
   const { data: balanceTokenA } = useBankBalance(tokenA);
@@ -925,7 +927,10 @@ export default function PoolManagement({
             <TokenInputGroup
               className="flex"
               variant={!hasSufficientFundsA && 'error'}
-              onValueChanged={setInputValueA}
+              onValueChanged={(value) => {
+                setInputValueA(value);
+                setLastUsedInput('A');
+              }}
               onTokenChanged={setTokenA}
               tokenList={tokenList}
               token={tokenA}
@@ -947,7 +952,10 @@ export default function PoolManagement({
             <TokenInputGroup
               className="flex"
               variant={!hasSufficientFundsB && 'error'}
-              onValueChanged={setInputValueB}
+              onValueChanged={(value) => {
+                setInputValueB(value);
+                setLastUsedInput('B');
+              }}
               onTokenChanged={setTokenB}
               tokenList={tokenList}
               token={tokenB}
@@ -1020,6 +1028,7 @@ export default function PoolManagement({
               onClick={() => {
                 setInputValueA('');
                 setInputValueB('');
+                setLastUsedInput(undefined);
               }}
               disabled={isValueAZero && isValueBZero}
             >
