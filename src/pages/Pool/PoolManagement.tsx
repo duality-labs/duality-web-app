@@ -717,7 +717,13 @@ export default function PoolManagement({
         setInputValueA(amountA ? formatAmount(amountA) : '');
       }
       // if either side is set then calculate the new user ticks
-      if (lastUsedInput) {
+      if (
+        lastUsedInput &&
+        shapeReservesArray.some(
+          ([, reserveA, reserveB]) =>
+            reserveA.isGreaterThan(0) || reserveB.isGreaterThan(0)
+        )
+      ) {
         setUserTicks(
           shapeReservesArray.map(([tickIndex, reserveA, reserveB]) => {
             return {
@@ -731,6 +737,10 @@ export default function PoolManagement({
             };
           })
         );
+      }
+      // else remove all ticks
+      else {
+        setUserTicks([]);
       }
     }
   }, [
