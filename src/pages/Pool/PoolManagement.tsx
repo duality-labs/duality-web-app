@@ -692,28 +692,46 @@ export default function PoolManagement({
 
   // overwrite the input field for the token amount not set
   useLayoutEffect(() => {
-    if (tokenB && lastUsedInput === 'A') {
-      // convert back to display units
-      const amountB = getAmountInDenom(
-        tokenB,
-        shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
-          return acc.plus(reserveB);
-        }, new BigNumber(0)),
-        tokenB.address,
-        tokenB.display
-      );
-      setInputValueB(amountB ? formatAmount(amountB) : '');
-    } else if (tokenA && lastUsedInput === 'B') {
-      // convert back to display units
-      const amountA = getAmountInDenom(
-        tokenA,
-        shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
-          return acc.plus(reserveA);
-        }, new BigNumber(0)),
-        tokenA.address,
-        tokenA.display
-      );
-      setInputValueA(amountA ? formatAmount(amountA) : '');
+    if (tokenA && tokenB && feeType) {
+      if (lastUsedInput === 'A') {
+        // convert back to display units
+        const amountB = getAmountInDenom(
+          tokenB,
+          shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
+            return acc.plus(reserveB);
+          }, new BigNumber(0)),
+          tokenB.address,
+          tokenB.display
+        );
+        setInputValueB(amountB ? formatAmount(amountB) : '');
+      } else if (lastUsedInput === 'B') {
+        // convert back to display units
+        const amountA = getAmountInDenom(
+          tokenA,
+          shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
+            return acc.plus(reserveA);
+          }, new BigNumber(0)),
+          tokenA.address,
+          tokenA.display
+        );
+        setInputValueA(amountA ? formatAmount(amountA) : '');
+      }
+      // if either side is set then calculate the new user ticks
+      if (lastUsedInput) {
+        setUserTicks(
+          shapeReservesArray.map(([tickIndex, reserveA, reserveB]) => {
+            return {
+              reserveA,
+              reserveB,
+              priceBToA: tickIndexToPrice(new BigNumber(tickIndex)),
+              tickIndexBToA: tickIndex,
+              fee: feeType.fee,
+              tokenA,
+              tokenB,
+            };
+          })
+        );
+      }
     }
   }, [
     shapeReservesArray,
@@ -722,199 +740,8 @@ export default function PoolManagement({
     tokenA,
     setInputValueA,
     setInputValueB,
-  ]);
-
-  useLayoutEffect(() => {
-    function getUserTicks(): TickGroup {
-      const indexMin = Math.ceil(rangeMinIndex);
-      const indexMax = Math.floor(rangeMaxIndex);
-      // set multiple ticks across the range
-      const fee = feeType?.fee;
-      if (
-        tokenA &&
-        tokenB &&
-        tickCount > 1 &&
-        indexMin !== undefined &&
-        indexMax !== undefined &&
-        indexMax >= indexMin &&
-        fee !== undefined
-      ) {
-        const tokenAmountA = new BigNumber(values[0]);
-        const tokenAmountB = new BigNumber(values[1]);
-
-        // space new ticks linearly across tick (which is exponentially across price)
-        const tickCounts: [number, number] = [0, 0];
-        // space ticks across unique tick indexes
-        const tickPrices = Array.from({ length: tickCount })
-          .reduce<number[]>((result, _, index) => {
-            const tickIndexBToA = Math.round(
-              indexMin +
-                (index * (indexMax - indexMin)) / Math.max(1, tickCount - 1)
-            );
-            // add index only if it is unique
-            return !result.includes(tickIndexBToA)
-              ? [...result, tickIndexBToA]
-              : result;
-          }, [])
-          .map<Tick>((tickIndexBToA, index, tickIndexes) => {
-            const priceBToA = tickIndexToPrice(new BigNumber(tickIndexBToA));
-
-            // choose whether token A or B should be added for the tick at this price
-            const invertToken =
-              isValueAZero || isValueBZero
-                ? // enforce singe-sided liquidity has single ticks
-                  isValueBZero
-                : // for double-sided liquidity split the ticks somewhere
-                edgePrice
-                ? // split the ticks at the current price if it exists
-                  priceBToA.isLessThan(edgePrice)
-                : // split the ticks by index if no price exists yet
-                  index < tickIndexes.length / 2;
-            // add to count
-            tickCounts[invertToken ? 0 : 1] += 1;
-            return {
-              reserveA: new BigNumber(invertToken ? 1 : 0),
-              reserveB: new BigNumber(invertToken ? 0 : 1),
-              priceBToA: priceBToA,
-              tickIndexBToA: tickIndexBToA,
-              fee: fee,
-              tokenA: tokenA,
-              tokenB: tokenB,
-            };
-          });
-
-        const shapeFactor = (() => {
-          // for a single tick it should have a weight of 1
-          if (tickPrices.length === 1) {
-            return [1];
-          }
-          // determine weighting for different shapes
-          return (() => {
-            switch (liquidityShape.value) {
-              case 'increasing':
-                return tickPrices.map((_, index, tickPrices) => {
-                  const percent = index / (tickPrices.length - 1);
-                  return 1 + percent;
-                });
-              case 'normal':
-                return tickPrices.map((_, index, tickPrices) => {
-                  const percent = index / (tickPrices.length - 1);
-                  return (
-                    (1 / Math.sqrt(2 * Math.PI)) *
-                    Math.exp(-(1 / 2) * Math.pow((percent - 0.5) / 0.25, 2))
-                  );
-                });
-              case 'decreasing':
-                return tickPrices.map((_, index, tickPrices) => {
-                  const percent = 1 - index / (tickPrices.length - 1);
-                  return 1 + percent;
-                });
-              case 'flat':
-              default:
-                return tickPrices.map(() => 1);
-            }
-          })();
-        })();
-
-        // normalise the tick amounts given
-        const shapedTicks = tickPrices.map((tick, index) => {
-          return {
-            ...tick,
-            reserveA: tickCounts[0]
-              ? tick.reserveA.multipliedBy(shapeFactor[index])
-              : new BigNumber(0),
-            reserveB: tickCounts[1]
-              ? tick.reserveB.multipliedBy(shapeFactor[index])
-              : new BigNumber(0),
-          };
-        });
-
-        const shapedTickTotalReserveA = shapedTicks.reduce((acc, tick) => {
-          return acc.plus(tick.reserveA);
-        }, new BigNumber(0));
-        const shapedTickTotalReserveB = shapedTicks.reduce((acc, tick) => {
-          return acc.plus(tick.reserveB);
-        }, new BigNumber(0));
-
-        return shapedTicks.map((tick) => {
-          return {
-            ...tick,
-            reserveA: tick.reserveA
-              .dividedBy(shapedTickTotalReserveA)
-              .multipliedBy(tokenAmountA),
-            reserveB: tick.reserveB
-              .dividedBy(shapedTickTotalReserveB)
-              .multipliedBy(tokenAmountB),
-          };
-        });
-      }
-      // set 1 tick in the middle of the range given
-      else if (
-        tokenA &&
-        tokenB &&
-        indexMin !== undefined &&
-        indexMax !== undefined &&
-        indexMin === indexMax &&
-        feeType &&
-        fee !== undefined
-      ) {
-        const tickIndexBToA = Math.round((indexMin + indexMax) / 2);
-        const priceBToA = tickIndexToPrice(new BigNumber(tickIndexBToA));
-        return [
-          {
-            reserveA: new BigNumber(!isValueAZero ? 1 : 0),
-            reserveB: new BigNumber(!isValueBZero ? 1 : 0),
-            priceBToA: priceBToA,
-            tickIndexBToA: tickIndexBToA,
-            fee: fee,
-            tokenA: tokenA,
-            tokenB: tokenB,
-          },
-        ];
-      }
-      // or set no ticks
-      else {
-        return [];
-      }
-    }
-
-    setUserTicks?.((userTicks) => {
-      const newUserTicks = getUserTicks();
-
-      // check if number of ticks are equal or value in ticks are equal
-      if (
-        userTicks.length !== newUserTicks.length ||
-        !newUserTicks.every((newUserTick, ticksIndex) => {
-          const userTick = userTicks[ticksIndex];
-          return (
-            newUserTick.fee === userTick.fee &&
-            newUserTick.tickIndexBToA === userTick.tickIndexBToA &&
-            newUserTick.reserveA.isEqualTo(userTick.reserveA) &&
-            newUserTick.reserveB.isEqualTo(userTick.reserveB)
-          );
-        })
-      ) {
-        // return changed values
-        return newUserTicks;
-      } else {
-        // return same values
-        return userTicks;
-      }
-    });
-  }, [
-    values,
-    isValueAZero,
-    isValueBZero,
-    feeType,
-    tokenA,
-    tokenB,
-    liquidityShape,
-    rangeMinIndex,
-    rangeMaxIndex,
-    tickCount,
-    edgePrice,
-    invertTokenOrder,
     setUserTicks,
+    feeType,
   ]);
 
   const { data: balanceTokenA } = useBankBalance(tokenA);
