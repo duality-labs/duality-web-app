@@ -655,7 +655,9 @@ interface GenericEventColumnProps<T> extends EventColumnProps<T> {
   getToken1Reserves: (event: T) => string;
 }
 
-function EventColumn<T extends DexEvent>({
+function EventColumn<
+  T extends DexDepositEvent | DexWithdrawalEvent | DexPlaceLimitOrderEvent
+>({
   tx,
   events,
   heading,

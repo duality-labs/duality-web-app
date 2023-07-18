@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.7](https://github.com/duality-labs/duality-web-app/compare/v0.3.6...v0.3.7) (2023-07-18)
+
+
+### Fixes
+
+* ensure the page state updates after Msgs succeed ([#403](https://github.com/duality-labs/duality-web-app/issues/403)) ([6d8abd8](https://github.com/duality-labs/duality-web-app/commit/6d8abd81185e08b0b8960465a07d5d9946594cc6))
+
+## [0.3.6](https://github.com/duality-labs/duality-web-app/compare/v0.3.5...v0.3.6) (2023-07-15)
+
+
+### Fixes
+
+* switching token order can cause a crash ([#402](https://github.com/duality-labs/duality-web-app/issues/402)) ([47cfe13](https://github.com/duality-labs/duality-web-app/commit/47cfe1328917bc470fc79b06d33cde399d1dba6f))
+
 ## [0.3.5](https://github.com/duality-labs/duality-web-app/compare/v0.3.4...v0.3.5) (2023-07-14)
 
 

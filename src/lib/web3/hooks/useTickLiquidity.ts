@@ -1,6 +1,5 @@
-import { useEffect, useMemo } from 'react';
-import { SWRConfiguration, SWRResponse } from 'swr';
-import useSWRInfinite from 'swr/infinite';
+import { useEffect, useMemo, useRef } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 import {
   QueryAllTickLiquidityRequest,
@@ -9,27 +8,25 @@ import {
 import { useLcdClientPromise } from '../lcdClient';
 import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
 
-import { defaultPaginationParams, getNextPaginationKey } from './utils';
-
 import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useTokens';
 import BigNumber from 'bignumber.js';
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
+import { usePairUpdateHeight } from '../indexerProvider';
+
 import { TokenAddress } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
 
 type QueryAllTickLiquidityState = {
   data: Array<TickInfo> | undefined;
-  isValidating: SWRResponse['isValidating'];
-  error: SWRResponse['error'];
+  isValidating: boolean;
+  error: Error | null;
 };
 
 export default function useTickLiquidity({
-  swr: swrConfig,
   query: queryConfig,
   queryClient: queryClientConfig,
 }: {
-  swr?: SWRConfiguration;
   query: QueryAllTickLiquidityRequest | null;
   queryClient?: string;
 }): QueryAllTickLiquidityState {
@@ -40,74 +37,90 @@ export default function useTickLiquidity({
     throw new Error('Cannot fetch liquidity: no token ID given');
   }
 
-  const params: QueryAllTickLiquidityRequest | null = !queryConfig
-    ? null
-    : {
-        ...queryConfig,
-        pagination: {
-          ...defaultPaginationParams,
-          ...queryConfig?.pagination,
-        },
-      };
-
   const lcdClientPromise = useLcdClientPromise(queryClientConfig);
 
-  // todo: add a subscription listener here or above here to invalidate the
-  // following request cache keys a refetch new data (recommend passing block ID
-  // into the cache key to only refetch at most once per block)
+  // on swap the user shares hasn't changed, the user may not be a liquidity provider
+  // a CosmosSDK websocket subscription updates our pair update height store
+  // whenever the user has a successful transaction against the chain
+  // todo: this value should update on any liquidity change within the pair
+  // not just changes from the current user
+  const pairUpdateHeight = usePairUpdateHeight(queryConfig?.pairID);
 
   const {
-    data: pages,
-    isValidating,
+    data,
     error,
-    setSize,
-  } = useSWRInfinite<QueryAllTickLiquidityResponseSDKType>(
-    !params
-      ? () => ''
-      : getNextPaginationKey<QueryAllTickLiquidityRequest>(
-          // set unique cache key for this client method
-          'dualitylabs.duality.dex.tickLiquidityAll',
-          params
-        ),
-    !params
-      ? null
-      : async ([, params]: [
-          _: string,
-          params: QueryAllTickLiquidityRequest
-        ]) => {
-          const client = await lcdClientPromise;
-          return await client.dualitylabs.duality.dex.tickLiquidityAll(params);
-        },
-    { persistSize: true, ...swrConfig }
-  );
-  // set number of pages to latest total
+    isFetching: isValidating,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: [
+      'dualitylabs.duality.dex.tickLiquidityAll',
+      queryConfig,
+      pairUpdateHeight,
+    ],
+    queryFn: async ({
+      pageParam: nextKey,
+    }): Promise<QueryAllTickLiquidityResponseSDKType | undefined> => {
+      if (queryConfig) {
+        const client = await lcdClientPromise;
+        return await client.dualitylabs.duality.dex.tickLiquidityAll({
+          ...queryConfig,
+          pagination: nextKey ? { key: nextKey } : queryConfig.pagination,
+        });
+      }
+    },
+    defaultPageParam: undefined,
+    getNextPageParam: (
+      lastPage: QueryAllTickLiquidityResponseSDKType | undefined
+    ) => {
+      return lastPage?.pagination?.next_key ?? undefined;
+    },
+  });
+
+  // fetch more data if data has changed but there are still more pages to get
   useEffect(() => {
-    const pageItemCount = Number(pages?.[0]?.tickLiquidity?.length);
-    const totalItemCount = Number(pages?.[0]?.pagination?.total);
-    if (pageItemCount > 0 && totalItemCount > pageItemCount) {
-      const pageCount = Math.ceil(totalItemCount / pageItemCount);
-      setSize(pageCount);
+    if (fetchNextPage && hasNextPage) {
+      fetchNextPage();
     }
-  }, [pages, setSize]);
+  }, [data, fetchNextPage, hasNextPage]);
 
   // place pages of data into the same list
-  const tradingPairs = useMemo(() => {
-    const liquidity = pages?.flatMap((page) => page.tickLiquidity);
-    return liquidity && transformData(liquidity);
-  }, [pages]);
-  return { data: tradingPairs, isValidating, error };
+  const lastLiquidity = useRef<TickInfo[]>();
+  const tickSideLiquidity = useMemo(() => {
+    // when refetching, the library sets `data` to `undefined`
+    // I think this is unintuitive. we should only "empty" the data here
+    // if a response comes back with an empty array, otherwise we keep the state
+    const pages = data?.pages;
+    if (pages && pages.length > 0) {
+      const lastPage = pages[pages.length - 1];
+      // update our state only if the last page of data has been reached
+      if (!lastPage?.pagination?.next_key) {
+        const poolReserves = pages?.flatMap(
+          (page) =>
+            page?.tickLiquidity?.flatMap(
+              (tickLiquidity) => tickLiquidity.poolReserves ?? []
+            ) ?? []
+        );
+        lastLiquidity.current = poolReserves.flatMap(transformPoolReserves);
+      }
+    }
+    return lastLiquidity.current;
+  }, [data]);
+  return { data: tickSideLiquidity, isValidating, error };
 }
 
-function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
-  return ticks.map<TickInfo>(function ({
-    poolReserves: {
+function transformPoolReserves(
+  poolReserves: TickLiquiditySDKType['poolReserves']
+): TickInfo | [] {
+  // process only ticks with pool reserves
+  if (poolReserves) {
+    const {
       pairID: { token0 = '', token1 = '' } = {},
       tokenIn,
       tickIndex: tickIndex1To0String,
       fee: feeString,
       reserves: reservesString,
-    } = {},
-  }) {
+    } = poolReserves;
     const tickIndex1To0 = Number(tickIndex1To0String);
     const fee = feeString && Number(feeString);
     if (
@@ -150,7 +163,9 @@ function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
       }
     }
     throw new Error('Unexpected tickLiquidity shape');
-  });
+  } else {
+    return [];
+  }
 }
 
 // add convenience method to fetch ticks in a pair

@@ -30,9 +30,9 @@ function MyLiquidityOrSwap() {
 function App() {
   return (
     <Web3Provider>
-      <IndexerProvider>
-        <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <IndexerProvider>
+          <ThemeProvider>
             <BrowserRouter>
               <Header />
               <Stars />
@@ -49,9 +49,9 @@ function App() {
                 <Notifications />
               </main>
             </BrowserRouter>
-          </QueryClientProvider>
-        </ThemeProvider>
-      </IndexerProvider>
+          </ThemeProvider>
+        </IndexerProvider>
+      </QueryClientProvider>
     </Web3Provider>
   );
 }

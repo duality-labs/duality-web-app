@@ -34,7 +34,8 @@ export type CosmosEvent =
 export type DexEvent =
   | DexPlaceLimitOrderEvent
   | DexDepositEvent
-  | DexWithdrawalEvent;
+  | DexWithdrawalEvent
+  | DexTickUpdateEvent;
 
 export interface DexDepositEvent {
   type: 'message';
@@ -85,6 +86,20 @@ export interface DexPlaceLimitOrderEvent {
     OrderType: string;
     Shares: string;
     TrancheKey: string;
+  };
+}
+
+export interface DexTickUpdateEvent {
+  type: 'message';
+  attributes: {
+    module: 'dex';
+    action: 'TickUpdate';
+    Token0: string;
+    Token1: string;
+    TokenIn: string;
+    TickIndex: string;
+    Fee: string;
+    Reserves: string;
   };
 }
 

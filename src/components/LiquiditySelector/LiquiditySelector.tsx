@@ -46,8 +46,7 @@ export interface LiquiditySelectorProps {
   initialPrice?: string;
   rangeMin: string;
   rangeMax: string;
-  setRangeMin: React.Dispatch<React.SetStateAction<string>>;
-  setRangeMax: React.Dispatch<React.SetStateAction<string>>;
+  setRange: React.Dispatch<React.SetStateAction<[string, string]>>;
   setSignificantDecimals?: React.Dispatch<React.SetStateAction<number>>;
   setViewableIndexes: React.Dispatch<
     React.SetStateAction<[number, number] | undefined>
@@ -130,8 +129,7 @@ export default function LiquiditySelector({
   initialPrice = '',
   rangeMin,
   rangeMax,
-  setRangeMin,
-  setRangeMax,
+  setRange,
   setSignificantDecimals,
   setViewableIndexes,
   userTicks = [],
@@ -162,54 +160,32 @@ export default function LiquiditySelector({
   const setRangeMinIndex: React.Dispatch<React.SetStateAction<number>> =
     useCallback(
       (valueOrCallback) => {
-        // process as a callback
-        if (typeof valueOrCallback === 'function') {
-          const callback = valueOrCallback;
-          setRangeMin((rangeMin) => {
-            // convert price to index
-            const fractionalRangeMinIndex = priceToTickIndex(
-              new BigNumber(rangeMin)
-            ).toNumber();
-            // process as index
-            const value = callback(fractionalRangeMinIndex);
-            // convert index back to price
-            return tickIndexToPrice(new BigNumber(value)).toFixed();
-          });
-        }
-        // process as a value
-        else {
-          const value = valueOrCallback;
+        setRange(([min, max]) => {
+          // get new min index value value
+          const newMinIndex =
+            typeof valueOrCallback === 'function'
+              ? valueOrCallback(priceToTickIndex(new BigNumber(min)).toNumber())
+              : valueOrCallback;
           // convert index to price
-          setRangeMin(tickIndexToPrice(new BigNumber(value)).toFixed());
-        }
+          return [tickIndexToPrice(new BigNumber(newMinIndex)).toFixed(), max];
+        });
       },
-      [setRangeMin]
+      [setRange]
     );
   const setRangeMaxIndex: React.Dispatch<React.SetStateAction<number>> =
     useCallback(
       (valueOrCallback) => {
-        // process as a callback
-        if (typeof valueOrCallback === 'function') {
-          const callback = valueOrCallback;
-          setRangeMax((rangeMax) => {
-            // convert price to index
-            const fractionalRangeMaxIndex = priceToTickIndex(
-              new BigNumber(rangeMax)
-            ).toNumber();
-            // process as index
-            const value = callback(fractionalRangeMaxIndex);
-            // convert index back to price
-            return tickIndexToPrice(new BigNumber(value)).toFixed();
-          });
-        }
-        // process as a value
-        else {
-          const value = valueOrCallback;
+        setRange(([min, max]) => {
+          // get new max index value value
+          const newMaxIndex =
+            typeof valueOrCallback === 'function'
+              ? valueOrCallback(priceToTickIndex(new BigNumber(max)).toNumber())
+              : valueOrCallback;
           // convert index to price
-          setRangeMax(tickIndexToPrice(new BigNumber(value)).toFixed());
-        }
+          return [min, tickIndexToPrice(new BigNumber(newMaxIndex)).toFixed()];
+        });
       },
-      [setRangeMax]
+      [setRange]
     );
 
   const [token0Address, token1Address] =

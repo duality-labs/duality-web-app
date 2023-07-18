@@ -7,10 +7,10 @@ import {
   useCallback,
 } from 'react';
 import Long from 'long';
-import { BigNumber } from 'bignumber.js';
 import { cosmos, dualitylabs } from '@duality-labs/dualityjs';
 
-import { MessageActionEvent } from './events';
+import { MessageActionEvent, TendermintTxData } from './events';
+import { DexTickUpdateEvent, mapEventAttributes } from './utils/events';
 import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
@@ -21,9 +21,8 @@ import useTokenPairs from './hooks/useTokenPairs';
 import { feeTypes } from './utils/fees';
 
 import { Token, TokenAddress, getAmountInDenom } from './utils/tokens';
-import { calculateShares } from './utils/ticks';
 import { IndexedShare, getShareInfo } from './utils/shares';
-import { getPairID } from './utils/pairs';
+import { PairIdString, getPairID } from './utils/pairs';
 
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 import { StakeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/stake';
@@ -50,27 +49,28 @@ interface UserStakedShares {
   stakedShares: Array<UserStakedShare>;
 }
 
+interface PairUpdateHeightData {
+  [pairID: string]: number; // block height
+}
+
 interface IndexerContextType {
   bank: {
     data?: UserBankBalance;
-    error?: string;
     isValidating: boolean;
   };
   shares: {
     data?: UserShares & UserStakedShares;
-    error?: string;
     isValidating: boolean;
   };
   tokens: {
     data?: Token[];
-    error?: string;
     isValidating: boolean;
   };
   tokenPairs: {
     data?: [TokenAddress, TokenAddress][];
-    error?: string;
     isValidating: boolean;
   };
+  pairUpdateHeight: PairUpdateHeightData;
 }
 
 interface FetchState {
@@ -92,6 +92,7 @@ const IndexerContext = createContext<IndexerContextType>({
   tokenPairs: {
     isValidating: true,
   },
+  pairUpdateHeight: {},
 });
 
 const defaultFetchParams: Partial<PageRequest> = {
@@ -105,15 +106,15 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
 
   const [bankData, setBankData] = useState<UserBankBalance>();
   const [shareData, setShareData] = useState<UserShares & UserStakedShares>();
+  const [poolUpdateHeightData, setPoolUpdateHeightData] =
+    useState<PairUpdateHeightData>({});
   const tokensData = useTokens();
   const { data: tokenPairsData, isValidating: isTokenPairsValidating } =
     useTokenPairs({
-      swr: { refreshInterval: 10 * minutes },
+      queryOptions: { refetchInterval: 10 * minutes },
     });
 
   const rpcPromise = useRpcPromise();
-
-  const [error, setError] = useState<string>();
 
   const { address } = useWeb3();
   const [, setFetchBankDataState] = useState<FetchState>({
@@ -144,7 +145,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                   if (token0 && token1 && tickIndex1To0 && fee) {
                     // add tokenized share if everything is fine
                     if (address) {
-                      const tokenizedShare = {
+                      const tokenizedShare: IndexedShare = {
                         // todo: remove address from here
                         address,
                         pairId: getPairID(token0, token1),
@@ -274,11 +275,19 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
     updateBankData();
   }, [updateBankData, address]);
 
-  // update bank balance whenever bank transfers are detected
+  // update bank balance and pool height whenever the user completes a Tx
   useEffect(() => {
     if (address) {
-      const onTxBalanceUpdate = () => {
+      const onTxBalanceUpdate = (
+        event: MessageActionEvent,
+        tx: TendermintTxData
+      ) => {
+        // update bank
         updateBankData();
+        // update pool heights for pages to fetch nex data for
+        if (tx?.value?.TxResult) {
+          updatePairUpdateHeightData(tx.value.TxResult);
+        }
       };
       subscriber.subscribeMessage(onTxBalanceUpdate, {
         transfer: { recipient: address },
@@ -290,155 +299,69 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         subscriber.unsubscribeMessage(onTxBalanceUpdate);
       };
     }
-  }, [updateBankData, address]);
-
-  useEffect(() => {
-    const onDexUpdateMessage = function (event: MessageActionEvent) {
-      const Receiver = event['message.Receiver'];
-      const Token0 = event['message.Token0'];
-      const Token1 = event['message.Token1'];
-      const TickIndex1To0 = event['message.TickIndex'];
-      const Fee = event['message.Fee'];
-      const NewReserves0 = event['message.NewReserves0'];
-      const NewReserves1 = event['message.NewReserves1'];
-
-      if (
-        Receiver !== address ||
-        !Token0 ||
-        !Token1 ||
-        !TickIndex1To0 ||
-        !Fee ||
-        !NewReserves0 ||
-        !NewReserves1
-      ) {
-        setError('Invalid event response from server');
-        return;
-      } else {
-        setError(undefined);
+    function updatePairUpdateHeightData(
+      txResult: TendermintTxData['value']['TxResult']
+    ) {
+      const height = Number(txResult.height);
+      const events = txResult.result.events;
+      if (events && events.length > 0 && !isNaN(height)) {
+        // find tick Update events
+        const tickUpdateEvents = events
+          .map(mapEventAttributes)
+          .filter((event): event is DexTickUpdateEvent => {
+            return (
+              (event as DexTickUpdateEvent).attributes.action === 'TickUpdate'
+            );
+          });
+        // collect token heights to change
+        if (tickUpdateEvents.length > 0) {
+          setPoolUpdateHeightData((poolUpdateHeightData) => {
+            return tickUpdateEvents.reduce(
+              (poolUpdateHeightData, event) => {
+                const pairID = getPairID(
+                  event.attributes.Token0,
+                  event.attributes.Token1
+                );
+                poolUpdateHeightData[pairID] = height;
+                return poolUpdateHeightData;
+              },
+              {
+                ...poolUpdateHeightData,
+              }
+            );
+          });
+        }
       }
-      // update user's share state
-      setShareData((state) => {
-        if (!state) return state;
-        // find matched data
-        const { shares = [], stakedShares = [] } = state || {};
-        const data = shares.slice();
-        const pairId = getPairID(Token0, Token1);
-        const shareFoundIndex = shares.findIndex(
-          (share) =>
-            share.pairId === pairId &&
-            share.tickIndex1To0 === TickIndex1To0 &&
-            share.fee === Fee
-        );
-        const sharesOwned = calculateShares({
-          tickIndex1To0: new BigNumber(TickIndex1To0),
-          reserve0: new BigNumber(NewReserves0),
-          reserve1: new BigNumber(NewReserves1),
-        });
-        // upsert new share
-        if (sharesOwned.isGreaterThan(0)) {
-          const newShare = {
-            pairId,
-            address,
-            fee: Fee,
-            tickIndex1To0: TickIndex1To0,
-            sharesOwned: sharesOwned.toFixed(),
-          };
-          if (shareFoundIndex >= 0) {
-            // update share
-            data.splice(shareFoundIndex, 1, newShare);
-          } else {
-            // add share
-            data.push(newShare);
-          }
-        }
-        // else remove share
-        else {
-          if (shareFoundIndex >= 0) {
-            data.splice(shareFoundIndex, 1);
-          }
-        }
-        return { shares: data, stakedShares };
-      });
-    };
-    // subscribe to messages for this address only
-    if (address) {
-      subscriber.subscribeMessage(onDexUpdateMessage, {
-        message: { action: 'Deposit', Receiver: address },
-      });
-      subscriber.subscribeMessage(onDexUpdateMessage, {
-        message: { action: 'Withdrawal', Receiver: address },
-      });
-      return () => {
-        subscriber.unsubscribeMessage(onDexUpdateMessage);
-      };
     }
-  }, [rpcPromise, address]);
-
-  useEffect(() => {
-    const onRouterUpdateMessage = function (event: MessageActionEvent) {
-      const Creator = event['message.Creator'];
-      const TokenIn = event['message.TokenIn'];
-      const TokenOut = event['message.TokenOut'];
-      const AmountIn = event['message.AmountIn'];
-      const AmountOut = event['message.AmountOut'];
-      const MinOut = event['message.MinOut'];
-      if (
-        !Creator ||
-        !TokenIn ||
-        !TokenOut ||
-        !AmountIn ||
-        !AmountOut ||
-        !MinOut
-      ) {
-        setError('Invalid event response from server');
-        return;
-      } else {
-        setError(undefined);
-      }
-
-      // todo: update something without refetching?
-      // may not be possible or helpful
-      // bank balance update will be caught already by the bank event watcher
-      // it's too complicated to update indexer state with the event detail's
-    };
-    subscriber.subscribeMessage(onRouterUpdateMessage, {
-      // todo: this doesn't exist anymore
-      message: { action: 'NewSwap' },
-    });
-    return () => {
-      subscriber.unsubscribeMessage(onRouterUpdateMessage);
-    };
-  }, [rpcPromise]);
+  }, [updateBankData, address]);
 
   const result = useMemo(() => {
     return {
+      // todo: pass whole query responses here
       bank: {
         data: bankData,
-        error: error,
-        isValidating: !bankData && !error,
+        isValidating: !bankData,
       },
       shares: {
         data: shareData,
-        error: error,
-        isValidating: !shareData && !error,
+        isValidating: !shareData,
       },
       tokens: {
         data: tokensData,
-        error: error,
-        isValidating: !shareData && !error,
+        isValidating: !shareData,
       },
       tokenPairs: {
         data: tokenPairsData,
-        error: error,
         isValidating: isTokenPairsValidating,
       },
+      pairUpdateHeight: poolUpdateHeightData,
     };
   }, [
     bankData,
     shareData,
     tokensData,
     tokenPairsData,
-    error,
+    poolUpdateHeightData,
     isTokenPairsValidating,
   ]);
 
@@ -452,12 +375,12 @@ export function useBankData() {
 }
 
 export function useBankBalances() {
-  const { data, error, isValidating } = useBankData();
-  return { data: data?.balances, error, isValidating };
+  const { data, isValidating } = useBankData();
+  return { data: data?.balances, isValidating };
 }
 
 export function useBankBalance(token: Token | undefined) {
-  const { data: balances, error, isValidating } = useBankBalances();
+  const { data: balances, isValidating } = useBankBalances();
   const balance = useMemo(() => {
     return (
       (token &&
@@ -465,11 +388,11 @@ export function useBankBalance(token: Token | undefined) {
       '0'
     );
   }, [balances, token]);
-  return { data: balance, error, isValidating };
+  return { data: balance, isValidating };
 }
 
 export function useBankBigBalance(token: Token | undefined) {
-  const { data: balances, error, isValidating } = useBankBalances();
+  const { data: balances, isValidating } = useBankBalances();
   const balance = useMemo(() => {
     const foundBalance =
       token &&
@@ -487,7 +410,7 @@ export function useBankBigBalance(token: Token | undefined) {
       )
     );
   }, [balances, token]);
-  return { data: balance, error, isValidating };
+  return { data: balance, isValidating };
 }
 
 export function useShareData() {
@@ -498,7 +421,7 @@ export function useShares({
   tokens,
   staked = false,
 }: { tokens?: [tokenA: Token, tokenB: Token]; staked?: boolean } = {}) {
-  const { data, error, isValidating } = useShareData();
+  const { data, isValidating } = useShareData();
   const shares = useMemo((): IndexedShare[] | UserStakedShare[] | undefined => {
     // filter to specific tokens if asked for
     const shares = data?.shares.filter(
@@ -525,7 +448,7 @@ export function useShares({
       };
     }
   }, [data?.shares, data?.stakedShares, tokens, staked]);
-  return { data: shares, error, isValidating };
+  return { data: shares, isValidating };
 }
 
 export function useTokensList() {
@@ -534,4 +457,10 @@ export function useTokensList() {
 
 export function useTokenPairsList() {
   return useContext(IndexerContext).tokenPairs;
+}
+
+export function usePairUpdateHeight(
+  pairID: PairIdString = ''
+): number | undefined {
+  return useContext(IndexerContext).pairUpdateHeight[pairID];
 }
