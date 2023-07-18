@@ -95,8 +95,13 @@ export default function useTickLiquidity({
       const lastPage = pages[pages.length - 1];
       // update our state only if the last page of data has been reached
       if (!lastPage?.pagination?.next_key) {
-        const liquidity = pages?.flatMap((page) => page?.tickLiquidity ?? []);
-        lastLiquidity.current = transformData(liquidity);
+        const poolReserves = pages?.flatMap(
+          (page) =>
+            page?.tickLiquidity?.flatMap(
+              (tickLiquidity) => tickLiquidity.poolReserves ?? []
+            ) ?? []
+        );
+        lastLiquidity.current = poolReserves.flatMap(transformPoolReserves);
       }
     }
     return lastLiquidity.current;
@@ -104,16 +109,18 @@ export default function useTickLiquidity({
   return { data: tickSideLiquidity, isValidating, error };
 }
 
-function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
-  return ticks.map<TickInfo>(function ({
-    poolReserves: {
+function transformPoolReserves(
+  poolReserves: TickLiquiditySDKType['poolReserves']
+): TickInfo | [] {
+  // process only ticks with pool reserves
+  if (poolReserves) {
+    const {
       pairID: { token0 = '', token1 = '' } = {},
       tokenIn,
       tickIndex: tickIndex1To0String,
       fee: feeString,
       reserves: reservesString,
-    } = {},
-  }) {
+    } = poolReserves;
     const tickIndex1To0 = Number(tickIndex1To0String);
     const fee = feeString && Number(feeString);
     if (
@@ -156,7 +163,9 @@ function transformData(ticks: Array<TickLiquiditySDKType>): Array<TickInfo> {
       }
     }
     throw new Error('Unexpected tickLiquidity shape');
-  });
+  } else {
+    return [];
+  }
 }
 
 // add convenience method to fetch ticks in a pair
