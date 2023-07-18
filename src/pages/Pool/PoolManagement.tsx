@@ -169,6 +169,7 @@ export default function PoolManagement({
 
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
   const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
+  const [lastUsedInput, setLastUsedInput] = useState<'A' | 'B'>();
   // convert input value text to correct denom values
   const values = useMemo(
     (): [string, string] => [
@@ -522,6 +523,13 @@ export default function PoolManagement({
     ]);
     setInputValueA(inputValueB);
     setInputValueB(inputValueA);
+    setLastUsedInput((lastUsedInput) => {
+      return lastUsedInput !== undefined
+        ? lastUsedInput === 'A'
+          ? 'B'
+          : 'A'
+        : undefined;
+    });
     setTokens([tokenB, tokenA]);
     setInitialPrice((price) => {
       const priceNumber = Number(price);
@@ -541,14 +549,181 @@ export default function PoolManagement({
     inputValueB,
     setInputValueA,
     setInputValueB,
+    setLastUsedInput,
     setInitialPrice,
     formatSignificantDecimalRangeString,
   ]);
 
   const [chartTypeSelected] = useState<'AMM' | 'Orderbook'>('AMM');
 
-  // todo: this effect should be replaced with a better calculation for ticks
-  const tickCount = Number(precision || 1);
+  // get the shape function we will use to calculate the ticks
+  const shapeFunction = useMemo((): ((xPercent: number) => number) => {
+    switch (liquidityShape.value) {
+      case 'increasing':
+        // linearly increase from -1/3 to +1/3 (or 2 to 4 before normalization)
+        return (xPercent) => 2 + 2 * xPercent;
+      case 'decreasing':
+        // linearly decrease from +1/3 to -1/3 (or 4 to 2 before normalization)
+        return (xPercent) => 4 - 2 * xPercent;
+      case 'normal':
+        // normal distribution curve
+        return (xPercent) => {
+          return (
+            (1 / Math.sqrt(2 * Math.PI)) *
+            Math.exp(-(1 / 2) * Math.pow((xPercent - 0.5) / 0.25, 2))
+          );
+        };
+      case 'flat':
+      default:
+        // uniform
+        return () => 1;
+    }
+  }, [liquidityShape]);
+
+  // this is a simple calculation to doesn't really need a memo
+  // its just here to group the logic
+  const tickCount = useMemo(() => {
+    // how many ticks did the user ask for
+    const userDesiredTickCount = Number(precision) || 1;
+    // how many ticks can they have?
+    const possibleTickCount = rangeMaxIndex - rangeMinIndex + 1;
+    // the number of ticks we will use
+    return Math.min(userDesiredTickCount, possibleTickCount);
+  }, [precision, rangeMaxIndex, rangeMinIndex]);
+
+  // determine the normalized values for each tick
+  const shapeUnitValueArray = useMemo(() => {
+    const unitValues =
+      tickCount > 1
+        ? // calculate the relative value heights for each tick index
+          Array.from({ length: tickCount }).map((_, index, ticks) => {
+            const xPercent = index / (ticks.length - 1);
+            return shapeFunction(xPercent);
+          })
+        : // return single point
+          [1];
+    const unitValuesTotal = unitValues.reduce((acc, v) => acc + v, 0) || 1;
+    // return normalized shape values (values add to 1)
+    return unitValues.map((value) => value / unitValuesTotal);
+  }, [tickCount, shapeFunction]);
+
+  const shapeReservesArray = useMemo((): Array<
+    [tickIndex: number, reservesA: BigNumber, reservesB: BigNumber]
+  > => {
+    const amountA = new BigNumber(values[0] || 0);
+    const amountB = new BigNumber(values[1] || 0);
+    if (lastUsedInput && edgePriceIndex) {
+      // calculate the used tick indexes
+      const tickIndexValues = shapeUnitValueArray.map(
+        (value, index, ticks): [tickIndex: number, value: number] => {
+          const xPercent = index / (ticks.length - 1);
+          // interpolate the whole tick index nearest to the array index
+          const tickIndex = Math.round(
+            rangeMinIndex + xPercent * (rangeMaxIndex - rangeMinIndex)
+          );
+          return [tickIndex, value];
+        }
+      );
+      // // split values into tokenA and tokenB values
+      // find what mode we will be in:
+      if (lastUsedInput === 'A') {
+        // split values into different tokens
+        const tokenUnitValues = tickIndexValues.map(([tickIndex, value]) => {
+          return edgePriceIndex <= rangeMinIndex || edgePriceIndex > tickIndex
+            ? [tickIndex, value, 0]
+            : [tickIndex, 0, value];
+        });
+        // find factor to adjust by
+        const totalUnitValueA =
+          edgePriceIndex > rangeMinIndex
+            ? tokenUnitValues.reduce((acc, [, value]) => acc + value, 0) || 1
+            : 1;
+        // adjust to last value given
+        const adjustmentFactor = amountA.dividedBy(totalUnitValueA || 1);
+        return tokenUnitValues.map(([tickIndex, valueA, valueB]) => {
+          return [
+            tickIndex,
+            adjustmentFactor.multipliedBy(valueA),
+            // convert other token reserves using equivalent value
+            // totalAmount0 = amount0 + amount1 * price1To0
+            adjustmentFactor
+              .multipliedBy(valueB)
+              .dividedBy(tickIndexToPrice(new BigNumber(edgePriceIndex))),
+          ];
+        });
+      }
+      if (lastUsedInput === 'B') {
+        // split values into different tokens
+        const tokenUnitValues = tickIndexValues.map(([tickIndex, value]) => {
+          return edgePriceIndex >= rangeMaxIndex || edgePriceIndex < tickIndex
+            ? [tickIndex, 0, value]
+            : [tickIndex, value, 0];
+        });
+        // find factor to adjust by
+        const totalUnitValueB =
+          edgePriceIndex < rangeMaxIndex
+            ? tokenUnitValues.reduce((acc, [, , value]) => acc + value, 0) || 1
+            : 1;
+        // adjust to last value given
+        const adjustmentFactor = amountB.dividedBy(totalUnitValueB || 1);
+        return tokenUnitValues.map(([tickIndex, valueA, valueB]) => {
+          return [
+            tickIndex,
+            // convert other token reserves using equivalent value
+            // totalAmount0 = amount0 + amount1 * price1To0
+            adjustmentFactor
+              .multipliedBy(valueA)
+              .multipliedBy(tickIndexToPrice(new BigNumber(edgePriceIndex))),
+            adjustmentFactor.multipliedBy(valueB),
+          ];
+        });
+      }
+    }
+    // don't compute it an input was not touched
+    return [];
+  }, [
+    shapeUnitValueArray,
+    edgePriceIndex,
+    rangeMinIndex,
+    rangeMaxIndex,
+    values,
+    lastUsedInput,
+  ]);
+
+  // overwrite the input field for the token amount not set
+  useLayoutEffect(() => {
+    if (tokenB && lastUsedInput === 'A') {
+      // convert back to display units
+      const amountB = getAmountInDenom(
+        tokenB,
+        shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
+          return acc.plus(reserveB);
+        }, new BigNumber(0)),
+        tokenB.address,
+        tokenB.display
+      );
+      setInputValueB(amountB ? formatAmount(amountB) : '');
+    } else if (tokenA && lastUsedInput === 'B') {
+      // convert back to display units
+      const amountA = getAmountInDenom(
+        tokenA,
+        shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
+          return acc.plus(reserveA);
+        }, new BigNumber(0)),
+        tokenA.address,
+        tokenA.display
+      );
+      setInputValueA(amountA ? formatAmount(amountA) : '');
+    }
+  }, [
+    shapeReservesArray,
+    lastUsedInput,
+    tokenB,
+    tokenA,
+    setInputValueA,
+    setInputValueB,
+  ]);
+
   useLayoutEffect(() => {
     function getUserTicks(): TickGroup {
       const indexMin = Math.ceil(rangeMinIndex);
@@ -925,7 +1100,10 @@ export default function PoolManagement({
             <TokenInputGroup
               className="flex"
               variant={!hasSufficientFundsA && 'error'}
-              onValueChanged={setInputValueA}
+              onValueChanged={(value) => {
+                setInputValueA(value);
+                setLastUsedInput('A');
+              }}
               onTokenChanged={setTokenA}
               tokenList={tokenList}
               token={tokenA}
@@ -947,7 +1125,10 @@ export default function PoolManagement({
             <TokenInputGroup
               className="flex"
               variant={!hasSufficientFundsB && 'error'}
-              onValueChanged={setInputValueB}
+              onValueChanged={(value) => {
+                setInputValueB(value);
+                setLastUsedInput('B');
+              }}
               onTokenChanged={setTokenB}
               tokenList={tokenList}
               token={tokenB}
@@ -1020,6 +1201,7 @@ export default function PoolManagement({
               onClick={() => {
                 setInputValueA('');
                 setInputValueB('');
+                setLastUsedInput(undefined);
               }}
               disabled={isValueAZero && isValueBZero}
             >
