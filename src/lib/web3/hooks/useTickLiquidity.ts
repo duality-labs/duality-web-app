@@ -90,11 +90,12 @@ export default function useTickLiquidity({
     // when refetching, the library sets `data` to `undefined`
     // I think this is unintuitive. we should only "empty" the data here
     // if a response comes back with an empty array, otherwise we keep the state
-    if (data) {
-      const liquidity = data?.pages?.flatMap(
-        (page) => page?.tickLiquidity ?? []
-      );
-      if (liquidity) {
+    const pages = data?.pages;
+    if (pages && pages.length > 0) {
+      const lastPage = pages[pages.length - 1];
+      // update our state only if the last page of data has been reached
+      if (!lastPage?.pagination?.next_key) {
+        const liquidity = pages?.flatMap((page) => page?.tickLiquidity ?? []);
         lastLiquidity.current = transformData(liquidity);
       }
     }
