@@ -113,8 +113,8 @@ const zoomSpeedFactor = 2; // zoom in/out means divide/multiply the number of sh
 const zoomMinIndexLimit = priceMinIndex * 2;
 const zoomMaxIndexLimit = priceMaxIndex * 2;
 
-const leftPadding = 75;
-const rightPadding = 75;
+const leftPadding = 85;
+const rightPadding = 85;
 const topPadding = 33;
 const bottomPadding = 26; // height of axis-ticks element
 
