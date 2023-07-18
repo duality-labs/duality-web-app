@@ -17,16 +17,19 @@ import {
   formatPrice,
   formatMaximumSignificantDecimals,
   roundToSignificantDigits,
+  formatCurrency,
 } from '../../lib/utils/number';
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import {
   TickInfo,
+  getReserveValue,
   priceToTickIndex,
   tickIndexToPrice,
 } from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
+import { useSimplePrice } from '../../lib/tokenPrices';
 import useOnDragMove from '../hooks/useOnDragMove';
 
 import './LiquiditySelector.scss';
@@ -113,8 +116,9 @@ const zoomSpeedFactor = 2; // zoom in/out means divide/multiply the number of sh
 const zoomMinIndexLimit = priceMinIndex * 2;
 const zoomMaxIndexLimit = priceMaxIndex * 2;
 
+const rightMargin = 66;
 const leftPadding = 85;
-const rightPadding = 85;
+const rightPadding = 85 + rightMargin;
 const topPadding = 33;
 const bottomPadding = 26; // height of axis-ticks element
 
@@ -142,6 +146,8 @@ export default function LiquiditySelector({
   oneSidedLiquidity = false,
   ControlsComponent,
 }: LiquiditySelectorProps) {
+  // get price of tokenA for USD conversions
+  const { data: priceA } = useSimplePrice(tokenA);
   // convert range price state controls into range index state controls
   const fractionalRangeMinIndex = useMemo(() => {
     const index = priceToTickIndex(new BigNumber(rangeMin)).toNumber();
@@ -578,6 +584,25 @@ export default function LiquiditySelector({
     );
   }, [tickBuckets]);
 
+  // calculate highest value to plot on the chart
+  const userTickMaxValue = useMemo(() => {
+    return userTicks.reduce((result, tick) => {
+      if (tick && priceA && edgePriceIndex) {
+        const priceB = tickIndexToPrice(new BigNumber(edgePriceIndex))
+          .dividedBy(priceA)
+          .toNumber();
+        const value = getReserveValue(
+          priceA,
+          priceB,
+          tick.reserveA,
+          tick.reserveB
+        );
+        return Math.max(result, value?.toNumber() || 0);
+      }
+      return result;
+    }, 0);
+  }, [edgePriceIndex, priceA, userTicks]);
+
   // get plotting functions
   const [plotWidth, plotHeight] = useMemo(() => {
     return [
@@ -707,10 +732,38 @@ export default function LiquiditySelector({
       <g className="axis x-axis">
         <rect
           x="0"
-          width={containerSize.width}
+          width={containerSize.width - rightMargin}
           y={plotY(0).toFixed(0)}
           height="2"
         />
+        <text
+          x={containerSize.width - rightMargin}
+          y={percentY(1) + 4}
+          textAnchor="start"
+          alignmentBaseline="middle"
+        >
+          &nbsp;-{' '}
+          {tokenA && priceA ? (
+            formatCurrency(
+              getAmountInDenom(
+                tokenA,
+                yMaxValue * priceA,
+                tokenA.address,
+                tokenA.display
+              ) || 0
+            )
+          ) : (
+            <>100%</>
+          )}
+        </text>
+        <text
+          x={containerSize.width - rightMargin}
+          y={plotY(0) + 1}
+          textAnchor="start"
+          alignmentBaseline="middle"
+        >
+          &nbsp;- 0
+        </text>
       </g>
       <g className="axis x-axis">
         {userTicks.length > 0 && (
@@ -720,10 +773,42 @@ export default function LiquiditySelector({
         )}
         <rect
           x="0"
-          width={containerSize.width}
+          width={containerSize.width - rightMargin}
           y={percentY(0).toFixed(0)}
           height="8"
         />
+        {userTicks.length > 0 && (
+          <text
+            x={containerSize.width - rightMargin}
+            y={halfPercentYBigNumber(new BigNumber(1))}
+            textAnchor="start"
+            alignmentBaseline="middle"
+          >
+            &nbsp;-{' '}
+            {tokenA && priceA ? (
+              formatCurrency(
+                getAmountInDenom(
+                  tokenA,
+                  userTickMaxValue,
+                  tokenA.address,
+                  tokenA.display
+                ) || 0
+              )
+            ) : (
+              <>100%</>
+            )}
+          </text>
+        )}
+        {userTicks.length > 0 && (
+          <text
+            x={containerSize.width - rightMargin}
+            y={percentY(0) + 1}
+            textAnchor="start"
+            alignmentBaseline="middle"
+          >
+            &nbsp;- 0
+          </text>
+        )}
       </g>
       {!advanced && (
         <TicksBackgroundArea
@@ -864,7 +949,7 @@ export default function LiquiditySelector({
         {containerSize.width > 0 && containerSize.height > 0 ? svg : null}
       </div>
       {ControlsComponent && (
-        <div className="col">
+        <div className="col zoom-buttons">
           <ControlsComponent
             zoomIn={
               // the +2 on index spread allows for rounded values on both sides
