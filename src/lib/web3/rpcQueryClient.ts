@@ -3,7 +3,11 @@ import {
   createProtobufRpcClient,
   ProtobufRpcClient,
 } from '@cosmjs/stargate';
-import { Tendermint37Client, HttpEndpoint } from '@cosmjs/tendermint-rpc';
+import {
+  Tendermint37Client,
+  HttpClient,
+  HttpEndpoint,
+} from '@cosmjs/tendermint-rpc';
 
 import { useMemo } from 'react';
 
@@ -19,7 +23,6 @@ const getRpcEndpointKey = (
   }
 };
 
-const _rpcClients: Record<string, ProtobufRpcClient> = {};
 const getRpcClient = async (
   rpcEndpoint?: string | HttpEndpoint
 ): Promise<ProtobufRpcClient> => {
@@ -27,14 +30,10 @@ const getRpcClient = async (
   if (!key) {
     throw new Error('No RPC endpoint given');
   }
-  if (_rpcClients.hasOwnProperty(key)) {
-    return _rpcClients[key];
-  }
-  const tmClient = await Tendermint37Client.connect(key);
+  const httpClient = new HttpClient(key);
+  const tmClient = await Tendermint37Client.create(httpClient);
   const client = new QueryClient(tmClient);
-  const rpc = createProtobufRpcClient(client);
-  _rpcClients[key] = rpc;
-  return rpc;
+  return createProtobufRpcClient(client);
 };
 
 /* useRPCPromise: gets an `rpc` value in a promise
