@@ -3,7 +3,7 @@ import {
   createProtobufRpcClient,
   ProtobufRpcClient,
 } from '@cosmjs/stargate';
-import { Tendermint34Client, HttpEndpoint } from '@cosmjs/tendermint-rpc';
+import { Tendermint37Client, HttpEndpoint } from '@cosmjs/tendermint-rpc';
 
 import { useMemo } from 'react';
 
@@ -30,7 +30,7 @@ const getRpcClient = async (
   if (_rpcClients.hasOwnProperty(key)) {
     return _rpcClients[key];
   }
-  const tmClient = await Tendermint34Client.connect(key);
+  const tmClient = await Tendermint37Client.connect(key);
   const client = new QueryClient(tmClient);
   const rpc = createProtobufRpcClient(client);
   _rpcClients[key] = rpc;
