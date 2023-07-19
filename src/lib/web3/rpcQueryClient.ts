@@ -13,24 +13,13 @@ import { useMemo } from 'react';
 
 const { REACT_APP__RPC_API = '' } = process.env;
 
-const getRpcEndpointKey = (
-  rpcEndpoint: string | HttpEndpoint = REACT_APP__RPC_API
-) => {
-  if (typeof rpcEndpoint === 'string') {
-    return rpcEndpoint;
-  } else if (!!rpcEndpoint) {
-    return rpcEndpoint.url;
-  }
-};
-
 const getRpcClient = async (
-  rpcEndpoint?: string | HttpEndpoint
+  rpcEndpoint: string | HttpEndpoint = REACT_APP__RPC_API
 ): Promise<ProtobufRpcClient> => {
-  const key = getRpcEndpointKey(rpcEndpoint);
-  if (!key) {
+  if (!rpcEndpoint) {
     throw new Error('No RPC endpoint given');
   }
-  const httpClient = new HttpClient(key);
+  const httpClient = new HttpClient(rpcEndpoint);
   const tmClient = await Tendermint37Client.create(httpClient);
   const client = new QueryClient(tmClient);
   return createProtobufRpcClient(client);
