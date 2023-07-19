@@ -31,6 +31,7 @@ import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 
 import './Swap.scss';
+import { MsgPlaceLimitOrder } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
 
 type CardType = 'trade' | 'settings';
 type OrderType = 'market' | 'limit';
@@ -105,12 +106,7 @@ function Swap() {
     data: routerResult,
     isValidating: isValidatingRate,
     error,
-  } = useRouterResult({
-    tokenA: tokenA?.address,
-    tokenB: tokenB?.address,
-    valueA: lastUpdatedA ? valueA : undefined,
-    valueB: lastUpdatedA ? undefined : valueB,
-  });
+  } = useRouterResult();
 
   const rateData = getRouterEstimates(pairRequest, routerResult);
   const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap();
@@ -149,49 +145,60 @@ function Swap() {
   const [token0] =
     useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
 
+  const msg = useMemo<MsgPlaceLimitOrder | undefined>(() => {
+    // calculate tolerance from user slippage settings
+    // set tiny minimum of tolerance as the frontend calculations
+    // don't always exactly align with the backend calculations
+    const tolerance = Math.max(1e-12, parseFloat(slippage) / 100);
+    if (
+      address &&
+      routerResult &&
+      tokenA &&
+      tokenB &&
+      !isNaN(tolerance)
+    ) {
+      // convert to swap request format
+      const result = routerResult;
+      const forward = result.tokenIn === token0;
+      return {
+        amountIn:
+          getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
+        tokenIn: result.tokenIn,
+        tokenOut: result.tokenOut,
+        creator: address,
+        receiver: address,
+        // see LimitOrderType in types repo (cannot import at runtime)
+        // https://github.com/duality-labs/dualityjs/blob/2cf50a7af7bf7c6b1490a590a4e1756b848096dd/src/codegen/duality/dex/tx.ts#L6-L13
+        // using type IMMEDIATE_OR_CANCEL so that partially filled requests
+        // succeed (in testing when swapping 1e18 utokens, often the order
+        // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
+        // todo: use type FILL_OR_KILL: order must be filled completely
+        orderType: 2,
+        // todo: set tickIndex to allow for a tolerance:
+        //   the below function is a tolerance of 0
+        tickIndex: Long.fromNumber(32564 * (forward ? 1 : -1)),
+        maxAmountOut:
+          getAmountInDenom(tokenB, result.amountOut, tokenB?.display) || '0',
+      };
+    }
+  },
+  [address, routerResult, tokenA, tokenB, token0, slippage]
+);
+
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
       // calculate tolerance from user slippage settings
       // set tiny minimum of tolerance as the frontend calculations
       // don't always exactly align with the backend calculations
-      const tolerance = Math.max(1e-12, parseFloat(slippage) / 100);
-      const tickIndexLimit = routerResult?.tickIndexOut?.toNumber();
-      if (
-        address &&
-        routerResult &&
-        tokenA &&
-        tokenB &&
-        !isNaN(tolerance) &&
-        tickIndexLimit &&
-        !isNaN(tickIndexLimit)
-      ) {
-        // convert to swap request format
-        const result = routerResult;
-        const forward = result.tokenIn === token0;
+      if (msg) {
         swapRequest({
-          amountIn:
-            getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
-          tokenIn: result.tokenIn,
-          tokenOut: result.tokenOut,
-          creator: address,
-          receiver: address,
-          // see LimitOrderType in types repo (cannot import at runtime)
-          // https://github.com/duality-labs/dualityjs/blob/2cf50a7af7bf7c6b1490a590a4e1756b848096dd/src/codegen/duality/dex/tx.ts#L6-L13
-          // using type IMMEDIATE_OR_CANCEL so that partially filled requests
-          // succeed (in testing when swapping 1e18 utokens, often the order
-          // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
-          // todo: use type FILL_OR_KILL: order must be filled completely
-          orderType: 2,
-          // todo: set tickIndex to allow for a tolerance:
-          //   the below function is a tolerance of 0
-          tickIndex: Long.fromNumber(tickIndexLimit * (forward ? 1 : -1)),
-          maxAmountOut:
-            getAmountInDenom(tokenB, result.amountOut, tokenB?.display) || '0',
+          ...msg,
+          // todo: overwrite tickIndex with results of swap simulation
         });
       }
     },
-    [address, routerResult, tokenA, tokenB, token0, slippage, swapRequest]
+    [msg, swapRequest]
   );
 
   const onValueAChanged = useCallback(

@@ -7,6 +7,7 @@ import {
   getSigningDualitylabsClientOptions,
 } from '@duality-labs/dualityjs';
 
+import { getSigningDualitylabsSimulationClient } from './rpcSimulateClient';
 import {
   HttpEndpoint,
   SigningStargateClient,
@@ -37,6 +38,16 @@ export function signingRpcClient(
   rpcURL = REACT_APP__RPC_API
 ) {
   return getSigningClientFunction({
+    rpcEndpoint: rpcURL,
+    signer: wallet as OfflineAminoSigner,
+  });
+}
+
+export function simulatedRpcClient(
+  wallet: OfflineSigner,
+  rpcURL = REACT_APP__RPC_API
+) {
+  return getSigningDualitylabsSimulationClient({
     rpcEndpoint: rpcURL,
     signer: wallet as OfflineAminoSigner,
   });

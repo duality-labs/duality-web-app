@@ -11,6 +11,11 @@ import { useTokenPairTickLiquidity } from '../../../lib/web3/hooks/useTickLiquid
 import { useOrderedTokenPair } from '../../../lib/web3/hooks/useTokenPairs';
 import { TickInfo } from '../../../lib/web3/utils/ticks';
 import { getPairID } from '../../../lib/web3/utils/pairs';
+import { useQuery } from '@tanstack/react-query';
+import { simulatedRpcClient } from '../../../lib/web3/rpcMsgClient';
+import { useWeb3 } from '../../../lib/web3/useWeb3';
+import { dualitylabs } from '@duality-labs/dualityjs';
+import { MsgPlaceLimitOrder } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
 
 const cachedRequests: {
   [token0: string]: { [token1: string]: PairResult };
@@ -45,7 +50,7 @@ async function getRouterResult(
  * @param pairRequest the respective addresses and value
  * @returns estimated info of swap, loading state and possible error
  */
-export function useRouterResult(pairRequest: PairRequest): {
+export function useRouterResult(limitOrderRequest: MsgPlaceLimitOrder): {
   data?: RouterResult;
   isValidating: boolean;
   error?: SwapError;
@@ -54,112 +59,122 @@ export function useRouterResult(pairRequest: PairRequest): {
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<SwapError>();
 
-  const [token0, token1] =
-    useOrderedTokenPair([pairRequest.tokenA, pairRequest.tokenB]) || [];
+  const { wallet, address } = useWeb3();
+  const result = useQuery({
+    queryKey: ['simulated-swap', limitOrderRequest],
+    queryFn: wallet && address ? async () => {
+      const client = await simulatedRpcClient(wallet) 
+      const msg = dualitylabs.duality.dex.MessageComposer.withTypeUrl.placeLimitOrder(limitOrderRequest);
+      return client.tx.simulate(address, [msg]);
+    } : undefined,
+  });
 
-  const pairId = token0 && token1 ? getPairID(token0, token1) : null;
-  const {
-    data: [token0Ticks, token1Ticks],
-  } = useTokenPairTickLiquidity([token0, token1]);
+  // const [token0, token1] =
+  //   useOrderedTokenPair([pairRequest.tokenA, pairRequest.tokenB]) || [];
 
-  useEffect(() => {
-    if (
-      !pairRequest.tokenA ||
-      !pairRequest.tokenB ||
-      (!pairRequest.valueA && !pairRequest.valueB) ||
-      !token0 ||
-      !token1 ||
-      !pairId
-    ) {
-      return;
-    }
-    if (pairRequest.tokenA === pairRequest.tokenB) {
-      setData(undefined);
-      setError(new Error('The tokens cannot be the same'));
-      return;
-    }
-    if (pairRequest.valueA && pairRequest.valueB) {
-      setData(undefined);
-      setError(new Error('One value must be falsy'));
-      return;
-    }
-    setIsValidating(true);
-    setData(undefined);
-    setError(undefined);
-    const tokenA = addressableTokenMap[pairRequest.tokenA];
-    const tokenB = addressableTokenMap[pairRequest.tokenB];
-    // convert token request down into base denom
-    const alteredValue = getAmountInDenom(
-      tokenA,
-      pairRequest.valueA || 0,
-      tokenA.display
-    );
-    const reverseSwap = !!pairRequest.valueB;
-    if (!alteredValue || alteredValue === '0') {
-      setIsValidating(false);
-      setData(undefined);
-      return;
-    }
-    let cancelled = false;
+  // const pairId = token0 && token1 ? getPairID(token0, token1) : null;
+  // const {
+  //   data: [token0Ticks, token1Ticks],
+  // } = useTokenPairTickLiquidity([token0, token1]);
 
-    // this could be useRouterResult for much better usage
-    // replacing the above useEffect with probably a useMemo
-    getRouterResult(
-      alteredValue,
-      pairRequest.tokenA,
-      pairRequest.tokenB,
-      token0,
-      token0Ticks,
-      token1Ticks,
-      reverseSwap
-    )
-      .then(function (result) {
-        if (cancelled) return;
-        setIsValidating(false);
-        // convert token result back into display denom
-        setData(convertToDisplayDenom(result));
-      })
-      .catch(function (err: SwapError) {
-        if (cancelled) return;
-        setIsValidating(false);
-        setError(err);
-        if (err.result) {
-          setData(convertToDisplayDenom(err.result));
-        } else {
-          setData(undefined);
-        }
-      });
+  // useEffect(() => {
+  //   if (
+  //     !pairRequest.tokenA ||
+  //     !pairRequest.tokenB ||
+  //     (!pairRequest.valueA && !pairRequest.valueB) ||
+  //     !token0 ||
+  //     !token1 ||
+  //     !pairId
+  //   ) {
+  //     return;
+  //   }
+  //   if (pairRequest.tokenA === pairRequest.tokenB) {
+  //     setData(undefined);
+  //     setError(new Error('The tokens cannot be the same'));
+  //     return;
+  //   }
+  //   if (pairRequest.valueA && pairRequest.valueB) {
+  //     setData(undefined);
+  //     setError(new Error('One value must be falsy'));
+  //     return;
+  //   }
+  //   setIsValidating(true);
+  //   setData(undefined);
+  //   setError(undefined);
+  //   const tokenA = addressableTokenMap[pairRequest.tokenA];
+  //   const tokenB = addressableTokenMap[pairRequest.tokenB];
+  //   // convert token request down into base denom
+  //   const alteredValue = getAmountInDenom(
+  //     tokenA,
+  //     pairRequest.valueA || 0,
+  //     tokenA.display
+  //   );
+  //   const reverseSwap = !!pairRequest.valueB;
+  //   if (!alteredValue || alteredValue === '0') {
+  //     setIsValidating(false);
+  //     setData(undefined);
+  //     return;
+  //   }
+  //   let cancelled = false;
 
-    return () => {
-      cancelled = true;
-    };
+  //   // this could be useRouterResult for much better usage
+  //   // replacing the above useEffect with probably a useMemo
+  //   getRouterResult(
+  //     alteredValue,
+  //     pairRequest.tokenA,
+  //     pairRequest.tokenB,
+  //     token0,
+  //     token0Ticks,
+  //     token1Ticks,
+  //     reverseSwap
+  //   )
+  //     .then(function (result) {
+  //       if (cancelled) return;
+  //       setIsValidating(false);
+  //       // convert token result back into display denom
+  //       setData(convertToDisplayDenom(result));
+  //     })
+  //     .catch(function (err: SwapError) {
+  //       if (cancelled) return;
+  //       setIsValidating(false);
+  //       setError(err);
+  //       if (err.result) {
+  //         setData(convertToDisplayDenom(err.result));
+  //       } else {
+  //         setData(undefined);
+  //       }
+  //     });
 
-    // todo: this function should deal with uToken values only and not be concerned with conversions
-    function convertToDisplayDenom(result: RouterResult): RouterResult {
-      return {
-        ...result,
-        amountIn: new BigNumber(pairRequest.valueA || 0),
-        amountOut: new BigNumber(
-          getAmountInDenom(
-            tokenB,
-            result.amountOut.decimalPlaces(0, BigNumber.ROUND_DOWN),
-            tokenB.address,
-            tokenB.display
-          ) || 0
-        ),
-      };
-    }
-  }, [
-    pairRequest.tokenA,
-    pairRequest.tokenB,
-    pairRequest.valueA,
-    pairRequest.valueB,
-    pairId,
-    token0,
-    token1,
-    token0Ticks,
-    token1Ticks,
-  ]);
+  //   return () => {
+  //     cancelled = true;
+  //   };
+
+  //   // todo: this function should deal with uToken values only and not be concerned with conversions
+  //   function convertToDisplayDenom(result: RouterResult): RouterResult {
+  //     return {
+  //       ...result,
+  //       amountIn: new BigNumber(pairRequest.valueA || 0),
+  //       amountOut: new BigNumber(
+  //         getAmountInDenom(
+  //           tokenB,
+  //           result.amountOut.decimalPlaces(0, BigNumber.ROUND_DOWN),
+  //           tokenB.address,
+  //           tokenB.display
+  //         ) || 0
+  //       ),
+  //     };
+  //   }
+  // }, [
+  //   pairRequest.tokenA,
+  //   pairRequest.tokenB,
+  //   pairRequest.valueA,
+  //   pairRequest.valueB,
+  //   pairId,
+  //   token0,
+  //   token1,
+  //   token0Ticks,
+  //   token1Ticks,
+  // ]);
 
   return { data, isValidating, error };
 }
