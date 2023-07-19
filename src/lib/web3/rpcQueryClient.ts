@@ -7,7 +7,7 @@ import {
   Tendermint37Client,
   HttpClient,
   HttpEndpoint,
-} from '@cosmjs/tendermint-rpc';
+} from '@cosmjs/tendermint-rpc'; // this is an indirect dependency
 
 import { useMemo } from 'react';
 

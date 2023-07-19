@@ -1,5 +1,5 @@
 import { dualitylabs } from '@duality-labs/dualityjs';
-import { encodeSecp256k1Pubkey } from '@cosmjs/amino';
+import { encodeSecp256k1Pubkey } from '@cosmjs/amino'; // this is an indirect dependency
 import {
   Registry,
   EncodeObject,
