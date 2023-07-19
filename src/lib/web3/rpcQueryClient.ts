@@ -9,7 +9,9 @@ import { useMemo } from 'react';
 
 const { REACT_APP__RPC_API = '' } = process.env;
 
-const getRpcEndpointKey = (rpcEndpoint: string | HttpEndpoint) => {
+const getRpcEndpointKey = (
+  rpcEndpoint: string | HttpEndpoint = REACT_APP__RPC_API
+) => {
   if (typeof rpcEndpoint === 'string') {
     return rpcEndpoint;
   } else if (!!rpcEndpoint) {
@@ -18,8 +20,8 @@ const getRpcEndpointKey = (rpcEndpoint: string | HttpEndpoint) => {
 };
 
 const _rpcClients: Record<string, ProtobufRpcClient> = {};
-export const getRpcClient = async (
-  rpcEndpoint: string | HttpEndpoint
+const getRpcClient = async (
+  rpcEndpoint?: string | HttpEndpoint
 ): Promise<ProtobufRpcClient> => {
   const key = getRpcEndpointKey(rpcEndpoint);
   if (!key) {
@@ -45,10 +47,10 @@ export const getRpcClient = async (
  *       });
  */
 export function useRpcPromise(
-  rpcURL = REACT_APP__RPC_API
+  rpcEndpoint?: string | HttpEndpoint
 ): Promise<ProtobufRpcClient> {
   // return a new promise for each provided endpoint
   return useMemo(() => {
-    return getRpcClient(rpcURL);
-  }, [rpcURL]);
+    return getRpcClient(rpcEndpoint);
+  }, [rpcEndpoint]);
 }
