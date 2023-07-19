@@ -22,7 +22,6 @@ import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBigBalance } from '../../lib/web3/indexerProvider';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
-import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -147,11 +146,8 @@ function Swap() {
   const [inputSlippage, setInputSlippage, slippage = '0'] =
     useNumericInputState(defaultSlippage);
 
-  const [token0, token1] =
+  const [token0] =
     useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
-  const {
-    data: [token0Ticks, token1Ticks],
-  } = useTokenPairTickLiquidity([token0, token1]);
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -172,95 +168,30 @@ function Swap() {
       ) {
         // convert to swap request format
         const result = routerResult;
-        // Cosmos requires tokens in integer format of smallest denomination
-        // calculate gas estimate
-        const tickMin =
-          routerResult.tickIndexIn &&
-          routerResult.tickIndexOut &&
-          Math.min(
-            routerResult.tickIndexIn.toNumber(),
-            routerResult.tickIndexOut.toNumber()
-          );
-        const tickMax =
-          routerResult.tickIndexIn &&
-          routerResult.tickIndexOut &&
-          Math.max(
-            routerResult.tickIndexIn.toNumber(),
-            routerResult.tickIndexOut.toNumber()
-          );
         const forward = result.tokenIn === token0;
-        const ticks = forward ? token1Ticks : token0Ticks;
-        const ticksPassed =
-          (tickMin !== undefined &&
-            tickMax !== undefined &&
-            ticks?.filter((tick) => {
-              return (
-                tick.tickIndex1To0.isGreaterThanOrEqualTo(tickMin) &&
-                tick.tickIndex1To0.isLessThanOrEqualTo(tickMax)
-              );
-            })) ||
-          [];
-        const ticksUsed =
-          ticksPassed?.filter(
-            forward
-              ? (tick) => !tick.reserve1.isZero()
-              : (tick) => !tick.reserve0.isZero()
-          ).length || 0;
-        const ticksUnused =
-          new Set<number>([
-            ...(ticksPassed?.map((tick) => tick.tickIndex1To0.toNumber()) ||
-              []),
-          ]).size - ticksUsed;
-        const gasEstimate = ticksUsed
-          ? // 120000 base
-            120000 +
-            // add 80000 if multiple ticks need to be traversed
-            (ticksUsed > 1 ? 80000 : 0) +
-            // add 1000000 for each tick that we need to remove liquidity from
-            1000000 * (ticksUsed - 1) +
-            // add 500000 for each tick we pass without drawing liquidity from
-            500000 * ticksUnused +
-            // add another 500000 for each reverse tick we pass without drawing liquidity from
-            (forward ? 0 : 500000 * ticksUnused)
-          : 0;
-
-        swapRequest(
-          {
-            amountIn:
-              getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
-            tokenIn: result.tokenIn,
-            tokenOut: result.tokenOut,
-            creator: address,
-            receiver: address,
-            // see LimitOrderType in types repo (cannot import at runtime)
-            // https://github.com/duality-labs/dualityjs/blob/2cf50a7af7bf7c6b1490a590a4e1756b848096dd/src/codegen/duality/dex/tx.ts#L6-L13
-            // using type IMMEDIATE_OR_CANCEL so that partially filled requests
-            // succeed (in testing when swapping 1e18 utokens, often the order
-            // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
-            // todo: use type FILL_OR_KILL: order must be filled completely
-            orderType: 2,
-            // todo: set tickIndex to allow for a tolerance:
-            //   the below function is a tolerance of 0
-            tickIndex: Long.fromNumber(tickIndexLimit * (forward ? 1 : -1)),
-            maxAmountOut:
-              getAmountInDenom(tokenB, result.amountOut, tokenB?.display) ||
-              '0',
-          },
-          gasEstimate
-        );
+        swapRequest({
+          amountIn:
+            getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
+          tokenIn: result.tokenIn,
+          tokenOut: result.tokenOut,
+          creator: address,
+          receiver: address,
+          // see LimitOrderType in types repo (cannot import at runtime)
+          // https://github.com/duality-labs/dualityjs/blob/2cf50a7af7bf7c6b1490a590a4e1756b848096dd/src/codegen/duality/dex/tx.ts#L6-L13
+          // using type IMMEDIATE_OR_CANCEL so that partially filled requests
+          // succeed (in testing when swapping 1e18 utokens, often the order
+          // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
+          // todo: use type FILL_OR_KILL: order must be filled completely
+          orderType: 2,
+          // todo: set tickIndex to allow for a tolerance:
+          //   the below function is a tolerance of 0
+          tickIndex: Long.fromNumber(tickIndexLimit * (forward ? 1 : -1)),
+          maxAmountOut:
+            getAmountInDenom(tokenB, result.amountOut, tokenB?.display) || '0',
+        });
       }
     },
-    [
-      address,
-      routerResult,
-      tokenA,
-      tokenB,
-      token0,
-      token0Ticks,
-      token1Ticks,
-      slippage,
-      swapRequest,
-    ]
+    [address, routerResult, tokenA, tokenB, token0, slippage, swapRequest]
   );
 
   const onValueAChanged = useCallback(

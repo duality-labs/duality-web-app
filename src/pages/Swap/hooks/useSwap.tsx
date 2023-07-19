@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { DeliverTxResponse } from '@cosmjs/stargate';
+import { DeliverTxResponse, GasPrice } from '@cosmjs/stargate';
 import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 
@@ -46,7 +46,7 @@ async function sendSwap(
     creator,
     receiver,
   }: MsgPlaceLimitOrder,
-  gasEstimate: number
+  gasEstimate: number | 'auto' = 'auto'
 ): Promise<void> {
   if (!amountIn || !orderType || !tokenIn || !tokenOut || !creator) {
     throw new Error('Invalid Input');
@@ -67,7 +67,9 @@ async function sendSwap(
 
   createLoadingToast({ id, description: 'Executing your trade' });
 
-  const client = await rpcClient(wallet);
+  const client = await rpcClient(wallet, {
+    gasPrice: GasPrice.fromString('1token'),
+  });
   return client
     .signAndBroadcast(
       address,
@@ -83,10 +85,7 @@ async function sendSwap(
           receiver,
         }),
       ],
-      {
-        gas: gasEstimate.toFixed(0),
-        amount: [{ amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' }],
-      }
+      gasEstimate
     )
     .then(function (res): void {
       if (!res) {
@@ -154,7 +153,7 @@ export function useSwap(): [
     isValidating: boolean;
     error?: string;
   },
-  (request: MsgPlaceLimitOrder, gasEstimate: number) => void
+  (request: MsgPlaceLimitOrder, gasEstimate?: number) => void
 ] {
   const [data, setData] = useState<MsgPlaceLimitOrderResponseSDKType>();
   const [validating, setValidating] = useState(false);
@@ -162,7 +161,7 @@ export function useSwap(): [
   const web3 = useWeb3();
 
   const sendRequest = useCallback(
-    (request: MsgPlaceLimitOrder, gasEstimate: number) => {
+    (request: MsgPlaceLimitOrder, gasEstimate?: number) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
       const {
