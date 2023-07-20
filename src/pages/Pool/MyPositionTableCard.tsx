@@ -145,7 +145,7 @@ export function MyNewPositionTableCard({
               <td className="min-width">
                 {reserveA.isGreaterThan(0) && (
                   <div
-                    className="red-value-bar"
+                    className="green-value-bar"
                     style={{
                       width: new BigNumber(poolValues[index][0])
                         .dividedBy(maxPoolValue)
@@ -333,7 +333,7 @@ export function MyEditedPositionTableCard({
               <td className="min-width">
                 {reserveA.isGreaterThan(0) && (
                   <div
-                    className="red-value-bar"
+                    className="green-value-bar"
                     style={{
                       width: new BigNumber(poolValues[index][0])
                         .dividedBy(maxPoolValue)
