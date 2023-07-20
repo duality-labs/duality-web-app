@@ -513,9 +513,9 @@ function StakingRow({
           <div
             className={
               isStaked && isIncentivized
-                ? 'green-value-bar'
-                : tokenAValue.isGreaterThan(0)
                 ? 'red-value-bar'
+                : tokenAValue.isGreaterThan(0)
+                ? 'green-value-bar'
                 : 'blue-value-bar'
             }
             style={{
