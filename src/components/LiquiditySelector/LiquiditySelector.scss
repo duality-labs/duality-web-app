@@ -18,32 +18,42 @@
 .tick-buckets {
   .tick-bucket {
     transition: opacity 0.15s ease-in-out, y 0.1s ease, height 0.1s ease;
-    stroke-width: 0.125;
-    opacity: 0.75;
+    opacity: 1;
   }
 
   .token-a {
-    fill: hsl(0, 58%, 33%);
-    stroke: hsl(0, 58%, 33%);
+    fill: hsl(182, 50%, 37%);
+    stroke: hsl(182, 50%, 37%);
   }
   .token-b {
-    fill: hsl(202deg 58% 33%);
-    stroke: hsl(202deg 58% 33%);
+    fill: hsl(202, 50%, 37%);
+    stroke: hsl(202, 50%, 37%);
   }
 }
 
 .new-ticks {
   pointer-events: none;
   stroke-width: 2px;
-  stroke: hsl(202deg 58% 33%);
   .tip {
     stroke-width: 1px;
   }
+  .token-a {
+    stroke: hsl(182, 50%, 40%);
+    &.tick--selected {
+      stroke: hsl(182, 77%, 61%);
+    }
+  }
+  .token-b {
+    stroke: hsl(202, 50%, 40%);
+    &.tick--selected {
+      stroke: hsl(202, 77%, 61%);
+    }
+  }
   .token-a .tip {
-    fill: hsl(262, 41%, 50%);
+    fill: hsl(182, 65%, 45%);
   }
   .token-b .tip {
-    fill: hsl(202, 41%, 36%);
+    fill: hsl(202, 65%, 45%);
   }
   .tick--price-warning {
     .tip,
@@ -56,9 +66,6 @@
     stroke: none;
     cursor: move;
     pointer-events: visible;
-  }
-  .tick--selected {
-    stroke: var(--submit-button-bg);
   }
   .tick text {
     display: none;
@@ -145,7 +152,7 @@
   stroke-width: 1;
   stroke: var(--text-default);
   > rect {
-    fill: hsl(202deg 58% 33%);
+    fill: hsl(202, 70%, 45%);
     stroke-width: 0;
   }
   &.x-axis line {

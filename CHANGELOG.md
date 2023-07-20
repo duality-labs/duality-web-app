@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10](https://github.com/duality-labs/duality-web-app/compare/v0.3.9...v0.3.10) (2023-07-20)
+
+
+### Features
+
+* adjust chart colors to appear to be part of current color scheme ([#411](https://github.com/duality-labs/duality-web-app/issues/411)) ([c1388a0](https://github.com/duality-labs/duality-web-app/commit/c1388a09d6c345e5827245567c739c5519cf70ab))
+
 ## [0.3.9](https://github.com/duality-labs/duality-web-app/compare/v0.3.8...v0.3.9) (2023-07-18)
 
 
