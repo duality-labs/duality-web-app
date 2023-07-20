@@ -511,13 +511,14 @@ function StakingRow({
         <td>{formatCurrency(tokenAValue.plus(tokenBValue).toFixed(2))}</td>
         <td className="min-width">
           <div
-            className={
-              isStaked && isIncentivized
-                ? 'red-value-bar'
-                : tokenAValue.isGreaterThan(0)
+            className={[
+              tokenAValue.isGreaterThan(0)
                 ? 'green-value-bar'
-                : 'blue-value-bar'
-            }
+                : 'blue-value-bar',
+              isStaked && isIncentivized && 'highlighted',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             style={{
               width: tokenAValue
                 .plus(tokenBValue)

@@ -254,14 +254,23 @@ hr {
 .red-value-bar {
   height: 1rem;
   background-color: hsl(0deg, 50%, 37%);
+  &.highlighted {
+    background-color: hsl(0, 77%, 61%);
+  }
 }
 .green-value-bar {
   height: 1rem;
   background-color: hsl(182, 50%, 37%);
+  &.highlighted {
+    background-color: hsl(182, 77%, 61%);
+  }
 }
 .blue-value-bar {
   height: 1rem;
   background-color: hsl(202, 50%, 37%);
+  &.highlighted {
+    background-color: hsl(202, 77%, 61%);
+  }
 }
 
 // add a tiny faint shadow to all token logos
