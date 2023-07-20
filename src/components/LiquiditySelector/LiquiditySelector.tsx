@@ -1556,9 +1556,8 @@ function TicksGroup({
 
   // add a scaling factor if the maximum tick is very short (scale up to minMaxHeight)
   const scalingFactor =
-    cumulativeTokenValues && maxValue / cumulativeTokenValues > minMaxHeight
-      ? 0.7
-      : 0.7 * minMaxHeight / (maxValue / cumulativeTokenValues);
+    cumulativeTokenValues &&
+    0.7 * Math.max(1, minMaxHeight / (maxValue / cumulativeTokenValues));
 
   const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
 
