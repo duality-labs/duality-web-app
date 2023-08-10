@@ -245,6 +245,10 @@ fieldset:disabled label {
 fieldset:disabled *:not(:has(> *)) {
   opacity: 0.5;
 }
+input {
+  background-color: transparent;
+  border: none;
+}
 
 hr {
   border-bottom-width: 0;
