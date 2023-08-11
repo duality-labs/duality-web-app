@@ -13,6 +13,7 @@ import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 
 import { formatAmount } from '../../lib/utils/number';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import dualityLogo from '../../assets/logo/logo.svg';
 
 import './AssetsTableCard.scss';
 
@@ -229,7 +230,16 @@ function BridgeButton({
                 <div className="px-4 py-sm text-muted">From</div>
               </div>
               <div className="col">
-                <div className="py-sm flex">Ethereum</div>
+                <div className="row py-sm flex gap-3">
+                  <div className="col">
+                    <img
+                      src="https://raw.githubusercontent.com/cosmos/chain-registry/master/_non-cosmos/ethereum/images/eth-white.svg"
+                      className="logo"
+                      alt="logo"
+                    />
+                  </div>
+                  <div className="col">Ethereum</div>
+                </div>
               </div>
               <div className="col">
                 <div className="px-4 py-sm text-secondary">Unconnected</div>
@@ -238,7 +248,12 @@ function BridgeButton({
                 <div className="px-4 py-sm text-muted">To</div>
               </div>
               <div className="col">
-                <div className="py-sm flex">CosmosHub</div>
+                <div className="row py-sm flex gap-3">
+                  <div className="col">
+                    <img src={dualityLogo} className="logo" alt="logo" />
+                  </div>
+                  <div className="col">Duality</div>
+                </div>
               </div>
               <div className="col">
                 <div className="px-4 py-sm flex row">
