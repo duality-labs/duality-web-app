@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { Asset, Chain } from '@chain-registry/types';
+import { sha256 } from '@cosmjs/crypto';
 
 export interface Token extends Asset {
   chain: Chain;
@@ -83,4 +84,17 @@ export function getTokenValue(
   )
     .multipliedBy(price || 0)
     .toNumber();
+}
+
+// port = 'transfer'
+// channel = 'channel-141'
+// baseDenom = 'uosmo';
+export function getIbcDenom(
+  baseDenom: string,
+  channel = 'channel-1',
+  port = 'transfer'
+) {
+  return `ibc/${Buffer.from(
+    sha256(Buffer.from('transfer/channel-141/uosmo'))
+  ).toString('hex')}`;
 }

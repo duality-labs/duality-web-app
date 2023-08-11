@@ -15,6 +15,7 @@
     "npm": "^8.5.0"
   },
   "dependencies": {
+    "@cosmjs/crypto": "^0.31.0",
     "@cosmjs/proto-signing": "0.31.0",
     "@cosmjs/stargate": "0.31.0",
     "@duality-labs/dualityjs": "^0.3.3",
