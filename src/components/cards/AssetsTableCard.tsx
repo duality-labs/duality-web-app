@@ -16,6 +16,9 @@ import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 import './AssetsTableCard.scss';
 
+const keplrLogoURI =
+  'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
+
 type TokenCoin = CoinSDKType & {
   token: Token;
   value: BigNumber | undefined;
@@ -219,7 +222,7 @@ function BridgeButton({
         initialFocusRef={inputRef}
         className="bridge-card"
       >
-        <div className="card-row my-4 gapx-3 token-asset-selection">
+        <div className="col gap-lg">
           <div className="flex path-box">
             <div className="path-box__grid">
               <div className="col">
@@ -272,6 +275,28 @@ function BridgeButton({
                   innerRef={inputRef}
                 />
               </div>
+            </div>
+          </div>
+          <div className="row gap-md">
+            <div className="flex col">
+              <button className="button-wallet">
+                <div className="row gap-md">
+                  <div className="col">
+                    <img src={keplrLogoURI} className="logo" alt="logo" />
+                  </div>
+                  <div className="col">Source Wallet</div>
+                </div>
+              </button>
+            </div>
+            <div className="flex col">
+              <button className="button-wallet">
+                <div className="row gap-md">
+                  <div className="col">
+                    <img src={keplrLogoURI} className="logo" alt="logo" />
+                  </div>
+                  <div className="col">Destination Wallet</div>
+                </div>
+              </button>
             </div>
           </div>
         </div>
