@@ -16,6 +16,7 @@ interface NumberInputProps
   onChange?: (value: string) => void;
   value: string | undefined;
   appendString?: string;
+  innerRef?: React.RefObject<HTMLInputElement>;
 }
 
 // restrict inputs to digits with or out without one decimal place and '', '.'
@@ -45,6 +46,7 @@ export default function NumberInput({
   onClick,
   onKeyDown,
   onKeyUp,
+  innerRef,
   ...inputProps
 }: NumberInputProps) {
   const moveSelectionBeforeAppendedString = useCallback(
@@ -65,6 +67,7 @@ export default function NumberInput({
   return (
     <input
       {...inputProps}
+      ref={innerRef}
       className={['number-input', className].filter(Boolean).join(' ')}
       type="text"
       placeholder={placeholder}
