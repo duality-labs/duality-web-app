@@ -299,6 +299,20 @@ function BridgeButton({
               </button>
             </div>
           </div>
+          <div className="transaction-box p-4 col gap-md">
+            <div className="row">
+              <div className="col">Transfer Fee</div>
+              <div className="col ml-auto">20.1 USDC</div>
+            </div>
+            <div className="row">
+              <div className="col">Estimated Time</div>
+              <div className="col ml-auto">15 minutes</div>
+            </div>
+            <div className="row">
+              <div className="col">Total (est)</div>
+              <div className="col ml-auto">380.1 USDC</div>
+            </div>
+          </div>
         </div>
       </Dialog>
     </>
