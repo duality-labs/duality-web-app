@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { ReactNode, useCallback, useMemo, useState } from 'react';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+
+import Dialog from '../Dialog/Dialog';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import useTokens from '../../lib/web3/hooks/useTokens';
@@ -166,14 +167,48 @@ function AssetRow({
       </td>
       {showActions && (
         <td>
-          <Link to="" className="button button-primary-outline nowrap mx-0">
+          <BridgeButton
+            className="button button-primary-outline nowrap mx-0"
+            from={token}
+          >
             Deposit
-          </Link>
-          <Link to="" className="button button-outline nowrap mx-0 ml-3">
+          </BridgeButton>
+          <BridgeButton
+            className="button button-outline nowrap mx-0 ml-3"
+            to={token}
+          >
             Withdraw
-          </Link>
+          </BridgeButton>
         </td>
       )}
     </tr>
+  );
+}
+
+function BridgeButton({
+  className,
+  children,
+}: {
+  className: string;
+  from?: Token;
+  to?: Token;
+  children: ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const open = useCallback(() => setIsOpen(true), []);
+  const close = useCallback(() => setIsOpen(false), []);
+
+  return (
+    <>
+      <button className={className} onClick={open}>
+        {children}
+      </button>
+      <Dialog
+        isOpen={isOpen}
+        onDismiss={close}
+        header={<h2 className="h3">Bridge</h2>}
+        className="bridge-card"
+      ></Dialog>
+    </>
   );
 }
