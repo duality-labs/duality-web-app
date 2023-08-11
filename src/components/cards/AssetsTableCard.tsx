@@ -299,20 +299,31 @@ function BridgeButton({
               </button>
             </div>
           </div>
-          <div className="transaction-box p-4 col gap-md">
+          <div className="transaction-box my-sm p-4 col gap-md">
             <div className="row">
               <div className="col">Transfer Fee</div>
-              <div className="col ml-auto">20.1 USDC</div>
+              <div className="col ml-auto">
+                {Number(value) ? <>20.1 USDC</> : null}
+              </div>
             </div>
             <div className="row">
               <div className="col">Estimated Time</div>
-              <div className="col ml-auto">15 minutes</div>
+              <div className="col ml-auto">
+                {Number(value) ? <>15 minutes</> : null}
+              </div>
             </div>
             <div className="row">
               <div className="col">Total (est)</div>
-              <div className="col ml-auto">380.1 USDC</div>
+              <div className="col ml-auto">
+                {Number(value) ? <>380.1 USDC</> : null}
+              </div>
             </div>
           </div>
+          {token && (
+            <button className="button-primary h3 p-4" disabled={!Number(value)}>
+              Bridge {token?.symbol}
+            </button>
+          )}
         </div>
       </Dialog>
     </>
