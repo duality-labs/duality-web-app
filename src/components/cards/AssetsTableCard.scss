@@ -32,4 +32,20 @@
   .dialog-header-row {
     border: none;
   }
+  // leave no padding around path info box
+  .dialog-body {
+    padding-top: 0;
+
+    .path-box {
+      background-color: #111928;
+      border-radius: 10px;
+      .path-box-top {
+        border-bottom: 1px solid hsl(217deg, 19%, 27%);
+      }
+    }
+    .ibc-transfer-value {
+      width: 100%;
+      color: var(--default-alt);
+    }
+  }
 }

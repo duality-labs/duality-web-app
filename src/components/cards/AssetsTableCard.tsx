@@ -1,8 +1,10 @@
 import BigNumber from 'bignumber.js';
-import { ReactNode, useCallback, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import Dialog from '../Dialog/Dialog';
+import TokenPicker from '../TokenPicker/TokenPicker';
+import NumberInput from '../inputs/NumberInput/NumberInput';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import useTokens from '../../lib/web3/hooks/useTokens';
@@ -187,6 +189,8 @@ function AssetRow({
 
 function BridgeButton({
   className,
+  from,
+  to,
   children,
 }: {
   className: string;
@@ -197,6 +201,11 @@ function BridgeButton({
   const [isOpen, setIsOpen] = useState(false);
   const open = useCallback(() => setIsOpen(true), []);
   const close = useCallback(() => setIsOpen(false), []);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const tokenList = useTokens();
+  const [token, setToken] = useState<Token | undefined>(from || to);
+  const [value, setValue] = useState('');
 
   return (
     <>
@@ -207,8 +216,64 @@ function BridgeButton({
         isOpen={isOpen}
         onDismiss={close}
         header={<h2 className="h3">Bridge</h2>}
+        initialFocusRef={inputRef}
         className="bridge-card"
-      ></Dialog>
+      >
+        <div className="card-row my-4 gapx-3 token-asset-selection">
+          <div className="flex path-box gap-2">
+            <div className="path-box-row path-box-top py-md px-4">
+              <div className="flex row gap-md">
+                <div className="text-muted">From</div>
+                <div className="flex">Ethereum</div>
+                <div className="text-secondary">Unconnected</div>
+              </div>
+            </div>
+            <div className="path-box-row path-box-bottom py-md px-4">
+              <div className="flex row gap-md">
+                <div className="text-muted">To</div>
+                <div className="flex">CosmosHub</div>
+                <div className="text-muted">Available</div>
+                <div className="text-muted">0</div>
+              </div>
+              <div>
+                <div className="flex row gap-md">
+                  <div className="col">
+                    <TokenPicker
+                      className="mt-sm gutter-l-3"
+                      value={token}
+                      exclusion={token}
+                      onChange={setToken}
+                      tokenList={tokenList}
+                      showChain={false}
+                    />
+                  </div>
+                  <div className="col flex flex-centered">
+                    <NumberInput
+                      type="text"
+                      className={[
+                        'col flex ibc-transfer-value h3 my-sm',
+                        !Number(value) && 'input--zero',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      value={value}
+                      placeholder="0"
+                      onChange={setValue}
+                      onClick={selectAll}
+                      disabled={!token}
+                      innerRef={inputRef}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Dialog>
     </>
   );
+}
+
+function selectAll(e: React.MouseEvent<HTMLInputElement>) {
+  e.currentTarget.select();
 }
