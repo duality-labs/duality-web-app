@@ -284,7 +284,7 @@ function BridgeButton({
                   <div className="col">
                     <img src={keplrLogoURI} className="logo" alt="logo" />
                   </div>
-                  <div className="col">Source Wallet</div>
+                  <div className="col">Source&nbsp;Wallet</div>
                 </div>
               </button>
             </div>
@@ -294,7 +294,7 @@ function BridgeButton({
                   <div className="col">
                     <img src={keplrLogoURI} className="logo" alt="logo" />
                   </div>
-                  <div className="col">Destination Wallet</div>
+                  <div className="col">Destination&nbsp;Wallet</div>
                 </div>
               </button>
             </div>
