@@ -220,51 +220,57 @@ function BridgeButton({
         className="bridge-card"
       >
         <div className="card-row my-4 gapx-3 token-asset-selection">
-          <div className="flex path-box gap-2">
-            <div className="path-box-row path-box-top py-md px-4">
-              <div className="flex row gap-md">
-                <div className="text-muted">From</div>
-                <div className="flex">Ethereum</div>
-                <div className="text-secondary">Unconnected</div>
+          <div className="flex path-box">
+            <div className="path-box__grid">
+              <div className="col">
+                <div className="px-4 py-sm text-muted">From</div>
+              </div>
+              <div className="col">
+                <div className="py-sm flex">Ethereum</div>
+              </div>
+              <div className="col">
+                <div className="px-4 py-sm text-secondary">Unconnected</div>
+              </div>
+              <div className="col">
+                <div className="px-4 py-sm text-muted">To</div>
+              </div>
+              <div className="col">
+                <div className="py-sm flex">CosmosHub</div>
+              </div>
+              <div className="col">
+                <div className="px-4 py-sm flex row">
+                  <div className="text-muted">Available</div>
+                  <div className="text-muted ml-auto">0</div>
+                </div>
               </div>
             </div>
-            <div className="path-box-row path-box-bottom py-md px-4">
-              <div className="flex row gap-md">
-                <div className="text-muted">To</div>
-                <div className="flex">CosmosHub</div>
-                <div className="text-muted">Available</div>
-                <div className="text-muted">0</div>
+            <div className="row px-4 pb-3">
+              <div className="col">
+                <TokenPicker
+                  className="mt-sm gutter-l-3"
+                  value={token}
+                  exclusion={token}
+                  onChange={setToken}
+                  tokenList={tokenList}
+                  showChain={false}
+                />
               </div>
-              <div>
-                <div className="flex row gap-md">
-                  <div className="col">
-                    <TokenPicker
-                      className="mt-sm gutter-l-3"
-                      value={token}
-                      exclusion={token}
-                      onChange={setToken}
-                      tokenList={tokenList}
-                      showChain={false}
-                    />
-                  </div>
-                  <div className="col flex flex-centered">
-                    <NumberInput
-                      type="text"
-                      className={[
-                        'col flex ibc-transfer-value h3 my-sm',
-                        !Number(value) && 'input--zero',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                      value={value}
-                      placeholder="0"
-                      onChange={setValue}
-                      onClick={selectAll}
-                      disabled={!token}
-                      innerRef={inputRef}
-                    />
-                  </div>
-                </div>
+              <div className="col flex flex-centered">
+                <NumberInput
+                  type="text"
+                  className={[
+                    'col flex ibc-transfer-value h3 my-sm',
+                    !Number(value) && 'input--zero',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  value={value}
+                  placeholder="0"
+                  onChange={setValue}
+                  onClick={selectAll}
+                  disabled={!token}
+                  innerRef={inputRef}
+                />
               </div>
             </div>
           </div>

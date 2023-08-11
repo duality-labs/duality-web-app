@@ -38,9 +38,28 @@
 
     .path-box {
       background-color: #111928;
+      color: var(--default-alt);
+      border: 1px solid transparent;
       border-radius: 10px;
-      .path-box-top {
-        border-bottom: 1px solid hsl(217deg, 19%, 27%);
+      .path-box__grid {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        // expand first row border to edges using some margin and padding magic
+        margin: 0 -1px;
+        > :nth-child(1),
+        > :nth-child(4) {
+          padding-left: 1px;
+        }
+        > :nth-child(3),
+        > :nth-child(6) {
+          padding-right: 1px;
+        }
+        // add border bottom to first row
+        > :nth-child(1),
+        > :nth-child(2),
+        > :nth-child(3) {
+          border-bottom: 1px solid hsl(217deg, 19%, 27%);
+        }
       }
     }
     .ibc-transfer-value {
