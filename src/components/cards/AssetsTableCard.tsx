@@ -354,7 +354,7 @@ function BridgeDialog({
                 </div>
                 <div className="text-truncate text-muted">
                   {chainAddressFrom ? (
-                    formatAddress(chainAddressFrom)
+                    formatAddress(chainAddressFrom, 18)
                   ) : (
                     <span className="text-secondary">
                       {chainAddressFromIsValidating
@@ -375,7 +375,7 @@ function BridgeDialog({
                 </div>
                 <div className="text-truncate text-muted">
                   {chainAddressTo ? (
-                    formatAddress(chainAddressTo)
+                    formatAddress(chainAddressTo, 18)
                   ) : (
                     <span className="text-secondary">
                       {chainAddressToIsValidating
