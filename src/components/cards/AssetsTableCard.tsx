@@ -205,6 +205,28 @@ function BridgeButton({
   const [isOpen, setIsOpen] = useState(false);
   const open = useCallback(() => setIsOpen(true), []);
   const close = useCallback(() => setIsOpen(false), []);
+  return (
+    <>
+      <button className={className} onClick={open}>
+        {children}
+      </button>
+      <BridgeDialog isOpen={isOpen} setIsOpen={close} from={from} to={to} />
+    </>
+  );
+}
+
+function BridgeDialog({
+  from,
+  to,
+  isOpen,
+  setIsOpen,
+}: {
+  from?: Token;
+  to?: Token;
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  const close = useCallback(() => setIsOpen(false), [setIsOpen]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const tokenList = useTokens();
@@ -213,9 +235,6 @@ function BridgeButton({
 
   return (
     <>
-      <button className={className} onClick={open}>
-        {children}
-      </button>
       <Dialog
         isOpen={isOpen}
         onDismiss={close}
