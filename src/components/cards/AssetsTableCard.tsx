@@ -408,7 +408,10 @@ function BridgeDialog({
             </div>
           </div>
           {token && (
-            <button className="button-primary h3 p-4" disabled={!Number(value)}>
+            <button
+              className="button-primary h3 p-4"
+              disabled={!chainAddressFrom || !chainAddressTo || !Number(value)}
+            >
               Bridge {token?.symbol}
             </button>
           )}
