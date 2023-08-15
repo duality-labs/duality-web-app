@@ -10,10 +10,11 @@ import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import useTokens from '../../lib/web3/hooks/useTokens';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
+import { dualityChain, useChainAddress } from '../../lib/web3/hooks/useChains';
+import { formatAddress } from '../../lib/web3/utils/address';
 
 import { formatAmount } from '../../lib/utils/number';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
-import dualityLogo from '../../assets/logo/logo.svg';
 
 import './AssetsTableCard.scss';
 
@@ -210,7 +211,9 @@ function BridgeButton({
       <button className={className} onClick={open}>
         {children}
       </button>
-      <BridgeDialog isOpen={isOpen} setIsOpen={close} from={from} to={to} />
+      {isOpen && (
+        <BridgeDialog isOpen={isOpen} setIsOpen={close} from={from} to={to} />
+      )}
     </>
   );
 }
@@ -233,6 +236,13 @@ function BridgeDialog({
   const [token, setToken] = useState<Token | undefined>(from || to);
   const [value, setValue] = useState('');
 
+  const chainFrom = from ? from.chain : dualityChain;
+  const chainTo = to ? to.chain : dualityChain;
+  const { data: chainAddressFrom, isValidating: chainAddressFromIsValidating } =
+    useChainAddress(chainFrom);
+  const { data: chainAddressTo, isValidating: chainAddressToIsValidating } =
+    useChainAddress(chainTo);
+
   return (
     <>
       <Dialog
@@ -252,16 +262,28 @@ function BridgeDialog({
                 <div className="row py-sm flex gap-3">
                   <div className="col">
                     <img
-                      src="https://raw.githubusercontent.com/cosmos/chain-registry/master/_non-cosmos/ethereum/images/eth-white.svg"
+                      src={
+                        chainFrom.logo_URIs?.svg ??
+                        chainFrom.logo_URIs?.png ??
+                        chainFrom.logo_URIs?.jpeg
+                      }
                       className="logo"
                       alt="logo"
                     />
                   </div>
-                  <div className="col">Ethereum</div>
+                  <div className="col">
+                    {chainFrom.pretty_name ?? chainFrom.chain_name}
+                  </div>
                 </div>
               </div>
               <div className="col">
-                <div className="px-4 py-sm text-secondary">Unconnected</div>
+                <div className="px-4 py-sm">
+                  {chainAddressFrom ? (
+                    <span>Connected</span>
+                  ) : (
+                    <span className="text-secondary">Unconnected</span>
+                  )}
+                </div>
               </div>
               <div className="col">
                 <div className="px-4 py-sm text-muted">To</div>
@@ -269,9 +291,19 @@ function BridgeDialog({
               <div className="col">
                 <div className="row py-sm flex gap-3">
                   <div className="col">
-                    <img src={dualityLogo} className="logo" alt="logo" />
+                    <img
+                      src={
+                        chainTo.logo_URIs?.svg ??
+                        chainTo.logo_URIs?.png ??
+                        chainTo.logo_URIs?.jpeg
+                      }
+                      className="logo"
+                      alt="logo"
+                    />
                   </div>
-                  <div className="col">Duality</div>
+                  <div className="col">
+                    {chainTo.pretty_name ?? chainTo.chain_name}
+                  </div>
                 </div>
               </div>
               <div className="col">
@@ -313,22 +345,44 @@ function BridgeDialog({
           </div>
           <div className="row gap-md">
             <div className="flex col">
-              <button className="button-wallet">
+              <button className="button-wallet col gap-3">
                 <div className="row gap-md">
                   <div className="col">
                     <img src={keplrLogoURI} className="logo" alt="logo" />
                   </div>
-                  <div className="col">Source&nbsp;Wallet</div>
+                  <div className="col">Source</div>
+                </div>
+                <div className="text-truncate text-muted">
+                  {chainAddressFrom ? (
+                    formatAddress(chainAddressFrom)
+                  ) : (
+                    <span className="text-secondary">
+                      {chainAddressFromIsValidating
+                        ? 'Connecting...'
+                        : 'Unconnected'}
+                    </span>
+                  )}
                 </div>
               </button>
             </div>
             <div className="flex col">
-              <button className="button-wallet">
+              <button className="button-wallet col gap-3">
                 <div className="row gap-md">
                   <div className="col">
                     <img src={keplrLogoURI} className="logo" alt="logo" />
                   </div>
-                  <div className="col">Destination&nbsp;Wallet</div>
+                  <div className="col">Destination</div>
+                </div>
+                <div className="text-truncate text-muted">
+                  {chainAddressTo ? (
+                    formatAddress(chainAddressTo)
+                  ) : (
+                    <span className="text-secondary">
+                      {chainAddressToIsValidating
+                        ? 'Connecting...'
+                        : 'Unconnected'}
+                    </span>
+                  )}
                 </div>
               </button>
             </div>

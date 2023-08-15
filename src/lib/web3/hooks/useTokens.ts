@@ -4,15 +4,12 @@ import { assets, chains } from 'chain-registry';
 import { Chain } from '@chain-registry/types';
 import { Token, TokenAddress, getTokenValue } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
+import { dualityChain } from './useChains';
 
 import tknLogo from '../../../assets/tokens/TKN.svg';
 import stkLogo from '../../../assets/tokens/STK.svg';
 
-const {
-  REACT_APP__CHAIN_NAME = '[chain_name]',
-  REACT_APP__CHAIN_ID = '[chain_id]',
-  REACT_APP__IS_MAINNET = 'mainnet',
-} = process.env;
+const { REACT_APP__IS_MAINNET = 'mainnet' } = process.env;
 
 const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 
@@ -21,16 +18,6 @@ interface AddressableToken extends Token {
 }
 
 type TokenList = Array<Token>;
-
-const dualityChain = {
-  chain_name: REACT_APP__CHAIN_NAME,
-  status: 'upcoming',
-  network_type: 'testnet',
-  pretty_name: 'Duality Chain',
-  chain_id: REACT_APP__CHAIN_ID,
-  bech32_prefix: 'cosmos',
-  slip44: 330,
-};
 
 const dualityMainToken: Token = {
   description: 'SDK default token',

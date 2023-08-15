@@ -124,3 +124,10 @@ export function useSyncKeplrState(
     }
   }, [connectWallet, syncActive]);
 }
+
+export async function getChainInfo(chainId: string) {
+  invariant(chainId, `Invalid chain id: ${chainId}`);
+  const keplr = await getKeplr();
+  invariant(keplr, 'Keplr extension is not installed or enabled');
+  return await keplr.getKey(chainId);
+}
