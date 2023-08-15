@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { Event } from '@cosmjs/stargate';
+import { Event, parseCoins } from '@cosmjs/stargate';
 import { WalletAddress } from './address';
 import { Token } from './tokens';
 
@@ -103,11 +103,13 @@ export interface DexTickUpdateEvent {
   };
 }
 
-type AmountDenomString = string;
+// CoinString is an amount and denom like "1000uATOM"
+// typically handled with object type Coin from @cosmjs/stargate
+type CoinString = string;
 export interface CoinReceivedEvent {
   type: 'coin_received';
   attributes: {
-    amount: AmountDenomString;
+    amount: CoinString;
     receiver: WalletAddress;
   };
 }
@@ -115,7 +117,7 @@ export interface CoinReceivedEvent {
 export interface CoinSpentEvent {
   type: 'coin_spent';
   attributes: {
-    amount: AmountDenomString;
+    amount: CoinString;
     spender: WalletAddress;
   };
 }
@@ -123,7 +125,7 @@ export interface CoinSpentEvent {
 export interface CoinTransferEvent {
   type: 'transfer';
   attributes: {
-    amount: AmountDenomString;
+    amount: CoinString;
     recipient: WalletAddress;
     sender: WalletAddress;
   };
@@ -132,20 +134,9 @@ export interface CoinTransferEvent {
 export interface TxFeeEvent {
   type: 'tx';
   attributes: {
-    fee: AmountDenomString;
+    fee: CoinString;
     fee_payer: WalletAddress;
   };
-}
-
-export function parseAmountDenomString(
-  amountDenom: AmountDenomString
-): [amount: BigNumber, denom: string] {
-  const [, amountString, denom] = amountDenom.match(/^(\d+)(.*)$/) || [];
-  const amount = new BigNumber(amountString);
-  if (amount.isNaN()) {
-    throw new Error(`Invalid token amount: ${amountString}`);
-  }
-  return [amount, denom];
 }
 
 export function getSpentTokenAmount(
@@ -238,6 +229,6 @@ function sumTokenEventAmounts(
   events: (CoinReceivedEvent | CoinSpentEvent)[]
 ): BigNumber {
   return events
-    .map(({ attributes }) => parseAmountDenomString(attributes.amount))
-    .reduce((acc, [amount]) => acc.plus(amount), new BigNumber(0));
+    .map(({ attributes }) => parseCoins(attributes.amount)[0])
+    .reduce((acc, coin) => acc.plus(coin?.amount || 0), new BigNumber(0));
 }
