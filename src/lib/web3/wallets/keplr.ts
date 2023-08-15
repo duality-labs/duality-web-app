@@ -129,5 +129,7 @@ export async function getChainInfo(chainId: string) {
   invariant(chainId, `Invalid chain id: ${chainId}`);
   const keplr = await getKeplr();
   invariant(keplr, 'Keplr extension is not installed or enabled');
+  // this action causes an auth window to popup to the user if they have not yet
+  // given permission for this app to read this chain
   return await keplr.getKey(chainId);
 }
