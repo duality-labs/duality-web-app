@@ -1,15 +1,19 @@
 import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
-import { assets, chains } from 'chain-registry';
-import { Chain } from '@chain-registry/types';
+import {
+  assets as chainRegistryAssetList,
+  chains as chainRegistryChainList,
+} from 'chain-registry';
+import { AssetList, Chain } from '@chain-registry/types';
 import { Token, TokenAddress, getTokenValue } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { dualityChain } from './useChains';
+import { dualityChain, providerChain } from './useChains';
 
 import tknLogo from '../../../assets/tokens/TKN.svg';
 import stkLogo from '../../../assets/tokens/STK.svg';
 
-const { REACT_APP__IS_MAINNET = 'mainnet' } = process.env;
+const { REACT_APP__IS_MAINNET = 'mainnet', REACT_APP__PROVIDER_ASSETS = '' } =
+  process.env;
 
 const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 
@@ -69,11 +73,22 @@ const dualityStakeToken: Token = {
   chain: dualityChain,
 };
 
+const providerAssets: AssetList | undefined = REACT_APP__PROVIDER_ASSETS
+  ? JSON.parse(REACT_APP__PROVIDER_ASSETS)
+  : undefined;
+
+const assetList = providerAssets
+  ? [...chainRegistryAssetList, providerAssets]
+  : chainRegistryAssetList;
+const chainList = providerChain
+  ? [...chainRegistryChainList, providerChain]
+  : chainRegistryChainList;
+
 const testnetTokens = isTestnet && [
   dualityMainToken,
   dualityStakeToken,
   // add a copy of some tokens onto the Duality chain for development
-  ...assets.flatMap(({ chain_name, assets }) => {
+  ...assetList.flatMap(({ chain_name, assets }) => {
     const dualityTestAssetsAddressMap: { [key: string]: string } = {
       'cosmoshub:ATOM': 'tokenA',
       'ethereum:USDC': 'tokenB',
@@ -128,10 +143,12 @@ const testnetTokens = isTestnet && [
 function getTokens(condition: (chain: Chain) => boolean) {
   // go through each chain
   return (
-    assets
+    assetList
       .reduce<TokenList>((result, { chain_name, assets }) => {
         // add each asset with the parent chain details
-        const chain = chains.find((chain) => chain.chain_name === chain_name);
+        const chain = chainList.find(
+          (chain) => chain.chain_name === chain_name
+        );
         // only show assets that have a known address
         const knownAssets = assets.filter(
           (asset): asset is Token => !!asset.address

@@ -6,6 +6,7 @@ import dualityLogo from '../../../assets/logo/logo.svg';
 const {
   REACT_APP__CHAIN_NAME = '[chain_name]',
   REACT_APP__CHAIN_ID = '[chain_id]',
+  REACT_APP__PROVIDER_CHAIN = '',
 } = process.env;
 
 export const dualityChain: Chain = {
@@ -20,6 +21,10 @@ export const dualityChain: Chain = {
     svg: dualityLogo,
   },
 };
+
+export const providerChain: Chain | undefined = REACT_APP__PROVIDER_CHAIN
+  ? JSON.parse(REACT_APP__PROVIDER_CHAIN)
+  : undefined;
 
 export function useChainAddress(chain?: Chain): {
   data?: string;
