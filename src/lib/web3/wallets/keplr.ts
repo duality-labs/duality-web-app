@@ -3,6 +3,9 @@ import invariant from 'invariant';
 import { useEffect } from 'react';
 import { AccountData, OfflineSigner } from '@cosmjs/proto-signing';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
+import { chainRegistryChainToKeplr } from '@chain-registry/keplr';
+import { providerChain } from '../hooks/useChains';
+import { providerAssets } from '../hooks/useTokens';
 
 const {
   REACT_APP__CHAIN_ID,
@@ -129,6 +132,12 @@ export async function getChainInfo(chainId: string) {
   invariant(chainId, `Invalid chain id: ${chainId}`);
   const keplr = await getKeplr();
   invariant(keplr, 'Keplr extension is not installed or enabled');
+  if (providerAssets && providerChain && providerChain.chain_id === chainId) {
+    // add auth popup for potentially not registered provider chain
+    await keplr.experimentalSuggestChain(
+      chainRegistryChainToKeplr(providerChain, [providerAssets])
+    );
+  }
   // this action causes an auth window to popup to the user if they have not yet
   // given permission for this app to read this chain
   return await keplr.getKey(chainId);
