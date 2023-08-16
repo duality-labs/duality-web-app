@@ -89,7 +89,9 @@ async function getKeplr(): Promise<Keplr | undefined> {
 type KeplrWallet = OfflineSigner;
 type KeplrWalletAccount = AccountData;
 
-export async function getKeplrWallet(): Promise<KeplrWallet | undefined> {
+export async function getKeplrDualityWallet(): Promise<
+  KeplrWallet | undefined
+> {
   try {
     invariant(chainId, `Invalid chain id: ${chainId}`);
     const keplr = await getKeplr();
@@ -105,8 +107,24 @@ export async function getKeplrWallet(): Promise<KeplrWallet | undefined> {
   }
 }
 
+export async function getKeplrWallet(
+  chainId: string
+): Promise<KeplrWallet | undefined> {
+  try {
+    invariant(chainId, `Invalid chain id: ${chainId}`);
+    const keplr = await getKeplr();
+    invariant(keplr, 'Keplr extension is not installed or enabled');
+    const offlineSigner = keplr.getOfflineSigner(chainId);
+    invariant(offlineSigner, 'Keplr wallet is not set');
+    return offlineSigner;
+  } catch {
+    // silently ignore errors
+    // invocations should handle the possibly undefined result
+  }
+}
+
 export async function getKeplrWalletAccount(
-  wallet: KeplrWallet
+  wallet: KeplrWallet | undefined
 ): Promise<KeplrWalletAccount | undefined> {
   const [account] = (await wallet?.getAccounts()) || [];
   return account;

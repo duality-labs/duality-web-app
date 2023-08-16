@@ -1,6 +1,8 @@
 import BigNumber from 'bignumber.js';
+import Long from 'long';
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { coin } from '@cosmjs/stargate';
 
 import Dialog from '../Dialog/Dialog';
 import TokenPicker from '../TokenPicker/TokenPicker';
@@ -8,15 +10,20 @@ import NumberInput from '../inputs/NumberInput/NumberInput';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import useTokens from '../../lib/web3/hooks/useTokens';
+import useBridge from '../../pages/Bridge/useBridge';
+import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import { dualityChain, useChainAddress } from '../../lib/web3/hooks/useChains';
-import { formatAddress } from '../../lib/web3/utils/address';
 
+import { minutes, nanoseconds } from '../../lib/utils/time';
+import { formatAddress } from '../../lib/web3/utils/address';
 import { formatAmount } from '../../lib/utils/number';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 import './AssetsTableCard.scss';
+
+const defaultTimeout = 30 * minutes;
 
 const keplrLogoURI =
   'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
@@ -244,16 +251,105 @@ function BridgeDialog({
   const { data: chainAddressTo, isValidating: chainAddressToIsValidating } =
     useChainAddress(chainTo);
 
+  const { wallet } = useWeb3();
+  const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(
+    from?.chain
+  );
+  const bridgeTokens = useCallback<React.FormEventHandler<HTMLFormElement>>(
+    async (e) => {
+      // prevent submission to URL
+      e.preventDefault();
+      if (!wallet) {
+        throw new Error('No connected wallet');
+      }
+      if (!from && !to) {
+        throw new Error('Invalid Tokens');
+      }
+      if (!chainAddressFrom) {
+        throw new Error('No From Address');
+      }
+      if (!chainAddressTo) {
+        throw new Error('No To Address');
+      }
+      const timeoutTimestamp = Long.fromNumber(
+        Date.now() + defaultTimeout // calculate in ms then convert to nanoseconds
+      ).multiply(1 / nanoseconds);
+      // bridging to Duality
+      if (from) {
+        if (!from.chain.chain_id) {
+          throw new Error('From Chain not found');
+        }
+        const amount = getAmountInDenom(
+          from,
+          value,
+          from.display,
+          from.address
+        );
+        if (!amount || !Number(amount)) {
+          throw new Error('Invalid Token Amount');
+        }
+        try {
+          await sendRequest({
+            token: coin(amount, from.address),
+            timeoutTimestamp,
+            sender: chainAddressFrom,
+            receiver: chainAddressTo,
+            sourcePort: 'transfer',
+            sourceChannel: 'channel-1',
+            memo: '',
+          });
+          close();
+        } catch {
+          // don't close
+        }
+      }
+      // bridging from Duality
+      else if (to) {
+        if (!to.chain.chain_id) {
+          throw new Error('From Chain not found');
+        }
+        const amount = getAmountInDenom(to, value, to.display, to.address);
+        if (!amount || !Number(amount)) {
+          throw new Error('Invalid Token Amount');
+        }
+        try {
+          // await sendRequest({
+          //   token: coin(amount, to.address),
+          //   timeoutTimestamp,
+          //   sender: chainAddressFrom,
+          //   receiver: chainAddressTo,
+          //   sourcePort: 'transfer',
+          //   sourceChannel: 'channel-1',
+          //   memo: '',
+          // });
+          close();
+        } catch {
+          // don't close
+        }
+      }
+    },
+    [
+      chainAddressFrom,
+      chainAddressTo,
+      close,
+      from,
+      sendRequest,
+      to,
+      value,
+      wallet,
+    ]
+  );
+
   return (
-    <>
-      <Dialog
-        isOpen={isOpen}
-        onDismiss={close}
-        header={<h2 className="h3">Bridge</h2>}
-        initialFocusRef={inputRef}
-        className="bridge-card"
-      >
-        <div className="col gap-lg">
+    <Dialog
+      isOpen={isOpen}
+      onDismiss={close}
+      header={<h2 className="h3">Bridge</h2>}
+      initialFocusRef={inputRef}
+      className="bridge-card"
+    >
+      <form onSubmit={bridgeTokens}>
+        <fieldset className="col gap-lg" disabled={isValidatingBridgeTokens}>
           <div className="flex path-box">
             <div className="path-box__grid">
               <div className="col">
@@ -346,7 +442,7 @@ function BridgeDialog({
           </div>
           <div className="row gap-md">
             <div className="flex col">
-              <button className="button-wallet col gap-3">
+              <button type="button" className="button-wallet col gap-3">
                 <div className="row gap-md">
                   <div className="col">
                     <img src={keplrLogoURI} className="logo" alt="logo" />
@@ -367,7 +463,7 @@ function BridgeDialog({
               </button>
             </div>
             <div className="flex col">
-              <button className="button-wallet col gap-3">
+              <button type="button" className="button-wallet col gap-3">
                 <div className="row gap-md">
                   <div className="col">
                     <img src={keplrLogoURI} className="logo" alt="logo" />
@@ -410,15 +506,16 @@ function BridgeDialog({
           </div>
           {token && (
             <button
+              type="submit"
               className="button-primary h3 p-4"
               disabled={!chainAddressFrom || !chainAddressTo || !Number(value)}
             >
               Bridge {token?.symbol}
             </button>
           )}
-        </div>
-      </Dialog>
-    </>
+        </fieldset>
+      </form>
+    </Dialog>
   );
 }
 
