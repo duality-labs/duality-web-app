@@ -149,9 +149,10 @@ function AssetRow({
             </div>
             <div className="row">
               <div className="col subtext">
-                {token.chain.chain_name
-                  .split('')
-                  .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
+                {token.chain.pretty_name ??
+                  token.chain.chain_name
+                    .split('')
+                    .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
               </div>
             </div>
           </div>
