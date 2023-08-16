@@ -9,7 +9,7 @@ import TokenPicker from '../TokenPicker/TokenPicker';
 import NumberInput from '../inputs/NumberInput/NumberInput';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
-import useTokens from '../../lib/web3/hooks/useTokens';
+import useTokens, { useConnectedTokens } from '../../lib/web3/hooks/useTokens';
 import useBridge from '../../pages/Bridge/useBridge';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
@@ -240,7 +240,7 @@ function BridgeDialog({
   const close = useCallback(() => setIsOpen(false), [setIsOpen]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const tokenList = useTokens();
+  const tokenList = useConnectedTokens();
   const [token, setToken] = useState<Token | undefined>(from || to);
   const [value, setValue] = useState('');
 

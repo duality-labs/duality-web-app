@@ -7,7 +7,7 @@ import {
 import { AssetList, Chain } from '@chain-registry/types';
 import { Token, TokenAddress, getTokenValue } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { dualityChain, providerChain } from './useChains';
+import { dualityChain, providerChain, useConnectedChainIDs } from './useChains';
 
 import tknLogo from '../../../assets/tokens/TKN.svg';
 import stkLogo from '../../../assets/tokens/STK.svg';
@@ -203,6 +203,16 @@ export function useDualityTokens(sortFunction = defaultSort) {
     () => tokenListCache['dualityTokens'].slice().sort(sortFunction).reverse(),
     [sortFunction]
   );
+}
+
+export function useConnectedTokens(sortFunction = defaultSort) {
+  const ibcClientChainIds = useConnectedChainIDs();
+  return useMemo(() => {
+    const ibcTokens = getTokens((chain) =>
+      ibcClientChainIds.includes(chain.chain_id)
+    );
+    return ibcTokens.sort(sortFunction).reverse();
+  }, [sortFunction, ibcClientChainIds]);
 }
 
 export function getTokenBySymbol(symbol: string | undefined) {
