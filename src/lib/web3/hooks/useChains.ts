@@ -23,7 +23,7 @@ export const dualityChain: Chain = {
   pretty_name: 'Duality Chain',
   chain_id: REACT_APP__CHAIN_ID,
   bech32_prefix: 'cosmos',
-  slip44: 330,
+  slip44: 118,
   logo_URIs: {
     svg: dualityLogo,
   },
