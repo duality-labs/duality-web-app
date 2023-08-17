@@ -14,7 +14,11 @@ import useBridge from '../../pages/Bridge/useBridge';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
-import { dualityChain, useChainAddress } from '../../lib/web3/hooks/useChains';
+import {
+  dualityChain,
+  useChainAddress,
+  useIbcOpenTransfers,
+} from '../../lib/web3/hooks/useChains';
 
 import { minutes, nanoseconds } from '../../lib/utils/time';
 import { formatAddress } from '../../lib/web3/utils/address';
@@ -251,6 +255,8 @@ function BridgeDialog({
   const { data: chainAddressTo, isValidating: chainAddressToIsValidating } =
     useChainAddress(chainTo);
 
+  const ibcOpenTransfers = useIbcOpenTransfers(chainFrom);
+
   const { wallet } = useWeb3();
   const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(
     from?.chain
@@ -279,6 +285,20 @@ function BridgeDialog({
         if (!from.chain.chain_id) {
           throw new Error('From Chain not found');
         }
+        const ibcTransferInfo = ibcOpenTransfers?.find((transfer) => {
+          return transfer.chainID === chainTo.chain_id;
+        });
+        if (!ibcTransferInfo) {
+          throw new Error(
+            `IBC transfer path for this chain (${from.chain.chain_id}) not found`
+          );
+        }
+        const connectionLength = ibcTransferInfo.channel.connection_hops.length;
+        if (connectionLength !== 1) {
+          throw new Error(
+            `Multi-hop IBC transfer paths not supported: ${connectionLength} connection hops`
+          );
+        }
         const amount = getAmountInDenom(
           from,
           value,
@@ -294,8 +314,8 @@ function BridgeDialog({
             timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
-            sourcePort: 'transfer',
-            sourceChannel: 'channel-1',
+            sourcePort: ibcTransferInfo.channel.port_id,
+            sourceChannel: ibcTransferInfo.channel.channel_id,
             memo: '',
           });
           close();
@@ -331,8 +351,10 @@ function BridgeDialog({
     [
       chainAddressFrom,
       chainAddressTo,
+      chainTo.chain_id,
       close,
       from,
+      ibcOpenTransfers,
       sendRequest,
       to,
       value,

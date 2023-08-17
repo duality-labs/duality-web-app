@@ -140,7 +140,7 @@ function filterChannelsOpen(
   return state === 'STATE_OPEN';
 }
 
-function useIbcOpenTransfers(chain: Chain = dualityChain) {
+export function useIbcOpenTransfers(chain: Chain = dualityChain) {
   const { data: { client_states } = {} } = useIbcClientStates(chain);
   const { data: { connections } = {} } = useIbcConnections(chain);
   const { data: { channels } = {} } = useIbcChannels(chain);
