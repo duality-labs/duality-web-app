@@ -68,9 +68,9 @@ export function useChainAddress(chain?: Chain): {
   return { data, isValidating, error };
 }
 
-function useChainStates(chain: Chain) {
+function useIbcClientStates(chain: Chain) {
   return useQuery({
-    queryKey: ['chain-states', chain.chain_id],
+    queryKey: ['ibc-client-states', chain.chain_id],
     queryFn: async (): Promise<
       QueryClientStatesResponseSDKType | undefined
     > => {
@@ -87,7 +87,7 @@ function useChainStates(chain: Chain) {
 
 export function useConnectedChainIDs(chain: Chain = dualityChain) {
   const { data: { client_states: ibcClientStates } = {} } =
-    useChainStates(chain);
+    useIbcClientStates(chain);
   // list of connected chain IDs from IBC client list
   // todo: ensure the chain connections are status: Active (not Expired)
   return useMemo(() => {
