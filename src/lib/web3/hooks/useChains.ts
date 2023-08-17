@@ -68,6 +68,16 @@ export function useChainAddress(chain?: Chain): {
   return { data, isValidating, error };
 }
 
+async function getIbcLcdClient(
+  chain: Chain
+): Promise<ReturnType<typeof ibc.ClientFactory.createLCDClient> | undefined> {
+  // get IBC LCD client
+  const restEndpoint = chain?.apis?.rest?.at(0)?.address;
+  if (restEndpoint) {
+    return ibc.ClientFactory.createLCDClient({ restEndpoint });
+  }
+}
+
 function useIbcClientStates(chain: Chain) {
   return useQuery({
     queryKey: ['ibc-client-states', chain.chain_id],
@@ -75,11 +85,8 @@ function useIbcClientStates(chain: Chain) {
       QueryClientStatesResponseSDKType | undefined
     > => {
       // get IBC LCD client
-      const restEndpoint = chain?.apis?.rest?.at(0)?.address;
-      if (restEndpoint) {
-        const lcd = await ibc.ClientFactory.createLCDClient({ restEndpoint });
-        return lcd.ibc.core.client.v1.clientStates();
-      }
+      const lcd = await getIbcLcdClient(chain);
+      return lcd?.ibc.core.client.v1.clientStates();
     },
     refetchInterval: 5 * minutes,
   });
