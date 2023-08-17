@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 import { Token, getAmountInDenom } from '../utils/tokens';
 import { useBankBalances } from '../indexerProvider';
-import useTokens, { matchTokenByDenom } from './useTokens';
+import { useConnectedTokens, matchTokenByDenom } from './useTokens';
 import { useSimplePrice } from '../../tokenPrices';
 
 type TokenCoin = CoinSDKType & {
@@ -15,7 +15,7 @@ type TokenCoin = CoinSDKType & {
 export function useUserBankValues(): TokenCoin[] {
   const { data: balances } = useBankBalances();
 
-  const allTokens = useTokens();
+  const allTokens = useConnectedTokens();
   const selectedTokens = useMemo<Token[]>(() => {
     // note: this could be better: we are just finding the first match in the chain registry
     // with that denom, but really it needs to check for chain id too

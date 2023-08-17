@@ -5,9 +5,14 @@ import {
   chains as chainRegistryChainList,
 } from 'chain-registry';
 import { AssetList, Chain } from '@chain-registry/types';
-import { Token, TokenAddress, getTokenValue } from '../utils/tokens';
+import {
+  Token,
+  TokenAddress,
+  getIbcDenom,
+  getTokenValue,
+} from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { dualityChain, providerChain, useConnectedChainIDs } from './useChains';
+import { dualityChain, providerChain, useIbcOpenTransfers } from './useChains';
 
 import tknLogo from '../../../assets/tokens/TKN.svg';
 import stkLogo from '../../../assets/tokens/STK.svg';
@@ -206,13 +211,55 @@ export function useDualityTokens(sortFunction = defaultSort) {
 }
 
 export function useConnectedTokens(sortFunction = defaultSort) {
-  const ibcClientChainIds = useConnectedChainIDs();
+  const ibcOpenTransfersInfo = useIbcOpenTransfers();
   return useMemo(() => {
+    // get tokens that match the expected chainIDs
+    const ibcClientChainIds = ibcOpenTransfersInfo.map(
+      (openTransfer) => openTransfer.chainID
+    );
     const ibcTokens = getTokens((chain) =>
       ibcClientChainIds.includes(chain.chain_id)
     );
-    return ibcTokens.sort(sortFunction).reverse();
-  }, [sortFunction, ibcClientChainIds]);
+    return (
+      ibcTokens
+        // add IBC denom information
+        .map((token) => {
+          // return unchanged tokens from native chain
+          if (token.chain.chain_id === dualityChain.chain_id) {
+            return token;
+          }
+          // append ibcDenpm as a denom alias
+          const ibcOpenTransferInfo = ibcOpenTransfersInfo.find(
+            ({ chainID }) => {
+              return chainID === token.chain.chain_id;
+            }
+          );
+          // found connection info
+          if (ibcOpenTransferInfo) {
+            const channelID = ibcOpenTransferInfo.channel.channel_id;
+            const portID = ibcOpenTransferInfo.channel.port_id;
+            return {
+              ...token,
+              denom_units: token.denom_units.map(
+                ({ aliases = [], ...unit }) => {
+                  const ibcDenom = getIbcDenom(unit.denom, channelID, portID);
+                  return {
+                    ...unit,
+                    aliases: [...aliases, ibcDenom],
+                  };
+                }
+              ),
+            };
+          }
+          // else return the unchanged token
+          else {
+            return token;
+          }
+        })
+        .sort(sortFunction)
+        .reverse()
+    );
+  }, [sortFunction, ibcOpenTransfersInfo]);
 }
 
 export function getTokenBySymbol(symbol: string | undefined) {
@@ -246,8 +293,20 @@ export function matchTokenByAddress(address: TokenAddress) {
   return (token: Token) => token.address === address;
 }
 export function matchTokenByDenom(denom: string) {
-  return (token: Token) =>
-    !!token.denom_units.find((unit) => unit.denom === denom);
+  if (denom) {
+    if (denom.startsWith('ibc/')) {
+      // search token aliases for ibc denoms (which we should have updated)
+      return (token: Token) =>
+        !!token.denom_units.find((unit) => unit.aliases?.includes(denom));
+    } else {
+      return (token: Token) =>
+        !!token.denom_units.find((unit) => unit.denom === denom);
+    }
+  }
+  // don't match empty string to anything
+  else {
+    return () => false;
+  }
 }
 
 // utility function to get value of token amount in USD

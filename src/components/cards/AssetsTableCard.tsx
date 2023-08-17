@@ -9,7 +9,7 @@ import TokenPicker from '../TokenPicker/TokenPicker';
 import NumberInput from '../inputs/NumberInput/NumberInput';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
-import useTokens, { useConnectedTokens } from '../../lib/web3/hooks/useTokens';
+import { useConnectedTokens } from '../../lib/web3/hooks/useTokens';
 import useBridge from '../../pages/Bridge/useBridge';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
@@ -46,7 +46,7 @@ export default function AssetsTableCard({
   tokenList: givenTokenList,
   ...tableCardProps
 }: AssetsTableCardOptions & Partial<TableCardProps<string>>) {
-  const tokenList = useTokens();
+  const tokenList = useConnectedTokens();
   const allUserBankAssets = useUserBankValues();
 
   // define sorting rows by token value
@@ -100,7 +100,10 @@ export default function AssetsTableCard({
           {filteredList.length > 0 ? (
             filteredList.map(({ chain, symbol, token }) => {
               const foundUserAsset = allUserBankAssets.find((userToken) => {
-                return userToken.token === token;
+                return (
+                  userToken.token.address === token.address &&
+                  userToken.token.chain.chain_id === token.chain.chain_id
+                );
               });
               return foundUserAsset ? (
                 <AssetRow
