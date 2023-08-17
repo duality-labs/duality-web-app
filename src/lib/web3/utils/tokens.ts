@@ -94,5 +94,7 @@ export function getIbcDenom(
 ) {
   return `ibc/${Buffer.from(
     sha256(Buffer.from(`${port}/${channel}/${baseDenom}`))
-  ).toString('hex')}`;
+  )
+    .toString('hex')
+    .toUpperCase()}`;
 }
