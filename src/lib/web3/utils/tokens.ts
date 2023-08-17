@@ -86,15 +86,13 @@ export function getTokenValue(
     .toNumber();
 }
 
-// port = 'transfer'
-// channel = 'channel-141'
-// baseDenom = 'uosmo';
+// get IBC hash representation of a IBC transferred denom
 export function getIbcDenom(
   baseDenom: string,
-  channel = 'channel-1',
+  channel: string,
   port = 'transfer'
 ) {
   return `ibc/${Buffer.from(
-    sha256(Buffer.from('transfer/channel-141/uosmo'))
+    sha256(Buffer.from(`${port}/${channel}/${baseDenom}`))
   ).toString('hex')}`;
 }
