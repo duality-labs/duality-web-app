@@ -90,6 +90,12 @@ function useIbcClientStates(chain: Chain) {
     > => {
       // get IBC LCD client
       const lcd = await getIbcLcdClient(chain);
+      // note: it appears that clients may appear in this list if they are of:
+      // - state: "STATE_OPEN", but with
+      // - status: "Expired" (this property must be queried individually:
+      //           using GET/ibc/core/client/v1/client_status/07-tendermint-0)
+      // we ignore the status of the light clients here, but their status should
+      // be checked at the moment they are required for a transfer
       return lcd?.ibc.core.client.v1.clientStates();
     },
     refetchInterval: 5 * minutes,
@@ -114,10 +120,6 @@ function useIbcChannels(chain: Chain) {
     queryFn: async (): Promise<QueryChannelsResponseSDKType | undefined> => {
       // get IBC LCD client
       const lcd = await getIbcLcdClient(chain);
-      // note: it appears that channels only appear in this list if they are of:
-      // - state: "STATE_OPEN" connections
-      // - status: "Active" clients
-      //   - maybe: confirm state with an Active client but not OPEN connection
       return lcd?.ibc.core.channel.v1.channels();
     },
     refetchInterval: 5 * minutes,
