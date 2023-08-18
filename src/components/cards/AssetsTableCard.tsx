@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 import Long from 'long';
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { Chain } from '@chain-registry/types';
 import { coin } from '@cosmjs/stargate';
 
 import Dialog from '../Dialog/Dialog';
@@ -20,6 +21,8 @@ import {
   dualityChain,
   useChainAddress,
   useIbcOpenTransfers,
+  useRemoteChainBankBalance,
+  useRemoteChainRestEndpoint,
 } from '../../lib/web3/hooks/useChains';
 
 import { minutes, nanoseconds } from '../../lib/utils/time';
@@ -434,15 +437,19 @@ function BridgeDialog({
                   </div>
                 </div>
               </div>
-              <div className="col">
-                <div className="px-4 py-sm">
-                  {chainAddressFrom ? (
-                    <span>Connected</span>
+              {token && (
+                <div className="col px-4 py-sm">
+                  {chainFrom === dualityChain ? (
+                    <LocalChainReserves token={token} />
                   ) : (
-                    <span className="text-secondary">Unconnected</span>
+                    <RemoteChainReserves
+                      chain={chainFrom}
+                      token={token}
+                      address={chainAddressFrom}
+                    />
                   )}
                 </div>
-              </div>
+              )}
               <div className="col">
                 <div className="px-4 py-sm text-muted">To</div>
               </div>
@@ -464,12 +471,19 @@ function BridgeDialog({
                   </div>
                 </div>
               </div>
-              <div className="col">
-                <div className="px-4 py-sm flex row">
-                  <div className="text-muted">Available</div>
-                  <div className="text-muted ml-auto">0</div>
+              {token && (
+                <div className="col px-4 py-sm">
+                  {chainTo === dualityChain ? (
+                    <LocalChainReserves token={token} />
+                  ) : (
+                    <RemoteChainReserves
+                      chain={chainTo}
+                      token={token}
+                      address={chainAddressTo}
+                    />
+                  )}
                 </div>
-              </div>
+              )}
             </div>
             <div className="row px-4 pb-3">
               <div className="col">
@@ -582,4 +596,74 @@ function BridgeDialog({
 
 function selectAll(e: React.MouseEvent<HTMLInputElement>) {
   e.currentTarget.select();
+}
+
+function RemoteChainReserves({
+  className,
+  chain,
+  token,
+  address,
+}: {
+  className?: string;
+  chain: Chain;
+  token: Token;
+  address?: string;
+}) {
+  const { data: chainEndpoint, isFetching: isFetchingChainEndpoint } =
+    useRemoteChainRestEndpoint(chain);
+  const { data: bankBalance, isFetching: isFetchingBankBalance } =
+    useRemoteChainBankBalance(chain, token, address);
+
+  if (chainEndpoint) {
+    const bankBalanceAmount = bankBalance?.balance?.amount;
+    if (bankBalanceAmount || isFetchingBankBalance) {
+      return (
+        <div className={`${className} flex row gap-3`}>
+          <div className="text-muted">Available</div>
+          <div className="text-muted ml-auto">{bankBalanceAmount ?? '...'}</div>
+        </div>
+      );
+    } else {
+      return (
+        <div className={className}>
+          <div className="text-muted">Could not fetch balance</div>
+        </div>
+      );
+    }
+  } else if (!chainEndpoint && isFetchingChainEndpoint) {
+    return (
+      <div className={className}>
+        <span className="text-muted">Connecting...</span>
+      </div>
+    );
+  } else {
+    return (
+      <div className={className}>
+        <span className="text-secondary">Unconnected</span>
+      </div>
+    );
+  }
+}
+
+function LocalChainReserves({
+  className,
+  token,
+}: {
+  className?: string;
+  token: Token;
+}) {
+  const allUserBankAssets = useUserBankValues();
+  const userToken = allUserBankAssets.find((tokenCoin) => {
+    return (
+      tokenCoin.token.address === token.address &&
+      tokenCoin.token.chain.chain_id === token.chain.chain_id
+    );
+  });
+
+  return (
+    <div className={`${className} flex row gap-3`}>
+      <div className="text-muted">Available</div>
+      <div className="text-muted ml-auto">{userToken?.amount ?? '...'}</div>
+    </div>
+  );
 }

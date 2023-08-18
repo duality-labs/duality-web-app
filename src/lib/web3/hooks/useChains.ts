@@ -4,12 +4,14 @@ import { ibc } from '@duality-labs/dualityjs';
 import { QueryClientStatesResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
 import { QueryConnectionsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
 import { QueryChannelsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/query';
+import { QueryBalanceResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { State as ChannelState } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/channel';
 import { State as ConnectionState } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
 import { useQuery } from '@tanstack/react-query';
 
 import { getChainInfo } from '../wallets/keplr';
 import dualityLogo from '../../../assets/logo/logo.svg';
+import { Token } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 
 const {
@@ -193,4 +195,63 @@ export function useConnectedChainIDs(chain: Chain = dualityChain) {
   return useMemo(() => {
     return openTransfers.map((openTransfer) => openTransfer.chainID);
   }, [openTransfers]);
+}
+
+export function useRemoteChainRestEndpoint(chain: Chain) {
+  return useQuery({
+    queryKey: ['cosmos-chain-endpoints', chain.chain_id],
+    queryFn: async (): Promise<string | null> => {
+      const restEndpoints = (chain?.apis?.rest ?? []).map(
+        (rest) => rest.address
+      );
+      if (restEndpoints.length > 0) {
+        try {
+          const restEndpoint = await Promise.race([
+            Promise.any(
+              restEndpoints.map(async (restEndpoint) => {
+                const client = await ibc.ClientFactory.createLCDClient({
+                  restEndpoint,
+                });
+                await client.cosmos.base.tendermint.v1beta1.getNodeInfo();
+                return restEndpoint;
+              })
+            ),
+            new Promise<string>((resolve, reject) => setTimeout(reject, 10000)),
+          ]);
+          return restEndpoint ?? null;
+        } catch (e) {
+          // all requests failed or the requests timed out
+          return null;
+        }
+      } else {
+        return null;
+      }
+    },
+    refetchInterval: false,
+  });
+}
+
+export function useRemoteChainBankBalance(
+  chain: Chain,
+  token: Token,
+  address?: string
+) {
+  const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
+  return useQuery({
+    queryKey: ['cosmos-chain-endpoints', restEndpoint, address],
+    queryFn: async (): Promise<QueryBalanceResponseSDKType | null> => {
+      if (restEndpoint && address) {
+        const client = await ibc.ClientFactory.createLCDClient({
+          restEndpoint,
+        });
+        return client.cosmos.bank.v1beta1.balance({
+          address,
+          denom: token.base,
+        });
+      } else {
+        return null;
+      }
+    },
+    refetchInterval: 5 * minutes,
+  });
 }
