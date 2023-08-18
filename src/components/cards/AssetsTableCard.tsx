@@ -559,7 +559,13 @@ function BridgeDialog({
               </button>
             </div>
           </div>
-          <div className="transaction-box my-sm p-4 col gap-md">
+          {/*
+            todo: build out fees and values
+              calculate fees by querying:
+              - /ibc/apps/fee/v1/channels/{channel_id}/ports/{port_id}/fee_enabled
+              - /ibc/apps/fee/v1/channels/{channel_id}/ports/{port_id}/fee_enabled
+          */}
+          <div className="transaction-box my-sm p-4 col gap-md hide">
             <div className="row">
               <div className="col">Transfer Fee</div>
               <div className="col ml-auto">
