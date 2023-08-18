@@ -59,7 +59,9 @@ export default function AssetsTableCard({
       return (
         getTokenValue(b).minus(getTokenValue(a)).toNumber() ||
         // if value is equal, sort by amount
-        getTokenAmount(b).minus(getTokenAmount(a)).toNumber()
+        getTokenAmount(b).minus(getTokenAmount(a)).toNumber() ||
+        // if amount is equal, sort by local chain
+        getTokenChain(b) - getTokenChain(a)
       );
       function getTokenValue(token: Token) {
         const foundUserAsset = allUserBankAssets.find((userToken) => {
@@ -78,6 +80,15 @@ export default function AssetsTableCard({
           );
         });
         return new BigNumber(foundUserAsset?.amount || 0);
+      }
+      function getTokenChain(token: Token) {
+        if (token.chain.chain_id === dualityChain.chain_id) {
+          return 2;
+        }
+        if (token.ibc) {
+          return 1;
+        }
+        return 0;
       }
     },
     [allUserBankAssets]
