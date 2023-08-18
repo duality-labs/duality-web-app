@@ -626,7 +626,16 @@ function RemoteChainReserves({
       return (
         <div className={`${className} flex row gap-3`}>
           <div className="text-muted">Available</div>
-          <div className="text-muted ml-auto">{bankBalanceAmount ?? '...'}</div>
+          <div className="text-muted ml-auto">
+            {bankBalanceAmount
+              ? getAmountInDenom(
+                  token,
+                  bankBalanceAmount,
+                  token.base,
+                  token.display
+                )
+              : '...'}
+          </div>
         </div>
       );
     } else {
@@ -669,7 +678,11 @@ function LocalChainReserves({
   return (
     <div className={`${className} flex row gap-3`}>
       <div className="text-muted">Available</div>
-      <div className="text-muted ml-auto">{userToken?.amount ?? '...'}</div>
+      <div className="text-muted ml-auto">
+        {userToken?.amount
+          ? getAmountInDenom(token, userToken.amount, token.base, token.display)
+          : '...'}
+      </div>
     </div>
   );
 }
