@@ -3,7 +3,10 @@ import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 import { Token, getAmountInDenom } from '../utils/tokens';
 import { useBankBalances } from '../indexerProvider';
-import { useConnectedTokens, matchTokenByDenom } from './useTokens';
+import useTokens, {
+  useTokensWithIbcInfo,
+  matchTokenByDenom,
+} from './useTokens';
 import { useSimplePrice } from '../../tokenPrices';
 
 type TokenCoin = CoinSDKType & {
@@ -15,20 +18,21 @@ type TokenCoin = CoinSDKType & {
 export function useUserBankValues(): TokenCoin[] {
   const { data: balances } = useBankBalances();
 
-  const allTokens = useConnectedTokens();
+  const allTokens = useTokens();
+  const allTokensWithIBC = useTokensWithIbcInfo(allTokens);
   const selectedTokens = useMemo<Token[]>(() => {
     // note: this could be better: we are just finding the first match in the chain registry
     // with that denom, but really it needs to check for chain id too
     // ibc tokens will need to be checked here too
     // this should probably live in the indexerData as we'll always want the filtered balances
     return (balances || []).reduce<Token[]>((result, balance) => {
-      const token = allTokens.find(matchTokenByDenom(balance.denom));
+      const token = allTokensWithIBC.find(matchTokenByDenom(balance.denom));
       if (token) {
         result.push(token);
       }
       return result;
     }, []);
-  }, [balances, allTokens]);
+  }, [balances, allTokensWithIBC]);
 
   const { data: selectedTokensPrices } = useSimplePrice(selectedTokens);
 

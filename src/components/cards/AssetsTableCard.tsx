@@ -9,7 +9,9 @@ import TokenPicker from '../TokenPicker/TokenPicker';
 import NumberInput from '../inputs/NumberInput/NumberInput';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
-import { useConnectedTokens } from '../../lib/web3/hooks/useTokens';
+import useTokens, {
+  useTokensWithIbcInfo,
+} from '../../lib/web3/hooks/useTokens';
 import useBridge from '../../pages/Bridge/useBridge';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
@@ -46,18 +48,36 @@ export default function AssetsTableCard({
   tokenList: givenTokenList,
   ...tableCardProps
 }: AssetsTableCardOptions & Partial<TableCardProps<string>>) {
-  const tokenList = useConnectedTokens();
+  const tokenList = useTokens();
+  const tokenListWithIBC = useTokensWithIbcInfo(givenTokenList || tokenList);
   const allUserBankAssets = useUserBankValues();
 
   // define sorting rows by token value
   const sortByValue = useCallback(
     (a: Token, b: Token) => {
-      return getTokenValue(b).minus(getTokenValue(a)).toNumber();
+      // sort first by value
+      return (
+        getTokenValue(b).minus(getTokenValue(a)).toNumber() ||
+        // if value is equal, sort by amount
+        getTokenAmount(b).minus(getTokenAmount(a)).toNumber()
+      );
       function getTokenValue(token: Token) {
         const foundUserAsset = allUserBankAssets.find((userToken) => {
-          return userToken.token === token;
+          return (
+            userToken.token.address === token.address &&
+            userToken.token.chain.chain_id === token.chain.chain_id
+          );
         });
         return foundUserAsset?.value || new BigNumber(0);
+      }
+      function getTokenAmount(token: Token) {
+        const foundUserAsset = allUserBankAssets.find((userToken) => {
+          return (
+            userToken.token.address === token.address &&
+            userToken.token.chain.chain_id === token.chain.chain_id
+          );
+        });
+        return new BigNumber(foundUserAsset?.amount || 0);
       }
     },
     [allUserBankAssets]
@@ -65,8 +85,8 @@ export default function AssetsTableCard({
 
   // sort tokens
   const sortedList = useMemo(() => {
-    return (givenTokenList || [...tokenList]).sort(sortByValue);
-  }, [tokenList, givenTokenList, sortByValue]);
+    return tokenListWithIBC.sort(sortByValue);
+  }, [tokenListWithIBC, sortByValue]);
 
   const [searchValue, setSearchValue] = useState<string>('');
 
@@ -189,8 +209,9 @@ function AssetRow({
       </td>
       {showActions && (
         <td>
-          {token.ibc && (
-            <>
+          {token.chain.chain_id !== dualityChain.chain_id && (
+            // disable buttons if there is no known path to bridge them here
+            <fieldset disabled={!token.ibc}>
               <BridgeButton
                 className="button button-primary-outline nowrap mx-0"
                 from={token}
@@ -203,7 +224,7 @@ function AssetRow({
               >
                 Withdraw
               </BridgeButton>
-            </>
+            </fieldset>
           )}
         </td>
       )}
@@ -251,7 +272,7 @@ function BridgeDialog({
   const close = useCallback(() => setIsOpen(false), [setIsOpen]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const tokenList = useConnectedTokens();
+  const tokenList = useTokens();
   const [token, setToken] = useState<Token | undefined>(from || to);
   const [value, setValue] = useState('');
 

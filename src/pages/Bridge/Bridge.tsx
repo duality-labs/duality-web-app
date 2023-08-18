@@ -2,7 +2,6 @@ import AssetsTableCard from '../../components/cards/AssetsTableCard';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
-import { useConnectedTokens } from '../../lib/web3/hooks/useTokens';
 
 import '../MyLiquidity/MyLiquidity.scss';
 
@@ -66,11 +65,10 @@ function HeroCard() {
 }
 
 function Tables() {
-  const connectedTokens = useConnectedTokens();
   return (
     <div className="row flex gapx-4 gapy-5 flow-wrap">
       <div className="col flex">
-        <AssetsTableCard showActions tokenList={connectedTokens} />
+        <AssetsTableCard showActions />
       </div>
     </div>
   );

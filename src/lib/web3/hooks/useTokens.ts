@@ -210,7 +210,7 @@ export function useDualityTokens(sortFunction = defaultSort) {
   );
 }
 
-export function useConnectedTokens(sortFunction = defaultSort) {
+export function useIbcTokens(sortFunction = defaultSort) {
   const ibcOpenTransfersInfo = useIbcOpenTransfers();
   return useMemo(() => {
     // get tokens that match the expected chainIDs
@@ -220,8 +220,16 @@ export function useConnectedTokens(sortFunction = defaultSort) {
     const ibcTokens = getTokens((chain) =>
       ibcClientChainIds.includes(chain.chain_id)
     );
+    return ibcTokens.sort(sortFunction).reverse();
+  }, [sortFunction, ibcOpenTransfersInfo]);
+}
+
+// connected IBC info into given token list
+export function useTokensWithIbcInfo(tokenList: Token[]) {
+  const ibcOpenTransfersInfo = useIbcOpenTransfers();
+  return useMemo(() => {
     return (
-      ibcTokens
+      tokenList
         // add IBC denom information
         .map((token) => {
           // return unchanged tokens from native chain
@@ -261,10 +269,8 @@ export function useConnectedTokens(sortFunction = defaultSort) {
             return token;
           }
         })
-        .sort(sortFunction)
-        .reverse()
     );
-  }, [sortFunction, ibcOpenTransfersInfo]);
+  }, [tokenList, ibcOpenTransfersInfo]);
 }
 
 export function getTokenBySymbol(symbol: string | undefined) {
