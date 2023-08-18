@@ -189,18 +189,22 @@ function AssetRow({
       </td>
       {showActions && (
         <td>
-          <BridgeButton
-            className="button button-primary-outline nowrap mx-0"
-            from={token}
-          >
-            Deposit
-          </BridgeButton>
-          <BridgeButton
-            className="button button-outline nowrap mx-0 ml-3"
-            to={token}
-          >
-            Withdraw
-          </BridgeButton>
+          {token.ibc && (
+            <>
+              <BridgeButton
+                className="button button-primary-outline nowrap mx-0"
+                from={token}
+              >
+                Deposit
+              </BridgeButton>
+              <BridgeButton
+                className="button button-outline nowrap mx-0 ml-3"
+                to={token}
+              >
+                Withdraw
+              </BridgeButton>
+            </>
+          )}
         </td>
       )}
     </tr>

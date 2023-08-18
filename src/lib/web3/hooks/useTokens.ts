@@ -236,8 +236,9 @@ export function useConnectedTokens(sortFunction = defaultSort) {
           );
           // found connection info
           if (ibcOpenTransferInfo) {
-            const channelID = ibcOpenTransferInfo.channel.channel_id;
-            const portID = ibcOpenTransferInfo.channel.port_id;
+            const channel = ibcOpenTransferInfo.channel;
+            const channelID = channel.channel_id;
+            const portID = channel.port_id;
             return {
               ...token,
               denom_units: token.denom_units.map(
@@ -249,6 +250,10 @@ export function useConnectedTokens(sortFunction = defaultSort) {
                   };
                 }
               ),
+              ibc: {
+                dst_channel: channel.channel_id,
+                source_channel: channel.counterparty?.channel_id,
+              },
             };
           }
           // else return the unchanged token
