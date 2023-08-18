@@ -75,54 +75,54 @@ export function useChainAddress(chain?: Chain): {
 }
 
 async function getIbcLcdClient(
-  chain: Chain
+  restEndpoint?: string | null
 ): Promise<ReturnType<typeof ibc.ClientFactory.createLCDClient> | undefined> {
   // get IBC LCD client
-  const restEndpoint = chain?.apis?.rest?.at(0)?.address;
   if (restEndpoint) {
     return ibc.ClientFactory.createLCDClient({ restEndpoint });
   }
 }
 
 function useIbcClientStates(chain: Chain) {
+  const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
-    queryKey: ['ibc-client-states', chain.chain_id],
-    queryFn: async (): Promise<
-      QueryClientStatesResponseSDKType | undefined
-    > => {
+    queryKey: ['ibc-client-states', restEndpoint],
+    queryFn: async (): Promise<QueryClientStatesResponseSDKType> => {
       // get IBC LCD client
-      const lcd = await getIbcLcdClient(chain);
+      const lcd = await getIbcLcdClient(restEndpoint);
       // note: it appears that clients may appear in this list if they are of:
       // - state: "STATE_OPEN", but with
       // - status: "Expired" (this property must be queried individually:
       //           using GET/ibc/core/client/v1/client_status/07-tendermint-0)
       // we ignore the status of the light clients here, but their status should
       // be checked at the moment they are required for a transfer
-      return lcd?.ibc.core.client.v1.clientStates();
+      return lcd?.ibc.core.client.v1.clientStates() ?? { client_states: [] };
     },
     refetchInterval: 5 * minutes,
   });
 }
 
 function useIbcConnections(chain: Chain) {
+  const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
-    queryKey: ['ibc-connections', chain.chain_id],
-    queryFn: async (): Promise<QueryConnectionsResponseSDKType | undefined> => {
+    queryKey: ['ibc-connections', restEndpoint],
+    queryFn: async (): Promise<QueryConnectionsResponseSDKType> => {
       // get IBC LCD client
-      const lcd = await getIbcLcdClient(chain);
-      return lcd?.ibc.core.connection.v1.connections();
+      const lcd = await getIbcLcdClient(restEndpoint);
+      return lcd?.ibc.core.connection.v1.connections() ?? { connections: [] };
     },
     refetchInterval: 5 * minutes,
   });
 }
 
 function useIbcChannels(chain: Chain) {
+  const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
-    queryKey: ['ibc-channels', chain.chain_id],
-    queryFn: async (): Promise<QueryChannelsResponseSDKType | undefined> => {
+    queryKey: ['ibc-channels', restEndpoint],
+    queryFn: async (): Promise<QueryChannelsResponseSDKType> => {
       // get IBC LCD client
-      const lcd = await getIbcLcdClient(chain);
-      return lcd?.ibc.core.channel.v1.channels();
+      const lcd = await getIbcLcdClient(restEndpoint);
+      return lcd?.ibc.core.channel.v1.channels() ?? { channels: [] };
     },
     refetchInterval: 5 * minutes,
   });
