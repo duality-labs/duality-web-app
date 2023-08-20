@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import { ibc } from '@duality-labs/dualityjs';
-import { DeliverTxResponse } from '@cosmjs/stargate';
+import { DeliverTxResponse, SigningStargateClient } from '@cosmjs/stargate';
 import { Chain } from '@chain-registry/types';
 import {
   MsgTransfer,
@@ -9,7 +9,7 @@ import {
 } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/tx';
 
 import { ibcClient } from '../../lib/web3/rpcMsgClient';
-import { dualityChain } from '../../lib/web3/hooks/useChains';
+import { useRemoteChainRestEndpoint } from '../../lib/web3/hooks/useChains';
 import {
   getKeplrWallet,
   getKeplrWalletAccount,
@@ -23,7 +23,11 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 
-async function bridgeToken(chainFrom: Chain = dualityChain, msg: MsgTransfer) {
+async function bridgeToken(
+  msg: MsgTransfer,
+  client: SigningStargateClient,
+  signingAddress: string
+) {
   const {
     sender,
     receiver,
@@ -52,26 +56,15 @@ async function bridgeToken(chainFrom: Chain = dualityChain, msg: MsgTransfer) {
   // note: all Cosmos chains use IBC v1 transfer at the moment
   //       so passing different chains interchangably works fine
   // future: update when there is a transition to a newer version
-  const offlineSigner = await getKeplrWallet(chainFrom.chain_id);
-  const account = await getKeplrWalletAccount(offlineSigner);
-  if (!offlineSigner) {
-    throw new Error('No Wallet');
-  }
-  if (!account || !account.address) {
-    throw new Error('No wallet address');
-  }
 
   // send message to chain
   const id = `${Date.now()}.${Math.random}`;
 
   createLoadingToast({ id, description: 'Executing your trade' });
 
-  // get from chain endpoint if available
-  const externalRpcUrl = chainFrom?.apis?.rpc?.at(0)?.address;
-  const client = await ibcClient(offlineSigner, externalRpcUrl);
   return client
     .signAndBroadcast(
-      account.address,
+      signingAddress,
       [ibc.applications.transfer.v1.MessageComposer.withTypeUrl.transfer(msg)],
       {
         gas: '100000',
@@ -103,7 +96,7 @@ async function bridgeToken(chainFrom: Chain = dualityChain, msg: MsgTransfer) {
     });
 }
 
-export default function useBridge(fromChain?: Chain): [
+export default function useBridge(chainFrom?: Chain): [
   {
     data?: MsgTransferResponseSDKType;
     isValidating: boolean;
@@ -115,16 +108,32 @@ export default function useBridge(fromChain?: Chain): [
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
 
+  const { data: restEndpointFrom } = useRemoteChainRestEndpoint(chainFrom);
+
   const sendRequest = useCallback(
     async (request: MsgTransfer) => {
+      // check things around the request (not the request payload)
       if (!request) return onError('Missing Token and Amount');
+      if (!chainFrom) return onError('No Chain connected');
+      if (!restEndpointFrom) return onError('No available endpoint for chain');
 
       setValidating(true);
       setError(undefined);
       setData(undefined);
 
       try {
-        await bridgeToken(fromChain, request);
+        // check async things around the request (not the request payload)
+        const offlineSigner = await getKeplrWallet(chainFrom.chain_id);
+        if (!offlineSigner) {
+          throw new Error('No Wallet');
+        }
+        const account = await getKeplrWalletAccount(offlineSigner);
+        if (!account || !account.address) {
+          throw new Error('No wallet address');
+        }
+        // make the bridge transaction to the from chain (with correct signing)
+        const client = await ibcClient(offlineSigner, restEndpointFrom);
+        await bridgeToken(request, client, account.address);
         setValidating(false);
       } catch (err: unknown) {
         // add error to state
@@ -142,7 +151,7 @@ export default function useBridge(fromChain?: Chain): [
         setError(message);
       }
     },
-    [fromChain]
+    [chainFrom, restEndpointFrom]
   );
 
   return [
