@@ -197,9 +197,9 @@ export function useConnectedChainIDs(chain: Chain = dualityChain) {
   }, [openTransfers]);
 }
 
-export function useRemoteChainRestEndpoint(chain: Chain) {
+export function useRemoteChainRestEndpoint(chain?: Chain) {
   return useQuery({
-    queryKey: ['cosmos-chain-endpoints', chain.chain_id],
+    queryKey: ['cosmos-chain-endpoints', chain?.chain_id],
     queryFn: async (): Promise<string | null> => {
       const restEndpoints = (chain?.apis?.rest ?? []).map(
         (rest) => rest.address
@@ -223,7 +223,13 @@ export function useRemoteChainRestEndpoint(chain: Chain) {
           // all requests failed or the requests timed out
           return null;
         }
-      } else {
+      }
+      // return the Duality chain REST API if this is the Duality chain
+      else if (chain?.chain_id === REACT_APP__CHAIN_ID) {
+        return REACT_APP__REST_API;
+      }
+      // return nothing if the request is invalid
+      else {
         return null;
       }
     },
