@@ -359,6 +359,8 @@ function BridgeDialog({
             sourceChannel: ibcTransferInfo.channel.channel_id,
             memo: '',
           });
+          // todo: add streaming updates to UI here
+          // display wait for transaction to be confirmed on Duality Chain
           close();
         } catch {
           // don't close
@@ -386,6 +388,8 @@ function BridgeDialog({
             sourceChannel: ibcTransferInfo.channel.counterparty.channel_id,
             memo: '',
           });
+          // todo: add streaming updates to UI here
+          // display wait for transaction to be confirmed on external Chain
           close();
         } catch {
           // don't close
