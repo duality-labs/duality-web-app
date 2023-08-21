@@ -108,14 +108,14 @@ export default function useBridge(chainFrom?: Chain): [
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
 
-  const { data: restEndpointFrom } = useRemoteChainRestEndpoint(chainFrom);
+  const { data: restEndpointFrom, refetch: refetchFrom } =
+    useRemoteChainRestEndpoint(chainFrom);
 
   const sendRequest = useCallback(
     async (request: MsgTransfer) => {
       // check things around the request (not the request payload)
       if (!request) return onError('Missing Token and Amount');
       if (!chainFrom) return onError('No Chain connected');
-      if (!restEndpointFrom) return onError('No available endpoint for chain');
 
       setValidating(true);
       setError(undefined);
@@ -131,8 +131,14 @@ export default function useBridge(chainFrom?: Chain): [
         if (!account || !account.address) {
           throw new Error('No wallet address');
         }
+        const refetchOptions = { cancelRefetch: false };
+        const clientEndpointFrom =
+          restEndpointFrom ?? (await refetchFrom(refetchOptions)).data;
+        if (!clientEndpointFrom) {
+          throw new Error('No chain endpoint found');
+        }
         // make the bridge transaction to the from chain (with correct signing)
-        const client = await ibcClient(offlineSigner, restEndpointFrom);
+        const client = await ibcClient(offlineSigner, clientEndpointFrom);
         await bridgeToken(request, client, account.address);
         setValidating(false);
       } catch (err: unknown) {
@@ -151,7 +157,7 @@ export default function useBridge(chainFrom?: Chain): [
         setError(message);
       }
     },
-    [chainFrom, restEndpointFrom]
+    [chainFrom, refetchFrom, restEndpointFrom]
   );
 
   return [
