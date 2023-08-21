@@ -23,8 +23,6 @@ import {
   createLoadingToast,
 } from '../../components/Notifications/common';
 
-import { seconds } from '../../lib/utils/time';
-
 async function bridgeToken(
   msg: MsgTransfer,
   client: SigningStargateClient,
@@ -110,34 +108,20 @@ export default function useBridge(chainFrom?: Chain): [
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
 
-  const { dataPromise: restEndpointFromPromise } = useRemoteChainRestEndpoint(
-    chainFrom,
-    { returnPromise: true }
-  );
+  const { data: restEndpointFrom } = useRemoteChainRestEndpoint(chainFrom);
 
   const sendRequest = useCallback(
     async (request: MsgTransfer) => {
       // check things around the request (not the request payload)
       if (!request) return onError('Missing Token and Amount');
       if (!chainFrom) return onError('No Chain connected');
+      if (!restEndpointFrom) return onError('No available endpoint for chain');
 
       setValidating(true);
       setError(undefined);
       setData(undefined);
 
       try {
-        // wait for REST endpoint for a while
-        const restEndpointFrom = await Promise.race([
-          restEndpointFromPromise,
-          new Promise<string>((resolve, reject) =>
-            setTimeout(
-              () => reject('Could not find chain to connect to'),
-              10 * seconds
-            )
-          ),
-        ]);
-        if (!restEndpointFrom)
-          return onError('No available endpoint for chain');
         // check async things around the request (not the request payload)
         const offlineSigner = await getKeplrWallet(chainFrom.chain_id);
         if (!offlineSigner) {
@@ -167,7 +151,7 @@ export default function useBridge(chainFrom?: Chain): [
         setError(message);
       }
     },
-    [chainFrom, restEndpointFromPromise]
+    [chainFrom, restEndpointFrom]
   );
 
   return [

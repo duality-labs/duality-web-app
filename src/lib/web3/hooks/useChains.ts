@@ -1,5 +1,5 @@
 import { Chain } from '@chain-registry/types';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ibc } from '@duality-labs/dualityjs';
 import { QueryClientStatesResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
 import { QueryConnectionsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
@@ -7,17 +7,12 @@ import { QueryChannelsResponseSDKType } from '@duality-labs/dualityjs/types/code
 import { QueryBalanceResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { State as ChannelState } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/channel';
 import { State as ConnectionState } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
-import {
-  QueryClient,
-  QueryObserver,
-  UseQueryResult,
-  useQuery,
-} from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import { getChainInfo } from '../wallets/keplr';
 import dualityLogo from '../../../assets/logo/logo.svg';
 import { Token } from '../utils/tokens';
-import { hours, minutes } from '../../utils/time';
+import { minutes } from '../../utils/time';
 
 const {
   REACT_APP__CHAIN_NAME = '[chain_name]',
@@ -202,22 +197,15 @@ export function useConnectedChainIDs(chain: Chain = dualityChain) {
   }, [openTransfers]);
 }
 
-// store rest endpoints in their own query client for observer use here
-const restEndpointQueryClient = new QueryClient();
-export function useRemoteChainRestEndpoint(
-  chain?: Chain,
-  { returnPromise }: { returnPromise?: boolean } = {}
-): UseQueryResult<string | null, Error> & {
-  dataPromise: Promise<string | null>;
-} {
-  const queryConfig = useMemo(
-    () => ({
-      queryKey: ['cosmos-chain-endpoints', chain?.chain_id],
-      queryFn: async (): Promise<string | null> => {
-        const restEndpoints = (chain?.apis?.rest ?? []).map(
-          (rest) => rest.address
-        );
-        if (restEndpoints.length > 0) {
+export function useRemoteChainRestEndpoint(chain?: Chain) {
+  return useQuery({
+    queryKey: ['cosmos-chain-endpoints', chain?.chain_id],
+    queryFn: async (): Promise<string | null> => {
+      const restEndpoints = (chain?.apis?.rest ?? []).map(
+        (rest) => rest.address
+      );
+      if (restEndpoints.length > 0) {
+        try {
           const restEndpoint = await Promise.race([
             Promise.any(
               restEndpoints.map(async (restEndpoint) => {
@@ -231,60 +219,22 @@ export function useRemoteChainRestEndpoint(
             new Promise<string>((resolve, reject) => setTimeout(reject, 10000)),
           ]);
           return restEndpoint ?? null;
-        }
-        // return the Duality chain REST API if this is the Duality chain
-        else if (chain?.chain_id === REACT_APP__CHAIN_ID) {
-          return REACT_APP__REST_API;
-        }
-        // return nothing if the request is invalid
-        else {
+        } catch (e) {
+          // all requests failed or the requests timed out
           return null;
         }
-      },
-      refetchInterval: 1 * hours,
-    }),
-    [chain]
-  );
-
-  // create observer
-  const observer = useMemo(() => {
-    return new QueryObserver(restEndpointQueryClient, queryConfig);
-  }, [queryConfig]);
-
-  // wait for data on observation
-  const [promise, setPromise] = useState<Promise<string>>(
-    new Promise(() => undefined)
-  );
-
-  // sync observer to promise result
-  useEffect(() => {
-    if (returnPromise) {
-      let cleanupFunction: () => void = () => undefined;
-      // update promise
-      setPromise(
-        new Promise((resolve, reject) => {
-          const unsubscribe = observer.subscribe((result) => {
-            if (typeof result.data === 'string') {
-              resolve(result.data);
-            } else if (result.error) {
-              reject(result.error);
-            }
-          });
-          cleanupFunction = () => {
-            unsubscribe();
-            reject(new Error('Promise updated'));
-          };
-        })
-      );
-
-      // clean up both the subscription and waiting for the promise
-      return cleanupFunction;
-    }
-  }, [observer, returnPromise]);
-  const result = useQuery(queryConfig, restEndpointQueryClient);
-
-  // add data promise
-  return { ...result, dataPromise: promise };
+      }
+      // return the Duality chain REST API if this is the Duality chain
+      else if (chain?.chain_id === REACT_APP__CHAIN_ID) {
+        return REACT_APP__REST_API;
+      }
+      // return nothing if the request is invalid
+      else {
+        return null;
+      }
+    },
+    refetchInterval: false,
+  });
 }
 
 export function useRemoteChainBankBalance(
