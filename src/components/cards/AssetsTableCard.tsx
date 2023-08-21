@@ -560,6 +560,20 @@ function BridgeDialog({
           </div>
           <div className="transaction-box my-sm p-4 col gap-md">
             <div className="row">
+              <div className="col">Estimated Time</div>
+              <div className="col ml-auto">
+                {!!(from || to) ? (
+                  // todo: the transfer time will be a collection of:
+                  // + connection.delay_period (a string eg. "0", "500ms")
+                  // + the block time of the source chain
+                  // + the time to send the request via relayers (usually 0/1 blocks)
+                  // + the block time of the destination chain
+                  // for Cosmos IBC chains this will be about 2-3 blocks time
+                  <>&lt;30 seconds</>
+                ) : null}
+              </div>
+            </div>
+            <div className="row">
               <div className="col">Transfer Fee</div>
               <div className="col ml-auto">
                 {Number(value) ? (
@@ -569,20 +583,6 @@ function BridgeDialog({
                   // not all chains will contain middleware or routes to query them
                   // see: /ibc/apps/fee/v1/channels/{channel_id}/ports/{port_id}/fee_enabled
                   <>~0 {(from || to)?.symbol}</>
-                ) : null}
-              </div>
-            </div>
-            <div className="row">
-              <div className="col">Estimated Time</div>
-              <div className="col ml-auto">
-                {Number(value) ? (
-                  // todo: the transfer time will be a collection of:
-                  // + connection.delay_period (a string eg. "0", "500ms")
-                  // + the block time of the source chain
-                  // + the time to send the request via relayers (usually 0/1 blocks)
-                  // + the block time of the destination chain
-                  // for Cosmos IBC chains this will be about 2-3 blocks time
-                  <>&lt;30 seconds</>
                 ) : null}
               </div>
             </div>
