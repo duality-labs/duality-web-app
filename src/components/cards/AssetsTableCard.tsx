@@ -321,24 +321,24 @@ function BridgeDialog({
       const timeoutTimestamp = Long.fromNumber(
         Date.now() + defaultTimeout // calculate in ms then convert to nanoseconds
       ).multiply(1 / nanoseconds);
+      const ibcTransferInfo = ibcOpenTransfers?.find((transfer) => {
+        return transfer.chainID === chainTo.chain_id;
+      });
+      if (!ibcTransferInfo) {
+        throw new Error(
+          `IBC transfer path (${chainFrom.chain_id} -> ${chainTo.chain_id}) not found`
+        );
+      }
+      const connectionLength = ibcTransferInfo.channel.connection_hops.length;
+      if (connectionLength !== 1) {
+        throw new Error(
+          `Multi-hop IBC transfer paths not supported: ${connectionLength} connection hops`
+        );
+      }
       // bridging to Duality
       if (from) {
         if (!from.chain.chain_id) {
-          throw new Error('From Chain not found');
-        }
-        const ibcTransferInfo = ibcOpenTransfers?.find((transfer) => {
-          return transfer.chainID === chainTo.chain_id;
-        });
-        if (!ibcTransferInfo) {
-          throw new Error(
-            `IBC transfer path for this chain (${from.chain.chain_id}) not found`
-          );
-        }
-        const connectionLength = ibcTransferInfo.channel.connection_hops.length;
-        if (connectionLength !== 1) {
-          throw new Error(
-            `Multi-hop IBC transfer paths not supported: ${connectionLength} connection hops`
-          );
+          throw new Error('Source Chain not found');
         }
         const amount = getAmountInDenom(
           from,
@@ -367,22 +367,25 @@ function BridgeDialog({
       // bridging from Duality
       else if (to) {
         if (!to.chain.chain_id) {
-          throw new Error('From Chain not found');
+          throw new Error('Destination Chain not found');
         }
         const amount = getAmountInDenom(to, value, to.display, to.address);
         if (!amount || !Number(amount)) {
           throw new Error('Invalid Token Amount');
         }
+        if (!ibcTransferInfo.channel.counterparty) {
+          throw new Error('No egress connection information found');
+        }
         try {
-          // await sendRequest({
-          //   token: coin(amount, to.address),
-          //   timeoutTimestamp,
-          //   sender: chainAddressFrom,
-          //   receiver: chainAddressTo,
-          //   sourcePort: 'transfer',
-          //   sourceChannel: 'channel-1',
-          //   memo: '',
-          // });
+          await sendRequest({
+            token: coin(amount, to.address),
+            timeoutTimestamp,
+            sender: chainAddressFrom,
+            receiver: chainAddressTo,
+            sourcePort: ibcTransferInfo.channel.counterparty.port_id,
+            sourceChannel: ibcTransferInfo.channel.counterparty.channel_id,
+            memo: '',
+          });
           close();
         } catch {
           // don't close
@@ -392,6 +395,7 @@ function BridgeDialog({
     [
       chainAddressFrom,
       chainAddressTo,
+      chainFrom.chain_id,
       chainTo.chain_id,
       close,
       from,
