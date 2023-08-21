@@ -558,29 +558,42 @@ function BridgeDialog({
               </button>
             </div>
           </div>
-          {/*
-            todo: build out fees and values
-              calculate fees by querying:
-              - /ibc/apps/fee/v1/channels/{channel_id}/ports/{port_id}/fee_enabled
-              - /ibc/apps/fee/v1/channels/{channel_id}/ports/{port_id}/fee_enabled
-          */}
-          <div className="transaction-box my-sm p-4 col gap-md hide">
+          <div className="transaction-box my-sm p-4 col gap-md">
             <div className="row">
               <div className="col">Transfer Fee</div>
               <div className="col ml-auto">
-                {Number(value) ? <>20.1 USDC</> : null}
+                {Number(value) ? (
+                  // todo: the transfer fee will be a collection of:
+                  // + source chain IBC fee middleware
+                  // + destination chain IBC fee middleware
+                  // not all chains will contain middleware or routes to query them
+                  // see: /ibc/apps/fee/v1/channels/{channel_id}/ports/{port_id}/fee_enabled
+                  <>~0 {(from || to)?.symbol}</>
+                ) : null}
               </div>
             </div>
             <div className="row">
               <div className="col">Estimated Time</div>
               <div className="col ml-auto">
-                {Number(value) ? <>15 minutes</> : null}
+                {Number(value) ? (
+                  // todo: the transfer time will be a collection of:
+                  // + connection.delay_period (a string eg. "0", "500ms")
+                  // + the block time of the source chain
+                  // + the time to send the request via relayers (usually 0/1 blocks)
+                  // + the block time of the destination chain
+                  // for Cosmos IBC chains this will be about 2-3 blocks time
+                  <>&lt;30 seconds</>
+                ) : null}
               </div>
             </div>
             <div className="row">
               <div className="col">Total (est)</div>
               <div className="col ml-auto">
-                {Number(value) ? <>380.1 USDC</> : null}
+                {Number(value) ? (
+                  <>
+                    {value} {(from || to)?.symbol}
+                  </>
+                ) : null}
               </div>
             </div>
           </div>
