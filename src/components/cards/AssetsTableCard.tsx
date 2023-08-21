@@ -301,7 +301,8 @@ function BridgeDialog({
 
   const { wallet } = useWeb3();
   const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(
-    from?.chain
+    chainFrom,
+    chainTo
   );
   const bridgeTokens = useCallback<React.FormEventHandler<HTMLFormElement>>(
     async (e) => {

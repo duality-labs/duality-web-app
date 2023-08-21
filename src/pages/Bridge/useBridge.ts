@@ -9,7 +9,10 @@ import {
 } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/tx';
 
 import { ibcClient } from '../../lib/web3/rpcMsgClient';
-import { useRemoteChainRestEndpoint } from '../../lib/web3/hooks/useChains';
+import {
+  useIbcOpenTransfers,
+  useRemoteChainRestEndpoint,
+} from '../../lib/web3/hooks/useChains';
 import {
   getKeplrWallet,
   getKeplrWalletAccount,
@@ -96,7 +99,10 @@ async function bridgeToken(
     });
 }
 
-export default function useBridge(chainFrom?: Chain): [
+export default function useBridge(
+  chainFrom?: Chain,
+  chainTo?: Chain
+): [
   {
     data?: MsgTransferResponseSDKType;
     isValidating: boolean;
@@ -110,12 +116,16 @@ export default function useBridge(chainFrom?: Chain): [
 
   const { data: restEndpointFrom, refetch: refetchFrom } =
     useRemoteChainRestEndpoint(chainFrom);
+  const { data: restEndpointTo, refetch: refetchTo } =
+    useRemoteChainRestEndpoint(chainTo);
+  const ibcOpenTransfers = useIbcOpenTransfers(chainFrom);
 
   const sendRequest = useCallback(
     async (request: MsgTransfer) => {
       // check things around the request (not the request payload)
       if (!request) return onError('Missing Token and Amount');
-      if (!chainFrom) return onError('No Chain connected');
+      if (!chainFrom) return onError('No Source Chain connected');
+      if (!chainTo) return onError('No Destination Chain connected');
 
       setValidating(true);
       setError(undefined);
@@ -131,11 +141,48 @@ export default function useBridge(chainFrom?: Chain): [
         if (!account || !account.address) {
           throw new Error('No wallet address');
         }
+        const connection = ibcOpenTransfers.find(({ chainID }) => {
+          return chainID === chainTo.chain_id;
+        })?.connection;
+        if (!connection) {
+          throw new Error('No connection between source and destination found');
+        }
         const refetchOptions = { cancelRefetch: false };
         const clientEndpointFrom =
           restEndpointFrom ?? (await refetchFrom(refetchOptions)).data;
         if (!clientEndpointFrom) {
-          throw new Error('No chain endpoint found');
+          throw new Error('No source chain endpoint found');
+        }
+        // before sending the transaction:
+        // check that both sides of the channel have an Active status
+        const clientEndpointTo =
+          restEndpointTo ?? (await refetchTo(refetchOptions)).data;
+        if (!clientEndpointTo) {
+          throw new Error('No destination chain endpoint found');
+        }
+        const lcdClientFrom = await ibc.ClientFactory.createLCDClient({
+          restEndpoint: clientEndpointFrom,
+        });
+        const lcdClientTo = await ibc.ClientFactory.createLCDClient({
+          restEndpoint: clientEndpointTo,
+        });
+        const clientFromStatus =
+          await lcdClientFrom.ibc.core.client.v1.clientStatus({
+            clientId: connection.client_id,
+          });
+        if (clientFromStatus.status !== 'Active') {
+          throw new Error(
+            `The connection source client is not active. Current status: ${clientFromStatus.status}`
+          );
+        }
+        const clientToStatus =
+          await lcdClientTo.ibc.core.client.v1.clientStatus({
+            clientId: connection.client_id,
+          });
+        if (clientToStatus.status !== 'Active') {
+          throw new Error(
+            `The connection destination client is not active. Current status: ${clientToStatus.status}`
+          );
         }
         // make the bridge transaction to the from chain (with correct signing)
         const client = await ibcClient(offlineSigner, clientEndpointFrom);
@@ -157,7 +204,15 @@ export default function useBridge(chainFrom?: Chain): [
         setError(message);
       }
     },
-    [chainFrom, refetchFrom, restEndpointFrom]
+    [
+      chainFrom,
+      chainTo,
+      ibcOpenTransfers,
+      refetchFrom,
+      refetchTo,
+      restEndpointFrom,
+      restEndpointTo,
+    ]
   );
 
   return [
