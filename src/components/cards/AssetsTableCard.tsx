@@ -669,7 +669,7 @@ function RemoteChainReserves({
   const { data: bankBalance, isFetching: isFetchingBankBalance } =
     useRemoteChainBankBalance(chain, token, address);
 
-  if (chainEndpoint) {
+  if (chainEndpoint && address) {
     const bankBalanceAmount = bankBalance?.balance?.amount;
     if (bankBalanceAmount || isFetchingBankBalance) {
       return (
