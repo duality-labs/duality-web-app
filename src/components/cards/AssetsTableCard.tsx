@@ -380,9 +380,19 @@ function BridgeDialog({
         if (!ibcTransferInfo.channel.counterparty) {
           throw new Error('No egress connection information found');
         }
+        // find the denom unit asked for
+        const denomUnit = to.denom_units.find(
+          (unit) =>
+            unit.denom === to.address ||
+            unit.aliases?.find((alias) => alias === to.address)
+        );
+        // use the IBC version of the denom unit if found
+        const tokenDenom =
+          denomUnit?.aliases?.find((alias) => alias.startsWith('ibc/')) ??
+          to.address;
         try {
           await sendRequest({
-            token: coin(amount, to.address),
+            token: coin(amount, tokenDenom),
             timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
