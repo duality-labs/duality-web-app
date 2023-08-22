@@ -429,9 +429,9 @@ function BridgeDialog({
           defaultMaxChainTime
       ).multipliedBy(nanoseconds);
       const blockMinutes = chainMsFrom.plus(chainMsTo).dividedBy(minutes);
-      return `<${blockMinutes.toFixed(0)} minute${
-        blockMinutes.isGreaterThan(1) ? 's' : ''
-      }`;
+      return `<${formatAmount(blockMinutes.toFixed(0), {
+        useGrouping: true,
+      })} minute${blockMinutes.isGreaterThan(1) ? 's' : ''}`;
     }
   }, [chainTimeFrom, chainTimeTo]);
 
@@ -445,7 +445,7 @@ function BridgeDialog({
         .multipliedBy(one.plus(chainFeesFrom?.params?.fee_percentage ?? 0))
         .multipliedBy(one.plus(chainFeesTo?.params?.fee_percentage ?? 0))
         .minus(value);
-      return formatAmount(fee.toFixed());
+      return formatAmount(fee.toFixed(), { useGrouping: true });
     }
   }, [value, chainFeesFrom, chainFeesTo]);
 
@@ -626,7 +626,8 @@ function BridgeDialog({
               <div className="col ml-auto">
                 {Number(value) ? (
                   <>
-                    {value} {(from || to)?.symbol}
+                    {formatAmount(value, { useGrouping: true })}{' '}
+                    {(from || to)?.symbol}
                   </>
                 ) : null}
               </div>
@@ -676,11 +677,14 @@ function RemoteChainReserves({
           <div className="text-muted">Available</div>
           <div className="text-muted ml-auto">
             {bankBalanceAmount
-              ? getAmountInDenom(
-                  token,
-                  bankBalanceAmount,
-                  token.base,
-                  token.display
+              ? formatAmount(
+                  getAmountInDenom(
+                    token,
+                    bankBalanceAmount,
+                    token.base,
+                    token.display
+                  ) || 0,
+                  { useGrouping: true }
                 )
               : '...'}
           </div>
@@ -728,7 +732,15 @@ function LocalChainReserves({
       <div className="text-muted">Available</div>
       <div className="text-muted ml-auto">
         {userToken?.amount
-          ? getAmountInDenom(token, userToken.amount, token.base, token.display)
+          ? formatAmount(
+              getAmountInDenom(
+                token,
+                userToken.amount,
+                token.base,
+                token.display
+              ) || 0,
+              { useGrouping: true }
+            )
           : '...'}
       </div>
     </div>
