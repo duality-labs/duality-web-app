@@ -719,6 +719,7 @@ function LocalChainReserves({
   className?: string;
   token: Token;
 }) {
+  const { address } = useWeb3();
   const allUserBankAssets = useUserBankValues();
   const userToken = allUserBankAssets.find((tokenCoin) => {
     return (
@@ -726,6 +727,14 @@ function LocalChainReserves({
       tokenCoin.token.chain.chain_id === token.chain.chain_id
     );
   });
+
+  if (!address) {
+    return (
+      <div className={className}>
+        <span className="text-secondary">Unconnected</span>
+      </div>
+    );
+  }
 
   return (
     <div className={`${className} flex row gap-3`}>
