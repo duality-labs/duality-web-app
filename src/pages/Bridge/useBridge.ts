@@ -166,6 +166,11 @@ export default function useBridge(
         const lcdClientTo = await ibc.ClientFactory.createLCDClient({
           restEndpoint: clientEndpointTo,
         });
+        // future: can check both sides of the chain to see if they have IBC
+        // - send_enabled
+        // - receive_enabled
+        // by querying each chain with: /ibc/apps/transfer/v1/params
+        // (this may be redundant as we know there is an IBC connection already)
         const clientFromStatus =
           await lcdClientFrom.ibc.core.client.v1.clientStatus({
             clientId: connection.client_id,
