@@ -2,7 +2,10 @@ import { Chain } from '@chain-registry/types';
 import { useMemo, useState } from 'react';
 import { ibc } from '@duality-labs/dualityjs';
 import { QueryClientStatesResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
-import { QueryConnectionsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
+import {
+  QueryConnectionParamsResponseSDKType,
+  QueryConnectionsResponseSDKType,
+} from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
 import { QueryChannelsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/query';
 import { QueryBalanceResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { State as ChannelState } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/channel';
@@ -254,6 +257,30 @@ export function useRemoteChainBankBalance(
           address,
           denom: token.base,
         });
+      } else {
+        return null;
+      }
+    },
+    refetchInterval: 5 * minutes,
+  });
+}
+
+export function useRemoteChainBlockTime(chain: Chain) {
+  const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
+  return useQuery({
+    enabled: !!restEndpoint,
+    queryKey: ['cosmos-chain-block-time', restEndpoint],
+    queryFn: async (): Promise<QueryConnectionParamsResponseSDKType | null> => {
+      if (restEndpoint) {
+        const client = await ibc.ClientFactory.createLCDClient({
+          restEndpoint,
+        });
+        try {
+          return await client.ibc.core.connection.v1.connectionParams();
+        } catch (e) {
+          // many chains do not return this route, in which case: state empty
+          return {};
+        }
       } else {
         return null;
       }
