@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
-import { OfflineSigner } from '@cosmjs/proto-signing';
+import { OfflineSigner, parseCoins } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 
 import { formatAmount } from '../../../lib/utils/number';
@@ -19,7 +19,6 @@ import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
 import {
   mapEventAttributes,
   CoinReceivedEvent,
-  parseAmountDenomString,
 } from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
 import { dualitylabs } from '@duality-labs/dualityjs';
@@ -104,9 +103,9 @@ async function sendSwap(
           // collect into more usable format for parsing
           const { attributes } = mapEventAttributes<CoinReceivedEvent>(event);
           // parse coin string for matching tokens
-          const [amount, denom] = parseAmountDenomString(attributes.amount);
-          if (denom === tokenOut) {
-            return result.plus(amount);
+          const coin = parseCoins(attributes.amount)[0];
+          if (coin?.denom === tokenOut) {
+            return result.plus(coin?.amount || 0);
           }
         }
         return result;
