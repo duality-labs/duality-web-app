@@ -1,6 +1,7 @@
 import { Chain } from '@chain-registry/types';
 import { useMemo, useState } from 'react';
-import { ibc } from '@duality-labs/dualityjs';
+import { ibc, router } from '@duality-labs/dualityjs';
+import { QueryParamsResponseSDKType as QueryRouterParamsSDKType } from '@duality-labs/dualityjs/types/codegen/router/v1/query';
 import { QueryClientStatesResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
 import { ParamsSDKType as QueryConnectionParamsSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
 import { QueryConnectionsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
@@ -285,6 +286,25 @@ export function useRemoteChainBlockTime(chain: Chain) {
           // many chains do not return this route, in which case: state empty
           return {};
         }
+      } else {
+        return null;
+      }
+    },
+    refetchInterval: 5 * minutes,
+  });
+}
+
+export function useRemoteChainFees(chain: Chain) {
+  const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
+  return useQuery({
+    enabled: !!restEndpoint,
+    queryKey: ['cosmos-chain-fees', restEndpoint],
+    queryFn: async (): Promise<QueryRouterParamsSDKType | null> => {
+      if (restEndpoint) {
+        const client = await router.ClientFactory.createLCDClient({
+          restEndpoint,
+        });
+        return client.router.v1.params();
       } else {
         return null;
       }

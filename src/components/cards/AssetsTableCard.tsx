@@ -23,6 +23,7 @@ import {
   useIbcOpenTransfers,
   useRemoteChainBankBalance,
   useRemoteChainBlockTime,
+  useRemoteChainFees,
   useRemoteChainRestEndpoint,
 } from '../../lib/web3/hooks/useChains';
 
@@ -433,6 +434,21 @@ function BridgeDialog({
       }`;
     }
   }, [chainTimeFrom, chainTimeTo]);
+
+  // find transfer fees
+  const { data: chainFeesFrom } = useRemoteChainFees(chainFrom);
+  const { data: chainFeesTo } = useRemoteChainFees(chainTo);
+  const chainFees = useMemo(() => {
+    if (chainFeesFrom !== undefined && chainFeesTo !== undefined) {
+      const one = new BigNumber(1);
+      const fee = new BigNumber(value)
+        .multipliedBy(one.plus(chainFeesFrom?.params?.fee_percentage ?? 0))
+        .multipliedBy(one.plus(chainFeesTo?.params?.fee_percentage ?? 0))
+        .minus(value);
+      return formatAmount(fee.toFixed());
+    }
+  }, [value, chainFeesFrom, chainFeesTo]);
+
   return (
     <Dialog
       isOpen={isOpen}
@@ -599,12 +615,9 @@ function BridgeDialog({
               <div className="col">Transfer Fee</div>
               <div className="col ml-auto">
                 {Number(value) ? (
-                  // todo: the transfer fee will be a collection of:
-                  // + source chain IBC fee middleware
-                  // + destination chain IBC fee middleware
-                  // not all chains will contain middleware or routes to query them
-                  // see: /ibc/apps/fee/v1/channels/{channel_id}/ports/{port_id}/fee_enabled
-                  <>~0 {(from || to)?.symbol}</>
+                  <>
+                    {chainFees ?? '...'} {(from || to)?.symbol}
+                  </>
                 ) : null}
               </div>
             </div>
