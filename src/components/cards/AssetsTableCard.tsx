@@ -731,11 +731,11 @@ function LocalChainReserves({
     <div className={`${className} flex row gap-3`}>
       <div className="text-muted">Available</div>
       <div className="text-muted ml-auto">
-        {userToken?.amount
+        {allUserBankAssets
           ? formatAmount(
               getAmountInDenom(
                 token,
-                userToken.amount,
+                userToken?.amount ?? 0,
                 token.base,
                 token.display
               ) || 0,
