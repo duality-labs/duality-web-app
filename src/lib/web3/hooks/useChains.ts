@@ -2,10 +2,8 @@ import { Chain } from '@chain-registry/types';
 import { useMemo, useState } from 'react';
 import { ibc } from '@duality-labs/dualityjs';
 import { QueryClientStatesResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
-import {
-  QueryConnectionParamsResponseSDKType,
-  QueryConnectionsResponseSDKType,
-} from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
+import { ParamsSDKType as QueryConnectionParamsSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
+import { QueryConnectionsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
 import { QueryChannelsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/query';
 import { QueryBalanceResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { State as ChannelState } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/channel';
@@ -16,6 +14,10 @@ import { getChainInfo } from '../wallets/keplr';
 import dualityLogo from '../../../assets/logo/logo.svg';
 import { Token } from '../utils/tokens';
 import { minutes } from '../../utils/time';
+
+interface QueryConnectionParamsResponseSDKType {
+  params?: QueryConnectionParamsSDKType;
+}
 
 const {
   REACT_APP__CHAIN_NAME = '[chain_name]',
@@ -276,7 +278,9 @@ export function useRemoteChainBlockTime(chain: Chain) {
           restEndpoint,
         });
         try {
-          return await client.ibc.core.connection.v1.connectionParams();
+          const params = await client.ibc.core.connection.v1.connectionParams();
+          // fix return type to point to connection params and not client params
+          return params as unknown as QueryConnectionParamsResponseSDKType;
         } catch (e) {
           // many chains do not return this route, in which case: state empty
           return {};
