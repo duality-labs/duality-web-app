@@ -2,7 +2,12 @@ import invariant from 'invariant';
 
 import { useEffect } from 'react';
 import { AccountData, OfflineSigner } from '@cosmjs/proto-signing';
-import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
+import {
+  ChainInfo,
+  Currency,
+  Keplr,
+  Window as KeplrWindow,
+} from '@keplr-wallet/types';
 import { chainRegistryChainToKeplr } from '@chain-registry/keplr';
 import { providerChain } from '../hooks/useChains';
 import { providerAssets } from '../hooks/useTokens';
@@ -13,6 +18,9 @@ const {
   REACT_APP__RPC_API,
   REACT_APP__REST_API,
   REACT_APP__BECH_PREFIX,
+  REACT_APP__CHAIN_STAKE_CURRENCY,
+  REACT_APP__CHAIN_TOKEN_CURRENCIES,
+  REACT_APP__CHAIN_FEE_CURRENCIES,
 } = process.env;
 
 const chainId = REACT_APP__CHAIN_ID || '';
@@ -21,25 +29,24 @@ const rpcEndpoint = REACT_APP__RPC_API || '';
 const restEndpoint = REACT_APP__REST_API || '';
 const bech32Prefix = REACT_APP__BECH_PREFIX || 'cosmos';
 
-const token = {
-  coinDenom: 'TOKEN',
-  coinMinimalDenom: 'token',
-  coinDecimals: 18,
-};
-const stake = {
-  coinDenom: 'STAKE',
-  coinMinimalDenom: 'stake',
-  coinDecimals: 18,
-};
+const stakeCurrency = REACT_APP__CHAIN_STAKE_CURRENCY
+  ? (JSON.parse(REACT_APP__CHAIN_STAKE_CURRENCY) as Currency)
+  : { coinDenom: 'STAKE', coinMinimalDenom: 'stake', coinDecimals: 6 };
+const currencies = REACT_APP__CHAIN_TOKEN_CURRENCIES
+  ? JSON.parse(REACT_APP__CHAIN_TOKEN_CURRENCIES)
+  : [stakeCurrency];
+const feeCurrencies = REACT_APP__CHAIN_FEE_CURRENCIES
+  ? JSON.parse(REACT_APP__CHAIN_FEE_CURRENCIES)
+  : [stakeCurrency];
 
 const chainInfo: ChainInfo = {
   chainId,
   chainName,
   rpc: rpcEndpoint,
   rest: restEndpoint,
-  currencies: [token, stake],
-  stakeCurrency: stake,
-  feeCurrencies: [token],
+  currencies,
+  stakeCurrency,
+  feeCurrencies,
   bip44: {
     coinType: 118,
   },
