@@ -203,6 +203,11 @@ export default function useBridge(
         setValidating(false);
       } catch (err: unknown) {
         // add error to state
+        // add custom error message for known error codes
+        if ((err as { response?: { code?: number } })?.response?.code === 11) {
+          onError();
+          throw err;
+        }
         onError((err as Error)?.message ?? 'Unknown error');
         // pass error to console for developer
         // eslint-disable-next-line no-console
