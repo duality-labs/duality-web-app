@@ -12,6 +12,7 @@ import { ibcClient } from '../../lib/web3/rpcMsgClient';
 import {
   useIbcOpenTransfers,
   useRemoteChainRestEndpoint,
+  useRemoteChainRpcEndpoint,
 } from '../../lib/web3/hooks/useChains';
 import {
   getKeplrWallet,
@@ -119,6 +120,8 @@ export default function useBridge(
   const { data: restEndpointTo, refetch: refetchTo } =
     useRemoteChainRestEndpoint(chainTo);
   const ibcOpenTransfers = useIbcOpenTransfers(chainFrom);
+  const { data: rpcEndpointFrom, refetch: refetchRpc } =
+    useRemoteChainRpcEndpoint(chainFrom);
 
   const sendRequest = useCallback(
     async (request: MsgTransfer) => {
@@ -189,8 +192,13 @@ export default function useBridge(
             `The connection destination client is not active. Current status: ${clientToStatus.status}`
           );
         }
+        const rpcClientEndpointFrom =
+          rpcEndpointFrom ?? (await refetchRpc(refetchOptions)).data;
+        if (!rpcClientEndpointFrom) {
+          throw new Error('No source chain transaction endpoint found');
+        }
         // make the bridge transaction to the from chain (with correct signing)
-        const client = await ibcClient(offlineSigner, clientEndpointFrom);
+        const client = await ibcClient(offlineSigner, rpcClientEndpointFrom);
         await bridgeToken(request, client, account.address);
         setValidating(false);
       } catch (err: unknown) {
@@ -214,9 +222,11 @@ export default function useBridge(
       chainTo,
       ibcOpenTransfers,
       refetchFrom,
+      refetchRpc,
       refetchTo,
       restEndpointFrom,
       restEndpointTo,
+      rpcEndpointFrom,
     ]
   );
 

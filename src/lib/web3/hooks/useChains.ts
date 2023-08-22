@@ -203,9 +203,47 @@ export function useConnectedChainIDs(chain: Chain = dualityChain) {
   }, [openTransfers]);
 }
 
+export function useRemoteChainRpcEndpoint(chain?: Chain) {
+  return useQuery({
+    queryKey: ['cosmos-chain-rpc-endpoints', chain?.chain_id],
+    queryFn: async (): Promise<string | null> => {
+      const rpcEndpoints = (chain?.apis?.rpc ?? []).map((rest) => rest.address);
+      if (rpcEndpoints.length > 0) {
+        try {
+          const rpcEndpoint = await Promise.race([
+            Promise.any(
+              rpcEndpoints.map(async (rpcEndpoint) => {
+                const client = await ibc.ClientFactory.createRPCQueryClient({
+                  rpcEndpoint,
+                });
+                await client.cosmos.base.tendermint.v1beta1.getNodeInfo();
+                return rpcEndpoint;
+              })
+            ),
+            new Promise<string>((resolve, reject) => setTimeout(reject, 10000)),
+          ]);
+          return rpcEndpoint ?? null;
+        } catch (e) {
+          // all requests failed or the requests timed out
+          return null;
+        }
+      }
+      // return the Duality chain REST API if this is the Duality chain
+      else if (chain?.chain_id === REACT_APP__CHAIN_ID) {
+        return REACT_APP__RPC_API;
+      }
+      // return nothing if the request is invalid
+      else {
+        return null;
+      }
+    },
+    refetchInterval: false,
+  });
+}
+
 export function useRemoteChainRestEndpoint(chain?: Chain) {
   return useQuery({
-    queryKey: ['cosmos-chain-endpoints', chain?.chain_id],
+    queryKey: ['cosmos-chain-rest-endpoints', chain?.chain_id],
     queryFn: async (): Promise<string | null> => {
       const restEndpoints = (chain?.apis?.rest ?? []).map(
         (rest) => rest.address
