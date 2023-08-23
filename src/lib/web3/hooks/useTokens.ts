@@ -79,7 +79,7 @@ const dualityStakeToken: Token = {
 };
 
 export const providerAssets: AssetList | undefined = REACT_APP__PROVIDER_ASSETS
-  ? JSON.parse(REACT_APP__PROVIDER_ASSETS)
+  ? (JSON.parse(REACT_APP__PROVIDER_ASSETS) as AssetList)
   : undefined;
 
 const assetList = providerAssets
