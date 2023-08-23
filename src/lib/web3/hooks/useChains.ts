@@ -21,6 +21,7 @@ interface QueryConnectionParamsResponseSDKType {
 }
 
 const {
+  REACT_APP__CHAIN = '',
   REACT_APP__CHAIN_NAME = '[chain_name]',
   REACT_APP__CHAIN_ID = '[chain_id]',
   REACT_APP__CHAIN_FEE_TOKENS = '',
@@ -52,6 +53,8 @@ export const dualityChain: Chain = {
       ? (JSON.parse(REACT_APP__CHAIN_FEE_TOKENS) as ChainFeeTokens)
       : [],
   },
+  // override default settings with an env variable for the whole chain config
+  ...(REACT_APP__CHAIN ? (JSON.parse(REACT_APP__CHAIN) as Chain) : {}),
 };
 
 export const providerChain: Chain | undefined = REACT_APP__PROVIDER_CHAIN
