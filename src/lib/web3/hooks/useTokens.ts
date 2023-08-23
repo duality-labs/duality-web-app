@@ -17,8 +17,11 @@ import { dualityChain, providerChain, useIbcOpenTransfers } from './useChains';
 import tknLogo from '../../../assets/tokens/TKN.svg';
 import stkLogo from '../../../assets/tokens/STK.svg';
 
-const { REACT_APP__IS_MAINNET = 'mainnet', REACT_APP__PROVIDER_ASSETS = '' } =
-  process.env;
+const {
+  REACT_APP__IS_MAINNET = 'mainnet',
+  REACT_APP__CHAIN_ASSETS = '',
+  REACT_APP__PROVIDER_ASSETS = '',
+} = process.env;
 
 const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 
@@ -77,6 +80,15 @@ const dualityStakeToken: Token = {
   },
   chain: dualityChain,
 };
+
+export const dualityAssets: AssetList | undefined = REACT_APP__CHAIN_ASSETS
+  ? (JSON.parse(REACT_APP__CHAIN_ASSETS) as AssetList)
+  : isTestnet
+  ? {
+      chain_name: dualityChain.chain_name,
+      assets: [dualityStakeToken, dualityMainToken],
+    }
+  : undefined;
 
 export const providerAssets: AssetList | undefined = REACT_APP__PROVIDER_ASSETS
   ? (JSON.parse(REACT_APP__PROVIDER_ASSETS) as AssetList)

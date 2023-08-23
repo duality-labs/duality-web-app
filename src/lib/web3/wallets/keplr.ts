@@ -2,63 +2,17 @@ import invariant from 'invariant';
 
 import { useEffect } from 'react';
 import { AccountData, OfflineSigner } from '@cosmjs/proto-signing';
-import {
-  ChainInfo,
-  Currency,
-  Keplr,
-  Window as KeplrWindow,
-} from '@keplr-wallet/types';
+import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
 import { chainRegistryChainToKeplr } from '@chain-registry/keplr';
-import { providerChain } from '../hooks/useChains';
-import { providerAssets } from '../hooks/useTokens';
+import { dualityChain, providerChain } from '../hooks/useChains';
+import { dualityAssets, providerAssets } from '../hooks/useTokens';
 
-const {
-  REACT_APP__CHAIN_ID,
-  REACT_APP__CHAIN_NAME,
-  REACT_APP__RPC_API,
-  REACT_APP__REST_API,
-  REACT_APP__BECH_PREFIX,
-  REACT_APP__CHAIN_STAKE_CURRENCY,
-  REACT_APP__CHAIN_TOKEN_CURRENCIES,
-  REACT_APP__CHAIN_FEE_CURRENCIES,
-} = process.env;
+const { REACT_APP__CHAIN_ID: chainId = '' } = process.env;
 
-const chainId = REACT_APP__CHAIN_ID || '';
-const chainName = REACT_APP__CHAIN_NAME || '';
-const rpcEndpoint = REACT_APP__RPC_API || '';
-const restEndpoint = REACT_APP__REST_API || '';
-const bech32Prefix = REACT_APP__BECH_PREFIX || 'cosmos';
-
-const stakeCurrency = REACT_APP__CHAIN_STAKE_CURRENCY
-  ? (JSON.parse(REACT_APP__CHAIN_STAKE_CURRENCY) as Currency)
-  : { coinDenom: 'STAKE', coinMinimalDenom: 'stake', coinDecimals: 6 };
-const currencies = REACT_APP__CHAIN_TOKEN_CURRENCIES
-  ? JSON.parse(REACT_APP__CHAIN_TOKEN_CURRENCIES)
-  : [stakeCurrency];
-const feeCurrencies = REACT_APP__CHAIN_FEE_CURRENCIES
-  ? JSON.parse(REACT_APP__CHAIN_FEE_CURRENCIES)
-  : [stakeCurrency];
-
-const chainInfo: ChainInfo = {
-  chainId,
-  chainName,
-  rpc: rpcEndpoint,
-  rest: restEndpoint,
-  currencies,
-  stakeCurrency,
-  feeCurrencies,
-  bip44: {
-    coinType: 118,
-  },
-  bech32Config: {
-    bech32PrefixAccAddr: `${bech32Prefix}`,
-    bech32PrefixAccPub: `${bech32Prefix}pub`,
-    bech32PrefixValAddr: `${bech32Prefix}valoper`,
-    bech32PrefixValPub: `${bech32Prefix}valoperpub`,
-    bech32PrefixConsAddr: `${bech32Prefix}valcons`,
-    bech32PrefixConsPub: `${bech32Prefix}valconspub`,
-  },
-};
+const chainInfo: ChainInfo = chainRegistryChainToKeplr(
+  dualityChain,
+  dualityAssets ? [dualityAssets] : []
+);
 
 declare global {
   interface Window extends KeplrWindow {

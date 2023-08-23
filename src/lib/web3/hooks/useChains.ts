@@ -23,17 +23,19 @@ interface QueryConnectionParamsResponseSDKType {
 const {
   REACT_APP__CHAIN_NAME = '[chain_name]',
   REACT_APP__CHAIN_ID = '[chain_id]',
+  REACT_APP__CHAIN_FEE_TOKENS = '',
   REACT_APP__PROVIDER_CHAIN = '',
   REACT_APP__RPC_API = '',
   REACT_APP__REST_API = '',
 } = process.env;
 
+type ChainFeeTokens = NonNullable<Chain['fees']>['fee_tokens'];
 export const dualityChain: Chain = {
-  chain_name: REACT_APP__CHAIN_NAME,
+  chain_id: REACT_APP__CHAIN_ID,
+  chain_name: REACT_APP__CHAIN_ID,
+  pretty_name: REACT_APP__CHAIN_NAME,
   status: 'upcoming',
   network_type: 'testnet',
-  pretty_name: 'Duality Chain',
-  chain_id: REACT_APP__CHAIN_ID,
   bech32_prefix: 'cosmos',
   slip44: 118,
   logo_URIs: {
@@ -42,6 +44,13 @@ export const dualityChain: Chain = {
   apis: {
     rpc: [{ address: REACT_APP__RPC_API }],
     rest: [{ address: REACT_APP__REST_API }],
+  },
+  fees: {
+    // if not specified the fee tokens will default to the stake token in Keplr
+    // see: https://github.com/cosmology-tech/chain-registry/blob/%40chain-registry/keplr%401.22.1/packages/keplr/src/index.ts#L103-L131
+    fee_tokens: REACT_APP__CHAIN_FEE_TOKENS
+      ? (JSON.parse(REACT_APP__CHAIN_FEE_TOKENS) as ChainFeeTokens)
+      : [],
   },
 };
 
