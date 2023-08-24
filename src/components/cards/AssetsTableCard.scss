@@ -38,57 +38,5 @@
   // leave no padding around path info box
   .dialog-body {
     padding-top: 0;
-
-    .path-box {
-      background-color: #111928;
-      color: var(--default-alt);
-      border: 1px solid transparent;
-      border-radius: 10px;
-      .path-box__grid {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        // expand first row border to edges using some margin and padding magic
-        margin: 0 -1px;
-        > :nth-child(1),
-        > :nth-child(4) {
-          padding-left: 1px;
-        }
-        > :nth-child(3),
-        > :nth-child(6) {
-          padding-right: 1px;
-        }
-        // add border bottom to first row
-        > :nth-child(1),
-        > :nth-child(2),
-        > :nth-child(3) {
-          border-bottom: 1px solid hsl(217deg, 19%, 27%);
-        }
-      }
-    }
-    // allow disabled token picker to not look disabled
-    .token-picker-toggle:disabled {
-      opacity: 1;
-    }
-    // allow disabled wallet buttons to not look disabled
-    .button-wallet:disabled {
-      opacity: 1;
-    }
-    .ibc-transfer-value {
-      width: 100%;
-      color: var(--default-alt);
-    }
-    .transaction-box {
-      border-radius: 8px;
-      border: 1px solid hsla(217, 19%, 27%, 1);
-    }
-    .logo {
-      width: 1.4rem;
-      height: 1.4rem;
-    }
-    .button-wallet {
-      padding: 1.25rem paddings.size(lg);
-      background-color: hsl(219, 19%, 27%);
-      border: 1px solid hsl(215, 14%, 34%);
-    }
   }
 }
