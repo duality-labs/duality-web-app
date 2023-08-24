@@ -1,74 +1,44 @@
-import AssetsTableCard from '../../components/cards/AssetsTableCard';
+import { useMemo, useState } from 'react';
+import { Asset } from '@chain-registry/types';
 
-import { useWeb3 } from '../../lib/web3/useWeb3';
-import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
+import BridgeCard from '../../components/cards/BridgeCard';
+import { dualityAssets, providerAssets } from '../../lib/web3/hooks/useTokens';
+import { Token } from '../../lib/web3/utils/tokens';
+import { dualityChain, providerChain } from '../../lib/web3/hooks/useChains';
 
-import '../MyLiquidity/MyLiquidity.scss';
+import './Bridge.scss';
 
 export default function MyLiquidity() {
-  return (
-    <div className="my-liquidity-page container col flex gap-5 py-6">
-      <Heading />
-      <HeroCard />
-      <Tables />
-    </div>
-  );
-}
+  const [assetFrom] = useState<Asset | undefined>(providerAssets?.assets.at(0));
+  const [assetTo] = useState<Asset | undefined>(dualityAssets?.assets.at(0));
+  const from = useMemo<Token | undefined>(() => {
+    return (
+      assetFrom &&
+      providerChain && {
+        address: '',
+        chain: providerChain,
+        ...assetFrom,
+      }
+    );
+  }, [assetFrom]);
+  const to = useMemo<Token | undefined>(() => {
+    return (
+      assetTo &&
+      providerChain && {
+        address: '',
+        chain: dualityChain,
+        ...assetTo,
+      }
+    );
+  }, [assetTo]);
 
-function Heading() {
-  const { wallet, connectWallet } = useWeb3();
   return (
-    <div className="row gap-5">
-      <div className="col">
-        <h1 className="h1 hero-text">Bridge</h1>
-      </div>
-      {!wallet && (
-        <div className="col flex-centered mt-2 pt-1">
-          <button
-            className="connect-wallet button-primary p-3 px-4"
-            onClick={connectWallet}
-          >
-            Connect Wallet
-          </button>
+    <div className="container row">
+      <div className="bridge-page col m-auto">
+        <div className="page-card">
+          <h2 className="h2 mb-lg">Bridge</h2>
+          <BridgeCard from={from} to={to} />
         </div>
-      )}
-    </div>
-  );
-}
-
-function HeroCard() {
-  const { wallet } = useWeb3();
-  const allUserBankValue = useUserBankValue();
-  return (
-    <div className="page-card">
-      <table className="hero-table simple-table gutter-b-1">
-        <thead>
-          <tr>
-            <th>Total Assets on Duality</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              {wallet
-                ? `$${allUserBankValue.toNumber().toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`
-                : '-'}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function Tables() {
-  return (
-    <div className="row flex gapx-4 gapy-5 flow-wrap">
-      <div className="col flex">
-        <AssetsTableCard showActions />
       </div>
     </div>
   );
