@@ -69,6 +69,10 @@
     .token-picker-toggle:disabled {
       opacity: 1;
     }
+    // allow disabled wallet buttons to not look disabled
+    .button-wallet:disabled {
+      opacity: 1;
+    }
     .ibc-transfer-value {
       width: 100%;
       color: var(--default-alt);

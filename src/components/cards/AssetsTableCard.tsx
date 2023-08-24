@@ -573,7 +573,11 @@ function BridgeDialog({
           </div>
           <div className="row gap-md">
             <div className="flex col">
-              <button type="button" className="button-wallet col gap-3">
+              <button
+                type="button"
+                disabled
+                className="button-wallet col gap-3"
+              >
                 <div className="row gap-md">
                   <div className="col">
                     <img src={keplrLogoURI} className="logo" alt="logo" />
@@ -594,7 +598,11 @@ function BridgeDialog({
               </button>
             </div>
             <div className="flex col">
-              <button type="button" className="button-wallet col gap-3">
+              <button
+                type="button"
+                disabled
+                className="button-wallet col gap-3"
+              >
                 <div className="row gap-md">
                   <div className="col">
                     <img src={keplrLogoURI} className="logo" alt="logo" />
