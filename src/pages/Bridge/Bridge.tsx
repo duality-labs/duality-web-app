@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Asset } from '@chain-registry/types';
 
 import BridgeCard from '../../components/cards/BridgeCard';
@@ -32,12 +32,34 @@ export default function MyLiquidity() {
     );
   }, [assetTo]);
 
+  const [deposit, setDeposit] = useState(true);
+  const setDepositMode = useCallback(() => setDeposit(true), []);
+  const setWithdrawMode = useCallback(() => setDeposit(false), []);
+
   return (
     <div className="container row">
       <div className="bridge-page col m-auto">
         <div className="page-card">
           <h2 className="h2 mb-lg">Bridge</h2>
-          <BridgeCard from={from} to={to} />
+          <div className="tabs flex row gap-5 mb-5">
+            <button
+              className={['tab px-0 pb-3', deposit && 'active']
+                .filter(Boolean)
+                .join(' ')}
+              onClick={setDepositMode}
+            >
+              Deposit
+            </button>
+            <button
+              className={['tab px-0 pb-3', !deposit && 'active']
+                .filter(Boolean)
+                .join(' ')}
+              onClick={setWithdrawMode}
+            >
+              Withdraw
+            </button>
+          </div>
+          <BridgeCard from={deposit ? from : to} to={deposit ? to : from} />
         </div>
       </div>
     </div>
