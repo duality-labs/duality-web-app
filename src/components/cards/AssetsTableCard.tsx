@@ -549,6 +549,7 @@ function BridgeDialog({
                   onChange={setToken}
                   tokenList={tokenList}
                   showChain={false}
+                  disabled
                 />
               </div>
               <div className="col flex flex-centered">

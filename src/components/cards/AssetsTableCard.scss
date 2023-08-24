@@ -65,6 +65,10 @@
         }
       }
     }
+    // allow disabled token picker to not look disabled
+    .token-picker-toggle:disabled {
+      opacity: 1;
+    }
     .ibc-transfer-value {
       width: 100%;
       color: var(--default-alt);
