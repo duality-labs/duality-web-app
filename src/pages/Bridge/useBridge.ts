@@ -26,6 +26,8 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
+import { toast } from '../../components/Notifications';
+import { seconds } from '../../lib/utils/time';
 
 async function bridgeToken(
   msg: MsgTransfer,
@@ -95,8 +97,8 @@ async function bridgeToken(
         checkMsgOutOfGasToast(err, { id }) ||
         checkMsgErrorToast(err, { id });
 
-      // rethrow error
-      throw err;
+      // don't rethrow error, we should error message toasts for previous errors
+      // throw err;
     });
 }
 
@@ -220,6 +222,12 @@ export default function useBridge(
         setValidating(false);
         setData(undefined);
         setError(message);
+        // add transient error message to user
+        toast.error('Transaction Failed', {
+          description: message,
+          duration: 7 * seconds,
+          dismissable: true,
+        });
       }
     },
     [

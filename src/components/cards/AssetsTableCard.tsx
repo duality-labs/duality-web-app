@@ -302,8 +302,10 @@ function BridgeDialog({
   const ibcOpenTransfers = useIbcOpenTransfers(chainFrom);
 
   const { wallet } = useWeb3();
-  const [{ isValidating: isValidatingBridgeTokens, error }, sendRequest] =
-    useBridge(chainFrom, chainTo);
+  const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(
+    chainFrom,
+    chainTo
+  );
   const bridgeTokens = useCallback<React.FormEventHandler<HTMLFormElement>>(
     async (e) => {
       // prevent submission to URL
@@ -652,7 +654,6 @@ function BridgeDialog({
               </div>
             </div>
           </div>
-          {error && <div className="panel panel-error mb-sm p-4">{error}</div>}
           {token && (
             <button
               type="submit"
