@@ -106,7 +106,7 @@ export default function PoolOverview({
               </div>
             )}
             <div className="col">
-              <Link to={`/swap/${tokenA.symbol}/${tokenB.symbol}`}>
+              <Link to={`/orderbook/${tokenA.symbol}/${tokenB.symbol}`}>
                 <button className="button button-primary-outline py-3 px-4">
                   Trade
                 </button>
