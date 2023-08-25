@@ -42,10 +42,10 @@ function Orderbook() {
           <div className="flex page-card">left</div>
         </div>
         <div className="col">
-          <div className="flex page-card">center</div>
+          <div className="flex page-card">Orderbook/Trades table</div>
         </div>
         <div className="col">
-          <div className="flex page-card">right</div>
+          <div className="flex page-card">Limit Order control</div>
         </div>
       </div>
       <div className="row">
