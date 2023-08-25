@@ -122,6 +122,8 @@ function OrderbookStatsRow({
     <div className="row gap-5">
       <StatColPrice tokenA={tokenA} tokenB={tokenB} />
       <StatColVolume tokenA={tokenA} tokenB={tokenB} />
+      <StatColPriceHigh tokenA={tokenA} tokenB={tokenB} />
+      <StatColPriceLow tokenA={tokenA} tokenB={tokenB} />
     </div>
   );
 }
@@ -143,6 +145,22 @@ function StatColPrice({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       }
     />
   );
+}
+
+function StatColPriceHigh({
+  tokenA,
+  tokenB,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+}) {
+  const [, price] = useStatPrice(tokenA, tokenB, 'high');
+  return <StatCol heading="24H High" value={price ?? undefined} />;
+}
+
+function StatColPriceLow({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
+  const [, price] = useStatPrice(tokenA, tokenB, 'low');
+  return <StatCol heading="24H Low" value={price ?? undefined} />;
 }
 
 function StatColVolume({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
