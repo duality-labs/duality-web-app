@@ -108,7 +108,12 @@ export interface DexPlaceLimitOrderEvent {
     TokenIn: string;
     AmountIn: string;
     LimitTick: string;
-    OrderType: string;
+    OrderType:
+      | 'GOOD_TIL_CANCELLED'
+      | 'FILL_OR_KILL'
+      | 'IMMEDIATE_OR_CANCEL'
+      | 'JUST_IN_TIME'
+      | 'GOOD_TIL_TIME';
     Shares: string;
     TrancheKey: string;
   };
