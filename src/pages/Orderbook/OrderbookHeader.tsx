@@ -6,6 +6,7 @@ import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import useTokens from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 
+import TokenPairLogos from '../../components/TokenPairLogos/TokenPairLogos';
 import TokenPicker from '../../components/TokenPicker/TokenPicker';
 import { formatCurrency, formatPercentage } from '../../lib/utils/number';
 import { useStatPrice, useStatVolume } from '../../components/stats/hooks';
@@ -85,28 +86,36 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
   const tokenList = useTokens();
 
   return (
-    <div className="row flex-centered gap-3">
-      <div className="col">
+    <div className="row gap-md flex-centered">
+      <TokenPairLogos className="h3" tokenA={tokenA} tokenB={tokenB} />
+      <h2 className="h3 text-medium">
         <TokenPicker
+          className="h3 text-medium px-0 inline"
           tokenList={tokenList}
           onChange={setTokenA}
           exclusion={tokenA}
           value={tokenA}
-        />
-      </div>
-      <div className="col">
+        >
+          {tokenA?.symbol ?? 'Select'}
+        </TokenPicker>
+        <span>/</span>
         <TokenPicker
+          className="h3 text-medium px-0 inline"
           tokenList={tokenList}
           onChange={setTokenB}
           exclusion={tokenB}
           value={tokenB}
-        />
-      </div>
-      <div className="col">
-        <button className="button px-1 py-0" onClick={swapTokens}>
-          <FontAwesomeIcon icon={faArrowRightArrowLeft} />
-        </button>
-      </div>
+        >
+          {tokenB?.symbol ?? 'Select'}
+        </TokenPicker>
+      </h2>
+      <button
+        type="button"
+        className="ml-auto icon-button"
+        onClick={swapTokens}
+      >
+        <FontAwesomeIcon icon={faArrowRightArrowLeft}></FontAwesomeIcon>
+      </button>
     </div>
   );
 }
