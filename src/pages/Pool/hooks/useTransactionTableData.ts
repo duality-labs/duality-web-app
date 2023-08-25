@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Token } from '../../../lib/web3/utils/tokens';
 import { guessInvertedOrder } from '../../../lib/web3/utils/pairs';
 import { DexMessageAction } from '../../../lib/web3/utils/events';
+import { WalletAddress } from '../../../lib/web3/utils/address';
 
 const { REACT_APP__RPC_API = '' } = process.env;
 
@@ -48,11 +49,13 @@ const blockTimestamps: { [height: string]: string } = {};
 export default function useTransactionTableData({
   tokenA,
   tokenB,
+  account,
   action,
   pageSize = 10,
 }: {
   tokenA: Token;
   tokenB: Token;
+  account?: WalletAddress;
   action?: DexMessageAction;
   pageSize?: number;
 }) {
@@ -98,6 +101,7 @@ export default function useTransactionTableData({
             !invertedOrder
               ? `message.Token1='${tokenB.address}'`
               : `message.Token1='${tokenA.address}'`,
+            account ? `message.Creator='${account}'` : '',
             action ? `message.action='${action}'` : '',
           ]
             .filter(Boolean)
