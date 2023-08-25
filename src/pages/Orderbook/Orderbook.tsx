@@ -6,6 +6,8 @@ import { Token } from '../../lib/web3/utils/tokens';
 
 import OrderbookHeader from './OrderbookHeader';
 
+import './Orderbook.scss';
+
 export default function OrderbookPage() {
   return (
     <div className="container flex row">

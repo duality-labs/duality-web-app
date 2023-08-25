@@ -1,0 +1,8 @@
+@use '../../styles/mixins-vars/margins.scss' as margins;
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+
+.orderbook-page {
+  .page-card {
+    @include paddings.padding('y', 'md');
+  }
+}
