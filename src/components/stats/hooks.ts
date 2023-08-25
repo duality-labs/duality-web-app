@@ -1,5 +1,6 @@
 import useSWR from 'swr';
 import { useMemo } from 'react';
+import BigNumber from 'bignumber.js';
 
 import {
   TimeSeriesPage,
@@ -10,6 +11,7 @@ import {
 } from './utils';
 import { Token } from '../../lib/web3/utils/tokens';
 import { useTokenValueTotal } from '../../lib/web3/hooks/useTokens';
+import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
@@ -104,6 +106,24 @@ function useStatTokenValue(
   );
 
   return [timeUnix, valueTotal, valueDiffTotal];
+}
+
+// Price
+function getStatPricePath(tokenA: Token, tokenB: Token) {
+  return `stats/price/${tokenA.address}/${tokenB.address}`;
+}
+function getStatPriceValues([open, high, low, close]: number[]): number[] {
+  return [tickIndexToPrice(new BigNumber(close)).toNumber()];
+}
+export function useStatPrice(tokenA: Token, tokenB: Token) {
+  const [timeUnix, prices, priceDiffs] = useStatData(
+    tokenA,
+    tokenB,
+    getStatPricePath,
+    getStatPriceValues
+  );
+  // return single values from data
+  return [timeUnix, prices && prices[0], priceDiffs && priceDiffs[0]];
 }
 
 // TVL
