@@ -22,11 +22,11 @@ export default function OrderbookHeader({
   return (
     <div className="page-card flex">
       <div className="row flex-centered">
-        <div className="col">
+        <div className="col mr-auto">
           <OrderbookNav tokenA={tokenA} tokenB={tokenB} />
         </div>
         {tokenA && tokenB && (
-          <div className="col ml-auto">
+          <div className="col">
             <div className="row flex-centered gap-5">
               <div className="col">
                 <OrderbookStatsRow tokenA={tokenA} tokenB={tokenB} />
