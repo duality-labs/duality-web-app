@@ -1,5 +1,5 @@
 import useSWR from 'swr';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -113,10 +113,21 @@ function useStatTokenValue(
 function getStatPricePath(tokenA: Token, tokenB: Token) {
   return `stats/price/${tokenA.address}/${tokenB.address}`;
 }
-function getStatPriceValues([open, high, low, close]: number[]): number[] {
-  return [tickIndexToPrice(new BigNumber(close)).toNumber()];
-}
-export function useStatPrice(tokenA: Token, tokenB: Token) {
+export function useStatPrice(
+  tokenA: Token,
+  tokenB: Token,
+  attribute: 'open' | 'high' | 'low' | 'close' = 'close'
+) {
+  const getStatPriceValues = useCallback(
+    ([open, high, low, close]: number[]): number[] => {
+      return [
+        tickIndexToPrice(
+          new BigNumber({ open, high, low, close }[attribute])
+        ).toNumber(),
+      ];
+    },
+    [attribute]
+  );
   const [timeUnix, prices, priceDiffs] = useStatData(
     tokenA,
     tokenB,
