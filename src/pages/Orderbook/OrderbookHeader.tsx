@@ -8,7 +8,7 @@ import { Token } from '../../lib/web3/utils/tokens';
 
 import TokenPicker from '../../components/TokenPicker/TokenPicker';
 import { formatCurrency, formatPercentage } from '../../lib/utils/number';
-import { useStatPrice } from '../../components/stats/hooks';
+import { useStatPrice, useStatVolume } from '../../components/stats/hooks';
 
 import './OrderbookHeader.scss';
 
@@ -119,8 +119,9 @@ function OrderbookStatsRow({
   tokenB: Token;
 }) {
   return (
-    <div className="row">
+    <div className="row gap-5">
       <StatColPrice tokenA={tokenA} tokenB={tokenB} />
+      <StatColVolume tokenA={tokenA} tokenB={tokenB} />
     </div>
   );
 }
@@ -138,6 +139,25 @@ function StatColPrice({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       change={
         previousPrice !== undefined
           ? Number(priceDiff) / Number(previousPrice)
+          : undefined
+      }
+    />
+  );
+}
+
+function StatColVolume({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
+  const [, amount, amountDiff] = useStatVolume(tokenA, tokenB);
+  const previousPrice =
+    !isNaN(amount ?? NaN) && !isNaN(amountDiff ?? NaN)
+      ? Number(amount) - Number(amountDiff)
+      : undefined;
+  return (
+    <StatCol
+      heading="24H Volume"
+      value={amount ?? undefined}
+      change={
+        previousPrice !== undefined
+          ? Number(amountDiff) / Number(previousPrice)
           : undefined
       }
     />
