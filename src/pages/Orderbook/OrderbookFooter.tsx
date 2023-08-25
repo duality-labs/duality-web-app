@@ -14,7 +14,6 @@ export default function OrderbookFooter({
         <div className="col">
           <div className="row flex-centered gap-lg">
             <h4 className="h4">Orders</h4>
-            <div>Hide other pairs</div>
           </div>
         </div>
         <div className="col ml-auto">Card Nav right</div>
