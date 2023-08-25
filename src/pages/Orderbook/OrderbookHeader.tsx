@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
@@ -17,11 +17,26 @@ export default function OrderbookHeader({
 }) {
   return (
     <div className="page-card flex">
-      <div className="row">
+      <div className="row flex-centered">
         <div className="col">
           <OrderbookNav tokenA={tokenA} tokenB={tokenB} />
         </div>
-        <div className="col ml-auto">Nav right</div>
+        {tokenA && tokenB && (
+          <div className="col ml-auto">
+            <div className="row flex-centered gap-5">
+              <div className="col">
+                <OrderbookStatsRow tokenA={tokenA} tokenB={tokenB} />
+              </div>
+              <div className="col">
+                <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
+                  <button type="button" className="button-primary py-sm">
+                    Deposit
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -90,4 +105,14 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
       </div>
     </div>
   );
+}
+
+function OrderbookStatsRow({
+  tokenA,
+  tokenB,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+}) {
+  return <div className="row">Nav right</div>;
 }
