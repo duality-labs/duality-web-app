@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { ReactNode, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -7,6 +7,10 @@ import useTokens from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 
 import TokenPicker from '../../components/TokenPicker/TokenPicker';
+import { formatCurrency, formatPercentage } from '../../lib/utils/number';
+import { useStatPrice } from '../../components/stats/hooks';
+
+import './OrderbookHeader.scss';
 
 export default function OrderbookHeader({
   tokenA,
@@ -114,5 +118,71 @@ function OrderbookStatsRow({
   tokenA: Token;
   tokenB: Token;
 }) {
-  return <div className="row">Nav right</div>;
+  return (
+    <div className="row">
+      <StatColPrice tokenA={tokenA} tokenB={tokenB} />
+    </div>
+  );
+}
+
+function StatColPrice({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
+  const [, price, priceDiff] = useStatPrice(tokenA, tokenB);
+  const previousPrice =
+    !isNaN(price ?? NaN) && !isNaN(priceDiff ?? NaN)
+      ? Number(price) - Number(priceDiff)
+      : undefined;
+  return (
+    <StatCol
+      heading="Last Price"
+      value={price ?? undefined}
+      change={
+        previousPrice !== undefined
+          ? Number(priceDiff) / Number(previousPrice)
+          : undefined
+      }
+    />
+  );
+}
+
+function StatCol({
+  heading,
+  value,
+  change,
+  children = heading,
+}: {
+  heading?: ReactNode;
+  value?: number | string;
+  change?: number | string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="col stat-col">
+      <div className="text-muted">{children}</div>
+      <div className="row text-medium gap-3">
+        {value !== undefined ? (
+          <span>{formatCurrency(value)}</span>
+        ) : (
+          <span>-</span>
+        )}
+        {change !== undefined && (
+          <span className={getChangeClassName(change)}>
+            {formatPercentage(change, { signDisplay: 'always' })}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function getChangeClassName(
+  change: string | number | null = 0
+): string | undefined {
+  const changeValue = Number(change);
+  if (changeValue > 0) {
+    return 'text-success';
+  }
+  if (changeValue < 0) {
+    return 'text-danger';
+  }
+  return 'text-muted';
 }
