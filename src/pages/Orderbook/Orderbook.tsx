@@ -26,10 +26,10 @@ function Orderbook() {
 
   return (
     <div className="flex col gap-3">
-      <div className="row">
+      <div className="orderbook-header row">
         <OrderbookHeader tokenA={tokenA} tokenB={tokenB} />
       </div>
-      <div className="flex row gap-3">
+      <div className="orderbook-body flex row gap-3">
         <div className="flex col">
           <div className="flex page-card">
             {tokenA?.address === 'stake' && tokenB?.address === 'token' && (
@@ -44,7 +44,7 @@ function Orderbook() {
           <div className="flex page-card">Limit Order control</div>
         </div>
       </div>
-      <div className="row">
+      <div className="orderbook-footer row">
         <OrderbookFooter tokenA={tokenA} tokenB={tokenB} />
       </div>
     </div>
