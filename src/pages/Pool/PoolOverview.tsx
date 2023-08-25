@@ -465,18 +465,19 @@ interface GetTxsEventResponseManuallyType {
 
 const blockTimestamps: { [height: string]: string } = {};
 
-const pageSize = 10;
-function TransactionsTable({
+function useTransactionTableData({
   tokenA,
   tokenB,
   action,
+  pageSize = 10,
 }: {
   tokenA: Token;
   tokenB: Token;
   action?: DexMessageAction;
+  pageSize?: number;
 }) {
   const [pageOffset] = useState<number>(0);
-  const query = useQuery({
+  return useQuery({
     queryKey: ['events', action, tokenA.address, tokenB.address, pageOffset],
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
       const invertedOrder = guessInvertedOrder(tokenA.address, tokenB.address);
@@ -558,6 +559,18 @@ function TransactionsTable({
       };
     },
   });
+}
+
+function TransactionsTable({
+  tokenA,
+  tokenB,
+  action,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  action?: DexMessageAction;
+}) {
+  const query = useTransactionTableData({ tokenA, tokenB, action });
 
   const columns = useMemo(() => {
     return transactionTableHeadings.map(
