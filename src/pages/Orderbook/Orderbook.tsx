@@ -4,6 +4,7 @@ import { useTokenBySymbol } from '../../lib/web3/hooks/useTokens';
 
 import OrderbookHeader from './OrderbookHeader';
 import OrderbookFooter from './OrderbookFooter';
+import OrderBookChart from './OrderbookChart';
 
 import './Orderbook.scss';
 
@@ -30,7 +31,11 @@ function Orderbook() {
       </div>
       <div className="flex row gap-3">
         <div className="flex col">
-          <div className="flex page-card">left</div>
+          <div className="flex page-card">
+            {tokenA?.address === 'stake' && tokenB?.address === 'token' && (
+              <OrderBookChart tokenA={tokenA} tokenB={tokenB} />
+            )}
+          </div>
         </div>
         <div className="col">
           <div className="flex page-card">Orderbook/Trades table</div>
