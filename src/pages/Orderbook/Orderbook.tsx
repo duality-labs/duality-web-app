@@ -2,6 +2,8 @@ import { useMatch } from 'react-router-dom';
 
 import { useTokenBySymbol } from '../../lib/web3/hooks/useTokens';
 
+import OrderbookHeader from './OrderbookHeader';
+
 export default function OrderbookPage() {
   return (
     <div className="container flex row">
@@ -21,14 +23,7 @@ function Orderbook() {
   return (
     <div className="flex col gap-3">
       <div className="row">
-        <div className="page-card flex">
-          <div className="row">
-            <div className="col">
-              Nav {tokenA?.symbol} {tokenB?.symbol}
-            </div>
-            <div className="col ml-auto">Nav right</div>
-          </div>
-        </div>
+        <OrderbookHeader tokenA={tokenA} tokenB={tokenB} />
       </div>
       <div className="flex row gap-3">
         <div className="flex col">
