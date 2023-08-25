@@ -5,6 +5,7 @@ import { getTokenBySymbol } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 
 import OrderbookHeader from './OrderbookHeader';
+import OrderbookFooter from './OrderbookFooter';
 
 import './Orderbook.scss';
 
@@ -48,20 +49,7 @@ function Orderbook() {
         </div>
       </div>
       <div className="row">
-        <div className="page-card flex">
-          <div className="row flex-centered mb-lg">
-            <div className="col">
-              <div className="row flex-centered gap-lg">
-                <h4 className="h4">Orders</h4>
-                <div>Hide other pairs</div>
-              </div>
-            </div>
-            <div className="col ml-auto">Card Nav right</div>
-          </div>
-          <div className="row">
-            <div>Table</div>
-          </div>
-        </div>
+        <OrderbookFooter tokenA={tokenA} tokenB={tokenB} />
       </div>
     </div>
   );
