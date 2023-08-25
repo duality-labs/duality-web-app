@@ -32,7 +32,7 @@ const dualityChain = {
   slip44: 330,
 };
 
-const dualityMainToken: Token = {
+export const dualityMainToken: Token = {
   description: 'SDK default token',
   address: 'token',
   denom_units: [
@@ -57,7 +57,7 @@ const dualityMainToken: Token = {
   chain: dualityChain,
 };
 
-const dualityStakeToken: Token = {
+export const dualityStakeToken: Token = {
   description: 'SDK default token',
   address: 'stake',
   denom_units: [
