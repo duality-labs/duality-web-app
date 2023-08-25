@@ -4,6 +4,8 @@ import { useTokenBySymbol } from '../../lib/web3/hooks/useTokens';
 
 import OrderbookHeader from './OrderbookHeader';
 
+import './Orderbook.scss';
+
 export default function OrderbookPage() {
   return (
     <div className="container flex row">
