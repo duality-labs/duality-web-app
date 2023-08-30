@@ -1,6 +1,6 @@
 import { ReactNode, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
-import { Tick } from '../../components/LiquiditySelector/LiquiditySelector';
+import { Tick } from '../../components/Liquidity/LiquiditySelector';
 
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { tickIndexToDisplayPrice } from '../../lib/web3/utils/ticks';

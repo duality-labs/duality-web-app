@@ -24,13 +24,13 @@ import StepNumberInput from '../../components/StepNumberInput';
 import { useNumericInputState } from '../../components/inputs/NumberInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
 import TokenPicker from '../../components/TokenPicker/TokenPicker';
-import LiquiditySelector from '../../components/LiquiditySelector';
+import LiquiditySelector from '../../components/Liquidity/LiquiditySelector';
 import {
   TickGroup,
   Tick,
   getRangeIndexes,
-} from '../../components/LiquiditySelector/LiquiditySelector';
-import useCurrentPriceIndexFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
+} from '../../components/Liquidity/LiquiditySelector';
+import useCurrentPriceIndexFromTicks from '../../components/Liquidity/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import {
