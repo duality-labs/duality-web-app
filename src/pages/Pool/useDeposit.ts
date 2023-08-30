@@ -6,7 +6,7 @@ import { dualitylabs } from '@duality-labs/dualityjs';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import rpcClient from '../../lib/web3/rpcMsgClient';
-import { TickGroup } from '../../components/LiquiditySelector/LiquiditySelector';
+import { TickGroup } from '../../components/Liquidity/LiquiditySelector';
 import {
   checkMsgErrorToast,
   checkMsgOutOfGasToast,
