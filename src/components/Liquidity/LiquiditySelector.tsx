@@ -30,6 +30,8 @@ import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
 
 import './LiquiditySelector.scss';
+import { useSignificantDecimals } from './useRange';
+import { useViewableIndexes } from './usePlot';
 
 const { REACT_APP__MAX_TICK_INDEXES = '' } = process.env;
 const [
@@ -40,17 +42,13 @@ const [
 export interface LiquiditySelectorProps {
   tokenA?: Token;
   tokenB?: Token;
-  fee: number | undefined;
   userTickSelected: number | undefined;
   setUserTickSelected: (index: number) => void;
   initialPrice?: string;
-  rangeMin: string;
-  rangeMax: string;
-  setRange: React.Dispatch<React.SetStateAction<[string, string]>>;
-  setSignificantDecimals?: React.Dispatch<React.SetStateAction<number>>;
-  setViewableIndexes: React.Dispatch<
-    React.SetStateAction<[number, number] | undefined>
-  >;
+  rangeMinIndex: number;
+  rangeMaxIndex: number;
+  setRangeMinIndex: React.Dispatch<React.SetStateAction<number>>;
+  setRangeMaxIndex: React.Dispatch<React.SetStateAction<number>>;
   userTicksBase?: Array<Tick | undefined>;
   userTicks?: Array<Tick | undefined>;
   setUserTicks?: (callback: (userTicks: TickGroup) => TickGroup) => void;
@@ -63,6 +61,7 @@ export interface LiquiditySelectorProps {
     zoomIn?: () => void;
     zoomOut?: () => void;
   }>;
+  svgContainerRef: React.RefObject<HTMLDivElement>;
 }
 
 export interface Tick {
@@ -123,15 +122,13 @@ const poleWidth = 8;
 export default function LiquiditySelector({
   tokenA,
   tokenB,
-  fee,
   userTickSelected = -1,
   setUserTickSelected,
   initialPrice = '',
-  rangeMin,
-  rangeMax,
-  setRange,
-  setSignificantDecimals,
-  setViewableIndexes,
+  rangeMinIndex: fractionalRangeMinIndex,
+  rangeMaxIndex: fractionalRangeMaxIndex,
+  setRangeMinIndex,
+  setRangeMaxIndex,
   userTicks = [],
   userTicksBase = userTicks,
   setUserTicks,
@@ -141,53 +138,8 @@ export default function LiquiditySelector({
   canMoveX,
   oneSidedLiquidity = false,
   ControlsComponent,
+  svgContainerRef: svgContainer,
 }: LiquiditySelectorProps) {
-  // convert range price state controls into range index state controls
-  const fractionalRangeMinIndex = useMemo(() => {
-    const index = priceToTickIndex(new BigNumber(rangeMin)).toNumber();
-    // guard against incorrect numbers
-    return !isNaN(index)
-      ? Math.max(priceMinIndex, Math.min(priceMaxIndex, index))
-      : defaultMinIndex;
-  }, [rangeMin]);
-  const fractionalRangeMaxIndex = useMemo(() => {
-    const index = priceToTickIndex(new BigNumber(rangeMax)).toNumber();
-    // guard against incorrect numbers
-    return !isNaN(index)
-      ? Math.max(priceMinIndex, Math.min(priceMaxIndex, index))
-      : defaultMaxIndex;
-  }, [rangeMax]);
-  const setRangeMinIndex: React.Dispatch<React.SetStateAction<number>> =
-    useCallback(
-      (valueOrCallback) => {
-        setRange(([min, max]) => {
-          // get new min index value value
-          const newMinIndex =
-            typeof valueOrCallback === 'function'
-              ? valueOrCallback(priceToTickIndex(new BigNumber(min)).toNumber())
-              : valueOrCallback;
-          // convert index to price
-          return [tickIndexToPrice(new BigNumber(newMinIndex)).toFixed(), max];
-        });
-      },
-      [setRange]
-    );
-  const setRangeMaxIndex: React.Dispatch<React.SetStateAction<number>> =
-    useCallback(
-      (valueOrCallback) => {
-        setRange(([min, max]) => {
-          // get new max index value value
-          const newMaxIndex =
-            typeof valueOrCallback === 'function'
-              ? valueOrCallback(priceToTickIndex(new BigNumber(max)).toNumber())
-              : valueOrCallback;
-          // convert index to price
-          return [min, tickIndexToPrice(new BigNumber(newMaxIndex)).toFixed()];
-        });
-      },
-      [setRange]
-    );
-
   const [token0Address, token1Address] =
     useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
   const {
@@ -410,7 +362,6 @@ export default function LiquiditySelector({
   ]);
 
   // find container size that buckets should fit
-  const svgContainer = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   useLayoutEffect(() => {
     setContainerSize({
@@ -426,43 +377,14 @@ export default function LiquiditySelector({
     })
   );
 
-  // find significant digits for display on the chart that makes sense
-  // eg. when viewing from 1-100 just 3 significant digits is fine
-  //     when viewing from 100-100.01 then 6 significant digits is needed
-  const dynamicSignificantDigits = useMemo(() => {
-    const diff = Math.min(
-      graphMaxIndex - graphMinIndex,
-      rangeMaxIndex - rangeMinIndex
-    );
-    switch (true) {
-      case diff <= 25:
-        return 6;
-      case diff <= 250:
-        return 5;
-      case diff <= 2500:
-        return 4;
-      default:
-        return 3;
-    }
-  }, [graphMinIndex, graphMaxIndex, rangeMinIndex, rangeMaxIndex]);
-
-  useEffect(() => {
-    setSignificantDecimals?.(dynamicSignificantDigits);
-  }, [setSignificantDecimals, dynamicSignificantDigits]);
-
-  const [viewableMinIndex, viewableMaxIndex] = useMemo<[number, number]>(() => {
-    // get bounds
-    const spread = graphMaxIndex - graphMinIndex;
-    const width = Math.max(1, containerSize.width - leftPadding - rightPadding);
-    return [
-      graphMinIndex - (spread * leftPadding) / width,
-      graphMaxIndex + (spread * rightPadding) / width,
-    ];
-  }, [graphMinIndex, graphMaxIndex, containerSize.width]);
-
-  useEffect(() => {
-    setViewableIndexes([viewableMinIndex, viewableMaxIndex]);
-  }, [setViewableIndexes, viewableMinIndex, viewableMaxIndex]);
+  const dynamicSignificantDigits = useSignificantDecimals(
+    rangeMinIndex,
+    rangeMaxIndex
+  );
+  const [viewableMinIndex, viewableMaxIndex] = useViewableIndexes(
+    graphMinIndex,
+    graphMaxIndex
+  );
 
   // calculate bucket extents
   const getEmptyBuckets = useCallback<

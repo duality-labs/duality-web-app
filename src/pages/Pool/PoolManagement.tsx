@@ -68,6 +68,16 @@ import { usePairPrice } from '../../lib/tokenPrices';
 
 import PoolLayout from './PoolLayout';
 import NumberInput from '../../components/inputs/NumberInput/NumberInput';
+import {
+  useChartIndexes,
+  useLiquidityDataExtents,
+  useUserRangeExtents,
+  useUserTickExtents,
+} from '../../components/Liquidity/useChartExtents';
+import { useCurrentPriceIndex } from '../../components/Liquidity/useCurrentPriceIndex';
+import { useViewableIndexes } from '../../components/Liquidity/usePlot';
+import useResizeObserver from '@react-hook/resize-observer';
+import { useRangeState } from '../../components/Liquidity/useRange';
 
 // the default resolution for a number in 18 decimal places
 const {
@@ -189,6 +199,35 @@ export default function PoolManagement({
   const valuesValid =
     !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
 
+  // start with a default range of nothing, but is should be quickly set
+  // after price information becomes available
+  const [[fractionalRangeMin, fractionalRangeMax], setRangeUnprotected] =
+    useState(['1', '1']);
+
+  // create form states
+  const [[zoomMinIndex, zoomMaxIndex] = [], setZoomExtents] =
+    useState<[number | undefined, number | undefined]>();
+
+  // find size of chart
+  const svgContainerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  useLayoutEffect(() => {
+    setContainerSize({
+      width: svgContainerRef.current?.clientWidth ?? 0,
+      height: svgContainerRef.current?.clientHeight ?? 0,
+    });
+  }, [svgContainerRef]);
+
+  useResizeObserver(svgContainerRef, (container) =>
+    setContainerSize({
+      width: container.contentRect.width,
+      height: container.contentRect.height,
+    })
+  );
+
+  // derive intermediary values
+  const [dataMinIndex, dataMaxIndex] = useLiquidityDataExtents(tokenA, tokenB);
+
   const currentPriceFromTicks = useCurrentPriceFromTicks(
     tokenA?.address,
     tokenB?.address
@@ -210,12 +249,6 @@ export default function PoolManagement({
   useEffect(() => {
     setInitialPrice('');
   }, [tokenA, tokenB]);
-
-  // start with a default range of nothing, but is should be quickly set
-  // after price information becomes available
-  const [[fractionalRangeMin, fractionalRangeMax], setRangeUnprotected] =
-    useState(['1', '1']);
-  const [significantDecimals, setSignificantDecimals] = useState(3);
 
   const handleSetInitialPrice = useCallback(
     (price: string): void => {
@@ -371,21 +404,81 @@ export default function PoolManagement({
     return edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
   }, [edgePrice]);
 
-  const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
-    const fractionalRangeMinIndex = priceToTickIndex(
-      new BigNumber(fractionalRangeMin),
-      'none'
-    ).toNumber();
-    const fractionalRangeMaxIndex = priceToTickIndex(
-      new BigNumber(fractionalRangeMax),
-      'none'
-    ).toNumber();
-    return getRangeIndexes(
-      edgePriceIndex,
-      fractionalRangeMinIndex,
-      fractionalRangeMaxIndex
+  const getInitialRangeMinFormValue = useCallback(() => {
+    return currentPriceFromTicks
+      ? formatRangeString(currentPriceFromTicks.multipliedBy(0.7), 3)
+      : !isNaN(Number(initialPrice))
+      ? formatRangeString(Number(initialPrice) * 0.1, 3)
+      : '';
+  }, [currentPriceFromTicks, initialPrice]);
+  const getInitialRangeMaxFormValue = useCallback(() => {
+    return currentPriceFromTicks
+      ? formatRangeString(currentPriceFromTicks.multipliedBy(1.3), 3)
+      : !isNaN(Number(initialPrice))
+      ? formatRangeString(Number(initialPrice) * 10, 3)
+      : '';
+  }, [currentPriceFromTicks, initialPrice]);
+
+  const [initialRangeMinFormValue, setInitialRangeMinFormValue] =
+    useState<string>(getInitialRangeMinFormValue);
+  const [initialRangeMaxFormValue, setInitialRangeMaxFormValue] =
+    useState<string>(getInitialRangeMaxFormValue);
+
+  const [
+    [rangeMinFormValue, setRangeMinFormValue],
+    [rangeMaxFormValue, setRangeMaxFormValue],
+    [rangeMinIndex, setRangeMinIndex],
+    [rangeMaxIndex, setRangeMaxIndex],
+  ] = useRangeState(initialRangeMinFormValue, initialRangeMaxFormValue);
+
+  const [userTicksMinIndex, userTicksMaxIndex] = useUserTickExtents(userTicks);
+
+  const [graphMinIndex, graphMaxIndex] = useChartIndexes({
+    // total tick liquidity range
+    dataMinIndex,
+    dataMaxIndex,
+
+    // user set tick liquidity range
+    userTicksMinIndex,
+    userTicksMaxIndex,
+
+    // user set range
+    rangeMinIndex,
+    rangeMaxIndex,
+
+    // user set zoom range
+    zoomMinIndex,
+    zoomMaxIndex,
+
+    // current estimated price
+    edgePriceIndex,
+  });
+
+  const [viewableMinIndex, viewableMaxIndex] = useViewableIndexes(
+    graphMinIndex,
+    graphMaxIndex,
+    containerSize.width
+  );
+
+  // find significant digits for display on the chart that makes sense
+  // eg. when viewing from 1-100 just 3 significant digits is fine
+  //     when viewing from 100-100.01 then 6 significant digits is needed
+  const significantDecimals = useMemo(() => {
+    const diff = Math.min(
+      graphMaxIndex - graphMinIndex,
+      rangeMaxIndex - rangeMinIndex
     );
-  }, [fractionalRangeMin, fractionalRangeMax, edgePriceIndex]);
+    switch (true) {
+      case diff <= 25:
+        return 6;
+      case diff <= 250:
+        return 5;
+      case diff <= 2500:
+        return 4;
+      default:
+        return 3;
+    }
+  }, [graphMinIndex, graphMaxIndex, rangeMinIndex, rangeMaxIndex]);
 
   const formatSignificantDecimalRangeString = useCallback(
     (price: BigNumber.Value) => {
@@ -770,9 +863,6 @@ export default function PoolManagement({
     tokenA?.address ?? '',
     tokenB?.address ?? ''
   );
-
-  const [[viewableMinIndex, viewableMaxIndex] = [], setViewableIndexes] =
-    useState<[number, number] | undefined>();
 
   const [editedUserPosition, setEditedUserPosition] = useState<
     Array<EditedPosition>
@@ -1361,17 +1451,16 @@ export default function PoolManagement({
                   </div>
                   <div className="flex row chart-area gap-3">
                     <LiquiditySelector
+                      svgContainerRef={svgContainerRef}
                       tokenA={tokenA}
                       tokenB={tokenB}
                       initialPrice={initialPrice}
-                      rangeMin={fractionalRangeMin}
-                      rangeMax={fractionalRangeMax}
-                      setRange={setRange}
-                      setSignificantDecimals={setSignificantDecimals}
-                      setViewableIndexes={setViewableIndexes}
+                      rangeMinIndex={rangeMinIndex}
+                      rangeMaxIndex={rangeMaxIndex}
+                      setRangeMinIndex={setRangeMinIndex}
+                      setRangeMaxIndex={setRangeMaxIndex}
                       userTickSelected={userTickSelected}
                       setUserTickSelected={setUserTickSelected}
-                      fee={feeType?.fee}
                       userTicksBase={editMode ? editedUserTicksBase : userTicks}
                       userTicks={editMode ? editedUserTicks : userTicks}
                       setUserTicks={
@@ -1393,9 +1482,9 @@ export default function PoolManagement({
                       .join(' ')}
                   >
                     <div className="card-row">
-                      <StepNumberInput<number>
+                      <StepNumberInput<string>
                         title="MIN PRICE"
-                        value={rangeMin}
+                        value={rangeMinFormValue}
                         onChange={(value: BigNumber.Value) => {
                           setRange(([, max]) => {
                             const newIndex = priceToTickIndex(
@@ -1436,9 +1525,9 @@ export default function PoolManagement({
                         maxSignificantDigits={maxFractionDigits + 2}
                         format={formatSignificantDecimalRangeString}
                       />
-                      <StepNumberInput<number>
+                      <StepNumberInput<string>
                         title="MAX PRICE"
-                        value={rangeMax}
+                        value={rangeMaxFormValue}
                         onChange={(value: BigNumber.Value) => {
                           setRange(([min]) => {
                             const newIndex = priceToTickIndex(
@@ -1548,7 +1637,7 @@ export default function PoolManagement({
                                 stepFunction={logarithmStep}
                                 value={userTicks[
                                   userTickSelected
-                                ].priceBToA.toNumber()}
+                                ].priceBToA.toFixed()}
                                 onChange={(value) => {
                                   setUserTicks((userTicks) => {
                                     // skip non-update
@@ -1656,11 +1745,7 @@ function LiquidityShapeOptionComponent({
 
 // calculates set from last digit (eg. 0.98 -> 0.99 -> 1.0 -> 1.1)
 // while respecting significant digits expectation
-function logarithmStep(
-  valueNumber: number,
-  direction: number,
-  valueString: string
-): number {
+function logarithmStep(valueString: string, direction: number): string {
   const value = new BigNumber(valueString);
   const significantDigits = value.sd(false);
   const trailingZeros =
@@ -1682,7 +1767,7 @@ function logarithmStep(
       const nextIndexStep = tickIndexToPrice(
         priceToTickIndex(value, 'round').plus(1)
       );
-      return BigNumber.max(nextStep, nextIndexStep).toNumber();
+      return BigNumber.max(nextStep, nextIndexStep).toFixed();
     }
     // if subtracting from value
     else {
@@ -1700,8 +1785,8 @@ function logarithmStep(
       const nextIndexStep = tickIndexToPrice(
         priceToTickIndex(value, 'round').minus(1)
       );
-      return BigNumber.min(nextStep, nextIndexStep).toNumber();
+      return BigNumber.min(nextStep, nextIndexStep).toFixed();
     }
   }
-  return valueNumber;
+  return valueString;
 }
