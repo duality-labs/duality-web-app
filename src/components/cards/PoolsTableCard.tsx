@@ -23,7 +23,7 @@ import {
 
 import './PoolsTableCard.scss';
 import useIncentiveGauges from '../../lib/web3/hooks/useIncentives';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
+import { Gauge } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
 import { IncentivesButton } from './PoolStakesTableCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFire } from '@fortawesome/free-solid-svg-icons';
@@ -181,7 +181,7 @@ function PairRow({
   }, [token0Ticks, token1Ticks, token0, token1, price0, price1]);
 
   const { data: { gauges } = {} } = useIncentiveGauges();
-  const incentives = useMemo<GaugeSDKType[]>(() => {
+  const incentives = useMemo<Gauge[]>(() => {
     const tokenAddresses = [token0.address, token1.address].filter(
       (address): address is string => !!address
     );

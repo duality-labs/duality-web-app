@@ -3,10 +3,10 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 
 import {
   QueryAllTickLiquidityRequest,
-  QueryAllTickLiquidityResponseSDKType,
+  QueryAllTickLiquidityResponse,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
 import { useLcdClientPromise } from '../lcdClient';
-import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
+import { TickLiquidity } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
 
 import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useTokens';
 import BigNumber from 'bignumber.js';
@@ -60,7 +60,7 @@ export default function useTickLiquidity({
     ],
     queryFn: async ({
       pageParam: nextKey,
-    }): Promise<QueryAllTickLiquidityResponseSDKType | undefined> => {
+    }): Promise<QueryAllTickLiquidityResponse | undefined> => {
       if (queryConfig) {
         const client = await lcdClientPromise;
         return await client.dualitylabs.duality.dex.tickLiquidityAll({
@@ -70,9 +70,7 @@ export default function useTickLiquidity({
       }
     },
     defaultPageParam: undefined,
-    getNextPageParam: (
-      lastPage: QueryAllTickLiquidityResponseSDKType | undefined
-    ) => {
+    getNextPageParam: (lastPage: QueryAllTickLiquidityResponse | undefined) => {
       return lastPage?.pagination?.next_key ?? undefined;
     },
   });
@@ -110,7 +108,7 @@ export default function useTickLiquidity({
 }
 
 function transformPoolReserves(
-  poolReserves: TickLiquiditySDKType['poolReserves']
+  poolReserves: TickLiquidity['poolReserves']
 ): TickInfo | [] {
   // process only ticks with pool reserves
   if (poolReserves) {
