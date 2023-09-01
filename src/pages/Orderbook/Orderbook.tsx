@@ -38,7 +38,7 @@ function Orderbook() {
       <div className="orderbook-header row">
         <OrderbookHeader tokenA={tokenA} tokenB={tokenB} />
       </div>
-      <div className="orderbook-body flex row gap-3">
+      <div className="orderbook-body row gap-3">
         <div className="flex col">
           <div className="flex page-card">
             {tokenA?.address === 'stake' && tokenB?.address === 'token' && (

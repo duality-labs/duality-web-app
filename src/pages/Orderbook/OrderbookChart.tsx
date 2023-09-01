@@ -106,7 +106,7 @@ export default function OrderBookChart({
         type="candlestick"
         options={chartOptions}
         series={chartSeries}
-        height={400}
+        height={440}
       />
     </div>
   );
