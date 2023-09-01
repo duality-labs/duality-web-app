@@ -5,8 +5,4 @@
   .page-card {
     @include paddings.padding('y', 'md');
   }
-
-  .orderbook-body {
-    max-height: 32rem;
-  }
 }
