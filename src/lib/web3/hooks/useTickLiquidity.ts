@@ -65,7 +65,12 @@ export default function useTickLiquidity({
         const client = await lcdClientPromise;
         return await client.dualitylabs.duality.dex.tickLiquidityAll({
           ...queryConfig,
-          pagination: nextKey ? { key: nextKey } : queryConfig.pagination,
+          pagination: {
+            ...queryConfig?.pagination,
+            ...(nextKey && {
+              key: nextKey,
+            }),
+          },
         });
       }
     },
