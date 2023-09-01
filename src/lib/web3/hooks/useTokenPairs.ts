@@ -1,3 +1,4 @@
+import Long from 'long';
 import { useEffect, useMemo } from 'react';
 
 import { useLcdClientPromise } from '../lcdClient';
@@ -16,6 +17,10 @@ type QueryAllTokenMapState = {
   isValidating: boolean;
   error: Error | null;
 };
+
+// experimentally timed that 250 is faster than 100 or 1000 items per page
+//   - experiment list length: 7,220)
+const defaultPaginationLimit = Long.fromNumber(250);
 
 export default function useTokenPairs({
   queryOptions,
@@ -45,6 +50,7 @@ export default function useTokenPairs({
       return await client.cosmos.bank.v1beta1.totalSupply({
         ...queryConfig,
         pagination: {
+          limit: defaultPaginationLimit,
           ...queryConfig?.pagination,
           ...(nextKey && {
             key: nextKey,

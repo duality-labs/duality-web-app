@@ -1,3 +1,4 @@
+import Long from 'long';
 import { useEffect, useMemo, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
@@ -22,6 +23,11 @@ type QueryAllTickLiquidityState = {
   isValidating: boolean;
   error: Error | null;
 };
+
+// experimentally timed that 1000 is faster than 100 or 10,000 items per page
+//   - experiment list length: 7,220
+//   - time to receive first page for 10,000 list is >100ms
+const defaultPaginationLimit = Long.fromNumber(1000);
 
 export default function useTickLiquidity({
   query: queryConfig,
@@ -66,6 +72,7 @@ export default function useTickLiquidity({
         return await client.dualitylabs.duality.dex.tickLiquidityAll({
           ...queryConfig,
           pagination: {
+            limit: defaultPaginationLimit,
             ...queryConfig?.pagination,
             ...(nextKey && {
               key: nextKey,
