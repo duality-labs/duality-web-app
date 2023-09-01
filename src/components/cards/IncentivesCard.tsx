@@ -1,6 +1,6 @@
 import { DetailedHTMLProps, HTMLAttributes } from 'react';
 import { Link, useMatch } from 'react-router-dom';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
+import { Gauge } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
 
 import TableCard from './TableCard';
 
@@ -12,7 +12,7 @@ export default function IncentivesCard({
   className,
   incentives = [],
 }: DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> & {
-  incentives?: GaugeSDKType[];
+  incentives?: Gauge[];
 }) {
   const isOnPortfolioPage = useMatch('/portfolio');
   const tokens = useTokens();
@@ -48,7 +48,7 @@ export default function IncentivesCard({
             <tbody key={`${gauge.id}`}>
               <tr>
                 <td colSpan={4}>
-                  {gauge.is_perpetual ? (
+                  {gauge.isPerpetual ? (
                     <span>Perpetual</span>
                   ) : (
                     <span>
@@ -56,8 +56,8 @@ export default function IncentivesCard({
                       <time>
                         in{' '}
                         {formatDecimalPlaces(
-                          Number(gauge.num_epochs_paid_over) -
-                            Number(gauge.filled_epochs),
+                          Number(gauge.numEpochsPaidOver) -
+                            Number(gauge.filledEpochs),
                           0,
                           {
                             useGrouping: true,
@@ -85,7 +85,7 @@ export default function IncentivesCard({
                     <td>{token.name}</td>
                     <td className="flex-centered">
                       {formatAmount(
-                        Number(coin.amount) / Number(gauge.num_epochs_paid_over)
+                        Number(coin.amount) / Number(gauge.numEpochsPaidOver)
                       )}
                     </td>
                     <td>{token.symbol}</td>

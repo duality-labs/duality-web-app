@@ -17,7 +17,7 @@ import {
   useInteractions,
 } from '@floating-ui/react';
 import BigNumber from 'bignumber.js';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
+import { Gauge } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
 
 import TableCard, { TableCardProps } from './TableCard';
 
@@ -595,7 +595,7 @@ export function IncentivesButton({
 }: {
   children: ReactNode;
   className?: string;
-  incentives: GaugeSDKType[];
+  incentives: Gauge[];
   floating?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);

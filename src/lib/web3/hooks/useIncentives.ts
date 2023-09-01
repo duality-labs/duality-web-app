@@ -3,12 +3,12 @@ import { UseQueryResult, useQuery } from '@tanstack/react-query';
 import { dualitylabs } from '@duality-labs/dualityjs';
 import type {
   GaugeStatus,
-  GetFutureRewardEstimateResponseSDKType,
+  GetFutureRewardEstimateResponse,
   GetGaugesRequest,
-  GetGaugesResponseSDKType,
+  GetGaugesResponse,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/query';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
-import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { Gauge } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
+import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import subscriber from '../subscriptionManager';
 import { ValuedUserPositionDepositContext } from './useUserShareValues';
@@ -25,10 +25,10 @@ export default function useIncentiveGauges({
 }: Pick<
   Partial<GetGaugesRequest>,
   'status'
-> = {}): UseQueryResult<GetGaugesResponseSDKType> {
+> = {}): UseQueryResult<GetGaugesResponse> {
   const result = useQuery({
     queryKey: ['incentives', status],
-    queryFn: async (): Promise<GetGaugesResponseSDKType> => {
+    queryFn: async (): Promise<GetGaugesResponse> => {
       // get incentives LCD client
       const lcd = await dualitylabs.ClientFactory.createLCDClient({
         restEndpoint: REACT_APP__REST_API,
@@ -73,9 +73,9 @@ export default function useIncentiveGauges({
 
 function isIncentiveMatch(
   userPosition: ValuedUserPositionDepositContext,
-  incentiveGauge: GaugeSDKType
+  incentiveGauge: Gauge
 ): boolean {
-  const { pairID, startTick, endTick } = incentiveGauge.distribute_to || {};
+  const { pairID, startTick, endTick } = incentiveGauge.distributeTo || {};
   if (pairID && startTick !== undefined && endTick !== undefined) {
     return (
       // is this the correct tick pair?
@@ -93,7 +93,7 @@ export function useMatchIncentives(
   userPositionOrUserPositions:
     | ValuedUserPositionDepositContext
     | ValuedUserPositionDepositContext[]
-): GaugeSDKType[] | undefined {
+): Gauge[] | undefined {
   const userPositions = Array.isArray(userPositionOrUserPositions)
     ? userPositionOrUserPositions
     : [userPositionOrUserPositions];
@@ -126,12 +126,10 @@ export function useFutureRewardsEstimate(
   web3Address: string | null,
   stakeIDs: number[],
   endEpoch = 365
-): CoinSDKType[] | undefined {
+): Coin[] | undefined {
   const { data } = useQuery({
     queryKey: ['future-rewards-estimate', web3Address, stakeIDs, endEpoch],
-    queryFn: async (): Promise<
-      GetFutureRewardEstimateResponseSDKType | undefined
-    > => {
+    queryFn: async (): Promise<GetFutureRewardEstimateResponse | undefined> => {
       // get incentives LCD client
       const lcd = await dualitylabs.ClientFactory.createLCDClient({
         restEndpoint: REACT_APP__REST_API,

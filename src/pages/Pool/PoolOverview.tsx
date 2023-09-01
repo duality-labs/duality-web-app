@@ -53,7 +53,7 @@ import StatCardFees from '../../components/stats/StatCardFees';
 import StatCardVolatility from '../../components/stats/StatCardVolatility';
 import { useStatComposition } from '../../components/stats/hooks';
 import useIncentiveGauges from '../../lib/web3/hooks/useIncentives';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
+import { Gauge } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 const { REACT_APP__RPC_API = '' } = process.env;
@@ -218,8 +218,8 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
       ? gauges?.filter((gauge) => {
           return tokenAddresses.every((address) => {
             return (
-              address === gauge.distribute_to?.pairID?.token0 ||
-              address === gauge.distribute_to?.pairID?.token1
+              address === gauge.distributeTo?.pairID?.token0 ||
+              address === gauge.distributeTo?.pairID?.token1
             );
           });
         })
@@ -230,7 +230,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
     return {
       headings: ['Token', 'Range', 'Reward'],
       columns: [
-        function TokenCellLogo({ row }: { row: GaugeSDKType }) {
+        function TokenCellLogo({ row }: { row: Gauge }) {
           return (
             <td
               className=" flex row gap-3"
@@ -257,29 +257,29 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
             </td>
           );
         },
-        function TokenCellRange({ row }: { row: GaugeSDKType }) {
-          if (row.distribute_to?.pairID) {
+        function TokenCellRange({ row }: { row: Gauge }) {
+          if (row.distributeTo?.pairID) {
             const Token0 = tokens.find(
-              matchTokenByAddress(row.distribute_to.pairID.token0)
+              matchTokenByAddress(row.distributeTo.pairID.token0)
             );
             const Token1 = tokens.find(
-              matchTokenByAddress(row.distribute_to.pairID.token1)
+              matchTokenByAddress(row.distributeTo.pairID.token1)
             );
             return (
               <td>
-                {row.distribute_to && Token0 && Token1 && (
+                {row.distributeTo && Token0 && Token1 && (
                   <div className="row gap-2">
                     <div className="col ml-auto">
                       {formatPrice(
                         tickIndexToPrice(
-                          new BigNumber(`${row.distribute_to.startTick}`) || 0
+                          new BigNumber(`${row.distributeTo.startTick}`) || 0
                         ).toNumber(),
                         { useGrouping: true, minimumSignificantDigits: 2 }
                       )}
                       &nbsp;-&nbsp;
                       {formatPrice(
                         tickIndexToPrice(
-                          new BigNumber(`${row.distribute_to.endTick}`) || 0
+                          new BigNumber(`${row.distributeTo.endTick}`) || 0
                         ).toNumber(),
                         {
                           useGrouping: true,
@@ -298,7 +298,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
             return <td></td>;
           }
         },
-        function TokenCellReward({ row }: { row: GaugeSDKType }) {
+        function TokenCellReward({ row }: { row: Gauge }) {
           return (
             <td>
               {row.coins.map((coin) => {
@@ -307,7 +307,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
                   <div key={coin.denom} className="row gap-2">
                     <div className="col ml-auto">
                       {formatAmount(
-                        Number(coin.amount) / Number(row.num_epochs_paid_over)
+                        Number(coin.amount) / Number(row.numEpochsPaidOver)
                       )}
                     </div>
                     <div className="col text-muted">{token.symbol} Per Day</div>
@@ -348,7 +348,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
       className="pb-5"
       scrolling={filteredGauges && filteredGauges.length > 3}
     >
-      <Table<GaugeSDKType>
+      <Table<Gauge>
         data={filteredGauges}
         columns={columns}
         headings={headings}
@@ -499,7 +499,7 @@ function TransactionsTable({
        *       : `message.Token1='${tokenA.address}'`,
        *     action ? `message.action='${action}'` : '',
        *   ].filter(Boolean),
-       *   orderBy: cosmos.tx.v1beta1.OrderBySDKType.ORDER_BY_ASC,
+       *   orderBy: cosmos.tx.v1beta1.OrderBy.ORDER_BY_ASC,
        *   page: Long.fromString(pageOffset + 1),
        *   limit: Long.fromString(pageSize),
        * });
