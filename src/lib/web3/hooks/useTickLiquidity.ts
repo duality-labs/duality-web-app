@@ -25,8 +25,8 @@ type QueryAllTickLiquidityState = {
 };
 
 // experimentally timed that 1000 is faster than 100 or 10,000 items per page
-//   - experiment list length: 7,220
-//   - time to receive first page for 10,000 list is >100ms
+//   - experiment list length: 1,462 + 5,729 (for each token side)
+//   - time to receive first page for ~5,000 list is ~100ms
 const defaultPaginationLimit = Long.fromNumber(1000);
 
 export default function useTickLiquidity({
