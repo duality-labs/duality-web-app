@@ -71,7 +71,10 @@ export default function useTickLiquidity({
     },
     defaultPageParam: undefined,
     getNextPageParam: (lastPage: QueryAllTickLiquidityResponse | undefined) => {
-      return lastPage?.pagination?.next_key ?? undefined;
+      // don't pass an empty array as that will trigger another page to download
+      return lastPage?.pagination?.next_key?.length
+        ? lastPage?.pagination?.next_key
+        : undefined;
     },
   });
 
@@ -92,7 +95,7 @@ export default function useTickLiquidity({
     if (pages && pages.length > 0) {
       const lastPage = pages[pages.length - 1];
       // update our state only if the last page of data has been reached
-      if (!lastPage?.pagination?.next_key) {
+      if (!lastPage?.pagination?.next_key?.length) {
         const poolReserves = pages?.flatMap(
           (page) =>
             page?.tickLiquidity?.flatMap(
