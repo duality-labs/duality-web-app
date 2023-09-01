@@ -43,7 +43,7 @@ interface UserShares {
 export interface UserStakedShare extends IndexedShare {
   ID: string;
   owner: string;
-  startTime?: string;
+  start_time?: string;
 }
 interface UserStakedShares {
   stakedShares: Array<UserStakedShare>;
@@ -195,7 +195,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                     sharesOwned: coin.amount,
                     ID: `${ID}`,
                     owner,
-                    startTime: startTime && `${startTime}`,
+                    start_time: startTime && `${startTime}`,
                   };
                   stakedShares.push(stakedShare);
                 });

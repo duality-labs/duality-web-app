@@ -62,7 +62,7 @@ export function usePoolDepositFilterForPair(
 }
 
 interface ExtendedDepositRecord extends DirectionalDepositRecord {
-  stakeContext?: { ID: string; owner: string; startTime?: string };
+  stakeContext?: { ID: string; owner: string; start_time?: string };
 }
 // select all (or optional token pair list of) user shares
 export function useUserDeposits(
@@ -73,7 +73,7 @@ export function useUserDeposits(
   return useMemo(() => {
     const deposits = shares?.map<ExtendedDepositRecord>((share) => {
       const { fee, pairId, sharesOwned, tickIndex1To0 } = share;
-      const { ID, owner, startTime } = share as UserStakedShare;
+      const { ID, owner, start_time } = share as UserStakedShare;
       const [token0Address, token1Address] = pairId.split('<>');
       return {
         pairID: { token0: token0Address, token1: token1Address },
@@ -82,7 +82,7 @@ export function useUserDeposits(
         lowerTickIndex1To0: Long.fromString(tickIndex1To0).sub(fee),
         upperTickIndex1To0: Long.fromString(tickIndex1To0).add(fee),
         fee: Long.fromString(fee),
-        stakeContext: staked ? { ID, owner, startTime } : undefined,
+        stakeContext: staked ? { ID, owner, start_time } : undefined,
       };
     });
     // return filtered list of deposits
