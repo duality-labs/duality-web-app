@@ -3,10 +3,10 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 
 import {
   QueryAllTickLiquidityRequest,
-  QueryAllTickLiquidityResponse,
+  QueryAllTickLiquidityResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
 import { useLcdClientPromise } from '../lcdClient';
-import { TickLiquidity } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
+import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
 
 import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useTokens';
 import BigNumber from 'bignumber.js';
@@ -60,7 +60,7 @@ export default function useTickLiquidity({
     ],
     queryFn: async ({
       pageParam: nextKey,
-    }): Promise<QueryAllTickLiquidityResponse | undefined> => {
+    }): Promise<QueryAllTickLiquidityResponseSDKType | undefined> => {
       if (queryConfig) {
         const client = await lcdClientPromise;
         return await client.dualitylabs.duality.dex.tickLiquidityAll({
@@ -70,8 +70,10 @@ export default function useTickLiquidity({
       }
     },
     defaultPageParam: undefined,
-    getNextPageParam: (lastPage: QueryAllTickLiquidityResponse | undefined) => {
-      return lastPage?.pagination?.nextKey ?? undefined;
+    getNextPageParam: (
+      lastPage: QueryAllTickLiquidityResponseSDKType | undefined
+    ) => {
+      return lastPage?.pagination?.next_key ?? undefined;
     },
   });
 
@@ -92,7 +94,7 @@ export default function useTickLiquidity({
     if (pages && pages.length > 0) {
       const lastPage = pages[pages.length - 1];
       // update our state only if the last page of data has been reached
-      if (!lastPage?.pagination?.nextKey) {
+      if (!lastPage?.pagination?.next_key) {
         const poolReserves = pages?.flatMap(
           (page) =>
             page?.tickLiquidity?.flatMap(
@@ -108,7 +110,7 @@ export default function useTickLiquidity({
 }
 
 function transformPoolReserves(
-  poolReserves: TickLiquidity['poolReserves']
+  poolReserves: TickLiquiditySDKType['poolReserves']
 ): TickInfo | [] {
   // process only ticks with pool reserves
   if (poolReserves) {

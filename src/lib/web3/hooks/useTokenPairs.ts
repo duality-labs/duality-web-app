@@ -3,8 +3,8 @@ import { useEffect, useMemo } from 'react';
 import { useLcdClientPromise } from '../lcdClient';
 
 import {
-  QueryTotalSupplyRequest,
-  QueryTotalSupplyResponse,
+  QueryTotalSupplyRequestSDKType,
+  QueryTotalSupplyResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { getShareInfo } from '../utils/shares';
 import { getPairID } from '../utils/pairs';
@@ -24,7 +24,7 @@ export default function useTokenPairs({
 }: {
   // todo: pass entire useQuery options set here
   queryOptions?: { refetchInterval: number | false };
-  query?: QueryTotalSupplyRequest;
+  query?: QueryTotalSupplyRequestSDKType;
   queryClient?: string;
 } = {}): QueryAllTokenMapState {
   const lcdClientPromise = useLcdClientPromise(queryClientConfig);
@@ -40,7 +40,7 @@ export default function useTokenPairs({
     queryKey: ['cosmos.bank.v1beta1.totalSupply'],
     queryFn: async ({
       pageParam: nextKey,
-    }): Promise<QueryTotalSupplyResponse | undefined> => {
+    }): Promise<QueryTotalSupplyResponseSDKType | undefined> => {
       const client = await lcdClientPromise;
       return await client.cosmos.bank.v1beta1.totalSupply({
         ...queryConfig,
@@ -48,8 +48,10 @@ export default function useTokenPairs({
       });
     },
     defaultPageParam: undefined,
-    getNextPageParam: (lastPage: QueryTotalSupplyResponse | undefined) => {
-      return lastPage?.pagination?.nextKey ?? undefined;
+    getNextPageParam: (
+      lastPage: QueryTotalSupplyResponseSDKType | undefined
+    ) => {
+      return lastPage?.pagination?.next_key ?? undefined;
     },
   });
 

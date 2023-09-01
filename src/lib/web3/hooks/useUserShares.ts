@@ -4,12 +4,12 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import {
   QuerySupplyOfRequest,
-  QuerySupplyOfResponse,
+  QuerySupplyOfResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/deposit_record';
 import {
   QueryGetPoolReservesRequest,
-  QueryGetPoolReservesResponse,
+  QueryGetPoolReservesResponseSDKType,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
 
 import { useLcdClientPromise } from '../lcdClient';
@@ -102,7 +102,7 @@ export function useUserPositionsTotalShares(
   const lcdClientPromise = useLcdClientPromise();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
 
-  const memoizedData = useRef<QuerySupplyOfResponse[]>([]);
+  const memoizedData = useRef<QuerySupplyOfResponseSDKType[]>([]);
   const { data } = useQueries({
     queries: useMemo(() => {
       return (selectedPoolDeposits || []).flatMap(
@@ -130,7 +130,7 @@ export function useUserPositionsTotalShares(
       // only process data from successfully resolved queries
       const data = results
         .map((result) => result.data)
-        .filter((data): data is QuerySupplyOfResponse => !!data);
+        .filter((data): data is QuerySupplyOfResponseSDKType => !!data);
 
       if (data.length === memoizedData.current.length) {
         // let isSame: boolean = true;
@@ -165,7 +165,7 @@ export function useUserPositionsTotalReserves(
   const lcdClientPromise = useLcdClientPromise();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
 
-  const memoizedData = useRef<QueryGetPoolReservesResponse[]>([]);
+  const memoizedData = useRef<QueryGetPoolReservesResponseSDKType[]>([]);
   const { data } = useQueries({
     queries: useMemo(() => {
       return (selectedPoolDeposits || []).flatMap(
@@ -211,7 +211,7 @@ export function useUserPositionsTotalReserves(
       // only process data from successfully resolved queries
       const data = results
         .map((result) => result.data)
-        .filter((data): data is QueryGetPoolReservesResponse => !!data);
+        .filter((data): data is QueryGetPoolReservesResponseSDKType => !!data);
 
       if (data.length === memoizedData.current.length) {
         // let isSame: boolean = true;

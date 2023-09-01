@@ -24,8 +24,8 @@ import { Token, TokenAddress, getAmountInDenom } from './utils/tokens';
 import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairIdString, getPairID } from './utils/pairs';
 
-import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
-import { Stake } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/stake';
+import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { StakeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/stake';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 
@@ -34,7 +34,7 @@ const { REACT_APP__REST_API = '' } = process.env;
 const bankClientImpl = cosmos.bank.v1beta1.QueryClientImpl;
 
 interface UserBankBalance {
-  balances: Array<Coin>;
+  balances: Array<CoinSDKType>;
 }
 
 interface UserShares {
@@ -132,7 +132,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             .then(([coins = [], stakedCoins] = [[], []]) => {
               // separate out 'normal' and 'share' tokens from the bank balance
               const [tokens, tokenizedShares] = coins.reduce<
-                [Array<Coin>, Array<IndexedShare>]
+                [Array<CoinSDKType>, Array<IndexedShare>]
               >(
                 ([tokens, tokenizedShares], coin) => {
                   const {
@@ -178,7 +178,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
               const stakedShares: UserStakedShare[] = stakedCoins.reduce<
                 UserStakedShare[]
               >((stakedShares, stakedCoin) => {
-                const { ID, coins, owner, startTime } = stakedCoin;
+                const { ID, coins, owner, start_time } = stakedCoin;
                 coins.forEach((coin) => {
                   const {
                     token0Address: token0,
@@ -195,7 +195,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                     sharesOwned: coin.amount,
                     ID: `${ID}`,
                     owner,
-                    start_time: startTime && `${startTime}`,
+                    start_time: start_time && `${start_time}`,
                   };
                   stakedShares.push(stakedShare);
                 });
@@ -214,13 +214,15 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         return fetchState;
       });
 
-      async function fetchBankData(): Promise<[Coin[], Stake[]] | undefined> {
+      async function fetchBankData(): Promise<
+        [CoinSDKType[], StakeSDKType[]] | undefined
+      > {
         const rpc = await rpcPromise;
         if (address && rpc) {
           const client = new bankClientImpl(rpc);
           setFetchBankDataState(({ fetched }) => ({ fetching: true, fetched }));
           let nextKey: Uint8Array | undefined;
-          let balances: Array<Coin> = [];
+          let balances: Array<CoinSDKType> = [];
           let res: QueryAllBalancesResponse;
           const stakedPositionsPromise =
             dualitylabs.ClientFactory.createLCDClient({
@@ -241,7 +243,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 } as PageRequest,
               });
               const nonZeroBalances = res.balances?.filter(
-                (balance: Coin): balance is Coin => balance.amount !== undefined
+                (balance: CoinSDKType): balance is CoinSDKType =>
+                  balance.amount !== undefined
               );
               balances = balances.concat(nonZeroBalances || []);
             } catch (err) {

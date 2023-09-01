@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
-import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import useTokens from '../../lib/web3/hooks/useTokens';
@@ -12,7 +12,7 @@ import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 import './AssetsTableCard.scss';
 
-type TokenCoin = Coin & {
+type TokenCoin = CoinSDKType & {
   token: Token;
   value: BigNumber | undefined;
 };

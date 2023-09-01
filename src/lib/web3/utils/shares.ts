@@ -1,4 +1,4 @@
-import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 import { TokenAddressPair, TokenPair, getTokenAddressPair } from './tokens';
 import { guessInvertedOrder } from './pairs';
 
@@ -10,7 +10,7 @@ export interface IndexedShare {
   sharesOwned: string;
 }
 
-export function getShareInfo(coin: Coin) {
+export function getShareInfo(coin: CoinSDKType) {
   const match = coin.denom.match(
     /^DualityPoolShares-([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/
   );

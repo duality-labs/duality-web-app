@@ -23,7 +23,7 @@ import {
 import rpcClient from '../../../lib/web3/rpcMsgClient';
 import { dualitylabs } from '@duality-labs/dualityjs';
 import {
-  MsgPlaceLimitOrderResponse,
+  MsgPlaceLimitOrderResponseSDKType,
   MsgPlaceLimitOrder,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
 
@@ -149,13 +149,13 @@ async function sendSwap(
  */
 export function useSwap(): [
   {
-    data?: MsgPlaceLimitOrderResponse;
+    data?: MsgPlaceLimitOrderResponseSDKType;
     isValidating: boolean;
     error?: string;
   },
   (request: MsgPlaceLimitOrder, gasEstimate: number) => void
 ] {
-  const [data, setData] = useState<MsgPlaceLimitOrderResponse>();
+  const [data, setData] = useState<MsgPlaceLimitOrderResponseSDKType>();
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
   const web3 = useWeb3();
