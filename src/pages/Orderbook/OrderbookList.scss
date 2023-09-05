@@ -1,0 +1,26 @@
+.orderbook-list {
+  min-width: 8em;
+  .orderbook-list__tabs {
+    font-size: 0.75em;
+    text-align: center;
+    .orderbook-list__tab .active {
+      background-color: hsl(219, 40%, 11%);
+    }
+  }
+  .orderbook-list__table {
+    width: 100%;
+    font-size: 0.75em;
+    border-spacing: 0;
+    border-collapse: collapse;
+    th {
+      border: 1px solid hsl(218deg, 11%, 65%);
+      border-left: none;
+      border-right: none;
+    }
+    .orderbook-list__table__tick-center {
+      td {
+        text-align: left;
+      }
+    }
+  }
+}
