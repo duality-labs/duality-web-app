@@ -295,14 +295,15 @@ export function useRemoteChainRestEndpoint(chain?: Chain) {
 
 export function useRemoteChainBankBalance(
   chain: Chain,
-  token: Token,
+  token?: Token,
   address?: string
 ) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
+    enabled: !!token,
     queryKey: ['cosmos-chain-endpoints', restEndpoint, address],
     queryFn: async (): Promise<QueryBalanceResponseSDKType | null> => {
-      if (restEndpoint && address) {
+      if (restEndpoint && address && token) {
         const client = await ibc.ClientFactory.createLCDClient({
           restEndpoint,
         });

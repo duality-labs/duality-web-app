@@ -407,17 +407,81 @@ export default function BridgeCard({
             </div>
           </div>
           {token && (
-            <button
-              type="submit"
-              className="button-primary h3 p-4"
-              disabled={!chainAddressFrom || !chainAddressTo || !Number(value)}
-            >
-              Bridge {token?.symbol}
-            </button>
+            <BridgeButton
+              chainFrom={chainFrom}
+              chainTo={chainTo}
+              token={token}
+              value={value}
+            />
           )}
         </fieldset>
       </form>
     </div>
+  );
+}
+
+function BridgeButton({
+  chainFrom,
+  chainTo,
+  token,
+  value,
+}: {
+  chainFrom: Chain;
+  chainTo: Chain;
+  token?: Token;
+  value: string;
+}) {
+  const { data: chainAddressFrom } = useChainAddress(chainFrom);
+  const { data: chainAddressTo } = useChainAddress(chainTo);
+
+  const { data: bankBalanceAvailable } = useRemoteChainBankBalance(
+    chainFrom,
+    token,
+    chainAddressFrom
+  );
+
+  const hasAvailableBalance = useMemo(() => {
+    return new BigNumber(value || 0).isLessThanOrEqualTo(
+      token
+        ? getAmountInDenom(
+            token,
+            bankBalanceAvailable?.balance?.amount || 0,
+            token.base,
+            token.display
+          ) || 0
+        : 0
+    );
+  }, [value, bankBalanceAvailable, token]);
+
+  const errorMessage = useMemo<string | undefined>(() => {
+    switch (true) {
+      case !hasAvailableBalance:
+        return 'Insufficient Funds';
+      default:
+        return undefined;
+    }
+  }, [hasAvailableBalance]);
+
+  // return "incomplete" state
+  if (!token || !chainAddressFrom || !chainAddressTo || !Number(value)) {
+    return (
+      <button type="submit" className="button-primary h3 p-4" disabled>
+        Bridge {token?.symbol}
+      </button>
+    );
+  }
+  // return success or error state
+  return (
+    <button
+      type={errorMessage ? 'button' : 'submit'}
+      onClick={() => undefined}
+      className={[
+        'h3 p-4',
+        errorMessage ? 'button-error' : 'button-primary',
+      ].join(' ')}
+    >
+      {errorMessage ? <>{errorMessage}</> : <>Bridge {token?.symbol}</>}
+    </button>
   );
 }
 
