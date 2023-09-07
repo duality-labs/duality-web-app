@@ -21,6 +21,12 @@ interface ToastOptions {
   descriptionLink?: string;
 }
 
+type MinimalTxResponse = Pick<
+  DeliverTxResponse,
+  'code' | 'transactionHash' | 'gasUsed' | 'gasWanted'
+> &
+  Partial<Pick<DeliverTxResponse, 'rawLog'>>;
+
 export function createLoadingToast({
   id,
   title,
@@ -37,7 +43,7 @@ export function createLoadingToast({
 }
 
 export function checkMsgSuccessToast(
-  res: DeliverTxResponse,
+  res: MinimalTxResponse,
   { id, title, description, descriptionLink }: ToastOptions = {}
 ) {
   const { code, transactionHash } = res;
@@ -56,7 +62,7 @@ export function checkMsgSuccessToast(
 }
 
 export function checkMsgRejectedToast(
-  err: Error & { response?: DeliverTxResponse },
+  err: Error & { response?: MinimalTxResponse },
   { id, title, description, descriptionLink }: ToastOptions = {}
 ) {
   if (!err.response && err?.message.includes('rejected')) {
@@ -72,7 +78,7 @@ export function checkMsgRejectedToast(
 }
 
 export function checkMsgOutOfGasToast(
-  err: Error & { response?: DeliverTxResponse },
+  err: Error & { response?: MinimalTxResponse },
   { id, title, description, descriptionLink }: ToastOptions = {}
 ) {
   if (err?.response?.code === ERROR_OUT_OF_GAS) {
@@ -96,7 +102,7 @@ export function checkMsgOutOfGasToast(
 }
 
 export function checkMsgErrorToast(
-  err: Error & { response?: DeliverTxResponse },
+  err: Error & { response?: MinimalTxResponse },
   { id, title, description, descriptionLink }: ToastOptions = {}
 ) {
   const { transactionHash } = err?.response || {};
@@ -117,8 +123,10 @@ export function checkMsgErrorToast(
   });
 }
 
-export async function handleStandardToastTransaction(
-  callback: (id: string) => Promise<DeliverTxResponse>,
+export async function handleStandardToastTransaction<
+  T extends MinimalTxResponse
+>(
+  callback: (id: string) => Promise<T>,
   {
     // create default ID if it does not exist yet
     id = `${Date.now()}.${Math.random}`,
@@ -129,20 +137,18 @@ export async function handleStandardToastTransaction(
   }: {
     id?: string;
     onLoadingMessage?: string;
-    onSuccessMessage?:
-      | string
-      | ((res: DeliverTxResponse) => ToastOptions | undefined);
+    onSuccessMessage?: string | ((res: T) => ToastOptions | undefined);
     onErrorMessage?:
       | string
-      | ((res: DeliverTxResponse | undefined) => ToastOptions | undefined);
+      | ((res: T | undefined) => ToastOptions | undefined);
     rethrowError?: boolean;
   } = {}
-): Promise<DeliverTxResponse | undefined> {
+): Promise<T | undefined> {
   // start toasts
   createLoadingToast({ id, description: onLoadingMessage });
   // start transaction and wiat for response
   return callback(id)
-    .then(function (res): DeliverTxResponse {
+    .then(function (res): T {
       if (!res) {
         throw new Error('No response');
       }
@@ -153,16 +159,14 @@ export async function handleStandardToastTransaction(
           : { id, ...onSuccessMessage?.(res) };
       // check and show a toast if successful
       if (!checkMsgSuccessToast(res, toastOptions)) {
-        const error: Error & { response?: DeliverTxResponse } = new Error(
-          `Tx error: ${code}`
-        );
+        const error: Error & { response?: T } = new Error(`Tx error: ${code}`);
         error.response = res;
         throw error;
       }
       // listen for the transaction on the receiving chain
       return res;
     })
-    .catch(function (err: Error & { response?: DeliverTxResponse }) {
+    .catch(function (err: Error & { response?: T }) {
       const toastOptions: ToastOptions =
         typeof onErrorMessage === 'string'
           ? { id, description: onErrorMessage }
