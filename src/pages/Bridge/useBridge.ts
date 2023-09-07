@@ -11,6 +11,7 @@ import { GetTxsEventRequest } from '@duality-labs/dualityjs/types/codegen/cosmos
 
 import { ibcClient } from '../../lib/web3/rpcMsgClient';
 import {
+  IBCReceivePacketEvent,
   IBCSendPacketEvent,
   decodeEvent,
   mapEventAttributes,
@@ -205,11 +206,12 @@ export default function useBridge(
           // is pre-v0.35.0 Tendermint or not so the atrributes may be encoded
           ...responseFrom.events.map(decodeEvent).map(mapEventAttributes),
         ];
-        const packetDataHex =
+        const sendEvent =
           events &&
           events.find((event): event is IBCSendPacketEvent => {
             return event.type === 'send_packet';
-          })?.attributes.packet_data_hex;
+          });
+        const packetDataHex = sendEvent?.attributes.packet_data_hex;
         if (!packetDataHex) {
           throw new Error('Could not confirm sending chain transaction data');
         }
@@ -221,10 +223,29 @@ export default function useBridge(
             while (Date.now() <= timeout) {
               const res = await lcdClientTo.cosmos.tx.v1beta1.getTxsEvent({
                 events: `recv_packet.packet_data_hex='${packetDataHex}'`,
-                limit: '1',
+                limit: '10',
                 // note: hacking request payload type because it is very wrong
               } as unknown as GetTxsEventRequest);
-              const txResult = res?.tx_responses?.at(0);
+              const txResult = res?.tx_responses?.find((txResponse) => {
+                const events = [
+                  // collect events with mapped attributes
+                  ...txResponse.events.map(mapEventAttributes),
+                  // collect events with potential mapped base64 attributes
+                  // we do this because we haven't checked whether the source chain
+                  // is pre-v0.35.0 Tendermint or not so the atrributes may be encoded
+                  ...txResponse.events.map(decodeEvent).map(mapEventAttributes),
+                ];
+                const receiveEvent = events.find(
+                  (event): event is IBCReceivePacketEvent => {
+                    return event.type === 'recv_packet';
+                  }
+                );
+                // compare the timeout timestamp as it is the most unique identifier
+                return (
+                  receiveEvent?.attributes.packet_timeout_timestamp ===
+                  sendEvent?.attributes.packet_timeout_timestamp
+                );
+              });
               if (txResult) {
                 // translate response into format for toasts
                 return {
