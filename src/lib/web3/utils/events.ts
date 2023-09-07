@@ -46,13 +46,15 @@ export type DexMessageAction =
   | 'Withdraw'
   | 'TickUpdate';
 
-export type ChainEvent = CosmosEvent | DexEvent;
+export type ChainEvent = CosmosEvent | IBCEvent | DexEvent;
 
 export type CosmosEvent =
   | TxFeeEvent
   | CoinTransferEvent
   | CoinSpentEvent
   | CoinReceivedEvent;
+
+export type IBCEvent = IBCSendPacketEvent | IBCReceivePacketEvent;
 
 export type DexEvent =
   | DexPlaceLimitOrderEvent
@@ -160,6 +162,31 @@ export interface TxFeeEvent {
     fee: CoinString;
     fee_payer: WalletAddress;
   };
+}
+
+interface IBCPacketEventAttributes {
+  packet_data: string; // JSON string representation of the packet
+  packet_data_hex: string;
+  packet_timeout_height: string;
+  packet_timeout_timestamp: string;
+  packet_sequence: string;
+  packet_src_port: string;
+  packet_src_channel: string;
+  packet_dst_port: string;
+  packet_dst_channel: string;
+  packet_channel_ordering: string;
+  packet_connection: string;
+  connection_id: string;
+}
+
+export interface IBCSendPacketEvent {
+  type: 'send_packet';
+  attributes: IBCPacketEventAttributes;
+}
+
+export interface IBCReceivePacketEvent {
+  type: 'recv_packet';
+  attributes: IBCPacketEventAttributes;
 }
 
 export function getSpentTokenAmount(
