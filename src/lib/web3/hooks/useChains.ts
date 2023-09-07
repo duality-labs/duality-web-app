@@ -149,17 +149,13 @@ function useIbcChannels(chain: Chain) {
 function filterConnectionsOpen(
   connection: QueryConnectionsResponse['connections'][number]
 ): boolean {
-  // convert state Type to returned string representation of the enum
-  const state = connection.state as unknown as keyof typeof ConnectionState;
-  return state === 'STATE_OPEN';
+  return connection.state === (3 as ConnectionState.STATE_OPEN);
 }
 
 function filterChannelsOpen(
   channel: QueryChannelsResponse['channels'][number]
 ): boolean {
-  // convert state Type to returned string representation of the enum
-  const state = channel.state as unknown as keyof typeof ChannelState;
-  return state === 'STATE_OPEN';
+  return channel.state === (3 as ChannelState.STATE_OPEN);
 }
 
 export function useIbcOpenTransfers(chain: Chain = dualityChain) {
@@ -179,9 +175,7 @@ export function useIbcOpenTransfers(chain: Chain = dualityChain) {
     //       are open, then the same open resources exist on the counterparty.
     //       this may not be true, but is good enough for some UI lists
     return openClients.flatMap((clientState) => {
-      const chainID = (
-        clientState.client_state as unknown as { chain_id: string }
-      ).chain_id;
+      const chainID = clientState.client_state?.chain_id;
       return (
         openConnections
           // filter to connections of the current client
