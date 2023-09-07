@@ -17,6 +17,29 @@ export function mapEventAttributes<T = ChainEvent>(event: Event): T {
   } as unknown as T;
 }
 
+// note: some versions of CosmosSDK have base64 encoded keys and values,
+//       the values were base64 encoded in Tendermint versions before v0.35.0
+// the switch to plain strings is documented here:
+// - Tendermint v0.35.0
+//   - code: https://github.com/tendermint/tendermint/blob/v0.35.0/proto/tendermint/abci/types.proto#L282-L286
+//   - docs: https://github.com/tendermint/tendermint/blob/v0.35.0/CHANGELOG.md?plain=1#L120
+// - CometBFT v0.37.0
+//   - code: https://github.com/cometbft/cometbft/blob/v0.37.0/proto/tendermint/abci/types.proto#L346-L350
+//   - docs: https://github.com/cometbft/cometbft/blob/v0.37.0/CHANGELOG.md?plain=1#L44-L46
+export function decodeEvent(event: Event): Event {
+  return {
+    ...event,
+    // change base64 encoded objects into plain string values
+    attributes: event.attributes.map(({ key, value, ...rest }) => {
+      return {
+        ...rest,
+        key: Buffer.from(`${key}`, 'base64').toString(),
+        value: Buffer.from(`${value}`, 'base64').toString(),
+      };
+    }),
+  };
+}
+
 export type DexMessageAction =
   | 'PlaceLimitOrder'
   | 'Deposit'
