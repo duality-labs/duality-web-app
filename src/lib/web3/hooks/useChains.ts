@@ -307,9 +307,17 @@ export function useRemoteChainBankBalance(
         const client = await ibc.ClientFactory.createLCDClient({
           restEndpoint,
         });
+        // optionally find the IBC denom when querying the Duality chain
+        const denom =
+          restEndpoint === REACT_APP__REST_API
+            ? token.denom_units
+                .find((unit) => unit.denom === token.base)
+                ?.aliases?.find((alias) => alias.startsWith('ibc/')) ??
+              token.base
+            : token.base;
         return client.cosmos.bank.v1beta1.balance({
           address,
-          denom: token.base,
+          denom,
         });
       } else {
         return null;
