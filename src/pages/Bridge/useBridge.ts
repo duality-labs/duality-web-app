@@ -237,7 +237,11 @@ export default function useBridge(
                 ];
                 const receiveEvent = events.find(
                   (event): event is IBCReceivePacketEvent => {
-                    return event.type === 'recv_packet';
+                    // return the receive packet type that has the correctly decoded keys
+                    return (
+                      event.type === 'recv_packet' &&
+                      !!event.attributes.packet_data_hex
+                    );
                   }
                 );
                 // compare the timeout timestamp as it is the most unique identifier
