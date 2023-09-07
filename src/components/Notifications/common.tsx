@@ -23,6 +23,10 @@ interface ToastOptions {
   descriptionLink?: string;
 }
 
+interface TransactionConfig {
+  restEndpoint?: string;
+}
+
 type MinimalTxResponse = Pick<
   DeliverTxResponse,
   'code' | 'transactionHash' | 'gasUsed' | 'gasWanted'
@@ -46,7 +50,8 @@ export function createLoadingToast({
 
 export function checkMsgSuccessToast(
   res: MinimalTxResponse,
-  { id, title, description, descriptionLink }: ToastOptions = {}
+  { id, title, description, descriptionLink }: ToastOptions = {},
+  { restEndpoint = REACT_APP__REST_API }: TransactionConfig = {}
 ) {
   const { code, transactionHash } = res;
   if (code === REQUEST_SUCCESS) {
@@ -55,7 +60,7 @@ export function checkMsgSuccessToast(
       description: description || 'View more details',
       descriptionLink:
         descriptionLink ||
-        `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
+        `${restEndpoint}/cosmos/tx/v1beta1/txs/${transactionHash}`,
       icon: <FontAwesomeIcon icon={faCheckCircle} />,
       duration: 15 * seconds,
       dismissable: true,
@@ -65,7 +70,8 @@ export function checkMsgSuccessToast(
 
 export function checkMsgRejectedToast(
   err: Error & { response?: MinimalTxResponse },
-  { id, title, description, descriptionLink }: ToastOptions = {}
+  { id, title, description, descriptionLink }: ToastOptions = {},
+  { restEndpoint = REACT_APP__REST_API }: TransactionConfig = {}
 ) {
   if (!err.response && err?.message.includes('rejected')) {
     return toast.error(title || 'Transaction Rejected', {
@@ -81,7 +87,8 @@ export function checkMsgRejectedToast(
 
 export function checkMsgOutOfGasToast(
   err: Error & { response?: MinimalTxResponse },
-  { id, title, description, descriptionLink }: ToastOptions = {}
+  { id, title, description, descriptionLink }: ToastOptions = {},
+  { restEndpoint = REACT_APP__REST_API }: TransactionConfig = {}
 ) {
   if (err?.response?.code === ERROR_OUT_OF_GAS) {
     const { gasUsed, gasWanted, transactionHash } = err?.response;
@@ -95,7 +102,7 @@ export function checkMsgOutOfGasToast(
         )} wanted: ${gasWanted?.toLocaleString('en-US')})`,
       descriptionLink:
         descriptionLink ||
-        `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
+        `${restEndpoint}/cosmos/tx/v1beta1/txs/${transactionHash}`,
       icon: <FontAwesomeIcon icon={faCircleXmark} />,
       duration: Infinity,
       dismissable: true,
@@ -105,10 +112,11 @@ export function checkMsgOutOfGasToast(
 
 export function checkMsgErrorToast(
   err: Error & { response?: MinimalTxResponse },
-  { id, title, description, descriptionLink }: ToastOptions = {}
+  { id, title, description, descriptionLink }: ToastOptions = {},
+  { restEndpoint = REACT_APP__REST_API }: TransactionConfig = {}
 ) {
   const { transactionHash } = err?.response || {};
-  const transactionLink = `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`;
+  const transactionLink = `${restEndpoint}/cosmos/tx/v1beta1/txs/${transactionHash}`;
   // pass error to console for developers
   // eslint-disable-next-line no-console
   console.error(
@@ -152,6 +160,7 @@ export class TransactionToastError extends Error {}
 export async function createTransactionToasts<T extends MinimalTxResponse>(
   callback: (id: string) => Promise<T>,
   {
+    restEndpoint = REACT_APP__REST_API,
     // create default ID if it does not exist yet
     id = `${Date.now()}.${Math.random}`,
     onLoadingMessage,
@@ -161,6 +170,7 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
     onErrorMessage,
     quiet = false,
   }: {
+    restEndpoint?: string;
     id?: string;
     onLoadingMessage?: string;
     onSuccess?: (res: T) => ToastOptions | undefined | void;
@@ -171,6 +181,7 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
     quiet?: boolean;
   } = {}
 ): Promise<T | undefined> {
+  const config: TransactionConfig = { restEndpoint };
   // start toasts
   createLoadingToast({ id, description: onLoadingMessage });
   // start transaction and wait for response
@@ -189,7 +200,7 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
         ...onSuccess?.(res),
       };
       // check and show a toast if successful
-      if (!checkMsgSuccessToast(res, toastOptions)) {
+      if (!checkMsgSuccessToast(res, toastOptions, config)) {
         const error: Error & { response?: T } = new Error(`Tx error: ${code}`);
         error.response = res;
         throw error;
@@ -208,9 +219,9 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
       };
       // catch transaction errors
       // chain toast checks so only one toast may be shown
-      checkMsgRejectedToast(err, toastOptions) ||
-        checkMsgOutOfGasToast(err, toastOptions) ||
-        checkMsgErrorToast(err, toastOptions);
+      checkMsgRejectedToast(err, toastOptions, config) ||
+        checkMsgOutOfGasToast(err, toastOptions, config) ||
+        checkMsgErrorToast(err, toastOptions, config);
 
       // only throw the error if it will be handled
       if (!quiet) {
