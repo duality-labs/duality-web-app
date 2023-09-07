@@ -82,9 +82,9 @@ export function checkMsgOutOfGasToast(
       id,
       description:
         description ||
-        `Out of gas (used: ${gasUsed.toLocaleString(
+        `Out of gas (used: ${gasUsed?.toLocaleString(
           'en-US'
-        )} wanted: ${gasWanted.toLocaleString('en-US')})`,
+        )} wanted: ${gasWanted?.toLocaleString('en-US')})`,
       descriptionLink:
         descriptionLink ||
         `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
@@ -115,4 +115,68 @@ export function checkMsgErrorToast(
     duration: Infinity,
     dismissable: true,
   });
+}
+
+export async function handleStandardToastTransaction(
+  callback: (id: string) => Promise<DeliverTxResponse>,
+  {
+    // create default ID if it does not exist yet
+    id = `${Date.now()}.${Math.random}`,
+    onLoadingMessage,
+    onSuccessMessage,
+    onErrorMessage,
+    rethrowError = false,
+  }: {
+    id?: string;
+    onLoadingMessage?: string;
+    onSuccessMessage?:
+      | string
+      | ((res: DeliverTxResponse) => ToastOptions | undefined);
+    onErrorMessage?:
+      | string
+      | ((res: DeliverTxResponse | undefined) => ToastOptions | undefined);
+    rethrowError?: boolean;
+  } = {}
+): Promise<DeliverTxResponse | undefined> {
+  // start toasts
+  createLoadingToast({ id, description: onLoadingMessage });
+  // start transaction and wiat for response
+  return callback(id)
+    .then(function (res): DeliverTxResponse {
+      if (!res) {
+        throw new Error('No response');
+      }
+      const { code } = res;
+      const toastOptions: ToastOptions =
+        typeof onSuccessMessage === 'string'
+          ? { id, description: onSuccessMessage }
+          : { id, ...onSuccessMessage?.(res) };
+      // check and show a toast if successful
+      if (!checkMsgSuccessToast(res, toastOptions)) {
+        const error: Error & { response?: DeliverTxResponse } = new Error(
+          `Tx error: ${code}`
+        );
+        error.response = res;
+        throw error;
+      }
+      // listen for the transaction on the receiving chain
+      return res;
+    })
+    .catch(function (err: Error & { response?: DeliverTxResponse }) {
+      const toastOptions: ToastOptions =
+        typeof onErrorMessage === 'string'
+          ? { id, description: onErrorMessage }
+          : { id, ...onErrorMessage?.(err.response) };
+      // catch transaction errors
+      // chain toast checks so only one toast may be shown
+      checkMsgRejectedToast(err, toastOptions) ||
+        checkMsgOutOfGasToast(err, toastOptions) ||
+        checkMsgErrorToast(err, toastOptions);
+
+      // only throw the error if it will be handled
+      if (rethrowError) {
+        throw err;
+      }
+      return undefined;
+    });
 }
