@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
-import { formatAmount } from '../../lib/utils/number';
+import { formatDecimalPlaces } from '../../lib/utils/number';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
@@ -135,9 +135,9 @@ export default function OrderBookList({
               }
             >
               {currentPrice
-                ? `${formatAmount(currentPrice.toNumber())} ${tokenA.symbol}/${
-                    tokenB.symbol
-                  }`
+                ? `${formatDecimalPlaces(currentPrice.toNumber(), 6)} ${
+                    tokenA.symbol
+                  }/${tokenB.symbol}`
                 : '-'}
             </DiffCell>
           </tr>
@@ -196,20 +196,12 @@ function OrderbookListRow({
   return (
     <tr key={tick.tickIndex1To0.toNumber()}>
       <DiffCell className="text-right" diff={diff.toNumber()}>
-        {formatAmount(tick.price1To0.toNumber(), {
-          maximumSignificantDigits: undefined,
-          maximumFractionDigits: priceDecimalPlaces,
-          minimumFractionDigits: priceDecimalPlaces,
-        })}
+        {formatDecimalPlaces(tick.price1To0.toNumber(), priceDecimalPlaces)}
       </DiffCell>
       <td className="text-right text-muted">
         {value !== undefined
           ? value > 0.005
-            ? formatAmount(value, {
-                maximumSignificantDigits: undefined,
-                maximumFractionDigits: amountDecimalPlaces,
-                minimumFractionDigits: amountDecimalPlaces,
-              })
+            ? formatDecimalPlaces(value, amountDecimalPlaces)
             : '<0.01'
           : '...'}
       </td>
