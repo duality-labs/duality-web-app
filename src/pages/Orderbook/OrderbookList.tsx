@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import BigNumber from 'bignumber.js';
+
 import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
 import { formatAmount, formatLongPrice } from '../../lib/utils/number';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
@@ -40,6 +42,54 @@ export default function OrderBookList({
     return [...tokenBTicks, ...spacingTicks].slice(0, shownTickRows);
   }, [reverse, token0Ticks, token1Ticks]);
 
+  // keep the state of the previously seen ticks
+  const previousTokenATicks = useMemo<TickInfo[]>(() => {
+    // todo: replace with block height tracking and previous block height ticks
+    return tokenATicks
+      .filter((tick): tick is TickInfo => !!tick)
+      .map((tick) => {
+        const randomAdjustment = Math.round(Math.random() * 3 - 1.5);
+        return {
+          ...tick,
+          // add -10% or 0% or 10% of reserves
+          ...(forward
+            ? {
+                reserve0: tick.reserve0.plus(
+                  tick.reserve0.div(10).times(randomAdjustment)
+                ),
+              }
+            : {
+                reserve1: tick.reserve1.plus(
+                  tick.reserve1.div(10).times(randomAdjustment)
+                ),
+              }),
+        };
+      });
+  }, [tokenATicks, forward]);
+  const previousTokenBTicks = useMemo<TickInfo[]>(() => {
+    // todo: replace with block height tracking and previous block height ticks
+    return tokenBTicks
+      .filter((tick): tick is TickInfo => !!tick)
+      .map((tick) => {
+        const randomAdjustment = Math.round(Math.random() * 3 - 1.5);
+        return {
+          ...tick,
+          // add -10% or 0% or 10% of reserves
+          ...(reverse
+            ? {
+                reserve0: tick.reserve0.plus(
+                  tick.reserve0.div(10).times(randomAdjustment)
+                ),
+              }
+            : {
+                reserve1: tick.reserve1.plus(
+                  tick.reserve1.div(10).times(randomAdjustment)
+                ),
+              }),
+        };
+      });
+  }, [tokenBTicks, reverse]);
+
   const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
 
   return (
@@ -61,6 +111,7 @@ export default function OrderBookList({
               <OrderbookListRow
                 key={index}
                 tick={tick}
+                previousTicks={previousTokenATicks}
                 token={tokenA}
                 reserveKey={forward ? 'reserve0' : 'reserve1'}
               />
@@ -84,6 +135,7 @@ export default function OrderBookList({
               <OrderbookListRow
                 key={index}
                 tick={tick}
+                previousTicks={previousTokenBTicks}
                 token={tokenB}
                 reserveKey={reverse ? 'reserve0' : 'reserve1'}
               />
@@ -97,10 +149,12 @@ export default function OrderBookList({
 
 function OrderbookListRow({
   tick,
+  previousTicks,
   token,
   reserveKey,
 }: {
   tick: TickInfo | undefined;
+  previousTicks: TickInfo[];
   token: Token;
   reserveKey: 'reserve0' | 'reserve1';
 }) {
@@ -113,9 +167,26 @@ function OrderbookListRow({
     );
   }
   // add tick row
+  const previousTokenATick = previousTicks.find((prev) => {
+    return prev.tickIndex1To0 === tick.tickIndex1To0;
+  });
+  const diff = previousTokenATick
+    ? tick[reserveKey].minus(previousTokenATick[reserveKey])
+    : new BigNumber(0);
   return (
-    <tr>
-      <td className="text-left">
+    <tr key={tick.tickIndex1To0.toNumber()}>
+      <td
+        className={[
+          'text-left',
+          diff.isGreaterThan(0)
+            ? 'text-success'
+            : diff.isLessThan(0)
+            ? 'text-error'
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         {formatLongPrice(tick.price1To0.toNumber())}
       </td>
       <td className="text-right text-muted">
