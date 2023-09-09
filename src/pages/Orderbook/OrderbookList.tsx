@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
-import { formatAmount, formatLongPrice } from '../../lib/utils/number';
+import { formatAmount } from '../../lib/utils/number';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
@@ -134,9 +134,9 @@ export default function OrderBookList({
               }
             >
               {currentPrice
-                ? `${formatLongPrice(currentPrice.toNumber())} ${
-                    tokenA.symbol
-                  }/${tokenB.symbol}`
+                ? `${formatAmount(currentPrice.toNumber())} ${tokenA.symbol}/${
+                    tokenB.symbol
+                  }`
                 : '-'}
             </DiffCell>
           </tr>
@@ -164,11 +164,15 @@ function OrderbookListRow({
   previousTicks,
   token,
   reserveKey,
+  priceDecimalPlaces = 6,
+  amountDecimalPlaces = 3,
 }: {
   tick: TickInfo | undefined;
   previousTicks: TickInfo[];
   token: Token;
   reserveKey: 'reserve0' | 'reserve1';
+  priceDecimalPlaces?: number;
+  amountDecimalPlaces?: number;
 }) {
   // add empty row
   if (!tick) {
@@ -188,7 +192,11 @@ function OrderbookListRow({
   return (
     <tr key={tick.tickIndex1To0.toNumber()}>
       <DiffCell className="text-right" diff={diff.toNumber()}>
-        {formatLongPrice(tick.price1To0.toNumber())}
+        {formatAmount(tick.price1To0.toNumber(), {
+          maximumSignificantDigits: undefined,
+          maximumFractionDigits: priceDecimalPlaces,
+          minimumFractionDigits: priceDecimalPlaces,
+        })}
       </DiffCell>
       <td className="text-right text-muted">
         {formatAmount(
@@ -197,7 +205,12 @@ function OrderbookListRow({
             tick[reserveKey],
             token.address,
             token.display
-          ) || ''
+          ) || '',
+          {
+            maximumSignificantDigits: undefined,
+            maximumFractionDigits: amountDecimalPlaces,
+            minimumFractionDigits: amountDecimalPlaces,
+          }
         )}
       </td>
     </tr>
