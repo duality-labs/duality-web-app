@@ -175,20 +175,9 @@ function OrderbookListRow({
     : new BigNumber(0);
   return (
     <tr key={tick.tickIndex1To0.toNumber()}>
-      <td
-        className={[
-          'text-left',
-          diff.isGreaterThan(0)
-            ? 'text-success'
-            : diff.isLessThan(0)
-            ? 'text-error'
-            : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-      >
+      <DiffCell className="text-left" diff={diff.toNumber()}>
         {formatLongPrice(tick.price1To0.toNumber())}
-      </td>
+      </DiffCell>
       <td className="text-right text-muted">
         {formatAmount(
           getAmountInDenom(
@@ -200,5 +189,24 @@ function OrderbookListRow({
         )}
       </td>
     </tr>
+  );
+}
+
+function DiffCell({
+  diff = 0,
+  className,
+  ...props
+}: JSX.IntrinsicElements['td'] & { diff?: number }) {
+  return (
+    // add style of diff to classnames
+    <td
+      className={[
+        className,
+        diff > 0 ? 'text-success' : diff < 0 ? 'text-error' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      {...props}
+    />
   );
 }
