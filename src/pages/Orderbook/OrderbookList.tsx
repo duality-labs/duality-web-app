@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
 import { formatAmount, formatLongPrice } from '../../lib/utils/number';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { TickInfo } from '../../lib/web3/utils/ticks';
 
 import './OrderbookList.scss';
 
@@ -28,8 +30,15 @@ export default function OrderBookList({
     token1Address === tokenA.address && token0Address === tokenB.address,
   ];
 
-  const tokenATicks = forward ? token0Ticks : token1Ticks;
-  const tokenBTicks = reverse ? token0Ticks : token1Ticks;
+  // works with shortened length and correct sort order ticks for this component
+  const tokenATicks = useMemo<Array<TickInfo | undefined>>(() => {
+    const tokenATicks = forward ? token0Ticks : token1Ticks;
+    return [...tokenATicks, ...spacingTicks].slice(0, shownTickRows).reverse();
+  }, [forward, token0Ticks, token1Ticks]);
+  const tokenBTicks = useMemo<Array<TickInfo | undefined>>(() => {
+    const tokenBTicks = reverse ? token0Ticks : token1Ticks;
+    return [...tokenBTicks, ...spacingTicks].slice(0, shownTickRows);
+  }, [reverse, token0Ticks, token1Ticks]);
 
   const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
 
@@ -47,38 +56,35 @@ export default function OrderBookList({
           </tr>
         </thead>
         <tbody className="orderbook-list__table__ticks-a">
-          {[...tokenATicks, ...spacingTicks]
-            .slice(0, shownTickRows)
-            .reverse()
-            .map((tick, index) => {
-              // add empty row
-              if (!tick) {
-                return (
-                  // make sure index key doesn't collide with a real tick number
-                  <tr key={index + 0.5}>
-                    <td colSpan={2}>&nbsp;</td>
-                  </tr>
-                );
-              }
-              // add tick row
+          {tokenATicks.map((tick, index) => {
+            // add empty row
+            if (!tick) {
               return (
-                <tr key={tick.tickIndex1To0.toNumber()}>
-                  <td className="text-left">
-                    {formatLongPrice(tick.price1To0.toNumber())}
-                  </td>
-                  <td className="text-right text-muted">
-                    {formatAmount(
-                      getAmountInDenom(
-                        tokenA,
-                        forward ? tick.reserve0 : tick.reserve1,
-                        tokenA.address,
-                        tokenA.display
-                      ) || ''
-                    )}
-                  </td>
+                // make sure index key doesn't collide with a real tick number
+                <tr key={index + 0.5}>
+                  <td colSpan={2}>&nbsp;</td>
                 </tr>
               );
-            })}
+            }
+            // add tick row
+            return (
+              <tr key={tick.tickIndex1To0.toNumber()}>
+                <td className="text-left">
+                  {formatLongPrice(tick.price1To0.toNumber())}
+                </td>
+                <td className="text-right text-muted">
+                  {formatAmount(
+                    getAmountInDenom(
+                      tokenA,
+                      forward ? tick.reserve0 : tick.reserve1,
+                      tokenA.address,
+                      tokenA.display
+                    ) || ''
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
         <tbody className="orderbook-list__table__tick-center">
           <tr>
@@ -92,36 +98,34 @@ export default function OrderBookList({
           </tr>
         </tbody>
         <tbody className="orderbook-list__table__ticks-b">
-          {[...tokenBTicks, ...spacingTicks]
-            .slice(0, shownTickRows)
-            .map((tick, index) => {
-              // add empty row
-              if (!tick) {
-                return (
-                  <tr key={index + 0.5}>
-                    <td colSpan={2}>&nbsp;</td>
-                  </tr>
-                );
-              }
-              // add tick row
+          {tokenBTicks.map((tick, index) => {
+            // add empty row
+            if (!tick) {
               return (
-                <tr key={tick.tickIndex1To0.toNumber()}>
-                  <td className="text-left">
-                    {formatLongPrice(tick.price1To0.toNumber())}
-                  </td>
-                  <td className="text-right text-muted">
-                    {formatAmount(
-                      getAmountInDenom(
-                        tokenA,
-                        reverse ? tick.reserve0 : tick.reserve1,
-                        tokenA.address,
-                        tokenA.display
-                      ) || ''
-                    )}
-                  </td>
+                <tr key={index + 0.5}>
+                  <td colSpan={2}>&nbsp;</td>
                 </tr>
               );
-            })}
+            }
+            // add tick row
+            return (
+              <tr key={tick.tickIndex1To0.toNumber()}>
+                <td className="text-left">
+                  {formatLongPrice(tick.price1To0.toNumber())}
+                </td>
+                <td className="text-right text-muted">
+                  {formatAmount(
+                    getAmountInDenom(
+                      tokenA,
+                      reverse ? tick.reserve0 : tick.reserve1,
+                      tokenA.address,
+                      tokenA.display
+                    ) || ''
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
