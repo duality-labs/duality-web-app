@@ -100,6 +100,11 @@ export default function OrderBookList({
   return (
     <div className="flex-centered orderbook-list">
       <table className="orderbook-list__table">
+        <colgroup>
+          {/* minimize the first column width */}
+          <col width="0" />
+          <col />
+        </colgroup>
         <thead>
           <tr>
             <th className="text-medium text-muted text-left">Price</th>
@@ -182,7 +187,7 @@ function OrderbookListRow({
     : new BigNumber(0);
   return (
     <tr key={tick.tickIndex1To0.toNumber()}>
-      <DiffCell className="text-left" diff={diff.toNumber()}>
+      <DiffCell className="text-right" diff={diff.toNumber()}>
         {formatLongPrice(tick.price1To0.toNumber())}
       </DiffCell>
       <td className="text-right text-muted">
