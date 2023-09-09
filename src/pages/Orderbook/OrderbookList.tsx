@@ -5,7 +5,8 @@ import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentP
 import { formatAmount } from '../../lib/utils/number';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { useSimplePrice } from '../../lib/tokenPrices';
+import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
 import { TickInfo } from '../../lib/web3/utils/ticks';
 
 import './OrderbookList.scss';
@@ -165,7 +166,7 @@ function OrderbookListRow({
   token,
   reserveKey,
   priceDecimalPlaces = 6,
-  amountDecimalPlaces = 3,
+  amountDecimalPlaces = 2,
 }: {
   tick: TickInfo | undefined;
   previousTicks: TickInfo[];
@@ -174,6 +175,7 @@ function OrderbookListRow({
   priceDecimalPlaces?: number;
   amountDecimalPlaces?: number;
 }) {
+  const { data: price } = useSimplePrice(token);
   // add empty row
   if (!tick) {
     return (
@@ -189,6 +191,8 @@ function OrderbookListRow({
   const diff = previousTokenATick
     ? tick[reserveKey].minus(previousTokenATick[reserveKey])
     : new BigNumber(0);
+
+  const value = getTokenValue(token, tick[reserveKey], price);
   return (
     <tr key={tick.tickIndex1To0.toNumber()}>
       <DiffCell className="text-right" diff={diff.toNumber()}>
@@ -199,19 +203,15 @@ function OrderbookListRow({
         })}
       </DiffCell>
       <td className="text-right text-muted">
-        {formatAmount(
-          getAmountInDenom(
-            token,
-            tick[reserveKey],
-            token.address,
-            token.display
-          ) || '',
-          {
-            maximumSignificantDigits: undefined,
-            maximumFractionDigits: amountDecimalPlaces,
-            minimumFractionDigits: amountDecimalPlaces,
-          }
-        )}
+        {value !== undefined
+          ? value > 0.005
+            ? formatAmount(value, {
+                maximumSignificantDigits: undefined,
+                maximumFractionDigits: amountDecimalPlaces,
+                minimumFractionDigits: amountDecimalPlaces,
+              })
+            : '<0.01'
+          : '...'}
       </td>
     </tr>
   );
