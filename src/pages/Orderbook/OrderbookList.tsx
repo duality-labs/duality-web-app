@@ -57,32 +57,13 @@ export default function OrderBookList({
         </thead>
         <tbody className="orderbook-list__table__ticks-a">
           {tokenATicks.map((tick, index) => {
-            // add empty row
-            if (!tick) {
-              return (
-                // make sure index key doesn't collide with a real tick number
-                <tr key={index + 0.5}>
-                  <td colSpan={2}>&nbsp;</td>
-                </tr>
-              );
-            }
-            // add tick row
             return (
-              <tr key={tick.tickIndex1To0.toNumber()}>
-                <td className="text-left">
-                  {formatLongPrice(tick.price1To0.toNumber())}
-                </td>
-                <td className="text-right text-muted">
-                  {formatAmount(
-                    getAmountInDenom(
-                      tokenA,
-                      forward ? tick.reserve0 : tick.reserve1,
-                      tokenA.address,
-                      tokenA.display
-                    ) || ''
-                  )}
-                </td>
-              </tr>
+              <OrderbookListRow
+                key={index}
+                tick={tick}
+                token={tokenA}
+                reserveKey={forward ? 'reserve0' : 'reserve1'}
+              />
             );
           })}
         </tbody>
@@ -99,35 +80,54 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__ticks-b">
           {tokenBTicks.map((tick, index) => {
-            // add empty row
-            if (!tick) {
-              return (
-                <tr key={index + 0.5}>
-                  <td colSpan={2}>&nbsp;</td>
-                </tr>
-              );
-            }
-            // add tick row
             return (
-              <tr key={tick.tickIndex1To0.toNumber()}>
-                <td className="text-left">
-                  {formatLongPrice(tick.price1To0.toNumber())}
-                </td>
-                <td className="text-right text-muted">
-                  {formatAmount(
-                    getAmountInDenom(
-                      tokenA,
-                      reverse ? tick.reserve0 : tick.reserve1,
-                      tokenA.address,
-                      tokenA.display
-                    ) || ''
-                  )}
-                </td>
-              </tr>
+              <OrderbookListRow
+                key={index}
+                tick={tick}
+                token={tokenB}
+                reserveKey={reverse ? 'reserve0' : 'reserve1'}
+              />
             );
           })}
         </tbody>
       </table>
     </div>
+  );
+}
+
+function OrderbookListRow({
+  tick,
+  token,
+  reserveKey,
+}: {
+  tick: TickInfo | undefined;
+  token: Token;
+  reserveKey: 'reserve0' | 'reserve1';
+}) {
+  // add empty row
+  if (!tick) {
+    return (
+      <tr>
+        <td colSpan={2}>&nbsp;</td>
+      </tr>
+    );
+  }
+  // add tick row
+  return (
+    <tr>
+      <td className="text-left">
+        {formatLongPrice(tick.price1To0.toNumber())}
+      </td>
+      <td className="text-right text-muted">
+        {formatAmount(
+          getAmountInDenom(
+            token,
+            tick[reserveKey],
+            token.address,
+            token.display
+          ) || ''
+        )}
+      </td>
+    </tr>
   );
 }
