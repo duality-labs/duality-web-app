@@ -23,5 +23,15 @@
         text-align: left;
       }
     }
+    // add cell spacing
+    & {
+      td {
+        padding: 0.125rem 0;
+      }
+      // add triple spacing on first row to align the spacing for whole table
+      .orderbook-list__table__ticks-a tr:first-child td {
+        padding-top: 0.375rem;
+      }
+    }
   }
 }
