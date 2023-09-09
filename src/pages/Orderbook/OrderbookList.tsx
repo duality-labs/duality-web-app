@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
-import { formatAmount } from '../../lib/utils/number';
+import { formatAmount, getDecimalPlaces } from '../../lib/utils/number';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
@@ -98,6 +98,11 @@ export default function OrderBookList({
     return currentPrice?.plus(randomAdjustment);
   }, [currentPrice]);
 
+  const priceDecimalPlaces =
+    currentPrice !== undefined
+      ? getDecimalPlaces(currentPrice.toNumber(), 6)
+      : undefined;
+
   return (
     <div className="flex-centered orderbook-list">
       <table className="orderbook-list__table">
@@ -121,6 +126,7 @@ export default function OrderBookList({
                 previousTicks={previousTokenATicks}
                 token={tokenA}
                 reserveKey={forward ? 'reserve0' : 'reserve1'}
+                priceDecimalPlaces={priceDecimalPlaces}
               />
             );
           })}
@@ -135,9 +141,10 @@ export default function OrderBookList({
               }
             >
               {currentPrice
-                ? `${formatAmount(currentPrice.toNumber())} ${tokenA.symbol}/${
-                    tokenB.symbol
-                  }`
+                ? `${formatAmount(currentPrice.toNumber(), {
+                    minimumFractionDigits: priceDecimalPlaces,
+                    maximumFractionDigits: priceDecimalPlaces,
+                  })} ${tokenA.symbol}/${tokenB.symbol}`
                 : '-'}
             </DiffCell>
           </tr>
@@ -151,6 +158,7 @@ export default function OrderBookList({
                 previousTicks={previousTokenBTicks}
                 token={tokenB}
                 reserveKey={reverse ? 'reserve0' : 'reserve1'}
+                priceDecimalPlaces={priceDecimalPlaces}
               />
             );
           })}
