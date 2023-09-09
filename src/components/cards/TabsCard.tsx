@@ -1,31 +1,34 @@
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
 
-import './Tabs.scss';
+import { Tab } from '../Tabs/Tabs';
 
-export interface Tab {
-  nav: ReactNode;
-  Tab: React.FunctionComponent;
-}
-export default function Tabs({
+import './TabsCard.scss';
+
+export default function TabsCard({
   tabs,
   className,
-}: {
+  ...props
+}: JSX.IntrinsicElements['div'] & {
   tabs: Array<Tab>;
-  className?: string;
 }) {
   const [tabIndex, setTabIndex] = useState<number>(0);
   const { Tab } = tabs[tabIndex];
 
   return (
-    <div className={['tabs col gap-4', className].filter(Boolean).join(' ')}>
-      <div className="tabs__nav flex row gutter-x-3">
+    <div
+      className={['page-card tabs-card p-0', className]
+        .filter(Boolean)
+        .join(' ')}
+      {...props}
+    >
+      <div className="tabs-card__nav row">
         {tabs.map((tab, index) => {
           return (
             <button
               key={index}
               className={[
-                'tabs__nav-button',
-                'px-3',
+                'tabs-card__nav-button',
+                'py-md px-4',
                 index === tabIndex && 'active',
               ]
                 .filter(Boolean)
@@ -37,7 +40,7 @@ export default function Tabs({
           );
         })}
       </div>
-      <div className="tabs__tab flex row">
+      <div className="tabs-card__tab flex row">
         <div className="flex col">
           <Tab />
         </div>
