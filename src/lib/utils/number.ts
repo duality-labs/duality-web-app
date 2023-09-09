@@ -1,5 +1,11 @@
 import BigNumber from 'bignumber.js';
 
+// return the decimal places found of a number if rounded to significant digits
+export function getDecimalPlaces(value: number, significantDigits = 6) {
+  const orderOfMagnitude = value ? Math.floor(Math.log10(Math.abs(value))) : 0;
+  return Math.max(0, significantDigits - orderOfMagnitude - 1);
+}
+
 // rounding to 6 significant figures will guarantee a unique index
 // for all tick indexes using the basis of price = 1.0001^index
 export function roundToSignificantDigits(

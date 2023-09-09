@@ -197,21 +197,15 @@ function OrderbookListRow({
     <tr key={tick.tickIndex1To0.toNumber()}>
       <DiffCell className="text-right" diff={diff.toNumber()}>
         {formatAmount(tick.price1To0.toNumber(), {
-          maximumSignificantDigits: undefined,
-          maximumFractionDigits: priceDecimalPlaces,
           minimumFractionDigits: priceDecimalPlaces,
+          maximumFractionDigits: priceDecimalPlaces,
         })}
       </DiffCell>
       <td className="text-right text-muted">
-        {value !== undefined
-          ? value > 0.005
-            ? formatAmount(value, {
-                maximumSignificantDigits: undefined,
-                maximumFractionDigits: amountDecimalPlaces,
-                minimumFractionDigits: amountDecimalPlaces,
-              })
-            : '<0.01'
-          : '...'}
+        {formatAmount(value ?? '...', {
+          minimumFractionDigits: amountDecimalPlaces,
+          maximumFractionDigits: amountDecimalPlaces,
+        })}
       </td>
     </tr>
   );
