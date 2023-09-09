@@ -192,7 +192,7 @@ $min-body-height: 150px;
 
   .dialog-content {
     overflow: hidden;
-    border: paddings.size(2) solid var(--card-border);
+    border: paddings.size(2) solid var(--dialog-border);
     background-color: var(--dialog-bg);
   }
 
