@@ -91,6 +91,11 @@ export default function OrderBookList({
   }, [tokenBTicks, reverse]);
 
   const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+  const previousPrice = useMemo<BigNumber | undefined>(() => {
+    // todo: replace with block height tracking and previous block height ticks
+    const randomAdjustment = Math.round(Math.random() * 3 - 1.5);
+    return currentPrice?.plus(randomAdjustment);
+  }, [currentPrice]);
 
   return (
     <div className="flex-centered orderbook-list">
@@ -120,13 +125,19 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__tick-center">
           <tr>
-            <td colSpan={2} className="text-center py-3">
+            <DiffCell
+              colSpan={2}
+              className="text-center py-3"
+              diff={
+                previousPrice && currentPrice?.minus(previousPrice).toNumber()
+              }
+            >
               {currentPrice
                 ? `${formatLongPrice(currentPrice.toNumber())} ${
                     tokenA.symbol
                   }/${tokenB.symbol}`
                 : '-'}
-            </td>
+            </DiffCell>
           </tr>
         </tbody>
         <tbody className="orderbook-list__table__ticks-b">
