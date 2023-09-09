@@ -4,6 +4,7 @@ import { useMatch } from 'react-router-dom';
 import { getTokenBySymbol } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 
+import TabsCard from '../../components/cards/TabsCard';
 import OrderbookHeader from './OrderbookHeader';
 import OrderbookFooter from './OrderbookFooter';
 import OrderBookChart from './OrderbookChart';
@@ -48,11 +49,30 @@ function Orderbook() {
           </div>
         </div>
         <div className="col">
-          <div className="flex page-card">
-            {tokenA?.address === 'stake' && tokenB?.address === 'token' && (
-              <OrderBookList tokenA={tokenA} tokenB={tokenB} />
-            )}
-          </div>
+          <TabsCard
+            className="flex"
+            style={{
+              // fix width to a minimum to allow tabs to be of equal size
+              // sized to the word "Orderbook" with padding
+              minWidth: '15em',
+            }}
+            tabs={useMemo(() => {
+              return [
+                {
+                  nav: 'Orderbook',
+                  Tab: () =>
+                    tokenA?.address === 'stake' &&
+                    tokenB?.address === 'token' ? (
+                      <OrderBookList tokenA={tokenA} tokenB={tokenB} />
+                    ) : null,
+                },
+                {
+                  nav: 'Trades',
+                  Tab: () => null,
+                },
+              ];
+            }, [tokenA, tokenB])}
+          />
         </div>
         <div className="col">
           <div className="flex page-card">Limit Order control</div>

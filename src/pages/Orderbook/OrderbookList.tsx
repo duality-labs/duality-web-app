@@ -99,15 +99,11 @@ export default function OrderBookList({
 
   return (
     <div className="flex-centered orderbook-list">
-      <div className="orderbook-list__tabs row pb-2">
-        <div className="flex col active">Orderbook</div>
-        <div className="flex col">Trades</div>
-      </div>
       <table className="orderbook-list__table">
         <thead>
           <tr>
-            <th className="text-medium text-muted text-left py-1">Price</th>
-            <th className="text-medium text-muted text-right py-1">Amount</th>
+            <th className="text-medium text-muted text-left">Price</th>
+            <th className="text-medium text-muted text-right">Amount</th>
           </tr>
         </thead>
         <tbody className="orderbook-list__table__ticks-a">
