@@ -180,8 +180,8 @@ function AmountColumn({ row: tx }: { row: Tx }) {
   function getTokenAReserves() {
     const address = attributes.Creator;
     return attributes.TokenIn === tokenA.address
-      ? getSpentTokenAmount(events, address, { matchToken: tokenA })
-      : getReceivedTokenAmount(events, address, { matchToken: tokenA });
+      ? getSpentTokenAmount(events, { address, matchToken: tokenA })
+      : getReceivedTokenAmount(events, { address, matchToken: tokenA });
   }
 
   // function getTokenBReserves() {
@@ -228,8 +228,8 @@ function TotalColumn({ row: tx }: { row: Tx }) {
   function getTokenAReserves() {
     const address = attributes.Creator;
     return attributes.TokenIn === tokenA.address
-      ? getSpentTokenAmount(events, address, { matchToken: tokenA })
-      : getReceivedTokenAmount(events, address, { matchToken: tokenA });
+      ? getSpentTokenAmount(events, { address, matchToken: tokenA })
+      : getReceivedTokenAmount(events, { address, matchToken: tokenA });
   }
 
   // function getTokenBReserves() {

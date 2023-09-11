@@ -61,7 +61,15 @@ export default function useTransactionTableData({
 }) {
   const [pageOffset] = useState<number>(0);
   return useQuery({
-    queryKey: ['events', action, tokenA.address, tokenB.address, pageOffset],
+    queryKey: [
+      'events',
+      tokenA.address,
+      tokenB.address,
+      action,
+      account,
+      pageSize,
+      pageOffset,
+    ],
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
       const invertedOrder = guessInvertedOrder(tokenA.address, tokenB.address);
 
