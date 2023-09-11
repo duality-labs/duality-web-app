@@ -152,6 +152,11 @@ function Tables() {
             switchValue={subPage}
             switchValues={subPages}
             switchOnChange={setSubPage}
+            headerActions={
+              <Link to="/bridge" className="button button-primary p-sm px-md">
+                Bridge Assets
+              </Link>
+            }
           />
         )}
         {subPage === 'pools' &&
@@ -179,6 +184,11 @@ function Tables() {
               switchOnChange={setSubPage}
               onTokenPairClick={goToPositionManagementPage}
               userPositionActions={userPositionActions}
+              headerActions={
+                <Link to="/pools" className="button button-primary p-sm px-md">
+                  Add Liquidity
+                </Link>
+              }
             />
           ))}
       </div>

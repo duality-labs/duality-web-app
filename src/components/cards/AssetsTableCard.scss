@@ -1,10 +1,12 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+
 .asset-list-card {
   .table-card__table {
     // style first column
     th,
     td {
       text-align: left;
-      width: 50%;
+      width: 60%;
       min-width: 7em;
     }
     // style second and third columns
@@ -12,13 +14,29 @@
     td + td {
       min-width: auto;
       text-align: right;
-      width: 30%;
+      width: 10%;
     }
     th + th + th,
     td + td + td {
       text-align: right;
-      width: 20%;
-      min-width: 5em;
+      width: 30%;
+      min-width: 10em;
     }
+  }
+}
+
+.bridge-card {
+  .dialog-content {
+    width: 540px;
+    border-radius: 8px;
+    border: 1px solid hsla(217, 19%, 27%, 1);
+    background-color: var(--page-card);
+  }
+  .dialog-header-row {
+    border: none;
+  }
+  // leave no padding around path info box
+  .dialog-body {
+    padding-top: 0;
   }
 }

@@ -1,11 +1,17 @@
 import BigNumber from 'bignumber.js';
-import { useCallback, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
+import Dialog from '../Dialog/Dialog';
+
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
-import useTokens from '../../lib/web3/hooks/useTokens';
+import useTokens, {
+  useTokensWithIbcInfo,
+} from '../../lib/web3/hooks/useTokens';
+import BridgeCard from './BridgeCard';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
+import { dualityChain } from '../../lib/web3/hooks/useChains';
 
 import { formatAmount } from '../../lib/utils/number';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
@@ -18,24 +24,55 @@ type TokenCoin = CoinSDKType & {
 };
 interface AssetsTableCardOptions {
   tokenList?: Token[];
+  showActions?: boolean;
 }
 
 export default function AssetsTableCard({
+  showActions,
   tokenList: givenTokenList,
   ...tableCardProps
 }: AssetsTableCardOptions & Partial<TableCardProps<string>>) {
   const tokenList = useTokens();
+  const tokenListWithIBC = useTokensWithIbcInfo(givenTokenList || tokenList);
   const allUserBankAssets = useUserBankValues();
 
   // define sorting rows by token value
   const sortByValue = useCallback(
     (a: Token, b: Token) => {
-      return getTokenValue(b).minus(getTokenValue(a)).toNumber();
+      // sort first by value
+      return (
+        getTokenValue(b).minus(getTokenValue(a)).toNumber() ||
+        // if value is equal, sort by amount
+        getTokenAmount(b).minus(getTokenAmount(a)).toNumber() ||
+        // if amount is equal, sort by local chain
+        getTokenChain(b) - getTokenChain(a)
+      );
       function getTokenValue(token: Token) {
         const foundUserAsset = allUserBankAssets.find((userToken) => {
-          return userToken.token === token;
+          return (
+            userToken.token.address === token.address &&
+            userToken.token.chain.chain_id === token.chain.chain_id
+          );
         });
         return foundUserAsset?.value || new BigNumber(0);
+      }
+      function getTokenAmount(token: Token) {
+        const foundUserAsset = allUserBankAssets.find((userToken) => {
+          return (
+            userToken.token.address === token.address &&
+            userToken.token.chain.chain_id === token.chain.chain_id
+          );
+        });
+        return new BigNumber(foundUserAsset?.amount || 0);
+      }
+      function getTokenChain(token: Token) {
+        if (token.chain.chain_id === dualityChain.chain_id) {
+          return 2;
+        }
+        if (token.ibc) {
+          return 1;
+        }
+        return 0;
       }
     },
     [allUserBankAssets]
@@ -43,8 +80,8 @@ export default function AssetsTableCard({
 
   // sort tokens
   const sortedList = useMemo(() => {
-    return (givenTokenList || [...tokenList]).sort(sortByValue);
-  }, [tokenList, givenTokenList, sortByValue]);
+    return tokenListWithIBC.sort(sortByValue);
+  }, [tokenListWithIBC, sortByValue]);
 
   const [searchValue, setSearchValue] = useState<string>('');
 
@@ -71,13 +108,17 @@ export default function AssetsTableCard({
           <tr>
             <th>Token + Chain</th>
             <th>Balance</th>
+            {showActions && <th>Actions</th>}
           </tr>
         </thead>
         <tbody>
           {filteredList.length > 0 ? (
             filteredList.map(({ chain, symbol, token }) => {
               const foundUserAsset = allUserBankAssets.find((userToken) => {
-                return userToken.token === token;
+                return (
+                  userToken.token.address === token.address &&
+                  userToken.token.chain.chain_id === token.chain.chain_id
+                );
               });
               return foundUserAsset ? (
                 <AssetRow
@@ -86,6 +127,7 @@ export default function AssetsTableCard({
                   token={token}
                   amount={foundUserAsset.amount}
                   value={foundUserAsset.value}
+                  showActions={showActions}
                 />
               ) : (
                 <AssetRow
@@ -94,6 +136,7 @@ export default function AssetsTableCard({
                   denom={''}
                   amount="0"
                   value={new BigNumber(0)}
+                  showActions={showActions}
                 />
               );
             })
@@ -110,7 +153,12 @@ export default function AssetsTableCard({
   );
 }
 
-function AssetRow({ token, amount, value }: TokenCoin) {
+function AssetRow({
+  token,
+  amount,
+  value,
+  showActions,
+}: TokenCoin & AssetsTableCardOptions) {
   return (
     <tr>
       <td>
@@ -130,9 +178,10 @@ function AssetRow({ token, amount, value }: TokenCoin) {
             </div>
             <div className="row">
               <div className="col subtext">
-                {token.chain.chain_name
-                  .split('')
-                  .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
+                {token.chain.pretty_name ??
+                  token.chain.chain_name
+                    .split('')
+                    .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
               </div>
             </div>
           </div>
@@ -153,6 +202,79 @@ function AssetRow({ token, amount, value }: TokenCoin) {
           })}`}
         </div>
       </td>
+      {showActions && (
+        <td>
+          {token.chain.chain_id !== dualityChain.chain_id && (
+            // disable buttons if there is no known path to bridge them here
+            <fieldset disabled={!token.ibc}>
+              <BridgeButton
+                className="button button-primary-outline nowrap mx-0"
+                from={token}
+              >
+                Deposit
+              </BridgeButton>
+              <BridgeButton
+                className="button button-outline nowrap mx-0 ml-3"
+                to={token}
+              >
+                Withdraw
+              </BridgeButton>
+            </fieldset>
+          )}
+        </td>
+      )}
     </tr>
+  );
+}
+
+function BridgeButton({
+  className,
+  from,
+  to,
+  children,
+}: {
+  className: string;
+  from?: Token;
+  to?: Token;
+  children: ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const open = useCallback(() => setIsOpen(true), []);
+  const close = useCallback(() => setIsOpen(false), []);
+  return (
+    <>
+      <button className={className} onClick={open}>
+        {children}
+      </button>
+      {isOpen && (
+        <BridgeDialog isOpen={isOpen} setIsOpen={close} from={from} to={to} />
+      )}
+    </>
+  );
+}
+
+function BridgeDialog({
+  from,
+  to,
+  isOpen,
+  setIsOpen,
+}: {
+  from?: Token;
+  to?: Token;
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  const close = useCallback(() => setIsOpen(false), [setIsOpen]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <Dialog
+      isOpen={isOpen}
+      onDismiss={close}
+      header={<h2 className="h3">Bridge</h2>}
+      initialFocusRef={inputRef}
+      className="bridge-card"
+    >
+      <BridgeCard from={from} to={to} inputRef={inputRef} onSuccess={close} />
+    </Dialog>
   );
 }
