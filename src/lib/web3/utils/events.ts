@@ -196,11 +196,11 @@ export interface IBCReceivePacketEvent {
 
 export function getSpentTokenAmount(
   events: ChainEvent[],
-  spender: WalletAddress,
   {
+    address: spender,
     matchToken,
     includeFees,
-  }: { matchToken?: Token; includeFees?: boolean } = {}
+  }: { address?: WalletAddress; matchToken?: Token; includeFees?: boolean } = {}
 ): BigNumber {
   const excludedEvents: ChainEvent[] = includeFees
     ? []
@@ -212,18 +212,18 @@ export function getSpentTokenAmount(
       (matchToken
         ? event.attributes.amount.endsWith(matchToken.address)
         : true) &&
-      event.attributes.spender === spender
+      (spender ? event.attributes.spender === spender : true)
   );
   return sumTokenEventAmounts(tokenEvents);
 }
 
 export function getReceivedTokenAmount(
   events: ChainEvent[],
-  receiver: WalletAddress,
   {
+    address: receiver,
     matchToken,
     includeFees,
-  }: { matchToken?: Token; includeFees?: boolean } = {}
+  }: { address?: WalletAddress; matchToken?: Token; includeFees?: boolean } = {}
 ): BigNumber {
   const excludedEvents: ChainEvent[] = includeFees
     ? []
@@ -235,15 +235,21 @@ export function getReceivedTokenAmount(
       (matchToken
         ? event.attributes.amount.endsWith(matchToken.address)
         : true) &&
-      event.attributes.receiver === receiver
+      (receiver ? event.attributes.receiver === receiver : true)
   );
   return sumTokenEventAmounts(tokenEvents);
 }
 
 // find the fee events in a list of ChainEvents, eg. for excluding from a search
-function getFeeEvents(events: ChainEvent[], feePayer: WalletAddress) {
+function getFeeEvents(events: ChainEvent[], feePayer?: WalletAddress) {
   const feeTxEvent = events.find((event): event is TxFeeEvent => {
-    return event.type === 'tx' && event.attributes.fee_payer === feePayer;
+    return (
+      event.type === 'tx' &&
+      // match fee payer string if asked for
+      (feePayer
+        ? event.attributes.fee_payer === feePayer
+        : !!event.attributes.fee_payer)
+    );
   });
   const feeTransferEvent =
     feeTxEvent &&

@@ -193,8 +193,8 @@ function AmountColumn({
   function getTokenReserves(token: Token) {
     const address = attributes.Creator;
     return attributes.TokenIn === token.address
-      ? getSpentTokenAmount(events, address, { matchToken: token })
-      : getReceivedTokenAmount(events, address, { matchToken: token });
+      ? getSpentTokenAmount(events, { address, matchToken: token })
+      : getReceivedTokenAmount(events, { address, matchToken: token });
   }
 
   function getTokenReservesInDenom(token: Token, reserves: BigNumber.Value) {
@@ -240,8 +240,8 @@ function TotalColumn({
   function getTokenReserves(token: Token) {
     const address = attributes.Creator;
     return attributes.TokenIn === token.address
-      ? getSpentTokenAmount(events, address, { matchToken: token })
-      : getReceivedTokenAmount(events, address, { matchToken: token });
+      ? getSpentTokenAmount(events, { address, matchToken: token })
+      : getReceivedTokenAmount(events, { address, matchToken: token });
   }
 
   function getTokenReservesInDenom(token: Token, reserves: BigNumber.Value) {
