@@ -10,6 +10,7 @@ import OrderBookChart from './OrderbookChart';
 import OrderBookList from './OrderbookList';
 
 import './Orderbook.scss';
+import OrderBookTradesList from './OrderbookTradesList';
 
 export default function OrderbookPage() {
   return (
@@ -60,7 +61,11 @@ function Orderbook() {
                 },
                 {
                   nav: 'Trades',
-                  Tab: () => null,
+                  Tab: () =>
+                    tokenA?.address === 'stake' &&
+                    tokenB?.address === 'token' ? (
+                      <OrderBookTradesList tokenA={tokenA} tokenB={tokenB} />
+                    ) : null,
                 },
               ];
             }, [tokenA, tokenB])}

@@ -1,5 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { Event, parseCoins } from '@cosmjs/stargate';
+
+import { tickIndexToPrice } from './ticks';
 import { WalletAddress } from './address';
 import { Token } from './tokens';
 
@@ -120,7 +122,7 @@ export interface DexPlaceLimitOrderEvent {
 }
 
 export interface DexTickUpdateEvent {
-  type: 'message';
+  type: 'message' | 'TickUpdate';
   attributes: {
     module: 'dex';
     action: 'TickUpdate';
@@ -192,6 +194,28 @@ export interface IBCSendPacketEvent {
 export interface IBCReceivePacketEvent {
   type: 'recv_packet';
   attributes: IBCPacketEventAttributes;
+}
+
+export function getLastPrice(
+  events: ChainEvent[],
+  { tokenA, tokenB }: { tokenA: Token; tokenB: Token }
+) {
+  const lastTickUpdate = events
+    .reverse()
+    .find((event): event is DexTickUpdateEvent => {
+      return (
+        (event.type === 'message' || event.type === 'TickUpdate') &&
+        event.attributes.action === 'TickUpdate'
+      );
+    });
+  const tickIndex = lastTickUpdate
+    ? new BigNumber(lastTickUpdate.attributes.TickIndex)
+    : undefined;
+  const forward = lastTickUpdate?.attributes.Token0 === tokenA.address;
+  const reverse = lastTickUpdate?.attributes.Token0 === tokenB.address;
+  return tickIndex && (forward || reverse)
+    ? tickIndexToPrice(forward ? tickIndex : tickIndex.negated())
+    : undefined;
 }
 
 export function getSpentTokenAmount(
