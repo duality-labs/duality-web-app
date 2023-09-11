@@ -29,7 +29,7 @@
         padding-left: 0;
       }
       // add more spacing on first row to align the spacing for whole table
-      .orderbook-list__table__ticks-a tr:first-child td {
+      tbody:first-of-type tr:first-child td {
         padding-top: paddings.$p-3;
       }
     }
