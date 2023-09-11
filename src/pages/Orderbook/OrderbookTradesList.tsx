@@ -5,7 +5,7 @@ import useTransactionTableData, {
 } from '../Pool/hooks/useTransactionTableData';
 
 import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
-import { formatDecimalPlaces, getDecimalPlaces } from '../../lib/utils/number';
+import { formatAmount, getDecimalPlaces } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
 
@@ -90,6 +90,7 @@ export default function OrderBookTradesList({
                 <OrderbookTradeListRow
                   key={tx.hash}
                   tx={tx}
+                  nextTx={txs[index - 1]}
                   previousTx={txs[index + 1]}
                   tokenA={tokenA}
                   tokenB={tokenB}
@@ -108,6 +109,7 @@ export default function OrderBookTradesList({
 
 function OrderbookTradeListRow({
   tx,
+  nextTx,
   previousTx,
   tokenA,
   tokenB,
@@ -115,6 +117,7 @@ function OrderbookTradeListRow({
   amountDecimalPlaces = 2,
 }: {
   tx: Tx;
+  nextTx?: Tx;
   previousTx?: Tx;
   tokenA: Token;
   tokenB: Token;
@@ -156,24 +159,42 @@ function OrderbookTradeListRow({
     return valueA + valueB;
   }, [events, priceA, priceB, tokenA, tokenB]);
 
+  const nextDay =
+    nextTx?.timestamp && dayFormat.format(new Date(nextTx.timestamp));
+  const today = tx.timestamp && dayFormat.format(new Date(tx.timestamp));
   return (
-    <tr>
-      <DiffCell className="text-right" diff={diff}>
-        {lastPrice
-          ? formatDecimalPlaces(lastPrice?.toFixed(), priceDecimalPlaces)
-          : '-'}
-      </DiffCell>
-      <td className="text-right text-muted">
-        {value !== undefined
-          ? value > 0.005
-            ? formatDecimalPlaces(value, amountDecimalPlaces)
-            : '<0.01'
-          : '...'}
-      </td>
-      <td className="text-right text-muted">
-        {tx.timestamp ? timeFormat.format(new Date(tx.timestamp)) : '-'}
-      </td>
-    </tr>
+    <>
+      {nextDay && nextDay !== today && (
+        <tr>
+          <td className="text-right" colSpan={3}>
+            {today}
+          </td>
+        </tr>
+      )}
+      <tr>
+        <DiffCell className="text-right" diff={diff}>
+          {lastPrice
+            ? formatAmount(lastPrice?.toNumber(), {
+                minimumFractionDigits: priceDecimalPlaces,
+                maximumFractionDigits: priceDecimalPlaces,
+              })
+            : '-'}
+        </DiffCell>
+        <td className="text-right text-muted">
+          {value !== undefined
+            ? value > 0.005
+              ? formatAmount(value, {
+                  minimumFractionDigits: amountDecimalPlaces,
+                  maximumFractionDigits: amountDecimalPlaces,
+                })
+              : '<0.01'
+            : '...'}
+        </td>
+        <td className="text-right text-muted">
+          {tx.timestamp ? timeFormat.format(new Date(tx.timestamp)) : '-'}
+        </td>
+      </tr>
+    </>
   );
 }
 
@@ -195,6 +216,13 @@ function DiffCell({
     />
   );
 }
+
+const dayFormat = new Intl.DateTimeFormat(undefined, {
+  weekday: 'long',
+  day: '2-digit',
+  month: '2-digit',
+  year: '2-digit',
+});
 
 const timeFormat = new Intl.DateTimeFormat(undefined, {
   hour: '2-digit',
