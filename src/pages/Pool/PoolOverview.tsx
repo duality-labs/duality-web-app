@@ -26,7 +26,9 @@ import {
   getReceivedTokenAmount,
 } from '../../lib/web3/utils/events';
 
-import useTransactionTableData, { Tx } from './hooks/useTransactionTableData';
+import useTransactionTableData, {
+  TxResponse,
+} from './hooks/useTransactionTableData';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import {
   formatAmount,
@@ -435,8 +437,12 @@ function TransactionsTable({
   const columns = useMemo(() => {
     return transactionTableHeadings.map(
       (heading: TransactionTableColumnKey) => {
-        return function TransactionTableColumn({ row: tx }: { row: Tx }) {
-          const events = tx.tx_result.events.map((event) =>
+        return function TransactionTableColumn({
+          row: tx,
+        }: {
+          row: TxResponse;
+        }) {
+          const events = tx.events.map((event) =>
             mapEventAttributes<DexEvent>(event)
           );
 
@@ -499,8 +505,8 @@ function TransactionsTable({
 
   return (
     <div>
-      <Table<Tx>
-        data={query.data?.txs}
+      <Table<TxResponse>
+        data={query.data?.tx_responses}
         headings={transactionTableHeadings.map((heading) => (
           <TransactionTableHeading
             key={heading}
@@ -519,7 +525,7 @@ function TransactionsTable({
 interface EventColumnProps<T> {
   tokenA: Token;
   tokenB: Token;
-  tx: Tx;
+  tx: TxResponse;
   events: T[];
   heading: TransactionTableColumnKey;
 }
@@ -691,7 +697,7 @@ function SwapColumn({
 }: {
   tokenA: Token;
   tokenB: Token;
-  tx: Tx;
+  tx: TxResponse;
   event: DexPlaceLimitOrderEvent;
   events: ChainEvent[];
   heading: TransactionTableColumnKey;

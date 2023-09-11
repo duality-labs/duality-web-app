@@ -12,7 +12,7 @@ import {
 } from '../../lib/web3/utils/events';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import useTransactionTableData, {
-  Tx,
+  TxResponse,
 } from '../Pool/hooks/useTransactionTableData';
 
 import './OrderbookFooter.scss';
@@ -73,7 +73,13 @@ function OrderbookFooterTable({
     pageSize,
   });
 
-  return <Table<Tx> headings={headings} columns={columns} data={data?.txs} />;
+  return (
+    <Table<TxResponse>
+      headings={headings}
+      columns={columns}
+      data={data?.tx_responses}
+    />
+  );
 }
 
 const headings = [
@@ -97,7 +103,7 @@ const columns = [
   StatusColumn,
 ];
 
-function TimeColumn({ row: tx }: { row: Tx }) {
+function TimeColumn({ row: tx }: { row: TxResponse }) {
   return (
     <td>
       {tx.timestamp ? (
@@ -111,7 +117,7 @@ function TimeColumn({ row: tx }: { row: Tx }) {
 
 function findPlaceLimitOrderActionEvent({
   attributes,
-}: Tx['tx_result']['events'][number]) {
+}: TxResponse['events'][number]) {
   return (
     attributes
       // .filter((event): event is DexPlaceLimitOrderEvent => event.key === 'action' && event.value === 'PlaceLimitOrder' )
@@ -130,8 +136,8 @@ const orderTypeTextMap: {
   UNRECOGNIZED: 'Unknown',
 };
 
-function TypeColumn({ row: tx }: { row: Tx }) {
-  const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);
+function TypeColumn({ row: tx }: { row: TxResponse }) {
+  const event = tx.events.find(findPlaceLimitOrderActionEvent);
   if (event) {
     const attributes =
       mapEventAttributes<DexPlaceLimitOrderEvent>(event).attributes;
@@ -140,8 +146,8 @@ function TypeColumn({ row: tx }: { row: Tx }) {
   return <td></td>;
 }
 
-function SideColumn({ row: tx }: { row: Tx }) {
-  const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);
+function SideColumn({ row: tx }: { row: TxResponse }) {
+  const event = tx.events.find(findPlaceLimitOrderActionEvent);
   if (event) {
     const attributes =
       mapEventAttributes<DexPlaceLimitOrderEvent>(event).attributes;
@@ -164,12 +170,10 @@ function PriceColumn() {
   return <td>{formatCurrency(Math.random())}</td>;
 }
 
-function AmountColumn({ row: tx }: { row: Tx }) {
-  const events = tx.tx_result.events.map((event) =>
-    mapEventAttributes<DexEvent>(event)
-  );
+function AmountColumn({ row: tx }: { row: TxResponse }) {
+  const events = tx.events.map((event) => mapEventAttributes<DexEvent>(event));
 
-  const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);
+  const event = tx.events.find(findPlaceLimitOrderActionEvent);
   const attributes = mapEventAttributes<DexPlaceLimitOrderEvent>(
     event || { type: '', attributes: [] }
   ).attributes;
@@ -209,18 +213,16 @@ function FilledColumn() {
   return <td>100%</td>;
 }
 
-function TotalColumn({ row: tx }: { row: Tx }) {
+function TotalColumn({ row: tx }: { row: TxResponse }) {
   const tokenA = dualityMainToken;
   const tokenB = dualityStakeToken;
   const {
     data: [tokenAPrice],
     // isValidating,
   } = useSimplePrice([tokenA, tokenB]);
-  const events = tx.tx_result.events.map((event) =>
-    mapEventAttributes<DexEvent>(event)
-  );
+  const events = tx.events.map((event) => mapEventAttributes<DexEvent>(event));
 
-  const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);
+  const event = tx.events.find(findPlaceLimitOrderActionEvent);
   const attributes = mapEventAttributes<DexPlaceLimitOrderEvent>(
     event || { type: '', attributes: [] }
   ).attributes;
