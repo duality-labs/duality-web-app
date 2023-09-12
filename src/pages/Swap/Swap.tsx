@@ -12,7 +12,10 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import { useTokenBySymbol } from '../../lib/web3/hooks/useTokens';
+import {
+  getBaseIbcDenom,
+  useTokenBySymbol,
+} from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import NumberInput, {
   useNumericInputState,
@@ -63,7 +66,10 @@ function Swap() {
   const setTokensPath = useCallback(
     ([tokenA, tokenB]: [Token?, Token?]) => {
       if (tokenA || tokenB) {
-        const path = [tokenA?.symbol ?? '-', tokenB?.symbol ?? '-'];
+        const path = [
+          encodeURIComponent(getBaseIbcDenom(tokenA) ?? tokenA?.symbol ?? '-'),
+          encodeURIComponent(getBaseIbcDenom(tokenB) ?? tokenB?.symbol ?? '-'),
+        ];
         navigate(`/swap/${path.filter(Boolean).join('/')}`);
       } else {
         navigate('/swap');
