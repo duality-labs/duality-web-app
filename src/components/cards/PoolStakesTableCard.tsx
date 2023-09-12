@@ -457,7 +457,7 @@ function StakingRow({
 
   const incentives = useMatchIncentives(userPosition);
 
-  const isStaked = userPosition.stakeContext?.start_time;
+  const isStaked = userPosition.stakeContext;
   const isIncentivized = !!incentives && incentives?.length > 0;
 
   if (tokenAValue.isGreaterThan(0) || tokenBValue.isGreaterThan(0)) {
@@ -573,7 +573,11 @@ function StakingRow({
             <PopOver
               floating={
                 <RelativeTime
-                  timestamp={userPosition.stakeContext?.start_time}
+                  timestamp={
+                    userPosition.stakeContext?.startTimeUnix
+                      ? userPosition.stakeContext.startTimeUnix * 1000
+                      : undefined
+                  }
                 />
               }
             >

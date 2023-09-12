@@ -22,7 +22,7 @@ import {
   getTokenAddressPair,
 } from '../utils/tokens';
 import useTokens from './useTokens';
-import { UserStakedShare, useShares } from '../indexerProvider';
+import { StakeContext, UserStakedShare, useShares } from '../indexerProvider';
 import { getShareInfo } from '../utils/shares';
 
 interface DirectionalDepositRecord
@@ -62,7 +62,7 @@ export function usePoolDepositFilterForPair(
 }
 
 interface ExtendedDepositRecord extends DirectionalDepositRecord {
-  stakeContext?: { ID: string; owner: string; start_time?: string };
+  stakeContext?: StakeContext;
 }
 // select all (or optional token pair list of) user shares
 export function useUserDeposits(
@@ -73,7 +73,7 @@ export function useUserDeposits(
   return useMemo(() => {
     const deposits = shares?.map<ExtendedDepositRecord>((share) => {
       const { fee, pairId, sharesOwned, tickIndex1To0 } = share;
-      const { ID, owner, start_time } = share as UserStakedShare;
+      const { ID, owner, startTimeUnix } = share as UserStakedShare;
       const [token0Address, token1Address] = pairId.split('<>');
       return {
         pairID: { token0: token0Address, token1: token1Address },
@@ -82,7 +82,7 @@ export function useUserDeposits(
         lowerTickIndex1To0: Long.fromString(tickIndex1To0).sub(fee),
         upperTickIndex1To0: Long.fromString(tickIndex1To0).add(fee),
         fee: Long.fromString(fee),
-        stakeContext: staked ? { ID, owner, start_time } : undefined,
+        stakeContext: staked ? { ID, owner, startTimeUnix } : undefined,
       };
     });
     // return filtered list of deposits
@@ -261,11 +261,7 @@ export interface UserPositionDepositContext {
   token0Context?: ShareValueContext;
   token1: Token;
   token1Context?: ShareValueContext;
-  stakeContext?: {
-    ID: string;
-    owner: string;
-    start_time?: string;
-  };
+  stakeContext?: StakeContext;
 }
 
 // collect all the context about the user's positions together

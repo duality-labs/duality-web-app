@@ -40,11 +40,12 @@ interface UserBankBalance {
 interface UserShares {
   shares: Array<IndexedShare>;
 }
-export interface UserStakedShare extends IndexedShare {
+export interface StakeContext {
   ID: string;
   owner: string;
-  start_time?: string;
+  startTimeUnix: number | undefined;
 }
+export interface UserStakedShare extends IndexedShare, StakeContext {}
 interface UserStakedShares {
   stakedShares: Array<UserStakedShare>;
 }
@@ -195,7 +196,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                     sharesOwned: coin.amount,
                     ID: `${ID}`,
                     owner,
-                    start_time: start_time && `${start_time}`,
+                    startTimeUnix: start_time?.seconds.toNumber(),
                   };
                   stakedShares.push(stakedShare);
                 });
