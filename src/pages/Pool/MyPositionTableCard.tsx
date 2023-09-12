@@ -4,7 +4,7 @@ import { Tick } from '../../components/LiquiditySelector/LiquiditySelector';
 
 import { formatCurrency } from '../../lib/utils/number';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 
 import { EditedPosition } from '../MyLiquidity/useEditLiquidity';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
@@ -86,26 +86,12 @@ export function MyNewPositionTableCard({
         const valueA =
           (priceA || 0) *
           new BigNumber(
-            (reserveA &&
-              getAmountInDenom(
-                tokenA,
-                reserveA || 0,
-                tokenA.address,
-                tokenA.display
-              )) ||
-              0
+            (reserveA && getDisplayDenomAmount(tokenA, reserveA || 0)) || 0
           ).toNumber();
         const valueB =
           (priceB || 0) *
           new BigNumber(
-            (reserveB &&
-              getAmountInDenom(
-                tokenB,
-                reserveB || 0,
-                tokenB.address,
-                tokenB.display
-              )) ||
-              0
+            (reserveB && getDisplayDenomAmount(tokenB, reserveB || 0)) || 0
           ).toNumber();
         return [valueA, valueB];
       }
@@ -257,11 +243,9 @@ export function MyEditedPositionTableCard({
           (priceA || 0) *
           new BigNumber(
             (tokenAContext?.userReserves &&
-              getAmountInDenom(
+              getDisplayDenomAmount(
                 tokenA,
-                tokenAContext?.userReserves || 0,
-                tokenA.address,
-                tokenA.display
+                tokenAContext?.userReserves || 0
               )) ||
               0
           ).toNumber();
@@ -269,11 +253,9 @@ export function MyEditedPositionTableCard({
           (priceB || 0) *
           new BigNumber(
             (tokenBContext?.userReserves &&
-              getAmountInDenom(
+              getDisplayDenomAmount(
                 tokenB,
-                tokenBContext?.userReserves || 0,
-                tokenB.address,
-                tokenB.display
+                tokenBContext?.userReserves || 0
               )) ||
               0
           ).toNumber();
@@ -461,7 +443,7 @@ function formatReserveAmount(
   fractionalDigits = 3
 ) {
   return reserve.isGreaterThan(1e-5)
-    ? getAmountInDenom(token, reserve, token.address, token.display, {
+    ? getDisplayDenomAmount(token, reserve, {
         fractionalDigits,
       })
     : '';

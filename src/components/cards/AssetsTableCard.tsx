@@ -14,7 +14,7 @@ import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import { dualityChain } from '../../lib/web3/hooks/useChains';
 
 import { formatAmount } from '../../lib/utils/number';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 
 import './AssetsTableCard.scss';
 
@@ -189,12 +189,9 @@ function AssetRow({
       </td>
       <td>
         <div>
-          {`${formatAmount(
-            getAmountInDenom(token, amount, token.address, token.display) || '',
-            {
-              useGrouping: true,
-            }
-          )}`}
+          {`${formatAmount(getDisplayDenomAmount(token, amount) || '', {
+            useGrouping: true,
+          })}`}
         </div>
         <div className="subtext">
           {`$${formatAmount(value?.toFixed() || '', {

@@ -28,7 +28,7 @@ import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import { formatAmount } from '../../lib/utils/number';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getBaseDenomAmount } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 
 import './Swap.scss';
@@ -219,8 +219,7 @@ function Swap() {
 
         swapRequest(
           {
-            amountIn:
-              getAmountInDenom(tokenA, result.amountIn, tokenA?.display) || '0',
+            amountIn: getBaseDenomAmount(tokenA, result.amountIn) || '0',
             tokenIn: result.tokenIn,
             tokenOut: result.tokenOut,
             creator: address,
@@ -235,9 +234,7 @@ function Swap() {
             // todo: set tickIndex to allow for a tolerance:
             //   the below function is a tolerance of 0
             tickIndex: Long.fromNumber(tickIndexLimit * (forward ? 1 : -1)),
-            maxAmountOut:
-              getAmountInDenom(tokenB, result.amountOut, tokenB?.display) ||
-              '0',
+            maxAmountOut: getBaseDenomAmount(tokenB, result.amountOut) || '0',
           },
           gasEstimate
         );

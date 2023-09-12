@@ -20,7 +20,7 @@ import useTokenPairs from './hooks/useTokenPairs';
 
 import { feeTypes } from './utils/fees';
 
-import { Token, TokenAddress, getAmountInDenom } from './utils/tokens';
+import { Token, TokenAddress, getDenomAmount } from './utils/tokens';
 import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairIdString, getPairID } from './utils/pairs';
 
@@ -400,7 +400,7 @@ export function useBankBigBalance(token: Token | undefined) {
     return (
       token &&
       foundBalance &&
-      getAmountInDenom(
+      getDenomAmount(
         token,
         foundBalance.amount,
         foundBalance.denom,
