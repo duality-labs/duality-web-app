@@ -260,6 +260,8 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
             const portID = channel.port_id;
             return {
               ...token,
+              // rename the address as its IBC denom for easy local referencing
+              address: getIbcDenom(token.address, channelID, portID),
               denom_units: token.denom_units.map(
                 ({ aliases = [], ...unit }) => {
                   const ibcDenom = getIbcDenom(unit.denom, channelID, portID);
@@ -313,6 +315,21 @@ export function useTokenBySymbol(symbol: string | undefined) {
     return undefined;
   }
   return tokensWithIbcInfo.find(matchTokenBySymbol(symbol));
+}
+
+// return the base IBC denom if it is found
+export function getBaseIbcDenom(token: Token | undefined): string | undefined {
+  if (token?.ibc) {
+    const baseUnit = token.denom_units.find(
+      (unit) => unit.denom === token.base
+    );
+    // return the denom that matches an IBC string
+    if (baseUnit) {
+      return [baseUnit.denom, ...(baseUnit.aliases || [])].find((alias) =>
+        alias.match(ibcDenomRegex)
+      );
+    }
+  }
 }
 
 function defaultSort(a: Token, b: Token) {
