@@ -12,7 +12,7 @@ import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 
 import { useFilteredTokenList } from './hooks';
-import { useDualityTokens } from '../../lib/web3/hooks/useTokens';
+import useTokens, { useDualityTokens } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 import {
   useBankBalances,
@@ -31,7 +31,7 @@ interface TokenPickerProps {
   onChange: (newToken: Token | undefined) => void;
   exclusion?: Token | undefined;
   value: Token | undefined;
-  tokenList: Array<Token>;
+  tokenList?: Array<Token>;
   disabled?: boolean;
   showChain?: boolean;
 }
@@ -83,7 +83,7 @@ export default function TokenPicker({
   value,
   onChange,
   exclusion,
-  tokenList,
+  tokenList: givenTokenList,
   disabled = false,
   showChain = true,
 }: TokenPickerProps) {
@@ -93,6 +93,8 @@ export default function TokenPicker({
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
   const { data: balances } = useBankBalances();
+  const defaultTokenList = useTokens();
+  const tokenList = givenTokenList || defaultTokenList;
   const userList = useMemo(() => {
     return balances
       ? tokenList.filter((token) =>
