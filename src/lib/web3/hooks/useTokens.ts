@@ -94,16 +94,18 @@ export const providerAssets: AssetList | undefined = REACT_APP__PROVIDER_ASSETS
   ? (JSON.parse(REACT_APP__PROVIDER_ASSETS) as AssetList)
   : undefined;
 
-const assetList = providerAssets
-  ? [...chainRegistryAssetList, providerAssets]
-  : chainRegistryAssetList;
-const chainList = providerChain
-  ? [...chainRegistryChainList, providerChain]
-  : chainRegistryChainList;
+const assetList = [
+  ...chainRegistryAssetList,
+  dualityAssets,
+  providerAssets,
+].filter((assets): assets is AssetList => !!assets);
+const chainList = [
+  ...chainRegistryChainList,
+  dualityChain,
+  providerChain,
+].filter((chain): chain is Chain => !!chain);
 
 const testnetTokens = isTestnet && [
-  dualityMainToken,
-  dualityStakeToken,
   // add a copy of some tokens onto the Duality chain for development
   ...assetList.flatMap(({ chain_name, assets }) => {
     const dualityTestAssetsAddressMap: { [key: string]: string } = {
