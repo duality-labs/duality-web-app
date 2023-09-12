@@ -24,7 +24,7 @@ interface InputGroupProps {
   variant?: 'success' | 'error' | false;
   onTokenChanged?: (token?: Token) => void;
   onValueChanged?: (value: string) => void;
-  tokenList: Array<Token>;
+  tokenList?: Array<Token>;
   className?: string;
   exclusion?: Token;
   value?: string;

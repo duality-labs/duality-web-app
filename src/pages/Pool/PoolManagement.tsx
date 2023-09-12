@@ -38,7 +38,6 @@ import {
   MyNewPositionTableCard,
 } from './MyPositionTableCard';
 
-import useTokens from '../../lib/web3/hooks/useTokens';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
@@ -165,8 +164,6 @@ export default function PoolManagement({
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
   );
-  const tokenList = useTokens();
-
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
   const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
   const [lastUsedInput, setLastUsedInput] = useState<'A' | 'B'>();
@@ -932,7 +929,6 @@ export default function PoolManagement({
                 setLastUsedInput('A');
               }}
               onTokenChanged={setTokenA}
-              tokenList={tokenList}
               token={tokenA}
               value={inputValueA}
               exclusion={tokenB}
@@ -940,7 +936,6 @@ export default function PoolManagement({
           ) : (
             <TokenPicker
               className="flex button-primary p-4"
-              tokenList={tokenList}
               value={tokenA}
               onChange={setTokenA}
               exclusion={tokenB}
@@ -957,7 +952,6 @@ export default function PoolManagement({
                 setLastUsedInput('B');
               }}
               onTokenChanged={setTokenB}
-              tokenList={tokenList}
               token={tokenB}
               value={inputValueB}
               exclusion={tokenA}
@@ -965,7 +959,6 @@ export default function PoolManagement({
           ) : (
             <TokenPicker
               className="flex button-primary p-4"
-              tokenList={tokenList}
               value={tokenB}
               onChange={setTokenB}
               exclusion={tokenA}

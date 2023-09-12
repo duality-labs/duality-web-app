@@ -7,7 +7,6 @@ import { coin } from '@cosmjs/stargate';
 import TokenPicker from '../TokenPicker/TokenPicker';
 import NumberInput from '../inputs/NumberInput/NumberInput';
 
-import useTokens from '../../lib/web3/hooks/useTokens';
 import useBridge from '../../pages/Bridge/useBridge';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
@@ -46,7 +45,6 @@ export default function BridgeCard({
   inputRef?: React.RefObject<HTMLInputElement>;
   onSuccess?: () => void;
 }) {
-  const tokenList = useTokens();
   const [token, setToken] = useState<Token | undefined>(from || to);
   const [value, setValue] = useState('');
 
@@ -309,7 +307,6 @@ export default function BridgeCard({
                   value={token}
                   exclusion={token}
                   onChange={setToken}
-                  tokenList={tokenList}
                   showChain={false}
                   disabled
                 />

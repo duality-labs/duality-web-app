@@ -12,7 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import useTokens, { getTokenBySymbol } from '../../lib/web3/hooks/useTokens';
+import { getTokenBySymbol } from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import NumberInput, {
   useNumericInputState,
@@ -54,7 +54,6 @@ function Swap() {
   const navigate = useNavigate();
 
   // change tokens to match pathname
-  const tokenList = useTokens();
   const match = useMatch('/swap/:tokenA/:tokenB');
 
   const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
@@ -385,7 +384,6 @@ function Swap() {
             }
             onValueChanged={onValueAChanged}
             onTokenChanged={setTokenA}
-            tokenList={tokenList}
             token={tokenA}
             value={lastUpdatedA ? inputValueA : valueAConverted}
             className={
@@ -415,7 +413,6 @@ function Swap() {
             variant={error?.insufficientLiquidityOut && 'error'}
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}
-            tokenList={tokenList}
             token={tokenB}
             value={lastUpdatedA ? valueBConverted : inputValueB}
             className={
