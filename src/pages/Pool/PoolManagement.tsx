@@ -609,7 +609,7 @@ export default function PoolManagement({
   > => {
     const amountA = new BigNumber(values[0] || 0);
     const amountB = new BigNumber(values[1] || 0);
-    if (lastUsedInput && edgePriceIndex) {
+    if (lastUsedInput && edgePriceIndex !== undefined) {
       // calculate the used tick indexes
       const tickIndexValues = shapeUnitValueArray.map(
         (value, index, ticks): [tickIndex: number, value: number] => {
