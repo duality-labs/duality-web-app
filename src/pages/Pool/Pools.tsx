@@ -1,10 +1,13 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useMatch, useNavigate } from 'react-router-dom';
 import PoolsTableCard, {
   MyPoolsTableCard,
 } from '../../components/cards/PoolsTableCard';
 
-import { getTokenBySymbol } from '../../lib/web3/hooks/useTokens';
+import {
+  getBaseIbcDenom,
+  useTokenBySymbol,
+} from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 import { useUserPositionsShareValues } from '../../lib/web3/hooks/useUserShareValues';
 
@@ -33,14 +36,8 @@ function Pools() {
       matchTokenManagement.params['addOrEdit'] === 'edit');
   const match = matchTokens || matchTokenManagement;
 
-  const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
-    if (match) {
-      const tokenA = getTokenBySymbol(match.params['tokenA']);
-      const tokenB = getTokenBySymbol(match.params['tokenB']);
-      return [tokenA, tokenB];
-    }
-    return [];
-  }, [match]);
+  const tokenA = useTokenBySymbol(match?.params['tokenA']);
+  const tokenB = useTokenBySymbol(match?.params['tokenB']);
 
   // don't change tokens directly:
   // change the path name which will in turn update the tokens selected
@@ -48,8 +45,8 @@ function Pools() {
     ([tokenA, tokenB]: [Token?, Token?]) => {
       if (tokenA || tokenB) {
         const path = [
-          tokenA?.symbol ?? '-',
-          tokenB?.symbol ?? '-',
+          encodeURIComponent(getBaseIbcDenom(tokenA) ?? tokenA?.symbol ?? '-'),
+          encodeURIComponent(getBaseIbcDenom(tokenB) ?? tokenB?.symbol ?? '-'),
           isManagementPath ? matchTokenManagement.params['addOrEdit'] : '',
         ];
         navigate(`/pools/${path.filter(Boolean).join('/')}`);

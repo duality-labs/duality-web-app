@@ -12,7 +12,10 @@ import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 
 import { useFilteredTokenList } from './hooks';
-import useTokens, { useDualityTokens } from '../../lib/web3/hooks/useTokens';
+import useTokens, {
+  useDualityTokens,
+  useTokensWithIbcInfo,
+} from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 import {
   useBankBalances,
@@ -93,7 +96,7 @@ export default function TokenPicker({
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
   const { data: balances } = useBankBalances();
-  const defaultTokenList = useTokens();
+  const defaultTokenList = useTokensWithIbcInfo(useTokens());
   const tokenList = givenTokenList || defaultTokenList;
   const userList = useMemo(() => {
     return balances

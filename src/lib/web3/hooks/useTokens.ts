@@ -261,6 +261,8 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
             const portID = channel.port_id;
             return {
               ...token,
+              // rename the address as its IBC denom for easy local referencing
+              address: getIbcDenom(token.address, channelID, portID),
               denom_units: token.denom_units.map(
                 ({ aliases = [], ...unit }) => {
                   const ibcDenom = getIbcDenom(unit.denom, channelID, portID);
@@ -285,9 +287,20 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
   }, [tokenList, ibcOpenTransfersInfo]);
 }
 
-export function getTokenBySymbol(symbol: string | undefined) {
+const ibcDenomRegex = /^ibc\/[0-9A-Fa-f]+$/;
+export function useTokenBySymbol(symbol: string | undefined) {
+  const allTokens = useTokens();
+  const tokensWithIbcInfo = useTokensWithIbcInfo(allTokens);
   if (!symbol) {
     return undefined;
+  }
+  // find symbol to that matches IBC denom
+  if (tokensWithIbcInfo?.length && symbol.match(ibcDenomRegex)) {
+    return tokensWithIbcInfo.find((token) =>
+      token.denom_units?.find((unit) =>
+        unit.aliases?.find((alias) => alias === symbol)
+      )
+    );
   }
   if (isTestnet) {
     tokenListCache['dualityTokens'] =
@@ -303,6 +316,21 @@ export function getTokenBySymbol(symbol: string | undefined) {
     return tokenListCache['mainnetTokens'].find(
       (token) => token.symbol === symbol
     );
+  }
+}
+
+// return the base IBC denom if it is found
+export function getBaseIbcDenom(token: Token | undefined): string | undefined {
+  if (token?.ibc) {
+    const baseUnit = token.denom_units.find(
+      (unit) => unit.denom === token.base
+    );
+    // return the denom that matches an IBC string
+    if (baseUnit) {
+      return [baseUnit.denom, ...(baseUnit.aliases || [])].find((alias) =>
+        alias.match(ibcDenomRegex)
+      );
+    }
   }
 }
 
