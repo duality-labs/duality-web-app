@@ -1,7 +1,7 @@
 import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
-import { Token, getAmountInDenom } from '../utils/tokens';
+import { Token, getDenomAmount } from '../utils/tokens';
 import { useBankBalances } from '../indexerProvider';
 import useTokens, {
   useTokensWithIbcInfo,
@@ -45,7 +45,7 @@ export function useUserBankValues(): TokenCoin[] {
         const value =
           token &&
           new BigNumber(
-            getAmountInDenom(token, amount, denom, token.display) || 0
+            getDenomAmount(token, amount, denom, token.display) || 0
           ).multipliedBy(price || 0);
         return token ? { amount, denom, token, value } : null;
       })

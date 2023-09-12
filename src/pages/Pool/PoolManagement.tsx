@@ -49,7 +49,11 @@ import {
 import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getBaseDenomAmount,
+  getDisplayDenomAmount,
+} from '../../lib/web3/utils/tokens';
 
 import './Pool.scss';
 import RadioInput from '../../components/RadioInput';
@@ -170,12 +174,8 @@ export default function PoolManagement({
   // convert input value text to correct denom values
   const values = useMemo(
     (): [string, string] => [
-      (tokenA &&
-        getAmountInDenom(tokenA, valueA, tokenA.display, tokenA.address)) ||
-        '0',
-      (tokenB &&
-        getAmountInDenom(tokenB, valueB, tokenB.display, tokenB.address)) ||
-        '0',
+      (tokenA && getBaseDenomAmount(tokenA, valueA)) || '0',
+      (tokenB && getBaseDenomAmount(tokenB, valueB)) || '0',
     ],
     [tokenA, tokenB, valueA, valueB]
   );
@@ -692,24 +692,20 @@ export default function PoolManagement({
     if (tokenA && tokenB && feeType) {
       if (lastUsedInput === 'A') {
         // convert back to display units
-        const amountB = getAmountInDenom(
+        const amountB = getDisplayDenomAmount(
           tokenB,
           shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
             return acc.plus(reserveB);
-          }, new BigNumber(0)),
-          tokenB.address,
-          tokenB.display
+          }, new BigNumber(0))
         );
         setInputValueB(amountB ? formatAmount(amountB) : '');
       } else if (lastUsedInput === 'B') {
         // convert back to display units
-        const amountA = getAmountInDenom(
+        const amountA = getDisplayDenomAmount(
           tokenA,
           shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
             return acc.plus(reserveA);
-          }, new BigNumber(0)),
-          tokenA.address,
-          tokenA.display
+          }, new BigNumber(0))
         );
         setInputValueA(amountA ? formatAmount(amountA) : '');
       }
@@ -1085,12 +1081,8 @@ export default function PoolManagement({
                 </div>
                 <div className="col ml-auto">
                   {formatAmount(
-                    getAmountInDenom(
-                      tokenA,
-                      diffA.negated().toNumber(),
-                      tokenA.address,
-                      tokenA.display
-                    ) || 0
+                    getDisplayDenomAmount(tokenA, diffA.negated().toNumber()) ||
+                      0
                   )}{' '}
                   {tokenA.symbol}
                 </div>
@@ -1103,12 +1095,8 @@ export default function PoolManagement({
                 </div>
                 <div className="col ml-auto">
                   {formatAmount(
-                    getAmountInDenom(
-                      tokenB,
-                      diffB.negated().toNumber(),
-                      tokenB.address,
-                      tokenB.display
-                    ) || 0
+                    getDisplayDenomAmount(tokenB, diffB.negated().toNumber()) ||
+                      0
                   )}{' '}
                   {tokenB.symbol}
                 </div>
@@ -1121,12 +1109,7 @@ export default function PoolManagement({
                 </div>
                 <div className="col ml-auto">
                   {formatAmount(
-                    getAmountInDenom(
-                      tokenA,
-                      diffA.toNumber(),
-                      tokenA.address,
-                      tokenA.display
-                    ) || 0
+                    getDisplayDenomAmount(tokenA, diffA.toNumber()) || 0
                   )}{' '}
                   {tokenA.symbol}
                 </div>
@@ -1139,12 +1122,7 @@ export default function PoolManagement({
                 </div>
                 <div className="col ml-auto">
                   {formatAmount(
-                    getAmountInDenom(
-                      tokenB,
-                      diffB.toNumber(),
-                      tokenB.address,
-                      tokenB.display
-                    ) || 0
+                    getDisplayDenomAmount(tokenB, diffB.toNumber()) || 0
                   )}{' '}
                   {tokenB.symbol}
                 </div>
@@ -1172,11 +1150,9 @@ export default function PoolManagement({
               {tokenA && !diffTokenA.isZero() && (
                 <div className="ml-auto">
                   {formatAmount(
-                    getAmountInDenom(
+                    getDisplayDenomAmount(
                       tokenA,
-                      diffTokenA.negated().toNumber(),
-                      tokenA.address,
-                      tokenA.display
+                      diffTokenA.negated().toNumber()
                     ) || 0
                   )}{' '}
                   {tokenA.symbol}
@@ -1185,11 +1161,9 @@ export default function PoolManagement({
               {tokenB && !diffTokenB.isZero() && (
                 <div className="ml-auto">
                   {formatAmount(
-                    getAmountInDenom(
+                    getDisplayDenomAmount(
                       tokenB,
-                      diffTokenB.negated().toNumber(),
-                      tokenB.address,
-                      tokenB.display
+                      diffTokenB.negated().toNumber()
                     ) || 0
                   )}{' '}
                   {tokenB.symbol}

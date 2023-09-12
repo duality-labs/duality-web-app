@@ -14,7 +14,7 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import {
   DexDepositEvent,
   mapEventAttributes,
@@ -373,21 +373,11 @@ export function useDeposit([tokenA, tokenB]: [
               description: `Deposited ${[
                 receivedTokenA.isGreaterThan(0) &&
                   `${formatAmount(
-                    getAmountInDenom(
-                      tokenA,
-                      receivedTokenA,
-                      tokenA.address,
-                      tokenA.display
-                    ) || 0
+                    getDisplayDenomAmount(tokenA, receivedTokenA) || 0
                   )} ${tokenA.symbol}`,
                 receivedTokenB.isGreaterThan(0) &&
                   `${formatAmount(
-                    getAmountInDenom(
-                      tokenB,
-                      receivedTokenB,
-                      tokenB.address,
-                      tokenB.display
-                    ) || 0
+                    getDisplayDenomAmount(tokenB, receivedTokenB) || 0
                   )} ${tokenB.symbol}`,
               ]
                 .filter(Boolean)

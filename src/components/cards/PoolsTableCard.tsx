@@ -10,7 +10,7 @@ import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import useTokens from '../../lib/web3/hooks/useTokens';
 
 import { formatAmount } from '../../lib/utils/number';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { getPairID } from '../../lib/web3/utils/pairs';
@@ -157,22 +157,14 @@ function PairRow({
       return [
         token0Ticks.reduce<BigNumber>((acc, tick) => {
           return acc.plus(
-            getAmountInDenom(
-              token0,
-              tick.reserve0.multipliedBy(price0),
-              token0.address,
-              token0.display
-            ) || 0
+            getDisplayDenomAmount(token0, tick.reserve0.multipliedBy(price0)) ||
+              0
           );
         }, initialValues[0]),
         token1Ticks.reduce<BigNumber>((acc, tick) => {
           return acc.plus(
-            getAmountInDenom(
-              token1,
-              tick.reserve1.multipliedBy(price1),
-              token1.address,
-              token1.display
-            ) || 0
+            getDisplayDenomAmount(token1, tick.reserve1.multipliedBy(price1)) ||
+              0
           );
         }, initialValues[1]),
       ];
@@ -424,24 +416,10 @@ function PositionRow({
         <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
         <td>
           <span className="token-compositions">
-            {formatAmount(
-              getAmountInDenom(
-                token0,
-                total0,
-                token0.address,
-                token0.display
-              ) || 0
-            )}
+            {formatAmount(getDisplayDenomAmount(token0, total0) || 0)}
             &nbsp;{token0.symbol}
             {' / '}
-            {formatAmount(
-              getAmountInDenom(
-                token1,
-                total1,
-                token1.address,
-                token1.display
-              ) || 0
-            )}
+            {formatAmount(getDisplayDenomAmount(token1, total1) || 0)}
             &nbsp;{token1.symbol}
           </span>
         </td>

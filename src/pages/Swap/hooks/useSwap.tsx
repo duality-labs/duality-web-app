@@ -15,7 +15,7 @@ import {
 } from '../../../components/Notifications/common';
 
 import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
-import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
+import { getDisplayDenomAmount } from '../../../lib/web3/utils/tokens';
 import {
   mapEventAttributes,
   CoinReceivedEvent,
@@ -113,12 +113,8 @@ async function sendSwap(
 
       const description = amountOut
         ? `Received ${formatAmount(
-            getAmountInDenom(
-              tokenOutToken,
-              amountOut?.toFixed() || '0',
-              tokenOutToken.address,
-              tokenOutToken.display
-            ) || '0'
+            getDisplayDenomAmount(tokenOutToken, amountOut?.toFixed() || '0') ||
+              '0'
           )} ${tokenOutToken.symbol} (click for more details)`
         : undefined;
 
