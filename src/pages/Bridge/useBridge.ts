@@ -5,7 +5,7 @@ import { DeliverTxResponse, SigningStargateClient } from '@cosmjs/stargate';
 import { Chain } from '@chain-registry/types';
 import {
   MsgTransfer,
-  MsgTransferResponseSDKType,
+  MsgTransferResponse,
 } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/tx';
 
 import { ibcClient } from '../../lib/web3/rpcMsgClient';
@@ -37,10 +37,10 @@ async function bridgeToken(
   const {
     sender,
     receiver,
-    sourceChannel,
-    sourcePort,
+    source_channel: sourceChannel,
+    source_port: sourcePort,
     token,
-    timeoutTimestamp,
+    timeout_timestamp: timeoutTimestamp,
   } = msg;
   if (
     !sender ||
@@ -107,13 +107,13 @@ export default function useBridge(
   chainTo?: Chain
 ): [
   {
-    data?: MsgTransferResponseSDKType;
+    data?: MsgTransferResponse;
     isValidating: boolean;
     error?: string;
   },
   (request: MsgTransfer) => Promise<void>
 ] {
-  const [data, setData] = useState<MsgTransferResponseSDKType>();
+  const [data, setData] = useState<MsgTransferResponse>();
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -178,7 +178,7 @@ export default function useBridge(
         // (this may be redundant as we know there is an IBC connection already)
         const clientFromStatus =
           await lcdClientFrom.ibc.core.client.v1.clientStatus({
-            clientId: connection.client_id,
+            client_id: connection.client_id,
           });
         if (clientFromStatus.status !== 'Active') {
           throw new Error(
@@ -187,7 +187,7 @@ export default function useBridge(
         }
         const clientToStatus =
           await lcdClientTo.ibc.core.client.v1.clientStatus({
-            clientId: connection.client_id,
+            client_id: connection.client_id,
           });
         if (clientToStatus.status !== 'Active') {
           throw new Error(
