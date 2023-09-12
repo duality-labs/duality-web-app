@@ -4,9 +4,12 @@ import { routerAsync, calculateFee, SwapError } from './router';
 import { formatAmount } from '../../../lib/utils/number';
 
 import BigNumber from 'bignumber.js';
-import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import { useToken } from '../../../lib/web3/hooks/useTokens';
+import {
+  getBaseDenomAmount,
+  getDisplayDenomAmount,
+} from '../../../lib/web3/utils/tokens';
 
+import { useToken } from '../../../lib/web3/hooks/useTokens';
 import { useTokenPairTickLiquidity } from '../../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../../lib/web3/hooks/useTokenPairs';
 import { TickInfo } from '../../../lib/web3/utils/ticks';
@@ -95,11 +98,7 @@ export function useRouterResult(pairRequest: PairRequest): {
     setData(undefined);
     setError(undefined);
     // convert token request down into base denom
-    const alteredValue = getAmountInDenom(
-      tokenA,
-      pairRequest.valueA || 0,
-      tokenA.display
-    );
+    const alteredValue = getBaseDenomAmount(tokenA, pairRequest.valueA || 0);
     const reverseSwap = !!pairRequest.valueB;
     if (!alteredValue || alteredValue === '0') {
       setIsValidating(false);
@@ -147,11 +146,9 @@ export function useRouterResult(pairRequest: PairRequest): {
         amountIn: new BigNumber(pairRequest.valueA || 0),
         amountOut: new BigNumber(
           (tokenB &&
-            getAmountInDenom(
+            getDisplayDenomAmount(
               tokenB,
-              result.amountOut.decimalPlaces(0, BigNumber.ROUND_DOWN),
-              tokenB.address,
-              tokenB.display
+              result.amountOut.decimalPlaces(0, BigNumber.ROUND_DOWN)
             )) ||
             0
         ),

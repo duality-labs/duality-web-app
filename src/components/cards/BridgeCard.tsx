@@ -23,7 +23,11 @@ import {
 import { minutes, nanoseconds } from '../../lib/utils/time';
 import { formatAddress } from '../../lib/web3/utils/address';
 import { formatAmount } from '../../lib/utils/number';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getBaseDenomAmount,
+  getDisplayDenomAmount,
+} from '../../lib/web3/utils/tokens';
 
 import './BridgeCard.scss';
 
@@ -100,12 +104,7 @@ export default function BridgeCard({
         if (!from.chain.chain_id) {
           throw new Error('Source Chain not found');
         }
-        const amount = getAmountInDenom(
-          from,
-          value,
-          from.display,
-          from.address
-        );
+        const amount = getBaseDenomAmount(from, value);
         if (!amount || !Number(amount)) {
           throw new Error('Invalid Token Amount');
         }
@@ -135,7 +134,7 @@ export default function BridgeCard({
         if (!to.chain.chain_id) {
           throw new Error('Destination Chain not found');
         }
-        const amount = getAmountInDenom(to, value, to.display, to.address);
+        const amount = getBaseDenomAmount(to, value);
         if (!amount || !Number(amount)) {
           throw new Error('Invalid Token Amount');
         }
@@ -448,11 +447,9 @@ function BridgeButton({
   const hasAvailableBalance = useMemo(() => {
     return new BigNumber(value || 0).isLessThanOrEqualTo(
       token
-        ? getAmountInDenom(
+        ? getDisplayDenomAmount(
             token,
-            bankBalanceAvailable?.balance?.amount || 0,
-            token.base,
-            token.display
+            bankBalanceAvailable?.balance?.amount || 0
           ) || 0
         : 0
     );
@@ -519,12 +516,7 @@ function RemoteChainReserves({
           <div className="text-muted ml-auto">
             {bankBalanceAmount
               ? formatAmount(
-                  getAmountInDenom(
-                    token,
-                    bankBalanceAmount,
-                    token.base,
-                    token.display
-                  ) || 0,
+                  getDisplayDenomAmount(token, bankBalanceAmount) || 0,
                   { useGrouping: true }
                 )
               : '...'}
@@ -583,12 +575,7 @@ function LocalChainReserves({
       <div className="text-muted ml-auto">
         {allUserBankAssets
           ? formatAmount(
-              getAmountInDenom(
-                token,
-                userToken?.amount ?? 0,
-                token.base,
-                token.display
-              ) || 0,
+              getDisplayDenomAmount(token, userToken?.amount ?? 0) || 0,
               { useGrouping: true }
             )
           : '...'}

@@ -26,7 +26,7 @@ import {
   formatDecimalPlaces,
   formatPercentage,
 } from '../../lib/utils/number';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 
 import { usePoolDepositFilterForPair } from '../../lib/web3/hooks/useUserShares';
 import {
@@ -113,24 +113,14 @@ export default function MyPoolStakesTableCard<T extends string | number>({
         }
         // add amount A
         const amountA = Number(
-          getAmountInDenom(
-            tokenA,
-            tokenAContext?.userReserves || 0,
-            tokenA.address,
-            tokenA.display
-          ) || 0
+          getDisplayDenomAmount(tokenA, tokenAContext?.userReserves || 0) || 0
         );
         if (!isNaN(amountA) && amountA > 0) {
           acc.amountA.push(amountA);
         }
         // add amount B
         const amountB = Number(
-          getAmountInDenom(
-            tokenB,
-            tokenBContext?.userReserves || 0,
-            tokenB.address,
-            tokenB.display
-          ) || 0
+          getDisplayDenomAmount(tokenB, tokenBContext?.userReserves || 0) || 0
         );
         if (!isNaN(amountB) && amountB > 0) {
           acc.amountB.push(amountB);
@@ -533,11 +523,9 @@ function StakingRow({
             <div>
               <span>
                 {formatDecimalPlaces(
-                  getAmountInDenom(
+                  getDisplayDenomAmount(
                     tokenA,
-                    tokenAContext?.userReserves || 0,
-                    tokenA.address,
-                    tokenA.display
+                    tokenAContext?.userReserves || 0
                   ) || 0,
                   columnDecimalPlaces.amountA,
                   {
@@ -552,11 +540,9 @@ function StakingRow({
             <div>
               <span>
                 {formatDecimalPlaces(
-                  getAmountInDenom(
+                  getDisplayDenomAmount(
                     tokenB,
-                    tokenBContext?.userReserves || 0,
-                    tokenB.address,
-                    tokenB.display
+                    tokenBContext?.userReserves || 0
                   ) || 0,
                   columnDecimalPlaces.amountB,
                   {

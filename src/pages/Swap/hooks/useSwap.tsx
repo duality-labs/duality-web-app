@@ -8,7 +8,7 @@ import { useWeb3 } from '../../../lib/web3/useWeb3';
 
 import { createTransactionToasts } from '../../../components/Notifications/common';
 
-import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
+import { getDisplayDenomAmount } from '../../../lib/web3/utils/tokens';
 import useTokens, {
   matchTokenByAddress,
   useTokensWithIbcInfo,
@@ -159,11 +159,9 @@ export function useSwap(): [
 
             const description = amountOut
               ? `Received ${formatAmount(
-                  getAmountInDenom(
+                  getDisplayDenomAmount(
                     tokenOutToken,
-                    amountOut?.toFixed() || '0',
-                    tokenOutToken.address,
-                    tokenOutToken.display
+                    amountOut?.toFixed() || '0'
                   ) || '0'
                 )} ${tokenOutToken.symbol} (click for more details)`
               : undefined;

@@ -26,7 +26,7 @@ export function getTokenAddressPair(
   return [getTokenAddress(token0), getTokenAddress(token1)];
 }
 
-export function getAmountInDenom(
+export function getDenomAmount(
   token: Token,
   amount: BigNumber.Value,
   // default to minimum denomination output
@@ -70,6 +70,37 @@ export function getAmountInDenom(
   }
 }
 
+export function getDisplayDenomAmount(
+  token: Token,
+  amount: BigNumber.Value,
+  options: {
+    fractionalDigits?: number;
+    // should we display more digits if there is not enough resolution to see?
+    significantDigits?: number;
+  } = {}
+): string | undefined {
+  return getDenomAmount(token, amount, token.base, token.display, options);
+}
+
+export function getBaseDenomAmount(
+  token: Token,
+  amount: BigNumber.Value,
+  {
+    fractionalDigits = 0,
+    // so digits forcibly past fractional digits
+    significantDigits,
+  }: {
+    fractionalDigits?: number;
+    // should we display more digits if there is not enough resolution to see?
+    significantDigits?: number;
+  } = {}
+): string | undefined {
+  return getDenomAmount(token, amount, token.display, token.base, {
+    fractionalDigits,
+    significantDigits,
+  });
+}
+
 // get how much a utoken amount is worth in USD
 export function getTokenValue(
   token: Token,
@@ -79,9 +110,7 @@ export function getTokenValue(
   if (price === undefined || amount === undefined) {
     return undefined;
   }
-  return new BigNumber(
-    getAmountInDenom(token, amount, token.address, token.display) || 0
-  )
+  return new BigNumber(getDisplayDenomAmount(token, amount) || 0)
     .multipliedBy(price || 0)
     .toNumber();
 }

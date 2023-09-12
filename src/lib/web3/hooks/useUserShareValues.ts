@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 import useTokens from './useTokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { Token, getAmountInDenom } from '../utils/tokens';
+import { Token, getDisplayDenomAmount } from '../utils/tokens';
 import {
   ShareValueContext,
   UserDepositFilter,
@@ -90,12 +90,7 @@ export function useUserPositionsShareValues(
       const price = selectedTokensPriceMap[tokenAddress];
       if (token && price && !isNaN(price)) {
         // how many tokens does the user have?
-        const amount = getAmountInDenom(
-          token,
-          userReserves,
-          token.address,
-          token.display
-        );
+        const amount = getDisplayDenomAmount(token, userReserves);
         // how much are those tokens worth?
         const value = new BigNumber(amount || 0).multipliedBy(price);
         return value;
