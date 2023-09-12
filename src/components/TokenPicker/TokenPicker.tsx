@@ -29,10 +29,11 @@ import './TokenPicker.scss';
 interface TokenPickerProps {
   className?: string;
   onChange: (newToken: Token | undefined) => void;
-  exclusion: Token | undefined;
+  exclusion?: Token | undefined;
   value: Token | undefined;
   tokenList: Array<Token>;
   disabled?: boolean;
+  showChain?: boolean;
 }
 
 type AssetModeType = 'User' | 'All' | 'Duality';
@@ -84,6 +85,7 @@ export default function TokenPicker({
   exclusion,
   tokenList,
   disabled = false,
+  showChain = true,
 }: TokenPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -215,9 +217,11 @@ export default function TokenPicker({
         <span className="token-symbol">
           {value?.symbol ?? 'Select A Token'}
         </span>
-        <span className="token-chain">
-          {value?.chain.pretty_name ?? value?.chain.chain_name}
-        </span>
+        {showChain && (
+          <span className="token-chain">
+            {value?.chain.pretty_name ?? value?.chain.chain_name}
+          </span>
+        )}
       </button>
       <Dialog
         isOpen={isOpen}

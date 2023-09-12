@@ -9,7 +9,7 @@ import {
 
 import { OfflineSigner } from '@cosmjs/proto-signing';
 import {
-  getKeplrWallet,
+  getKeplrDualityWallet,
   getKeplrWalletAccount,
   useSyncKeplrState,
 } from './wallets/keplr';
@@ -45,7 +45,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
       > {
         switch (walletType) {
           case 'keplr': {
-            const wallet = await getKeplrWallet();
+            const wallet = await getKeplrDualityWallet();
             const account = wallet && (await getKeplrWalletAccount(wallet));
             return [wallet, account?.address];
           }

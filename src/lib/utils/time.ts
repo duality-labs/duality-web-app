@@ -1,6 +1,9 @@
 const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
 
 export const milliseconds = 1;
+export const microseconds = milliseconds / 1000;
+export const nanoseconds = microseconds / 1000;
+
 export const seconds = 1000 * milliseconds;
 export const minutes = 60 * seconds;
 export const hours = 60 * minutes;

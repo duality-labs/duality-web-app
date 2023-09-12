@@ -15,6 +15,8 @@
     "npm": "^8.5.0"
   },
   "dependencies": {
+    "@chain-registry/keplr": "^1.22.1",
+    "@cosmjs/crypto": "^0.31.0",
     "@cosmjs/proto-signing": "0.31.0",
     "@cosmjs/stargate": "0.31.0",
     "@duality-labs/dualityjs": "github:duality-labs/dualityjs#6b167f4cadd73b3d2dd963638b54c59050e33bae",
@@ -22,6 +24,8 @@
     "@fortawesome/fontawesome-svg-core": "^6.1.2",
     "@fortawesome/free-solid-svg-icons": "^6.1.2",
     "@fortawesome/react-fontawesome": "^0.2.0",
+    "@keplr-wallet/router": "^0.12.20",
+    "@keplr-wallet/stores": "^0.12.20",
     "@reach/dialog": "^0.18.0",
     "@react-hook/resize-observer": "^1.2.6",
     "@tanstack/react-query": "^5.0.0-alpha.35",
@@ -51,7 +55,7 @@
   },
   "devDependencies": {
     "@chain-registry/types": "^0.16.0",
-    "@keplr-wallet/types": "^0.12.14",
+    "@keplr-wallet/types": "^0.12.20",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
