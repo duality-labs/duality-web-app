@@ -133,10 +133,11 @@ export function MyNewPositionTableCard({
                   <div
                     className="green-value-bar"
                     style={{
-                      width: new BigNumber(poolValues[index][0])
-                        .dividedBy(maxPoolValue)
-                        .multipliedBy(50)
-                        .toNumber(),
+                      width:
+                        new BigNumber(poolValues[index][0])
+                          .dividedBy(maxPoolValue)
+                          .multipliedBy(50)
+                          .toNumber() || 0,
                     }}
                   ></div>
                 )}
@@ -144,10 +145,11 @@ export function MyNewPositionTableCard({
                   <div
                     className="blue-value-bar"
                     style={{
-                      width: new BigNumber(poolValues[index][1])
-                        .dividedBy(maxPoolValue)
-                        .multipliedBy(50)
-                        .toNumber(),
+                      width:
+                        new BigNumber(poolValues[index][1])
+                          .dividedBy(maxPoolValue)
+                          .multipliedBy(50)
+                          .toNumber() || 0,
                     }}
                   ></div>
                 )}
@@ -317,10 +319,11 @@ export function MyEditedPositionTableCard({
                   <div
                     className="green-value-bar"
                     style={{
-                      width: new BigNumber(poolValues[index][0])
-                        .dividedBy(maxPoolValue)
-                        .multipliedBy(50)
-                        .toNumber(),
+                      width:
+                        new BigNumber(poolValues[index][0])
+                          .dividedBy(maxPoolValue)
+                          .multipliedBy(50)
+                          .toNumber() || 0,
                     }}
                   ></div>
                 )}
@@ -328,10 +331,11 @@ export function MyEditedPositionTableCard({
                   <div
                     className="blue-value-bar"
                     style={{
-                      width: new BigNumber(poolValues[index][1])
-                        .dividedBy(maxPoolValue)
-                        .multipliedBy(50)
-                        .toNumber(),
+                      width:
+                        new BigNumber(poolValues[index][1])
+                          .dividedBy(maxPoolValue)
+                          .multipliedBy(50)
+                          .toNumber() || 0,
                     }}
                   ></div>
                 )}
