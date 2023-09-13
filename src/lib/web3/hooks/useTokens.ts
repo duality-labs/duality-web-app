@@ -337,6 +337,12 @@ function defaultSort(a: Token, b: Token) {
   return a.symbol.localeCompare(b.symbol);
 }
 
+export function matchTokens(tokenA: Token, tokenB: Token) {
+  return (
+    tokenA.address === tokenB.address &&
+    tokenA.chain.chain_id === tokenB.chain.chain_id
+  );
+}
 // utility functions to get a matching token from a list
 export function matchTokenByAddress(address: TokenAddress) {
   return (token: Token) => token.address === address;
