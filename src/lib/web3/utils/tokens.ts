@@ -48,7 +48,14 @@ export function getDenomAmount(
   } = {}
 ): string | undefined {
   const { denom_units } = token;
-  const inputDenomUnit = denom_units.find(({ denom }) => denom === inputDenom);
+  const inputDenomUnit = denom_units.find((unit) => {
+    return (
+      // match denom
+      unit.denom === inputDenom ||
+      // or match alias
+      unit.aliases?.find((alias) => alias === inputDenom)
+    );
+  });
   const outputDenomUnit = denom_units.find(
     ({ denom }) => denom === outputDenom
   );
