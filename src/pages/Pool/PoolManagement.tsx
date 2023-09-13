@@ -17,7 +17,7 @@ import {
   faMagnifyingGlassMinus,
 } from '@fortawesome/free-solid-svg-icons';
 
-import { useBankBalance } from '../../lib/web3/indexerProvider';
+import { useBankBalanceBaseAmount } from '../../lib/web3/hooks/useUserBankBalances';
 
 import SelectInput, { OptionProps } from '../../components/inputs/SelectInput';
 import StepNumberInput from '../../components/StepNumberInput';
@@ -737,8 +737,8 @@ export default function PoolManagement({
     feeType,
   ]);
 
-  const { data: balanceTokenA } = useBankBalance(tokenA);
-  const { data: balanceTokenB } = useBankBalance(tokenB);
+  const { data: balanceTokenA } = useBankBalanceBaseAmount(tokenA);
+  const { data: balanceTokenB } = useBankBalanceBaseAmount(tokenB);
 
   // compare with BigNumber to avoid float imprecision
   const hasSufficientFundsA =

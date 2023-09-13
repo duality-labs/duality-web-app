@@ -5,7 +5,7 @@ import TokenPicker from '../TokenPicker';
 import { Token } from '../../lib/web3/utils/tokens';
 
 import NumberInput from '../inputs/NumberInput';
-import { useBankBigBalance } from '../../lib/web3/indexerProvider';
+import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import {
   formatAmount,
@@ -74,7 +74,7 @@ export default function TokenInputGroup({
     return '';
   }, [value, price]);
 
-  const { data: balance } = useBankBigBalance(token);
+  const { data: balance } = useBankBalanceDisplayAmount(token);
   const maxValue = givenMaxValue || balance;
   return (
     <div
