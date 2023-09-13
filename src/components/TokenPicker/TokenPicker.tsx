@@ -5,7 +5,6 @@ import {
   useRef,
   useState,
   useId,
-  useMemo,
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
@@ -14,7 +13,7 @@ import BigNumber from 'bignumber.js';
 import { useFilteredTokenList } from './hooks';
 import { useDualityTokens } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
-import { useBankBalances } from '../../lib/web3/indexerProvider';
+import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
@@ -91,14 +90,7 @@ export default function TokenPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
-  const { data: balances } = useBankBalances();
-  const userList = useMemo(() => {
-    return balances
-      ? tokenList.filter((token) =>
-          balances.find((balance) => balance.token === token)
-        )
-      : [];
-  }, [tokenList, balances]); // Todo: actually filter list to tokens in User's wallet
+  const userList = useUserTokens();
   const [assetMode, setAssetMode] = useState<AssetModeType>(
     userList.length ? 'User' : 'Duality'
   );
