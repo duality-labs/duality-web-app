@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Token, getDenomAmount } from '../utils/tokens';
 import { useBankBalances } from '../indexerProvider';
+import { matchTokens } from './useTokens';
 
 // note: if dealing with IBC tokens, ensure Token has IBC context
 //       (by fetching it with useTokensWithIbcInfo)
@@ -8,7 +9,9 @@ function useBankBalance(token: Token | undefined) {
   const { data: balances, ...rest } = useBankBalances();
   const balance = useMemo(() => {
     // find the balance that matches the token
-    return token && balances?.find((balance) => balance.token === token);
+    return (
+      token && balances?.find((balance) => matchTokens(balance.token, token))
+    );
   }, [balances, token]);
   return { data: balance, ...rest };
 }
