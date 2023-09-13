@@ -15,12 +15,15 @@ import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
 import { useRpcPromise } from './rpcQueryClient';
-import useTokens from '../../lib/web3/hooks/useTokens';
+import useTokens, {
+  matchTokenByDenom,
+  useTokensWithIbcInfo,
+} from '../../lib/web3/hooks/useTokens';
 import useTokenPairs from './hooks/useTokenPairs';
 
 import { feeTypes } from './utils/fees';
 
-import { Token, TokenAddress, getDenomAmount } from './utils/tokens';
+import { Token, TokenAddress } from './utils/tokens';
 import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairIdString, getPairID } from './utils/pairs';
 
@@ -368,47 +371,34 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useBankData() {
+// note avoid using bank data directly, as we almost certainly want to use
+// useBankBalances which matches IBC tokens based on current chain IBC context
+function useBankData() {
   return useContext(IndexerContext).bank;
 }
 
+// define TokenCoin to represent a Coin paired with its chain-registry token
+export type TokenCoin = Coin & { token: Token };
+
+// get all the user's bank balance amounts of known tokens
+// this includes IBC tokens using our known current chain IBC context
 export function useBankBalances() {
-  const { data, isValidating } = useBankData();
-  return { data: data?.balances, isValidating };
-}
+  const { data, ...rest } = useBankData();
 
-export function useBankBalance(token: Token | undefined) {
-  const { data: balances, isValidating } = useBankBalances();
-  const balance = useMemo(() => {
-    return (
-      (token &&
-        balances?.find((balance) => balance.denom === token.address)?.amount) ||
-      '0'
-    );
-  }, [balances, token]);
-  return { data: balance, isValidating };
-}
+  const allTokens = useTokens();
+  const allTokensWithIBC = useTokensWithIbcInfo(allTokens);
+  const balances = useMemo<TokenCoin[] | undefined>(() => {
+    // check all known tokens with IBC context for matching balance denoms
+    return data?.balances.reduce<TokenCoin[]>((result, balance) => {
+      const token = allTokensWithIBC.find(matchTokenByDenom(balance.denom));
+      if (token) {
+        result.push({ token, ...balance });
+      }
+      return result;
+    }, []);
+  }, [data?.balances, allTokensWithIBC]);
 
-export function useBankBigBalance(token: Token | undefined) {
-  const { data: balances, isValidating } = useBankBalances();
-  const balance = useMemo(() => {
-    const foundBalance =
-      token &&
-      balances?.find((balance) => {
-        return token.denom_units.find((unit) => unit.denom === balance.denom);
-      });
-    return (
-      token &&
-      foundBalance &&
-      getDenomAmount(
-        token,
-        foundBalance.amount,
-        foundBalance.denom,
-        token.display
-      )
-    );
-  }, [balances, token]);
-  return { data: balance, isValidating };
+  return { data: balances, ...rest };
 }
 
 export function useShareData() {

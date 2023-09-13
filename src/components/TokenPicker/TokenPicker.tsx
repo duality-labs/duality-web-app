@@ -14,10 +14,9 @@ import BigNumber from 'bignumber.js';
 import { useFilteredTokenList } from './hooks';
 import { useDualityTokens } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
-import {
-  useBankBalances,
-  useBankBigBalance,
-} from '../../lib/web3/indexerProvider';
+import { useBankBalances } from '../../lib/web3/indexerProvider';
+import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
+
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 
@@ -96,7 +95,7 @@ export default function TokenPicker({
   const userList = useMemo(() => {
     return balances
       ? tokenList.filter((token) =>
-          balances.find((balance) => balance.denom === token.address)
+          balances.find((balance) => balance.token === token)
         )
       : [];
   }, [tokenList, balances]); // Todo: actually filter list to tokens in User's wallet
@@ -332,7 +331,7 @@ function TokenPickerItem({
   const address = token.address;
   const logos = token.logo_URIs;
   const isDisabled = !!exclusion?.address && exclusion?.address === address;
-  const { data: balance = 0 } = useBankBigBalance(token);
+  const { data: balance = 0 } = useBankBalanceDisplayAmount(token);
   const {
     data: [price = 0],
   } = useSimplePrice(Number(balance) ? [token] : []);

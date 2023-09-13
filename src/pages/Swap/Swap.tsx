@@ -20,7 +20,7 @@ import NumberInput, {
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { useBankBigBalance } from '../../lib/web3/indexerProvider';
+import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 
@@ -130,7 +130,7 @@ function Swap() {
     ]
   );
 
-  const { data: balanceTokenA } = useBankBigBalance(tokenA);
+  const { data: balanceTokenA } = useBankBalanceDisplayAmount(tokenA);
   const valueAConvertedNumber = new BigNumber(valueAConverted || 0);
   const hasFormData =
     address && tokenA && tokenB && valueAConvertedNumber.isGreaterThan(0);
