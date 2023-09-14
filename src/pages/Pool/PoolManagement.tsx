@@ -699,25 +699,19 @@ export default function PoolManagement({
         const amountB = shapeReservesArray
           .reduce((acc, [, , reserveB]) => acc.plus(reserveB), new BigNumber(0))
           .toFixed();
-        // convert back to display units
-        setInputValueB(
-          roundToBaseUnit(
-            tokenB,
-            getDisplayDenomAmount(tokenB, amountB) || 0
-          ) ?? ''
-        );
+        // convert to the display units of the original token
+        const displayAmountB = getDisplayDenomAmount(tokenB, amountB);
+        // then transpose this complementary value to the new units
+        setInputValueB(roundToBaseUnit(tokenB, displayAmountB || 0) ?? '');
       } else if (lastUsedInput === 'B') {
         const amountA = shapeReservesArray.reduce(
           (acc, [, reserveA]) => acc.plus(reserveA),
           new BigNumber(0)
         );
-        // convert back to display units
-        setInputValueA(
-          roundToBaseUnit(
-            tokenA,
-            getDisplayDenomAmount(tokenA, amountA) || 0
-          ) ?? ''
-        );
+        // convert to the display units of the original token
+        const displayAmountA = getDisplayDenomAmount(tokenA, amountA);
+        // then transpose this complementary value to the new units
+        setInputValueA(roundToBaseUnit(tokenA, displayAmountA || 0) ?? '');
       }
       // if either side is set then calculate the new user ticks
       if (lastUsedInput) {
