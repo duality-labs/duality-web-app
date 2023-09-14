@@ -37,6 +37,7 @@ import IncentivesCard from './IncentivesCard';
 
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
+import { matchTokens } from '../../lib/web3/hooks/useTokens';
 
 import './PoolsTableCard.scss';
 import { useStake } from '../../pages/MyLiquidity/useStaking';
@@ -424,7 +425,7 @@ function StakingRow({
   };
   checkbox?: ReactElement;
 }) {
-  const tokensInverted = tokenA.address !== userPosition.token0.address;
+  const tokensInverted = !matchTokens(tokenA, userPosition.token0);
 
   const {
     tokenAContext,
