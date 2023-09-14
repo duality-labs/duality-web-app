@@ -1211,11 +1211,15 @@ export default function PoolManagement({
   );
 
   const estimatedPairPriceResponse = usePairPrice(tokenA, tokenB);
-  const estimatedPairPriceString = estimatedPairPriceResponse.data
-    ? formatPrice(estimatedPairPriceResponse.data, {
-        maximumSignificantDigits: 5,
-      })
-    : '';
+  const estimatedPairPriceString =
+    estimatedPairPriceResponse.data &&
+    // protect against zero and infinite price
+    estimatedPairPriceResponse.data > 0 &&
+    Number.isFinite(estimatedPairPriceResponse.data)
+      ? formatPrice(estimatedPairPriceResponse.data, {
+          maximumSignificantDigits: 5,
+        })
+      : '';
 
   return (
     <PoolLayout
