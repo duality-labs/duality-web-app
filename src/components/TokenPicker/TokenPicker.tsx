@@ -262,7 +262,7 @@ export default function TokenPicker({
             filteredList.map(({ chain, symbol, token }, index) => {
               return token ? (
                 <TokenPickerItem
-                  key={`${token.base}:${token.chain.chain_name}`}
+                  key={`${token.address}:${token.chain.chain_name}`}
                   token={token}
                   chain={chain}
                   symbol={symbol}
