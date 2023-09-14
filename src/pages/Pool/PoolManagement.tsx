@@ -54,6 +54,7 @@ import {
   Token,
   getBaseDenomAmount,
   getDisplayDenomAmount,
+  roundToBaseUnit,
 } from '../../lib/web3/utils/tokens';
 
 import './Pool.scss';
@@ -695,23 +696,28 @@ export default function PoolManagement({
   useLayoutEffect(() => {
     if (tokenA && tokenB && feeType) {
       if (lastUsedInput === 'A') {
+        const amountB = shapeReservesArray
+          .reduce((acc, [, , reserveB]) => acc.plus(reserveB), new BigNumber(0))
+          .toFixed();
         // convert back to display units
-        const amountB = getDisplayDenomAmount(
-          tokenB,
-          shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
-            return acc.plus(reserveB);
-          }, new BigNumber(0))
+        setInputValueB(
+          roundToBaseUnit(
+            tokenB,
+            getDisplayDenomAmount(tokenB, amountB) || 0
+          ) ?? ''
         );
-        setInputValueB(amountB ? formatAmount(amountB) : '');
       } else if (lastUsedInput === 'B') {
-        // convert back to display units
-        const amountA = getDisplayDenomAmount(
-          tokenA,
-          shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
-            return acc.plus(reserveA);
-          }, new BigNumber(0))
+        const amountA = shapeReservesArray.reduce(
+          (acc, [, reserveA]) => acc.plus(reserveA),
+          new BigNumber(0)
         );
-        setInputValueA(amountA ? formatAmount(amountA) : '');
+        // convert back to display units
+        setInputValueA(
+          roundToBaseUnit(
+            tokenA,
+            getDisplayDenomAmount(tokenA, amountA) || 0
+          ) ?? ''
+        );
       }
       // if either side is set then calculate the new user ticks
       if (lastUsedInput) {
