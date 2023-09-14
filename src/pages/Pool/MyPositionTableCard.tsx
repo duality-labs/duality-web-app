@@ -9,6 +9,7 @@ import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import { EditedPosition } from '../MyLiquidity/useEditLiquidity';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
+import { matchTokens } from '../../lib/web3/hooks/useTokens';
 
 import TableCard from '../../components/cards/TableCard';
 
@@ -237,8 +238,12 @@ export function MyEditedPositionTableCard({
   const poolValues = useMemo(() => {
     return sortedPosition.map<[number, number]>(
       ({ token0, token0Context, token1Context }) => {
-        const tokenAContext = tokenA === token0 ? token0Context : token1Context;
-        const tokenBContext = tokenB === token0 ? token0Context : token1Context;
+        const tokenAContext = matchTokens(tokenA, token0)
+          ? token0Context
+          : token1Context;
+        const tokenBContext = matchTokens(tokenB, token0)
+          ? token0Context
+          : token1Context;
         const valueA =
           (priceA || 0) *
           new BigNumber(
