@@ -25,11 +25,10 @@ export function useUserBankValues(): TokenCoinWithValue[] {
       const { amount, denom, token } = balance;
       const tokenIndex = selectedTokens.indexOf(token);
       const price = selectedTokensPrices[tokenIndex];
+      const displayAmount = getDenomAmount(token, amount, denom, token.display);
       const value =
-        price !== undefined
-          ? new BigNumber(
-              getDenomAmount(token, amount, denom, token.display) || 0
-            ).multipliedBy(price)
+        price !== undefined && !isNaN(price)
+          ? new BigNumber(displayAmount || 0).multipliedBy(price)
           : undefined;
       // append value to balance
       return { amount, denom, token, value };
