@@ -12,6 +12,7 @@ import { useSimplePrice } from '../../lib/tokenPrices';
 
 import TableCard from '../../components/cards/TableCard';
 import ValueBar from '../../components/Table/ValueBar';
+import { matchTokens } from '../../lib/web3/hooks/useTokens';
 
 function MyPositionTableCard({
   tokenA,
@@ -231,8 +232,12 @@ export function MyEditedPositionTableCard({
   const poolValues = useMemo(() => {
     return sortedPosition.map<[number, number]>(
       ({ token0, token0Context, token1Context }) => {
-        const tokenAContext = tokenA === token0 ? token0Context : token1Context;
-        const tokenBContext = tokenB === token0 ? token0Context : token1Context;
+        const tokenAContext = matchTokens(tokenA, token0)
+          ? token0Context
+          : token1Context;
+        const tokenBContext = matchTokens(tokenB, token0)
+          ? token0Context
+          : token1Context;
         const valueA =
           (priceA || 0) *
           new BigNumber(
