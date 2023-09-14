@@ -495,13 +495,12 @@ function TokenPair({
           </div>
         </div>
         <div className="row">
-          <div className="col subtext">
+          <div className="col subtext text-left">
             {token0.chain.chain_name === token1.chain.chain_name ? (
               <span className="nowrap">{token0.chain.pretty_name}</span>
             ) : (
               <>
-                <span className="nowrap">{token0.chain.pretty_name}</span>
-                <span> / </span>
+                <span className="nowrap">{token0.chain.pretty_name} /</span>
                 <span>{token1.chain.pretty_name}</span>
               </>
             )}
