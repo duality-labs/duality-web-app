@@ -168,9 +168,14 @@ export function useSimplePrice(
   // cache the found result array so it doesn't generate updates if the values are equal
   const cachedResults = useMemo(() => {
     // return found results as numbers
-    return tokens.map(
-      (token) =>
-        !isDevToken(token) ? data?.[token?.coingecko_id ?? '']?.[currencyID] : 1 // fake dev token price
+    return tokens.map((token) =>
+      data && token?.coingecko_id
+        ? // if the information is fetchable, return fetched (number) or not yet fetched (undefined)
+          (data[token.coingecko_id]?.[currencyID] as number | undefined)
+        : // if the information is not fetchable, return a dev token price or 0 (unpriced)
+        isDevToken(token)
+        ? 1
+        : 0
     );
   }, [tokens, data, currencyID]);
 
