@@ -9,6 +9,7 @@ import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import { EditedPosition } from '../MyLiquidity/useEditLiquidity';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
+import { useStake } from '../MyLiquidity/useStaking';
 
 import TableCard from '../../components/cards/TableCard';
 import ValueBar from '../../components/Table/ValueBar';
@@ -277,12 +278,19 @@ export function MyEditedPositionTableCard({
     );
   }, [poolValues]);
 
+  const [, sendStakeRequest] = useStake();
+
   const data = editedUserPosition
-    ? sortedPosition.map(
-        (
-          { tickDiff0, tickDiff1, deposit, token0Context, token1Context },
-          index
-        ) => {
+    ? sortedPosition.map((userPosition, index) => {
+        if (userPosition) {
+          const {
+            tickDiff0,
+            tickDiff1,
+            deposit,
+            token0Context,
+            token1Context,
+            stakeContext,
+          } = userPosition;
           const reserveA = !invertedTokenOrder
             ? tickDiff0.plus(token0Context?.userReserves || 0)
             : tickDiff1.plus(token1Context?.userReserves || 0);
@@ -348,8 +356,13 @@ export function MyEditedPositionTableCard({
                   (reserveA.isZero() || reserveB.isZero()) && (
                     <button
                       type="button"
-                      className="button button-light ml-auto"
+                      className={`button ${
+                        stakeContext ? 'button-primary-outline' : 'button-light'
+                      } ml-auto`}
                       onClick={() => {
+                        if (stakeContext) {
+                          return sendStakeRequest([], [userPosition]);
+                        }
                         setEditedUserPosition((ticks) => {
                           return ticks.map((tick) => {
                             return tick.deposit.centerTickIndex1To0.toNumber() ===
@@ -370,7 +383,7 @@ export function MyEditedPositionTableCard({
                         });
                       }}
                     >
-                      Withdraw
+                      {stakeContext ? <>Unstake</> : <>Withdraw</>}
                     </button>
                   )}
                 {(!tickDiff0.isZero() || !tickDiff1.isZero()) && (
@@ -401,7 +414,8 @@ export function MyEditedPositionTableCard({
             </tr>
           ) : null;
         }
-      )
+        return null;
+      })
     : null;
 
   return (
