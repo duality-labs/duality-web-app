@@ -247,6 +247,7 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
               ibc: {
                 dst_channel: channel.channel_id,
                 source_channel: channel.counterparty?.channel_id,
+                source_denom: token.address,
               },
             };
           }
