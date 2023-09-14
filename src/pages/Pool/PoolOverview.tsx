@@ -650,6 +650,7 @@ interface EventColumnProps<T> {
   heading: TransactionTableColumnKey;
 }
 interface GenericEventColumnProps<T> extends EventColumnProps<T> {
+  action: 'Deposit' | 'Withdraw';
   getToken0Reserves: (event: T) => string;
   getToken1Reserves: (event: T) => string;
 }
@@ -662,6 +663,7 @@ function EventColumn<
   heading,
   tokenA,
   tokenB,
+  action,
   getToken0Reserves,
   getToken1Reserves,
 }: GenericEventColumnProps<T>) {
@@ -681,7 +683,7 @@ function EventColumn<
       case 'Wallet':
         return formatAddress(Creator);
       case 'Type':
-        return `Add ${[
+        return `${action === 'Deposit' ? 'Add' : 'Remove'} ${[
           Number(getTokenAReserves()) > 0 && tokenA.symbol,
           Number(getTokenBReserves()) > 0 && tokenB.symbol,
         ]
@@ -769,6 +771,7 @@ function DepositColumn(props: EventColumnProps<DexDepositEvent>) {
   return (
     <EventColumn<DexDepositEvent>
       {...props}
+      action="Deposit"
       getToken0Reserves={getToken0Reserves}
       getToken1Reserves={getToken1Reserves}
     />
@@ -792,6 +795,7 @@ function WithdrawalColumn(props: EventColumnProps<DexWithdrawalEvent>) {
   return (
     <EventColumn<DexWithdrawalEvent>
       {...props}
+      action="Withdraw"
       getToken0Reserves={getToken0Reserves}
       getToken1Reserves={getToken1Reserves}
     />
