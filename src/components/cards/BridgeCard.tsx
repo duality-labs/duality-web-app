@@ -108,9 +108,21 @@ export default function BridgeCard({
         if (!amount || !Number(amount)) {
           throw new Error('Invalid Token Amount');
         }
+        // find the denom unit asked for
+        const denomUnit = from.denom_units.find(
+          (unit) =>
+            unit.denom === from.address ||
+            unit.aliases?.find((alias) => alias === from.address)
+        );
+        // use the non-IBC version of the denom unit if found
+        const tokenDenom = denomUnit?.denom ?? from.ibc?.source_denom;
+        if (!tokenDenom) {
+          throw new Error('Source denom not found');
+        }
+
         try {
           await sendRequest({
-            token: coin(amount, from.address),
+            token: coin(amount, tokenDenom),
             timeout_timestamp: timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
