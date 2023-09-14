@@ -8,9 +8,9 @@ const { REACT_APP__DEV_TOKEN_DENOMS } = process.env;
 
 const baseAPI = 'https://api.coingecko.com/api/v3';
 
-const devTokens = JSON.parse(REACT_APP__DEV_TOKEN_DENOMS || '[]') as string[];
+// identify dev tokens using a specific dev chain name
 function isDevToken(token?: Token) {
-  return !!token && devTokens.includes(token.base);
+  return !!token && token.chain.chain_name === '___dev___';
 }
 
 class FetchError extends Error {

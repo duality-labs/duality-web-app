@@ -4,7 +4,7 @@ import {
   assets as chainRegistryAssetList,
   chains as chainRegistryChainList,
 } from 'chain-registry';
-import { AssetList, Chain } from '@chain-registry/types';
+import { Asset, AssetList, Chain } from '@chain-registry/types';
 import {
   Token,
   TokenAddress,
@@ -21,6 +21,7 @@ const {
   REACT_APP__IS_MAINNET = 'mainnet',
   REACT_APP__CHAIN_ASSETS = '',
   REACT_APP__PROVIDER_ASSETS = '',
+  REACT_APP__DEV_ASSET_MAP = '',
 } = process.env;
 
 const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
@@ -31,7 +32,9 @@ interface AddressableToken extends Token {
 
 type TokenList = Array<Token>;
 
-const dualityMainToken: Token = {
+// create an alternate chain to identify dev assets on the Duality chain
+export const devChain = { ...dualityChain, chain_name: '___dev___' };
+const dualityMainToken: Asset = {
   description: 'SDK default token',
   address: 'token',
   denom_units: [
@@ -53,10 +56,9 @@ const dualityMainToken: Token = {
   logo_URIs: {
     svg: tknLogo,
   },
-  chain: dualityChain,
 };
 
-const dualityStakeToken: Token = {
+const dualityStakeToken: Asset = {
   description: 'SDK default token',
   address: 'stake',
   denom_units: [
@@ -78,14 +80,13 @@ const dualityStakeToken: Token = {
   logo_URIs: {
     svg: stkLogo,
   },
-  chain: dualityChain,
 };
 
 export const dualityAssets: AssetList | undefined = REACT_APP__CHAIN_ASSETS
   ? (JSON.parse(REACT_APP__CHAIN_ASSETS) as AssetList)
   : isTestnet
   ? {
-      chain_name: dualityChain.chain_name,
+      chain_name: devChain.chain_name,
       assets: [dualityStakeToken, dualityMainToken],
     }
   : undefined;
@@ -94,91 +95,60 @@ export const providerAssets: AssetList | undefined = REACT_APP__PROVIDER_ASSETS
   ? (JSON.parse(REACT_APP__PROVIDER_ASSETS) as AssetList)
   : undefined;
 
+const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
+  ? {
+      chain_name: devChain.chain_name,
+      assets: Object.entries(
+        JSON.parse(REACT_APP__DEV_ASSET_MAP) as { [address: string]: string }
+      ).flatMap<Asset>(([address, path]) => {
+        const devChainName = devChain.chain_name;
+        const [symbol, chainName = devChainName] = path.split('/');
+        const foundAssetList = chainRegistryAssetList.find(
+          (list) => list.chain_name === chainName
+        );
+        const foundAsset = foundAssetList?.assets.find((asset) => {
+          return asset.symbol === symbol;
+        });
+        // overwrite chain asset with fake address of dev chain
+        return foundAsset
+          ? {
+              ...foundAsset,
+              address,
+            }
+          : [];
+      }),
+    }
+  : undefined;
+
 const assetList = [
   ...chainRegistryAssetList,
   dualityAssets,
   providerAssets,
+  // add any dev assets added to the environment
+  isTestnet && devAssets,
 ].filter((assets): assets is AssetList => !!assets);
 const chainList = [
   ...chainRegistryChainList,
   dualityChain,
   providerChain,
+  isTestnet && devChain,
 ].filter((chain): chain is Chain => !!chain);
-
-const testnetTokens = isTestnet && [
-  // add a copy of some tokens onto the Duality chain for development
-  ...assetList.flatMap(({ chain_name, assets }) => {
-    const dualityTestAssetsAddressMap: { [key: string]: string } = {
-      'cosmoshub:ATOM': 'tokenA',
-      'ethereum:USDC': 'tokenB',
-      'ethereum:ETH': 'tokenC',
-      'osmosis:OSMO': 'tokenD',
-      'juno:JUNO': 'tokenE',
-      'stride:STRD': 'tokenF',
-      'stargaze:STARS': 'tokenG',
-      'crescent:CRE': 'tokenH',
-      'chihuahua:HUAHUA': 'tokenI',
-    };
-
-    return assets.flatMap((asset) => {
-      const address =
-        dualityTestAssetsAddressMap[`${chain_name}:${asset.symbol}`];
-      if (address) {
-        const base = asset.base;
-        return [
-          {
-            chain: dualityChain,
-            ...asset,
-            // replace base address with dev token name
-            address,
-            base: address,
-            denom_units: asset.denom_units.map((unit) => {
-              // replace base unit with dev token name
-              if (unit.denom === base) {
-                return {
-                  ...unit,
-                  denom: address,
-                };
-              }
-              // make test token amounts more consistent in dev
-              // the different exponents really throws off
-              else {
-                return {
-                  ...unit,
-                  exponent: 18,
-                };
-              }
-            }),
-          },
-        ];
-      }
-      return [];
-    });
-  }),
-];
 
 // transform AssetList into TokenList
 // for easier filtering/ordering by token attributes
 function getTokens(condition: (chain: Chain) => boolean) {
   // go through each chain
-  return (
-    assetList
-      .reduce<TokenList>((result, { chain_name, assets }) => {
-        // add each asset with the parent chain details
-        const chain = chainList.find(
-          (chain) => chain.chain_name === chain_name
-        );
-        // only show assets that have a known address
-        const knownAssets = assets.filter(
-          (asset): asset is Token => !!asset.address
-        );
-        return chain && condition(chain)
-          ? result.concat(knownAssets.map((asset) => ({ ...asset, chain })))
-          : result;
-      }, [])
-      // add testnet Duality chain tokens
-      .concat(testnetTokens || [])
-  );
+  return assetList.reduce<TokenList>((result, { chain_name, assets }) => {
+    // add each asset with the parent chain details
+    const chain = chainList.find((chain) => chain.chain_name === chain_name);
+    // only show assets that have a known address
+    const knownAssets = assets.filter(
+      (asset): asset is Token => !!asset.address
+    );
+    return chain && condition(chain)
+      ? result.concat(knownAssets.map((asset) => ({ ...asset, chain })))
+      : result;
+  }, []);
 }
 
 export const addressableTokenMap = getTokens(Boolean).reduce<{
