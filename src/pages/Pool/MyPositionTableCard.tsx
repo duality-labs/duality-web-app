@@ -11,6 +11,7 @@ import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
 
 import TableCard from '../../components/cards/TableCard';
+import ValueBar from '../../components/Table/ValueBar';
 
 function MyPositionTableCard({
   tokenA,
@@ -115,6 +116,7 @@ export function MyNewPositionTableCard({
   const data =
     tokenA && tokenB && !(reserveATotal.isZero() && reserveBTotal.isZero())
       ? userTicks.map(({ priceBToA, reserveA, reserveB }, index) => {
+          const [valueA, valueB] = poolValues[index];
           // note: fix these restrictions, they are a bit off
           return (
             <tr key={index} className="pt-2">
@@ -122,36 +124,26 @@ export function MyNewPositionTableCard({
               <td>{new BigNumber(priceBToA.toFixed(5)).toFixed(5)}</td>
               <td>
                 {reserveA.isGreaterThan(0) && (
-                  <div>{formatCurrency(poolValues[index][0])}</div>
+                  <div>{formatCurrency(valueA)}</div>
                 )}
                 {reserveB.isGreaterThan(0) && (
-                  <div>{formatCurrency(poolValues[index][1])}</div>
+                  <div>{formatCurrency(valueB)}</div>
                 )}
               </td>
               <td className="min-width">
                 {reserveA.isGreaterThan(0) && (
-                  <div
-                    className="green-value-bar"
-                    style={{
-                      width:
-                        new BigNumber(poolValues[index][0])
-                          .dividedBy(maxPoolValue)
-                          .multipliedBy(50)
-                          .toNumber() || 0,
-                    }}
-                  ></div>
+                  <ValueBar
+                    variant="green"
+                    value={valueA}
+                    maxValue={maxPoolValue}
+                  />
                 )}
                 {reserveB.isGreaterThan(0) && (
-                  <div
-                    className="blue-value-bar"
-                    style={{
-                      width:
-                        new BigNumber(poolValues[index][1])
-                          .dividedBy(maxPoolValue)
-                          .multipliedBy(50)
-                          .toNumber() || 0,
-                    }}
-                  ></div>
+                  <ValueBar
+                    variant="blue"
+                    value={valueB}
+                    maxValue={maxPoolValue}
+                  />
                 )}
               </td>
 
@@ -292,6 +284,7 @@ export function MyEditedPositionTableCard({
           const reserveB = !invertedTokenOrder
             ? tickDiff1.plus(token1Context?.userReserves || 0)
             : tickDiff0.plus(token0Context?.userReserves || 0);
+          const [valueA, valueB] = poolValues[index];
 
           const tickIndexBToA = !invertedTokenOrder
             ? new BigNumber(deposit.centerTickIndex1To0.toNumber())
@@ -308,36 +301,26 @@ export function MyEditedPositionTableCard({
               <td>{new BigNumber(1).div(priceBToA).toFixed(5)}</td>
               <td>
                 {reserveA.isGreaterThan(0) && (
-                  <div>{formatCurrency(poolValues[index][0])}</div>
+                  <div>{formatCurrency(valueA)}</div>
                 )}
                 {reserveB.isGreaterThan(0) && (
-                  <div>{formatCurrency(poolValues[index][1])}</div>
+                  <div>{formatCurrency(valueB)}</div>
                 )}
               </td>
               <td className="min-width">
                 {reserveA.isGreaterThan(0) && (
-                  <div
-                    className="green-value-bar"
-                    style={{
-                      width:
-                        new BigNumber(poolValues[index][0])
-                          .dividedBy(maxPoolValue)
-                          .multipliedBy(50)
-                          .toNumber() || 0,
-                    }}
-                  ></div>
+                  <ValueBar
+                    variant="green"
+                    value={valueA}
+                    maxValue={maxPoolValue}
+                  />
                 )}
                 {reserveB.isGreaterThan(0) && (
-                  <div
-                    className="blue-value-bar"
-                    style={{
-                      width:
-                        new BigNumber(poolValues[index][1])
-                          .dividedBy(maxPoolValue)
-                          .multipliedBy(50)
-                          .toNumber() || 0,
-                    }}
-                  ></div>
+                  <ValueBar
+                    variant="blue"
+                    value={valueB}
+                    maxValue={maxPoolValue}
+                  />
                 )}
               </td>
 

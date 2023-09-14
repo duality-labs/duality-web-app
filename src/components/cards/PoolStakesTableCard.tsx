@@ -49,6 +49,7 @@ import {
 import { useMatchIncentives } from '../../lib/web3/hooks/useIncentives';
 import { RelativeTime } from '../Time';
 import PopOver from '../PopOver/PopOver';
+import ValueBar from '../Table/ValueBar';
 
 interface PoolsTableCardOptions {
   tokenA: Token;
@@ -500,23 +501,22 @@ function StakingRow({
         </td>
         <td>{formatCurrency(tokenAValue.plus(tokenBValue).toFixed(2))}</td>
         <td className="min-width">
-          <div
-            className={[
-              tokenAValue.isGreaterThan(0)
-                ? 'green-value-bar'
-                : 'blue-value-bar',
-              isStaked && isIncentivized && 'highlighted',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            style={{
-              width: tokenAValue
-                .plus(tokenBValue)
-                .dividedBy(maxPoolValue)
-                .multipliedBy(50)
-                .toNumber(),
-            }}
-          ></div>
+          {tokenAValue.isGreaterThan(0) && (
+            <ValueBar
+              className={isStaked && isIncentivized && 'highlighted'}
+              variant="green"
+              value={tokenAValue}
+              maxValue={maxPoolValue}
+            />
+          )}
+          {tokenBValue.isGreaterThan(0) && (
+            <ValueBar
+              className={isStaked && isIncentivized && 'highlighted'}
+              variant="blue"
+              value={tokenBValue}
+              maxValue={maxPoolValue}
+            />
+          )}
         </td>
         <td>
           {tokenAContext?.userReserves.isGreaterThan(0) && (
