@@ -497,28 +497,12 @@ function TokenPair({
         <div className="row">
           <div className="col subtext">
             {token0.chain.chain_name === token1.chain.chain_name ? (
-              <span className="nowrap">
-                {token0.chain.chain_name
-                  .split('')
-                  .map((v, i) => (i > 0 ? v : v.toUpperCase()))
-                  .join('')}
-              </span>
+              <span className="nowrap">{token0.chain.pretty_name}</span>
             ) : (
               <>
-                <span className="nowrap">
-                  {token0.chain.chain_name
-                    .split('')
-                    .map((v, i) => (i > 0 ? v : v.toUpperCase()))
-                    .join('')}
-                </span>
+                <span className="nowrap">{token0.chain.pretty_name}</span>
                 <span> / </span>
-                <span>
-                  {token1.chain.chain_name
-                    .split('')
-                    .map((v, i) => (i > 0 ? v : v.toUpperCase()))
-                    .join('')}
-                  `
-                </span>
+                <span>{token1.chain.pretty_name}</span>
               </>
             )}
           </div>
