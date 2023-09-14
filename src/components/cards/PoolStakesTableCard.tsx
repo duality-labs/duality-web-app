@@ -22,6 +22,7 @@ import { Gauge } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality
 import TableCard, { TableCardProps } from './TableCard';
 
 import {
+  formatAmount,
   formatCurrency,
   formatDecimalPlaces,
   formatPercentage,
@@ -153,10 +154,11 @@ export default function MyPoolStakesTableCard<T extends string | number>({
       if (!value) {
         return 2;
       }
-      return (
-        new BigNumber(value).toPrecision(precision).split('.').pop()?.length ||
-        0
-      );
+      // two steps are required here so that big/small values don't become
+      // scientific notation strings, eg. 1.2e-9
+      const roundedValue = new BigNumber(value).toPrecision(precision);
+      const stringValue = new BigNumber(roundedValue).toFixed();
+      return stringValue.split('.').pop()?.length || 0;
     }
   }, [allShareValues, tokenA, tokenB]);
 
@@ -523,12 +525,14 @@ function StakingRow({
           {tokenAContext?.userReserves.isGreaterThan(0) && (
             <div>
               <span>
-                {formatDecimalPlaces(
+                {formatAmount(
                   getDisplayDenomAmount(
                     tokenA,
-                    tokenAContext?.userReserves || 0
+                    tokenAContext?.userReserves || 0,
+                    {
+                      fractionalDigits: columnDecimalPlaces.amountA,
+                    }
                   ) || 0,
-                  columnDecimalPlaces.amountA,
                   {
                     useGrouping: true,
                   }
@@ -540,12 +544,14 @@ function StakingRow({
           {tokenBContext?.userReserves.isGreaterThan(0) && (
             <div>
               <span>
-                {formatDecimalPlaces(
+                {formatAmount(
                   getDisplayDenomAmount(
                     tokenB,
-                    tokenBContext?.userReserves || 0
+                    tokenBContext?.userReserves || 0,
+                    {
+                      fractionalDigits: columnDecimalPlaces.amountB,
+                    }
                   ) || 0,
-                  columnDecimalPlaces.amountB,
                   {
                     useGrouping: true,
                   }

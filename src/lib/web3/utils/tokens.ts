@@ -108,6 +108,19 @@ export function getBaseDenomAmount(
   });
 }
 
+export function roundToBaseUnit(
+  token: Token,
+  amount: BigNumber.Value,
+  roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN
+): string | undefined {
+  const baseAmount = getBaseDenomAmount(token, amount);
+  const roundedAmount =
+    baseAmount && new BigNumber(baseAmount).toFixed(0, roundingMode);
+  const displayAmount =
+    roundedAmount && getDisplayDenomAmount(token, roundedAmount);
+  return displayAmount && new BigNumber(displayAmount).toFixed();
+}
+
 // get how much a utoken amount is worth in USD
 export function getTokenValue(
   token: Token,

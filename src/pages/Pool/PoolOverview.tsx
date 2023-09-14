@@ -689,9 +689,13 @@ function EventColumn<
           .filter(Boolean)
           .join(' and ')}`;
       case 'Token A Amount':
-        return getTokenReservesInDenom(tokenA, getTokenAReserves().toFixed());
+        return formatAmount(
+          getTokenReservesInDenom(tokenA, getTokenAReserves().toFixed()) || 0
+        );
       case 'Token B Amount':
-        return getTokenReservesInDenom(tokenB, getTokenBReserves().toFixed());
+        return formatAmount(
+          getTokenReservesInDenom(tokenB, getTokenBReserves().toFixed()) || 0
+        );
       case 'Total Value':
         const values = [
           new BigNumber(
@@ -701,12 +705,9 @@ function EventColumn<
             getDisplayDenomAmount(tokenB, getTokenBReserves()) || 0
           ).multipliedBy(tokenBPrice || 0),
         ];
-        const value = values[0].plus(values[1]);
         // return loading start or calculated value
         return !tokenA && !tokenB && isValidating
           ? '...'
-          : value.isLessThan(0.005)
-          ? `< ${formatCurrency(0.01)}`
           : formatCurrency(values[0].plus(values[1]).toNumber());
       case 'Time':
         return tx.timestamp
