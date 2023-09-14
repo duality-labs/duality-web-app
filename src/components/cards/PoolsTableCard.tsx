@@ -191,7 +191,7 @@ function PairRow({
       : [];
   }, [gauges, token0, token1]);
 
-  if (token0 && token1 && price0 && price1) {
+  if (token0 && token1 && price0 !== undefined && price1 !== undefined) {
     return (
       <tr>
         <td className="min-width">
