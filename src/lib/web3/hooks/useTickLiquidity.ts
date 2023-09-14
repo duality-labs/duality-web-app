@@ -130,7 +130,7 @@ function transformPoolReserves(
   poolReserves: TickLiquidity['poolReserves']
 ): TickInfo | [] {
   // process only ticks with pool reserves
-  if (poolReserves) {
+  if (poolReserves?.reserves) {
     const {
       pairID,
       tokenIn,
