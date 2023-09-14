@@ -2,7 +2,7 @@ import { ReactNode, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 import { Tick } from '../../components/LiquiditySelector/LiquiditySelector';
 
-import { formatCurrency } from '../../lib/utils/number';
+import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 
@@ -442,14 +442,6 @@ export function MyEditedPositionTableCard({
   );
 }
 
-function formatReserveAmount(
-  token: Token,
-  reserve: BigNumber,
-  fractionalDigits = 3
-) {
-  return reserve.isGreaterThan(1e-5)
-    ? getDisplayDenomAmount(token, reserve, {
-        fractionalDigits,
-      })
-    : '';
+function formatReserveAmount(token: Token, reserve: BigNumber) {
+  return formatAmount(getDisplayDenomAmount(token, reserve) || 0);
 }

@@ -62,10 +62,12 @@ export function formatMaximumSignificantDecimals(
 // link: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat#roundingpriority
 export function formatAmount(
   amount: number | string,
-  opts: Intl.NumberFormatOptions = {}
+  opts: Intl.NumberFormatOptions = {},
+  // avoid rendering very long fractional values with a practical limit
+  minimum = 0.000001
 ) {
   const numericAmount = Number(amount);
-  return !isNaN(numericAmount)
+  return numericAmount > minimum / 2
     ? numericAmount.toLocaleString('en-US', {
         maximumFractionDigits: maxFractionDigits,
         maximumSignificantDigits: Math.max(
@@ -75,6 +77,10 @@ export function formatAmount(
         useGrouping: false,
         ...opts,
       })
+    : !isNaN(numericAmount)
+    ? numericAmount > 0
+      ? `<${minimum}`
+      : '0'
     : '-';
 }
 
@@ -129,16 +135,28 @@ export function formatLongPrice(
   return formatPrice(amount, { maximumSignificantDigits: 6, ...opts });
 }
 
-// format to a visually pleasing output of currency
+// format to a visually pleasing output of currency eg. $1,234.00 / <$0.01 / $0
 // should never be passed on to further calculations due to rounding
 // it is intended that the amount passed here has no more decimal places
 // than its denom exponent (eg. it has come from `getDisplayDenomAmount()`)
-export function formatCurrency(amount: number | string, currency = 'USD') {
-  return Number(amount).toLocaleString('en-US', {
+export function formatCurrency(
+  amount: number | string,
+  currency = 'USD',
+  decimalPlaces = 2
+) {
+  const numericAmount = Number(amount);
+  const minimumDisplayedCurrencyValue = Math.pow(10, -1 * decimalPlaces);
+  const isLessThanMinimum =
+    numericAmount > 0 && numericAmount < minimumDisplayedCurrencyValue / 2;
+  const stringAmount = (
+    isLessThanMinimum ? minimumDisplayedCurrencyValue : numericAmount
+  ).toLocaleString('en-US', {
     currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: decimalPlaces,
+    maximumFractionDigits: decimalPlaces,
     currencyDisplay: 'symbol',
     style: 'currency',
   });
+  // add "less than" indicator for small (non-zero) amounts
+  return `${isLessThanMinimum ? '<' : ''}${stringAmount}`;
 }

@@ -2,21 +2,14 @@ import React, { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import TokenPicker from '../TokenPicker';
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, roundToBaseUnit } from '../../lib/web3/utils/tokens';
 
 import NumberInput from '../inputs/NumberInput';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import {
-  formatAmount,
-  formatCurrency,
-  formatLongPrice,
-} from '../../lib/utils/number';
+import { formatAmount, formatCurrency } from '../../lib/utils/number';
 
 import './TokenInputGroup.scss';
-
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
-const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 
 const placeholder = '0';
 
@@ -95,7 +88,7 @@ export default function TokenInputGroup({
           })}
         </h5>
       )}
-      {!disabledInput && maxValue && Number(maxValue) > 0 && (
+      {!disabledInput && token && maxValue && Number(maxValue) > 0 && (
         <span className="token-group-balance">
           <button
             type="button"
@@ -103,12 +96,7 @@ export default function TokenInputGroup({
             onClick={() =>
               onValueChanged?.(
                 // allow max value be as long as it needs to be to perfectly fit user's balance
-                new BigNumber(maxValue)
-                  .toFixed(maxFractionDigits, BigNumber.ROUND_DOWN)
-                  // replace trailing zeros
-                  .replace(/\.([0-9]*[1-9])?0+$/, '.$1')
-                  // remove trailing decimal point
-                  .replace(/\.$/, '')
+                roundToBaseUnit(token, maxValue) || ''
               )
             }
           >
@@ -119,7 +107,9 @@ export default function TokenInputGroup({
             className="badge badge-light"
             onClick={() =>
               // allow rounding on half of balance because we don't need an exact target
-              onValueChanged?.(formatLongPrice(Number(maxValue) / 2))
+              onValueChanged?.(
+                roundToBaseUnit(token, Number(maxValue) / 2) || ''
+              )
             }
           >
             HALF
