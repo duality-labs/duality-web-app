@@ -120,7 +120,9 @@ export function MyNewPositionTableCard({
           return (
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
-              <td>{new BigNumber(priceBToA.toFixed(5)).toFixed(5)}</td>
+              <td>
+                {priceBToA ? formatAmount(priceBToA.toNumber(), {}, 0) : '-'}
+              </td>
               <td>
                 {reserveA.isGreaterThan(0) && (
                   <div>{formatCurrency(poolValues[index][0])}</div>
@@ -300,7 +302,7 @@ export function MyEditedPositionTableCard({
             ? new BigNumber(deposit.centerTickIndex1To0.toNumber())
             : new BigNumber(deposit.centerTickIndex1To0.toNumber()).negated();
 
-          const priceBToA = tickIndexToPrice(tickIndexBToA.negated());
+          const priceBToA = tickIndexToPrice(tickIndexBToA);
           // show only those ticks that are in the currently visible range
           return viewableMinIndex !== undefined &&
             viewableMaxIndex !== undefined &&
@@ -308,7 +310,9 @@ export function MyEditedPositionTableCard({
             tickIndexBToA.isLessThanOrEqualTo(viewableMaxIndex) ? (
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
-              <td>{new BigNumber(1).div(priceBToA).toFixed(5)}</td>
+              <td>
+                {priceBToA ? formatAmount(priceBToA.toNumber(), {}, 0) : '-'}
+              </td>
               <td>
                 {reserveA.isGreaterThan(0) && (
                   <div>{formatCurrency(poolValues[index][0])}</div>
