@@ -38,6 +38,7 @@ import {
   MyNewPositionTableCard,
 } from './MyPositionTableCard';
 
+import { getBaseIbcDenom } from '../../lib/web3/hooks/useTokens';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
@@ -165,6 +166,13 @@ export default function PoolManagement({
   setTokenB: (tokenB: Token | undefined) => void;
   setTokens: ([tokenA, tokenB]: [Token?, Token?]) => void;
 }) {
+  const [tokenAPath, tokenBPath] = useMemo(() => {
+    return [
+      encodeURIComponent(getBaseIbcDenom(tokenA) ?? tokenA?.symbol ?? '-'),
+      encodeURIComponent(getBaseIbcDenom(tokenB) ?? tokenB?.symbol ?? '-'),
+    ];
+  }, [tokenA, tokenB]);
+
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
   );
@@ -1222,14 +1230,14 @@ export default function PoolManagement({
         tokenA && tokenB && editMode ? (
           <div className="row gap-3">
             <div className="col">
-              <Link to={`/portfolio/pools/${tokenA.symbol}/${tokenB.symbol}`}>
+              <Link to={`/portfolio/pools/${tokenAPath}/${tokenBPath}`}>
                 <button className="button button-primary py-3 px-4">
                   Stake Position
                 </button>
               </Link>
             </div>
             <div className="col">
-              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
+              <Link to={`/pools/${tokenAPath}/${tokenBPath}/add`}>
                 <button className="button button-primary py-3 px-4">
                   Add To Position
                 </button>
@@ -1242,7 +1250,7 @@ export default function PoolManagement({
           editedUserPosition &&
           editedUserPosition.length > 0 && (
             <div className="col">
-              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/edit`}>
+              <Link to={`/pools/${tokenAPath}/${tokenBPath}/edit`}>
                 <button className="button button-primary py-3 px-4">
                   Edit Position
                 </button>

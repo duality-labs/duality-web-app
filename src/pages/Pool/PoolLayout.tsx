@@ -1,10 +1,11 @@
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { Link, useMatch } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 import TokenPairLogos from '../../components/TokenPairLogos';
 import { Token } from '../../lib/web3/utils/tokens';
+import { getBaseIbcDenom } from '../../lib/web3/hooks/useTokens';
 
 import './Pool.scss';
 
@@ -23,6 +24,13 @@ export default function PoolLayout({
   swap?: () => void;
   children?: ReactNode;
 }) {
+  const [tokenAPath, tokenBPath] = useMemo(() => {
+    return [
+      encodeURIComponent(getBaseIbcDenom(tokenA) ?? tokenA?.symbol ?? '-'),
+      encodeURIComponent(getBaseIbcDenom(tokenB) ?? tokenB?.symbol ?? '-'),
+    ];
+  }, [tokenA, tokenB]);
+
   const matchTokenManagement = useMatch('/pools/:tokenA/:tokenB/:addOrEdit');
   const addOrEdit = matchTokenManagement?.params['addOrEdit'];
   return (
@@ -37,7 +45,7 @@ export default function PoolLayout({
             <>
               <Link
                 className="text-light-alt"
-                to={`/pools/${tokenA.symbol}/${tokenB.symbol}`}
+                to={`/pools/${tokenAPath}/${tokenBPath}`}
               >
                 {tokenA.symbol}/{tokenB.symbol}
               </Link>
