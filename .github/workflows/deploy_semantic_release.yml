@@ -52,7 +52,7 @@ jobs:
             @semantic-release/github
             @semantic-release/npm
             @semantic-release/exec
-            conventional-changelog-conventionalcommits
+            conventional-changelog-conventionalcommits@6
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 

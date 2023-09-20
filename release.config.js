@@ -1,21 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
 
-const conventionalCommitPresetConfig = {
-  types: [
-    { type: 'feat', section: 'Features' },
-    { type: 'fix', section: 'Fixes' },
-    { type: 'chore', hidden: false, section: 'Other' },
-    { type: 'docs', hidden: false, section: 'Other' },
-    { type: 'style', hidden: false, section: 'Other' },
-    { type: 'refactor', hidden: false, section: 'Other' },
-    { type: 'perf', hidden: false, section: 'Other' },
-    { type: 'revert', hidden: false, section: 'Other ' },
-    { type: 'test', hidden: false, section: 'Other ' },
-    { type: 'build', hidden: false, section: 'Other' },
-    { type: 'ci', hidden: true },
-  ],
-};
-
 /**
  * config for Semantic Release workflow
  * docs: https://github.com/semantic-release/semantic-release/blob/master/docs/usage/configuration.md#configuration
@@ -38,7 +22,6 @@ module.exports = {
           { type: 'fix', release: 'patch' },
           { type: 'perf', release: 'patch' },
         ],
-        presetConfig: conventionalCommitPresetConfig,
       },
     ],
     // create CHANGELOG text for changelog and commit description
@@ -46,7 +29,21 @@ module.exports = {
       '@semantic-release/release-notes-generator',
       {
         preset: 'conventionalcommits',
-        presetConfig: conventionalCommitPresetConfig,
+        presetConfig: {
+          types: [
+            { type: 'feat', section: 'Features' },
+            { type: 'fix', section: 'Fixes' },
+            { type: 'chore', hidden: false, section: 'Other' },
+            { type: 'docs', hidden: false, section: 'Other' },
+            { type: 'style', hidden: false, section: 'Other' },
+            { type: 'refactor', hidden: false, section: 'Other' },
+            { type: 'perf', hidden: false, section: 'Other' },
+            { type: 'revert', hidden: false, section: 'Other ' },
+            { type: 'test', hidden: false, section: 'Other ' },
+            { type: 'build', hidden: false, section: 'Other' },
+            { type: 'ci', hidden: true },
+          ],
+        },
       },
     ],
     // edits CHANGELOG.md
