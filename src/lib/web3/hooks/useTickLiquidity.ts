@@ -180,10 +180,12 @@ export function useTokenPairTickLiquidity([tokenA, tokenB]: [
   const [token0, token1] = useOrderedTokenPair([tokenA, tokenB]) || [];
   const pairID = token0 && token1 ? getPairID(token0, token1) : null;
   const token0TicksState = useTickLiquidity({
-    query: pairID && token0 ? { pairID, tokenIn: token0 } : null,
+    query:
+      pairID && token0 ? { pairID, tokenIn: token0, pagination: {} } : null,
   });
   const token1TicksState = useTickLiquidity({
-    query: pairID && token1 ? { pairID, tokenIn: token1 } : null,
+    query:
+      pairID && token1 ? { pairID, tokenIn: token1, pagination: {} } : null,
   });
   return {
     data: [token0TicksState.data, token1TicksState.data],
