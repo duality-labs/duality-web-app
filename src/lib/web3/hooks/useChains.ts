@@ -15,6 +15,7 @@ import { getChainInfo } from '../wallets/keplr';
 import dualityLogo from '../../../assets/logo/logo.svg';
 import { Token } from '../utils/tokens';
 import { minutes } from '../../utils/time';
+import Long from 'long';
 
 interface QueryConnectionParamsResponse {
   params?: QueryConnectionParams;
@@ -114,7 +115,12 @@ function useIbcClientStates(chain: Chain) {
       //           using GET/ibc/core/client/v1/client_status/07-tendermint-0)
       // we ignore the status of the light clients here, but their status should
       // be checked at the moment they are required for a transfer
-      return lcd?.ibc.core.client.v1.clientStates() ?? { client_states: [] };
+      return (
+        lcd?.ibc.core.client.v1.clientStates() ?? {
+          client_states: [],
+          pagination: { total: Long.ZERO },
+        }
+      );
     },
     refetchInterval: 5 * minutes,
   });
@@ -127,7 +133,13 @@ function useIbcConnections(chain: Chain) {
     queryFn: async (): Promise<QueryConnectionsResponse> => {
       // get IBC LCD client
       const lcd = await getIbcLcdClient(restEndpoint);
-      return lcd?.ibc.core.connection.v1.connections() ?? { connections: [] };
+      return (
+        lcd?.ibc.core.connection.v1.connections() ?? {
+          connections: [],
+          pagination: { total: Long.ZERO },
+          height: { revision_height: Long.ZERO, revision_number: Long.ZERO },
+        }
+      );
     },
     refetchInterval: 5 * minutes,
   });
@@ -140,7 +152,13 @@ function useIbcChannels(chain: Chain) {
     queryFn: async (): Promise<QueryChannelsResponse> => {
       // get IBC LCD client
       const lcd = await getIbcLcdClient(restEndpoint);
-      return lcd?.ibc.core.channel.v1.channels() ?? { channels: [] };
+      return (
+        lcd?.ibc.core.channel.v1.channels() ?? {
+          channels: [],
+          pagination: { total: Long.ZERO },
+          height: { revision_height: Long.ZERO, revision_number: Long.ZERO },
+        }
+      );
     },
     refetchInterval: 5 * minutes,
   });

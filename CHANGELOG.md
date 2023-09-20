@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.11](https://github.com/duality-labs/duality-web-app/compare/v0.3.10...v0.3.11) (2023-09-20)
+
+
+### Features
+
+* add bridging page and bridging UI ([#416](https://github.com/duality-labs/duality-web-app/issues/416)) ([7dfd561](https://github.com/duality-labs/duality-web-app/commit/7dfd5619166f42c24fb5fc0f8345024bc479f680))
+
+
+### Fixes
+
+* semantic version release process ([#428](https://github.com/duality-labs/duality-web-app/issues/428)) ([4e9b81f](https://github.com/duality-labs/duality-web-app/commit/4e9b81fc8260396ff9176f9626f40257897237cc))
+* update dualityjs dependency to cosmology/telescope version ([#426](https://github.com/duality-labs/duality-web-app/issues/426)) ([f1ccffd](https://github.com/duality-labs/duality-web-app/commit/f1ccffd2531ae0e4360d6be7f22042e0764a1312))
+
+
+### Other
+
+* parse amount denoms with cosmjs parseCoins ([#418](https://github.com/duality-labs/duality-web-app/issues/418)) ([8e08f88](https://github.com/duality-labs/duality-web-app/commit/8e08f886febdec0013bb77ccb6ad511232dc66b7))
+
 ## [0.3.10](https://github.com/duality-labs/duality-web-app/compare/v0.3.9...v0.3.10) (2023-07-20)
 
 
