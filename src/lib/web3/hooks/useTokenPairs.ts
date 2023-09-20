@@ -44,7 +44,7 @@ export default function useTokenPairs({
       const client = await lcdClientPromise;
       return await client.cosmos.bank.v1beta1.totalSupply({
         ...queryConfig,
-        pagination: nextKey ? { key: nextKey } : queryConfig?.pagination,
+        pagination: nextKey ? { key: nextKey } : queryConfig?.pagination ?? {},
       });
     },
     defaultPageParam: undefined,

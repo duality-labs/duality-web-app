@@ -120,6 +120,10 @@ export default function BridgeCard({
             sourcePort: ibcTransferInfo.channel.port_id,
             sourceChannel: ibcTransferInfo.channel.channel_id,
             memo: '',
+            timeoutHeight: {
+              revisionHeight: Long.ZERO,
+              revisionNumber: Long.ZERO,
+            },
           });
           // todo: add streaming updates to UI here
           // display wait for transaction to be confirmed on Duality Chain
@@ -159,6 +163,10 @@ export default function BridgeCard({
             sourcePort: ibcTransferInfo.channel.counterparty.port_id,
             sourceChannel: ibcTransferInfo.channel.counterparty.channel_id,
             memo: '',
+            timeoutHeight: {
+              revisionHeight: Long.ZERO,
+              revisionNumber: Long.ZERO,
+            },
           });
           // todo: add streaming updates to UI here
           // display wait for transaction to be confirmed on external Chain
