@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - fix-semantic-release
 
 jobs:
   semantic_release:
@@ -22,6 +23,8 @@ jobs:
         uses: cycjimmy/semantic-release-action@v4
         id: semantic
         with:
+          dry_run: true
+          branch: fix-semantic-release
           # replace master branch with main as a release branch
           # see https://github.com/semantic-release/semantic-release/issues/1581
           # note that branches may already be filtered by the triggers of this workflow
@@ -29,6 +32,7 @@ jobs:
             [
               '+([0-9])?(.{+([0-9]),x}).x',
               'main',
+              'fix-semantic-release',
               'next',
               'next-major',
               {

@@ -6,8 +6,8 @@
  **/
 
 module.exports = {
-  branches: ['main'],
-  dryRun: false,
+  branches: ['main', 'fix-semantic-release'],
+  dryRun: true,
   plugins: [
     // determine what type of semver change this commit may generate
     [
