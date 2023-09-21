@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
-import { CoinSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
+import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
 import Dialog from '../Dialog/Dialog';
 
@@ -18,7 +18,7 @@ import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 
 import './AssetsTableCard.scss';
 
-type TokenCoin = CoinSDKType & {
+type TokenCoin = Coin & {
   token: Token;
   value: BigNumber | undefined;
 };

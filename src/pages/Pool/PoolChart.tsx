@@ -151,8 +151,10 @@ function useTimeSeriesData(
     },
     defaultPageParam: '',
     getNextPageParam: (lastPage: TimeSeriesPage) => {
-      const nextKey = lastPage?.pagination?.next_key;
-      return nextKey ? nextKey : undefined;
+      // don't pass an empty array as that will trigger another page to download
+      return lastPage?.pagination?.next_key?.length
+        ? lastPage?.pagination?.next_key
+        : undefined;
     },
   });
 

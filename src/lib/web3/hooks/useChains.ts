@@ -1,12 +1,12 @@
 import { Chain } from '@chain-registry/types';
 import { useMemo, useState } from 'react';
 import { ibc, router } from '@duality-labs/dualityjs';
-import { QueryParamsResponseSDKType as QueryRouterParamsSDKType } from '@duality-labs/dualityjs/types/codegen/router/v1/query';
-import { QueryClientStatesResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
-import { ParamsSDKType as QueryConnectionParamsSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
-import { QueryConnectionsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
-import { QueryChannelsResponseSDKType } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/query';
-import { QueryBalanceResponseSDKType } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
+import { QueryParamsResponse as QueryRouterParams } from '@duality-labs/dualityjs/types/codegen/router/v1/query';
+import { QueryClientStatesResponse } from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
+import { Params as QueryConnectionParams } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
+import { QueryConnectionsResponse } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
+import { QueryChannelsResponse } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/query';
+import { QueryBalanceResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { State as ChannelState } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/channel';
 import { State as ConnectionState } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
 import { useQuery } from '@tanstack/react-query';
@@ -17,8 +17,8 @@ import { Token } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import Long from 'long';
 
-interface QueryConnectionParamsResponseSDKType {
-  params?: QueryConnectionParamsSDKType;
+interface QueryConnectionParamsResponse {
+  params?: QueryConnectionParams;
 }
 
 const {
@@ -106,7 +106,7 @@ function useIbcClientStates(chain: Chain) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
     queryKey: ['ibc-client-states', restEndpoint],
-    queryFn: async (): Promise<QueryClientStatesResponseSDKType> => {
+    queryFn: async (): Promise<QueryClientStatesResponse> => {
       // get IBC LCD client
       const lcd = await getIbcLcdClient(restEndpoint);
       // note: it appears that clients may appear in this list if they are of:
@@ -130,7 +130,7 @@ function useIbcConnections(chain: Chain) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
     queryKey: ['ibc-connections', restEndpoint],
-    queryFn: async (): Promise<QueryConnectionsResponseSDKType> => {
+    queryFn: async (): Promise<QueryConnectionsResponse> => {
       // get IBC LCD client
       const lcd = await getIbcLcdClient(restEndpoint);
       return (
@@ -149,7 +149,7 @@ function useIbcChannels(chain: Chain) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
     queryKey: ['ibc-channels', restEndpoint],
-    queryFn: async (): Promise<QueryChannelsResponseSDKType> => {
+    queryFn: async (): Promise<QueryChannelsResponse> => {
       // get IBC LCD client
       const lcd = await getIbcLcdClient(restEndpoint);
       return (
@@ -165,19 +165,15 @@ function useIbcChannels(chain: Chain) {
 }
 
 function filterConnectionsOpen(
-  connection: QueryConnectionsResponseSDKType['connections'][number]
+  connection: QueryConnectionsResponse['connections'][number]
 ): boolean {
-  // convert state Type to returned string representation of the enum
-  const state = connection.state as unknown as keyof typeof ConnectionState;
-  return state === 'STATE_OPEN';
+  return connection.state === (3 as ConnectionState.STATE_OPEN);
 }
 
 function filterChannelsOpen(
-  channel: QueryChannelsResponseSDKType['channels'][number]
+  channel: QueryChannelsResponse['channels'][number]
 ): boolean {
-  // convert state Type to returned string representation of the enum
-  const state = channel.state as unknown as keyof typeof ChannelState;
-  return state === 'STATE_OPEN';
+  return channel.state === (3 as ChannelState.STATE_OPEN);
 }
 
 export function useIbcOpenTransfers(chain: Chain = dualityChain) {
@@ -197,9 +193,7 @@ export function useIbcOpenTransfers(chain: Chain = dualityChain) {
     //       are open, then the same open resources exist on the counterparty.
     //       this may not be true, but is good enough for some UI lists
     return openClients.flatMap((clientState) => {
-      const chainID = (
-        clientState.client_state as unknown as { chain_id: string }
-      ).chain_id;
+      const chainID = clientState.client_state?.chain_id;
       return (
         openConnections
           // filter to connections of the current client
@@ -320,7 +314,7 @@ export function useRemoteChainBankBalance(
   return useQuery({
     enabled: !!token,
     queryKey: ['cosmos-chain-endpoints', restEndpoint, address],
-    queryFn: async (): Promise<QueryBalanceResponseSDKType | null> => {
+    queryFn: async (): Promise<QueryBalanceResponse | null> => {
       if (restEndpoint && address && token) {
         const client = await ibc.ClientFactory.createLCDClient({
           restEndpoint,
@@ -350,7 +344,7 @@ export function useRemoteChainBlockTime(chain: Chain) {
   return useQuery({
     enabled: !!restEndpoint,
     queryKey: ['cosmos-chain-block-time', restEndpoint],
-    queryFn: async (): Promise<QueryConnectionParamsResponseSDKType | null> => {
+    queryFn: async (): Promise<QueryConnectionParamsResponse | null> => {
       if (restEndpoint) {
         const client = await ibc.ClientFactory.createLCDClient({
           restEndpoint,
@@ -358,7 +352,7 @@ export function useRemoteChainBlockTime(chain: Chain) {
         try {
           const params = await client.ibc.core.connection.v1.connectionParams();
           // fix return type to point to connection params and not client params
-          return params as unknown as QueryConnectionParamsResponseSDKType;
+          return params as unknown as QueryConnectionParamsResponse;
         } catch (e) {
           // many chains do not return this route, in which case: state empty
           return {};
@@ -376,7 +370,7 @@ export function useRemoteChainFees(chain: Chain) {
   return useQuery({
     enabled: !!restEndpoint,
     queryKey: ['cosmos-chain-fees', restEndpoint],
-    queryFn: async (): Promise<QueryRouterParamsSDKType | null> => {
+    queryFn: async (): Promise<QueryRouterParams | null> => {
       if (restEndpoint) {
         const client = await router.ClientFactory.createLCDClient({
           restEndpoint,

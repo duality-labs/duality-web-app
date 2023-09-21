@@ -17,7 +17,7 @@ import {
   useInteractions,
 } from '@floating-ui/react';
 import BigNumber from 'bignumber.js';
-import { GaugeSDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
+import { Gauge } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/gauge';
 
 import TableCard, { TableCardProps } from './TableCard';
 
@@ -457,7 +457,7 @@ function StakingRow({
 
   const incentives = useMatchIncentives(userPosition);
 
-  const isStaked = userPosition.stakeContext?.start_time;
+  const isStaked = userPosition.stakeContext;
   const isIncentivized = !!incentives && incentives?.length > 0;
 
   if (tokenAValue.isGreaterThan(0) || tokenBValue.isGreaterThan(0)) {
@@ -573,7 +573,11 @@ function StakingRow({
             <PopOver
               floating={
                 <RelativeTime
-                  timestamp={userPosition.stakeContext?.start_time}
+                  timestamp={
+                    userPosition.stakeContext?.startTimeUnix
+                      ? userPosition.stakeContext.startTimeUnix * 1000
+                      : undefined
+                  }
                 />
               }
             >
@@ -595,7 +599,7 @@ export function IncentivesButton({
 }: {
   children: ReactNode;
   className?: string;
-  incentives: GaugeSDKType[];
+  incentives: Gauge[];
   floating?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);

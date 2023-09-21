@@ -268,7 +268,7 @@ export function useDeposit([tokenA, tokenB]: [
                 ),
                 // todo: allow user to specify autoswap behavior
                 Options: filteredUserTicks.map(() => ({
-                  disableAutoswap: false,
+                  disable_autoswap: false,
                 })),
               }),
             ],

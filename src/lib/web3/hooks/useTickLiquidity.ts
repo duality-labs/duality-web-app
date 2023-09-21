@@ -1,12 +1,13 @@
+import Long from 'long';
 import { useEffect, useMemo, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import {
   QueryAllTickLiquidityRequest,
-  QueryAllTickLiquidityResponseSDKType,
+  QueryAllTickLiquidityResponse,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
 import { useLcdClientPromise } from '../lcdClient';
-import { TickLiquiditySDKType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
+import { TickLiquidity } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
 
 import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useTokens';
 import BigNumber from 'bignumber.js';
@@ -22,6 +23,11 @@ type QueryAllTickLiquidityState = {
   isValidating: boolean;
   error: Error | null;
 };
+
+// experimentally timed that 1000 is faster than 100 or 10,000 items per page
+//   - experiment list length: 1,462 + 5,729 (for each token side)
+//   - time to receive first page for ~5,000 list is ~100ms
+const defaultPaginationLimit = Long.fromNumber(1000);
 
 export default function useTickLiquidity({
   query: queryConfig,
@@ -60,20 +66,27 @@ export default function useTickLiquidity({
     ],
     queryFn: async ({
       pageParam: nextKey,
-    }): Promise<QueryAllTickLiquidityResponseSDKType | undefined> => {
+    }): Promise<QueryAllTickLiquidityResponse | undefined> => {
       if (queryConfig) {
         const client = await lcdClientPromise;
         return await client.dualitylabs.duality.dex.tickLiquidityAll({
           ...queryConfig,
-          pagination: nextKey ? { key: nextKey } : queryConfig.pagination,
+          pagination: {
+            limit: defaultPaginationLimit,
+            ...queryConfig?.pagination,
+            ...(nextKey && {
+              key: nextKey,
+            }),
+          },
         });
       }
     },
     defaultPageParam: undefined,
-    getNextPageParam: (
-      lastPage: QueryAllTickLiquidityResponseSDKType | undefined
-    ) => {
-      return lastPage?.pagination?.next_key ?? undefined;
+    getNextPageParam: (lastPage: QueryAllTickLiquidityResponse | undefined) => {
+      // don't pass an empty array as that will trigger another page to download
+      return lastPage?.pagination?.next_key?.length
+        ? lastPage?.pagination?.next_key
+        : undefined;
     },
   });
 
@@ -94,7 +107,7 @@ export default function useTickLiquidity({
     if (pages && pages.length > 0) {
       const lastPage = pages[pages.length - 1];
       // update our state only if the last page of data has been reached
-      if (!lastPage?.pagination?.next_key) {
+      if (!lastPage?.pagination?.next_key?.length) {
         const poolReserves = pages?.flatMap(
           (page) =>
             page?.tickLiquidity?.flatMap(
@@ -110,7 +123,7 @@ export default function useTickLiquidity({
 }
 
 function transformPoolReserves(
-  poolReserves: TickLiquiditySDKType['poolReserves']
+  poolReserves: TickLiquidity['poolReserves']
 ): TickInfo | [] {
   // process only ticks with pool reserves
   if (poolReserves) {

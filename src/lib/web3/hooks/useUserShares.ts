@@ -4,12 +4,12 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import {
   QuerySupplyOfRequest,
-  QuerySupplyOfResponseSDKType,
+  QuerySupplyOfResponse,
 } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/deposit_record';
 import {
   QueryGetPoolReservesRequest,
-  QueryGetPoolReservesResponseSDKType,
+  QueryGetPoolReservesResponse,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
 
 import { useLcdClientPromise } from '../lcdClient';
@@ -22,7 +22,7 @@ import {
   getTokenAddressPair,
 } from '../utils/tokens';
 import useTokens from './useTokens';
-import { UserStakedShare, useShares } from '../indexerProvider';
+import { StakeContext, UserStakedShare, useShares } from '../indexerProvider';
 import { getShareInfo } from '../utils/shares';
 
 interface DirectionalDepositRecord
@@ -62,7 +62,7 @@ export function usePoolDepositFilterForPair(
 }
 
 interface ExtendedDepositRecord extends DirectionalDepositRecord {
-  stakeContext?: { ID: string; owner: string; start_time?: string };
+  stakeContext?: StakeContext;
 }
 // select all (or optional token pair list of) user shares
 export function useUserDeposits(
@@ -73,7 +73,7 @@ export function useUserDeposits(
   return useMemo(() => {
     const deposits = shares?.map<ExtendedDepositRecord>((share) => {
       const { fee, pairId, sharesOwned, tickIndex1To0 } = share;
-      const { ID, owner, start_time } = share as UserStakedShare;
+      const { ID, owner, startTimeUnix } = share as UserStakedShare;
       const [token0Address, token1Address] = pairId.split('<>');
       return {
         pairID: { token0: token0Address, token1: token1Address },
@@ -82,7 +82,7 @@ export function useUserDeposits(
         lowerTickIndex1To0: Long.fromString(tickIndex1To0).sub(fee),
         upperTickIndex1To0: Long.fromString(tickIndex1To0).add(fee),
         fee: Long.fromString(fee),
-        stakeContext: staked ? { ID, owner, start_time } : undefined,
+        stakeContext: staked ? { ID, owner, startTimeUnix } : undefined,
       };
     });
     // return filtered list of deposits
@@ -102,7 +102,7 @@ export function useUserPositionsTotalShares(
   const lcdClientPromise = useLcdClientPromise();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
 
-  const memoizedData = useRef<QuerySupplyOfResponseSDKType[]>([]);
+  const memoizedData = useRef<QuerySupplyOfResponse[]>([]);
   const { data } = useQueries({
     queries: useMemo(() => {
       return (selectedPoolDeposits || []).flatMap(
@@ -130,7 +130,7 @@ export function useUserPositionsTotalShares(
       // only process data from successfully resolved queries
       const data = results
         .map((result) => result.data)
-        .filter((data): data is QuerySupplyOfResponseSDKType => !!data);
+        .filter((data): data is QuerySupplyOfResponse => !!data);
 
       if (data.length === memoizedData.current.length) {
         // let isSame: boolean = true;
@@ -165,7 +165,7 @@ export function useUserPositionsTotalReserves(
   const lcdClientPromise = useLcdClientPromise();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
 
-  const memoizedData = useRef<QueryGetPoolReservesResponseSDKType[]>([]);
+  const memoizedData = useRef<QueryGetPoolReservesResponse[]>([]);
   const { data } = useQueries({
     queries: useMemo(() => {
       return (selectedPoolDeposits || []).flatMap(
@@ -211,7 +211,7 @@ export function useUserPositionsTotalReserves(
       // only process data from successfully resolved queries
       const data = results
         .map((result) => result.data)
-        .filter((data): data is QueryGetPoolReservesResponseSDKType => !!data);
+        .filter((data): data is QueryGetPoolReservesResponse => !!data);
 
       if (data.length === memoizedData.current.length) {
         // let isSame: boolean = true;
@@ -261,11 +261,7 @@ export interface UserPositionDepositContext {
   token0Context?: ShareValueContext;
   token1: Token;
   token1Context?: ShareValueContext;
-  stakeContext?: {
-    ID: string;
-    owner: string;
-    start_time?: string;
-  };
+  stakeContext?: StakeContext;
 }
 
 // collect all the context about the user's positions together

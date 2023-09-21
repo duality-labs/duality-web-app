@@ -1,10 +1,11 @@
+import Long from 'long';
 import { useEffect, useMemo } from 'react';
 
 import { useLcdClientPromise } from '../lcdClient';
 
 import {
-  QueryTotalSupplyRequestSDKType,
-  QueryTotalSupplyResponseSDKType,
+  QueryTotalSupplyRequest,
+  QueryTotalSupplyResponse,
 } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { getShareInfo } from '../utils/shares';
 import { getPairID } from '../utils/pairs';
@@ -17,6 +18,10 @@ type QueryAllTokenMapState = {
   error: Error | null;
 };
 
+// experimentally timed that 250 is faster than 100 or 1000 items per page
+//   - experiment list length: 7,220)
+const defaultPaginationLimit = Long.fromNumber(250);
+
 export default function useTokenPairs({
   queryOptions,
   query: queryConfig,
@@ -24,7 +29,7 @@ export default function useTokenPairs({
 }: {
   // todo: pass entire useQuery options set here
   queryOptions?: { refetchInterval: number | false };
-  query?: QueryTotalSupplyRequestSDKType;
+  query?: QueryTotalSupplyRequest;
   queryClient?: string;
 } = {}): QueryAllTokenMapState {
   const lcdClientPromise = useLcdClientPromise(queryClientConfig);
@@ -40,18 +45,25 @@ export default function useTokenPairs({
     queryKey: ['cosmos.bank.v1beta1.totalSupply'],
     queryFn: async ({
       pageParam: nextKey,
-    }): Promise<QueryTotalSupplyResponseSDKType | undefined> => {
+    }): Promise<QueryTotalSupplyResponse | undefined> => {
       const client = await lcdClientPromise;
       return await client.cosmos.bank.v1beta1.totalSupply({
         ...queryConfig,
-        pagination: nextKey ? { key: nextKey } : queryConfig?.pagination ?? {},
+        pagination: {
+          limit: defaultPaginationLimit,
+          ...queryConfig?.pagination,
+          ...(nextKey && {
+            key: nextKey,
+          }),
+        },
       });
     },
     defaultPageParam: undefined,
-    getNextPageParam: (
-      lastPage: QueryTotalSupplyResponseSDKType | undefined
-    ) => {
-      return lastPage?.pagination?.next_key ?? undefined;
+    getNextPageParam: (lastPage: QueryTotalSupplyResponse | undefined) => {
+      // don't pass an empty array as that will trigger another page to download
+      return lastPage?.pagination?.next_key?.length
+        ? lastPage?.pagination?.next_key
+        : undefined;
     },
   });
 
