@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.12](https://github.com/duality-labs/duality-web-app/compare/v0.3.11...v0.3.12) (2023-09-21)
+
+
+### Fixes
+
+* tick liquidity pagination and API types ([#423](https://github.com/duality-labs/duality-web-app/issues/423)) ([cacd4e1](https://github.com/duality-labs/duality-web-app/commit/cacd4e135e8e2bb98825f2dd8387607b56cc8d80))
+
 ## [0.3.11](https://github.com/duality-labs/duality-web-app/compare/v0.3.10...v0.3.11) (2023-09-20)
 
 
