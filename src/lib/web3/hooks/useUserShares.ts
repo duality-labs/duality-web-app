@@ -11,8 +11,10 @@ import {
   QueryGetPoolReservesRequest,
   QueryGetPoolReservesResponse,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
+import { dualitylabs } from '@duality-labs/dualityjs';
 
 import { useLcdClientPromise } from '../lcdClient';
+import { useRpcPromise } from '../rpcQueryClient';
 import { getPairID } from '../utils/pairs';
 import {
   Token,
@@ -162,7 +164,7 @@ export function useUserPositionsTotalReserves(
   poolDepositFilter?: UserDepositFilter,
   staked?: boolean
 ) {
-  const lcdClientPromise = useLcdClientPromise();
+  const rpcPromise = useRpcPromise();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
 
   const memoizedData = useRef<QueryGetPoolReservesResponse[]>([]);
@@ -191,10 +193,14 @@ export function useUserPositionsTotalReserves(
               return {
                 queryKey: ['dualitylabs.duality.dex.poolReserves', params],
                 queryFn: async () => {
-                  const lcdClient = await lcdClientPromise;
-                  return lcdClient
-                    ? lcdClient.dualitylabs.duality.dex.poolReserves(params)
-                    : null;
+                  const rpc = await rpcPromise;
+                  const client = new dualitylabs.duality.dex.QueryClientImpl(
+                    rpc
+                  );
+                  // todo: when switching to RPC pool reserves with pagination
+                  //       remember that all pagination fields are required
+                  const result = await client.poolReserves(params);
+                  return result ?? null;
                 },
                 // don't retry, a 404 means there is 0 liquidity there
                 retry: false,
@@ -206,7 +212,7 @@ export function useUserPositionsTotalReserves(
           return [];
         }
       );
-    }, [lcdClientPromise, selectedPoolDeposits]),
+    }, [rpcPromise, selectedPoolDeposits]),
     combine(results) {
       // only process data from successfully resolved queries
       const data = results
