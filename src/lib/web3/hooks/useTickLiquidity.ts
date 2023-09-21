@@ -2,15 +2,17 @@ import Long from 'long';
 import { useEffect, useMemo, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
+import { dualitylabs } from '@duality-labs/dualityjs';
 import {
   QueryAllTickLiquidityRequest,
   QueryAllTickLiquidityResponse,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
-import { useLcdClientPromise } from '../lcdClient';
 import { TickLiquidity } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
 
 import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useTokens';
 import BigNumber from 'bignumber.js';
+
+import { useRpcPromise } from '../rpcQueryClient';
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
 import { usePairUpdateHeight } from '../indexerProvider';
@@ -43,7 +45,7 @@ export default function useTickLiquidity({
     throw new Error('Cannot fetch liquidity: no token ID given');
   }
 
-  const lcdClientPromise = useLcdClientPromise(queryClientConfig);
+  const rpcPromise = useRpcPromise(queryClientConfig);
 
   // on swap the user shares hasn't changed, the user may not be a liquidity provider
   // a CosmosSDK websocket subscription updates our pair update height store
@@ -61,18 +63,26 @@ export default function useTickLiquidity({
   } = useInfiniteQuery({
     queryKey: [
       'dualitylabs.duality.dex.tickLiquidityAll',
-      queryConfig,
+      queryConfig?.pairID,
+      queryConfig?.tokenIn,
       pairUpdateHeight,
     ],
+    enabled: !!queryConfig,
     queryFn: async ({
       pageParam: nextKey,
     }): Promise<QueryAllTickLiquidityResponse | undefined> => {
       if (queryConfig) {
-        const client = await lcdClientPromise;
-        return await client.dualitylabs.duality.dex.tickLiquidityAll({
+        const rpc = await rpcPromise;
+        const client = new dualitylabs.duality.dex.QueryClientImpl(rpc);
+        return client.tickLiquidityAll({
           ...queryConfig,
           pagination: {
+            // RPC endpoint requires all pagination properties to be defined
+            // set defaults that can be overridden here:
+            key: Buffer.from(''),
+            offset: Long.ZERO,
             limit: defaultPaginationLimit,
+            // override default values with custom query config
             ...queryConfig?.pagination,
             ...(nextKey && {
               key: nextKey,
