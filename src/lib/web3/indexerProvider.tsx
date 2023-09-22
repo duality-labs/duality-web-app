@@ -96,11 +96,6 @@ const IndexerContext = createContext<IndexerContextType>({
   pairUpdateHeight: {},
 });
 
-const defaultFetchParams: Partial<PageRequest> = {
-  limit: Long.fromNumber(1000),
-  countTotal: true,
-};
-
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const seconds = 1000;
   const minutes = 60 * seconds;
@@ -237,7 +232,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 address,
                 pagination: {
                   offset: Long.fromNumber(0),
-                  ...defaultFetchParams,
+                  limit: Long.fromNumber(1000),
+                  countTotal: true,
                   key: nextKey || [],
                 } as PageRequest,
               });
