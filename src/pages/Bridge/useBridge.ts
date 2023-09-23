@@ -26,9 +26,9 @@ import {
 import { coerceError } from '../../lib/utils/error';
 
 async function bridgeToken(
-  msg: MsgTransfer,
   client: SigningStargateClient,
-  signingAddress: string
+  signingAddress: string,
+  msg: MsgTransfer
 ) {
   const {
     sender,
@@ -179,7 +179,7 @@ export default function useBridge(
         // process intended request
         // make the bridge transaction to the from chain (with correct signing)
         const client = await ibcClient(offlineSigner, rpcClientEndpointFrom);
-        await bridgeToken(request, client, account.address);
+        await bridgeToken(client, account.address, request);
         // exit loading state
         setValidating(false);
       } catch (maybeError: unknown) {
