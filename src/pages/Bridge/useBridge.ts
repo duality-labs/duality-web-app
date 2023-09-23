@@ -190,16 +190,12 @@ export default function useBridge(
         if (!(err instanceof TransactionToastError)) {
           createErrorToast(err);
         }
-        // add error to state
-        onError(err);
-        // pass error through
-        throw err;
-      }
-
-      function onError(err: Error) {
+        // set error state
         setValidating(false);
         setData(undefined);
         setError(err.message);
+        // pass error through
+        throw err;
       }
     },
     [
