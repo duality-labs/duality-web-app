@@ -123,7 +123,11 @@ export function checkMsgErrorToast(
   });
 }
 
-export async function createTransactionToasts<T extends MinimalTxResponse>(
+export class TransactionToastError extends Error {}
+
+export async function createTransactionToasts<
+  T extends MinimalTxResponse
+>(
   callback: (id: string) => Promise<T>,
   {
     // create default ID if it does not exist yet
@@ -133,6 +137,7 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
     onSuccessMessage,
     onError,
     onErrorMessage,
+    quiet = false,
   }: {
     id?: string;
     onLoadingMessage?: string;
@@ -140,6 +145,8 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
     onSuccessMessage?: string;
     onError?: (error: Error, res?: T) => ToastOptions | undefined | void;
     onErrorMessage?: string;
+    // optionally silence errors here
+    quiet?: boolean;
   } = {}
 ): Promise<T | undefined> {
   // start toasts
@@ -178,6 +185,11 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
       checkMsgRejectedToast(err, toastOptions) ||
         checkMsgOutOfGasToast(err, toastOptions) ||
         checkMsgErrorToast(err, toastOptions);
+
+      // only throw the error if it will be handled
+      if (!quiet) {
+        throw new TransactionToastError('Transaction Error', { cause: err });
+      }
       // return undefined as a nicer type than void
       return undefined;
     });
