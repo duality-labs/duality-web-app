@@ -20,7 +20,6 @@ import {
 } from '../../lib/web3/wallets/keplr';
 
 import {
-  TransactionToastError,
   createErrorToast,
   createTransactionToasts,
 } from '../../components/Notifications/common';
@@ -186,10 +185,8 @@ export default function useBridge(
         setValidating(false);
       } catch (maybeError: unknown) {
         const err = coerceError(maybeError);
-        // handle unhandled errors
-        if (!(err instanceof TransactionToastError)) {
-          createErrorToast(err);
-        }
+        // handle unhandled errors (handled errors won't be processed twice)
+        createErrorToast(err);
         // set error state
         setValidating(false);
         setData(undefined);

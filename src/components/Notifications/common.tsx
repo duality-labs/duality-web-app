@@ -129,6 +129,10 @@ export function createErrorToast(
   err: Error,
   { id, title, description, descriptionLink }: ToastOptions = {}
 ) {
+  // skip if this error has already been used to show a transaction toast
+  if (err instanceof TransactionToastError) {
+    return;
+  }
   // eslint-disable-next-line no-console
   console.error(err);
   return toast.error(title || 'Error', {
