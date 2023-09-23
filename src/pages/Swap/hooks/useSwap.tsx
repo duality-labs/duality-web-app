@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
-import { OfflineSigner, parseCoins } from '@cosmjs/proto-signing';
+import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 import invariant from 'invariant';
 
 import { dualitylabs } from '@duality-labs/dualityjs';
-import { MsgPlaceLimitOrder } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
+import {
+  MsgPlaceLimitOrder,
+  MsgPlaceLimitOrderResponse,
+} from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
 
 import { formatAmount } from '../../../lib/utils/number';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
@@ -14,10 +17,6 @@ import { createTransactionToasts } from '../../../components/Notifications/commo
 
 import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import {
-  mapEventAttributes,
-  CoinReceivedEvent,
-} from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
 import { coerceError } from '../../../lib/utils/error';
 
@@ -40,7 +39,7 @@ async function sendSwap(
     receiver,
   }: MsgPlaceLimitOrder,
   gasEstimate: number
-): Promise<DeliverTxResponse | undefined> {
+): Promise<MsgPlaceLimitOrderResponse> {
   if (!amountIn || !orderType || !tokenIn || !tokenOut || !creator) {
     throw new Error('Invalid Input');
   }
@@ -77,35 +76,30 @@ async function sendSwap(
       }
     );
   };
+
+  function getMsgPlaceLimitOrderResponse(
+    response: DeliverTxResponse | undefined
+  ): MsgPlaceLimitOrderResponse {
+    const value = response?.msgResponses.at(0)?.value;
+    if (value) {
+      return dualitylabs.duality.dex.MsgPlaceLimitOrderResponse.decode(value);
+    } else {
+      throw new Error('Could not read PlaceLimitOrder response');
+    }
+  }
+
   const response = await createTransactionToasts(request, {
     onLoadingMessage: 'Executing your trade',
     // find the received amount to put in the success toast
     onSuccess(res) {
-      const amountOut = res.events.reduce<BigNumber>((result, event) => {
-        if (
-          event.type === 'coin_received' &&
-          event.attributes.find(
-            ({ key, value }) => key === 'receiver' && value === address
-          )
-        ) {
-          // collect into more usable format for parsing
-          const { attributes } = mapEventAttributes<CoinReceivedEvent>(event);
-          // parse coin string for matching tokens
-          const coin = parseCoins(attributes.amount)[0];
-          if (coin?.denom === tokenOut) {
-            return result.plus(coin?.amount || 0);
-          }
-        }
-        return result;
-      }, new BigNumber(0));
-
-      return amountOut
+      const { takerCoinOut } = getMsgPlaceLimitOrderResponse(res);
+      return !isNaN(Number(takerCoinOut.amount)) && takerCoinOut.denom
         ? {
             description: `Received ${formatAmount(
               getAmountInDenom(
                 tokenOutToken,
-                amountOut?.toFixed() || '0',
-                tokenOutToken.address,
+                takerCoinOut.amount,
+                takerCoinOut.denom,
                 tokenOutToken.display
               ) || '0'
             )} ${tokenOutToken.symbol} (click for more details)`,
@@ -113,7 +107,8 @@ async function sendSwap(
         : undefined;
     },
   });
-  return response;
+  // get expected response type
+  return getMsgPlaceLimitOrderResponse(response);
 }
 
 /**
