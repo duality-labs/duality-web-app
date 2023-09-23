@@ -6,6 +6,7 @@ import {
 
 import { toast } from './Notifications';
 import { DeliverTxResponse } from '@cosmjs/stargate';
+import { coerceError } from '../../lib/utils/error';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -151,8 +152,10 @@ export async function createTransactionToasts<
 ): Promise<T | undefined> {
   // start toasts
   createLoadingToast({ id, description: onLoadingMessage });
-  // start transaction and wiat for response
-  return callback(id)
+  // start transaction and wait for response
+  // ensure entire callback can be caught with the catch handlers
+  return Promise.resolve()
+    .then(() => callback(id))
     .then(function (res): T {
       if (!res) {
         throw new Error('No response');
@@ -173,7 +176,9 @@ export async function createTransactionToasts<
       // listen for the transaction on the receiving chain
       return res;
     })
-    .catch(function (err: Error & { response?: T }) {
+    .catch(function (maybeError: unknown) {
+      // ensure thrown types are errors
+      const err: Error & { response?: T } = coerceError(maybeError);
       const toastOptions: ToastOptions = {
         id,
         description: onErrorMessage,
