@@ -2,17 +2,15 @@ import { useCallback, useState } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import { OfflineSigner, parseCoins } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
+import invariant from 'invariant';
+
+import { dualitylabs } from '@duality-labs/dualityjs';
+import { MsgPlaceLimitOrder } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
 
 import { formatAmount } from '../../../lib/utils/number';
 import { useWeb3 } from '../../../lib/web3/useWeb3';
 
-import {
-  checkMsgErrorToast,
-  checkMsgOutOfGasToast,
-  checkMsgRejectedToast,
-  checkMsgSuccessToast,
-  createLoadingToast,
-} from '../../../components/Notifications/common';
+import { createTransactionToasts } from '../../../components/Notifications/common';
 
 import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
@@ -21,11 +19,7 @@ import {
   CoinReceivedEvent,
 } from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
-import { dualitylabs } from '@duality-labs/dualityjs';
-import {
-  MsgPlaceLimitOrderResponse,
-  MsgPlaceLimitOrder,
-} from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
+import { coerceError } from '../../../lib/utils/error';
 
 async function sendSwap(
   {
@@ -46,7 +40,7 @@ async function sendSwap(
     receiver,
   }: MsgPlaceLimitOrder,
   gasEstimate: number
-): Promise<void> {
+): Promise<DeliverTxResponse | undefined> {
   if (!amountIn || !orderType || !tokenIn || !tokenOut || !creator) {
     throw new Error('Invalid Input');
   }
@@ -61,14 +55,9 @@ async function sendSwap(
   }
 
   // send message to chain
-
-  const id = `${Date.now()}.${Math.random}`;
-
-  createLoadingToast({ id, description: 'Executing your trade' });
-
   const client = await rpcClient(wallet);
-  return client
-    .signAndBroadcast(
+  const request = () => {
+    return client.signAndBroadcast(
       address,
       [
         dualitylabs.duality.dex.MessageComposer.withTypeUrl.placeLimitOrder({
@@ -86,13 +75,12 @@ async function sendSwap(
         gas: gasEstimate.toFixed(0),
         amount: [{ amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' }],
       }
-    )
-    .then(function (res): void {
-      if (!res) {
-        throw new Error('No response');
-      }
-      const { code } = res;
-
+    );
+  };
+  const response = await createTransactionToasts(request, {
+    onLoadingMessage: 'Executing your trade',
+    // find the received amount to put in the success toast
+    onSuccess(res) {
       const amountOut = res.events.reduce<BigNumber>((result, event) => {
         if (
           event.type === 'coin_received' &&
@@ -111,35 +99,21 @@ async function sendSwap(
         return result;
       }, new BigNumber(0));
 
-      const description = amountOut
-        ? `Received ${formatAmount(
-            getAmountInDenom(
-              tokenOutToken,
-              amountOut?.toFixed() || '0',
-              tokenOutToken.address,
-              tokenOutToken.display
-            ) || '0'
-          )} ${tokenOutToken.symbol} (click for more details)`
+      return amountOut
+        ? {
+            description: `Received ${formatAmount(
+              getAmountInDenom(
+                tokenOutToken,
+                amountOut?.toFixed() || '0',
+                tokenOutToken.address,
+                tokenOutToken.display
+              ) || '0'
+            )} ${tokenOutToken.symbol} (click for more details)`,
+          }
         : undefined;
-
-      if (!checkMsgSuccessToast(res, { id, description })) {
-        const error: Error & { response?: DeliverTxResponse } = new Error(
-          `Tx error: ${code}`
-        );
-        error.response = res;
-        throw error;
-      }
-    })
-    .catch(function (err: Error & { response?: DeliverTxResponse }) {
-      // catch transaction errors
-      // chain toast checks so only one toast may be shown
-      checkMsgRejectedToast(err, { id }) ||
-        checkMsgOutOfGasToast(err, { id }) ||
-        checkMsgErrorToast(err, { id });
-
-      // rethrow error
-      throw err;
-    });
+    },
+  });
+  return response;
 }
 
 /**
@@ -149,64 +123,45 @@ async function sendSwap(
  */
 export function useSwap(): [
   {
-    data?: MsgPlaceLimitOrderResponse;
+    data?: DeliverTxResponse;
     isValidating: boolean;
     error?: string;
   },
   (request: MsgPlaceLimitOrder, gasEstimate: number) => void
 ] {
-  const [data, setData] = useState<MsgPlaceLimitOrderResponse>();
+  const [data, setData] = useState<DeliverTxResponse>();
   const [validating, setValidating] = useState(false);
   const [error, setError] = useState<string>();
   const web3 = useWeb3();
 
   const sendRequest = useCallback(
-    (request: MsgPlaceLimitOrder, gasEstimate: number) => {
-      if (!request) return onError('Missing Tokens and value');
-      if (!web3) return onError('Missing Provider');
-      const {
-        orderType,
-        tickIndex,
-        amountIn,
-        maxAmountOut,
-        tokenIn,
-        tokenOut,
-        creator,
-        receiver,
-      } = request;
-      if (
-        !orderType ||
-        !tickIndex ||
-        !amountIn ||
-        !maxAmountOut ||
-        !tokenIn ||
-        !tokenOut ||
-        !creator ||
-        !receiver
-      )
-        return onError('Invalid input');
-      setValidating(true);
-      setError(undefined);
-      setData(undefined);
+    async (request: MsgPlaceLimitOrder, gasEstimate: number) => {
+      try {
+        // asset sync conditions
+        invariant(request, 'Missing Tokens and value');
+        invariant(web3, 'Missing Provider');
+        invariant(web3.wallet && web3.address, 'Client has no wallet');
 
-      const { wallet, address } = web3;
-      if (!wallet || !address) return onError('Client has no wallet');
+        // set loading state
+        setValidating(true);
+        setError(undefined);
+        setData(undefined);
 
-      sendSwap({ wallet, address }, request, gasEstimate)
-        .then(function () {
-          setValidating(false);
-        })
-        .catch(function (err: Error) {
-          onError(err?.message ?? 'Unknown error');
-          // pass error to console for developer
-          // eslint-disable-next-line no-console
-          console.error(err);
-        });
+        // send request
+        const { wallet, address } = web3;
+        await sendSwap({ wallet, address }, request, gasEstimate);
 
-      function onError(message?: string) {
+        // exit loading state
+        setValidating(true);
+        setError(undefined);
+        setData(undefined);
+      } catch (maybeError: unknown) {
+        const err = coerceError(maybeError);
+
+        // set error state
         setValidating(false);
         setData(undefined);
-        setError(message);
+        setError(err.message);
       }
     },
     [web3]
