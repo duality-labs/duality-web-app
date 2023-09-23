@@ -279,8 +279,15 @@ export default function useBridge(
           throw new Error('Could not confirm destination chain transaction');
         }
 
+        const value = responseTo.msgResponses.at(0)?.value;
+        if (!value) {
+          throw new Error('Could not decode destination chain transaction');
+        }
+
         // exit loading state
         setValidating(false);
+        setData(ibc.applications.transfer.v1.MsgTransferResponse.decode(value));
+        setError(undefined);
       } catch (maybeError: unknown) {
         const err = coerceError(maybeError);
         // handle unhandled errors (handled errors won't be processed twice)
