@@ -125,6 +125,22 @@ export function checkMsgErrorToast(
   });
 }
 
+export function createErrorToast(
+  err: Error,
+  { id, title, description, descriptionLink }: ToastOptions = {}
+) {
+  // eslint-disable-next-line no-console
+  console.error(err);
+  return toast.error(title || 'Error', {
+    id,
+    description: description || 'Unknown error',
+    descriptionLink: descriptionLink,
+    icon: <FontAwesomeIcon icon={faCircleXmark} />,
+    duration: 7 * seconds,
+    dismissable: true,
+  });
+}
+
 export class TransactionToastError extends Error {}
 
 export async function createTransactionToasts<T extends MinimalTxResponse>(
