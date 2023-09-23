@@ -123,9 +123,7 @@ export function checkMsgErrorToast(
   });
 }
 
-export async function handleStandardToastTransaction<
-  T extends MinimalTxResponse
->(
+export async function createTransactionToasts<T extends MinimalTxResponse>(
   callback: (id: string) => Promise<T>,
   {
     // create default ID if it does not exist yet
