@@ -21,10 +21,9 @@ import {
 
 import {
   TransactionToastError,
+  createErrorToast,
   createTransactionToasts,
 } from '../../components/Notifications/common';
-import { toast } from '../../components/Notifications';
-import { seconds } from '../../lib/utils/time';
 import { coerceError } from '../../lib/utils/error';
 
 async function bridgeToken(
@@ -194,15 +193,8 @@ export default function useBridge(
         }
         // add error to state
         onError(err);
-        // pass error to console for developer
-        // eslint-disable-next-line no-console
-        console.error(err);
-        // add transient error message to user
-        toast.error('Transaction Failed', {
-          description: err.message,
-          duration: 7 * seconds,
-          dismissable: true,
-        });
+        // handle unhandled errors
+        createErrorToast(err);
         // pass error through
         throw err;
       }
