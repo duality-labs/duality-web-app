@@ -178,23 +178,20 @@ export default function useBridge(
         // process intended request
         // make the bridge transaction to the from chain (with correct signing)
         const client = await ibcClient(offlineSigner, rpcClientEndpointFrom);
-        await createTransactionToasts(
-          () => bridgeToken(request, client, account.address),
-          { onError }
+        await createTransactionToasts(() =>
+          bridgeToken(request, client, account.address)
         );
 
         // exit loading state
         setValidating(false);
       } catch (maybeError: unknown) {
         const err = coerceError(maybeError);
-        // pass through already handled toast error
-        if (err instanceof TransactionToastError) {
-          throw err;
+        // handle unhandled errors
+        if (!(err instanceof TransactionToastError)) {
+          createErrorToast(err);
         }
         // add error to state
         onError(err);
-        // handle unhandled errors
-        createErrorToast(err);
         // pass error through
         throw err;
       }
