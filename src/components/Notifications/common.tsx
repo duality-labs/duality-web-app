@@ -7,6 +7,7 @@ import {
 import { toast } from './Notifications';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import { coerceError } from '../../lib/utils/error';
+import { seconds } from '../../lib/utils/time';
 
 const { REACT_APP__REST_API } = process.env;
 
@@ -56,7 +57,7 @@ export function checkMsgSuccessToast(
         descriptionLink ||
         `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`,
       icon: <FontAwesomeIcon icon={faCheckCircle} />,
-      duration: 15e3,
+      duration: 15 * seconds,
       dismissable: true,
     });
   }
@@ -72,7 +73,7 @@ export function checkMsgRejectedToast(
       description: description || 'You declined the transaction',
       descriptionLink,
       icon: <FontAwesomeIcon icon={faCircleXmark} />,
-      duration: 5e3,
+      duration: 5 * seconds,
       dismissable: true,
     });
   }
