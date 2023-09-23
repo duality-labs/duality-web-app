@@ -133,7 +133,6 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
     onSuccessMessage,
     onError,
     onErrorMessage,
-    rethrowError = false,
   }: {
     id?: string;
     onLoadingMessage?: string;
@@ -141,7 +140,6 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
     onSuccessMessage?: string;
     onError?: (error: Error, res?: T) => ToastOptions | undefined | void;
     onErrorMessage?: string;
-    rethrowError?: boolean;
   } = {}
 ): Promise<T | undefined> {
   // start toasts
@@ -180,11 +178,7 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
       checkMsgRejectedToast(err, toastOptions) ||
         checkMsgOutOfGasToast(err, toastOptions) ||
         checkMsgErrorToast(err, toastOptions);
-
-      // only throw the error if it will be handled
-      if (rethrowError) {
-        throw err;
-      }
+      // return undefined as a nicer type than void
       return undefined;
     });
 }
