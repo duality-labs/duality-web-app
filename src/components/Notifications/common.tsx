@@ -129,16 +129,18 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
     // create default ID if it does not exist yet
     id = `${Date.now()}.${Math.random}`,
     onLoadingMessage,
+    onSuccess,
     onSuccessMessage,
+    onError,
     onErrorMessage,
     rethrowError = false,
   }: {
     id?: string;
     onLoadingMessage?: string;
-    onSuccessMessage?: string | ((res: T) => ToastOptions | undefined);
-    onErrorMessage?:
-      | string
-      | ((res: T | undefined) => ToastOptions | undefined);
+    onSuccess?: (res: T) => ToastOptions | undefined | void;
+    onSuccessMessage?: string;
+    onError?: (error: Error, res?: T) => ToastOptions | undefined | void;
+    onErrorMessage?: string;
     rethrowError?: boolean;
   } = {}
 ): Promise<T | undefined> {
@@ -151,10 +153,12 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
         throw new Error('No response');
       }
       const { code } = res;
-      const toastOptions: ToastOptions =
-        typeof onSuccessMessage === 'string'
-          ? { id, description: onSuccessMessage }
-          : { id, ...onSuccessMessage?.(res) };
+      const toastOptions: ToastOptions = {
+        id,
+        description: onSuccessMessage,
+        // add optional toast props from optional hook
+        ...onSuccess?.(res),
+      };
       // check and show a toast if successful
       if (!checkMsgSuccessToast(res, toastOptions)) {
         const error: Error & { response?: T } = new Error(`Tx error: ${code}`);
@@ -165,10 +169,12 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
       return res;
     })
     .catch(function (err: Error & { response?: T }) {
-      const toastOptions: ToastOptions =
-        typeof onErrorMessage === 'string'
-          ? { id, description: onErrorMessage }
-          : { id, ...onErrorMessage?.(err.response) };
+      const toastOptions: ToastOptions = {
+        id,
+        description: onErrorMessage,
+        // add optional toast props from optional hook
+        ...onError?.(err, err.response),
+      };
       // catch transaction errors
       // chain toast checks so only one toast may be shown
       checkMsgRejectedToast(err, toastOptions) ||
