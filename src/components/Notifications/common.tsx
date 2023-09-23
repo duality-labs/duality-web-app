@@ -126,9 +126,7 @@ export function checkMsgErrorToast(
 
 export class TransactionToastError extends Error {}
 
-export async function createTransactionToasts<
-  T extends MinimalTxResponse
->(
+export async function createTransactionToasts<T extends MinimalTxResponse>(
   callback: (id: string) => Promise<T>,
   {
     // create default ID if it does not exist yet
