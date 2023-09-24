@@ -282,25 +282,33 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
   }, [tokenList, ibcOpenTransfersInfo]);
 }
 
-export function getTokenBySymbol(symbol: string | undefined) {
+const ibcDenomRegex = /^ibc\/[0-9A-Fa-f]+$/;
+function matchTokenBySymbol(symbol: string | undefined) {
+  if (!symbol) {
+    return () => false;
+  }
+  // match denom aliases for IBC tokens
+  if (symbol.match(ibcDenomRegex)) {
+    return (tokenWithIbcInfo: Token) => {
+      return tokenWithIbcInfo.denom_units?.find((unit) =>
+        unit.aliases?.find((alias) => alias === symbol)
+      );
+    };
+  }
+  // match regular symbols for local tokens
+  else {
+    return (token: Token) => {
+      return token.symbol === symbol;
+    };
+  }
+}
+export function useTokenBySymbol(symbol: string | undefined) {
+  const allTokens = useTokens();
+  const tokensWithIbcInfo = useTokensWithIbcInfo(allTokens);
   if (!symbol) {
     return undefined;
   }
-  if (isTestnet) {
-    tokenListCache['dualityTokens'] =
-      tokenListCache['dualityTokens'] || getTokens(dualityTokensFilter);
-    return tokenListCache['dualityTokens'].find(
-      (token) => token.symbol === symbol
-    );
-  } else {
-    // todo: in mainnet find the best way to differentiate between symbols
-    // maybe use addresses instead or as a fallback to be more specific?
-    tokenListCache['mainnetTokens'] =
-      tokenListCache['mainnetTokens'] || getTokens(mainnetTokens);
-    return tokenListCache['mainnetTokens'].find(
-      (token) => token.symbol === symbol
-    );
-  }
+  return tokensWithIbcInfo.find(matchTokenBySymbol(symbol));
 }
 
 function defaultSort(a: Token, b: Token) {

@@ -12,7 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import useTokens, { getTokenBySymbol } from '../../lib/web3/hooks/useTokens';
+import useTokens, { useTokenBySymbol } from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import NumberInput, {
   useNumericInputState,
@@ -56,15 +56,8 @@ function Swap() {
   // change tokens to match pathname
   const tokenList = useTokens();
   const match = useMatch('/swap/:tokenA/:tokenB');
-
-  const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
-    if (match) {
-      const tokenA = getTokenBySymbol(match.params['tokenA']);
-      const tokenB = getTokenBySymbol(match.params['tokenB']);
-      return [tokenA, tokenB];
-    }
-    return [];
-  }, [match]);
+  const tokenA = useTokenBySymbol(match?.params['tokenA']);
+  const tokenB = useTokenBySymbol(match?.params['tokenB']);
 
   // don't change tokens directly:
   // change the path name which will in turn update the tokens selected

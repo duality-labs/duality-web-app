@@ -1,5 +1,5 @@
 import { Link, useMatch, useNavigate } from 'react-router-dom';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import {
   Actions,
   MyPoolsTableCard,
@@ -15,7 +15,7 @@ import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowAltCircleRight } from '@fortawesome/free-solid-svg-icons';
-import { getTokenBySymbol } from '../../lib/web3/hooks/useTokens';
+import { useTokenBySymbol } from '../../lib/web3/hooks/useTokens';
 import MyPoolStakesTableCard from '../../components/cards/PoolStakesTableCard';
 
 export default function MyLiquidity() {
@@ -126,15 +126,8 @@ function Tables() {
   );
 
   const matchTokens = useMatch('/portfolio/pools/:tokenA/:tokenB');
-
-  const [tokenA, tokenB] = useMemo<[Token?, Token?]>(() => {
-    if (matchTokens) {
-      const tokenA = getTokenBySymbol(matchTokens.params['tokenA']);
-      const tokenB = getTokenBySymbol(matchTokens.params['tokenB']);
-      return [tokenA, tokenB];
-    }
-    return [];
-  }, [matchTokens]);
+  const tokenA = useTokenBySymbol(matchTokens?.params['tokenA']);
+  const tokenB = useTokenBySymbol(matchTokens?.params['tokenB']);
 
   const goToPositionManagementPage = useCallback(
     ([token0, token1]: [Token, Token]) => {
