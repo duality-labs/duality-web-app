@@ -109,6 +109,7 @@ export function checkMsgErrorToast(
 ) {
   const { transactionHash } = err?.response || {};
   const transactionLink = `${REACT_APP__REST_API}/cosmos/tx/v1beta1/txs/${transactionHash}`;
+  // pass error to console for developers
   // eslint-disable-next-line no-console
   console.error(
     err,
@@ -133,6 +134,7 @@ export function createErrorToast(
   if (err instanceof TransactionToastError) {
     return;
   }
+  // pass error to console for developers
   // eslint-disable-next-line no-console
   console.error(err);
   return toast.error(title || 'Error', {
