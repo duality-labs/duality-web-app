@@ -8,20 +8,21 @@ import {
   QueryAllTickLiquidityResponse,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
 import { TickLiquidity } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tick_liquidity';
+import { PoolReserves } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/pool_reserves';
 
-import { addressableTokenMap as tokenMap } from '../../../lib/web3/hooks/useTokens';
 import BigNumber from 'bignumber.js';
 
 import { useRpcPromise } from '../rpcQueryClient';
+import { useToken } from '../../../lib/web3/hooks/useTokens';
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
 import { usePairUpdateHeight } from '../indexerProvider';
 
-import { TokenAddress } from '../utils/tokens';
+import { Token, TokenAddress } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
 
 type QueryAllTickLiquidityState = {
-  data: Array<TickInfo> | undefined;
+  data: Array<PoolReserves> | undefined;
   isValidating: boolean;
   error: Error | null;
 };
@@ -31,7 +32,7 @@ type QueryAllTickLiquidityState = {
 //   - time to receive first page for ~5,000 list is ~100ms
 const defaultPaginationLimit = Long.fromNumber(1000);
 
-export default function useTickLiquidity({
+function useTickLiquidity({
   query: queryConfig,
   queryClient: queryClientConfig,
 }: {
@@ -108,7 +109,7 @@ export default function useTickLiquidity({
   }, [data, fetchNextPage, hasNextPage]);
 
   // place pages of data into the same list
-  const lastLiquidity = useRef<TickInfo[]>();
+  const lastLiquidity = useRef<PoolReserves[]>();
   const tickSideLiquidity = useMemo(() => {
     // when refetching, the library sets `data` to `undefined`
     // I think this is unintuitive. we should only "empty" the data here
@@ -124,7 +125,7 @@ export default function useTickLiquidity({
               (tickLiquidity) => tickLiquidity.poolReserves ?? []
             ) ?? []
         );
-        lastLiquidity.current = poolReserves.flatMap(transformPoolReserves);
+        lastLiquidity.current = poolReserves;
       }
     }
     return lastLiquidity.current;
@@ -133,12 +134,14 @@ export default function useTickLiquidity({
 }
 
 function transformPoolReserves(
+  token0: Token,
+  token1: Token,
   poolReserves: TickLiquidity['poolReserves']
 ): TickInfo | [] {
   // process only ticks with pool reserves
   if (poolReserves?.reserves) {
     const {
-      pairID: { token0 = '', token1 = '' } = {},
+      pairID,
       tokenIn,
       tickIndex: tickIndex1To0String,
       fee: feeString,
@@ -149,11 +152,8 @@ function transformPoolReserves(
     if (
       !isNaN(tickIndex1To0) &&
       tokenIn &&
-      token0 &&
-      token1 &&
-      tokenMap[tokenIn] &&
-      tokenMap[token0] &&
-      tokenMap[token1] &&
+      token0.address === pairID?.token0 &&
+      token1.address === pairID?.token1 &&
       !isNaN(Number(reservesString)) &&
       !isNaN(Number(fee)) &&
       fee !== undefined
@@ -163,20 +163,20 @@ function transformPoolReserves(
       const bigTickIndex1To0 = new BigNumber(tickIndex1To0 || 0);
       const bigPrice1To0 = tickIndexToPrice(bigTickIndex1To0);
 
-      if (tokenIn === token0) {
+      if (tokenIn === token0.address) {
         return {
-          token0: tokenMap[token0],
-          token1: tokenMap[token1],
+          token0,
+          token1,
           tickIndex1To0: bigTickIndex1To0,
           price1To0: bigPrice1To0,
           fee: new BigNumber(fee),
           reserve0: new BigNumber(reservesString || 0),
           reserve1: new BigNumber(0),
         };
-      } else if (tokenIn === token1) {
+      } else if (tokenIn === token1.address) {
         return {
-          token0: tokenMap[token0],
-          token1: tokenMap[token1],
+          token0,
+          token1,
           tickIndex1To0: bigTickIndex1To0,
           price1To0: bigPrice1To0,
           fee: new BigNumber(fee),
@@ -200,18 +200,43 @@ export function useTokenPairTickLiquidity([tokenA, tokenB]: [
   isValidating: boolean;
   error: unknown;
 } {
-  const [token0, token1] = useOrderedTokenPair([tokenA, tokenB]) || [];
-  const pairID = token0 && token1 ? getPairID(token0, token1) : null;
+  const [token0Address, token1Address] =
+    useOrderedTokenPair([tokenA, tokenB]) || [];
+  const pairID =
+    token0Address && token1Address
+      ? getPairID(token0Address, token1Address)
+      : null;
   const token0TicksState = useTickLiquidity({
     query:
-      pairID && token0 ? { pairID, tokenIn: token0, pagination: {} } : null,
+      pairID && token0Address
+        ? { pairID, tokenIn: token0Address, pagination: {} }
+        : null,
   });
   const token1TicksState = useTickLiquidity({
     query:
-      pairID && token1 ? { pairID, tokenIn: token1, pagination: {} } : null,
+      pairID && token1Address
+        ? { pairID, tokenIn: token1Address, pagination: {} }
+        : null,
   });
+
+  // add token context into pool reserves
+  const token0 = useToken(token0Address);
+  const token1 = useToken(token1Address);
+  const data = useMemo<[TickInfo[] | undefined, TickInfo[] | undefined]>(() => {
+    return token0 && token1
+      ? [
+          token0TicksState.data?.flatMap((reserves) =>
+            transformPoolReserves(token0, token1, reserves)
+          ),
+          token1TicksState.data?.flatMap((reserves) =>
+            transformPoolReserves(token0, token1, reserves)
+          ),
+        ]
+      : [undefined, undefined];
+  }, [token0, token0TicksState.data, token1, token1TicksState.data]);
+
   return {
-    data: [token0TicksState.data, token1TicksState.data],
+    data,
     isValidating:
       token0TicksState.isValidating && token1TicksState.isValidating,
     error: token0TicksState.error || token1TicksState.error,
