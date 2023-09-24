@@ -179,9 +179,7 @@ export function MyNewPositionTableCard({
         data ? (
           <>
             <span className="text-muted">Total Assets</span>
-            <strong>
-              {valueTotal ? formatCurrency(valueTotal.toFixed()) : '...'}
-            </strong>
+            <strong>{valueTotal ? formatCurrency(valueTotal) : '...'}</strong>
           </>
         ) : null
       }
@@ -429,9 +427,7 @@ export function MyEditedPositionTableCard({
       header={
         <>
           <span className="text-muted">Total Assets</span>
-          <strong>
-            {valueTotal ? formatCurrency(valueTotal.toFixed()) : '...'}
-          </strong>
+          <strong>{valueTotal ? formatCurrency(valueTotal) : '...'}</strong>
         </>
       }
       data={data}

@@ -39,7 +39,7 @@ export function getDenomAmount(
     .sort((a, b) => a.exponent - b.exponent)[0].denom,
   {
     fractionalDigits,
-    // so digits forcibly past fractional digits
+    // set minimum significant digits forcibly past fractional digits
     significantDigits,
   }: {
     fractionalDigits?: number;

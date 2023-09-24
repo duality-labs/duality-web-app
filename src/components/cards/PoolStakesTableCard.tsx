@@ -502,7 +502,7 @@ function StakingRow({
             minimumFractionDigits: 2,
           })}
         </td>
-        <td>{formatCurrency(tokenAValue.plus(tokenBValue).toFixed(2))}</td>
+        <td>{formatCurrency(tokenAValue.plus(tokenBValue).toNumber())}</td>
         <td className="min-width">
           {tokenAValue.isGreaterThan(0) && (
             <ValueBar

@@ -698,7 +698,10 @@ export default function PoolManagement({
         // convert to the display units of the original token
         const displayAmountB = getDisplayDenomAmount(tokenA, amountB);
         // then transpose this complementary value to the new units
-        setInputValueB(roundToBaseUnit(tokenB, displayAmountB || 0) ?? '');
+        setInputValueB(
+          roundToBaseUnit(tokenB, new BigNumber(displayAmountB || 0).sd(6)) ??
+            ''
+        );
       } else if (lastUsedInput === 'B') {
         const amountA = shapeReservesArray.reduce(
           (acc, [, reserveA]) => acc.plus(reserveA),
@@ -707,7 +710,10 @@ export default function PoolManagement({
         // convert to the display units of the original token
         const displayAmountA = getDisplayDenomAmount(tokenB, amountA);
         // then transpose this complementary value to the new units
-        setInputValueA(roundToBaseUnit(tokenA, displayAmountA || 0) ?? '');
+        setInputValueA(
+          roundToBaseUnit(tokenA, new BigNumber(displayAmountA || 0).sd(6)) ??
+            ''
+        );
       }
       // if either side is set then calculate the new user ticks
       if (lastUsedInput) {
@@ -1326,7 +1332,9 @@ export default function PoolManagement({
                       <div className="row gap-2">
                         <strong>Current Price:</strong>
                         <div className="chart-highlight">
-                          {currentPriceFromTicks?.toFixed(5) ?? '-'}
+                          {currentPriceFromTicks !== undefined
+                            ? formatAmount(currentPriceFromTicks.toFixed() || 0)
+                            : '-'}
                         </div>
                         {tokenA && tokenB && (
                           <div>

@@ -9,7 +9,7 @@ import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import useTokens from '../../lib/web3/hooks/useTokens';
 
-import { formatAmount } from '../../lib/utils/number';
+import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
@@ -215,7 +215,7 @@ function PairRow({
           )}
         </td>
         {/* TVL col */}
-        <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
+        <td>{formatCurrency(value0.plus(value1).toNumber())}</td>
         {/* Volume (7 days) col */}
         <td>-</td>
         {/* Volatility (7 days) col */}
@@ -413,7 +413,7 @@ function PositionRow({
         <td>
           <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
-        <td>{value0 && value1 && <>${value0.plus(value1).toFixed(2)}</>}</td>
+        <td>{formatCurrency(value0.plus(value1).toNumber())}</td>
         <td>
           <span className="token-compositions">
             {formatAmount(getDisplayDenomAmount(token0, total0) || 0)}
