@@ -5,7 +5,7 @@ import { formatAmount } from '../../../lib/utils/number';
 
 import BigNumber from 'bignumber.js';
 import { getAmountInDenom } from '../../../lib/web3/utils/tokens';
-import { addressableTokenMap } from '../../../lib/web3/hooks/useTokens';
+import { useToken } from '../../../lib/web3/hooks/useTokens';
 
 import { useTokenPairTickLiquidity } from '../../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../../lib/web3/hooks/useTokenPairs';
@@ -62,6 +62,9 @@ export function useRouterResult(pairRequest: PairRequest): {
     data: [token0Ticks, token1Ticks],
   } = useTokenPairTickLiquidity([token0, token1]);
 
+  const tokenA = useToken(pairRequest.tokenA);
+  const tokenB = useToken(pairRequest.tokenB);
+
   useEffect(() => {
     if (
       !pairRequest.tokenA ||
@@ -83,11 +86,14 @@ export function useRouterResult(pairRequest: PairRequest): {
       setError(new Error('One value must be falsy'));
       return;
     }
+    if (!tokenA || !tokenB) {
+      setData(undefined);
+      setError(new Error('Tokens not found: token list not ready'));
+      return;
+    }
     setIsValidating(true);
     setData(undefined);
     setError(undefined);
-    const tokenA = addressableTokenMap[pairRequest.tokenA];
-    const tokenB = addressableTokenMap[pairRequest.tokenB];
     // convert token request down into base denom
     const alteredValue = getAmountInDenom(
       tokenA,
@@ -140,12 +146,14 @@ export function useRouterResult(pairRequest: PairRequest): {
         ...result,
         amountIn: new BigNumber(pairRequest.valueA || 0),
         amountOut: new BigNumber(
-          getAmountInDenom(
-            tokenB,
-            result.amountOut.decimalPlaces(0, BigNumber.ROUND_DOWN),
-            tokenB.address,
-            tokenB.display
-          ) || 0
+          (tokenB &&
+            getAmountInDenom(
+              tokenB,
+              result.amountOut.decimalPlaces(0, BigNumber.ROUND_DOWN),
+              tokenB.address,
+              tokenB.display
+            )) ||
+            0
         ),
       };
     }
@@ -159,6 +167,8 @@ export function useRouterResult(pairRequest: PairRequest): {
     token1,
     token0Ticks,
     token1Ticks,
+    tokenA,
+    tokenB,
   ]);
 
   return { data, isValidating, error };
