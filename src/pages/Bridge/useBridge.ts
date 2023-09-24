@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import { ibc } from '@duality-labs/dualityjs';
-import { DeliverTxResponse, SigningStargateClient } from '@cosmjs/stargate';
+import { SigningStargateClient } from '@cosmjs/stargate';
 import { Chain } from '@chain-registry/types';
 import {
   MsgTransfer,
@@ -20,14 +20,10 @@ import {
 } from '../../lib/web3/wallets/keplr';
 
 import {
-  checkMsgErrorToast,
-  checkMsgOutOfGasToast,
-  checkMsgRejectedToast,
-  checkMsgSuccessToast,
-  createLoadingToast,
+  createErrorToast,
+  createTransactionToasts,
 } from '../../components/Notifications/common';
-import { toast } from '../../components/Notifications';
-import { seconds } from '../../lib/utils/time';
+import { coerceError } from '../../lib/utils/error';
 
 async function bridgeToken(
   msg: MsgTransfer,
@@ -63,13 +59,8 @@ async function bridgeToken(
   //       so passing different chains interchangably works fine
   // future: update when there is a transition to a newer version
 
-  // send message to chain
-  const id = `${Date.now()}.${Math.random}`;
-
-  createLoadingToast({ id, description: 'Executing your trade' });
-
-  return client
-    .signAndBroadcast(
+  return createTransactionToasts(() =>
+    client.signAndBroadcast(
       signingAddress,
       [ibc.applications.transfer.v1.MessageComposer.withTypeUrl.transfer(msg)],
       {
@@ -77,29 +68,7 @@ async function bridgeToken(
         amount: [],
       }
     )
-    .then(function (res): void {
-      if (!res) {
-        throw new Error('No response');
-      }
-      const { code } = res;
-      if (!checkMsgSuccessToast(res, { id })) {
-        const error: Error & { response?: DeliverTxResponse } = new Error(
-          `Tx error: ${code}`
-        );
-        error.response = res;
-        throw error;
-      }
-    })
-    .catch(function (err: Error & { response?: DeliverTxResponse }) {
-      // catch transaction errors
-      // chain toast checks so only one toast may be shown
-      checkMsgRejectedToast(err, { id }) ||
-        checkMsgOutOfGasToast(err, { id }) ||
-        checkMsgErrorToast(err, { id });
-
-      // don't rethrow error, we should error message toasts for previous errors
-      // throw err;
-    });
+  );
 }
 
 export default function useBridge(
@@ -127,16 +96,23 @@ export default function useBridge(
 
   const sendRequest = useCallback(
     async (request: MsgTransfer) => {
-      // check things around the request (not the request payload)
-      if (!request) return onError('Missing Token and Amount');
-      if (!chainFrom) return onError('No Source Chain connected');
-      if (!chainTo) return onError('No Destination Chain connected');
-
-      setValidating(true);
-      setError(undefined);
-      setData(undefined);
-
       try {
+        // check synchronous things around the request (not the request payload)
+        if (!request) {
+          throw new Error('Missing Token and Amount');
+        }
+        if (!chainFrom) {
+          throw new Error('No Source Chain connected');
+        }
+        if (!chainTo) {
+          throw new Error('No Destination Chain connected');
+        }
+
+        // set loading state
+        setValidating(true);
+        setError(undefined);
+        setData(undefined);
+
         // check async things around the request (not the request payload)
         const offlineSigner = await getKeplrWallet(chainFrom.chain_id);
         if (!offlineSigner) {
@@ -199,35 +175,25 @@ export default function useBridge(
         if (!rpcClientEndpointFrom) {
           throw new Error('No source chain transaction endpoint found');
         }
+
+        // process intended request
         // make the bridge transaction to the from chain (with correct signing)
         const client = await ibcClient(offlineSigner, rpcClientEndpointFrom);
         await bridgeToken(request, client, account.address);
+        // exit loading state
         setValidating(false);
-      } catch (err: unknown) {
-        // add error to state
-        // add custom error message for known error codes
-        if ((err as { response?: { code?: number } })?.response?.code === 11) {
-          onError();
-          throw err;
-        }
-        onError((err as Error)?.message ?? 'Unknown error');
-        // pass error to console for developer
-        // eslint-disable-next-line no-console
-        console.error(err);
-        // pass error through
-        throw err;
-      }
+      } catch (maybeError: unknown) {
+        const err = coerceError(maybeError);
+        // handle unhandled errors (handled errors won't be processed twice)
+        createErrorToast(err);
 
-      function onError(message?: string) {
+        // set error state
         setValidating(false);
         setData(undefined);
-        setError(message);
-        // add transient error message to user
-        toast.error('Transaction Failed', {
-          description: message,
-          duration: 7 * seconds,
-          dismissable: true,
-        });
+        setError(err.message);
+
+        // pass error through
+        throw err;
       }
     },
     [
