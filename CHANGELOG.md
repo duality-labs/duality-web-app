@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.13](https://github.com/duality-labs/duality-web-app/compare/v0.3.12...v0.3.13) (2023-09-24)
+
+
+### Features
+
+* abstract consistent transaction notification toasts ([#434](https://github.com/duality-labs/duality-web-app/issues/434)) ([0de982d](https://github.com/duality-labs/duality-web-app/commit/0de982d6676edc32e0a3a4769799a5c9928e0942))
+
 ## [0.3.12](https://github.com/duality-labs/duality-web-app/compare/v0.3.11...v0.3.12) (2023-09-21)
 
 
