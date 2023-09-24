@@ -17,19 +17,44 @@ export function mapEventAttributes<T = ChainEvent>(event: Event): T {
   } as unknown as T;
 }
 
+// note: some versions of CosmosSDK have base64 encoded keys and values,
+//       the values were base64 encoded in Tendermint versions before v0.35.0
+// the switch to plain strings is documented here:
+// - Tendermint v0.35.0
+//   - code: https://github.com/tendermint/tendermint/blob/v0.35.0/proto/tendermint/abci/types.proto#L282-L286
+//   - docs: https://github.com/tendermint/tendermint/blob/v0.35.0/CHANGELOG.md?plain=1#L120
+// - CometBFT v0.37.0
+//   - code: https://github.com/cometbft/cometbft/blob/v0.37.0/proto/tendermint/abci/types.proto#L346-L350
+//   - docs: https://github.com/cometbft/cometbft/blob/v0.37.0/CHANGELOG.md?plain=1#L44-L46
+export function decodeEvent(event: Event): Event {
+  return {
+    ...event,
+    // change base64 encoded objects into plain string values
+    attributes: event.attributes.map(({ key, value, ...rest }) => {
+      return {
+        ...rest,
+        key: Buffer.from(`${key}`, 'base64').toString(),
+        value: Buffer.from(`${value}`, 'base64').toString(),
+      };
+    }),
+  };
+}
+
 export type DexMessageAction =
   | 'PlaceLimitOrder'
   | 'Deposit'
   | 'Withdraw'
   | 'TickUpdate';
 
-export type ChainEvent = CosmosEvent | DexEvent;
+export type ChainEvent = CosmosEvent | IBCEvent | DexEvent;
 
 export type CosmosEvent =
   | TxFeeEvent
   | CoinTransferEvent
   | CoinSpentEvent
   | CoinReceivedEvent;
+
+export type IBCEvent = IBCSendPacketEvent | IBCReceivePacketEvent;
 
 export type DexEvent =
   | DexPlaceLimitOrderEvent
@@ -137,6 +162,31 @@ export interface TxFeeEvent {
     fee: CoinString;
     fee_payer: WalletAddress;
   };
+}
+
+interface IBCPacketEventAttributes {
+  packet_data: string; // JSON string representation of the packet
+  packet_data_hex: string;
+  packet_timeout_height: string;
+  packet_timeout_timestamp: string;
+  packet_sequence: string;
+  packet_src_port: string;
+  packet_src_channel: string;
+  packet_dst_port: string;
+  packet_dst_channel: string;
+  packet_channel_ordering: string;
+  packet_connection: string;
+  connection_id: string;
+}
+
+export interface IBCSendPacketEvent {
+  type: 'send_packet';
+  attributes: IBCPacketEventAttributes;
+}
+
+export interface IBCReceivePacketEvent {
+  type: 'recv_packet';
+  attributes: IBCPacketEventAttributes;
 }
 
 export function getSpentTokenAmount(

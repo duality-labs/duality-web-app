@@ -1,14 +1,21 @@
 import { useCallback, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import { ibc } from '@duality-labs/dualityjs';
-import { SigningStargateClient } from '@cosmjs/stargate';
+import { DeliverTxResponse, SigningStargateClient } from '@cosmjs/stargate';
 import { Chain } from '@chain-registry/types';
 import {
   MsgTransfer,
   MsgTransferResponse,
 } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/tx';
+import { GetTxsEventRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/tx/v1beta1/service';
 
 import { ibcClient } from '../../lib/web3/rpcMsgClient';
+import {
+  IBCReceivePacketEvent,
+  IBCSendPacketEvent,
+  decodeEvent,
+  mapEventAttributes,
+} from '../../lib/web3/utils/events';
 import {
   useIbcOpenTransfers,
   useRemoteChainRestEndpoint,
@@ -24,11 +31,12 @@ import {
   createTransactionToasts,
 } from '../../components/Notifications/common';
 import { coerceError } from '../../lib/utils/error';
+import { seconds } from '../../lib/utils/time';
 
 async function bridgeToken(
-  msg: MsgTransfer,
   client: SigningStargateClient,
-  signingAddress: string
+  signingAddress: string,
+  msg: MsgTransfer
 ) {
   const {
     sender,
@@ -59,15 +67,13 @@ async function bridgeToken(
   //       so passing different chains interchangably works fine
   // future: update when there is a transition to a newer version
 
-  return createTransactionToasts(() =>
-    client.signAndBroadcast(
-      signingAddress,
-      [ibc.applications.transfer.v1.MessageComposer.withTypeUrl.transfer(msg)],
-      {
-        gas: '100000',
-        amount: [],
-      }
-    )
+  return await client.signAndBroadcast(
+    signingAddress,
+    [ibc.applications.transfer.v1.MessageComposer.withTypeUrl.transfer(msg)],
+    {
+      gas: '100000',
+      amount: [],
+    }
   );
 }
 
@@ -179,7 +185,100 @@ export default function useBridge(
         // process intended request
         // make the bridge transaction to the from chain (with correct signing)
         const client = await ibcClient(offlineSigner, rpcClientEndpointFrom);
-        await bridgeToken(request, client, account.address);
+        const responseFrom = await createTransactionToasts(
+          () => bridgeToken(client, account.address, request),
+          {
+            onLoadingMessage: 'Source Chain Transaction Started...',
+            onSuccessMessage: 'Source Chain Transaction Successful!',
+            onErrorMessage: 'Source Chain Transaction Failed',
+            restEndpoint: restEndpointFrom ?? undefined,
+          }
+        );
+        if (!responseFrom) {
+          throw new Error('Could not confirm source chain transaction');
+        }
+        // confirm the transaction is received on the receiving chain
+        const events = [
+          // collect events with mapped attributes
+          ...responseFrom.events.map(mapEventAttributes),
+          // collect events with potential mapped base64 attributes
+          // we do this because we haven't checked whether the source chain
+          // is pre-v0.35.0 Tendermint or not so the atrributes may be encoded
+          ...responseFrom.events.map(decodeEvent).map(mapEventAttributes),
+        ];
+        const sendEvent =
+          events &&
+          events.find((event): event is IBCSendPacketEvent => {
+            return event.type === 'send_packet';
+          });
+        const packetDataHex = sendEvent?.attributes.packet_data_hex;
+        if (!packetDataHex) {
+          throw new Error('Could not confirm sending chain transaction data');
+        }
+
+        const responseTo = await createTransactionToasts(
+          async () => {
+            // poll for expected IBC packet, but timeout after a period of time
+            const timeout = Date.now() + 30 * seconds;
+            while (Date.now() <= timeout) {
+              const res = await lcdClientTo.cosmos.tx.v1beta1.getTxsEvent({
+                events: `recv_packet.packet_data_hex='${packetDataHex}'`,
+                limit: '10',
+                // note: hacking request payload type because it is very wrong
+              } as unknown as GetTxsEventRequest);
+              const txResult = res?.tx_responses?.find((txResponse) => {
+                const events = [
+                  // collect events with mapped attributes
+                  ...txResponse.events.map(mapEventAttributes),
+                  // collect events with potential mapped base64 attributes
+                  // we do this because we haven't checked whether the source chain
+                  // is pre-v0.35.0 Tendermint or not so the atrributes may be encoded
+                  ...txResponse.events.map(decodeEvent).map(mapEventAttributes),
+                ];
+                const receiveEvent = events.find(
+                  (event): event is IBCReceivePacketEvent => {
+                    // return the receive packet type that has the correctly decoded keys
+                    return (
+                      event.type === 'recv_packet' &&
+                      !!event.attributes.packet_data_hex
+                    );
+                  }
+                );
+                // compare the timeout timestamp as it is the most unique identifier
+                return (
+                  receiveEvent?.attributes.packet_timeout_timestamp ===
+                  sendEvent?.attributes.packet_timeout_timestamp
+                );
+              });
+              if (txResult) {
+                // translate response into format for toasts
+                return {
+                  code: txResult.code,
+                  transactionHash: txResult.txhash,
+                  rawLog: txResult.raw_log,
+                  gasUsed: txResult.gas_used.toNumber(),
+                  gasWanted: txResult.gas_wanted.toNumber(),
+                } as DeliverTxResponse;
+              }
+              // wait a little while
+              await new Promise((resolve) => setTimeout(resolve, 3 * seconds));
+            }
+            // while timeout reached
+            throw new Error(
+              'Timed out waiting for receiving chain confirmation'
+            );
+          },
+          {
+            onLoadingMessage: 'Destination Chain Transaction Started...',
+            onSuccessMessage: 'Destination Chain Transaction Successful!',
+            onErrorMessage: 'Destination Chain Transaction Failed',
+            restEndpoint: restEndpointTo ?? undefined,
+          }
+        );
+        if (!responseTo) {
+          throw new Error('Could not confirm destination chain transaction');
+        }
+
         // exit loading state
         setValidating(false);
       } catch (maybeError: unknown) {
