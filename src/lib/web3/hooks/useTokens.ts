@@ -26,10 +26,6 @@ const {
 
 const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 
-interface AddressableToken extends Token {
-  address: string; // only accept routeable tokens in lists
-}
-
 type TokenList = Array<Token>;
 
 // create an alternate chain to identify dev assets on the Duality chain
@@ -150,15 +146,6 @@ function getTokens(condition: (chain: Chain) => boolean) {
       : result;
   }, []);
 }
-
-export const addressableTokenMap = getTokens(Boolean).reduce<{
-  [tickAddress: string]: AddressableToken;
-}>((result, asset) => {
-  if (asset.address) {
-    result[asset.address] = asset as AddressableToken;
-  }
-  return result;
-}, {});
 
 const tokenListCache: {
   [key: string]: TokenList;
