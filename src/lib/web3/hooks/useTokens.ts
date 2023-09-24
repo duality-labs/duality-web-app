@@ -25,10 +25,6 @@ const {
 
 const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 
-interface AddressableToken extends Token {
-  address: string; // only accept routeable tokens in lists
-}
-
 type TokenList = Array<Token>;
 
 const dualityMainToken: Token = {
@@ -178,15 +174,6 @@ function getTokens(condition: (chain: Chain) => boolean) {
       .concat(testnetTokens || [])
   );
 }
-
-export const addressableTokenMap = getTokens(Boolean).reduce<{
-  [tickAddress: string]: AddressableToken;
-}>((result, asset) => {
-  if (asset.address) {
-    result[asset.address] = asset as AddressableToken;
-  }
-  return result;
-}, {});
 
 const tokenListCache: {
   [key: string]: TokenList;
