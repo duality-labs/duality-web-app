@@ -17,6 +17,7 @@ import {
   formatPrice,
   formatMaximumSignificantDecimals,
   roundToSignificantDigits,
+  formatPercentage,
 } from '../../lib/utils/number';
 import { Token } from '../../lib/web3/utils/tokens';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
@@ -1200,18 +1201,16 @@ function TicksArea({
 
   const formatPercentageValue = useCallback(
     (tickIndex: number, currentPriceIndex: number) => {
-      return formatAmount(
-        formatMaximumSignificantDecimals(
-          tickIndexToPrice(new BigNumber(tickIndex))
-            .multipliedBy(100)
-            .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
-            .minus(100),
-          2
-        ),
+      return formatPercentage(
+        tickIndexToPrice(new BigNumber(tickIndex))
+          .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
+          .minus(1)
+          .toFixed(),
         {
           signDisplay: 'always',
           useGrouping: true,
-        }
+        },
+        2
       );
     },
     []
@@ -1287,7 +1286,8 @@ function TicksArea({
             {
               minimumSignificantDigits: significantDecimals,
               useGrouping: true,
-            }
+            },
+            0
           )}
           &nbsp;
         </text>
@@ -1301,13 +1301,13 @@ function TicksArea({
             textAnchor="end"
           >
             &nbsp;&nbsp;&nbsp;
-            {`${formatPercentageValue(
+            {formatPercentageValue(
               // show percentage to this limit index line (inclusive)
               rangeMinValueIndex <= Math.round(currentPriceIndex)
                 ? rangeMinValueIndex - 1
                 : rangeMinValueIndex,
               currentPriceIndex
-            )}%`}
+            )}
             &nbsp;&nbsp;&nbsp;
           </text>
         )}
@@ -1413,13 +1413,13 @@ function TicksArea({
             textAnchor="start"
           >
             &nbsp;&nbsp;&nbsp;
-            {`${formatPercentageValue(
+            {formatPercentageValue(
               // show percentage to this limit index line (inclusive)
               rangeMaxValueIndex >= Math.round(currentPriceIndex)
                 ? rangeMaxValueIndex + 1
                 : rangeMaxValueIndex,
               currentPriceIndex
-            )}%`}
+            )}
             &nbsp;&nbsp;&nbsp;
           </text>
         )}
