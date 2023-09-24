@@ -7,8 +7,15 @@ import {
   MsgTransfer,
   MsgTransferResponse,
 } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/tx';
+import { GetTxsEventRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/tx/v1beta1/service';
 
 import { ibcClient } from '../../lib/web3/rpcMsgClient';
+import {
+  IBCReceivePacketEvent,
+  IBCSendPacketEvent,
+  decodeEvent,
+  mapEventAttributes,
+} from '../../lib/web3/utils/events';
 import {
   useIbcOpenTransfers,
   useRemoteChainRestEndpoint,
@@ -20,19 +27,16 @@ import {
 } from '../../lib/web3/wallets/keplr';
 
 import {
-  checkMsgErrorToast,
-  checkMsgOutOfGasToast,
-  checkMsgRejectedToast,
-  checkMsgSuccessToast,
-  createLoadingToast,
+  createErrorToast,
+  createTransactionToasts,
 } from '../../components/Notifications/common';
-import { toast } from '../../components/Notifications';
+import { coerceError } from '../../lib/utils/error';
 import { seconds } from '../../lib/utils/time';
 
 async function bridgeToken(
-  msg: MsgTransfer,
   client: SigningStargateClient,
-  signingAddress: string
+  signingAddress: string,
+  msg: MsgTransfer
 ) {
   const {
     sender,
@@ -63,43 +67,14 @@ async function bridgeToken(
   //       so passing different chains interchangably works fine
   // future: update when there is a transition to a newer version
 
-  // send message to chain
-  const id = `${Date.now()}.${Math.random}`;
-
-  createLoadingToast({ id, description: 'Executing your trade' });
-
-  return client
-    .signAndBroadcast(
-      signingAddress,
-      [ibc.applications.transfer.v1.MessageComposer.withTypeUrl.transfer(msg)],
-      {
-        gas: '100000',
-        amount: [],
-      }
-    )
-    .then(function (res): void {
-      if (!res) {
-        throw new Error('No response');
-      }
-      const { code } = res;
-      if (!checkMsgSuccessToast(res, { id })) {
-        const error: Error & { response?: DeliverTxResponse } = new Error(
-          `Tx error: ${code}`
-        );
-        error.response = res;
-        throw error;
-      }
-    })
-    .catch(function (err: Error & { response?: DeliverTxResponse }) {
-      // catch transaction errors
-      // chain toast checks so only one toast may be shown
-      checkMsgRejectedToast(err, { id }) ||
-        checkMsgOutOfGasToast(err, { id }) ||
-        checkMsgErrorToast(err, { id });
-
-      // don't rethrow error, we should error message toasts for previous errors
-      // throw err;
-    });
+  return await client.signAndBroadcast(
+    signingAddress,
+    [ibc.applications.transfer.v1.MessageComposer.withTypeUrl.transfer(msg)],
+    {
+      gas: '100000',
+      amount: [],
+    }
+  );
 }
 
 export default function useBridge(
@@ -127,16 +102,23 @@ export default function useBridge(
 
   const sendRequest = useCallback(
     async (request: MsgTransfer) => {
-      // check things around the request (not the request payload)
-      if (!request) return onError('Missing Token and Amount');
-      if (!chainFrom) return onError('No Source Chain connected');
-      if (!chainTo) return onError('No Destination Chain connected');
-
-      setValidating(true);
-      setError(undefined);
-      setData(undefined);
-
       try {
+        // check synchronous things around the request (not the request payload)
+        if (!request) {
+          throw new Error('Missing Token and Amount');
+        }
+        if (!chainFrom) {
+          throw new Error('No Source Chain connected');
+        }
+        if (!chainTo) {
+          throw new Error('No Destination Chain connected');
+        }
+
+        // set loading state
+        setValidating(true);
+        setError(undefined);
+        setData(undefined);
+
         // check async things around the request (not the request payload)
         const offlineSigner = await getKeplrWallet(chainFrom.chain_id);
         if (!offlineSigner) {
@@ -199,35 +181,118 @@ export default function useBridge(
         if (!rpcClientEndpointFrom) {
           throw new Error('No source chain transaction endpoint found');
         }
+
+        // process intended request
         // make the bridge transaction to the from chain (with correct signing)
         const client = await ibcClient(offlineSigner, rpcClientEndpointFrom);
-        await bridgeToken(request, client, account.address);
-        setValidating(false);
-      } catch (err: unknown) {
-        // add error to state
-        // add custom error message for known error codes
-        if ((err as { response?: { code?: number } })?.response?.code === 11) {
-          onError();
-          throw err;
+        const responseFrom = await createTransactionToasts(
+          () => bridgeToken(client, account.address, request),
+          {
+            onLoadingMessage: 'Source Chain Transaction Started...',
+            onSuccessMessage: 'Source Chain Transaction Successful!',
+            onErrorMessage: 'Source Chain Transaction Failed',
+            restEndpoint: restEndpointFrom ?? undefined,
+          }
+        );
+        if (!responseFrom) {
+          throw new Error('Could not confirm source chain transaction');
         }
-        onError((err as Error)?.message ?? 'Unknown error');
-        // pass error to console for developer
-        // eslint-disable-next-line no-console
-        console.error(err);
-        // pass error through
-        throw err;
-      }
+        // confirm the transaction is received on the receiving chain
+        const events = [
+          // collect events with mapped attributes
+          ...responseFrom.events.map(mapEventAttributes),
+          // collect events with potential mapped base64 attributes
+          // we do this because we haven't checked whether the source chain
+          // is pre-v0.35.0 Tendermint or not so the atrributes may be encoded
+          ...responseFrom.events.map(decodeEvent).map(mapEventAttributes),
+        ];
+        const sendEvent =
+          events &&
+          events.find((event): event is IBCSendPacketEvent => {
+            return event.type === 'send_packet';
+          });
+        const packetDataHex = sendEvent?.attributes.packet_data_hex;
+        if (!packetDataHex) {
+          throw new Error('Could not confirm sending chain transaction data');
+        }
 
-      function onError(message?: string) {
+        const responseTo = await createTransactionToasts(
+          async () => {
+            // poll for expected IBC packet, but timeout after a period of time
+            const timeout = Date.now() + 30 * seconds;
+            while (Date.now() <= timeout) {
+              const res = await lcdClientTo.cosmos.tx.v1beta1.getTxsEvent({
+                events: `recv_packet.packet_data_hex='${packetDataHex}'`,
+                limit: '10',
+                // note: hacking request payload type because it is very wrong
+              } as unknown as GetTxsEventRequest);
+              const txResult = res?.tx_responses?.find((txResponse) => {
+                const events = [
+                  // collect events with mapped attributes
+                  ...txResponse.events.map(mapEventAttributes),
+                  // collect events with potential mapped base64 attributes
+                  // we do this because we haven't checked whether the source chain
+                  // is pre-v0.35.0 Tendermint or not so the atrributes may be encoded
+                  ...txResponse.events.map(decodeEvent).map(mapEventAttributes),
+                ];
+                const receiveEvent = events.find(
+                  (event): event is IBCReceivePacketEvent => {
+                    // return the receive packet type that has the correctly decoded keys
+                    return (
+                      event.type === 'recv_packet' &&
+                      !!event.attributes.packet_data_hex
+                    );
+                  }
+                );
+                // compare the timeout timestamp as it is the most unique identifier
+                return (
+                  receiveEvent?.attributes.packet_timeout_timestamp ===
+                  sendEvent?.attributes.packet_timeout_timestamp
+                );
+              });
+              if (txResult) {
+                // translate response into format for toasts
+                return {
+                  code: txResult.code,
+                  transactionHash: txResult.txhash,
+                  rawLog: txResult.raw_log,
+                  gasUsed: txResult.gas_used.toNumber(),
+                  gasWanted: txResult.gas_wanted.toNumber(),
+                } as DeliverTxResponse;
+              }
+              // wait a little while
+              await new Promise((resolve) => setTimeout(resolve, 3 * seconds));
+            }
+            // while timeout reached
+            throw new Error(
+              'Timed out waiting for receiving chain confirmation'
+            );
+          },
+          {
+            onLoadingMessage: 'Destination Chain Transaction Started...',
+            onSuccessMessage: 'Destination Chain Transaction Successful!',
+            onErrorMessage: 'Destination Chain Transaction Failed',
+            restEndpoint: restEndpointTo ?? undefined,
+          }
+        );
+        if (!responseTo) {
+          throw new Error('Could not confirm destination chain transaction');
+        }
+
+        // exit loading state
+        setValidating(false);
+      } catch (maybeError: unknown) {
+        const err = coerceError(maybeError);
+        // handle unhandled errors (handled errors won't be processed twice)
+        createErrorToast(err);
+
+        // set error state
         setValidating(false);
         setData(undefined);
-        setError(message);
-        // add transient error message to user
-        toast.error('Transaction Failed', {
-          description: message,
-          duration: 7 * seconds,
-          dismissable: true,
-        });
+        setError(err.message);
+
+        // pass error through
+        throw err;
       }
     },
     [
