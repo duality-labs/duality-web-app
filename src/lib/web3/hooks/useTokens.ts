@@ -236,6 +236,16 @@ export function useIbcTokens(sortFunction = defaultSort) {
   }, [sortFunction, ibcOpenTransfersInfo]);
 }
 
+export function useToken(
+  tokenAddress: string | undefined,
+  matchFunction = matchTokenByAddress
+): Token | undefined {
+  const tokens = useTokens();
+  return useMemo(() => {
+    return tokenAddress ? tokens.find(matchFunction(tokenAddress)) : undefined;
+  }, [matchFunction, tokenAddress, tokens]);
+}
+
 // connected IBC info into given token list
 export function useTokensWithIbcInfo(tokenList: Token[]) {
   const ibcOpenTransfersInfo = useIbcOpenTransfers();
