@@ -180,17 +180,18 @@ export default function useBridge(
         // make the bridge transaction to the from chain (with correct signing)
         const client = await ibcClient(offlineSigner, rpcClientEndpointFrom);
         await bridgeToken(request, client, account.address);
-
         // exit loading state
         setValidating(false);
       } catch (maybeError: unknown) {
         const err = coerceError(maybeError);
         // handle unhandled errors (handled errors won't be processed twice)
         createErrorToast(err);
+
         // set error state
         setValidating(false);
         setData(undefined);
         setError(err.message);
+
         // pass error through
         throw err;
       }
