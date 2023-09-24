@@ -59,13 +59,15 @@ async function bridgeToken(
   //       so passing different chains interchangably works fine
   // future: update when there is a transition to a newer version
 
-  return client.signAndBroadcast(
-    signingAddress,
-    [ibc.applications.transfer.v1.MessageComposer.withTypeUrl.transfer(msg)],
-    {
-      gas: '100000',
-      amount: [],
-    }
+  return createTransactionToasts(() =>
+    client.signAndBroadcast(
+      signingAddress,
+      [ibc.applications.transfer.v1.MessageComposer.withTypeUrl.transfer(msg)],
+      {
+        gas: '100000',
+        amount: [],
+      }
+    )
   );
 }
 
@@ -177,9 +179,7 @@ export default function useBridge(
         // process intended request
         // make the bridge transaction to the from chain (with correct signing)
         const client = await ibcClient(offlineSigner, rpcClientEndpointFrom);
-        await createTransactionToasts(() =>
-          bridgeToken(request, client, account.address)
-        );
+        await bridgeToken(request, client, account.address);
 
         // exit loading state
         setValidating(false);
