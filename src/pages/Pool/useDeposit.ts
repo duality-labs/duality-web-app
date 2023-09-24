@@ -13,6 +13,7 @@ import {
   checkMsgRejectedToast,
   checkMsgSuccessToast,
   createLoadingToast,
+  createTransactionToasts,
 } from '../../components/Notifications/common';
 import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import {
@@ -80,10 +81,14 @@ export function useDeposit([tokenA, tokenB]: [
     ) {
       try {
         // check for correct inputs
-        if (!web3.address || !web3.wallet) {
+        if (!web3) {
+          throw new Error('Provider not found');
+        }
+        const { address, wallet } = web3;
+        // check for correct inputs
+        if (!address || !wallet) {
           throw new Error('Wallet not connected');
         }
-        const web3Address = web3.address;
         if (!tokenA || !tokenB) {
           throw new Error('Tokens not set');
         }
@@ -242,15 +247,15 @@ export function useDeposit([tokenA, tokenB]: [
 
         // wrap transaction logic
         try {
-          const client = await rpcClient(web3.wallet);
-          const res = await client.signAndBroadcast(
-            web3.address,
+          const client = await rpcClient(wallet);
+          const request = () => client.signAndBroadcast(
+            address,
             [
               dualitylabs.duality.dex.MessageComposer.withTypeUrl.deposit({
-                creator: web3Address,
+                creator: address,
                 tokenA: tokenA.address,
                 tokenB: tokenB.address,
-                receiver: web3Address,
+                receiver: address,
                 // note: tick indexes must be in the form of "A to B"
                 // as that is what is noted by the key sent to the API
                 // but that seems to be we have defined as "B to A"
@@ -280,6 +285,118 @@ export function useDeposit([tokenA, tokenB]: [
             }
           );
 
+          const res = await createTransactionToasts(request, {
+            onLoadingMessage: 'Adding Liquidity...',
+            onSuccess(res) {
+                    
+              // calculate received tokens
+              const { receivedTokenA, receivedTokenB } = res.events.reduce<{
+                receivedTokenA: BigNumber;
+                receivedTokenB: BigNumber;
+              }>(
+                (acc, event) => {
+                  // find and process each dex Deposit message created by this user
+                  if (
+                    event.type === 'message' &&
+                    event.attributes.find(
+                      ({ key, value }) => key === 'module' && value === 'dex'
+                    ) &&
+                    event.attributes.find(
+                      ({ key, value }) => key === 'action' && value === 'Deposit'
+                    ) &&
+                    event.attributes.find(
+                      ({ key, value }) =>
+                        key === 'Creator' && value === address
+                    )
+                  ) {
+                    // collect into more usable format for parsing
+                    const { attributes } =
+                      mapEventAttributes<DexDepositEvent>(event);
+
+                    // accumulate share values
+                    // ('NewReserves' is the difference between previous and next share value)
+                    const shareIncrease0 = new BigNumber(
+                      attributes['Reserves0Deposited']
+                    );
+                    const shareIncrease1 = new BigNumber(
+                      attributes['Reserves1Deposited']
+                    );
+                    if (
+                      tokenA.address === attributes['Token0'] &&
+                      tokenB.address === attributes['Token1']
+                    ) {
+                      acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease0);
+                      acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease1);
+                    } else if (
+                      tokenA.address === attributes['Token1'] &&
+                      tokenB.address === attributes['Token0']
+                    ) {
+                      acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease1);
+                      acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease0);
+                    }
+                  }
+                  return acc;
+                },
+                {
+                  receivedTokenA: new BigNumber(0),
+                  receivedTokenB: new BigNumber(0),
+                }
+              );
+
+              // check no shares exception
+              if (receivedTokenA.isZero() && receivedTokenB.isZero()) {
+                const error: Error & { response?: DeliverTxResponse } = new Error(
+                  'No new shares received'
+                );
+                error.response = res;
+                checkMsgErrorToast(error, {
+                  id,
+                  title: 'No new shares received',
+                  description:
+                    'The transaction was successful but no new shares were created',
+                });
+              }
+              // set success
+              else if (
+                receivedTokenA.isGreaterThanOrEqualTo(0) &&
+                receivedTokenB.isGreaterThanOrEqualTo(0)
+              ) {
+                // update toast
+                checkMsgSuccessToast(res, {
+                  id,
+                  description: `Deposited ${[
+                    receivedTokenA.isGreaterThan(0) &&
+                      `${formatAmount(
+                        getAmountInDenom(
+                          tokenA,
+                          receivedTokenA,
+                          tokenA.address,
+                          tokenA.display
+                        ) || 0
+                      )} ${tokenA.symbol}`,
+                    receivedTokenB.isGreaterThan(0) &&
+                      `${formatAmount(
+                        getAmountInDenom(
+                          tokenB,
+                          receivedTokenB,
+                          tokenB.address,
+                          tokenB.display
+                        ) || 0
+                      )} ${tokenB.symbol}`,
+                  ]
+                    .filter(Boolean)
+                    .join(' and ')} (click for more details)`,
+                });
+                // set new information
+                setData({
+                  gasUsed: gasUsed.toString(),
+                  receivedTokenA: receivedTokenA.toFixed(),
+                  receivedTokenB: receivedTokenB.toFixed(),
+                });
+              }
+            },
+          });
+
           // check for response
           if (!res) {
             throw new Error('No response');
@@ -295,111 +412,6 @@ export function useDeposit([tokenA, tokenB]: [
             throw error;
           }
 
-          // calculate received tokens
-          const { receivedTokenA, receivedTokenB } = res.events.reduce<{
-            receivedTokenA: BigNumber;
-            receivedTokenB: BigNumber;
-          }>(
-            (acc, event) => {
-              // find and process each dex Deposit message created by this user
-              if (
-                event.type === 'message' &&
-                event.attributes.find(
-                  ({ key, value }) => key === 'module' && value === 'dex'
-                ) &&
-                event.attributes.find(
-                  ({ key, value }) => key === 'action' && value === 'Deposit'
-                ) &&
-                event.attributes.find(
-                  ({ key, value }) =>
-                    key === 'Creator' && value === web3.address
-                )
-              ) {
-                // collect into more usable format for parsing
-                const { attributes } =
-                  mapEventAttributes<DexDepositEvent>(event);
-
-                // accumulate share values
-                // ('NewReserves' is the difference between previous and next share value)
-                const shareIncrease0 = new BigNumber(
-                  attributes['Reserves0Deposited']
-                );
-                const shareIncrease1 = new BigNumber(
-                  attributes['Reserves1Deposited']
-                );
-                if (
-                  tokenA.address === attributes['Token0'] &&
-                  tokenB.address === attributes['Token1']
-                ) {
-                  acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease0);
-                  acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease1);
-                } else if (
-                  tokenA.address === attributes['Token1'] &&
-                  tokenB.address === attributes['Token0']
-                ) {
-                  acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease1);
-                  acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease0);
-                }
-              }
-              return acc;
-            },
-            {
-              receivedTokenA: new BigNumber(0),
-              receivedTokenB: new BigNumber(0),
-            }
-          );
-
-          // check no shares exception
-          if (receivedTokenA.isZero() && receivedTokenB.isZero()) {
-            const error: Error & { response?: DeliverTxResponse } = new Error(
-              'No new shares received'
-            );
-            error.response = res;
-            checkMsgErrorToast(error, {
-              id,
-              title: 'No new shares received',
-              description:
-                'The transaction was successful but no new shares were created',
-            });
-          }
-          // set success
-          else if (
-            receivedTokenA.isGreaterThanOrEqualTo(0) &&
-            receivedTokenB.isGreaterThanOrEqualTo(0)
-          ) {
-            // update toast
-            checkMsgSuccessToast(res, {
-              id,
-              description: `Deposited ${[
-                receivedTokenA.isGreaterThan(0) &&
-                  `${formatAmount(
-                    getAmountInDenom(
-                      tokenA,
-                      receivedTokenA,
-                      tokenA.address,
-                      tokenA.display
-                    ) || 0
-                  )} ${tokenA.symbol}`,
-                receivedTokenB.isGreaterThan(0) &&
-                  `${formatAmount(
-                    getAmountInDenom(
-                      tokenB,
-                      receivedTokenB,
-                      tokenB.address,
-                      tokenB.display
-                    ) || 0
-                  )} ${tokenB.symbol}`,
-              ]
-                .filter(Boolean)
-                .join(' and ')} (click for more details)`,
-            });
-            // set new information
-            setData({
-              gasUsed: gasUsed.toString(),
-              receivedTokenA: receivedTokenA.toFixed(),
-              receivedTokenB: receivedTokenB.toFixed(),
-            });
-          }
           // catch other exceptions
           else {
             const error: Error & { response?: DeliverTxResponse } = new Error(
@@ -434,7 +446,7 @@ export function useDeposit([tokenA, tokenB]: [
         console.error(e);
       }
     },
-    [web3.address, web3.wallet, token0, token1, token0Ticks, token1Ticks]
+    [address, wallet, token0, token1, token0Ticks, token1Ticks]
   );
 
   return [{ data, isValidating, error }, sendDepositRequest];
