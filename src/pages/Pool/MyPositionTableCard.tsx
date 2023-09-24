@@ -3,7 +3,10 @@ import BigNumber from 'bignumber.js';
 import { Tick } from '../../components/LiquiditySelector/LiquiditySelector';
 
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
-import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import {
+  tickIndexToDisplayPrice,
+  tickIndexToPrice,
+} from '../../lib/web3/utils/ticks';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 
 import { EditedPosition } from '../MyLiquidity/useEditLiquidity';
@@ -62,10 +65,12 @@ export function MyNewPositionTableCard({
   tokenA,
   tokenB,
   userTicks,
+  edgePriceIndex,
 }: {
   tokenA?: Token;
   tokenB?: Token;
   userTicks: Tick[];
+  edgePriceIndex: number | undefined;
 }) {
   const [reserveATotal, reserveBTotal] = useMemo(() => {
     return [
@@ -82,6 +87,19 @@ export function MyNewPositionTableCard({
 
   const { data: priceA } = useSimplePrice(tokenA);
   const { data: priceB } = useSimplePrice(tokenB);
+
+  const edgpePriceBToA = useMemo(() => {
+    return tickIndexToPrice(new BigNumber(edgePriceIndex || 0));
+  }, [edgePriceIndex]);
+
+  const maxPoolEquivalentReservesA = useMemo(() => {
+    return userTicks.reduce((acc, { reserveA, reserveB }) => {
+      const equivalentReservesA = reserveA?.toNumber() || 0;
+      const equivalentReservesB =
+        reserveB?.multipliedBy(edgpePriceBToA).toNumber() || 0;
+      return Math.max(acc, equivalentReservesA, equivalentReservesB);
+    }, 0);
+  }, [userTicks, edgpePriceBToA]);
 
   const poolValues = useMemo(() => {
     return userTicks.map<[number, number]>(
@@ -101,13 +119,6 @@ export function MyNewPositionTableCard({
     );
   }, [userTicks, priceA, priceB]);
 
-  const maxPoolValue = useMemo(() => {
-    return poolValues.reduce(
-      (acc, [valueA, valueB]) => Math.max(acc, valueA, valueB),
-      0
-    );
-  }, [poolValues]);
-
   const valueTotal = useMemo(() => {
     return poolValues.reduce(
       (acc, [valueA, valueB]) => acc + valueA + valueB,
@@ -117,15 +128,24 @@ export function MyNewPositionTableCard({
 
   const data =
     tokenA && tokenB && !(reserveATotal.isZero() && reserveBTotal.isZero())
-      ? userTicks.map(({ priceBToA, reserveA, reserveB }, index) => {
+      ? userTicks.map((tick, index) => {
+          const { reserveA, reserveB, tickIndexBToA, tokenA, tokenB } = tick;
           const [valueA, valueB] = poolValues[index];
+          const displayPriceBToA = tickIndexToDisplayPrice(
+            new BigNumber(tickIndexBToA),
+            tokenA,
+            tokenB
+          );
           // note: fix these restrictions, they are a bit off
           return (
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
               <td>
-                {priceBToA ? formatAmount(priceBToA.toNumber(), {}, 0) : '-'}
+                {displayPriceBToA
+                  ? formatAmount(displayPriceBToA.toNumber(), {}, 0)
+                  : '-'}
               </td>
+              {/* this shows the USD equivalent value of the token reserves */}
               <td>
                 {reserveA.isGreaterThan(0) && (
                   <div>{formatCurrency(valueA)}</div>
@@ -134,19 +154,24 @@ export function MyNewPositionTableCard({
                   <div>{formatCurrency(valueB)}</div>
                 )}
               </td>
+              {/*
+               * this shows the reserveA equivalent value of the token reserves
+               * (not USD equivalent) because there may not be a USD price
+               */}
               <td className="min-width">
                 {reserveA.isGreaterThan(0) && (
                   <ValueBar
                     variant="green"
-                    value={valueA}
-                    maxValue={maxPoolValue}
+                    value={reserveA}
+                    maxValue={maxPoolEquivalentReservesA}
                   />
                 )}
+                {/* this looks weird, but its only because of the inconsistent use of individual priceBToA and edgePrice */}
                 {reserveB.isGreaterThan(0) && (
                   <ValueBar
                     variant="blue"
-                    value={valueB}
-                    maxValue={maxPoolValue}
+                    value={reserveB.multipliedBy(edgpePriceBToA)}
+                    maxValue={maxPoolEquivalentReservesA}
                   />
                 )}
               </td>
@@ -202,6 +227,7 @@ export function MyEditedPositionTableCard({
   setEditedUserPosition,
   viewableMinIndex,
   viewableMaxIndex,
+  edgePriceIndex,
 }: {
   tokenA: Token;
   tokenB: Token;
@@ -209,6 +235,7 @@ export function MyEditedPositionTableCard({
   setEditedUserPosition: React.Dispatch<React.SetStateAction<EditedPosition[]>>;
   viewableMinIndex: number | undefined;
   viewableMaxIndex: number | undefined;
+  edgePriceIndex: number | undefined;
 }) {
   const invertedTokenOrder = guessInvertedOrder(tokenA.address, tokenB.address);
 
@@ -229,6 +256,29 @@ export function MyEditedPositionTableCard({
         })
     );
   }, [editedUserPosition, invertedTokenOrder]);
+
+  const edgpePriceBToA = useMemo(() => {
+    return tickIndexToPrice(new BigNumber(edgePriceIndex || 0));
+  }, [edgePriceIndex]);
+
+  const maxPoolEquivalentReservesA = useMemo(() => {
+    return sortedPosition.reduce(
+      (acc, { token0, token0Context, token1Context }) => {
+        const tokenAContext = matchTokens(tokenA, token0)
+          ? token0Context
+          : token1Context;
+        const tokenBContext = matchTokens(tokenB, token0)
+          ? token0Context
+          : token1Context;
+        const equivalentReserveA = tokenAContext?.userReserves.toNumber() ?? 0;
+        const equivalentReserveB =
+          tokenBContext?.userReserves.multipliedBy(edgpePriceBToA).toNumber() ??
+          0;
+        return Math.max(acc, equivalentReserveA, equivalentReserveB);
+      },
+      0
+    );
+  }, [edgpePriceBToA, sortedPosition, tokenA, tokenB]);
 
   const poolValues = useMemo(() => {
     return sortedPosition.map<[number, number]>(
@@ -264,13 +314,6 @@ export function MyEditedPositionTableCard({
     );
   }, [priceA, priceB, tokenA, tokenB, sortedPosition]);
 
-  const maxPoolValue = useMemo(() => {
-    return poolValues.reduce(
-      (acc, [valueA, valueB]) => Math.max(acc, valueA, valueB),
-      0
-    );
-  }, [poolValues]);
-
   const valueTotal = useMemo(() => {
     return poolValues.reduce(
       (acc, [valueA, valueB]) => acc + valueA + valueB,
@@ -303,7 +346,11 @@ export function MyEditedPositionTableCard({
             ? new BigNumber(deposit.centerTickIndex1To0.toNumber())
             : new BigNumber(deposit.centerTickIndex1To0.toNumber()).negated();
 
-          const priceBToA = tickIndexToPrice(tickIndexBToA);
+          const displayPriceBToA = tickIndexToDisplayPrice(
+            tickIndexBToA,
+            tokenA,
+            tokenB
+          );
           // show only those ticks that are in the currently visible range
           return viewableMinIndex !== undefined &&
             viewableMaxIndex !== undefined &&
@@ -312,8 +359,11 @@ export function MyEditedPositionTableCard({
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
               <td>
-                {priceBToA ? formatAmount(priceBToA.toNumber(), {}, 0) : '-'}
+                {displayPriceBToA
+                  ? formatAmount(displayPriceBToA.toNumber(), {}, 0)
+                  : '-'}
               </td>
+              {/* this shows the USD equivalent value of the token reserves */}
               <td>
                 {reserveA.isGreaterThan(0) && (
                   <div>{formatCurrency(valueA)}</div>
@@ -322,19 +372,23 @@ export function MyEditedPositionTableCard({
                   <div>{formatCurrency(valueB)}</div>
                 )}
               </td>
+              {/*
+               * this shows the reserveA equivalent value of the token reserves
+               * (not USD equivalent) because there may not be a USD price
+               */}
               <td className="min-width">
                 {reserveA.isGreaterThan(0) && (
                   <ValueBar
                     variant="green"
-                    value={valueA}
-                    maxValue={maxPoolValue}
+                    value={reserveA}
+                    maxValue={maxPoolEquivalentReservesA}
                   />
                 )}
                 {reserveB.isGreaterThan(0) && (
                   <ValueBar
                     variant="blue"
-                    value={valueB}
-                    maxValue={maxPoolValue}
+                    value={reserveB.multipliedBy(edgpePriceBToA)}
+                    maxValue={maxPoolEquivalentReservesA}
                   />
                 )}
               </td>

@@ -6,6 +6,7 @@ import Chart, { ChartProps } from '../../components/charts/Chart';
 import TimeSeriesBarChart from '../../components/charts/TimeSeriesBarChart';
 import TimeSeriesLineChart from '../../components/charts/TimeSeriesLineChart';
 import ButtonGroup from '../../components/ButtonGroup/ButtonGroup';
+import { encodeTokensPath } from '../../components/stats/hooks';
 
 import { days, hours, weeks } from '../../lib/utils/time';
 import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
@@ -122,7 +123,7 @@ function useTimeSeriesData(
   getValues?: (values: number[]) => number[]
 ) {
   const resolution = getDataResolution(timePeriodKey) || 'day';
-  const path = `${basePath}/${tokenA.address}/${tokenB.address}/${resolution}`;
+  const path = `${basePath}/${encodeTokensPath(tokenA, tokenB)}/${resolution}`;
   const {
     data: resultData,
     error,

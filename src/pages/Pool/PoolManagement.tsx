@@ -30,7 +30,7 @@ import {
   Tick,
   getRangeIndexes,
 } from '../../components/LiquiditySelector/LiquiditySelector';
-import { useCurrentPriceFromTicks } from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
+import useCurrentPriceIndexFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import {
@@ -38,6 +38,7 @@ import {
   MyNewPositionTableCard,
 } from './MyPositionTableCard';
 
+import { getBaseIbcDenom } from '../../lib/web3/hooks/useTokens';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
@@ -46,7 +47,12 @@ import {
   formatMaximumSignificantDecimals,
   formatPrice,
 } from '../../lib/utils/number';
-import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import {
+  displayPriceToTickIndex,
+  priceToTickIndex,
+  tickIndexToDisplayPrice,
+  tickIndexToPrice,
+} from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 import {
@@ -166,6 +172,13 @@ export default function PoolManagement({
   setTokenB: (tokenB: Token | undefined) => void;
   setTokens: ([tokenA, tokenB]: [Token?, Token?]) => void;
 }) {
+  const [tokenAPath, tokenBPath] = useMemo(() => {
+    return [
+      encodeURIComponent(getBaseIbcDenom(tokenA) ?? tokenA?.symbol ?? '-'),
+      encodeURIComponent(getBaseIbcDenom(tokenB) ?? tokenB?.symbol ?? '-'),
+    ];
+  }, [tokenA, tokenB]);
+
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
   );
@@ -187,22 +200,35 @@ export default function PoolManagement({
   const valuesValid =
     !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
 
-  const currentPriceFromTicks = useCurrentPriceFromTicks(
+  const currentPriceIndexFromTicks = useCurrentPriceIndexFromTicks(
     tokenA?.address,
     tokenB?.address
   );
 
   const [initialPrice, setInitialPrice] = useState<string>('');
-  // set price to price from ticks or user supplied value
-  const edgePrice = useMemo(() => {
-    if (currentPriceFromTicks) {
-      return currentPriceFromTicks;
-    }
+  const initialPriceIndex = useMemo(() => {
     const initialPriceNumber = Number(initialPrice);
     return initialPriceNumber > 0
-      ? new BigNumber(initialPriceNumber)
+      ? displayPriceToTickIndex(
+          new BigNumber(initialPriceNumber),
+          tokenA,
+          tokenB,
+          'none'
+        )?.toNumber()
       : undefined;
-  }, [currentPriceFromTicks, initialPrice]);
+  }, [initialPrice, tokenA, tokenB]);
+
+  // set edge from ticks or user supplied value
+  const edgePriceIndex = useMemo(() => {
+    return currentPriceIndexFromTicks ?? initialPriceIndex;
+  }, [currentPriceIndexFromTicks, initialPriceIndex]);
+
+  // edge price is the DISPLAY price that the user sees
+  const edgePrice = useMemo(() => {
+    return edgePriceIndex !== undefined && !isNaN(Number(edgePriceIndex))
+      ? tickIndexToDisplayPrice(new BigNumber(edgePriceIndex), tokenA, tokenB)
+      : undefined;
+  }, [edgePriceIndex, tokenA, tokenB]);
 
   // reset initial price whenever selected tokens are changed
   useEffect(() => {
@@ -263,8 +289,8 @@ export default function PoolManagement({
         const newPrice = new BigNumber(priceMin);
         return {
           ...tick,
-          reserveA: newReserveA,
-          reserveB: newReserveB,
+          reserveA: newReserveA.decimalPlaces(0),
+          reserveB: newReserveB.decimalPlaces(0),
           priceBToA: new BigNumber(priceMin),
           tickIndexBToA: priceToTickIndex(newPrice).toNumber(),
         };
@@ -273,16 +299,16 @@ export default function PoolManagement({
         const newPrice = new BigNumber(priceMax);
         return {
           ...tick,
-          reserveA: newReserveA,
-          reserveB: newReserveB,
+          reserveA: newReserveA.decimalPlaces(0),
+          reserveB: newReserveB.decimalPlaces(0),
           priceBToA: new BigNumber(priceMax),
           tickIndexBToA: priceToTickIndex(newPrice).toNumber(),
         };
       }
       return {
         ...tick,
-        reserveA: newReserveA,
-        reserveB: newReserveB,
+        reserveA: newReserveA.decimalPlaces(0),
+        reserveB: newReserveB.decimalPlaces(0),
       };
     }
     if (typeof userTicksOrCallback === 'function') {
@@ -365,25 +391,25 @@ export default function PoolManagement({
     );
   }, [precision]);
 
-  const edgePriceIndex = useMemo(() => {
-    return edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
-  }, [edgePrice]);
-
   const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
-    const fractionalRangeMinIndex = priceToTickIndex(
+    const fractionalRangeMinIndex = displayPriceToTickIndex(
       new BigNumber(fractionalRangeMin),
+      tokenA,
+      tokenB,
       'none'
-    ).toNumber();
-    const fractionalRangeMaxIndex = priceToTickIndex(
+    )?.toNumber();
+    const fractionalRangeMaxIndex = displayPriceToTickIndex(
       new BigNumber(fractionalRangeMax),
+      tokenA,
+      tokenB,
       'none'
-    ).toNumber();
+    )?.toNumber();
     return getRangeIndexes(
       edgePriceIndex,
-      fractionalRangeMinIndex,
-      fractionalRangeMaxIndex
+      fractionalRangeMinIndex || 0,
+      fractionalRangeMaxIndex || 0
     );
-  }, [fractionalRangeMin, fractionalRangeMax, edgePriceIndex]);
+  }, [fractionalRangeMin, tokenA, tokenB, fractionalRangeMax, edgePriceIndex]);
 
   const formatSignificantDecimalRangeString = useCallback(
     (price: BigNumber.Value) => {
@@ -393,12 +419,26 @@ export default function PoolManagement({
   );
 
   const rangeMin = useMemo<number>(
-    () => tickIndexToPrice(new BigNumber(rangeMinIndex)).toNumber(),
-    [rangeMinIndex]
+    () =>
+      (rangeMinIndex !== undefined &&
+        tickIndexToDisplayPrice(
+          new BigNumber(rangeMinIndex),
+          tokenA,
+          tokenB
+        )?.toNumber()) ||
+      NaN,
+    [rangeMinIndex, tokenA, tokenB]
   );
   const rangeMax = useMemo<number>(
-    () => tickIndexToPrice(new BigNumber(rangeMaxIndex)).toNumber(),
-    [rangeMaxIndex]
+    () =>
+      (rangeMaxIndex !== undefined &&
+        tickIndexToDisplayPrice(
+          new BigNumber(rangeMaxIndex),
+          tokenA,
+          tokenB
+        )?.toNumber()) ||
+      NaN,
+    [rangeMaxIndex, tokenA, tokenB]
   );
 
   const [pairPriceMin, pairPriceMax] = useMemo<[number, number]>(() => {
@@ -589,6 +629,21 @@ export default function PoolManagement({
     return Math.min(userDesiredTickCount, possibleTickCount);
   }, [precision, rangeMaxIndex, rangeMinIndex]);
 
+  // const edgeIndexValueToReserve = useCallback((token: Token, tickIndex: number, value: number) => {
+  //   const priceFactor = tickIndexToPrice(new BigNumber(edgePriceIndex || 0));
+  //   const forward = token === tokenA;
+  //   return token === tokenA
+  //     ? priceFactor.
+  //     : ;
+  // }, [tokenA, tokenB, edgePriceIndex]);
+  // const reserveToEdgeIndexDisplayValue = useCallback((token: Token, tickIndex: number, reserves: number) => {
+  //   const priceFactor = tickIndexToPrice(new BigNumber(edgePriceIndex || 0));
+  //   const forward = token === tokenA;
+  //   return token === tokenA
+  //     ? priceFactor.
+  //     : ;
+  // }, [tokenA, tokenB, edgePriceIndex]);
+
   // determine the normalized values for each tick
   const shapeUnitValueArray = useMemo(() => {
     const unitValues =
@@ -605,6 +660,8 @@ export default function PoolManagement({
     return unitValues.map((value) => value / unitValuesTotal);
   }, [tickCount, shapeFunction]);
 
+  // shapeReservesArray describes the desired shape of the reserves as accurately as possible
+  // it does not account for denom rounding or amount limits of any kind
   const shapeReservesArray = useMemo((): Array<
     [tickIndex: number, reservesA: BigNumber, reservesB: BigNumber]
   > => {
@@ -696,7 +753,7 @@ export default function PoolManagement({
           .reduce((acc, [, , reserveB]) => acc.plus(reserveB), new BigNumber(0))
           .toFixed();
         // convert to the display units of the original token
-        const displayAmountB = getDisplayDenomAmount(tokenA, amountB);
+        const displayAmountB = getDisplayDenomAmount(tokenB, amountB);
         // then transpose this complementary value to the new units
         setInputValueB(
           roundToBaseUnit(tokenB, new BigNumber(displayAmountB || 0).sd(6)) ??
@@ -708,7 +765,7 @@ export default function PoolManagement({
           new BigNumber(0)
         );
         // convert to the display units of the original token
-        const displayAmountA = getDisplayDenomAmount(tokenB, amountA);
+        const displayAmountA = getDisplayDenomAmount(tokenA, amountA);
         // then transpose this complementary value to the new units
         setInputValueA(
           roundToBaseUnit(tokenA, new BigNumber(displayAmountA || 0).sd(6)) ??
@@ -1239,14 +1296,14 @@ export default function PoolManagement({
         tokenA && tokenB && editMode ? (
           <div className="row gap-3">
             <div className="col">
-              <Link to={`/portfolio/pools/${tokenA.symbol}/${tokenB.symbol}`}>
+              <Link to={`/portfolio/pools/${tokenAPath}/${tokenBPath}`}>
                 <button className="button button-primary py-3 px-4">
                   Stake Position
                 </button>
               </Link>
             </div>
             <div className="col">
-              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
+              <Link to={`/pools/${tokenAPath}/${tokenBPath}/add`}>
                 <button className="button button-primary py-3 px-4">
                   Add To Position
                 </button>
@@ -1259,7 +1316,7 @@ export default function PoolManagement({
           editedUserPosition &&
           editedUserPosition.length > 0 && (
             <div className="col">
-              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/edit`}>
+              <Link to={`/pools/${tokenAPath}/${tokenBPath}/edit`}>
                 <button className="button button-primary py-3 px-4">
                   Edit Position
                 </button>
@@ -1275,7 +1332,7 @@ export default function PoolManagement({
           <div className="col row-lg gap-4 col-slide-container gutter-x-4">
             {addLiquidityForm}
             <div className="col flex gap-4">
-              {tokenA && tokenB && currentPriceFromTicks === undefined && (
+              {tokenA && tokenB && currentPriceIndexFromTicks === undefined && (
                 <div className="page-card col">
                   <div className="h4">Select Starting Price</div>
                   <div className="panel panel-primary col my-3 gap-2">
@@ -1332,8 +1389,14 @@ export default function PoolManagement({
                       <div className="row gap-2">
                         <strong>Current Price:</strong>
                         <div className="chart-highlight">
-                          {currentPriceFromTicks !== undefined
-                            ? formatAmount(currentPriceFromTicks.toFixed() || 0)
+                          {currentPriceIndexFromTicks !== undefined
+                            ? formatAmount(
+                                tickIndexToDisplayPrice(
+                                  new BigNumber(currentPriceIndexFromTicks),
+                                  tokenA,
+                                  tokenB
+                                )?.toFixed() || 0
+                              )
                             : '-'}
                         </div>
                         {tokenA && tokenB && (
@@ -1349,7 +1412,7 @@ export default function PoolManagement({
                     <LiquiditySelector
                       tokenA={tokenA}
                       tokenB={tokenB}
-                      initialPrice={initialPrice}
+                      initialPriceIndex={initialPriceIndex}
                       rangeMin={fractionalRangeMin}
                       rangeMax={fractionalRangeMax}
                       setRange={setRange}
@@ -1585,12 +1648,14 @@ export default function PoolManagement({
                 setEditedUserPosition={setEditedUserPosition}
                 viewableMinIndex={viewableMinIndex}
                 viewableMaxIndex={viewableMaxIndex}
+                edgePriceIndex={edgePriceIndex}
               />
             ) : (
               <MyNewPositionTableCard
                 tokenA={tokenA}
                 tokenB={tokenB}
                 userTicks={userTicks}
+                edgePriceIndex={edgePriceIndex}
               />
             )}
           </div>

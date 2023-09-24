@@ -106,9 +106,13 @@ function useStatTokenValue(
   return [timeUnix, valueTotal, valueDiffTotal];
 }
 
+export function encodeTokensPath(...tokens: Token[]) {
+  return tokens.map((token) => encodeURIComponent(token.address)).join('/');
+}
+
 // TVL
 function getStatTvlPath(tokenA: Token, tokenB: Token) {
-  return `stats/tvl/${tokenA.address}/${tokenB.address}`;
+  return `stats/tvl/${encodeTokensPath(tokenA, tokenB)}`;
 }
 function getStatTvlValues([amountA, amountB]: number[]): number[] {
   return [amountA, amountB];
@@ -123,7 +127,7 @@ export function useStatComposition(tokenA: Token, tokenB: Token) {
 
 // volume and fees
 function getStatVolumePath(tokenA: Token, tokenB: Token) {
-  return `stats/volume/${tokenA.address}/${tokenB.address}`;
+  return `stats/volume/${encodeTokensPath(tokenA, tokenB)}`;
 }
 function getStatVolumeValues([amountA, amountB]: number[]): number[] {
   return [amountA, amountB];
@@ -145,7 +149,7 @@ export function useStatFee(tokenA: Token, tokenB: Token) {
 
 // volatility
 function getStatVolatilityPath(tokenA: Token, tokenB: Token) {
-  return `stats/volatility/${tokenA.address}/${tokenB.address}`;
+  return `stats/volatility/${encodeTokensPath(tokenA, tokenB)}`;
 }
 function getStatVolatilityValues([value]: number[]): number[] {
   return [value];

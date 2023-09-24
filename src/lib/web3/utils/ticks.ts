@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { Token } from './tokens';
+import { Token, getDisplayDenomAmount } from './tokens';
 
 /**
  * price1To0:
@@ -65,6 +65,19 @@ export interface TickInfo {
 export function tickIndexToPrice(tickIndex: BigNumber): BigNumber {
   return new BigNumber(Math.pow(1.0001, tickIndex.toNumber()));
 }
+export function tickIndexToDisplayPrice(
+  tickIndex: BigNumber,
+  token0: Token | undefined,
+  token1: Token | undefined
+): BigNumber | undefined {
+  const denomMagnitude0 = token0 && getDisplayDenomAmount(token0, 1);
+  const denomMagnitude1 = token1 && getDisplayDenomAmount(token1, 1);
+  return denomMagnitude0 && denomMagnitude1
+    ? tickIndexToPrice(tickIndex)
+        .multipliedBy(denomMagnitude0)
+        .dividedBy(denomMagnitude1)
+    : undefined;
+}
 
 export function priceToTickIndex(
   price: BigNumber,
@@ -75,6 +88,21 @@ export function priceToTickIndex(
   return new BigNumber(
     roundingFunction(Math.log(price.toNumber()) / Math.log(1.0001))
   );
+}
+export function displayPriceToTickIndex(
+  displayPrice: BigNumber,
+  token0: Token | undefined,
+  token1: Token | undefined,
+  roundingMethod = 'none' as 'round' | 'ceil' | 'floor' | 'none'
+): BigNumber | undefined {
+  const denomMagnitude0 = token0 && getDisplayDenomAmount(token0, 1);
+  const denomMagnitude1 = token1 && getDisplayDenomAmount(token1, 1);
+  return denomMagnitude0 && denomMagnitude1
+    ? priceToTickIndex(
+        displayPrice.multipliedBy(denomMagnitude1).dividedBy(denomMagnitude0),
+        roundingMethod
+      )
+    : undefined;
 }
 
 const bigZero = new BigNumber(0);

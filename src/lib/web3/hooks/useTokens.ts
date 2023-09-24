@@ -199,10 +199,12 @@ export function useToken(
   tokenAddress: string | undefined,
   matchFunction = matchTokenByAddress
 ): Token | undefined {
-  const tokens = useTokens();
+  const tokensWithIbcInfo = useTokensWithIbcInfo(useTokens());
   return useMemo(() => {
-    return tokenAddress ? tokens.find(matchFunction(tokenAddress)) : undefined;
-  }, [matchFunction, tokenAddress, tokens]);
+    return tokenAddress
+      ? tokensWithIbcInfo.find(matchFunction(tokenAddress))
+      : undefined;
+  }, [matchFunction, tokenAddress, tokensWithIbcInfo]);
 }
 
 // connected IBC info into given token list
@@ -217,7 +219,11 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
           if (token.chain.chain_id === dualityChain.chain_id) {
             return token;
           }
-          // append ibcDenpm as a denom alias
+          // if IBC information already exists, do not re-append it
+          if (token.ibc) {
+            return token;
+          }
+          // append ibcDenom as a denom alias
           const ibcOpenTransferInfo = ibcOpenTransfersInfo.find(
             ({ chainID }) => {
               return chainID === token.chain.chain_id;
@@ -261,6 +267,14 @@ const ibcDenomRegex = /^ibc\/[0-9A-Fa-f]+$/;
 function matchTokenBySymbol(symbol: string | undefined) {
   if (!symbol) {
     return () => false;
+  }
+  // match denom aliases for IBC tokens
+  if (symbol.match(ibcDenomRegex)) {
+    return (tokenWithIbcInfo: Token) => {
+      return tokenWithIbcInfo.denom_units?.find((unit) =>
+        unit.aliases?.find((alias) => alias === symbol)
+      );
+    };
   }
   // match regular symbols for local tokens
   else {

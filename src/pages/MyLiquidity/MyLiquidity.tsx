@@ -202,8 +202,15 @@ const userPositionActions: Actions = {
   manage: {
     title: 'Manage',
     className: 'button-light m-0',
-    action: ({ navigate, token0, token1 }) =>
-      navigate(`/pools/${token0.symbol}/${token1.symbol}/edit`),
+    action: ({ navigate, token0, token1 }) => {
+      const [token0Symbol, token1Symbol] = [
+        encodeURIComponent(getBaseIbcDenom(token0) ?? token0?.symbol),
+        encodeURIComponent(getBaseIbcDenom(token1) ?? token1?.symbol),
+      ];
+      if (token0Symbol && token1Symbol) {
+        return navigate(`/pools/${token0Symbol}/${token1Symbol}/edit`);
+      }
+    },
   },
   stake: {
     title: (
@@ -212,7 +219,14 @@ const userPositionActions: Actions = {
       </>
     ),
     className: 'button-primary m-0',
-    action: ({ navigate, token0, token1 }) =>
-      navigate(`/portfolio/pools/${token0.symbol}/${token1.symbol}`),
+    action: ({ navigate, token0, token1 }) => {
+      const [token0Symbol, token1Symbol] = [
+        encodeURIComponent(getBaseIbcDenom(token0) ?? token0?.symbol),
+        encodeURIComponent(getBaseIbcDenom(token1) ?? token1?.symbol),
+      ];
+      if (token0Symbol && token1Symbol) {
+        return navigate(`/portfolio/pools/${token0Symbol}/${token1Symbol}`);
+      }
+    },
   },
 };

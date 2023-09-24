@@ -26,6 +26,8 @@ import {
   TickInfo,
   priceToTickIndex,
   tickIndexToPrice,
+  displayPriceToTickIndex,
+  tickIndexToDisplayPrice,
 } from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
@@ -44,7 +46,7 @@ export interface LiquiditySelectorProps {
   fee: number | undefined;
   userTickSelected: number | undefined;
   setUserTickSelected: (index: number) => void;
-  initialPrice?: string;
+  initialPriceIndex?: number;
   rangeMin: string;
   rangeMax: string;
   setRange: React.Dispatch<React.SetStateAction<[string, string]>>;
@@ -127,7 +129,7 @@ export default function LiquiditySelector({
   fee,
   userTickSelected = -1,
   setUserTickSelected,
-  initialPrice = '',
+  initialPriceIndex,
   rangeMin,
   rangeMax,
   setRange,
@@ -143,21 +145,43 @@ export default function LiquiditySelector({
   oneSidedLiquidity = false,
   ControlsComponent,
 }: LiquiditySelectorProps) {
+  const shortcutTickIndexToDisplayPrice = useCallback(
+    (index: BigNumber) =>
+      tickIndexToDisplayPrice(new BigNumber(index), tokenA, tokenB) ||
+      new BigNumber(0),
+    [tokenA, tokenB]
+  );
+
+  const shortcutDisplayPriceToTickIndex = useCallback(
+    (displayPrice: BigNumber) =>
+      displayPriceToTickIndex(new BigNumber(displayPrice), tokenA, tokenB) ||
+      new BigNumber(0),
+    [tokenA, tokenB]
+  );
+
+  const defaultPriceIndex = useMemo(() => {
+    return shortcutDisplayPriceToTickIndex(new BigNumber(1)).toNumber();
+  }, [shortcutDisplayPriceToTickIndex]);
+
   // convert range price state controls into range index state controls
   const fractionalRangeMinIndex = useMemo(() => {
-    const index = priceToTickIndex(new BigNumber(rangeMin)).toNumber();
+    const index = shortcutDisplayPriceToTickIndex(
+      new BigNumber(rangeMin)
+    ).toNumber();
     // guard against incorrect numbers
     return !isNaN(index)
       ? Math.max(priceMinIndex, Math.min(priceMaxIndex, index))
       : defaultMinIndex;
-  }, [rangeMin]);
+  }, [shortcutDisplayPriceToTickIndex, rangeMin]);
   const fractionalRangeMaxIndex = useMemo(() => {
-    const index = priceToTickIndex(new BigNumber(rangeMax)).toNumber();
+    const index = shortcutDisplayPriceToTickIndex(
+      new BigNumber(rangeMax)
+    ).toNumber();
     // guard against incorrect numbers
     return !isNaN(index)
       ? Math.max(priceMinIndex, Math.min(priceMaxIndex, index))
       : defaultMaxIndex;
-  }, [rangeMax]);
+  }, [shortcutDisplayPriceToTickIndex, rangeMax]);
   const setRangeMinIndex: React.Dispatch<React.SetStateAction<number>> =
     useCallback(
       (valueOrCallback) => {
@@ -165,13 +189,24 @@ export default function LiquiditySelector({
           // get new min index value value
           const newMinIndex =
             typeof valueOrCallback === 'function'
-              ? valueOrCallback(priceToTickIndex(new BigNumber(min)).toNumber())
+              ? valueOrCallback(
+                  shortcutDisplayPriceToTickIndex(new BigNumber(min)).toNumber()
+                )
               : valueOrCallback;
           // convert index to price
-          return [tickIndexToPrice(new BigNumber(newMinIndex)).toFixed(), max];
+          return [
+            shortcutTickIndexToDisplayPrice(
+              new BigNumber(newMinIndex)
+            ).toFixed(),
+            max,
+          ];
         });
       },
-      [setRange]
+      [
+        shortcutDisplayPriceToTickIndex,
+        setRange,
+        shortcutTickIndexToDisplayPrice,
+      ]
     );
   const setRangeMaxIndex: React.Dispatch<React.SetStateAction<number>> =
     useCallback(
@@ -180,13 +215,24 @@ export default function LiquiditySelector({
           // get new max index value value
           const newMaxIndex =
             typeof valueOrCallback === 'function'
-              ? valueOrCallback(priceToTickIndex(new BigNumber(max)).toNumber())
+              ? valueOrCallback(
+                  shortcutDisplayPriceToTickIndex(new BigNumber(max)).toNumber()
+                )
               : valueOrCallback;
           // convert index to price
-          return [min, tickIndexToPrice(new BigNumber(newMaxIndex)).toFixed()];
+          return [
+            min,
+            shortcutTickIndexToDisplayPrice(
+              new BigNumber(newMaxIndex)
+            ).toFixed(),
+          ];
         });
       },
-      [setRange]
+      [
+        shortcutDisplayPriceToTickIndex,
+        setRange,
+        shortcutTickIndexToDisplayPrice,
+      ]
     );
 
   const [token0Address, token1Address] =
@@ -252,15 +298,8 @@ export default function LiquiditySelector({
 
   // note edge price, the price of the edge of one-sided liquidity
   const edgePriceIndex = useMemo(() => {
-    if (currentPriceIndexFromTicks !== undefined) {
-      return currentPriceIndexFromTicks;
-    }
-    // return calculated price index
-    if (Number(initialPrice) > 0) {
-      return priceToTickIndex(new BigNumber(initialPrice)).toNumber();
-    }
-    return undefined;
-  }, [currentPriceIndexFromTicks, initialPrice]);
+    return currentPriceIndexFromTicks ?? initialPriceIndex;
+  }, [currentPriceIndexFromTicks, initialPriceIndex]);
 
   // note warning price, the price at which warning states should be shown
   const [tokenAWarningPriceIndex, tokenBWarningPriceIndex] = useMemo(() => {
@@ -305,11 +344,25 @@ export default function LiquiditySelector({
 
   // set some somewhat reasonable starting zoom points
   // these really only affect the view when no data is present
-  // and we want the dragging of limits to feel reasonably sensible\
+  // and we want the dragging of limits to feel reasonably sensible
+  const [defaultZoomMinIndex, defaultZoomMaxIndex] = useMemo(() => {
+    return [
+      displayPriceToTickIndex(
+        new BigNumber(0.001),
+        tokenA,
+        tokenB
+      )?.toNumber() ?? 1 / 10,
+      displayPriceToTickIndex(
+        new BigNumber(1000),
+        tokenA,
+        tokenB
+      )?.toNumber() ?? zoomMaxIndexLimit / 10,
+    ];
+  }, [tokenA, tokenB]);
   const [
     [
-      zoomMinIndex = zoomMinIndexLimit / 10,
-      zoomMaxIndex = zoomMaxIndexLimit / 10,
+      zoomMinIndex = dataMinIndex ?? defaultZoomMinIndex,
+      zoomMaxIndex = dataMaxIndex ?? defaultZoomMaxIndex,
     ] = [],
     setZoomRangeUnprotected,
   ] = useState<[number, number]>();
@@ -382,6 +435,7 @@ export default function LiquiditySelector({
   // allow user ticks to reset the boundary of the graph
   const [graphMinIndex, graphMaxIndex] = useMemo<[number, number]>(() => {
     const allValues = [
+      edgePriceIndex ?? defaultPriceIndex,
       ...userTicks.map<number | undefined>((tick) => tick?.tickIndexBToA),
       rangeMinIndex,
       rangeMaxIndex,
@@ -401,6 +455,8 @@ export default function LiquiditySelector({
     }
     return [min, max];
   }, [
+    edgePriceIndex,
+    defaultPriceIndex,
     rangeMinIndex,
     rangeMaxIndex,
     userTicks,
@@ -564,7 +620,7 @@ export default function LiquiditySelector({
     function getReserveBValue(reserve: BigNumber): BigNumber {
       return reserve.multipliedBy(edgePrice);
     }
-  }, [emptyBuckets, tokenATicks, tokenBTicks, edgePriceIndex]);
+  }, [edgePriceIndex, emptyBuckets, tokenATicks, tokenBTicks]);
 
   // calculate highest value to plot on the chart
   const yMaxValue = useMemo(() => {
@@ -726,12 +782,14 @@ export default function LiquiditySelector({
       )}
       <Axis
         className="x-axis"
-        tickMarkIndex={edgePriceIndex || 0}
+        tickMarkIndex={edgePriceIndex}
         highlightedTickIndex={edgePriceIndex}
         significantDecimals={dynamicSignificantDigits}
         plotX={plotX}
         plotY={plotY}
         percentY={percentY}
+        tickIndexToPrice={shortcutTickIndexToDisplayPrice}
+        priceToTickIndex={shortcutDisplayPriceToTickIndex}
       />
       {!advanced && (
         <TicksArea
@@ -750,6 +808,7 @@ export default function LiquiditySelector({
           setRangeMinIndex={setRangeMinIndex}
           setRangeMaxIndex={setRangeMaxIndex}
           significantDecimals={dynamicSignificantDigits}
+          tickIndexToPrice={shortcutTickIndexToDisplayPrice}
         />
       )}
       <TicksGroup
@@ -1079,6 +1138,7 @@ function TicksArea({
   setRangeMaxIndex,
   significantDecimals,
   className,
+  tickIndexToPrice,
 }: {
   currentPriceIndex: number | undefined;
   tokenAWarningPriceIndex: number | undefined;
@@ -1095,6 +1155,7 @@ function TicksArea({
   setRangeMaxIndex: (rangeMaxIndex: number) => void;
   significantDecimals: number;
   className?: string;
+  tickIndexToPrice: (index: BigNumber) => BigNumber;
 }) {
   const lastDisplacementMin = useRef<number>(0);
   const [startDragMin, isDraggingMin] = useOnDragMove(
@@ -1213,7 +1274,7 @@ function TicksArea({
         2
       );
     },
-    []
+    [tickIndexToPrice]
   );
 
   return !isNaN(rangeMinIndex) && !isNaN(rangeMaxIndex) ? (
@@ -1530,6 +1591,10 @@ function TicksGroup({
   canMoveX?: boolean;
   className?: string;
 }) {
+  // todo: I think this is fundamentally wrong:
+  //       the expected value conversion should take place on *each* tick
+  //       not just the edge price tick
+  //       this should work correctly if the shapeReserveArray also does the same
   const currentPrice = tickIndexToPrice(new BigNumber(currentPriceIndex || 1));
   // collect reserve height to calculate stats to use
   const tickValues = userTicks.flatMap((tick) =>
@@ -1955,8 +2020,11 @@ function Bucket({
 }
 
 function Axis({
+  priceToTickIndex,
+  tickIndexToPrice,
   className = '',
-  tickMarkIndex,
+  // default to the tick index that represents display price of 1
+  tickMarkIndex = priceToTickIndex(new BigNumber(1)).toNumber(),
   tickMarkIndexes = tickMarkIndex !== undefined ? [tickMarkIndex] : [],
   highlightedTickIndex,
   significantDecimals,
@@ -1972,6 +2040,8 @@ function Axis({
   plotX: (x: number) => number;
   plotY: (y: number) => number;
   percentY: (y: number) => number;
+  tickIndexToPrice: (index: BigNumber) => BigNumber;
+  priceToTickIndex: (displayPrice: BigNumber) => BigNumber;
 }) {
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
