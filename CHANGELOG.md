@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.14](https://github.com/duality-labs/duality-web-app/compare/v0.3.13...v0.3.14) (2023-09-24)
+
+
+### Features
+
+* improve IBC bridging toast notifications ([#436](https://github.com/duality-labs/duality-web-app/issues/436)) ([df65f94](https://github.com/duality-labs/duality-web-app/commit/df65f94ef73a513cc12d0c6282802770eda89084))
+
 ## [0.3.13](https://github.com/duality-labs/duality-web-app/compare/v0.3.12...v0.3.13) (2023-09-24)
 
 
