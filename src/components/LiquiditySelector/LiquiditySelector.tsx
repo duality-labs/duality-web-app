@@ -17,16 +17,19 @@ import {
   formatPrice,
   formatMaximumSignificantDecimals,
   roundToSignificantDigits,
+  formatCurrency,
 } from '../../lib/utils/number';
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import {
   TickInfo,
+  getReserveValue,
   priceToTickIndex,
   tickIndexToPrice,
 } from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
+import { useSimplePrice } from '../../lib/tokenPrices';
 import useOnDragMove from '../hooks/useOnDragMove';
 
 import './LiquiditySelector.scss';
@@ -113,8 +116,9 @@ const zoomSpeedFactor = 2; // zoom in/out means divide/multiply the number of sh
 const zoomMinIndexLimit = priceMinIndex * 2;
 const zoomMaxIndexLimit = priceMaxIndex * 2;
 
-const leftPadding = 75;
-const rightPadding = 75;
+const rightMargin = 66;
+const leftPadding = 85;
+const rightPadding = 85;
 const topPadding = 33;
 const bottomPadding = 26; // height of axis-ticks element
 
@@ -142,6 +146,8 @@ export default function LiquiditySelector({
   oneSidedLiquidity = false,
   ControlsComponent,
 }: LiquiditySelectorProps) {
+  // get price of tokenA for USD conversions
+  const { data: priceA } = useSimplePrice(tokenA);
   // convert range price state controls into range index state controls
   const fractionalRangeMinIndex = useMemo(() => {
     const index = priceToTickIndex(new BigNumber(rangeMin)).toNumber();
@@ -453,7 +459,10 @@ export default function LiquiditySelector({
   const [viewableMinIndex, viewableMaxIndex] = useMemo<[number, number]>(() => {
     // get bounds
     const spread = graphMaxIndex - graphMinIndex;
-    const width = Math.max(1, containerSize.width - leftPadding - rightPadding);
+    const width = Math.max(
+      1,
+      containerSize.width - leftPadding - rightPadding - rightMargin
+    );
     return [
       graphMinIndex - (spread * leftPadding) / width,
       graphMaxIndex + (spread * rightPadding) / width,
@@ -578,11 +587,33 @@ export default function LiquiditySelector({
     );
   }, [tickBuckets]);
 
+  // calculate highest value to plot on the chart
+  const userTickMaxValue = useMemo(() => {
+    return userTicks.reduce((result, tick) => {
+      if (tick && priceA && edgePriceIndex) {
+        const priceB = tickIndexToPrice(new BigNumber(edgePriceIndex))
+          .dividedBy(priceA)
+          .toNumber();
+        const value = getReserveValue(
+          priceA,
+          priceB,
+          tick.reserveA,
+          tick.reserveB
+        );
+        return Math.max(result, value?.toNumber() || 0);
+      }
+      return result;
+    }, 0);
+  }, [edgePriceIndex, priceA, userTicks]);
+
   // get plotting functions
   const [plotWidth, plotHeight] = useMemo(() => {
     return [
       // width
-      Math.max(0, containerSize.width - leftPadding - rightPadding),
+      Math.max(
+        0,
+        containerSize.width - leftPadding - rightPadding - rightMargin
+      ),
       // height
       Math.max(0, containerSize.height - topPadding - bottomPadding),
     ];
@@ -600,14 +631,16 @@ export default function LiquiditySelector({
     },
     [graphMinIndex, graphMaxIndex, plotWidth]
   );
+  const hasUserTicks = userTicks.length > 0;
   const plotY = useCallback(
     (y: number): number => {
-      const height = plotHeight;
+      const aboveBaseline = plotHeight * (hasUserTicks ? 0.42 : 0);
+      const height = plotHeight - aboveBaseline;
       return yMaxValue === 0
-        ? -bottomPadding // pin to bottom
-        : -bottomPadding - (height * y) / yMaxValue;
+        ? -aboveBaseline - bottomPadding // pin to bottom
+        : -aboveBaseline - bottomPadding - (height * y) / yMaxValue;
     },
-    [yMaxValue, plotHeight]
+    [yMaxValue, plotHeight, hasUserTicks]
   );
   const percentY = useCallback(
     (y: number): number => {
@@ -623,6 +656,10 @@ export default function LiquiditySelector({
   const percentYBigNumber = useCallback(
     (y: BigNumber) => percentY(y.toNumber()),
     [percentY]
+  );
+  const halfPercentYBigNumber = useCallback(
+    (y: BigNumber) => percentY(y.dividedBy(hasUserTicks ? 3.2 : 1).toNumber()),
+    [percentY, hasUserTicks]
   );
 
   const TextRoundedBackgroundFilter = useCallback(
@@ -701,10 +738,83 @@ export default function LiquiditySelector({
       <g className="axis x-axis">
         <rect
           x="0"
-          width={containerSize.width}
+          width={containerSize.width - rightMargin}
           y={plotY(0).toFixed(0)}
+          height="2"
+        />
+        <text
+          x={containerSize.width - rightMargin}
+          y={percentY(1) + 4}
+          textAnchor="start"
+          alignmentBaseline="middle"
+        >
+          &nbsp;-{' '}
+          {tokenA && priceA ? (
+            formatCurrency(
+              getAmountInDenom(
+                tokenA,
+                yMaxValue * priceA,
+                tokenA.address,
+                tokenA.display
+              ) || 0
+            )
+          ) : (
+            <>100%</>
+          )}
+        </text>
+        <text
+          x={containerSize.width - rightMargin}
+          y={plotY(0) + 1}
+          textAnchor="start"
+          alignmentBaseline="middle"
+        >
+          &nbsp;- 0
+        </text>
+      </g>
+      <g className="axis x-axis">
+        {userTicks.length > 0 && (
+          <text x="0" y={percentY(0.03)}>
+            Your position
+          </text>
+        )}
+        <rect
+          x="0"
+          width={containerSize.width - rightMargin}
+          y={percentY(0).toFixed(0)}
           height="8"
         />
+        {userTicks.length > 0 && (
+          <text
+            x={containerSize.width - rightMargin}
+            y={halfPercentYBigNumber(new BigNumber(1))}
+            textAnchor="start"
+            alignmentBaseline="middle"
+          >
+            &nbsp;-{' '}
+            {tokenA && priceA ? (
+              formatCurrency(
+                getAmountInDenom(
+                  tokenA,
+                  userTickMaxValue,
+                  tokenA.address,
+                  tokenA.display
+                ) || 0
+              )
+            ) : (
+              <>100%</>
+            )}
+          </text>
+        )}
+        {userTicks.length > 0 && (
+          <text
+            x={containerSize.width - rightMargin}
+            y={percentY(0) + 1}
+            textAnchor="start"
+            alignmentBaseline="middle"
+          >
+            &nbsp;- 0
+          </text>
+        )}
       </g>
       {!advanced && (
         <TicksBackgroundArea
@@ -719,6 +829,8 @@ export default function LiquiditySelector({
         <TickBucketsGroup
           tickBuckets={tickBuckets}
           edgePriceIndex={edgePriceIndex}
+          minIndex={viewableMinIndex}
+          maxIndex={viewableMaxIndex}
           plotX={plotX}
           plotY={plotYBigNumber}
         />
@@ -764,7 +876,7 @@ export default function LiquiditySelector({
         userTickSelected={userTickSelected}
         setUserTickSelected={setUserTickSelected}
         plotX={plotX}
-        percentY={percentYBigNumber}
+        percentY={halfPercentYBigNumber}
         canMoveUp={canMoveUp}
         canMoveDown={canMoveDown}
         canMoveX={canMoveX}
@@ -845,7 +957,7 @@ export default function LiquiditySelector({
         {containerSize.width > 0 && containerSize.height > 0 ? svg : null}
       </div>
       {ControlsComponent && (
-        <div className="col">
+        <div className="col zoom-buttons">
           <ControlsComponent
             zoomIn={
               // the +2 on index spread allows for rounded values on both sides
@@ -1557,8 +1669,8 @@ function TicksGroup({
   // add a scaling factor if the maximum tick is very short (scale up to minMaxHeight)
   const scalingFactor =
     cumulativeTokenValues && maxValue / cumulativeTokenValues > minMaxHeight
-      ? 0.925
-      : (0.925 / (maxValue / cumulativeTokenValues)) * minMaxHeight;
+      ? 1
+      : minMaxHeight / (maxValue / cumulativeTokenValues);
 
   const lastSelectedTick = useRef<{ tick: Tick; index: number }>();
 
@@ -1863,12 +1975,16 @@ function TicksGroup({
 function TickBucketsGroup({
   tickBuckets,
   edgePriceIndex,
+  minIndex,
+  maxIndex,
   plotX,
   plotY,
   className,
 }: {
   tickBuckets: TickGroupMergedBucketsFilled;
   edgePriceIndex: number;
+  minIndex: number;
+  maxIndex: number;
   plotX: (x: number) => number;
   plotY: (y: BigNumber) => number;
   className?: string;
@@ -1899,8 +2015,8 @@ function TickBucketsGroup({
               className={['token-a', !leftSide && 'behind-enemy-lines']
                 .filter(Boolean)
                 .join(' ')}
-              lowerBoundIndex={lowerBoundIndex}
-              upperBoundIndex={upperBoundIndex}
+              lowerBoundIndex={Math.max(minIndex, lowerBoundIndex)}
+              upperBoundIndex={Math.min(maxIndex, upperBoundIndex)}
               reserveValue={tokenAValue}
               offsetValue={tokenAOffset}
               plotX={plotX}
@@ -1911,8 +2027,8 @@ function TickBucketsGroup({
               className={['token-b', leftSide && 'behind-enemy-lines']
                 .filter(Boolean)
                 .join(' ')}
-              lowerBoundIndex={lowerBoundIndex}
-              upperBoundIndex={upperBoundIndex}
+              lowerBoundIndex={Math.max(minIndex, lowerBoundIndex)}
+              upperBoundIndex={Math.min(maxIndex, upperBoundIndex)}
               reserveValue={tokenBValue}
               offsetValue={tokenBOffset}
               plotX={plotX}
@@ -1987,7 +2103,7 @@ function Axis({
             className="line--success"
             x1={plotX(tickMarkIndex).toFixed(3)}
             x2={plotX(tickMarkIndex).toFixed(3)}
-            y1={plotY(0) + 8}
+            y1={percentY(0) + 8}
             y2={percentY(1)}
           />
         )}
@@ -1997,7 +2113,7 @@ function Axis({
             tickMarkIndex === highlightedTickIndex ? 'text--success' : ''
           }
           x={plotX(tickMarkIndex).toFixed(3)}
-          y={plotY(0) + 4 + 8}
+          y={percentY(0) + 4 + 8}
           dominantBaseline="middle"
           textAnchor="middle"
           alignmentBaseline="text-before-edge"
@@ -2023,6 +2139,10 @@ function Axis({
   }
 }
 
+// scales user tick heights
+// 1 tick = 100%
+// 10 ticks = 95%
+// 100 ticks = 90%
 function getMinYHeight(tickCount: number): number {
-  return 1 / ((tickCount - 2) / 6 + 2) + 0.4;
+  return 1 - Math.log(tickCount) / Math.log(10) / 20;
 }

@@ -62,6 +62,21 @@ export interface TickInfo {
   tickIndex1To0: TickIndex;
 }
 
+export function getReserveValue(
+  price0: number | undefined,
+  price1: number | undefined,
+  reserve0: BigNumber.Value = 0,
+  reserve1: BigNumber.Value = 0
+): BigNumber | undefined {
+  if (price0 && price1) {
+    return new BigNumber(price0).multipliedBy(
+      new BigNumber(reserve0).plus(
+        new BigNumber(reserve1).multipliedBy(price1 / price0)
+      )
+    );
+  }
+}
+
 export function tickIndexToPrice(tickIndex: BigNumber): BigNumber {
   return new BigNumber(Math.pow(1.0001, tickIndex.toNumber()));
 }

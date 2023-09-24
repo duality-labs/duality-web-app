@@ -176,3 +176,14 @@
     fill: hsl(165, 83%, 57%);
   }
 }
+
+.chart-card {
+  .chart-area {
+    position: relative;
+    .zoom-buttons {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+  }
+}
