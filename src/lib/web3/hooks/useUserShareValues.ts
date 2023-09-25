@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
-import useTokens from './useTokens';
+import useTokens, { getTokenId, matchTokenByDenom } from './useTokens';
 import { useSimplePrice } from '../../tokenPrices';
 import { Token, getDisplayDenomAmount } from '../utils/tokens';
 import {
@@ -59,8 +59,9 @@ export function useUserPositionsShareValues(
     return selectedTokens.reduce<{
       [tokenAddress: string]: number | undefined;
     }>((acc, token, index) => {
-      if (token.address) {
-        acc[token.address] = selectedTokensPrices[index];
+      const tokenId = getTokenId(token);
+      if (tokenId) {
+        acc[tokenId] = selectedTokensPrices[index];
       }
       return acc;
     }, {});
@@ -82,12 +83,10 @@ export function useUserPositionsShareValues(
     function getValueOfContext(
       context: ShareValueContext
     ): BigNumber | undefined {
-      const { token: tokenAddress, userReserves } = context;
+      const { token: tokenDenom, userReserves } = context;
       // what is the price per token?
-      const token = selectedTokens.find(
-        ({ address }) => address === tokenAddress
-      );
-      const price = selectedTokensPriceMap[tokenAddress];
+      const token = selectedTokens.find(matchTokenByDenom(tokenDenom));
+      const price = selectedTokensPriceMap[getTokenId(token) || ''];
       if (token && price && !isNaN(price)) {
         // how many tokens does the user have?
         const amount = getDisplayDenomAmount(token, userReserves);

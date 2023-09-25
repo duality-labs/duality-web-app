@@ -1,14 +1,14 @@
 import BigNumber from 'bignumber.js';
 import { Asset, Chain } from '@chain-registry/types';
 import { sha256 } from '@cosmjs/crypto';
+import { getTokenId } from '../hooks/useTokens';
 
 export interface Token extends Asset {
   // each asset should have exactly one chain parent
   chain: Chain;
-  // enforce that an address exists
-  address: TokenAddress;
 }
 
+// todo: fix all usage of TokenAddress to TokenID
 export type TokenAddress = string; // a valid hex address, eg. 0x01
 
 export type TokenPair = [Token, Token];
@@ -16,7 +16,7 @@ export type TokenAddressPair = [TokenAddress, TokenAddress];
 export function getTokenAddress(
   token: Token | TokenAddress | undefined
 ): TokenAddress | undefined {
-  return typeof token === 'string' ? token : token?.address;
+  return typeof token === 'string' ? token : getTokenId(token);
 }
 export function getTokenAddressPair(
   [token0, token1]: TokenPair | TokenAddressPair | [undefined, undefined] = [

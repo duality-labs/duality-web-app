@@ -13,6 +13,7 @@ import BigNumber from 'bignumber.js';
 
 import { useFilteredTokenList } from './hooks';
 import useTokens, {
+  getTokenId,
   useDualityTokens,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
@@ -160,7 +161,7 @@ export default function TokenPicker({
           return newIndex;
         } else if (event.key === 'Enter') {
           const token = filteredList[newIndex];
-          if (token && exclusion?.address !== token.token?.address)
+          if (token && getTokenId(exclusion) !== getTokenId(token.token))
             selectToken(token?.token);
         } else {
           // Ignore all of the keys not including above
@@ -178,7 +179,7 @@ export default function TokenPicker({
         return newIndex;
       });
     },
-    [filteredList, close, exclusion?.address, selectToken]
+    [filteredList, close, exclusion, selectToken]
   );
 
   const [movingAssetRef, createRefForValue] =
@@ -282,7 +283,9 @@ export default function TokenPicker({
             filteredList.map(({ chain, symbol, token }, index) => {
               return token ? (
                 <TokenPickerItem
-                  key={`${token.address}:${token.chain.chain_name}`}
+                  key={`${getTokenId(token) ?? token.base}:${
+                    token.chain.chain_name
+                  }`}
                   token={token}
                   chain={chain}
                   symbol={symbol}
@@ -345,9 +348,10 @@ function TokenPickerItem({
   selectToken: (token?: Token) => void;
   setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
 }) {
-  const address = token.address;
+  const tokenId = getTokenId(token);
+  const exclusionId = getTokenId(exclusion);
   const logos = token.logo_URIs;
-  const isDisabled = !!exclusion?.address && exclusion?.address === address;
+  const isDisabled = !!exclusionId && exclusionId === tokenId;
   const { data: balance = 0 } = useBankBalanceDisplayAmount(token);
   const {
     data: [price = 0],
@@ -363,7 +367,7 @@ function TokenPickerItem({
 
   return (
     <li>
-      <data value={address}>
+      <data value={tokenId}>
         <button
           type="button"
           disabled={isDisabled}
@@ -392,7 +396,7 @@ function TokenPickerItem({
             ></FontAwesomeIcon>
           )}
           <span className="token-symbol">
-            <abbr title={address}>{textListWithMark(symbol)}</abbr>
+            <abbr title={token.display}>{textListWithMark(symbol)}</abbr>
           </span>
           <span className="chain-name">{textListWithMark(chain)}</span>
           {new BigNumber(balance).isZero() ? (

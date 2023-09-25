@@ -38,7 +38,7 @@ import {
   MyNewPositionTableCard,
 } from './MyPositionTableCard';
 
-import { useTokenPathPart } from '../../lib/web3/hooks/useTokens';
+import { getTokenId, useTokenPathPart } from '../../lib/web3/hooks/useTokens';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
@@ -198,8 +198,8 @@ export default function PoolManagement({
     !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
 
   const currentPriceIndexFromTicks = useCurrentPriceIndexFromTicks(
-    tokenA?.address,
-    tokenB?.address
+    getTokenId(tokenA),
+    getTokenId(tokenB)
   );
 
   const [initialPrice, setInitialPrice] = useState<string>('');
@@ -792,8 +792,8 @@ export default function PoolManagement({
     (balanceTokenB && new BigNumber(balanceTokenB).gte(values[1])) || false;
 
   const { data: feeLiquidityMap } = useFeeLiquidityMap(
-    tokenA?.address,
-    tokenB?.address
+    getTokenId(tokenA),
+    getTokenId(tokenB)
   );
 
   const pairPoolDepositFilter = usePoolDepositFilterForPair(
@@ -812,8 +812,8 @@ export default function PoolManagement({
     useEditLiquidity();
 
   const invertedTokenOrder = guessInvertedOrder(
-    tokenA?.address ?? '',
-    tokenB?.address ?? ''
+    getTokenId(tokenA) ?? '',
+    getTokenId(tokenB) ?? ''
   );
 
   const [[viewableMinIndex, viewableMaxIndex] = [], setViewableIndexes] =

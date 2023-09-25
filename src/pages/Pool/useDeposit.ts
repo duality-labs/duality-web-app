@@ -22,6 +22,7 @@ import {
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { formatAmount } from '../../lib/utils/number';
+import { getTokenId } from '../../lib/web3/hooks/useTokens';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -61,7 +62,7 @@ export function useDeposit([tokenA, tokenB]: [
 ] {
   // get previous ticks context
   const [token0, token1] =
-    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
+    useOrderedTokenPair([getTokenId(tokenA), getTokenId(tokenB)]) || [];
   const {
     data: [token0Ticks, token1Ticks],
   } = useTokenPairTickLiquidity([token0, token1]);
@@ -92,30 +93,32 @@ export function useDeposit([tokenA, tokenB]: [
         }
 
         // do not make requests if they are not routable
-        if (!tokenA.address) {
+        const tokenIdA = getTokenId(tokenA);
+        const tokenIdB = getTokenId(tokenB);
+        if (!tokenIdA) {
           throw new Error(
             `Token ${tokenA.symbol} has no address on the Duality chain`
           );
         }
-        if (!tokenB.address) {
+        if (!tokenIdB) {
           throw new Error(
             `Token ${tokenB.symbol} has no address on the Duality chain`
           );
         }
 
-        const forward = token0 === tokenA.address && token1 === tokenB.address;
-        const reverse = token0 === tokenB.address && token1 === tokenA.address;
+        const forward = token0 === tokenIdA && token1 === tokenIdB;
+        const reverse = token0 === tokenIdB && token1 === tokenIdA;
         const pairTicks = forward || reverse;
 
         // if (!pairs || !pairTicks) {
         //   throw new Error(
         //     `Cannot initialize a new pair here: ${[
         //       `our calculation of pair ID as either "${getPairID(
-        //         tokenA.address,
-        //         tokenB.address
+        //         tokenIdA,
+        //         tokenIdB
         //       )}" or "${getPairID(
-        //         tokenB.address,
-        //         tokenA.address
+        //         tokenIdB,
+        //         tokenIdA
         //       )}" may be incorrect.`,
         //     ].join(', ')}`
         //   );
@@ -248,8 +251,8 @@ export function useDeposit([tokenA, tokenB]: [
             [
               dualitylabs.duality.dex.MessageComposer.withTypeUrl.deposit({
                 creator: web3Address,
-                tokenA: tokenA.address,
-                tokenB: tokenB.address,
+                tokenA: tokenIdA,
+                tokenB: tokenIdB,
                 receiver: web3Address,
                 // note: tick indexes must be in the form of "A to B"
                 // as that is what is noted by the key sent to the API
@@ -326,14 +329,14 @@ export function useDeposit([tokenA, tokenB]: [
                   attributes['Reserves1Deposited']
                 );
                 if (
-                  tokenA.address === attributes['Token0'] &&
-                  tokenB.address === attributes['Token1']
+                  tokenIdA === attributes['Token0'] &&
+                  tokenIdB === attributes['Token1']
                 ) {
                   acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease0);
                   acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease1);
                 } else if (
-                  tokenA.address === attributes['Token1'] &&
-                  tokenB.address === attributes['Token0']
+                  tokenIdA === attributes['Token1'] &&
+                  tokenIdB === attributes['Token0']
                 ) {
                   acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease1);
                   acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease0);
