@@ -342,10 +342,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
           {hasContext ? (
             allShareValues
               .sort((a, b) => {
-                return !guessInvertedOrder(
-                  getTokenId(tokenA),
-                  getTokenId(tokenB)
-                )
+                return !guessInvertedOrder([tokenA, tokenB])
                   ? a.deposit.centerTickIndex1To0
                       .subtract(b.deposit.centerTickIndex1To0)
                       .toNumber()

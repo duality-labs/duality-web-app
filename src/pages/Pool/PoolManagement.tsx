@@ -810,10 +810,8 @@ export default function PoolManagement({
   const [{ isValidating: isValidatingEdit }, sendEditRequest] =
     useEditLiquidity();
 
-  const invertedTokenOrder = guessInvertedOrder(
-    getTokenId(tokenA) ?? '',
-    getTokenId(tokenB) ?? ''
-  );
+  const invertedTokenOrder =
+    !!tokenA && !!tokenB && guessInvertedOrder([tokenA, tokenB]);
 
   const [[viewableMinIndex, viewableMaxIndex] = [], setViewableIndexes] =
     useState<[number, number] | undefined>();

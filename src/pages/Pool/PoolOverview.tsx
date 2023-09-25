@@ -484,7 +484,7 @@ function TransactionsTable({
   const query = useQuery({
     queryKey: ['events', action, tokenIdA, tokenIdB, pageOffset],
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
-      const invertedOrder = guessInvertedOrder(tokenIdA, tokenIdB);
+      const invertedOrder = guessInvertedOrder([tokenA, tokenB]);
 
       /*
        * note: you would expect the following to work, but the ABCI query check
@@ -724,11 +724,7 @@ function EventColumn<
     return null;
 
     function getHasInvertedOrder(): boolean {
-      return hasInvertedOrder(
-        getPairID(Token0, Token1),
-        tokenA.base,
-        tokenB.base
-      );
+      return hasInvertedOrder(getPairID(Token0, Token1), [tokenA, tokenB]);
     }
 
     function getTokenAReserves() {
