@@ -287,7 +287,12 @@ function matchTokenBySymbol(symbol: string | undefined) {
   // match regular symbols for local tokens
   else {
     return (token: Token) => {
-      return token.symbol === symbol;
+      return (
+        // match Duaity chain
+        token.chain.chain_id === REACT_APP__CHAIN_ID &&
+        // match symbol
+        token.symbol === symbol
+      );
     };
   }
 }
