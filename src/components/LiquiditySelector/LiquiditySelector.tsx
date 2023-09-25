@@ -159,6 +159,10 @@ export default function LiquiditySelector({
     [tokenA, tokenB]
   );
 
+  const defaultPriceIndex = useMemo(() => {
+    return shortcutDisplayPriceToTickIndex(new BigNumber(1)).toNumber();
+  }, [shortcutDisplayPriceToTickIndex]);
+
   // convert range price state controls into range index state controls
   const fractionalRangeMinIndex = useMemo(() => {
     const index = shortcutDisplayPriceToTickIndex(
@@ -431,6 +435,7 @@ export default function LiquiditySelector({
   // allow user ticks to reset the boundary of the graph
   const [graphMinIndex, graphMaxIndex] = useMemo<[number, number]>(() => {
     const allValues = [
+      edgePriceIndex ?? defaultPriceIndex,
       ...userTicks.map<number | undefined>((tick) => tick?.tickIndexBToA),
       rangeMinIndex,
       rangeMaxIndex,
@@ -450,6 +455,8 @@ export default function LiquiditySelector({
     }
     return [min, max];
   }, [
+    edgePriceIndex,
+    defaultPriceIndex,
     rangeMinIndex,
     rangeMaxIndex,
     userTicks,
@@ -613,7 +620,7 @@ export default function LiquiditySelector({
     function getReserveBValue(reserve: BigNumber): BigNumber {
       return reserve.multipliedBy(edgePrice);
     }
-  }, [emptyBuckets, tokenATicks, tokenBTicks, edgePriceIndex]);
+  }, [edgePriceIndex, emptyBuckets, tokenATicks, tokenBTicks]);
 
   // calculate highest value to plot on the chart
   const yMaxValue = useMemo(() => {
