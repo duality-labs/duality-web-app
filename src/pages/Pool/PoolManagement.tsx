@@ -286,8 +286,8 @@ export default function PoolManagement({
         const newPrice = new BigNumber(priceMin);
         return {
           ...tick,
-          reserveA: newReserveA,
-          reserveB: newReserveB,
+          reserveA: newReserveA.decimalPlaces(0),
+          reserveB: newReserveB.decimalPlaces(0),
           priceBToA: new BigNumber(priceMin),
           tickIndexBToA: priceToTickIndex(newPrice).toNumber(),
         };
@@ -296,16 +296,16 @@ export default function PoolManagement({
         const newPrice = new BigNumber(priceMax);
         return {
           ...tick,
-          reserveA: newReserveA,
-          reserveB: newReserveB,
+          reserveA: newReserveA.decimalPlaces(0),
+          reserveB: newReserveB.decimalPlaces(0),
           priceBToA: new BigNumber(priceMax),
           tickIndexBToA: priceToTickIndex(newPrice).toNumber(),
         };
       }
       return {
         ...tick,
-        reserveA: newReserveA,
-        reserveB: newReserveB,
+        reserveA: newReserveA.decimalPlaces(0),
+        reserveB: newReserveB.decimalPlaces(0),
       };
     }
     if (typeof userTicksOrCallback === 'function') {
