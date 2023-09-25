@@ -7,6 +7,7 @@ import {
 import { Asset, AssetList, Chain } from '@chain-registry/types';
 import {
   Token,
+  TokenID,
   getIbcBaseDenom,
   getIbcDenom,
   getTokenId,
@@ -35,7 +36,6 @@ type TokenList = Array<Token>;
 export const devChain = { ...dualityChain, chain_name: '___dev___' };
 const dualityMainToken: Asset = {
   description: 'SDK default token',
-  address: 'token',
   denom_units: [
     {
       denom: 'token',
@@ -59,7 +59,6 @@ const dualityMainToken: Asset = {
 
 const dualityStakeToken: Asset = {
   description: 'SDK default token',
-  address: 'stake',
   denom_units: [
     {
       denom: 'stake',
@@ -98,8 +97,8 @@ const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
   ? {
       chain_name: devChain.chain_name,
       assets: Object.entries(
-        JSON.parse(REACT_APP__DEV_ASSET_MAP) as { [address: string]: string }
-      ).flatMap<Asset>(([address, path]) => {
+        JSON.parse(REACT_APP__DEV_ASSET_MAP) as { [tokenId: TokenID]: string }
+      ).flatMap<Asset>(([tokenId, path]) => {
         const devChainName = devChain.chain_name;
         const [symbol, chainName = devChainName] = path.split('/');
         const foundAssetList = chainRegistryAssetList.find(
@@ -108,11 +107,12 @@ const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
         const foundAsset = foundAssetList?.assets.find((asset) => {
           return asset.symbol === symbol;
         });
-        // overwrite chain asset with fake address of dev chain
+        // overwrite chain asset with fake tokenId of dev chain
         return foundAsset
           ? {
               ...foundAsset,
-              address,
+              address: tokenId,
+              type_asset: '___dev___',
             }
           : [];
       }),
