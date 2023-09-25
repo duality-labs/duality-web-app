@@ -1627,12 +1627,14 @@ export default function PoolManagement({
                 setEditedUserPosition={setEditedUserPosition}
                 viewableMinIndex={viewableMinIndex}
                 viewableMaxIndex={viewableMaxIndex}
+                edgePriceIndex={edgePriceIndex}
               />
             ) : (
               <MyNewPositionTableCard
                 tokenA={tokenA}
                 tokenB={tokenB}
                 userTicks={userTicks}
+                edgePriceIndex={edgePriceIndex}
               />
             )}
           </div>
