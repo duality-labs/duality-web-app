@@ -283,7 +283,9 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
 }
 
 const ibcDenomRegex = /^ibc\/[0-9A-Fa-f]+$/;
+// allow matching by token symbol or IBC denom string (typically from a URL)
 function matchTokenBySymbol(symbol: string | undefined) {
+  // match nothing
   if (!symbol) {
     return () => false;
   }
