@@ -3,7 +3,7 @@ import { Event, parseCoins } from '@cosmjs/stargate';
 
 import { tickIndexToPrice } from './ticks';
 import { WalletAddress } from './address';
-import { Token } from './tokens';
+import { Token, TokenID, getTokenId } from './tokens';
 
 export function mapEventAttributes<T = ChainEvent>(event: Event): T {
   return {
@@ -223,8 +223,14 @@ export function getSpentTokenAmount(
   {
     address: spender,
     matchToken,
+    matchTokenId = getTokenId(matchToken),
     includeFees,
-  }: { address?: WalletAddress; matchToken?: Token; includeFees?: boolean } = {}
+  }: {
+    address?: WalletAddress;
+    matchToken?: Token;
+    matchTokenId?: TokenID;
+    includeFees?: boolean;
+  } = {}
 ): BigNumber {
   const excludedEvents: ChainEvent[] = includeFees
     ? []
@@ -233,7 +239,7 @@ export function getSpentTokenAmount(
     (event): event is CoinSpentEvent =>
       !excludedEvents.includes(event) &&
       event.type === 'coin_spent' &&
-      (matchToken ? event.attributes.amount.endsWith(matchToken.base) : true) &&
+      (matchTokenId ? event.attributes.amount.endsWith(matchTokenId) : true) &&
       (spender ? event.attributes.spender === spender : true)
   );
   return sumTokenEventAmounts(tokenEvents);
@@ -244,8 +250,14 @@ export function getReceivedTokenAmount(
   {
     address: receiver,
     matchToken,
+    matchTokenId = getTokenId(matchToken),
     includeFees,
-  }: { address?: WalletAddress; matchToken?: Token; includeFees?: boolean } = {}
+  }: {
+    address?: WalletAddress;
+    matchToken?: Token;
+    matchTokenId?: TokenID;
+    includeFees?: boolean;
+  } = {}
 ): BigNumber {
   const excludedEvents: ChainEvent[] = includeFees
     ? []
@@ -254,7 +266,7 @@ export function getReceivedTokenAmount(
     (event): event is CoinReceivedEvent =>
       !excludedEvents.includes(event) &&
       event.type === 'coin_received' &&
-      (matchToken ? event.attributes.amount.endsWith(matchToken.base) : true) &&
+      (matchTokenId ? event.attributes.amount.endsWith(matchTokenId) : true) &&
       (receiver ? event.attributes.receiver === receiver : true)
   );
   return sumTokenEventAmounts(tokenEvents);
