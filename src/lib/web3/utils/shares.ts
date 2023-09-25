@@ -33,10 +33,7 @@ export function getShareDenom(
   fee: number
 ): string | undefined {
   const tokenAddresses = resolveTokenIdPair(tokens);
-  const [token0Address, token1Address] = guessInvertedOrder(
-    tokenAddresses[0],
-    tokenAddresses[1]
-  )
+  const [token0Address, token1Address] = guessInvertedOrder(tokens)
     ? [tokenAddresses[1], tokenAddresses[0]]
     : tokenAddresses;
   if (token0Address && token1Address && !isNaN(tickIndex1To0) && !isNaN(fee)) {

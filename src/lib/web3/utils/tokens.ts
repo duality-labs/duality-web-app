@@ -12,7 +12,7 @@ export type TokenID = string; // a valid token identifier, eg. token or ibc/3C3D
 
 export type TokenPair = [Token, Token];
 export type TokenIdPair = [TokenID, TokenID];
-function resolveTokenId(
+export function resolveTokenId(
   token: Token | TokenID | undefined
 ): TokenID | undefined {
   return typeof token === 'string' ? token : getTokenId(token);

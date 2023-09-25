@@ -1,5 +1,11 @@
 import { TickInfo } from './ticks';
-import { TokenID, TokenIdPair, TokenPair, resolveTokenIdPair } from './tokens';
+import {
+  TokenID,
+  TokenIdPair,
+  TokenPair,
+  resolveTokenId,
+  resolveTokenIdPair,
+} from './tokens';
 
 export interface PairInfo {
   token0: string;
@@ -26,11 +32,11 @@ export function getPairID(
 ): PairIdString {
   return token0 && token1 ? `${token0}<>${token1}` : '';
 }
-export function getTokenAddressPairID(
+export function getTokenPairID(
   tokenPair: TokenPair | TokenIdPair
 ): PairIdString {
-  const tokenAddressPair = resolveTokenIdPair(tokenPair);
-  return getPairID(...tokenAddressPair);
+  const tokenIdPair = resolveTokenIdPair(tokenPair);
+  return getPairID(...tokenIdPair);
 }
 
 /**
@@ -42,21 +48,19 @@ export function getTokenAddressPairID(
  */
 export function hasInvertedOrder(
   pairID: string,
-  tokenA: string,
-  tokenB: string
+  tokenPair: TokenPair | TokenIdPair
 ): boolean {
-  return getPairID(tokenA, tokenB) !== pairID;
+  return getTokenPairID(tokenPair) !== pairID;
 }
 
 export function guessInvertedOrder(
-  tokenA?: string,
-  tokenB?: string
+  tokens: TokenPair | TokenIdPair
 ): boolean | undefined {
   // assume that Array.sort is equivalent to the sorting function in Golang
   // for all known token address values
-  const pairID = getPairID(...[tokenA, tokenB].sort());
-  return tokenA && tokenB
-    ? hasInvertedOrder(pairID, tokenA, tokenB)
+  const tokenPairID = getPairID(...tokens.map(resolveTokenId).sort());
+  return tokens[0] && tokens[1]
+    ? hasInvertedOrder(tokenPairID, tokens)
     : undefined;
 }
 

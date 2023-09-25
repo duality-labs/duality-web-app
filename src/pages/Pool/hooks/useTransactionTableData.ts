@@ -76,7 +76,7 @@ export default function useTransactionTableData({
     ],
     enabled: !!(tokenIdA && tokenIdB),
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
-      const invertedOrder = guessInvertedOrder(tokenIdA, tokenIdB);
+      const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
 
       /*
        * note: you would expect the following to work, but the ABCI query check

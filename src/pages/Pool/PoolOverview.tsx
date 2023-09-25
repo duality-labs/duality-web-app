@@ -592,11 +592,7 @@ function EventColumn<
     return null;
 
     function getHasInvertedOrder(): boolean {
-      return hasInvertedOrder(
-        getPairID(Token0, Token1),
-        tokenA.base,
-        tokenB.base
-      );
+      return hasInvertedOrder(getPairID(Token0, Token1), [tokenA, tokenB]);
     }
 
     function getTokenAReserves() {
