@@ -24,7 +24,7 @@ import useTokenPairs from './hooks/useTokenPairs';
 
 import { feeTypes } from './utils/fees';
 
-import { Token, TokenAddress } from './utils/tokens';
+import { Token, TokenID } from './utils/tokens';
 import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairIdString, getPairID } from './utils/pairs';
 
@@ -72,7 +72,7 @@ interface IndexerContextType {
     isValidating: boolean;
   };
   tokenPairs: {
-    data?: [TokenAddress, TokenAddress][];
+    data?: [TokenID, TokenID][];
     isValidating: boolean;
   };
   pairUpdateHeight: PairUpdateHeightData;

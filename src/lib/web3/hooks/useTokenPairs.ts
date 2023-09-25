@@ -9,11 +9,11 @@ import {
 } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { getShareInfo } from '../utils/shares';
 import { getPairID } from '../utils/pairs';
-import { TokenAddress } from '../utils/tokens';
+import { TokenID } from '../utils/tokens';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 type QueryAllTokenMapState = {
-  data: [TokenAddress, TokenAddress][] | undefined;
+  data: [TokenID, TokenID][] | undefined;
   isValidating: boolean;
   error: Error | null;
 };
@@ -76,22 +76,23 @@ export default function useTokenPairs({
 
   // place pages of data into the same list
   const tradingPairs = useMemo(() => {
-    const tradingPairMap = data?.pages?.reduce<
-      Map<string, [TokenAddress, TokenAddress]>
-    >((acc, page) => {
-      page?.supply.forEach((coin) => {
-        const match = getShareInfo(coin);
-        if (match) {
-          const { token0Address, token1Address } = match;
-          acc.set(getPairID(token0Address, token1Address), [
-            token0Address,
-            token1Address,
-          ]);
-        }
-      });
+    const tradingPairMap = data?.pages?.reduce<Map<string, [TokenID, TokenID]>>(
+      (acc, page) => {
+        page?.supply.forEach((coin) => {
+          const match = getShareInfo(coin);
+          if (match) {
+            const { token0Address, token1Address } = match;
+            acc.set(getPairID(token0Address, token1Address), [
+              token0Address,
+              token1Address,
+            ]);
+          }
+        });
 
-      return acc;
-    }, new Map<string, [TokenAddress, TokenAddress]>());
+        return acc;
+      },
+      new Map<string, [TokenID, TokenID]>()
+    );
     return tradingPairMap && Array.from(tradingPairMap.values());
   }, [data]);
 
@@ -100,10 +101,9 @@ export default function useTokenPairs({
 }
 
 // add convenience method to fetch ticks in a pair
-export function useOrderedTokenPair([tokenA, tokenB]: [
-  TokenAddress?,
-  TokenAddress?
-]): [token0: TokenAddress, token1: TokenAddress] | undefined {
+export function useOrderedTokenPair([tokenA, tokenB]: [TokenID?, TokenID?]):
+  | [token0: TokenID, token1: TokenID]
+  | undefined {
   const { data: tokenPairs } = useTokenPairs();
   // search for ordered token pair in our token pair list
   return tokenA && tokenB

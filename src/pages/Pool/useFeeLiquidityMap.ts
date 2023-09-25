@@ -4,12 +4,9 @@ import BigNumber from 'bignumber.js';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { calculateShares } from '../../lib/web3/utils/ticks';
-import { TokenAddress } from '../../lib/web3/utils/tokens';
+import { TokenID } from '../../lib/web3/utils/tokens';
 
-export default function useFeeLiquidityMap(
-  tokenA?: TokenAddress,
-  tokenB?: TokenAddress
-) {
+export default function useFeeLiquidityMap(tokenA?: TokenID, tokenB?: TokenID) {
   const {
     data: [token0Ticks, token1Ticks],
     isValidating,

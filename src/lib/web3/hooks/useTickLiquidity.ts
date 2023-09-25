@@ -18,7 +18,7 @@ import { useOrderedTokenPair } from './useTokenPairs';
 import { usePairUpdateHeight } from '../indexerProvider';
 import { getTokenId, useToken } from '../../../lib/web3/hooks/useTokens';
 
-import { Token, TokenAddress } from '../utils/tokens';
+import { Token, TokenID } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
 
 type QueryAllTickLiquidityState = {
@@ -195,8 +195,8 @@ function transformPoolReserves(
 
 // add convenience method to fetch ticks in a pair
 export function useTokenPairTickLiquidity([tokenA, tokenB]: [
-  TokenAddress?,
-  TokenAddress?
+  TokenID?,
+  TokenID?
 ]): {
   data: [TickInfo[] | undefined, TickInfo[] | undefined];
   isValidating: boolean;

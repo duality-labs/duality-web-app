@@ -18,10 +18,10 @@ import { useRpcPromise } from '../rpcQueryClient';
 import { getPairID } from '../utils/pairs';
 import {
   Token,
-  TokenAddress,
-  TokenAddressPair,
+  TokenID,
+  TokenIdPair,
   TokenPair,
-  getTokenAddressPair,
+  resolveTokenIdPair,
 } from '../utils/tokens';
 import useTokens, {
   matchTokenByDenom,
@@ -47,9 +47,9 @@ export type UserDepositFilter = (
 const defaultFilter: UserDepositFilter = () => true;
 
 export function usePoolDepositFilterForPair(
-  tokenPair: TokenPair | TokenAddressPair | undefined
+  tokenPair: TokenPair | TokenIdPair | undefined
 ): (poolDeposit: DirectionalDepositRecord) => boolean {
-  const [tokenAddressA, tokenAddressB] = getTokenAddressPair(tokenPair);
+  const [tokenAddressA, tokenAddressB] = resolveTokenIdPair(tokenPair);
   const poolDepositFilter = useCallback(
     (poolDeposit: DirectionalDepositRecord) => {
       const addresses = [tokenAddressA, tokenAddressB];
@@ -259,7 +259,7 @@ export function useUserPositionsTotalReserves(
 export interface ShareValueContext {
   userShares: BigNumber;
   dexTotalShares: BigNumber;
-  token: TokenAddress;
+  token: TokenID;
   tickIndex1To0: BigNumber;
   dexTotalReserves: BigNumber;
   userReserves: BigNumber;

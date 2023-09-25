@@ -1,10 +1,5 @@
 import { TickInfo } from './ticks';
-import {
-  TokenAddress,
-  TokenAddressPair,
-  TokenPair,
-  getTokenAddressPair,
-} from './tokens';
+import { TokenID, TokenIdPair, TokenPair, resolveTokenIdPair } from './tokens';
 
 export interface PairInfo {
   token0: string;
@@ -26,15 +21,15 @@ export type PairIdString = string;
  * @returns pair id for tokens
  */
 export function getPairID(
-  token0: TokenAddress = '',
-  token1: TokenAddress = ''
+  token0: TokenID = '',
+  token1: TokenID = ''
 ): PairIdString {
   return token0 && token1 ? `${token0}<>${token1}` : '';
 }
 export function getTokenAddressPairID(
-  tokenPair: TokenPair | TokenAddressPair
+  tokenPair: TokenPair | TokenIdPair
 ): PairIdString {
-  const tokenAddressPair = getTokenAddressPair(tokenPair);
+  const tokenAddressPair = resolveTokenIdPair(tokenPair);
   return getPairID(...tokenAddressPair);
 }
 
