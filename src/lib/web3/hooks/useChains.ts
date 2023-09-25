@@ -13,10 +13,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import { getChainInfo } from '../wallets/keplr';
 import dualityLogo from '../../../assets/logo/logo.svg';
-import { Token } from '../utils/tokens';
+import { Token, getTokenId } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import Long from 'long';
-import { getTokenId } from './useTokens';
 
 interface QueryConnectionParamsResponse {
   params?: QueryConnectionParams;

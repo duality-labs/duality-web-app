@@ -6,7 +6,6 @@ import Dialog from '../Dialog/Dialog';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import useTokens, {
-  getTokenId,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
 import BridgeCard from './BridgeCard';
@@ -15,7 +14,11 @@ import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import { dualityChain } from '../../lib/web3/hooks/useChains';
 
 import { formatAmount } from '../../lib/utils/number';
-import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getDisplayDenomAmount,
+  getTokenId,
+} from '../../lib/web3/utils/tokens';
 
 import './AssetsTableCard.scss';
 

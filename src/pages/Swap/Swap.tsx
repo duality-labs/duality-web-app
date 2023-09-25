@@ -13,7 +13,6 @@ import {
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
-  getTokenId,
   getTokenPathPart,
   useTokenBySymbol,
 } from '../../lib/web3/hooks/useTokens';
@@ -32,7 +31,11 @@ import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import { formatPercentage } from '../../lib/utils/number';
-import { Token, getBaseDenomAmount } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getBaseDenomAmount,
+  getTokenId,
+} from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 
 import './Swap.scss';

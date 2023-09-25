@@ -5,7 +5,14 @@ import {
   chains as chainRegistryChainList,
 } from 'chain-registry';
 import { Asset, AssetList, Chain } from '@chain-registry/types';
-import { Token, getIbcDenom, getTokenValue } from '../utils/tokens';
+import {
+  Token,
+  getIbcBaseDenom,
+  getIbcDenom,
+  getTokenId,
+  getTokenValue,
+  ibcDenomRegex,
+} from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
 import { dualityChain, providerChain, useIbcOpenTransfers } from './useChains';
 
@@ -143,6 +150,11 @@ const tokenListCache: {
   [key: string]: TokenList;
 } = {};
 
+function defaultSort(a: Token, b: Token) {
+  // compare by symbol name
+  return a.symbol.localeCompare(b.symbol);
+}
+
 const allTokens = () => true;
 export default function useTokens(sortFunction = defaultSort) {
   tokenListCache['allTokens'] =
@@ -266,7 +278,6 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
   }, [tokenList, ibcOpenTransfersInfo]);
 }
 
-const ibcDenomRegex = /^ibc\/[0-9A-Fa-f]+$/;
 // allow matching by token symbol or IBC denom string (typically from a URL)
 function matchTokenBySymbol(symbol: string | undefined) {
   // match nothing
@@ -305,32 +316,10 @@ export function useTokenBySymbol(symbol: string | undefined) {
   return tokensWithIbcInfo.find(matchTokenBySymbol(symbol));
 }
 
-export function getIbcBaseDenom(token: Token | undefined): string | undefined {
-  const ibcDenom = token?.ibc?.source_denom;
-  // return the source IBC denom if it is found
-  if (ibcDenom) {
-    const baseUnit = token.denom_units.find((unit) => unit.denom === ibcDenom);
-    // return the denom that matches an appended IBC denom alias
-    if (baseUnit) {
-      return baseUnit.aliases?.find((alias) => alias.match(ibcDenomRegex));
-    }
-  }
-}
-
 // get a "symbol" string that can be later decoded by matchTokenBySymbol
 function getTokenSymbol(token: Token | undefined): string | undefined {
   // return IBC denom or the local token symbol as the token identifier
   return token?.ibc ? getIbcBaseDenom(token) : token?.symbol;
-}
-// the token ID is what is the Duality chain uses as the identifying string of its denoms
-// it is basically the base denom in local or IBC string format
-export function getTokenId(token: Token | undefined): string | undefined {
-  // return IBC base denom or the local token base denom as the token identifier
-  if (token?.ibc) {
-    return getIbcBaseDenom(token);
-  } else if (token?.chain.chain_id === REACT_APP__CHAIN_ID) {
-    return token?.base;
-  }
 }
 // return token identifier that can be used as a part of a URL
 // (for later decoding by matchTokenBySymbol and useTokenBySymbol)
@@ -340,11 +329,6 @@ export function getTokenPathPart(token: Token | undefined) {
 
 export function useTokenPathPart(token: Token | undefined) {
   return useMemo(() => getTokenPathPart(token), [token]);
-}
-
-function defaultSort(a: Token, b: Token) {
-  // compare by symbol name
-  return a.symbol.localeCompare(b.symbol);
 }
 
 export function matchToken(tokenSearch: Token) {

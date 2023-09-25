@@ -8,14 +8,17 @@ import TableCard, { TableCardProps } from './TableCard';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import useTokens, {
-  getTokenId,
   getTokenPathPart,
   matchTokenByDenom,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
 
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
-import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getDisplayDenomAmount,
+  getTokenId,
+} from '../../lib/web3/utils/tokens';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { getPairID } from '../../lib/web3/utils/pairs';

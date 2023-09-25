@@ -27,7 +27,11 @@ import {
   formatDecimalPlaces,
   formatPercentage,
 } from '../../lib/utils/number';
-import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getDisplayDenomAmount,
+  getTokenId,
+} from '../../lib/web3/utils/tokens';
 
 import { usePoolDepositFilterForPair } from '../../lib/web3/hooks/useUserShares';
 import {
@@ -38,7 +42,7 @@ import IncentivesCard from './IncentivesCard';
 
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
-import { getTokenId, matchTokens } from '../../lib/web3/hooks/useTokens';
+import { matchTokens } from '../../lib/web3/hooks/useTokens';
 import { useCurrentPriceFromTicks } from '../LiquiditySelector/useCurrentPriceFromTicks';
 
 import './PoolsTableCard.scss';

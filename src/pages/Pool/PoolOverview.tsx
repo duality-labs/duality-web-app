@@ -13,7 +13,11 @@ import { SmallCardRow } from '../../components/cards/SmallCard';
 import StatCardTVL from '../../components/stats/StatCardTVL';
 
 import { formatAddress } from '../../lib/web3/utils/address';
-import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getDisplayDenomAmount,
+  getTokenId,
+} from '../../lib/web3/utils/tokens';
 import {
   getPairID,
   guessInvertedOrder,
@@ -41,7 +45,6 @@ import { formatRelativeTime } from '../../lib/utils/time';
 
 import './Pool.scss';
 import useTokens, {
-  getTokenId,
   matchTokenByDenom,
   useTokenPathPart,
   useTokenValue,

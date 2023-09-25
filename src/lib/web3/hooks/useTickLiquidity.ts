@@ -16,9 +16,9 @@ import { useRpcPromise } from '../rpcQueryClient';
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
 import { usePairUpdateHeight } from '../indexerProvider';
-import { getTokenId, useToken } from '../../../lib/web3/hooks/useTokens';
+import { useToken } from '../../../lib/web3/hooks/useTokens';
 
-import { Token, TokenID } from '../utils/tokens';
+import { Token, TokenID, getTokenId } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
 
 type QueryAllTickLiquidityState = {
