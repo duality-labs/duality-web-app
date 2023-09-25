@@ -8,23 +8,22 @@ export interface Token extends Asset {
   chain: Chain;
 }
 
-// todo: fix all usage of TokenAddress to TokenID
-export type TokenAddress = string; // a valid hex address, eg. 0x01
+export type TokenID = string; // a valid token identifier, eg. token or ibc/3C3D7B3BE4ECC85A0E5B52A3AEC3B7DFC2AA9CA47C37821E57020D6807043BE9
 
 export type TokenPair = [Token, Token];
-export type TokenAddressPair = [TokenAddress, TokenAddress];
-export function getTokenAddress(
-  token: Token | TokenAddress | undefined
-): TokenAddress | undefined {
+export type TokenIdPair = [TokenID, TokenID];
+function resolveTokenId(
+  token: Token | TokenID | undefined
+): TokenID | undefined {
   return typeof token === 'string' ? token : getTokenId(token);
 }
-export function getTokenAddressPair(
-  [token0, token1]: TokenPair | TokenAddressPair | [undefined, undefined] = [
+export function resolveTokenIdPair(
+  [token0, token1]: TokenPair | TokenIdPair | [undefined, undefined] = [
     undefined,
     undefined,
   ]
-): [TokenAddress | undefined, TokenAddress | undefined] {
-  return [getTokenAddress(token0), getTokenAddress(token1)];
+): [TokenID | undefined, TokenID | undefined] {
+  return [resolveTokenId(token0), resolveTokenId(token1)];
 }
 
 export function getDenomAmount(

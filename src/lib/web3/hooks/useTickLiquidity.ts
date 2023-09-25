@@ -6,27 +6,24 @@ import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
 import { useToken } from '../../../lib/web3/hooks/useTokens';
 
-import { Token, TokenAddress } from '../utils/tokens';
 import { useIndexerStreamOfDualDataSet } from './useIndexer';
+import { Token, TokenID } from '../utils/tokens';
 
 type ReserveDataRow = [tickIndex: number, reserves: number];
 
 // add convenience method to fetch ticks in a pair
-export function useTokenPairTickLiquidity([tokenAddressA, tokenAddressB]: [
-  TokenAddress?,
-  TokenAddress?
+export function useTokenPairTickLiquidity([tokenIdA, tokenIdB]: [
+  TokenID?,
+  TokenID?
 ]): {
   data: [TickInfo[] | undefined, TickInfo[] | undefined];
   isValidating: boolean;
   error: unknown;
 } {
-  const [token0Address, token1Address] =
-    useOrderedTokenPair([tokenAddressA, tokenAddressB]) || [];
+  const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
   // stream data from indexer
   const { data, error } = useIndexerStreamOfDualDataSet<ReserveDataRow>(
-    tokenAddressA &&
-      tokenAddressB &&
-      `/liquidity/pair/${tokenAddressA}/${tokenAddressB}`,
+    tokenIdA && tokenIdB && `/liquidity/pair/${tokenIdA}/${tokenIdB}`,
     {
       // remove entries of value 0 from the accumulated map, they are not used
       mapEntryRemovalValue: 0,
@@ -34,8 +31,8 @@ export function useTokenPairTickLiquidity([tokenAddressA, tokenAddressB]: [
   );
 
   // add token context into pool reserves
-  const token0 = useToken(token0Address);
-  const token1 = useToken(token1Address);
+  const token0 = useToken(tokenId0);
+  const token1 = useToken(tokenId1);
 
   // add token context into pool reserves
   const [tickInfoA, tickInfoB] = useMemo<

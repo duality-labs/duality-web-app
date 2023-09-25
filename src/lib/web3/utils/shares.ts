@@ -1,5 +1,5 @@
 import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
-import { TokenAddressPair, TokenPair, getTokenAddressPair } from './tokens';
+import { TokenIdPair, TokenPair, resolveTokenIdPair } from './tokens';
 import { guessInvertedOrder } from './pairs';
 
 export interface IndexedShare {
@@ -28,11 +28,11 @@ export function getShareInfo(coin: Coin) {
 }
 
 export function getShareDenom(
-  tokens: TokenPair | TokenAddressPair,
+  tokens: TokenPair | TokenIdPair,
   tickIndex1To0: number,
   fee: number
 ): string | undefined {
-  const tokenAddresses = getTokenAddressPair(tokens);
+  const tokenAddresses = resolveTokenIdPair(tokens);
   const [token0Address, token1Address] = guessInvertedOrder(
     tokenAddresses[0],
     tokenAddresses[1]
