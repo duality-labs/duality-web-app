@@ -290,7 +290,7 @@ function matchTokenBySymbol(symbol: string | undefined) {
   // match denom aliases for IBC tokens
   if (symbol.match(ibcDenomRegex)) {
     return (tokenWithIbcInfo: Token) => {
-      return tokenWithIbcInfo.denom_units?.find((unit) =>
+      return !!tokenWithIbcInfo.denom_units?.find((unit) =>
         unit.aliases?.find((alias) => alias === symbol)
       );
     };
