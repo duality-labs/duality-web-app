@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { Event, parseCoins } from '@cosmjs/stargate';
 import { WalletAddress } from './address';
-import { Token } from './tokens';
+import { TokenID } from './tokens';
 
 export function mapEventAttributes<T = ChainEvent>(event: Event): T {
   return {
@@ -193,9 +193,9 @@ export function getSpentTokenAmount(
   events: ChainEvent[],
   spender: WalletAddress,
   {
-    matchToken,
+    matchTokenId,
     includeFees,
-  }: { matchToken?: Token; includeFees?: boolean } = {}
+  }: { matchTokenId?: TokenID; includeFees?: boolean } = {}
 ): BigNumber {
   const excludedEvents: ChainEvent[] = includeFees
     ? []
@@ -204,7 +204,7 @@ export function getSpentTokenAmount(
     (event): event is CoinSpentEvent =>
       !excludedEvents.includes(event) &&
       event.type === 'coin_spent' &&
-      (matchToken ? event.attributes.amount.endsWith(matchToken.base) : true) &&
+      (matchTokenId ? event.attributes.amount.endsWith(matchTokenId) : true) &&
       event.attributes.spender === spender
   );
   return sumTokenEventAmounts(tokenEvents);
@@ -214,9 +214,9 @@ export function getReceivedTokenAmount(
   events: ChainEvent[],
   receiver: WalletAddress,
   {
-    matchToken,
+    matchTokenId,
     includeFees,
-  }: { matchToken?: Token; includeFees?: boolean } = {}
+  }: { matchTokenId?: TokenID; includeFees?: boolean } = {}
 ): BigNumber {
   const excludedEvents: ChainEvent[] = includeFees
     ? []
@@ -225,7 +225,7 @@ export function getReceivedTokenAmount(
     (event): event is CoinReceivedEvent =>
       !excludedEvents.includes(event) &&
       event.type === 'coin_received' &&
-      (matchToken ? event.attributes.amount.endsWith(matchToken.base) : true) &&
+      (matchTokenId ? event.attributes.amount.endsWith(matchTokenId) : true) &&
       event.attributes.receiver === receiver
   );
   return sumTokenEventAmounts(tokenEvents);

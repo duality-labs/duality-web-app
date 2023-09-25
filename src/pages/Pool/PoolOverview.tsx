@@ -870,15 +870,15 @@ function SwapColumn({
     function getTokenAReserves() {
       const address = attributes.Creator;
       return attributes.TokenIn === tokenIdA
-        ? getSpentTokenAmount(events, address, { matchToken: tokenA })
-        : getReceivedTokenAmount(events, address, { matchToken: tokenA });
+        ? getSpentTokenAmount(events, address, { matchTokenId: tokenIdA })
+        : getReceivedTokenAmount(events, address, { matchTokenId: tokenIdA });
     }
 
     function getTokenBReserves() {
       const address = attributes.Creator;
       return attributes.TokenIn === tokenIdB
-        ? getSpentTokenAmount(events, address, { matchToken: tokenB })
-        : getReceivedTokenAmount(events, address, { matchToken: tokenB });
+        ? getSpentTokenAmount(events, address, { matchTokenId: tokenIdB })
+        : getReceivedTokenAmount(events, address, { matchTokenId: tokenIdB });
     }
 
     function getTokenReservesInDenom(token: Token, reserves: BigNumber.Value) {
