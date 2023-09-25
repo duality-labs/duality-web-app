@@ -38,7 +38,7 @@ import IncentivesCard from './IncentivesCard';
 
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
-import { matchTokens } from '../../lib/web3/hooks/useTokens';
+import { getTokenId, matchTokens } from '../../lib/web3/hooks/useTokens';
 import { useCurrentPriceFromTicks } from '../LiquiditySelector/useCurrentPriceFromTicks';
 
 import './PoolsTableCard.scss';
@@ -78,7 +78,10 @@ export default function MyPoolStakesTableCard<T extends string | number>({
     return [...userPositionsShareValues, ...userStakedShareValues];
   }, [userPositionsShareValues, userStakedShareValues]);
 
-  const edgePrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+  const edgePrice = useCurrentPriceFromTicks(
+    getTokenId(tokenA),
+    getTokenId(tokenB)
+  );
 
   const maxPoolEquivalentReservesA = useMemo(() => {
     return edgePrice
@@ -109,7 +112,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
       amountB: number[];
     }>(
       (acc, userPosition) => {
-        const tokensInverted = tokenA.address !== userPosition.token0.address;
+        const tokensInverted = !matchTokens(tokenA, userPosition.token0);
 
         const { tokenAContext, tokenBContext } = !tokensInverted
           ? {
@@ -339,7 +342,10 @@ export default function MyPoolStakesTableCard<T extends string | number>({
           {hasContext ? (
             allShareValues
               .sort((a, b) => {
-                return !guessInvertedOrder(tokenA.address, tokenB.address)
+                return !guessInvertedOrder(
+                  getTokenId(tokenA),
+                  getTokenId(tokenB)
+                )
                   ? a.deposit.centerTickIndex1To0
                       .subtract(b.deposit.centerTickIndex1To0)
                       .toNumber()
@@ -444,7 +450,10 @@ function StakingRow({
 }) {
   const tokensInverted = !matchTokens(tokenA, userPosition.token0);
 
-  const edgePrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+  const edgePrice = useCurrentPriceFromTicks(
+    getTokenId(tokenA),
+    getTokenId(tokenB)
+  );
   const {
     tokenAContext,
     tokenBContext,

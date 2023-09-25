@@ -10,7 +10,7 @@ import { createTransactionToasts } from '../../../components/Notifications/commo
 
 import { getDisplayDenomAmount } from '../../../lib/web3/utils/tokens';
 import useTokens, {
-  matchTokenByAddress,
+  matchTokenByDenom,
   useTokensWithIbcInfo,
 } from '../../../lib/web3/hooks/useTokens';
 import {
@@ -128,7 +128,7 @@ export function useSwap(): [
       if (!wallet || !address) return onError('Client has no wallet');
       if (!tokens) return onError('Send not ready: token list not ready');
 
-      const tokenOutToken = tokens.find(matchTokenByAddress(tokenOut));
+      const tokenOutToken = tokens.find(matchTokenByDenom(tokenOut));
       if (!tokenOutToken) return onError('Token out was not found');
 
       createTransactionToasts(

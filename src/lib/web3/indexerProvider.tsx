@@ -16,6 +16,7 @@ import { useWeb3 } from './useWeb3';
 
 import { useRpcPromise } from './rpcQueryClient';
 import useTokens, {
+  getTokenId,
   matchTokenByDenom,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
@@ -426,12 +427,12 @@ export function useShares({
     return !staked ? shares : stakedShares;
 
     function tokensFilter(tokens: [tokenA: Token, tokenB: Token]) {
-      const [addressA, addressB] = tokens.map((token) => token.address);
+      const [denomA, denomB] = tokens.map((token) => getTokenId(token));
       return function tokenFilter({ pairId = '' }: IndexedShare): boolean {
-        const [address0, address1] = pairId.split('/');
+        const [denom0, denom1] = pairId.split('/');
         return (
-          (addressA === address0 && addressB === address1) ||
-          (addressA === address1 && addressB === address0)
+          (denomA === denom0 && denomB === denom1) ||
+          (denomA === denom1 && denomB === denom0)
         );
       };
     }

@@ -16,7 +16,7 @@ import { useRpcPromise } from '../rpcQueryClient';
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
 import { usePairUpdateHeight } from '../indexerProvider';
-import { useToken } from '../../../lib/web3/hooks/useTokens';
+import { getTokenId, useToken } from '../../../lib/web3/hooks/useTokens';
 
 import { Token, TokenAddress } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
@@ -149,11 +149,13 @@ function transformPoolReserves(
     } = poolReserves;
     const tickIndex1To0 = Number(tickIndex1To0String);
     const fee = feeString && Number(feeString);
+    const tokenId0 = getTokenId(token0);
+    const tokenId1 = getTokenId(token1);
     if (
       !isNaN(tickIndex1To0) &&
       tokenIn &&
-      token0.address === pairID?.token0 &&
-      token1.address === pairID?.token1 &&
+      tokenId0 === pairID?.token0 &&
+      tokenId1 === pairID?.token1 &&
       !isNaN(Number(reservesString)) &&
       !isNaN(Number(fee)) &&
       fee !== undefined
@@ -163,7 +165,7 @@ function transformPoolReserves(
       const bigTickIndex1To0 = new BigNumber(tickIndex1To0 || 0);
       const bigPrice1To0 = tickIndexToPrice(bigTickIndex1To0);
 
-      if (tokenIn === token0.address) {
+      if (tokenIn === tokenId0) {
         return {
           token0,
           token1,
@@ -173,7 +175,7 @@ function transformPoolReserves(
           reserve0: new BigNumber(reservesString || 0),
           reserve1: new BigNumber(0),
         };
-      } else if (tokenIn === token1.address) {
+      } else if (tokenIn === tokenId1) {
         return {
           token0,
           token1,

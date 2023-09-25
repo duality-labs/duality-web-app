@@ -5,7 +5,7 @@ import { Gauge } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality
 import TableCard from './TableCard';
 
 import './IncentivesCard.scss';
-import useTokens, { matchTokenByAddress } from '../../lib/web3/hooks/useTokens';
+import useTokens, { matchTokenByDenom } from '../../lib/web3/hooks/useTokens';
 import { formatAmount, formatDecimalPlaces } from '../../lib/utils/number';
 
 export default function IncentivesCard({
@@ -72,7 +72,7 @@ export default function IncentivesCard({
               </tr>
 
               {gauge.coins.map((coin) => {
-                const token = tokens.find(matchTokenByAddress(coin.denom));
+                const token = tokens.find(matchTokenByDenom(coin.denom));
                 return token ? (
                   <tr className="striped" key={`${index}-${coin.denom}`}>
                     <td className="row flex-centered p-3">

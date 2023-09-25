@@ -41,7 +41,8 @@ import { formatRelativeTime } from '../../lib/utils/time';
 
 import './Pool.scss';
 import useTokens, {
-  matchTokenByAddress,
+  getTokenId,
+  matchTokenByDenom,
   useTokenPathPart,
   useTokenValue,
 } from '../../lib/web3/hooks/useTokens';
@@ -213,7 +214,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
 
   const { data: { gauges } = {} } = useIncentiveGauges();
   const filteredGauges = useMemo(() => {
-    const tokenAddresses = [tokenA?.address, tokenB?.address].filter(
+    const tokenAddresses = [getTokenId(tokenA), getTokenId(tokenB)].filter(
       (address): address is string => !!address
     );
     return tokenAddresses.length > 0
@@ -240,7 +241,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
             >
               <div className="row gap-4">
                 {row.coins.map((coin) => {
-                  const token = tokens.find(matchTokenByAddress(coin.denom));
+                  const token = tokens.find(matchTokenByDenom(coin.denom));
                   return token ? (
                     <div
                       key={coin.denom}
@@ -262,10 +263,10 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
         function TokenCellRange({ row }: { row: Gauge }) {
           if (row.distribute_to?.pairID) {
             const Token0 = tokens.find(
-              matchTokenByAddress(row.distribute_to.pairID.token0)
+              matchTokenByDenom(row.distribute_to.pairID.token0)
             );
             const Token1 = tokens.find(
-              matchTokenByAddress(row.distribute_to.pairID.token1)
+              matchTokenByDenom(row.distribute_to.pairID.token1)
             );
             return (
               <td>
@@ -304,7 +305,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
           return (
             <td>
               {row.coins.map((coin) => {
-                const token = tokens.find(matchTokenByAddress(coin.denom));
+                const token = tokens.find(matchTokenByDenom(coin.denom));
                 return token ? (
                   <div key={coin.denom} className="row gap-2">
                     <div className="col ml-auto">
@@ -477,11 +478,13 @@ function TransactionsTable({
   tokenB: Token;
   action?: DexMessageAction;
 }) {
+  const tokenIdA = getTokenId(tokenA);
+  const tokenIdB = getTokenId(tokenB);
   const [pageOffset] = useState<number>(0);
   const query = useQuery({
-    queryKey: ['events', action, tokenA.address, tokenB.address, pageOffset],
+    queryKey: ['events', action, tokenIdA, tokenIdB, pageOffset],
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
-      const invertedOrder = guessInvertedOrder(tokenA.address, tokenB.address);
+      const invertedOrder = guessInvertedOrder(tokenIdA, tokenIdB);
 
       /*
        * note: you would expect the following to work, but the ABCI query check
@@ -494,11 +497,11 @@ function TransactionsTable({
        *   events: [
        *     `message.module='${'dex'}'`,
        *     !invertedOrder
-       *       ? `message.Token='${tokenA.address}'`
-       *       : `message.Token0='${tokenB.address}'`,
+       *       ? `message.Token='${tokenIdA}'`
+       *       : `message.Token0='${tokenIdB}'`,
        *     !invertedOrder
-       *       ? `message.Token='${tokenB.address}'`
-       *       : `message.Token1='${tokenA.address}'`,
+       *       ? `message.Token='${tokenIdB}'`
+       *       : `message.Token1='${tokenIdA}'`,
        *     action ? `message.action='${action}'` : '',
        *   ].filter(Boolean),
        *   orderBy: cosmos.tx.v1beta1.OrderBy.ORDER_BY_ASC,
@@ -514,11 +517,11 @@ function TransactionsTable({
           [
             `message.module='${'dex'}'`,
             !invertedOrder
-              ? `message.Token0='${tokenA.address}'`
-              : `message.Token0='${tokenB.address}'`,
+              ? `message.Token0='${tokenIdA}'`
+              : `message.Token0='${tokenIdB}'`,
             !invertedOrder
-              ? `message.Token1='${tokenB.address}'`
-              : `message.Token1='${tokenA.address}'`,
+              ? `message.Token1='${tokenIdB}'`
+              : `message.Token1='${tokenIdA}'`,
             action ? `message.action='${action}'` : '',
           ]
             .filter(Boolean)
@@ -723,8 +726,8 @@ function EventColumn<
     function getHasInvertedOrder(): boolean {
       return hasInvertedOrder(
         getPairID(Token0, Token1),
-        tokenA.address,
-        tokenB.address
+        tokenA.base,
+        tokenB.base
       );
     }
 
@@ -824,6 +827,8 @@ function SwapColumn({
     data: [tokenAPrice, tokenBPrice],
     isValidating,
   } = useSimplePrice([tokenA, tokenB]);
+  const tokenIdA = getTokenId(tokenA);
+  const tokenIdB = getTokenId(tokenB);
 
   const content = (() => {
     switch (heading) {
@@ -865,14 +870,14 @@ function SwapColumn({
 
     function getTokenAReserves() {
       const address = attributes.Creator;
-      return attributes.TokenIn === tokenA.address
+      return attributes.TokenIn === tokenIdA
         ? getSpentTokenAmount(events, address, { matchToken: tokenA })
         : getReceivedTokenAmount(events, address, { matchToken: tokenA });
     }
 
     function getTokenBReserves() {
       const address = attributes.Creator;
-      return attributes.TokenIn === tokenB.address
+      return attributes.TokenIn === tokenIdB
         ? getSpentTokenAmount(events, address, { matchToken: tokenB })
         : getReceivedTokenAmount(events, address, { matchToken: tokenB });
     }

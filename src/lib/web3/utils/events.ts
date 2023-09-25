@@ -204,9 +204,7 @@ export function getSpentTokenAmount(
     (event): event is CoinSpentEvent =>
       !excludedEvents.includes(event) &&
       event.type === 'coin_spent' &&
-      (matchToken
-        ? event.attributes.amount.endsWith(matchToken.address)
-        : true) &&
+      (matchToken ? event.attributes.amount.endsWith(matchToken.base) : true) &&
       event.attributes.spender === spender
   );
   return sumTokenEventAmounts(tokenEvents);
@@ -227,9 +225,7 @@ export function getReceivedTokenAmount(
     (event): event is CoinReceivedEvent =>
       !excludedEvents.includes(event) &&
       event.type === 'coin_received' &&
-      (matchToken
-        ? event.attributes.amount.endsWith(matchToken.address)
-        : true) &&
+      (matchToken ? event.attributes.amount.endsWith(matchToken.base) : true) &&
       event.attributes.receiver === receiver
   );
   return sumTokenEventAmounts(tokenEvents);

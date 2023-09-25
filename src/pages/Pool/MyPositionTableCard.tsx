@@ -12,7 +12,7 @@ import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import { EditedPosition } from '../MyLiquidity/useEditLiquidity';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { matchTokens } from '../../lib/web3/hooks/useTokens';
+import { getTokenId, matchTokens } from '../../lib/web3/hooks/useTokens';
 import { useStake } from '../MyLiquidity/useStaking';
 
 import TableCard from '../../components/cards/TableCard';
@@ -237,7 +237,10 @@ export function MyEditedPositionTableCard({
   viewableMaxIndex: number | undefined;
   edgePriceIndex: number | undefined;
 }) {
-  const invertedTokenOrder = guessInvertedOrder(tokenA.address, tokenB.address);
+  const invertedTokenOrder = guessInvertedOrder(
+    getTokenId(tokenA),
+    getTokenId(tokenB)
+  );
 
   const {
     data: [priceA, priceB],

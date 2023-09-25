@@ -8,8 +8,9 @@ import TableCard, { TableCardProps } from './TableCard';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import useTokens, {
+  getTokenId,
   getTokenPathPart,
-  matchTokenByAddress,
+  matchTokenByDenom,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
 
@@ -54,8 +55,8 @@ export default function PoolsTableCard<T extends string | number>({
           .map(([token0, token1]) => {
             return [
               getPairID(token0, token1),
-              tokenList.find(matchTokenByAddress(token0)),
-              tokenList.find(matchTokenByAddress(token1)),
+              tokenList.find(matchTokenByDenom(token0)),
+              tokenList.find(matchTokenByDenom(token1)),
             ];
           })
           // remove pairs with unfound tokens
@@ -146,7 +147,7 @@ function PairRow({
   } = useSimplePrice([token0, token1]);
   const {
     data: [token0Ticks = [], token1Ticks = []],
-  } = useTokenPairTickLiquidity([token0.address, token1.address]);
+  } = useTokenPairTickLiquidity([getTokenId(token0), getTokenId(token1)]);
 
   const [value0, value1] = useMemo(() => {
     const initialValues: [BigNumber, BigNumber] = [
@@ -174,16 +175,16 @@ function PairRow({
 
   const { data: { gauges } = {} } = useIncentiveGauges();
   const incentives = useMemo<Gauge[]>(() => {
-    const tokenAddresses = [token0.address, token1.address].filter(
-      (address): address is string => !!address
+    const tokenIds = [getTokenId(token0), getTokenId(token1)].filter(
+      (id): id is string => !!id
     );
     return gauges && gauges.length > 0
       ? gauges.filter((gauge) => {
-          return tokenAddresses.length > 0
-            ? tokenAddresses.every((address) => {
+          return tokenIds.length > 0
+            ? tokenIds.every((id) => {
                 return (
-                  address === gauge.distribute_to?.pairID?.token0 ||
-                  address === gauge.distribute_to?.pairID?.token1
+                  id === gauge.distribute_to?.pairID?.token0 ||
+                  id === gauge.distribute_to?.pairID?.token1
                 );
               })
             : true;
@@ -264,8 +265,8 @@ export function MyPoolsTableCard<T extends string | number>({
       const { token0: token0Address, token1: token1Address } =
         userPosition.deposit.pairID;
       const pairID = getPairID(token0Address, token1Address);
-      const token0 = tokenList.find(matchTokenByAddress(token0Address));
-      const token1 = tokenList.find(matchTokenByAddress(token1Address));
+      const token0 = tokenList.find(matchTokenByDenom(token0Address));
+      const token1 = tokenList.find(matchTokenByDenom(token1Address));
       if (pairID && token0 && token1) {
         map[pairID] = map[pairID] || { token0, token1, userPositions: [] };
         map[pairID].userPositions.push(userPosition);

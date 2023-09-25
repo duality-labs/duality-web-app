@@ -24,7 +24,7 @@ import {
   getTokenAddressPair,
 } from '../utils/tokens';
 import useTokens, {
-  matchTokenByAddress,
+  matchTokenByDenom,
   useTokensWithIbcInfo,
 } from './useTokens';
 import { StakeContext, UserStakedShare, useShares } from '../indexerProvider';
@@ -331,12 +331,8 @@ export function useUserPositionsContext(
               data?.poolReserves?.fee.toString() === deposit.fee.toString()
             );
           }) ?? undefined;
-        const token0 = allTokens.find(
-          matchTokenByAddress(deposit.pairID.token0)
-        );
-        const token1 = allTokens.find(
-          matchTokenByAddress(deposit.pairID.token1)
-        );
+        const token0 = allTokens.find(matchTokenByDenom(deposit.pairID.token0));
+        const token1 = allTokens.find(matchTokenByDenom(deposit.pairID.token1));
 
         if (token0 && token1) {
           // collect context of both side of the liquidity

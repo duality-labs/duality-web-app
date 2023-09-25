@@ -5,12 +5,7 @@ import {
   chains as chainRegistryChainList,
 } from 'chain-registry';
 import { Asset, AssetList, Chain } from '@chain-registry/types';
-import {
-  Token,
-  TokenAddress,
-  getIbcDenom,
-  getTokenValue,
-} from '../utils/tokens';
+import { Token, getIbcDenom, getTokenValue } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
 import { dualityChain, providerChain, useIbcOpenTransfers } from './useChains';
 
@@ -138,12 +133,8 @@ function getTokens(condition: (chain: Chain) => boolean) {
   return assetList.reduce<TokenList>((result, { chain_name, assets }) => {
     // add each asset with the parent chain details
     const chain = chainList.find((chain) => chain.chain_name === chain_name);
-    // only show assets that have a known address
-    const knownAssets = assets.filter(
-      (asset): asset is Token => !!asset.address
-    );
     return chain && condition(chain)
-      ? result.concat(knownAssets.map((asset) => ({ ...asset, chain })))
+      ? result.concat(assets.map((asset) => ({ ...asset, chain })))
       : result;
   }, []);
 }
@@ -198,7 +189,7 @@ export function useIbcTokens(sortFunction = defaultSort) {
 
 export function useToken(
   tokenAddress: string | undefined,
-  matchFunction = matchTokenByAddress
+  matchFunction = matchTokenByDenom
 ): Token | undefined {
   const tokens = useTokensWithIbcInfo(useTokens());
   return useMemo(() => {
@@ -326,6 +317,8 @@ function getTokenSymbol(token: Token | undefined): string | undefined {
   // return IBC denom or the local token symbol as the token identifier
   return token?.ibc ? getIbcBaseDenom(token) : token?.symbol;
 }
+// the token ID is what is the Duality chain uses as the identifying string of its denoms
+// it is basically the base denom in local or IBC string format
 export function getTokenId(token: Token | undefined): string | undefined {
   // return IBC base denom or the local token base denom as the token identifier
   if (token?.ibc) {
@@ -349,6 +342,23 @@ function defaultSort(a: Token, b: Token) {
   return a.symbol.localeCompare(b.symbol);
 }
 
+export function matchToken(tokenSearch: Token) {
+  const tokenId = getTokenId(tokenSearch);
+  const tokenChainId = tokenSearch.chain.chain_id;
+  if (tokenId && tokenChainId) {
+    return (token: Token) => {
+      return (
+        // check for matching chain
+        token.chain.chain_id === tokenChainId &&
+        // match by identifying token symbols
+        getTokenId(token) === tokenId
+      );
+    };
+  }
+  // match nothing
+  return () => false;
+}
+
 export function matchTokens(tokenA: Token, tokenB: Token) {
   // check for matching chain
   if (tokenA.chain.chain_id === tokenB.chain.chain_id) {
@@ -359,9 +369,6 @@ export function matchTokens(tokenA: Token, tokenB: Token) {
   }
 }
 // utility functions to get a matching token from a list
-export function matchTokenByAddress(address: TokenAddress) {
-  return (token: Token) => token.address === address;
-}
 export function matchTokenByDenom(denom: string) {
   if (denom) {
     // match IBC tokens

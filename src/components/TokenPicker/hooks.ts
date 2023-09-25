@@ -60,7 +60,8 @@ export function useFilteredTokenList(
           [
             token.symbol,
             token.name,
-            token.address,
+            token.base,
+            token.display,
             token.chain.pretty_name,
             token.chain.chain_name,
           ].some((txt) => txt && regexQuery.test(txt))

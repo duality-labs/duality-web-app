@@ -31,6 +31,7 @@ import {
 } from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
+import { getTokenId } from '../../lib/web3/hooks/useTokens';
 
 import './LiquiditySelector.scss';
 
@@ -236,14 +237,16 @@ export default function LiquiditySelector({
     );
 
   const [token0Address, token1Address] =
-    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
+    useOrderedTokenPair([getTokenId(tokenA), getTokenId(tokenB)]) || [];
   const {
     data: [token0Ticks = [], token1Ticks = []],
   } = useTokenPairTickLiquidity([token0Address, token1Address]);
 
   const [forward, reverse] = [
-    token0Address === tokenA?.address && token1Address === tokenB?.address,
-    token1Address === tokenA?.address && token0Address === tokenB?.address,
+    token0Address === getTokenId(tokenA) &&
+      token1Address === getTokenId(tokenB),
+    token1Address === getTokenId(tokenA) &&
+      token0Address === getTokenId(tokenB),
   ];
 
   // translate ticks from token0/1 to tokenA/B
@@ -285,8 +288,8 @@ export default function LiquiditySelector({
   //       (if no existing ticks exist only cuurent price can indicate start and end)
 
   const currentPriceIndexFromTicks = useCurrentPriceIndexFromTicks(
-    tokenA?.address,
-    tokenB?.address
+    getTokenId(tokenA),
+    getTokenId(tokenB)
   );
 
   const isUserTicksAZero =

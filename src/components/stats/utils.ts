@@ -1,9 +1,12 @@
 import { formatCurrency, formatPercentage } from '../../lib/utils/number';
+import { getIbcBaseDenom } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 
 // format a URL path part to reference a token on the indexer
 export function getIndexerTokenPathPart(token: Token) {
-  return encodeURIComponent(token.address);
+  return encodeURIComponent(
+    (token.ibc ? getIbcBaseDenom(token) : token.base) ?? '-'
+  );
 }
 
 export type TimeSeriesRow = [unixTime: number, values: number[]];
