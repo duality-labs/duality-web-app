@@ -19,7 +19,7 @@ import {
   roundToSignificantDigits,
   formatPercentage,
 } from '../../lib/utils/number';
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import {
@@ -31,7 +31,6 @@ import {
 } from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
-import { getTokenId } from '../../lib/web3/hooks/useTokens';
 
 import './LiquiditySelector.scss';
 

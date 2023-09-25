@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { Asset, Chain } from '@chain-registry/types';
 import { sha256 } from '@cosmjs/crypto';
-import { getTokenId } from '../hooks/useTokens';
+
+const { REACT_APP__CHAIN_ID = '' } = process.env;
 
 export interface Token extends Asset {
   // each asset should have exactly one chain parent
@@ -24,6 +25,30 @@ export function resolveTokenIdPair(
   ]
 ): [TokenID | undefined, TokenID | undefined] {
   return [resolveTokenId(token0), resolveTokenId(token1)];
+}
+
+export const ibcDenomRegex = /^ibc\/[0-9A-Fa-f]+$/;
+export function getIbcBaseDenom(token: Token | undefined): string | undefined {
+  const ibcDenom = token?.ibc?.source_denom;
+  // return the source IBC denom if it is found
+  if (ibcDenom) {
+    const baseUnit = token.denom_units.find((unit) => unit.denom === ibcDenom);
+    // return the denom that matches an appended IBC denom alias
+    if (baseUnit) {
+      return baseUnit.aliases?.find((alias) => alias.match(ibcDenomRegex));
+    }
+  }
+}
+
+// the token ID is what is the Duality chain uses as the identifying string of its denoms
+// it is basically the base denom in local or IBC string format
+export function getTokenId(token: Token | undefined): string | undefined {
+  // return IBC base denom or the local token base denom as the token identifier
+  if (token?.ibc) {
+    return getIbcBaseDenom(token);
+  } else if (token?.chain.chain_id === REACT_APP__CHAIN_ID) {
+    return token?.base;
+  }
 }
 
 export function getDenomAmount(

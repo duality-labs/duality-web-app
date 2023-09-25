@@ -13,10 +13,9 @@ import {
   Bar,
 } from '@tradingview/charting-library';
 
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 
 import useTokens, {
-  getTokenId,
   matchTokenByDenom,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';

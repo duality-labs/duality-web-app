@@ -13,7 +13,7 @@ import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/
 import subscriber from '../subscriptionManager';
 import { ValuedUserPositionDepositContext } from './useUserShareValues';
 import { minutes } from '../../utils/time';
-import { getTokenId } from './useTokens';
+import { getTokenId } from '../utils/tokens';
 
 const {
   REACT_APP__REST_API = '',

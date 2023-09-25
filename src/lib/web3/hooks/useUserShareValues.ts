@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
-import useTokens, { getTokenId, matchTokenByDenom } from './useTokens';
+import useTokens, { matchTokenByDenom } from './useTokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { Token, getDisplayDenomAmount } from '../utils/tokens';
+import { Token, getDisplayDenomAmount, getTokenId } from '../utils/tokens';
 import {
   ShareValueContext,
   UserDepositFilter,

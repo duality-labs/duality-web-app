@@ -1,12 +1,11 @@
 import { ReactNode } from 'react';
 
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useCurrentPriceFromTicks } from '../Liquidity/useCurrentPriceFromTicks';
 import { formatPrice } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
 
 import './PriceCard.scss';
-import { getTokenId } from '../../lib/web3/hooks/useTokens';
 
 export function PriceCard({
   tokenA,

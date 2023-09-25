@@ -1,6 +1,5 @@
 import { formatCurrency, formatPercentage } from '../../lib/utils/number';
-import { getIbcBaseDenom } from '../../lib/web3/hooks/useTokens';
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getIbcBaseDenom } from '../../lib/web3/utils/tokens';
 
 // format a URL path part to reference a token on the indexer
 export function getIndexerTokenPathPart(token: Token) {

@@ -38,7 +38,7 @@ import {
   MyNewPositionTableCard,
 } from './MyPositionTableCard';
 
-import { getTokenId, useTokenPathPart } from '../../lib/web3/hooks/useTokens';
+import { useTokenPathPart } from '../../lib/web3/hooks/useTokens';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
@@ -59,6 +59,7 @@ import {
   Token,
   getBaseDenomAmount,
   getDisplayDenomAmount,
+  getTokenId,
   roundToBaseUnit,
 } from '../../lib/web3/utils/tokens';
 

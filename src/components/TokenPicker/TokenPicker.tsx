@@ -13,11 +13,10 @@ import BigNumber from 'bignumber.js';
 
 import { useFilteredTokenList } from './hooks';
 import useTokens, {
-  getTokenId,
   useDualityTokens,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 

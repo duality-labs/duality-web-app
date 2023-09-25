@@ -16,7 +16,6 @@ import { useWeb3 } from './useWeb3';
 
 import { useRpcPromise } from './rpcQueryClient';
 import useTokens, {
-  getTokenId,
   matchTokenByDenom,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
@@ -24,7 +23,7 @@ import useTokenPairs, { TokenPairReserves } from './hooks/useTokenPairs';
 
 import { feeTypes } from './utils/fees';
 
-import { Token } from './utils/tokens';
+import { Token, getTokenId } from './utils/tokens';
 import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairIdString, getPairID } from './utils/pairs';
 

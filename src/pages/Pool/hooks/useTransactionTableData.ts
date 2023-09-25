@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { Token } from '../../../lib/web3/utils/tokens';
+import { Token, getTokenId } from '../../../lib/web3/utils/tokens';
 import { guessInvertedOrder } from '../../../lib/web3/utils/pairs';
 import { DexMessageAction } from '../../../lib/web3/utils/events';
 import { WalletAddress } from '../../../lib/web3/utils/address';
-import { getTokenId } from '../../../lib/web3/hooks/useTokens';
 
 const { REACT_APP__RPC_API = '' } = process.env;
 

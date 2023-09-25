@@ -14,7 +14,11 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
-import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getDisplayDenomAmount,
+  getTokenId,
+} from '../../lib/web3/utils/tokens';
 import {
   DexDepositEvent,
   mapEventAttributes,
@@ -22,7 +26,6 @@ import {
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { formatAmount } from '../../lib/utils/number';
-import { getTokenId } from '../../lib/web3/hooks/useTokens';
 
 interface SendDepositResponse {
   gasUsed: string;
