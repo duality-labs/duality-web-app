@@ -6,6 +6,7 @@ import Dialog from '../Dialog/Dialog';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import useTokens, {
+  matchTokens,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
 import BridgeCard from './BridgeCard';
@@ -115,10 +116,7 @@ export default function AssetsTableCard({
           {filteredList.length > 0 ? (
             filteredList.map(({ chain, symbol, token }) => {
               const foundUserAsset = allUserBankAssets.find((userToken) => {
-                return (
-                  userToken.token.address === token.address &&
-                  userToken.token.chain.chain_id === token.chain.chain_id
-                );
+                return matchTokens(userToken.token, token);
               });
               return foundUserAsset ? (
                 <AssetRow

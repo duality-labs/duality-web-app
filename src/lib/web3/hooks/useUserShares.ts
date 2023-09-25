@@ -23,7 +23,10 @@ import {
   TokenPair,
   getTokenAddressPair,
 } from '../utils/tokens';
-import useTokens from './useTokens';
+import useTokens, {
+  matchTokenByAddress,
+  useTokensWithIbcInfo,
+} from './useTokens';
 import { StakeContext, UserStakedShare, useShares } from '../indexerProvider';
 import { getShareInfo } from '../utils/shares';
 
@@ -285,7 +288,7 @@ export function useUserPositionsContext(
     staked
   );
 
-  const allTokens = useTokens();
+  const allTokens = useTokensWithIbcInfo(useTokens());
 
   return useMemo<UserPositionDepositContext[]>(() => {
     return (selectedPoolDeposits || []).flatMap<UserPositionDepositContext>(
@@ -329,10 +332,10 @@ export function useUserPositionsContext(
             );
           }) ?? undefined;
         const token0 = allTokens.find(
-          (token) => token.address === deposit.pairID.token0
+          matchTokenByAddress(deposit.pairID.token0)
         );
         const token1 = allTokens.find(
-          (token) => token.address === deposit.pairID.token1
+          matchTokenByAddress(deposit.pairID.token1)
         );
 
         if (token0 && token1) {
