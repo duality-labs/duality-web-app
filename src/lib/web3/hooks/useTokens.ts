@@ -326,6 +326,14 @@ function getTokenSymbol(token: Token | undefined): string | undefined {
   // return IBC denom or the local token symbol as the token identifier
   return token?.ibc ? getIbcBaseDenom(token) : token?.symbol;
 }
+export function getTokenId(token: Token | undefined): string | undefined {
+  // return IBC base denom or the local token base denom as the token identifier
+  if (token?.ibc) {
+    return getIbcBaseDenom(token);
+  } else if (token?.chain.chain_id === REACT_APP__CHAIN_ID) {
+    return token?.base;
+  }
+}
 // return token identifier that can be used as a part of a URL
 // (for later decoding by matchTokenBySymbol and useTokenBySymbol)
 export function getTokenPathPart(token: Token | undefined) {
