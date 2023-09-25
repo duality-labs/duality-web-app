@@ -83,7 +83,6 @@ export default function TokenInputGroup({
         <h5 className="token-group-title">
           Available{' '}
           {formatAmount(maxValue, {
-            maximumSignificantDigits: 9,
             useGrouping: true,
           })}
         </h5>
