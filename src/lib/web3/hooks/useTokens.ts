@@ -7,6 +7,7 @@ import {
 import { Asset, AssetList, Chain } from '@chain-registry/types';
 import {
   Token,
+  TokenID,
   getIbcBaseDenom,
   getIbcDenom,
   getTokenId,
@@ -40,7 +41,6 @@ type TokenList = Array<Token>;
 export const dualityMainToken: Token = {
   chain: devChain,
   description: 'SDK default token',
-  address: 'token',
   denom_units: [
     {
       denom: 'token',
@@ -65,7 +65,6 @@ export const dualityMainToken: Token = {
 export const dualityStakeToken: Token = {
   chain: devChain,
   description: 'SDK default token',
-  address: 'stake',
   denom_units: [
     {
       denom: 'stake',
@@ -104,8 +103,8 @@ export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
   ? {
       chain_name: devChain.chain_name,
       assets: Object.entries(
-        JSON.parse(REACT_APP__DEV_ASSET_MAP) as { [address: string]: string }
-      ).flatMap<Asset>(([address, path]) => {
+        JSON.parse(REACT_APP__DEV_ASSET_MAP) as { [tokenId: TokenID]: string }
+      ).flatMap<Asset>(([tokenId, path]) => {
         const devChainName = devChain.chain_name;
         const [symbol, chainName = devChainName] = path.split('/');
         const foundAssetList = chainRegistryAssetList.find(
@@ -114,7 +113,7 @@ export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
         const foundAsset = foundAssetList?.assets.find((asset) => {
           return asset.symbol === symbol;
         });
-        // overwrite chain asset with fake address of dev chain
+        // overwrite chain asset with fake tokenId of dev chain
         return foundAsset
           ? {
               ...foundAsset,
@@ -122,16 +121,18 @@ export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
               // fix: remove clashing TypeScript types
               traces: undefined,
               // overwrite address for token matching
-              address,
+              address: tokenId,
+              // mark as a dev asset
+              type_asset: '___dev___',
               // overwrite base denom for denom matching in Keplr fees
-              base: address,
+              base: tokenId,
               // add denom alias for denom exponent matching
               denom_units: foundAsset.denom_units.map((unit) => {
                 return unit.denom === foundAsset.base
                   ? // add token as base denom, move original denom to aliases
                     {
                       ...unit,
-                      denom: address,
+                      denom: tokenId,
                       aliases: [...(unit.aliases || []), unit.denom],
                     }
                   : unit;
