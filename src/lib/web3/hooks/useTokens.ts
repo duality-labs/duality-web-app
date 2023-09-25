@@ -219,14 +219,10 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
   return useMemo(() => {
     return (
       tokenList
-        // add IBC denom information
-        .map((token) => {
+        // remove existing IBC informations and add new IBC denom information
+        .map(({ ibc, ...token }) => {
           // return unchanged tokens from native chain
           if (token.chain.chain_id === dualityChain.chain_id) {
-            return token;
-          }
-          // if IBC information already exists, do not re-append it
-          if (token.ibc) {
             return token;
           }
           // append ibcDenom as a denom alias
