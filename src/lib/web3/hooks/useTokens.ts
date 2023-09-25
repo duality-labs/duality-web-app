@@ -199,7 +199,7 @@ export function useToken(
   tokenAddress: string | undefined,
   matchFunction = matchTokenByAddress
 ): Token | undefined {
-  const tokens = useTokens();
+  const tokens = useTokensWithIbcInfo(useTokens());
   return useMemo(() => {
     return tokenAddress ? tokens.find(matchFunction(tokenAddress)) : undefined;
   }, [matchFunction, tokenAddress, tokens]);
