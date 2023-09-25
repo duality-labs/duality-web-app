@@ -15,6 +15,7 @@ import {
   TimeSeriesRow,
   formatStatPercentageValue,
   formatStatTokenValue,
+  getIndexerTokenPathPart,
 } from '../../components/stats/utils';
 import { formatAmount } from '../../lib/utils/number';
 
@@ -122,7 +123,10 @@ function useTimeSeriesData(
   getValues?: (values: number[]) => number[]
 ) {
   const resolution = getDataResolution(timePeriodKey) || 'day';
-  const path = `${basePath}/${tokenA.address}/${tokenB.address}/${resolution}`;
+  const path = `${basePath}/${[
+    getIndexerTokenPathPart(tokenA),
+    getIndexerTokenPathPart(tokenB),
+  ].join('/')}/${resolution}`;
   const {
     data: resultData,
     error,
