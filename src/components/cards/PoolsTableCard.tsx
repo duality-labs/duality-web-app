@@ -8,7 +8,7 @@ import TableCard, { TableCardProps } from './TableCard';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import useTokens, {
-  getBaseIbcDenom,
+  getTokenPathPart,
   matchTokenByAddress,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
@@ -374,13 +374,9 @@ const defaultActions: Actions = {
     title: 'Manage',
     className: 'button-light m-0',
     action: ({ navigate, token0, token1 }) => {
-      const [token0Symbol, token1Symbol] = [
-        encodeURIComponent(getBaseIbcDenom(token0) ?? token0?.symbol),
-        encodeURIComponent(getBaseIbcDenom(token1) ?? token1?.symbol),
-      ];
-      if (token0Symbol && token1Symbol) {
-        return navigate(`/pools/${token0Symbol}/${token1Symbol}/edit`);
-      }
+      return navigate(
+        `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
+      );
     },
   },
 };

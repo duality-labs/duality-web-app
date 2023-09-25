@@ -289,7 +289,7 @@ export function useTokenBySymbol(symbol: string | undefined) {
 }
 
 // return the base IBC denom if it is found
-export function getBaseIbcDenom(token: Token | undefined): string | undefined {
+function getBaseIbcDenom(token: Token | undefined): string | undefined {
   if (token?.ibc) {
     const baseUnit = token.denom_units.find(
       (unit) => unit.denom === token.base
@@ -301,6 +301,14 @@ export function getBaseIbcDenom(token: Token | undefined): string | undefined {
       );
     }
   }
+}
+
+export function getTokenPathPart(token: Token | undefined) {
+  return encodeURIComponent(getBaseIbcDenom(token) ?? token?.symbol ?? '-');
+}
+
+export function useTokenPathPart(token: Token | undefined) {
+  return useMemo(() => getTokenPathPart(token), [token]);
 }
 
 function defaultSort(a: Token, b: Token) {
