@@ -16,7 +16,7 @@ import { Token } from '../../lib/web3/utils/tokens';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowAltCircleRight } from '@fortawesome/free-solid-svg-icons';
 import {
-  getBaseIbcDenom,
+  getTokenPathPart,
   useTokenBySymbol,
 } from '../../lib/web3/hooks/useTokens';
 import MyPoolStakesTableCard from '../../components/cards/PoolStakesTableCard';
@@ -134,13 +134,9 @@ function Tables() {
 
   const goToPositionManagementPage = useCallback(
     ([token0, token1]: [Token, Token]) => {
-      const [token0Symbol, token1Symbol] = [
-        encodeURIComponent(getBaseIbcDenom(token0) ?? token0?.symbol),
-        encodeURIComponent(getBaseIbcDenom(token1) ?? token1?.symbol),
-      ];
-      if (token0Symbol && token1Symbol) {
-        return navigate(`/pools/${token0Symbol}/${token1Symbol}/edit`);
-      }
+      return navigate(
+        `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
+      );
     },
     [navigate]
   );
@@ -203,13 +199,9 @@ const userPositionActions: Actions = {
     title: 'Manage',
     className: 'button-light m-0',
     action: ({ navigate, token0, token1 }) => {
-      const [token0Symbol, token1Symbol] = [
-        encodeURIComponent(getBaseIbcDenom(token0) ?? token0?.symbol),
-        encodeURIComponent(getBaseIbcDenom(token1) ?? token1?.symbol),
-      ];
-      if (token0Symbol && token1Symbol) {
-        return navigate(`/pools/${token0Symbol}/${token1Symbol}/edit`);
-      }
+      return navigate(
+        `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
+      );
     },
   },
   stake: {
@@ -220,13 +212,12 @@ const userPositionActions: Actions = {
     ),
     className: 'button-primary m-0',
     action: ({ navigate, token0, token1 }) => {
-      const [token0Symbol, token1Symbol] = [
-        encodeURIComponent(getBaseIbcDenom(token0) ?? token0?.symbol),
-        encodeURIComponent(getBaseIbcDenom(token1) ?? token1?.symbol),
-      ];
-      if (token0Symbol && token1Symbol) {
-        return navigate(`/portfolio/pools/${token0Symbol}/${token1Symbol}`);
-      }
+      return navigate(
+        `/portfolio/pools/${[
+          getTokenPathPart(token0),
+          getTokenPathPart(token1),
+        ].join('/')}`
+      );
     },
   },
 };

@@ -13,7 +13,7 @@ import {
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
-  getBaseIbcDenom,
+  getTokenPathPart,
   useTokenBySymbol,
 } from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
@@ -66,11 +66,9 @@ function Swap() {
   const setTokensPath = useCallback(
     ([tokenA, tokenB]: [Token?, Token?]) => {
       if (tokenA || tokenB) {
-        const path = [
-          encodeURIComponent(getBaseIbcDenom(tokenA) ?? tokenA?.symbol ?? '-'),
-          encodeURIComponent(getBaseIbcDenom(tokenB) ?? tokenB?.symbol ?? '-'),
-        ];
-        navigate(`/swap/${path.filter(Boolean).join('/')}`);
+        navigate(
+          `/swap/${getTokenPathPart(tokenA)}/${getTokenPathPart(tokenB)}`
+        );
       } else {
         navigate('/swap');
       }

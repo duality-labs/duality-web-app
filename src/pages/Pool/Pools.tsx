@@ -5,7 +5,7 @@ import PoolsTableCard, {
 } from '../../components/cards/PoolsTableCard';
 
 import {
-  getBaseIbcDenom,
+  getTokenPathPart,
   useTokenBySymbol,
 } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
@@ -45,8 +45,8 @@ function Pools() {
     ([tokenA, tokenB]: [Token?, Token?]) => {
       if (tokenA || tokenB) {
         const path = [
-          encodeURIComponent(getBaseIbcDenom(tokenA) ?? tokenA?.symbol ?? '-'),
-          encodeURIComponent(getBaseIbcDenom(tokenB) ?? tokenB?.symbol ?? '-'),
+          getTokenPathPart(tokenA),
+          getTokenPathPart(tokenB),
           isManagementPath ? matchTokenManagement.params['addOrEdit'] : '',
         ];
         navigate(`/pools/${path.filter(Boolean).join('/')}`);

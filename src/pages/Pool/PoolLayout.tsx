@@ -1,11 +1,11 @@
-import { ReactNode, useMemo } from 'react';
+import { ReactNode } from 'react';
 import { Link, useMatch } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 import TokenPairLogos from '../../components/TokenPairLogos';
 import { Token } from '../../lib/web3/utils/tokens';
-import { getBaseIbcDenom } from '../../lib/web3/hooks/useTokens';
+import { useTokenPathPart } from '../../lib/web3/hooks/useTokens';
 
 import './Pool.scss';
 
@@ -24,12 +24,8 @@ export default function PoolLayout({
   swap?: () => void;
   children?: ReactNode;
 }) {
-  const [tokenAPath, tokenBPath] = useMemo(() => {
-    return [
-      encodeURIComponent(getBaseIbcDenom(tokenA) ?? tokenA?.symbol ?? '-'),
-      encodeURIComponent(getBaseIbcDenom(tokenB) ?? tokenB?.symbol ?? '-'),
-    ];
-  }, [tokenA, tokenB]);
+  const tokenAPath = useTokenPathPart(tokenA);
+  const tokenBPath = useTokenPathPart(tokenB);
 
   const matchTokenManagement = useMatch('/pools/:tokenA/:tokenB/:addOrEdit');
   const addOrEdit = matchTokenManagement?.params['addOrEdit'];

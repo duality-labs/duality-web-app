@@ -41,8 +41,8 @@ import { formatRelativeTime } from '../../lib/utils/time';
 
 import './Pool.scss';
 import useTokens, {
-  getBaseIbcDenom,
   matchTokenByAddress,
+  useTokenPathPart,
   useTokenValue,
 } from '../../lib/web3/hooks/useTokens';
 import {
@@ -75,12 +75,8 @@ export default function PoolOverview({
   const pairPoolDepositFilter = usePoolDepositFilterForPair([tokenA, tokenB]);
   const userPairDeposits = useUserDeposits(pairPoolDepositFilter);
 
-  const [tokenAPath, tokenBPath] = useMemo(() => {
-    return [
-      encodeURIComponent(getBaseIbcDenom(tokenA) ?? tokenA?.symbol ?? '-'),
-      encodeURIComponent(getBaseIbcDenom(tokenB) ?? tokenB?.symbol ?? '-'),
-    ];
-  }, [tokenA, tokenB]);
+  const tokenAPath = useTokenPathPart(tokenA);
+  const tokenBPath = useTokenPathPart(tokenB);
 
   return (
     <PoolLayout tokenA={tokenA} tokenB={tokenB} swap={swap}>
