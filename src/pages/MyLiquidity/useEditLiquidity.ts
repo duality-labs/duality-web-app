@@ -10,7 +10,7 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
-import { getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { getBaseDenomAmount } from '../../lib/web3/utils/tokens';
 
 import { UserPositionDepositContext } from '../../lib/web3/hooks/useUserShares';
 import rpcClient from '../../lib/web3/rpcMsgClient';
@@ -151,11 +151,8 @@ export function useEditLiquidity(): [
                                       tickIndexesAToB: [centerTickIndex1To0],
                                       fees: [fee],
                                       amountsA: [
-                                        getAmountInDenom(
-                                          token0,
-                                          tickDiff0,
-                                          token0.display
-                                        ) || '0',
+                                        getBaseDenomAmount(token0, tickDiff0) ||
+                                          '0',
                                       ],
                                       amountsB: ['0'],
                                       // todo: allow user to specify autoswap behavior
@@ -201,11 +198,8 @@ export function useEditLiquidity(): [
                                       fees: [fee],
                                       amountsA: ['0'],
                                       amountsB: [
-                                        getAmountInDenom(
-                                          token1,
-                                          tickDiff1,
-                                          token1.display
-                                        ) || '0',
+                                        getBaseDenomAmount(token1, tickDiff1) ||
+                                          '0',
                                       ],
                                       // todo: allow user to specify autoswap behavior
                                       Options: [{ disable_autoswap: false }],

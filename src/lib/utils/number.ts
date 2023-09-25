@@ -53,7 +53,7 @@ export function formatMaximumSignificantDecimals(
 // format to a visually pleasing output
 // should never be passed on to further calculations due to rounding
 // it is intended that the amount passed here has no more decimal places
-// than its denom exponent (eg. 18 set from a typical `getAmountInDenom()` call
+// than its denom exponent (eg. 18 set from a typical `getDisplayDenomAmount()`
 // or had its digits restricted with `formatMaximumSignificantDecimals()`)
 // this is because there is a conflict between setting fractionDigits and
 // significantDigits at the same time (which isn't resolved in any browser yet)
@@ -132,7 +132,7 @@ export function formatLongPrice(
 // format to a visually pleasing output of currency
 // should never be passed on to further calculations due to rounding
 // it is intended that the amount passed here has no more decimal places
-// than its denom exponent (eg. it has come from `getAmountInDenom()`)
+// than its denom exponent (eg. it has come from `getDisplayDenomAmount()`)
 export function formatCurrency(amount: number | string, currency = 'USD') {
   return Number(amount).toLocaleString('en-US', {
     currency,

@@ -1,16 +1,9 @@
 import { useMemo } from 'react';
-import useTokens from './useTokens';
-import { useUserBankValues } from './useUserBankValues';
+import { useBankBalances } from '../indexerProvider';
 
 export default function useUserTokens() {
-  const tokenList = useTokens();
-
-  const allUserBankAssets = useUserBankValues();
+  const { data: balances } = useBankBalances();
   return useMemo(() => {
-    return tokenList.filter((token) => {
-      return allUserBankAssets.find((userToken) => {
-        return userToken.token === token;
-      });
-    });
-  }, [tokenList, allUserBankAssets]);
+    return balances?.map((balance) => balance.token) ?? [];
+  }, [balances]);
 }

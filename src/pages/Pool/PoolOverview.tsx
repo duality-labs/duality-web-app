@@ -13,7 +13,7 @@ import { SmallCardRow } from '../../components/cards/SmallCard';
 import StatCardTVL from '../../components/stats/StatCardTVL';
 
 import { formatAddress } from '../../lib/web3/utils/address';
-import { Token, getAmountInDenom } from '../../lib/web3/utils/tokens';
+import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import {
   getPairID,
   guessInvertedOrder,
@@ -179,11 +179,9 @@ function PairComposition({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           return (
             <td>
               {formatAmount(
-                getAmountInDenom(
+                getDisplayDenomAmount(
                   token,
-                  token === tokenA ? amountA : amountB,
-                  token.address,
-                  token.display
+                  token === tokenA ? amountA : amountB
                 ) || 0
               )}
             </td>
@@ -695,20 +693,10 @@ function EventColumn<
       case 'Total Value':
         const values = [
           new BigNumber(
-            getAmountInDenom(
-              tokenA,
-              getTokenAReserves(),
-              tokenA.address,
-              tokenA.display
-            ) || 0
+            getDisplayDenomAmount(tokenA, getTokenAReserves()) || 0
           ).multipliedBy(tokenAPrice || 0),
           new BigNumber(
-            getAmountInDenom(
-              tokenB,
-              getTokenBReserves(),
-              tokenB.address,
-              tokenB.display
-            ) || 0
+            getDisplayDenomAmount(tokenB, getTokenBReserves()) || 0
           ).multipliedBy(tokenBPrice || 0),
         ];
         const value = values[0].plus(values[1]);
@@ -750,7 +738,7 @@ function EventColumn<
     }
 
     function getTokenReservesInDenom(token: Token, reserves: string) {
-      return getAmountInDenom(token, reserves, token.address, token.display, {
+      return getDisplayDenomAmount(token, reserves, {
         fractionalDigits: 3,
         significantDigits: 3,
       });
@@ -846,20 +834,10 @@ function SwapColumn({
       case 'Total Value':
         const values = [
           new BigNumber(
-            getAmountInDenom(
-              tokenA,
-              getTokenAReserves(),
-              tokenA.address,
-              tokenA.display
-            ) || 0
+            getDisplayDenomAmount(tokenA, getTokenAReserves()) || 0
           ).multipliedBy(tokenAPrice || 0),
           new BigNumber(
-            getAmountInDenom(
-              tokenB,
-              getTokenBReserves(),
-              tokenB.address,
-              tokenB.display
-            ) || 0
+            getDisplayDenomAmount(tokenB, getTokenBReserves()) || 0
           ).multipliedBy(tokenBPrice || 0),
         ];
         const value = values[0].plus(values[1]);
@@ -891,7 +869,7 @@ function SwapColumn({
     }
 
     function getTokenReservesInDenom(token: Token, reserves: BigNumber.Value) {
-      return getAmountInDenom(token, reserves, token.address, token.display, {
+      return getDisplayDenomAmount(token, reserves, {
         fractionalDigits: 3,
         significantDigits: 3,
       });
