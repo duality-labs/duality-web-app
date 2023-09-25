@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.15](https://github.com/duality-labs/duality-web-app/compare/v0.3.14...v0.3.15) (2023-09-25)
+
+
+### Fixes
+
+* known error toasts should show intended descriptions ([#438](https://github.com/duality-labs/duality-web-app/issues/438)) ([b2ee307](https://github.com/duality-labs/duality-web-app/commit/b2ee307aab5bbc7d260a1c7c1cdeda1b8f6589ac))
+
 ## [0.3.14](https://github.com/duality-labs/duality-web-app/compare/v0.3.13...v0.3.14) (2023-09-24)
 
 
