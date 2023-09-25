@@ -219,8 +219,8 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
       };
       // catch transaction errors
       // chain toast checks so only one toast may be shown
-      checkMsgRejectedToast(err, toastOptions, config) ||
-        checkMsgOutOfGasToast(err, toastOptions, config) ||
+      checkMsgRejectedToast(err, { id }, config) ||
+        checkMsgOutOfGasToast(err, { id }, config) ||
         checkMsgErrorToast(err, toastOptions, config);
 
       // only throw the error if it will be handled
