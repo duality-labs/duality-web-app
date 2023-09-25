@@ -16,6 +16,7 @@ import dualityLogo from '../../../assets/logo/logo.svg';
 import { Token } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import Long from 'long';
+import { getTokenId } from './useTokens';
 
 interface QueryConnectionParamsResponse {
   params?: QueryConnectionParams;
@@ -311,26 +312,21 @@ export function useRemoteChainBankBalance(
   address?: string
 ) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
+  // optionally find the IBC denom when querying the Duality chain
+  const denom =
+    restEndpoint === REACT_APP__REST_API
+      ? getTokenId(token)
+      : // query the base denom of any external chains
+        token?.base;
   return useQuery({
-    enabled: !!token,
+    enabled: !!denom,
     queryKey: ['cosmos-chain-endpoints', restEndpoint, address],
     queryFn: async (): Promise<QueryBalanceResponse | null> => {
-      if (restEndpoint && address && token) {
+      if (restEndpoint && address && denom) {
         const client = await ibc.ClientFactory.createLCDClient({
           restEndpoint,
         });
-        // optionally find the IBC denom when querying the Duality chain
-        const denom =
-          restEndpoint === REACT_APP__REST_API
-            ? token.denom_units
-                .find((unit) => unit.denom === token.base)
-                ?.aliases?.find((alias) => alias.startsWith('ibc/')) ??
-              token.base
-            : token.base;
-        return client.cosmos.bank.v1beta1.balance({
-          address,
-          denom,
-        });
+        return client.cosmos.bank.v1beta1.balance({ address, denom });
       } else {
         return null;
       }
