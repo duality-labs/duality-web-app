@@ -235,6 +235,12 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
             return {
               ...token,
               // rename the address as its IBC denom for easy local referencing
+              // note: we assume that only one denom of any logical token is
+              //       used when importing tokens to the local chain
+              //       if this is true (which seems reasonable)
+              //       and the imported token is the source chain token address
+              //       (which may not be as reasonable)
+              //       then we can use the IBC as the local chain address
               address: getIbcDenom(token.address, channelID, portID),
               denom_units: token.denom_units.map(
                 ({ aliases = [], ...unit }) => {
@@ -248,6 +254,11 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
               ibc: {
                 dst_channel: channel.channel_id,
                 source_channel: channel.counterparty?.channel_id,
+                // note: this may not be accurate:
+                //       a channel may transfer many denoms from a source chain.
+                //       this should be the denom registered in an IBC hash
+                //       on chain but instead we avoid fetching these
+                //       and assume that it was what was in the "address" field
                 source_denom: token.address,
               },
             };
@@ -292,23 +303,10 @@ export function useTokenBySymbol(symbol: string | undefined) {
   return tokensWithIbcInfo.find(matchTokenBySymbol(symbol));
 }
 
-// return the base IBC denom if it is found
-function getBaseIbcDenom(token: Token | undefined): string | undefined {
-  if (token?.ibc) {
-    const baseUnit = token.denom_units.find(
-      (unit) => unit.denom === token.base
-    );
-    // return the denom that matches an IBC string
-    if (baseUnit) {
-      return [baseUnit.denom, ...(baseUnit.aliases || [])].find((alias) =>
-        alias.match(ibcDenomRegex)
-      );
-    }
-  }
-}
-
 export function getTokenPathPart(token: Token | undefined) {
-  return encodeURIComponent(getBaseIbcDenom(token) ?? token?.symbol ?? '-');
+  return encodeURIComponent(
+    (token?.ibc ? token.address : token?.symbol) ?? '-'
+  );
 }
 
 export function useTokenPathPart(token: Token | undefined) {
