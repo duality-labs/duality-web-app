@@ -149,7 +149,11 @@ const assetList = [
   providerAssets,
   // add any dev assets added to the environment
   isTestnet && devAssets,
-].filter((assets): assets is AssetList => !!assets);
+]
+  .filter((assets): assets is AssetList => !!assets)
+  // remove duplicate assets
+  // todo: work out how to include terra assets without duplication
+  .filter((assets) => !assets.chain_name.startsWith('terra'));
 const chainList = [
   ...chainRegistryChainList,
   dualityChain,
