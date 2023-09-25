@@ -30,7 +30,7 @@ import {
   Tick,
   getRangeIndexes,
 } from '../../components/LiquiditySelector/LiquiditySelector';
-import { useCurrentPriceFromTicks } from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
+import useCurrentPriceIndexFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import {
@@ -192,22 +192,30 @@ export default function PoolManagement({
   const valuesValid =
     !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
 
-  const currentPriceFromTicks = useCurrentPriceFromTicks(
+  const currentPriceIndexFromTicks = useCurrentPriceIndexFromTicks(
     tokenA?.address,
     tokenB?.address
   );
 
   const [initialPrice, setInitialPrice] = useState<string>('');
-  // set price to price from ticks or user supplied value
-  const edgePrice = useMemo(() => {
-    if (currentPriceFromTicks) {
-      return currentPriceFromTicks;
-    }
+  const initialPriceIndex = useMemo(() => {
     const initialPriceNumber = Number(initialPrice);
     return initialPriceNumber > 0
-      ? new BigNumber(initialPriceNumber)
+      ? priceToTickIndex(new BigNumber(initialPriceNumber), 'none')?.toNumber()
       : undefined;
-  }, [currentPriceFromTicks, initialPrice]);
+  }, [initialPrice]);
+
+  // set edge from ticks or user supplied value
+  const edgePriceIndex = useMemo(() => {
+    return currentPriceIndexFromTicks ?? initialPriceIndex;
+  }, [currentPriceIndexFromTicks, initialPriceIndex]);
+
+  // edge price is the DISPLAY price that the user sees
+  const edgePrice = useMemo(() => {
+    return edgePriceIndex !== undefined && !isNaN(Number(edgePriceIndex))
+      ? tickIndexToPrice(new BigNumber(edgePriceIndex))
+      : undefined;
+  }, [edgePriceIndex]);
 
   // reset initial price whenever selected tokens are changed
   useEffect(() => {
@@ -369,10 +377,6 @@ export default function PoolManagement({
       Math.min(selected, Number(precision) - 1)
     );
   }, [precision]);
-
-  const edgePriceIndex = useMemo(() => {
-    return edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
-  }, [edgePrice]);
 
   const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
     const fractionalRangeMinIndex = priceToTickIndex(
@@ -1273,7 +1277,7 @@ export default function PoolManagement({
           <div className="col row-lg gap-4 col-slide-container gutter-x-4">
             {addLiquidityForm}
             <div className="col flex gap-4">
-              {tokenA && tokenB && currentPriceFromTicks === undefined && (
+              {tokenA && tokenB && currentPriceIndexFromTicks === undefined && (
                 <div className="page-card col">
                   <div className="h4">Select Starting Price</div>
                   <div className="panel panel-primary col my-3 gap-2">
@@ -1330,10 +1334,12 @@ export default function PoolManagement({
                       <div className="row gap-2">
                         <strong>Current Price:</strong>
                         <div className="chart-highlight">
-                          {currentPriceFromTicks !== undefined
+                          {currentPriceIndexFromTicks !== undefined
                             ? formatAmount(
                                 formatMaximumSignificantDecimals(
-                                  currentPriceFromTicks
+                                  tickIndexToPrice(
+                                    new BigNumber(currentPriceIndexFromTicks)
+                                  )
                                 ),
                                 { useGrouping: true },
                                 { reformatSmallValues: false }
