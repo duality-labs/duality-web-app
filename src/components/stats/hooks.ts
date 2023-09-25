@@ -5,6 +5,7 @@ import {
   TimeSeriesPage,
   TimeSeriesRow,
   TokenValuePair,
+  getIndexerTokenPathPart,
   getLastDataChanges,
   getLastDataValues,
 } from './utils';
@@ -108,7 +109,10 @@ function useStatTokenValue(
 
 // TVL
 function getStatTvlPath(tokenA: Token, tokenB: Token) {
-  return `stats/tvl/${tokenA.address}/${tokenB.address}`;
+  return `stats/tvl/${[
+    getIndexerTokenPathPart(tokenA),
+    getIndexerTokenPathPart(tokenB),
+  ].join('/')}`;
 }
 function getStatTvlValues([amountA, amountB]: number[]): number[] {
   return [amountA, amountB];
@@ -123,7 +127,10 @@ export function useStatComposition(tokenA: Token, tokenB: Token) {
 
 // volume and fees
 function getStatVolumePath(tokenA: Token, tokenB: Token) {
-  return `stats/volume/${tokenA.address}/${tokenB.address}`;
+  return `stats/volume/${[
+    getIndexerTokenPathPart(tokenA),
+    getIndexerTokenPathPart(tokenB),
+  ].join('/')}`;
 }
 function getStatVolumeValues([amountA, amountB]: number[]): number[] {
   return [amountA, amountB];
@@ -145,7 +152,10 @@ export function useStatFee(tokenA: Token, tokenB: Token) {
 
 // volatility
 function getStatVolatilityPath(tokenA: Token, tokenB: Token) {
-  return `stats/volatility/${tokenA.address}/${tokenB.address}`;
+  return `stats/volatility/${[
+    getIndexerTokenPathPart(tokenA),
+    getIndexerTokenPathPart(tokenB),
+  ].join('/')}`;
 }
 function getStatVolatilityValues([value]: number[]): number[] {
   return [value];
