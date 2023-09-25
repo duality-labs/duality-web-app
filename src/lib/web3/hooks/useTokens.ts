@@ -217,7 +217,11 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
           if (token.chain.chain_id === dualityChain.chain_id) {
             return token;
           }
-          // append ibcDenpm as a denom alias
+          // if IBC information already exists, do not re-append it
+          if (token.ibc) {
+            return token;
+          }
+          // append ibcDenom as a denom alias
           const ibcOpenTransferInfo = ibcOpenTransfersInfo.find(
             ({ chainID }) => {
               return chainID === token.chain.chain_id;
