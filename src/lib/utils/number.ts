@@ -102,7 +102,7 @@ export function formatDecimalPlaces(
 export function formatPercentage(
   amount: number | string,
   opts: Intl.NumberFormatOptions = {},
-  maximumSignificantDecimals = 3
+  maximumSignificantDecimals = opts.maximumSignificantDigits ?? 3
 ) {
   const percentage = Number(amount) * 100;
   const roundedAmount = formatMaximumSignificantDecimals(
