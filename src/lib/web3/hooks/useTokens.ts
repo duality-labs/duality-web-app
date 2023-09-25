@@ -24,6 +24,7 @@ import stkLogo from '../../../assets/tokens/STK.svg';
 
 const {
   REACT_APP__IS_MAINNET = 'mainnet',
+  REACT_APP__CHAIN_ID = '',
   REACT_APP__CHAIN_ASSETS = '',
   REACT_APP__PROVIDER_ASSETS = '',
   REACT_APP__DEV_ASSET_MAP = '',
@@ -260,32 +261,34 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
             const portID = channel.port_id;
             return {
               ...token,
-              // rename the address as its IBC denom for easy local referencing
-              // note: we assume that only one denom of any logical token is
-              //       used when importing tokens to the local chain
-              //       if this is true (which seems reasonable)
-              //       and the imported token is the source chain token address
-              //       (which may not be as reasonable)
-              //       then we can use the IBC as the local chain address
-              address: getIbcDenom(token.address, channelID, portID),
+              // append IBC information to existing known token/assets.
+              // Duality will have assets registered in chain-registry,
+              // but for not yet known/documented channels (in dev and testnet)
+              // this appended information allows us to identify which tokens
+              // a Duality chain IBC denom represents
               denom_units: token.denom_units.map(
                 ({ aliases = [], ...unit }) => {
                   const ibcDenom = getIbcDenom(unit.denom, channelID, portID);
                   return {
                     ...unit,
+                    // place the calculated IBC denom as a unit denom alias.
+                    // the local chain knows the IBC denom, and this unit->denom
+                    // of this token and chain is what the IBC denom represents
                     aliases: [...aliases, ibcDenom],
                   };
                 }
               ),
+              // append our calculated IBC denom source information here
               ibc: {
                 dst_channel: channel.channel_id,
                 source_channel: channel.counterparty?.channel_id,
                 // note: this may not be accurate:
                 //       a channel may transfer many denoms from a source chain.
-                //       this should be the denom registered in an IBC hash
-                //       on chain but instead we avoid fetching these
-                //       and assume that it was what was in the "address" field
-                source_denom: token.address,
+                //       this *should* be the base denom of token in question
+                //       because duality operates on indivisible (base) denoms,
+                //       but it is *possible* to IBC transfer a non-base denom
+                //       which would be a *bad idea* for whoever did that
+                source_denom: token.base,
               },
             };
           }
@@ -308,8 +311,11 @@ function matchTokenBySymbol(symbol: string | undefined) {
   // match denom aliases for IBC tokens
   if (symbol.match(ibcDenomRegex)) {
     return (tokenWithIbcInfo: Token) => {
-      return !!tokenWithIbcInfo.denom_units?.find((unit) =>
-        unit.aliases?.find((alias) => alias === symbol)
+      return (
+        !!tokenWithIbcInfo.ibc &&
+        !!tokenWithIbcInfo.denom_units?.find((unit) =>
+          unit.aliases?.find((alias) => alias === symbol)
+        )
       );
     };
   }
@@ -329,10 +335,27 @@ export function useTokenBySymbol(symbol: string | undefined) {
   return tokensWithIbcInfo.find(matchTokenBySymbol(symbol));
 }
 
+export function getIbcBaseDenom(token: Token | undefined): string | undefined {
+  const ibcDenom = token?.ibc?.source_denom;
+  // return the source IBC denom if it is found
+  if (ibcDenom) {
+    const baseUnit = token.denom_units.find((unit) => unit.denom === ibcDenom);
+    // return the denom that matches an appended IBC denom alias
+    if (baseUnit) {
+      return baseUnit.aliases?.find((alias) => alias.match(ibcDenomRegex));
+    }
+  }
+}
+
+// get a "symbol" string that can be later decoded by matchTokenBySymbol
+function getTokenSymbol(token: Token | undefined): string | undefined {
+  // return IBC denom or the local token symbol as the token identifier
+  return token?.ibc ? getIbcBaseDenom(token) : token?.symbol;
+}
+// return token identifier that can be used as a part of a URL
+// (for later decoding by matchTokenBySymbol and useTokenBySymbol)
 export function getTokenPathPart(token: Token | undefined) {
-  return encodeURIComponent(
-    (token?.ibc ? token.address : token?.symbol) ?? '-'
-  );
+  return encodeURIComponent(getTokenSymbol(token) ?? '-');
 }
 
 export function useTokenPathPart(token: Token | undefined) {
@@ -345,10 +368,13 @@ function defaultSort(a: Token, b: Token) {
 }
 
 export function matchTokens(tokenA: Token, tokenB: Token) {
-  return (
-    tokenA.address === tokenB.address &&
-    tokenA.chain.chain_id === tokenB.chain.chain_id
-  );
+  // check for matching chain
+  if (tokenA.chain.chain_id === tokenB.chain.chain_id) {
+    // match by identifying token symbols
+    const tokenASymbol = getTokenSymbol(tokenA);
+    const tokenBSymbol = getTokenSymbol(tokenB);
+    return !!tokenASymbol && !!tokenBSymbol && tokenASymbol === tokenBSymbol;
+  }
 }
 // utility functions to get a matching token from a list
 export function matchTokenByAddress(address: TokenAddress) {
@@ -356,19 +382,20 @@ export function matchTokenByAddress(address: TokenAddress) {
 }
 export function matchTokenByDenom(denom: string) {
   if (denom) {
-    if (denom.startsWith('ibc/')) {
-      // search token aliases for ibc denoms (which we should have updated)
+    // match IBC tokens
+    if (denom.match(ibcDenomRegex)) {
+      // the denom is an IBC token identifier, use available matching function
+      return matchTokenBySymbol(denom);
+    }
+    // match Duality chain token denoms only
+    else if (REACT_APP__CHAIN_ID) {
       return (token: Token) =>
-        !!token.denom_units.find((unit) => unit.aliases?.includes(denom));
-    } else {
-      return (token: Token) =>
+        token.chain.chain_id === REACT_APP__CHAIN_ID &&
         !!token.denom_units.find((unit) => unit.denom === denom);
     }
   }
   // don't match empty string to anything
-  else {
-    return () => false;
-  }
+  return () => false;
 }
 
 // utility function to get value of token amount in USD

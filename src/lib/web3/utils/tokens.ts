@@ -3,6 +3,7 @@ import { Asset, Chain } from '@chain-registry/types';
 import { sha256 } from '@cosmjs/crypto';
 
 export interface Token extends Asset {
+  // each asset should have exactly one chain parent
   chain: Chain;
   // enforce that an address exists
   address: TokenAddress;
