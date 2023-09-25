@@ -38,7 +38,7 @@ import {
   MyNewPositionTableCard,
 } from './MyPositionTableCard';
 
-import { getBaseIbcDenom } from '../../lib/web3/hooks/useTokens';
+import { useTokenPathPart } from '../../lib/web3/hooks/useTokens';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
@@ -166,12 +166,8 @@ export default function PoolManagement({
   setTokenB: (tokenB: Token | undefined) => void;
   setTokens: ([tokenA, tokenB]: [Token?, Token?]) => void;
 }) {
-  const [tokenAPath, tokenBPath] = useMemo(() => {
-    return [
-      encodeURIComponent(getBaseIbcDenom(tokenA) ?? tokenA?.symbol ?? '-'),
-      encodeURIComponent(getBaseIbcDenom(tokenB) ?? tokenB?.symbol ?? '-'),
-    ];
-  }, [tokenA, tokenB]);
+  const tokenAPath = useTokenPathPart(tokenA);
+  const tokenBPath = useTokenPathPart(tokenB);
 
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
