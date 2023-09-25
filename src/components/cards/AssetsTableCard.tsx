@@ -6,7 +6,7 @@ import Dialog from '../Dialog/Dialog';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import useTokens, {
-  matchTokens,
+  getTokenId,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
 import BridgeCard from './BridgeCard';
@@ -37,33 +37,38 @@ export default function AssetsTableCard({
   const tokenListWithIBC = useTokensWithIbcInfo(givenTokenList || tokenList);
   const allUserBankAssets = useUserBankValues();
 
+  const allUserBankAssetsByTokenId = useMemo(() => {
+    return allUserBankAssets.reduce<{ [symbol: string]: TokenCoin }>(
+      (acc, asset) => {
+        const symbol = getTokenId(asset.token);
+        if (symbol) {
+          acc[symbol] = asset;
+        }
+        return acc;
+      },
+      {}
+    );
+  }, [allUserBankAssets]);
+
   // define sorting rows by token value
   const sortByValue = useCallback(
-    (a: Token, b: Token) => {
+    (tokenA: Token, tokenB: Token) => {
+      const a = getTokenId(tokenA) || '';
+      const b = getTokenId(tokenB) || '';
       // sort first by value
       return (
         getTokenValue(b).minus(getTokenValue(a)).toNumber() ||
         // if value is equal, sort by amount
         getTokenAmount(b).minus(getTokenAmount(a)).toNumber() ||
         // if amount is equal, sort by local chain
-        getTokenChain(b) - getTokenChain(a)
+        getTokenChain(tokenB) - getTokenChain(tokenA)
       );
-      function getTokenValue(token: Token) {
-        const foundUserAsset = allUserBankAssets.find((userToken) => {
-          return (
-            userToken.token.address === token.address &&
-            userToken.token.chain.chain_id === token.chain.chain_id
-          );
-        });
+      function getTokenValue(id: string) {
+        const foundUserAsset = allUserBankAssetsByTokenId[id];
         return foundUserAsset?.value || new BigNumber(0);
       }
-      function getTokenAmount(token: Token) {
-        const foundUserAsset = allUserBankAssets.find((userToken) => {
-          return (
-            userToken.token.address === token.address &&
-            userToken.token.chain.chain_id === token.chain.chain_id
-          );
-        });
+      function getTokenAmount(id: string) {
+        const foundUserAsset = allUserBankAssetsByTokenId[id];
         return new BigNumber(foundUserAsset?.amount || 0);
       }
       function getTokenChain(token: Token) {
@@ -76,7 +81,7 @@ export default function AssetsTableCard({
         return 0;
       }
     },
-    [allUserBankAssets]
+    [allUserBankAssetsByTokenId]
   );
 
   // sort tokens
@@ -114,10 +119,9 @@ export default function AssetsTableCard({
         </thead>
         <tbody>
           {filteredList.length > 0 ? (
-            filteredList.map(({ chain, symbol, token }) => {
-              const foundUserAsset = allUserBankAssets.find((userToken) => {
-                return matchTokens(userToken.token, token);
-              });
+            filteredList.map(({ token }) => {
+              const id = getTokenId(token) || '';
+              const foundUserAsset = allUserBankAssetsByTokenId[id];
               return foundUserAsset ? (
                 <AssetRow
                   key={`${token.base}-${token.chain.chain_name}`}
