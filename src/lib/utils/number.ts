@@ -142,27 +142,26 @@ export function formatLongPrice(
 export function formatCurrency(
   amount: number | string,
   {
-    currency = 'USD',
-    decimalPlaces = 2,
-    maxDecimalPlaces = decimalPlaces,
-  }: {
-    currency?: string;
-    decimalPlaces?: number;
-    maxDecimalPlaces?: number;
-  } = {}
+    minimumFractionDigits = 2,
+    maximumFractionDigits = minimumFractionDigits,
+    ...numberFormatOptions
+  }: Intl.NumberFormatOptions = {}
 ) {
   const numericAmount = Number(amount);
-  const minimumDisplayedCurrencyValue = Math.pow(10, -1 * maxDecimalPlaces);
+  const minimumDisplayedCurrencyValue = Math.pow(10, -maximumFractionDigits);
   const isLessThanMinimum =
     numericAmount > 0 && numericAmount < minimumDisplayedCurrencyValue;
   const stringAmount = (
     isLessThanMinimum ? minimumDisplayedCurrencyValue : numericAmount
   ).toLocaleString('en-US', {
-    currency,
-    minimumFractionDigits: decimalPlaces,
-    maximumFractionDigits: maxDecimalPlaces,
+    // add defaults
+    currency: 'USD',
     currencyDisplay: 'symbol',
     style: 'currency',
+    // add user given options
+    minimumFractionDigits,
+    maximumFractionDigits,
+    ...numberFormatOptions,
   });
   // add "less than" indicator for small (non-zero) amounts
   return `${isLessThanMinimum ? '<' : ''}${stringAmount}`;
