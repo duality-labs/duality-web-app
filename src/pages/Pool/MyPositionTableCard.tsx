@@ -120,9 +120,7 @@ export function MyNewPositionTableCard({
           return (
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
-              <td>
-                {priceBToA ? formatAmount(priceBToA.toNumber(), {}, 0) : '-'}
-              </td>
+              <td>{priceBToA ? formatAmount(priceBToA.toNumber()) : '-'}</td>
               <td>
                 {reserveA.isGreaterThan(0) && (
                   <div>{formatCurrency(poolValues[index][0])}</div>
@@ -308,9 +306,7 @@ export function MyEditedPositionTableCard({
             tickIndexBToA.isLessThanOrEqualTo(viewableMaxIndex) ? (
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
-              <td>
-                {priceBToA ? formatAmount(priceBToA.toNumber(), {}, 0) : '-'}
-              </td>
+              <td>{priceBToA ? formatAmount(priceBToA.toNumber()) : '-'}</td>
               <td>
                 {reserveA.isGreaterThan(0) && (
                   <div>{formatCurrency(poolValues[index][0])}</div>

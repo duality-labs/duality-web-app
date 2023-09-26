@@ -1,8 +1,5 @@
 import BigNumber from 'bignumber.js';
 
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
-const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
-
 // rounding to 6 significant figures will guarantee a unique index
 // for all tick indexes using the basis of price = 1.0001^index
 export function roundToSignificantDigits(
@@ -62,26 +59,29 @@ export function formatMaximumSignificantDecimals(
 // link: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat#roundingpriority
 export function formatAmount(
   amount: number | string,
-  opts: Intl.NumberFormatOptions = {},
-  // avoid rendering very long fractional values with a practical limit
-  minimum = 0.000001
+  {
+    minimumFractionDigits,
+    // avoid rendering very long fractional values with a practical limit
+    maximumFractionDigits = minimumFractionDigits ?? 6,
+    ...numberFormatOptions
+  }: Intl.NumberFormatOptions = {}
 ) {
   const numericAmount = Number(amount);
-  return numericAmount > minimum / 2
-    ? numericAmount.toLocaleString('en-US', {
-        maximumFractionDigits: maxFractionDigits,
-        maximumSignificantDigits: Math.max(
-          6,
-          opts.minimumSignificantDigits || 0
-        ),
-        useGrouping: false,
-        ...opts,
-      })
-    : !isNaN(numericAmount)
-    ? numericAmount > 0
-      ? `<${minimum}`
-      : '0'
-    : '-';
+  // use passed limits to determine when we show a small value (eg. <0.001)
+  const minimumValue = Math.pow(10, -maximumFractionDigits);
+  const isSmallValue = numericAmount > 0 && numericAmount < minimumValue;
+  const stringAmount = (
+    isSmallValue ? minimumValue : !isNaN(numericAmount) ? numericAmount : '-'
+  ).toLocaleString('en-US', {
+    // add defaults
+    useGrouping: false,
+    // add user given options
+    minimumFractionDigits,
+    maximumFractionDigits,
+    ...numberFormatOptions,
+  });
+  // add "less than" indicator for small (non-zero) amounts
+  return `${isSmallValue ? '<' : ''}${stringAmount}`;
 }
 
 export function formatDecimalPlaces(
@@ -147,17 +147,7 @@ export function formatCurrency(
     ...numberFormatOptions
   }: Intl.NumberFormatOptions = {}
 ) {
-  const numericAmount = Number(amount);
-  const minimumDisplayedCurrencyValue = Math.pow(10, -maximumFractionDigits);
-  const isLessThanMinimum =
-    numericAmount > 0 && numericAmount < minimumDisplayedCurrencyValue;
-  const stringAmount = (
-    isLessThanMinimum
-      ? minimumDisplayedCurrencyValue
-      : isNaN(numericAmount)
-      ? numericAmount
-      : '-'
-  ).toLocaleString('en-US', {
+  return formatAmount(amount, {
     // add defaults
     currency: 'USD',
     currencyDisplay: 'symbol',
@@ -167,6 +157,4 @@ export function formatCurrency(
     maximumFractionDigits,
     ...numberFormatOptions,
   });
-  // add "less than" indicator for small (non-zero) amounts
-  return `${isLessThanMinimum ? '<' : ''}${stringAmount}`;
 }

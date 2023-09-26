@@ -1286,8 +1286,7 @@ function TicksArea({
             {
               minimumSignificantDigits: significantDecimals,
               useGrouping: true,
-            },
-            0
+            }
           )}
           &nbsp;
         </text>
