@@ -833,9 +833,13 @@ function SwapColumn({
           .filter(Boolean)
           .join(' and ')}`;
       case 'Token A Amount':
-        return getTokenReservesInDenom(tokenA, getTokenAReserves());
+        return formatAmount(
+          getTokenReservesInDenom(tokenA, getTokenAReserves()) || '0'
+        );
       case 'Token B Amount':
-        return getTokenReservesInDenom(tokenB, getTokenBReserves());
+        return formatAmount(
+          getTokenReservesInDenom(tokenB, getTokenBReserves()) || '0'
+        );
       case 'Total Value':
         const values = [
           new BigNumber(
