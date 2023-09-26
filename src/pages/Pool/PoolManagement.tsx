@@ -96,7 +96,8 @@ const defaultPrecision = '30';
 const formatRangeString = (value: BigNumber.Value, significantDecimals = 3) => {
   return formatAmount(
     formatMaximumSignificantDecimals(value, significantDecimals),
-    { minimumSignificantDigits: significantDecimals }
+    { minimumSignificantDigits: significantDecimals },
+    { reformatSmallValues: false }
   );
 };
 

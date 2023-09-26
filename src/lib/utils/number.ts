@@ -64,12 +64,14 @@ export function formatAmount(
     // avoid rendering very long fractional values with a practical limit
     maximumFractionDigits = minimumFractionDigits ?? 6,
     ...numberFormatOptions
-  }: Intl.NumberFormatOptions = {}
+  }: Intl.NumberFormatOptions = {},
+  { reformatSmallValues = true } = {}
 ) {
   const numericAmount = Number(amount);
   // use passed limits to determine when we show a small value (eg. <0.001)
   const minimumValue = Math.pow(10, -maximumFractionDigits);
-  const isSmallValue = numericAmount > 0 && numericAmount < minimumValue;
+  const isSmallValue =
+    reformatSmallValues && numericAmount > 0 && numericAmount < minimumValue;
   const stringAmount = (
     isSmallValue ? minimumValue : !isNaN(numericAmount) ? numericAmount : '-'
   ).toLocaleString('en-US', {

@@ -1286,6 +1286,9 @@ function TicksArea({
             {
               minimumSignificantDigits: significantDecimals,
               useGrouping: true,
+            },
+            {
+              reformatSmallValues: false,
             }
           )}
           &nbsp;
@@ -1398,6 +1401,9 @@ function TicksArea({
             {
               minimumSignificantDigits: significantDecimals,
               useGrouping: true,
+            },
+            {
+              reformatSmallValues: false,
             }
           )}
           &nbsp;
