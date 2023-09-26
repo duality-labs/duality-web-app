@@ -42,6 +42,7 @@ import { formatRelativeTime } from '../../lib/utils/time';
 import './Pool.scss';
 import useTokens, {
   matchTokenByAddress,
+  useTokenPathPart,
   useTokenValue,
 } from '../../lib/web3/hooks/useTokens';
 import {
@@ -74,6 +75,9 @@ export default function PoolOverview({
   const pairPoolDepositFilter = usePoolDepositFilterForPair([tokenA, tokenB]);
   const userPairDeposits = useUserDeposits(pairPoolDepositFilter);
 
+  const tokenAPath = useTokenPathPart(tokenA);
+  const tokenBPath = useTokenPathPart(tokenB);
+
   return (
     <PoolLayout tokenA={tokenA} tokenB={tokenB} swap={swap}>
       <div className="row mt-3 mb-xl">
@@ -86,7 +90,7 @@ export default function PoolOverview({
         <div className="col ml-auto">
           <div className="row gap-lg">
             <div className="col">
-              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
+              <Link to={`/pools/${tokenAPath}/${tokenBPath}/add`}>
                 <button className="button button-primary py-3 px-4">
                   {userPairDeposits && userPairDeposits.length > 0 ? (
                     <>Add To Position</>
@@ -98,7 +102,7 @@ export default function PoolOverview({
             </div>
             {userPairDeposits && userPairDeposits.length > 0 && (
               <div className="col">
-                <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/edit`}>
+                <Link to={`/pools/${tokenAPath}/${tokenBPath}/edit`}>
                   <button className="button button-primary py-3 px-4">
                     Edit Position
                   </button>
@@ -106,7 +110,7 @@ export default function PoolOverview({
               </div>
             )}
             <div className="col">
-              <Link to={`/swap/${tokenA.symbol}/${tokenB.symbol}`}>
+              <Link to={`/swap/${tokenAPath}/${tokenBPath}`}>
                 <button className="button button-primary-outline py-3 px-4">
                   Trade
                 </button>

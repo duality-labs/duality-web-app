@@ -4,7 +4,10 @@ import PoolsTableCard, {
   MyPoolsTableCard,
 } from '../../components/cards/PoolsTableCard';
 
-import { useTokenBySymbol } from '../../lib/web3/hooks/useTokens';
+import {
+  getTokenPathPart,
+  useTokenBySymbol,
+} from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 import { useUserPositionsShareValues } from '../../lib/web3/hooks/useUserShareValues';
 
@@ -42,8 +45,8 @@ function Pools() {
     ([tokenA, tokenB]: [Token?, Token?]) => {
       if (tokenA || tokenB) {
         const path = [
-          tokenA?.symbol ?? '-',
-          tokenB?.symbol ?? '-',
+          getTokenPathPart(tokenA),
+          getTokenPathPart(tokenB),
           isManagementPath ? matchTokenManagement.params['addOrEdit'] : '',
         ];
         navigate(`/pools/${path.filter(Boolean).join('/')}`);

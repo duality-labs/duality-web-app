@@ -12,7 +12,10 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
-import useTokens, { useTokenBySymbol } from '../../lib/web3/hooks/useTokens';
+import {
+  getTokenPathPart,
+  useTokenBySymbol,
+} from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import NumberInput, {
   useNumericInputState,
@@ -54,7 +57,6 @@ function Swap() {
   const navigate = useNavigate();
 
   // change tokens to match pathname
-  const tokenList = useTokens();
   const match = useMatch('/swap/:tokenA/:tokenB');
   const tokenA = useTokenBySymbol(match?.params['tokenA']);
   const tokenB = useTokenBySymbol(match?.params['tokenB']);
@@ -64,8 +66,9 @@ function Swap() {
   const setTokensPath = useCallback(
     ([tokenA, tokenB]: [Token?, Token?]) => {
       if (tokenA || tokenB) {
-        const path = [tokenA?.symbol ?? '-', tokenB?.symbol ?? '-'];
-        navigate(`/swap/${path.filter(Boolean).join('/')}`);
+        navigate(
+          `/swap/${getTokenPathPart(tokenA)}/${getTokenPathPart(tokenB)}`
+        );
       } else {
         navigate('/swap');
       }
@@ -375,7 +378,6 @@ function Swap() {
             }
             onValueChanged={onValueAChanged}
             onTokenChanged={setTokenA}
-            tokenList={tokenList}
             token={tokenA}
             value={lastUpdatedA ? inputValueA : valueAConverted}
             className={
@@ -405,7 +407,6 @@ function Swap() {
             variant={error?.insufficientLiquidityOut && 'error'}
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}
-            tokenList={tokenList}
             token={tokenB}
             value={lastUpdatedA ? valueBConverted : inputValueB}
             className={

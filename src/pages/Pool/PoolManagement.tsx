@@ -38,7 +38,7 @@ import {
   MyNewPositionTableCard,
 } from './MyPositionTableCard';
 
-import useTokens from '../../lib/web3/hooks/useTokens';
+import { useTokenPathPart } from '../../lib/web3/hooks/useTokens';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
@@ -166,11 +166,12 @@ export default function PoolManagement({
   setTokenB: (tokenB: Token | undefined) => void;
   setTokens: ([tokenA, tokenB]: [Token?, Token?]) => void;
 }) {
+  const tokenAPath = useTokenPathPart(tokenA);
+  const tokenBPath = useTokenPathPart(tokenB);
+
   const [feeType, setFeeType] = useState<FeeType | undefined>(() =>
     feeTypes.find(({ label }) => label === defaultFee)
   );
-  const tokenList = useTokens();
-
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
   const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
   const [lastUsedInput, setLastUsedInput] = useState<'A' | 'B'>();
@@ -928,7 +929,6 @@ export default function PoolManagement({
                 setLastUsedInput('A');
               }}
               onTokenChanged={setTokenA}
-              tokenList={tokenList}
               token={tokenA}
               value={inputValueA}
               exclusion={tokenB}
@@ -936,7 +936,6 @@ export default function PoolManagement({
           ) : (
             <TokenPicker
               className="flex button-primary p-4"
-              tokenList={tokenList}
               value={tokenA}
               onChange={setTokenA}
               exclusion={tokenB}
@@ -953,7 +952,6 @@ export default function PoolManagement({
                 setLastUsedInput('B');
               }}
               onTokenChanged={setTokenB}
-              tokenList={tokenList}
               token={tokenB}
               value={inputValueB}
               exclusion={tokenA}
@@ -961,7 +959,6 @@ export default function PoolManagement({
           ) : (
             <TokenPicker
               className="flex button-primary p-4"
-              tokenList={tokenList}
               value={tokenB}
               onChange={setTokenB}
               exclusion={tokenA}
@@ -1229,14 +1226,14 @@ export default function PoolManagement({
         tokenA && tokenB && editMode ? (
           <div className="row gap-3">
             <div className="col">
-              <Link to={`/portfolio/pools/${tokenA.symbol}/${tokenB.symbol}`}>
+              <Link to={`/portfolio/pools/${tokenAPath}/${tokenBPath}`}>
                 <button className="button button-primary py-3 px-4">
                   Stake Position
                 </button>
               </Link>
             </div>
             <div className="col">
-              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/add`}>
+              <Link to={`/pools/${tokenAPath}/${tokenBPath}/add`}>
                 <button className="button button-primary py-3 px-4">
                   Add To Position
                 </button>
@@ -1249,7 +1246,7 @@ export default function PoolManagement({
           editedUserPosition &&
           editedUserPosition.length > 0 && (
             <div className="col">
-              <Link to={`/pools/${tokenA.symbol}/${tokenB.symbol}/edit`}>
+              <Link to={`/pools/${tokenAPath}/${tokenBPath}/edit`}>
                 <button className="button button-primary py-3 px-4">
                   Edit Position
                 </button>

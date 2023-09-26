@@ -5,6 +5,7 @@ import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 import TokenPairLogos from '../../components/TokenPairLogos';
 import { Token } from '../../lib/web3/utils/tokens';
+import { useTokenPathPart } from '../../lib/web3/hooks/useTokens';
 
 import './Pool.scss';
 
@@ -23,6 +24,9 @@ export default function PoolLayout({
   swap?: () => void;
   children?: ReactNode;
 }) {
+  const tokenAPath = useTokenPathPart(tokenA);
+  const tokenBPath = useTokenPathPart(tokenB);
+
   const matchTokenManagement = useMatch('/pools/:tokenA/:tokenB/:addOrEdit');
   const addOrEdit = matchTokenManagement?.params['addOrEdit'];
   return (
@@ -37,7 +41,7 @@ export default function PoolLayout({
             <>
               <Link
                 className="text-light-alt"
-                to={`/pools/${tokenA.symbol}/${tokenB.symbol}`}
+                to={`/pools/${tokenAPath}/${tokenBPath}`}
               >
                 {tokenA.symbol}/{tokenB.symbol}
               </Link>

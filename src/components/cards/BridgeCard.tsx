@@ -7,7 +7,6 @@ import { coin } from '@cosmjs/stargate';
 import TokenPicker from '../TokenPicker/TokenPicker';
 import NumberInput from '../inputs/NumberInput/NumberInput';
 
-import useTokens from '../../lib/web3/hooks/useTokens';
 import useBridge from '../../pages/Bridge/useBridge';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
@@ -28,6 +27,7 @@ import {
   Token,
   getBaseDenomAmount,
   getDisplayDenomAmount,
+  getIbcDenom,
 } from '../../lib/web3/utils/tokens';
 
 import './BridgeCard.scss';
@@ -50,7 +50,6 @@ export default function BridgeCard({
   inputRef?: React.RefObject<HTMLInputElement>;
   onSuccess?: () => void;
 }) {
-  const tokenList = useTokens();
   const [token, setToken] = useState<Token | undefined>(from || to);
   const [value, setValue] = useState('');
 
@@ -110,9 +109,15 @@ export default function BridgeCard({
         if (!amount || !Number(amount)) {
           throw new Error('Invalid Token Amount');
         }
+        // find the base non-IBC denom to match the base amount being sent
+        const tokenDenom = from.base;
+        if (!tokenDenom) {
+          throw new Error('Source denom not found');
+        }
+
         try {
           await sendRequest({
-            token: coin(amount, from.address),
+            token: coin(amount, tokenDenom),
             timeout_timestamp: timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
@@ -136,26 +141,22 @@ export default function BridgeCard({
         if (!to.chain.chain_id) {
           throw new Error('Destination Chain not found');
         }
-        const amount = getBaseDenomAmount(to, value);
-        if (!amount || !Number(amount)) {
+        const baseAmount = getBaseDenomAmount(to, value);
+        if (!baseAmount || !Number(baseAmount)) {
           throw new Error('Invalid Token Amount');
         }
         if (!ibcTransferInfo.channel.counterparty) {
           throw new Error('No egress connection information found');
         }
-        // find the denom unit asked for
-        const denomUnit = to.denom_units.find(
-          (unit) =>
-            unit.denom === to.address ||
-            unit.aliases?.find((alias) => alias === to.address)
+        // find the base IBC denom to match the base amount being sent
+        const tokenBaseDenom = getIbcDenom(
+          to.base,
+          ibcTransferInfo.channel.channel_id,
+          ibcTransferInfo.channel.port_id
         );
-        // use the IBC version of the denom unit if found
-        const tokenDenom =
-          denomUnit?.aliases?.find((alias) => alias.startsWith('ibc/')) ??
-          to.address;
         try {
           await sendRequest({
-            token: coin(amount, tokenDenom),
+            token: coin(baseAmount, tokenBaseDenom),
             timeout_timestamp: timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
@@ -308,7 +309,6 @@ export default function BridgeCard({
                   value={token}
                   exclusion={token}
                   onChange={setToken}
-                  tokenList={tokenList}
                   showChain={false}
                   disabled
                 />

@@ -15,7 +15,10 @@ import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowAltCircleRight } from '@fortawesome/free-solid-svg-icons';
-import { useTokenBySymbol } from '../../lib/web3/hooks/useTokens';
+import {
+  getTokenPathPart,
+  useTokenBySymbol,
+} from '../../lib/web3/hooks/useTokens';
 import MyPoolStakesTableCard from '../../components/cards/PoolStakesTableCard';
 
 export default function MyLiquidity() {
@@ -131,7 +134,9 @@ function Tables() {
 
   const goToPositionManagementPage = useCallback(
     ([token0, token1]: [Token, Token]) => {
-      return navigate(`/pools/${token0.symbol}/${token1.symbol}/edit`);
+      return navigate(
+        `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
+      );
     },
     [navigate]
   );
@@ -193,8 +198,11 @@ const userPositionActions: Actions = {
   manage: {
     title: 'Manage',
     className: 'button-light m-0',
-    action: ({ navigate, token0, token1 }) =>
-      navigate(`/pools/${token0.symbol}/${token1.symbol}/edit`),
+    action: ({ navigate, token0, token1 }) => {
+      return navigate(
+        `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
+      );
+    },
   },
   stake: {
     title: (
@@ -203,7 +211,13 @@ const userPositionActions: Actions = {
       </>
     ),
     className: 'button-primary m-0',
-    action: ({ navigate, token0, token1 }) =>
-      navigate(`/portfolio/pools/${token0.symbol}/${token1.symbol}`),
+    action: ({ navigate, token0, token1 }) => {
+      return navigate(
+        `/portfolio/pools/${[
+          getTokenPathPart(token0),
+          getTokenPathPart(token1),
+        ].join('/')}`
+      );
+    },
   },
 };

@@ -7,7 +7,11 @@ import TableCard, { TableCardProps } from './TableCard';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
-import useTokens from '../../lib/web3/hooks/useTokens';
+import useTokens, {
+  getTokenPathPart,
+  matchTokenByAddress,
+  useTokensWithIbcInfo,
+} from '../../lib/web3/hooks/useTokens';
 
 import { formatAmount } from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
@@ -41,28 +45,24 @@ export default function PoolsTableCard<T extends string | number>({
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
   const [searchValue, setSearchValue] = useState<string>('');
 
-  const tokenList = useTokens();
+  const tokenList = useTokensWithIbcInfo(useTokens());
   const { data: tokenPairs } = useTokenPairs();
   const allPairsList = useMemo<Array<[string, Token, Token]>>(() => {
-    const tokenListByAddress = tokenList.reduce<{ [address: string]: Token }>(
-      (acc, token) => {
-        if (token.address) {
-          acc[token.address] = token;
-        }
-        return acc;
-      },
-      {}
-    );
     return tokenPairs
       ? tokenPairs
-          .map<[string, Token, Token]>(([token0, token1]) => {
+          // find the tokens that match our known pair token addresses
+          .map(([token0, token1]) => {
             return [
               getPairID(token0, token1),
-              tokenListByAddress[token0],
-              tokenListByAddress[token1],
+              tokenList.find(matchTokenByAddress(token0)),
+              tokenList.find(matchTokenByAddress(token1)),
             ];
           })
-          .filter(([, token0, token1]) => token0 && token1)
+          // remove pairs with unfound tokens
+          .filter<[string, Token, Token]>(
+            (tokenPair): tokenPair is [string, Token, Token] =>
+              tokenPair.every(Boolean)
+          )
       : [];
   }, [tokenList, tokenPairs]);
 
@@ -239,7 +239,7 @@ export function MyPoolsTableCard<T extends string | number>({
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
   const [searchValue, setSearchValue] = useState<string>('');
 
-  const tokenList = useTokens();
+  const tokenList = useTokensWithIbcInfo(useTokens());
 
   const userPositionsShareValues = useUserPositionsShareValues();
 
@@ -264,8 +264,8 @@ export function MyPoolsTableCard<T extends string | number>({
       const { token0: token0Address, token1: token1Address } =
         userPosition.deposit.pairID;
       const pairID = getPairID(token0Address, token1Address);
-      const token0 = tokenList.find((token) => token.address === token0Address);
-      const token1 = tokenList.find((token) => token.address === token1Address);
+      const token0 = tokenList.find(matchTokenByAddress(token0Address));
+      const token1 = tokenList.find(matchTokenByAddress(token1Address));
       if (pairID && token0 && token1) {
         map[pairID] = map[pairID] || { token0, token1, userPositions: [] };
         map[pairID].userPositions.push(userPosition);
@@ -373,8 +373,11 @@ const defaultActions: Actions = {
   manage: {
     title: 'Manage',
     className: 'button-light m-0',
-    action: ({ navigate, token0, token1 }) =>
-      navigate(`/pools/${token0.symbol}/${token1.symbol}/edit`),
+    action: ({ navigate, token0, token1 }) => {
+      return navigate(
+        `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
+      );
+    },
   },
 };
 

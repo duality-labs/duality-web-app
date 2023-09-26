@@ -11,8 +11,10 @@ import {
   QueryGetPoolReservesRequest,
   QueryGetPoolReservesResponse,
 } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
+import { dualitylabs } from '@duality-labs/dualityjs';
 
 import { useLcdClientPromise } from '../lcdClient';
+import { useRpcPromise } from '../rpcQueryClient';
 import { getPairID } from '../utils/pairs';
 import {
   Token,
@@ -21,7 +23,10 @@ import {
   TokenPair,
   getTokenAddressPair,
 } from '../utils/tokens';
-import useTokens from './useTokens';
+import useTokens, {
+  matchTokenByAddress,
+  useTokensWithIbcInfo,
+} from './useTokens';
 import { StakeContext, UserStakedShare, useShares } from '../indexerProvider';
 import { getShareInfo } from '../utils/shares';
 
@@ -162,7 +167,7 @@ export function useUserPositionsTotalReserves(
   poolDepositFilter?: UserDepositFilter,
   staked?: boolean
 ) {
-  const lcdClientPromise = useLcdClientPromise();
+  const rpcPromise = useRpcPromise();
   const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
 
   const memoizedData = useRef<QueryGetPoolReservesResponse[]>([]);
@@ -191,10 +196,14 @@ export function useUserPositionsTotalReserves(
               return {
                 queryKey: ['dualitylabs.duality.dex.poolReserves', params],
                 queryFn: async () => {
-                  const lcdClient = await lcdClientPromise;
-                  return lcdClient
-                    ? lcdClient.dualitylabs.duality.dex.poolReserves(params)
-                    : null;
+                  const rpc = await rpcPromise;
+                  const client = new dualitylabs.duality.dex.QueryClientImpl(
+                    rpc
+                  );
+                  // todo: when switching to RPC pool reserves with pagination
+                  //       remember that all pagination fields are required
+                  const result = await client.poolReserves(params);
+                  return result ?? null;
                 },
                 // don't retry, a 404 means there is 0 liquidity there
                 retry: false,
@@ -206,7 +215,7 @@ export function useUserPositionsTotalReserves(
           return [];
         }
       );
-    }, [lcdClientPromise, selectedPoolDeposits]),
+    }, [rpcPromise, selectedPoolDeposits]),
     combine(results) {
       // only process data from successfully resolved queries
       const data = results
@@ -279,7 +288,7 @@ export function useUserPositionsContext(
     staked
   );
 
-  const allTokens = useTokens();
+  const allTokens = useTokensWithIbcInfo(useTokens());
 
   return useMemo<UserPositionDepositContext[]>(() => {
     return (selectedPoolDeposits || []).flatMap<UserPositionDepositContext>(
@@ -323,10 +332,10 @@ export function useUserPositionsContext(
             );
           }) ?? undefined;
         const token0 = allTokens.find(
-          (token) => token.address === deposit.pairID.token0
+          matchTokenByAddress(deposit.pairID.token0)
         );
         const token1 = allTokens.find(
-          (token) => token.address === deposit.pairID.token1
+          matchTokenByAddress(deposit.pairID.token1)
         );
 
         if (token0 && token1) {
