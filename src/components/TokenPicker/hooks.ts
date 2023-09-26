@@ -11,10 +11,10 @@ export function useFilteredTokenList(
   list: Token[],
   searchQuery: string
 ): FilteredTokenContext[] {
-  // update the filtered list whenever the query or the list changes
-  return useMemo(
+  // update the chains lookup only when the token list changes
+  const chainsByPrettyName = useMemo<Map<string, Set<Chain>>>(
     function () {
-      const chainsByPrettyName = list.reduce((result, token) => {
+      return list.reduce((result, token) => {
         const name = token.chain.pretty_name;
         // use set to ensure unique chains
         const chains = result.get(name) || new Set<Chain>();
@@ -23,7 +23,13 @@ export function useFilteredTokenList(
         }
         return result;
       }, new Map<string, Set<Chain>>());
+    },
+    [list]
+  );
 
+  // update the filtered list whenever the query or the list changes
+  return useMemo(
+    function () {
       function getChainName(token: Token) {
         const chains = chainsByPrettyName.get(token.chain.pretty_name);
         return (chains?.size || 0) > 1
@@ -67,6 +73,6 @@ export function useFilteredTokenList(
           return { chain: nameResult, symbol: symbolResult, token };
         });
     },
-    [list, searchQuery]
+    [list, chainsByPrettyName, searchQuery]
   );
 }

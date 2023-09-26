@@ -191,7 +191,7 @@ function PairRow({
       : [];
   }, [gauges, token0, token1]);
 
-  if (token0 && token1 && price0 && price1) {
+  if (token0 && token1 && price0 !== undefined && price1 !== undefined) {
     return (
       <tr>
         <td className="min-width">
@@ -495,30 +495,13 @@ function TokenPair({
           </div>
         </div>
         <div className="row">
-          <div className="col subtext">
+          <div className="col subtext text-left">
             {token0.chain.chain_name === token1.chain.chain_name ? (
-              <span className="nowrap">
-                {token0.chain.chain_name
-                  .split('')
-                  .map((v, i) => (i > 0 ? v : v.toUpperCase()))
-                  .join('')}
-              </span>
+              <span className="nowrap">{token0.chain.pretty_name}</span>
             ) : (
               <>
-                <span className="nowrap">
-                  {token0.chain.chain_name
-                    .split('')
-                    .map((v, i) => (i > 0 ? v : v.toUpperCase()))
-                    .join('')}
-                </span>
-                <span> / </span>
-                <span>
-                  {token1.chain.chain_name
-                    .split('')
-                    .map((v, i) => (i > 0 ? v : v.toUpperCase()))
-                    .join('')}
-                  `
-                </span>
+                <span className="nowrap">{token0.chain.pretty_name} /</span>
+                <span>{token1.chain.pretty_name}</span>
               </>
             )}
           </div>
