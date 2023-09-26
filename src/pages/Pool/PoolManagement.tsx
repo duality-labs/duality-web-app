@@ -1331,7 +1331,11 @@ export default function PoolManagement({
                         <strong>Current Price:</strong>
                         <div className="chart-highlight">
                           {currentPriceFromTicks !== undefined
-                            ? formatAmount(currentPriceFromTicks.toFixed() || 0)
+                            ? formatAmount(
+                                currentPriceFromTicks.toFixed() || 0,
+                                { useGrouping: true },
+                                { reformatSmallValues: false }
+                              )
                             : '-'}
                         </div>
                         {tokenA && tokenB && (
