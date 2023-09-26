@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.16](https://github.com/duality-labs/duality-web-app/compare/v0.3.15...v0.3.16) (2023-09-26)
+
+
+### Fixes
+
+* ensure IBC tokens are referenced correctly ([#440](https://github.com/duality-labs/duality-web-app/issues/440)) ([d6f7a67](https://github.com/duality-labs/duality-web-app/commit/d6f7a679279b1b478d328d369d208c1c9692a10d))
+
+
+### Other
+
+* avoid static token list lookups ([#437](https://github.com/duality-labs/duality-web-app/issues/437)) ([e6a30d0](https://github.com/duality-labs/duality-web-app/commit/e6a30d02abeeeac1bad473228e25208fb411a782))
+* seperate denom amount getters ([#439](https://github.com/duality-labs/duality-web-app/issues/439)) ([5fe9fc1](https://github.com/duality-labs/duality-web-app/commit/5fe9fc1a570a4dacf75c14491e251285a4b5a4e1))
+
 ## [0.3.15](https://github.com/duality-labs/duality-web-app/compare/v0.3.14...v0.3.15) (2023-09-25)
 
 
