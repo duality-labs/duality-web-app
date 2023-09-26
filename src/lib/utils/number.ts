@@ -141,19 +141,26 @@ export function formatLongPrice(
 // than its denom exponent (eg. it has come from `getDisplayDenomAmount()`)
 export function formatCurrency(
   amount: number | string,
-  currency = 'USD',
-  decimalPlaces = 2
+  {
+    currency = 'USD',
+    decimalPlaces = 2,
+    maxDecimalPlaces = decimalPlaces,
+  }: {
+    currency?: string;
+    decimalPlaces?: number;
+    maxDecimalPlaces?: number;
+  } = {}
 ) {
   const numericAmount = Number(amount);
-  const minimumDisplayedCurrencyValue = Math.pow(10, -1 * decimalPlaces);
+  const minimumDisplayedCurrencyValue = Math.pow(10, -1 * maxDecimalPlaces);
   const isLessThanMinimum =
-    numericAmount > 0 && numericAmount < minimumDisplayedCurrencyValue / 2;
+    numericAmount > 0 && numericAmount < minimumDisplayedCurrencyValue;
   const stringAmount = (
     isLessThanMinimum ? minimumDisplayedCurrencyValue : numericAmount
   ).toLocaleString('en-US', {
     currency,
     minimumFractionDigits: decimalPlaces,
-    maximumFractionDigits: decimalPlaces,
+    maximumFractionDigits: maxDecimalPlaces,
     currencyDisplay: 'symbol',
     style: 'currency',
   });
