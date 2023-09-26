@@ -98,7 +98,7 @@ export function formatPercentage(
   );
   const numericAmount = Number(roundedAmount);
   return !isNaN(numericAmount)
-    ? `${numericAmount.toLocaleString('en-US', {
+    ? `${formatAmount(numericAmount, {
         useGrouping: true,
         ...opts,
       })}%`
