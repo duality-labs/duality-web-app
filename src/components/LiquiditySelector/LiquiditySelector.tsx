@@ -2019,6 +2019,9 @@ function Axis({
                   ? significantDecimals
                   : 1,
               useGrouping: true,
+            },
+            {
+              reformatSmallValues: false,
             }
           )}
           &nbsp;
