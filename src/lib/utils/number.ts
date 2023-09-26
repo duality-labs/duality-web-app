@@ -139,6 +139,7 @@ export function formatCurrency(
     currency: 'USD',
     currencyDisplay: 'symbol',
     style: 'currency',
+    useGrouping: true,
     // add user given options
     minimumFractionDigits,
     maximumFractionDigits,

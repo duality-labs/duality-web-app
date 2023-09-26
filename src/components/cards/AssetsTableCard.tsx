@@ -193,7 +193,6 @@ function AssetRow({
         </div>
         <div className="subtext">
           {`${formatCurrency(value?.toFixed() || '', {
-            useGrouping: true,
             maximumFractionDigits: 6,
           })}`}
         </div>
