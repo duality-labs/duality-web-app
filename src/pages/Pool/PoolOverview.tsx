@@ -849,12 +849,9 @@ function SwapColumn({
             getDisplayDenomAmount(tokenB, getTokenBReserves()) || 0
           ).multipliedBy(tokenBPrice || 0),
         ];
-        const value = values[0].plus(values[1]);
         // return loading start or calculated value
         return !tokenA && !tokenB && isValidating
           ? '...'
-          : value.isLessThan(0.005)
-          ? `< ${formatCurrency(0.01)}`
           : formatCurrency(values[0].plus(values[1]).toNumber());
       case 'Time':
         return tx.timestamp
