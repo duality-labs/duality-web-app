@@ -1332,7 +1332,9 @@ export default function PoolManagement({
                         <div className="chart-highlight">
                           {currentPriceFromTicks !== undefined
                             ? formatAmount(
-                                currentPriceFromTicks.toFixed() || 0,
+                                formatMaximumSignificantDecimals(
+                                  currentPriceFromTicks
+                                ),
                                 { useGrouping: true },
                                 { reformatSmallValues: false }
                               )
