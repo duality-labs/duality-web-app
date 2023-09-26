@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.17](https://github.com/duality-labs/duality-web-app/compare/v0.3.16...v0.3.17) (2023-09-26)
+
+
+### Fixes
+
+* improve display of IBC tokens and chains ([#441](https://github.com/duality-labs/duality-web-app/issues/441)) ([e737be3](https://github.com/duality-labs/duality-web-app/commit/e737be3d52e8349a3f7b023842f8a5ca8ae086a1))
+
 ## [0.3.16](https://github.com/duality-labs/duality-web-app/compare/v0.3.15...v0.3.16) (2023-09-26)
 
 
