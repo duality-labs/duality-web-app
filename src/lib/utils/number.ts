@@ -60,9 +60,9 @@ export function formatMaximumSignificantDecimals(
 export function formatAmount(
   amount: number | string,
   {
-    minimumFractionDigits,
+    minimumFractionDigits = 0,
     // avoid rendering very long fractional values with a practical limit
-    maximumFractionDigits = minimumFractionDigits ?? 6,
+    maximumFractionDigits = Math.max(minimumFractionDigits, 6),
     ...numberFormatOptions
   }: Intl.NumberFormatOptions = {},
   { reformatSmallValues = true } = {}
