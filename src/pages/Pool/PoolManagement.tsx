@@ -54,6 +54,7 @@ import {
   Token,
   getBaseDenomAmount,
   getDisplayDenomAmount,
+  roundToBaseUnit,
 } from '../../lib/web3/utils/tokens';
 
 import './Pool.scss';
@@ -95,7 +96,8 @@ const defaultPrecision = '30';
 const formatRangeString = (value: BigNumber.Value, significantDecimals = 3) => {
   return formatAmount(
     formatMaximumSignificantDecimals(value, significantDecimals),
-    { minimumSignificantDigits: significantDecimals }
+    { minimumSignificantDigits: significantDecimals },
+    { reformatSmallValues: false }
   );
 };
 
@@ -695,23 +697,28 @@ export default function PoolManagement({
   useLayoutEffect(() => {
     if (tokenA && tokenB && feeType) {
       if (lastUsedInput === 'A') {
-        // convert back to display units
-        const amountB = getDisplayDenomAmount(
-          tokenB,
-          shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
-            return acc.plus(reserveB);
-          }, new BigNumber(0))
+        const amountB = shapeReservesArray
+          .reduce((acc, [, , reserveB]) => acc.plus(reserveB), new BigNumber(0))
+          .toFixed();
+        // convert to the display units of the original token
+        const displayAmountB = getDisplayDenomAmount(tokenB, amountB);
+        // then transpose this complementary value to the new units
+        setInputValueB(
+          roundToBaseUnit(tokenB, new BigNumber(displayAmountB || 0).sd(6)) ??
+            ''
         );
-        setInputValueB(amountB ? formatAmount(amountB) : '');
       } else if (lastUsedInput === 'B') {
-        // convert back to display units
-        const amountA = getDisplayDenomAmount(
-          tokenA,
-          shapeReservesArray.reduce((acc, [tickInddex, reserveA, reserveB]) => {
-            return acc.plus(reserveA);
-          }, new BigNumber(0))
+        const amountA = shapeReservesArray.reduce(
+          (acc, [, reserveA]) => acc.plus(reserveA),
+          new BigNumber(0)
         );
-        setInputValueA(amountA ? formatAmount(amountA) : '');
+        // convert to the display units of the original token
+        const displayAmountA = getDisplayDenomAmount(tokenA, amountA);
+        // then transpose this complementary value to the new units
+        setInputValueA(
+          roundToBaseUnit(tokenA, new BigNumber(displayAmountA || 0).sd(6)) ??
+            ''
+        );
       }
       // if either side is set then calculate the new user ticks
       if (lastUsedInput) {
@@ -1323,7 +1330,9 @@ export default function PoolManagement({
                       <div className="row gap-2">
                         <strong>Current Price:</strong>
                         <div className="chart-highlight">
-                          {currentPriceFromTicks?.toFixed(5) ?? '-'}
+                          {currentPriceFromTicks !== undefined
+                            ? formatAmount(currentPriceFromTicks.toFixed() || 0)
+                            : '-'}
                         </div>
                         {tokenA && tokenB && (
                           <div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PairRequest, PairResult, RouterResult } from './index';
 import { routerAsync, calculateFee, SwapError } from './router';
-import { formatAmount } from '../../../lib/utils/number';
+import { formatMaximumSignificantDecimals } from '../../../lib/utils/number';
 
 import BigNumber from 'bignumber.js';
 import {
@@ -192,8 +192,8 @@ export function getRouterEstimates(
         tokenA: routerResult.tokenIn,
         tokenB: routerResult.tokenOut,
         rate: rate.toFixed(),
-        valueA: formatAmount(routerResult.amountIn.toFixed()),
-        valueB: formatAmount(routerResult.amountOut.toFixed()),
+        valueA: formatMaximumSignificantDecimals(routerResult.amountIn),
+        valueB: formatMaximumSignificantDecimals(routerResult.amountOut),
         gas: extraFee.toFixed(),
       };
       cachedRequests[token0] = cachedRequests[token0] || {};
@@ -218,13 +218,13 @@ export function getRouterEstimates(
           pairRequest.tokenA === cachedPairInfo.tokenA
             ? new BigNumber(rate)
             : new BigNumber(1).dividedBy(rate);
-        const roughEstimate = formatAmount(
+        const roughEstimate = formatMaximumSignificantDecimals(
           new BigNumber(alteredValue).multipliedBy(convertedRate).toFixed()
         );
         return {
           tokenA: pairRequest.tokenA,
           tokenB: pairRequest.tokenB,
-          rate: formatAmount(convertedRate.toFixed()),
+          rate: convertedRate.toFixed(),
           valueA: reverseSwap ? roughEstimate : alteredValue,
           valueB: reverseSwap ? alteredValue : roughEstimate,
           gas,

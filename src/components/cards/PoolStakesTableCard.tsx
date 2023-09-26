@@ -22,8 +22,8 @@ import { Gauge } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality
 import TableCard, { TableCardProps } from './TableCard';
 
 import {
+  formatAmount,
   formatCurrency,
-  formatDecimalPlaces,
   formatPercentage,
 } from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
@@ -152,10 +152,11 @@ export default function MyPoolStakesTableCard<T extends string | number>({
       if (!value) {
         return 2;
       }
-      return (
-        new BigNumber(value).toPrecision(precision).split('.').pop()?.length ||
-        0
-      );
+      // two steps are required here so that big/small values don't become
+      // scientific notation strings, eg. 1.2e-9
+      const roundedValue = new BigNumber(value).toPrecision(precision);
+      const stringValue = new BigNumber(roundedValue).toFixed();
+      return stringValue.split('.').pop()?.length || 0;
     }
   }, [allShareValues, tokenA, tokenB]);
 
@@ -459,7 +460,7 @@ function StakingRow({
           <label className="pt-0 pb-2 pr-3">{checkbox}</label>
         </td>
         <td className="min-width pl-3">
-          {formatDecimalPlaces(
+          {formatAmount(
             tickIndexToPrice(
               !tokensInverted
                 ? new BigNumber(
@@ -469,9 +470,10 @@ function StakingRow({
                     userPosition.deposit.centerTickIndex1To0.toNumber()
                   ).negated()
             ).toFixed(),
-            columnDecimalPlaces.price,
             {
               useGrouping: true,
+              minimumFractionDigits: columnDecimalPlaces.price,
+              maximumFractionDigits: columnDecimalPlaces.price,
             }
           )}{' '}
           <span className="text-muted">
@@ -499,7 +501,7 @@ function StakingRow({
             minimumFractionDigits: 2,
           })}
         </td>
-        <td>{formatCurrency(tokenAValue.plus(tokenBValue).toFixed(2))}</td>
+        <td>{formatCurrency(tokenAValue.plus(tokenBValue).toNumber())}</td>
         <td className="min-width">
           <div
             className={[
@@ -523,12 +525,14 @@ function StakingRow({
           {tokenAContext?.userReserves.isGreaterThan(0) && (
             <div>
               <span>
-                {formatDecimalPlaces(
+                {formatAmount(
                   getDisplayDenomAmount(
                     tokenA,
-                    tokenAContext?.userReserves || 0
+                    tokenAContext?.userReserves || 0,
+                    {
+                      fractionalDigits: columnDecimalPlaces.amountA,
+                    }
                   ) || 0,
-                  columnDecimalPlaces.amountA,
                   {
                     useGrouping: true,
                   }
@@ -540,12 +544,14 @@ function StakingRow({
           {tokenBContext?.userReserves.isGreaterThan(0) && (
             <div>
               <span>
-                {formatDecimalPlaces(
+                {formatAmount(
                   getDisplayDenomAmount(
                     tokenB,
-                    tokenBContext?.userReserves || 0
+                    tokenBContext?.userReserves || 0,
+                    {
+                      fractionalDigits: columnDecimalPlaces.amountB,
+                    }
                   ) || 0,
-                  columnDecimalPlaces.amountB,
                   {
                     useGrouping: true,
                   }

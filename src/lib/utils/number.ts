@@ -1,8 +1,5 @@
 import BigNumber from 'bignumber.js';
 
-const { REACT_APP__MAX_FRACTION_DIGITS = '' } = process.env;
-const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
-
 // rounding to 6 significant figures will guarantee a unique index
 // for all tick indexes using the basis of price = 1.0001^index
 export function roundToSignificantDigits(
@@ -62,41 +59,37 @@ export function formatMaximumSignificantDecimals(
 // link: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat#roundingpriority
 export function formatAmount(
   amount: number | string,
-  opts: Intl.NumberFormatOptions = {}
+  {
+    minimumFractionDigits = 0,
+    // avoid rendering very long fractional values with a practical limit
+    maximumFractionDigits = Math.max(minimumFractionDigits, 6),
+    ...numberFormatOptions
+  }: Intl.NumberFormatOptions = {},
+  { reformatSmallValues = true } = {}
 ) {
   const numericAmount = Number(amount);
-  return !isNaN(numericAmount)
-    ? numericAmount.toLocaleString('en-US', {
-        maximumFractionDigits: maxFractionDigits,
-        maximumSignificantDigits: Math.max(
-          6,
-          opts.minimumSignificantDigits || 0
-        ),
-        useGrouping: false,
-        ...opts,
-      })
-    : '-';
-}
-
-export function formatDecimalPlaces(
-  amount: number | string,
-  fractionDigits = 2,
-  opts: Intl.NumberFormatOptions = {}
-) {
-  const numericAmount = Number(amount);
-  return !isNaN(numericAmount)
-    ? numericAmount.toLocaleString('en-US', {
-        minimumFractionDigits: fractionDigits,
-        maximumFractionDigits: fractionDigits,
-        ...opts,
-      })
-    : '-';
+  // use passed limits to determine when we show a small value (eg. <0.001)
+  const minimumValue = Math.pow(10, -maximumFractionDigits);
+  const isSmallValue =
+    reformatSmallValues && numericAmount > 0 && numericAmount < minimumValue;
+  const stringAmount = (
+    isSmallValue ? minimumValue : !isNaN(numericAmount) ? numericAmount : '-'
+  ).toLocaleString('en-US', {
+    // add defaults
+    useGrouping: false,
+    // add user given options
+    minimumFractionDigits,
+    maximumFractionDigits,
+    ...numberFormatOptions,
+  });
+  // add "less than" indicator for small (non-zero) amounts
+  return `${isSmallValue ? '<' : ''}${stringAmount}`;
 }
 
 export function formatPercentage(
   amount: number | string,
   opts: Intl.NumberFormatOptions = {},
-  maximumSignificantDecimals = 3
+  maximumSignificantDecimals = opts.maximumSignificantDigits ?? 3
 ) {
   const percentage = Number(amount) * 100;
   const roundedAmount = formatMaximumSignificantDecimals(
@@ -105,7 +98,7 @@ export function formatPercentage(
   );
   const numericAmount = Number(roundedAmount);
   return !isNaN(numericAmount)
-    ? `${numericAmount.toLocaleString('en-US', {
+    ? `${formatAmount(numericAmount, {
         useGrouping: true,
         ...opts,
       })}%`
@@ -126,19 +119,33 @@ export function formatLongPrice(
   amount: number | string,
   opts: Intl.NumberFormatOptions = {}
 ) {
-  return formatPrice(amount, { maximumSignificantDigits: 6, ...opts });
+  return formatPrice(amount, {
+    maximumSignificantDigits: 6,
+    ...opts,
+  });
 }
 
-// format to a visually pleasing output of currency
+// format to a visually pleasing output of currency eg. $1,234.00 / <$0.01 / $0
 // should never be passed on to further calculations due to rounding
 // it is intended that the amount passed here has no more decimal places
 // than its denom exponent (eg. it has come from `getDisplayDenomAmount()`)
-export function formatCurrency(amount: number | string, currency = 'USD') {
-  return Number(amount).toLocaleString('en-US', {
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+export function formatCurrency(
+  amount: number | string,
+  {
+    minimumFractionDigits = 2,
+    maximumFractionDigits = minimumFractionDigits,
+    ...numberFormatOptions
+  }: Intl.NumberFormatOptions = {}
+) {
+  return formatAmount(amount, {
+    // add defaults
+    currency: 'USD',
     currencyDisplay: 'symbol',
     style: 'currency',
+    useGrouping: true,
+    // add user given options
+    minimumFractionDigits,
+    maximumFractionDigits,
+    ...numberFormatOptions,
   });
 }

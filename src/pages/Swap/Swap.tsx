@@ -30,7 +30,7 @@ import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
-import { formatAmount } from '../../lib/utils/number';
+import { formatPercentage } from '../../lib/utils/number';
 import { Token, getBaseDenomAmount } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 
@@ -322,10 +322,10 @@ function Swap() {
     routerResult.priceBToAIn?.isGreaterThan(0) &&
     routerResult.priceBToAOut?.isGreaterThan(0)
       ? new BigNumber(
-          new BigNumber(routerResult.priceBToAIn)
-            .dividedBy(new BigNumber(routerResult.priceBToAOut))
-            .multipliedBy(100)
-        ).minus(100)
+          new BigNumber(routerResult.priceBToAIn).dividedBy(
+            new BigNumber(routerResult.priceBToAOut)
+          )
+        ).minus(1)
       : undefined;
 
   const tradeCard = (
@@ -466,9 +466,9 @@ function Swap() {
                         switch (true) {
                           case priceImpact.isGreaterThanOrEqualTo(0):
                             return 'text-success';
-                          case priceImpact.isGreaterThan(-1):
+                          case priceImpact.isGreaterThan(-0.01):
                             return 'text-value';
-                          case priceImpact.isGreaterThan(-5):
+                          case priceImpact.isGreaterThan(-0.05):
                             return 'text';
                           default:
                             return 'text-error';
@@ -476,11 +476,10 @@ function Swap() {
                       })(),
                     ].join(' ')}
                   >
-                    {formatAmount(priceImpact.toFixed(), {
+                    {formatPercentage(priceImpact.toFixed(), {
                       maximumSignificantDigits: 4,
                       minimumSignificantDigits: 4,
                     })}
-                    %
                   </span>
                 )}
               </div>

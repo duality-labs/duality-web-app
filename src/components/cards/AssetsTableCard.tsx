@@ -14,7 +14,7 @@ import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import { dualityChain } from '../../lib/web3/hooks/useChains';
 
-import { formatAmount } from '../../lib/utils/number';
+import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 
 import './AssetsTableCard.scss';
@@ -192,8 +192,8 @@ function AssetRow({
           })}`}
         </div>
         <div className="subtext">
-          {`$${formatAmount(value?.toFixed() || '', {
-            useGrouping: true,
+          {`${formatCurrency(value?.toFixed() || '', {
+            maximumFractionDigits: 6,
           })}`}
         </div>
       </td>
