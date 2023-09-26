@@ -192,7 +192,10 @@ function AssetRow({
           })}`}
         </div>
         <div className="subtext">
-          {`${formatCurrency(value?.toFixed() || '', { maxDecimalPlaces: 6 })}`}
+          {`${formatCurrency(value?.toFixed() || '', {
+            useGrouping: true,
+            maximumFractionDigits: 6,
+          })}`}
         </div>
       </td>
       {showActions && (
