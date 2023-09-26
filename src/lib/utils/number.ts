@@ -152,7 +152,11 @@ export function formatCurrency(
   const isLessThanMinimum =
     numericAmount > 0 && numericAmount < minimumDisplayedCurrencyValue;
   const stringAmount = (
-    isLessThanMinimum ? minimumDisplayedCurrencyValue : numericAmount
+    isLessThanMinimum
+      ? minimumDisplayedCurrencyValue
+      : isNaN(numericAmount)
+      ? numericAmount
+      : '-'
   ).toLocaleString('en-US', {
     // add defaults
     currency: 'USD',
