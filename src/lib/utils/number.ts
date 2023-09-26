@@ -119,7 +119,10 @@ export function formatLongPrice(
   amount: number | string,
   opts: Intl.NumberFormatOptions = {}
 ) {
-  return formatPrice(amount, { maximumSignificantDigits: 6, ...opts });
+  return formatPrice(amount, {
+    maximumSignificantDigits: 6,
+    ...opts,
+  });
 }
 
 // format to a visually pleasing output of currency eg. $1,234.00 / <$0.01 / $0

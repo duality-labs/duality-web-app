@@ -283,10 +283,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
                         tickIndexToPrice(
                           new BigNumber(`${row.distribute_to.endTick}`) || 0
                         ).toNumber(),
-                        {
-                          useGrouping: true,
-                          minimumSignificantDigits: 2,
-                        }
+                        { useGrouping: true, minimumSignificantDigits: 2 }
                       )}
                     </div>
                     <div className="col text-muted">
