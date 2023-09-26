@@ -24,7 +24,6 @@ import TableCard, { TableCardProps } from './TableCard';
 import {
   formatAmount,
   formatCurrency,
-  formatDecimalPlaces,
   formatPercentage,
 } from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
@@ -461,7 +460,7 @@ function StakingRow({
           <label className="pt-0 pb-2 pr-3">{checkbox}</label>
         </td>
         <td className="min-width pl-3">
-          {formatDecimalPlaces(
+          {formatAmount(
             tickIndexToPrice(
               !tokensInverted
                 ? new BigNumber(
@@ -471,9 +470,10 @@ function StakingRow({
                     userPosition.deposit.centerTickIndex1To0.toNumber()
                   ).negated()
             ).toFixed(),
-            columnDecimalPlaces.price,
             {
               useGrouping: true,
+              minimumFractionDigits: columnDecimalPlaces.price,
+              maximumFractionDigits: columnDecimalPlaces.price,
             }
           )}{' '}
           <span className="text-muted">

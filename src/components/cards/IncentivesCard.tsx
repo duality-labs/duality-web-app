@@ -6,7 +6,7 @@ import TableCard from './TableCard';
 
 import './IncentivesCard.scss';
 import useTokens, { matchTokenByAddress } from '../../lib/web3/hooks/useTokens';
-import { formatAmount, formatDecimalPlaces } from '../../lib/utils/number';
+import { formatAmount } from '../../lib/utils/number';
 
 export default function IncentivesCard({
   className,
@@ -55,12 +55,12 @@ export default function IncentivesCard({
                       Ending{' '}
                       <time>
                         in{' '}
-                        {formatDecimalPlaces(
+                        {formatAmount(
                           Number(gauge.num_epochs_paid_over) -
                             Number(gauge.filled_epochs),
-                          0,
                           {
                             useGrouping: true,
+                            maximumFractionDigits: 0,
                           }
                         )}{' '}
                         Days
