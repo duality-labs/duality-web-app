@@ -62,11 +62,15 @@ export function formatAmount(
   {
     minimumFractionDigits = 0,
     // avoid rendering very long fractional values with a practical limit
-    maximumFractionDigits = Math.max(minimumFractionDigits, 6),
+    maximumFractionDigits: givenMaximumFractionDigits = 6,
     ...numberFormatOptions
   }: Intl.NumberFormatOptions = {},
   { reformatSmallValues = true } = {}
 ) {
+  const maximumFractionDigits = Math.max(
+    minimumFractionDigits,
+    givenMaximumFractionDigits
+  );
   const numericAmount = Number(amount);
   // use passed limits to determine when we show a small value (eg. <0.001)
   const minimumValue = Math.pow(10, -maximumFractionDigits);
