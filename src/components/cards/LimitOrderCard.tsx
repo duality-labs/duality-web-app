@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
+
 import TabsCard from './TabsCard';
+import Tabs from '../Tabs';
 
 import { Token } from '../../lib/web3/utils/tokens';
 
@@ -23,14 +25,61 @@ export default function LimitOrderCard({
         return [
           {
             nav: 'Buy',
-            Tab: () => (tokenA && tokenB ? <div>Buy</div> : null),
+            Tab: () => <LimitOrderType tokenA={tokenA} tokenB={tokenB} />,
           },
           {
             nav: 'Sell',
-            Tab: () => (tokenA && tokenB ? <div>Sell</div> : null),
+            Tab: () => <LimitOrderType tokenA={tokenA} tokenB={tokenB} sell />,
           },
         ];
       }, [tokenA, tokenB])}
     />
   );
+}
+
+function LimitOrderType({
+  tokenA,
+  tokenB,
+  sell = false,
+}: {
+  tokenA?: Token;
+  tokenB?: Token;
+  sell?: boolean;
+}) {
+  const tabs = useMemo(() => {
+    const props = { tokenA, tokenB, sell };
+    return [
+      {
+        nav: 'Limit',
+        Tab: () => <LimitOrder {...props} />,
+      },
+      {
+        nav: 'Market',
+        Tab: () => <LimitOrder {...props} />,
+      },
+      {
+        nav: 'Stop Limit',
+        Tab: () => <LimitOrder {...props} />,
+      },
+    ];
+  }, [tokenA, tokenB, sell]);
+
+  return (
+    <div className="p-md">
+      <Tabs className="limitorder-type" tabs={tabs} />
+    </div>
+  );
+}
+
+function LimitOrder({
+  tokenA,
+  tokenB,
+  sell: sellMode = false,
+}: {
+  tokenA?: Token;
+  tokenB?: Token;
+  sell?: boolean;
+}) {
+  const buyMode = !sellMode;
+  return <div>{buyMode ? `Buy ${tokenA?.name}` : `Sell ${tokenB?.name}`}</div>;
 }
