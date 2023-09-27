@@ -30,7 +30,7 @@ import {
   Tick,
   getRangeIndexes,
 } from '../../components/LiquiditySelector/LiquiditySelector';
-import { useCurrentPriceFromTicks } from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
+import useCurrentPriceIndexFromTicks from '../../components/LiquiditySelector/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import {
@@ -47,7 +47,12 @@ import {
   formatMaximumSignificantDecimals,
   formatPrice,
 } from '../../lib/utils/number';
-import { priceToTickIndex, tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import {
+  displayPriceToTickIndex,
+  priceToTickIndex,
+  tickIndexToDisplayPrice,
+  tickIndexToPrice,
+} from '../../lib/web3/utils/ticks';
 import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 import {
@@ -192,22 +197,35 @@ export default function PoolManagement({
   const valuesValid =
     !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
 
-  const currentPriceFromTicks = useCurrentPriceFromTicks(
+  const currentPriceIndexFromTicks = useCurrentPriceIndexFromTicks(
     tokenA?.address,
     tokenB?.address
   );
 
   const [initialPrice, setInitialPrice] = useState<string>('');
-  // set price to price from ticks or user supplied value
-  const edgePrice = useMemo(() => {
-    if (currentPriceFromTicks) {
-      return currentPriceFromTicks;
-    }
+  const initialPriceIndex = useMemo(() => {
     const initialPriceNumber = Number(initialPrice);
     return initialPriceNumber > 0
-      ? new BigNumber(initialPriceNumber)
+      ? displayPriceToTickIndex(
+          new BigNumber(initialPriceNumber),
+          tokenA,
+          tokenB,
+          'none'
+        )?.toNumber()
       : undefined;
-  }, [currentPriceFromTicks, initialPrice]);
+  }, [initialPrice, tokenA, tokenB]);
+
+  // set edge from ticks or user supplied value
+  const edgePriceIndex = useMemo(() => {
+    return currentPriceIndexFromTicks ?? initialPriceIndex;
+  }, [currentPriceIndexFromTicks, initialPriceIndex]);
+
+  // edge price is the DISPLAY price that the user sees
+  const edgePrice = useMemo(() => {
+    return edgePriceIndex !== undefined && !isNaN(Number(edgePriceIndex))
+      ? tickIndexToDisplayPrice(new BigNumber(edgePriceIndex), tokenA, tokenB)
+      : undefined;
+  }, [edgePriceIndex, tokenA, tokenB]);
 
   // reset initial price whenever selected tokens are changed
   useEffect(() => {
@@ -268,8 +286,8 @@ export default function PoolManagement({
         const newPrice = new BigNumber(priceMin);
         return {
           ...tick,
-          reserveA: newReserveA,
-          reserveB: newReserveB,
+          reserveA: newReserveA.decimalPlaces(0),
+          reserveB: newReserveB.decimalPlaces(0),
           priceBToA: new BigNumber(priceMin),
           tickIndexBToA: priceToTickIndex(newPrice).toNumber(),
         };
@@ -278,16 +296,16 @@ export default function PoolManagement({
         const newPrice = new BigNumber(priceMax);
         return {
           ...tick,
-          reserveA: newReserveA,
-          reserveB: newReserveB,
+          reserveA: newReserveA.decimalPlaces(0),
+          reserveB: newReserveB.decimalPlaces(0),
           priceBToA: new BigNumber(priceMax),
           tickIndexBToA: priceToTickIndex(newPrice).toNumber(),
         };
       }
       return {
         ...tick,
-        reserveA: newReserveA,
-        reserveB: newReserveB,
+        reserveA: newReserveA.decimalPlaces(0),
+        reserveB: newReserveB.decimalPlaces(0),
       };
     }
     if (typeof userTicksOrCallback === 'function') {
@@ -370,25 +388,25 @@ export default function PoolManagement({
     );
   }, [precision]);
 
-  const edgePriceIndex = useMemo(() => {
-    return edgePrice && priceToTickIndex(edgePrice, 'none').toNumber();
-  }, [edgePrice]);
-
   const [rangeMinIndex, rangeMaxIndex] = useMemo(() => {
-    const fractionalRangeMinIndex = priceToTickIndex(
+    const fractionalRangeMinIndex = displayPriceToTickIndex(
       new BigNumber(fractionalRangeMin),
+      tokenA,
+      tokenB,
       'none'
-    ).toNumber();
-    const fractionalRangeMaxIndex = priceToTickIndex(
+    )?.toNumber();
+    const fractionalRangeMaxIndex = displayPriceToTickIndex(
       new BigNumber(fractionalRangeMax),
+      tokenA,
+      tokenB,
       'none'
-    ).toNumber();
+    )?.toNumber();
     return getRangeIndexes(
       edgePriceIndex,
-      fractionalRangeMinIndex,
-      fractionalRangeMaxIndex
+      fractionalRangeMinIndex || 0,
+      fractionalRangeMaxIndex || 0
     );
-  }, [fractionalRangeMin, fractionalRangeMax, edgePriceIndex]);
+  }, [fractionalRangeMin, tokenA, tokenB, fractionalRangeMax, edgePriceIndex]);
 
   const formatSignificantDecimalRangeString = useCallback(
     (price: BigNumber.Value) => {
@@ -398,12 +416,26 @@ export default function PoolManagement({
   );
 
   const rangeMin = useMemo<number>(
-    () => tickIndexToPrice(new BigNumber(rangeMinIndex)).toNumber(),
-    [rangeMinIndex]
+    () =>
+      (rangeMinIndex !== undefined &&
+        tickIndexToDisplayPrice(
+          new BigNumber(rangeMinIndex),
+          tokenA,
+          tokenB
+        )?.toNumber()) ||
+      NaN,
+    [rangeMinIndex, tokenA, tokenB]
   );
   const rangeMax = useMemo<number>(
-    () => tickIndexToPrice(new BigNumber(rangeMaxIndex)).toNumber(),
-    [rangeMaxIndex]
+    () =>
+      (rangeMaxIndex !== undefined &&
+        tickIndexToDisplayPrice(
+          new BigNumber(rangeMaxIndex),
+          tokenA,
+          tokenB
+        )?.toNumber()) ||
+      NaN,
+    [rangeMaxIndex, tokenA, tokenB]
   );
 
   const [pairPriceMin, pairPriceMax] = useMemo<[number, number]>(() => {
@@ -610,12 +642,14 @@ export default function PoolManagement({
     return unitValues.map((value) => value / unitValuesTotal);
   }, [tickCount, shapeFunction]);
 
+  // shapeReservesArray describes the desired shape of the reserves as accurately as possible
+  // it does not account for denom rounding or amount limits of any kind
   const shapeReservesArray = useMemo((): Array<
     [tickIndex: number, reservesA: BigNumber, reservesB: BigNumber]
   > => {
     const amountA = new BigNumber(values[0] || 0);
     const amountB = new BigNumber(values[1] || 0);
-    if (lastUsedInput && edgePriceIndex) {
+    if (lastUsedInput && edgePriceIndex !== undefined) {
       // calculate the used tick indexes
       const tickIndexValues = shapeUnitValueArray.map(
         (value, index, ticks): [tickIndex: number, value: number] => {
@@ -1273,7 +1307,7 @@ export default function PoolManagement({
           <div className="col row-lg gap-4 col-slide-container gutter-x-4">
             {addLiquidityForm}
             <div className="col flex gap-4">
-              {tokenA && tokenB && currentPriceFromTicks === undefined && (
+              {tokenA && tokenB && currentPriceIndexFromTicks === undefined && (
                 <div className="page-card col">
                   <div className="h4">Select Starting Price</div>
                   <div className="panel panel-primary col my-3 gap-2">
@@ -1330,10 +1364,14 @@ export default function PoolManagement({
                       <div className="row gap-2">
                         <strong>Current Price:</strong>
                         <div className="chart-highlight">
-                          {currentPriceFromTicks !== undefined
+                          {currentPriceIndexFromTicks !== undefined
                             ? formatAmount(
                                 formatMaximumSignificantDecimals(
-                                  currentPriceFromTicks
+                                  tickIndexToDisplayPrice(
+                                    new BigNumber(currentPriceIndexFromTicks),
+                                    tokenA,
+                                    tokenB
+                                  )?.toNumber() || 0
                                 ),
                                 { useGrouping: true },
                                 { reformatSmallValues: false }
@@ -1353,7 +1391,7 @@ export default function PoolManagement({
                     <LiquiditySelector
                       tokenA={tokenA}
                       tokenB={tokenB}
-                      initialPrice={initialPrice}
+                      initialPriceIndex={initialPriceIndex}
                       rangeMin={fractionalRangeMin}
                       rangeMax={fractionalRangeMax}
                       setRange={setRange}

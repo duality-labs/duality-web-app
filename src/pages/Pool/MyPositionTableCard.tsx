@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Tick } from '../../components/LiquiditySelector/LiquiditySelector';
 
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
-import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { tickIndexToDisplayPrice } from '../../lib/web3/utils/ticks';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 
 import { EditedPosition } from '../MyLiquidity/useEditLiquidity';
@@ -115,12 +115,22 @@ export function MyNewPositionTableCard({
 
   const data =
     tokenA && tokenB && !(reserveATotal.isZero() && reserveBTotal.isZero())
-      ? userTicks.map(({ priceBToA, reserveA, reserveB }, index) => {
+      ? userTicks.map((tick, index) => {
+          const { reserveA, reserveB, tickIndexBToA, tokenA, tokenB } = tick;
+          const displayPriceBToA = tickIndexToDisplayPrice(
+            new BigNumber(tickIndexBToA),
+            tokenA,
+            tokenB
+          );
           // note: fix these restrictions, they are a bit off
           return (
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
-              <td>{priceBToA ? formatAmount(priceBToA.toNumber()) : '-'}</td>
+              <td>
+                {displayPriceBToA
+                  ? formatAmount(displayPriceBToA.toNumber())
+                  : '-'}
+              </td>
               <td>
                 {reserveA.isGreaterThan(0) && (
                   <div>{formatCurrency(poolValues[index][0])}</div>
@@ -298,7 +308,11 @@ export function MyEditedPositionTableCard({
             ? new BigNumber(deposit.centerTickIndex1To0.toNumber())
             : new BigNumber(deposit.centerTickIndex1To0.toNumber()).negated();
 
-          const priceBToA = tickIndexToPrice(tickIndexBToA);
+          const displayPriceBToA = tickIndexToDisplayPrice(
+            tickIndexBToA,
+            tokenA,
+            tokenB
+          );
           // show only those ticks that are in the currently visible range
           return viewableMinIndex !== undefined &&
             viewableMaxIndex !== undefined &&
@@ -306,7 +320,11 @@ export function MyEditedPositionTableCard({
             tickIndexBToA.isLessThanOrEqualTo(viewableMaxIndex) ? (
             <tr key={index} className="pt-2">
               <td>{index + 1}</td>
-              <td>{priceBToA ? formatAmount(priceBToA.toNumber()) : '-'}</td>
+              <td>
+                {displayPriceBToA
+                  ? formatAmount(displayPriceBToA.toNumber())
+                  : '-'}
+              </td>
               <td>
                 {reserveA.isGreaterThan(0) && (
                   <div>{formatCurrency(poolValues[index][0])}</div>
