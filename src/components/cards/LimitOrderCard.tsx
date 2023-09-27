@@ -3,6 +3,8 @@ import TabsCard from './TabsCard';
 
 import { Token } from '../../lib/web3/utils/tokens';
 
+import './LimitOrderCard.scss';
+
 export default function LimitOrderCard({
   tokenA,
   tokenB,

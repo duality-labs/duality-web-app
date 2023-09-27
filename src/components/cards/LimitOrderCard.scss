@@ -1,0 +1,15 @@
+.limitorder-card {
+  .tabs-card__nav {
+    .tabs-card__nav-button {
+      & {
+        opacity: 0.25;
+      }
+      &.active {
+        opacity: 1;
+        background-color: var(--page-card);
+        color: hsla(165, 83%, 57%, 1);
+        font-weight: bold;
+      }
+    }
+  }
+}
