@@ -294,6 +294,7 @@ function NumericInputRow({
         }}
         onBlur={() => setInternalValue(undefined)}
         readOnly={readOnly}
+        style={readOnly ? { outline: 'none' } : undefined}
       ></input>
       <div className="token-amount-input__suffix">{suffix}</div>
     </div>
