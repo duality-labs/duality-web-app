@@ -72,7 +72,7 @@ function LimitOrderType({
   }, [tokenA, tokenB, sell]);
 
   return (
-    <div className="p-md">
+    <div className="pt-4 px-md">
       <Tabs className="limitorder-type" tabs={tabs} />
     </div>
   );
@@ -96,7 +96,7 @@ function LimitOrder({
 
   return (
     <div>
-      <div className="my-3">
+      <div className="mt-2 mb-4">
         <NumericInputRow
           prefix="Amount"
           value={amount}
@@ -104,7 +104,7 @@ function LimitOrder({
           suffix={tokenA?.symbol}
         />
       </div>
-      <div className="my-3">
+      <div className="my-4">
         <NumericInputRow
           prefix="Total"
           value={total}
