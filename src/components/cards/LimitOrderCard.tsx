@@ -81,5 +81,14 @@ function LimitOrder({
   sell?: boolean;
 }) {
   const buyMode = !sellMode;
-  return <div>{buyMode ? `Buy ${tokenA?.name}` : `Sell ${tokenB?.name}`}</div>;
+
+  return (
+    <div>
+      <div className="flex row">
+        <button className="limit-order__confirm-button flex button-primary my-lg py-4">
+          {buyMode ? 'Buy' : 'Sell'}
+        </button>
+      </div>
+    </div>
+  );
 }
