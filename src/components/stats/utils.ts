@@ -71,5 +71,7 @@ export function formatStatTokenValue(value: TokenValue) {
   return typeof value === 'number' ? formatCurrency(value) : value;
 }
 export function formatStatPercentageValue(value: TokenValue) {
-  return typeof value === 'number' ? formatPercentage(value) : value;
+  return typeof value === 'number'
+    ? formatPercentage(value, { minimumSignificantDigits: 3 })
+    : value;
 }

@@ -476,8 +476,7 @@ function Swap() {
                       })(),
                     ].join(' ')}
                   >
-                    {formatPercentage(priceImpact.toFixed(), {
-                      maximumSignificantDigits: 4,
+                    {formatPercentage(priceImpact.toNumber(), {
                       minimumSignificantDigits: 4,
                     })}
                   </span>

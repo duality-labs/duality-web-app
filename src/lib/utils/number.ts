@@ -90,20 +90,25 @@ export function formatAmount(
 
 export function formatPercentage(
   amount: number | string,
-  opts: Intl.NumberFormatOptions = {},
-  maximumSignificantDecimals = opts.maximumSignificantDigits ?? 3
+  {
+    minimumSignificantDigits,
+    ...numberFormatOptions
+  }: Intl.NumberFormatOptions = {}
 ) {
-  const percentage = Number(amount) * 100;
-  const roundedAmount = formatMaximumSignificantDecimals(percentage, {
-    minimumSignificantDigits: maximumSignificantDecimals,
-  });
-  const numericAmount = Number(roundedAmount);
-  return !isNaN(numericAmount)
-    ? `${formatAmount(numericAmount, {
-        useGrouping: true,
-        ...opts,
-      })}%`
-    : '-';
+  const numericAmount = Number(amount) * 100;
+  // only format significant decimals if asked to
+  const roundedAmount = minimumSignificantDigits
+    ? formatMaximumSignificantDecimals(numericAmount, {
+        minimumSignificantDigits,
+      })
+    : numericAmount;
+  return `${formatAmount(roundedAmount, {
+    // add defaults
+    useGrouping: true,
+    // add user given options
+    minimumSignificantDigits,
+    ...numberFormatOptions,
+  })}%`;
 }
 
 export function formatPrice(

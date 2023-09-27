@@ -33,7 +33,7 @@ export default function StatCard({
       footer={
         change !== undefined
           ? change !== null
-            ? formatPercentage(change)
+            ? formatPercentage(change, { minimumSignificantDigits: 3 })
             : 'N/A'
           : '...'
       }

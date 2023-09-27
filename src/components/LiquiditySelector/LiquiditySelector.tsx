@@ -1201,12 +1201,12 @@ function TicksArea({
         tickIndexToPrice(new BigNumber(tickIndex))
           .dividedBy(tickIndexToPrice(new BigNumber(currentPriceIndex)))
           .minus(1)
-          .toFixed(),
+          .toNumber(),
         {
+          minimumSignificantDigits: 2,
           signDisplay: 'always',
           useGrouping: true,
-        },
-        2
+        }
       );
     },
     []
