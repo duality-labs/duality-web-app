@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.19](https://github.com/duality-labs/duality-web-app/compare/v0.3.18...v0.3.19) (2023-09-27)
+
+
+### Fixes
+
+* better minimum value formatting fixes ([#448](https://github.com/duality-labs/duality-web-app/issues/448)) ([5997cb7](https://github.com/duality-labs/duality-web-app/commit/5997cb798ac5fc2fcc941aa33b52b518ab1789a8))
+
 ## [0.3.18](https://github.com/duality-labs/duality-web-app/compare/v0.3.17...v0.3.18) (2023-09-26)
 
 
