@@ -38,6 +38,19 @@
     }
   }
 
+  .token-amount-input {
+    color: hsl(218deg, 11%, 65%);
+    background-color: hsla(216, 20%, 25%, 1);
+    border: 1px solid var(--page-card-border);
+    border-radius: paddings.$p-3;
+    input {
+      font-size: 1rem;
+      font-weight: 500;
+      color: hsl(218deg, 11%, 65%);
+      text-align: right;
+    }
+  }
+
   .limit-order__confirm-button {
     font-size: 1.25rem;
   }
