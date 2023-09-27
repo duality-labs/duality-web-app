@@ -46,6 +46,33 @@ export function formatMaximumSignificantDecimals(
 }
 
 // I think my final resolution is
+// create a new type
+interface IntlNumberFormatOptionsPlus extends Intl.NumberFormatOptions {
+  significantFractionalDigits?: number;
+}
+// - put everything through formatAmount
+// - expose an optional formatter for each type to use, like: formatSignificantDecimalAmount
+// - apply significantFractionalDigits as a transform to minimumSignificantDigits, maximumSignificantDigits, and removing minimumFractionDigits, maximumFractionDigits
+// then in formatAmount apply significant digits, then fractional digits???
+function getSignificantDecimalConfig(
+  amount: number,
+  significantFractionalDigits = 0
+) {
+  const numericAmount = Number(amount);
+  const orderOfMagnitude = Math.floor(Math.log10(Math.abs(numericAmount)));
+  // control number of decimal places by enforcing significant digits
+  const significantDigits = Math.max(
+    orderOfMagnitude,
+    significantFractionalDigits
+  );
+  return {
+    minimumSignificantDigits: significantDigits,
+    maximumSignificantDigits: significantDigits,
+    minimumFractionDigits: undefined,
+    maximumFractionDigits: undefined,
+  };
+}
+
 // - put everything through formatAmount
 // - if `minimumSignificantDigits` or `maximumSignificantDigits` are set then
 // - call internal function formatMaximumSignificantDecimals to apply significant digit rounding first
@@ -65,11 +92,12 @@ export function formatMaximumSignificantDecimals(
 export function formatAmount(
   amount: number | string,
   {
+    significantFractionalDigits,
     minimumFractionDigits = 0,
     // avoid rendering very long fractional values with a practical limit
     maximumFractionDigits: givenMaximumFractionDigits = 6,
     ...numberFormatOptions
-  }: Intl.NumberFormatOptions = {},
+  }: IntlNumberFormatOptionsPlus = {},
   { reformatSmallValues = true } = {}
 ) {
   const maximumFractionDigits = Math.max(
@@ -91,9 +119,22 @@ export function formatAmount(
     minimumFractionDigits,
     maximumFractionDigits,
     ...numberFormatOptions,
+    // override with special significantDecimalConfig
+    ...(significantFractionalDigits &&
+      getSignificantDecimalConfig(numericAmount, significantFractionalDigits)),
   });
   // add "less than" indicator for small (non-zero) amounts
   return `${isSmallValue ? '<' : ''}${stringAmount}`;
+}
+export function formatSignificantDecimalAmount(
+  amount: number | string,
+  significantFractionalDigits = 3
+) {
+  return formatAmount(
+    amount,
+    { significantFractionalDigits },
+    { reformatSmallValues: false }
+  );
 }
 
 export function formatPercentage(
