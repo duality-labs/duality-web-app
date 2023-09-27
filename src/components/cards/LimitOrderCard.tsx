@@ -3,7 +3,14 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import TabsCard from './TabsCard';
 import Tabs from '../Tabs';
 
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
+import { dualityMainToken } from '../../lib/web3/hooks/useTokens';
+import {
+  formatCurrency,
+  formatMaximumSignificantDecimals,
+  formatPercentage,
+  formatPrice,
+} from '../../lib/utils/number';
 
 import './LimitOrderCard.scss';
 
@@ -84,6 +91,9 @@ function LimitOrder({
 
   const [amount, setAmount] = useState('0');
   const [total, setTotal] = useState('0');
+
+  const [fee] = useState('0');
+
   return (
     <div>
       <div className="my-3">
@@ -104,9 +114,67 @@ function LimitOrder({
         />
       </div>
       <div className="flex row">
+        <NumericValueRow
+          prefix="Est. Fee"
+          value={formatPrice(
+            formatMaximumSignificantDecimals(
+              getDisplayDenomAmount(dualityMainToken, fee) || 0,
+              3
+            )
+          )}
+          suffix={dualityMainToken.symbol}
+        />
+      </div>
+      <div className="flex row">
+        <NumericValueRow prefix="Est. Slippage" value={formatPercentage(0)} />
+      </div>
+      <div className="flex row">
+        <NumericValueRow
+          prefix="Est. Average Price"
+          value={formatPrice(
+            formatMaximumSignificantDecimals(
+              tokenB ? getDisplayDenomAmount(tokenB, fee) || 0 : '-',
+              3
+            )
+          )}
+          suffix={tokenB?.symbol}
+        />
+      </div>
+      <div className="flex row">
         <button className="limit-order__confirm-button flex button-primary my-lg py-4">
           {buyMode ? 'Buy' : 'Sell'}
         </button>
+      </div>
+      <div className="flex row">
+        <NumericValueRow
+          prefix={`${tokenA?.symbol} Available`}
+          value={formatPrice(
+            formatMaximumSignificantDecimals(
+              tokenA ? getDisplayDenomAmount(tokenA, fee) || 0 : '-',
+              3
+            )
+          )}
+          suffix={tokenA?.symbol}
+        />
+      </div>
+      <div className="flex row">
+        <NumericValueRow
+          prefix="USD Available"
+          value={formatCurrency(0)}
+          suffix={tokenB?.symbol}
+        />
+      </div>
+      <div className="flex row">
+        <NumericValueRow
+          prefix={`${tokenB?.symbol} Available`}
+          value={formatPrice(
+            formatMaximumSignificantDecimals(
+              tokenB ? getDisplayDenomAmount(tokenB, fee) || 0 : '-',
+              3
+            )
+          )}
+          suffix={tokenB?.symbol}
+        />
       </div>
     </div>
   );
@@ -173,6 +241,25 @@ function NumericInputRow({
         readOnly={readOnly}
       ></input>
       <div className="token-amount-input__suffix">{suffix}</div>
+    </div>
+  );
+}
+
+function NumericValueRow({
+  prefix = '',
+  value = '',
+  suffix = '',
+}: {
+  prefix?: string;
+  value: string;
+  suffix?: string;
+  format?: (value: number) => string;
+}) {
+  return (
+    <div className="numeric-value-row flex row py-2">
+      <div className="numeric-value-row__prefix">{prefix}</div>
+      <div className="numeric-value-row__value ml-auto">{value}</div>
+      {suffix && <div className="numeric-value-row__suffix ml-3">{suffix}</div>}
     </div>
   );
 }

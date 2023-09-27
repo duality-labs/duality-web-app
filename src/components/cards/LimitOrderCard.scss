@@ -38,6 +38,15 @@
     }
   }
 
+  .numeric-value-row {
+    & {
+      color: hsl(218deg, 11%, 65%);
+    }
+    .numeric-value-row__value {
+      color: white;
+    }
+  }
+
   .token-amount-input {
     color: hsl(218deg, 11%, 65%);
     background-color: hsla(216, 20%, 25%, 1);
