@@ -15,6 +15,7 @@ import {
 import './LimitOrderCard.scss';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-solid-svg-icons';
+import Tooltip from '../Tooltip';
 
 export default function LimitOrderCard({
   tokenA,
@@ -181,7 +182,11 @@ function LimitOrder({
         />
       </div>
       <div className="flex row">
-        <NumericValueRow prefix="Est. Slippage" value={formatPercentage(0)} />
+        <NumericValueRow
+          prefix="Est. Slippage"
+          tooltip="Slippage"
+          value={formatPercentage(0)}
+        />
       </div>
       <div className="flex row">
         <NumericValueRow
@@ -215,6 +220,7 @@ function LimitOrder({
       <div className="flex row">
         <NumericValueRow
           prefix="USD Available"
+          tooltip="Estimated USD equivalent"
           value={formatCurrency(0)}
           suffix={tokenB?.symbol}
         />
@@ -305,15 +311,19 @@ function NumericValueRow({
   prefix = '',
   value = '',
   suffix = '',
+  tooltip,
 }: {
   prefix?: string;
   value: string;
   suffix?: string;
-  format?: (value: number) => string;
+  tooltip?: string;
 }) {
   return (
     <div className="numeric-value-row flex row py-2">
-      <div className="numeric-value-row__prefix">{prefix}</div>
+      <div className="numeric-value-row__prefix">
+        {prefix}
+        {tooltip && <Tooltip>{tooltip}</Tooltip>}
+      </div>
       <div className="numeric-value-row__value ml-auto">{value}</div>
       {suffix && <div className="numeric-value-row__suffix ml-3">{suffix}</div>}
     </div>

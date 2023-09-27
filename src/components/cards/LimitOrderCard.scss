@@ -42,6 +42,9 @@
     & {
       color: hsl(218deg, 11%, 65%);
     }
+    .numeric-value-row__prefix {
+      position: relative;
+    }
     .numeric-value-row__value {
       color: white;
     }

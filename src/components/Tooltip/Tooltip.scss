@@ -4,8 +4,9 @@
 
 .tooltip {
   & {
-    @include margins.margin('x', 1);
-    position: relative;
+    top: margins.$m-sm;
+    right: -18px;
+    position: absolute;
     font-size: inherit;
     cursor: help;
   }
