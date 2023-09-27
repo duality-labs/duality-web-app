@@ -45,6 +45,13 @@ export function formatMaximumSignificantDecimals(
   );
 }
 
+// I think my final resolution is
+// - put everything through formatAmount
+// - if `minimumSignificantDigits` or `maximumSignificantDigits` are set then
+// - call internal function formatMaximumSignificantDecimals to apply significant digit rounding first
+//   - in the way that non-decimal digits are never changed to 0 due to maximumSignificantDigits
+// - then apply `minimumFractionDigits` and `maximumFractionDigits` rounding
+
 // format to a visually pleasing output
 // should never be passed on to further calculations due to rounding
 // it is intended that the amount passed here has no more decimal places
@@ -70,6 +77,7 @@ export function formatAmount(
     givenMaximumFractionDigits
   );
   const numericAmount = Number(amount);
+  // todo: call minimumSignificantDigits here?
   // use passed limits to determine when we show a small value (eg. <0.001)
   const minimumValue = Math.pow(10, -maximumFractionDigits);
   const isSmallValue =
