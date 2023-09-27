@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.20](https://github.com/duality-labs/duality-web-app/compare/v0.3.19...v0.3.20) (2023-09-27)
+
+
+### Fixes
+
+* mismatching display denom exponent issues ([#443](https://github.com/duality-labs/duality-web-app/issues/443)) ([00af5eb](https://github.com/duality-labs/duality-web-app/commit/00af5eb36710290280c12d29a6497af1f8a5f6fd))
+
 ## [0.3.19](https://github.com/duality-labs/duality-web-app/compare/v0.3.18...v0.3.19) (2023-09-27)
 
 
