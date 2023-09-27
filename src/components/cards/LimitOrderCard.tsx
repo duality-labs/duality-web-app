@@ -11,6 +11,7 @@ import {
 } from '../../lib/web3/utils/tokens';
 import { dualityMainToken } from '../../lib/web3/hooks/useTokens';
 import {
+  formatAmount,
   formatCurrency,
   formatMaximumSignificantDecimals,
   formatPercentage,
@@ -111,7 +112,6 @@ function LimitOrder({
   } = useTokenPairTickLiquidity([token0, token1]);
 
   const [amount, setAmount] = useState('0');
-  const [total, setTotal] = useState('0');
   const [sliderIndex, setSliderIndex] = useState<number>(0);
   const slippage = sliderValues[sliderIndex] || 0;
 
@@ -293,8 +293,7 @@ function LimitOrder({
       <div className="my-4">
         <NumericInputRow
           prefix="Total"
-          value={total}
-          onChange={setTotal}
+          value={formatAmount(routerResult?.amountOut?.toNumber() ?? 0)}
           suffix={tokenB?.symbol}
           readOnly
         />
