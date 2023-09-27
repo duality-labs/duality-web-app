@@ -16,7 +16,6 @@ import {
   formatAmount,
   formatPrice,
   formatMaximumSignificantDecimals,
-  roundToSignificantDigits,
   formatPercentage,
 } from '../../lib/utils/number';
 import { Token } from '../../lib/web3/utils/tokens';
@@ -1005,13 +1004,11 @@ function getRangePositions(
 
 export function getRangeIndexes(
   currentPriceIndex: number | undefined,
-  fractionalRangeMinIndex: number,
-  fractionalRangeMaxIndex: number
+  rangeMinIndex: number,
+  rangeMaxIndex: number
 ) {
   const roundedCurrentPriceIndex =
     currentPriceIndex && Math.round(currentPriceIndex);
-  const rangeMinIndex = roundToSignificantDigits(fractionalRangeMinIndex);
-  const rangeMaxIndex = roundToSignificantDigits(fractionalRangeMaxIndex);
   // align fractional index positions to whole tick index positions
   // for the min and max cases
   if (roundedCurrentPriceIndex === undefined) {
