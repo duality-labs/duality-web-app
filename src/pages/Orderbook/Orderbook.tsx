@@ -8,6 +8,7 @@ import OrderbookHeader from './OrderbookHeader';
 import OrderbookFooter from './OrderbookFooter';
 import OrderBookChart from './OrderbookChart';
 import OrderBookList from './OrderbookList';
+import LimitOrderCard from '../../components/cards/LimitOrderCard';
 
 import './Orderbook.scss';
 import OrderBookTradesList from './OrderbookTradesList';
@@ -72,7 +73,7 @@ function Orderbook() {
           />
         </div>
         <div className="col">
-          <div className="flex page-card">Limit Order control</div>
+          <LimitOrderCard tokenA={tokenA} tokenB={tokenB} />
         </div>
       </div>
       <div className="orderbook-footer row">
