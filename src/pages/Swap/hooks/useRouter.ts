@@ -192,8 +192,12 @@ export function getRouterEstimates(
         tokenA: routerResult.tokenIn,
         tokenB: routerResult.tokenOut,
         rate: rate.toFixed(),
-        valueA: formatMaximumSignificantDecimals(routerResult.amountIn),
-        valueB: formatMaximumSignificantDecimals(routerResult.amountOut),
+        valueA: formatMaximumSignificantDecimals(
+          routerResult.amountIn.toNumber()
+        ),
+        valueB: formatMaximumSignificantDecimals(
+          routerResult.amountOut.toNumber()
+        ),
         gas: extraFee.toFixed(),
       };
       cachedRequests[token0] = cachedRequests[token0] || {};

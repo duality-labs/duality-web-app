@@ -13,7 +13,6 @@ import React, {
 import useResizeObserver from '@react-hook/resize-observer';
 
 import {
-  formatAmount,
   formatPrice,
   formatMaximumSignificantDecimals,
   formatPercentage,
@@ -1275,11 +1274,8 @@ function TicksArea({
           alignmentBaseline="text-before-edge"
         >
           &nbsp;
-          {formatAmount(
-            formatMaximumSignificantDecimals(
-              tickIndexToPrice(new BigNumber(rangeMinValueIndex)).toFixed(),
-              significantDecimals
-            ),
+          {formatMaximumSignificantDecimals(
+            tickIndexToPrice(new BigNumber(rangeMinValueIndex)).toNumber(),
             {
               minimumSignificantDigits: significantDecimals,
               useGrouping: true,
@@ -1390,11 +1386,8 @@ function TicksArea({
           alignmentBaseline="text-before-edge"
         >
           &nbsp;
-          {formatAmount(
-            formatMaximumSignificantDecimals(
-              tickIndexToPrice(new BigNumber(rangeMaxValueIndex)).toFixed(),
-              significantDecimals
-            ),
+          {formatMaximumSignificantDecimals(
+            tickIndexToPrice(new BigNumber(rangeMaxValueIndex)).toNumber(),
             {
               minimumSignificantDigits: significantDecimals,
               useGrouping: true,
@@ -2005,11 +1998,8 @@ function Axis({
           alignmentBaseline="text-before-edge"
         >
           &nbsp;
-          {formatAmount(
-            formatMaximumSignificantDecimals(
-              tickIndexToPrice(new BigNumber(tickMarkIndex)).toFixed(),
-              significantDecimals
-            ),
+          {formatMaximumSignificantDecimals(
+            tickIndexToPrice(new BigNumber(tickMarkIndex)).toNumber(),
             {
               minimumSignificantDigits:
                 tickMarkIndex === highlightedTickIndex

@@ -93,9 +93,9 @@ const defaultLiquidityShape =
 
 const defaultPrecision = '30';
 
-const formatRangeString = (value: BigNumber.Value, significantDecimals = 3) => {
-  return formatAmount(
-    formatMaximumSignificantDecimals(value, significantDecimals),
+const formatRangeString = (value: number, significantDecimals = 3) => {
+  return formatMaximumSignificantDecimals(
+    value,
     { minimumSignificantDigits: significantDecimals },
     { reformatSmallValues: false }
   );
@@ -391,7 +391,7 @@ export default function PoolManagement({
   }, [fractionalRangeMin, fractionalRangeMax, edgePriceIndex]);
 
   const formatSignificantDecimalRangeString = useCallback(
-    (price: BigNumber.Value) => {
+    (price: number) => {
       return formatRangeString(price, significantDecimals);
     },
     [significantDecimals]
@@ -517,7 +517,7 @@ export default function PoolManagement({
       // invert price
       const newValue = new BigNumber(1).dividedBy(new BigNumber(value));
       // round number to formatted string
-      return formatSignificantDecimalRangeString(newValue);
+      return formatSignificantDecimalRangeString(newValue.toNumber());
     };
     setInvertTokenOrder((order) => !order);
     setRangeUnprotected([
@@ -1331,10 +1331,8 @@ export default function PoolManagement({
                         <strong>Current Price:</strong>
                         <div className="chart-highlight">
                           {currentPriceFromTicks !== undefined
-                            ? formatAmount(
-                                formatMaximumSignificantDecimals(
-                                  currentPriceFromTicks
-                                ),
+                            ? formatMaximumSignificantDecimals(
+                                currentPriceFromTicks.toNumber(),
                                 { useGrouping: true },
                                 { reformatSmallValues: false }
                               )

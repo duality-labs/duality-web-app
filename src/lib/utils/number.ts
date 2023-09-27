@@ -1,5 +1,3 @@
-import BigNumber from 'bignumber.js';
-
 // format a special "significant decimals" function which means
 // something different when above and below 0.
 // eg. significant decimals of 3 can format 1,234,567 and 0.00000123
@@ -20,18 +18,30 @@ import BigNumber from 'bignumber.js';
 // we name it inconsistently against Number.toLocaleString argument properties
 // because it is not the same, it does not translate directly to that method
 export function formatMaximumSignificantDecimals(
-  value: BigNumber.Value,
-  maximumSignificantDecimals = 3
+  amount: number | string,
+  {
+    minimumSignificantDigits = 3,
+    maximumSignificantDigits,
+    ...numberFormatOptions
+  }: Intl.NumberFormatOptions = {},
+  // default small value reformatting to false to show all significant digits
+  { reformatSmallValues = false, ...reformatOptions } = {}
 ) {
-  const bigValue = new BigNumber(value);
-  const roundingFunction = BigNumber.ROUND_HALF_UP;
-  const roundedValue = bigValue.abs().toPrecision(6, roundingFunction);
-  const roundedOrderOfMagnitude = Math.floor(
-    Math.log10(Number(roundedValue) || 1)
+  const numericAmount = Number(amount);
+  const orderOfMagnitude = Math.floor(Math.log10(Math.abs(numericAmount)));
+  // control number of decimal places by enforcing significant digits
+  const significantDigits = Math.max(
+    orderOfMagnitude,
+    minimumSignificantDigits
   );
-  return bigValue.toFixed(
-    Math.max(0, maximumSignificantDecimals - roundedOrderOfMagnitude - 1),
-    roundingFunction
+  return formatAmount(
+    numericAmount,
+    {
+      minimumSignificantDigits: significantDigits,
+      maximumSignificantDigits: significantDigits,
+      ...numberFormatOptions,
+    },
+    { reformatSmallValues, ...reformatOptions }
   );
 }
 
@@ -84,10 +94,9 @@ export function formatPercentage(
   maximumSignificantDecimals = opts.maximumSignificantDigits ?? 3
 ) {
   const percentage = Number(amount) * 100;
-  const roundedAmount = formatMaximumSignificantDecimals(
-    percentage,
-    maximumSignificantDecimals
-  );
+  const roundedAmount = formatMaximumSignificantDecimals(percentage, {
+    minimumSignificantDigits: maximumSignificantDecimals,
+  });
   const numericAmount = Number(roundedAmount);
   return !isNaN(numericAmount)
     ? `${formatAmount(numericAmount, {
