@@ -13,6 +13,8 @@ import {
 } from '../../lib/utils/number';
 
 import './LimitOrderCard.scss';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCircle } from '@fortawesome/free-solid-svg-icons';
 
 export default function LimitOrderCard({
   tokenA,
@@ -78,6 +80,9 @@ function LimitOrderType({
   );
 }
 
+const sliderValues = [0.1, 0.25, 0.5, 1];
+const sliderPositions = [0, 1 / 3, 2 / 3, 1];
+
 function LimitOrder({
   tokenA,
   tokenB,
@@ -91,6 +96,9 @@ function LimitOrder({
 
   const [amount, setAmount] = useState('0');
   const [total, setTotal] = useState('0');
+  const [sliderIndex, setSliderIndex] = useState<number>(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const sliderValue = sliderValues[sliderIndex] || 0;
 
   const [fee] = useState('0');
 
@@ -102,6 +110,53 @@ function LimitOrder({
           value={amount}
           onChange={setAmount}
           suffix={tokenA?.symbol}
+        />
+      </div>
+      <div className="flex row my-3 slider-input-container">
+        <aside className="slider-input__background flex row">
+          <div className="slider-input__track"></div>
+        </aside>
+        <aside className="slider-input__background flex row">
+          <div
+            className="slider-input__track active"
+            style={{ width: `${100 * sliderPositions[sliderIndex]}%` }}
+          ></div>
+        </aside>
+        <aside className="slider-input__background flex row">
+          <FontAwesomeIcon
+            icon={faCircle}
+            size="xs"
+            style={{ left: `${100 * sliderPositions[0]}%` }}
+            className={[sliderIndex > 0 && 'active'].join()}
+          />
+          <FontAwesomeIcon
+            icon={faCircle}
+            size="xs"
+            style={{ left: `${100 * sliderPositions[1]}%` }}
+            className={[sliderIndex > 1 && 'active'].join()}
+          />
+          <FontAwesomeIcon
+            icon={faCircle}
+            size="xs"
+            style={{ left: `${100 * sliderPositions[2]}%` }}
+            className={[sliderIndex > 2 && 'active'].join()}
+          />
+          <FontAwesomeIcon
+            icon={faCircle}
+            size="xs"
+            style={{ left: `${100 * sliderPositions[3]}%` }}
+            className={[sliderIndex > 3 && 'active'].join()}
+          />
+        </aside>
+        <input
+          type="range"
+          className="flex slider-input"
+          value={sliderIndex}
+          onChange={useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+            setSliderIndex(Number(e.target.value) || 0);
+          }, [])}
+          min={0}
+          max={3}
         />
       </div>
       <div className="my-4">
