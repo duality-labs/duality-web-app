@@ -20,8 +20,6 @@ import {
 } from '../../lib/utils/number';
 
 import './LimitOrderCard.scss';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircle } from '@fortawesome/free-solid-svg-icons';
 import Tooltip from '../Tooltip';
 import { useSwap } from '../../pages/Swap/hooks/useSwap';
 import { useRouterResult } from '../../pages/Swap/hooks/useRouter';
@@ -29,6 +27,7 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
+import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
 
 export default function LimitOrderCard({
   tokenA,
@@ -94,7 +93,7 @@ function LimitOrderType({
   );
 }
 
-const sliderValues = [0, 0.25, 0.5, 0.75, 1];
+const userBankBalanceRangePercentages = [0, 0.25, 0.5, 0.75, 1];
 
 function LimitOrder({
   tokenA,
@@ -117,7 +116,6 @@ function LimitOrder({
     data: userTokenADisplayAmount,
     isValidating: isLoadingUserTokenADisplayAmount,
   } = useBankBalanceDisplayAmount(tokenA);
-  const [sliderIndex, setSliderIndex] = useState<number>(0);
   const slippage = 0.1;
 
   const [fee] = useState('0');
@@ -248,69 +246,34 @@ function LimitOrder({
           suffix={tokenA?.symbol}
         />
       </div>
-      <div
-        className={[
-          'flex row my-3 slider-input-container',
-          !userTokenADisplayAmount &&
-            isLoadingUserTokenADisplayAmount &&
-            'disabled',
-        ].join(' ')}
-      >
-        <aside className="slider-input__background flex row">
-          <div className="slider-input__track"></div>
-        </aside>
-        <aside className="slider-input__background flex row">
-          <div
-            className="slider-input__track active"
-            style={{
-              width: `${(100 * sliderIndex) / (sliderValues.length - 1)}%`,
-            }}
-          ></div>
-        </aside>
-        <aside className="slider-input__background flex row">
-          {sliderValues.map((_, index) => {
-            return (
-              <FontAwesomeIcon
-                key={index}
-                icon={faCircle}
-                size="xs"
-                className={[sliderIndex > index && 'active'].join()}
-              />
-            );
-          })}
-        </aside>
-        <input
-          type="range"
-          disabled={
-            !userTokenADisplayAmount && isLoadingUserTokenADisplayAmount
-          }
-          className="flex slider-input"
-          value={sliderIndex}
-          onChange={useCallback(
-            (e: React.ChangeEvent<HTMLInputElement>) => {
-              const newSliderIndex = Number(e.target.value) || 0;
-              setSliderIndex(newSliderIndex);
-              const newSliderValue = sliderValues[newSliderIndex];
-              const newValue =
-                newSliderValue < 1
-                  ? // round calculated values
-                    formatAmount(
-                      new BigNumber(userTokenADisplayAmount || 0)
-                        .multipliedBy(newSliderValue)
-                        .toNumber()
-                    )
-                  : // or pass full value
-                    userTokenADisplayAmount;
-              if (newValue) {
-                setAmount(newValue || '');
-              }
-            },
-            [userTokenADisplayAmount]
-          )}
-          min={0}
-          max={3}
-        />
-      </div>
+      <RangeListSliderInput<number>
+        list={userBankBalanceRangePercentages}
+        disabled={!userTokenADisplayAmount && isLoadingUserTokenADisplayAmount}
+        value={
+          new BigNumber(amount)
+            .dividedBy(userTokenADisplayAmount || 1)
+            .toNumber() || 0
+        }
+        onChange={useCallback(
+          (value: number) => {
+            const numericValue = Number(value);
+            const newValue =
+              numericValue < 1
+                ? // round calculated values
+                  formatAmount(
+                    new BigNumber(userTokenADisplayAmount || 0)
+                      .multipliedBy(numericValue)
+                      .toNumber()
+                  )
+                : // or pass full value
+                  userTokenADisplayAmount;
+            if (newValue) {
+              setAmount(newValue || '');
+            }
+          },
+          [userTokenADisplayAmount]
+        )}
+      />
       <div className="my-4">
         <NumericInputRow
           prefix="Total"
