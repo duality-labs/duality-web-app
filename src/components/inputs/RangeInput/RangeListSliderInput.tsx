@@ -34,9 +34,17 @@ export default function RangeListSliderInput({
     () => (Number(max) - Number(min)) / (list.length - 1 || 1),
     [list.length, max, min]
   );
-  const percent = useMemo(
-    () => (value - min) / (max - min || 1),
-    [max, min, value]
+  const getPercent = useCallback(
+    (value: number) => (value - min) / (max - min || 1),
+    [max, min]
+  );
+  const snapToStep = useCallback(
+    (value: number) => {
+      const percent = getPercent(value);
+      const roundedListIndex = Math.round(percent * (list.length - 1 || 1));
+      return onChange?.(min + roundedListIndex * step);
+    },
+    [getPercent, list.length, min, onChange, step]
   );
 
   return (
@@ -56,7 +64,7 @@ export default function RangeListSliderInput({
         <div
           className="slider-input__track active"
           style={{
-            width: `${100 * percent}%`,
+            width: `${100 * getPercent(value)}%`,
           }}
         ></div>
       </aside>
@@ -82,18 +90,18 @@ export default function RangeListSliderInput({
         value={value}
         onChange={useCallback(
           (e: React.ChangeEvent<HTMLInputElement>) => {
-            onChange?.(Number(e.target.value) || 0);
+            const value = Number(e.target.value) || 0;
+            snapToStep(value);
           },
-          [onChange]
+          [snapToStep]
         )}
         // round to nearest step when clicked
         onClick={useCallback(() => {
-          const roundedListIndex = Math.round(percent * (list.length - 1 || 1));
-          return onChange?.(min + roundedListIndex * step);
-        }, [list.length, min, onChange, percent, step])}
+          snapToStep(value);
+        }, [snapToStep, value])}
         min={min}
         max={max}
-        step={step}
+        step="any"
         {...inputProps}
       />
     </div>
