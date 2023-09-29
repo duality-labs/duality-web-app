@@ -87,7 +87,7 @@ function LimitOrderType({
   }, [tokenA, tokenB, sell]);
 
   return (
-    <div className="pt-4 px-md">
+    <div className="p-md pt-4">
       <Tabs className="limitorder-type" tabs={tabs} />
     </div>
   );
