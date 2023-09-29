@@ -94,8 +94,8 @@ function LimitOrderType({
   );
 }
 
-const sliderValues = [0.1, 0.25, 0.5, 1];
-const sliderPositions = [0, 1 / 3, 2 / 3, 1];
+const sliderValues = [0, 0.1, 0.25, 0.5, 1];
+const sliderPositions = [0, 0.1, 1 / 3, 2 / 3, 1];
 
 function LimitOrder({
   tokenA,
@@ -263,7 +263,9 @@ function LimitOrder({
         <aside className="slider-input__background flex row">
           <div
             className="slider-input__track active"
-            style={{ width: `${100 * sliderPositions[sliderIndex]}%` }}
+            style={{
+              width: `${(100 * sliderIndex) / (sliderPositions.length - 1)}%`,
+            }}
           ></div>
         </aside>
         <aside className="slider-input__background flex row">
@@ -284,6 +286,12 @@ function LimitOrder({
             size="xs"
             style={{ left: `${100 * sliderPositions[2]}%` }}
             className={[sliderIndex > 2 && 'active'].join()}
+          />
+          <FontAwesomeIcon
+            icon={faCircle}
+            size="xs"
+            style={{ left: `${100 * sliderPositions[3]}%` }}
+            className={[sliderIndex > 3 && 'active'].join()}
           />
           <FontAwesomeIcon
             icon={faCircle}
@@ -321,7 +329,7 @@ function LimitOrder({
             [userTokenADisplayAmount]
           )}
           min={0}
-          max={3}
+          max={4}
         />
       </div>
       <div className="my-4">
