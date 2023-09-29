@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, useCallback } from 'react';
+import { InputHTMLAttributes, useCallback, useMemo } from 'react';
 import { faCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -30,6 +30,14 @@ export default function RangeListSliderInput({
   // get min and max values from list
   const min = list.at(0) || 0;
   const max = list.at(-1) || 0;
+  const step = useMemo(
+    () => (Number(max) - Number(min)) / (list.length - 1 || 1),
+    [list.length, max, min]
+  );
+  const percent = useMemo(
+    () => (value - min) / (max - min || 1),
+    [max, min, value]
+  );
 
   return (
     <div
@@ -48,7 +56,7 @@ export default function RangeListSliderInput({
         <div
           className="slider-input__track active"
           style={{
-            width: `${(100 * (value - min)) / (max - min || 1)}%`,
+            width: `${100 * percent}%`,
           }}
         ></div>
       </aside>
@@ -78,9 +86,14 @@ export default function RangeListSliderInput({
           },
           [onChange]
         )}
+        // round to nearest step when clicked
+        onClick={useCallback(() => {
+          const roundedListIndex = Math.round(percent * (list.length - 1 || 1));
+          return onChange?.(min + roundedListIndex * step);
+        }, [list.length, min, onChange, percent, step])}
         min={min}
         max={max}
-        step={(Number(max) - Number(min)) / (list.length - 1)}
+        step={step}
         {...inputProps}
       />
     </div>
