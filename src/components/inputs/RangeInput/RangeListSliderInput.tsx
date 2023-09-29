@@ -1,23 +1,23 @@
-import { InputHTMLAttributes, useCallback, useMemo } from 'react';
+import { InputHTMLAttributes, useCallback } from 'react';
 import { faCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import './RangeInput.scss';
 
-interface RangeSliderInputProps<T = string | number>
+interface RangeSliderInputProps
   extends Omit<
     InputHTMLAttributes<HTMLInputElement>,
     'onInput' | 'onChange' | 'list' | 'value'
   > {
   // restrict value type to only strings for easier handling
-  list: Array<T>;
-  onInput?: (value: T) => void;
-  onChange?: (value: T) => void;
-  value: T;
+  list: Array<number>;
+  onInput?: (value: number) => void;
+  onChange?: (value: number) => void;
+  value: number;
   innerRef?: React.RefObject<HTMLInputElement>;
 }
 
-export default function RangeListSliderInput<T>({
+export default function RangeListSliderInput({
   className,
   onInput,
   onChange = onInput,
@@ -26,21 +26,10 @@ export default function RangeListSliderInput<T>({
   innerRef,
   disabled,
   ...inputProps
-}: RangeSliderInputProps<T>) {
-  const selectedIndex = useMemo(() => {
-    const numericValue = Number(value);
-    const maxIndex = list.length - 1 || 1;
-    return (
-      maxIndex -
-      (list
-        .slice()
-        .reverse()
-        .findIndex((option) => {
-          const numericOptionValue = Number(option);
-          return numericValue >= numericOptionValue;
-        }) ?? maxIndex)
-    );
-  }, [list, value]);
+}: RangeSliderInputProps) {
+  // get min and max values from list
+  const min = list.at(0) || 0;
+  const max = list.at(-1) || 0;
 
   return (
     <div
@@ -59,7 +48,7 @@ export default function RangeListSliderInput<T>({
         <div
           className="slider-input__track active"
           style={{
-            width: `${(100 * selectedIndex) / (list.length - 1 || 1)}%`,
+            width: `${(100 * (value - min)) / (max - min || 1)}%`,
           }}
         ></div>
       </aside>
@@ -82,17 +71,16 @@ export default function RangeListSliderInput<T>({
         type="range"
         className="flex slider-input"
         disabled={disabled}
-        value={selectedIndex}
+        value={value}
         onChange={useCallback(
           (e: React.ChangeEvent<HTMLInputElement>) => {
-            const newSelectedIndex = Number(e.target.value) || 0;
-            const newSelectedValue = list[newSelectedIndex];
-            onChange?.(newSelectedValue);
+            onChange?.(Number(e.target.value) || 0);
           },
-          [list, onChange]
+          [onChange]
         )}
-        min={0}
-        max={list.length - 1}
+        min={min}
+        max={max}
+        step={(Number(max) - Number(min)) / (list.length - 1)}
         {...inputProps}
       />
     </div>

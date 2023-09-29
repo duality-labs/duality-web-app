@@ -246,7 +246,7 @@ function LimitOrder({
           suffix={tokenA?.symbol}
         />
       </div>
-      <RangeListSliderInput<number>
+      <RangeListSliderInput
         list={userBankBalanceRangePercentages}
         disabled={!userTokenADisplayAmount && isLoadingUserTokenADisplayAmount}
         value={
