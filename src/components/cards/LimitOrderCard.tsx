@@ -114,7 +114,10 @@ function LimitOrder({
   } = useTokenPairTickLiquidity([token0, token1]);
 
   const [amount, setAmount] = useState('0');
-  const { data: userTokenADisplayAmount } = useBankBalanceDisplayAmount(tokenA);
+  const {
+    data: userTokenADisplayAmount,
+    isValidating: isLoadingUserTokenADisplayAmount,
+  } = useBankBalanceDisplayAmount(tokenA);
   const [sliderIndex, setSliderIndex] = useState<number>(0);
   const slippage = sliderValues[sliderIndex] || 0;
 
@@ -246,7 +249,14 @@ function LimitOrder({
           suffix={tokenA?.symbol}
         />
       </div>
-      <div className="flex row my-3 slider-input-container">
+      <div
+        className={[
+          'flex row my-3 slider-input-container',
+          !userTokenADisplayAmount &&
+            isLoadingUserTokenADisplayAmount &&
+            'disabled',
+        ].join(' ')}
+      >
         <aside className="slider-input__background flex row">
           <div className="slider-input__track"></div>
         </aside>
@@ -284,6 +294,9 @@ function LimitOrder({
         </aside>
         <input
           type="range"
+          disabled={
+            !userTokenADisplayAmount && isLoadingUserTokenADisplayAmount
+          }
           className="flex slider-input"
           value={sliderIndex}
           onChange={useCallback(
