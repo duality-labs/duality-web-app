@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, useCallback, useMemo } from 'react';
+import { InputHTMLAttributes, useCallback } from 'react';
 import { faCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -30,21 +30,21 @@ export default function RangeListSliderInput({
   // get min and max values from list
   const min = list.at(0) || 0;
   const max = list.at(-1) || 0;
-  const step = useMemo(
-    () => (Number(max) - Number(min)) / (list.length - 1 || 1),
-    [list.length, max, min]
-  );
   const getPercent = useCallback(
     (value: number) => (value - min) / (max - min || 1),
     [max, min]
   );
-  const snapToStep = useCallback(
+  const snapToListValue = useCallback(
     (value: number) => {
-      const percent = getPercent(value);
-      const roundedListIndex = Math.round(percent * (list.length - 1 || 1));
-      return onChange?.(min + roundedListIndex * step);
+      const sortedList = list.slice().sort((a, b) => {
+        return (a - value) * (a - value) - (b - value) * (b - value);
+      });
+      const closestValue = sortedList.at(0);
+      if (closestValue !== undefined) {
+        return onChange?.(closestValue);
+      }
     },
-    [getPercent, list.length, min, onChange, step]
+    [list, onChange]
   );
 
   return (
@@ -72,11 +72,17 @@ export default function RangeListSliderInput({
         {list.map((option) => {
           const numericValue = Number(value);
           const numericOptionValue = Number(option);
+          const percent = 100 * getPercent(numericOptionValue);
           return (
             <FontAwesomeIcon
               key={numericOptionValue}
               icon={faCircle}
               size="xs"
+              style={{
+                position: 'absolute',
+                left: `${percent}%`,
+                translate: `-${percent}%`,
+              }}
               className={[numericValue > numericOptionValue && 'active'].join()}
             />
           );
@@ -91,14 +97,14 @@ export default function RangeListSliderInput({
         onChange={useCallback(
           (e: React.ChangeEvent<HTMLInputElement>) => {
             const value = Number(e.target.value) || 0;
-            snapToStep(value);
+            snapToListValue(value);
           },
-          [snapToStep]
+          [snapToListValue]
         )}
         // round to nearest step when clicked
         onClick={useCallback(() => {
-          snapToStep(value);
-        }, [snapToStep, value])}
+          snapToListValue(value);
+        }, [snapToListValue, value])}
         min={min}
         max={max}
         step="any"
