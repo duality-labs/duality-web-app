@@ -265,8 +265,8 @@ function LimitOrder({
                       .multipliedBy(numericValue)
                       .toNumber()
                   )
-                : // or pass full value
-                  userTokenADisplayAmount;
+                : // or pass full value (while truncating fractional zeros)
+                  new BigNumber(userTokenADisplayAmount || '0').toFixed();
             if (newValue) {
               setAmount(newValue || '');
             }
