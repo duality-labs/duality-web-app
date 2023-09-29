@@ -37,9 +37,9 @@ function Orderbook() {
       <div className="orderbook-body row gap-3">
         <div className="flex col">
           <div className="flex page-card">
-            {tokenA?.address === 'stake' && tokenB?.address === 'token' && (
+            {/* {tokenA?.address === 'stake' && tokenB?.address === 'token' && (
               <OrderBookChart tokenA={tokenA} tokenB={tokenB} />
-            )}
+            )} */}
           </div>
         </div>
         <div className="col">
