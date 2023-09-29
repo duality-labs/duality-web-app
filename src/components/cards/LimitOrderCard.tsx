@@ -1,4 +1,5 @@
 import Long from 'long';
+import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import TabsCard from './TabsCard';
@@ -27,6 +28,7 @@ import { useRouterResult } from '../../pages/Swap/hooks/useRouter';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
+import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 
 export default function LimitOrderCard({
   tokenA,
@@ -112,6 +114,7 @@ function LimitOrder({
   } = useTokenPairTickLiquidity([token0, token1]);
 
   const [amount, setAmount] = useState('0');
+  const { data: userTokenADisplayAmount } = useBankBalanceDisplayAmount(tokenA);
   const [sliderIndex, setSliderIndex] = useState<number>(0);
   const slippage = sliderValues[sliderIndex] || 0;
 
@@ -283,9 +286,27 @@ function LimitOrder({
           type="range"
           className="flex slider-input"
           value={sliderIndex}
-          onChange={useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-            setSliderIndex(Number(e.target.value) || 0);
-          }, [])}
+          onChange={useCallback(
+            (e: React.ChangeEvent<HTMLInputElement>) => {
+              const newSliderIndex = Number(e.target.value) || 0;
+              setSliderIndex(newSliderIndex);
+              const newSliderValue = sliderValues[newSliderIndex];
+              const newValue =
+                newSliderValue < 1
+                  ? // round calculated values
+                    formatAmount(
+                      new BigNumber(userTokenADisplayAmount || 0)
+                        .multipliedBy(newSliderValue)
+                        .toNumber()
+                    )
+                  : // or pass full value
+                    userTokenADisplayAmount;
+              if (newValue) {
+                setAmount(newValue || '');
+              }
+            },
+            [userTokenADisplayAmount]
+          )}
           min={0}
           max={3}
         />
