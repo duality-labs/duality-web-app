@@ -93,7 +93,7 @@ function LimitOrderType({
   );
 }
 
-const userBankBalanceRangePercentages = [0, 0.25, 0.5, 0.75, 1];
+const userBankBalanceRangePercentages = [0, 0.1, 0.25, 0.5, 0.75, 1];
 
 function LimitOrder({
   tokenA,
