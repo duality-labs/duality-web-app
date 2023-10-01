@@ -594,6 +594,7 @@ function NumericInputRow({
       )}
       <input
         className="token-amount-input__input flex"
+        placeholder="0"
         value={internalValue}
         onInput={() => maybeUpdate(inputRef.current?.value || '0', onInput)}
         onChange={(e) => {
