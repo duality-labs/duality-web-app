@@ -144,7 +144,7 @@ function LimitOrder({
   } = useBankBalanceDisplayAmount(tokenA);
 
   const [fee] = useState('0');
-  const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap();
+  const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap();
 
   const { data: routerResult } = useRouterResult({
     tokenA: tokenA?.address,
@@ -424,12 +424,16 @@ function LimitOrder({
           suffix={tokenB?.symbol}
         />
       </div>
-      {warning && (
+      {warning ? (
         // show a warning if an amount has been entered, but the form fails validation
         <div className="mt-4">
           <div className="text-error flex text-center">{warning}</div>
         </div>
-      )}
+      ) : error ? (
+        <div className="mt-4">
+          <div className="text-error flex text-center">{error}</div>
+        </div>
+      ) : null}
       <div className="flex row">
         <button
           className="limit-order__confirm-button flex button-primary my-lg py-4"
