@@ -13,7 +13,6 @@ import {
 import { dualityMainToken } from '../../lib/web3/hooks/useTokens';
 import {
   formatAmount,
-  formatCurrency,
   formatMaximumSignificantDecimals,
   formatPercentage,
   formatPrice,
@@ -143,6 +142,10 @@ function LimitOrder({
     data: userTokenADisplayAmount,
     isValidating: isLoadingUserTokenADisplayAmount,
   } = useBankBalanceDisplayAmount(tokenA);
+  const {
+    data: userTokenBDisplayAmount,
+    isValidating: isLoadingUserTokenBDisplayAmount,
+  } = useBankBalanceDisplayAmount(tokenB);
 
   const [fee] = useState('0');
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap();
@@ -463,31 +466,37 @@ function LimitOrder({
       <div>
         <NumericValueRow
           prefix={`${tokenA?.symbol} Available`}
-          value={formatPrice(
+          value={formatAmount(
             formatMaximumSignificantDecimals(
-              tokenA ? getDisplayDenomAmount(tokenA, fee) || 0 : '-',
+              tokenA
+                ? (userTokenADisplayAmount ??
+                    (isLoadingUserTokenADisplayAmount && '-')) ||
+                    0
+                : '-',
               3
-            )
+            ),
+            {
+              useGrouping: true,
+            }
           )}
           suffix={tokenA?.symbol}
         />
       </div>
       <div>
         <NumericValueRow
-          prefix="USD Available"
-          tooltip="Estimated USD equivalent"
-          value={formatCurrency(0)}
-          suffix={tokenB?.symbol}
-        />
-      </div>
-      <div>
-        <NumericValueRow
           prefix={`${tokenB?.symbol} Available`}
-          value={formatPrice(
+          value={formatAmount(
             formatMaximumSignificantDecimals(
-              tokenB ? getDisplayDenomAmount(tokenB, fee) || 0 : '-',
+              tokenB
+                ? (userTokenBDisplayAmount ??
+                    (isLoadingUserTokenBDisplayAmount && '-')) ||
+                    0
+                : '-',
               3
-            )
+            ),
+            {
+              useGrouping: true,
+            }
           )}
           suffix={tokenB?.symbol}
         />
