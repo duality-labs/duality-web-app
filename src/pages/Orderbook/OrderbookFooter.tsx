@@ -6,6 +6,7 @@ import { formatDateTime } from '../../lib/utils/time';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { WalletAddress } from '../../lib/web3/utils/address';
 import {
+  ChainEvent,
   DexEvent,
   DexPlaceLimitOrderEvent,
   getReceivedTokenAmount,
@@ -13,7 +14,11 @@ import {
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
-import { formatAmount, formatCurrency } from '../../lib/utils/number';
+import {
+  formatAmount,
+  formatCurrency,
+  formatPercentage,
+} from '../../lib/utils/number';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import useTransactionTableData, {
@@ -119,21 +124,9 @@ function TimeColumn({ row: tx }: { row: Tx }) {
   );
 }
 
-function findPlaceLimitOrderActionEvent({
-  attributes,
-}: Tx['tx_result']['events'][number]) {
-  return (
-    attributes
-      // .filter((event): event is DexPlaceLimitOrderEvent => event.key === 'action' && event.value === 'PlaceLimitOrder' )
-      .find(({ key, value }) => key === 'action' && value === 'PlaceLimitOrder')
-  );
-}
-
 function TypeColumn({ row: tx }: { row: Tx }) {
-  const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);
-  if (event) {
-    const attributes =
-      mapEventAttributes<DexPlaceLimitOrderEvent>(event).attributes;
+  const attributes = getPlaceLimitOrderActionEvent(tx);
+  if (attributes) {
     return <td>{orderTypeTextMap[attributes.OrderType]}</td>;
   }
   return <td></td>;
@@ -146,10 +139,8 @@ function SideColumn({
   row: Tx;
   context?: OrderbookFooterTableContext;
 }) {
-  const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);
-  if (event) {
-    const attributes =
-      mapEventAttributes<DexPlaceLimitOrderEvent>(event).attributes;
+  const attributes = getPlaceLimitOrderActionEvent(tx);
+  if (attributes) {
     return (
       <td>
         {tokenA && tokenB ? (
@@ -165,9 +156,28 @@ function SideColumn({
   return <td></td>;
 }
 
-function PriceColumn() {
-  // todo: un-hardcode
-  return <td>{formatCurrency(Math.random())}</td>;
+// price is the end price of the trade
+function PriceColumn({
+  row: tx,
+  context: { tokenA, tokenB } = {},
+}: {
+  row: Tx;
+  context?: OrderbookFooterTableContext;
+}) {
+  const events = getMappedEvents(tx);
+  const attributes = getPlaceLimitOrderActionEvent(tx);
+  const reservesIn =
+    tokenA && attributes && getTokenReserves(tokenA, events, attributes);
+  const reservesOut =
+    tokenB && attributes && getTokenReserves(tokenB, events, attributes);
+
+  return (
+    <td className="text-right">
+      {Number(reservesOut) && Number(reservesIn)
+        ? formatCurrency(Number(reservesOut) / Number(reservesIn))
+        : '-'}
+    </td>
+  );
 }
 
 function AmountColumn({
@@ -177,41 +187,49 @@ function AmountColumn({
   row: Tx;
   context?: OrderbookFooterTableContext;
 }) {
-  const events = tx.tx_result.events.map((event) =>
-    mapEventAttributes<DexEvent>(event)
-  );
-
-  const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);
-  const attributes = mapEventAttributes<DexPlaceLimitOrderEvent>(
-    event || { type: '', attributes: [] }
-  ).attributes;
-
-  function getTokenReserves(token: Token) {
-    const address = attributes.Creator;
-    return attributes.TokenIn === token.address
-      ? getSpentTokenAmount(events, { address, matchToken: token })
-      : getReceivedTokenAmount(events, { address, matchToken: token });
-  }
-
-  function getTokenReservesInDenom(token: Token, reserves: BigNumber.Value) {
-    return getDisplayDenomAmount(token, reserves, {
-      fractionalDigits: 3,
-      significantDigits: 3,
-    });
-  }
-
-  const reserves =
+  const events = getMappedEvents(tx);
+  const attributes = getPlaceLimitOrderActionEvent(tx);
+  const tokenIn =
     tokenA &&
     tokenB &&
-    (attributes.TokenIn === tokenA.address
-      ? getTokenReservesInDenom(tokenA, getTokenReserves(tokenA))
-      : getTokenReservesInDenom(tokenB, getTokenReserves(tokenB)));
-  return <td>{formatAmount(reserves || 0)}</td>;
+    attributes &&
+    (attributes.TokenIn === tokenA.address ? tokenA : tokenB);
+  const reservesIn =
+    tokenIn && getDisplayDenomReserves(tokenIn, events, attributes);
+  return (
+    <td className="text-right">
+      {formatAmount(reservesIn || 0)} {tokenIn?.symbol}
+    </td>
+  );
 }
 
-function FilledColumn() {
-  // todo: un-hardcode
-  return <td>100%</td>;
+function FilledColumn({
+  row: tx,
+  context: { tokenA, tokenB } = {},
+}: {
+  row: Tx;
+  context?: OrderbookFooterTableContext;
+}) {
+  const events = getMappedEvents(tx);
+  const attributes = getPlaceLimitOrderActionEvent(tx);
+  const [tokenIn] =
+    tokenA && tokenB && attributes
+      ? attributes.TokenIn === tokenA.address
+        ? [tokenA, tokenB]
+        : [tokenB, tokenA]
+      : [];
+  const reservesIn =
+    tokenIn && attributes && getTokenReserves(tokenIn, events, attributes);
+  // todo: fix, this doesn't calculated filled amount
+  //       to calculate filled amount we would need to know the number of reserves
+  //       used in TickUpdates (but this shows a new token total, not the diff)
+  return (
+    <td className="text-right">
+      {formatPercentage(
+        Number(reservesIn) / (Number(attributes?.AmountIn) || 1)
+      )}
+    </td>
+  );
 }
 
 function TotalColumn({
@@ -224,38 +242,19 @@ function TotalColumn({
   const {
     data: [tokenAPrice, tokenBPrice],
   } = useSimplePrice([tokenA, tokenB]);
-  const events = tx.tx_result.events.map((event) =>
-    mapEventAttributes<DexEvent>(event)
-  );
-
-  const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);
-  const attributes = mapEventAttributes<DexPlaceLimitOrderEvent>(
-    event || { type: '', attributes: [] }
-  ).attributes;
-
-  function getTokenReserves(token: Token) {
-    const address = attributes.Creator;
-    return attributes.TokenIn === token.address
-      ? getSpentTokenAmount(events, { address, matchToken: token })
-      : getReceivedTokenAmount(events, { address, matchToken: token });
-  }
-
-  function getTokenReservesInDenom(token: Token, reserves: BigNumber.Value) {
-    return getDisplayDenomAmount(token, reserves, {
-      fractionalDigits: 3,
-      significantDigits: 3,
-    });
-  }
+  const events = getMappedEvents(tx);
+  const attributes = getPlaceLimitOrderActionEvent(tx);
 
   const value =
     tokenA &&
     tokenB &&
+    attributes &&
     (attributes.TokenIn === tokenA.address
       ? new BigNumber(
-          getTokenReservesInDenom(tokenA, getTokenReserves(tokenA)) || 0
+          getDisplayDenomReserves(tokenA, events, attributes) || 0
         ).multipliedBy(tokenAPrice || 0)
       : new BigNumber(
-          getTokenReservesInDenom(tokenB, getTokenReserves(tokenB)) || 0
+          getDisplayDenomReserves(tokenB, events, attributes) || 0
         ).multipliedBy(tokenBPrice || 0));
   return <td>{formatCurrency(value?.toNumber() || 0)}</td>;
 }
@@ -263,4 +262,51 @@ function TotalColumn({
 function StatusColumn() {
   // todo: un-hardcode
   return <td>Filled</td>;
+}
+
+// helper functions
+function getDisplayDenomReserves(
+  token: Token,
+  events: ChainEvent[],
+  attributes: DexPlaceLimitOrderEvent['attributes']
+) {
+  const reserves = getTokenReserves(token, events, attributes);
+  return getDisplayDenomAmount(token, reserves, {
+    fractionalDigits: 3,
+    significantDigits: 3,
+  });
+}
+
+function getTokenReserves(
+  token: Token,
+  events: ChainEvent[],
+  attributes: DexPlaceLimitOrderEvent['attributes']
+) {
+  const address = attributes.Creator;
+  return attributes.TokenIn === token.address
+    ? getSpentTokenAmount(events, { address, matchToken: token })
+    : getReceivedTokenAmount(events, { address, matchToken: token });
+}
+
+function getPlaceLimitOrderActionEvent(tx: Tx) {
+  const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);
+  return event
+    ? mapEventAttributes<DexPlaceLimitOrderEvent>(event).attributes
+    : undefined;
+}
+
+function getMappedEvents(tx: Tx) {
+  return tx.tx_result.events.map((event) =>
+    mapEventAttributes<DexEvent>(event)
+  );
+}
+
+function findPlaceLimitOrderActionEvent({
+  attributes,
+}: Tx['tx_result']['events'][number]) {
+  return (
+    attributes
+      // .filter((event): event is DexPlaceLimitOrderEvent => event.key === 'action' && event.value === 'PlaceLimitOrder' )
+      .find(({ key, value }) => key === 'action' && value === 'PlaceLimitOrder')
+  );
 }
