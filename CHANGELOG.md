@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.21](https://github.com/duality-labs/duality-web-app/compare/v0.3.20...v0.3.21) (2023-10-01)
+
+
+### Fixes
+
+* better token value calculations for tables ([#444](https://github.com/duality-labs/duality-web-app/issues/444)) ([bed1029](https://github.com/duality-labs/duality-web-app/commit/bed1029f37f1869a4dbd2ddb31081abbe26e0e04))
+
 ## [0.3.20](https://github.com/duality-labs/duality-web-app/compare/v0.3.19...v0.3.20) (2023-09-27)
 
 

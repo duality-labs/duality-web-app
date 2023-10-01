@@ -1,0 +1,23 @@
+.value-bar {
+  & {
+    height: 1rem;
+  }
+  &.value-bar--red {
+    background-color: hsl(0deg, 50%, 37%);
+    &.highlighted {
+      background-color: hsl(0, 77%, 61%);
+    }
+  }
+  &.value-bar--green {
+    background-color: hsl(182, 50%, 37%);
+    &.highlighted {
+      background-color: hsl(182, 77%, 61%);
+    }
+  }
+  &.value-bar--blue {
+    background-color: hsl(202, 50%, 37%);
+    &.highlighted {
+      background-color: hsl(202, 77%, 61%);
+    }
+  }
+}
