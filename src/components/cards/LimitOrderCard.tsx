@@ -454,6 +454,7 @@ function LimitOrder({
 }
 
 function NumericInputRow({
+  className,
   prefix = '',
   value = '',
   onInput,
@@ -464,6 +465,7 @@ function NumericInputRow({
   format,
   readOnly = false,
 }: {
+  className?: string;
   prefix?: string;
   value: string;
   onInput?: (value: string) => void;
@@ -500,7 +502,11 @@ function NumericInputRow({
   );
 
   return (
-    <div className="token-amount-input flex row py-3 px-4">
+    <div
+      className={['token-amount-input flex row py-3 px-4', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className="token-amount-input__prefix">{prefix}</div>
       <input
         className="token-amount-input__input mx-3 flex"
