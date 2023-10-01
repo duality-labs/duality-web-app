@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
-import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
 
+import { orderTypeTextMap } from '../../components/cards/LimitOrderContext';
 import Table from '../../components/Table/Table';
 import { formatDateTime } from '../../lib/utils/time';
 import { useWeb3 } from '../../lib/web3/useWeb3';
@@ -128,17 +128,6 @@ function findPlaceLimitOrderActionEvent({
       .find(({ key, value }) => key === 'action' && value === 'PlaceLimitOrder')
   );
 }
-
-const orderTypeTextMap: {
-  [key in keyof typeof LimitOrderType]: string;
-} = {
-  IMMEDIATE_OR_CANCEL: 'Market',
-  FILL_OR_KILL: 'Fill-Kill',
-  GOOD_TIL_CANCELLED: 'Limit',
-  GOOD_TIL_TIME: 'Stop Order',
-  JUST_IN_TIME: 'JIT',
-  UNRECOGNIZED: 'Unknown',
-};
 
 function TypeColumn({ row: tx }: { row: Tx }) {
   const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);

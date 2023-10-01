@@ -1,6 +1,6 @@
 import Long from 'long';
 import BigNumber from 'bignumber.js';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useMemo, useRef, useState } from 'react';
 
 import TabsCard from './TabsCard';
 import Tabs from '../Tabs';
@@ -28,6 +28,14 @@ import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
+import {
+  LimitOrderTypeKeys,
+  LimitOrderContextProvider,
+  orderTypeTextMap,
+  LimitOrderFormContext,
+  LimitOrderFormSetContext,
+} from './LimitOrderContext';
+import SelectInput from '../inputs/SelectInput';
 
 export default function LimitOrderCard({
   tokenA,
@@ -37,29 +45,31 @@ export default function LimitOrderCard({
   tokenB?: Token;
 }) {
   return (
-    <TabsCard
-      className="flex limitorder-card"
-      style={{
-        // fix width to a minimum to allow tabs to be of equal size
-        minWidth: '20em',
-      }}
-      tabs={useMemo(() => {
-        return [
-          {
-            nav: 'Buy',
-            Tab: () => <LimitOrderType tokenA={tokenA} tokenB={tokenB} />,
-          },
-          {
-            nav: 'Sell',
-            Tab: () => <LimitOrderType tokenA={tokenA} tokenB={tokenB} sell />,
-          },
-        ];
-      }, [tokenA, tokenB])}
-    />
+    <LimitOrderContextProvider>
+      <TabsCard
+        className="flex limitorder-card"
+        style={{
+          // fix width to a minimum to allow tabs to be of equal size
+          minWidth: '20em',
+        }}
+        tabs={useMemo(() => {
+          return [
+            {
+              nav: 'Buy',
+              Tab: () => <LimitOrderNav tokenA={tokenA} tokenB={tokenB} />,
+            },
+            {
+              nav: 'Sell',
+              Tab: () => <LimitOrderNav tokenA={tokenA} tokenB={tokenB} sell />,
+            },
+          ];
+        }, [tokenA, tokenB])}
+      />
+    </LimitOrderContextProvider>
   );
 }
 
-function LimitOrderType({
+function LimitOrderNav({
   tokenA,
   tokenB,
   sell = false,
@@ -73,7 +83,7 @@ function LimitOrderType({
     return [
       {
         nav: 'Limit',
-        Tab: () => <LimitOrder {...props} />,
+        Tab: () => <LimitOrder {...props} showLimitPrice />,
       },
       {
         nav: 'Market',
@@ -81,7 +91,7 @@ function LimitOrderType({
       },
       {
         nav: 'Stop Limit',
-        Tab: () => <LimitOrder {...props} />,
+        Tab: () => <LimitOrder {...props} showLimitPrice showTriggerPrice />,
       },
     ];
   }, [tokenA, tokenB, sell]);
@@ -99,10 +109,14 @@ function LimitOrder({
   tokenA,
   tokenB,
   sell: sellMode = false,
+  showLimitPrice = false,
+  showTriggerPrice = false,
 }: {
   tokenA?: Token;
   tokenB?: Token;
   sell?: boolean;
+  showLimitPrice?: boolean;
+  showTriggerPrice?: boolean;
 }) {
   const buyMode = !sellMode;
   const [token0, token1] =
@@ -111,7 +125,9 @@ function LimitOrder({
     data: [token0Ticks, token1Ticks],
   } = useTokenPairTickLiquidity([token0, token1]);
 
-  const [amount, setAmount] = useState('0');
+  const formState = useContext(LimitOrderFormContext);
+  const formSetState = useContext(LimitOrderFormSetContext);
+
   const {
     data: userTokenADisplayAmount,
     isValidating: isLoadingUserTokenADisplayAmount,
@@ -124,7 +140,7 @@ function LimitOrder({
   const { data: routerResult } = useRouterResult({
     tokenA: tokenA?.address,
     tokenB: tokenB?.address,
-    valueA: amount,
+    valueA: formState.amount,
     valueB: undefined,
   });
   const { address, connectWallet } = useWeb3();
@@ -241,16 +257,17 @@ function LimitOrder({
       <div className="mt-2 mb-4">
         <NumericInputRow
           prefix="Amount"
-          value={amount}
-          onChange={setAmount}
+          value={formState.amount ?? ''}
+          onChange={formSetState.setAmount}
           suffix={tokenA?.symbol}
         />
       </div>
       <RangeListSliderInput
+        className="mb-4"
         list={userBankBalanceRangePercentages}
         disabled={!userTokenADisplayAmount && isLoadingUserTokenADisplayAmount}
         value={
-          new BigNumber(amount)
+          new BigNumber(formState.amount || 0)
             .dividedBy(userTokenADisplayAmount || 1)
             .toNumber() || 0
         }
@@ -268,13 +285,43 @@ function LimitOrder({
                 : // or pass full value (while truncating fractional zeros)
                   new BigNumber(userTokenADisplayAmount || '0').toFixed();
             if (newValue) {
-              setAmount(newValue || '');
+              formSetState.setAmount?.(newValue || '');
             }
           },
-          [userTokenADisplayAmount]
+          [formSetState, userTokenADisplayAmount]
         )}
       />
-      <div className="mt-4">
+      {showLimitPrice && (
+        <div className="my-md">
+          <NumericInputRow
+            prefix="Limit Price"
+            value={formState.limitPrice ?? ''}
+            onChange={formSetState.setLimitPrice}
+            suffix={`${tokenA?.symbol}/${tokenB?.symbol}`}
+          />
+        </div>
+      )}
+      {showTriggerPrice && (
+        <div className="my-md">
+          <NumericInputRow
+            prefix="Trigger Price"
+            value={formState.triggerPrice ?? ''}
+            onChange={formSetState.setTriggerPrice}
+            suffix={`${tokenA?.symbol}/${tokenB?.symbol}`}
+          />
+        </div>
+      )}
+      <div className="my-md flex row">
+        <SelectInput<LimitOrderTypeKeys>
+          className="flex col m-0 p-0"
+          list={Object.keys(orderTypeTextMap) as LimitOrderTypeKeys[]}
+          getLabel={(key = 'FILL_OR_KILL') => orderTypeTextMap[key]}
+          value={formState.execution}
+          onChange={formSetState.setExecution}
+          floating
+        />
+      </div>
+      <div>
         <NumericValueRow
           prefix="Est. Fee"
           value={formatPrice(

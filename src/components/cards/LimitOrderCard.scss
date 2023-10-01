@@ -38,6 +38,21 @@
     }
   }
 
+  // override default select input styles
+  .select-input {
+    .select-input-selection {
+      padding: paddings.$p-3 paddings.$p-4;
+      // align text with other input
+      line-height: 1.5;
+      color: hsl(218deg, 11%, 65%);
+    }
+    .select-input-selection,
+    .select-input-group,
+    label {
+      background-color: hsla(216, 20%, 25%, 1);
+    }
+  }
+
   .numeric-value-row {
     & {
       color: hsl(218deg, 11%, 65%);
@@ -61,8 +76,10 @@
       color: hsl(218deg, 11%, 65%);
       text-align: right;
       flex: 1 1 auto;
-      width: 100px;
+      width: 80px;
     }
+    // fix vertical alignment
+    align-items: baseline;
   }
 
   .limit-order__confirm-button {
