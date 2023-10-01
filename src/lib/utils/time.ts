@@ -15,6 +15,17 @@ export const hours = 60 * minutes;
 export const days = 24 * hours;
 export const weeks = 7 * days;
 
+export const timeUnits = {
+  nanoseconds,
+  microseconds,
+  milliseconds,
+  seconds,
+  minutes,
+  hours,
+  days,
+  weeks,
+};
+
 export function formatDateTime(timestamp: string) {
   const time = new Date(timestamp);
   return dateTime.format(time);

@@ -13,6 +13,23 @@ export type LimitOrderTypeKeys = keyof Omit<
   'UNRECOGNIZED'
 >;
 
+// copy out enum as an object with checks that should break if the type changes
+export const orderTypeEnum: {
+  GOOD_TIL_CANCELLED: typeof LimitOrderType['GOOD_TIL_CANCELLED'];
+  FILL_OR_KILL: typeof LimitOrderType['FILL_OR_KILL'];
+  IMMEDIATE_OR_CANCEL: typeof LimitOrderType['IMMEDIATE_OR_CANCEL'];
+  JUST_IN_TIME: typeof LimitOrderType['JUST_IN_TIME'];
+  GOOD_TIL_TIME: typeof LimitOrderType['GOOD_TIL_TIME'];
+  UNRECOGNIZED: typeof LimitOrderType['UNRECOGNIZED'];
+} = {
+  GOOD_TIL_CANCELLED: 0,
+  FILL_OR_KILL: 1,
+  IMMEDIATE_OR_CANCEL: 2,
+  JUST_IN_TIME: 3,
+  GOOD_TIL_TIME: 4,
+  UNRECOGNIZED: -1,
+};
+
 export const orderTypeTextMap: {
   [key in LimitOrderTypeKeys]: string;
 } = {

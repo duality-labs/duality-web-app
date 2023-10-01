@@ -35,8 +35,10 @@ import {
   LimitOrderFormContext,
   LimitOrderFormSetContext,
   defaultExecutionType,
+  orderTypeEnum,
 } from './LimitOrderContext';
 import SelectInput from '../inputs/SelectInput';
+import { timeUnits } from '../../lib/utils/time';
 
 export default function LimitOrderCard({
   tokenA,
@@ -133,7 +135,6 @@ function LimitOrder({
     data: userTokenADisplayAmount,
     isValidating: isLoadingUserTokenADisplayAmount,
   } = useBankBalanceDisplayAmount(tokenA);
-  const slippage = 0.1;
 
   const [fee] = useState('0');
   const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap();
@@ -152,16 +153,31 @@ function LimitOrder({
       // calculate tolerance from user slippage settings
       // set tiny minimum of tolerance as the frontend calculations
       // don't always exactly align with the backend calculations
-      const tolerance = Math.max(1e-12, slippage);
-      const tickIndexLimit = routerResult?.tickIndexOut?.toNumber();
+      const tolerance = Math.max(1e-12, Number(formState.slippage) || 0);
+      const tickIndexOut = routerResult?.tickIndexOut?.toNumber() || NaN;
+      const { execution, timePeriod } = formState;
+      const amount = Number(formState.amount ?? NaN);
+      const timeAmount = Number(formState.timeAmount ?? NaN);
+      const limitPrice = Number(formState.limitPrice ?? NaN);
+      const triggerPrice = Number(formState.triggerPrice ?? NaN);
+      // calculate the expiration time in JS epoch (milliseconds)
+      const expirationTimeMs =
+        timeAmount && timePeriod
+          ? new Date(Date.now() + timeAmount * timeUnits[timePeriod]).getTime()
+          : NaN;
       if (
+        !isNaN(amount) &&
+        execution &&
+        (execution === 'GOOD_TIL_TIME' ? !isNaN(expirationTimeMs) : true) &&
+        (execution === 'GOOD_TIL_TIME' ? timePeriod !== undefined : true) &&
+        (showLimitPrice ? !isNaN(limitPrice) : true) &&
+        (showTriggerPrice ? !isNaN(triggerPrice) : true) &&
         address &&
         routerResult &&
         tokenA &&
         tokenB &&
         !isNaN(tolerance) &&
-        tickIndexLimit &&
-        !isNaN(tickIndexLimit)
+        !isNaN(tickIndexOut)
       ) {
         // convert to swap request format
         const result = routerResult;
@@ -182,6 +198,7 @@ function LimitOrder({
             routerResult.tickIndexOut.toNumber()
           );
         const forward = result.tokenIn === token0;
+        const tickIndexLimit = tickIndexOut * (forward ? 1 : -1);
         const ticks = forward ? token1Ticks : token0Ticks;
         const ticksPassed =
           (tickMin !== undefined &&
@@ -230,25 +247,37 @@ function LimitOrder({
             // succeed (in testing when swapping 1e18 utokens, often the order
             // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
             // todo: use type FILL_OR_KILL: order must be filled completely
-            orderType: 2,
+            orderType: orderTypeEnum[execution],
             // todo: set tickIndex to allow for a tolerance:
             //   the below function is a tolerance of 0
-            tickIndex: Long.fromNumber(tickIndexLimit * (forward ? 1 : -1)),
+            tickIndex: Long.fromNumber(
+              showLimitPrice ? limitPrice : tickIndexLimit
+            ),
+            // optional params
             maxAmountOut: getBaseDenomAmount(tokenB, result.amountOut) || '0',
+            ...(execution === 'GOOD_TIL_TIME' &&
+              !isNaN(expirationTimeMs) && {
+                expirationTime: {
+                  seconds: Long.fromNumber(Math.round(expirationTimeMs / 1000)),
+                  nanos: 0,
+                },
+              }),
           },
           gasEstimate
         );
       }
     },
     [
-      address,
+      formState,
       routerResult,
+      showLimitPrice,
+      showTriggerPrice,
+      address,
       tokenA,
       tokenB,
       token0,
-      token0Ticks,
       token1Ticks,
-      slippage,
+      token0Ticks,
       swapRequest,
     ]
   );
