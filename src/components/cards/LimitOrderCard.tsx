@@ -321,6 +321,7 @@ function LimitOrder({
           value={formState.amount ?? ''}
           onChange={formSetState.setAmount}
           suffix={tokenA?.symbol}
+          format={formatAmount}
         />
       </div>
       <RangeListSliderInput
@@ -359,6 +360,7 @@ function LimitOrder({
             value={formState.limitPrice ?? ''}
             onChange={formSetState.setLimitPrice}
             suffix={`${tokenA?.symbol}/${tokenB?.symbol}`}
+            format={formatAmount}
           />
         </div>
       )}
@@ -369,6 +371,7 @@ function LimitOrder({
             value={formState.triggerPrice ?? ''}
             onChange={formSetState.setTriggerPrice}
             suffix={`${tokenA?.symbol}/${tokenB?.symbol}`}
+            format={formatAmount}
           />
         </div>
       )}
