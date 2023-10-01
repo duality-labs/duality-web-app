@@ -58,6 +58,7 @@ interface SelectInputProps<T> extends RadioInputProps<T> {
   getSelectedText?: GetNode<T>;
   getLabel?: GetNode<T>;
   getDescription?: GetNode<T>;
+  floating?: boolean;
 }
 
 function defaultGetLabelText<T>(item: T) {
@@ -77,6 +78,7 @@ export default function SelectInput<T>({
   list,
   value,
   maxColumnCount = 1,
+  floating,
   ...radioInputProps
 }: SelectInputProps<T>) {
   const selectedItem = list.find((item) => item === value);
@@ -85,6 +87,7 @@ export default function SelectInput<T>({
     () => setExpanded((expanded) => !expanded),
     []
   );
+  const close = useCallback(() => setExpanded(false), []);
   return (
     <div
       className={['select-input', className, expanded && 'expanded']
@@ -95,6 +98,7 @@ export default function SelectInput<T>({
         className="select-input-selection row flex flex-centered"
         type="button"
         onClick={toggleExpand}
+        onBlur={close}
       >
         <div className="col mr-auto">
           <SelectedComponent
@@ -106,7 +110,11 @@ export default function SelectInput<T>({
           <FontAwesomeIcon icon={faAngleDown} />
         </div>
       </button>
-      <Drawer containerClassName="select-input-options" expanded={expanded}>
+      <Drawer
+        containerClassName="select-input-options"
+        expanded={expanded}
+        floating={floating}
+      >
         <RadioInput<T>
           inputType="checkbox"
           className={[
