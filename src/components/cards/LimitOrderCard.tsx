@@ -274,15 +274,7 @@ function LimitOrder({
           [userTokenADisplayAmount]
         )}
       />
-      <div className="my-4">
-        <NumericInputRow
-          prefix="Total"
-          value={formatAmount(routerResult?.amountOut?.toNumber() ?? 0)}
-          suffix={tokenB?.symbol}
-          readOnly
-        />
-      </div>
-      <div>
+      <div className="mt-4">
         <NumericValueRow
           prefix="Est. Fee"
           value={formatPrice(
@@ -310,6 +302,13 @@ function LimitOrder({
               3
             )
           )}
+          suffix={tokenB?.symbol}
+        />
+      </div>
+      <div>
+        <NumericValueRow
+          prefix="Total"
+          value={formatAmount(routerResult?.amountOut?.toNumber() ?? 0)}
           suffix={tokenB?.symbol}
         />
       </div>
