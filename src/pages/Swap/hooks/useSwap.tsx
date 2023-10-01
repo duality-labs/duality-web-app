@@ -45,7 +45,15 @@ async function sendSwap(
   }: MsgPlaceLimitOrder,
   gasEstimate: number
 ): Promise<DeliverTxResponse> {
-  if (!amountIn || !orderType || !tokenIn || !tokenOut || !creator) {
+  if (
+    orderType === undefined ||
+    !tickIndex ||
+    !amountIn ||
+    !tokenIn ||
+    !tokenOut ||
+    !creator ||
+    !receiver
+  ) {
     throw new Error('Invalid Input');
   }
 
@@ -105,17 +113,15 @@ export function useSwap(): [
         orderType,
         tickIndex,
         amountIn,
-        maxAmountOut,
         tokenIn,
         tokenOut,
         creator,
         receiver,
       } = request;
       if (
-        !orderType ||
+        orderType === undefined ||
         !tickIndex ||
         !amountIn ||
-        !maxAmountOut ||
         !tokenIn ||
         !tokenOut ||
         !creator ||
