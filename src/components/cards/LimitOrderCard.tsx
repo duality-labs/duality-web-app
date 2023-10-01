@@ -282,7 +282,7 @@ function LimitOrder({
           readOnly
         />
       </div>
-      <div className="flex row">
+      <div>
         <NumericValueRow
           prefix="Est. Fee"
           value={formatPrice(
@@ -294,14 +294,14 @@ function LimitOrder({
           suffix={dualityMainToken.symbol}
         />
       </div>
-      <div className="flex row">
+      <div>
         <NumericValueRow
           prefix="Est. Slippage"
           tooltip="Slippage"
           value={formatPercentage(0)}
         />
       </div>
-      <div className="flex row">
+      <div>
         <NumericValueRow
           prefix="Est. Average Price"
           value={formatPrice(
@@ -322,7 +322,7 @@ function LimitOrder({
           {!address ? 'Connect Wallet' : buyMode ? 'Buy' : 'Sell'}
         </button>
       </div>
-      <div className="flex row">
+      <div>
         <NumericValueRow
           prefix={`${tokenA?.symbol} Available`}
           value={formatPrice(
@@ -334,7 +334,7 @@ function LimitOrder({
           suffix={tokenA?.symbol}
         />
       </div>
-      <div className="flex row">
+      <div>
         <NumericValueRow
           prefix="USD Available"
           tooltip="Estimated USD equivalent"
@@ -342,7 +342,7 @@ function LimitOrder({
           suffix={tokenB?.symbol}
         />
       </div>
-      <div className="flex row">
+      <div>
         <NumericValueRow
           prefix={`${tokenB?.symbol} Available`}
           value={formatPrice(
