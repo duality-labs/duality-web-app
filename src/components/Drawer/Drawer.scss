@@ -8,5 +8,6 @@
   .drawer-panel {
     position: absolute;
     width: 100%;
+    transition: height animations.$short-duration;
   }
 }
