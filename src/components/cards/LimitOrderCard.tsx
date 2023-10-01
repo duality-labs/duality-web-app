@@ -21,7 +21,6 @@ import { dualityMainToken } from '../../lib/web3/hooks/useTokens';
 import {
   formatAmount,
   formatMaximumSignificantDecimals,
-  formatPercentage,
   formatPrice,
 } from '../../lib/utils/number';
 
@@ -164,7 +163,6 @@ function LimitOrder({
     isValidating: isLoadingUserTokenOutDisplayAmount,
   } = useBankBalanceDisplayAmount(tokenOut);
 
-  const [fee] = useState('0');
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap();
 
   const { data: routerResult } = useRouterResult({
@@ -174,6 +172,65 @@ function LimitOrder({
     valueB: undefined,
   });
   const { address, connectWallet } = useWeb3();
+
+  const gasEstimate = useMemo(() => {
+    if (routerResult) {
+      // convert to swap request format
+      const result = routerResult;
+      // Cosmos requires tokens in integer format of smallest denomination
+      // calculate gas estimate
+      const tickMin =
+        routerResult.tickIndexIn &&
+        routerResult.tickIndexOut &&
+        Math.min(
+          routerResult.tickIndexIn.toNumber(),
+          routerResult.tickIndexOut.toNumber()
+        );
+      const tickMax =
+        routerResult.tickIndexIn &&
+        routerResult.tickIndexOut &&
+        Math.max(
+          routerResult.tickIndexIn.toNumber(),
+          routerResult.tickIndexOut.toNumber()
+        );
+      const forward = result.tokenIn === token0;
+      const ticks = forward ? token1Ticks : token0Ticks;
+      const ticksPassed =
+        (tickMin !== undefined &&
+          tickMax !== undefined &&
+          ticks?.filter((tick) => {
+            return (
+              tick.tickIndex1To0.isGreaterThanOrEqualTo(tickMin) &&
+              tick.tickIndex1To0.isLessThanOrEqualTo(tickMax)
+            );
+          })) ||
+        [];
+      const ticksUsed =
+        ticksPassed?.filter(
+          forward
+            ? (tick) => !tick.reserve1.isZero()
+            : (tick) => !tick.reserve0.isZero()
+        ).length || 0;
+      const ticksUnused =
+        new Set<number>([
+          ...(ticksPassed?.map((tick) => tick.tickIndex1To0.toNumber()) || []),
+        ]).size - ticksUsed;
+      const gasEstimate = ticksUsed
+        ? // 120000 base
+          120000 +
+          // add 80000 if multiple ticks need to be traversed
+          (ticksUsed > 1 ? 80000 : 0) +
+          // add 1000000 for each tick that we need to remove liquidity from
+          1000000 * (ticksUsed - 1) +
+          // add 500000 for each tick we pass without drawing liquidity from
+          500000 * ticksUnused +
+          // add another 500000 for each reverse tick we pass without drawing liquidity from
+          (forward ? 0 : 500000 * ticksUnused)
+        : 0;
+      return gasEstimate;
+    }
+    return undefined;
+  }, [routerResult, token0, token0Ticks, token1Ticks]);
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -209,59 +266,8 @@ function LimitOrder({
       ) {
         // convert to swap request format
         const result = routerResult;
-        // Cosmos requires tokens in integer format of smallest denomination
-        // calculate gas estimate
-        const tickMin =
-          routerResult.tickIndexIn &&
-          routerResult.tickIndexOut &&
-          Math.min(
-            routerResult.tickIndexIn.toNumber(),
-            routerResult.tickIndexOut.toNumber()
-          );
-        const tickMax =
-          routerResult.tickIndexIn &&
-          routerResult.tickIndexOut &&
-          Math.max(
-            routerResult.tickIndexIn.toNumber(),
-            routerResult.tickIndexOut.toNumber()
-          );
         const forward = result.tokenIn === token0;
         const tickIndexLimit = tickIndexOut * (forward ? 1 : -1);
-        const ticks = forward ? token1Ticks : token0Ticks;
-        const ticksPassed =
-          (tickMin !== undefined &&
-            tickMax !== undefined &&
-            ticks?.filter((tick) => {
-              return (
-                tick.tickIndex1To0.isGreaterThanOrEqualTo(tickMin) &&
-                tick.tickIndex1To0.isLessThanOrEqualTo(tickMax)
-              );
-            })) ||
-          [];
-        const ticksUsed =
-          ticksPassed?.filter(
-            forward
-              ? (tick) => !tick.reserve1.isZero()
-              : (tick) => !tick.reserve0.isZero()
-          ).length || 0;
-        const ticksUnused =
-          new Set<number>([
-            ...(ticksPassed?.map((tick) => tick.tickIndex1To0.toNumber()) ||
-              []),
-          ]).size - ticksUsed;
-        const gasEstimate = ticksUsed
-          ? // 120000 base
-            120000 +
-            // add 80000 if multiple ticks need to be traversed
-            (ticksUsed > 1 ? 80000 : 0) +
-            // add 1000000 for each tick that we need to remove liquidity from
-            1000000 * (ticksUsed - 1) +
-            // add 500000 for each tick we pass without drawing liquidity from
-            500000 * ticksUnused +
-            // add another 500000 for each reverse tick we pass without drawing liquidity from
-            (forward ? 0 : 500000 * ticksUnused)
-          : 0;
-
         swapRequest(
           {
             amountIn: getBaseDenomAmount(tokenIn, result.amountIn) || '0',
@@ -305,7 +311,7 @@ function LimitOrder({
                 },
               }),
           },
-          gasEstimate
+          gasEstimate || 0
         );
       }
     },
@@ -318,8 +324,7 @@ function LimitOrder({
       tokenIn,
       tokenOut,
       token0,
-      token1Ticks,
-      token0Ticks,
+      gasEstimate,
       swapRequest,
     ]
   );
@@ -438,7 +443,7 @@ function LimitOrder({
           prefix="Est. Fee"
           value={formatPrice(
             formatMaximumSignificantDecimals(
-              getDisplayDenomAmount(dualityMainToken, fee) || 0,
+              getDisplayDenomAmount(dualityMainToken, gasEstimate || 0) || 0,
               3
             )
           )}
@@ -447,21 +452,20 @@ function LimitOrder({
       </div>
       <div>
         <NumericValueRow
-          prefix="Est. Slippage"
-          tooltip="Slippage"
-          value={formatPercentage(0)}
-        />
-      </div>
-      <div>
-        <NumericValueRow
           prefix="Est. Average Price"
           value={formatPrice(
             formatMaximumSignificantDecimals(
-              tokenB ? getDisplayDenomAmount(tokenB, fee) || 0 : '-',
+              buyMode
+                ? routerResult?.amountOut
+                    .div(routerResult.amountIn)
+                    .toNumber() || '-'
+                : routerResult?.amountIn
+                    .div(routerResult.amountOut)
+                    .toNumber() || '-',
               3
             )
           )}
-          suffix={tokenB?.symbol}
+          suffix={`${tokenA?.symbol}/${tokenB?.symbol}`}
         />
       </div>
       <div>
