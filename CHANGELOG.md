@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.22](https://github.com/duality-labs/duality-web-app/compare/v0.3.21...v0.3.22) (2023-10-01)
+
+
+### Features
+
+* add staked positions in the Pool positions table ([#446](https://github.com/duality-labs/duality-web-app/issues/446)) ([e775b86](https://github.com/duality-labs/duality-web-app/commit/e775b869bb52ad8f1a646838e856e0db935a2536))
+
 ## [0.3.21](https://github.com/duality-labs/duality-web-app/compare/v0.3.20...v0.3.21) (2023-10-01)
 
 
