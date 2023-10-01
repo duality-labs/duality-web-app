@@ -36,9 +36,13 @@ import {
   LimitOrderFormSetContext,
   defaultExecutionType,
   orderTypeEnum,
+  timePeriods,
+  timePeriodLabels,
+  TimePeriod,
 } from './LimitOrderContext';
 import SelectInput from '../inputs/SelectInput';
 import { timeUnits } from '../../lib/utils/time';
+import Drawer from '../Drawer';
 
 export default function LimitOrderCard({
   tokenA,
@@ -354,7 +358,7 @@ function LimitOrder({
           />
         </div>
       )}
-      <div className="my-md flex row">
+      <div className="my-md">
         <SelectInput<LimitOrderTypeKeys>
           className="flex col m-0 p-0"
           list={Object.keys(orderTypeTextMap) as LimitOrderTypeKeys[]}
@@ -363,6 +367,24 @@ function LimitOrder({
           onChange={formSetState.setExecution}
           floating
         />
+        <Drawer expanded={formState.execution === 'GOOD_TIL_TIME'}>
+          <div className="mb-3 flex row gap-3">
+            <NumericInputRow
+              className="mb-3"
+              prefix="Time"
+              value={formState.timeAmount ?? ''}
+              onChange={formSetState.setTimeAmount}
+            />
+            <SelectInput<TimePeriod>
+              className="flex col m-0 p-0"
+              list={timePeriods.slice()}
+              getLabel={(key = 'days') => timePeriodLabels[key]}
+              value={formState.timePeriod}
+              onChange={formSetState.setTimePeriod}
+              floating
+            />
+          </div>
+        </Drawer>
       </div>
       <div>
         <NumericValueRow
@@ -507,9 +529,11 @@ function NumericInputRow({
         .filter(Boolean)
         .join(' ')}
     >
-      <div className="token-amount-input__prefix">{prefix}</div>
+      {prefix && (
+        <div className="token-amount-input__prefix mr-3">{prefix}</div>
+      )}
       <input
-        className="token-amount-input__input mx-3 flex"
+        className="token-amount-input__input flex"
         value={internalValue}
         onInput={() => maybeUpdate(inputRef.current?.value || '0', onInput)}
         onChange={(e) => {
@@ -520,7 +544,9 @@ function NumericInputRow({
         readOnly={readOnly}
         style={readOnly ? { outline: 'none' } : undefined}
       ></input>
-      <div className="token-amount-input__suffix">{suffix}</div>
+      {suffix && (
+        <div className="token-amount-input__suffix ml-3">{suffix}</div>
+      )}
     </div>
   );
 }

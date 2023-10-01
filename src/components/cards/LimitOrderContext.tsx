@@ -39,6 +39,23 @@ export const orderTypeTextMap: {
   GOOD_TIL_TIME: 'Good Til Time',
   JUST_IN_TIME: 'Just In Time',
 };
+export const timePeriods = [
+  'seconds',
+  'minutes',
+  'hours',
+  'days',
+  'weeks',
+] as const;
+export type TimePeriod = typeof timePeriods[number];
+export const timePeriodLabels: {
+  [timePeriod in TimePeriod]: string;
+} = {
+  seconds: 'Seconds',
+  minutes: 'Minutes',
+  hours: 'Hours',
+  days: 'Days',
+  weeks: 'Weeks',
+};
 
 export const defaultExecutionType: LimitOrderTypeKeys = 'FILL_OR_KILL';
 
@@ -48,7 +65,7 @@ interface FormState {
   limitPrice: string;
   triggerPrice: string;
   timeAmount: string;
-  timePeriod: 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks';
+  timePeriod: TimePeriod;
   execution: LimitOrderTypeKeys;
   slippage: string;
 }
@@ -77,8 +94,8 @@ export function LimitOrderContextProvider({
   const [amount, setAmount] = useState('');
   const [limitPrice, setLimitPrice] = useState('');
   const [triggerPrice, setTriggerPrice] = useState('');
-  const [timeAmount, setTimeAmount] = useState('');
-  const [timePeriod, setTimePeriod] = useState<FormState['timePeriod']>('days');
+  const [timeAmount, setTimeAmount] = useState('28');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('days');
   const [execution, setExecution] = useState(defaultExecutionType);
   const [slippage, setSlippage] = useState('');
 

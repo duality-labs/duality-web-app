@@ -20,7 +20,12 @@ export default function Drawer({
 
   return (
     <div
-      className={['drawer', containerClassName, floating && 'floating']
+      className={[
+        'drawer',
+        containerClassName,
+        expanded && 'expanded',
+        floating && 'floating',
+      ]
         .filter(Boolean)
         .join(' ')}
       style={
