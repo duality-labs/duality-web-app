@@ -394,7 +394,7 @@ function LimitOrder({
             prefix="Limit Price"
             value={formState.limitPrice ?? ''}
             onChange={formSetState.setLimitPrice}
-            suffix={`${tokenA?.symbol}/${tokenB?.symbol}`}
+            suffix={tokenA && tokenB && `${tokenA.symbol}/${tokenB.symbol}`}
             format={formatAmount}
           />
         </div>
@@ -405,7 +405,7 @@ function LimitOrder({
             prefix="Trigger Price"
             value={formState.triggerPrice ?? ''}
             onChange={formSetState.setTriggerPrice}
-            suffix={`${tokenA?.symbol}/${tokenB?.symbol}`}
+            suffix={tokenA && tokenB && `${tokenA.symbol}/${tokenB.symbol}`}
             format={formatAmount}
           />
         </div>
@@ -465,7 +465,7 @@ function LimitOrder({
               3
             )
           )}
-          suffix={`${tokenA?.symbol}/${tokenB?.symbol}`}
+          suffix={tokenA && tokenB && `${tokenA.symbol}/${tokenB.symbol}`}
         />
       </div>
       <div>
