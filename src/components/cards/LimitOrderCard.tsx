@@ -270,7 +270,12 @@ function LimitOrder({
                   tickIndexLimit
             ),
             // optional params
-            maxAmountOut: getBaseDenomAmount(tokenB, result.amountOut) || '0',
+            // only add maxOut for "taker" (immediate) orders
+            ...((execution === 'FILL_OR_KILL' ||
+              execution === 'IMMEDIATE_OR_CANCEL') && {
+              maxAmountOut: getBaseDenomAmount(tokenB, result.amountOut) || '0',
+            }),
+            // only add expiration time to timed limit orders
             ...(execution === 'GOOD_TIL_TIME' &&
               !isNaN(expirationTimeMs) && {
                 expirationTime: {
