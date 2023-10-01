@@ -1,6 +1,13 @@
 import Long from 'long';
 import BigNumber from 'bignumber.js';
-import { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import TabsCard from './TabsCard';
 import Tabs from '../Tabs';
@@ -44,6 +51,13 @@ import { timeUnits } from '../../lib/utils/time';
 import { displayPriceToTickIndex } from '../../lib/web3/utils/ticks';
 import Drawer from '../Drawer';
 
+const TabContext = createContext<
+  [
+    tabIndex?: number,
+    setTabIndex?: React.Dispatch<React.SetStateAction<number>>
+  ]
+>([]);
+
 export default function LimitOrderCard({
   tokenA,
   tokenB,
@@ -52,7 +66,7 @@ export default function LimitOrderCard({
   tokenB?: Token;
 }) {
   return (
-    <LimitOrderContextProvider>
+    <TabContext.Provider value={useState(0)}>
       <TabsCard
         className="flex limitorder-card"
         style={{
@@ -72,7 +86,7 @@ export default function LimitOrderCard({
           ];
         }, [tokenA, tokenB])}
       />
-    </LimitOrderContextProvider>
+    </TabContext.Provider>
   );
 }
 
@@ -85,8 +99,7 @@ function LimitOrderNav({
   tokenB?: Token;
   sell?: boolean;
 }) {
-  const { tabIndex } = useContext(LimitOrderFormContext);
-  const { setTabIndex } = useContext(LimitOrderFormSetContext);
+  const [tabIndex, setTabIndex] = useContext(TabContext);
   const tabs = useMemo(() => {
     const props = { tokenA, tokenB, sell };
     return [
@@ -103,12 +116,14 @@ function LimitOrderNav({
 
   return (
     <div className="p-md pt-4">
-      <Tabs
-        className="limitorder-type"
-        tabs={tabs}
-        value={tabIndex}
-        onChange={setTabIndex}
-      />
+      <LimitOrderContextProvider>
+        <Tabs
+          className="limitorder-type"
+          tabs={tabs}
+          value={tabIndex}
+          onChange={setTabIndex}
+        />
+      </LimitOrderContextProvider>
     </div>
   );
 }
