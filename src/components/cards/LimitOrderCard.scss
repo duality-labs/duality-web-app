@@ -1,22 +1,6 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
 
 .limitorder-card {
-  .tabs-card__nav {
-    // remove bottom border
-    padding-bottom: 0;
-    .tabs-card__nav-button {
-      & {
-        opacity: 0.25;
-      }
-      &.active {
-        opacity: 1;
-        background-color: var(--page-card);
-        color: hsla(165, 83%, 57%, 1);
-        font-weight: bold;
-      }
-    }
-  }
-
   .limitorder-type {
     // style limit order type selection like pills
     .tabs__nav {

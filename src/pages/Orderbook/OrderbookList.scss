@@ -8,7 +8,9 @@
     border-spacing: 0;
     border-collapse: collapse;
     th {
-      border-bottom: 1px solid var(--page-card-border);
+      border: 1px solid var(--page-card-border);
+      border-left: none;
+      border-right: none;
     }
     .orderbook-list__table__tick-center {
       td {

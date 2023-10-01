@@ -3,17 +3,21 @@
     // add borders around buttons (using background color)
     & {
       background-color: var(--page-card-border);
-      gap: 1px;
-      padding-bottom: 1px;
     }
     // tab buttons
     .tabs-card__nav-button {
       background-color: var(--page-card);
       border-radius: 0;
       flex: 1 1 0;
+      // unselected tabs
+      & {
+        opacity: 0.25;
+      }
       // selected buttons
       &.active {
-        background-color: var(--default);
+        opacity: 1;
+        color: hsla(165, 83%, 57%, 1);
+        font-weight: bold;
       }
     }
   }
