@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 
@@ -22,7 +22,7 @@ const chartOptions: ApexOptions = {
       enabled: true,
     },
     title: {
-      text: 'STK/TKN',
+      text: '',
     },
   },
   theme: {
@@ -55,22 +55,28 @@ export default function OrderBookChart({
   tokenA,
   tokenB,
 }: {
-  tokenA?: Token;
-  tokenB?: Token;
+  tokenA: Token;
+  tokenB: Token;
 }) {
   const [chartSeries, setChartSeries] = useState<ApexAxisChartSeries>([]);
+  const tokenAPath = tokenA.address;
+  const tokenBPath = tokenB.address;
   useEffect(() => {
     const poller = {
       poll: async () => undefined,
     };
     poller.poll = async function poll() {
+      // skip undefined token fetches
+      if (!tokenAPath || !tokenAPath) {
+        return;
+      }
       let next = '';
       const liquidity = [];
       do {
         const response = await fetch(
-          next
-            ? `http://localhost:8000/timeseries/price/token/stake?pagination.key=${next}`
-            : 'http://localhost:8000/timeseries/price/token/stake'
+          `http://localhost:8000/timeseries/price/${tokenAPath}/${tokenBPath}${
+            next ? `?pagination.key=${next}` : ''
+          }`
         );
         const { data = [], pagination = {} } = await response.json();
         // add data into current context
@@ -82,7 +88,7 @@ export default function OrderBookChart({
 
       setChartSeries([
         {
-          name: 'STK / TKN',
+          name: `${tokenA.symbol}/${tokenB.symbol}`,
           data: liquidity.map((row) => {
             return [
               row[0] * 1000,
@@ -97,14 +103,24 @@ export default function OrderBookChart({
 
     let timeout = setTimeout(poller.poll, 0);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [tokenA, tokenAPath, tokenB, tokenBPath]);
 
   return (
     <div className="flex-centered">
       <Chart
         className="candlestick-chart"
         type="candlestick"
-        options={chartOptions}
+        options={useMemo(() => {
+          return {
+            ...chartOptions,
+            yaxis: {
+              ...chartOptions?.yaxis,
+              title: {
+                text: `${tokenA.symbol}/${tokenB.symbol}`,
+              },
+            },
+          };
+        }, [tokenA, tokenB])}
         series={chartSeries}
         height={440}
       />

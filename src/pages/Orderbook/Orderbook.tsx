@@ -37,7 +37,7 @@ function Orderbook() {
       <div className="orderbook-body row gap-3">
         <div className="flex col">
           <div className="flex page-card">
-            {tokenA?.address === 'stake' && tokenB?.address === 'token' && (
+            {tokenA && tokenB && (
               <OrderBookChart tokenA={tokenA} tokenB={tokenB} />
             )}
           </div>
@@ -55,16 +55,14 @@ function Orderbook() {
                 {
                   nav: 'Orderbook',
                   Tab: () =>
-                    tokenA?.address === 'stake' &&
-                    tokenB?.address === 'token' ? (
+                    tokenA && tokenB ? (
                       <OrderBookList tokenA={tokenA} tokenB={tokenB} />
                     ) : null,
                 },
                 {
                   nav: 'Trades',
                   Tab: () =>
-                    tokenA?.address === 'stake' &&
-                    tokenB?.address === 'token' ? (
+                    tokenA && tokenB ? (
                       <OrderBookTradesList tokenA={tokenA} tokenB={tokenB} />
                     ) : null,
                 },

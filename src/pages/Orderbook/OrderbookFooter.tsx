@@ -139,19 +139,26 @@ function TypeColumn({ row: tx }: { row: Tx }) {
   return <td></td>;
 }
 
-function SideColumn({ row: tx }: { row: Tx }) {
+function SideColumn({
+  row: tx,
+  context: { tokenA, tokenB } = {},
+}: {
+  row: Tx;
+  context?: OrderbookFooterTableContext;
+}) {
   const event = tx.tx_result.events.find(findPlaceLimitOrderActionEvent);
   if (event) {
     const attributes =
       mapEventAttributes<DexPlaceLimitOrderEvent>(event).attributes;
-    // todo: un-hardcode
     return (
       <td>
-        {attributes.TokenIn === 'token' ? (
-          <span className="text-success">Buy</span>
-        ) : (
-          <span className="text-danger">Sell</span>
-        )}
+        {tokenA && tokenB ? (
+          attributes.TokenIn === tokenA.address ? (
+            <span className="text-success">Buy</span>
+          ) : (
+            <span className="text-danger">Sell</span>
+          )
+        ) : null}
       </td>
     );
   }
