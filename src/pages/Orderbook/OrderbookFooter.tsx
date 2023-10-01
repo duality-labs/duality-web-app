@@ -38,7 +38,7 @@ export default function OrderbookFooter({
             <h4 className="h4">Orders</h4>
           </div>
         </div>
-        <div className="col ml-auto">Card Nav right</div>
+        <div className="col ml-auto"></div>
       </div>
       <div className="row orderbook-orders">
         {tokenA && tokenB && account && (
