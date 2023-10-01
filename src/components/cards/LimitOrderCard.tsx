@@ -153,21 +153,23 @@ function LimitOrder({
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
 
+  const tokenIn = !buyMode ? tokenA : tokenB;
+  const tokenOut = buyMode ? tokenA : tokenB;
   const {
-    data: userTokenADisplayAmount,
-    isValidating: isLoadingUserTokenADisplayAmount,
-  } = useBankBalanceDisplayAmount(tokenA);
+    data: userTokenInDisplayAmount,
+    isValidating: isLoadingUserTokenInDisplayAmount,
+  } = useBankBalanceDisplayAmount(tokenIn);
   const {
-    data: userTokenBDisplayAmount,
-    isValidating: isLoadingUserTokenBDisplayAmount,
-  } = useBankBalanceDisplayAmount(tokenB);
+    data: userTokenOutDisplayAmount,
+    isValidating: isLoadingUserTokenOutDisplayAmount,
+  } = useBankBalanceDisplayAmount(tokenOut);
 
   const [fee] = useState('0');
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap();
 
   const { data: routerResult } = useRouterResult({
-    tokenA: tokenA?.address,
-    tokenB: tokenB?.address,
+    tokenA: tokenIn?.address,
+    tokenB: tokenOut?.address,
     valueA: formState.amount,
     valueB: undefined,
   });
@@ -200,8 +202,8 @@ function LimitOrder({
         (showTriggerPrice ? !isNaN(triggerPrice) : true) &&
         address &&
         routerResult &&
-        tokenA &&
-        tokenB &&
+        tokenIn &&
+        tokenOut &&
         !isNaN(tolerance) &&
         !isNaN(tickIndexOut)
       ) {
@@ -262,7 +264,7 @@ function LimitOrder({
 
         swapRequest(
           {
-            amountIn: getBaseDenomAmount(tokenA, result.amountIn) || '0',
+            amountIn: getBaseDenomAmount(tokenIn, result.amountIn) || '0',
             tokenIn: result.tokenIn,
             tokenOut: result.tokenOut,
             creator: address,
@@ -281,8 +283,8 @@ function LimitOrder({
                 ? // set given limit price
                   displayPriceToTickIndex(
                     new BigNumber(limitPrice),
-                    forward ? tokenA : tokenB,
-                    forward ? tokenB : tokenA
+                    forward ? tokenIn : tokenOut,
+                    forward ? tokenOut : tokenIn
                   )?.toNumber() || NaN
                 : // or default to market end trade price (with tolerance)
                   tickIndexLimit
@@ -291,7 +293,8 @@ function LimitOrder({
             // only add maxOut for "taker" (immediate) orders
             ...((execution === 'FILL_OR_KILL' ||
               execution === 'IMMEDIATE_OR_CANCEL') && {
-              maxAmountOut: getBaseDenomAmount(tokenB, result.amountOut) || '0',
+              maxAmountOut:
+                getBaseDenomAmount(tokenOut, result.amountOut) || '0',
             }),
             // only add expiration time to timed limit orders
             ...(execution === 'GOOD_TIL_TIME' &&
@@ -312,8 +315,8 @@ function LimitOrder({
       showLimitPrice,
       showTriggerPrice,
       address,
-      tokenA,
-      tokenB,
+      tokenIn,
+      tokenOut,
       token0,
       token1Ticks,
       token0Ticks,
@@ -345,10 +348,12 @@ function LimitOrder({
       <RangeListSliderInput
         className="mb-4"
         list={userBankBalanceRangePercentages}
-        disabled={!userTokenADisplayAmount && isLoadingUserTokenADisplayAmount}
+        disabled={
+          !userTokenInDisplayAmount && isLoadingUserTokenInDisplayAmount
+        }
         value={
           new BigNumber(formState.amount || 0)
-            .dividedBy(userTokenADisplayAmount || 1)
+            .dividedBy(userTokenInDisplayAmount || 1)
             .toNumber() || 0
         }
         onChange={useCallback(
@@ -358,17 +363,17 @@ function LimitOrder({
               numericValue < 1
                 ? // round calculated values
                   formatAmount(
-                    new BigNumber(userTokenADisplayAmount || 0)
+                    new BigNumber(userTokenInDisplayAmount || 0)
                       .multipliedBy(numericValue)
                       .toNumber()
                   )
                 : // or pass full value (while truncating fractional zeros)
-                  new BigNumber(userTokenADisplayAmount || '0').toFixed();
+                  new BigNumber(userTokenInDisplayAmount || '0').toFixed();
             if (newValue) {
               formSetState.setAmount?.(newValue || '');
             }
           },
-          [formSetState, userTokenADisplayAmount]
+          [formSetState, userTokenInDisplayAmount]
         )}
       />
       {showLimitPrice && (
@@ -484,8 +489,8 @@ function LimitOrder({
           value={formatAmount(
             formatMaximumSignificantDecimals(
               tokenA
-                ? (userTokenADisplayAmount ??
-                    (isLoadingUserTokenADisplayAmount && '-')) ||
+                ? (userTokenInDisplayAmount ??
+                    (isLoadingUserTokenInDisplayAmount && '-')) ||
                     0
                 : '-',
               3
@@ -502,8 +507,8 @@ function LimitOrder({
           value={formatAmount(
             formatMaximumSignificantDecimals(
               tokenB
-                ? (userTokenBDisplayAmount ??
-                    (isLoadingUserTokenBDisplayAmount && '-')) ||
+                ? (userTokenOutDisplayAmount ??
+                    (isLoadingUserTokenOutDisplayAmount && '-')) ||
                     0
                 : '-',
               3
