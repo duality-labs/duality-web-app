@@ -23,13 +23,15 @@ export const orderTypeTextMap: {
   JUST_IN_TIME: 'JIT',
 };
 
+export const defaultExecutionType: LimitOrderTypeKeys = 'FILL_OR_KILL';
+
 interface FormState {
   amount: string;
   limitPrice: string;
   triggerPrice: string;
   timeAmount: string;
-  timePeriod: 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks' | undefined;
-  execution: LimitOrderTypeKeys | undefined;
+  timePeriod: 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks';
+  execution: LimitOrderTypeKeys;
   slippage: string;
 }
 interface FormSetState {
@@ -56,8 +58,8 @@ export function LimitOrderContextProvider({
   const [limitPrice, setLimitPrice] = useState('');
   const [triggerPrice, setTriggerPrice] = useState('');
   const [timeAmount, setTimeAmount] = useState('');
-  const [timePeriod, setTimePeriod] = useState<FormState['timePeriod']>();
-  const [execution, setExecution] = useState<FormState['execution']>();
+  const [timePeriod, setTimePeriod] = useState<FormState['timePeriod']>('days');
+  const [execution, setExecution] = useState(defaultExecutionType);
   const [slippage, setSlippage] = useState('');
 
   const state = useMemo(() => {

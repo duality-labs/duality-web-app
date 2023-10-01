@@ -34,6 +34,7 @@ import {
   orderTypeTextMap,
   LimitOrderFormContext,
   LimitOrderFormSetContext,
+  defaultExecutionType,
 } from './LimitOrderContext';
 import SelectInput from '../inputs/SelectInput';
 
@@ -315,7 +316,7 @@ function LimitOrder({
         <SelectInput<LimitOrderTypeKeys>
           className="flex col m-0 p-0"
           list={Object.keys(orderTypeTextMap) as LimitOrderTypeKeys[]}
-          getLabel={(key = 'FILL_OR_KILL') => orderTypeTextMap[key]}
+          getLabel={(key = defaultExecutionType) => orderTypeTextMap[key]}
           value={formState.execution}
           onChange={formSetState.setExecution}
           floating
