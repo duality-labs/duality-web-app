@@ -463,9 +463,9 @@ function LimitOrder({
           {!address ? 'Connect Wallet' : buyMode ? 'Buy' : 'Sell'}
         </button>
       </div>
-      <div>
+      {!buyMode ? (
         <NumericValueRow
-          prefix={`${tokenA?.symbol} Available`}
+          prefix="Available Balance"
           value={formatAmount(
             formatMaximumSignificantDecimals(
               tokenA
@@ -481,10 +481,9 @@ function LimitOrder({
           )}
           suffix={tokenA?.symbol}
         />
-      </div>
-      <div>
+      ) : (
         <NumericValueRow
-          prefix={`${tokenB?.symbol} Available`}
+          prefix="Available Balance"
           value={formatAmount(
             formatMaximumSignificantDecimals(
               tokenB
@@ -500,7 +499,7 @@ function LimitOrder({
           )}
           suffix={tokenB?.symbol}
         />
-      </div>
+      )}
     </form>
   );
 }
