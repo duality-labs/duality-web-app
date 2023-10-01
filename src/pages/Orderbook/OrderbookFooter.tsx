@@ -2,7 +2,8 @@ import BigNumber from 'bignumber.js';
 
 import { orderTypeTextMap } from '../../components/cards/LimitOrderContext';
 import Table from '../../components/Table/Table';
-import { formatDateTime } from '../../lib/utils/time';
+import { RelativeAndAbsoluteTime } from '../../components/Time';
+
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { WalletAddress } from '../../lib/web3/utils/address';
 import {
@@ -116,7 +117,7 @@ function TimeColumn({ row: tx }: { row: Tx }) {
   return (
     <td>
       {tx.timestamp ? (
-        <>{formatDateTime(tx.timestamp)}</>
+        <RelativeAndAbsoluteTime timestamp={tx.timestamp} />
       ) : (
         <>Block: {tx.height}</>
       )}
