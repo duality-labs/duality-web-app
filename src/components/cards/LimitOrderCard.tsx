@@ -339,10 +339,17 @@ function LimitOrder({
       <div className="mt-2 mb-4">
         <NumericInputRow
           prefix="Amount"
-          value={formState.amount ?? ''}
+          value={
+            buyMode
+              ? formatAmount(routerResult?.amountOut.toNumber() || 0)
+              : formState.amount || ''
+          }
           onChange={formSetState.setAmount}
           suffix={tokenA?.symbol}
           format={formatAmount}
+          // todo: estimate amountIn needed to match an amountOut value
+          //       to be able to allow setting amountOut here in buyMode
+          readOnly={buyMode}
         />
       </div>
       <RangeListSliderInput
@@ -460,7 +467,11 @@ function LimitOrder({
       <div>
         <NumericValueRow
           prefix="Total"
-          value={formatAmount(routerResult?.amountOut?.toNumber() ?? 0)}
+          value={formatAmount(
+            !buyMode
+              ? routerResult?.amountOut.toNumber() || 0
+              : formState.amount || 0
+          )}
           suffix={tokenB?.symbol}
         />
       </div>
