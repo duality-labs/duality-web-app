@@ -42,6 +42,7 @@ import {
 } from './LimitOrderContext';
 import SelectInput from '../inputs/SelectInput';
 import { timeUnits } from '../../lib/utils/time';
+import { displayPriceToTickIndex } from '../../lib/web3/utils/ticks';
 import Drawer from '../Drawer';
 
 export default function LimitOrderCard({
@@ -258,7 +259,15 @@ function LimitOrder({
             // todo: set tickIndex to allow for a tolerance:
             //   the below function is a tolerance of 0
             tickIndex: Long.fromNumber(
-              showLimitPrice ? limitPrice : tickIndexLimit
+              showLimitPrice
+                ? // set given limit price
+                  displayPriceToTickIndex(
+                    new BigNumber(limitPrice),
+                    forward ? tokenA : tokenB,
+                    forward ? tokenB : tokenA
+                  )?.toNumber() || NaN
+                : // or default to market end trade price (with tolerance)
+                  tickIndexLimit
             ),
             // optional params
             maxAmountOut: getBaseDenomAmount(tokenB, result.amountOut) || '0',
