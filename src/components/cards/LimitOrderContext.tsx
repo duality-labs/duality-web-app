@@ -16,11 +16,11 @@ export type LimitOrderTypeKeys = keyof Omit<
 export const orderTypeTextMap: {
   [key in LimitOrderTypeKeys]: string;
 } = {
-  IMMEDIATE_OR_CANCEL: 'Market',
-  FILL_OR_KILL: 'Fill-Kill',
-  GOOD_TIL_CANCELLED: 'Limit',
-  GOOD_TIL_TIME: 'Stop Order',
-  JUST_IN_TIME: 'JIT',
+  IMMEDIATE_OR_CANCEL: 'Immediate Or Cancel',
+  FILL_OR_KILL: 'Fill Or Kill',
+  GOOD_TIL_CANCELLED: 'Good Til Canceled',
+  GOOD_TIL_TIME: 'Good Til Time',
+  JUST_IN_TIME: 'Just In Time',
 };
 
 export const defaultExecutionType: LimitOrderTypeKeys = 'FILL_OR_KILL';
