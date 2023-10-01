@@ -94,10 +94,6 @@ function LimitOrderNav({
         nav: 'Market',
         Tab: () => <LimitOrder {...props} />,
       },
-      {
-        nav: 'Stop Limit',
-        Tab: () => <LimitOrder {...props} showLimitPrice showTriggerPrice />,
-      },
     ];
   }, [tokenA, tokenB, sell]);
 
