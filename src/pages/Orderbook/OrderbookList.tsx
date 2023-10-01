@@ -1,13 +1,17 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
-import { formatAmount, getDecimalPlaces } from '../../lib/utils/number';
+import {
+  formatAmount,
+  getDecimalPlaces,
+  getOrderOfMagnitude,
+} from '../../lib/utils/number';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
-import { TickInfo } from '../../lib/web3/utils/ticks';
+import { TickInfo, priceToTickIndex } from '../../lib/web3/utils/ticks';
 
 import './OrderbookList.scss';
 
@@ -33,15 +37,92 @@ export default function OrderBookList({
     token1Address === tokenA.address && token0Address === tokenB.address,
   ];
 
+  const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+  const resolutionPercent = 0.1; // size of price steps
+
+  const getTickBuckets = useCallback(
+    (forward: boolean) => {
+      const resolutionOrderOfMagnitude = getOrderOfMagnitude(resolutionPercent);
+      const step =
+        currentPrice &&
+        Math.pow(
+          10,
+          getOrderOfMagnitude(currentPrice.toNumber()) +
+            resolutionOrderOfMagnitude
+        );
+
+      const tokenATicks = forward ? token0Ticks : token1Ticks;
+      const precision = 1 - resolutionOrderOfMagnitude;
+      const tickBucketLimits = Array.from({ length: shownTickRows }).flatMap(
+        (_, index) =>
+          currentPrice && step
+            ? forward
+              ? Number(
+                  currentPrice
+                    .minus(index * step)
+                    .toPrecision(precision, BigNumber.ROUND_FLOOR)
+                )
+              : Number(
+                  currentPrice
+                    .plus(index * step)
+                    .toPrecision(precision, BigNumber.ROUND_CEIL)
+                )
+            : []
+      );
+      const limit = forward
+        ? Math.min(...tickBucketLimits)
+        : Math.max(...tickBucketLimits);
+
+      const groupedTokenATicks = tokenATicks.reduce<{
+        [roundedPrice: string]: number;
+      }>((acc, tick) => {
+        // add if price is within bounds
+        if (
+          step &&
+          currentPrice &&
+          (forward
+            ? tick.price1To0.isGreaterThanOrEqualTo(limit)
+            : tick.price1To0.isLessThanOrEqualTo(limit))
+        ) {
+          const roundedPrice = Number(
+            tick.price1To0.toPrecision(
+              precision,
+              forward ? BigNumber.ROUND_FLOOR : BigNumber.ROUND_CEIL
+            )
+          );
+          acc[roundedPrice] = acc[roundedPrice] || 0;
+          acc[roundedPrice] += (
+            forward ? tick.reserve0 : tick.reserve1
+          ).toNumber();
+        }
+        return acc;
+      }, {});
+
+      // create TickInfo replacements for bucketed data
+      const fakeTicks = tickBucketLimits.map((key): TickInfo => {
+        return {
+          token0: forward ? tokenA : tokenB,
+          token1: forward ? tokenB : tokenA,
+          fee: new BigNumber(0),
+          price1To0: new BigNumber(key),
+          tickIndex1To0: priceToTickIndex(new BigNumber(key)),
+          reserve0: new BigNumber(forward ? groupedTokenATicks[key] || 0 : 0),
+          reserve1: new BigNumber(forward ? 0 : groupedTokenATicks[key] || 0),
+        };
+      });
+
+      return [...fakeTicks, ...spacingTicks].slice(0, shownTickRows).reverse();
+    },
+    [currentPrice, token0Ticks, token1Ticks, tokenA, tokenB]
+  );
+
   // works with shortened length and correct sort order ticks for this component
   const tokenATicks = useMemo<Array<TickInfo | undefined>>(() => {
-    const tokenATicks = forward ? token0Ticks : token1Ticks;
-    return [...tokenATicks, ...spacingTicks].slice(0, shownTickRows).reverse();
-  }, [forward, token0Ticks, token1Ticks]);
+    return getTickBuckets(!!forward);
+  }, [forward, getTickBuckets]);
   const tokenBTicks = useMemo<Array<TickInfo | undefined>>(() => {
-    const tokenBTicks = reverse ? token0Ticks : token1Ticks;
-    return [...tokenBTicks, ...spacingTicks].slice(0, shownTickRows);
-  }, [reverse, token0Ticks, token1Ticks]);
+    return getTickBuckets(!forward);
+  }, [forward, getTickBuckets]);
 
   // keep the state of the previously seen ticks
   const previousTokenATicks = useMemo<TickInfo[]>(() => {
@@ -91,7 +172,6 @@ export default function OrderBookList({
       });
   }, [tokenBTicks, reverse]);
 
-  const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
   const previousPrice = useMemo<BigNumber | undefined>(() => {
     // todo: replace with block height tracking and previous block height ticks
     const randomAdjustment = Math.round(Math.random() * 3 - 1.5);
@@ -100,7 +180,10 @@ export default function OrderBookList({
 
   const priceDecimalPlaces =
     currentPrice !== undefined
-      ? getDecimalPlaces(currentPrice.toNumber(), 6)
+      ? getDecimalPlaces(
+          currentPrice.toNumber(),
+          1 - getOrderOfMagnitude(resolutionPercent)
+        )
       : undefined;
 
   return (
@@ -141,10 +224,9 @@ export default function OrderBookList({
               }
             >
               {currentPrice
-                ? `${formatAmount(currentPrice.toNumber(), {
-                    minimumFractionDigits: priceDecimalPlaces,
-                    maximumFractionDigits: priceDecimalPlaces,
-                  })} ${tokenA.symbol}/${tokenB.symbol}`
+                ? `${formatAmount(currentPrice.toNumber())} ${tokenA.symbol}/${
+                    tokenB.symbol
+                  }`
                 : '-'}
             </DiffCell>
           </tr>

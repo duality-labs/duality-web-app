@@ -1,8 +1,12 @@
 import BigNumber from 'bignumber.js';
 
+export function getOrderOfMagnitude(value: number) {
+  return Math.floor(Math.log10(Math.abs(value)));
+}
+
 // return the decimal places found of a number if rounded to significant digits
 export function getDecimalPlaces(value: number, significantDigits = 6) {
-  const orderOfMagnitude = value ? Math.floor(Math.log10(Math.abs(value))) : 0;
+  const orderOfMagnitude = value ? getOrderOfMagnitude(value) : 0;
   return Math.max(0, significantDigits - orderOfMagnitude - 1);
 }
 
@@ -13,7 +17,7 @@ export function roundToSignificantDigits(
   significantDigits = 8
 ): number {
   if (value === 0) return 0;
-  const orderOfMagnitude = Math.floor(Math.log10(Math.abs(value)));
+  const orderOfMagnitude = getOrderOfMagnitude(value);
   const factor = Math.pow(10, significantDigits - orderOfMagnitude - 1);
   return Math.round(value * factor) / factor;
 }
