@@ -81,6 +81,8 @@ function LimitOrderNav({
   tokenB?: Token;
   sell?: boolean;
 }) {
+  const { tabIndex } = useContext(LimitOrderFormContext);
+  const { setTabIndex } = useContext(LimitOrderFormSetContext);
   const tabs = useMemo(() => {
     const props = { tokenA, tokenB, sell };
     return [
@@ -101,7 +103,12 @@ function LimitOrderNav({
 
   return (
     <div className="p-md pt-4">
-      <Tabs className="limitorder-type" tabs={tabs} />
+      <Tabs
+        className="limitorder-type"
+        tabs={tabs}
+        value={tabIndex}
+        onChange={setTabIndex}
+      />
     </div>
   );
 }

@@ -8,12 +8,21 @@ export interface Tab {
 }
 export default function Tabs({
   tabs,
+  value: givenTabIndex,
+  onChange: givenSetTabIndex,
   className,
 }: {
   tabs: Array<Tab>;
   className?: string;
+  value?: number;
+  onChange?: (index: number) => void;
 }) {
-  const [tabIndex, setTabIndex] = useState<number>(0);
+  const [defaultTabIndex, defaultSetTabIndex] = useState<number>(0);
+  // allow tab index to be set internally or externally
+  const [tabIndex, setTabIndex] =
+    givenTabIndex !== undefined
+      ? [givenTabIndex, givenSetTabIndex]
+      : [defaultTabIndex, defaultSetTabIndex];
   const { Tab } = tabs[tabIndex];
 
   return (
@@ -30,7 +39,7 @@ export default function Tabs({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              onClick={() => setTabIndex(index)}
+              onClick={() => setTabIndex?.(index)}
             >
               {tab.nav}
             </button>

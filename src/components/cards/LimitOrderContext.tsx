@@ -43,6 +43,7 @@ export const orderTypeTextMap: {
 export const defaultExecutionType: LimitOrderTypeKeys = 'FILL_OR_KILL';
 
 interface FormState {
+  tabIndex: number;
   amount: string;
   limitPrice: string;
   triggerPrice: string;
@@ -52,6 +53,7 @@ interface FormState {
   slippage: string;
 }
 interface FormSetState {
+  setTabIndex: Dispatch<SetStateAction<FormState['tabIndex']>>;
   setAmount: Dispatch<SetStateAction<FormState['amount']>>;
   setLimitPrice: Dispatch<SetStateAction<FormState['limitPrice']>>;
   setTriggerPrice: Dispatch<SetStateAction<FormState['triggerPrice']>>;
@@ -71,6 +73,7 @@ export function LimitOrderContextProvider({
 }: {
   children: ReactNode;
 }) {
+  const [tabIndex, setTabIndex] = useState(0);
   const [amount, setAmount] = useState('');
   const [limitPrice, setLimitPrice] = useState('');
   const [triggerPrice, setTriggerPrice] = useState('');
@@ -81,6 +84,7 @@ export function LimitOrderContextProvider({
 
   const state = useMemo(() => {
     return {
+      tabIndex,
       amount,
       limitPrice,
       triggerPrice,
@@ -90,6 +94,7 @@ export function LimitOrderContextProvider({
       slippage,
     };
   }, [
+    tabIndex,
     amount,
     limitPrice,
     triggerPrice,
@@ -101,6 +106,7 @@ export function LimitOrderContextProvider({
 
   const setState = useMemo(() => {
     return {
+      setTabIndex,
       setAmount,
       setLimitPrice,
       setTriggerPrice,
@@ -110,6 +116,7 @@ export function LimitOrderContextProvider({
       setSlippage,
     };
   }, [
+    setTabIndex,
     setAmount,
     setLimitPrice,
     setTriggerPrice,
