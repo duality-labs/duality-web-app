@@ -127,6 +127,11 @@ export function useSwap(): [
       const { wallet, address } = web3;
       if (!wallet || !address) return onError('Client has no wallet');
       if (!tokens) return onError('Send not ready: token list not ready');
+      // check for not well defined tick index
+      const tickNumber = tickIndex.toNumber();
+      if (Number.isNaN(tickNumber) || !Number.isFinite(tickNumber)) {
+        return onError('Limit Price is not defined');
+      }
 
       const tokenOutToken = tokens.find(matchTokenByAddress(tokenOut));
       if (!tokenOutToken) return onError('Token out was not found');

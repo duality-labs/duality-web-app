@@ -285,6 +285,16 @@ function LimitOrder({
     ]
   );
 
+  const warning = useMemo<string | undefined>(() => {
+    const { amount, limitPrice } = formState;
+    if (Number(amount) > 0) {
+      if (showLimitPrice && !Number(limitPrice)) {
+        return 'Limit Price is not valid';
+      }
+    }
+    return undefined;
+  }, [formState, showLimitPrice]);
+
   return (
     <form onSubmit={onFormSubmit}>
       <div className="mt-2 mb-4">
@@ -392,11 +402,17 @@ function LimitOrder({
           suffix={tokenB?.symbol}
         />
       </div>
+      {warning && (
+        // show a warning if an amount has been entered, but the form fails validation
+        <div className="mt-4">
+          <div className="text-error flex text-center">{warning}</div>
+        </div>
+      )}
       <div className="flex row">
         <button
           className="limit-order__confirm-button flex button-primary my-lg py-4"
           onClick={!address ? connectWallet : undefined}
-          disabled={isValidatingSwap}
+          disabled={isValidatingSwap || !!warning || !Number(formState.amount)}
         >
           {!address ? 'Connect Wallet' : buyMode ? 'Buy' : 'Sell'}
         </button>
