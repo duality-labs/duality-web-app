@@ -23,7 +23,7 @@ const pageLinkMap = {
   '/bridge': 'Bridge',
 };
 
-const defaultPage = Object.keys(pageLinkMap).at(0) ?? '/';
+export const defaultPage = Object.keys(pageLinkMap).at(0) ?? '/';
 
 export default function Header() {
   const { connectWallet, address } = useWeb3();

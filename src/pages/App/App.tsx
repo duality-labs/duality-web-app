@@ -1,4 +1,4 @@
-import { Web3Provider, useWeb3 } from '../../lib/web3/useWeb3';
+import { Web3Provider } from '../../lib/web3/useWeb3';
 import { IndexerProvider } from '../../lib/web3/indexerProvider';
 import { ThemeProvider } from '../../lib/themeProvider';
 
@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Header from '../../components/Header';
 import Notifications from '../../components/Notifications';
+import { defaultPage } from '../../components/Header/Header';
 
 import Stars from './Stars';
 import Planets from './Planets';
@@ -24,11 +25,6 @@ import './App.scss';
 
 const queryClient = new QueryClient();
 
-function MyLiquidityOrSwap() {
-  const { address } = useWeb3();
-  return address ? <Navigate to="/portfolio" /> : <Navigate to="/swap" />;
-}
-
 function App() {
   return (
     <Web3Provider>
@@ -41,7 +37,7 @@ function App() {
               <Planets />
               <main>
                 <Routes>
-                  <Route index element={<MyLiquidityOrSwap />} />
+                  <Route index element={<Navigate to={defaultPage} />} />
                   <Route path="swap/*" element={<Swap />} />
                   <Route path="pools/*" element={<Pool />} />
                   <Route path="orderbook/*" element={<Orderbook />} />
