@@ -23,6 +23,8 @@ const pageLinkMap = {
   '/bridge': 'Bridge',
 };
 
+const defaultPage = Object.keys(pageLinkMap).at(0) ?? '/';
+
 export default function Header() {
   const { connectWallet, address } = useWeb3();
   const { themeMode, toggleThemeMode } = useThemeMode();
@@ -86,7 +88,8 @@ export default function Header() {
           <div className="col">
             <NavLink
               className="logo"
-              to={['/swap', REACT_APP__DEFAULT_PAIR].join('/')}
+              // may be redirected by other logic from here
+              to={defaultPage}
               onClick={closeMenuAndScrollToTop}
             >
               <h1 className="font-brand">
