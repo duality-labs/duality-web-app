@@ -40,6 +40,10 @@ export default function OrderBookList({
   const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
   const resolutionPercent = 0.01; // size of price steps
 
+  // todo: this needs fixes, the comparison between prices is off because it
+  //       sometimes compares price1To0 and priceBToA
+  //       it would greatly benefit from useTokenPairTickLiquidity returning
+  //       price and tickIndexes in BtoA form
   const getTickBuckets = useCallback(
     (forward: boolean) => {
       const resolutionOrderOfMagnitude = getOrderOfMagnitude(resolutionPercent);
@@ -51,7 +55,7 @@ export default function OrderBookList({
             resolutionOrderOfMagnitude
         );
 
-      const tokenATicks = forward ? token0Ticks : token1Ticks;
+      const ticks = forward ? token0Ticks : token1Ticks;
       const precision = 1 - resolutionOrderOfMagnitude;
       const tickBucketLimits = Array.from({ length: shownTickRows }).flatMap(
         (_, index) =>
@@ -73,7 +77,7 @@ export default function OrderBookList({
         ? Math.min(...tickBucketLimits)
         : Math.max(...tickBucketLimits);
 
-      const groupedTokenATicks = tokenATicks.reduce<{
+      const groupedTicks = ticks.reduce<{
         [roundedPrice: string]: number;
       }>((acc, tick) => {
         // add if price is within bounds
@@ -106,19 +110,19 @@ export default function OrderBookList({
           fee: new BigNumber(0),
           price1To0: new BigNumber(key),
           tickIndex1To0: priceToTickIndex(new BigNumber(key)),
-          reserve0: new BigNumber(forward ? groupedTokenATicks[key] || 0 : 0),
-          reserve1: new BigNumber(forward ? 0 : groupedTokenATicks[key] || 0),
+          reserve0: new BigNumber(forward ? groupedTicks[key] || 0 : 0),
+          reserve1: new BigNumber(forward ? 0 : groupedTicks[key] || 0),
         };
       });
 
-      return [...fakeTicks, ...spacingTicks].slice(0, shownTickRows).reverse();
+      return [...fakeTicks, ...spacingTicks].slice(0, shownTickRows);
     },
     [currentPrice, token0Ticks, token1Ticks, tokenA, tokenB]
   );
 
-  // works with shortened length and correct sort order ticks for this component
+  // get tokenA as the top ascending from current price list
   const tokenATicks = useMemo<Array<TickInfo | undefined>>(() => {
-    return getTickBuckets(!!forward);
+    return getTickBuckets(!!forward).reverse();
   }, [forward, getTickBuckets]);
   const tokenBTicks = useMemo<Array<TickInfo | undefined>>(() => {
     return getTickBuckets(!forward);
