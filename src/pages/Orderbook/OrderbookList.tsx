@@ -16,7 +16,7 @@ import { TickInfo, priceToTickIndex } from '../../lib/web3/utils/ticks';
 import './OrderbookList.scss';
 
 // ensure that a certain amount of liquidity rows are shown in the card
-const shownTickRows = 8;
+const shownTickRows = 10;
 const spacingTicks = Array.from({ length: shownTickRows }).map(() => undefined);
 
 export default function OrderBookList({
@@ -38,7 +38,7 @@ export default function OrderBookList({
   ];
 
   const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
-  const resolutionPercent = 0.1; // size of price steps
+  const resolutionPercent = 0.01; // size of price steps
 
   const getTickBuckets = useCallback(
     (forward: boolean) => {
