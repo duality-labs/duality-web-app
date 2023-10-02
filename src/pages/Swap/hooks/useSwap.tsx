@@ -37,6 +37,7 @@ async function sendSwap(
     tickIndex,
     amountIn,
     maxAmountOut,
+    expirationTime,
     tokenIn,
     tokenOut,
     creator,
@@ -44,7 +45,15 @@ async function sendSwap(
   }: MsgPlaceLimitOrder,
   gasEstimate: number
 ): Promise<DeliverTxResponse> {
-  if (!amountIn || !orderType || !tokenIn || !tokenOut || !creator) {
+  if (
+    orderType === undefined ||
+    !tickIndex ||
+    !amountIn ||
+    !tokenIn ||
+    !tokenOut ||
+    !creator ||
+    !receiver
+  ) {
     throw new Error('Invalid Input');
   }
 
@@ -62,6 +71,7 @@ async function sendSwap(
         tickIndex,
         amountIn,
         maxAmountOut,
+        expirationTime,
         tokenIn,
         tokenOut,
         creator,
@@ -103,17 +113,15 @@ export function useSwap(): [
         orderType,
         tickIndex,
         amountIn,
-        maxAmountOut,
         tokenIn,
         tokenOut,
         creator,
         receiver,
       } = request;
       if (
-        !orderType ||
+        orderType === undefined ||
         !tickIndex ||
         !amountIn ||
-        !maxAmountOut ||
         !tokenIn ||
         !tokenOut ||
         !creator ||
@@ -127,6 +135,11 @@ export function useSwap(): [
       const { wallet, address } = web3;
       if (!wallet || !address) return onError('Client has no wallet');
       if (!tokens) return onError('Send not ready: token list not ready');
+      // check for not well defined tick index
+      const tickNumber = tickIndex.toNumber();
+      if (Number.isNaN(tickNumber) || !Number.isFinite(tickNumber)) {
+        return onError('Limit Price is not defined');
+      }
 
       const tokenOutToken = tokens.find(matchTokenByAddress(tokenOut));
       if (!tokenOutToken) return onError('Token out was not found');

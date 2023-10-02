@@ -5,8 +5,13 @@
   overflow: hidden;
   transition: height animations.$short-duration;
 
+  &.expanded {
+    overflow: visible;
+  }
+
   .drawer-panel {
     position: absolute;
     width: 100%;
+    transition: height animations.$short-duration;
   }
 }

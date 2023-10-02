@@ -1,0 +1,13 @@
+.orderbook-orders {
+  .text-success {
+    color: hsla(158, 60%, 48%, 1);
+  }
+  .text-danger {
+    color: hsla(0, 84%, 63%, 1);
+  }
+
+  th + th + th,
+  td + td + td {
+    text-align: right;
+  }
+}

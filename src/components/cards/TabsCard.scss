@@ -1,0 +1,24 @@
+.tabs-card {
+  .tabs-card__nav {
+    // add borders around buttons (using background color)
+    & {
+      background-color: var(--page-card-border);
+    }
+    // tab buttons
+    .tabs-card__nav-button {
+      background-color: var(--page-card);
+      border-radius: 0;
+      flex: 1 1 0;
+      // unselected tabs
+      & {
+        opacity: 0.25;
+      }
+      // selected buttons
+      &.active {
+        opacity: 1;
+        color: hsla(165, 83%, 57%, 1);
+        font-weight: bold;
+      }
+    }
+  }
+}

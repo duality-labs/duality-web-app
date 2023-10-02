@@ -1,16 +1,24 @@
 import { Fragment, ReactNode } from 'react';
 import './Table.scss';
 
-export default function Table<DataRow>({
+export default function Table<DataRow, Context = Record<string, unknown>>({
   data,
   columns = [],
   headings = [],
+  context,
   rowDescription = 'Data',
   filtered = false,
 }: {
   data?: DataRow[];
-  columns?: Array<React.FunctionComponent<{ row: DataRow; rows: DataRow[] }>>;
+  columns?: Array<
+    React.FunctionComponent<{
+      row: DataRow;
+      rows: DataRow[];
+      context?: Context;
+    }>
+  >;
   headings?: Array<ReactNode> | (() => Array<ReactNode>);
+  context?: Context;
   rowDescription?: string;
   filtered?: boolean;
 }) {
@@ -41,7 +49,14 @@ export default function Table<DataRow>({
               <tr key={index}>
                 {columns.map((Column, index) => {
                   // allow component to handle setting of <td>
-                  return <Column key={index} row={row} rows={rows} />;
+                  return (
+                    <Column
+                      key={index}
+                      row={row}
+                      rows={rows}
+                      context={context}
+                    />
+                  );
                 })}
               </tr>
             );
