@@ -38,7 +38,7 @@ import IncentivesCard from './IncentivesCard';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { matchTokens } from '../../lib/web3/hooks/useTokens';
-import { useCurrentPriceFromTicks } from '../LiquiditySelector/useCurrentPriceFromTicks';
+import { useCurrentPriceFromTicks } from '../Liquidity/useCurrentPriceFromTicks';
 
 import './PoolsTableCard.scss';
 import { useStake } from '../../pages/MyLiquidity/useStaking';

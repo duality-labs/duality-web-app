@@ -1,0 +1,39 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+
+.orderbook-list {
+  .orderbook-list__table {
+    width: 100%;
+    font-size: 0.75em;
+    color: #f9fafb;
+    border-spacing: 0;
+    border-collapse: collapse;
+    th {
+      border: 1px solid var(--page-card-border);
+      border-left: none;
+      border-right: none;
+    }
+    .orderbook-list__table__tick-center {
+      td {
+        text-align: left;
+      }
+    }
+    // add cell spacing
+    & {
+      th {
+        padding: paddings.$p-2 paddings.$p-4;
+      }
+      td {
+        padding: paddings.$p-1 paddings.$p-4;
+      }
+      // remove duplicate inner-column spaces
+      th + th,
+      td + td {
+        padding-left: 0;
+      }
+      // add more spacing on first row to align the spacing for whole table
+      tbody:first-of-type tr:first-child td {
+        padding-top: paddings.$p-3;
+      }
+    }
+  }
+}

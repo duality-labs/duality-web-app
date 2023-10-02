@@ -50,9 +50,10 @@ $input-text: core.$light-white;
 $input-bg: transparent;
 
 $page-card: rgb(255, 255, 255);
-$card-border: core.$bg-light;
+$page-card-border: core.$bg-light;
 
 $dialog-bg: core.$light-blue;
+$dialog-border: rgb(152, 203, 231);
 $dialog-backdrop: rgba(core.$dark-black, 50%);
 $selected-token: core.$bg-light;
 
@@ -65,7 +66,6 @@ $input: rgb(0, 0, 0);
 $ghost: rgba(0, 0, 0, 0.5);
 $icon-button-bg: rgba(170, 169, 169, 0.4);
 $icon-button-text: rgb(188, 188, 188);
-$card-border: rgb(152, 203, 231);
 $badge-main-bg: rgb(18, 93, 135);
 $badge-main-text: rgb(255, 255, 255);
 $badge-secondary-bg: rgb(168, 168, 168);
@@ -128,9 +128,10 @@ $map: (
   'input-bg': $input-bg,
 
   'page-card': $page-card,
-  'card-border': $card-border,
+  'page-card-border': $page-card-border,
 
   'dialog-bg': $dialog-bg,
+  'dialog-border': $dialog-border,
   'dialog-backdrop': $dialog-backdrop,
   'selected-token': $selected-token,
 

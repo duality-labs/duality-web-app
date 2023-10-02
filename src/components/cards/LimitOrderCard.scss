@@ -1,0 +1,72 @@
+@use '../../styles/mixins-vars/paddings.scss' as paddings;
+
+.limitorder-card {
+  .limitorder-type {
+    // style limit order type selection like pills
+    .tabs__nav {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+      border: 1px solid var(--page-card-border);
+      border-radius: paddings.$p-3;
+      overflow: hidden;
+      .tabs__nav-button {
+        flex: 1;
+        border-radius: 0;
+        padding: paddings.$p-3 0 !important;
+        font-size: 0.85em;
+        &.active {
+          color: hsla(165, 83%, 57%, 1);
+          font-weight: bold;
+        }
+      }
+    }
+  }
+
+  // override default select input styles
+  .select-input {
+    .select-input-selection {
+      padding: paddings.$p-3 paddings.$p-4;
+      // align text with other input
+      line-height: 1.5;
+      color: hsl(218deg, 11%, 65%);
+    }
+    .select-input-selection,
+    .select-input-group,
+    label {
+      background-color: hsla(216, 20%, 25%, 1);
+    }
+  }
+
+  .numeric-value-row {
+    & {
+      color: hsl(218deg, 11%, 65%);
+    }
+    .numeric-value-row__prefix {
+      position: relative;
+    }
+    .numeric-value-row__value {
+      color: white;
+    }
+  }
+
+  .token-amount-input {
+    color: hsl(218deg, 11%, 65%);
+    background-color: hsla(216, 20%, 25%, 1);
+    border: 1px solid var(--page-card-border);
+    border-radius: paddings.$p-3;
+    input {
+      font-size: 1rem;
+      font-weight: 500;
+      color: hsl(218deg, 11%, 65%);
+      text-align: right;
+      flex: 1 1 auto;
+      width: 80px;
+    }
+    // fix vertical alignment
+    align-items: baseline;
+  }
+
+  .limit-order__confirm-button {
+    font-size: 1.25rem;
+  }
+}

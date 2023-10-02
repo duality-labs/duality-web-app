@@ -1,5 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { Event, parseCoins } from '@cosmjs/stargate';
+
+import { tickIndexToPrice } from './ticks';
 import { WalletAddress } from './address';
 import { Token } from './tokens';
 
@@ -108,14 +110,19 @@ export interface DexPlaceLimitOrderEvent {
     TokenIn: string;
     AmountIn: string;
     LimitTick: string;
-    OrderType: string;
+    OrderType:
+      | 'GOOD_TIL_CANCELLED'
+      | 'FILL_OR_KILL'
+      | 'IMMEDIATE_OR_CANCEL'
+      | 'JUST_IN_TIME'
+      | 'GOOD_TIL_TIME';
     Shares: string;
     TrancheKey: string;
   };
 }
 
 export interface DexTickUpdateEvent {
-  type: 'message';
+  type: 'message' | 'TickUpdate';
   attributes: {
     module: 'dex';
     action: 'TickUpdate';
@@ -189,13 +196,35 @@ export interface IBCReceivePacketEvent {
   attributes: IBCPacketEventAttributes;
 }
 
+export function getLastPrice(
+  events: ChainEvent[],
+  { tokenA, tokenB }: { tokenA: Token; tokenB: Token }
+) {
+  const lastTickUpdate = events
+    .reverse()
+    .find((event): event is DexTickUpdateEvent => {
+      return (
+        (event.type === 'message' || event.type === 'TickUpdate') &&
+        event.attributes.action === 'TickUpdate'
+      );
+    });
+  const tickIndex = lastTickUpdate
+    ? new BigNumber(lastTickUpdate.attributes.TickIndex)
+    : undefined;
+  const forward = lastTickUpdate?.attributes.Token0 === tokenA.address;
+  const reverse = lastTickUpdate?.attributes.Token0 === tokenB.address;
+  return tickIndex && (forward || reverse)
+    ? tickIndexToPrice(forward ? tickIndex : tickIndex.negated())
+    : undefined;
+}
+
 export function getSpentTokenAmount(
   events: ChainEvent[],
-  spender: WalletAddress,
   {
+    address: spender,
     matchToken,
     includeFees,
-  }: { matchToken?: Token; includeFees?: boolean } = {}
+  }: { address?: WalletAddress; matchToken?: Token; includeFees?: boolean } = {}
 ): BigNumber {
   const excludedEvents: ChainEvent[] = includeFees
     ? []
@@ -207,18 +236,18 @@ export function getSpentTokenAmount(
       (matchToken
         ? event.attributes.amount.endsWith(matchToken.address)
         : true) &&
-      event.attributes.spender === spender
+      (spender ? event.attributes.spender === spender : true)
   );
   return sumTokenEventAmounts(tokenEvents);
 }
 
 export function getReceivedTokenAmount(
   events: ChainEvent[],
-  receiver: WalletAddress,
   {
+    address: receiver,
     matchToken,
     includeFees,
-  }: { matchToken?: Token; includeFees?: boolean } = {}
+  }: { address?: WalletAddress; matchToken?: Token; includeFees?: boolean } = {}
 ): BigNumber {
   const excludedEvents: ChainEvent[] = includeFees
     ? []
@@ -230,15 +259,21 @@ export function getReceivedTokenAmount(
       (matchToken
         ? event.attributes.amount.endsWith(matchToken.address)
         : true) &&
-      event.attributes.receiver === receiver
+      (receiver ? event.attributes.receiver === receiver : true)
   );
   return sumTokenEventAmounts(tokenEvents);
 }
 
 // find the fee events in a list of ChainEvents, eg. for excluding from a search
-function getFeeEvents(events: ChainEvent[], feePayer: WalletAddress) {
+function getFeeEvents(events: ChainEvent[], feePayer?: WalletAddress) {
   const feeTxEvent = events.find((event): event is TxFeeEvent => {
-    return event.type === 'tx' && event.attributes.fee_payer === feePayer;
+    return (
+      event.type === 'tx' &&
+      // match fee payer string if asked for
+      (feePayer
+        ? event.attributes.fee_payer === feePayer
+        : !!event.attributes.fee_payer)
+    );
   });
   const feeTransferEvent =
     feeTxEvent &&

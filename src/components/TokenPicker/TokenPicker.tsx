@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   useId,
+  ReactNode,
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
@@ -35,6 +36,7 @@ interface TokenPickerProps {
   tokenList?: Array<Token>;
   disabled?: boolean;
   showChain?: boolean;
+  children?: ReactNode;
 }
 
 type AssetModeType = 'User' | 'All' | 'Duality';
@@ -87,6 +89,7 @@ export default function TokenPicker({
   tokenList: givenTokenList,
   disabled = false,
   showChain = true,
+  children,
 }: TokenPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -182,43 +185,60 @@ export default function TokenPicker({
     useSelectedButtonBackgroundMove(assetMode);
   return (
     <>
-      <button
-        type="button"
-        className={[
-          'my-1',
-          'token-picker-toggle',
-          className,
-          isOpen && 'open',
-          !value?.symbol && 'no-selected-token',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        onClick={open}
-        disabled={disabled}
-      >
-        {value?.logo_URIs ? (
-          <img
-            className="token-image"
-            alt={`${value.symbol} logo`}
-            // in this context (large images) prefer SVGs over PNGs for better images
-            src={value.logo_URIs.svg || value.logo_URIs.png}
-          />
-        ) : (
-          <FontAwesomeIcon
-            icon={faQuestionCircle}
-            size="2x"
-            className="token-image token-image-not-found"
-          ></FontAwesomeIcon>
-        )}
-        <span className="token-symbol">
-          {value?.symbol ?? 'Select A Token'}
-        </span>
-        {showChain && (
-          <span className="token-chain">
-            {value?.chain.pretty_name ?? value?.chain.chain_name}
+      {children ? (
+        <button
+          type="button"
+          className={[
+            className,
+            isOpen && 'open',
+            !value?.symbol && 'no-selected-token',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={open}
+          disabled={disabled}
+        >
+          {children}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={[
+            className,
+            'my-1',
+            'token-picker-toggle',
+            isOpen && 'open',
+            !value?.symbol && 'no-selected-token',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={open}
+          disabled={disabled}
+        >
+          {value?.logo_URIs ? (
+            <img
+              className="token-image"
+              alt={`${value.symbol} logo`}
+              // in this context (large images) prefer SVGs over PNGs for better images
+              src={value.logo_URIs.svg || value.logo_URIs.png}
+            />
+          ) : (
+            <FontAwesomeIcon
+              icon={faQuestionCircle}
+              size="2x"
+              className="token-image token-image-not-found"
+            ></FontAwesomeIcon>
+          )}
+          <span className="token-symbol">
+            {value?.symbol ?? 'Select A Token'}
           </span>
-        )}
-      </button>
+          {showChain && (
+            <span className="token-chain">
+              {value?.chain.pretty_name ?? value?.chain.chain_name}
+            </span>
+          )}
+        </button>
+      )}
       <Dialog
         isOpen={isOpen}
         onDismiss={close}

@@ -10,6 +10,7 @@ import {
   faSliders,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
+import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
@@ -163,7 +164,7 @@ function Swap() {
         tokenA &&
         tokenB &&
         !isNaN(tolerance) &&
-        tickIndexLimit &&
+        tickIndexLimit !== undefined &&
         !isNaN(tickIndexLimit)
       ) {
         // convert to swap request format
@@ -228,12 +229,8 @@ function Swap() {
             creator: address,
             receiver: address,
             // see LimitOrderType in types repo (cannot import at runtime)
-            // https://github.com/duality-labs/dualityjs/blob/2cf50a7af7bf7c6b1490a590a4e1756b848096dd/src/codegen/duality/dex/tx.ts#L6-L13
-            // using type IMMEDIATE_OR_CANCEL so that partially filled requests
-            // succeed (in testing when swapping 1e18 utokens, often the order
-            // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
-            // todo: use type FILL_OR_KILL: order must be filled completely
-            orderType: 2,
+            // using type FILL_OR_KILL so that partially filled requests fail
+            orderType: 1 as LimitOrderType.FILL_OR_KILL,
             // todo: set tickIndex to allow for a tolerance:
             //   the below function is a tolerance of 0
             tickIndex: Long.fromNumber(tickIndexLimit * (forward ? 1 : -1)),

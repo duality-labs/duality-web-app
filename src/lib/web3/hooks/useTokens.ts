@@ -30,7 +30,8 @@ type TokenList = Array<Token>;
 
 // create an alternate chain to identify dev assets on the Duality chain
 export const devChain = { ...dualityChain, chain_name: '___dev___' };
-const dualityMainToken: Asset = {
+export const dualityMainToken: Token = {
+  chain: dualityChain,
   description: 'SDK default token',
   address: 'token',
   denom_units: [
@@ -54,7 +55,8 @@ const dualityMainToken: Asset = {
   },
 };
 
-const dualityStakeToken: Asset = {
+export const dualityStakeToken: Token = {
+  chain: dualityChain,
   description: 'SDK default token',
   address: 'stake',
   denom_units: [

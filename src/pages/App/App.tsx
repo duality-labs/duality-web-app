@@ -14,6 +14,7 @@ import Planets from './Planets';
 import Swap from '../Swap';
 import Pool from '../Pool';
 import Bridge from '../Bridge';
+import Orderbook from '../Orderbook/Orderbook';
 import MyLiquidity from '../MyLiquidity';
 // you would think the import order here doesn't matter, but you would be wrong
 // the Trade page must be imported after Pool so that .table-card styles
@@ -43,6 +44,7 @@ function App() {
                   <Route index element={<MyLiquidityOrSwap />} />
                   <Route path="swap/*" element={<Swap />} />
                   <Route path="pools/*" element={<Pool />} />
+                  <Route path="orderbook/*" element={<Orderbook />} />
                   <Route path="portfolio/*" element={<MyLiquidity />} />
                   <Route path="bridge" element={<Bridge />} />
                   <Route path="stake" element={<div>Coming soon</div>} />

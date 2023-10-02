@@ -32,7 +32,7 @@
 
     .drawer-panel {
       padding: 0px 2px;
-      bottom: 0;
+      top: 0;
     }
 
     .select-input-group--column {
@@ -45,11 +45,19 @@
         background-color: var(--default);
         border-radius: paddings.$p-3;
         // replace margins with paddings for better drawer panel background color
-        margin: 0 0 margins.$m-3;
+        margin: 0;
         padding: paddings.$p-3 0;
       }
       label {
         padding: paddings.$p-2 paddings.$p-4;
+      }
+    }
+
+    &.floating {
+      overflow-y: visible;
+      .drawer-panel {
+        overflow: hidden;
+        z-index: 1;
       }
     }
   }
