@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BigNumber from 'bignumber.js';
 
 import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
@@ -128,59 +128,64 @@ export default function OrderBookList({
     return getTickBuckets(!forward);
   }, [forward, getTickBuckets]);
 
-  // keep the state of the previously seen ticks
-  const previousTokenATicks = useMemo<TickInfo[]>(() => {
-    // todo: replace with block height tracking and previous block height ticks
-    return tokenATicks
-      .filter((tick): tick is TickInfo => !!tick)
-      .map((tick) => {
-        const randomAdjustment = Math.round(Math.random() * 3 - 1.5);
-        return {
-          ...tick,
-          // add -10% or 0% or 10% of reserves
-          ...(forward
-            ? {
-                reserve0: tick.reserve0.plus(
-                  tick.reserve0.div(10).times(randomAdjustment)
-                ),
-              }
-            : {
-                reserve1: tick.reserve1.plus(
-                  tick.reserve1.div(10).times(randomAdjustment)
-                ),
-              }),
-        };
-      });
-  }, [tokenATicks, forward]);
-  const previousTokenBTicks = useMemo<TickInfo[]>(() => {
-    // todo: replace with block height tracking and previous block height ticks
-    return tokenBTicks
-      .filter((tick): tick is TickInfo => !!tick)
-      .map((tick) => {
-        const randomAdjustment = Math.round(Math.random() * 3 - 1.5);
-        return {
-          ...tick,
-          // add -10% or 0% or 10% of reserves
-          ...(reverse
-            ? {
-                reserve0: tick.reserve0.plus(
-                  tick.reserve0.div(10).times(randomAdjustment)
-                ),
-              }
-            : {
-                reserve1: tick.reserve1.plus(
-                  tick.reserve1.div(10).times(randomAdjustment)
-                ),
-              }),
-        };
-      });
-  }, [tokenBTicks, reverse]);
+  const [previousTokenATicks, setPrevTokenATicks] = useState<Array<TickInfo>>(
+    []
+  );
+  const lastTokenATicks = useRef<Array<TickInfo | undefined>>();
+  useEffect(() => {
+    if (
+      !lastTokenATicks.current ||
+      JSON.stringify(tokenATicks) !== JSON.stringify(lastTokenATicks.current)
+    ) {
+      // set old data
+      if (lastTokenATicks.current) {
+        // and remove undefined ticks from list
+        setPrevTokenATicks(
+          lastTokenATicks.current.filter((tick): tick is TickInfo => !!tick)
+        );
+      }
+      // set new data
+      lastTokenATicks.current = tokenATicks;
+    }
+  }, [tokenATicks]);
 
-  const previousPrice = useMemo<BigNumber | undefined>(() => {
-    // todo: replace with block height tracking and previous block height ticks
-    const randomAdjustment = Math.round(Math.random() * 3 - 1.5);
-    return currentPrice?.plus(randomAdjustment);
-  }, [currentPrice]);
+  const [previousTokenBTicks, setPrevTokenBTicks] = useState<Array<TickInfo>>(
+    []
+  );
+  const lastTokenBTicks = useRef<Array<TickInfo | undefined>>();
+  useEffect(() => {
+    if (
+      !lastTokenBTicks.current ||
+      JSON.stringify(tokenATicks) !== JSON.stringify(lastTokenBTicks.current)
+    ) {
+      // set old data
+      if (lastTokenBTicks.current) {
+        // and remove undefined ticks from list
+        setPrevTokenBTicks(
+          lastTokenBTicks.current.filter((tick): tick is TickInfo => !!tick)
+        );
+      }
+      // set new data
+      lastTokenBTicks.current = tokenATicks;
+    }
+  }, [tokenATicks]);
+
+  const [previousPrice, setPreviousPrice] = useState<BigNumber | undefined>();
+  const lastPrice = useRef<BigNumber | undefined>(currentPrice);
+  useEffect(() => {
+    if (
+      currentPrice &&
+      (!lastPrice.current || !lastPrice.current.isEqualTo(currentPrice))
+    ) {
+      // set old data
+      if (lastPrice.current) {
+        // and remove undefined ticks from list
+        setPreviousPrice(lastPrice.current);
+      }
+      // set new data
+      lastPrice.current = currentPrice;
+    }
+  }, [currentPrice, tokenATicks]);
 
   const priceDecimalPlaces =
     currentPrice !== undefined
