@@ -10,16 +10,20 @@ import Drawer from '../Drawer';
 import logoWithText from '../../assets/logo/logo-with-text-white.svg';
 import './Header.scss';
 
+const { REACT_APP__DEFAULT_PAIR = '' } = process.env;
+
 const keplrLogoURI =
   'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
 
 const pageLinkMap = {
-  '/swap': 'Swap',
+  [['/swap', REACT_APP__DEFAULT_PAIR].join('/')]: 'Swap',
   '/pools': 'Pools',
-  '/orderbook': 'Orderbook',
+  [['/orderbook', REACT_APP__DEFAULT_PAIR].join('/')]: 'Orderbook',
   '/portfolio': 'Portfolio',
   '/bridge': 'Bridge',
 };
+
+export const defaultPage = Object.keys(pageLinkMap).at(0) ?? '/';
 
 export default function Header() {
   const { connectWallet, address } = useWeb3();
@@ -84,7 +88,8 @@ export default function Header() {
           <div className="col">
             <NavLink
               className="logo"
-              to="/swap"
+              // may be redirected by other logic from here
+              to={defaultPage}
               onClick={closeMenuAndScrollToTop}
             >
               <h1 className="font-brand">
@@ -180,8 +185,12 @@ export default function Header() {
 }
 
 function NavLink({ to, children, className, ...otherProps }: LinkProps) {
-  const resolved = useResolvedPath(`${to}/*`);
-  const match = useMatch({ path: resolved.pathname, end: true });
+  const resolved = useResolvedPath(to);
+  // match only first path part for "active" class
+  const match = useMatch({
+    path: `/${resolved.pathname.split('/').at(1)}/*`,
+    end: true,
+  });
   const activeClassName = match ? 'active' : '';
   const fullClassName = [className, activeClassName].filter(Boolean).join(' ');
 
