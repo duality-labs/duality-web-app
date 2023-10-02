@@ -38,6 +38,7 @@ import IncentivesCard from './IncentivesCard';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { matchTokens } from '../../lib/web3/hooks/useTokens';
+import { useCurrentPriceFromTicks } from '../Liquidity/useCurrentPriceFromTicks';
 
 import './PoolsTableCard.scss';
 import { useStake } from '../../pages/MyLiquidity/useStaking';
@@ -50,6 +51,7 @@ import {
 import { useMatchIncentives } from '../../lib/web3/hooks/useIncentives';
 import { RelativeTime } from '../Time';
 import PopOver from '../PopOver/PopOver';
+import ValueBar from '../Table/ValueBar';
 
 interface PoolsTableCardOptions {
   tokenA: Token;
@@ -75,16 +77,29 @@ export default function MyPoolStakesTableCard<T extends string | number>({
     return [...userPositionsShareValues, ...userStakedShareValues];
   }, [userPositionsShareValues, userStakedShareValues]);
 
-  const maxPoolValue = useMemo(() => {
-    return allShareValues.reduce<number>(
-      (acc, { token0Value, token1Value }) => {
-        const value =
-          (token0Value?.toNumber() || 0) + (token1Value?.toNumber() || 0);
-        return value > acc ? value : acc;
-      },
-      0
-    );
-  }, [allShareValues]);
+  const edgePrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+
+  const maxPoolEquivalentReservesA = useMemo(() => {
+    return edgePrice
+      ? allShareValues.reduce<number>(
+          (acc, { token0, token0Context, token1Context }, index) => {
+            const forward = matchTokens(token0, tokenA);
+            const reverse = matchTokens(token0, tokenB);
+            const tokenAContext = forward ? token0Context : token1Context;
+            const tokenBContext = reverse ? token0Context : token1Context;
+            const tokenAValue = tokenAContext?.userReserves;
+            const tokenBValue =
+              tokenBContext?.userReserves.multipliedBy(edgePrice);
+            return Math.max(
+              acc,
+              tokenAValue?.toNumber() || 0,
+              tokenBValue?.toNumber() || 0
+            );
+          },
+          0
+        )
+      : 0;
+  }, [allShareValues, edgePrice, tokenA, tokenB]);
 
   const columnDecimalPlaces = useMemo(() => {
     const values = allShareValues.reduce<{
@@ -352,7 +367,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
                     tokenA={tokenA}
                     tokenB={tokenB}
                     userPosition={userPosition}
-                    maxPoolValue={maxPoolValue}
+                    maxPoolEquivalentReservesA={maxPoolEquivalentReservesA}
                     columnDecimalPlaces={columnDecimalPlaces}
                     checkbox={checkbox}
                   />
@@ -409,14 +424,14 @@ function StakingRow({
   tokenA,
   tokenB,
   userPosition,
-  maxPoolValue = 1,
+  maxPoolEquivalentReservesA = 0,
   columnDecimalPlaces,
   checkbox,
 }: {
   tokenA: Token;
   tokenB: Token;
   userPosition: ValuedUserPositionDepositContext;
-  maxPoolValue: number;
+  maxPoolEquivalentReservesA: number;
   columnDecimalPlaces: {
     price: number;
     fee: number;
@@ -428,6 +443,7 @@ function StakingRow({
 }) {
   const tokensInverted = !matchTokens(tokenA, userPosition.token0);
 
+  const edgePrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
   const {
     tokenAContext,
     tokenBContext,
@@ -452,7 +468,11 @@ function StakingRow({
   const isStaked = userPosition.stakeContext;
   const isIncentivized = !!incentives && incentives?.length > 0;
 
-  if (tokenAValue.isGreaterThan(0) || tokenBValue.isGreaterThan(0)) {
+  if (
+    edgePrice &&
+    maxPoolEquivalentReservesA &&
+    (tokenAContext || tokenBContext)
+  ) {
     return (
       <tr>
         <td className="min-width">
@@ -501,25 +521,29 @@ function StakingRow({
             minimumFractionDigits: 2,
           })}
         </td>
+        {/* this shows the USD equivalent value of the user's token reserves */}
         <td>{formatCurrency(tokenAValue.plus(tokenBValue).toNumber())}</td>
+        {/*
+         * this shows the reserveA equivalent value of the token reserves
+         * (not USD equivalent) because there may not be a USD price
+         */}
         <td className="min-width">
-          <div
-            className={[
-              tokenAValue.isGreaterThan(0)
-                ? 'green-value-bar'
-                : 'blue-value-bar',
-              isStaked && isIncentivized && 'highlighted',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            style={{
-              width: tokenAValue
-                .plus(tokenBValue)
-                .dividedBy(maxPoolValue)
-                .multipliedBy(50)
-                .toNumber(),
-            }}
-          ></div>
+          {tokenAContext?.userReserves.isGreaterThan(0) && (
+            <ValueBar
+              className={isStaked && isIncentivized && 'highlighted'}
+              variant="green"
+              value={tokenAContext?.userReserves}
+              maxValue={maxPoolEquivalentReservesA}
+            />
+          )}
+          {tokenBContext?.userReserves.isGreaterThan(0) && (
+            <ValueBar
+              className={isStaked && isIncentivized && 'highlighted'}
+              variant="blue"
+              value={tokenBContext?.userReserves.multipliedBy(edgePrice)}
+              maxValue={maxPoolEquivalentReservesA}
+            />
+          )}
         </td>
         <td>
           {tokenAContext?.userReserves.isGreaterThan(0) && (
