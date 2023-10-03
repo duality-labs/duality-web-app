@@ -115,6 +115,8 @@ const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
         return foundAsset
           ? {
               ...foundAsset,
+              // fix: remove clashing TypeScript types
+              traces: undefined,
               // overwrite address for token matching
               address,
               // add denom alias for denom exponent matching
