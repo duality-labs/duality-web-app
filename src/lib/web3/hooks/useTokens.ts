@@ -188,7 +188,7 @@ export function useMainnetTokens(sortFunction = defaultSort) {
 }
 
 const dualityTokensFilter = (chain: Chain) =>
-  chain?.chain_id === 'duality' || chain === devChain;
+  chain.chain_id === dualityChain.chain_id;
 export function useDualityTokens(sortFunction = defaultSort) {
   tokenListCache['dualityTokens'] =
     tokenListCache['dualityTokens'] || getTokens(dualityTokensFilter);
