@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.27](https://github.com/duality-labs/duality-web-app/compare/v0.3.26...v0.3.27) (2023-10-03)
+
+
+### Fixes
+
+* dev tokens not showing in deploy previews part 3 ([#465](https://github.com/duality-labs/duality-web-app/issues/465)) ([bc944f9](https://github.com/duality-labs/duality-web-app/commit/bc944f9c91b7839501490b6332df6b74581c5647))
+
 ## [0.3.26](https://github.com/duality-labs/duality-web-app/compare/v0.3.25...v0.3.26) (2023-10-03)
 
 
