@@ -12,7 +12,12 @@ import {
   getTokenValue,
 } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { dualityChain, providerChain, useIbcOpenTransfers } from './useChains';
+import {
+  devChain,
+  dualityChain,
+  providerChain,
+  useIbcOpenTransfers,
+} from './useChains';
 
 import tknLogo from '../../../assets/tokens/TKN.svg';
 import stkLogo from '../../../assets/tokens/STK.svg';
@@ -29,7 +34,6 @@ const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 type TokenList = Array<Token>;
 
 // create an alternate chain to identify dev assets on the Duality chain
-export const devChain = { ...dualityChain, chain_name: '___dev___' };
 export const dualityMainToken: Token = {
   chain: dualityChain,
   description: 'SDK default token',
@@ -111,7 +115,17 @@ const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
         return foundAsset
           ? {
               ...foundAsset,
+              // fix: remove clashing TypeScript types
+              traces: undefined,
+              // overwrite address for token matching
               address,
+              // add denom alias for denom exponent matching
+              denom_units: foundAsset.denom_units.map((unit) => {
+                return unit.denom === foundAsset.base
+                  ? // add to aliases
+                    { ...unit, aliases: [...(unit.aliases || []), address] }
+                  : unit;
+              }),
             }
           : [];
       }),
@@ -173,7 +187,8 @@ export function useMainnetTokens(sortFunction = defaultSort) {
   );
 }
 
-const dualityTokensFilter = (chain: Chain) => chain?.chain_id === 'duality';
+const dualityTokensFilter = (chain: Chain) =>
+  chain?.chain_id === 'duality' || chain === devChain;
 export function useDualityTokens(sortFunction = defaultSort) {
   tokenListCache['dualityTokens'] =
     tokenListCache['dualityTokens'] || getTokens(dualityTokensFilter);
