@@ -274,9 +274,7 @@ export function useDeposit([tokenA, tokenB]: [
             ],
             {
               gas: gasEstimate.toFixed(0),
-              amount: [
-                { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
-              ],
+              amount: [],
             }
           );
 

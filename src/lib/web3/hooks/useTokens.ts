@@ -88,7 +88,7 @@ export const dualityAssets: AssetList | undefined = REACT_APP__CHAIN_ASSETS
   ? (JSON.parse(REACT_APP__CHAIN_ASSETS) as AssetList)
   : isTestnet
   ? {
-      chain_name: devChain.chain_name,
+      chain_name: dualityChain.chain_name,
       assets: [dualityStakeToken, dualityMainToken],
     }
   : undefined;
@@ -97,7 +97,7 @@ export const providerAssets: AssetList | undefined = REACT_APP__PROVIDER_ASSETS
   ? (JSON.parse(REACT_APP__PROVIDER_ASSETS) as AssetList)
   : undefined;
 
-const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
+export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
   ? {
       chain_name: devChain.chain_name,
       assets: Object.entries(
@@ -188,7 +188,7 @@ export function useMainnetTokens(sortFunction = defaultSort) {
 }
 
 const dualityTokensFilter = (chain: Chain) =>
-  chain?.chain_id === 'duality' || chain === devChain;
+  chain.chain_id === dualityChain.chain_id;
 export function useDualityTokens(sortFunction = defaultSort) {
   tokenListCache['dualityTokens'] =
     tokenListCache['dualityTokens'] || getTokens(dualityTokensFilter);

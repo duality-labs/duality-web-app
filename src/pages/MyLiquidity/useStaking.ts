@@ -137,9 +137,7 @@ export function useStake(): [
             ],
             {
               gas: gasEstimate.toFixed(0),
-              amount: [
-                { amount: (gasEstimate * 0.025).toFixed(0), denom: 'token' },
-              ],
+              amount: [],
             },
             ''
           );
