@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.29](https://github.com/duality-labs/duality-web-app/compare/v0.3.28...v0.3.29) (2023-10-03)
+
+
+### Fixes
+
+* allow incentives cards to be wider ([#467](https://github.com/duality-labs/duality-web-app/issues/467)) ([5788e44](https://github.com/duality-labs/duality-web-app/commit/5788e4477fbdd601709430838d6386667af404eb))
+
 ## [0.3.28](https://github.com/duality-labs/duality-web-app/compare/v0.3.27...v0.3.28) (2023-10-03)
 
 
