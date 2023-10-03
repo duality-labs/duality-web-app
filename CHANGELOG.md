@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.28](https://github.com/duality-labs/duality-web-app/compare/v0.3.27...v0.3.28) (2023-10-03)
+
+
+### Fixes
+
+* override Keplr currencies for now ([#466](https://github.com/duality-labs/duality-web-app/issues/466)) ([e128fd2](https://github.com/duality-labs/duality-web-app/commit/e128fd2bb7d1bb8a75a58518b99e9a88472c84dc))
+
 ## [0.3.27](https://github.com/duality-labs/duality-web-app/compare/v0.3.26...v0.3.27) (2023-10-03)
 
 
