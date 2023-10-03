@@ -97,7 +97,7 @@ export const providerAssets: AssetList | undefined = REACT_APP__PROVIDER_ASSETS
   ? (JSON.parse(REACT_APP__PROVIDER_ASSETS) as AssetList)
   : undefined;
 
-const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
+export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
   ? {
       chain_name: devChain.chain_name,
       assets: Object.entries(

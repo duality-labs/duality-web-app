@@ -5,13 +5,14 @@ import { AccountData, OfflineSigner } from '@cosmjs/proto-signing';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
 import { chainRegistryChainToKeplr } from '@chain-registry/keplr';
 import { dualityChain, providerChain } from '../hooks/useChains';
-import { dualityAssets, providerAssets } from '../hooks/useTokens';
+import { devAssets, dualityAssets, providerAssets } from '../hooks/useTokens';
+import { AssetList } from '@chain-registry/types';
 
 const { REACT_APP__CHAIN_ID: chainId = '' } = process.env;
 
 const chainInfo: ChainInfo = chainRegistryChainToKeplr(
   dualityChain,
-  dualityAssets ? [dualityAssets] : []
+  [devAssets, dualityAssets].filter((list): list is AssetList => !!list)
 );
 
 declare global {
