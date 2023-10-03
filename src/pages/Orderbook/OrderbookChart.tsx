@@ -4,6 +4,8 @@ import { ApexOptions } from 'apexcharts';
 
 import { Token } from '../../lib/web3/utils/tokens';
 
+const { REACT_APP__INDEXER_API = '' } = process.env;
+
 const chartOptions: ApexOptions = {
   title: {
     text: '',
@@ -74,7 +76,7 @@ export default function OrderBookChart({
       const liquidity = [];
       do {
         const response = await fetch(
-          `http://localhost:8000/timeseries/price/${tokenAPath}/${tokenBPath}${
+          `${REACT_APP__INDEXER_API}/timeseries/price/${tokenAPath}/${tokenBPath}${
             next ? `?pagination.key=${next}` : ''
           }`
         );
