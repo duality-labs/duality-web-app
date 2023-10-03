@@ -119,11 +119,17 @@ export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
               traces: undefined,
               // overwrite address for token matching
               address,
+              // overwrite base denom for denom matching in Keplr fees
+              base: address,
               // add denom alias for denom exponent matching
               denom_units: foundAsset.denom_units.map((unit) => {
                 return unit.denom === foundAsset.base
-                  ? // add to aliases
-                    { ...unit, aliases: [...(unit.aliases || []), address] }
+                  ? // add token as base denom, move original denom to aliases
+                    {
+                      ...unit,
+                      denom: address,
+                      aliases: [...(unit.aliases || []), unit.denom],
+                    }
                   : unit;
               }),
             }

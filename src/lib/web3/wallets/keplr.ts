@@ -58,37 +58,7 @@ export async function getKeplrDualityWallet(): Promise<
     invariant(chainId, `Invalid chain id: ${chainId}`);
     const keplr = await getKeplr();
     invariant(keplr, 'Keplr extension is not installed or enabled');
-    await keplr.experimentalSuggestChain({
-      ...chainInfo,
-      currencies: [
-        ...chainInfo.currencies,
-        {
-          coinDenom: 'token',
-          coinMinimalDenom: 'token',
-          coinDecimals: 6,
-          coinGeckoId: 'cosmos',
-        },
-      ],
-      feeCurrencies: [
-        {
-          coinDenom: 'token',
-          coinMinimalDenom: 'token',
-          coinDecimals: 6,
-          coinGeckoId: 'cosmos',
-          gasPriceStep: {
-            low: 0.01,
-            average: 0.025,
-            high: 0.04,
-          },
-        },
-      ],
-      stakeCurrency: {
-        coinDenom: 'token',
-        coinMinimalDenom: 'token',
-        coinDecimals: 6,
-        coinGeckoId: 'cosmos',
-      },
-    });
+    await keplr.experimentalSuggestChain(chainInfo);
     await keplr.enable(chainId);
     const offlineSigner = keplr.getOfflineSigner(chainId);
     invariant(offlineSigner, 'Keplr wallet is not set');
