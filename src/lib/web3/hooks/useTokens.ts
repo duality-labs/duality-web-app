@@ -88,7 +88,7 @@ export const dualityAssets: AssetList | undefined = REACT_APP__CHAIN_ASSETS
   ? (JSON.parse(REACT_APP__CHAIN_ASSETS) as AssetList)
   : isTestnet
   ? {
-      chain_name: devChain.chain_name,
+      chain_name: dualityChain.chain_name,
       assets: [dualityStakeToken, dualityMainToken],
     }
   : undefined;
