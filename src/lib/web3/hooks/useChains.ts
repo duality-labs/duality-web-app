@@ -57,6 +57,7 @@ export const dualityChain: Chain = {
   // override default settings with an env variable for the whole chain config
   ...(REACT_APP__CHAIN ? (JSON.parse(REACT_APP__CHAIN) as Chain) : {}),
 };
+export const devChain = { ...dualityChain, chain_name: '___dev___' };
 
 export const providerChain: Chain | undefined = REACT_APP__PROVIDER_CHAIN
   ? JSON.parse(REACT_APP__PROVIDER_CHAIN)

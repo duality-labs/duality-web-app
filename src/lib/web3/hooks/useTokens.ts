@@ -12,7 +12,12 @@ import {
   getTokenValue,
 } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { dualityChain, providerChain, useIbcOpenTransfers } from './useChains';
+import {
+  devChain,
+  dualityChain,
+  providerChain,
+  useIbcOpenTransfers,
+} from './useChains';
 
 import tknLogo from '../../../assets/tokens/TKN.svg';
 import stkLogo from '../../../assets/tokens/STK.svg';
@@ -29,7 +34,6 @@ const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 type TokenList = Array<Token>;
 
 // create an alternate chain to identify dev assets on the Duality chain
-export const devChain = { ...dualityChain, chain_name: '___dev___' };
 export const dualityMainToken: Token = {
   chain: dualityChain,
   description: 'SDK default token',
