@@ -115,7 +115,15 @@ const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
         return foundAsset
           ? {
               ...foundAsset,
+              // overwrite address for token matching
               address,
+              // add denom alias for denom exponent matching
+              denom_units: foundAsset.denom_units.map((unit) => {
+                return unit.denom === foundAsset.base
+                  ? // add to aliases
+                    { ...unit, aliases: [...(unit.aliases || []), address] }
+                  : unit;
+              }),
             }
           : [];
       }),
