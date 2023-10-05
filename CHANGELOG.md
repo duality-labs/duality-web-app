@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.30](https://github.com/duality-labs/duality-web-app/compare/v0.3.29...v0.3.30) (2023-10-05)
+
+
+### Fixes
+
+* pay fees using local dev tokens ([#468](https://github.com/duality-labs/duality-web-app/issues/468)) ([4b0bd33](https://github.com/duality-labs/duality-web-app/commit/4b0bd33fa859ce3b876d528e5d8f393f0228ab43))
+
 ## [0.3.29](https://github.com/duality-labs/duality-web-app/compare/v0.3.28...v0.3.29) (2023-10-03)
 
 
