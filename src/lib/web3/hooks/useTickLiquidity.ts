@@ -1,8 +1,7 @@
 import Long from 'long';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import { dualitylabs } from '@duality-labs/dualityjs';
 import {
   QueryAllTickLiquidityRequest,
   QueryAllTickLiquidityResponse,
@@ -12,14 +11,19 @@ import { PoolReserves } from '@duality-labs/dualityjs/types/codegen/dualitylabs/
 
 import BigNumber from 'bignumber.js';
 
-import { useRpcPromise } from '../rpcQueryClient';
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
-import { usePairUpdateHeight } from '../indexerProvider';
 import { useToken } from '../../../lib/web3/hooks/useTokens';
 
 import { Token, TokenAddress } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
+
+const { REACT_APP__INDEXER_API = '' } = process.env;
+
+interface QueryAllTickLiquidityResponseWithHeight
+  extends QueryAllTickLiquidityResponse {
+  height: number;
+}
 
 type QueryAllTickLiquidityState = {
   data: Array<PoolReserves> | undefined;
@@ -30,7 +34,7 @@ type QueryAllTickLiquidityState = {
 // experimentally timed that 1000 is faster than 100 or 10,000 items per page
 //   - experiment list length: 1,462 + 5,729 (for each token side)
 //   - time to receive first page for ~5,000 list is ~100ms
-const defaultPaginationLimit = Long.fromNumber(1000);
+const defaultPaginationLimit = 10000;
 
 function useTickLiquidity({
   query: queryConfig,
@@ -46,14 +50,7 @@ function useTickLiquidity({
     throw new Error('Cannot fetch liquidity: no token ID given');
   }
 
-  const rpcPromise = useRpcPromise(queryClientConfig);
-
-  // on swap the user shares hasn't changed, the user may not be a liquidity provider
-  // a CosmosSDK websocket subscription updates our pair update height store
-  // whenever the user has a successful transaction against the chain
-  // todo: this value should update on any liquidity change within the pair
-  // not just changes from the current user
-  const pairUpdateHeight = usePairUpdateHeight(queryConfig?.pairID);
+  const [knownChainHeight, setKnownChainHeight] = useState<number>();
 
   const {
     data,
@@ -66,45 +63,127 @@ function useTickLiquidity({
       'dualitylabs.duality.dex.tickLiquidityAll',
       queryConfig?.pairID,
       queryConfig?.tokenIn,
-      pairUpdateHeight,
+      knownChainHeight,
     ],
     enabled: !!queryConfig,
     queryFn: async ({
-      pageParam: nextKey,
-    }): Promise<QueryAllTickLiquidityResponse | undefined> => {
-      if (queryConfig) {
-        const rpc = await rpcPromise;
-        const client = new dualitylabs.duality.dex.QueryClientImpl(rpc);
-        return client.tickLiquidityAll({
-          ...queryConfig,
-          pagination: {
-            // RPC endpoint requires all pagination properties to be defined
-            // set defaults that can be overridden here:
-            key: Buffer.from(''),
-            offset: Long.ZERO,
-            limit: defaultPaginationLimit,
-            // override default values with custom query config
-            ...queryConfig?.pagination,
-            ...(nextKey && {
-              key: nextKey,
-            }),
-          },
-        });
+      pageParam: { nextKey = undefined, height = 0 } = {},
+    }): Promise<QueryAllTickLiquidityResponseWithHeight | undefined> => {
+      // build path
+      const orderedTokens = new Set(
+        [
+          queryConfig?.tokenIn ?? '',
+          ...(queryConfig?.pairID ?? '').split('<>'),
+        ].filter(Boolean)
+      );
+      const path = Array.from(orderedTokens).map(encodeURIComponent).join('/');
+      // build query params
+      const queryParams = new URLSearchParams();
+      const nextKeyString =
+        nextKey && Buffer.from(nextKey.buffer).toString('base64');
+      if (nextKeyString) {
+        queryParams.append('pagination.key', nextKeyString);
+      } else {
+        // return the item count information for stats and debugging
+        queryParams.append('pagination.count_total', 'true');
+        queryParams.append(
+          'pagination.limit',
+          defaultPaginationLimit.toFixed()
+        );
       }
+      const query = queryParams.toString() ? `?${queryParams}` : '';
+      // request with appropriate headers
+      const response = await fetch(
+        `${REACT_APP__INDEXER_API}/liquidity/token/${path}${query}`,
+        {
+          headers: {
+            ...(height > 0
+              ? // if we are requesting a "next" page: request the current height
+                {
+                  // eTags should have double quotes for strong conparison
+                  // (strong conparison allows for caching to be used)
+                  'If-Match': `"${height}"`,
+                }
+              : // if not a "next" page, we a starting a new request "chain"
+                // if we already have the data for a current height, request
+                // the next height that does not match this height, ie. long polling
+                // the server should wait until it has new information to return
+                knownChainHeight && {
+                  // eTags should have double quotes for strong conparison
+                  // (strong conparison allows for caching to be used)
+                  'If-None-Match': `"${knownChainHeight}"`,
+                }),
+          },
+        }
+      );
+      // get reserve with Indexer result type
+      const result: {
+        data: Array<[tickIndex: number, reserves: number]>;
+        pagination: { next_key: string; total?: number };
+      } = await response.json();
+      // get the response eTag which should come enclosed in double quotes
+      // (this is due to an RFC spec to distnguish weak vs. strong entity tags
+      // https://www.rfc-editor.org/rfc/rfc7232#section-2.3)
+      const eTag = response.headers.get('Etag')?.replace(/^"(.+)"$/, '$1');
+      // we stored the chain height as the first ID part in the eTag
+      const chainHeight = Number(eTag?.split('-').at(0)) || 0;
+      return {
+        // translate tick liquidity here
+        tickLiquidity: result.data.flatMap(([tickIndexOutToIn, reserveIn]) => {
+          const [token0, token1] = queryConfig?.pairID.split('<>') || [];
+          if (queryConfig && token0 && token1) {
+            return {
+              poolReserves: {
+                pairID: {
+                  token0,
+                  token1,
+                },
+                tokenIn: queryConfig.tokenIn,
+                tickIndex:
+                  queryConfig.tokenIn === token0
+                    ? Long.fromNumber(tickIndexOutToIn)
+                    : Long.fromNumber(tickIndexOutToIn).negate(),
+                reserves: reserveIn.toFixed(0),
+                fee: Long.ZERO,
+              },
+            };
+          } else return [];
+        }),
+        pagination: {
+          // note: `null` here would be cast to a string: Buffer.from('null')
+          next_key: Buffer.from(result.pagination.next_key || '', 'base64'),
+          total: Long.fromNumber(result.pagination.total || 0),
+        },
+        // add block height to response
+        height: chainHeight,
+      };
     },
     defaultPageParam: undefined,
-    getNextPageParam: (lastPage: QueryAllTickLiquidityResponse | undefined) => {
+    getNextPageParam: (lastPage?: QueryAllTickLiquidityResponseWithHeight) => {
       // don't pass an empty array as that will trigger another page to download
       return lastPage?.pagination?.next_key?.length
-        ? lastPage?.pagination?.next_key
-        : undefined;
+        ? // return key and also height to request the right height of next page
+          {
+            nextKey: lastPage?.pagination?.next_key,
+            height: lastPage?.height,
+          }
+        : // return undefined to indicate this as the last page and stop
+          undefined;
     },
   });
 
   // fetch more data if data has changed but there are still more pages to get
   useEffect(() => {
-    if (fetchNextPage && hasNextPage) {
-      fetchNextPage();
+    // note: when a new request chain is started, data becomes `undefined`
+    if (data) {
+      // fetch following page
+      if (hasNextPage) {
+        fetchNextPage?.();
+      }
+      // if the end of pages has been reached, set the new known height
+      else {
+        setKnownChainHeight(data.pages?.at(-1)?.height);
+      }
     }
   }, [data, fetchNextPage, hasNextPage]);
 
