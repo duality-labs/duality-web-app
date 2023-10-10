@@ -23,6 +23,7 @@ const { REACT_APP__INDEXER_API = '' } = process.env;
 interface QueryAllTickLiquidityResponseWithHeight
   extends QueryAllTickLiquidityResponse {
   height: number;
+  updateFromHeight?: number;
 }
 
 type QueryAllTickLiquidityState = {
@@ -114,6 +115,7 @@ function useTickLiquidity({
       );
       // get reserve with Indexer result type
       const result: {
+        updateFromHeight?: number;
         data: Array<[tickIndex: number, reserves: number]>;
         pagination: { next_key: string; total?: number };
       } = await response.json();
@@ -151,6 +153,8 @@ function useTickLiquidity({
           total: Long.fromNumber(result.pagination.total || 0),
         },
         // add block height to response
+        // add block height that the update starts from (if included)
+        updateFromHeight: knownChainHeight,
         height: chainHeight,
       };
     },
@@ -200,11 +204,38 @@ function useTickLiquidity({
               (tickLiquidity) => tickLiquidity.poolReserves ?? []
             ) ?? []
         );
-        lastLiquidity.current = poolReserves;
+        // check if these pages are intended to be updates (partial content)
+        if (lastPage?.updateFromHeight) {
+          // double check this update can be applied to the known state
+          if (lastPage?.updateFromHeight === knownChainHeight) {
+            lastLiquidity.current = Array.from(
+              // create map out of previous state and new state to ensure new
+              // updates to respective tick indexes overwrite previous state
+              new Map(
+                [...(lastLiquidity.current || []), ...poolReserves].map(
+                  (reserves): [number, PoolReserves] => [
+                    reserves.tickIndex.toNumber(),
+                    reserves,
+                  ]
+                )
+              ).values()
+              // and remove empty reserves from array
+            ).filter((poolReserves) => poolReserves.reserves !== '0');
+          } else {
+            // eslint-disable-next-line no-console
+            console.error(
+              'An update was received but there is no base to apply it to'
+            );
+          }
+        }
+        // no updateFromHeight should indicate this is a complete update
+        else {
+          lastLiquidity.current = poolReserves;
+        }
       }
     }
     return lastLiquidity.current;
-  }, [data]);
+  }, [data?.pages, knownChainHeight]);
   return { data: tickSideLiquidity, isValidating, error };
 }
 
