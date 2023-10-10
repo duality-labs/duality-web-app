@@ -97,22 +97,18 @@ function useTickLiquidity({
         `${REACT_APP__INDEXER_API}/liquidity/token/${path}${query}`,
         {
           headers: {
-            ...(height > 0
-              ? // if we are requesting a "next" page: request the current height
-                {
-                  // eTags should have double quotes for strong conparison
-                  // (strong conparison allows for caching to be used)
-                  'If-Match': `"${height}"`,
-                }
-              : // if not a "next" page, we a starting a new request "chain"
-                // if we already have the data for a current height, request
-                // the next height that does not match this height, ie. long polling
-                // the server should wait until it has new information to return
-                knownChainHeight && {
-                  // eTags should have double quotes for strong conparison
-                  // (strong conparison allows for caching to be used)
-                  'If-None-Match': `"${knownChainHeight}"`,
-                }),
+            ...(height > 0 && {
+              // if we are requesting a "next" page: request the current height
+              // eTags should have double quotes for strong conparison
+              // (strong conparison allows for caching to be used)
+              'If-Match': `"${height}"`,
+            }),
+            ...(knownChainHeight && {
+              // the server should wait until it has new information to return // the next height that does not match this height, ie. long polling // if we already have the data for a current height, request // if not a "next" page, we a starting a new request "chain"
+              // eTags should have double quotes for strong conparison
+              // (strong conparison allows for caching to be used)
+              'If-None-Match': `"${knownChainHeight}"`,
+            }),
           },
         }
       );
