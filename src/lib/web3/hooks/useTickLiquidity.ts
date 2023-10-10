@@ -197,8 +197,8 @@ function useTickLiquidity({
     if (pages && pages.length > 0) {
       const lastPage = pages[pages.length - 1];
       // update our state only if the last page of data has been reached
-      if (!lastPage?.pagination?.next_key?.length) {
-        const poolReserves = pages?.flatMap(
+      if (lastPage && !lastPage.pagination?.next_key?.length) {
+        const poolReserves = pages.flatMap(
           (page) =>
             page?.tickLiquidity?.flatMap(
               (tickLiquidity) => tickLiquidity.poolReserves ?? []
