@@ -41,9 +41,7 @@ type QueryAllTickLiquidityState = {
   error: Error | null;
 };
 
-// experimentally timed that 1000 is faster than 100 or 10,000 items per page
-//   - experiment list length: 1,462 + 5,729 (for each token side)
-//   - time to receive first page for ~5,000 list is ~100ms
+// experimentally timed that a 10,000-25,000 list is a good gzipped size request
 const defaultPaginationLimit = 10000;
 
 // only return cache it it is available in this context
@@ -207,7 +205,10 @@ function useTickLiquidity({
                     total:
                       result.block_range.from_height > 0
                         ? // is update so give final merged length
-                          // note: may be wrong if there are several update pages
+                          // note: may be wrong if there are many update pages
+                          //       it is impossible to know the result from
+                          //       just the total and diff total as some diff
+                          //       updates may remove cumulative reserve items
                           combinedData?.length
                         : (cachedResult ?? result).pagination.total,
                     next_key: result.pagination.next_key,
