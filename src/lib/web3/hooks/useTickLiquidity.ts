@@ -188,10 +188,10 @@ function useTickLiquidity({
                 // and remove empty reserves from array
               ).filter(([key, value]) => value > 0)
             : undefined;
-          const combinedResult: IndexerQueryAllTickLiquidityRangeResponse =
+          const combinedResult = JSON.stringify(
             combinedData
               ? // data is an update
-                {
+                ({
                   block_range: {
                     from_height: Math.min(
                       cachedResult?.block_range.from_height ?? 0,
@@ -212,9 +212,10 @@ function useTickLiquidity({
                         : (cachedResult ?? result).pagination.total,
                     next_key: result.pagination.next_key,
                   },
-                }
+                } as IndexerQueryAllTickLiquidityRangeResponse)
               : // data is a replacement
-                result;
+                result
+          );
           // place in cache for next initial request
           // reset cache to count time since component has unmounted
           setOnUnmount(() => {
@@ -223,10 +224,7 @@ function useTickLiquidity({
             const headers = new Headers();
             headers.set('Cache-Control', 'public, max-age=60');
             headers.set('Date', new Date().toUTCString());
-            cache?.put(
-              urlPath,
-              new Response(JSON.stringify(combinedResult), { headers })
-            );
+            cache?.put(urlPath, new Response(combinedResult, { headers }));
           });
         }
       } catch (e) {
