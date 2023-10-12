@@ -180,8 +180,16 @@ function useTickLiquidity({
             | IndexerQueryAllTickLiquidityRangeResponse
             | undefined = await cachedResponse?.json();
           // data is an update if it is from a height or a next page
+          const combinedData = !isInitialRequest
+            ? Array.from(
+                // create map out of previous state and new state to ensure new
+                // updates to respective tick indexes overwrite previous state
+                new Map((cachedResult?.data || []).concat(result.data || []))
+                // and remove empty reserves from array
+              ).filter(([key, value]) => value > 0)
+            : undefined;
           const combinedResult: IndexerQueryAllTickLiquidityRangeResponse =
-            !isInitialRequest
+            combinedData
               ? // data is an update
                 {
                   block_range: {
@@ -194,17 +202,14 @@ function useTickLiquidity({
                       result.block_range.to_height
                     ),
                   },
-                  data: Array.from(
-                    // create map out of previous state and new state to ensure new
-                    // updates to respective tick indexes overwrite previous state
-                    new Map(
-                      (cachedResult?.data || []).concat(result.data || [])
-                    )
-                    // and remove empty reserves from array
-                  ).filter(([key, value]) => value > 0),
+                  data: combinedData,
                   pagination: {
                     total:
-                      cachedResult?.pagination.total || result.pagination.total,
+                      result.block_range.from_height > 0
+                        ? // is update so give final merged length
+                          // note: may be wrong if there are several update pages
+                          combinedData?.length
+                        : (cachedResult ?? result).pagination.total,
                     next_key: result.pagination.next_key,
                   },
                 }
