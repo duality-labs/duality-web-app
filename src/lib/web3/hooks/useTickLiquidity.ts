@@ -20,10 +20,12 @@ import { getPairID } from '../utils/pairs';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
-interface QueryAllTickLiquidityResponseWithHeight
+interface QueryAllTickLiquidityRangeResponse
   extends QueryAllTickLiquidityResponse {
-  height: number;
-  updateFromHeight?: number;
+  block_range: {
+    from_height: number; // range from (non-incluse)
+    to_height: number; // range to (inclusive)
+  };
 }
 
 type QueryAllTickLiquidityState = {
@@ -51,7 +53,7 @@ function useTickLiquidity({
     throw new Error('Cannot fetch liquidity: no token ID given');
   }
 
-  const [knownChainHeight, setKnownChainHeight] = useState<number>();
+  const [knownHeight, setKnownChainHeight] = useState<number>();
 
   const {
     data,
@@ -64,12 +66,12 @@ function useTickLiquidity({
       'dualitylabs.duality.dex.tickLiquidityAll',
       queryConfig?.pairID,
       queryConfig?.tokenIn,
-      knownChainHeight,
+      knownHeight,
     ],
     enabled: !!queryConfig,
     queryFn: async ({
-      pageParam: { nextKey = undefined, height = 0 } = {},
-    }): Promise<QueryAllTickLiquidityResponseWithHeight | undefined> => {
+      pageParam: { nextKey = undefined, height = undefined } = {},
+    }): Promise<QueryAllTickLiquidityRangeResponse | undefined> => {
       // build path
       const orderedTokens = new Set(
         [
@@ -80,6 +82,7 @@ function useTickLiquidity({
       const path = Array.from(orderedTokens).map(encodeURIComponent).join('/');
       // build query params
       const queryParams = new URLSearchParams();
+      // add pagination params
       const nextKeyString =
         nextKey && Buffer.from(nextKey.buffer).toString('base64');
       if (nextKeyString) {
@@ -92,39 +95,40 @@ function useTickLiquidity({
           defaultPaginationLimit.toFixed()
         );
       }
+      // add block range params
+      // if we know a certain height already, we may request a partial update
+      if (knownHeight && knownHeight > 0) {
+        // an update with `block_range.from_height` may take a while to resolve.
+        // if the chain has no updates since the known height it will wait
+        // until there is new data and send through the update from this height.
+        queryParams.append('block_range.from_height', knownHeight.toFixed(0));
+      }
+      // if we are requesting several pages of results, ensure the same height
+      // is fetched for all subsequent request pages
+      if (height && height > 0) {
+        // a known issue that may be possibly experienced with multiple indexers
+        // is that the liquidity data of a pair cannot be guaranteed to be found
+        // for a historic height. we rely on the initial (page 0) request from
+        // a front end client to populate a specific height cache in the
+        // indexer so that it may be found for the subsequest page requests.
+        // link: https://github.com/duality-labs/hapi-indexer/issues/22
+        // these requests may fail with a 412: Precondition Failed error.
+        queryParams.append('block_range.to_height', height.toFixed(0));
+      }
       const query = queryParams.toString() ? `?${queryParams}` : '';
       // request with appropriate headers
       const response = await fetch(
-        `${REACT_APP__INDEXER_API}/liquidity/token/${path}${query}`,
-        {
-          headers: {
-            ...(height > 0 && {
-              // if we are requesting a "next" page: request the current height
-              // eTags should have double quotes for strong conparison
-              // (strong conparison allows for caching to be used)
-              'If-Match': `"${height}"`,
-            }),
-            ...(knownChainHeight && {
-              // the server should wait until it has new information to return // the next height that does not match this height, ie. long polling // if we already have the data for a current height, request // if not a "next" page, we a starting a new request "chain"
-              // eTags should have double quotes for strong conparison
-              // (strong conparison allows for caching to be used)
-              'If-None-Match': `"${knownChainHeight}"`,
-            }),
-          },
-        }
+        `${REACT_APP__INDEXER_API}/liquidity/token/${path}${query}`
       );
       // get reserve with Indexer result type
       const result: {
-        updateFromHeight?: number;
+        block_range: {
+          from_height: number; // range from (non-incluse)
+          to_height: number; // range to (inclusive)
+        };
         data: Array<[tickIndex: number, reserves: number]>;
         pagination: { next_key: string; total?: number };
       } = await response.json();
-      // get the response eTag which should come enclosed in double quotes
-      // (this is due to an RFC spec to distnguish weak vs. strong entity tags
-      // https://www.rfc-editor.org/rfc/rfc7232#section-2.3)
-      const eTag = response.headers.get('Etag')?.replace(/^"(.+)"$/, '$1');
-      // we stored the chain height as the first ID part in the eTag
-      const chainHeight = Number(eTag?.split('-').at(0)) || 0;
       return {
         // translate tick liquidity here
         tickLiquidity: result.data.flatMap(([tickIndexOutToIn, reserveIn]) => {
@@ -152,20 +156,18 @@ function useTickLiquidity({
           next_key: Buffer.from(result.pagination.next_key || '', 'base64'),
           total: Long.fromNumber(result.pagination.total || 0),
         },
-        // add block height to response
-        // add block height that the update starts from (if included)
-        updateFromHeight: knownChainHeight,
-        height: chainHeight,
+        // add block heights to response
+        block_range: result.block_range,
       };
     },
     defaultPageParam: undefined,
-    getNextPageParam: (lastPage?: QueryAllTickLiquidityResponseWithHeight) => {
+    getNextPageParam: (lastPage?: QueryAllTickLiquidityRangeResponse) => {
       // don't pass an empty array as that will trigger another page to download
       return lastPage?.pagination?.next_key?.length
         ? // return key and also height to request the right height of next page
           {
             nextKey: lastPage?.pagination?.next_key,
-            height: lastPage?.height,
+            height: lastPage?.block_range.to_height,
           }
         : // return undefined to indicate this as the last page and stop
           undefined;
@@ -182,7 +184,7 @@ function useTickLiquidity({
       }
       // if the end of pages has been reached, set the new known height
       else {
-        setKnownChainHeight(data.pages?.at(-1)?.height);
+        setKnownChainHeight(data.pages?.at(-1)?.block_range.to_height);
       }
     }
   }, [data, fetchNextPage, hasNextPage]);
@@ -205,9 +207,9 @@ function useTickLiquidity({
             ) ?? []
         );
         // check if these pages are intended to be updates (partial content)
-        if (lastPage?.updateFromHeight) {
+        if (lastPage?.block_range.from_height) {
           // double check this update can be applied to the known state
-          if (lastPage?.updateFromHeight === knownChainHeight) {
+          if (lastPage?.block_range.from_height === knownHeight) {
             lastLiquidity.current = Array.from(
               // create map out of previous state and new state to ensure new
               // updates to respective tick indexes overwrite previous state
@@ -235,7 +237,7 @@ function useTickLiquidity({
       }
     }
     return lastLiquidity.current;
-  }, [data?.pages, knownChainHeight]);
+  }, [data?.pages, knownHeight]);
   return { data: tickSideLiquidity, isValidating, error };
 }
 
