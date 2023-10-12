@@ -46,6 +46,15 @@ type QueryAllTickLiquidityState = {
 //   - time to receive first page for ~5,000 list is ~100ms
 const defaultPaginationLimit = 10000;
 
+// only return cache it it is available in this context
+let liquidityCache: Cache | undefined;
+const getLiquidityCache = async () => {
+  if ('caches' in window) {
+    liquidityCache = liquidityCache || (await caches.open('liquidity/token'));
+    return liquidityCache;
+  }
+};
+
 function useTickLiquidity({
   query: queryConfig,
   queryClient: queryClientConfig,
@@ -148,8 +157,7 @@ function useTickLiquidity({
       }
       const query = queryParams.toString() ? `?${queryParams}` : '';
       // use browser Fetch API cache if available
-      const cache =
-        'caches' in window ? await caches.open('liquidity/token') : undefined;
+      const cache = await getLiquidityCache();
       // request with appropriate query
       const urlPath = `${REACT_APP__INDEXER_API}/liquidity/token/${path}`;
       const isInitialRequest = !knownHeight && !nextKey;
