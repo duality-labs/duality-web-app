@@ -71,6 +71,7 @@ function useTickLiquidity({
     enabled: !!queryConfig,
     queryFn: async ({
       pageParam: { nextKey = undefined, height = undefined } = {},
+      signal,
     }): Promise<QueryAllTickLiquidityRangeResponse | undefined> => {
       // build path
       const orderedTokens = new Set(
@@ -118,7 +119,8 @@ function useTickLiquidity({
       const query = queryParams.toString() ? `?${queryParams}` : '';
       // request with appropriate headers
       const response = await fetch(
-        `${REACT_APP__INDEXER_API}/liquidity/token/${path}${query}`
+        `${REACT_APP__INDEXER_API}/liquidity/token/${path}${query}`,
+        { signal }
       );
       // get reserve with Indexer result type
       const result: {
