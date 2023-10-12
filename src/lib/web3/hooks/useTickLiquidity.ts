@@ -153,9 +153,11 @@ function useTickLiquidity({
       // request with appropriate query
       const urlPath = `${REACT_APP__INDEXER_API}/liquidity/token/${path}`;
       const isInitialRequest = !knownHeight && !nextKey;
+      const cachedInitialResponse =
+        isInitialRequest && cache && (await cache.match(path))?.clone();
       const response =
         // return cached initial response if asked for and available
-        (isInitialRequest && cache && (await cache.match(path))) ||
+        cachedInitialResponse ||
         // fetch new data from the indexer
         (await fetch(`${urlPath}${query}`, { signal }));
       // get reserve with Indexer result type
@@ -163,7 +165,8 @@ function useTickLiquidity({
         await response.json();
       // store or update browser cache of the liquidity state as known
       try {
-        if (cache) {
+        // skip over saving cache if we just read from it
+        if (cache && !cachedInitialResponse) {
           const cachedResponse = await cache.match(path);
           const cachedResult:
             | IndexerQueryAllTickLiquidityRangeResponse
