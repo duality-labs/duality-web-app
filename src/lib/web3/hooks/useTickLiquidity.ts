@@ -199,18 +199,14 @@ function useTickLiquidity({
                 }
               : // data is a replacement
                 result;
-          // specify the cached response is valid for a short period of time:
-          // the liquidity state may have moved if not fetched for a while
-          const headers = new Headers();
-          headers.set('Cache-Control', 'public, max-age=60');
-          headers.set('Date', new Date().toUTCString());
           // place in cache for next initial request
-          await cache.put(
-            path,
-            new Response(JSON.stringify(combinedResult), { headers })
-          );
           // reset cache to count time since component has unmounted
           setOnUnmount(() => {
+            // specify the cached response is valid for a short period of time:
+            // the liquidity state may have moved if not fetched for a while
+            const headers = new Headers();
+            headers.set('Cache-Control', 'public, max-age=60');
+            headers.set('Date', new Date().toUTCString());
             cache?.put(
               path,
               new Response(JSON.stringify(combinedResult), { headers })
