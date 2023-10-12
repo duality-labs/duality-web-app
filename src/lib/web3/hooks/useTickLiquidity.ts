@@ -62,6 +62,14 @@ function useTickLiquidity({
     hasNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
+    // note: don't allow "update requests" to be considered stale (refetchable):
+    // when a component loads this hook and this hook contains cached data,
+    // the component will receive the cached progressive update request pages
+    // in order starting from `knownHeight = undefined`, this works well.
+    // but if the data is considered stale then useQuery will send out a request
+    // for each cached page the component reads, generating a lot of requests
+    // and cancelled requests as the component catches up on the known heights
+    staleTime: Infinity,
     queryKey: [
       'dualitylabs.duality.dex.tickLiquidityAll',
       queryConfig?.pairID,
