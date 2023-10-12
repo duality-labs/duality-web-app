@@ -21,22 +21,27 @@ import { minutes } from '../../utils/time';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
-interface IndexerQueryAllTickLiquidityRangeResponse {
+type ReserveDataRow = [tickIndex: number, reserves: number];
+interface IndexerQueryAllPairLiquidityRangeResponse {
   block_range: {
     from_height: number; // range from (non-incluse)
     to_height: number; // range to (inclusive)
   };
-  data: Array<[tickIndex: number, reserves: number]>;
+  data: [Array<ReserveDataRow>, Array<ReserveDataRow>];
   pagination: { next_key: string; total?: number };
 }
 
-interface QueryAllTickLiquidityRangeResponse
-  extends QueryAllTickLiquidityResponse {
-  block_range: IndexerQueryAllTickLiquidityRangeResponse['block_range'];
+interface QueryAllPairLiquidityRangeResponse
+  extends Omit<QueryAllTickLiquidityResponse, 'tickLiquidity'> {
+  tickLiquidity: [
+    QueryAllTickLiquidityResponse['tickLiquidity'],
+    QueryAllTickLiquidityResponse['tickLiquidity']
+  ];
+  block_range: IndexerQueryAllPairLiquidityRangeResponse['block_range'];
 }
 
-type QueryAllTickLiquidityState = {
-  data: Array<PoolReserves> | undefined;
+type QueryAllPairLiquidityState = {
+  data: [Array<PoolReserves>, Array<PoolReserves>] | undefined;
   isValidating: boolean;
   error: Error | null;
 };
@@ -53,13 +58,13 @@ const getLiquidityCache = async () => {
   }
 };
 
-function useTickLiquidity({
+function usePairLiquidity({
   query: queryConfig,
   queryClient: queryClientConfig,
 }: {
   query: QueryAllTickLiquidityRequest | null;
   queryClient?: string;
-}): QueryAllTickLiquidityState {
+}): QueryAllPairLiquidityState {
   if (queryConfig && !queryConfig?.pairID) {
     throw new Error('Cannot fetch liquidity: no pair ID given');
   }
@@ -109,7 +114,7 @@ function useTickLiquidity({
     queryFn: async ({
       pageParam: { nextKey = undefined, height = undefined } = {},
       signal,
-    }): Promise<QueryAllTickLiquidityRangeResponse | undefined> => {
+    }): Promise<QueryAllPairLiquidityRangeResponse | undefined> => {
       // build path
       const orderedTokens = new Set(
         [
@@ -117,7 +122,8 @@ function useTickLiquidity({
           ...(queryConfig?.pairID ?? '').split('<>'),
         ].filter(Boolean)
       );
-      const path = Array.from(orderedTokens).map(encodeURIComponent).join('/');
+      const [tokenA, tokenB] = Array.from(orderedTokens.values());
+      const path = [tokenA, tokenB].map(encodeURIComponent).join('/');
       // build query params
       const queryParams = new URLSearchParams();
       // add pagination params
@@ -157,7 +163,7 @@ function useTickLiquidity({
       // use browser Fetch API cache if available
       const cache = await getLiquidityCache();
       // request with appropriate query
-      const urlPath = `${REACT_APP__INDEXER_API}/liquidity/token/${path}`;
+      const urlPath = `${REACT_APP__INDEXER_API}/liquidity/pair/${path}`;
       const isInitialRequest = !knownHeight && !nextKey;
       const cachedInitialResponse =
         isInitialRequest && cache && (await cache.match(urlPath))?.clone();
@@ -167,24 +173,34 @@ function useTickLiquidity({
         // fetch new data from the indexer
         (await fetch(`${urlPath}${query}`, { signal }));
       // get reserve with Indexer result type
-      const result: IndexerQueryAllTickLiquidityRangeResponse =
+      const result: IndexerQueryAllPairLiquidityRangeResponse =
         await response.json();
+      const [resultA, resultB] = result.data;
       // store or update browser cache of the liquidity state as known
       try {
         // skip over saving cache if we just read from it
         if (cache && !cachedInitialResponse) {
           const cachedResponse = await cache.match(urlPath);
           const cachedResult:
-            | IndexerQueryAllTickLiquidityRangeResponse
+            | IndexerQueryAllPairLiquidityRangeResponse
             | undefined = await cachedResponse?.json();
+          const [cachedResultA, cachedResultB] = cachedResult?.data ?? [];
           // data is an update if it is from a height or a next page
           const combinedData = !isInitialRequest
-            ? Array.from(
-                // create map out of previous state and new state to ensure new
-                // updates to respective tick indexes overwrite previous state
-                new Map((cachedResult?.data || []).concat(result.data || []))
-                // and remove empty reserves from array
-              ).filter(([key, value]) => value > 0)
+            ? [
+                Array.from(
+                  // create map out of previous state and new state to ensure new
+                  // updates to respective tick indexes overwrite previous state
+                  new Map((cachedResultA || []).concat(resultA || []))
+                  // and remove empty reserves from array
+                ).filter(([key, value]) => value > 0),
+                Array.from(
+                  // create map out of previous state and new state to ensure new
+                  // updates to respective tick indexes overwrite previous state
+                  new Map((cachedResultB || []).concat(resultB || []))
+                  // and remove empty reserves from array
+                ).filter(([key, value]) => value > 0),
+              ]
             : undefined;
           const combinedResult = JSON.stringify(
             combinedData
@@ -213,7 +229,7 @@ function useTickLiquidity({
                         : (cachedResult ?? result).pagination.total,
                     next_key: result.pagination.next_key,
                   },
-                } as IndexerQueryAllTickLiquidityRangeResponse)
+                } as IndexerQueryAllPairLiquidityRangeResponse)
               : // data is a replacement
                 result
           );
@@ -234,26 +250,10 @@ function useTickLiquidity({
       }
       return {
         // translate tick liquidity here
-        tickLiquidity: result.data.flatMap(([tickIndexOutToIn, reserveIn]) => {
-          const [token0, token1] = queryConfig?.pairID.split('<>') || [];
-          if (queryConfig && token0 && token1) {
-            return {
-              poolReserves: {
-                pairID: {
-                  token0,
-                  token1,
-                },
-                tokenIn: queryConfig.tokenIn,
-                tickIndex:
-                  queryConfig.tokenIn === token0
-                    ? Long.fromNumber(tickIndexOutToIn)
-                    : Long.fromNumber(tickIndexOutToIn).negate(),
-                reserves: reserveIn.toFixed(0),
-                fee: Long.ZERO,
-              },
-            };
-          } else return [];
-        }),
+        tickLiquidity: [
+          resultA.flatMap(transformToPoolReserves(tokenA)),
+          resultB.flatMap(transformToPoolReserves(tokenB)),
+        ],
         pagination: {
           // note: `null` here would be cast to a string: Buffer.from('null')
           next_key: Buffer.from(result.pagination.next_key || '', 'base64'),
@@ -262,9 +262,32 @@ function useTickLiquidity({
         // add block heights to response
         block_range: result.block_range,
       };
+
+      function transformToPoolReserves(token: string) {
+        return ([tickIndexOutToIn, reserveIn]: [number, number]) => {
+          const [token0, token1] = queryConfig?.pairID.split('<>') || [];
+          if (token && token0 && token1) {
+            return {
+              poolReserves: {
+                pairID: {
+                  token0,
+                  token1,
+                },
+                tokenIn: token,
+                tickIndex:
+                  token === token0
+                    ? Long.fromNumber(tickIndexOutToIn)
+                    : Long.fromNumber(tickIndexOutToIn).negate(),
+                reserves: reserveIn.toFixed(0),
+                fee: Long.ZERO,
+              },
+            };
+          } else return [];
+        };
+      }
     },
     defaultPageParam: undefined,
-    getNextPageParam: (lastPage?: QueryAllTickLiquidityRangeResponse) => {
+    getNextPageParam: (lastPage?: QueryAllPairLiquidityRangeResponse) => {
       // don't pass an empty array as that will trigger another page to download
       return lastPage?.pagination?.next_key?.length
         ? // return key and also height to request the right height of next page
@@ -293,7 +316,7 @@ function useTickLiquidity({
   }, [data, fetchNextPage, hasNextPage]);
 
   // place pages of data into the same list
-  const lastLiquidity = useRef<PoolReserves[]>();
+  const lastLiquidity = useRef<[PoolReserves[], PoolReserves[]]>();
   const tickSideLiquidity = useMemo(() => {
     // when refetching, the library sets `data` to `undefined`
     // I think this is unintuitive. we should only "empty" the data here
@@ -303,29 +326,50 @@ function useTickLiquidity({
       const lastPage = pages[pages.length - 1];
       // update our state only if the last page of data has been reached
       if (lastPage && !lastPage.pagination?.next_key?.length) {
-        const poolReserves = pages.flatMap(
-          (page) =>
-            page?.tickLiquidity?.flatMap(
+        const [poolReservesA, poolReservesB] = pages.flatMap((page) => {
+          const [liquidityA, liquidityB] = page?.tickLiquidity || [];
+          return [
+            liquidityA?.flatMap(
               (tickLiquidity) => tickLiquidity.poolReserves ?? []
-            ) ?? []
-        );
+            ) ?? [],
+            liquidityB?.flatMap(
+              (tickLiquidity) => tickLiquidity.poolReserves ?? []
+            ) ?? [],
+          ];
+        });
         // check if these pages are intended to be updates (partial content)
         if (lastPage?.block_range.from_height) {
           // double check this update can be applied to the known state
           if (lastPage?.block_range.from_height === knownHeight) {
-            lastLiquidity.current = Array.from(
-              // create map out of previous state and new state to ensure new
-              // updates to respective tick indexes overwrite previous state
-              new Map(
-                [...(lastLiquidity.current || []), ...poolReserves].map(
-                  (reserves): [number, PoolReserves] => [
-                    reserves.tickIndex.toNumber(),
-                    reserves,
-                  ]
-                )
-              ).values()
-              // and remove empty reserves from array
-            ).filter((poolReserves) => poolReserves.reserves !== '0');
+            const [currentA, currentB] = lastLiquidity.current ?? [];
+            lastLiquidity.current = [
+              Array.from(
+                // create map out of previous state and new state to ensure new
+                // updates to respective tick indexes overwrite previous state
+                new Map(
+                  [...(currentA || []), ...poolReservesA].map(
+                    (reserves): [number, PoolReserves] => [
+                      reserves.tickIndex.toNumber(),
+                      reserves,
+                    ]
+                  )
+                ).values()
+                // and remove empty reserves from array
+              ).filter((poolReserves) => poolReserves.reserves !== '0'),
+              Array.from(
+                // create map out of previous state and new state to ensure new
+                // updates to respective tick indexes overwrite previous state
+                new Map(
+                  [...(currentB || []), ...poolReservesB].map(
+                    (reserves): [number, PoolReserves] => [
+                      reserves.tickIndex.toNumber(),
+                      reserves,
+                    ]
+                  )
+                ).values()
+                // and remove empty reserves from array
+              ).filter((poolReserves) => poolReserves.reserves !== '0'),
+            ];
           } else {
             // eslint-disable-next-line no-console
             console.error(
@@ -335,7 +379,7 @@ function useTickLiquidity({
         }
         // no updateFromHeight should indicate this is a complete update
         else {
-          lastLiquidity.current = poolReserves;
+          lastLiquidity.current = [poolReservesA, poolReservesB];
         }
       }
     }
@@ -417,17 +461,9 @@ export function useTokenPairTickLiquidity([tokenA, tokenB]: [
     token0Address && token1Address
       ? getPairID(token0Address, token1Address)
       : null;
-  const token0TicksState = useTickLiquidity({
+  const pairState = usePairLiquidity({
     query:
-      pairID && token0Address
-        ? { pairID, tokenIn: token0Address, pagination: {} }
-        : null,
-  });
-  const token1TicksState = useTickLiquidity({
-    query:
-      pairID && token1Address
-        ? { pairID, tokenIn: token1Address, pagination: {} }
-        : null,
+      pairID && tokenA ? { pairID, tokenIn: tokenA, pagination: {} } : null,
   });
 
   // add token context into pool reserves
@@ -436,20 +472,18 @@ export function useTokenPairTickLiquidity([tokenA, tokenB]: [
   const data = useMemo<[TickInfo[] | undefined, TickInfo[] | undefined]>(() => {
     return token0 && token1
       ? [
-          token0TicksState.data?.flatMap((reserves) =>
+          pairState.data?.[0]?.flatMap((reserves) =>
             transformPoolReserves(token0, token1, reserves)
           ),
-          token1TicksState.data?.flatMap((reserves) =>
+          pairState.data?.[1]?.flatMap((reserves) =>
             transformPoolReserves(token0, token1, reserves)
           ),
         ]
       : [undefined, undefined];
-  }, [token0, token0TicksState.data, token1, token1TicksState.data]);
+  }, [token0, token1, pairState.data]);
 
   return {
+    ...pairState,
     data,
-    isValidating:
-      token0TicksState.isValidating && token1TicksState.isValidating,
-    error: token0TicksState.error || token1TicksState.error,
   };
 }
