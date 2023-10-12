@@ -154,7 +154,7 @@ function useTickLiquidity({
       const urlPath = `${REACT_APP__INDEXER_API}/liquidity/token/${path}`;
       const isInitialRequest = !knownHeight && !nextKey;
       const cachedInitialResponse =
-        isInitialRequest && cache && (await cache.match(path))?.clone();
+        isInitialRequest && cache && (await cache.match(urlPath))?.clone();
       const response =
         // return cached initial response if asked for and available
         cachedInitialResponse ||
@@ -167,7 +167,7 @@ function useTickLiquidity({
       try {
         // skip over saving cache if we just read from it
         if (cache && !cachedInitialResponse) {
-          const cachedResponse = await cache.match(path);
+          const cachedResponse = await cache.match(urlPath);
           const cachedResult:
             | IndexerQueryAllTickLiquidityRangeResponse
             | undefined = await cachedResponse?.json();
@@ -211,7 +211,7 @@ function useTickLiquidity({
             headers.set('Cache-Control', 'public, max-age=60');
             headers.set('Date', new Date().toUTCString());
             cache?.put(
-              path,
+              urlPath,
               new Response(JSON.stringify(combinedResult), { headers })
             );
           });
