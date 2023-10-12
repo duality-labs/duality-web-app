@@ -62,6 +62,12 @@ function useTickLiquidity({
 
   const [knownHeight, setKnownChainHeight] = useState<number>();
 
+  // refresh cache time on unmount
+  const [onUnmount, setOnUnmount] = useState<() => void>();
+  useEffect(() => {
+    return onUnmount;
+  }, [onUnmount]);
+
   const {
     data,
     error,
@@ -197,11 +203,19 @@ function useTickLiquidity({
           // the liquidity state may have moved if not fetched for a while
           const headers = new Headers();
           headers.set('Cache-Control', 'public, max-age=60');
+          headers.set('Date', new Date().toUTCString());
           // place in cache for next initial request
           await cache.put(
             path,
             new Response(JSON.stringify(combinedResult), { headers })
           );
+          // reset cache to count time since component has unmounted
+          setOnUnmount(() => {
+            cache?.put(
+              path,
+              new Response(JSON.stringify(combinedResult), { headers })
+            );
+          });
         }
       } catch (e) {
         // eslint-disable-next-line no-console
