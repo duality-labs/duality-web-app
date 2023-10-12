@@ -17,15 +17,22 @@ import { useToken } from '../../../lib/web3/hooks/useTokens';
 
 import { Token, TokenAddress } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
+import { minutes } from '../../utils/time';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
-interface QueryAllTickLiquidityRangeResponse
-  extends QueryAllTickLiquidityResponse {
+interface IndexerQueryAllTickLiquidityRangeResponse {
   block_range: {
     from_height: number; // range from (non-incluse)
     to_height: number; // range to (inclusive)
   };
+  data: Array<[tickIndex: number, reserves: number]>;
+  pagination: { next_key: string; total?: number };
+}
+
+interface QueryAllTickLiquidityRangeResponse
+  extends QueryAllTickLiquidityResponse {
+  block_range: IndexerQueryAllTickLiquidityRangeResponse['block_range'];
 }
 
 type QueryAllTickLiquidityState = {
@@ -70,6 +77,15 @@ function useTickLiquidity({
     // for each cached page the component reads, generating a lot of requests
     // and cancelled requests as the component catches up on the known heights
     staleTime: Infinity,
+    // note: a custom fetch API cache is better here than the useQuery cache.
+    // this custom cache is advantageous over the useQuery state because it has
+    // context about this response needing to combine multiple pages of data.
+    // if the user is on one page for longer than the useQuery cache time, then
+    // navigates away and back again, the useQuery inital request cache will
+    // be empty and the hook will not be able to apply all updates in order.
+    // the custom cache will catch that case, caching the combined data as a
+    // source of up-to-date state of a new initial request
+    gcTime: 'caches' in window ? 0 : 5 * minutes,
     queryKey: [
       'dualitylabs.duality.dex.tickLiquidityAll',
       queryConfig?.pairID,
@@ -125,20 +141,72 @@ function useTickLiquidity({
         queryParams.append('block_range.to_height', height.toFixed(0));
       }
       const query = queryParams.toString() ? `?${queryParams}` : '';
-      // request with appropriate headers
-      const response = await fetch(
-        `${REACT_APP__INDEXER_API}/liquidity/token/${path}${query}`,
-        { signal }
-      );
+      // use browser Fetch API cache if available
+      const cache =
+        'caches' in window ? await caches.open('liquidity/token') : undefined;
+      // request with appropriate query
+      const urlPath = `${REACT_APP__INDEXER_API}/liquidity/token/${path}`;
+      const isInitialRequest = !knownHeight && !nextKey;
+      const response =
+        // return cached initial response if asked for and available
+        (isInitialRequest && cache && (await cache.match(path))) ||
+        // fetch new data from the indexer
+        (await fetch(`${urlPath}${query}`, { signal }));
       // get reserve with Indexer result type
-      const result: {
-        block_range: {
-          from_height: number; // range from (non-incluse)
-          to_height: number; // range to (inclusive)
-        };
-        data: Array<[tickIndex: number, reserves: number]>;
-        pagination: { next_key: string; total?: number };
-      } = await response.json();
+      const result: IndexerQueryAllTickLiquidityRangeResponse =
+        await response.json();
+      // store or update browser cache of the liquidity state as known
+      try {
+        if (cache) {
+          const cachedResponse = await cache.match(path);
+          const cachedResult:
+            | IndexerQueryAllTickLiquidityRangeResponse
+            | undefined = await cachedResponse?.json();
+          // data is an update if it is from a height or a next page
+          const combinedResult: IndexerQueryAllTickLiquidityRangeResponse =
+            !isInitialRequest
+              ? // data is an update
+                {
+                  block_range: {
+                    from_height: Math.min(
+                      cachedResult?.block_range.from_height ?? 0,
+                      result.block_range.from_height
+                    ),
+                    to_height: Math.max(
+                      cachedResult?.block_range.to_height ?? 0,
+                      result.block_range.to_height
+                    ),
+                  },
+                  data: Array.from(
+                    // create map out of previous state and new state to ensure new
+                    // updates to respective tick indexes overwrite previous state
+                    new Map(
+                      (cachedResult?.data || []).concat(result.data || [])
+                    )
+                    // and remove empty reserves from array
+                  ).filter(([key, value]) => value > 0),
+                  pagination: {
+                    total:
+                      cachedResult?.pagination.total || result.pagination.total,
+                    next_key: result.pagination.next_key,
+                  },
+                }
+              : // data is a replacement
+                result;
+          // specify the cached response is valid for a short period of time:
+          // the liquidity state may have moved if not fetched for a while
+          const headers = new Headers();
+          headers.set('Cache-Control', 'public, max-age=60');
+          // place in cache for next initial request
+          await cache.put(
+            path,
+            new Response(JSON.stringify(combinedResult), { headers })
+          );
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Cache error:', e);
+      }
       return {
         // translate tick liquidity here
         tickLiquidity: result.data.flatMap(([tickIndexOutToIn, reserveIn]) => {

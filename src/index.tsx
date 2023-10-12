@@ -12,6 +12,23 @@ import reportWebVitals from './reportWebVitals';
 import { Buffer } from 'buffer';
 global.Buffer = Buffer;
 
+const { NODE_ENV } = process.env;
+if (NODE_ENV !== 'production') {
+  if ('caches' in window) {
+    caches
+      .keys()
+      .then((cacheKeys) => {
+        return Promise.all(
+          cacheKeys.map((cacheKey) => caches.delete(cacheKey))
+        );
+      })
+      .then(() => {
+        // eslint-disable-next-line no-console
+        console.log('cleared fetch API caches');
+      });
+  }
+}
+
 // ensure App is loaded after Buffer because Keplr needs it on import
 const App = React.lazy(() => import('./pages/App'));
 
