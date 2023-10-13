@@ -188,22 +188,21 @@ function usePairLiquidity({
           // data is an update if it is from a height or a next page
           const combinedData = !isInitialRequest
             ? [
-                Array.from(
-                  // create map out of previous state and new state to ensure new
-                  // updates to respective tick indexes overwrite previous state
-                  new Map((cachedResultA || []).concat(resultA || []))
-                  // and remove empty reserves from array
-                ).filter(([key, value]) => value > 0),
-                Array.from(
-                  // create map out of previous state and new state to ensure new
-                  // updates to respective tick indexes overwrite previous state
-                  new Map((cachedResultB || []).concat(resultB || []))
-                  // and remove empty reserves from array
-                ).filter(([key, value]) => value > 0),
+                (cachedResultA || []).concat(resultA || []),
+                (cachedResultB || []).concat(resultB || []),
+              ]
+            : undefined;
+          // create map out of previous state and new state to ensure new
+          // updates to respective tick indexes overwrite previous state
+          // and remove empty reserves from array
+          const filteredCombinedData = combinedData
+            ? [
+                Array.from(new Map(combinedData[0])).filter(([, v]) => v > 0),
+                Array.from(new Map(combinedData[1])).filter(([, v]) => v > 0),
               ]
             : undefined;
           const combinedResult = JSON.stringify(
-            combinedData
+            combinedData && filteredCombinedData
               ? // data is an update
                 ({
                   block_range: {
@@ -216,18 +215,23 @@ function usePairLiquidity({
                       result.block_range.to_height
                     ),
                   },
-                  data: combinedData,
+                  data: filteredCombinedData,
                   pagination: {
-                    total:
-                      result.block_range.from_height > 0
-                        ? // is update so give final merged length
-                          // note: may be wrong if there are many update pages
-                          //       it is impossible to know the result from
-                          //       just the total and diff total as some diff
-                          //       updates may remove cumulative reserve items
-                          combinedData?.length
-                        : (cachedResult ?? result).pagination.total,
                     next_key: result.pagination.next_key,
+                    // calculate new total estimate using known totals (fetched)
+                    // note: because we don't know the number of filtered items
+                    //       midway through page requests, the total is only
+                    //       accurate when there are no more nextKey pages left
+                    total: [
+                      // previous total
+                      cachedResult?.pagination.total ?? 0,
+                      // + new chain of requests at height total
+                      (!nextKey && result.pagination.total) || 0,
+                      // - number of filtered out reserveA items
+                      filteredCombinedData[0].length - combinedData[0].length,
+                      // - number of tickB 0 reserve items
+                      filteredCombinedData[1].length - combinedData[1].length,
+                    ].reduce((acc, count) => acc + count, 0),
                   },
                 } as IndexerQueryAllPairLiquidityRangeResponse)
               : // data is a replacement
