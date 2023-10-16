@@ -12,6 +12,7 @@ import reportWebVitals from './reportWebVitals';
 import { Buffer } from 'buffer';
 global.Buffer = Buffer;
 
+// in development, clear the fetch API cache on each reload
 const { NODE_ENV } = process.env;
 if (NODE_ENV !== 'production') {
   if ('caches' in window) {
