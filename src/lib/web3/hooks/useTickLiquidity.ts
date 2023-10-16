@@ -358,8 +358,11 @@ function usePairLiquidity({
                     ]
                   )
                 ).values()
+              )
                 // and remove empty reserves from array
-              ).filter((poolReserves) => poolReserves.reserves !== '0'),
+                .filter((poolReserves) => poolReserves.reserves !== '0')
+                // re-sort the array (on the reduced length array)
+                .sort((a, b) => b.tickIndex.subtract(a.tickIndex).toNumber()),
               Array.from(
                 // create map out of previous state and new state to ensure new
                 // updates to respective tick indexes overwrite previous state
@@ -371,8 +374,11 @@ function usePairLiquidity({
                     ]
                   )
                 ).values()
+              )
                 // and remove empty reserves from array
-              ).filter((poolReserves) => poolReserves.reserves !== '0'),
+                .filter((poolReserves) => poolReserves.reserves !== '0')
+                // re-sort the array (on the reduced length array)
+                .sort((a, b) => a.tickIndex.subtract(b.tickIndex).toNumber()),
             ];
           } else {
             // eslint-disable-next-line no-console
