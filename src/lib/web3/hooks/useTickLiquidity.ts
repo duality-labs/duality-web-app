@@ -80,6 +80,18 @@ function usePairLiquidity({
     return onUnmount;
   }, [onUnmount]);
 
+  // figure out which direction this query is in
+  const [token0, token1] = useMemo(
+    () => queryConfig?.pairID.split('<>') || [],
+    [queryConfig]
+  );
+  const [tokenA, tokenB] = useMemo(() => {
+    const orderedTokens = new Set(
+      [queryConfig?.tokenIn ?? '', token0, token1].filter(Boolean)
+    );
+    return Array.from(orderedTokens.values());
+  }, [queryConfig, token0, token1]);
+
   const {
     data,
     error,
@@ -106,8 +118,8 @@ function usePairLiquidity({
     gcTime: 'caches' in window ? 0 : 5 * minutes,
     queryKey: [
       'dualitylabs.duality.dex.tickLiquidityAll',
-      queryConfig?.pairID,
-      queryConfig?.tokenIn,
+      tokenA,
+      tokenB,
       knownHeight,
     ],
     enabled: !!queryConfig,
@@ -116,13 +128,6 @@ function usePairLiquidity({
       signal,
     }): Promise<QueryAllPairLiquidityRangeResponse | undefined> => {
       // build path
-      const orderedTokens = new Set(
-        [
-          queryConfig?.tokenIn ?? '',
-          ...(queryConfig?.pairID ?? '').split('<>'),
-        ].filter(Boolean)
-      );
-      const [tokenA, tokenB] = Array.from(orderedTokens.values());
       const path = [tokenA, tokenB].map(encodeURIComponent).join('/');
       // build query params
       const queryParams = new URLSearchParams();
@@ -269,7 +274,6 @@ function usePairLiquidity({
 
       function transformToPoolReserves(token: string) {
         return ([tickIndexOutToIn, reserveIn]: [number, number]) => {
-          const [token0, token1] = queryConfig?.pairID.split('<>') || [];
           if (token && token0 && token1) {
             return {
               poolReserves: {
