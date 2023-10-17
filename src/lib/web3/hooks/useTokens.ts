@@ -35,7 +35,7 @@ type TokenList = Array<Token>;
 
 // create an alternate chain to identify dev assets on the Duality chain
 export const dualityMainToken: Token = {
-  chain: dualityChain,
+  chain: devChain,
   description: 'SDK default token',
   address: 'token',
   denom_units: [
@@ -60,7 +60,7 @@ export const dualityMainToken: Token = {
 };
 
 export const dualityStakeToken: Token = {
-  chain: dualityChain,
+  chain: devChain,
   description: 'SDK default token',
   address: 'stake',
   denom_units: [
@@ -88,7 +88,7 @@ export const dualityAssets: AssetList | undefined = REACT_APP__CHAIN_ASSETS
   ? (JSON.parse(REACT_APP__CHAIN_ASSETS) as AssetList)
   : isTestnet
   ? {
-      chain_name: dualityChain.chain_name,
+      chain_name: devChain.chain_name,
       assets: [dualityStakeToken, dualityMainToken],
     }
   : undefined;
@@ -115,6 +115,7 @@ export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
         return foundAsset
           ? {
               ...foundAsset,
+              chain: devChain,
               // fix: remove clashing TypeScript types
               traces: undefined,
               // overwrite address for token matching
@@ -159,12 +160,14 @@ function getTokens(condition: (chain: Chain) => boolean) {
   return assetList.reduce<TokenList>((result, { chain_name, assets }) => {
     // add each asset with the parent chain details
     const chain = chainList.find((chain) => chain.chain_name === chain_name);
-    // only show assets that have a known address
-    const knownAssets = assets.filter(
-      (asset): asset is Token => !!asset.address
-    );
     return chain && condition(chain)
-      ? result.concat(knownAssets.map((asset) => ({ ...asset, chain })))
+      ? result.concat(
+          // add assets that have a known address
+          assets
+            .filter((asset): asset is Omit<Token, 'chain'> => !!asset.address)
+            // and append chain information to them (if devChain not already set)
+            .map((asset) => ({ chain, ...asset }))
+        )
       : result;
   }, []);
 }
