@@ -16,7 +16,7 @@ import { useWeb3 } from './useWeb3';
 
 import { useRpcPromise } from './rpcQueryClient';
 import useTokens, {
-  matchTokenByDenom,
+  matchTokenByAddress,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
 import useTokenPairs from './hooks/useTokenPairs';
@@ -390,7 +390,7 @@ export function useBankBalances() {
   const balances = useMemo<TokenCoin[] | undefined>(() => {
     // check all known tokens with IBC context for matching balance denoms
     return data?.balances.reduce<TokenCoin[]>((result, balance) => {
-      const token = allTokensWithIBC.find(matchTokenByDenom(balance.denom));
+      const token = allTokensWithIBC.find(matchTokenByAddress(balance.denom));
       if (token) {
         result.push({ token, ...balance });
       }

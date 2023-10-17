@@ -3,6 +3,7 @@ import { useEffect, useMemo } from 'react';
 
 import { ObservableList, useObservableList } from './utils/observableList';
 import { Token } from './web3/utils/tokens';
+import { devChain } from './web3/hooks/useChains';
 
 const { REACT_APP__DEV_TOKEN_DENOMS } = process.env;
 
@@ -10,7 +11,7 @@ const baseAPI = 'https://api.coingecko.com/api/v3';
 
 // identify dev tokens using a specific dev chain name
 function isDevToken(token?: Token) {
-  return !!token && token.chain.chain_name === '___dev___';
+  return !!token && token.chain === devChain;
 }
 
 class FetchError extends Error {

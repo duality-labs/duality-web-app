@@ -12,7 +12,12 @@ import {
   getTokenValue,
 } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { dualityChain, providerChain, useIbcOpenTransfers } from './useChains';
+import {
+  devChain,
+  dualityChain,
+  providerChain,
+  useIbcOpenTransfers,
+} from './useChains';
 
 import tknLogo from '../../../assets/tokens/TKN.svg';
 import stkLogo from '../../../assets/tokens/STK.svg';
@@ -29,7 +34,6 @@ const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 type TokenList = Array<Token>;
 
 // create an alternate chain to identify dev assets on the Duality chain
-export const devChain = { ...dualityChain, chain_name: '___dev___' };
 export const dualityMainToken: Token = {
   chain: dualityChain,
   description: 'SDK default token',
@@ -84,7 +88,7 @@ export const dualityAssets: AssetList | undefined = REACT_APP__CHAIN_ASSETS
   ? (JSON.parse(REACT_APP__CHAIN_ASSETS) as AssetList)
   : isTestnet
   ? {
-      chain_name: devChain.chain_name,
+      chain_name: dualityChain.chain_name,
       assets: [dualityStakeToken, dualityMainToken],
     }
   : undefined;
@@ -93,7 +97,7 @@ export const providerAssets: AssetList | undefined = REACT_APP__PROVIDER_ASSETS
   ? (JSON.parse(REACT_APP__PROVIDER_ASSETS) as AssetList)
   : undefined;
 
-const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
+export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
   ? {
       chain_name: devChain.chain_name,
       assets: Object.entries(
@@ -111,7 +115,23 @@ const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
         return foundAsset
           ? {
               ...foundAsset,
+              // fix: remove clashing TypeScript types
+              traces: undefined,
+              // overwrite address for token matching
               address,
+              // overwrite base denom for denom matching in Keplr fees
+              base: address,
+              // add denom alias for denom exponent matching
+              denom_units: foundAsset.denom_units.map((unit) => {
+                return unit.denom === foundAsset.base
+                  ? // add token as base denom, move original denom to aliases
+                    {
+                      ...unit,
+                      denom: address,
+                      aliases: [...(unit.aliases || []), unit.denom],
+                    }
+                  : unit;
+              }),
             }
           : [];
       }),
@@ -173,7 +193,8 @@ export function useMainnetTokens(sortFunction = defaultSort) {
   );
 }
 
-const dualityTokensFilter = (chain: Chain) => chain?.chain_id === 'duality';
+const dualityTokensFilter = (chain: Chain) =>
+  chain.chain_id === dualityChain.chain_id;
 export function useDualityTokens(sortFunction = defaultSort) {
   tokenListCache['dualityTokens'] =
     tokenListCache['dualityTokens'] || getTokens(dualityTokensFilter);

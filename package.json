@@ -1,7 +1,7 @@
 {
   "name": "duality-webapp",
   "homepage": "https://app.duality.xyz",
-  "version": "0.3.24",
+  "version": "0.3.30",
   "private": true,
   "scripts": {
     "start": "react-scripts start",
@@ -37,7 +37,7 @@
     "apexcharts": "^3.42.0",
     "bignumber.js": "^9.0.2",
     "buffer": "^6.0.3",
-    "chain-registry": "^1.15.0",
+    "chain-registry": "^1.20.0",
     "invariant": "^2.2.4",
     "long": "^5.2.3",
     "react": "^18.2.0",

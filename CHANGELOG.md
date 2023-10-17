@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.3.30](https://github.com/duality-labs/duality-web-app/compare/v0.3.29...v0.3.30) (2023-10-05)
+
+
+### Fixes
+
+* pay fees using local dev tokens ([#468](https://github.com/duality-labs/duality-web-app/issues/468)) ([4b0bd33](https://github.com/duality-labs/duality-web-app/commit/4b0bd33fa859ce3b876d528e5d8f393f0228ab43))
+
+## [0.3.29](https://github.com/duality-labs/duality-web-app/compare/v0.3.28...v0.3.29) (2023-10-03)
+
+
+### Fixes
+
+* allow incentives cards to be wider ([#467](https://github.com/duality-labs/duality-web-app/issues/467)) ([5788e44](https://github.com/duality-labs/duality-web-app/commit/5788e4477fbdd601709430838d6386667af404eb))
+
+## [0.3.28](https://github.com/duality-labs/duality-web-app/compare/v0.3.27...v0.3.28) (2023-10-03)
+
+
+### Fixes
+
+* override Keplr currencies for now ([#466](https://github.com/duality-labs/duality-web-app/issues/466)) ([e128fd2](https://github.com/duality-labs/duality-web-app/commit/e128fd2bb7d1bb8a75a58518b99e9a88472c84dc))
+
+## [0.3.27](https://github.com/duality-labs/duality-web-app/compare/v0.3.26...v0.3.27) (2023-10-03)
+
+
+### Fixes
+
+* dev tokens not showing in deploy previews part 3 ([#465](https://github.com/duality-labs/duality-web-app/issues/465)) ([bc944f9](https://github.com/duality-labs/duality-web-app/commit/bc944f9c91b7839501490b6332df6b74581c5647))
+
+## [0.3.26](https://github.com/duality-labs/duality-web-app/compare/v0.3.25...v0.3.26) (2023-10-03)
+
+
+### Fixes
+
+* dev tokens not showing in deploy previews part 2 ([#464](https://github.com/duality-labs/duality-web-app/issues/464)) ([06b5566](https://github.com/duality-labs/duality-web-app/commit/06b5566e150e25b8741bc122f25cb3c30cea8e8b))
+
+## [0.3.25](https://github.com/duality-labs/duality-web-app/compare/v0.3.24...v0.3.25) (2023-10-03)
+
+
+### Fixes
+
+* dev tokens not showing in deploy previews ([#463](https://github.com/duality-labs/duality-web-app/issues/463)) ([0a338a5](https://github.com/duality-labs/duality-web-app/commit/0a338a5fc4ccbe8c4a374d2004ee8b63b9b6020e)), closes [#445](https://github.com/duality-labs/duality-web-app/issues/445)
+
 ## [0.3.24](https://github.com/duality-labs/duality-web-app/compare/v0.3.23...v0.3.24) (2023-10-02)
 
 
