@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.31](https://github.com/duality-labs/duality-web-app/compare/v0.3.30...v0.3.31) (2023-10-18)
+
+
+### Fixes
+
+* improve Pool Overview transaction tables ([#447](https://github.com/duality-labs/duality-web-app/issues/447)) ([31cda9a](https://github.com/duality-labs/duality-web-app/commit/31cda9ac0f87e300bd0c78c3840fe6851a95d34e))
+
 ## [0.3.30](https://github.com/duality-labs/duality-web-app/compare/v0.3.29...v0.3.30) (2023-10-05)
 
 
