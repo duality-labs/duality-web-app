@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.33](https://github.com/duality-labs/duality-web-app/compare/v0.3.32...v0.3.33) (2023-10-20)
+
+
+### Features
+
+* optimize tick liquidity fetching through indexer ([#469](https://github.com/duality-labs/duality-web-app/issues/469)) ([de75c25](https://github.com/duality-labs/duality-web-app/commit/de75c2566f4187cf5b691218cc6feafb668b2abb))
+
 ## [0.3.32](https://github.com/duality-labs/duality-web-app/compare/v0.3.31...v0.3.32) (2023-10-18)
 
 
