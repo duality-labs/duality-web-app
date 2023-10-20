@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.32](https://github.com/duality-labs/duality-web-app/compare/v0.3.31...v0.3.32) (2023-10-18)
+
+
+### Fixes
+
+* dev token prices should all be non zero ([#473](https://github.com/duality-labs/duality-web-app/issues/473)) ([6de0f01](https://github.com/duality-labs/duality-web-app/commit/6de0f015b9eca0cda36aad27757a509505191c37))
+
 ## [0.3.31](https://github.com/duality-labs/duality-web-app/compare/v0.3.30...v0.3.31) (2023-10-18)
 
 
