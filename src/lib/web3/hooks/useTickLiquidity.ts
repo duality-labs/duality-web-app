@@ -17,7 +17,7 @@ import { useToken } from '../../../lib/web3/hooks/useTokens';
 
 import { Token, TokenAddress } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
-import { minutes } from '../../utils/time';
+import { seconds } from '../../utils/time';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
@@ -49,15 +49,6 @@ type QueryAllPairLiquidityState = {
 // experimentally timed that a 10,000-25,000 list is a good gzipped size request
 const defaultPaginationLimit = 10000;
 
-// only return cache it it is available in this context
-let liquidityCache: Cache | undefined;
-const getLiquidityCache = async () => {
-  if ('caches' in window) {
-    liquidityCache = liquidityCache || (await caches.open('liquidity/token'));
-    return liquidityCache;
-  }
-};
-
 function usePairLiquidity({
   query: queryConfig,
   queryClient: queryClientConfig,
@@ -73,12 +64,6 @@ function usePairLiquidity({
   }
 
   const [knownHeight, setKnownChainHeight] = useState<number>();
-
-  // refresh cache time on unmount
-  const [onUnmount, setOnUnmount] = useState<() => void>();
-  useEffect(() => {
-    return onUnmount;
-  }, [onUnmount]);
 
   // figure out which direction this query is in
   const [token0, token1] = useMemo(
@@ -107,15 +92,11 @@ function usePairLiquidity({
     // for each cached page the component reads, generating a lot of requests
     // and cancelled requests as the component catches up on the known heights
     staleTime: Infinity,
-    // note: a custom fetch API cache is better here than the useQuery cache.
-    // this custom cache is advantageous over the useQuery state because it has
-    // context about this response needing to combine multiple pages of data.
-    // if the user is on one page for longer than the useQuery cache time, then
-    // navigates away and back again, the useQuery inital request cache will
-    // be empty and the hook will not be able to apply all updates in order.
-    // the custom cache will catch that case, caching the combined data as a
-    // source of up-to-date state of a new initial request
-    gcTime: 'caches' in window ? 0 : 5 * minutes,
+    // note: we don't want to persist the data too long, because the hook
+    // will basically loop through all cached heights to build the liquidity
+    // and while this is fast, it can take a lot of time if there are many known
+    // heights to process. So we remove these values from the cache early.
+    gcTime: 30 * seconds,
     queryKey: [
       'dualitylabs.duality.dex.tickLiquidityAll',
       tokenA,
@@ -165,98 +146,13 @@ function usePairLiquidity({
         queryParams.append('block_range.to_height', height.toFixed(0));
       }
       const query = queryParams.toString() ? `?${queryParams}` : '';
-      // use browser Fetch API cache if available
-      const cache = await getLiquidityCache();
       // request with appropriate query
       const urlPath = `${REACT_APP__INDEXER_API}/liquidity/pair/${path}`;
-      const isInitialRequest = !knownHeight && !nextKey;
-      const cachedInitialResponse =
-        isInitialRequest && cache && (await cache.match(urlPath))?.clone();
-      const response =
-        // return cached initial response if asked for and available
-        cachedInitialResponse ||
-        // fetch new data from the indexer
-        (await fetch(`${urlPath}${query}`, { signal }));
+      const response = await fetch(`${urlPath}${query}`, { signal });
       // get reserve with Indexer result type
       const result: IndexerQueryAllPairLiquidityRangeResponse =
         await response.json();
       const [resultA, resultB] = result.data;
-      // store or update browser cache of the liquidity state as known
-      try {
-        // skip over saving cache if we just read from it
-        if (cache && !cachedInitialResponse) {
-          const cachedResponse = await cache.match(urlPath);
-          const cachedResult:
-            | IndexerQueryAllPairLiquidityRangeResponse
-            | undefined = await cachedResponse?.json();
-          const [cachedResultA, cachedResultB] = cachedResult?.data ?? [];
-          // data is an update if it is from a height or a next page
-          const combinedData = !isInitialRequest
-            ? [
-                (cachedResultA || []).concat(resultA || []),
-                (cachedResultB || []).concat(resultB || []),
-              ]
-            : undefined;
-          // create map out of previous state and new state to ensure new
-          // updates to respective tick indexes overwrite previous state
-          // and remove empty reserves from array
-          const filteredCombinedData = combinedData
-            ? [
-                Array.from(new Map(combinedData[0])).filter(([, v]) => v > 0),
-                Array.from(new Map(combinedData[1])).filter(([, v]) => v > 0),
-              ]
-            : undefined;
-          const combinedResult = JSON.stringify(
-            combinedData && filteredCombinedData
-              ? // data is an update
-                ({
-                  block_range: {
-                    from_height: Math.min(
-                      cachedResult?.block_range.from_height ?? 0,
-                      result.block_range.from_height
-                    ),
-                    to_height: Math.max(
-                      cachedResult?.block_range.to_height ?? 0,
-                      result.block_range.to_height
-                    ),
-                  },
-                  data: filteredCombinedData,
-                  pagination: {
-                    next_key: result.pagination.next_key,
-                    // calculate new total estimate using known totals (fetched)
-                    // note: because we don't know the number of filtered items
-                    //       midway through page requests, the total is only
-                    //       accurate when there are no more nextKey pages left
-                    total: [
-                      // previous total
-                      cachedResult?.pagination.total ?? 0,
-                      // + new chain of requests at height total
-                      (!nextKey && result.pagination.total) || 0,
-                      // - number of filtered out reserveA items
-                      filteredCombinedData[0].length - combinedData[0].length,
-                      // - number of tickB 0 reserve items
-                      filteredCombinedData[1].length - combinedData[1].length,
-                    ].reduce((acc, count) => acc + count, 0),
-                  },
-                } as IndexerQueryAllPairLiquidityRangeResponse)
-              : // data is a replacement
-                result
-          );
-          // place in cache for next initial request
-          // reset cache to count time since component has unmounted
-          setOnUnmount(() => {
-            // specify the cached response is valid for a short period of time:
-            // the liquidity state may have moved if not fetched for a while
-            const headers = new Headers();
-            headers.set('Cache-Control', 'public, max-age=60');
-            headers.set('Date', new Date().toUTCString());
-            cache?.put(urlPath, new Response(combinedResult, { headers }));
-          });
-        }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('Cache error:', e);
-      }
       return {
         // translate tick liquidity here
         tickLiquidity: [
