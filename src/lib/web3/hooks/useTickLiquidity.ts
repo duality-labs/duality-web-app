@@ -77,6 +77,25 @@ function usePairLiquidity({
     return Array.from(orderedTokens.values());
   }, [queryConfig, token0, token1]);
 
+  useEffect(() => {
+    const eventSource = new EventSource(
+      `${REACT_APP__INDEXER_API}/liquidity/pair/token/stake?stream=true`
+    );
+    eventSource.addEventListener('update', (event) => {
+      console.log(
+        'hi new block event',
+        event.lastEventId,
+        event.data ? JSON.parse(event.data) : null
+      );
+      // console.log('hi new block event', event.lastEventId)
+      // console.log('hi new block event data',event.data ? JSON.parse(event.data) : '[empty]')
+    });
+    eventSource.addEventListener('error', () => {
+      // handle errors
+    });
+    return () => eventSource.close();
+  }, []);
+
   const {
     data,
     error,
