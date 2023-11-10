@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.34](https://github.com/duality-labs/duality-web-app/compare/v0.3.33...v0.3.34) (2023-11-10)
+
+
+### Fixes
+
+* ensure correct calculated liquidity from usePairLiquidity ([#475](https://github.com/duality-labs/duality-web-app/issues/475)) ([fa7e2f1](https://github.com/duality-labs/duality-web-app/commit/fa7e2f183c8157897b0099ac9c154de5d6fb7042))
+
 ## [0.3.33](https://github.com/duality-labs/duality-web-app/compare/v0.3.32...v0.3.33) (2023-10-20)
 
 
