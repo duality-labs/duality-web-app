@@ -180,10 +180,10 @@ const allTokens = () => true;
 export default function useTokens(sortFunction = defaultSort) {
   tokenListCache['allTokens'] =
     tokenListCache['allTokens'] || getTokens(allTokens);
-  return useMemo(
-    () => tokenListCache['allTokens'].slice().sort(sortFunction),
-    [sortFunction]
-  );
+  return useMemo(() => {
+    console.log('memo useTokens');
+    return tokenListCache['allTokens'].slice().sort(sortFunction);
+  }, [sortFunction]);
 }
 
 const mainnetTokens = (chain: Chain) => chain?.network_type === 'mainnet';

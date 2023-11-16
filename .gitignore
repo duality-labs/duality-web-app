@@ -1,5 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# ensure copied TradingView chart bundles are not committed
+/public/charting_library
+
 # dependencies
 /node_modules
 

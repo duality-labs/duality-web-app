@@ -5,4 +5,9 @@
   .page-card {
     @include paddings.padding('y', 'md');
   }
+
+  // make the main row at least a decent height
+  .orderbook-body {
+    min-height: 750px;
+  }
 }

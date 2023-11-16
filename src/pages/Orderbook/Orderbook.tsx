@@ -42,7 +42,7 @@ function Orderbook() {
             )}
           </div>
         </div>
-        <div className="col">
+        <div className="col hide">
           <TabsCard
             className="flex"
             style={{
@@ -70,7 +70,7 @@ function Orderbook() {
             }, [tokenA, tokenB])}
           />
         </div>
-        <div className="col">
+        <div className="col hide">
           <LimitOrderCard tokenA={tokenA} tokenB={tokenB} />
         </div>
       </div>

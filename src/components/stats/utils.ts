@@ -13,6 +13,10 @@ export type TimeSeriesPage = {
   pagination?: {
     next_key?: string | null;
   };
+  block_range: {
+    from_height: number;
+    to_height: number;
+  };
 };
 
 export function getLastDataValue(
