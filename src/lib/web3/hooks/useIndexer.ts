@@ -2,22 +2,28 @@ import { TimeSeriesRow } from '../../../components/stats/utils';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
-type TimeSeries = Map<TimeSeriesRow['0'], TimeSeriesRow>;
-interface StreamCallbacks {
+type FlattenSingularItems<T> = T extends [infer U] ? U : T;
+
+type BaseDataRow = FlattenSingularItems<[id: number, values: number[]]>;
+
+interface StreamCallbacks<
+  DataRow extends BaseDataRow,
+  DataSet = Map<DataRow['0'], DataRow>
+> {
   // onUpdate returns individual update chunks
-  onUpdate?: (dataset: TimeSeriesRow[]) => void;
+  onUpdate?: (dataSet: DataRow[]) => void;
   // onCompleted indicates when the data stream is finished
-  onCompleted?: (dataset: TimeSeries) => void;
-  // onAccumulated returns accumulated TimeSeries so far as a Map
-  onAccumulated?: (dataset: TimeSeries) => void;
+  onCompleted?: (dataSet: DataSet) => void;
+  // onAccumulated returns accumulated DataSet so far as a Map
+  onAccumulated?: (dataSet: DataSet) => void;
   // allow errors to be seen and handled
   onError?: (error: Error) => void;
 }
-export class IndexerTimeSeriesStream {
+export class IndexerStream<DataRow extends BaseDataRow> {
   // store data in class instance
-  private timeseries: TimeSeries = new Map();
+  private dataSet: Map<DataRow['0'], DataRow> = new Map();
 
-  constructor(relativeURL: URL | string, callbacks: StreamCallbacks) {
+  constructor(relativeURL: URL | string, callbacks: StreamCallbacks<DataRow>) {
     const url = new URL(relativeURL, REACT_APP__INDEXER_API);
     // attempt to subscribe to Server-Sent Events
     this.subscribeToSSE(url, callbacks)
@@ -31,15 +37,15 @@ export class IndexerTimeSeriesStream {
       });
   }
 
-  // abstracted method to update saved timeseries
-  private accumulateTimeSeries = (dataUpdate: TimeSeriesRow[]): TimeSeries => {
+  // abstracted method to update saved dataSet
+  private accumulateDataSet = (dataUpdate: DataRow[]) => {
     dataUpdate.forEach((row) => {
-      this.timeseries.set(row[0], row);
+      this.dataSet.set(row[0], row);
     });
-    return this.timeseries;
+    return this.dataSet;
   };
 
-  private async subscribeToSSE(url: URL, callbacks: StreamCallbacks) {
+  private async subscribeToSSE(url: URL, callbacks: StreamCallbacks<DataRow>) {
     return await new Promise((resolve, reject) => {
       // create cancellable SSE event source
       const abortController = this.getNewAbortController();
@@ -55,10 +61,10 @@ export class IndexerTimeSeriesStream {
         eventSource.addEventListener(
           'update',
           (e: MessageEvent<string>) => {
-            let timeseriesUpdates: TimeSeriesRow[] | undefined;
+            let dataUpdates: DataRow[] | undefined;
             if (e.data) {
               try {
-                timeseriesUpdates = JSON.parse(e.data) as TimeSeriesRow[];
+                dataUpdates = JSON.parse(e.data) as DataRow[];
               } catch (err) {
                 reject(
                   new Error(`Could not parse data: ${e.data}`, {
@@ -67,13 +73,13 @@ export class IndexerTimeSeriesStream {
                 );
               }
             }
-            if (timeseriesUpdates) {
+            if (dataUpdates) {
               // send update directly to listener
-              callbacks.onUpdate?.(timeseriesUpdates);
-              // update accumulated timeseries
-              const timeseries = this.accumulateTimeSeries(timeseriesUpdates);
-              // send updated timeseries to listener
-              callbacks.onAccumulated?.(timeseries);
+              callbacks.onUpdate?.(dataUpdates);
+              // update accumulated dataSet
+              const dataSet = this.accumulateDataSet(dataUpdates);
+              // send updated dataSet to listener
+              callbacks.onAccumulated?.(dataSet);
             }
           },
           listenerOptions
@@ -82,10 +88,10 @@ export class IndexerTimeSeriesStream {
         eventSource.addEventListener(
           'end',
           () => {
-            // send completed timeseries to listener
-            callbacks.onCompleted?.(this.timeseries);
+            // send completed dataSet to listener
+            callbacks.onCompleted?.(this.dataSet);
             // end promise with completed data
-            resolve(this.timeseries);
+            resolve(this.dataSet);
           },
           listenerOptions
         );
@@ -106,8 +112,11 @@ export class IndexerTimeSeriesStream {
       .catch(() => this.unsubscribe());
   }
 
-  private async subscribeToLongPolling(url: URL, callbacks: StreamCallbacks) {
-    this.timeseries.clear();
+  private async subscribeToLongPolling(
+    url: URL,
+    callbacks: StreamCallbacks<DataRow>
+  ) {
+    this.dataSet.clear();
     // todo: add long-polling
     throw new Error('Long-polling not yet implemented');
   }
@@ -128,10 +137,32 @@ export class IndexerTimeSeriesStream {
   }
 }
 
+// add time series extended classes
+type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
+
+export class IndexerTimeSeriesStream extends IndexerStream<TimeSeriesRow> {
+  constructor(
+    symbolA: string,
+    symbolB: string,
+    resolution: TimeSeriesResolution,
+    callbacks: StreamCallbacks<TimeSeriesRow>
+  ) {
+    const relativeURL = `/timeseries/price/${symbolA}/${symbolB}${
+      resolution ? `/${resolution}` : ''
+    }`;
+    super(relativeURL, callbacks);
+    return this;
+  }
+}
+
 // add higher-level method to fetch multiple pages of data as "one request"
-export async function fetchFromIndexer(url: URL | string): Promise<TimeSeries> {
+export async function fetchTimeSeriesFromIndexer(
+  symbolA: string,
+  symbolB: string,
+  resolution: TimeSeriesResolution
+): Promise<Map<TimeSeriesRow['0'], TimeSeriesRow>> {
   return new Promise((resolve, reject) => {
-    const stream = new IndexerTimeSeriesStream(url, {
+    const stream = new IndexerTimeSeriesStream(symbolA, symbolB, resolution, {
       onCompleted: (timeSeries) => {
         stream.unsubscribe();
         resolve(timeSeries);
