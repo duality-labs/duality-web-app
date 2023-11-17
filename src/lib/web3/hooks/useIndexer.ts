@@ -5,24 +5,17 @@ const { REACT_APP__INDEXER_API = '' } = process.env;
 type FlattenSingularItems<T> = T extends [infer U] ? U : T;
 
 type BaseDataRow = FlattenSingularItems<[id: number, values: number[]]>;
+type BaseDataSet<DataRow extends BaseDataRow> = Map<DataRow['0'], DataRow>;
 
-interface StreamCallbacks<
-  DataRow extends BaseDataRow,
-  DataSet = Map<DataRow['0'], DataRow>
-> {
+interface StreamCallbacks<DataRow = BaseDataRow> {
   // onUpdate returns individual update chunks
-  onUpdate?: (dataSet: DataRow[]) => void;
+  onUpdate?: (dataUpdates: DataRow[]) => void;
   // onCompleted indicates when the data stream is finished
-  onCompleted?: (dataSet: DataSet) => void;
-  // onAccumulated returns accumulated DataSet so far as a Map
-  onAccumulated?: (dataSet: DataSet) => void;
+  onCompleted?: () => void;
   // allow errors to be seen and handled
   onError?: (error: Error) => void;
 }
-export class IndexerStream<DataRow extends BaseDataRow> {
-  // store data in class instance
-  private dataSet: Map<DataRow['0'], DataRow> = new Map();
-
+export class IndexerStream<DataRow = BaseDataRow> {
   constructor(relativeURL: URL | string, callbacks: StreamCallbacks<DataRow>) {
     const url = new URL(relativeURL, REACT_APP__INDEXER_API);
     // attempt to subscribe to Server-Sent Events
@@ -37,16 +30,8 @@ export class IndexerStream<DataRow extends BaseDataRow> {
       });
   }
 
-  // abstracted method to update saved dataSet
-  private accumulateDataSet = (dataUpdate: DataRow[]) => {
-    dataUpdate.forEach((row) => {
-      this.dataSet.set(row[0], row);
-    });
-    return this.dataSet;
-  };
-
   private async subscribeToSSE(url: URL, callbacks: StreamCallbacks<DataRow>) {
-    return await new Promise((resolve, reject) => {
+    return await new Promise<void>((resolve, reject) => {
       // create cancellable SSE event source
       const abortController = this.getNewAbortController();
       const listenerOptions = { signal: abortController.signal };
@@ -76,10 +61,6 @@ export class IndexerStream<DataRow extends BaseDataRow> {
             if (dataUpdates) {
               // send update directly to listener
               callbacks.onUpdate?.(dataUpdates);
-              // update accumulated dataSet
-              const dataSet = this.accumulateDataSet(dataUpdates);
-              // send updated dataSet to listener
-              callbacks.onAccumulated?.(dataSet);
             }
           },
           listenerOptions
@@ -88,10 +69,10 @@ export class IndexerStream<DataRow extends BaseDataRow> {
         eventSource.addEventListener(
           'end',
           () => {
-            // send completed dataSet to listener
-            callbacks.onCompleted?.(this.dataSet);
-            // end promise with completed data
-            resolve(this.dataSet);
+            // send onCompleted event to listener
+            callbacks.onCompleted?.();
+            // end promise
+            resolve();
           },
           listenerOptions
         );
@@ -116,7 +97,6 @@ export class IndexerStream<DataRow extends BaseDataRow> {
     url: URL,
     callbacks: StreamCallbacks<DataRow>
   ) {
-    this.dataSet.clear();
     // todo: add long-polling
     throw new Error('Long-polling not yet implemented');
   }
@@ -137,15 +117,120 @@ export class IndexerStream<DataRow extends BaseDataRow> {
   }
 }
 
+interface StreamSingleDataSetCallbacks<
+  DataRow extends BaseDataRow,
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
+> {
+  // onUpdate returns individual update chunks
+  onUpdate?: (update: DataRow[]) => void;
+  // onCompleted indicates when the data stream is finished
+  onCompleted?: (dataSet: DataSet) => void;
+  // onAccumulated returns accumulated DataSet so far as a Map
+  onAccumulated?: (dataSet: DataSet) => void;
+  // allow errors to be seen and handled
+  onError?: (error: Error) => void;
+}
+export class IndexerStreamAccumulateSingleDataSet<
+  DataRow extends BaseDataRow,
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
+> {
+  private dataSet: DataSet = new Map() as DataSet;
+  private stream?: IndexerStream<DataRow>;
+
+  constructor(
+    relativeURL: URL | string,
+    callbacks: StreamSingleDataSetCallbacks<DataRow>
+  ) {
+    this.stream = new IndexerStream(relativeURL, {
+      onUpdate: (dataUpdates: DataRow[]) => {
+        callbacks.onUpdate?.(dataUpdates);
+        // update accumulated dataSet
+        const dataSet = this.accumulateDataSet(dataUpdates);
+        // send updated dataSet to listener
+        callbacks.onAccumulated?.(dataSet);
+      },
+      onError: callbacks.onError,
+      onCompleted: () => callbacks.onCompleted?.(this.dataSet),
+    });
+  }
+
+  // abstracted method to update saved dataSet
+  private accumulateDataSet = (dataUpdate: DataRow[]) => {
+    dataUpdate.forEach((row) => {
+      this.dataSet.set(row[0], row);
+    });
+    return this.dataSet;
+  };
+
+  // call to unsubscribe from any data stream
+  unsubscribe() {
+    // abort any current requests
+    this.stream?.unsubscribe();
+  }
+}
+
+interface StreamDualDataSetCallbacks<
+  DataRow extends BaseDataRow,
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
+> {
+  // onUpdate returns individual update chunks
+  onUpdate?: (update: DataRow[][]) => void;
+  // onCompleted indicates when the data stream is finished
+  onCompleted?: (dataSet: DataSet[]) => void;
+  // onAccumulated returns accumulated DataSet so far as a Map
+  onAccumulated?: (dataSet: DataSet[]) => void;
+  // allow errors to be seen and handled
+  onError?: (error: Error) => void;
+}
+export class IndexerStreamAccumulateDualDataSet<
+  DataRow extends BaseDataRow,
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
+> {
+  // store data in class instance
+  private dataSets: DataSet[] = [new Map(), new Map()] as DataSet[];
+  private stream?: IndexerStream<DataRow[]>;
+
+  constructor(
+    relativeURL: URL | string,
+    callbacks: StreamDualDataSetCallbacks<DataRow>
+  ) {
+    this.stream = new IndexerStream<DataRow[]>(relativeURL, {
+      onUpdate: (dataUpdates: DataRow[][]) => {
+        callbacks.onUpdate?.(dataUpdates);
+        // update accumulated dataSet
+        const dataSet = this.accumulateDataSet(dataUpdates);
+        // send updated dataSet to listener
+        callbacks.onAccumulated?.(dataSet);
+      },
+      onError: callbacks.onError,
+      onCompleted: () => callbacks.onCompleted?.(this.dataSets),
+    });
+  }
+
+  // abstracted method to update saved dataSet
+  private accumulateDataSet = (dataUpdate: DataRow[][]) => {
+    dataUpdate[0].forEach((row) => {
+      this.dataSets[0].set(row[0], row);
+    });
+    return this.dataSets;
+  };
+
+  // call to unsubscribe from any data stream
+  unsubscribe() {
+    // abort any current requests
+    this.stream?.unsubscribe();
+  }
+}
+
 // add time series extended classes
 type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
 
-export class IndexerTimeSeriesStream extends IndexerStream<TimeSeriesRow> {
+export class IndexerPriceTimeSeriesStream extends IndexerStreamAccumulateSingleDataSet<TimeSeriesRow> {
   constructor(
     symbolA: string,
     symbolB: string,
     resolution: TimeSeriesResolution,
-    callbacks: StreamCallbacks<TimeSeriesRow>
+    callbacks: StreamSingleDataSetCallbacks<TimeSeriesRow>
   ) {
     const relativeURL = `/timeseries/price/${symbolA}/${symbolB}${
       resolution ? `/${resolution}` : ''
@@ -156,18 +241,26 @@ export class IndexerTimeSeriesStream extends IndexerStream<TimeSeriesRow> {
 }
 
 // add higher-level method to fetch multiple pages of data as "one request"
-export async function fetchTimeSeriesFromIndexer(
+export async function fetchPriceTimeSeriesFromIndexer(
   symbolA: string,
   symbolB: string,
   resolution: TimeSeriesResolution
-): Promise<Map<TimeSeriesRow['0'], TimeSeriesRow>> {
+): Promise<BaseDataSet<TimeSeriesRow>> {
   return new Promise((resolve, reject) => {
-    const stream = new IndexerTimeSeriesStream(symbolA, symbolB, resolution, {
-      onCompleted: (timeSeries) => {
-        stream.unsubscribe();
-        resolve(timeSeries);
-      },
-      onError: reject,
-    });
+    // set max height to now, which will cause the request to end at now height
+    const before = (Date.now() / 1000).toFixed(0);
+    const url = `/timeseries/price/${symbolA}/${symbolB}${
+      resolution ? `/${resolution}` : ''
+    }?pagination.before=${before}`;
+    const stream = new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
+      url,
+      {
+        onCompleted: (timeSeries) => {
+          stream.unsubscribe();
+          resolve(timeSeries);
+        },
+        onError: reject,
+      }
+    );
   });
 }
