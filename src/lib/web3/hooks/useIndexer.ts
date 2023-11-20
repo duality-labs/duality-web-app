@@ -118,6 +118,29 @@ export class IndexerStream<DataRow = BaseDataRow> {
   }
 }
 
+// abstraction of accumulatation update function that can be replaced if needed
+function accumulateUpdates<
+  DataRow extends BaseDataRow,
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
+>(currentMap: DataSet, dataUpdates: DataRow[]) {
+  // create new map or use current map
+  const newMap = new Map(currentMap) as DataSet;
+  // add data updates to new map
+  return accumulateUpdatesUsingMutation(newMap, dataUpdates);
+}
+
+// accumulation function that may be quicker than using non-mutation (for React)
+function accumulateUpdatesUsingMutation<
+  DataRow extends BaseDataRow,
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
+>(map: DataSet, dataUpdates: DataRow[]) {
+  // add data updates to current map
+  for (const row of dataUpdates) {
+    map.set(row[0], row);
+  }
+  return map;
+}
+
 interface StreamSingleDataSetCallbacks<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
@@ -156,14 +179,12 @@ export class IndexerStreamAccumulateSingleDataSet<
   }
 
   // abstracted method to update saved dataSet
-  private accumulateDataSet = (dataUpdate: DataRow[]) => {
-    const newDataSet = new Map(this.dataSet) as DataSet;
-    dataUpdate.forEach((row) => {
-      newDataSet.set(row[0], row);
-    });
-    this.dataSet = newDataSet;
-    return this.dataSet;
+  private accumulateDataSet = (dataUpdates: DataRow[]) => {
+    return this.accumulateUpdates(this.dataSet, dataUpdates);
   };
+
+  // add default accumulation function, but allow it to be replaced if needed
+  public accumulateUpdates = accumulateUpdates;
 
   // call to unsubscribe from any data stream
   unsubscribe() {
@@ -211,20 +232,17 @@ export class IndexerStreamAccumulateDualDataSet<
   }
 
   // abstracted method to update saved dataSet
-  private accumulateDataSet = (dataUpdate: DataRow[][]) => {
-    const addUpdate = (dataSet: DataSet, dataUpdates: DataRow[]) => {
-      dataUpdates.forEach((row) => {
-        dataSet.set(row[0], row);
-      });
-      return dataSet;
-    };
+  private accumulateDataSet = (dataUpdates: DataRow[][]) => {
     // create new objects (to escape React referential-equality comparision)
     this.dataSets = [
-      addUpdate(new Map(this.dataSets[0]) as DataSet, dataUpdate[0]),
-      addUpdate(new Map(this.dataSets[1]) as DataSet, dataUpdate[1]),
+      this.accumulateUpdates(this.dataSets[0], dataUpdates[0]),
+      this.accumulateUpdates(this.dataSets[1], dataUpdates[1]),
     ];
     return this.dataSets;
   };
+
+  // add default accumulation function, but allow it to be replaced if needed
+  public accumulateUpdates = accumulateUpdates;
 
   // call to unsubscribe from any data stream
   unsubscribe() {
@@ -335,6 +353,9 @@ export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
       },
       onError: reject,
     });
+    // allow mutation in this stream accumulator because we won't listen to
+    // individual data updates
+    stream.accumulateUpdates = accumulateUpdatesUsingMutation;
   });
 }
 
