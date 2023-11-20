@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import useDeepCompareEffect from 'use-deep-compare-effect';
 import { TimeSeriesRow } from '../../../components/stats/utils';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
@@ -16,8 +17,21 @@ interface StreamCallbacks<DataRow = BaseDataRow> {
   // allow errors to be seen and handled
   onError?: (error: Error) => void;
 }
+interface StreamOptions {
+  // optional single AbortController for all the requests
+  abortController?: AbortController;
+}
 export class IndexerStream<DataRow = BaseDataRow> {
-  constructor(relativeURL: URL | string, callbacks: StreamCallbacks<DataRow>) {
+  // use single AbortController for all the requests
+  private abortController = new AbortController();
+
+  constructor(
+    relativeURL: URL | string,
+    callbacks: StreamCallbacks<DataRow>,
+    opts?: StreamOptions
+  ) {
+    // replace abortController if one is given
+    this.abortController = opts?.abortController ?? this.abortController;
     const url = new URL(relativeURL, REACT_APP__INDEXER_API);
     // attempt to subscribe to Server-Sent Events
     this.subscribeToSSE(url, callbacks)
@@ -34,15 +48,14 @@ export class IndexerStream<DataRow = BaseDataRow> {
   private async subscribeToSSE(url: URL, callbacks: StreamCallbacks<DataRow>) {
     return await new Promise<void>((resolve, reject) => {
       // create cancellable SSE event source
-      const abortController = this.getNewAbortController();
-      const listenerOptions = { signal: abortController.signal };
+      const listenerOptions = { signal: this.abortController.signal };
       try {
         // subscribe to streaming version of URL
         const streamingURL = new URL(url);
         streamingURL.searchParams.append('stream', 'true');
         // add event source and add a cancellation listener
         const eventSource = new EventSource(streamingURL);
-        abortController.signal.onabort = () => eventSource.close();
+        this.abortController.signal.onabort = () => eventSource.close();
         // listen for updates and remove listener if aborted
         eventSource.addEventListener(
           'update',
@@ -102,19 +115,10 @@ export class IndexerStream<DataRow = BaseDataRow> {
     throw new Error('Long-polling not yet implemented');
   }
 
-  // restrict class instance to single abort controller
-  private _abortController: AbortController = new AbortController();
-  private getNewAbortController() {
-    // don't subscribe to multiple things at once
-    this._abortController.abort();
-    this._abortController = new AbortController();
-    return this._abortController;
-  }
-
   // call to unsubscribe from any data stream
   unsubscribe() {
     // abort any current requests
-    this._abortController.abort();
+    this.abortController.abort();
   }
 }
 
@@ -163,19 +167,24 @@ export class IndexerStreamAccumulateSingleDataSet<
 
   constructor(
     relativeURL: URL | string,
-    callbacks: StreamSingleDataSetCallbacks<DataRow>
+    callbacks: StreamSingleDataSetCallbacks<DataRow>,
+    opts?: StreamOptions
   ) {
-    this.stream = new IndexerStream(relativeURL, {
-      onUpdate: (dataUpdates: DataRow[]) => {
-        callbacks.onUpdate?.(dataUpdates);
-        // update accumulated dataSet
-        const dataSet = this.accumulateDataSet(dataUpdates);
-        // send updated dataSet to listener
-        callbacks.onAccumulated?.(dataSet);
+    this.stream = new IndexerStream<DataRow>(
+      relativeURL,
+      {
+        onUpdate: (dataUpdates: DataRow[]) => {
+          callbacks.onUpdate?.(dataUpdates);
+          // update accumulated dataSet
+          const dataSet = this.accumulateDataSet(dataUpdates);
+          // send updated dataSet to listener
+          callbacks.onAccumulated?.(dataSet);
+        },
+        onError: callbacks.onError,
+        onCompleted: () => callbacks.onCompleted?.(this.dataSet),
       },
-      onError: callbacks.onError,
-      onCompleted: () => callbacks.onCompleted?.(this.dataSet),
-    });
+      opts
+    );
   }
 
   // abstracted method to update saved dataSet
@@ -216,19 +225,24 @@ export class IndexerStreamAccumulateDualDataSet<
 
   constructor(
     relativeURL: URL | string,
-    callbacks: StreamDualDataSetCallbacks<DataRow>
+    callbacks: StreamDualDataSetCallbacks<DataRow>,
+    opts?: StreamOptions
   ) {
-    this.stream = new IndexerStream<DataRow[]>(relativeURL, {
-      onUpdate: (dataUpdates: DataRow[][]) => {
-        callbacks.onUpdate?.(dataUpdates);
-        // update accumulated dataSet
-        const dataSet = this.accumulateDataSet(dataUpdates);
-        // send updated dataSet to listener
-        callbacks.onAccumulated?.(dataSet);
+    this.stream = new IndexerStream<DataRow[]>(
+      relativeURL,
+      {
+        onUpdate: (dataUpdates: DataRow[][]) => {
+          callbacks.onUpdate?.(dataUpdates);
+          // update accumulated dataSet
+          const dataSet = this.accumulateDataSet(dataUpdates);
+          // send updated dataSet to listener
+          callbacks.onAccumulated?.(dataSet);
+        },
+        onError: callbacks.onError,
+        onCompleted: () => callbacks.onCompleted?.(this.dataSets),
       },
-      onError: callbacks.onError,
-      onCompleted: () => callbacks.onCompleted?.(this.dataSets),
-    });
+      opts
+    );
   }
 
   // abstracted method to update saved dataSet
@@ -262,14 +276,16 @@ function useIndexerStream<
   DataSet = BaseDataSet<DataRow>
 >(
   url: URL | string | undefined,
-  IndexerClass: typeof IndexerStreamAccumulateSingleDataSet
+  IndexerClass: typeof IndexerStreamAccumulateSingleDataSet,
+  opts?: StreamOptions
 ): StaleWhileRevalidateState<DataSet>;
 function useIndexerStream<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
 >(
   url: URL | string | undefined,
-  IndexerClass: typeof IndexerStreamAccumulateDualDataSet
+  IndexerClass: typeof IndexerStreamAccumulateDualDataSet,
+  opts?: StreamOptions
 ): StaleWhileRevalidateState<DataSet[]>;
 function useIndexerStream<
   DataRow extends BaseDataRow,
@@ -278,27 +294,34 @@ function useIndexerStream<
   url: URL | string | undefined,
   IndexerClass:
     | typeof IndexerStreamAccumulateSingleDataSet
-    | typeof IndexerStreamAccumulateDualDataSet
+    | typeof IndexerStreamAccumulateDualDataSet,
+  opts?: StreamOptions
 ): StaleWhileRevalidateState<DataSet | DataSet[]> {
   const [dataset, setDataSet] = useState<DataSet | DataSet[]>();
   const [isValidating, setIsValidating] = useState<boolean>(false);
   const [error, setError] = useState<Error>();
 
-  useEffect(() => {
+  // use deep-compare effect to not cause unneccessary updates from url or opts
+  useDeepCompareEffect(() => {
     if (url) {
       setIsValidating(true);
-      const stream = new IndexerClass<DataRow>(url, {
-        onAccumulated: (dataSet) =>
-          // note: the TypeScript here is a bit hacky but this should be ok here
-          setDataSet(dataSet as unknown as DataSet | DataSet[]),
-        onCompleted: () => setIsValidating(false),
-        onError: (error) => setError(error),
-      });
+      const stream = new IndexerClass<DataRow>(
+        url,
+        {
+          onAccumulated: (dataSet) => {
+            // note: the TypeScript here is a bit hacky but this should be ok
+            setDataSet(dataSet as unknown as DataSet | DataSet[]);
+          },
+          onCompleted: () => setIsValidating(false),
+          onError: (error) => setError(error),
+        },
+        opts
+      );
       return () => {
         stream.unsubscribe();
       };
     }
-  }, [IndexerClass, url]);
+  }, [IndexerClass, opts, url]);
 
   return { data: dataset, isValidating, error };
 }
@@ -307,10 +330,11 @@ function useIndexerStream<
 export function useIndexerStreamOfSingleDataSet<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
->(url: URL | string | undefined) {
+>(url: URL | string | undefined, opts?: StreamOptions) {
   return useIndexerStream<DataRow, DataSet>(
     url,
-    IndexerStreamAccumulateSingleDataSet
+    IndexerStreamAccumulateSingleDataSet,
+    opts
   );
 }
 
@@ -318,27 +342,31 @@ export function useIndexerStreamOfSingleDataSet<
 export function useIndexerStreamOfDualDataSet<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
->(url: URL | string | undefined) {
+>(url: URL | string | undefined, opts?: StreamOptions) {
   return useIndexerStream<DataRow, DataSet>(
     url,
-    IndexerStreamAccumulateDualDataSet
+    IndexerStreamAccumulateDualDataSet,
+    opts
   );
 }
 
 // add higher-level function to fetch multiple pages of data as "one request"
 export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
   baseURL: URL | string,
-  IndexerClass: typeof IndexerStreamAccumulateSingleDataSet
+  IndexerClass: typeof IndexerStreamAccumulateSingleDataSet,
+  opts?: StreamOptions
 ): Promise<BaseDataSet<DataRow>>;
 export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
   baseURL: URL | string,
-  IndexerClass: typeof IndexerStreamAccumulateDualDataSet
+  IndexerClass: typeof IndexerStreamAccumulateDualDataSet,
+  opts?: StreamOptions
 ): Promise<BaseDataSet<DataRow>[]>;
 export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
   baseURL: URL | string,
   IndexerClass:
     | typeof IndexerStreamAccumulateSingleDataSet
-    | typeof IndexerStreamAccumulateDualDataSet
+    | typeof IndexerStreamAccumulateDualDataSet,
+  opts?: StreamOptions
 ): Promise<BaseDataSet<DataRow> | BaseDataSet<DataRow>[]> {
   return new Promise((resolve, reject) => {
     const url = new URL(baseURL, REACT_APP__INDEXER_API);
@@ -346,13 +374,17 @@ export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
     const before = Date.now() / 1000;
     url.searchParams.append('pagination.before', before.toFixed(0));
     // add stream listener and resolve promise on completion
-    const stream = new IndexerClass<DataRow>(url, {
-      onCompleted: (data) => {
-        stream.unsubscribe();
-        resolve(data);
+    const stream = new IndexerClass<DataRow>(
+      url,
+      {
+        onCompleted: (data) => {
+          stream.unsubscribe();
+          resolve(data);
+        },
+        onError: reject,
       },
-      onError: reject,
-    });
+      opts
+    );
     // allow mutation in this stream accumulator because we won't listen to
     // individual data updates
     stream.accumulateUpdates = accumulateUpdatesUsingMutation;
@@ -367,12 +399,13 @@ export class IndexerPriceTimeSeriesStream extends IndexerStreamAccumulateSingleD
     symbolA: string,
     symbolB: string,
     resolution: TimeSeriesResolution,
-    callbacks: StreamSingleDataSetCallbacks<TimeSeriesRow>
+    callbacks: StreamSingleDataSetCallbacks<TimeSeriesRow>,
+    opts?: StreamOptions
   ) {
     const relativeURL = `/timeseries/price/${symbolA}/${symbolB}${
       resolution ? `/${resolution}` : ''
     }`;
-    super(relativeURL, callbacks);
+    super(relativeURL, callbacks, opts);
     return this;
   }
 }
@@ -381,10 +414,15 @@ export class IndexerPriceTimeSeriesStream extends IndexerStreamAccumulateSingleD
 export async function fetchPriceTimeSeriesFromIndexer(
   symbolA: string,
   symbolB: string,
-  resolution: TimeSeriesResolution
+  resolution: TimeSeriesResolution,
+  opts?: StreamOptions
 ): Promise<BaseDataSet<TimeSeriesRow>> {
   const url = `/timeseries/price/${symbolA}/${symbolB}${
     resolution ? `/${resolution}` : ''
   }`;
-  return await fetchDataFromIndexer(url, IndexerStreamAccumulateSingleDataSet);
+  return await fetchDataFromIndexer(
+    url,
+    IndexerStreamAccumulateSingleDataSet,
+    opts
+  );
 }
