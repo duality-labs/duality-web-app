@@ -157,9 +157,11 @@ export class IndexerStreamAccumulateSingleDataSet<
 
   // abstracted method to update saved dataSet
   private accumulateDataSet = (dataUpdate: DataRow[]) => {
+    const newDataSet = new Map(this.dataSet) as DataSet;
     dataUpdate.forEach((row) => {
-      this.dataSet.set(row[0], row);
+      newDataSet.set(row[0], row);
     });
+    this.dataSet = newDataSet;
     return this.dataSet;
   };
 
@@ -210,9 +212,17 @@ export class IndexerStreamAccumulateDualDataSet<
 
   // abstracted method to update saved dataSet
   private accumulateDataSet = (dataUpdate: DataRow[][]) => {
-    dataUpdate[0].forEach((row) => {
-      this.dataSets[0].set(row[0], row);
-    });
+    const addUpdate = (dataSet: DataSet, dataUpdates: DataRow[]) => {
+      dataUpdates.forEach((row) => {
+        dataSet.set(row[0], row);
+      });
+      return dataSet;
+    };
+    // create new objects (to escape React referential-equality comparision)
+    this.dataSets = [
+      addUpdate(new Map(this.dataSets[0]) as DataSet, dataUpdate[0]),
+      addUpdate(new Map(this.dataSets[1]) as DataSet, dataUpdate[1]),
+    ];
     return this.dataSets;
   };
 
