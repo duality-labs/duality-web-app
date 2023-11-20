@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { TokenAddress } from '../utils/tokens';
 import { useIndexerStreamOfSingleDataSet } from './useIndexer';
 
@@ -19,12 +20,17 @@ export default function useTokenPairs(): TokenPairsState {
   const { data, isValidating, error } =
     useIndexerStreamOfSingleDataSet<DataRow>('/liquidity/pairs');
 
-  if (data) {
-    const values = Array.from(data, (row) => row[1][1] as TokenPairReserves);
-    return { data: values, isValidating, error: error || null };
-  }
+  const values: TokenPairReserves[] | undefined = useMemo(() => {
+    if (data) {
+      const values = Array.from(data, (row) => row[1])
+        .sort(([a], [b]) => a - b)
+        .map((row) => row[1]);
+      return values;
+    }
+  }, [data]);
+
   // return state
-  return { data: undefined, isValidating, error: error || null };
+  return { data: values, isValidating, error: error || null };
 }
 
 // add convenience method to fetch ticks in a pair
