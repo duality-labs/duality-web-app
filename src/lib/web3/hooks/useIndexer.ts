@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { TimeSeriesRow } from '../../../components/stats/utils';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
@@ -220,6 +221,80 @@ export class IndexerStreamAccumulateDualDataSet<
     // abort any current requests
     this.stream?.unsubscribe();
   }
+}
+
+interface StaleWhileRevalidateState<DataSetOrDataSets> {
+  data: DataSetOrDataSets | undefined;
+  isValidating: boolean;
+  error: Error | undefined;
+}
+// add higher-level hook to stream real-time DataSet or DataSets of Indexer URL
+function useIndexerStream<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(
+  url: URL | string | undefined,
+  IndexerClass: typeof IndexerStreamAccumulateSingleDataSet
+): StaleWhileRevalidateState<DataSet>;
+function useIndexerStream<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(
+  url: URL | string | undefined,
+  IndexerClass: typeof IndexerStreamAccumulateDualDataSet
+): StaleWhileRevalidateState<DataSet[]>;
+function useIndexerStream<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(
+  url: URL | string | undefined,
+  IndexerClass:
+    | typeof IndexerStreamAccumulateSingleDataSet
+    | typeof IndexerStreamAccumulateDualDataSet
+): StaleWhileRevalidateState<DataSet | DataSet[]> {
+  const [dataset, setDataSet] = useState<DataSet | DataSet[]>();
+  const [isValidating, setIsValidating] = useState<boolean>(false);
+  const [error, setError] = useState<Error>();
+
+  useEffect(() => {
+    if (url) {
+      setIsValidating(true);
+      const stream = new IndexerClass<DataRow>(url, {
+        onAccumulated: (dataSet) =>
+          // note: the TypeScript here is a bit hacky but this should be ok here
+          setDataSet(dataSet as unknown as DataSet | DataSet[]),
+        onCompleted: () => setIsValidating(false),
+        onError: (error) => setError(error),
+      });
+      return () => {
+        stream.unsubscribe();
+      };
+    }
+  }, [IndexerClass, url]);
+
+  return { data: dataset, isValidating, error };
+}
+
+// higher-level hook to stream real-time DataSet of Indexer URL
+export function useIndexerStreamOfSingleDataSet<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(url: URL | string | undefined) {
+  return useIndexerStream<DataRow, DataSet>(
+    url,
+    IndexerStreamAccumulateSingleDataSet
+  );
+}
+
+// higher-level hook to stream real-time DataSets of Indexer URL
+export function useIndexerStreamOfDualDataSet<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(url: URL | string | undefined) {
+  return useIndexerStream<DataRow, DataSet>(
+    url,
+    IndexerStreamAccumulateDualDataSet
+  );
 }
 
 // add higher-level function to fetch multiple pages of data as "one request"
