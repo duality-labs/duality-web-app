@@ -222,6 +222,37 @@ export class IndexerStreamAccumulateDualDataSet<
   }
 }
 
+// add higher-level function to fetch multiple pages of data as "one request"
+export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
+  baseURL: URL | string,
+  IndexerClass: typeof IndexerStreamAccumulateSingleDataSet
+): Promise<BaseDataSet<DataRow>>;
+export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
+  baseURL: URL | string,
+  IndexerClass: typeof IndexerStreamAccumulateDualDataSet
+): Promise<BaseDataSet<DataRow>[]>;
+export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
+  baseURL: URL | string,
+  IndexerClass:
+    | typeof IndexerStreamAccumulateSingleDataSet
+    | typeof IndexerStreamAccumulateDualDataSet
+): Promise<BaseDataSet<DataRow> | BaseDataSet<DataRow>[]> {
+  return new Promise((resolve, reject) => {
+    const url = new URL(baseURL, REACT_APP__INDEXER_API);
+    // set max height to now, which will cause the request to end at now height
+    const before = Date.now() / 1000;
+    url.searchParams.append('pagination.before', before.toFixed(0));
+    // add stream listener and resolve promise on completion
+    const stream = new IndexerClass<DataRow>(url, {
+      onCompleted: (data) => {
+        stream.unsubscribe();
+        resolve(data);
+      },
+      onError: reject,
+    });
+  });
+}
+
 // add time series extended classes
 type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
 
@@ -240,27 +271,14 @@ export class IndexerPriceTimeSeriesStream extends IndexerStreamAccumulateSingleD
   }
 }
 
-// add higher-level method to fetch multiple pages of data as "one request"
+// add higher-level method to fetch multiple pages of timeseries data
 export async function fetchPriceTimeSeriesFromIndexer(
   symbolA: string,
   symbolB: string,
   resolution: TimeSeriesResolution
 ): Promise<BaseDataSet<TimeSeriesRow>> {
-  return new Promise((resolve, reject) => {
-    // set max height to now, which will cause the request to end at now height
-    const before = (Date.now() / 1000).toFixed(0);
-    const url = `/timeseries/price/${symbolA}/${symbolB}${
-      resolution ? `/${resolution}` : ''
-    }?pagination.before=${before}`;
-    const stream = new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
-      url,
-      {
-        onCompleted: (timeSeries) => {
-          stream.unsubscribe();
-          resolve(timeSeries);
-        },
-        onError: reject,
-      }
-    );
-  });
+  const url = `/timeseries/price/${symbolA}/${symbolB}${
+    resolution ? `/${resolution}` : ''
+  }`;
+  return await fetchDataFromIndexer(url, IndexerStreamAccumulateSingleDataSet);
 }
