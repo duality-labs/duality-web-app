@@ -21,7 +21,7 @@ export default function useTokenPairs(): TokenPairsState {
 
   const values: TokenPairReserves[] | undefined = useMemo(() => {
     if (data) {
-      const values = Array.from(data, (row) => row[1])
+      const values = Array.from(data)
         .sort(([a], [b]) => a - b)
         .map((row) => row[1]);
       return values;

@@ -6,7 +6,7 @@ type FlattenSingularItems<T> = T extends [infer U] ? U : T;
 
 type value = string | number;
 type BaseDataRow = FlattenSingularItems<[id: value, values: value | value[]]>;
-type BaseDataSet<DataRow extends BaseDataRow> = Map<DataRow['0'], DataRow>;
+type BaseDataSet<DataRow extends BaseDataRow> = Map<DataRow['0'], DataRow['1']>;
 
 interface StreamCallbacks<DataRow = BaseDataRow> {
   // onUpdate returns individual update chunks
@@ -135,8 +135,8 @@ function accumulateUpdatesUsingMutation<
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 >(map: DataSet, dataUpdates: DataRow[]) {
   // add data updates to current map
-  for (const row of dataUpdates) {
-    map.set(row[0], row);
+  for (const [id, data] of dataUpdates) {
+    map.set(id, data);
   }
   return map;
 }
