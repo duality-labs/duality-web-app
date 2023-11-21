@@ -5,7 +5,7 @@ const { REACT_APP__INDEXER_API = '' } = process.env;
 type FlattenSingularItems<T> = T extends [infer U] ? U : T;
 
 type value = string | number;
-type BaseDataRow = FlattenSingularItems<[id: value, values: value[]]>;
+type BaseDataRow = FlattenSingularItems<[id: value, values: value | value[]]>;
 type BaseDataSet<DataRow extends BaseDataRow> = Map<DataRow['0'], DataRow>;
 
 interface StreamCallbacks<DataRow = BaseDataRow> {
