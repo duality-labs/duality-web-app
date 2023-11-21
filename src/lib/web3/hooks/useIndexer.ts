@@ -135,6 +135,8 @@ function accumulateUpdatesUsingMutation<
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 >(map: DataSet, dataUpdates: DataRow[]) {
   // add data updates to current map
+  // note: if you received an error about here you might be using the incorrect
+  //       indexer class (single/dual datasets) required for the endpoint
   for (const [id, data] of dataUpdates) {
     map.set(id, data);
   }
