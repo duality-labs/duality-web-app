@@ -12,12 +12,11 @@ type DataRow = [index: number, values: DataRowValues];
 
 type TokenPairsState = {
   data: DataRowValues[] | undefined;
-  isValidating: boolean;
   error: Error | null;
 };
 
 export default function useTokenPairs(): TokenPairsState {
-  const { data, isValidating, error } =
+  const { data, error } =
     useIndexerStreamOfSingleDataSet<DataRow>('/liquidity/pairs');
 
   const values: DataRowValues[] | undefined = useMemo(() => {
@@ -30,7 +29,7 @@ export default function useTokenPairs(): TokenPairsState {
   }, [data]);
 
   // return state
-  return { data: values, isValidating, error: error || null };
+  return { data: values, error: error || null };
 }
 
 // add convenience method to fetch ticks in a pair
