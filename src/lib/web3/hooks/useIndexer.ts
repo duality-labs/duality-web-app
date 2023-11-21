@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import useSWRSubscription, { SWRSubscription } from 'swr/subscription';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
@@ -265,9 +265,8 @@ export class IndexerStreamAccumulateDualDataSet<
 }
 
 interface StaleWhileRevalidateState<DataSetOrDataSets> {
-  data: DataSetOrDataSets | undefined;
-  isValidating: boolean;
-  error: Error | undefined;
+  data?: DataSetOrDataSets;
+  error?: Error;
 }
 // add higher-level hook to stream real-time DataSet or DataSets of Indexer URL
 function useIndexerStream<
@@ -288,34 +287,30 @@ function useIndexerStream<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
 >(
-  url: URL | string | undefined,
+  url: URL | string = '',
   IndexerClass:
     | typeof IndexerStreamAccumulateSingleDataSet
     | typeof IndexerStreamAccumulateDualDataSet
 ): StaleWhileRevalidateState<DataSet | DataSet[]> {
-  const [dataset, setDataSet] = useState<DataSet | DataSet[]>();
-  const [isValidating, setIsValidating] = useState<boolean>(false);
-  const [error, setError] = useState<Error>();
+  // define subscription callback which may or may not be used in this component
+  // it is passed to useSWRSubscription to handle if the subscription should be
+  // created/held/destroyed as multiple components may listen for the same data
+  const subscribe: SWRSubscription<string, DataSet | DataSet[], Error> = (
+    url,
+    { next }
+  ) => {
+    const stream = new IndexerClass<DataRow>(url, {
+      onAccumulated: (dataSet) => {
+        // note: the TypeScript here is a bit hacky but this should be ok
+        next(null, dataSet as unknown as DataSet | DataSet[]);
+      },
+      onError: (error) => next(error),
+    });
+    return () => stream.unsubscribe();
+  };
 
-  // todo: use deep-compare effect to not cause unneccessary updates from url or opts
-  useEffect(() => {
-    if (url) {
-      setIsValidating(true);
-      const stream = new IndexerClass<DataRow>(url, {
-        onAccumulated: (dataSet) => {
-          // note: the TypeScript here is a bit hacky but this should be ok
-          setDataSet(dataSet as unknown as DataSet | DataSet[]);
-        },
-        onCompleted: () => setIsValidating(false),
-        onError: (error) => setError(error),
-      });
-      return () => {
-        stream.unsubscribe();
-      };
-    }
-  }, [IndexerClass, url]);
-
-  return { data: dataset, isValidating, error };
+  // return cached subscription data
+  return useSWRSubscription<DataSet | DataSet[], Error>(`${url}`, subscribe);
 }
 
 // higher-level hook to stream real-time DataSet of Indexer URL
