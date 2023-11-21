@@ -49,11 +49,8 @@ export class IndexerStream<DataRow = BaseDataRow> {
       // create cancellable SSE event source
       const listenerOptions = { signal: this.abortController.signal };
       try {
-        // subscribe to streaming version of URL
-        const streamingURL = new URL(url);
-        streamingURL.searchParams.append('stream', 'true');
         // add event source and add a cancellation listener
-        const eventSource = new EventSource(streamingURL);
+        const eventSource = new EventSource(url);
         this.abortController.signal.onabort = () => eventSource.close();
         // listen for updates and remove listener if aborted
         eventSource.addEventListener(
