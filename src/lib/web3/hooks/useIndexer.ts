@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import useDeepCompareEffect from 'use-deep-compare-effect';
-import { TimeSeriesRow } from '../../../components/stats/utils';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
 type FlattenSingularItems<T> = T extends [infer U] ? U : T;
 
 type value = string | number;
-type BaseDataRow = FlattenSingularItems<[id: value, values: value[]]>;
-type BaseDataSet<DataRow extends BaseDataRow> = Map<DataRow['0'], DataRow>;
+export type BaseDataRow = FlattenSingularItems<[id: value, values: value[]]>;
+export type BaseDataSet<DataRow extends BaseDataRow> = Map<
+  DataRow['0'],
+  DataRow
+>;
 
-interface StreamCallbacks<DataRow = BaseDataRow> {
+export interface StreamCallbacks<DataRow = BaseDataRow> {
   // onUpdate returns individual update chunks
   onUpdate?: (dataUpdates: DataRow[]) => void;
   // onCompleted indicates when the data stream is finished
@@ -18,7 +20,7 @@ interface StreamCallbacks<DataRow = BaseDataRow> {
   // allow errors to be seen and handled
   onError?: (error: Error) => void;
 }
-interface StreamOptions {
+export interface StreamOptions {
   // optional single AbortController for all the requests
   abortController?: AbortController;
 }
@@ -146,7 +148,7 @@ function accumulateUpdatesUsingMutation<
   return map;
 }
 
-interface StreamSingleDataSetCallbacks<
+export interface StreamSingleDataSetCallbacks<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 > {
@@ -203,7 +205,7 @@ export class IndexerStreamAccumulateSingleDataSet<
   }
 }
 
-interface StreamDualDataSetCallbacks<
+export interface StreamDualDataSetCallbacks<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 > {
@@ -390,40 +392,4 @@ export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
     // individual data updates
     stream.accumulateUpdates = accumulateUpdatesUsingMutation;
   });
-}
-
-// add time series extended classes
-type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
-
-export class IndexerPriceTimeSeriesStream extends IndexerStreamAccumulateSingleDataSet<TimeSeriesRow> {
-  constructor(
-    symbolA: string,
-    symbolB: string,
-    resolution: TimeSeriesResolution,
-    callbacks: StreamSingleDataSetCallbacks<TimeSeriesRow>,
-    opts?: StreamOptions
-  ) {
-    const relativeURL = `/timeseries/price/${symbolA}/${symbolB}${
-      resolution ? `/${resolution}` : ''
-    }`;
-    super(relativeURL, callbacks, opts);
-    return this;
-  }
-}
-
-// add higher-level method to fetch multiple pages of timeseries data
-export async function fetchPriceTimeSeriesFromIndexer(
-  symbolA: string,
-  symbolB: string,
-  resolution: TimeSeriesResolution,
-  opts?: StreamOptions
-): Promise<BaseDataSet<TimeSeriesRow>> {
-  const url = `/timeseries/price/${symbolA}/${symbolB}${
-    resolution ? `/${resolution}` : ''
-  }`;
-  return await fetchDataFromIndexer(
-    url,
-    IndexerStreamAccumulateSingleDataSet,
-    opts
-  );
 }
