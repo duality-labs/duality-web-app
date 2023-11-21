@@ -279,16 +279,14 @@ function useIndexerStream<
   DataSet = BaseDataSet<DataRow>
 >(
   url: URL | string | undefined,
-  IndexerClass: typeof IndexerStreamAccumulateSingleDataSet,
-  opts?: StreamOptions
+  IndexerClass: typeof IndexerStreamAccumulateSingleDataSet
 ): StaleWhileRevalidateState<DataSet>;
 function useIndexerStream<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
 >(
   url: URL | string | undefined,
-  IndexerClass: typeof IndexerStreamAccumulateDualDataSet,
-  opts?: StreamOptions
+  IndexerClass: typeof IndexerStreamAccumulateDualDataSet
 ): StaleWhileRevalidateState<DataSet[]>;
 function useIndexerStream<
   DataRow extends BaseDataRow,
@@ -297,8 +295,7 @@ function useIndexerStream<
   url: URL | string | undefined,
   IndexerClass:
     | typeof IndexerStreamAccumulateSingleDataSet
-    | typeof IndexerStreamAccumulateDualDataSet,
-  opts?: StreamOptions
+    | typeof IndexerStreamAccumulateDualDataSet
 ): StaleWhileRevalidateState<DataSet | DataSet[]> {
   const [dataset, setDataSet] = useState<DataSet | DataSet[]>();
   const [isValidating, setIsValidating] = useState<boolean>(false);
@@ -308,23 +305,19 @@ function useIndexerStream<
   useDeepCompareEffect(() => {
     if (url) {
       setIsValidating(true);
-      const stream = new IndexerClass<DataRow>(
-        url,
-        {
-          onAccumulated: (dataSet) => {
-            // note: the TypeScript here is a bit hacky but this should be ok
-            setDataSet(dataSet as unknown as DataSet | DataSet[]);
-          },
-          onCompleted: () => setIsValidating(false),
-          onError: (error) => setError(error),
+      const stream = new IndexerClass<DataRow>(url, {
+        onAccumulated: (dataSet) => {
+          // note: the TypeScript here is a bit hacky but this should be ok
+          setDataSet(dataSet as unknown as DataSet | DataSet[]);
         },
-        opts
-      );
+        onCompleted: () => setIsValidating(false),
+        onError: (error) => setError(error),
+      });
       return () => {
         stream.unsubscribe();
       };
     }
-  }, [IndexerClass, opts, url]);
+  }, [IndexerClass, url]);
 
   return { data: dataset, isValidating, error };
 }
@@ -333,11 +326,10 @@ function useIndexerStream<
 export function useIndexerStreamOfSingleDataSet<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
->(url: URL | string | undefined, opts?: StreamOptions) {
+>(url: URL | string | undefined) {
   return useIndexerStream<DataRow, DataSet>(
     url,
-    IndexerStreamAccumulateSingleDataSet,
-    opts
+    IndexerStreamAccumulateSingleDataSet
   );
 }
 
@@ -348,8 +340,7 @@ export function useIndexerStreamOfDualDataSet<
 >(url: URL | string | undefined, opts?: StreamOptions) {
   return useIndexerStream<DataRow, DataSet>(
     url,
-    IndexerStreamAccumulateDualDataSet,
-    opts
+    IndexerStreamAccumulateDualDataSet
   );
 }
 
