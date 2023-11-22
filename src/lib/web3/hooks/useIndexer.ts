@@ -86,11 +86,15 @@ export class IndexerStream<DataRow = BaseDataRow> {
           },
           listenerOptions
         );
-        eventSource.addEventListener('error', (e) => {
-          callbacks.onError?.(
-            new Error('SSE error', { cause: new Error(e.type) })
-          );
-        });
+        eventSource.addEventListener(
+          'error',
+          (e) => {
+            callbacks.onError?.(
+              new Error('SSE error', { cause: new Error(e.type) })
+            );
+          },
+          listenerOptions
+        );
       } catch (e) {
         reject(
           new Error('SSE Error', {
