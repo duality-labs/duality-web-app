@@ -1,4 +1,5 @@
 import useSWRSubscription, { SWRSubscription } from 'swr/subscription';
+import { seconds } from '../../utils/time';
 
 const { REACT_APP__INDEXER_API = '' } = process.env;
 
@@ -125,6 +126,7 @@ export class IndexerStream<DataRow = BaseDataRow> {
     });
   }
 
+  maxRetries = 5;
   private async subscribeToLongPolling(
     url: URL,
     callbacks: StreamCallbacks<DataRow>
@@ -141,6 +143,7 @@ export class IndexerStream<DataRow = BaseDataRow> {
           : Number(url.searchParams.get('block_range.to_height')) ||
             Number.POSITIVE_INFINITY;
         do {
+          let retries = 0;
           let nextKey: string | undefined = undefined;
           do {
             // overwrite block height to request from (to long-poll next update)
@@ -175,8 +178,28 @@ export class IndexerStream<DataRow = BaseDataRow> {
             // if the request was not successful, log it and try to continue
             // (with a brief pause to not cause a large cascade of errors)
             else {
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-              continue;
+              // retry only if reasonable
+              if (retries < this.maxRetries) {
+                // eslint-disable-next-line no-console
+                console.error(
+                  `Could not fetch long-polling data (attempt: ${
+                    retries + 1
+                  }, code: ${
+                    response.status
+                  }), response: ${await response.text()}`
+                );
+                // relate back-off to number of retries for a linear back-off
+                const backoff = retries * 1 * seconds;
+                await new Promise((resolve) => setTimeout(resolve, backoff));
+                retries += 1;
+                continue;
+              }
+              // exit loop due to stuck request
+              else {
+                throw new Error(
+                  `Could not fetch data after ${this.maxRetries} times.`
+                );
+              }
             }
           } while (nextKey);
         } while (knownHeight < toHeight);
