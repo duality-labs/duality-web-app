@@ -264,15 +264,11 @@ function accumulateUpdatesUsingMutation<
 interface StreamSingleDataSetCallbacks<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
-> {
-  // onUpdate returns individual update chunks
-  onUpdate?: (update: DataRow[]) => void;
+> extends Omit<StreamCallbacks<DataRow>, 'onCompleted'> {
   // onCompleted indicates when the data stream is finished
   onCompleted?: (dataSet: DataSet) => void;
   // onAccumulated returns accumulated DataSet so far as a Map
   onAccumulated?: (dataSet: DataSet) => void;
-  // allow errors to be seen and handled
-  onError?: (error: Error) => void;
 }
 export class IndexerStreamAccumulateSingleDataSet<
   DataRow extends BaseDataRow,
@@ -327,15 +323,13 @@ export class IndexerStreamAccumulateSingleDataSet<
 interface StreamDualDataSetCallbacks<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
-> {
+> extends Omit<StreamCallbacks<DataRow>, 'onUpdate' | 'onCompleted'> {
   // onUpdate returns individual update chunks
   onUpdate?: (update: DataRow[][]) => void;
   // onCompleted indicates when the data stream is finished
   onCompleted?: (dataSet: DataSet[]) => void;
   // onAccumulated returns accumulated DataSet so far as a Map
   onAccumulated?: (dataSet: DataSet[]) => void;
-  // allow errors to be seen and handled
-  onError?: (error: Error) => void;
 }
 export class IndexerStreamAccumulateDualDataSet<
   DataRow extends BaseDataRow,
