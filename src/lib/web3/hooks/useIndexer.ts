@@ -34,6 +34,8 @@ interface StreamCallbacks<DataRow = BaseDataRow> {
 interface StreamOptions {
   // optional single AbortController for all the requests
   abortController?: AbortController;
+  // allow SSE requests to be disabled (they are slower to start)
+  disableSSE?: boolean;
 }
 interface AccumulatorOptions {
   // optional value to remove from accumulator maps
@@ -53,7 +55,15 @@ export class IndexerStream<DataRow = BaseDataRow> {
     this.abortController = opts?.abortController ?? this.abortController;
     const url = new URL(relativeURL, REACT_APP__INDEXER_API);
     // attempt to subscribe to Server-Sent Events
-    this.subscribeToSSE(url, callbacks)
+    new Promise<void>((resolve, reject) => {
+      if (!opts?.disableSSE) {
+        resolve();
+      } else {
+        reject('skip SSE and go to fallback methods');
+      }
+    })
+      // primarily attempt to use a SSE connection
+      .then(() => this.subscribeToSSE(url, callbacks))
       // fallback to long-polling if not available
       .catch(() => this.subscribeToLongPolling(url, callbacks))
       .catch(() => {
@@ -303,6 +313,7 @@ export class IndexerStreamAccumulateSingleDataSet<
       },
       {
         abortController: opts?.abortController,
+        disableSSE: opts?.disableSSE,
       }
     );
   }
@@ -369,6 +380,7 @@ export class IndexerStreamAccumulateDualDataSet<
       },
       {
         abortController: opts?.abortController,
+        disableSSE: opts?.disableSSE,
       }
     );
   }
