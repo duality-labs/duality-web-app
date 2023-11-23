@@ -143,7 +143,7 @@ export default function OrderBookChart({
       symbolA: string,
       symbolB: string,
       resolution: ResolutionString,
-      searchParams?: Record<string, string>
+      searchParams?: PaginationRequestQuery & BlockRangeRequestQuery
     ) => {
       const url = new URL(
         `${REACT_APP__INDEXER_API}/timeseries/price/${symbolA}/${symbolB}${
@@ -249,17 +249,10 @@ export default function OrderBookChart({
       ) => {
         // construct fetch ID that corresponds to a unique known fetch height
         const fetchID = getFetchID(symbolInfo, resolution);
-        const searchParams: PaginationRequestQuery = {
+        const url = getFetchURL(tokenAPath, tokenBPath, resolution, {
           'pagination.before': periodParams.to?.toFixed(0),
           'pagination.after': periodParams.from?.toFixed(0),
-        };
-        const url = getFetchURL(
-          tokenAPath,
-          tokenBPath,
-          resolution,
-          // remove `undefined` properties using JSON.stringify
-          JSON.parse(JSON.stringify(searchParams))
-        );
+        });
 
         const stream = new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
           url,
@@ -292,17 +285,9 @@ export default function OrderBookChart({
         onResetCacheNeededCallback
       ) => {
         const fetchID = getFetchID(symbolInfo, resolution);
-
-        const searchParams: BlockRangeRequestQuery = {
+        const url = getFetchURL(tokenAPath, tokenBPath, resolution, {
           'block_range.from_height': knownHeights.get(fetchID)?.toFixed(0),
-        };
-        const url = getFetchURL(
-          tokenAPath,
-          tokenBPath,
-          resolution,
-          // remove `undefined` properties using JSON.stringify
-          JSON.parse(JSON.stringify(searchParams))
-        );
+        });
 
         const stream = new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
           url,
