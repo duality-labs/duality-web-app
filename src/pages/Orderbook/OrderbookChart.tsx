@@ -21,7 +21,8 @@ import useTokens, {
 } from '../../lib/web3/hooks/useTokens';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
-import { TimeSeriesPage, TimeSeriesRow } from '../../components/stats/utils';
+import { TimeSeriesRow } from '../../components/stats/utils';
+import { IndexerStreamAccumulateSingleDataSet } from '../../lib/web3/hooks/useIndexer';
 
 const { REACT_APP__INDEXER_API = '', NODE_ENV = 'production' } = process.env;
 
@@ -125,8 +126,12 @@ export default function OrderBookChart({
 
     // keep track of data subscription state here
     type FetchID = string;
+    type SubscriberUUID = string;
     const knownHeights: Map<FetchID, number> = new Map();
-    const subscribers: Map<FetchID, AbortController['abort']> = new Map();
+    const streams: Map<
+      SubscriberUUID,
+      IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>
+    > = new Map();
 
     const getFetchID = (
       symbolInfo: LibrarySymbolInfo,
@@ -244,60 +249,40 @@ export default function OrderBookChart({
       ) => {
         // construct fetch ID that corresponds to a unique known fetch height
         const fetchID = getFetchID(symbolInfo, resolution);
-        // track requests with abort controller
-        const abortController = new AbortController();
-        subscribers.set(fetchID, () => abortController.abort());
-        // await data
-        await new Promise<TimeSeriesRow[]>(async (resolve, reject) => {
-          try {
-            let next = '';
-            const timeseries = [];
-            do {
-              const searchParams: PaginationRequestQuery = {
-                'pagination.before': periodParams.to?.toFixed(0),
-                'pagination.after': periodParams.from?.toFixed(0),
-                'pagination.key': next || undefined,
-              };
-              const url = getFetchURL(
-                tokenAPath,
-                tokenBPath,
-                resolution,
-                // remove `undefined` properties using JSON.stringify
-                JSON.parse(JSON.stringify(searchParams))
+        const searchParams: PaginationRequestQuery = {
+          'pagination.before': periodParams.to?.toFixed(0),
+          'pagination.after': periodParams.from?.toFixed(0),
+        };
+        const url = getFetchURL(
+          tokenAPath,
+          tokenBPath,
+          resolution,
+          // remove `undefined` properties using JSON.stringify
+          JSON.parse(JSON.stringify(searchParams))
+        );
+
+        const stream = new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
+          url,
+          {
+            onCompleted: (data, height) => {
+              stream.unsubscribe();
+              knownHeights.set(fetchID, height);
+              const bars: Bar[] = Array.from(data)
+                // note: the data needs to be in chronological order
+                // and our API delivers results in reverse-chronological order
+                .reverse()
+                .map(getBarFromTimeSeriesRow);
+              onHistoryCallback(bars, { noData: !bars.length });
+            },
+            onError: (e) => {
+              onErrorCallback(
+                (e as Error)?.message || 'Unknown error occurred'
               );
-              const response = await fetch(url.toString(), {
-                signal: abortController.signal,
-              });
-              const {
-                data = [],
-                pagination = {},
-                block_range: range,
-              } = (await response.json()) as TimeSeriesPage;
-              // add data into current context
-              // note: the data needs to be in chronological order
-              // and our API delivers results in reverse-chronological order
-              timeseries.unshift(...data.reverse());
-              // set known height for subscribers
-              if (range.to_height > (knownHeights.get(fetchID) ?? 0)) {
-                knownHeights.set(fetchID, range.to_height);
-              }
-              // fetch again if necessary
-              next = pagination['next_key'] || '';
-            } while (next);
-            resolve(timeseries);
-          } catch (e) {
-            reject(e);
-          }
-        })
-          .then((timeseries) => {
-            const bars: Bar[] = timeseries.map(getBarFromTimeSeriesRow);
-            onHistoryCallback(bars, { noData: !bars.length });
-          })
-          .catch((e) => {
-            onErrorCallback((e as Error)?.message || 'Unknown error occurred');
-          });
-        // clean up abort controller
-        subscribers.delete(fetchID);
+            },
+          },
+          { disableSSE: true }
+        );
+        streams.set(fetchID, stream);
       },
       subscribeBars: (
         symbolInfo,
@@ -310,7 +295,6 @@ export default function OrderBookChart({
 
         const searchParams: BlockRangeRequestQuery = {
           'block_range.from_height': knownHeights.get(fetchID)?.toFixed(0),
-          stream: 'true',
         };
         const url = getFetchURL(
           tokenAPath,
@@ -320,38 +304,28 @@ export default function OrderBookChart({
           JSON.parse(JSON.stringify(searchParams))
         );
 
-        const eventSource = new EventSource(url);
-        const update = (e: MessageEvent<string>) => {
-          // if update contains data then process it as JSON
-          if (e.data) {
-            try {
-              const timeseriesUpdates = JSON.parse(e.data) as TimeSeriesRow[];
+        const stream = new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
+          url,
+          {
+            onUpdate: (dataUpdates) => {
               // note: the data needs to be in chronological order
               // and our API delivers results in reverse-chronological order
-              const chronologicalUpdates = timeseriesUpdates.reverse();
+              const chronologicalUpdates = dataUpdates.reverse();
               for (const row of chronologicalUpdates) {
                 onRealtimeCallback(getBarFromTimeSeriesRow(row));
               }
-            } catch (e) {
+            },
+            onError: (e) => {
               // eslint-disable-next-line no-console
-              console.error('Could no add SSE update', e);
-            }
+              console.error('SSE error', e);
+            },
           }
-        };
-
-        // listen for updates
-        eventSource.addEventListener('update', update);
-        subscribers.set(subscriberUID, () => eventSource.close());
-
-        // listen for errors
-        eventSource.addEventListener('error', (e) => {
-          // eslint-disable-next-line no-console
-          console.log('SSE error', typeof e, e.type, e);
-        });
+        );
+        streams.set(subscriberUID, stream);
       },
       unsubscribeBars: (subscriberUID) => {
-        subscribers.get(subscriberUID)?.();
-        subscribers.delete(subscriberUID);
+        streams.get(subscriberUID)?.unsubscribe();
+        streams.delete(subscriberUID);
       },
     };
 
@@ -375,8 +349,8 @@ export default function OrderBookChart({
         // remove widget
         tvWidget.remove();
         // unsubscribe all requests (both getBars and subscribeBars)
-        subscribers.forEach((unsubscribe) => {
-          unsubscribe?.();
+        streams.forEach((stream) => {
+          stream.unsubscribe();
         });
       };
     }
