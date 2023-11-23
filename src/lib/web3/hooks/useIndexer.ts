@@ -8,6 +8,20 @@ type value = string | number;
 type BaseDataRow = FlattenSingularItems<[id: value, values: value | value[]]>;
 type BaseDataSet<DataRow extends BaseDataRow> = Map<DataRow['0'], DataRow['1']>;
 
+type IndexerPage<DataRow = BaseDataRow> = {
+  shape:
+    | [[string, string | string[]]]
+    | [[[string, string | string[]]], [[string, string | string[]]]];
+  data: Array<DataRow>;
+  pagination?: {
+    next_key?: string | null;
+  };
+  block_range?: {
+    from_height: number;
+    to_height: number;
+  };
+};
+
 interface StreamCallbacks<DataRow = BaseDataRow> {
   // onUpdate returns individual update chunks
   onUpdate?: (dataUpdates: DataRow[]) => void;
@@ -37,6 +51,8 @@ export class IndexerStream<DataRow = BaseDataRow> {
       // fallback to long-polling if not available
       .catch(() => this.subscribeToLongPolling(url, callbacks))
       .catch(() => {
+        // unsubscribe on failure of all methods
+        this.unsubscribe();
         // eslint-disable-next-line no-console
         console.error(
           `Could not establish a connection to the indexer URL: ${url}`
@@ -92,6 +108,10 @@ export class IndexerStream<DataRow = BaseDataRow> {
             callbacks.onError?.(
               new Error('SSE error', { cause: new Error(e.type) })
             );
+            // cancel the SSE if it is already closed
+            if (eventSource.CLOSED) {
+              reject(new Error('Could not establish an open EventSource'));
+            }
           },
           listenerOptions
         );
@@ -102,17 +122,78 @@ export class IndexerStream<DataRow = BaseDataRow> {
           })
         );
       }
-    })
-      // unsubscribe on failure
-      .catch(() => this.unsubscribe());
+    });
   }
 
   private async subscribeToLongPolling(
     url: URL,
     callbacks: StreamCallbacks<DataRow>
   ) {
-    // todo: add long-polling
-    throw new Error('Long-polling not yet implemented');
+    return await new Promise<void>(async (resolve, reject) => {
+      // create cancellable long-polling fetch options
+      const fetchOptions = { signal: this.abortController.signal };
+      try {
+        let knownHeight = 0;
+        // hack/fix: to control time limit behavior, assume the before timestamp
+        //           is in the past as we can't candle future timestamp limits
+        const toHeight = url.searchParams.get('pagination.before')
+          ? 0
+          : Number(url.searchParams.get('block_range.to_height')) ||
+            Number.POSITIVE_INFINITY;
+        do {
+          let nextKey: string | undefined = undefined;
+          do {
+            // overwrite block height to request from (to long-poll next update)
+            // note: known height is usually the chain height so the request
+            //       will be answered when the next block of data is available)
+            if (knownHeight) {
+              url.searchParams.set(
+                'block_range.from_height',
+                knownHeight.toFixed()
+              );
+            }
+            // add next page key if not all data was returned by last request
+            if (nextKey) {
+              url.searchParams.set('pagination.key', nextKey);
+            }
+            const response = await fetch(url.toString(), fetchOptions);
+            if (response.status === 200) {
+              const {
+                data = [],
+                pagination = {},
+                block_range: range,
+              } = (await response.json()) as IndexerPage<DataRow>;
+              // send update directly to listener
+              callbacks.onUpdate?.(data);
+              // set known height for next request
+              if (range && range.to_height > knownHeight) {
+                knownHeight = range.to_height;
+              }
+              // fetch again if necessary
+              nextKey = pagination['next_key'] || undefined;
+            }
+            // if the request was not successful, log it and try to continue
+            // (with a brief pause to not cause a large cascade of errors)
+            else {
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+              continue;
+            }
+          } while (nextKey);
+        } while (knownHeight < toHeight);
+
+        // if there is no new height to consider the request is completed
+        // send onCompleted event to listener
+        callbacks.onCompleted?.();
+        // end promise
+        resolve();
+      } catch (e) {
+        reject(
+          new Error('Long-Polling Error', {
+            cause: e instanceof Error ? e : new Error(`${e}`),
+          })
+        );
+      }
+    });
   }
 
   // call to unsubscribe from any data stream
