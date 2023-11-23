@@ -178,9 +178,9 @@ export class IndexerStreamAccumulateSingleDataSet<
         onUpdate: (dataUpdates: DataRow[]) => {
           callbacks.onUpdate?.(dataUpdates);
           // update accumulated dataSet
-          const dataSet = this.accumulateDataSet(dataUpdates);
+          this.dataSet = this.accumulateDataSet(dataUpdates);
           // send updated dataSet to listener
-          callbacks.onAccumulated?.(dataSet);
+          callbacks.onAccumulated?.(this.dataSet);
         },
         onError: callbacks.onError,
         onCompleted: () => callbacks.onCompleted?.(this.dataSet),
@@ -236,9 +236,9 @@ export class IndexerStreamAccumulateDualDataSet<
         onUpdate: (dataUpdates: DataRow[][]) => {
           callbacks.onUpdate?.(dataUpdates);
           // update accumulated dataSet
-          const dataSet = this.accumulateDataSet(dataUpdates);
+          this.dataSets = this.accumulateDataSet(dataUpdates);
           // send updated dataSet to listener
-          callbacks.onAccumulated?.(dataSet);
+          callbacks.onAccumulated?.(this.dataSets);
         },
         onError: callbacks.onError,
         onCompleted: () => callbacks.onCompleted?.(this.dataSets),
