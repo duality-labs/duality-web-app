@@ -66,13 +66,15 @@ export class IndexerStream<DataRow = BaseDataRow> {
       .then(() => this.subscribeToSSE(url, callbacks))
       // fallback to long-polling if not available
       .catch(() => this.subscribeToLongPolling(url, callbacks))
-      .catch(() => {
+      .catch((e) => {
         // unsubscribe on failure of all methods
         this.unsubscribe();
         // eslint-disable-next-line no-console
         console.error(
           `Could not establish a connection to the indexer URL: ${url}`
         );
+        // send error to be handled
+        callbacks.onError?.(e instanceof Error ? e : new Error(`${e}`));
       });
   }
 
