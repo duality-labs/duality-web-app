@@ -16,7 +16,6 @@ import useTokens, {
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
-import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { getPairID } from '../../lib/web3/utils/pairs';
 
 import { UserPositionDepositContext } from '../../lib/web3/hooks/useUserShares';
@@ -37,6 +36,8 @@ interface PoolsTableCardOptions {
   userPositionActions?: Actions;
 }
 
+type PoolTableRow = [string, Token, Token, number, number];
+
 export default function PoolsTableCard<T extends string | number>({
   className,
   title = 'All Pools',
@@ -47,28 +48,29 @@ export default function PoolsTableCard<T extends string | number>({
 
   const tokenList = useTokensWithIbcInfo(useTokens());
   const { data: tokenPairs } = useTokenPairs();
-  const allPairsList = useMemo<Array<[string, Token, Token]>>(() => {
+  const allPairsList = useMemo<Array<PoolTableRow>>(() => {
     return tokenPairs
       ? tokenPairs
           // find the tokens that match our known pair token addresses
-          .map(([token0, token1]) => {
+          .map(([token0, token1, reserves0, reserves1]) => {
             return [
               getPairID(token0, token1),
               tokenList.find(matchTokenByAddress(token0)),
               tokenList.find(matchTokenByAddress(token1)),
+              reserves0,
+              reserves1,
             ];
           })
           // remove pairs with unfound tokens
-          .filter<[string, Token, Token]>(
-            (tokenPair): tokenPair is [string, Token, Token] =>
-              tokenPair.every(Boolean)
+          .filter<PoolTableRow>((tokenPair): tokenPair is PoolTableRow =>
+            tokenPair.every(Boolean)
           )
       : [];
   }, [tokenList, tokenPairs]);
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
 
-  const filteredPoolsList = useMemo<Array<[string, Token, Token]>>(() => {
+  const filteredPoolsList = useMemo<Array<PoolTableRow>>(() => {
     const tokenList = filteredPoolTokenList.map(({ token }) => token);
     return allPairsList.filter(([, token0, token1]) => {
       return tokenList.includes(token0) || tokenList.includes(token1);
@@ -94,7 +96,8 @@ export default function PoolsTableCard<T extends string | number>({
             </tr>
           </thead>
           <tbody>
-            {filteredPoolsList.map(([pairId, token0, token1]) => {
+            {filteredPoolsList.map((row: PoolTableRow) => {
+              const [pairId, token0, token1, reserves0, reserves1] = row;
               const onRowClick:
                 | MouseEventHandler<HTMLButtonElement>
                 | undefined = onTokenPairClick
@@ -106,6 +109,8 @@ export default function PoolsTableCard<T extends string | number>({
                   key={pairId}
                   token0={token0}
                   token1={token1}
+                  reserves0={reserves0}
+                  reserves1={reserves1}
                   onClick={onRowClick}
                 />
               );
@@ -135,42 +140,29 @@ export default function PoolsTableCard<T extends string | number>({
 function PairRow({
   token0,
   token1,
+  reserves0 = 0,
+  reserves1 = 0,
   onClick,
 }: {
   token0: Token;
   token1: Token;
+  reserves0: number;
+  reserves1: number;
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   const {
     data: [price0, price1],
   } = useSimplePrice([token0, token1]);
-  const {
-    data: [token0Ticks = [], token1Ticks = []],
-  } = useTokenPairTickLiquidity([token0.address, token1.address]);
 
-  const [value0, value1] = useMemo(() => {
-    const initialValues: [BigNumber, BigNumber] = [
-      new BigNumber(0),
-      new BigNumber(0),
-    ];
+  const [value0, value1] = useMemo<[number, number]>(() => {
     if (price0 && price1) {
       return [
-        token0Ticks.reduce<BigNumber>((acc, tick) => {
-          return acc.plus(
-            getDisplayDenomAmount(token0, tick.reserve0.multipliedBy(price0)) ||
-              0
-          );
-        }, initialValues[0]),
-        token1Ticks.reduce<BigNumber>((acc, tick) => {
-          return acc.plus(
-            getDisplayDenomAmount(token1, tick.reserve1.multipliedBy(price1)) ||
-              0
-          );
-        }, initialValues[1]),
+        Number(getDisplayDenomAmount(token0, reserves0)) * price0 || 0,
+        Number(getDisplayDenomAmount(token1, reserves1)) * price1 || 0,
       ];
     }
-    return initialValues;
-  }, [token0Ticks, token1Ticks, token0, token1, price0, price1]);
+    return [0, 0];
+  }, [price0, price1, token0, reserves0, token1, reserves1]);
 
   const { data: { gauges } = {} } = useIncentiveGauges();
   const incentives = useMemo<Gauge[]>(() => {
@@ -215,7 +207,7 @@ function PairRow({
           )}
         </td>
         {/* TVL col */}
-        <td>{formatCurrency(value0.plus(value1).toNumber())}</td>
+        <td>{formatCurrency(value0 + value1)}</td>
         {/* Volume (7 days) col */}
         <td>-</td>
         {/* Volatility (7 days) col */}
