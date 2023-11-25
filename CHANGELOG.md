@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.35](https://github.com/duality-labs/duality-web-app/compare/v0.3.34...v0.3.35) (2023-11-25)
+
+
+### Features
+
+* get token pairs list from indexer ([#476](https://github.com/duality-labs/duality-web-app/issues/476)) ([59d2e0e](https://github.com/duality-labs/duality-web-app/commit/59d2e0e69084939738591165c3e84a528e27d33c))
+
 ## [0.3.34](https://github.com/duality-labs/duality-web-app/compare/v0.3.33...v0.3.34) (2023-11-10)
 
 
