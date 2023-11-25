@@ -211,16 +211,19 @@ export default function OrderBookChart({
         onResultReadyCallback
       ) => {
         const tokens = Array.from(new Set(tokenPairs.flatMap((v) => v)));
-        const input = userInput.toLowerCase();
+        const inputs = userInput.toLowerCase().split('/');
         const filteredTokens = tokens.filter((token) => {
-          return (
-            token.chain.chain_name.toLowerCase().includes(input) ||
-            token.name.toLowerCase().includes(input) ||
-            token.base.toLowerCase().includes(input) ||
-            token.display.toLowerCase().includes(input) ||
-            token.symbol.toLowerCase().includes(input) ||
-            token.keywords?.map((v) => v.toLowerCase()).includes(input)
-          );
+          // return a match if any of the inputs given match a token
+          return inputs.some((input) => {
+            return (
+              token.chain.chain_name.toLowerCase().includes(input) ||
+              token.name.toLowerCase().includes(input) ||
+              token.base.toLowerCase().includes(input) ||
+              token.display.toLowerCase().includes(input) ||
+              token.symbol.toLowerCase().includes(input) ||
+              token.keywords?.map((v) => v.toLowerCase()).includes(input)
+            );
+          });
         });
 
         const items: SearchSymbolResultItem[] = tokenPairs
