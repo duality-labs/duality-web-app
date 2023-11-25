@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.36](https://github.com/duality-labs/duality-web-app/compare/v0.3.35...v0.3.36) (2023-11-25)
+
+
+### Features
+
+* reduce tick liquidity fetching on Pools page ([#480](https://github.com/duality-labs/duality-web-app/issues/480)) ([c68c358](https://github.com/duality-labs/duality-web-app/commit/c68c35808956dda4dc84494306230d45602ce9e4))
+
 ## [0.3.35](https://github.com/duality-labs/duality-web-app/compare/v0.3.34...v0.3.35) (2023-11-25)
 
 
