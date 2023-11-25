@@ -19,11 +19,11 @@ import useTokens, {
   matchTokenByAddress,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
-import useTokenPairs from './hooks/useTokenPairs';
+import useTokenPairs, { TokenPairReserves } from './hooks/useTokenPairs';
 
 import { feeTypes } from './utils/fees';
 
-import { Token, TokenAddress } from './utils/tokens';
+import { Token } from './utils/tokens';
 import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairIdString, getPairID } from './utils/pairs';
 
@@ -71,7 +71,7 @@ interface IndexerContextType {
     isValidating: boolean;
   };
   tokenPairs: {
-    data?: [TokenAddress, TokenAddress][];
+    data?: TokenPairReserves[];
     isValidating: boolean;
   };
   pairUpdateHeight: PairUpdateHeightData;
@@ -105,18 +105,12 @@ const defaultFetchParams: Partial<PageRequest> = {
 };
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
-  const seconds = 1000;
-  const minutes = 60 * seconds;
-
   const [bankData, setBankData] = useState<UserBankBalance>();
   const [shareData, setShareData] = useState<UserShares & UserStakedShares>();
   const [poolUpdateHeightData, setPoolUpdateHeightData] =
     useState<PairUpdateHeightData>({});
   const tokensData = useTokens();
-  const { data: tokenPairsData, isValidating: isTokenPairsValidating } =
-    useTokenPairs({
-      queryOptions: { refetchInterval: 10 * minutes },
-    });
+  const { data: tokenPairsData } = useTokenPairs();
 
   const rpcPromise = useRpcPromise();
 
@@ -353,18 +347,13 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       },
       tokenPairs: {
         data: tokenPairsData,
-        isValidating: isTokenPairsValidating,
+        // note: token pairs uses a real-time indexer endpoint for data
+        //       so it should always be validating
+        isValidating: true,
       },
       pairUpdateHeight: poolUpdateHeightData,
     };
-  }, [
-    bankData,
-    shareData,
-    tokensData,
-    tokenPairsData,
-    poolUpdateHeightData,
-    isTokenPairsValidating,
-  ]);
+  }, [bankData, shareData, tokensData, tokenPairsData, poolUpdateHeightData]);
 
   return (
     <IndexerContext.Provider value={result}>{children}</IndexerContext.Provider>
