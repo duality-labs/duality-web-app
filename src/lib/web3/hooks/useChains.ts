@@ -10,6 +10,7 @@ import { QueryBalanceResponse } from '@duality-labs/dualityjs/types/codegen/cosm
 import { State as ChannelState } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/channel';
 import { State as ConnectionState } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
 import { useQuery } from '@tanstack/react-query';
+import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import { getChainInfo } from '../wallets/keplr';
 import dualityLogo from '../../../assets/logo/logo.svg';
@@ -178,13 +179,16 @@ function filterChannelsOpen(
 }
 
 export function useIbcOpenTransfers(chain: Chain = dualityChain) {
-  const { data: { client_states } = {} } = useIbcClientStates(chain);
-  const { data: { connections } = {} } = useIbcConnections(chain);
-  const { data: { channels } = {} } = useIbcChannels(chain);
+  const { data: clientStateData } = useIbcClientStates(chain);
+  const { data: connectionData } = useIbcConnections(chain);
+  const { data: channelData } = useIbcChannels(chain);
 
+  const clientStates = useDeepCompareMemoize(clientStateData?.client_states);
+  const connections = useDeepCompareMemoize(connectionData?.connections);
+  const channels = useDeepCompareMemoize(channelData?.channels);
   return useMemo(() => {
     // get openClients (all listed clients are assumed to be working)
-    const openClients = client_states || [];
+    const openClients = clientStates || [];
     // get open connections
     const openConnections = (connections || []).filter(filterConnectionsOpen);
     // get open channels
@@ -217,7 +221,7 @@ export function useIbcOpenTransfers(chain: Chain = dualityChain) {
           })
       );
     });
-  }, [client_states, connections, channels]);
+  }, [clientStates, connections, channels]);
 }
 
 export function useConnectedChainIDs(chain: Chain = dualityChain) {
