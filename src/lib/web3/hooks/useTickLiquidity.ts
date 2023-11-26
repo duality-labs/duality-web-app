@@ -42,9 +42,13 @@ export function useTokenPairTickLiquidity([tokenAddressA, tokenAddressB]: [
         token1 &&
         data && [
           // liquidity is stored in tickIndex format relative to each token side
-          Array.from(data[0]).map(getMapFunction({ invert: false })),
+          Array.from(data[0])
+            .sort(([a], [b]) => b - a)
+            .map(getMapFunction({ invert: false })),
           // the opposite side index must be inverted to get to this direction
-          Array.from(data[1]).map(getMapFunction({ invert: true })),
+          Array.from(data[1])
+            .sort(([a], [b]) => b - a)
+            .map(getMapFunction({ invert: true })),
         ]) ?? [undefined, undefined]
     );
 
