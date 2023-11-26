@@ -7,7 +7,7 @@ import useTransactionTableData, {
 import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
 import { formatAmount, getDecimalPlaces } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
+import { Token, getTokenId, getTokenValue } from '../../lib/web3/utils/tokens';
 
 import {
   getLastPrice,
@@ -61,7 +61,10 @@ export default function OrderBookTradesList({
     }
   }, [data]);
 
-  const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+  const currentPrice = useCurrentPriceFromTicks(
+    getTokenId(tokenA),
+    getTokenId(tokenB)
+  );
 
   const priceDecimalPlaces =
     currentPrice !== undefined

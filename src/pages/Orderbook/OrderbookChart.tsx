@@ -78,18 +78,18 @@ export default function OrderBookChart({
   const chartRef = useRef<HTMLDivElement>(null);
 
   const tokenList = useTokensWithIbcInfo(useTokens());
-  const { data: tokenPairAddresses } = useTokenPairs();
+  const { data: tokenPairReserves } = useTokenPairs();
 
   // memoize tokenPairs so we don't trigger the graph re-rendering too often
   const tokenPairs = useDeepCompareMemoize(
     useMemo<Array<[Token, Token]>>(() => {
-      return tokenPairAddresses
-        ? tokenPairAddresses
-            // find the tokens that match our known pair token addresses
-            .map(([token0, token1]) => {
+      return tokenPairReserves
+        ? tokenPairReserves
+            // find the tokens that match our known pair token IDs
+            .map(([tokenId0, tokenId1]) => {
               return [
-                tokenList.find(matchTokenByDenom(token0)),
-                tokenList.find(matchTokenByDenom(token1)),
+                tokenList.find(matchTokenByDenom(tokenId0)),
+                tokenList.find(matchTokenByDenom(tokenId1)),
               ];
             })
             // remove pairs with unfound tokens
@@ -97,7 +97,7 @@ export default function OrderBookChart({
               tokenPair.every(Boolean)
             )
         : [];
-    }, [tokenList, tokenPairAddresses])
+    }, [tokenList, tokenPairReserves])
   );
 
   // tokenPairID is made of symbols, which is different to token paths

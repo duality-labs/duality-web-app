@@ -14,7 +14,11 @@ import {
   getSpentTokenAmount,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
-import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getDisplayDenomAmount,
+  getTokenId,
+} from '../../lib/web3/utils/tokens';
 import {
   formatAmount,
   formatCurrency,
@@ -145,7 +149,7 @@ function SideColumn({
     return (
       <td>
         {tokenA && tokenB ? (
-          attributes.TokenIn === tokenA.address ? (
+          attributes.TokenIn === getTokenId(tokenA) ? (
             <span className="text-success">Buy</span>
           ) : (
             <span className="text-danger">Sell</span>
@@ -194,7 +198,7 @@ function AmountColumn({
     tokenA &&
     tokenB &&
     attributes &&
-    (attributes.TokenIn === tokenA.address ? tokenA : tokenB);
+    (attributes.TokenIn === getTokenId(tokenA) ? tokenA : tokenB);
   const reservesIn =
     tokenIn && getDisplayDenomReserves(tokenIn, events, attributes);
   return (
@@ -215,7 +219,7 @@ function FilledColumn({
   const attributes = getPlaceLimitOrderActionEvent(tx);
   const [tokenIn] =
     tokenA && tokenB && attributes
-      ? attributes.TokenIn === tokenA.address
+      ? attributes.TokenIn === getTokenId(tokenA)
         ? [tokenA, tokenB]
         : [tokenB, tokenA]
       : [];
@@ -250,7 +254,7 @@ function TotalColumn({
     tokenA &&
     tokenB &&
     attributes &&
-    (attributes.TokenIn === tokenA.address
+    (attributes.TokenIn === getTokenId(tokenA)
       ? new BigNumber(
           getDisplayDenomReserves(tokenA, events, attributes) || 0
         ).multipliedBy(tokenAPrice || 0)
@@ -284,9 +288,10 @@ function getTokenReserves(
   attributes: DexPlaceLimitOrderEvent['attributes']
 ) {
   const address = attributes.Creator;
-  return attributes.TokenIn === token.address
-    ? getSpentTokenAmount(events, { address, matchToken: token })
-    : getReceivedTokenAmount(events, { address, matchToken: token });
+  const tokenId = getTokenId(token);
+  return attributes.TokenIn === tokenId
+    ? getSpentTokenAmount(events, { address, matchTokenId: tokenId })
+    : getReceivedTokenAmount(events, { address, matchTokenId: tokenId });
 }
 
 function getPlaceLimitOrderActionEvent(tx: Tx) {
