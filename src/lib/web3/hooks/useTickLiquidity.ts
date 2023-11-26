@@ -32,7 +32,6 @@ export function useTokenPairTickLiquidity([tokenAddressA, tokenAddressB]: [
   // add token context into pool reserves
   const token0 = useToken(token0Address);
   const token1 = useToken(token1Address);
-  const isReversed = token0Address !== tokenAddressA;
 
   // add token context into pool reserves
   const [tickInfoA, tickInfoB] = useMemo<
@@ -42,24 +41,29 @@ export function useTokenPairTickLiquidity([tokenAddressA, tokenAddressB]: [
       (token0 &&
         token1 &&
         data && [
-          Array.from(data[0]).map(mapReservesToTickInfo),
-          Array.from(data[1]).map(mapReservesToTickInfo),
+          // liquidity is stored in tickIndex format relative to each token side
+          Array.from(data[0]).map(getMapFunction({ invert: false })),
+          // the opposite side index must be inverted to get to this direction
+          Array.from(data[1]).map(getMapFunction({ invert: true })),
         ]) ?? [undefined, undefined]
     );
 
-    function mapReservesToTickInfo([tickIndex, reserves]: ReserveDataRow) {
-      return {
-        // NOTE: TO FIX
-        fee: new BigNumber('0'), // problem must be fixed on indexer first
-        price1To0: tickIndexToPrice(new BigNumber(tickIndex)), // derive from tick index
-        reserve0: new BigNumber(isReversed ? 0 : reserves), // one is 0, one is reserves
-        reserve1: new BigNumber(isReversed ? reserves : 0), // one is 0, one is reserves
-        tickIndex1To0: new BigNumber(tickIndex), // is tick index
-        token0: token0 as Token,
-        token1: token1 as Token,
+    function getMapFunction({ invert }: { invert: boolean }) {
+      const tickIndexFactor = invert ? -1 : 1;
+      return ([relativeTickIndex, reserves]: ReserveDataRow) => {
+        const tickIndex = tickIndexFactor * relativeTickIndex;
+        return {
+          fee: new BigNumber('0'), // this endpoint does not return fee info
+          price1To0: tickIndexToPrice(new BigNumber(tickIndex)), // derive from tick index
+          reserve0: new BigNumber(invert ? 0 : reserves), // one is 0, one is reserves
+          reserve1: new BigNumber(invert ? reserves : 0), // one is 0, one is reserves
+          tickIndex1To0: new BigNumber(tickIndex), // is tick index
+          token0: token0 as Token,
+          token1: token1 as Token,
+        };
       };
     }
-  }, [token0, token1, isReversed, data]);
+  }, [token0, token1, data]);
 
   return {
     data: [tickInfoA, tickInfoB],
