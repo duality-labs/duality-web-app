@@ -26,7 +26,11 @@ export function useTokenPairTickLiquidity([tokenAddressA, tokenAddressB]: [
   const { data, error } = useIndexerStreamOfDualDataSet<ReserveDataRow>(
     tokenAddressA &&
       tokenAddressB &&
-      `/liquidity/pair/${tokenAddressA}/${tokenAddressB}`
+      `/liquidity/pair/${tokenAddressA}/${tokenAddressB}`,
+    {
+      // remove entries of value 0 from the accumulated map, they are not used
+      mapEntryRemovalValue: 0,
+    }
   );
 
   // add token context into pool reserves
