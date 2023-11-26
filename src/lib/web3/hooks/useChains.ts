@@ -125,6 +125,7 @@ function useIbcClientStates(chain: Chain) {
       );
     },
     refetchInterval: 5 * minutes,
+    refetchOnMount: false,
   });
 }
 
@@ -144,6 +145,7 @@ function useIbcConnections(chain: Chain) {
       );
     },
     refetchInterval: 5 * minutes,
+    refetchOnMount: false,
   });
 }
 
@@ -163,6 +165,7 @@ function useIbcChannels(chain: Chain) {
       );
     },
     refetchInterval: 5 * minutes,
+    refetchOnMount: false,
   });
 }
 
@@ -267,6 +270,7 @@ export function useRemoteChainRpcEndpoint(chain?: Chain) {
       }
     },
     refetchInterval: false,
+    refetchOnMount: false,
   });
 }
 
@@ -307,6 +311,7 @@ export function useRemoteChainRestEndpoint(chain?: Chain) {
       }
     },
     refetchInterval: false,
+    refetchOnMount: false,
   });
 }
 
