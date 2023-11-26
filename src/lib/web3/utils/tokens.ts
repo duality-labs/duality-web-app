@@ -47,10 +47,6 @@ export function getTokenId(token: Token | undefined): string | undefined {
   if (token?.ibc) {
     return getIbcBaseDenom(token);
   } else if (token?.chain.chain_id === REACT_APP__CHAIN_ID) {
-    // allow dev assets to be identified by address and represented denom
-    if (token.type_asset === '___dev___') {
-      return token.address;
-    }
     return token?.base;
   }
 }

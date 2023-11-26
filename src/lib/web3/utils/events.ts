@@ -211,8 +211,8 @@ export function getLastPrice(
   const tickIndex = lastTickUpdate
     ? new BigNumber(lastTickUpdate.attributes.TickIndex)
     : undefined;
-  const forward = lastTickUpdate?.attributes.Token0 === tokenA.address;
-  const reverse = lastTickUpdate?.attributes.Token0 === tokenB.address;
+  const forward = lastTickUpdate?.attributes.Token0 === getTokenId(tokenA);
+  const reverse = lastTickUpdate?.attributes.Token0 === getTokenId(tokenB);
   return tickIndex && (forward || reverse)
     ? tickIndexToPrice(forward ? tickIndex : tickIndex.negated())
     : undefined;

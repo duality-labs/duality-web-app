@@ -120,10 +120,6 @@ export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
               chain: devChain,
               // fix: remove clashing TypeScript types
               traces: undefined,
-              // overwrite address for token matching
-              address: tokenId,
-              // mark as a dev asset
-              type_asset: '___dev___',
               // overwrite base denom for denom matching in Keplr fees
               base: tokenId,
               // add denom alias for denom exponent matching

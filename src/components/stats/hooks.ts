@@ -10,7 +10,7 @@ import {
   getLastDataChanges,
   getLastDataValues,
 } from './utils';
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useTokenValueTotal } from '../../lib/web3/hooks/useTokens';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
@@ -111,7 +111,7 @@ function useStatTokenValue(
 
 // Price
 function getStatPricePath(tokenA: Token, tokenB: Token) {
-  return `stats/price/${tokenA.address}/${tokenB.address}`;
+  return `stats/price/${getTokenId(tokenA)}/${getTokenId(tokenB)}`;
 }
 export function useStatPrice(
   tokenA: Token,
