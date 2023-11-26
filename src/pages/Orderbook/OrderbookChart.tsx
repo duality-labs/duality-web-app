@@ -161,163 +161,164 @@ export default function OrderBookChart({
       return url;
     };
 
-    const datafeed: IBasicDataFeed = {
-      onReady: async (onReadyCallback) => {
-        await new Promise((resolve) => setTimeout(resolve, 1));
-        const datafeedConfiguration: DatafeedConfiguration = {
-          supports_marks: true,
-          supports_timescale_marks: true,
-          supports_time: true,
-          exchanges: [{ value: 'duality', name: 'Duality', desc: 'Duality' }],
-          // these are categories to be able to search on in the searchSymbols callback
-          symbols_types: [],
-          supported_resolutions: supportedResolutions,
-        };
-        onReadyCallback(datafeedConfiguration);
-      },
-      resolveSymbol: (
-        symbolName,
-        onSymbolResolvedCallback,
-        onResolveErrorCallback,
-        extension
-      ) => {
-        // if not on correct page, go to correct page
-        navigate(`/orderbook/${symbolName}`);
+    // don't create options unless ID requirements are satisfied
+    if (chartRef.current && tokenPairID && tokenAPath && tokenBPath) {
+      const datafeed: IBasicDataFeed = {
+        onReady: async (onReadyCallback) => {
+          await new Promise((resolve) => setTimeout(resolve, 1));
+          const datafeedConfiguration: DatafeedConfiguration = {
+            supports_marks: true,
+            supports_timescale_marks: true,
+            supports_time: true,
+            exchanges: [{ value: 'duality', name: 'Duality', desc: 'Duality' }],
+            // these are categories to be able to search on in the searchSymbols callback
+            symbols_types: [],
+            supported_resolutions: supportedResolutions,
+          };
+          onReadyCallback(datafeedConfiguration);
+        },
+        resolveSymbol: (
+          symbolName,
+          onSymbolResolvedCallback,
+          onResolveErrorCallback,
+          extension
+        ) => {
+          // if not on correct page, go to correct page
+          navigate(`/orderbook/${symbolName}`);
 
-        // find symbol information for this page
-        const symbolInfo: LibrarySymbolInfo = {
-          description: `Pair of ${symbolName}`,
-          format: 'price',
-          full_name: symbolName,
-          exchange: 'Duality',
-          listed_exchange: '',
-          minmov: 1,
-          name: symbolName,
-          pricescale: 1000,
-          session: '24x7',
-          has_intraday: true,
-          supported_resolutions: supportedResolutions,
-          timezone: 'Etc/UTC',
-          type: 'crypto',
-        };
-        setTimeout(() => {
-          onSymbolResolvedCallback(symbolInfo);
-        }, 0);
-      },
-      searchSymbols: (
-        userInput = '',
-        exchange, // will always be "Duality"
-        symbolType, // will always be "crypto"
-        onResultReadyCallback
-      ) => {
-        const tokens = Array.from(new Set(tokenPairs.flatMap((v) => v)));
-        const inputs = userInput.toLowerCase().split('/');
-        const filteredTokens = tokens.filter((token) => {
-          // return a match if any of the inputs given match a token
-          return inputs.some((input) => {
-            return (
-              token.chain.chain_name.toLowerCase().includes(input) ||
-              token.name.toLowerCase().includes(input) ||
-              token.base.toLowerCase().includes(input) ||
-              token.display.toLowerCase().includes(input) ||
-              token.symbol.toLowerCase().includes(input) ||
-              token.keywords?.map((v) => v.toLowerCase()).includes(input)
-            );
+          // find symbol information for this page
+          const symbolInfo: LibrarySymbolInfo = {
+            description: `Pair of ${symbolName}`,
+            format: 'price',
+            full_name: symbolName,
+            exchange: 'Duality',
+            listed_exchange: '',
+            minmov: 1,
+            name: symbolName,
+            pricescale: 1000,
+            session: '24x7',
+            has_intraday: true,
+            supported_resolutions: supportedResolutions,
+            timezone: 'Etc/UTC',
+            type: 'crypto',
+          };
+          setTimeout(() => {
+            onSymbolResolvedCallback(symbolInfo);
+          }, 0);
+        },
+        searchSymbols: (
+          userInput = '',
+          exchange, // will always be "Duality"
+          symbolType, // will always be "crypto"
+          onResultReadyCallback
+        ) => {
+          const tokens = Array.from(new Set(tokenPairs.flatMap((v) => v)));
+          const inputs = userInput.toLowerCase().split('/');
+          const filteredTokens = tokens.filter((token) => {
+            // return a match if any of the inputs given match a token
+            return inputs.some((input) => {
+              return (
+                token.chain.chain_name.toLowerCase().includes(input) ||
+                token.name.toLowerCase().includes(input) ||
+                token.base.toLowerCase().includes(input) ||
+                token.display.toLowerCase().includes(input) ||
+                token.symbol.toLowerCase().includes(input) ||
+                token.keywords?.map((v) => v.toLowerCase()).includes(input)
+              );
+            });
           });
-        });
 
-        const items: SearchSymbolResultItem[] = tokenPairs
-          .filter(([tokenA, tokenB]) => {
-            return (
-              filteredTokens.includes(tokenA) || filteredTokens.includes(tokenB)
-            );
-          })
-          .map(([tokenA, tokenB]) => {
-            return {
-              exchange: 'Duality Dex',
-              symbol: `${tokenA.symbol}/${tokenB.symbol}`,
-              full_name: `${tokenA.symbol}/${tokenB.symbol}`,
-              description: `Duality Dex pair of ${tokenA.name} and ${tokenB.name}`,
-              type: 'crypto',
-            };
+          const items: SearchSymbolResultItem[] = tokenPairs
+            .filter(([tokenA, tokenB]) => {
+              return (
+                filteredTokens.includes(tokenA) ||
+                filteredTokens.includes(tokenB)
+              );
+            })
+            .map(([tokenA, tokenB]) => {
+              return {
+                exchange: 'Duality Dex',
+                symbol: `${tokenA.symbol}/${tokenB.symbol}`,
+                full_name: `${tokenA.symbol}/${tokenB.symbol}`,
+                description: `Duality Dex pair of ${tokenA.name} and ${tokenB.name}`,
+                type: 'crypto',
+              };
+            });
+          onResultReadyCallback(items);
+        },
+        getBars: async (
+          symbolInfo,
+          resolution,
+          periodParams,
+          onHistoryCallback,
+          onErrorCallback
+        ) => {
+          // construct fetch ID that corresponds to a unique known fetch height
+          const fetchID = getFetchID(symbolInfo, resolution);
+          const url = getFetchURL(tokenAPath, tokenBPath, resolution, {
+            'pagination.before': periodParams.to?.toFixed(0),
+            'pagination.after': periodParams.from?.toFixed(0),
           });
-        onResultReadyCallback(items);
-      },
-      getBars: async (
-        symbolInfo,
-        resolution,
-        periodParams,
-        onHistoryCallback,
-        onErrorCallback
-      ) => {
-        // construct fetch ID that corresponds to a unique known fetch height
-        const fetchID = getFetchID(symbolInfo, resolution);
-        const url = getFetchURL(tokenAPath, tokenBPath, resolution, {
-          'pagination.before': periodParams.to?.toFixed(0),
-          'pagination.after': periodParams.from?.toFixed(0),
-        });
 
-        const stream = new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
-          url,
-          {
-            onCompleted: (data, height) => {
-              stream.unsubscribe();
-              knownHeights.set(fetchID, height);
-              const bars: Bar[] = Array.from(data)
+          const stream =
+            new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
+              url,
+              {
+                onCompleted: (data, height) => {
+                  stream.unsubscribe();
+                  knownHeights.set(fetchID, height);
+                  const bars: Bar[] = Array.from(data)
+                    // note: the data needs to be in chronological order
+                    // and our API delivers results in reverse-chronological order
+                    .reverse()
+                    .map(getBarFromTimeSeriesRow);
+                  onHistoryCallback(bars, { noData: !bars.length });
+                },
+                onError: (e) => {
+                  onErrorCallback(
+                    (e as Error)?.message || 'Unknown error occurred'
+                  );
+                },
+              },
+              { disableSSE: true }
+            );
+          streams.set(fetchID, stream);
+        },
+        subscribeBars: (
+          symbolInfo,
+          resolution,
+          onRealtimeCallback,
+          subscriberUID,
+          onResetCacheNeededCallback
+        ) => {
+          const fetchID = getFetchID(symbolInfo, resolution);
+          const url = getFetchURL(tokenAPath, tokenBPath, resolution, {
+            'block_range.from_height': knownHeights.get(fetchID)?.toFixed(0),
+          });
+
+          const stream =
+            new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(url, {
+              onUpdate: (dataUpdates) => {
                 // note: the data needs to be in chronological order
                 // and our API delivers results in reverse-chronological order
-                .reverse()
-                .map(getBarFromTimeSeriesRow);
-              onHistoryCallback(bars, { noData: !bars.length });
-            },
-            onError: (e) => {
-              onErrorCallback(
-                (e as Error)?.message || 'Unknown error occurred'
-              );
-            },
-          },
-          { disableSSE: true }
-        );
-        streams.set(fetchID, stream);
-      },
-      subscribeBars: (
-        symbolInfo,
-        resolution,
-        onRealtimeCallback,
-        subscriberUID,
-        onResetCacheNeededCallback
-      ) => {
-        const fetchID = getFetchID(symbolInfo, resolution);
-        const url = getFetchURL(tokenAPath, tokenBPath, resolution, {
-          'block_range.from_height': knownHeights.get(fetchID)?.toFixed(0),
-        });
+                const chronologicalUpdates = dataUpdates.reverse();
+                for (const row of chronologicalUpdates) {
+                  onRealtimeCallback(getBarFromTimeSeriesRow(row));
+                }
+              },
+              onError: (e) => {
+                // eslint-disable-next-line no-console
+                console.error('SSE error', e);
+              },
+            });
+          streams.set(subscriberUID, stream);
+        },
+        unsubscribeBars: (subscriberUID) => {
+          streams.get(subscriberUID)?.unsubscribe();
+          streams.delete(subscriberUID);
+        },
+      };
 
-        const stream = new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
-          url,
-          {
-            onUpdate: (dataUpdates) => {
-              // note: the data needs to be in chronological order
-              // and our API delivers results in reverse-chronological order
-              const chronologicalUpdates = dataUpdates.reverse();
-              for (const row of chronologicalUpdates) {
-                onRealtimeCallback(getBarFromTimeSeriesRow(row));
-              }
-            },
-            onError: (e) => {
-              // eslint-disable-next-line no-console
-              console.error('SSE error', e);
-            },
-          }
-        );
-        streams.set(subscriberUID, stream);
-      },
-      unsubscribeBars: (subscriberUID) => {
-        streams.get(subscriberUID)?.unsubscribe();
-        streams.delete(subscriberUID);
-      },
-    };
-
-    if (chartRef.current && tokenPairID) {
       // create options if possible to do so
       const widgetOptions: ChartingLibraryWidgetOptions = {
         ...defaultWidgetOptions,
