@@ -1,9 +1,9 @@
 import { BigNumber } from 'bignumber.js';
 
 export interface PairRequest {
-  /** address of token A */
+  /** ID of token A */
   tokenA?: string;
-  /** address of token B */
+  /** ID of token B */
   tokenB?: string;
   /** value of token A (falsy if B was just altered) */
   valueA?: string;
@@ -12,9 +12,9 @@ export interface PairRequest {
 }
 
 export interface PairResult {
-  /** address of token A */
+  /** ID of token A */
   tokenA: string;
-  /** address of token B */
+  /** ID of token B */
   tokenB: string;
   /** value for token A */
   valueA: string;
@@ -31,8 +31,8 @@ export interface PairResult {
  * but utilising BigNumber type instead of BigNumberString type properties
  */
 export interface RouterResult {
-  tokenIn: string; // address
-  tokenOut: string; // address
+  tokenIn: string; // token ID
+  tokenOut: string; // token ID
   amountIn: BigNumber;
   amountOut: BigNumber;
   priceBToAIn: BigNumber | undefined;

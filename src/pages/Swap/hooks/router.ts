@@ -109,8 +109,8 @@ export function calculateOut({
   amountIn,
   sortedTicks,
 }: {
-  tokenIn: string; // address
-  tokenOut: string; // address
+  tokenIn: string; // token ID
+  tokenOut: string; // token ID
   amountIn: BigNumber; // amount in (in minimum denom)
   sortedTicks: Array<TickInfo>;
 }): {

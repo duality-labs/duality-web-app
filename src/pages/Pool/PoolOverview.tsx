@@ -211,15 +211,13 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
 
   const { data: { gauges } = {} } = useIncentiveGauges();
   const filteredGauges = useMemo(() => {
-    const tokenAddresses = [getTokenId(tokenA), getTokenId(tokenB)].filter(
-      (address): address is string => !!address
-    );
-    return tokenAddresses.length > 0
+    const tokenIds = [getTokenId(tokenA), getTokenId(tokenB)];
+    return tokenIds.length > 0
       ? gauges?.filter((gauge) => {
-          return tokenAddresses.every((address) => {
+          return tokenIds.every((id) => {
             return (
-              address === gauge.distribute_to?.pairID?.token0 ||
-              address === gauge.distribute_to?.pairID?.token1
+              id === gauge.distribute_to?.pairID?.token0 ||
+              id === gauge.distribute_to?.pairID?.token1
             );
           });
         })

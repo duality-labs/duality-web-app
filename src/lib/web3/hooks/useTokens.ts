@@ -229,13 +229,13 @@ export function useIbcTokens(sortFunction = defaultSort) {
 }
 
 export function useToken(
-  tokenAddress: string | undefined,
+  denom: string | undefined,
   matchFunction = matchTokenByDenom
 ): Token | undefined {
   const tokens = useTokensWithIbcInfo(useTokens());
   return useMemo(() => {
-    return tokenAddress ? tokens.find(matchFunction(tokenAddress)) : undefined;
-  }, [matchFunction, tokenAddress, tokens]);
+    return denom ? tokens.find(matchFunction(denom)) : undefined;
+  }, [matchFunction, denom, tokens]);
 }
 
 // connected IBC info into given token list

@@ -55,7 +55,7 @@ export default function PoolsTableCard<T extends string | number>({
   const allPairsList = useMemo<Array<PoolTableRow>>(() => {
     return tokenPairs
       ? tokenPairs
-          // find the tokens that match our known pair token addresses
+          // find the tokens that match our known pair token IDs
           .map(([token0, token1, reserves0, reserves1]) => {
             return [
               getPairID(token0, token1),

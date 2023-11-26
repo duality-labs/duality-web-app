@@ -57,7 +57,7 @@ export function useUserPositionsShareValues(
 
   const selectedTokensPriceMap = useMemo(() => {
     return selectedTokens.reduce<{
-      [tokenAddress: string]: number | undefined;
+      [tokenId: string]: number | undefined;
     }>((acc, token, index) => {
       const tokenId = getTokenId(token);
       if (tokenId) {

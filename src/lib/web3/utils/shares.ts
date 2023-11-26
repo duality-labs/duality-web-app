@@ -32,12 +32,12 @@ export function getShareDenom(
   tickIndex1To0: number,
   fee: number
 ): string | undefined {
-  const tokenAddresses = resolveTokenIdPair(tokens);
-  const [token0Address, token1Address] = guessInvertedOrder(tokens)
-    ? [tokenAddresses[1], tokenAddresses[0]]
-    : tokenAddresses;
-  if (token0Address && token1Address && !isNaN(tickIndex1To0) && !isNaN(fee)) {
-    return `DualityPoolShares-${token0Address}-${token1Address}-t${tickIndex1To0.toFixed(
+  const tokenIds = resolveTokenIdPair(tokens);
+  const [tokenId0, tokenId1] = guessInvertedOrder(tokens)
+    ? [tokenIds[1], tokenIds[0]]
+    : tokenIds;
+  if (tokenId0 && tokenId1 && !isNaN(tickIndex1To0) && !isNaN(fee)) {
+    return `DualityPoolShares-${tokenId0}-${tokenId1}-t${tickIndex1To0.toFixed(
       0
     )}-f${fee.toFixed(0)}`;
   }
