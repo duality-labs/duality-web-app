@@ -49,14 +49,14 @@ jobs:
         # note: from https://github.com/actions/setup-node/issues/49#issuecomment-1293249466
         # security consideration:
         # Skip post-install scripts here, as a malicious script could steal NODE_AUTH_TOKEN.
+        # why don't you run this sanely, it works in every other environment that I have attempted to test it in
         run: |
-          echo $TESTTEXT;
-          npm install --ignore-scripts @tradingview/charting-library@https://dib542:$NODE_AUTH_TOKEN@github.com/tradingview/charting_library#e6d6096faf06b7f70f85a5be9a5f80ac455ad628
+          git config -l;
+          npm install @tradingview/charting-library@https://dib542:$TOKEN@github.com/tradingview/charting_library#e6d6096faf06b7f70f85a5be9a5f80ac455ad628
         env:
           # to install TradingView private dependency, private GitHub credentials are needed
           # secret tokens are added in Github project settings under [project]/settings/secrets/actions
-          NODE_AUTH_TOKEN: ${{ secrets.TEST_TOKEN }}
-          TESTTEXT: testtext
+          TOKEN: ${{ secrets.TEST_TOKEN }}
 
       # `npm rebuild` will run all those post-install scripts for us.
       - name: Run post-install scripts
