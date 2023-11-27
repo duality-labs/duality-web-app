@@ -40,12 +40,27 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.get-node-version.outputs.NODE_VERSION }}
+          cache: npm
+          registry-url: 'https://npm.pkg.github.com'
 
       - name: Add deployment preview specific environment variables
         run: cp .env.deploy-previews .env.local
 
       - name: Install dependencies
-        run: npm ci
+        # note: from https://github.com/actions/setup-node/issues/49#issuecomment-1293249466
+        # security consideration:
+        # Skip post-install scripts here, as a malicious script could steal NODE_AUTH_TOKEN.
+        run: 'npm ci --ignore-scripts'
+        shell: bash
+        env:
+          # to install TradingView private dependency, private GitHub credentials are needed
+          # secret tokens are added in Github project settings under [project]/settings/secrets/actions
+          NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      # `npm rebuild` will run all those post-install scripts for us.
+      - name: Run post-install scripts
+        run: 'npm rebuild && npm run prepare --if-present'
+        shell: bash
 
       - name: Build
         run: PUBLIC_URL=https://${{ env.deploy-alias }}--duality-xyz.netlify.app npm run build
