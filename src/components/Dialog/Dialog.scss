@@ -1,24 +1,32 @@
-// override base '@reach/dialog/styles.css'
-[data-reach-dialog-overlay] {
-  background-color: hsla(0, 0%, 0%, 33%);
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
   z-index: 3;
-}
-[data-reach-dialog-content] {
-  background: hsl(220, 13%, 18%);
-  box-shadow: 0 4px 8px 0 hsla(0, 0%, 0%, 33%);
+  background-color: var(--dialog-backdrop);
+  backdrop-filter: blur(3px);
+  animation: overlayShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 // add more opinionated content styling
 // easily overrideable by custom classNames, eg.
 //    <Dialog className="token-dialog">
-//    .token-dialog .dialog-content { width: 600px }
+//    .token-dialog.dialog-content { width: 600px }
 .dialog-content {
-  position: relative;
-  margin: 10vh auto;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   padding: 0;
   display: flex;
   flex-direction: column;
   border-radius: 20px;
+  z-index: 4;
+  max-width: 800px;
+  max-height: 85vh;
+
+  background: hsl(220, 13%, 18%);
+  box-shadow: 0 4px 8px 0 hsla(0, 0%, 0%, 33%);
+  animation: contentShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
 
   // dynamic max width based on viewport size
   width: 90vw;
@@ -63,20 +71,22 @@
   flex: 1 1 auto;
 }
 
-.dialog-background {
-  background-color: var(--dialog-backdrop);
-  backdrop-filter: blur(3px);
+@keyframes overlayShow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.dialog-scrollable {
-  // remove overflow from portal area and place in body
-  // note: assumes you won't make the dialog header tall enough to require scrolling
-  overflow: hidden;
-  .dialog-body {
-    overflow: auto;
-    flex: 1;
+@keyframes contentShow {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
   }
-  .dialog-content {
-    max-height: 80vh;
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
 }

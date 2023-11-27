@@ -26,7 +26,7 @@
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@keplr-wallet/router": "^0.12.20",
     "@keplr-wallet/stores": "^0.12.20",
-    "@reach/dialog": "^0.18.0",
+    "@radix-ui/react-dialog": "^1.0.5",
     "@react-hook/resize-observer": "^1.2.6",
     "@tanstack/react-query": "^5.0.0-alpha.35",
     "@visx/event": "^3.0.1",
