@@ -18,6 +18,8 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          # it is important to remove the default token credentials from git in this step
+          # otherwise they will get in the way of fetching the private TradingView dependency
           persist-credentials: false
 
       - name: Set Deploy Preview alias name (combine short SHA and files hash) (deploy alias max length is 37)
@@ -50,14 +52,14 @@ jobs:
         # note: from https://github.com/actions/setup-node/issues/49#issuecomment-1293249466
         # security consideration:
         # Skip post-install scripts here, as a malicious script could steal NODE_AUTH_TOKEN.
-        # remove odd git settings in
+        # use variable to read in the exact chart library dependency specified in package.json
         run: |
-          git config -l;
-          npm install --ignore-scripts @tradingview/charting-library@https://dib542:$TOKEN@github.com/tradingview/charting_library#e6d6096faf06b7f70f85a5be9a5f80ac455ad628
+          TVC_LOCATION=$( node -p "require('./package.json').dependencies['@tradingview/charting-library']" );
+          npm install --ignore-scripts @tradingview/charting-library@https://dib542:$TOKEN@$TVC_LOCATION
         env:
           # to install TradingView private dependency, private GitHub credentials are needed
           # secret tokens are added in Github project settings under [project]/settings/secrets/actions
-          TOKEN: ${{ secrets.TEST_TOKEN }}
+          TOKEN: ${{ secrets.GH_TOKEN }}
 
       # `npm rebuild` will run all those post-install scripts for us.
       - name: Run post-install scripts
