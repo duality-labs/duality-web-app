@@ -54,7 +54,7 @@ jobs:
         # Skip post-install scripts here, as a malicious script could steal NODE_AUTH_TOKEN.
         # use variable to read in the exact chart library dependency specified in package.json
         run: |
-          TVC_LOCATION=$( node -p "require('./package.json').dependencies['@tradingview/charting-library']" );
+          TVC_LOCATION=$( node -p "require('./package.json').dependencies['@tradingview/charting-library'].replace('github:','github.com/')" );
           npm install --ignore-scripts @tradingview/charting-library@https://dib542:$TOKEN@$TVC_LOCATION
         env:
           # to install TradingView private dependency, private GitHub credentials are needed
