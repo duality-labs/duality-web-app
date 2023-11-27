@@ -264,7 +264,7 @@ function BridgeDialog({
   return (
     <Dialog
       isOpen={isOpen}
-      onDismiss={close}
+      setIsOpen={setIsOpen}
       header={<h2 className="h3">Bridge</h2>}
       initialFocusRef={inputRef}
       className="bridge-card"

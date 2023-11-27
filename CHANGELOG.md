@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.37](https://github.com/duality-labs/duality-web-app/compare/v0.3.36...v0.3.37) (2023-11-27)
+
+
+### Fixes
+
+* deprecated dialog dependency issues ([#483](https://github.com/duality-labs/duality-web-app/issues/483)) ([76735d7](https://github.com/duality-labs/duality-web-app/commit/76735d760e9ee9a7d0c0f9509d6d2f82beb03664))
+
 ## [0.3.36](https://github.com/duality-labs/duality-web-app/compare/v0.3.35...v0.3.36) (2023-11-25)
 
 

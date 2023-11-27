@@ -241,7 +241,7 @@ export default function TokenPicker({
       )}
       <Dialog
         isOpen={isOpen}
-        onDismiss={close}
+        setIsOpen={setIsOpen}
         header={getHeader()}
         initialFocusRef={inputRef}
         className="token-picker-dialog"

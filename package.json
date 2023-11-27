@@ -1,7 +1,7 @@
 {
   "name": "duality-webapp",
   "homepage": "https://app.duality.xyz",
-  "version": "0.3.36",
+  "version": "0.3.37",
   "private": true,
   "scripts": {
     "start": "react-scripts start",
@@ -27,7 +27,7 @@
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@keplr-wallet/router": "^0.12.20",
     "@keplr-wallet/stores": "^0.12.20",
-    "@reach/dialog": "^0.18.0",
+    "@radix-ui/react-dialog": "^1.0.5",
     "@react-hook/resize-observer": "^1.2.6",
     "@tanstack/react-query": "^5.0.0-alpha.35",
     "@tradingview/charting-library": "github:tradingview/charting_library#e6d6096faf06b7f70f85a5be9a5f80ac455ad628",
