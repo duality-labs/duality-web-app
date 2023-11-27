@@ -49,10 +49,7 @@ jobs:
         # note: from https://github.com/actions/setup-node/issues/49#issuecomment-1293249466
         # security consideration:
         # Skip post-install scripts here, as a malicious script could steal NODE_AUTH_TOKEN.
-        run: |
-          git config --global url."https://dib542:$NODE_AUTH_TOKEN@github.com/".insteadOf "https://github.com/" &&
-          npm ci --ignore-scripts &&
-          git config --global --unset url."https://dib542:$NODE_AUTH_TOKEN@github.com/".insteadOf "https://github.com/"
+        run: npm install --ignore-scripts @tradingview/charting-library@https://dib542:$NODE_AUTH_TOKEN@github.com/tradingview/charting_library#e6d6096faf06b7f70f85a5be9a5f80ac455ad628
         env:
           # to install TradingView private dependency, private GitHub credentials are needed
           # secret tokens are added in Github project settings under [project]/settings/secrets/actions
@@ -60,7 +57,7 @@ jobs:
 
       # `npm rebuild` will run all those post-install scripts for us.
       - name: Run post-install scripts
-        run: 'npm rebuild && npm run prepare --if-present'
+        run: npm rebuild && npm run prepare --if-present
 
       - name: Build
         run: PUBLIC_URL=https://${{ env.deploy-alias }}--duality-xyz.netlify.app npm run build
