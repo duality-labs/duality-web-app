@@ -49,9 +49,13 @@ jobs:
         # note: from https://github.com/actions/setup-node/issues/49#issuecomment-1293249466
         # security consideration:
         # Skip post-install scripts here, as a malicious script could steal NODE_AUTH_TOKEN.
-        # why don't you run this sanely, it works in every other environment that I have attempted to test it in
+        # remove odd git settings in
         run: |
-          git config -l;
+          git config --global -l;
+          git config --system -l;
+          git config --local -l;
+          git config --worktree -l;
+          git config --global --unset http.https://github.com/.extraheader;
           npm install @tradingview/charting-library@https://dib542:$TOKEN@github.com/tradingview/charting_library#e6d6096faf06b7f70f85a5be9a5f80ac455ad628
         env:
           # to install TradingView private dependency, private GitHub credentials are needed
