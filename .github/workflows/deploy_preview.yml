@@ -89,8 +89,8 @@ jobs:
       - name: Add comment to PR
         if: github.ref != 'refs/heads/main' #github.ref looks like `refs/pull/[PR#]/merge`
         env:
-          # secret tokens are added in Github project settings under [project]/settings/secrets/actions
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # use GitHub action token to post comment to PR
+          GITHUB_TOKEN: ${{ github.token }}
         # get deploy outputs: see https://github.com/marketplace/actions/netlify-deploy#outputs
         # get PR number: see https://github.com/actions/checkout/issues/58#issuecomment-812259610
         run: |
