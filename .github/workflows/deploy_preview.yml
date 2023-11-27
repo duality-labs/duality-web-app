@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Set Deploy Preview alias name (combine short SHA and files hash) (deploy alias max length is 37)
         run: |
@@ -51,12 +52,8 @@ jobs:
         # Skip post-install scripts here, as a malicious script could steal NODE_AUTH_TOKEN.
         # remove odd git settings in
         run: |
-          git config --global -l;
-          git config --system -l;
-          git config --local -l;
-          git config --worktree -l;
-          git config --global --unset http.https://github.com/.extraheader;
-          npm install @tradingview/charting-library@https://dib542:$TOKEN@github.com/tradingview/charting_library#e6d6096faf06b7f70f85a5be9a5f80ac455ad628
+          git config -l;
+          npm install --ignore-scripts @tradingview/charting-library@https://dib542:$TOKEN@github.com/tradingview/charting_library#e6d6096faf06b7f70f85a5be9a5f80ac455ad628
         env:
           # to install TradingView private dependency, private GitHub credentials are needed
           # secret tokens are added in Github project settings under [project]/settings/secrets/actions
