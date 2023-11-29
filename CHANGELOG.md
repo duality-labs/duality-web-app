@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.39](https://github.com/duality-labs/duality-web-app/compare/v0.3.38...v0.3.39) (2023-11-29)
+
+
+### Features
+
+* use real-time indexer liquidity endpoints ([#481](https://github.com/duality-labs/duality-web-app/issues/481)) ([a6df510](https://github.com/duality-labs/duality-web-app/commit/a6df5103701180113f0d5e0c99896c2cdca36c4d))
+
 ## [0.3.38](https://github.com/duality-labs/duality-web-app/compare/v0.3.37...v0.3.38) (2023-11-29)
 
 
