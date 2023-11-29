@@ -18,6 +18,9 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          # it is important to remove the default token credentials from git in this step
+          # otherwise they will get in the way of fetching the private TradingView dependency
+          persist-credentials: false
 
       - name: Set Deploy Preview alias name (combine short SHA and files hash) (deploy alias max length is 37)
         run: |
@@ -40,12 +43,27 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.get-node-version.outputs.NODE_VERSION }}
+          cache: npm
 
       - name: Add deployment preview specific environment variables
         run: cp .env.deploy-previews .env.local
 
       - name: Install dependencies
-        run: npm ci
+        # note: from https://github.com/actions/setup-node/issues/49#issuecomment-1293249466
+        # security consideration:
+        # Skip post-install scripts here, as a malicious script could steal NODE_AUTH_TOKEN.
+        # use variable to read in the exact chart library dependency specified in package.json
+        run: |
+          TVC_LOCATION=$( node -p "require('./package.json').dependencies['@tradingview/charting-library'].replace('github:','github.com/')" );
+          npm install --ignore-scripts @tradingview/charting-library@https://dib542:$TOKEN@$TVC_LOCATION
+        env:
+          # to install TradingView private dependency, private GitHub credentials are needed
+          # secret tokens are added in Github project settings under [project]/settings/secrets/actions
+          TOKEN: ${{ secrets.GH_TOKEN }}
+
+      # `npm rebuild` will run all those post-install scripts for us.
+      - name: Run post-install scripts
+        run: npm rebuild && npm run prepare --if-present
 
       - name: Build
         run: PUBLIC_URL=https://${{ env.deploy-alias }}--duality-xyz.netlify.app npm run build
@@ -74,8 +92,8 @@ jobs:
       - name: Add comment to PR
         if: github.ref != 'refs/heads/main' #github.ref looks like `refs/pull/[PR#]/merge`
         env:
-          # secret tokens are added in Github project settings under [project]/settings/secrets/actions
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # use GitHub action token to post comment to PR
+          GITHUB_TOKEN: ${{ github.token }}
         # get deploy outputs: see https://github.com/marketplace/actions/netlify-deploy#outputs
         # get PR number: see https://github.com/actions/checkout/issues/58#issuecomment-812259610
         run: |
