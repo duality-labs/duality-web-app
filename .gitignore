@@ -1,5 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# ensure copied TradingView chart bundles are not committed
+/public/charting_library
+# but do commit reference for TradingView types
+!src/node_modules/trading-view.ts
+
 # dependencies
 /node_modules
 

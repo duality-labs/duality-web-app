@@ -25,7 +25,7 @@ type IndexerPage<DataRow = BaseDataRow> = {
 
 interface StreamCallbacks<DataRow = BaseDataRow> {
   // onUpdate returns individual update chunks
-  onUpdate?: (dataUpdates: DataRow[]) => void;
+  onUpdate?: (dataUpdates: DataRow[], height: number) => void;
   // onCompleted indicates when the data stream is finished
   onCompleted?: () => void;
   // allow errors to be seen and handled
@@ -34,6 +34,8 @@ interface StreamCallbacks<DataRow = BaseDataRow> {
 interface StreamOptions {
   // optional single AbortController for all the requests
   abortController?: AbortController;
+  // allow SSE requests to be disabled (they are slower to start)
+  disableSSE?: boolean;
 }
 interface AccumulatorOptions {
   // optional value to remove from accumulator maps
@@ -53,16 +55,26 @@ export class IndexerStream<DataRow = BaseDataRow> {
     this.abortController = opts?.abortController ?? this.abortController;
     const url = new URL(relativeURL, REACT_APP__INDEXER_API);
     // attempt to subscribe to Server-Sent Events
-    this.subscribeToSSE(url, callbacks)
+    new Promise<void>((resolve, reject) => {
+      if (!opts?.disableSSE) {
+        resolve();
+      } else {
+        reject('skip SSE and go to fallback methods');
+      }
+    })
+      // primarily attempt to use a SSE connection
+      .then(() => this.subscribeToSSE(url, callbacks))
       // fallback to long-polling if not available
       .catch(() => this.subscribeToLongPolling(url, callbacks))
-      .catch(() => {
+      .catch((e) => {
         // unsubscribe on failure of all methods
         this.unsubscribe();
         // eslint-disable-next-line no-console
         console.error(
           `Could not establish a connection to the indexer URL: ${url}`
         );
+        // send error to be handled
+        callbacks.onError?.(e instanceof Error ? e : new Error(`${e}`));
       });
   }
 
@@ -91,8 +103,9 @@ export class IndexerStream<DataRow = BaseDataRow> {
               }
             }
             if (dataUpdates) {
+              const heightOfData = Number(e.lastEventId.split(':').at(0));
               // send update directly to listener
-              callbacks.onUpdate?.(dataUpdates);
+              callbacks.onUpdate?.(dataUpdates, heightOfData);
             }
           },
           listenerOptions
@@ -172,7 +185,7 @@ export class IndexerStream<DataRow = BaseDataRow> {
                 block_range: range,
               } = (await response.json()) as IndexerPage<DataRow>;
               // send update directly to listener
-              callbacks.onUpdate?.(data);
+              callbacks.onUpdate?.(data, Number(range?.to_height));
               // set known height for next request
               if (range && range.to_height > knownHeight) {
                 knownHeight = range.to_height;
@@ -266,15 +279,16 @@ interface StreamSingleDataSetCallbacks<
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 > extends Omit<StreamCallbacks<DataRow>, 'onCompleted'> {
   // onCompleted indicates when the data stream is finished
-  onCompleted?: (dataSet: DataSet) => void;
+  onCompleted?: (dataSet: DataSet, height: number) => void;
   // onAccumulated returns accumulated DataSet so far as a Map
-  onAccumulated?: (dataSet: DataSet) => void;
+  onAccumulated?: (dataSet: DataSet, height: number) => void;
 }
 export class IndexerStreamAccumulateSingleDataSet<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 > {
   private dataSet: DataSet = new Map() as DataSet;
+  private dataHeight = 0;
   private stream?: IndexerStream<DataRow>;
 
   constructor(
@@ -285,19 +299,23 @@ export class IndexerStreamAccumulateSingleDataSet<
     this.stream = new IndexerStream<DataRow>(
       relativeURL,
       {
-        onUpdate: (dataUpdates: DataRow[]) => {
-          callbacks.onUpdate?.(dataUpdates);
+        onUpdate: (dataUpdates: DataRow[], dataHeight: number) => {
+          callbacks.onUpdate?.(dataUpdates, dataHeight);
+          // update accumulated dataSet
+          this.dataHeight = dataHeight;
           this.dataSet = this.accumulateDataSet(dataUpdates, {
             mapEntryRemovalValue: opts?.mapEntryRemovalValue,
           });
           // send updated dataSet to listener
-          callbacks.onAccumulated?.(this.dataSet);
+          callbacks.onAccumulated?.(this.dataSet, this.dataHeight);
         },
         onError: callbacks.onError,
-        onCompleted: () => callbacks.onCompleted?.(this.dataSet),
+        onCompleted: () =>
+          callbacks.onCompleted?.(this.dataSet, this.dataHeight),
       },
       {
         abortController: opts?.abortController,
+        disableSSE: opts?.disableSSE,
       }
     );
   }
@@ -325,11 +343,11 @@ interface StreamDualDataSetCallbacks<
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 > extends Omit<StreamCallbacks<DataRow>, 'onUpdate' | 'onCompleted'> {
   // onUpdate returns individual update chunks
-  onUpdate?: (update: DataRow[][]) => void;
+  onUpdate?: (update: DataRow[][], height: number) => void;
   // onCompleted indicates when the data stream is finished
-  onCompleted?: (dataSet: DataSet[]) => void;
+  onCompleted?: (dataSet: DataSet[], height: number) => void;
   // onAccumulated returns accumulated DataSet so far as a Map
-  onAccumulated?: (dataSet: DataSet[]) => void;
+  onAccumulated?: (dataSet: DataSet[], height: number) => void;
 }
 export class IndexerStreamAccumulateDualDataSet<
   DataRow extends BaseDataRow,
@@ -337,6 +355,7 @@ export class IndexerStreamAccumulateDualDataSet<
 > {
   // store data in class instance
   private dataSets: DataSet[] = [new Map(), new Map()] as DataSet[];
+  private dataHeight = 0;
   private stream?: IndexerStream<DataRow[]>;
 
   constructor(
@@ -347,20 +366,23 @@ export class IndexerStreamAccumulateDualDataSet<
     this.stream = new IndexerStream<DataRow[]>(
       relativeURL,
       {
-        onUpdate: (dataUpdates: DataRow[][]) => {
-          callbacks.onUpdate?.(dataUpdates);
+        onUpdate: (dataUpdates: DataRow[][], dataHeight: number) => {
+          callbacks.onUpdate?.(dataUpdates, dataHeight);
           // update accumulated dataSet
+          this.dataHeight = dataHeight;
           this.dataSets = this.accumulateDataSet(dataUpdates, {
             mapEntryRemovalValue: opts?.mapEntryRemovalValue,
           });
           // send updated dataSet to listener
-          callbacks.onAccumulated?.(this.dataSets);
+          callbacks.onAccumulated?.(this.dataSets, this.dataHeight);
         },
         onError: callbacks.onError,
-        onCompleted: () => callbacks.onCompleted?.(this.dataSets),
+        onCompleted: () =>
+          callbacks.onCompleted?.(this.dataSets, this.dataHeight),
       },
       {
         abortController: opts?.abortController,
+        disableSSE: opts?.disableSSE,
       }
     );
   }
