@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.38](https://github.com/duality-labs/duality-web-app/compare/v0.3.37...v0.3.38) (2023-11-29)
+
+
+### Features
+
+* add TradingView charts ([#477](https://github.com/duality-labs/duality-web-app/issues/477)) ([c128b34](https://github.com/duality-labs/duality-web-app/commit/c128b34fea7448d726136715e85d78a49791b894))
+
+
+### Fixes
+
+* add TradingView charts fix ([#484](https://github.com/duality-labs/duality-web-app/issues/484)) ([14b1a90](https://github.com/duality-labs/duality-web-app/commit/14b1a905be88fd67fecba6c41539cf9b5eff0f76))
+* add TradingView charts fix 2 ([#486](https://github.com/duality-labs/duality-web-app/issues/486)) ([953d32f](https://github.com/duality-labs/duality-web-app/commit/953d32f2bf1a9c56968c5d3900909c9a5fedabe4))
+
 ## [0.3.37](https://github.com/duality-labs/duality-web-app/compare/v0.3.36...v0.3.37) (2023-11-27)
 
 
