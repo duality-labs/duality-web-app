@@ -34,7 +34,7 @@ async function sendSwap(
   },
   {
     orderType,
-    tickIndex,
+    tickIndexInToOut,
     amountIn,
     maxAmountOut,
     expirationTime,
@@ -47,7 +47,7 @@ async function sendSwap(
 ): Promise<DeliverTxResponse> {
   if (
     orderType === undefined ||
-    !tickIndex ||
+    !tickIndexInToOut ||
     !amountIn ||
     !tokenIn ||
     !tokenOut ||
@@ -68,7 +68,7 @@ async function sendSwap(
     [
       dualitylabs.duality.dex.MessageComposer.withTypeUrl.placeLimitOrder({
         orderType,
-        tickIndex,
+        tickIndexInToOut,
         amountIn,
         maxAmountOut,
         expirationTime,
@@ -111,7 +111,7 @@ export function useSwap(): [
       if (!web3) return onError('Missing Provider');
       const {
         orderType,
-        tickIndex,
+        tickIndexInToOut,
         amountIn,
         tokenIn,
         tokenOut,
@@ -120,7 +120,7 @@ export function useSwap(): [
       } = request;
       if (
         orderType === undefined ||
-        !tickIndex ||
+        !tickIndexInToOut ||
         !amountIn ||
         !tokenIn ||
         !tokenOut ||
@@ -136,7 +136,7 @@ export function useSwap(): [
       if (!wallet || !address) return onError('Client has no wallet');
       if (!tokens) return onError('Send not ready: token list not ready');
       // check for not well defined tick index
-      const tickNumber = tickIndex.toNumber();
+      const tickNumber = tickIndexInToOut.toNumber();
       if (Number.isNaN(tickNumber) || !Number.isFinite(tickNumber)) {
         return onError('Limit Price is not defined');
       }

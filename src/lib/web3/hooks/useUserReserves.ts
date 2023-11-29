@@ -145,7 +145,9 @@ function useUserDepositsTotalReserves(
         if (Number(sharesOwned) > 0) {
           // return both upper and lower tick pools
           return [
-            { tokenIn: token0, tickIndex: deposit.lowerTickIndex },
+            // note: need to flip token0 tick index to align with query:
+            //       param.tickIndex now means tickIndexTakerToMaker
+            { tokenIn: token0, tickIndex: deposit.lowerTickIndex.negate() },
             { tokenIn: token1, tickIndex: deposit.upperTickIndex },
           ].map(({ tokenIn, tickIndex }) => {
             const params: QueryGetPoolReservesRequest = {
@@ -170,7 +172,8 @@ function useUserDepositsTotalReserves(
                     return {
                       deposit,
                       params,
-                      totalReserves: response.poolReserves.reserves,
+                      totalReserves:
+                        response.poolReserves?.reservesMakerDenom || '0',
                     };
                   })
                   .catch(() => {
@@ -488,10 +491,10 @@ export function useAccurateUserReserves(
       return userIndicativeReserves?.map<[number, [number, number]]>(
         ({ deposit }) => {
           // find state from tick liquidity
+          // note: reserve of token is in tickIndexTakerToMaker and needs to be
+          //       converted into tickIndex1to0 to align with token0/token1 math
           const reserves0 =
             liquidityMap0?.get(deposit.lowerTickIndex.toNumber()) || 0;
-          // note: reserve of token 1 is saved in tickIndex0to1 and needs to be
-          //       converted into tickIndex1to0 to align with token0/token1 math
           const reserves1 =
             liquidityMap1?.get(deposit.upperTickIndex.negate().toNumber()) || 0;
           // return in key, value format ready to create an array or map

@@ -285,7 +285,7 @@ function LimitOrder({
             orderType: orderTypeEnum[execution],
             // todo: set tickIndex to allow for a tolerance:
             //   the below function is a tolerance of 0
-            tickIndex: Long.fromNumber(
+            tickIndexInToOut: Long.fromNumber(
               showLimitPrice
                 ? // set given limit price
                   displayPriceToTickIndex(

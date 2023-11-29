@@ -30,7 +30,7 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
           address,
         });
         // return unwrapped result
-        return response.Deposits.sort(
+        return response.Deposits?.sort(
           (a, b) =>
             a.centerTickIndex.sub(b.centerTickIndex).toNumber() ||
             b.fee.sub(a.fee).toNumber()
