@@ -51,7 +51,7 @@ jobs:
             conventional-changelog-conventionalcommits@6
         env:
           # use GitHub action token to post comment to PR
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Echo new release
         if: steps.semantic.outputs.new_release_published == 'true'
