@@ -237,7 +237,9 @@ function Swap() {
             orderType: 1 as LimitOrderType.FILL_OR_KILL,
             // todo: set tickIndex to allow for a tolerance:
             //   the below function is a tolerance of 0
-            tickIndex: Long.fromNumber(tickIndexLimit * (forward ? 1 : -1)),
+            tickIndexInToOut: Long.fromNumber(
+              tickIndexLimit * (forward ? 1 : -1)
+            ),
             maxAmountOut: getBaseDenomAmount(tokenB, result.amountOut) || '0',
           },
           gasEstimate
