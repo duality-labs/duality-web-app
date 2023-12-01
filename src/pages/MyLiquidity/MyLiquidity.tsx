@@ -13,8 +13,6 @@ import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
 import './MyLiquidity.scss';
 import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { Token } from '../../lib/web3/utils/tokens';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowAltCircleRight } from '@fortawesome/free-solid-svg-icons';
 import {
   getTokenPathPart,
   useTokenBySymbol,
@@ -201,22 +199,6 @@ const userPositionActions: Actions = {
     action: ({ navigate, token0, token1 }) => {
       return navigate(
         `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
-      );
-    },
-  },
-  stake: {
-    title: (
-      <>
-        Stake <FontAwesomeIcon icon={faArrowAltCircleRight} />
-      </>
-    ),
-    className: 'button-primary m-0',
-    action: ({ navigate, token0, token1 }) => {
-      return navigate(
-        `/portfolio/pools/${[
-          getTokenPathPart(token0),
-          getTokenPathPart(token1),
-        ].join('/')}`
       );
     },
   },
