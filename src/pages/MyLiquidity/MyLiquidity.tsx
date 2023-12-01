@@ -57,7 +57,6 @@ function HeroCard() {
           <tr>
             <th style={{ width: '35%' }}>Total Assets</th>
             <th style={{ width: '35%' }}>Position Value</th>
-            <th style={{ width: '25%' }}>Earned Incentives</th>
           </tr>
         </thead>
         <tbody>
@@ -78,7 +77,6 @@ function HeroCard() {
                   })}`
                 : '-'}
             </td>
-            <td>{wallet ? '$0' : '-'}</td>
           </tr>
         </tbody>
       </table>
