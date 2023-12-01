@@ -12,7 +12,11 @@ import { SmallCardRow } from '../../components/cards/SmallCard';
 import StatCardTVL from '../../components/stats/StatCardTVL';
 
 import { formatAddress } from '../../lib/web3/utils/address';
-import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getDisplayDenomAmount,
+  getTokenId,
+} from '../../lib/web3/utils/tokens';
 import { getPairID, hasInvertedOrder } from '../../lib/web3/utils/pairs';
 import {
   ChainEvent,
@@ -37,7 +41,7 @@ import { formatRelativeTime } from '../../lib/utils/time';
 
 import './Pool.scss';
 import useTokens, {
-  matchTokenByAddress,
+  matchTokenByDenom,
   useTokenPathPart,
   useTokenValue,
 } from '../../lib/web3/hooks/useTokens';
@@ -207,15 +211,13 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
 
   const { data: { gauges } = {} } = useIncentiveGauges();
   const filteredGauges = useMemo(() => {
-    const tokenAddresses = [tokenA?.address, tokenB?.address].filter(
-      (address): address is string => !!address
-    );
-    return tokenAddresses.length > 0
+    const tokenIds = [getTokenId(tokenA), getTokenId(tokenB)];
+    return tokenIds.length > 0
       ? gauges?.filter((gauge) => {
-          return tokenAddresses.every((address) => {
+          return tokenIds.every((id) => {
             return (
-              address === gauge.distribute_to?.pairID?.token0 ||
-              address === gauge.distribute_to?.pairID?.token1
+              id === gauge.distribute_to?.pairID?.token0 ||
+              id === gauge.distribute_to?.pairID?.token1
             );
           });
         })
@@ -234,7 +236,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
             >
               <div className="row gap-4">
                 {row.coins.map((coin) => {
-                  const token = tokens.find(matchTokenByAddress(coin.denom));
+                  const token = tokens.find(matchTokenByDenom(coin.denom));
                   return token ? (
                     <div
                       key={coin.denom}
@@ -256,10 +258,10 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
         function TokenCellRange({ row }: { row: Gauge }) {
           if (row.distribute_to?.pairID) {
             const Token0 = tokens.find(
-              matchTokenByAddress(row.distribute_to.pairID.token0)
+              matchTokenByDenom(row.distribute_to.pairID.token0)
             );
             const Token1 = tokens.find(
-              matchTokenByAddress(row.distribute_to.pairID.token1)
+              matchTokenByDenom(row.distribute_to.pairID.token1)
             );
             return (
               <td>
@@ -295,7 +297,7 @@ function Incentives({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
           return (
             <td>
               {row.coins.map((coin) => {
-                const token = tokens.find(matchTokenByAddress(coin.denom));
+                const token = tokens.find(matchTokenByDenom(coin.denom));
                 return token ? (
                   <div key={coin.denom} className="row gap-2">
                     <div className="col ml-auto">
@@ -591,11 +593,7 @@ function EventColumn<
     return null;
 
     function getHasInvertedOrder(): boolean {
-      return hasInvertedOrder(
-        getPairID(Token0, Token1),
-        tokenA.address,
-        tokenB.address
-      );
+      return hasInvertedOrder(getPairID(Token0, Token1), [tokenA, tokenB]);
     }
 
     function getTokenAReserves() {
@@ -694,6 +692,8 @@ function SwapColumn({
     data: [tokenAPrice, tokenBPrice],
     isValidating,
   } = useSimplePrice([tokenA, tokenB]);
+  const tokenIdA = getTokenId(tokenA);
+  const tokenIdB = getTokenId(tokenB);
 
   const content = (() => {
     switch (heading) {
@@ -736,16 +736,16 @@ function SwapColumn({
 
     function getTokenAReserves() {
       const address = attributes.Creator;
-      return attributes.TokenIn === tokenA.address
-        ? getSpentTokenAmount(events, { address, matchToken: tokenA })
-        : getReceivedTokenAmount(events, { address, matchToken: tokenA });
+      return attributes.TokenIn === tokenIdA
+        ? getSpentTokenAmount(events, { address, matchTokenId: tokenIdA })
+        : getReceivedTokenAmount(events, { address, matchTokenId: tokenIdA });
     }
 
     function getTokenBReserves() {
       const address = attributes.Creator;
-      return attributes.TokenIn === tokenB.address
-        ? getSpentTokenAmount(events, { address, matchToken: tokenB })
-        : getReceivedTokenAmount(events, { address, matchToken: tokenB });
+      return attributes.TokenIn === tokenIdB
+        ? getSpentTokenAmount(events, { address, matchTokenId: tokenIdB })
+        : getReceivedTokenAmount(events, { address, matchTokenId: tokenIdB });
     }
 
     function getTokenReservesInDenom(token: Token, reserves: BigNumber.Value) {

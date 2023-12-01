@@ -1,9 +1,9 @@
 import { formatCurrency, formatPercentage } from '../../lib/utils/number';
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 
 // format a URL path part to reference a token on the indexer
 export function getIndexerTokenPathPart(token: Token) {
-  return encodeURIComponent(token.address);
+  return encodeURIComponent(getTokenId(token) || '-');
 }
 
 export type TimeSeriesRow = [unixTime: number, values: number[]];

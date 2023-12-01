@@ -237,7 +237,8 @@ export function MyEditedPositionTableCard({
   viewableMaxIndex: number | undefined;
   edgePriceIndex: number | undefined;
 }) {
-  const invertedTokenOrder = guessInvertedOrder(tokenA.address, tokenB.address);
+  const invertedTokenOrder =
+    !!tokenA && !!tokenB && guessInvertedOrder([tokenA, tokenB]);
 
   const {
     data: [priceA, priceB],

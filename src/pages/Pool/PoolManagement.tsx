@@ -59,6 +59,7 @@ import {
   Token,
   getBaseDenomAmount,
   getDisplayDenomAmount,
+  getTokenId,
   roundToBaseUnit,
 } from '../../lib/web3/utils/tokens';
 
@@ -198,8 +199,8 @@ export default function PoolManagement({
     !!tokenA && !!tokenB && values.some((v) => Number(v) >= 0);
 
   const currentPriceIndexFromTicks = useCurrentPriceIndexFromTicks(
-    tokenA?.address,
-    tokenB?.address
+    getTokenId(tokenA),
+    getTokenId(tokenB)
   );
 
   const [initialPrice, setInitialPrice] = useState<string>('');
@@ -792,8 +793,8 @@ export default function PoolManagement({
     (balanceTokenB && new BigNumber(balanceTokenB).gte(values[1])) || false;
 
   const { data: feeLiquidityMap } = useFeeLiquidityMap(
-    tokenA?.address,
-    tokenB?.address
+    getTokenId(tokenA),
+    getTokenId(tokenB)
   );
 
   const pairPoolDepositFilter = usePoolDepositFilterForPair(
@@ -811,10 +812,8 @@ export default function PoolManagement({
   const [{ isValidating: isValidatingEdit }, sendEditRequest] =
     useEditLiquidity();
 
-  const invertedTokenOrder = guessInvertedOrder(
-    tokenA?.address ?? '',
-    tokenB?.address ?? ''
-  );
+  const invertedTokenOrder =
+    !!tokenA && !!tokenB && guessInvertedOrder([tokenA, tokenB]);
 
   const [[viewableMinIndex, viewableMaxIndex] = [], setViewableIndexes] =
     useState<[number, number] | undefined>();

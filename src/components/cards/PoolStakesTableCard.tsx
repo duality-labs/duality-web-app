@@ -26,7 +26,11 @@ import {
   formatCurrency,
   formatPercentage,
 } from '../../lib/utils/number';
-import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getDisplayDenomAmount,
+  getTokenId,
+} from '../../lib/web3/utils/tokens';
 
 import { usePoolDepositFilterForPair } from '../../lib/web3/hooks/useUserShares';
 import {
@@ -77,7 +81,10 @@ export default function MyPoolStakesTableCard<T extends string | number>({
     return [...userPositionsShareValues, ...userStakedShareValues];
   }, [userPositionsShareValues, userStakedShareValues]);
 
-  const edgePrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+  const edgePrice = useCurrentPriceFromTicks(
+    getTokenId(tokenA),
+    getTokenId(tokenB)
+  );
 
   const maxPoolEquivalentReservesA = useMemo(() => {
     return edgePrice
@@ -108,7 +115,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
       amountB: number[];
     }>(
       (acc, userPosition) => {
-        const tokensInverted = tokenA.address !== userPosition.token0.address;
+        const tokensInverted = !matchTokens(tokenA, userPosition.token0);
 
         const { tokenAContext, tokenBContext } = !tokensInverted
           ? {
@@ -338,7 +345,7 @@ export default function MyPoolStakesTableCard<T extends string | number>({
           {hasContext ? (
             allShareValues
               .sort((a, b) => {
-                return !guessInvertedOrder(tokenA.address, tokenB.address)
+                return !guessInvertedOrder([tokenA, tokenB])
                   ? a.deposit.centerTickIndex1To0
                       .subtract(b.deposit.centerTickIndex1To0)
                       .toNumber()
@@ -443,7 +450,10 @@ function StakingRow({
 }) {
   const tokensInverted = !matchTokens(tokenA, userPosition.token0);
 
-  const edgePrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+  const edgePrice = useCurrentPriceFromTicks(
+    getTokenId(tokenA),
+    getTokenId(tokenB)
+  );
   const {
     tokenAContext,
     tokenBContext,

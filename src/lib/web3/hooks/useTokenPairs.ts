@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { TokenAddress } from '../utils/tokens';
+import { TokenID } from '../utils/tokens';
 import { useIndexerStreamOfSingleDataSet } from './useIndexer';
 
 export type TokenPairReserves = [
-  token0: TokenAddress,
-  token1: TokenAddress,
+  token0: TokenID,
+  token1: TokenID,
   reserve0: number,
   reserve1: number
 ];
@@ -34,8 +34,8 @@ export default function useTokenPairs(): TokenPairsState {
 
 // add convenience method to fetch ticks in a pair
 export function useOrderedTokenPair([tokenA, tokenB]: [
-  TokenAddress?,
-  TokenAddress?
+  tokenA?: TokenID,
+  tokenB?: TokenID
 ]): TokenPairReserves | undefined {
   const { data: tokenPairs } = useTokenPairs();
   // search for ordered token pair in our token pair list

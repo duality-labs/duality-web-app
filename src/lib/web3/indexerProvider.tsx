@@ -16,14 +16,14 @@ import { useWeb3 } from './useWeb3';
 
 import { useRpcPromise } from './rpcQueryClient';
 import useTokens, {
-  matchTokenByAddress,
+  matchTokenByDenom,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
 import useTokenPairs, { TokenPairReserves } from './hooks/useTokenPairs';
 
 import { feeTypes } from './utils/fees';
 
-import { Token } from './utils/tokens';
+import { Token, getTokenId } from './utils/tokens';
 import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairIdString, getPairID } from './utils/pairs';
 
@@ -379,7 +379,7 @@ export function useBankBalances() {
   const balances = useMemo<TokenCoin[] | undefined>(() => {
     // check all known tokens with IBC context for matching balance denoms
     return data?.balances.reduce<TokenCoin[]>((result, balance) => {
-      const token = allTokensWithIBC.find(matchTokenByAddress(balance.denom));
+      const token = allTokensWithIBC.find(matchTokenByDenom(balance.denom));
       if (token) {
         result.push({ token, ...balance });
       }
@@ -415,12 +415,12 @@ export function useShares({
     return !staked ? shares : stakedShares;
 
     function tokensFilter(tokens: [tokenA: Token, tokenB: Token]) {
-      const [addressA, addressB] = tokens.map((token) => token.address);
+      const [denomA, denomB] = tokens.map((token) => getTokenId(token));
       return function tokenFilter({ pairId = '' }: IndexedShare): boolean {
-        const [address0, address1] = pairId.split('/');
+        const [denom0, denom1] = pairId.split('/');
         return (
-          (addressA === address0 && addressB === address1) ||
-          (addressA === address1 && addressB === address0)
+          (denomA === denom0 && denomB === denom1) ||
+          (denomA === denom1 && denomB === denom0)
         );
       };
     }

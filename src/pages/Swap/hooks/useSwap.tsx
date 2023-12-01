@@ -10,7 +10,7 @@ import { createTransactionToasts } from '../../../components/Notifications/commo
 
 import { getDisplayDenomAmount } from '../../../lib/web3/utils/tokens';
 import useTokens, {
-  matchTokenByAddress,
+  matchTokenByDenom,
   useTokensWithIbcInfo,
 } from '../../../lib/web3/hooks/useTokens';
 import {
@@ -141,7 +141,7 @@ export function useSwap(): [
         return onError('Limit Price is not defined');
       }
 
-      const tokenOutToken = tokens.find(matchTokenByAddress(tokenOut));
+      const tokenOutToken = tokens.find(matchTokenByDenom(tokenOut));
       if (!tokenOutToken) return onError('Token out was not found');
 
       createTransactionToasts(

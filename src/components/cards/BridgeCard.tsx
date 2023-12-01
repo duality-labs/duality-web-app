@@ -22,6 +22,7 @@ import {
 
 import { minutes, nanoseconds } from '../../lib/utils/time';
 import { formatAddress } from '../../lib/web3/utils/address';
+import { matchToken } from '../../lib/web3/hooks/useTokens';
 import { formatAmount } from '../../lib/utils/number';
 import {
   Token,
@@ -557,12 +558,12 @@ function LocalChainReserves({
 }) {
   const { address } = useWeb3();
   const allUserBankAssets = useUserBankValues();
-  const userToken = allUserBankAssets.find((tokenCoin) => {
-    return (
-      tokenCoin.token.address === token.address &&
-      tokenCoin.token.chain.chain_id === token.chain.chain_id
-    );
-  });
+  const userToken = useMemo(() => {
+    const tokenMatcher = matchToken(token);
+    return allUserBankAssets.find((tokenCoin) => {
+      return tokenMatcher(tokenCoin.token);
+    });
+  }, [allUserBankAssets, token]);
 
   if (!address) {
     return (

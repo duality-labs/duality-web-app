@@ -13,6 +13,7 @@ import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/
 import subscriber from '../subscriptionManager';
 import { ValuedUserPositionDepositContext } from './useUserShareValues';
 import { minutes } from '../../utils/time';
+import { getTokenId } from '../utils/tokens';
 
 const {
   REACT_APP__REST_API = '',
@@ -79,8 +80,8 @@ function isIncentiveMatch(
   if (pairID && startTick !== undefined && endTick !== undefined) {
     return (
       // is this the correct tick pair?
-      pairID.token0 === userPosition.token0.address &&
-      pairID.token1 === userPosition.token1.address &&
+      pairID.token0 === getTokenId(userPosition.token0) &&
+      pairID.token1 === getTokenId(userPosition.token1) &&
       // are ticks within bounds?
       userPosition.deposit.lowerTickIndex1To0.greaterThanOrEqual(startTick) &&
       userPosition.deposit.upperTickIndex1To0.lessThanOrEqual(endTick)

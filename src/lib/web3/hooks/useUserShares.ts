@@ -18,13 +18,13 @@ import { useRpcPromise } from '../rpcQueryClient';
 import { getPairID } from '../utils/pairs';
 import {
   Token,
-  TokenAddress,
-  TokenAddressPair,
+  TokenID,
+  TokenIdPair,
   TokenPair,
-  getTokenAddressPair,
+  resolveTokenIdPair,
 } from '../utils/tokens';
 import useTokens, {
-  matchTokenByAddress,
+  matchTokenByDenom,
   useTokensWithIbcInfo,
 } from './useTokens';
 import { StakeContext, UserStakedShare, useShares } from '../indexerProvider';
@@ -47,21 +47,20 @@ export type UserDepositFilter = (
 const defaultFilter: UserDepositFilter = () => true;
 
 export function usePoolDepositFilterForPair(
-  tokenPair: TokenPair | TokenAddressPair | undefined
+  tokenPair: TokenPair | TokenIdPair | undefined
 ): (poolDeposit: DirectionalDepositRecord) => boolean {
-  const [tokenAddressA, tokenAddressB] = getTokenAddressPair(tokenPair);
+  const [tokenIdA, tokenIdB] = resolveTokenIdPair(tokenPair);
   const poolDepositFilter = useCallback(
     (poolDeposit: DirectionalDepositRecord) => {
-      const addresses = [tokenAddressA, tokenAddressB];
       return (
-        !!tokenAddressA &&
-        !!tokenAddressB &&
+        !!tokenIdA &&
+        !!tokenIdB &&
         !!poolDeposit.pairID &&
-        addresses.includes(poolDeposit.pairID.token0) &&
-        addresses.includes(poolDeposit.pairID.token1)
+        [tokenIdA, tokenIdB].includes(poolDeposit.pairID.token0) &&
+        [tokenIdA, tokenIdB].includes(poolDeposit.pairID.token1)
       );
     },
-    [tokenAddressA, tokenAddressB]
+    [tokenIdA, tokenIdB]
   );
   return poolDepositFilter;
 }
@@ -259,7 +258,7 @@ export function useUserPositionsTotalReserves(
 export interface ShareValueContext {
   userShares: BigNumber;
   dexTotalShares: BigNumber;
-  token: TokenAddress;
+  token: TokenID;
   tickIndex1To0: BigNumber;
   dexTotalReserves: BigNumber;
   userReserves: BigNumber;
@@ -331,12 +330,8 @@ export function useUserPositionsContext(
               data?.poolReserves?.fee.toString() === deposit.fee.toString()
             );
           }) ?? undefined;
-        const token0 = allTokens.find(
-          matchTokenByAddress(deposit.pairID.token0)
-        );
-        const token1 = allTokens.find(
-          matchTokenByAddress(deposit.pairID.token1)
-        );
+        const token0 = allTokens.find(matchTokenByDenom(deposit.pairID.token0));
+        const token1 = allTokens.find(matchTokenByDenom(deposit.pairID.token1));
 
         if (token0 && token1) {
           // collect context of both side of the liquidity

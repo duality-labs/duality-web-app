@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { Token } from '../../../lib/web3/utils/tokens';
+import { Token, getTokenId } from '../../../lib/web3/utils/tokens';
 import { guessInvertedOrder } from '../../../lib/web3/utils/pairs';
 import { DexMessageAction } from '../../../lib/web3/utils/events';
 import { WalletAddress } from '../../../lib/web3/utils/address';
@@ -59,19 +59,23 @@ export default function useTransactionTableData({
   action?: DexMessageAction;
   pageSize?: number;
 }) {
+  const tokenIdA = getTokenId(tokenA) || '';
+  const tokenIdB = getTokenId(tokenB) || '';
+
   const [pageOffset] = useState<number>(0);
   return useQuery({
     queryKey: [
       'events',
-      tokenA.address,
-      tokenB.address,
+      tokenIdA,
+      tokenIdB,
       action,
       account,
       pageSize,
       pageOffset,
     ],
+    enabled: !!(tokenIdA && tokenIdB),
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
-      const invertedOrder = guessInvertedOrder(tokenA.address, tokenB.address);
+      const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
 
       /*
        * note: you would expect the following to work, but the ABCI query check
@@ -84,11 +88,11 @@ export default function useTransactionTableData({
        *   events: [
        *     `message.module='${'dex'}'`,
        *     !invertedOrder
-       *       ? `message.Token='${tokenA.address}'`
-       *       : `message.Token0='${tokenB.address}'`,
+       *       ? `message.Token='${tokenIdA}'`
+       *       : `message.Token0='${tokenIdB}'`,
        *     !invertedOrder
-       *       ? `message.Token='${tokenB.address}'`
-       *       : `message.Token1='${tokenA.address}'`,
+       *       ? `message.Token='${tokenIdB}'`
+       *       : `message.Token1='${tokenIdA}'`,
        *     action ? `message.action='${action}'` : '',
        *   ].filter(Boolean),
        *   orderBy: cosmos.tx.v1beta1.OrderBySDKType.ORDER_BY_ASC,
@@ -104,11 +108,11 @@ export default function useTransactionTableData({
           [
             `message.module='${'dex'}'`,
             !invertedOrder
-              ? `message.Token0='${tokenA.address}'`
-              : `message.Token0='${tokenB.address}'`,
+              ? `message.Token0='${tokenIdA}'`
+              : `message.Token0='${tokenIdB}'`,
             !invertedOrder
-              ? `message.Token1='${tokenB.address}'`
-              : `message.Token1='${tokenA.address}'`,
+              ? `message.Token1='${tokenIdB}'`
+              : `message.Token1='${tokenIdA}'`,
             account ? `message.Creator='${account}'` : '',
             action ? `message.action='${action}'` : '',
           ]

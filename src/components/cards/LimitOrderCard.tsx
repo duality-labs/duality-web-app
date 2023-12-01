@@ -16,6 +16,7 @@ import {
   Token,
   getBaseDenomAmount,
   getDisplayDenomAmount,
+  getTokenId,
 } from '../../lib/web3/utils/tokens';
 import { dualityMainToken } from '../../lib/web3/hooks/useTokens';
 import {
@@ -143,11 +144,11 @@ function LimitOrder({
   showTriggerPrice?: boolean;
 }) {
   const buyMode = !sellMode;
-  const [token0, token1] =
-    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
+  const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
+  const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
   const {
     data: [token0Ticks, token1Ticks],
-  } = useTokenPairTickLiquidity([token0, token1]);
+  } = useTokenPairTickLiquidity([tokenId0, tokenId1]);
 
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
@@ -166,8 +167,8 @@ function LimitOrder({
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap();
 
   const { data: routerResult } = useRouterResult({
-    tokenA: tokenIn?.address,
-    tokenB: tokenOut?.address,
+    tokenA: getTokenId(tokenIn),
+    tokenB: getTokenId(tokenOut),
     valueA: formState.amount,
     valueB: undefined,
   });
@@ -193,7 +194,7 @@ function LimitOrder({
           routerResult.tickIndexIn.toNumber(),
           routerResult.tickIndexOut.toNumber()
         );
-      const forward = result.tokenIn === token0;
+      const forward = result.tokenIn === tokenId0;
       const ticks = forward ? token1Ticks : token0Ticks;
       const ticksPassed =
         (tickMin !== undefined &&
@@ -230,7 +231,7 @@ function LimitOrder({
       return gasEstimate;
     }
     return undefined;
-  }, [routerResult, token0, token0Ticks, token1Ticks]);
+  }, [routerResult, tokenId0, token0Ticks, token1Ticks]);
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -266,7 +267,7 @@ function LimitOrder({
       ) {
         // convert to swap request format
         const result = routerResult;
-        const forward = result.tokenIn === token0;
+        const forward = result.tokenIn === tokenId0;
         const tickIndexLimit = tickIndexOut * (forward ? 1 : -1);
         swapRequest(
           {
@@ -323,7 +324,7 @@ function LimitOrder({
       address,
       tokenIn,
       tokenOut,
-      token0,
+      tokenId0,
       gasEstimate,
       swapRequest,
     ]

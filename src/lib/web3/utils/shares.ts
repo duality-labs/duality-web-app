@@ -1,5 +1,5 @@
 import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
-import { TokenAddressPair, TokenPair, getTokenAddressPair } from './tokens';
+import { TokenIdPair, TokenPair, resolveTokenIdPair } from './tokens';
 import { guessInvertedOrder } from './pairs';
 
 export interface IndexedShare {
@@ -28,19 +28,16 @@ export function getShareInfo(coin: Coin) {
 }
 
 export function getShareDenom(
-  tokens: TokenPair | TokenAddressPair,
+  tokens: TokenPair | TokenIdPair,
   tickIndex1To0: number,
   fee: number
 ): string | undefined {
-  const tokenAddresses = getTokenAddressPair(tokens);
-  const [token0Address, token1Address] = guessInvertedOrder(
-    tokenAddresses[0],
-    tokenAddresses[1]
-  )
-    ? [tokenAddresses[1], tokenAddresses[0]]
-    : tokenAddresses;
-  if (token0Address && token1Address && !isNaN(tickIndex1To0) && !isNaN(fee)) {
-    return `DualityPoolShares-${token0Address}-${token1Address}-t${tickIndex1To0.toFixed(
+  const tokenIds = resolveTokenIdPair(tokens);
+  const [tokenId0, tokenId1] = guessInvertedOrder(tokens)
+    ? [tokenIds[1], tokenIds[0]]
+    : tokenIds;
+  if (tokenId0 && tokenId1 && !isNaN(tickIndex1To0) && !isNaN(fee)) {
+    return `DualityPoolShares-${tokenId0}-${tokenId1}-t${tickIndex1To0.toFixed(
       0
     )}-f${fee.toFixed(0)}`;
   }

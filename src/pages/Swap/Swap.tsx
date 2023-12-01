@@ -32,7 +32,11 @@ import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import { formatPercentage } from '../../lib/utils/number';
-import { Token, getBaseDenomAmount } from '../../lib/web3/utils/tokens';
+import {
+  Token,
+  getBaseDenomAmount,
+  getTokenId,
+} from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
 
 import './Swap.scss';
@@ -94,8 +98,8 @@ function Swap() {
   const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
   const pairRequest = {
-    tokenA: tokenA?.address,
-    tokenB: tokenB?.address,
+    tokenA: getTokenId(tokenA),
+    tokenB: getTokenId(tokenB),
     valueA: lastUpdatedA ? valueA : undefined,
     valueB: lastUpdatedA ? undefined : valueB,
   };
@@ -104,8 +108,8 @@ function Swap() {
     isValidating: isValidatingRate,
     error,
   } = useRouterResult({
-    tokenA: tokenA?.address,
-    tokenB: tokenB?.address,
+    tokenA: getTokenId(tokenA),
+    tokenB: getTokenId(tokenB),
     valueA: lastUpdatedA ? valueA : undefined,
     valueB: lastUpdatedA ? undefined : valueB,
   });
@@ -145,7 +149,7 @@ function Swap() {
     useNumericInputState(defaultSlippage);
 
   const [token0, token1] =
-    useOrderedTokenPair([tokenA?.address, tokenB?.address]) || [];
+    useOrderedTokenPair([getTokenId(tokenA), getTokenId(tokenB)]) || [];
   const {
     data: [token0Ticks, token1Ticks],
   } = useTokenPairTickLiquidity([token0, token1]);
@@ -429,7 +433,7 @@ function Swap() {
                     <>
                       1 {rateTokenOrder[1].symbol} ={' '}
                       {formatLongPrice(
-                        routerResult.tokenIn === rateTokenOrder[1].address
+                        routerResult.tokenIn === getTokenId(rateTokenOrder[1])
                           ? routerResult.amountOut
                               .dividedBy(routerResult.amountIn)
                               .toFixed()

@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useCurrentPriceFromTicks } from '../Liquidity/useCurrentPriceFromTicks';
 import { formatPrice } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
@@ -50,7 +50,10 @@ export function PairPriceCard({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+  const currentPrice = useCurrentPriceFromTicks(
+    getTokenId(tokenA),
+    getTokenId(tokenB)
+  );
   return (
     <PriceCard
       tokenA={tokenA}

@@ -45,7 +45,7 @@ async function getRouterResult(
 
 /**
  * Gets the estimated info of a swap transaction
- * @param pairRequest the respective addresses and value
+ * @param pairRequest the respective IDs and value
  * @returns estimated info of swap, loading state and possible error
  */
 export function useRouterResult(pairRequest: PairRequest): {
@@ -173,7 +173,7 @@ export function useRouterResult(pairRequest: PairRequest): {
 
 /**
  * Gets the estimated info of a swap transaction
- * @param pairRequest the respective addresses and value
+ * @param pairRequest the respective IDs and value
  * @param routerResult the results of the router (if they exist)
  * @returns estimated info of swap
  */
@@ -236,7 +236,7 @@ export function getRouterEstimates(
 
 /**
  * Gets the estimated info of a swap transaction
- * @param pairRequest the respective addresses and value
+ * @param pairRequest the respective IDs and value
  * @returns estimated info of swap, loading state and possible error
  */
 export function useRouterEstimates(pairRequest: PairRequest): {

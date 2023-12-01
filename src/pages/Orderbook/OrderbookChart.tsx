@@ -13,10 +13,10 @@ import {
   Bar,
 } from '@tradingview/charting-library';
 
-import { Token } from '../../lib/web3/utils/tokens';
+import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 
 import useTokens, {
-  matchTokenByAddress,
+  matchTokenByDenom,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
@@ -69,8 +69,8 @@ export default function OrderBookChart({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const tokenAPath = tokenA.address;
-  const tokenBPath = tokenB.address;
+  const tokenIdA = getTokenId(tokenA);
+  const tokenIdB = getTokenId(tokenB);
 
   const navigate = useNavigate();
 
@@ -78,18 +78,18 @@ export default function OrderBookChart({
   const chartRef = useRef<HTMLDivElement>(null);
 
   const tokenList = useTokensWithIbcInfo(useTokens());
-  const { data: tokenPairAddresses } = useTokenPairs();
+  const { data: tokenPairReserves } = useTokenPairs();
 
   // memoize tokenPairs so we don't trigger the graph re-rendering too often
   const tokenPairs = useDeepCompareMemoize(
     useMemo<Array<[Token, Token]>>(() => {
-      return tokenPairAddresses
-        ? tokenPairAddresses
-            // find the tokens that match our known pair token addresses
-            .map(([token0, token1]) => {
+      return tokenPairReserves
+        ? tokenPairReserves
+            // find the tokens that match our known pair token IDs
+            .map(([tokenId0, tokenId1]) => {
               return [
-                tokenList.find(matchTokenByAddress(token0)),
-                tokenList.find(matchTokenByAddress(token1)),
+                tokenList.find(matchTokenByDenom(tokenId0)),
+                tokenList.find(matchTokenByDenom(tokenId1)),
               ];
             })
             // remove pairs with unfound tokens
@@ -97,7 +97,7 @@ export default function OrderBookChart({
               tokenPair.every(Boolean)
             )
         : [];
-    }, [tokenList, tokenPairAddresses])
+    }, [tokenList, tokenPairReserves])
   );
 
   // tokenPairID is made of symbols, which is different to token paths
@@ -162,7 +162,7 @@ export default function OrderBookChart({
     };
 
     // don't create options unless ID requirements are satisfied
-    if (chartRef.current && tokenPairID && tokenAPath && tokenBPath) {
+    if (chartRef.current && tokenPairID && tokenIdA && tokenIdB) {
       const datafeed: IBasicDataFeed = {
         onReady: async (onReadyCallback) => {
           await new Promise((resolve) => setTimeout(resolve, 1));
@@ -255,7 +255,7 @@ export default function OrderBookChart({
         ) => {
           // construct fetch ID that corresponds to a unique known fetch height
           const fetchID = getFetchID(symbolInfo, resolution);
-          const url = getFetchURL(tokenAPath, tokenBPath, resolution, {
+          const url = getFetchURL(tokenIdA, tokenIdB, resolution, {
             'pagination.before': periodParams.to?.toFixed(0),
             'pagination.after': periodParams.from?.toFixed(0),
           });
@@ -292,7 +292,7 @@ export default function OrderBookChart({
           onResetCacheNeededCallback
         ) => {
           const fetchID = getFetchID(symbolInfo, resolution);
-          const url = getFetchURL(tokenAPath, tokenBPath, resolution, {
+          const url = getFetchURL(tokenIdA, tokenIdB, resolution, {
             'block_range.from_height': knownHeights.get(fetchID)?.toFixed(0),
           });
 
@@ -343,7 +343,7 @@ export default function OrderBookChart({
         });
       };
     }
-  }, [navigate, tokenAPath, tokenBPath, tokenPairID, tokenPairs]);
+  }, [navigate, tokenIdA, tokenIdB, tokenPairID, tokenPairs]);
 
   return <div className="trading-view-chart flex" ref={chartRef}></div>;
 }

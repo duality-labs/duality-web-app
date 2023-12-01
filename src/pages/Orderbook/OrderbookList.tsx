@@ -10,7 +10,7 @@ import {
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
+import { Token, getTokenId, getTokenValue } from '../../lib/web3/utils/tokens';
 import { TickInfo, priceToTickIndex } from '../../lib/web3/utils/ticks';
 
 import './OrderbookList.scss';
@@ -26,18 +26,18 @@ export default function OrderBookList({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const [token0Address, token1Address] =
-    useOrderedTokenPair([tokenA.address, tokenB.address]) || [];
+  const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
+  const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
   const {
     data: [token0Ticks = [], token1Ticks = []],
-  } = useTokenPairTickLiquidity([token0Address, token1Address]);
+  } = useTokenPairTickLiquidity([tokenId0, tokenId1]);
 
   const [forward, reverse] = [
-    token0Address === tokenA.address && token1Address === tokenB.address,
-    token1Address === tokenA.address && token0Address === tokenB.address,
+    tokenId0 === tokenIdA && tokenId1 === tokenIdB,
+    tokenId1 === tokenIdA && tokenId0 === tokenIdB,
   ];
 
-  const currentPrice = useCurrentPriceFromTicks(tokenA.address, tokenB.address);
+  const currentPrice = useCurrentPriceFromTicks(tokenIdA, tokenIdB);
   const resolutionPercent = 0.01; // size of price steps
 
   // todo: this needs fixes, the comparison between prices is off because it
