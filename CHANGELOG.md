@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.40](https://github.com/duality-labs/duality-web-app/compare/v0.3.39...v0.3.40) (2023-12-01)
+
+
+### Fixes
+
+* improve IBC token usage: do not require address field ([#445](https://github.com/duality-labs/duality-web-app/issues/445)) ([737d2fb](https://github.com/duality-labs/duality-web-app/commit/737d2fbcb53cb9ae639782a73e0ecc96ea061af3))
+
 ## [0.3.39](https://github.com/duality-labs/duality-web-app/compare/v0.3.38...v0.3.39) (2023-11-29)
 
 
