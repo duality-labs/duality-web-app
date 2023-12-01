@@ -5,11 +5,28 @@ import { ObservableList, useObservableList } from './utils/observableList';
 import { Token } from './web3/utils/tokens';
 import { devChain } from './web3/hooks/useChains';
 
+const { REACT_APP__DEV_ASSET_PRICE_MAP } = process.env;
+const defaultDevAssetPrice = 1;
+
 const baseAPI = 'https://api.coingecko.com/api/v3';
 
 // identify dev tokens using a specific dev chain id
 function isDevToken(token?: Token) {
   return !!devChain && !!token && token.chain?.chain_id === devChain?.chain_id;
+}
+
+const devTokenPriceMap: Record<string, number> = (() => {
+  try {
+    return JSON.parse(REACT_APP__DEV_ASSET_PRICE_MAP || '{}');
+  } catch {
+    return {};
+  }
+})();
+
+function getDevTokenPrice(token: Token | undefined): number | undefined {
+  return token && isDevToken(token)
+    ? devTokenPriceMap[token.symbol] || defaultDevAssetPrice
+    : undefined;
 }
 
 class FetchError extends Error {
@@ -172,9 +189,7 @@ export function useSimplePrice(
         ? // if the information is fetchable, return fetched (number) or not yet fetched (undefined)
           (data?.[token.coingecko_id]?.[currencyID] as number | undefined)
         : // if the information is not fetchable, return a dev token price or 0 (unpriced)
-        isDevToken(token)
-        ? 1
-        : 0
+          getDevTokenPrice(token) || 0
     );
   }, [tokens, data, currencyID]);
 
