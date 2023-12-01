@@ -13,11 +13,7 @@ import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
 import './MyLiquidity.scss';
 import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { Token } from '../../lib/web3/utils/tokens';
-import {
-  getTokenPathPart,
-  useTokenBySymbol,
-} from '../../lib/web3/hooks/useTokens';
-import MyPoolStakesTableCard from '../../components/cards/PoolStakesTableCard';
+import { getTokenPathPart } from '../../lib/web3/hooks/useTokens';
 
 export default function MyLiquidity() {
   return (
@@ -126,10 +122,6 @@ function Tables() {
     [navigate]
   );
 
-  const matchTokens = useMatch('/portfolio/pools/:tokenA/:tokenB');
-  const tokenA = useTokenBySymbol(matchTokens?.params['tokenA']);
-  const tokenB = useTokenBySymbol(matchTokens?.params['tokenB']);
-
   const goToPositionManagementPage = useCallback(
     ([token0, token1]: [Token, Token]) => {
       return navigate(
@@ -155,38 +147,22 @@ function Tables() {
             }
           />
         )}
-        {subPage === 'pools' &&
-          (tokenA && tokenB ? (
-            <MyPoolStakesTableCard
-              className="flex"
-              title={
-                <div className="row gap-3">
-                  <Link to="/portfolio/pools"> My Positions</Link>
-                  <span>&gt;</span>
-                  <span>{tokenA.symbol}</span>
-                  <span>/</span>
-                  <span>{tokenB.symbol}</span>
-                </div>
-              }
-              tokenA={tokenA}
-              tokenB={tokenB}
-            />
-          ) : (
-            <MyPoolsTableCard
-              className="flex"
-              title="My Positions"
-              switchValue={subPage}
-              switchValues={subPages}
-              switchOnChange={setSubPage}
-              onTokenPairClick={goToPositionManagementPage}
-              userPositionActions={userPositionActions}
-              headerActions={
-                <Link to="/pools" className="button button-primary p-sm px-md">
-                  Add Liquidity
-                </Link>
-              }
-            />
-          ))}
+        {subPage === 'pools' && (
+          <MyPoolsTableCard
+            className="flex"
+            title="My Positions"
+            switchValue={subPage}
+            switchValues={subPages}
+            switchOnChange={setSubPage}
+            onTokenPairClick={goToPositionManagementPage}
+            userPositionActions={userPositionActions}
+            headerActions={
+              <Link to="/pools" className="button button-primary p-sm px-md">
+                Add Liquidity
+              </Link>
+            }
+          />
+        )}
       </div>
     </div>
   );

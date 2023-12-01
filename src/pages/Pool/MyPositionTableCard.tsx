@@ -13,7 +13,6 @@ import { EditedPosition } from '../MyLiquidity/useEditLiquidity';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { matchTokens } from '../../lib/web3/hooks/useTokens';
-import { useStake } from '../MyLiquidity/useStaking';
 
 import TableCard from '../../components/cards/TableCard';
 import ValueBar from '../../components/Table/ValueBar';
@@ -322,8 +321,6 @@ export function MyEditedPositionTableCard({
     );
   }, [poolValues]);
 
-  const [, sendStakeRequest] = useStake();
-
   const data = editedUserPosition
     ? sortedPosition.map((userPosition, index) => {
         if (userPosition) {
@@ -333,7 +330,6 @@ export function MyEditedPositionTableCard({
             deposit,
             token0Context,
             token1Context,
-            stakeContext,
           } = userPosition;
           const reserveA = !invertedTokenOrder
             ? tickDiff0.plus(token0Context?.userReserves || 0)
@@ -413,13 +409,8 @@ export function MyEditedPositionTableCard({
                   (reserveA.isZero() || reserveB.isZero()) && (
                     <button
                       type="button"
-                      className={`button ${
-                        stakeContext ? 'button-primary-outline' : 'button-light'
-                      } ml-auto`}
+                      className={'button button-light ml-auto'}
                       onClick={() => {
-                        if (stakeContext) {
-                          return sendStakeRequest([], [userPosition]);
-                        }
                         setEditedUserPosition((ticks) => {
                           return ticks.map((tick) => {
                             return tick.deposit.centerTickIndex1To0.toNumber() ===
@@ -440,7 +431,7 @@ export function MyEditedPositionTableCard({
                         });
                       }}
                     >
-                      {stakeContext ? <>Unstake</> : <>Withdraw</>}
+                      <>Withdraw</>
                     </button>
                   )}
                 {(!tickDiff0.isZero() || !tickDiff1.isZero()) && (
