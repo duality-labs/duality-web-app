@@ -800,14 +800,7 @@ export default function PoolManagement({
   const pairPoolDepositFilter = usePoolDepositFilterForPair(
     tokenA && tokenB ? [tokenA, tokenB] : ['', '']
   );
-  const userUnstakedContext = useUserPositionsContext(pairPoolDepositFilter);
-  const userStakedContext = useUserPositionsContext(
-    pairPoolDepositFilter,
-    true
-  );
-  const userPositionsContext = useMemo(() => {
-    return [...userUnstakedContext, ...userStakedContext];
-  }, [userStakedContext, userUnstakedContext]);
+  const userPositionsContext = useUserPositionsContext(pairPoolDepositFilter);
 
   const [{ isValidating: isValidatingEdit }, sendEditRequest] =
     useEditLiquidity();

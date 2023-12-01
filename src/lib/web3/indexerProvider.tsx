@@ -7,7 +7,7 @@ import {
   useCallback,
 } from 'react';
 import Long from 'long';
-import { cosmos, dualitylabs } from '@duality-labs/dualityjs';
+import { cosmos } from '@duality-labs/dualityjs';
 
 import { MessageActionEvent, TendermintTxData } from './events';
 import { DexTickUpdateEvent, mapEventAttributes } from './utils/events';
@@ -28,11 +28,8 @@ import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairIdString, getPairID } from './utils/pairs';
 
 import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
-import { Stake } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/incentives/stake';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/helpers.d';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
-
-const { REACT_APP__REST_API = '' } = process.env;
 
 const bankClientImpl = cosmos.bank.v1beta1.QueryClientImpl;
 
@@ -43,16 +40,6 @@ interface UserBankBalance {
 interface UserShares {
   shares: Array<IndexedShare>;
 }
-export interface StakeContext {
-  ID: string;
-  owner: string;
-  startTimeUnix: number | undefined;
-}
-export interface UserStakedShare extends IndexedShare, StakeContext {}
-interface UserStakedShares {
-  stakedShares: Array<UserStakedShare>;
-}
-
 interface PairUpdateHeightData {
   [pairID: string]: number; // block height
 }
@@ -63,7 +50,7 @@ interface IndexerContextType {
     isValidating: boolean;
   };
   shares: {
-    data?: UserShares & UserStakedShares;
+    data?: UserShares;
     isValidating: boolean;
   };
   tokens: {
@@ -106,7 +93,7 @@ const defaultFetchParams: Partial<PageRequest> = {
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [bankData, setBankData] = useState<UserBankBalance>();
-  const [shareData, setShareData] = useState<UserShares & UserStakedShares>();
+  const [shareData, setShareData] = useState<UserShares>();
   const [poolUpdateHeightData, setPoolUpdateHeightData] =
     useState<PairUpdateHeightData>({});
   const tokensData = useTokens();
@@ -127,7 +114,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           // todo: clean up this effect when address has changed
           // see: https://github.com/duality-labs/duality-web-app/issues/290
           fetchBankData()
-            .then(([coins = [], stakedCoins] = [[], []]) => {
+            .then((coins = []) => {
               // separate out 'normal' and 'share' tokens from the bank balance
               const [tokens, tokenizedShares] = coins.reduce<
                 [Array<Coin>, Array<IndexedShare>]
@@ -172,35 +159,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
                 },
                 [[], []]
               );
-              // collect stakedShares in a similar format
-              const stakedShares: UserStakedShare[] = stakedCoins.reduce<
-                UserStakedShare[]
-              >((stakedShares, stakedCoin) => {
-                const { ID, coins, owner, start_time } = stakedCoin;
-                coins.forEach((coin) => {
-                  const {
-                    token0Address: token0,
-                    token1Address: token1,
-                    tickIndex1To0String: tickIndex1To0 = '',
-                    feeString: fee = '',
-                  } = getShareInfo(coin) || {};
-                  const stakedShare = {
-                    // todo: remove address from here
-                    address: address || '',
-                    pairId: getPairID(token0, token1),
-                    tickIndex1To0,
-                    fee,
-                    sharesOwned: coin.amount,
-                    ID: `${ID}`,
-                    owner,
-                    startTimeUnix: start_time?.seconds.toNumber(),
-                  };
-                  stakedShares.push(stakedShare);
-                });
-                return stakedShares;
-              }, []);
               setBankData({ balances: tokens });
-              setShareData({ shares: tokenizedShares, stakedShares });
+              setShareData({ shares: tokenizedShares });
             })
             .catch((e) => {
               setFetchBankDataState((state) => ({
@@ -212,7 +172,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         return fetchState;
       });
 
-      async function fetchBankData(): Promise<[Coin[], Stake[]] | undefined> {
+      async function fetchBankData(): Promise<Coin[] | undefined> {
         const rpc = await rpcPromise;
         if (address && rpc) {
           const client = new bankClientImpl(rpc);
@@ -220,14 +180,6 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           let nextKey: Uint8Array | undefined;
           let balances: Array<Coin> = [];
           let res: QueryAllBalancesResponse;
-          const stakedPositionsPromise =
-            dualitylabs.ClientFactory.createLCDClient({
-              restEndpoint: REACT_APP__REST_API,
-            }).then((lcdClient) => {
-              return lcdClient.dualitylabs.duality.incentives.getStakes({
-                owner: address,
-              });
-            });
           do {
             try {
               res = await client.allBalances({
@@ -253,10 +205,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             nextKey = res.pagination?.next_key;
           } while (nextKey && nextKey.length > 0);
           setFetchBankDataState(() => ({ fetching: false, fetched: true }));
-          // combine regular and staked balances together
-          return await stakedPositionsPromise.then((stakedPositions) => {
-            return [balances, stakedPositions.stakes || []];
-          });
+          return balances;
         } else if (!rpc) {
           throw new Error('Could not connect to RPC endpoint');
         }
@@ -396,23 +345,17 @@ export function useShareData() {
 
 export function useShares({
   tokens,
-  staked = false,
-}: { tokens?: [tokenA: Token, tokenB: Token]; staked?: boolean } = {}) {
+}: { tokens?: [tokenA: Token, tokenB: Token] } = {}) {
   const { data, isValidating } = useShareData();
-  const shares = useMemo((): IndexedShare[] | UserStakedShare[] | undefined => {
+  const shares = useMemo((): IndexedShare[] | undefined => {
     // filter to specific tokens if asked for
     const shares = data?.shares.filter(
       (share) => Number(share.sharesOwned) > 0
     );
-    const stakedShares = data?.stakedShares.filter(
-      (share) => Number(share.sharesOwned) > 0
-    );
     if (tokens) {
-      return !staked
-        ? shares?.filter(tokensFilter(tokens))
-        : stakedShares?.filter(tokensFilter(tokens));
+      return shares?.filter(tokensFilter(tokens));
     }
-    return !staked ? shares : stakedShares;
+    return shares;
 
     function tokensFilter(tokens: [tokenA: Token, tokenB: Token]) {
       const [denomA, denomB] = tokens.map((token) => getTokenId(token));
@@ -424,7 +367,7 @@ export function useShares({
         );
       };
     }
-  }, [data?.shares, data?.stakedShares, tokens, staked]);
+  }, [data?.shares, tokens]);
   return { data: shares, isValidating };
 }
 

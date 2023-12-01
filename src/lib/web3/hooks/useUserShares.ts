@@ -27,7 +27,7 @@ import useTokens, {
   matchTokenByDenom,
   useTokensWithIbcInfo,
 } from './useTokens';
-import { StakeContext, UserStakedShare, useShares } from '../indexerProvider';
+import { useShares } from '../indexerProvider';
 import { getShareInfo } from '../utils/shares';
 
 interface DirectionalDepositRecord
@@ -65,19 +65,14 @@ export function usePoolDepositFilterForPair(
   return poolDepositFilter;
 }
 
-interface ExtendedDepositRecord extends DirectionalDepositRecord {
-  stakeContext?: StakeContext;
-}
 // select all (or optional token pair list of) user shares
 export function useUserDeposits(
-  poolDepositFilter: UserDepositFilter = defaultFilter,
-  staked?: boolean
-): Required<ExtendedDepositRecord>[] | undefined {
-  const { data: shares } = useShares({ staked });
+  poolDepositFilter: UserDepositFilter = defaultFilter
+): Required<DirectionalDepositRecord>[] | undefined {
+  const { data: shares } = useShares();
   return useMemo(() => {
-    const deposits = shares?.map<ExtendedDepositRecord>((share) => {
+    const deposits = shares?.map<DirectionalDepositRecord>((share) => {
       const { fee, pairId, sharesOwned, tickIndex1To0 } = share;
-      const { ID, owner, startTimeUnix } = share as UserStakedShare;
       const [token0Address, token1Address] = pairId.split('<>');
       return {
         pairID: { token0: token0Address, token1: token1Address },
@@ -86,25 +81,24 @@ export function useUserDeposits(
         lowerTickIndex1To0: Long.fromString(tickIndex1To0).sub(fee),
         upperTickIndex1To0: Long.fromString(tickIndex1To0).add(fee),
         fee: Long.fromString(fee),
-        stakeContext: staked ? { ID, owner, startTimeUnix } : undefined,
       };
     });
     // return filtered list of deposits
     const filteredDeposits = deposits?.filter(poolDepositFilter);
     // only accept deposits with pairID properties attached (should be always)
     return filteredDeposits?.filter(
-      (deposit): deposit is Required<ExtendedDepositRecord> => !!deposit.pairID
+      (deposit): deposit is Required<DirectionalDepositRecord> =>
+        !!deposit.pairID
     );
-  }, [shares, poolDepositFilter, staked]);
+  }, [shares, poolDepositFilter]);
 }
 
 // select all (or optional token pair list of) user shares
 export function useUserPositionsTotalShares(
-  poolDepositFilter: UserDepositFilter = defaultFilter,
-  staked?: boolean
+  poolDepositFilter: UserDepositFilter = defaultFilter
 ) {
   const lcdClientPromise = useLcdClientPromise();
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
+  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
 
   const memoizedData = useRef<QuerySupplyOfResponse[]>([]);
   const { data } = useQueries({
@@ -163,11 +157,10 @@ export function useUserPositionsTotalShares(
 
 // select all (or optional token pair list of) user reserves
 export function useUserPositionsTotalReserves(
-  poolDepositFilter?: UserDepositFilter,
-  staked?: boolean
+  poolDepositFilter?: UserDepositFilter
 ) {
   const rpcPromise = useRpcPromise();
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
+  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
 
   const memoizedData = useRef<QueryGetPoolReservesResponse[]>([]);
   const { data } = useQueries({
@@ -269,23 +262,17 @@ export interface UserPositionDepositContext {
   token0Context?: ShareValueContext;
   token1: Token;
   token1Context?: ShareValueContext;
-  stakeContext?: StakeContext;
 }
 
 // collect all the context about the user's positions together
 export function useUserPositionsContext(
-  poolDepositFilter?: UserDepositFilter,
-  staked?: boolean
+  poolDepositFilter?: UserDepositFilter
 ): UserPositionDepositContext[] {
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter, staked);
-  const userPositionsTotalShares = useUserPositionsTotalShares(
-    poolDepositFilter,
-    staked
-  );
-  const userPositionsTotalReserves = useUserPositionsTotalReserves(
-    poolDepositFilter,
-    staked
-  );
+  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
+  const userPositionsTotalShares =
+    useUserPositionsTotalShares(poolDepositFilter);
+  const userPositionsTotalReserves =
+    useUserPositionsTotalReserves(poolDepositFilter);
 
   const allTokens = useTokensWithIbcInfo(useTokens());
 
@@ -383,9 +370,6 @@ export function useUserPositionsContext(
               token1Context: token1Context && {
                 ...token1Context,
                 userReserves: getReservesFromShareValueContext(token1Context),
-              },
-              stakeContext: deposit.stakeContext && {
-                ...deposit.stakeContext,
               },
             },
           ];
