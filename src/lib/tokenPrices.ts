@@ -5,8 +5,6 @@ import { ObservableList, useObservableList } from './utils/observableList';
 import { Token } from './web3/utils/tokens';
 import { devChain } from './web3/hooks/useChains';
 
-const { REACT_APP__DEV_TOKEN_DENOMS } = process.env;
-
 const baseAPI = 'https://api.coingecko.com/api/v3';
 
 // identify dev tokens using a specific dev chain id
@@ -208,35 +206,13 @@ export function usePairPrice(
   };
 }
 
-// add dev logic for assuming dev tokens TKN and STK are worth ~USD1
-function useDevTokenPrices(
-  tokenOrTokens: (Token | undefined) | (Token | undefined)[]
-) {
-  const tokens = Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
-  // declare dev tokens for each environment
-  const devPrice = 1;
-  const devTokenPrices = Array.isArray(tokenOrTokens)
-    ? tokens.map(() => devPrice)
-    : devPrice;
-  try {
-    const devTokens = JSON.parse(
-      REACT_APP__DEV_TOKEN_DENOMS || '[]'
-    ) as string[];
-    if (tokens.every((token) => token && devTokens.includes(token.base))) {
-      return devTokenPrices;
-    }
-  } catch {
-    return devTokenPrices;
-  }
-}
-
 export function useHasPriceData(
   tokens: (Token | undefined)[],
   currencyID = 'usd'
 ) {
   const { data, isValidating } = useSimplePrice(tokens, currencyID);
-  // do not claim price data for dev tokens
-  if (useDevTokenPrices(tokens)) {
+  // do not claim price data if tokens won't use any CoinGecko lookups
+  if (tokens.every((token) => !!token?.coingecko_id)) {
     return false;
   }
   return isValidating || data.some(Boolean);
