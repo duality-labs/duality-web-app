@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.41](https://github.com/duality-labs/duality-web-app/compare/v0.3.40...v0.3.41) (2023-12-02)
+
+
+### Features
+
+* remove incentives and staking UI ([#491](https://github.com/duality-labs/duality-web-app/issues/491)) ([d9eed0f](https://github.com/duality-labs/duality-web-app/commit/d9eed0f8a863a2d3db0dba8164e0bac2844346cb))
+
 ## [0.3.40](https://github.com/duality-labs/duality-web-app/compare/v0.3.39...v0.3.40) (2023-12-01)
 
 
