@@ -43,7 +43,6 @@ function App() {
                   <Route path="orderbook/*" element={<Orderbook />} />
                   <Route path="portfolio/*" element={<MyLiquidity />} />
                   <Route path="bridge" element={<Bridge />} />
-                  <Route path="stake" element={<div>Coming soon</div>} />
                   <Route path="*" element={<div>Not found</div>} />
                 </Routes>
                 <Notifications />

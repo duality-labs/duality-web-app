@@ -13,13 +13,7 @@ import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
 import './MyLiquidity.scss';
 import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { Token } from '../../lib/web3/utils/tokens';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowAltCircleRight } from '@fortawesome/free-solid-svg-icons';
-import {
-  getTokenPathPart,
-  useTokenBySymbol,
-} from '../../lib/web3/hooks/useTokens';
-import MyPoolStakesTableCard from '../../components/cards/PoolStakesTableCard';
+import { getTokenPathPart } from '../../lib/web3/hooks/useTokens';
 
 export default function MyLiquidity() {
   return (
@@ -63,7 +57,6 @@ function HeroCard() {
           <tr>
             <th style={{ width: '35%' }}>Total Assets</th>
             <th style={{ width: '35%' }}>Position Value</th>
-            <th style={{ width: '25%' }}>Earned Incentives</th>
           </tr>
         </thead>
         <tbody>
@@ -84,7 +77,6 @@ function HeroCard() {
                   })}`
                 : '-'}
             </td>
-            <td>{wallet ? '$0' : '-'}</td>
           </tr>
         </tbody>
       </table>
@@ -128,10 +120,6 @@ function Tables() {
     [navigate]
   );
 
-  const matchTokens = useMatch('/portfolio/pools/:tokenA/:tokenB');
-  const tokenA = useTokenBySymbol(matchTokens?.params['tokenA']);
-  const tokenB = useTokenBySymbol(matchTokens?.params['tokenB']);
-
   const goToPositionManagementPage = useCallback(
     ([token0, token1]: [Token, Token]) => {
       return navigate(
@@ -157,38 +145,22 @@ function Tables() {
             }
           />
         )}
-        {subPage === 'pools' &&
-          (tokenA && tokenB ? (
-            <MyPoolStakesTableCard
-              className="flex"
-              title={
-                <div className="row gap-3">
-                  <Link to="/portfolio/pools"> My Positions</Link>
-                  <span>&gt;</span>
-                  <span>{tokenA.symbol}</span>
-                  <span>/</span>
-                  <span>{tokenB.symbol}</span>
-                </div>
-              }
-              tokenA={tokenA}
-              tokenB={tokenB}
-            />
-          ) : (
-            <MyPoolsTableCard
-              className="flex"
-              title="My Positions"
-              switchValue={subPage}
-              switchValues={subPages}
-              switchOnChange={setSubPage}
-              onTokenPairClick={goToPositionManagementPage}
-              userPositionActions={userPositionActions}
-              headerActions={
-                <Link to="/pools" className="button button-primary p-sm px-md">
-                  Add Liquidity
-                </Link>
-              }
-            />
-          ))}
+        {subPage === 'pools' && (
+          <MyPoolsTableCard
+            className="flex"
+            title="My Positions"
+            switchValue={subPage}
+            switchValues={subPages}
+            switchOnChange={setSubPage}
+            onTokenPairClick={goToPositionManagementPage}
+            userPositionActions={userPositionActions}
+            headerActions={
+              <Link to="/pools" className="button button-primary p-sm px-md">
+                Add Liquidity
+              </Link>
+            }
+          />
+        )}
       </div>
     </div>
   );
@@ -201,22 +173,6 @@ const userPositionActions: Actions = {
     action: ({ navigate, token0, token1 }) => {
       return navigate(
         `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
-      );
-    },
-  },
-  stake: {
-    title: (
-      <>
-        Stake <FontAwesomeIcon icon={faArrowAltCircleRight} />
-      </>
-    ),
-    className: 'button-primary m-0',
-    action: ({ navigate, token0, token1 }) => {
-      return navigate(
-        `/portfolio/pools/${[
-          getTokenPathPart(token0),
-          getTokenPathPart(token1),
-        ].join('/')}`
       );
     },
   },
