@@ -11,23 +11,27 @@ import { minutes } from '../../utils/time';
 const { REACT_APP__REST_API = '' } = process.env;
 
 export function useUserDeposits(): UseQueryResult<
-  QueryAllUserDepositsResponse | undefined
+  QueryAllUserDepositsResponse['Deposits'] | undefined
 > {
   const { address } = useWeb3();
 
   const result = useQuery({
     queryKey: ['user-deposits', address],
     enabled: !!address,
-    queryFn: async (): Promise<QueryAllUserDepositsResponse | undefined> => {
+    queryFn: async (): Promise<
+      QueryAllUserDepositsResponse['Deposits'] | undefined
+    > => {
       if (address) {
         // get LCD client
         const lcd = await dualitylabs.ClientFactory.createLCDClient({
           restEndpoint: REACT_APP__REST_API,
         });
         // get all user's deposits
-        return lcd.dualitylabs.duality.dex.userDepositsAll({
+        const response = await lcd.dualitylabs.duality.dex.userDepositsAll({
           address,
         });
+        // return unwrapped result
+        return response.Deposits;
       }
     },
     refetchInterval: 5 * minutes,
@@ -38,11 +42,11 @@ export function useUserDeposits(): UseQueryResult<
 
 export function useUserDepositsOfTokenPair(
   tokenPair: TokenPair | TokenIdPair | undefined
-): UseQueryResult<QueryAllUserDepositsResponse | undefined> {
+): UseQueryResult<QueryAllUserDepositsResponse['Deposits'] | undefined> {
   const [tokenIdA, tokenIdB] = resolveTokenIdPair(tokenPair);
 
   const result = useUserDeposits();
-  const userDeposits = useDeepCompareMemoize(result.data?.Deposits);
+  const userDeposits = useDeepCompareMemoize(result.data);
   const userDepositsOfTokenPair = useMemo(() => {
     if (tokenIdA && tokenIdB) {
       const tokenIDs = [tokenIdA, tokenIdB];
@@ -57,8 +61,6 @@ export function useUserDepositsOfTokenPair(
 
   return {
     ...result,
-    data: userDepositsOfTokenPair
-      ? { Deposits: userDepositsOfTokenPair }
-      : undefined,
-  } as UseQueryResult<QueryAllUserDepositsResponse | undefined>;
+    data: userDepositsOfTokenPair,
+  } as UseQueryResult<QueryAllUserDepositsResponse['Deposits'] | undefined>;
 }
