@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import Long from 'long';
 import { useCallback, useMemo, useRef } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import {
@@ -27,9 +26,10 @@ import useTokens, {
   matchTokenByDenom,
   useTokensWithIbcInfo,
 } from './useTokens';
-import { useShares } from '../indexerProvider';
+import { useUserDeposits } from './useUserDeposits';
 import { getShareInfo } from '../utils/shares';
 
+// note: DirectionalDepositRecord is just a more explicitly keyed version of DepositRecord
 interface DirectionalDepositRecord
   extends Omit<
     DepositRecord,
@@ -66,31 +66,30 @@ export function usePoolDepositFilterForPair(
 }
 
 // select all (or optional token pair list of) user shares
-export function useUserDeposits(
+export function useFilteredUserDeposits(
   poolDepositFilter: UserDepositFilter = defaultFilter
 ): Required<DirectionalDepositRecord>[] | undefined {
-  const { data: shares } = useShares();
+  const { data: deposits } = useUserDeposits();
   return useMemo(() => {
-    const deposits = shares?.map<DirectionalDepositRecord>((share) => {
-      const { fee, pairId, sharesOwned, tickIndex1To0 } = share;
-      const [token0Address, token1Address] = pairId.split('<>');
-      return {
-        pairID: { token0: token0Address, token1: token1Address },
-        sharesOwned,
-        centerTickIndex1To0: Long.fromString(tickIndex1To0),
-        lowerTickIndex1To0: Long.fromString(tickIndex1To0).sub(fee),
-        upperTickIndex1To0: Long.fromString(tickIndex1To0).add(fee),
-        fee: Long.fromString(fee),
-      };
-    });
     // return filtered list of deposits
-    const filteredDeposits = deposits?.filter(poolDepositFilter);
+    const filteredDeposits = deposits
+      ?.map<DirectionalDepositRecord>((deposit) => {
+        return {
+          pairID: deposit.pairID,
+          sharesOwned: deposit.sharesOwned,
+          centerTickIndex1To0: deposit.centerTickIndex,
+          lowerTickIndex1To0: deposit.lowerTickIndex,
+          upperTickIndex1To0: deposit.upperTickIndex,
+          fee: deposit.fee,
+        };
+      })
+      ?.filter(poolDepositFilter);
     // only accept deposits with pairID properties attached (should be always)
     return filteredDeposits?.filter(
       (deposit): deposit is Required<DirectionalDepositRecord> =>
         !!deposit.pairID
     );
-  }, [shares, poolDepositFilter]);
+  }, [deposits, poolDepositFilter]);
 }
 
 // select all (or optional token pair list of) user shares
@@ -98,7 +97,7 @@ export function useUserPositionsTotalShares(
   poolDepositFilter: UserDepositFilter = defaultFilter
 ) {
   const lcdClientPromise = useLcdClientPromise();
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
+  const selectedPoolDeposits = useFilteredUserDeposits(poolDepositFilter);
 
   const memoizedData = useRef<QuerySupplyOfResponse[]>([]);
   const { data } = useQueries({
@@ -160,7 +159,7 @@ export function useUserPositionsTotalReserves(
   poolDepositFilter?: UserDepositFilter
 ) {
   const rpcPromise = useRpcPromise();
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
+  const selectedPoolDeposits = useFilteredUserDeposits(poolDepositFilter);
 
   const memoizedData = useRef<QueryGetPoolReservesResponse[]>([]);
   const { data } = useQueries({
@@ -268,7 +267,7 @@ export interface UserPositionDepositContext {
 export function useUserPositionsContext(
   poolDepositFilter?: UserDepositFilter
 ): UserPositionDepositContext[] {
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
+  const selectedPoolDeposits = useFilteredUserDeposits(poolDepositFilter);
   const userPositionsTotalShares =
     useUserPositionsTotalShares(poolDepositFilter);
   const userPositionsTotalReserves =

@@ -7,7 +7,7 @@ import {
   ShareValueContext,
   UserDepositFilter,
   UserPositionDepositContext,
-  useUserDeposits,
+  useFilteredUserDeposits,
   useUserPositionsContext,
 } from './useUserShares';
 
@@ -20,7 +20,7 @@ export interface ValuedUserPositionDepositContext
 export function useUserPositionsShareValues(
   poolDepositFilter?: UserDepositFilter
 ): ValuedUserPositionDepositContext[] {
-  const selectedPoolDeposits = useUserDeposits(poolDepositFilter);
+  const selectedPoolDeposits = useFilteredUserDeposits(poolDepositFilter);
   const userPositionDepositContext = useUserPositionsContext(poolDepositFilter);
 
   const allTokens = useTokens();

@@ -41,8 +41,8 @@ import {
   useTokenValue,
 } from '../../lib/web3/hooks/useTokens';
 import {
+  useFilteredUserDeposits,
   usePoolDepositFilterForPair,
-  useUserDeposits,
 } from '../../lib/web3/hooks/useUserShares';
 import StatCardVolume from '../../components/stats/StatCardVolume';
 import StatCardFees from '../../components/stats/StatCardFees';
@@ -63,7 +63,7 @@ export default function PoolOverview({
   }, [tokenA, tokenB, setTokens]);
 
   const pairPoolDepositFilter = usePoolDepositFilterForPair([tokenA, tokenB]);
-  const userPairDeposits = useUserDeposits(pairPoolDepositFilter);
+  const userPairDeposits = useFilteredUserDeposits(pairPoolDepositFilter);
 
   const tokenAPath = useTokenPathPart(tokenA);
   const tokenBPath = useTokenPathPart(tokenB);
