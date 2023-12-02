@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { UseQueryResult, useQuery } from '@tanstack/react-query';
 import { dualitylabs } from '@duality-labs/dualityjs';
-import { QueryAllUserDepositsResponse } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
+import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/deposit_record';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import { useWeb3 } from '../useWeb3';
@@ -10,17 +10,13 @@ import { minutes } from '../../utils/time';
 
 const { REACT_APP__REST_API = '' } = process.env;
 
-export function useUserDeposits(): UseQueryResult<
-  QueryAllUserDepositsResponse['Deposits'] | undefined
-> {
+export function useUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
   const { address } = useWeb3();
 
   const result = useQuery({
     queryKey: ['user-deposits', address],
     enabled: !!address,
-    queryFn: async (): Promise<
-      QueryAllUserDepositsResponse['Deposits'] | undefined
-    > => {
+    queryFn: async (): Promise<DepositRecord[] | undefined> => {
       if (address) {
         // get LCD client
         const lcd = await dualitylabs.ClientFactory.createLCDClient({
@@ -42,7 +38,7 @@ export function useUserDeposits(): UseQueryResult<
 
 export function useUserDepositsOfTokenPair(
   tokenPair: TokenPair | TokenIdPair | undefined
-): UseQueryResult<QueryAllUserDepositsResponse['Deposits'] | undefined> {
+): UseQueryResult<DepositRecord[] | undefined> {
   const [tokenIdA, tokenIdB] = resolveTokenIdPair(tokenPair);
 
   const result = useUserDeposits();
@@ -62,5 +58,5 @@ export function useUserDepositsOfTokenPair(
   return {
     ...result,
     data: userDepositsOfTokenPair,
-  } as UseQueryResult<QueryAllUserDepositsResponse['Deposits'] | undefined>;
+  } as UseQueryResult<DepositRecord[] | undefined>;
 }
