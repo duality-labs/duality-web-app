@@ -21,8 +21,10 @@ import useTokens, {
 } from '../../lib/web3/hooks/useTokens';
 import useTokenPairs, { TokenPairReserves } from './hooks/useTokenPairs';
 
-import { Token } from './utils/tokens';
-import { isDexShare } from './utils/shares';
+import { feeTypes } from './utils/fees';
+
+import { Token, getTokenId } from './utils/tokens';
+import { IndexedShare, getShareInfo } from './utils/shares';
 import { PairIdString, getPairID } from './utils/pairs';
 
 import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
@@ -35,6 +37,9 @@ interface UserBankBalance {
   balances: Array<Coin>;
 }
 
+interface UserShares {
+  shares: Array<IndexedShare>;
+}
 interface PairUpdateHeightData {
   [pairID: string]: number; // block height
 }
@@ -42,6 +47,10 @@ interface PairUpdateHeightData {
 interface IndexerContextType {
   bank: {
     data?: UserBankBalance;
+    isValidating: boolean;
+  };
+  shares: {
+    data?: UserShares;
     isValidating: boolean;
   };
   tokens: {
@@ -65,6 +74,9 @@ const IndexerContext = createContext<IndexerContextType>({
   bank: {
     isValidating: true,
   },
+  shares: {
+    isValidating: true,
+  },
   tokens: {
     isValidating: true,
   },
@@ -81,6 +93,7 @@ const defaultFetchParams: Partial<PageRequest> = {
 
 export function IndexerProvider({ children }: { children: React.ReactNode }) {
   const [bankData, setBankData] = useState<UserBankBalance>();
+  const [shareData, setShareData] = useState<UserShares>();
   const [poolUpdateHeightData, setPoolUpdateHeightData] =
     useState<PairUpdateHeightData>({});
   const tokensData = useTokens();
@@ -103,8 +116,51 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
           fetchBankData()
             .then((coins = []) => {
               // separate out 'normal' and 'share' tokens from the bank balance
-              const nonDexCoins = coins.filter((coin) => !isDexShare(coin));
-              setBankData({ balances: nonDexCoins });
+              const [tokens, tokenizedShares] = coins.reduce<
+                [Array<Coin>, Array<IndexedShare>]
+              >(
+                ([tokens, tokenizedShares], coin) => {
+                  const {
+                    token0Address: token0,
+                    token1Address: token1,
+                    tickIndex1To0String: tickIndex1To0,
+                    feeString: fee,
+                  } = getShareInfo(coin) || {};
+                  // transform tokenized shares into shares
+                  if (token0 && token1 && tickIndex1To0 && fee) {
+                    // add tokenized share if everything is fine
+                    if (address) {
+                      const tokenizedShare: IndexedShare = {
+                        // todo: remove address from here
+                        address,
+                        pairId: getPairID(token0, token1),
+                        tickIndex1To0,
+                        fee,
+                        sharesOwned: coin.amount,
+                      };
+                      return [tokens, [...tokenizedShares, tokenizedShare]];
+                    }
+                    // drop unknown (to front end) share
+                    else {
+                      // eslint-disable-next-line no-console
+                      console.warn(
+                        `Received unknown denomination in tokenized shares: ${coin.denom}`,
+                        {
+                          feeTypes,
+                          fee,
+                          address,
+                        }
+                      );
+                      return [tokens, tokenizedShares];
+                    }
+                  } else {
+                    return [[...tokens, coin], tokenizedShares];
+                  }
+                },
+                [[], []]
+              );
+              setBankData({ balances: tokens });
+              setShareData({ shares: tokenizedShares });
             })
             .catch((e) => {
               setFetchBankDataState((state) => ({
@@ -230,9 +286,13 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
         data: bankData,
         isValidating: !bankData,
       },
+      shares: {
+        data: shareData,
+        isValidating: !shareData,
+      },
       tokens: {
         data: tokensData,
-        isValidating: !bankData,
+        isValidating: !shareData,
       },
       tokenPairs: {
         data: tokenPairsData,
@@ -242,7 +302,7 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
       },
       pairUpdateHeight: poolUpdateHeightData,
     };
-  }, [bankData, tokensData, tokenPairsData, poolUpdateHeightData]);
+  }, [bankData, shareData, tokensData, tokenPairsData, poolUpdateHeightData]);
 
   return (
     <IndexerContext.Provider value={result}>{children}</IndexerContext.Provider>
@@ -277,6 +337,38 @@ export function useBankBalances() {
   }, [data?.balances, allTokensWithIBC]);
 
   return { data: balances, ...rest };
+}
+
+export function useShareData() {
+  return useContext(IndexerContext).shares;
+}
+
+export function useShares({
+  tokens,
+}: { tokens?: [tokenA: Token, tokenB: Token] } = {}) {
+  const { data, isValidating } = useShareData();
+  const shares = useMemo((): IndexedShare[] | undefined => {
+    // filter to specific tokens if asked for
+    const shares = data?.shares.filter(
+      (share) => Number(share.sharesOwned) > 0
+    );
+    if (tokens) {
+      return shares?.filter(tokensFilter(tokens));
+    }
+    return shares;
+
+    function tokensFilter(tokens: [tokenA: Token, tokenB: Token]) {
+      const [denomA, denomB] = tokens.map((token) => getTokenId(token));
+      return function tokenFilter({ pairId = '' }: IndexedShare): boolean {
+        const [denom0, denom1] = pairId.split('/');
+        return (
+          (denomA === denom0 && denomB === denom1) ||
+          (denomA === denom1 && denomB === denom0)
+        );
+      };
+    }
+  }, [data?.shares, tokens]);
+  return { data: shares, isValidating };
 }
 
 export function useTokensList() {
