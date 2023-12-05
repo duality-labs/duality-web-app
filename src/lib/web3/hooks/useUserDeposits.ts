@@ -6,6 +6,8 @@ import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import subscriber from '../subscriptionManager';
 import { useWeb3 } from '../useWeb3';
+import { MessageActionEvent, TendermintTxData } from '../events';
+import { CoinTransferEvent, mapEventAttributes } from '../utils/events';
 import { TokenIdPair, TokenPair, resolveTokenIdPair } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 
@@ -39,12 +41,31 @@ export function useUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
   // on update to user's bank balance, we should update the user's sharesOwned
   useEffect(() => {
     if (address) {
-      // todo: use partial updates to avoid querying all of the user's deposits
-      //       on any balance update, though sometimes it may be better if
-      //       all updates are processed together like this.
-      //       eg. a 30 tick deposit can trigger 30 requests or use "update all"
-      const onTxBalanceUpdate = () => {
-        refetch({ cancelRefetch: false });
+      const onTxBalanceUpdate = (
+        event: MessageActionEvent,
+        tx: TendermintTxData
+      ) => {
+        const events = tx.value.TxResult.result.events.map(mapEventAttributes);
+        const transferBalanceEvents = events
+          .filter(
+            (event): event is CoinTransferEvent => event.type === 'transfer'
+          )
+          .filter(
+            (event) =>
+              event.attributes.recipient === address ||
+              event.attributes.sender === address
+          );
+
+        // todo: use partial updates to avoid querying all of user's deposits
+        //       on any balance update, but decide first whether to requests
+        //       an update to all the user's deposits, or just partial updates
+        if (transferBalanceEvents.length >= 3) {
+          // update all known users shares
+          refetch({ cancelRefetch: false });
+        } else {
+          // todo: add partial update logic here
+          refetch({ cancelRefetch: false });
+        }
       };
       // subscribe to changes in the user's bank balance
       subscriber.subscribeMessage(onTxBalanceUpdate, {
