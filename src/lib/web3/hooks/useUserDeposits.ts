@@ -39,21 +39,29 @@ export function useUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
 export function useUserDepositsOfTokenPair(
   tokenPair: TokenPair | TokenIdPair | undefined
 ): UseQueryResult<DepositRecord[] | undefined> {
-  const [tokenIdA, tokenIdB] = resolveTokenIdPair(tokenPair);
+  const tokenPairIDs = useDeepCompareMemoize(resolveTokenIdPair(tokenPair));
 
   const result = useUserDeposits();
   const userDeposits = useDeepCompareMemoize(result.data);
   const userDepositsOfTokenPair = useMemo(() => {
-    if (tokenIdA && tokenIdB) {
-      const tokenIDs = [tokenIdA, tokenIdB];
-      return userDeposits?.filter((deposit) => {
-        return (
-          tokenIDs.includes(deposit.pairID.token0) &&
-          tokenIDs.includes(deposit.pairID.token1)
-        );
-      });
+    // if a pair ID request was given then filter the response
+    if (tokenPairIDs) {
+      const [tokenIdA, tokenIdB] = tokenPairIDs || [];
+      if (tokenIdA && tokenIdB) {
+        const tokenIDs = [tokenIdA, tokenIdB];
+        return userDeposits?.filter((deposit) => {
+          return (
+            tokenIDs.includes(deposit.pairID.token0) &&
+            tokenIDs.includes(deposit.pairID.token1)
+          );
+        });
+      }
+      // return filtered deposits with no match
+      return [];
     }
-  }, [tokenIdA, tokenIdB, userDeposits]);
+    // return unfiltered deposits with all matches
+    return userDeposits;
+  }, [tokenPairIDs, userDeposits]);
 
   return {
     ...result,

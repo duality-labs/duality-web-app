@@ -32,7 +32,7 @@ export function getShareDenom(
   tickIndex1To0: number,
   fee: number
 ): string | undefined {
-  const tokenIds = resolveTokenIdPair(tokens);
+  const tokenIds = resolveTokenIdPair(tokens) || [];
   const [tokenId0, tokenId1] = guessInvertedOrder(tokens)
     ? [tokenIds[1], tokenIds[0]]
     : tokenIds;

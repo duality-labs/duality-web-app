@@ -49,7 +49,7 @@ const defaultFilter: UserDepositFilter = () => true;
 export function usePoolDepositFilterForPair(
   tokenPair: TokenPair | TokenIdPair | undefined
 ): (poolDeposit: DirectionalDepositRecord) => boolean {
-  const [tokenIdA, tokenIdB] = resolveTokenIdPair(tokenPair);
+  const [tokenIdA, tokenIdB] = resolveTokenIdPair(tokenPair) || [];
   const poolDepositFilter = useCallback(
     (poolDeposit: DirectionalDepositRecord) => {
       return (
