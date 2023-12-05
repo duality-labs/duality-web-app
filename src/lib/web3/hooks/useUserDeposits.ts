@@ -119,3 +119,13 @@ export function useUserDeposits(
     data: userDepositsOfTokenPair,
   } as UseQueryResult<DepositRecord[] | undefined>;
 }
+
+export function useUserHasDeposits(
+  tokenPair?: TokenPair | TokenIdPair
+): UseQueryResult<boolean | undefined> {
+  const result = useUserDeposits(tokenPair);
+  return {
+    ...result,
+    data: result.data && result.data.length > 0,
+  } as UseQueryResult<boolean | undefined>;
+}
