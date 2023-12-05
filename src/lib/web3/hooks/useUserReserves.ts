@@ -7,19 +7,20 @@ import { QueryGetPoolReservesRequest } from '@duality-labs/dualityjs/types/codeg
 
 import { useLcdClientPromise } from '../lcdClient';
 import { useUserDepositsOfTokenPair } from './useUserDeposits';
-import { useOrderedTokenPair } from './useTokenPairs';
 import { useSimplePrice } from '../../tokenPrices';
 
 import { getPairID } from '../utils/pairs';
 import { priceToTickIndex, tickIndexToPrice } from '../utils/ticks';
 import {
+  Token,
   TokenIdPair,
   TokenPair,
   getBaseDenomAmount,
-  resolveTokenIdPair,
+  getTokenId,
 } from '../utils/tokens';
 import { useRpcPromise } from '../rpcQueryClient';
 import { dualitylabs } from '@duality-labs/dualityjs';
+import useTokens, { useTokensWithIbcInfo } from './useTokens';
 
 interface PairReserves {
   reserves0: string;
@@ -303,52 +304,100 @@ export function useUserIndicativeReserves(
   };
 }
 
-// requires a token pair to fetch the price for
-export function useEstimatedUserReservesOfTokenPair(
-  tokenPair: TokenPair
+export function useEstimatedUserReserves(
+  tokenPair?: TokenPair | TokenIdPair
 ): CombinedUseQueries<UserReserves[]> {
   const {
     data: userIndicatveReserves,
     isFetching,
     error,
   } = useUserIndicativeReserves(tokenPair);
-  const [tokenIdA, tokenIdB] = resolveTokenIdPair(tokenPair) || [];
-  const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
-  const isReversedOrder = tokenId0 !== tokenIdA || tokenId1 !== tokenIdB;
-  const orderedTokens = useMemo(() => {
-    return isReversedOrder ? tokenPair : [tokenPair[1], tokenPair[0]];
-  }, [tokenPair, isReversedOrder]);
 
-  const {
-    data: [tokenPrice0, tokenPrice1],
-  } = useSimplePrice(orderedTokens);
+  const allTokens = useTokensWithIbcInfo(useTokens());
+  const allTokensByIdMap = useMemo<Map<string, Token>>(() => {
+    return allTokens.reduce<Map<string, Token>>((acc, token) => {
+      const id = getTokenId(token);
+      if (id && !acc.has(id)) {
+        acc.set(id, token);
+      }
+      return acc;
+    }, new Map());
+  }, [allTokens]);
+
+  const tokenByIdMap = useMemo<Map<string, Token>>(() => {
+    const searchedTokenStrings: string[] = [];
+    return (userIndicatveReserves || []).reduce<Map<string, Token>>(
+      (acc, indicateReserves) => {
+        for (const tokenId of Object.values(indicateReserves.deposit.pairID)) {
+          if (!searchedTokenStrings.includes(tokenId)) {
+            const foundToken = allTokensByIdMap.get(tokenId);
+            if (foundToken) {
+              acc.set(tokenId, foundToken);
+            }
+            searchedTokenStrings.push(tokenId);
+          }
+        }
+        return acc;
+      },
+      new Map()
+    );
+  }, [userIndicatveReserves, allTokensByIdMap]);
+
+  const tokenList = useMemo(
+    () => Array.from(tokenByIdMap.values()),
+    [tokenByIdMap]
+  );
+
+  const { data: tokenPrices } = useSimplePrice(tokenList);
+
+  const tokenPriceByIdMap = useMemo(() => {
+    return tokenList.reduce<Map<string, number | undefined>>(
+      (acc, token, index) => {
+        const tokenId = getTokenId(token);
+        if (tokenId) {
+          acc.set(tokenId, tokenPrices[index]);
+        }
+        return acc;
+      },
+      new Map()
+    );
+  }, [tokenList, tokenPrices]);
 
   // using the current price, make assumptions about the current reserves
   return useMemo(() => {
-    const [token0, token1] = orderedTokens;
-    if (token0 && token1 && tokenPrice0 && tokenPrice1) {
-      const display0 = getBaseDenomAmount(token0, 1) || 1;
-      const display1 = getBaseDenomAmount(token1, 1) || 1;
-      const basePrice0 = new BigNumber(tokenPrice0).dividedBy(display0);
-      const basePrice1 = new BigNumber(tokenPrice1).dividedBy(display1);
-      const centerTickIndex = priceToTickIndex(basePrice1.div(basePrice0));
-      const userReserves = userIndicatveReserves?.map<UserReserves>(
+    if (Object.values(tokenPriceByIdMap).every((price = 0) => price > 0)) {
+      const userReserves = userIndicatveReserves?.flatMap<UserReserves>(
         ({ deposit, indicativeReserves }) => {
-          const toTheLeft = centerTickIndex.isGreaterThanOrEqualTo(
-            deposit.centerTickIndex.toInt()
-          );
-          return {
-            deposit,
-            reserves: toTheLeft
-              ? {
-                  reserves0: indicativeReserves.reserves0,
-                  reserves1: '0',
-                }
-              : {
-                  reserves0: '0',
-                  reserves1: indicativeReserves.reserves1,
-                },
-          };
+          const token0 = tokenByIdMap.get(deposit.pairID.token0);
+          const token1 = tokenByIdMap.get(deposit.pairID.token1);
+          const tokenPrice0 = tokenPriceByIdMap.get(deposit.pairID.token0);
+          const tokenPrice1 = tokenPriceByIdMap.get(deposit.pairID.token1);
+          if (token0 && token1 && tokenPrice0 && tokenPrice1) {
+            const display0 = getBaseDenomAmount(token0, 1) || 1;
+            const display1 = getBaseDenomAmount(token1, 1) || 1;
+            const basePrice0 = new BigNumber(tokenPrice0).dividedBy(display0);
+            const basePrice1 = new BigNumber(tokenPrice1).dividedBy(display1);
+            const centerTickIndex = priceToTickIndex(
+              basePrice1.div(basePrice0)
+            );
+            // decide if the reserves are of token0 or token1
+            const toTheLeft = centerTickIndex.isGreaterThanOrEqualTo(
+              deposit.centerTickIndex.toInt()
+            );
+            return {
+              deposit,
+              reserves: toTheLeft
+                ? {
+                    reserves0: indicativeReserves.reserves0,
+                    reserves1: '0',
+                  }
+                : {
+                    reserves0: '0',
+                    reserves1: indicativeReserves.reserves1,
+                  },
+            };
+          }
+          return [];
         }
       );
       return {
@@ -363,9 +412,8 @@ export function useEstimatedUserReservesOfTokenPair(
       error,
     };
   }, [
-    tokenPrice0,
-    tokenPrice1,
-    orderedTokens,
+    tokenByIdMap,
+    tokenPriceByIdMap,
     userIndicatveReserves,
     isFetching,
     error,
