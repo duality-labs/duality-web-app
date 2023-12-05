@@ -17,12 +17,10 @@ import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { getPairID } from '../../lib/web3/utils/pairs';
-
-import { UserPositionDepositContext } from '../../lib/web3/hooks/useUserShares';
 import {
-  ValuedUserPositionDepositContext,
-  useUserPositionsShareValues,
-} from '../../lib/web3/hooks/useUserShareValues';
+  UserValuedReserves,
+  useEstimatedUserReserves,
+} from '../../lib/web3/hooks/useUserReserves';
 
 import './PoolsTableCard.scss';
 
@@ -192,7 +190,7 @@ export function MyPoolsTableCard<T extends string | number>({
 
   const tokenList = useTokensWithIbcInfo(useTokens());
 
-  const userPositionsShareValues = useUserPositionsShareValues();
+  const { data: userValuedReserves } = useEstimatedUserReserves();
 
   const myPoolsList = useMemo<
     Array<
@@ -200,16 +198,16 @@ export function MyPoolsTableCard<T extends string | number>({
         pairID: string,
         token0: Token,
         token1: Token,
-        userPositions: UserPositionDepositContext[]
+        userValuedReserves: UserValuedReserves[]
       ]
     >
   >(() => {
     // collect positions into token pair groups
-    const userPositionsShareValueMap = userPositionsShareValues.reduce<{
+    const userValuedReservesMap = (userValuedReserves || []).reduce<{
       [pairID: string]: {
         token0: Token;
         token1: Token;
-        userPositions: UserPositionDepositContext[];
+        userValuedReserves: UserValuedReserves[];
       };
     }>((map, userPosition) => {
       const { token0: token0Address, token1: token1Address } =
@@ -218,25 +216,29 @@ export function MyPoolsTableCard<T extends string | number>({
       const token0 = tokenList.find(matchTokenByDenom(token0Address));
       const token1 = tokenList.find(matchTokenByDenom(token1Address));
       if (pairID && token0 && token1) {
-        map[pairID] = map[pairID] || { token0, token1, userPositions: [] };
-        map[pairID].userPositions.push(userPosition);
+        map[pairID] = map[pairID] || {
+          token0,
+          token1,
+          userValuedReserves: [],
+        };
+        map[pairID].userValuedReserves.push(userPosition);
       }
       return map;
     }, {});
 
-    return userPositionsShareValueMap
-      ? Object.entries(userPositionsShareValueMap).map<
-          [string, Token, Token, UserPositionDepositContext[]]
-        >(([pairId, { token0, token1, userPositions }]) => {
-          return [pairId, token0, token1, userPositions];
+    return userValuedReservesMap
+      ? Object.entries(userValuedReservesMap).map<
+          [string, Token, Token, UserValuedReserves[]]
+        >(([pairId, { token0, token1, userValuedReserves }]) => {
+          return [pairId, token0, token1, userValuedReserves];
         })
       : [];
-  }, [userPositionsShareValues, tokenList]);
+  }, [userValuedReserves, tokenList]);
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
 
   const filteredPoolsList = useMemo<
-    Array<[string, Token, Token, UserPositionDepositContext[]]>
+    Array<[string, Token, Token, UserValuedReserves[]]>
   >(() => {
     const tokenList = filteredPoolTokenList.map(({ token }) => token);
     return myPoolsList.filter(([, token0, token1]) => {
@@ -266,7 +268,7 @@ export function MyPoolsTableCard<T extends string | number>({
           </thead>
           <tbody>
             {filteredPoolsList.map(
-              ([pairId, token0, token1, userPositions]) => {
+              ([pairId, token0, token1, userValuedReserves]) => {
                 const onRowClick:
                   | MouseEventHandler<HTMLButtonElement>
                   | undefined = onTokenPairClick
@@ -278,7 +280,7 @@ export function MyPoolsTableCard<T extends string | number>({
                     key={pairId}
                     token0={token0}
                     token1={token1}
-                    userPositions={userPositions}
+                    userValuedReserves={userValuedReserves}
                     onClick={onRowClick}
                     actions={userPositionActions}
                   />
@@ -314,7 +316,7 @@ export interface Actions {
     action: (action: {
       token0: Token;
       token1: Token;
-      userPositions: Array<ValuedUserPositionDepositContext>;
+      userValuedReserves: Array<UserValuedReserves>;
       navigate: NavigateFunction;
     }) => void;
   };
@@ -335,30 +337,26 @@ const defaultActions: Actions = {
 function PositionRow({
   token0,
   token1,
-  userPositions,
+  userValuedReserves,
   onClick,
   actions = {},
 }: {
   token0: Token;
   token1: Token;
-  userPositions: Array<ValuedUserPositionDepositContext>;
+  userValuedReserves: Array<UserValuedReserves>;
   onClick?: MouseEventHandler<HTMLButtonElement>;
   actions?: Actions;
 }) {
   const navigate = useNavigate();
 
-  const total0 = userPositions.reduce<BigNumber>((acc, { token0Context }) => {
-    return acc.plus(token0Context?.userReserves || 0);
+  const total0 = userValuedReserves.reduce<BigNumber>((acc, estimate) => {
+    return acc.plus(estimate.reserves.reserves0 || 0);
   }, new BigNumber(0));
-  const total1 = userPositions.reduce<BigNumber>((acc, { token1Context }) => {
-    return acc.plus(token1Context?.userReserves || 0);
+  const total1 = userValuedReserves.reduce<BigNumber>((acc, estimate) => {
+    return acc.plus(estimate.reserves.reserves1 || 0);
   }, new BigNumber(0));
-
-  const value0 = userPositions.reduce<BigNumber>((acc, { token0Value }) => {
-    return acc.plus(token0Value || 0);
-  }, new BigNumber(0));
-  const value1 = userPositions.reduce<BigNumber>((acc, { token1Value }) => {
-    return acc.plus(token1Value || 0);
+  const value = userValuedReserves.reduce<BigNumber>((acc, { value }) => {
+    return acc.plus(value || 0);
   }, new BigNumber(0));
 
   if (total0 && total1) {
@@ -367,7 +365,7 @@ function PositionRow({
         <td>
           <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
-        <td>{formatCurrency(value0.plus(value1).toNumber())}</td>
+        <td>{formatCurrency(value.toNumber())}</td>
         <td>
           <span className="token-compositions">
             {formatAmount(getDisplayDenomAmount(token0, total0) || 0)}
@@ -387,7 +385,12 @@ function PositionRow({
                       key={actionKey}
                       type="button"
                       onClick={() => {
-                        action({ token0, token1, userPositions, navigate });
+                        action({
+                          token0,
+                          token1,
+                          userValuedReserves,
+                          navigate,
+                        });
                       }}
                       className={['button nowrap', className]
                         .filter(Boolean)

@@ -9,7 +9,7 @@ import {
   useTokenBySymbol,
 } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
-import { useUserPositionsShareValues } from '../../lib/web3/hooks/useUserShareValues';
+import { useUserDeposits } from '../../lib/web3/hooks/useUserDeposits';
 
 import PoolOverview from './PoolOverview';
 import PoolManagement from './PoolManagement';
@@ -116,7 +116,8 @@ function PoolTableCards({
   const [selectedPoolsList, setSelectedPoolsList] =
     useState<keyof typeof switchValues>('all');
 
-  const userHasPositions = useUserPositionsShareValues().length > 0;
+  const { data: userDeposits } = useUserDeposits();
+  const userHasPositions = !!userDeposits?.length;
 
   return userHasPositions && selectedPoolsList === 'mine' ? (
     <MyPoolsTableCard<keyof typeof switchValues>

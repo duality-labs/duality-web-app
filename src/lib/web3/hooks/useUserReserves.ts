@@ -38,11 +38,11 @@ interface IndicativeUserReserves {
   deposit: DepositRecord;
   indicativeReserves: PairReserves;
 }
-interface UserReserves {
+export interface UserReserves {
   deposit: DepositRecord;
   reserves: PairReserves;
 }
-interface UserValuedReserves extends UserReserves {
+export interface UserValuedReserves extends UserReserves {
   value: number;
 }
 
