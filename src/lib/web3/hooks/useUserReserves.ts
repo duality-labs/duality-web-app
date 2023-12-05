@@ -6,7 +6,7 @@ import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosm
 import { QueryGetPoolReservesRequest } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
 
 import { useLcdClientPromise } from '../lcdClient';
-import { useUserDepositsOfTokenPair } from './useUserDeposits';
+import { useUserDeposits } from './useUserDeposits';
 import { useSimplePrice } from '../../tokenPrices';
 
 import { getPairID } from '../utils/pairs';
@@ -56,7 +56,7 @@ function useUserDepositsTotalShares(
   tokenPair?: TokenPair | TokenIdPair
 ): CombinedUseQueries<UserReservesTotalShares[]> {
   const lcdClientPromise = useLcdClientPromise();
-  const { data: userPairDeposits } = useUserDepositsOfTokenPair(tokenPair);
+  const { data: userPairDeposits } = useUserDeposits(tokenPair);
 
   // for each specific amount of userDeposits, fetch the totalShares that match
   const memoizedData = useRef<UserReservesTotalShares[]>();
@@ -129,7 +129,7 @@ function useUserDepositsTotalReserves(
   tokenPair?: TokenPair | TokenIdPair
 ): CombinedUseQueries<UserReservesTotalReserves[]> {
   const rpcPromise = useRpcPromise();
-  const { data: userPairDeposits } = useUserDepositsOfTokenPair(tokenPair);
+  const { data: userPairDeposits } = useUserDeposits(tokenPair);
 
   // for each specific amount of userDeposits, fetch the totalShares that match
   const memoizedData = useRef<UserReservesTotalReserves[]>();
@@ -245,7 +245,7 @@ function useUserDepositsTotalReserves(
 export function useUserIndicativeReserves(
   tokenPair?: TokenPair | TokenIdPair
 ): CombinedUseQueries<IndicativeUserReserves[]> {
-  const userDepositsResults = useUserDepositsOfTokenPair(tokenPair);
+  const userDepositsResults = useUserDeposits(tokenPair);
   const userTotalSharesResults = useUserDepositsTotalShares(tokenPair);
   const userTotalReservesResults = useUserDepositsTotalReserves(tokenPair);
 

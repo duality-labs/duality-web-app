@@ -13,7 +13,7 @@ import { minutes } from '../../utils/time';
 
 const { REACT_APP__REST_API = '' } = process.env;
 
-export function useUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
+function useAllUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
   const { address } = useWeb3();
 
   const result = useQuery({
@@ -87,12 +87,12 @@ export function useUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
   return result;
 }
 
-export function useUserDepositsOfTokenPair(
+export function useUserDeposits(
   tokenPair?: TokenPair | TokenIdPair
 ): UseQueryResult<DepositRecord[] | undefined> {
   const tokenPairIDs = useDeepCompareMemoize(resolveTokenIdPair(tokenPair));
 
-  const result = useUserDeposits();
+  const result = useAllUserDeposits();
   const userDeposits = useDeepCompareMemoize(result.data);
   const userDepositsOfTokenPair = useMemo(() => {
     // if a pair ID request was given then filter the response
