@@ -42,6 +42,9 @@ interface UserReserves {
   deposit: DepositRecord;
   reserves: PairReserves;
 }
+interface UserValuedReserves extends UserReserves {
+  value: number;
+}
 
 interface CombinedUseQueries<T> {
   data: T | undefined;
@@ -306,7 +309,7 @@ export function useUserIndicativeReserves(
 
 export function useEstimatedUserReserves(
   tokenPair?: TokenPair | TokenIdPair
-): CombinedUseQueries<UserReserves[]> {
+): CombinedUseQueries<UserValuedReserves[]> {
   const {
     data: userIndicatveReserves,
     isFetching,
@@ -366,8 +369,8 @@ export function useEstimatedUserReserves(
   // using the current price, make assumptions about the current reserves
   return useMemo(() => {
     if (Object.values(tokenPriceByIdMap).every((price = 0) => price > 0)) {
-      const userReserves = userIndicatveReserves?.flatMap<UserReserves>(
-        ({ deposit, indicativeReserves }) => {
+      const userReserves = userIndicatveReserves?.flatMap<UserValuedReserves>(
+        ({ deposit, indicativeReserves: { reserves0, reserves1 } }) => {
           const token0 = tokenByIdMap.get(deposit.pairID.token0);
           const token1 = tokenByIdMap.get(deposit.pairID.token1);
           const tokenPrice0 = tokenPriceByIdMap.get(deposit.pairID.token0);
@@ -384,18 +387,23 @@ export function useEstimatedUserReserves(
             const toTheLeft = centerTickIndex.isGreaterThanOrEqualTo(
               deposit.centerTickIndex.toInt()
             );
-            return {
-              deposit,
-              reserves: toTheLeft
-                ? {
-                    reserves0: indicativeReserves.reserves0,
+            return toTheLeft
+              ? {
+                  deposit,
+                  reserves: {
+                    reserves0,
                     reserves1: '0',
-                  }
-                : {
-                    reserves0: '0',
-                    reserves1: indicativeReserves.reserves1,
                   },
-            };
+                  value: basePrice0.multipliedBy(reserves0).toNumber(),
+                }
+              : {
+                  deposit,
+                  reserves: {
+                    reserves0: '0',
+                    reserves1,
+                  },
+                  value: basePrice1.multipliedBy(reserves1).toNumber(),
+                };
           }
           return [];
         }
@@ -418,6 +426,19 @@ export function useEstimatedUserReserves(
     isFetching,
     error,
   ]);
+}
+
+// calculate total
+export function useEstimatedUserReservesValue(
+  tokenPair?: TokenPair | TokenIdPair
+): BigNumber {
+  const { data: estimatedUserReserves } = useEstimatedUserReserves(tokenPair);
+  return useMemo(() => {
+    return (estimatedUserReserves || []).reduce<BigNumber>(
+      (acc, estimatedUserReserve) => acc.plus(estimatedUserReserve.value),
+      new BigNumber(0)
+    );
+  }, [estimatedUserReserves]);
 }
 
 function isEqualDeposit(a: DepositRecord, b: DepositRecord) {
