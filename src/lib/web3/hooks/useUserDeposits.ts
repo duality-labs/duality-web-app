@@ -30,7 +30,11 @@ export function useUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
           address,
         });
         // return unwrapped result
-        return response.Deposits;
+        return response.Deposits.sort(
+          (a, b) =>
+            a.centerTickIndex.sub(b.centerTickIndex).toNumber() ||
+            b.fee.sub(a.fee).toNumber()
+        );
       }
     },
     refetchInterval: 5 * minutes,
@@ -84,7 +88,7 @@ export function useUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
 }
 
 export function useUserDepositsOfTokenPair(
-  tokenPair: TokenPair | TokenIdPair | undefined
+  tokenPair?: TokenPair | TokenIdPair
 ): UseQueryResult<DepositRecord[] | undefined> {
   const tokenPairIDs = useDeepCompareMemoize(resolveTokenIdPair(tokenPair));
 
