@@ -4,6 +4,7 @@ import { useQueries } from '@tanstack/react-query';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/deposit_record';
 import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { QueryGetPoolReservesRequest } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
+import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import { useLcdClientPromise } from '../lcdClient';
 import { useUserDeposits } from './useUserDeposits';
@@ -17,10 +18,13 @@ import {
   TokenPair,
   getBaseDenomAmount,
   getTokenId,
+  resolveTokenIdPair,
 } from '../utils/tokens';
 import { useRpcPromise } from '../rpcQueryClient';
 import { dualitylabs } from '@duality-labs/dualityjs';
 import useTokens, { useTokensWithIbcInfo } from './useTokens';
+import { useTokenPairMapLiquidity } from '../../web3/hooks/useTickLiquidity';
+import { useOrderedTokenPair } from './useTokenPairs';
 
 interface PairReserves {
   reserves0: string;
@@ -450,4 +454,83 @@ function isEqualDeposit(a: DepositRecord, b: DepositRecord) {
       a.centerTickIndex.equals(b.centerTickIndex) &&
       a.fee.equals(b.fee))
   );
+}
+
+const emptyDataSet: never[] = [];
+export function useAccurateUserReserves(
+  tokenPair?: TokenPair | TokenIdPair
+): CombinedUseQueries<UserReserves[]> {
+  const tokenIdPair = resolveTokenIdPair(tokenPair) || [];
+  const [tokenId0, tokenId1] = useOrderedTokenPair(tokenIdPair) || [];
+  const [tokenIdA, tokenIdB] = tokenIdPair;
+  const forward = tokenId0 === tokenIdA && tokenId1 === tokenIdB;
+  const reverse = tokenId0 === tokenIdB && tokenId1 === tokenIdA;
+
+  // combine data from user reserves and tick liquidity
+  const {
+    data: userIndicativeReserves,
+    isFetching,
+    error,
+  } = useUserIndicativeReserves(tokenPair);
+  const { data: [liquidityMapA, liquidityMapB] = [] } =
+    useTokenPairMapLiquidity(tokenIdPair);
+
+  const liquidityMap0 = forward ? liquidityMapA : liquidityMapB;
+  const liquidityMap1 = reverse ? liquidityMapA : liquidityMapB;
+
+  // note: memoize this middle state as an optimization
+  //       - liquidity maps update frequently
+  //       - user indicative reserves update infrequently
+  //       - the relevant liquidity pools to the user don't update that often
+  const userSpecificLiquidityKeyValues = useDeepCompareMemoize(
+    useMemo(() => {
+      return userIndicativeReserves?.map<[number, [number, number]]>(
+        ({ deposit }) => {
+          // find state from tick liquidity
+          const reserves0 =
+            liquidityMap0?.get(deposit.lowerTickIndex.toNumber()) || 0;
+          const reserves1 =
+            liquidityMap1?.get(deposit.upperTickIndex.toNumber()) || 0;
+          // return in key, value format ready to create an array or map
+          // use this format because it is easy to memoize and deep-compare
+          return [deposit.centerTickIndex.toNumber(), [reserves0, reserves1]];
+        }
+      );
+    }, [liquidityMap0, liquidityMap1, userIndicativeReserves])
+  );
+
+  const userReserves = useMemo<UserReserves[]>(() => {
+    if (
+      userIndicativeReserves?.length &&
+      userSpecificLiquidityKeyValues?.length
+    ) {
+      const liquidityMap = new Map(userSpecificLiquidityKeyValues);
+      return (userIndicativeReserves || []).map(
+        ({ deposit, indicativeReserves }) => {
+          // find state from tick liquidity
+          const [reserves0, reserves1] = liquidityMap?.get(
+            deposit.centerTickIndex.toNumber()
+          ) || [0, 0];
+          // compute user reserves from state to
+          const totalReserves = reserves0 + reserves1;
+          const percentage0 = totalReserves > 0 ? reserves0 / totalReserves : 0;
+          const percentage1 = totalReserves > 0 ? reserves1 / totalReserves : 0;
+          return {
+            deposit,
+            reserves: {
+              reserves0: new BigNumber(indicativeReserves.reserves0)
+                .multipliedBy(percentage0)
+                .toFixed(0),
+              reserves1: new BigNumber(indicativeReserves.reserves1)
+                .multipliedBy(percentage1)
+                .toFixed(0),
+            },
+          };
+        }
+      );
+    }
+    return emptyDataSet;
+  }, [userIndicativeReserves, userSpecificLiquidityKeyValues]);
+
+  return { data: userReserves, isFetching, error };
 }

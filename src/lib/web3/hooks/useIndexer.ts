@@ -489,7 +489,7 @@ export function useIndexerStreamOfDualDataSet<
     url,
     IndexerStreamAccumulateDualDataSet,
     opts
-  );
+  ) as StaleWhileRevalidateState<[DataSet, DataSet]>;
 }
 
 // add higher-level function to fetch multiple pages of data as "one request"

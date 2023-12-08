@@ -10,6 +10,25 @@ import { useIndexerStreamOfDualDataSet } from './useIndexer';
 import { Token, TokenID } from '../utils/tokens';
 
 type ReserveDataRow = [tickIndex: number, reserves: number];
+type ReserveDataSet = Map<ReserveDataRow['0'], ReserveDataRow['1']>;
+
+// add convenience method to fetch liquidity maps of a pair
+export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
+  TokenID?,
+  TokenID?
+]): {
+  data?: [ReserveDataSet, ReserveDataSet];
+  error?: unknown;
+} {
+  // stream data from indexer
+  return useIndexerStreamOfDualDataSet<ReserveDataRow>(
+    tokenIdA && tokenIdB && `/liquidity/pair/${tokenIdA}/${tokenIdB}`,
+    {
+      // remove entries of value 0 from the accumulated map, they are not used
+      mapEntryRemovalValue: 0,
+    }
+  );
+}
 
 // add convenience method to fetch ticks in a pair
 export function useTokenPairTickLiquidity([tokenIdA, tokenIdB]: [
@@ -21,14 +40,9 @@ export function useTokenPairTickLiquidity([tokenIdA, tokenIdB]: [
   error: unknown;
 } {
   const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
-  // stream data from indexer
-  const { data, error } = useIndexerStreamOfDualDataSet<ReserveDataRow>(
-    tokenIdA && tokenIdB && `/liquidity/pair/${tokenIdA}/${tokenIdB}`,
-    {
-      // remove entries of value 0 from the accumulated map, they are not used
-      mapEntryRemovalValue: 0,
-    }
-  );
+
+  // use stream data from indexer
+  const { data, error } = useTokenPairMapLiquidity([tokenIdA, tokenIdB]);
 
   // add token context into pool reserves
   const token0 = useToken(tokenId0);
