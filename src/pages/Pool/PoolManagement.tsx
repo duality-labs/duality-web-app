@@ -38,7 +38,11 @@ import {
   MyNewPositionTableCard,
 } from './MyPositionTableCard';
 
-import { useTokenPathPart } from '../../lib/web3/hooks/useTokens';
+import { useAccurateUserReserves } from '../../lib/web3/hooks/useUserReserves';
+import {
+  matchTokenByDenom,
+  useTokenPathPart,
+} from '../../lib/web3/hooks/useTokens';
 import { useDeposit } from './useDeposit';
 import useFeeLiquidityMap from './useFeeLiquidityMap';
 
@@ -57,6 +61,7 @@ import { FeeType, feeTypes } from '../../lib/web3/utils/fees';
 import { LiquidityShape, liquidityShapes } from '../../lib/web3/utils/shape';
 import {
   Token,
+  TokenPair,
   getBaseDenomAmount,
   getDisplayDenomAmount,
   getTokenId,
@@ -71,10 +76,6 @@ import {
   useEditLiquidity,
 } from '../MyLiquidity/useEditLiquidity';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
-import {
-  usePoolDepositFilterForPair,
-  useUserPositionsContext,
-} from '../../lib/web3/hooks/useUserShares';
 import { usePairPrice } from '../../lib/tokenPrices';
 
 import PoolLayout from './PoolLayout';
@@ -133,8 +134,7 @@ function getEditedPositionTick(
     token0,
     token1,
     deposit,
-    token0Context,
-    token1Context,
+    reserves,
     tickDiff0,
     tickDiff1,
   }: EditedPosition): Tick => {
@@ -142,11 +142,11 @@ function getEditedPositionTick(
     const maybeTickDiff1 = includeTickDiff ? tickDiff1 : new BigNumber(0);
     return {
       reserveA: !invertedTokenOrder
-        ? maybeTickDiff0.plus(token0Context?.userReserves || 0)
-        : maybeTickDiff1.plus(token1Context?.userReserves || 0),
+        ? maybeTickDiff0.plus(reserves.reserves0 || 0)
+        : maybeTickDiff1.plus(reserves.reserves1 || 0),
       reserveB: !invertedTokenOrder
-        ? maybeTickDiff1.plus(token1Context?.userReserves || 0)
-        : maybeTickDiff0.plus(token0Context?.userReserves || 0),
+        ? maybeTickDiff1.plus(reserves.reserves1 || 0)
+        : maybeTickDiff0.plus(reserves.reserves0 || 0),
       tickIndexBToA:
         (!invertedTokenOrder ? 1 : -1) * deposit.centerTickIndex.toNumber(),
       priceBToA: tickIndexToPrice(
@@ -797,10 +797,11 @@ export default function PoolManagement({
     getTokenId(tokenB)
   );
 
-  const pairPoolDepositFilter = usePoolDepositFilterForPair(
-    tokenA && tokenB ? [tokenA, tokenB] : ['', '']
-  );
-  const userPositionsContext = useUserPositionsContext(pairPoolDepositFilter);
+  const tokenPair = useMemo<TokenPair | undefined>(() => {
+    if (tokenA && tokenB) {
+      return [tokenA, tokenB];
+    }
+  }, [tokenA, tokenB]);
 
   const [{ isValidating: isValidatingEdit }, sendEditRequest] =
     useEditLiquidity();
@@ -811,17 +812,34 @@ export default function PoolManagement({
   const [[viewableMinIndex, viewableMaxIndex] = [], setViewableIndexes] =
     useState<[number, number] | undefined>();
 
+  const { data: userReserves } = useAccurateUserReserves(tokenPair);
+
+  // add token information to user reserves
+  // note: this could be refactored away if we didn't need token information
+  //       for converting denom amounts. but the conversion ability is helpful
+  const userTokenReserves = useMemo(() => {
+    const token0Address = userReserves?.at(0)?.deposit.pairID.token0 ?? '';
+    const token1Address = userReserves?.at(0)?.deposit.pairID.token1 ?? '';
+    const token0 = tokenPair?.find(matchTokenByDenom(token0Address));
+    const token1 = tokenPair?.find(matchTokenByDenom(token1Address));
+    return (
+      token0 &&
+      token1 &&
+      userReserves?.map((userReserve) => ({ ...userReserve, token0, token1 }))
+    );
+  }, [userReserves, tokenPair]);
+
   const [editedUserPosition, setEditedUserPosition] = useState<
     Array<EditedPosition>
   >([]);
 
   useEffect(() => {
     setEditedUserPosition((editedUserPosition) => {
-      let isEqual = editedUserPosition.length === userPositionsContext.length;
-      if (isEqual) {
+      let isEqual = editedUserPosition.length === userTokenReserves?.length;
+      if (userTokenReserves && isEqual) {
         for (let i = 0; i < editedUserPosition.length; i++) {
           const deposit = editedUserPosition[i].deposit;
-          const updatedDeposit = userPositionsContext[i].deposit;
+          const updatedDeposit = userTokenReserves[i].deposit;
           if (
             // check if the user's deposits have changed at all
             !(
@@ -833,7 +851,6 @@ export default function PoolManagement({
               deposit.upperTickIndex.equals(updatedDeposit.upperTickIndex) &&
               deposit.fee.equals(updatedDeposit.fee)
             )
-            // todo: check if the reserves have changed side
           ) {
             isEqual = false;
             break;
@@ -841,36 +858,37 @@ export default function PoolManagement({
         }
       }
 
-      if (isEqual) {
+      if (userTokenReserves && isEqual) {
         // merge context updates into the edited position
         return editedUserPosition.map((editedUserPosition, i) => {
           return {
             ...editedUserPosition,
-            token0Context: userPositionsContext[i].token0Context,
-            token1Context: userPositionsContext[i].token1Context,
+            // update position with new data
+            deposit: userTokenReserves[i].deposit,
+            reserves: userTokenReserves[i].reserves,
           };
         });
       } else {
         // reset the position as it has changed
-        return userPositionsContext.map<EditedPosition>((userPosition) => ({
-          ...userPosition,
+        return (userTokenReserves || []).map<EditedPosition>((userReserve) => ({
+          ...userReserve,
           tickDiff0: new BigNumber(0),
           tickDiff1: new BigNumber(0),
         }));
       }
     });
-  }, [userPositionsContext]);
+  }, [userTokenReserves]);
 
   const editedUserTicksBase = useMemo(() => {
-    return userPositionsContext
-      .map<EditedPosition>((userPosition) => ({
-        ...userPosition,
+    return (userTokenReserves || [])
+      .map<EditedPosition>((userReserve) => ({
+        ...userReserve,
         tickDiff0: new BigNumber(0),
         tickDiff1: new BigNumber(0),
       }))
       .map(getEditedPositionTick(true, invertedTokenOrder))
       .sort((a, b) => a.tickIndexBToA - b.tickIndexBToA);
-  }, [userPositionsContext, invertedTokenOrder]);
+  }, [userTokenReserves, invertedTokenOrder]);
 
   const editedUserTicks = useMemo(() => {
     return editedUserPosition
