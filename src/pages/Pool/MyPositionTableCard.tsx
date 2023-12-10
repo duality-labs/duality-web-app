@@ -249,10 +249,10 @@ export function MyEditedPositionTableCard({
         // sort by price
         .sort((a, b) => {
           return !!invertedTokenOrder
-            ? b.deposit.centerTickIndex1To0.toNumber() -
-                a.deposit.centerTickIndex1To0.toNumber()
-            : a.deposit.centerTickIndex1To0.toNumber() -
-                b.deposit.centerTickIndex1To0.toNumber();
+            ? b.deposit.centerTickIndex.toNumber() -
+                a.deposit.centerTickIndex.toNumber()
+            : a.deposit.centerTickIndex.toNumber() -
+                b.deposit.centerTickIndex.toNumber();
         })
     );
   }, [editedUserPosition, invertedTokenOrder]);
@@ -340,8 +340,8 @@ export function MyEditedPositionTableCard({
           const [valueA, valueB] = poolValues[index];
 
           const tickIndexBToA = !invertedTokenOrder
-            ? new BigNumber(deposit.centerTickIndex1To0.toNumber())
-            : new BigNumber(deposit.centerTickIndex1To0.toNumber()).negated();
+            ? new BigNumber(deposit.centerTickIndex.toNumber())
+            : new BigNumber(deposit.centerTickIndex.toNumber()).negated();
 
           const displayPriceBToA = tickIndexToDisplayPrice(
             tickIndexBToA,
@@ -413,8 +413,8 @@ export function MyEditedPositionTableCard({
                       onClick={() => {
                         setEditedUserPosition((ticks) => {
                           return ticks.map((tick) => {
-                            return tick.deposit.centerTickIndex1To0.toNumber() ===
-                              deposit.centerTickIndex1To0.toNumber() &&
+                            return tick.deposit.centerTickIndex.toNumber() ===
+                              deposit.centerTickIndex.toNumber() &&
                               tick.deposit.fee.toNumber() ===
                                 deposit.fee.toNumber()
                               ? {
@@ -441,8 +441,8 @@ export function MyEditedPositionTableCard({
                     onClick={() => {
                       setEditedUserPosition((ticks) => {
                         return ticks.map((tick) => {
-                          return tick.deposit.centerTickIndex1To0.toNumber() ===
-                            deposit.centerTickIndex1To0.toNumber() &&
+                          return tick.deposit.centerTickIndex.toNumber() ===
+                            deposit.centerTickIndex.toNumber() &&
                             tick.deposit.fee.toNumber() ===
                               deposit.fee.toNumber()
                             ? {
