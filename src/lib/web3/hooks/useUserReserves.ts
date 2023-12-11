@@ -246,7 +246,7 @@ function useUserDepositsTotalReserves(
   return result;
 }
 
-export function useUserIndicativeReserves(
+function useUserIndicativeReserves(
   tokenPair?: TokenPair | TokenIdPair
 ): CombinedUseQueries<IndicativeUserReserves[]> {
   const userDepositsResults = useUserDeposits(tokenPair);
