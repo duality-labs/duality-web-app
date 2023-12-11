@@ -388,10 +388,10 @@ export function useEstimatedUserReserves(
               basePrice1.div(basePrice0)
             );
             // decide if the reserves are of token0 or token1
-            const toTheLeft = centerTickIndex.isGreaterThanOrEqualTo(
+            const depositIsLeftOfPrice = centerTickIndex.isLessThan(
               deposit.centerTickIndex.toInt()
             );
-            return toTheLeft
+            return depositIsLeftOfPrice
               ? {
                   deposit,
                   reserves: {
