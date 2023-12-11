@@ -489,8 +489,10 @@ export function useAccurateUserReserves(
           // find state from tick liquidity
           const reserves0 =
             liquidityMap0?.get(deposit.lowerTickIndex.toNumber()) || 0;
+          // note: reserve of token 1 is saved in tickIndex0to1 and needs to be
+          //       converted into tickIndex1to0 to align with token0/token1 math
           const reserves1 =
-            liquidityMap1?.get(deposit.upperTickIndex.toNumber()) || 0;
+            liquidityMap1?.get(deposit.upperTickIndex.negate().toNumber()) || 0;
           // return in key, value format ready to create an array or map
           // use this format because it is easy to memoize and deep-compare
           return [deposit.centerTickIndex.toNumber(), [reserves0, reserves1]];
