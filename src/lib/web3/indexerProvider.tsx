@@ -207,8 +207,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
             return tickUpdateEvents.reduce(
               (poolUpdateHeightData, event) => {
                 const pairID = getPairID(
-                  event.attributes.Token0,
-                  event.attributes.Token1
+                  event.attributes.TokenZero,
+                  event.attributes.TokenOne
                 );
                 poolUpdateHeightData[pairID] = height;
                 return poolUpdateHeightData;
