@@ -392,7 +392,7 @@ function EventColumn<
   // get common attributes from first event
   const [
     {
-      attributes: { Creator, Token0, Token1 },
+      attributes: { Creator, TokenZero, TokenOne },
     },
   ] = events;
 
@@ -436,7 +436,7 @@ function EventColumn<
     return null;
 
     function getHasInvertedOrder(): boolean {
-      return hasInvertedOrder(getPairID(Token0, Token1), [tokenA, tokenB]);
+      return hasInvertedOrder(getPairID(TokenZero, TokenOne), [tokenA, tokenB]);
     }
 
     function getTokenAReserves() {
@@ -476,10 +476,10 @@ function EventColumn<
 
 function DepositColumn(props: EventColumnProps<DexDepositEvent>) {
   const getToken0Reserves = useCallback(({ attributes }: DexDepositEvent) => {
-    return attributes.Reserves0Deposited;
+    return attributes.ReservesZeroDeposited;
   }, []);
   const getToken1Reserves = useCallback(({ attributes }: DexDepositEvent) => {
-    return attributes.Reserves1Deposited;
+    return attributes.ReservesOneDeposited;
   }, []);
 
   return (
@@ -495,13 +495,13 @@ function DepositColumn(props: EventColumnProps<DexDepositEvent>) {
 function WithdrawalColumn(props: EventColumnProps<DexWithdrawalEvent>) {
   const getToken0Reserves = useCallback(
     ({ attributes }: DexWithdrawalEvent) => {
-      return attributes.Reserves0Withdrawn;
+      return attributes.ReservesZeroWithdrawn;
     },
     []
   );
   const getToken1Reserves = useCallback(
     ({ attributes }: DexWithdrawalEvent) => {
-      return attributes.Reserves1Withdrawn;
+      return attributes.ReservesOneWithdrawn;
     },
     []
   );

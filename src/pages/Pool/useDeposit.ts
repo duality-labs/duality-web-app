@@ -326,20 +326,20 @@ export function useDeposit([tokenA, tokenB]: [
                 // accumulate share values
                 // ('NewReserves' is the difference between previous and next share value)
                 const shareIncrease0 = new BigNumber(
-                  attributes['Reserves0Deposited']
+                  attributes['ReservesZeroDeposited']
                 );
                 const shareIncrease1 = new BigNumber(
-                  attributes['Reserves1Deposited']
+                  attributes['ReservesOneDeposited']
                 );
                 if (
-                  tokenIdA === attributes['Token0'] &&
-                  tokenIdB === attributes['Token1']
+                  tokenIdA === attributes['TokenZero'] &&
+                  tokenIdB === attributes['TokenOne']
                 ) {
                   acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease0);
                   acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease1);
                 } else if (
-                  tokenIdA === attributes['Token1'] &&
-                  tokenIdB === attributes['Token0']
+                  tokenIdA === attributes['TokenOne'] &&
+                  tokenIdB === attributes['TokenZero']
                 ) {
                   acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease1);
                   acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease0);

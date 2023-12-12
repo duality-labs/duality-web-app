@@ -79,7 +79,7 @@ export default function useTransactionTableData({
 
       /*
        * note: you would expect the following to work, but the ABCI query check
-       * fails the event query of attribute Token0 and Token1 for numeric chars
+       * fails the event query of attribute TokenZero and TokenOne for numeric chars
        * see: https://github.com/cosmos/cosmos-sdk/commit/18da0e9c15e0210fdd289e3f1f0f5fefe3f6b72a#diff-53f84248611b4e705fd4106d3f6f46eed9258656b0b3db22bd56fdde5628cebdR47
        *
        * const QueryClientImpl = cosmos.tx.v1beta1.ServiceClientImpl;
@@ -89,10 +89,10 @@ export default function useTransactionTableData({
        *     `message.module='${'dex'}'`,
        *     !invertedOrder
        *       ? `message.Token='${tokenIdA}'`
-       *       : `message.Token0='${tokenIdB}'`,
+       *       : `message.TokenZero='${tokenIdB}'`,
        *     !invertedOrder
        *       ? `message.Token='${tokenIdB}'`
-       *       : `message.Token1='${tokenIdA}'`,
+       *       : `message.TokenOne='${tokenIdA}'`,
        *     action ? `message.action='${action}'` : '',
        *   ].filter(Boolean),
        *   orderBy: cosmos.tx.v1beta1.OrderBySDKType.ORDER_BY_ASC,
@@ -108,11 +108,11 @@ export default function useTransactionTableData({
           [
             `message.module='${'dex'}'`,
             !invertedOrder
-              ? `message.Token0='${tokenIdA}'`
-              : `message.Token0='${tokenIdB}'`,
+              ? `message.TokenZero='${tokenIdA}'`
+              : `message.TokenZero='${tokenIdB}'`,
             !invertedOrder
-              ? `message.Token1='${tokenIdB}'`
-              : `message.Token1='${tokenIdA}'`,
+              ? `message.TokenOne='${tokenIdB}'`
+              : `message.TokenOne='${tokenIdA}'`,
             account ? `message.Creator='${account}'` : '',
             action ? `message.action='${action}'` : '',
           ]
