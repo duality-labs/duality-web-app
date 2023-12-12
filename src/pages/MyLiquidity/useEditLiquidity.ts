@@ -14,7 +14,7 @@ import { Token, getBaseDenomAmount } from '../../lib/web3/utils/tokens';
 
 import { UserReserves } from '../../lib/web3/hooks/useUserReserves';
 import rpcClient from '../../lib/web3/rpcMsgClient';
-import { dualitylabs } from '@duality-labs/dualityjs';
+import { duality } from '@duality-labs/dualityjs';
 
 export interface EditedPosition extends UserReserves {
   token0: Token;
@@ -117,33 +117,31 @@ export function useEditLiquidity(): [
                     // I'm not certain that non-100% withdrawals work in all cases.
                     tickDiff0.isLessThan(0) && tickDiff1.isLessThan(0)
                     ? [
-                        dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
-                          {
-                            creator: web3Address,
-                            tokenA: token0Address,
-                            tokenB: token1Address,
-                            receiver: web3Address,
-                            tickIndexesAToB: [centerTickIndex],
-                            fees: [fee],
-                            // approximate removal using percentages
-                            // todo: this probably has a bug when withdrawing from a tick
-                            // that has both token0 and token1 as this only takes into account one side
-                            sharesToRemove: [
-                              tickDiff0
-                                .plus(tickDiff1)
-                                .negated()
-                                .dividedBy(userTotalReserves)
-                                .multipliedBy(userShares)
-                                .toFixed(0),
-                            ],
-                          }
-                        ),
+                        duality.dex.MessageComposer.withTypeUrl.withdrawal({
+                          creator: web3Address,
+                          tokenA: token0Address,
+                          tokenB: token1Address,
+                          receiver: web3Address,
+                          tickIndexesAToB: [centerTickIndex],
+                          fees: [fee],
+                          // approximate removal using percentages
+                          // todo: this probably has a bug when withdrawing from a tick
+                          // that has both token0 and token1 as this only takes into account one side
+                          sharesToRemove: [
+                            tickDiff0
+                              .plus(tickDiff1)
+                              .negated()
+                              .dividedBy(userTotalReserves)
+                              .multipliedBy(userShares)
+                              .toFixed(0),
+                          ],
+                        }),
                       ]
                     : [
                         ...(!tickDiff0.isZero()
                           ? [
                               tickDiff0.isGreaterThan(0)
-                                ? dualitylabs.duality.dex.MessageComposer.withTypeUrl.deposit(
+                                ? duality.dex.MessageComposer.withTypeUrl.deposit(
                                     {
                                       creator: web3Address,
                                       tokenA: token0Address,
@@ -160,7 +158,7 @@ export function useEditLiquidity(): [
                                       Options: [{ disable_autoswap: false }],
                                     }
                                   )
-                                : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
+                                : duality.dex.MessageComposer.withTypeUrl.withdrawal(
                                     {
                                       creator: web3Address,
                                       tokenA: token0Address,
@@ -187,7 +185,7 @@ export function useEditLiquidity(): [
                         ...(!tickDiff1.isZero()
                           ? [
                               tickDiff1.isGreaterThan(0)
-                                ? dualitylabs.duality.dex.MessageComposer.withTypeUrl.deposit(
+                                ? duality.dex.MessageComposer.withTypeUrl.deposit(
                                     {
                                       creator: web3Address,
                                       tokenA: token0Address,
@@ -204,7 +202,7 @@ export function useEditLiquidity(): [
                                       Options: [{ disable_autoswap: false }],
                                     }
                                   )
-                                : dualitylabs.duality.dex.MessageComposer.withTypeUrl.withdrawal(
+                                : duality.dex.MessageComposer.withTypeUrl.withdrawal(
                                     {
                                       creator: web3Address,
                                       tokenA: token0Address,

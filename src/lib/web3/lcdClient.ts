@@ -1,16 +1,16 @@
 import { HttpEndpoint } from '@cosmjs/tendermint-rpc';
 
-import { dualitylabs } from '@duality-labs/dualityjs';
+import { duality } from '@duality-labs/dualityjs';
 import { useMemo } from 'react';
 
 const { REACT_APP__REST_API = '' } = process.env;
 
 export function lcdClient(rpcURL = REACT_APP__REST_API) {
-  return dualitylabs.ClientFactory.createLCDClient({ restEndpoint: rpcURL });
+  return duality.ClientFactory.createLCDClient({ restEndpoint: rpcURL });
 }
 
 type LcdClient = Awaited<
-  ReturnType<typeof dualitylabs.ClientFactory.createLCDClient>
+  ReturnType<typeof duality.ClientFactory.createLCDClient>
 >;
 
 const _lcdClients: Record<string, LcdClient> = {};
@@ -33,7 +33,7 @@ const getLcdClient = async (
   if (_lcdClients.hasOwnProperty(key)) {
     return _lcdClients[key];
   }
-  const lcd = await dualitylabs.ClientFactory.createLCDClient({
+  const lcd = await duality.ClientFactory.createLCDClient({
     restEndpoint: key,
   });
   _lcdClients[key] = lcd;
