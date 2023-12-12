@@ -20,7 +20,7 @@
     "@cosmjs/crypto": "0.31.1",
     "@cosmjs/proto-signing": "0.31.1",
     "@cosmjs/stargate": "0.31.1",
-    "@duality-labs/dualityjs": "0.3.4",
+    "@duality-labs/dualityjs": "github:duality-labs/dualityjs#b1e224db4288146aebae0d0bf889571503e92251",
     "@floating-ui/react": "^0.24.5",
     "@fortawesome/fontawesome-svg-core": "^6.1.2",
     "@fortawesome/free-solid-svg-icons": "^6.1.2",
