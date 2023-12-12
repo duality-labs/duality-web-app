@@ -514,9 +514,14 @@ export function useAccurateUserReserves(
             deposit.centerTickIndex.toNumber()
           ) || [0, 0];
           // compute user reserves from state to
-          const totalReserves = reserves0 + reserves1;
-          const percentage0 = totalReserves > 0 ? reserves0 / totalReserves : 0;
-          const percentage1 = totalReserves > 0 ? reserves1 / totalReserves : 0;
+          const reserves1As0 =
+            reserves1 *
+            tickIndexToPrice(
+              new BigNumber(deposit.centerTickIndex.toNumber())
+            ).toNumber();
+          const totalAs0 = reserves0 + reserves1As0;
+          const percentage0 = totalAs0 > 0 ? reserves0 / totalAs0 : 0;
+          const percentage1 = totalAs0 > 0 ? reserves1As0 / totalAs0 : 0;
           return {
             deposit,
             reserves: {
