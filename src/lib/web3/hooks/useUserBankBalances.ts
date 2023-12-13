@@ -115,6 +115,18 @@ function useAllUserBankBalances(): UseQueryResult<Coin[]> {
   } as UseQueryResult<Coin[]>;
 }
 
+export function useUserDexDenomBalances(): UseQueryResult<Coin[]> {
+  const result = useAllUserBankBalances();
+  // filter the data to only Dex coins
+  const data = useMemo(() => {
+    return result.data?.filter((balance) => !!isDexShare(balance));
+  }, [result.data]);
+  return {
+    ...result,
+    data,
+  } as UseQueryResult<Coin[]>;
+}
+
 function useUserChainDenomBalances(): UseQueryResult<Coin[]> {
   const result = useAllUserBankBalances();
   // filter the data to only plain coins
