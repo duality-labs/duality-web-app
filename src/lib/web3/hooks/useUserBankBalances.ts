@@ -1,11 +1,107 @@
 import { useMemo } from 'react';
+import { UseQueryResult, useInfiniteQuery } from '@tanstack/react-query';
+import { PageRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/base/query/v1beta1/pagination';
+import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
+
 import { Token, getDenomAmount } from '../utils/tokens';
-import { useBankBalances } from '../indexerProvider';
-import { matchTokens } from './useTokens';
+import useTokens, {
+  matchTokenByDenom,
+  matchTokens,
+  useTokensWithIbcInfo,
+} from './useTokens';
+import { useLcdClientPromise } from '../lcdClient';
+import { useWeb3 } from '../useWeb3';
+import { Coin } from '@cosmjs/proto-signing';
+import { isDexShare } from '../utils/shares';
+import { useDeepCompareMemoize } from 'use-deep-compare-effect';
+
+// fetch all the user's bank balance
+function useAllUserBankBalances(): UseQueryResult<Coin[]> {
+  const lcdClientPromise = useLcdClientPromise();
+  const { address } = useWeb3();
+
+  const result = useInfiniteQuery({
+    queryKey: ['cosmos.bank.v1beta1.allBalances', address],
+    enabled: !!address,
+    queryFn: async ({
+      pageParam: pageKey,
+    }: {
+      pageParam: Uint8Array | undefined;
+    }): Promise<QueryAllBalancesResponse> => {
+      const client = await lcdClientPromise;
+      return client.cosmos.bank.v1beta1.allBalances({
+        address: address || '',
+        pagination: {
+          key: pageKey || [],
+        } as PageRequest,
+      });
+    },
+    defaultPageParam: undefined as Uint8Array | undefined,
+    getNextPageParam: (lastPage): Uint8Array | undefined => {
+      // don't pass an empty array as that will trigger another page to download
+      return lastPage?.pagination?.next_key?.length
+        ? lastPage?.pagination?.next_key ?? undefined
+        : undefined;
+    },
+  });
+
+  // combine all non-zero balances
+  const pages = result.data?.pages;
+  const allNonZeroBalances = useMemo(() => {
+    const combinedBalances = pages?.flatMap((page) => page.balances);
+    const nonZeroBalances = combinedBalances?.filter(
+      (balance) => !!Number(balance.amount)
+    );
+    return nonZeroBalances;
+  }, [pages]);
+
+  return {
+    ...result,
+    data: useDeepCompareMemoize(allNonZeroBalances),
+  } as UseQueryResult<Coin[]>;
+}
+
+function useUserChainDenomBalances(): UseQueryResult<Coin[]> {
+  const result = useAllUserBankBalances();
+  // filter the data to only plain coins
+  const data = useMemo(() => {
+    return result.data?.filter((balance) => !isDexShare(balance));
+  }, [result.data]);
+  return {
+    ...result,
+    data,
+  } as UseQueryResult<Coin[]>;
+}
+
+// define TokenCoin to represent a Coin paired with its chain-registry token
+export interface TokenCoin extends Coin {
+  token: Token;
+}
+export function useBankBalances(): UseQueryResult<TokenCoin[]> {
+  const result = useUserChainDenomBalances();
+
+  // add token information to balances
+  const allTokensWithIBC = useTokensWithIbcInfo(useTokens());
+  const data = useMemo<TokenCoin[] | undefined>(() => {
+    // check all known tokens with IBC context for matching balance denoms
+    return result.data?.reduce<TokenCoin[]>((result, balance) => {
+      const token = allTokensWithIBC.find(matchTokenByDenom(balance.denom));
+      if (token) {
+        result.push({ token, ...balance });
+      }
+      return result;
+    }, []);
+  }, [result.data, allTokensWithIBC]);
+
+  return {
+    ...result,
+    data,
+  } as UseQueryResult<TokenCoin[]>;
+}
 
 // note: if dealing with IBC tokens, ensure Token has IBC context
 //       (by fetching it with useTokensWithIbcInfo)
-function useBankBalance(token: Token | undefined) {
+function useBankBalance(token: Token | undefined): UseQueryResult<TokenCoin> {
   const { data: balances, ...rest } = useBankBalances();
   const balance = useMemo(() => {
     // find the balance that matches the token
@@ -13,12 +109,14 @@ function useBankBalance(token: Token | undefined) {
       token && balances?.find((balance) => matchTokens(balance.token, token))
     );
   }, [balances, token]);
-  return { data: balance, ...rest };
+  return { data: balance, ...rest } as UseQueryResult<TokenCoin>;
 }
 
 // the bank balances may be in denoms that are neither base or display units
 // convert them to base or display units with the following handler functions
-export function useBankBalanceBaseAmount(token: Token | undefined) {
+export function useBankBalanceBaseAmount(
+  token: Token | undefined
+): UseQueryResult<string> {
   const { data: balance, ...rest } = useBankBalance(token);
   const balanceAmount = useMemo(() => {
     return (
@@ -31,9 +129,11 @@ export function useBankBalanceBaseAmount(token: Token | undefined) {
       )
     );
   }, [balance]);
-  return { data: balanceAmount, ...rest };
+  return { data: balanceAmount, ...rest } as UseQueryResult<string>;
 }
-export function useBankBalanceDisplayAmount(token: Token | undefined) {
+export function useBankBalanceDisplayAmount(
+  token: Token | undefined
+): UseQueryResult<string> {
   const { data: balance, ...rest } = useBankBalance(token);
   const balanceAmount = useMemo(() => {
     return (
@@ -46,5 +146,5 @@ export function useBankBalanceDisplayAmount(token: Token | undefined) {
       )
     );
   }, [balance]);
-  return { data: balanceAmount, ...rest };
+  return { data: balanceAmount, ...rest } as UseQueryResult<string>;
 }

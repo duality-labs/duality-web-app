@@ -15,10 +15,7 @@ import subscriber from './subscriptionManager';
 import { useWeb3 } from './useWeb3';
 
 import { useRpcPromise } from './rpcQueryClient';
-import useTokens, {
-  matchTokenByDenom,
-  useTokensWithIbcInfo,
-} from '../../lib/web3/hooks/useTokens';
+import useTokens from '../../lib/web3/hooks/useTokens';
 import useTokenPairs, { TokenPairReserves } from './hooks/useTokenPairs';
 
 import { Token } from './utils/tokens';
@@ -249,35 +246,8 @@ export function IndexerProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// note avoid using bank data directly, as we almost certainly want to use
-// useBankBalances which matches IBC tokens based on current chain IBC context
-function useBankData() {
-  return useContext(IndexerContext).bank;
-}
-
 // define TokenCoin to represent a Coin paired with its chain-registry token
 export type TokenCoin = Coin & { token: Token };
-
-// get all the user's bank balance amounts of known tokens
-// this includes IBC tokens using our known current chain IBC context
-export function useBankBalances() {
-  const { data, ...rest } = useBankData();
-
-  const allTokens = useTokens();
-  const allTokensWithIBC = useTokensWithIbcInfo(allTokens);
-  const balances = useMemo<TokenCoin[] | undefined>(() => {
-    // check all known tokens with IBC context for matching balance denoms
-    return data?.balances.reduce<TokenCoin[]>((result, balance) => {
-      const token = allTokensWithIBC.find(matchTokenByDenom(balance.denom));
-      if (token) {
-        result.push({ token, ...balance });
-      }
-      return result;
-    }, []);
-  }, [data?.balances, allTokensWithIBC]);
-
-  return { data: balances, ...rest };
-}
 
 export function useTokensList() {
   return useContext(IndexerContext).tokens;

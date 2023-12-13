@@ -157,11 +157,11 @@ function LimitOrder({
   const tokenOut = buyMode ? tokenA : tokenB;
   const {
     data: userTokenInDisplayAmount,
-    isValidating: isLoadingUserTokenInDisplayAmount,
+    isFetching: isLoadingUserTokenInDisplayAmount,
   } = useBankBalanceDisplayAmount(tokenIn);
   const {
     data: userTokenOutDisplayAmount,
-    isValidating: isLoadingUserTokenOutDisplayAmount,
+    isFetching: isLoadingUserTokenOutDisplayAmount,
   } = useBankBalanceDisplayAmount(tokenOut);
 
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap();

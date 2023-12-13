@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useBankBalances } from '../indexerProvider';
+import { useBankBalances } from './useUserBankBalances';
 
 export default function useUserTokens() {
   const { data: balances } = useBankBalances();
