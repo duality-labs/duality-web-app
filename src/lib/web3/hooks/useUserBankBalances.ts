@@ -91,6 +91,14 @@ function useAllUserBankBalances(): UseQueryResult<Coin[]> {
     }
   }, [refetch, address]);
 
+  const { fetchNextPage, data, hasNextPage } = result;
+  // fetch more data if data has changed but there are still more pages to get
+  useEffect(() => {
+    if (fetchNextPage && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, data, hasNextPage]);
+
   // combine all non-zero balances
   const pages = result.data?.pages;
   const allNonZeroBalances = useMemo(() => {
