@@ -1,9 +1,15 @@
 import BigNumber from 'bignumber.js';
+import Long from 'long';
 import { useMemo, useRef } from 'react';
-import { useQueries } from '@tanstack/react-query';
+import { UseQueryResult, useQueries } from '@tanstack/react-query';
+import { Coin } from '@cosmjs/proto-signing';
+import { PoolMetadata } from '@duality-labs/dualityjs/types/codegen/duality/dex/pool_metadata';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
 import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
-import { QueryPoolRequest } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+import {
+  QueryGetPoolMetadataRequest,
+  QueryPoolRequest,
+} from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import { useLcdClientPromise } from '../lcdClient';
@@ -23,11 +29,19 @@ import {
 import useTokens, { useTokensWithIbcInfo } from './useTokens';
 import { useTokenPairMapLiquidity } from '../../web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from './useTokenPairs';
+import { useUserDexDenomBalances } from './useUserBankBalances';
+import { getDexSharePoolID } from '../utils/shares';
 
 interface PairReserves {
   reserves0: string;
   reserves1: string;
 }
+
+interface PoolTotalShares {
+  balance: Coin;
+  totalShares: string;
+}
+
 interface UserReservesTotalShares {
   deposit: DepositRecord;
   totalShares: string;
@@ -54,33 +68,123 @@ interface CombinedUseQueries<T> {
   error: Error | null;
 }
 
-function useUserDepositsTotalShares(
+function useUserPoolMetadata(
   tokenPair?: TokenPair | TokenIdPair
-): CombinedUseQueries<UserReservesTotalShares[]> {
+): CombinedUseQueries<PoolMetadata[]> {
   const lcdClientPromise = useLcdClientPromise();
-  const { data: userPairDeposits } = useUserDeposits(tokenPair);
+  const { data: userDexDenomBalances } = useUserDexDenomBalances();
 
-  // for each specific amount of userDeposits, fetch the totalShares that match
-  const memoizedData = useRef<UserReservesTotalShares[]>();
+  // for each specific amount of userShares, fetch the totalShares that match
+  const memoizedData = useRef<PoolMetadata[]>();
   const result = useQueries({
     queries: useMemo(() => {
-      return (userPairDeposits || []).flatMap((deposit) => {
-        const { pairID, centerTickIndex, fee, sharesOwned } = deposit;
-        if (Number(sharesOwned) > 0) {
-          const params: QuerySupplyOfRequest = {
-            denom: `DualityPoolShares-${pairID.token0}-${pairID.token1}-t${centerTickIndex}-f${fee}`,
+      return (userDexDenomBalances || []).flatMap((balance) => {
+        const id = getDexSharePoolID(balance);
+        if (id !== undefined) {
+          const params: QueryGetPoolMetadataRequest = {
+            id: Long.fromNumber(id),
           };
+          return {
+            queryKey: ['duality.dex.poolMetadata', id],
+            queryFn: async (): Promise<PoolMetadata | null> => {
+              const lcdClient = await lcdClientPromise;
+              if (lcdClient) {
+                return lcdClient.duality.dex
+                  .poolMetadata(params)
+                  .then((response) => response.PoolMetadata);
+              }
+              return null;
+            },
+            // never refetch these values, they will never change
+            staleTime: Infinity,
+            refetchInterval: Infinity,
+            refetchOnMount: false,
+            refetchOnReconnect: false,
+            refetchOnWindowFocus: false,
+          };
+        }
+        return [];
+      });
+    }, [lcdClientPromise, userDexDenomBalances]),
+    combine(results) {
+      // only process data from successfully resolved queries
+      const data = results
+        .map((result) => result.data)
+        .filter((data): data is PoolMetadata => !!data);
+
+      // if array length or any item of the array has changed, then update data
+      if (data.length === memoizedData.current?.length) {
+        for (let i = 0; i < data.length; i++) {
+          const a = memoizedData.current[i];
+          const b = data[i];
+          if (!a.ID.equals(b.ID)) {
+            // an item has changed, update data
+            memoizedData.current = data;
+            break;
+          }
+        }
+      } else {
+        // the data array has changed, update data
+        memoizedData.current = data;
+      }
+      return {
+        data: memoizedData.current,
+        isFetching: results.some((result) => result.isFetching),
+        error: results.find((result) => result.error)?.error ?? null,
+      };
+    },
+  });
+
+  const tokenPairIDs = useDeepCompareMemoize(resolveTokenIdPair(tokenPair));
+
+  // filter to tokenPair now that we have metadata about the pool
+  const userTokenPairPoolMetadata = useMemo(() => {
+    // filter to token pair if specified
+    if (tokenPairIDs) {
+      const [tokenA, tokenB] = tokenPairIDs;
+      return result.data?.filter((metadata) => {
+        return (
+          (metadata.pairID.token0 === tokenA &&
+            metadata.pairID.token1 === tokenB) ||
+          (metadata.pairID.token0 === tokenB &&
+            metadata.pairID.token1 === tokenA)
+        );
+      });
+    }
+    // don't filter if no token pair is specified
+    return result.data;
+  }, [result.data, tokenPairIDs]);
+
+  return {
+    ...result,
+    data: userTokenPairPoolMetadata,
+  };
+}
+
+function useUserPoolTotalShares(): CombinedUseQueries<PoolTotalShares[]> {
+  const lcdClientPromise = useLcdClientPromise();
+  const { data: userDexDenomBalances } = useUserDexDenomBalances();
+
+  // for each specific amount of userShares, fetch the totalShares that match
+  const memoizedData = useRef<PoolTotalShares[]>();
+  const result = useQueries({
+    queries: useMemo(() => {
+      return (userDexDenomBalances || []).flatMap((balance) => {
+        const { amount: sharesOwned, denom } = balance;
+        if (getDexSharePoolID(balance) !== undefined) {
+          const params: QuerySupplyOfRequest = { denom };
           return {
             // include sharesOwned in query key so that share updates trigger data update
             queryKey: ['cosmos.bank.v1beta1.supplyOf', params, sharesOwned],
-            queryFn: async (): Promise<UserReservesTotalShares | null> => {
+            queryFn: async (): Promise<PoolTotalShares | null> => {
               const lcdClient = await lcdClientPromise;
               if (lcdClient) {
                 return lcdClient.cosmos.bank.v1beta1
                   .supplyOf(params)
                   .then((response) => {
+                    // userPairDeposits
                     return {
-                      deposit,
+                      balance,
                       totalShares: response.amount.amount,
                     };
                   });
@@ -91,12 +195,12 @@ function useUserDepositsTotalShares(
         }
         return [];
       });
-    }, [lcdClientPromise, userPairDeposits]),
+    }, [lcdClientPromise, userDexDenomBalances]),
     combine(results) {
       // only process data from successfully resolved queries
       const data = results
         .map((result) => result.data)
-        .filter((data): data is UserReservesTotalShares => !!data);
+        .filter((data): data is PoolTotalShares => !!data);
 
       // if array length or any item of the array has changed, then update data
       if (data.length === memoizedData.current?.length) {
@@ -105,7 +209,8 @@ function useUserDepositsTotalShares(
           const b = data[i];
           if (
             a.totalShares !== b.totalShares ||
-            !isEqualDeposit(a.deposit, b.deposit)
+            a.balance.denom !== b.balance.denom ||
+            a.balance.amount !== b.balance.amount
           ) {
             // an item has changed, update data
             memoizedData.current = data;
@@ -125,6 +230,65 @@ function useUserDepositsTotalShares(
   });
 
   return result;
+}
+
+function useUserDepositsTotalShares(
+  tokenPair?: TokenPair | TokenIdPair
+): UseQueryResult<UserReservesTotalShares[]> {
+  const { data: userPoolMetadata } = useUserPoolMetadata(tokenPair);
+  const { data: userPoolTotalShares, ...rest } = useUserPoolTotalShares();
+
+  const totalSharesByPoolID = useMemo<Map<number, PoolTotalShares>>(() => {
+    const totalSharesByPoolID = new Map<number, PoolTotalShares>();
+    for (const userPoolTotalShare of userPoolTotalShares || []) {
+      // make map here
+      const poolID = getDexSharePoolID(userPoolTotalShare.balance);
+      if (poolID) {
+        totalSharesByPoolID.set(poolID, userPoolTotalShare);
+      }
+    }
+    return totalSharesByPoolID;
+  }, [userPoolTotalShares]);
+
+  const { data: userPairDeposits } = useUserDeposits(tokenPair);
+
+  const userDepositsWithPoolID = useMemo(() => {
+    const userPoolMetadataSet = new Set(userPoolMetadata);
+    return userPairDeposits?.map(
+      (deposit): { deposit: DepositRecord; metadata?: PoolMetadata } => {
+        const remainingUserPoolMetadataSet = Array.from(userPoolMetadataSet);
+        for (const metadata of remainingUserPoolMetadataSet) {
+          if (
+            metadata.pairID.token0 === deposit.pairID.token0 &&
+            metadata.pairID.token1 === deposit.pairID.token1 &&
+            metadata.tick.equals(deposit.centerTickIndex) &&
+            metadata.fee.equals(deposit.fee)
+          ) {
+            // remove this value from the search set
+            userPoolMetadataSet.delete(metadata);
+            return { deposit, metadata };
+          }
+        }
+        return { deposit };
+      }
+    );
+  }, [userPairDeposits, userPoolMetadata]);
+
+  const userDepositsTotalShares = useMemo(() => {
+    return userDepositsWithPoolID?.map(({ deposit, metadata }) => {
+      const poolID = metadata?.ID.toNumber();
+      const totalShares =
+        totalSharesByPoolID.get(poolID || -1)?.totalShares ?? '0';
+      return {
+        deposit,
+        totalShares,
+      };
+    });
+  }, [userDepositsWithPoolID, totalSharesByPoolID]);
+
+  return { ...rest, data: userDepositsTotalShares } as UseQueryResult<
+    UserReservesTotalShares[]
+  >;
 }
 
 function useUserDepositsTotalReserves(
