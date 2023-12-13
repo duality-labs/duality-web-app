@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { UseQueryResult, useInfiniteQuery } from '@tanstack/react-query';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/base/query/v1beta1/pagination';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
@@ -44,6 +44,14 @@ function useAllUserBankBalances(): UseQueryResult<Coin[]> {
         : undefined;
     },
   });
+
+  const { fetchNextPage, data, hasNextPage } = result;
+  // fetch more data if data has changed but there are still more pages to get
+  useEffect(() => {
+    if (fetchNextPage && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, data, hasNextPage]);
 
   // combine all non-zero balances
   const pages = result.data?.pages;
