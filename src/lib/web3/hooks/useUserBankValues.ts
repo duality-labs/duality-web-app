@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 
 import { Token, getDenomAmount } from '../utils/tokens';
-import { TokenCoin, useBankBalances } from '../indexerProvider';
+import { TokenCoin, useBankBalances } from './useUserBankBalances';
 import { useSimplePrice } from '../../tokenPrices';
 
 type TokenCoinWithValue = TokenCoin & {
