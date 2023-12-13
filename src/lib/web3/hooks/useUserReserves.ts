@@ -3,7 +3,7 @@ import { useMemo, useRef } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
 import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
-import { QueryGetPoolReservesRequest } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+import { QueryPoolRequest } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import { useLcdClientPromise } from '../lcdClient';
@@ -20,8 +20,6 @@ import {
   getTokenId,
   resolveTokenIdPair,
 } from '../utils/tokens';
-import { useRpcPromise } from '../rpcQueryClient';
-import { duality } from '@duality-labs/dualityjs';
 import useTokens, { useTokensWithIbcInfo } from './useTokens';
 import { useTokenPairMapLiquidity } from '../../web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from './useTokenPairs';
@@ -132,7 +130,7 @@ function useUserDepositsTotalShares(
 function useUserDepositsTotalReserves(
   tokenPair?: TokenPair | TokenIdPair
 ): CombinedUseQueries<UserReservesTotalReserves[]> {
-  const rpcPromise = useRpcPromise();
+  const lcdClientPromise = useLcdClientPromise();
   const { data: userPairDeposits } = useUserDeposits(tokenPair);
 
   // for each specific amount of userDeposits, fetch the totalShares that match
@@ -141,80 +139,47 @@ function useUserDepositsTotalReserves(
     queries: useMemo(() => {
       return (userPairDeposits || []).flatMap((deposit) => {
         const { pairID, fee, sharesOwned } = deposit;
-        const { token0, token1 } = pairID;
         if (Number(sharesOwned) > 0) {
-          // return both upper and lower tick pools
-          return [
-            // note: need to flip token0 tick index to align with query:
-            //       param.tickIndex now means tickIndexTakerToMaker
-            { tokenIn: token0, tickIndex: deposit.lowerTickIndex.negate() },
-            { tokenIn: token1, tickIndex: deposit.upperTickIndex },
-          ].map(({ tokenIn, tickIndex }) => {
-            const params: QueryGetPoolReservesRequest = {
-              pairID: getPairID(pairID.token0, pairID.token1),
-              tokenIn,
-              tickIndex,
-              fee,
-            };
-            return {
-              queryKey: ['duality.dex.poolReserves', params, sharesOwned],
-              queryFn: async () => {
-                // we use an RPC call here because the LCD endpoint always 404s
-                const rpc = await rpcPromise;
-                const client = new duality.dex.QueryClientImpl(rpc);
-                return client
-                  .poolReserves(params)
-                  .then((response) => {
-                    return {
-                      deposit,
-                      params,
-                      totalReserves:
-                        response.poolReserves?.reservesMakerDenom || '0',
-                    };
-                  })
-                  .catch(() => {
-                    // assume the result was a 404: there is 0 liquidity
-                    return {
-                      deposit,
-                      params,
-                      totalReserves: '0',
-                    };
-                  });
-              },
-              retry: false,
-            };
-          });
+          // query pool reserves
+          const params: QueryPoolRequest = {
+            pairID: getPairID(pairID.token0, pairID.token1),
+            tickIndex: deposit.centerTickIndex,
+            fee,
+          };
+          return {
+            queryKey: ['duality.dex.pool', params, sharesOwned],
+            queryFn: async () => {
+              // we use an RPC call here because the LCD endpoint always 404s
+              const client = await lcdClientPromise;
+              return client.duality.dex
+                .pool(params)
+                .then(({ pool }): UserReservesTotalReserves => {
+                  return {
+                    deposit,
+                    totalReserves: {
+                      reserves0: pool?.lower_tick0.reservesMakerDenom || '0',
+                      reserves1: pool?.upper_tick1.reservesMakerDenom || '0',
+                    },
+                  };
+                })
+                .catch(() => {
+                  // assume the result was a 404: there is 0 liquidity
+                  return {
+                    deposit,
+                    params,
+                    totalReserves: { reserves0: '0', reserves1: '0' },
+                  };
+                });
+            },
+            retry: false,
+          };
         }
         return [];
       });
-    }, [rpcPromise, userPairDeposits]),
+    }, [lcdClientPromise, userPairDeposits]),
     combine(results) {
       // only process data from successfully resolved queries
-      const data = results
-        .map((result) => result.data)
-        // combine reserves for unique deposits
-        .reduce<UserReservesTotalReserves[]>((acc, data) => {
-          if (data) {
-            const foundReserves = acc.find(({ deposit }) =>
-              isEqualDeposit(deposit, data.deposit)
-            );
-            const reserves: UserReservesTotalReserves = foundReserves || {
-              deposit: data.deposit,
-              totalReserves: { reserves0: '', reserves1: '' },
-            };
-            if (data.params.tokenIn === data.deposit.pairID.token0) {
-              reserves.totalReserves.reserves0 = data.totalReserves;
-            } else if (data.params.tokenIn === data.deposit.pairID.token1) {
-              reserves.totalReserves.reserves1 = data.totalReserves;
-            }
-            return foundReserves ? acc : acc.concat(reserves);
-          }
-          return acc;
-        }, [])
-        // ensure these aren't empty strings
-        .filter(
-          (data) => data.totalReserves.reserves0 && data.totalReserves.reserves1
-        );
+      const data = results.flatMap((result) => result.data ?? []);
 
       // if array length or any item of the array has changed, then update data
       if (data.length === memoizedData.current?.length) {
