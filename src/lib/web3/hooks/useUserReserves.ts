@@ -449,7 +449,8 @@ function isEqualDeposit(a: DepositRecord, b: DepositRecord) {
   // compare by reference or compare by properties
   return (
     a === b ||
-    (a.pairID.token0 === b.pairID.token0 &&
+    (a.sharesOwned === b.sharesOwned &&
+      a.pairID.token0 === b.pairID.token0 &&
       a.pairID.token1 === b.pairID.token1 &&
       a.centerTickIndex.equals(b.centerTickIndex) &&
       a.fee.equals(b.fee))
