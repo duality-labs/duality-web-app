@@ -94,7 +94,7 @@ const [
 const priceMin = tickIndexToPrice(new BigNumber(priceMinIndex)).toNumber();
 const priceMax = tickIndexToPrice(new BigNumber(priceMaxIndex)).toNumber();
 const priceRangeLimits: [number, number] = [priceMin, priceMax];
-const defaultFee = '0.30%';
+const defaultFee = '0.20%';
 const defaultLiquidityShape =
   liquidityShapes.find(({ value }) => value === 'normal') ?? liquidityShapes[0];
 
