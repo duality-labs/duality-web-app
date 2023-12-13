@@ -1,5 +1,4 @@
 import { Web3Provider } from '../../lib/web3/useWeb3';
-import { IndexerProvider } from '../../lib/web3/indexerProvider';
 import { ThemeProvider } from '../../lib/themeProvider';
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
@@ -29,27 +28,25 @@ function App() {
   return (
     <Web3Provider>
       <QueryClientProvider client={queryClient}>
-        <IndexerProvider>
-          <ThemeProvider>
-            <BrowserRouter>
-              <Header />
-              <Stars />
-              <Planets />
-              <main>
-                <Routes>
-                  <Route index element={<Navigate to={defaultPage} />} />
-                  <Route path="swap/*" element={<Swap />} />
-                  <Route path="pools/*" element={<Pool />} />
-                  <Route path="orderbook/*" element={<Orderbook />} />
-                  <Route path="portfolio/*" element={<MyLiquidity />} />
-                  <Route path="bridge" element={<Bridge />} />
-                  <Route path="*" element={<div>Not found</div>} />
-                </Routes>
-                <Notifications />
-              </main>
-            </BrowserRouter>
-          </ThemeProvider>
-        </IndexerProvider>
+        <ThemeProvider>
+          <BrowserRouter>
+            <Header />
+            <Stars />
+            <Planets />
+            <main>
+              <Routes>
+                <Route index element={<Navigate to={defaultPage} />} />
+                <Route path="swap/*" element={<Swap />} />
+                <Route path="pools/*" element={<Pool />} />
+                <Route path="orderbook/*" element={<Orderbook />} />
+                <Route path="portfolio/*" element={<MyLiquidity />} />
+                <Route path="bridge" element={<Bridge />} />
+                <Route path="*" element={<div>Not found</div>} />
+              </Routes>
+              <Notifications />
+            </main>
+          </BrowserRouter>
+        </ThemeProvider>
       </QueryClientProvider>
     </Web3Provider>
   );
