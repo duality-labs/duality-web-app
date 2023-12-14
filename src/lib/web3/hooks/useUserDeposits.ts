@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { UseQueryResult, useQuery } from '@tanstack/react-query';
-import { duality } from '@duality-labs/dualityjs';
+import { UseQueryResult, useInfiniteQuery } from '@tanstack/react-query';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
@@ -10,37 +9,61 @@ import { MessageActionEvent, TendermintTxData } from '../events';
 import { CoinTransferEvent, mapEventAttributes } from '../utils/events';
 import { TokenIdPair, TokenPair, resolveTokenIdPair } from '../utils/tokens';
 import { minutes } from '../../utils/time';
+import { useLcdClientPromise } from '../lcdClient';
+import { QueryAllUserDepositsResponse } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 
-const { REACT_APP__REST_API = '' } = process.env;
-
-function useAllUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
+function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
   const { address } = useWeb3();
 
-  const result = useQuery({
+  const lcdClientPromise = useLcdClientPromise();
+  const result = useInfiniteQuery({
     queryKey: ['user-deposits', address],
     enabled: !!address,
-    queryFn: async (): Promise<DepositRecord[] | undefined> => {
+    queryFn: async ({
+      pageParam: pageKey,
+    }: {
+      pageParam: Uint8Array | undefined;
+    }): Promise<QueryAllUserDepositsResponse | undefined> => {
       if (address) {
         // get LCD client
-        const lcd = await duality.ClientFactory.createLCDClient({
-          restEndpoint: REACT_APP__REST_API,
-        });
+        const lcd = await lcdClientPromise;
         // get all user's deposits
         const response = await lcd.duality.dex.userDepositsAll({
           address,
+          pagination: { key: pageKey },
         });
         // return unwrapped result
-        return response.Deposits?.sort(
-          (a, b) =>
-            a.centerTickIndex.sub(b.centerTickIndex).toNumber() ||
-            b.fee.sub(a.fee).toNumber()
-        );
+        return response;
       }
+    },
+    defaultPageParam: undefined as Uint8Array | undefined,
+    getNextPageParam: (lastPage): Uint8Array | undefined => {
+      // don't pass an empty array as that will trigger another page to download
+      return lastPage?.pagination?.next_key?.length
+        ? lastPage?.pagination?.next_key ?? undefined
+        : undefined;
     },
     refetchInterval: 5 * minutes,
   });
 
-  const refetch = result.refetch;
+  const { refetch, fetchNextPage, data, hasNextPage } = result;
+  // fetch more data if data has changed but there are still more pages to get
+  useEffect(() => {
+    if (fetchNextPage && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, data, hasNextPage]);
+
+  // combine all deposits and sort them
+  const userDeposits = useMemo(() => {
+    return result.data?.pages
+      ?.flatMap((deposits) => deposits?.Deposits || [])
+      .sort(
+        (a, b) =>
+          a.centerTickIndex.sub(b.centerTickIndex).toNumber() ||
+          b.fee.sub(a.fee).toNumber()
+      );
+  }, [result.data]);
 
   // on update to user's bank balance, we should update the user's sharesOwned
   useEffect(() => {
@@ -84,7 +107,7 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
     }
   }, [refetch, address]);
 
-  return result;
+  return { ...result, data: userDeposits } as UseQueryResult<DepositRecord[]>;
 }
 
 export function useUserDeposits(
