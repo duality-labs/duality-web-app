@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.46](https://github.com/duality-labs/duality-web-app/compare/v0.3.45...v0.3.46) (2023-12-14)
+
+
+### Features
+
+* Upgrade to API v0.4.1 ([#497](https://github.com/duality-labs/duality-web-app/issues/497)) ([16dab6e](https://github.com/duality-labs/duality-web-app/commit/16dab6e4a74816e1d6d4110eee881622476bc6c7))
+
+
+### Other
+
+* optimize fetching of total pool reserves ([#501](https://github.com/duality-labs/duality-web-app/issues/501)) ([db8ecfc](https://github.com/duality-labs/duality-web-app/commit/db8ecfcf17d89c765b127b30bd979615dd8ba0db))
+
 ## [0.3.45](https://github.com/duality-labs/duality-web-app/compare/v0.3.44...v0.3.45) (2023-12-14)
 
 
