@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 
 import { Token, getDenomAmount } from '../utils/tokens';
-import { TokenCoin, useBankBalances } from '../indexerProvider';
+import { TokenCoin, useUserBankBalances } from './useUserBankBalances';
 import { useSimplePrice } from '../../tokenPrices';
 
 type TokenCoinWithValue = TokenCoin & {
@@ -11,7 +11,7 @@ type TokenCoinWithValue = TokenCoin & {
 
 // get all the user's bank values (tokens that are not Duality Dex shares)
 export function useUserBankValues(): TokenCoinWithValue[] {
-  const { data: balances } = useBankBalances();
+  const { data: balances } = useUserBankBalances();
 
   // get matched tokens found in the user's balances
   const selectedTokens = useMemo<Token[]>(() => {
