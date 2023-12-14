@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.42](https://github.com/duality-labs/duality-web-app/compare/v0.3.41...v0.3.42) (2023-12-14)
+
+
+### Features
+
+* update user state queries to new api endpoints ([#494](https://github.com/duality-labs/duality-web-app/issues/494)) ([30d644e](https://github.com/duality-labs/duality-web-app/commit/30d644e89ddc07ffea4dc3b055ff3e9418e691cb))
+
 ## [0.3.41](https://github.com/duality-labs/duality-web-app/compare/v0.3.40...v0.3.41) (2023-12-02)
 
 
