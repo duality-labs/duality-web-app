@@ -111,7 +111,7 @@ export interface WebSocketServerMessage {
   // an empty result object with an ID means
   // that a successful subscription on that ID has been established
   result: {
-    query: string; // subscribed query string eg. "tm.event='Tx' AND message.action='Deposit'"
+    query: string; // subscribed query string eg. "tm.event='Tx' AND message.action='DepositLP'"
     data?: TendermintDataType;
     events?: TendermintEvent;
   };

@@ -312,7 +312,7 @@ export function useDeposit([tokenA, tokenB]: [
                   ({ key, value }) => key === 'module' && value === 'dex'
                 ) &&
                 event.attributes.find(
-                  ({ key, value }) => key === 'action' && value === 'Deposit'
+                  ({ key, value }) => key === 'action' && value === 'DepositLP'
                 ) &&
                 event.attributes.find(
                   ({ key, value }) =>
