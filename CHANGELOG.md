@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.44](https://github.com/duality-labs/duality-web-app/compare/v0.3.43...v0.3.44) (2023-12-14)
+
+
+### Features
+
+* Upgrade to API v0.3.4  ([#495](https://github.com/duality-labs/duality-web-app/issues/495)) ([8e77621](https://github.com/duality-labs/duality-web-app/commit/8e77621c5c4c06fe8fa2c4d3dbe962b4ffdb3c50))
+
 ## [0.3.43](https://github.com/duality-labs/duality-web-app/compare/v0.3.42...v0.3.43) (2023-12-14)
 
 
