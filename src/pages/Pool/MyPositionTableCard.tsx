@@ -249,10 +249,10 @@ export function MyEditedPositionTableCard({
         // sort by price
         .sort((a, b) => {
           return !!invertedTokenOrder
-            ? b.deposit.centerTickIndex1To0.toNumber() -
-                a.deposit.centerTickIndex1To0.toNumber()
-            : a.deposit.centerTickIndex1To0.toNumber() -
-                b.deposit.centerTickIndex1To0.toNumber();
+            ? b.deposit.centerTickIndex.toNumber() -
+                a.deposit.centerTickIndex.toNumber()
+            : a.deposit.centerTickIndex.toNumber() -
+                b.deposit.centerTickIndex.toNumber();
         })
     );
   }, [editedUserPosition, invertedTokenOrder]);
@@ -263,17 +263,16 @@ export function MyEditedPositionTableCard({
 
   const maxPoolEquivalentReservesA = useMemo(() => {
     return sortedPosition.reduce(
-      (acc, { token0, token0Context, token1Context }) => {
-        const tokenAContext = matchTokens(tokenA, token0)
-          ? token0Context
-          : token1Context;
-        const tokenBContext = matchTokens(tokenB, token0)
-          ? token0Context
-          : token1Context;
-        const equivalentReserveA = tokenAContext?.userReserves.toNumber() ?? 0;
+      (acc, { token0, token1, reserves: { reserves0, reserves1 } }) => {
+        const [tokenReservesA, tokenReservesB] =
+          (matchTokens(tokenA, token0) &&
+            matchTokens(tokenB, token1) && [reserves0, reserves1]) ||
+          (matchTokens(tokenA, token1) &&
+            matchTokens(tokenB, token0) && [reserves1, reserves0]) ||
+          [];
+        const equivalentReserveA = Number(tokenReservesA) ?? 0;
         const equivalentReserveB =
-          tokenBContext?.userReserves.multipliedBy(edgpePriceBToA).toNumber() ??
-          0;
+          edgpePriceBToA.multipliedBy(tokenReservesB ?? 0).toNumber() ?? 0;
         return Math.max(acc, equivalentReserveA, equivalentReserveB);
       },
       0
@@ -282,31 +281,25 @@ export function MyEditedPositionTableCard({
 
   const poolValues = useMemo(() => {
     return sortedPosition.map<[number, number]>(
-      ({ token0, token0Context, token1Context }) => {
-        const tokenAContext = matchTokens(tokenA, token0)
-          ? token0Context
-          : token1Context;
-        const tokenBContext = matchTokens(tokenB, token0)
-          ? token0Context
-          : token1Context;
+      ({ token0, token1, reserves: { reserves0, reserves1 } }) => {
+        const [tokenReservesA, tokenReservesB] =
+          (matchTokens(tokenA, token0) &&
+            matchTokens(tokenB, token1) && [reserves0, reserves1]) ||
+          (matchTokens(tokenA, token1) &&
+            matchTokens(tokenB, token0) && [reserves1, reserves0]) ||
+          [];
         const valueA =
           (priceA || 0) *
           new BigNumber(
-            (tokenAContext?.userReserves &&
-              getDisplayDenomAmount(
-                tokenA,
-                tokenAContext?.userReserves || 0
-              )) ||
+            (tokenReservesA &&
+              getDisplayDenomAmount(tokenA, tokenReservesA || 0)) ||
               0
           ).toNumber();
         const valueB =
           (priceB || 0) *
           new BigNumber(
-            (tokenBContext?.userReserves &&
-              getDisplayDenomAmount(
-                tokenB,
-                tokenBContext?.userReserves || 0
-              )) ||
+            (tokenReservesB &&
+              getDisplayDenomAmount(tokenB, tokenReservesB || 0)) ||
               0
           ).toNumber();
         return [valueA, valueB];
@@ -328,20 +321,19 @@ export function MyEditedPositionTableCard({
             tickDiff0,
             tickDiff1,
             deposit,
-            token0Context,
-            token1Context,
+            reserves: { reserves0, reserves1 },
           } = userPosition;
           const reserveA = !invertedTokenOrder
-            ? tickDiff0.plus(token0Context?.userReserves || 0)
-            : tickDiff1.plus(token1Context?.userReserves || 0);
+            ? tickDiff0.plus(reserves0 || 0)
+            : tickDiff1.plus(reserves1 || 0);
           const reserveB = !invertedTokenOrder
-            ? tickDiff1.plus(token1Context?.userReserves || 0)
-            : tickDiff0.plus(token0Context?.userReserves || 0);
+            ? tickDiff1.plus(reserves1 || 0)
+            : tickDiff0.plus(reserves0 || 0);
           const [valueA, valueB] = poolValues[index];
 
           const tickIndexBToA = !invertedTokenOrder
-            ? new BigNumber(deposit.centerTickIndex1To0.toNumber())
-            : new BigNumber(deposit.centerTickIndex1To0.toNumber()).negated();
+            ? new BigNumber(deposit.centerTickIndex.toNumber())
+            : new BigNumber(deposit.centerTickIndex.toNumber()).negated();
 
           const displayPriceBToA = tickIndexToDisplayPrice(
             tickIndexBToA,
@@ -413,18 +405,18 @@ export function MyEditedPositionTableCard({
                       onClick={() => {
                         setEditedUserPosition((ticks) => {
                           return ticks.map((tick) => {
-                            return tick.deposit.centerTickIndex1To0.toNumber() ===
-                              deposit.centerTickIndex1To0.toNumber() &&
+                            return tick.deposit.centerTickIndex.toNumber() ===
+                              deposit.centerTickIndex.toNumber() &&
                               tick.deposit.fee.toNumber() ===
                                 deposit.fee.toNumber()
                               ? {
                                   ...tick,
-                                  tickDiff0:
-                                    tick.token0Context?.userReserves.negated() ||
-                                    new BigNumber(0),
-                                  tickDiff1:
-                                    tick.token1Context?.userReserves.negated() ||
-                                    new BigNumber(0),
+                                  tickDiff0: new BigNumber(
+                                    tick.reserves.reserves0 ?? 0
+                                  ).negated(),
+                                  tickDiff1: new BigNumber(
+                                    tick.reserves.reserves1 ?? 0
+                                  ).negated(),
                                 }
                               : tick;
                           });
@@ -441,8 +433,8 @@ export function MyEditedPositionTableCard({
                     onClick={() => {
                       setEditedUserPosition((ticks) => {
                         return ticks.map((tick) => {
-                          return tick.deposit.centerTickIndex1To0.toNumber() ===
-                            deposit.centerTickIndex1To0.toNumber() &&
+                          return tick.deposit.centerTickIndex.toNumber() ===
+                            deposit.centerTickIndex.toNumber() &&
                             tick.deposit.fee.toNumber() ===
                               deposit.fee.toNumber()
                             ? {

@@ -35,7 +35,7 @@ export function getPairID(
 export function getTokenPairID(
   tokenPair: TokenPair | TokenIdPair
 ): PairIdString {
-  const tokenIdPair = resolveTokenIdPair(tokenPair);
+  const tokenIdPair = resolveTokenIdPair(tokenPair) || [];
   return getPairID(...tokenIdPair);
 }
 

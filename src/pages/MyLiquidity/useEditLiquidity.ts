@@ -10,13 +10,15 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
-import { getBaseDenomAmount } from '../../lib/web3/utils/tokens';
+import { Token, getBaseDenomAmount } from '../../lib/web3/utils/tokens';
 
-import { UserPositionDepositContext } from '../../lib/web3/hooks/useUserShares';
+import { UserReserves } from '../../lib/web3/hooks/useUserReserves';
 import rpcClient from '../../lib/web3/rpcMsgClient';
 import { dualitylabs } from '@duality-labs/dualityjs';
 
-export interface EditedPosition extends UserPositionDepositContext {
+export interface EditedPosition extends UserReserves {
+  token0: Token;
+  token1: Token;
   tickDiff0: BigNumber;
   tickDiff1: BigNumber;
 }
@@ -88,26 +90,25 @@ export function useEditLiquidity(): [
               ({
                 deposit: {
                   pairID: { token0: token0Address, token1: token1Address },
-                  centerTickIndex1To0,
+                  centerTickIndex,
                   fee,
                   sharesOwned: userShares,
                 },
+                reserves: { reserves0, reserves1 },
                 token0,
                 token1,
-                token0Context,
-                token1Context,
                 tickDiff0,
                 tickDiff1,
               }) => {
                 const userTotalReserves = BigNumber.sum(
-                  token0Context?.userReserves || 0,
-                  token1Context?.userReserves || 0
+                  reserves0 || 0,
+                  reserves1 || 0
                 );
-                return centerTickIndex1To0 !== undefined &&
+                return centerTickIndex !== undefined &&
                   fee !== undefined &&
                   !isNaN(Number(fee)) &&
-                  token0Address &&
-                  token1Address &&
+                  token0 &&
+                  token1 &&
                   userTotalReserves.isGreaterThan(0)
                   ? // for situations where withdrawing both side of liquidity
                     // then add both together
@@ -122,7 +123,7 @@ export function useEditLiquidity(): [
                             tokenA: token0Address,
                             tokenB: token1Address,
                             receiver: web3Address,
-                            tickIndexesAToB: [centerTickIndex1To0],
+                            tickIndexesAToB: [centerTickIndex],
                             fees: [fee],
                             // approximate removal using percentages
                             // todo: this probably has a bug when withdrawing from a tick
@@ -148,7 +149,7 @@ export function useEditLiquidity(): [
                                       tokenA: token0Address,
                                       tokenB: token1Address,
                                       receiver: web3Address,
-                                      tickIndexesAToB: [centerTickIndex1To0],
+                                      tickIndexesAToB: [centerTickIndex],
                                       fees: [fee],
                                       amountsA: [
                                         getBaseDenomAmount(token0, tickDiff0) ||
@@ -165,18 +166,16 @@ export function useEditLiquidity(): [
                                       tokenA: token0Address,
                                       tokenB: token1Address,
                                       receiver: web3Address,
-                                      tickIndexesAToB: [centerTickIndex1To0],
+                                      tickIndexesAToB: [centerTickIndex],
                                       fees: [fee],
                                       // approximate removal using percentages
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
-                                      sharesToRemove: token0Context
+                                      sharesToRemove: reserves0
                                         ? [
                                             tickDiff0
                                               .negated()
-                                              .dividedBy(
-                                                token0Context.userReserves
-                                              )
+                                              .dividedBy(reserves0)
                                               .multipliedBy(userShares)
                                               .toFixed(0),
                                           ]
@@ -194,7 +193,7 @@ export function useEditLiquidity(): [
                                       tokenA: token0Address,
                                       tokenB: token1Address,
                                       receiver: web3Address,
-                                      tickIndexesAToB: [centerTickIndex1To0],
+                                      tickIndexesAToB: [centerTickIndex],
                                       fees: [fee],
                                       amountsA: ['0'],
                                       amountsB: [
@@ -211,18 +210,16 @@ export function useEditLiquidity(): [
                                       tokenA: token0Address,
                                       tokenB: token1Address,
                                       receiver: web3Address,
-                                      tickIndexesAToB: [centerTickIndex1To0],
+                                      tickIndexesAToB: [centerTickIndex],
                                       fees: [fee],
                                       // approximate removal using percentages
                                       // todo: this probably has a bug when withdrawing from a tick
                                       // that has both token0 and token1 as this only takes into account one side
-                                      sharesToRemove: token1Context
+                                      sharesToRemove: reserves1
                                         ? [
                                             tickDiff1
                                               .negated()
-                                              .dividedBy(
-                                                token1Context.userReserves
-                                              )
+                                              .dividedBy(reserves1)
                                               .multipliedBy(userShares)
                                               .toFixed(0),
                                           ]

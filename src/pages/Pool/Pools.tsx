@@ -9,7 +9,7 @@ import {
   useTokenBySymbol,
 } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
-import { useUserPositionsShareValues } from '../../lib/web3/hooks/useUserShareValues';
+import { useUserHasDeposits } from '../../lib/web3/hooks/useUserDeposits';
 
 import PoolOverview from './PoolOverview';
 import PoolManagement from './PoolManagement';
@@ -116,9 +116,9 @@ function PoolTableCards({
   const [selectedPoolsList, setSelectedPoolsList] =
     useState<keyof typeof switchValues>('all');
 
-  const userHasPositions = useUserPositionsShareValues().length > 0;
+  const { data: userHasDeposits } = useUserHasDeposits();
 
-  return userHasPositions && selectedPoolsList === 'mine' ? (
+  return userHasDeposits && selectedPoolsList === 'mine' ? (
     <MyPoolsTableCard<keyof typeof switchValues>
       className="flex mt-5"
       title="My Pools"
@@ -132,7 +132,7 @@ function PoolTableCards({
     <PoolsTableCard<keyof typeof switchValues>
       className="flex mt-5"
       title="All Pools"
-      switchValues={userHasPositions ? switchValues : undefined}
+      switchValues={userHasDeposits ? switchValues : undefined}
       switchValue={selectedPoolsList}
       switchOnChange={setSelectedPoolsList}
       onTokenPairClick={setTokens}

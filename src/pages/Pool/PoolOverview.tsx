@@ -14,6 +14,7 @@ import StatCardTVL from '../../components/stats/StatCardTVL';
 import { formatAddress } from '../../lib/web3/utils/address';
 import {
   Token,
+  TokenPair,
   getDisplayDenomAmount,
   getTokenId,
 } from '../../lib/web3/utils/tokens';
@@ -31,6 +32,7 @@ import {
 } from '../../lib/web3/utils/events';
 
 import useTransactionTableData, { Tx } from './hooks/useTransactionTableData';
+import { useUserHasDeposits } from '../../lib/web3/hooks/useUserDeposits';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { formatRelativeTime } from '../../lib/utils/time';
@@ -40,10 +42,6 @@ import {
   useTokenPathPart,
   useTokenValue,
 } from '../../lib/web3/hooks/useTokens';
-import {
-  usePoolDepositFilterForPair,
-  useUserDeposits,
-} from '../../lib/web3/hooks/useUserShares';
 import StatCardVolume from '../../components/stats/StatCardVolume';
 import StatCardFees from '../../components/stats/StatCardFees';
 import StatCardVolatility from '../../components/stats/StatCardVolatility';
@@ -62,8 +60,11 @@ export default function PoolOverview({
     setTokens([tokenB, tokenA]);
   }, [tokenA, tokenB, setTokens]);
 
-  const pairPoolDepositFilter = usePoolDepositFilterForPair([tokenA, tokenB]);
-  const userPairDeposits = useUserDeposits(pairPoolDepositFilter);
+  const tokenPair = useMemo<TokenPair>(
+    () => [tokenA, tokenB],
+    [tokenA, tokenB]
+  );
+  const { data: userHasDeposits } = useUserHasDeposits(tokenPair);
 
   const tokenAPath = useTokenPathPart(tokenA);
   const tokenBPath = useTokenPathPart(tokenB);
@@ -82,7 +83,7 @@ export default function PoolOverview({
             <div className="col">
               <Link to={`/pools/${tokenAPath}/${tokenBPath}/add`}>
                 <button className="button button-primary py-3 px-4">
-                  {userPairDeposits && userPairDeposits.length > 0 ? (
+                  {userHasDeposits ? (
                     <>Add To Position</>
                   ) : (
                     <>Create New Position</>
@@ -90,7 +91,7 @@ export default function PoolOverview({
                 </button>
               </Link>
             </div>
-            {userPairDeposits && userPairDeposits.length > 0 && (
+            {userHasDeposits && (
               <div className="col">
                 <Link to={`/pools/${tokenAPath}/${tokenBPath}/edit`}>
                   <button className="button button-primary py-3 px-4">

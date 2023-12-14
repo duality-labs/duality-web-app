@@ -7,7 +7,7 @@ import {
 import AssetsTableCard from '../../components/cards/AssetsTableCard';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { useUserPositionsShareValue } from '../../lib/web3/hooks/useUserShareValues';
+import { useEstimatedUserReservesValue } from '../../lib/web3/hooks/useUserReserves';
 import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
 
 import './MyLiquidity.scss';
@@ -48,7 +48,7 @@ function Heading() {
 
 function HeroCard() {
   const { wallet } = useWeb3();
-  const allUserSharesValue = useUserPositionsShareValue();
+  const allUserSharesValue = useEstimatedUserReservesValue();
   const allUserBankValue = useUserBankValue();
   return (
     <div className="page-card">

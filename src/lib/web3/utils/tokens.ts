@@ -18,13 +18,16 @@ export function resolveTokenId(
 ): TokenID | undefined {
   return typeof token === 'string' ? token : getTokenId(token);
 }
+
+// treat input of [] as a tokenPair requirement, output: [undefined, undefined]
+// treat input of undefined as no requirement, output: undefined
 export function resolveTokenIdPair(
-  [token0, token1]: TokenPair | TokenIdPair | [undefined, undefined] = [
-    undefined,
-    undefined,
-  ]
-): [TokenID | undefined, TokenID | undefined] {
-  return [resolveTokenId(token0), resolveTokenId(token1)];
+  tokenPair: TokenPair | TokenIdPair | [undefined, undefined] | undefined
+): [TokenID | undefined, TokenID | undefined] | undefined {
+  const [token0, token1] = tokenPair || [undefined, undefined];
+  return tokenPair
+    ? [resolveTokenId(token0), resolveTokenId(token1)]
+    : undefined;
 }
 
 export const ibcDenomRegex = /^ibc\/[0-9A-Fa-f]+$/;

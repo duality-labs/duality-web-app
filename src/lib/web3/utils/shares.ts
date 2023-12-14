@@ -10,10 +10,15 @@ export interface IndexedShare {
   sharesOwned: string;
 }
 
+const DexShareRegex = /^DualityPoolShares-([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/;
+
+// Duality denoms may be tokenized Dex shares or regular tokens on the chain
+export function isDexShare(coin: Coin) {
+  return DexShareRegex.test(coin.denom);
+}
+
 export function getShareInfo(coin: Coin) {
-  const match = coin.denom.match(
-    /^DualityPoolShares-([^-]+)-([^-]+)-t(-?\d+)-f(\d+)$/
-  );
+  const match = coin.denom.match(DexShareRegex);
   if (match) {
     const [, token0Address, token1Address, tickIndexString, feeString] = match;
     return {
@@ -32,7 +37,7 @@ export function getShareDenom(
   tickIndex1To0: number,
   fee: number
 ): string | undefined {
-  const tokenIds = resolveTokenIdPair(tokens);
+  const tokenIds = resolveTokenIdPair(tokens) || [];
   const [tokenId0, tokenId1] = guessInvertedOrder(tokens)
     ? [tokenIds[1], tokenIds[0]]
     : tokenIds;
