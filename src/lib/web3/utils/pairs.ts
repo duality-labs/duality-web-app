@@ -40,7 +40,7 @@ export function getTokenPairID(
 }
 
 /**
- * Check if the current TokenA/TokenB pair is in the same order as Token0/1
+ * Check if the current TokenA/TokenB pair is in the same order as TokenZero/One
  * @param pairID pair id for tokens
  * @param tokenA ID of token A
  * @param tokenB ID of token B
@@ -66,7 +66,7 @@ export function guessInvertedOrder(
 
 /**
  * Checks given token pair against stored data to determine
- * if the current TokenA/TokenB pair exists and is in the same order as Token0/1
+ * if the current TokenA/TokenB pair exists and is in the same order as TokenZero/One
  * @param pairMap pair map of stored tokens
  * @param tokenA ID of token A
  * @param tokenB ID of token B

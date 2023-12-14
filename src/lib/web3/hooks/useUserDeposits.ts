@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { UseQueryResult, useQuery } from '@tanstack/react-query';
-import { dualitylabs } from '@duality-labs/dualityjs';
-import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/deposit_record';
+import { duality } from '@duality-labs/dualityjs';
+import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import subscriber from '../subscriptionManager';
@@ -22,11 +22,11 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[] | undefined> {
     queryFn: async (): Promise<DepositRecord[] | undefined> => {
       if (address) {
         // get LCD client
-        const lcd = await dualitylabs.ClientFactory.createLCDClient({
+        const lcd = await duality.ClientFactory.createLCDClient({
           restEndpoint: REACT_APP__REST_API,
         });
         // get all user's deposits
-        const response = await lcd.dualitylabs.duality.dex.userDepositsAll({
+        const response = await lcd.duality.dex.userDepositsAll({
           address,
         });
         // return unwrapped result

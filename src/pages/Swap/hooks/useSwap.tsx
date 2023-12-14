@@ -18,11 +18,11 @@ import {
   CoinReceivedEvent,
 } from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
-import { dualitylabs } from '@duality-labs/dualityjs';
+import { duality } from '@duality-labs/dualityjs';
 import {
   MsgPlaceLimitOrderResponse,
   MsgPlaceLimitOrder,
-} from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
+} from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
 
 async function sendSwap(
   {
@@ -66,7 +66,7 @@ async function sendSwap(
   return client.signAndBroadcast(
     address,
     [
-      dualitylabs.duality.dex.MessageComposer.withTypeUrl.placeLimitOrder({
+      duality.dex.MessageComposer.withTypeUrl.placeLimitOrder({
         orderType,
         tickIndexInToOut,
         amountIn,

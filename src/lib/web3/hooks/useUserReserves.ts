@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 import { useMemo, useRef } from 'react';
 import { useQueries } from '@tanstack/react-query';
-import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/deposit_record';
+import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
 import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
-import { QueryGetPoolReservesRequest } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/query';
+import { QueryGetPoolReservesRequest } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import { useLcdClientPromise } from '../lcdClient';
@@ -21,7 +21,7 @@ import {
   resolveTokenIdPair,
 } from '../utils/tokens';
 import { useRpcPromise } from '../rpcQueryClient';
-import { dualitylabs } from '@duality-labs/dualityjs';
+import { duality } from '@duality-labs/dualityjs';
 import useTokens, { useTokensWithIbcInfo } from './useTokens';
 import { useTokenPairMapLiquidity } from '../../web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from './useTokenPairs';
@@ -157,15 +157,11 @@ function useUserDepositsTotalReserves(
               fee,
             };
             return {
-              queryKey: [
-                'dualitylabs.duality.dex.poolReserves',
-                params,
-                sharesOwned,
-              ],
+              queryKey: ['duality.dex.poolReserves', params, sharesOwned],
               queryFn: async () => {
                 // we use an RPC call here because the LCD endpoint always 404s
                 const rpc = await rpcPromise;
-                const client = new dualitylabs.duality.dex.QueryClientImpl(rpc);
+                const client = new duality.dex.QueryClientImpl(rpc);
                 return client
                   .poolReserves(params)
                   .then((response) => {

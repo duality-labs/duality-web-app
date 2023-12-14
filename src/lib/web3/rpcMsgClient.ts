@@ -3,7 +3,7 @@ import { OfflineAminoSigner } from '@cosmjs/amino';
 
 import {
   getSigningCosmosClient,
-  getSigningDualitylabsClient,
+  getSigningDualityClient,
   getSigningIbcClient,
 } from '@duality-labs/dualityjs';
 
@@ -13,7 +13,7 @@ export default function rpcClient(
   wallet?: OfflineSigner,
   rpcURL = REACT_APP__RPC_API
 ) {
-  return getSigningDualitylabsClient({
+  return getSigningDualityClient({
     rpcEndpoint: rpcURL,
     signer: wallet as OfflineAminoSigner,
   });
@@ -22,7 +22,7 @@ export default function rpcClient(
 export function signingRpcClient(
   getSigningClientFunction:
     | typeof getSigningCosmosClient
-    | typeof getSigningDualitylabsClient,
+    | typeof getSigningDualityClient,
   wallet?: OfflineSigner,
   rpcURL = REACT_APP__RPC_API
 ) {

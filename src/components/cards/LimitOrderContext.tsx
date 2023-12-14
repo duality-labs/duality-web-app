@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/dualitylabs/duality/dex/tx';
+import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
 
 export type LimitOrderTypeKeys = keyof Omit<
   typeof LimitOrderType,

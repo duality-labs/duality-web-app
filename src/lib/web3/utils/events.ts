@@ -71,13 +71,13 @@ export interface DexDepositEvent {
     action: 'Deposit';
     Creator: WalletAddress;
     Receiver: WalletAddress;
-    Token0: string;
-    Token1: string;
+    TokenZero: string;
+    TokenOne: string;
     TickIndex: string;
     Fee: string;
     SharesMinted: string;
-    Reserves0Deposited: string;
-    Reserves1Deposited: string;
+    ReservesZeroDeposited: string;
+    ReservesOneDeposited: string;
   };
 }
 
@@ -88,12 +88,12 @@ export interface DexWithdrawalEvent {
     action: 'Withdraw';
     Creator: WalletAddress;
     Receiver: WalletAddress;
-    Token0: string;
-    Token1: string;
+    TokenZero: string;
+    TokenOne: string;
     TickIndex: string;
     Fee: string;
-    Reserves0Withdrawn: string;
-    Reserves1Withdrawn: string;
+    ReservesZeroWithdrawn: string;
+    ReservesOneWithdrawn: string;
     SharesRemoved: string;
   };
 }
@@ -105,8 +105,8 @@ export interface DexPlaceLimitOrderEvent {
     action: 'PlaceLimitOrder';
     Creator: WalletAddress;
     Receiver: WalletAddress;
-    Token0: string;
-    Token1: string;
+    TokenZero: string;
+    TokenOne: string;
     TokenIn: string;
     AmountIn: string;
     LimitTick: string;
@@ -126,8 +126,8 @@ export interface DexTickUpdateEvent {
   attributes: {
     module: 'dex';
     action: 'TickUpdate';
-    Token0: string;
-    Token1: string;
+    TokenZero: string;
+    TokenOne: string;
     TokenIn: string;
     TickIndex: string;
     Fee: string;
@@ -211,8 +211,8 @@ export function getLastPrice(
   const tickIndex = lastTickUpdate
     ? new BigNumber(lastTickUpdate.attributes.TickIndex)
     : undefined;
-  const forward = lastTickUpdate?.attributes.Token0 === getTokenId(tokenA);
-  const reverse = lastTickUpdate?.attributes.Token0 === getTokenId(tokenB);
+  const forward = lastTickUpdate?.attributes.TokenZero === getTokenId(tokenA);
+  const reverse = lastTickUpdate?.attributes.TokenZero === getTokenId(tokenB);
   return tickIndex && (forward || reverse)
     ? tickIndexToPrice(forward ? tickIndex : tickIndex.negated())
     : undefined;
