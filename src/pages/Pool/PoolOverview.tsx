@@ -215,11 +215,11 @@ function PoolOverviewTable({
       },
       {
         nav: 'Adds',
-        Tab: () => <TokenTransactionTable action="Deposit" />,
+        Tab: () => <TokenTransactionTable action="DepositLP" />,
       },
       {
         nav: 'Removes',
-        Tab: () => <TokenTransactionTable action="Withdraw" />,
+        Tab: () => <TokenTransactionTable action="WithdrawLP" />,
       },
     ];
     // intermediary component to avoid repeating tokenA={tokenA} tokenB={tokenB}
@@ -305,7 +305,7 @@ function TransactionsTable({
           // try deposit event
           const depositEvents = events.filter(
             (event): event is DexDepositEvent =>
-              event.attributes.action === 'Deposit'
+              event.attributes.action === 'DepositLP'
           );
           if (depositEvents.length > 0) {
             return (
@@ -322,7 +322,7 @@ function TransactionsTable({
           // try withdrawal event
           const withdrawalEvents = events.filter(
             (event): event is DexWithdrawalEvent =>
-              event.attributes.action === 'Withdraw'
+              event.attributes.action === 'WithdrawLP'
           );
           if (withdrawalEvents.length > 0) {
             return (
@@ -368,7 +368,7 @@ interface EventColumnProps<T> {
   heading: TransactionTableColumnKey;
 }
 interface GenericEventColumnProps<T> extends EventColumnProps<T> {
-  action: 'Deposit' | 'Withdraw';
+  action: 'DepositLP' | 'WithdrawLP';
   getToken0Reserves: (event: T) => string;
   getToken1Reserves: (event: T) => string;
 }
@@ -401,7 +401,7 @@ function EventColumn<
       case 'Wallet':
         return formatAddress(Creator);
       case 'Type':
-        return `${action === 'Deposit' ? 'Add' : 'Remove'} ${[
+        return `${action === 'DepositLP' ? 'Add' : 'Remove'} ${[
           Number(getTokenAReserves()) > 0 && tokenA.symbol,
           Number(getTokenBReserves()) > 0 && tokenB.symbol,
         ]
@@ -485,7 +485,7 @@ function DepositColumn(props: EventColumnProps<DexDepositEvent>) {
   return (
     <EventColumn<DexDepositEvent>
       {...props}
-      action="Deposit"
+      action="DepositLP"
       getToken0Reserves={getToken0Reserves}
       getToken1Reserves={getToken1Reserves}
     />
@@ -509,7 +509,7 @@ function WithdrawalColumn(props: EventColumnProps<DexWithdrawalEvent>) {
   return (
     <EventColumn<DexWithdrawalEvent>
       {...props}
-      action="Withdraw"
+      action="WithdrawLP"
       getToken0Reserves={getToken0Reserves}
       getToken1Reserves={getToken1Reserves}
     />
