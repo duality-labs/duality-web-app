@@ -44,8 +44,8 @@ export function decodeEvent(event: Event): Event {
 
 export type DexMessageAction =
   | 'PlaceLimitOrder'
-  | 'Deposit'
-  | 'Withdraw'
+  | 'DepositLP'
+  | 'WithdrawLP'
   | 'TickUpdate';
 
 export type ChainEvent = CosmosEvent | IBCEvent | DexEvent;
@@ -68,7 +68,7 @@ export interface DexDepositEvent {
   type: 'message';
   attributes: {
     module: 'dex';
-    action: 'Deposit';
+    action: 'DepositLP';
     Creator: WalletAddress;
     Receiver: WalletAddress;
     TokenZero: string;
@@ -85,7 +85,7 @@ export interface DexWithdrawalEvent {
   type: 'message';
   attributes: {
     module: 'dex';
-    action: 'Withdraw';
+    action: 'WithdrawLP';
     Creator: WalletAddress;
     Receiver: WalletAddress;
     TokenZero: string;
