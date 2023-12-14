@@ -131,7 +131,7 @@ function useUserChainDenomBalances(): UseQueryResult<Coin[]> {
 export interface TokenCoin extends Coin {
   token: Token;
 }
-export function useBankBalances(): UseQueryResult<TokenCoin[]> {
+export function useUserBankBalances(): UseQueryResult<TokenCoin[]> {
   const result = useUserChainDenomBalances();
 
   // add token information to balances
@@ -155,8 +155,10 @@ export function useBankBalances(): UseQueryResult<TokenCoin[]> {
 
 // note: if dealing with IBC tokens, ensure Token has IBC context
 //       (by fetching it with useTokensWithIbcInfo)
-function useBankBalance(token: Token | undefined): UseQueryResult<TokenCoin> {
-  const { data: balances, ...rest } = useBankBalances();
+function useUserBankBalance(
+  token: Token | undefined
+): UseQueryResult<TokenCoin> {
+  const { data: balances, ...rest } = useUserBankBalances();
   const balance = useMemo(() => {
     // find the balance that matches the token
     return (
@@ -171,7 +173,7 @@ function useBankBalance(token: Token | undefined): UseQueryResult<TokenCoin> {
 export function useBankBalanceBaseAmount(
   token: Token | undefined
 ): UseQueryResult<string> {
-  const { data: balance, ...rest } = useBankBalance(token);
+  const { data: balance, ...rest } = useUserBankBalance(token);
   const balanceAmount = useMemo(() => {
     return (
       balance &&
@@ -188,7 +190,7 @@ export function useBankBalanceBaseAmount(
 export function useBankBalanceDisplayAmount(
   token: Token | undefined
 ): UseQueryResult<string> {
-  const { data: balance, ...rest } = useBankBalance(token);
+  const { data: balance, ...rest } = useUserBankBalance(token);
   const balanceAmount = useMemo(() => {
     return (
       balance &&

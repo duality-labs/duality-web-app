@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useBankBalances } from './useUserBankBalances';
+import { useUserBankBalances } from './useUserBankBalances';
 
 export default function useUserTokens() {
-  const { data: balances } = useBankBalances();
+  const { data: balances } = useUserBankBalances();
   return useMemo(() => {
     return balances?.map((balance) => balance.token) ?? [];
   }, [balances]);
