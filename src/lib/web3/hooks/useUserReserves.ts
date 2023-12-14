@@ -267,7 +267,9 @@ function useUserIndicativeReserves(
           const totalReserves = foundTotalReserves.totalReserves;
           const reserves0 = new BigNumber(totalReserves.reserves0);
           const reserves1 = new BigNumber(totalReserves.reserves1);
-          const userPercentageOfShares = sharesOwned.dividedBy(totalShares);
+          const userPercentageOfShares = totalShares.isZero()
+            ? totalShares
+            : sharesOwned.dividedBy(totalShares);
           const lowerTickIndex = new BigNumber(deposit.lowerTickIndex.toInt());
           const upperTickIndex = new BigNumber(deposit.upperTickIndex.toInt());
           const allReservesAsToken0 = reserves0.plus(
