@@ -14,6 +14,9 @@ import { useWeb3 } from '../useWeb3';
 import { Coin } from '@cosmjs/proto-signing';
 import { isDexShare } from '../utils/shares';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
+import { MessageActionEvent, TendermintTxData } from '../events';
+import { CoinTransferEvent, mapEventAttributes } from '../utils/events';
+import subscriber from '../subscriptionManager';
 
 // fetch all the user's bank balance
 function useAllUserBankBalances(): UseQueryResult<Coin[]> {
@@ -44,6 +47,49 @@ function useAllUserBankBalances(): UseQueryResult<Coin[]> {
         : undefined;
     },
   });
+
+  const { refetch } = result;
+  // subscribe to updates to the user's bank balance
+  useEffect(() => {
+    if (address) {
+      const onTxBalanceUpdate = (
+        event: MessageActionEvent,
+        tx: TendermintTxData
+      ) => {
+        const events = tx.value.TxResult.result.events.map(mapEventAttributes);
+        const transferBalanceEvents = events
+          .filter(
+            (event): event is CoinTransferEvent => event.type === 'transfer'
+          )
+          .filter(
+            (event) =>
+              event.attributes.recipient === address ||
+              event.attributes.sender === address
+          );
+
+        // todo: use partial updates to avoid querying all of user's balances
+        //       on any balance update, but decide first whether to requests
+        //       an update to all the user's balances, or just partial updates
+        if (transferBalanceEvents.length >= 3) {
+          // update all known users balances
+          refetch({ cancelRefetch: false });
+        } else {
+          // todo: add partial update logic here
+          refetch({ cancelRefetch: false });
+        }
+      };
+      // subscribe to changes in the user's bank balance
+      subscriber.subscribeMessage(onTxBalanceUpdate, {
+        transfer: { recipient: address },
+      });
+      subscriber.subscribeMessage(onTxBalanceUpdate, {
+        transfer: { sender: address },
+      });
+      return () => {
+        subscriber.unsubscribeMessage(onTxBalanceUpdate);
+      };
+    }
+  }, [refetch, address]);
 
   const { fetchNextPage, data, hasNextPage } = result;
   // fetch more data if data has changed but there are still more pages to get
