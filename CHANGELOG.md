@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.43](https://github.com/duality-labs/duality-web-app/compare/v0.3.42...v0.3.43) (2023-12-14)
+
+
+### Features
+
+* ensure user data is isolated to current wallet address ([#500](https://github.com/duality-labs/duality-web-app/issues/500)) ([d0701a0](https://github.com/duality-labs/duality-web-app/commit/d0701a06cf58c7e4b820c32c18eec6abe1e4956e))
+
 ## [0.3.42](https://github.com/duality-labs/duality-web-app/compare/v0.3.41...v0.3.42) (2023-12-14)
 
 
