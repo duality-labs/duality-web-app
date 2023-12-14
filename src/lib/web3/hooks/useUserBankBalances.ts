@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import { UseQueryResult, useInfiniteQuery } from '@tanstack/react-query';
 import { PageRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/base/query/v1beta1/pagination';
 import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { Coin } from '@cosmjs/proto-signing';
 
+import subscriber from '../subscriptionManager';
 import { Token, getDenomAmount } from '../utils/tokens';
 import useTokens, {
   matchTokenByDenom,
@@ -14,6 +15,8 @@ import useTokens, {
 import { useLcdClientPromise } from '../lcdClient';
 import { useWeb3 } from '../useWeb3';
 import { isDexShare } from '../utils/shares';
+import { MessageActionEvent, TendermintTxData } from '../events';
+import { CoinTransferEvent, mapEventAttributes } from '../utils/events';
 
 // fetch all the user's bank balance
 function useAllUserBankBalances(): UseQueryResult<Coin[]> {
@@ -44,6 +47,49 @@ function useAllUserBankBalances(): UseQueryResult<Coin[]> {
         : undefined;
     },
   });
+
+  const { refetch } = result;
+  // subscribe to updates to the user's bank balance
+  useEffect(() => {
+    if (address) {
+      const onTxBalanceUpdate = (
+        event: MessageActionEvent,
+        tx: TendermintTxData
+      ) => {
+        const events = tx.value.TxResult.result.events.map(mapEventAttributes);
+        const transferBalanceEvents = events
+          .filter(
+            (event): event is CoinTransferEvent => event.type === 'transfer'
+          )
+          .filter(
+            (event) =>
+              event.attributes.recipient === address ||
+              event.attributes.sender === address
+          );
+
+        // todo: use partial updates to avoid querying all of user's balances
+        //       on any balance update, but decide first whether to requests
+        //       an update to all the user's balances, or just partial updates
+        if (transferBalanceEvents.length >= 3) {
+          // update all known users balances
+          refetch({ cancelRefetch: false });
+        } else {
+          // todo: add partial update logic here
+          refetch({ cancelRefetch: false });
+        }
+      };
+      // subscribe to changes in the user's bank balance
+      subscriber.subscribeMessage(onTxBalanceUpdate, {
+        transfer: { recipient: address },
+      });
+      subscriber.subscribeMessage(onTxBalanceUpdate, {
+        transfer: { sender: address },
+      });
+      return () => {
+        subscriber.unsubscribeMessage(onTxBalanceUpdate);
+      };
+    }
+  }, [refetch, address]);
 
   // combine all non-zero balances
   const pages = result.data?.pages;
