@@ -1251,7 +1251,11 @@ export default function PoolManagement({
             <input
               className="button-primary text-medium mt-4 p-3"
               type="submit"
-              disabled={!hasSufficientFundsA || !hasSufficientFundsB}
+              // disable if a positive change is greater than user's balance
+              disabled={
+                diffTokenA.isGreaterThan(balanceTokenA || 0) ||
+                diffTokenB.isGreaterThan(balanceTokenB || 0)
+              }
               value="Confirm"
             />
           </div>
