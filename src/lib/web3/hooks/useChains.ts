@@ -39,7 +39,7 @@ export const dualityChain: Chain = {
   pretty_name: REACT_APP__CHAIN_NAME,
   status: 'upcoming',
   network_type: 'testnet',
-  bech32_prefix: 'dual',
+  bech32_prefix: 'neutron',
   slip44: 118,
   logo_URIs: {
     svg: dualityLogo,
