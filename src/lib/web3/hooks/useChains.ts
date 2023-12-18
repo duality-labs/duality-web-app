@@ -50,7 +50,7 @@ export const nativeChain: Chain = {
   // add default properties if no chain-registry chain is found
   status: 'upcoming',
   network_type: 'testnet',
-  bech32_prefix: 'dual',
+  bech32_prefix: 'neutron',
   slip44: 118,
   logo_URIs: {
     svg: dualityLogo,
