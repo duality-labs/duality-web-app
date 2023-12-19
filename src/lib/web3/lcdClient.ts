@@ -1,11 +1,13 @@
 import { HttpEndpoint } from '@cosmjs/tendermint-rpc';
+import cosmosclient from '@cosmos-client/core';
 
-import { duality } from '@duality-labs/dualityjs';
+import plus from '@neutron-org/neutronjsplus';
 import { useMemo } from 'react';
 
 const { REACT_APP__REST_API = '' } = process.env;
 
 export function lcdClient(rpcURL = REACT_APP__REST_API) {
+  new plus.cosmosWrapper.CosmosWrapper();
   return duality.ClientFactory.createLCDClient({ restEndpoint: rpcURL });
 }
 

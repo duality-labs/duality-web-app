@@ -18,11 +18,16 @@ import {
   CoinReceivedEvent,
 } from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
-import { duality } from '@duality-labs/dualityjs';
+import cosmosclient from '@cosmos-client/core';
+// import { duality } from '@duality-labs/dualityjs';
 import {
   MsgPlaceLimitOrderResponse,
-  MsgPlaceLimitOrder,
-} from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
+  MsgPlaceLimitOrder,  
+} from '@neutron-org/neutronjsplus/dist/proto/neutron/neutron/dex/tx_pb';
+import fdsa from '@neutron-org/neutronjsplus/dist/generated/proto'
+
+
+
 
 async function sendSwap(
   {
@@ -61,27 +66,38 @@ async function sendSwap(
     throw new Error('Invalid Input (0 value)');
   }
 
+  const asdf = new MsgPlaceLimitOrder({
+    orderType,
+    tickIndexInToOut,
+    amountIn,
+    maxAmountOut,
+    expirationTime,
+    tokenIn,
+    tokenOut,
+    creator,
+    receiver,
+  })
+  const sdk = new cosmosclient.CosmosSDK('http://localhost:1317', 'testchain');
+
   // send message to chain
   const client = await rpcClient(wallet);
-  return client.signAndBroadcast(
-    address,
-    [
-      duality.dex.MessageComposer.withTypeUrl.placeLimitOrder({
-        orderType,
-        tickIndexInToOut,
-        amountIn,
-        maxAmountOut,
-        expirationTime,
-        tokenIn,
-        tokenOut,
-        creator,
-        receiver,
-      }),
-    ],
+  // const txBuilder = new cosmosclient.TxBuilder(sdk, )
+  return cosmosclient.rest.tx.broadcastTx(
+    sdk,
     {
-      gas: gasEstimate.toFixed(0),
-      amount: [],
-    }
+      tx_bytes: new cosmosclient.TxBuilder(
+        sdk,
+        asdf,
+        new cosmosclient.proto.cosmos.tx.v1beta1.AuthInfo({
+          'signer_infos': [{ 'mode_info': { 'single': {'mode': cosmosclient.proto.cosmos.tx.signing.v1beta1.SignMode.SIGN_MODE_DIRECT_AUX }}}]
+        })
+      ).txBytes(),
+      mode: 'BROADCAST_MODE_ASYNC'
+    },
+    // {
+    //   gas: gasEstimate.toFixed(0),
+    //   amount: [],
+    // }
   );
 }
 

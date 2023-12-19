@@ -38,3 +38,23 @@ export function ibcClient(wallet?: OfflineSigner, rpcURL = REACT_APP__RPC_API) {
     signer: wallet as OfflineAminoSigner,
   });
 }
+
+export const getSigningDualityClient = async ({
+  rpcEndpoint,
+  signer,
+  defaultTypes = defaultRegistryTypes
+}: {
+  rpcEndpoint: string | HttpEndpoint;
+  signer: OfflineSigner;
+  defaultTypes?: ReadonlyArray<[string, GeneratedType]>;
+}) => {
+  const registry = new Registry([...defaultTypes, ...dualityProtoRegistry]);
+  const aminoTypes = new AminoTypes({
+    ...dualityAminoConverters
+  });
+  const client = await SigningStargateClient.connectWithSigner(rpcEndpoint, signer, {
+    registry: (registry as any),
+    aminoTypes
+  });
+  return client;
+};
