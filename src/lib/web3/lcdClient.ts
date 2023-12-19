@@ -1,16 +1,23 @@
 import { HttpEndpoint } from '@cosmjs/tendermint-rpc';
 
-import { duality } from '@duality-labs/dualityjs';
+import { useQuery } from '@tanstack/react-query';
+import { neutron } from '@duality-labs/dualityjs';
 import { useMemo } from 'react';
+
+// import cosmos from '@duality-labs/dualityjs/types/codegen/cosmos/lcd';
+import * as packetforward from '@duality-labs/dualityjs/module/codegen/packetforward/lcd';
+import * as PacketForward from '@duality-labs/dualityjs/types/codegen/packetforward/lcd';
+import * as cosmos from '@duality-labs/dualityjs/module/codegen/cosmos/lcd';
+import * as Cosmos from '@duality-labs/dualityjs/types/codegen/cosmos/lcd';
 
 const { REACT_APP__REST_API = '' } = import.meta.env;
 
 export function lcdClient(rpcURL = REACT_APP__REST_API) {
-  return duality.ClientFactory.createLCDClient({ restEndpoint: rpcURL });
+  return neutron.ClientFactory.createLCDClient({ restEndpoint: rpcURL });
 }
 
 type LcdClient = Awaited<
-  ReturnType<typeof duality.ClientFactory.createLCDClient>
+  ReturnType<typeof neutron.ClientFactory.createLCDClient>
 >;
 
 const _lcdClients: Record<string, LcdClient> = {};
@@ -33,7 +40,7 @@ const getLcdClient = async (
   if (key in _lcdClients) {
     return _lcdClients[key];
   }
-  const lcd = await duality.ClientFactory.createLCDClient({
+  const lcd = await neutron.ClientFactory.createLCDClient({
     restEndpoint: key,
   });
   _lcdClients[key] = lcd;
@@ -58,4 +65,32 @@ export function useLcdClientPromise(
   return useMemo(() => {
     return getLcdClient(restEndpoint);
   }, [restEndpoint]);
+}
+
+export function useCosmosLcdClient(restEndpoint = REACT_APP__REST_API) {
+  const result = useQuery({
+    queryKey: ['useCosmosLcdClient', restEndpoint],
+    queryFn: async () => {
+      return await (cosmos as typeof Cosmos).createLCDClient({ restEndpoint });
+    },
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  return result.data;
+}
+
+export function usePacketForwardMiddlewareLcdClient(
+  restEndpoint = REACT_APP__REST_API
+) {
+  const result = useQuery({
+    queryKey: ['usePacketForwardMiddlewareLcdClient', restEndpoint],
+    queryFn: async () => {
+      return await (packetforward as typeof PacketForward).createLCDClient({
+        restEndpoint,
+      });
+    },
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  return result.data;
 }

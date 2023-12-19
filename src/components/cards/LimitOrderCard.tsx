@@ -274,9 +274,9 @@ function LimitOrder({
         const tickIndexLimit = tickIndexOut * (forward ? 1 : -1);
         swapRequest(
           {
-            amountIn: getBaseDenomAmount(tokenIn, result.amountIn) || '0',
-            tokenIn: result.tokenIn,
-            tokenOut: result.tokenOut,
+            amount_in: getBaseDenomAmount(tokenIn, result.amountIn) || '0',
+            token_in: result.tokenIn,
+            token_out: result.tokenOut,
             creator: address,
             receiver: address,
             // see LimitOrderType in types repo (cannot import at runtime)
@@ -285,10 +285,10 @@ function LimitOrder({
             // succeed (in testing when swapping 1e18 utokens, often the order
             // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
             // todo: use type FILL_OR_KILL: order must be filled completely
-            orderType: orderTypeEnum[execution],
+            order_type: orderTypeEnum[execution],
             // todo: set tickIndex to allow for a tolerance:
             //   the below function is a tolerance of 0
-            tickIndexInToOut: Long.fromNumber(
+            tick_index_in_to_out: Long.fromNumber(
               showLimitPrice
                 ? // set given limit price
                   displayPriceToTickIndex(

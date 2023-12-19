@@ -211,7 +211,7 @@ export function MyPoolsTableCard<T extends string | number>({
       };
     }>((map, userPosition) => {
       const { token0: token0Address, token1: token1Address } =
-        userPosition.deposit.pairID;
+        userPosition.deposit.pair_id;
       const pairID = getPairID(token0Address, token1Address);
       const token0 = tokenList.find(matchTokenByDenom(token0Address));
       const token1 = tokenList.find(matchTokenByDenom(token1Address));
