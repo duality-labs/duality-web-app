@@ -15,11 +15,11 @@ import {
   CoinReceivedEvent,
 } from '../../../lib/web3/utils/events';
 import { getDexSigningClient } from '../../../lib/web3/clients/signingClients';
-import { duality } from '@duality-labs/dualityjs';
+import { neutron } from '@duality-labs/neutronjs';
 import {
   MsgPlaceLimitOrderResponse,
   MsgPlaceLimitOrder,
-} from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
+} from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
 
 async function sendSwap(
   {
@@ -30,13 +30,13 @@ async function sendSwap(
     address: string;
   },
   {
-    orderType,
-    tickIndexInToOut,
-    amountIn,
-    maxAmountOut,
-    expirationTime,
-    tokenIn,
-    tokenOut,
+    order_type: orderType,
+    tick_index_in_to_out: tickIndexInToOut,
+    amount_in: amountIn,
+    max_amount_out: maxAmountOut,
+    expiration_time: expirationTime,
+    token_in: tokenIn,
+    token_out: tokenOut,
     creator,
     receiver,
   }: MsgPlaceLimitOrder,
@@ -63,14 +63,14 @@ async function sendSwap(
   return client.signAndBroadcast(
     address,
     [
-      duality.dex.MessageComposer.withTypeUrl.placeLimitOrder({
-        orderType,
-        tickIndexInToOut,
-        amountIn,
-        maxAmountOut,
-        expirationTime,
-        tokenIn,
-        tokenOut,
+      neutron.dex.MessageComposer.withTypeUrl.placeLimitOrder({
+        order_type: orderType,
+        tick_index_in_to_out: tickIndexInToOut,
+        amount_in: amountIn,
+        max_amount_out: maxAmountOut,
+        expiration_time: expirationTime,
+        token_in: tokenIn,
+        token_out: tokenOut,
         creator,
         receiver,
       }),
@@ -107,11 +107,11 @@ export function useSwap(denoms: string[]): [
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
       const {
-        orderType,
-        tickIndexInToOut,
-        amountIn,
-        tokenIn,
-        tokenOut,
+        order_type: orderType,
+        tick_index_in_to_out: tickIndexInToOut,
+        amount_in: amountIn,
+        token_in: tokenIn,
+        token_out: tokenOut,
         creator,
         receiver,
       } = request;

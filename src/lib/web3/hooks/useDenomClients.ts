@@ -8,7 +8,7 @@ import {
 } from '@chain-registry/client';
 
 import { AdditionalMintageTrace, Asset, Chain } from '@chain-registry/types';
-import { DenomTrace } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/transfer';
+import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
 import { useDenomTrace, useDenomTraceByDenom } from './useDenomsFromChain';
 import { Token } from '../utils/tokens';

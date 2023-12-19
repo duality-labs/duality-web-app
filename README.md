@@ -2,7 +2,7 @@
 
 The code for the Duality front-end web app.
 
-This version of the front end is intended to work with the release of the backend that is noted in the [@duality-labs/dualityjs](https://www.npmjs.com/package/@duality-labs/dualityjs) dependency in package.json
+This version of the front end is intended to work with the release of the backend that is noted in the [@duality-labs/neutronjs](https://www.npmjs.com/package/@duality-labs/neutronjs) dependency in package.json
 
 ## Setting up the dev environment
 
@@ -51,13 +51,13 @@ We use TypeScript types and API client code generated from the backend repo
 .proto files and the
 [@osmonauts/telescope](https://www.npmjs.com/package/@osmonauts/telescope)
 package to help define the shape of the API for the frontend code base.
-These files exist at https://github.com/duality-labs/dualityjs
+These files exist at https://github.com/duality-labs/neutronjs
 
 The current backend repository version to use with the frontend
 should be defined in the package.json file: here the version number of the
-https://github.com/duality-labs/dualityjs dependency should represent
+https://github.com/duality-labs/neutronjs dependency should represent
 the corresponding backend API version number to use, see
-https://github.com/duality-labs/duality/releases
+https://github.com/neutron-org/neutron/releases
 
 ## Deployed At
 

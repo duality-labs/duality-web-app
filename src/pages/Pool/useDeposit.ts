@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
 import BigNumber from 'bignumber.js';
 import Long from 'long';
-import { duality } from '@duality-labs/dualityjs';
+import { neutron } from '@duality-labs/neutronjs';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { getDexSigningClient } from '../../lib/web3/clients/signingClients';
@@ -261,28 +261,28 @@ export function useDeposit([denomA, denomB]: [
           const res: DeliverTxResponse = await client.signAndBroadcast(
             web3.address,
             [
-              duality.dex.MessageComposer.withTypeUrl.deposit({
+              neutron.dex.MessageComposer.withTypeUrl.deposit({
                 creator: web3Address,
-                tokenA: denomA,
-                tokenB: denomB,
+                token_a: denomA,
+                token_b: denomB,
                 receiver: web3Address,
                 // note: tick indexes must be in the form of "A to B"
                 // as that is what is noted by the key sent to the API
                 // but that seems to be we have defined as "B to A"
-                tickIndexesAToB: filteredUserTicks.map((tick) =>
+                tick_indexes_a_to_b: filteredUserTicks.map((tick) =>
                   Long.fromNumber(tick.tickIndexBToA)
                 ),
                 fees: filteredUserTicks.map((tick) =>
                   Long.fromNumber(tick.fee)
                 ),
-                amountsA: filteredUserTicks.map((tick) =>
+                amounts_a: filteredUserTicks.map((tick) =>
                   tick.reserveA.toFixed(0)
                 ),
-                amountsB: filteredUserTicks.map((tick) =>
+                amounts_b: filteredUserTicks.map((tick) =>
                   tick.reserveB.toFixed(0)
                 ),
                 // todo: allow user to specify autoswap behavior
-                Options: filteredUserTicks.map(() => ({
+                options: filteredUserTicks.map(() => ({
                   disable_autoswap: false,
                 })),
               }),

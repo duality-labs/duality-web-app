@@ -1,23 +1,23 @@
 import { Chain } from '@chain-registry/types';
 import { useMemo } from 'react';
-import { ibc, router } from '@duality-labs/dualityjs';
-import { QueryParamsResponse as QueryRouterParams } from '@duality-labs/dualityjs/types/codegen/router/v1/query';
-import { Params as QueryConnectionParams } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
+import { ibc } from '@duality-labs/neutronjs';
+import { QueryParamsResponse as QueryRouterParams } from '@duality-labs/neutronjs/types/codegen/packetforward/v1/query';
+import { Params as QueryConnectionParams } from '@duality-labs/neutronjs/types/codegen/ibc/core/connection/v1/connection';
 import {
   QueryClientStatesRequest,
   QueryClientStatesResponse,
-} from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
+} from '@duality-labs/neutronjs/types/codegen/ibc/core/client/v1/query';
 import {
   QueryConnectionsRequest,
   QueryConnectionsResponse,
-} from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
+} from '@duality-labs/neutronjs/types/codegen/ibc/core/connection/v1/query';
 import {
   QueryChannelsRequest,
   QueryChannelsResponse,
-} from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/query';
-import { QueryBalanceResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
-import { State as ChannelState } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/channel';
-import { State as ConnectionState } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
+} from '@duality-labs/neutronjs/types/codegen/ibc/core/channel/v1/query';
+import { QueryBalanceResponse } from '@duality-labs/neutronjs/types/codegen/cosmos/bank/v1beta1/query';
+import { State as ChannelState } from '@duality-labs/neutronjs/types/codegen/ibc/core/channel/v1/channel';
+import { State as ConnectionState } from '@duality-labs/neutronjs/types/codegen/ibc/core/connection/v1/connection';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import { getChainInfo } from '../wallets/keplr';
@@ -29,6 +29,7 @@ import {
   useNativeChainClient,
   useRelatedChainsClient,
 } from './useDenomsFromRegistry';
+import { usePacketForwardRestClientPromise } from '../clients/restClients';
 import Long from 'long';
 import { SWRResponse } from 'swr';
 
@@ -62,9 +63,6 @@ export function useNativeChain(): SWRResponse<Chain> {
       // add base chain-registry chain
       ...baseChain,
       // override with other provided env vars
-      status: 'upcoming',
-      network_type: 'testnet',
-      bech32_prefix: 'dual',
       chain_id: REACT_APP__CHAIN_ID || baseChain?.chain_id,
       chain_name: REACT_APP__CHAIN_NAME || baseChain?.chain_name,
       pretty_name: REACT_APP__CHAIN_PRETTY_NAME || baseChain?.pretty_name,
@@ -481,19 +479,13 @@ export function useRemoteChainBlockTime(chain: Chain | undefined) {
 }
 
 export function useRemoteChainFees(chain: Chain | undefined) {
+  const clientPromise = usePacketForwardRestClientPromise();
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
-    enabled: !!restEndpoint,
     queryKey: ['cosmos-chain-fees', restEndpoint],
     queryFn: async (): Promise<QueryRouterParams | null> => {
-      if (restEndpoint) {
-        const client = await router.ClientFactory.createLCDClient({
-          restEndpoint,
-        });
-        return client.router.v1.params();
-      } else {
-        return null;
-      }
+      const client = await clientPromise;
+      return client.v1.params();
     },
     refetchInterval: 5 * minutes,
   });

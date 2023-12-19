@@ -2,7 +2,7 @@ import useSWRInfinite, { SWRInfiniteKeyLoader } from 'swr/infinite';
 import { immutable } from 'swr/immutable';
 import { useEffect, useMemo } from 'react';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
-import { DenomTrace } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/transfer';
+import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
 import { useIbcRestClient } from '../clients/restClients';
 import { useDefaultDenomTraceByDenom } from './useDenomsFromRegistry';
