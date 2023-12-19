@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { UseQueryResult, useInfiniteQuery } from '@tanstack/react-query';
-import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
+import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/neutron/dex/deposit_record';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import subscriber from '../subscriptionManager';
@@ -10,7 +10,7 @@ import { CoinTransferEvent, mapEventAttributes } from '../utils/events';
 import { TokenIdPair, TokenPair, resolveTokenIdPair } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import { useLcdClientPromise } from '../lcdClient';
-import { QueryAllUserDepositsResponse } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+import { QueryAllUserDepositsResponse } from '@duality-labs/dualityjs/types/codegen/neutron/dex/query';
 import { useFetchAllPaginatedPages } from './useQueries';
 
 function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
@@ -29,7 +29,7 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
         // get LCD client
         const lcd = await lcdClientPromise;
         // get all user's deposits
-        const response = await lcd.duality.dex.userDepositsAll({
+        const response = await lcd.neutron.dex.userDepositsAll({
           address,
           pagination: { key: pageKey },
         });
@@ -53,10 +53,10 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
   // combine all deposits and sort them
   const userDeposits = useMemo(() => {
     return result.data?.pages
-      ?.flatMap((deposits) => deposits?.Deposits || [])
+      ?.flatMap((deposits) => deposits?.deposits || [])
       .sort(
         (a, b) =>
-          a.centerTickIndex.sub(b.centerTickIndex).toNumber() ||
+          a.center_tick_index.sub(b.center_tick_index).toNumber() ||
           b.fee.sub(a.fee).toNumber()
       );
   }, [result.data]);
@@ -123,8 +123,8 @@ export function useUserDeposits(
         const tokenIDs = [tokenIdA, tokenIdB];
         return userDeposits?.filter((deposit) => {
           return (
-            tokenIDs.includes(deposit.pairID.token0) &&
-            tokenIDs.includes(deposit.pairID.token1)
+            tokenIDs.includes(deposit.pair_id.token0) &&
+            tokenIDs.includes(deposit.pair_id.token1)
           );
         });
       }

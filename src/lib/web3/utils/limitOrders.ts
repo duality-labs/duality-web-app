@@ -1,4 +1,4 @@
-import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
+import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/neutron/dex/tx';
 
 // disallow UNRECOGNIZED in our forms (though valid to pass to chain)
 export type AllowedLimitOrderTypeKey = keyof Omit<
