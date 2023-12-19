@@ -1,12 +1,12 @@
 import useSWRImmutable from 'swr/immutable';
-import { duality, ibc, cosmos } from '@duality-labs/dualityjs';
+import { neutron, ibc, cosmos } from '@duality-labs/dualityjs';
 import { useMemo } from 'react';
 
-type CreateDexClient = typeof duality.ClientFactory.createLCDClient;
+type CreateDexClient = typeof neutron.ClientFactory.createLCDClient;
 type CreateCosmosClient = typeof cosmos.ClientFactory.createLCDClient;
 type CreateIbcClient = typeof ibc.ClientFactory.createLCDClient;
 
-type DexRestClient = Awaited<ReturnType<CreateDexClient>>['duality'];
+type DexRestClient = Awaited<ReturnType<CreateDexClient>>['neutron'];
 type CosmosRestClient = Awaited<ReturnType<CreateCosmosClient>>['cosmos'];
 type IbcRestClient = Awaited<ReturnType<CreateIbcClient>>['ibc'];
 
@@ -17,8 +17,8 @@ const defaultRestEndpoint: string = REACT_APP__REST_API;
 
 // create base getter helpers
 export async function getDexRestClient(restEndpoint = defaultRestEndpoint) {
-  const client = await duality.ClientFactory.createLCDClient({ restEndpoint });
-  return client.duality;
+  const client = await neutron.ClientFactory.createLCDClient({ restEndpoint });
+  return client.neutron;
 }
 export async function getCosmosRestClient(restEndpoint = defaultRestEndpoint) {
   const client = await cosmos.ClientFactory.createLCDClient({ restEndpoint });
@@ -37,13 +37,13 @@ function useBaseRestClients(restEndpoint?: string) {
     return {
       ibc: await getIbcRestClient(restEndpoint),
       cosmos: await getCosmosRestClient(restEndpoint),
-      duality: await getDexRestClient(restEndpoint),
+      neutron: await getDexRestClient(restEndpoint),
     };
   }).data;
 }
 
 export function useDexRestClient(restEndpoint?: string) {
-  return useBaseRestClients(restEndpoint)?.duality;
+  return useBaseRestClients(restEndpoint)?.neutron;
 }
 export function useCosmosRestClient(restEndpoint?: string) {
   return useBaseRestClients(restEndpoint)?.cosmos;

@@ -1,8 +1,8 @@
 import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/coin';
 
-const DexShareRegex = /^duality\/pool\/(\d+)$/;
+const DexShareRegex = /^neutron\/pool\/(\d+)$/;
 
-// Duality denoms may be tokenized Dex shares or regular tokens on the chain
+// Neutron Dex denoms may be tokenized Dex shares or regular tokens on the chain
 export function isDexShare(coin: Coin) {
   return DexShareRegex.test(coin.denom);
 }

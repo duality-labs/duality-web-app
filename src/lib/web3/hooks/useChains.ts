@@ -1,8 +1,8 @@
 import { chains as chainList } from 'chain-registry';
 import { Chain } from '@chain-registry/types';
 import { useMemo } from 'react';
-import { ibc, router } from '@duality-labs/dualityjs';
-import { QueryParamsResponse as QueryRouterParams } from '@duality-labs/dualityjs/types/codegen/router/v1/query';
+import { ibc } from '@duality-labs/dualityjs';
+import { QueryParamsResponse as QueryRouterParams } from '@duality-labs/dualityjs/types/codegen/packetforward/v1/query';
 import { Params as QueryConnectionParams } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
 import {
   QueryClientStatesRequest,
@@ -26,6 +26,7 @@ import dualityLogo from '../../../assets/logo/logo.svg';
 import { Token, getTokenId } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import { useFetchAllPaginatedPages } from './useQueries';
+import { usePacketForwardMiddlewareLcdClient } from '../lcdClient';
 import Long from 'long';
 
 interface QueryConnectionParamsResponse {
@@ -466,16 +467,14 @@ export function useRemoteChainBlockTime(chain: Chain) {
 }
 
 export function useRemoteChainFees(chain: Chain) {
+  const client = usePacketForwardMiddlewareLcdClient();
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
-    enabled: !!restEndpoint,
+    enabled: !!client,
     queryKey: ['cosmos-chain-fees', restEndpoint],
     queryFn: async (): Promise<QueryRouterParams | null> => {
-      if (restEndpoint) {
-        const client = await router.ClientFactory.createLCDClient({
-          restEndpoint,
-        });
-        return client.router.v1.params();
+      if (client) {
+        return client.packetforward.v1.params();
       } else {
         return null;
       }

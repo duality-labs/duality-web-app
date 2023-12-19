@@ -10,7 +10,7 @@ import {
   faSliders,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
+import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/neutron/dex/tx';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
@@ -234,20 +234,20 @@ function Swap() {
 
         swapRequest(
           {
-            amountIn: getBaseDenomAmount(tokenA, result.amountIn) || '0',
-            tokenIn: result.tokenIn,
-            tokenOut: result.tokenOut,
+            amount_in: getBaseDenomAmount(tokenA, result.amountIn) || '0',
+            token_in: result.tokenIn,
+            token_out: result.tokenOut,
             creator: address,
             receiver: address,
             // see LimitOrderType in types repo (cannot import at runtime)
             // using type FILL_OR_KILL so that partially filled requests fail
-            orderType: 1 as LimitOrderType.FILL_OR_KILL,
+            order_type: 1 as LimitOrderType.FILL_OR_KILL,
             // todo: set tickIndex to allow for a tolerance:
             //   the below function is a tolerance of 0
-            tickIndexInToOut: Long.fromNumber(
+            tick_index_in_to_out: Long.fromNumber(
               tickIndexLimit * (forward ? 1 : -1)
             ),
-            maxAmountOut: getBaseDenomAmount(tokenB, result.amountOut) || '0',
+            max_amount_out: getBaseDenomAmount(tokenB, result.amountOut) || '0',
           },
           gasEstimate
         );

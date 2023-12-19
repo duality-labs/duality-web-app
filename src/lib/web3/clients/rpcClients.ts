@@ -1,7 +1,7 @@
 import useSWRImmutable from 'swr/immutable';
 import { QueryClient, createProtobufRpcClient } from '@cosmjs/stargate';
 import { Tendermint34Client } from '@cosmjs/tendermint-rpc';
-import { duality, ibc, cosmos } from '@duality-labs/dualityjs';
+import { neutron, ibc, cosmos } from '@duality-labs/dualityjs';
 
 const { REACT_APP__RPC_API: defaultRpcEndpoint = '' } = import.meta.env;
 
@@ -14,13 +14,13 @@ function useBaseRpcQueryClients(rpcEndpoint: string) {
     return {
       ibc: await ibc.ClientFactory.createRPCQueryClient(config),
       cosmos: await cosmos.ClientFactory.createRPCQueryClient(config),
-      duality: await duality.ClientFactory.createRPCQueryClient(config),
+      neutron: await neutron.ClientFactory.createRPCQueryClient(config),
     };
   }).data;
 }
 
 export function useDexRpcQueryClient(rpcEndpoint = defaultRpcEndpoint) {
-  return useBaseRpcQueryClients(rpcEndpoint)?.duality.duality;
+  return useBaseRpcQueryClients(rpcEndpoint)?.neutron.neutron;
 }
 export function useCosmosRpcQueryClient(rpcEndpoint = defaultRpcEndpoint) {
   return useBaseRpcQueryClients(rpcEndpoint)?.cosmos.cosmos;
@@ -50,7 +50,7 @@ function useBaseRpcTxClients(rpcEndpoint = defaultRpcEndpoint) {
           return {
             ibc: await ibc.ClientFactory.createRPCMsgClient(config),
             cosmos: await cosmos.ClientFactory.createRPCMsgClient(config),
-            duality: await duality.ClientFactory.createRPCMsgClient(config),
+            neutron: await neutron.ClientFactory.createRPCMsgClient(config),
           };
         }
       : null
@@ -58,7 +58,7 @@ function useBaseRpcTxClients(rpcEndpoint = defaultRpcEndpoint) {
 }
 
 export function useDexRpcTxClient(rpcEndpoint = defaultRpcEndpoint) {
-  return useBaseRpcTxClients(rpcEndpoint)?.duality.duality;
+  return useBaseRpcTxClients(rpcEndpoint)?.neutron.neutron;
 }
 export function useCosmosRpcTxClient(rpcEndpoint = defaultRpcEndpoint) {
   return useBaseRpcTxClients(rpcEndpoint)?.cosmos.cosmos;
