@@ -243,7 +243,7 @@ function useUserDepositsTotalShares(
     for (const userPoolTotalShare of userPoolTotalShares || []) {
       // make map here
       const poolID = getDexSharePoolID(userPoolTotalShare.balance);
-      if (poolID) {
+      if (poolID !== undefined) {
         totalSharesByPoolID.set(poolID, userPoolTotalShare);
       }
     }
@@ -278,7 +278,9 @@ function useUserDepositsTotalShares(
     return userDepositsWithPoolID?.map(({ deposit, metadata }) => {
       const poolID = metadata?.ID.toNumber();
       const totalShares =
-        totalSharesByPoolID.get(poolID || -1)?.totalShares ?? '0';
+        poolID !== undefined
+          ? totalSharesByPoolID.get(poolID)?.totalShares ?? '0'
+          : '0';
       return {
         deposit,
         totalShares,
