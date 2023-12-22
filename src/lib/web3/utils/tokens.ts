@@ -43,7 +43,7 @@ export function getIbcBaseDenom(token: Token | undefined): string | undefined {
   }
 }
 
-// the token ID is what is the Duality chain uses as the identifying string of its denoms
+// the token ID is what is the native chain uses as the identifying string of its denoms
 // it is basically the base denom in local or IBC string format
 export function getTokenId(token: Token | undefined): string | undefined {
   // return IBC base denom or the local token base denom as the token identifier
