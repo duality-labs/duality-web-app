@@ -1,9 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
-import {
-  assets as chainRegistryAssetList,
-  chains as chainRegistryChainList,
-} from 'chain-registry';
+import { assets as chainRegistryAssetList } from 'chain-registry';
 import { Asset, AssetList, Chain } from '@chain-registry/types';
 import {
   Token,
@@ -19,7 +16,7 @@ import {
   chainFeeTokens,
   devChain,
   nativeChain,
-  providerChain,
+  chainList,
   useIbcOpenTransfers,
 } from './useChains';
 
@@ -88,12 +85,6 @@ const assetList = [
   // remove duplicate assets
   // todo: work out how to include terra assets without duplication
   .filter((assets) => !assets.chain_name.startsWith('terra'));
-const chainList = [
-  ...chainRegistryChainList,
-  nativeChain,
-  providerChain,
-  isTestnet && devChain,
-].filter((chain): chain is Chain => !!chain);
 
 // transform AssetList into TokenList
 // for easier filtering/ordering by token attributes
@@ -178,7 +169,7 @@ export function useIbcTokens(sortFunction = defaultSort) {
   return useMemo(() => {
     // get tokens that match the expected chainIDs
     const ibcClientChainIds = ibcOpenTransfersInfo.map(
-      (openTransfer) => openTransfer.chainID
+      (openTransfer) => openTransfer.chain.chain_id
     );
     const ibcTokens = getTokens((chain) =>
       ibcClientChainIds.includes(chain.chain_id)
@@ -210,11 +201,9 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
             return token;
           }
           // append ibcDenom as a denom alias
-          const ibcOpenTransferInfo = ibcOpenTransfersInfo.find(
-            ({ chainID }) => {
-              return chainID === token.chain.chain_id;
-            }
-          );
+          const ibcOpenTransferInfo = ibcOpenTransfersInfo.find(({ chain }) => {
+            return chain.chain_id === token.chain.chain_id;
+          });
           // found connection info
           if (ibcOpenTransferInfo) {
             const channel = ibcOpenTransferInfo.channel;
