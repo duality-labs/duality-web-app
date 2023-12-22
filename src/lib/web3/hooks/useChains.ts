@@ -1,3 +1,4 @@
+import { chains as chainRegistryChainList } from 'chain-registry';
 import { Chain } from '@chain-registry/types';
 import { useMemo, useState } from 'react';
 import { ibc, router } from '@duality-labs/dualityjs';
@@ -25,6 +26,7 @@ interface QueryConnectionParamsResponse {
 const {
   REACT_APP__CHAIN = '',
   REACT_APP__CHAIN_NAME = '[chain_name]',
+  REACT_APP__CHAIN_PRETTY_NAME = REACT_APP__CHAIN_NAME || '[chain_pretty_name]',
   REACT_APP__CHAIN_ID = '[chain_id]',
   REACT_APP__CHAIN_FEE_TOKENS = '',
   REACT_APP__PROVIDER_CHAIN = '',
@@ -33,10 +35,11 @@ const {
 } = import.meta.env;
 
 type ChainFeeTokens = NonNullable<Chain['fees']>['fee_tokens'];
+const neutronChain = chainRegistryChainList.find(
+  (chain) => chain.chain_name === REACT_APP__CHAIN_NAME
+);
 export const nativeChain: Chain = {
-  chain_id: REACT_APP__CHAIN_ID,
-  chain_name: REACT_APP__CHAIN_ID,
-  pretty_name: REACT_APP__CHAIN_NAME,
+  // add default properties if no chain-registry chain is found
   status: 'upcoming',
   network_type: 'testnet',
   bech32_prefix: 'dual',
@@ -44,20 +47,30 @@ export const nativeChain: Chain = {
   logo_URIs: {
     svg: dualityLogo,
   },
-  apis: {
-    rpc: [{ address: REACT_APP__RPC_API }],
-    rest: [{ address: REACT_APP__REST_API }],
-  },
+  // add base chain-registry chain
+  ...neutronChain,
+  // override with other provided env vars
+  chain_id: REACT_APP__CHAIN_ID || neutronChain?.chain_id,
+  chain_name: REACT_APP__CHAIN_NAME || neutronChain?.chain_name,
+  pretty_name: REACT_APP__CHAIN_PRETTY_NAME || neutronChain?.pretty_name,
+  apis:
+    REACT_APP__RPC_API && REACT_APP__REST_API
+      ? {
+          rpc: [{ address: REACT_APP__RPC_API }],
+          rest: [{ address: REACT_APP__REST_API }],
+        }
+      : neutronChain?.apis,
   fees: {
+    ...neutronChain?.fees,
     // if not specified the fee tokens will default to the stake token in Keplr
     // see: https://github.com/cosmology-tech/chain-registry/blob/%40chain-registry/keplr%401.22.1/packages/keplr/src/index.ts#L103-L131
     fee_tokens: REACT_APP__CHAIN_FEE_TOKENS
       ? (JSON.parse(REACT_APP__CHAIN_FEE_TOKENS) as ChainFeeTokens)
-      : [],
+      : neutronChain?.fees?.fee_tokens,
   },
   // override default settings with an env variable for the whole chain config
   ...(REACT_APP__CHAIN ? (JSON.parse(REACT_APP__CHAIN) as Chain) : {}),
-};
+} as Chain;
 export const devChain = { ...nativeChain };
 export const chainFeeTokens: ChainFeeTokens = devChain.fees?.fee_tokens || [];
 
