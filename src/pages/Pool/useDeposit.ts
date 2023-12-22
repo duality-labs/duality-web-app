@@ -100,12 +100,12 @@ export function useDeposit([tokenA, tokenB]: [
         const tokenIdB = getTokenId(tokenB);
         if (!tokenIdA) {
           throw new Error(
-            `Token ${tokenA.symbol} has no address on the Duality chain`
+            `Token ${tokenA.symbol} has no address on the Neutron chain`
           );
         }
         if (!tokenIdB) {
           throw new Error(
-            `Token ${tokenB.symbol} has no address on the Duality chain`
+            `Token ${tokenB.symbol} has no address on the Neutron chain`
           );
         }
 
