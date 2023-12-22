@@ -168,7 +168,7 @@ export default function OrderBookChart({
             supports_marks: true,
             supports_timescale_marks: true,
             supports_time: true,
-            exchanges: [{ value: 'duality', name: 'Duality', desc: 'Duality' }],
+            exchanges: [{ value: 'neutron', name: 'Neutron', desc: 'Neutron' }],
             // these are categories to be able to search on in the searchSymbols callback
             symbols_types: [],
             supported_resolutions: supportedResolutions,
@@ -189,7 +189,7 @@ export default function OrderBookChart({
             description: `Pair of ${symbolName}`,
             format: 'price',
             full_name: symbolName,
-            exchange: 'Duality',
+            exchange: 'Neutron',
             listed_exchange: '',
             minmov: 1,
             name: symbolName,
@@ -206,7 +206,7 @@ export default function OrderBookChart({
         },
         searchSymbols: (
           userInput = '',
-          _exchange, // will always be "Duality"
+          _exchange, // will always be "Neutron"
           _symbolType, // will always be "crypto"
           onResultReadyCallback
         ) => {
@@ -235,10 +235,10 @@ export default function OrderBookChart({
             })
             .map(([tokenA, tokenB]) => {
               return {
-                exchange: 'Duality Dex',
+                exchange: 'Neutron Dex',
                 symbol: `${tokenA.symbol}/${tokenB.symbol}`,
                 full_name: `${tokenA.symbol}/${tokenB.symbol}`,
-                description: `Duality Dex pair of ${tokenA.name} and ${tokenB.name}`,
+                description: `Neutron Dex pair of ${tokenA.name} and ${tokenB.name}`,
                 type: 'crypto',
               };
             });

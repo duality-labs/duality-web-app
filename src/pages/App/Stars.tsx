@@ -63,7 +63,7 @@ function draw(ctx: CanvasRenderingContext2D, offsetMs = 0): void {
   const [dimPointX, dimPointY] = [canvasWidth / 2, canvasHeight];
   const dimRadius = canvasWidth;
 
-  const prng = alea('duality');
+  const prng = alea('neutron');
 
   // clear canvas
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);

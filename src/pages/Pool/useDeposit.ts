@@ -107,12 +107,12 @@ export function useDeposit([denomA, denomB]: [
         // do not make requests if they are not routable
         if (!token0) {
           throw new Error(
-            `Token ${denom0} has no address on the Duality chain`
+            `Token ${denom0} has no address on the Neutron chain`
           );
         }
         if (!token1) {
           throw new Error(
-            `Token ${denom1} has no address on the Duality chain`
+            `Token ${denom1} has no address on the Neutron chain`
           );
         }
 
