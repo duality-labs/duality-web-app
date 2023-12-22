@@ -25,6 +25,7 @@ interface QueryConnectionParamsResponse {
 }
 
 const {
+  REACT_APP__IS_MAINNET = 'mainnet',
   REACT_APP__CHAIN = '',
   REACT_APP__CHAIN_NAME = '[chain_name]',
   REACT_APP__CHAIN_PRETTY_NAME = REACT_APP__CHAIN_NAME || '[chain_pretty_name]',
@@ -34,6 +35,8 @@ const {
   REACT_APP__RPC_API = '',
   REACT_APP__REST_API = '',
 } = import.meta.env;
+
+const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 
 type ChainFeeTokens = NonNullable<Chain['fees']>['fee_tokens'];
 const neutronChain = chainRegistryChainList.find(
@@ -72,12 +75,28 @@ export const nativeChain: Chain = {
   // override default settings with an env variable for the whole chain config
   ...(REACT_APP__CHAIN ? (JSON.parse(REACT_APP__CHAIN) as Chain) : {}),
 } as Chain;
-export const devChain = { ...nativeChain };
+export const devChain: Chain = { ...nativeChain };
 export const chainFeeTokens: ChainFeeTokens = devChain.fees?.fee_tokens || [];
 
 export const providerChain: Chain | undefined = REACT_APP__PROVIDER_CHAIN
   ? JSON.parse(REACT_APP__PROVIDER_CHAIN)
   : undefined;
+
+export const chainList = chainRegistryChainList
+  // override chain-registry chains with our specific chains by matching name
+  .map((chain) => {
+    if (chain.chain_name === nativeChain.chain_name) {
+      return nativeChain;
+    }
+    if (providerChain && chain.chain_name === providerChain.chain_name) {
+      return providerChain;
+    }
+    if (isTestnet && chain.chain_name === devChain.chain_name) {
+      return devChain;
+    }
+    return chain;
+  })
+  .filter((chain): chain is Chain => !!chain);
 
 export function useChainAddress(chain?: Chain): {
   data?: string;
@@ -216,9 +235,11 @@ export function useIbcOpenTransfers(chain: Chain = nativeChain) {
     //       are open, then the same open resources exist on the counterparty.
     //       this may not be true, but is good enough for some UI lists
     return openClients.flatMap((clientState) => {
-      const chainID = (
-        clientState.client_state as unknown as { chain_id: string }
-      )?.chain_id;
+      const chainID =
+        (clientState.client_state as unknown as { chain_id: string })
+          ?.chain_id || undefined;
+      const chain = chainList.find((chain) => chain.chain_id === chainID);
+      if (!chainID || !chain) return [];
       return (
         openConnections
           // filter to connections of the current client
@@ -231,7 +252,7 @@ export function useIbcOpenTransfers(chain: Chain = nativeChain) {
                 .filter((ch) => ch.connection_hops.at(-1) === connection.id)
                 .map((channel) => {
                   return {
-                    chainID,
+                    chain,
                     client: clientState,
                     connection,
                     channel,
@@ -248,7 +269,7 @@ export function useConnectedChainIDs() {
   const openTransfers = useIbcOpenTransfers();
   // return only chain IDs for easy comparison to different lists
   return useMemo(() => {
-    return openTransfers.map((openTransfer) => openTransfer.chainID);
+    return openTransfers.map((openTransfer) => openTransfer.chain.chain_id);
   }, [openTransfers]);
 }
 

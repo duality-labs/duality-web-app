@@ -128,8 +128,8 @@ export default function useBridge(
         if (!account || !account.address) {
           throw new Error('No wallet address');
         }
-        const connection = ibcOpenTransfers.find(({ chainID }) => {
-          return chainID === chainTo.chain_id;
+        const connection = ibcOpenTransfers.find(({ chain }) => {
+          return chain.chain_id === chainTo.chain_id;
         })?.connection;
         if (!connection) {
           throw new Error('No connection between source and destination found');
