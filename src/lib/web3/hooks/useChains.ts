@@ -42,7 +42,7 @@ const {
 } = import.meta.env;
 
 type ChainFeeTokens = NonNullable<Chain['fees']>['fee_tokens'];
-export const dualityChain: Chain = {
+export const nativeChain: Chain = {
   chain_id: REACT_APP__CHAIN_ID,
   chain_name: REACT_APP__CHAIN_ID,
   pretty_name: REACT_APP__CHAIN_NAME,
@@ -67,7 +67,7 @@ export const dualityChain: Chain = {
   // override default settings with an env variable for the whole chain config
   ...(REACT_APP__CHAIN ? (JSON.parse(REACT_APP__CHAIN) as Chain) : {}),
 };
-export const devChain = { ...dualityChain };
+export const devChain = { ...nativeChain };
 export const chainFeeTokens: ChainFeeTokens = devChain.fees?.fee_tokens || [];
 
 export const providerChain: Chain | undefined = REACT_APP__PROVIDER_CHAIN
@@ -267,7 +267,7 @@ function filterChannelsOpen(
   return channel.state === (3 as ChannelState.STATE_OPEN);
 }
 
-export function useIbcOpenTransfers(chain: Chain = dualityChain) {
+export function useIbcOpenTransfers(chain: Chain = nativeChain) {
   const { data: clientStates } = useIbcClientStates(chain);
   const { data: connections } = useIbcConnections(chain);
   const { data: channels } = useIbcChannels(chain);
@@ -345,7 +345,7 @@ export function useRemoteChainRpcEndpoint(chain?: Chain) {
           return null;
         }
       }
-      // return the Duality chain REST API if this is the Duality chain
+      // return the native chain REST API if this is the native chain
       else if (chain?.chain_id === REACT_APP__CHAIN_ID) {
         return REACT_APP__RPC_API;
       }
@@ -388,7 +388,7 @@ export function useRemoteChainRestEndpoint(chain?: Chain) {
           return null;
         }
       }
-      // return the Duality chain REST API if this is the Duality chain
+      // return the native chain REST API if this is the native chain
       else if (chain?.chain_id === REACT_APP__CHAIN_ID) {
         return REACT_APP__REST_API;
       }
@@ -408,7 +408,7 @@ export function useRemoteChainBankBalance(
   address?: string
 ) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
-  // optionally find the IBC denom when querying the Duality chain
+  // optionally find the IBC denom when querying the native chain
   const denom =
     restEndpoint === REACT_APP__REST_API
       ? getTokenId(token)
