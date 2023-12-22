@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   assets as chainRegistryAssetList,
   chains as chainRegistryChainList,
@@ -16,6 +16,7 @@ import {
 } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
 import {
+  chainFeeTokens,
   devChain,
   dualityChain,
   providerChain,
@@ -208,6 +209,31 @@ export function useDualityTokens(sortFunction = defaultSort) {
     () => tokenListCache['dualityTokens'].slice().sort(sortFunction).reverse(),
     [sortFunction]
   );
+}
+
+export function useChainFeeToken(): [
+  Token | undefined,
+  React.Dispatch<React.SetStateAction<string | undefined>>
+] {
+  const [feeDenom, setFeeDenom] = useState(() => chainFeeTokens.at(0)?.denom);
+  const restrictedSetFeeDenom: React.Dispatch<
+    React.SetStateAction<string | undefined>
+  > = useCallback((feeDenomOrCallback) => {
+    if (feeDenomOrCallback) {
+      if (typeof feeDenomOrCallback === 'function') {
+        setFeeDenom((prev) => getRestrictedFeeDenom(feeDenomOrCallback(prev)));
+      } else {
+        setFeeDenom(getRestrictedFeeDenom(feeDenomOrCallback));
+      }
+    }
+    function getRestrictedFeeDenom(
+      feeDenom: string | undefined
+    ): string | undefined {
+      return chainFeeTokens.find(({ denom }) => denom === feeDenom)?.denom;
+    }
+  }, []);
+  const feeToken = useToken(feeDenom);
+  return [feeToken, restrictedSetFeeDenom];
 }
 
 export function useIbcTokens(sortFunction = defaultSort) {
