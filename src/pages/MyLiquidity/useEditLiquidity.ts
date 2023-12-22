@@ -14,7 +14,7 @@ import { Token, getBaseDenomAmount } from '../../lib/web3/utils/tokens';
 
 import { UserReserves } from '../../lib/web3/hooks/useUserReserves';
 import { getDexSigningClient } from '../../lib/web3/clients/signingClients';
-import { neutron as duality } from '@duality-labs/dualityjs';
+import { neutron } from '@duality-labs/dualityjs';
 
 export interface EditedPosition extends UserReserves {
   token0: Token;
@@ -119,7 +119,7 @@ export function useEditLiquidity(): [
                     // I'm not certain that non-100% withdrawals work in all cases.
                     tickDiff0.isLessThan(0) && tickDiff1.isLessThan(0)
                     ? [
-                        duality.dex.MessageComposer.withTypeUrl.withdrawal({
+                        neutron.dex.MessageComposer.withTypeUrl.withdrawal({
                           creator: web3Address,
                           token_a: token0Address,
                           token_b: token1Address,
@@ -143,7 +143,7 @@ export function useEditLiquidity(): [
                         ...(!tickDiff0.isZero()
                           ? [
                               tickDiff0.isGreaterThan(0)
-                                ? duality.dex.MessageComposer.withTypeUrl.deposit(
+                                ? neutron.dex.MessageComposer.withTypeUrl.deposit(
                                     {
                                       creator: web3Address,
                                       token_a: token0Address,
@@ -160,7 +160,7 @@ export function useEditLiquidity(): [
                                       options: [{ disable_autoswap: false }],
                                     }
                                   )
-                                : duality.dex.MessageComposer.withTypeUrl.withdrawal(
+                                : neutron.dex.MessageComposer.withTypeUrl.withdrawal(
                                     {
                                       creator: web3Address,
                                       token_a: token0Address,
@@ -187,7 +187,7 @@ export function useEditLiquidity(): [
                         ...(!tickDiff1.isZero()
                           ? [
                               tickDiff1.isGreaterThan(0)
-                                ? duality.dex.MessageComposer.withTypeUrl.deposit(
+                                ? neutron.dex.MessageComposer.withTypeUrl.deposit(
                                     {
                                       creator: web3Address,
                                       token_a: token0Address,
@@ -204,7 +204,7 @@ export function useEditLiquidity(): [
                                       options: [{ disable_autoswap: false }],
                                     }
                                   )
-                                : duality.dex.MessageComposer.withTypeUrl.withdrawal(
+                                : neutron.dex.MessageComposer.withTypeUrl.withdrawal(
                                     {
                                       creator: web3Address,
                                       token_a: token0Address,
