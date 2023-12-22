@@ -11,7 +11,7 @@ import useBridge from '../../pages/Bridge/useBridge';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import {
-  dualityChain,
+  nativeChain,
   useChainAddress,
   useIbcOpenTransfers,
   useRemoteChainBankBalance,
@@ -54,8 +54,8 @@ export default function BridgeCard({
   const [token, setToken] = useState<Token | undefined>(from || to);
   const [value, setValue] = useState('');
 
-  const chainFrom = from ? from.chain : dualityChain;
-  const chainTo = to ? to.chain : dualityChain;
+  const chainFrom = from ? from.chain : nativeChain;
+  const chainTo = to ? to.chain : nativeChain;
   const { data: chainAddressFrom, isValidating: chainAddressFromIsValidating } =
     useChainAddress(chainFrom);
   const { data: chainAddressTo, isValidating: chainAddressToIsValidating } =
@@ -101,7 +101,7 @@ export default function BridgeCard({
           `Multi-hop IBC transfer paths not supported: ${connectionLength} connection hops`
         );
       }
-      // bridging to Duality
+      // bridging to native chain
       if (from) {
         if (!from.chain.chain_id) {
           throw new Error('Source Chain not found');
@@ -131,13 +131,13 @@ export default function BridgeCard({
             },
           });
           // todo: add streaming updates to UI here
-          // display wait for transaction to be confirmed on Duality Chain
+          // display wait for transaction to be confirmed on native Chain
           onSuccess?.();
         } catch {
           // handled error with toast notifications
         }
       }
-      // bridging from Duality
+      // bridging from native chain
       else if (to) {
         if (!to.chain.chain_id) {
           throw new Error('Destination Chain not found');
@@ -257,7 +257,7 @@ export default function BridgeCard({
               </div>
               {token && (
                 <div className="col px-4 py-sm">
-                  {chainFrom === dualityChain ? (
+                  {chainFrom === nativeChain ? (
                     <LocalChainReserves token={token} />
                   ) : (
                     <RemoteChainReserves
@@ -291,7 +291,7 @@ export default function BridgeCard({
               </div>
               {token && (
                 <div className="col px-4 py-sm">
-                  {chainTo === dualityChain ? (
+                  {chainTo === nativeChain ? (
                     <LocalChainReserves token={token} />
                   ) : (
                     <RemoteChainReserves
