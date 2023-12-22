@@ -44,7 +44,7 @@ function HeroCard() {
       <table className="hero-table simple-table gutter-b-1">
         <thead>
           <tr>
-            <th>Total Assets on Duality</th>
+            <th>Total Assets on Neutron</th>
           </tr>
         </thead>
         <tbody>
