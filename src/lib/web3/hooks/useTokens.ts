@@ -23,13 +23,9 @@ import {
   useIbcOpenTransfers,
 } from './useChains';
 
-import tknLogo from '../../../assets/tokens/TKN.svg';
-import stkLogo from '../../../assets/tokens/STK.svg';
-
 const {
   REACT_APP__IS_MAINNET = 'mainnet',
   REACT_APP__CHAIN_ID = '',
-  REACT_APP__CHAIN_ASSETS = '',
   REACT_APP__PROVIDER_ASSETS = '',
   REACT_APP__DEV_ASSET_MAP = '',
 } = import.meta.env;
@@ -37,64 +33,6 @@ const {
 const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 
 type TokenList = Array<Token>;
-
-// create an alternate chain to identify dev assets on the Duality chain
-export const dualityMainToken: Token = {
-  chain: devChain,
-  description: 'SDK default token',
-  denom_units: [
-    {
-      denom: 'token',
-      exponent: 0,
-      aliases: [],
-    },
-    {
-      denom: 'tkn',
-      exponent: 18,
-      aliases: ['duality'],
-    },
-  ],
-  base: 'token',
-  name: 'Duality',
-  display: 'tkn',
-  symbol: 'TKN',
-  logo_URIs: {
-    svg: tknLogo,
-  },
-};
-
-export const dualityStakeToken: Token = {
-  chain: devChain,
-  description: 'SDK default token',
-  denom_units: [
-    {
-      denom: 'stake',
-      exponent: 0,
-      aliases: [],
-    },
-    {
-      denom: 'stk',
-      exponent: 18,
-      aliases: ['duality-stake'],
-    },
-  ],
-  base: 'stake',
-  name: 'Duality Stake',
-  display: 'stk',
-  symbol: 'STK',
-  logo_URIs: {
-    svg: stkLogo,
-  },
-};
-
-export const dualityAssets: AssetList | undefined = REACT_APP__CHAIN_ASSETS
-  ? (JSON.parse(REACT_APP__CHAIN_ASSETS) as AssetList)
-  : isTestnet
-  ? {
-      chain_name: devChain.chain_name,
-      assets: [dualityStakeToken, dualityMainToken],
-    }
-  : undefined;
 
 export const providerAssets: AssetList | undefined = REACT_APP__PROVIDER_ASSETS
   ? (JSON.parse(REACT_APP__PROVIDER_ASSETS) as AssetList)
@@ -142,7 +80,6 @@ export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
 
 const assetList = [
   ...chainRegistryAssetList,
-  dualityAssets,
   providerAssets,
   // add any dev assets added to the environment
   isTestnet && devAssets,
