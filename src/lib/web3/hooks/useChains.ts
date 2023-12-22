@@ -68,6 +68,7 @@ export const dualityChain: Chain = {
   ...(REACT_APP__CHAIN ? (JSON.parse(REACT_APP__CHAIN) as Chain) : {}),
 };
 export const devChain = { ...dualityChain };
+export const chainFeeTokens: ChainFeeTokens = devChain.fees?.fee_tokens || [];
 
 export const providerChain: Chain | undefined = REACT_APP__PROVIDER_CHAIN
   ? JSON.parse(REACT_APP__PROVIDER_CHAIN)
