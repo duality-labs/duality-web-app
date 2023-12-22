@@ -9,7 +9,7 @@ type TokenCoinWithValue = TokenCoin & {
   value: BigNumber | undefined;
 };
 
-// get all the user's bank values (tokens that are not Duality Dex shares)
+// get all the user's bank values (tokens that are not native Dex shares)
 export function useUserBankValues(): TokenCoinWithValue[] {
   const { data: balances } = useUserBankBalances();
 
