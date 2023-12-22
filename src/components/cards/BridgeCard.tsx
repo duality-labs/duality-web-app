@@ -88,7 +88,7 @@ export default function BridgeCard({
         Date.now() + defaultTimeout // calculate in ms then convert to nanoseconds
       ).multiply(1 / nanoseconds);
       const ibcTransferInfo = ibcOpenTransfers?.find((transfer) => {
-        return transfer.chainID === chainTo.chain_id;
+        return transfer.chain.chain_id === chainTo.chain_id;
       });
       if (!ibcTransferInfo) {
         throw new Error(
