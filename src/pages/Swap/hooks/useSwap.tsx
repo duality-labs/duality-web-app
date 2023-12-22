@@ -18,7 +18,7 @@ import {
   CoinReceivedEvent,
 } from '../../../lib/web3/utils/events';
 import rpcClient from '../../../lib/web3/rpcMsgClient';
-import { neutron as duality } from '@duality-labs/dualityjs';
+import { neutron } from '@duality-labs/dualityjs';
 import {
   MsgPlaceLimitOrderResponse,
   MsgPlaceLimitOrder,
@@ -66,7 +66,7 @@ async function sendSwap(
   return client.signAndBroadcast(
     address,
     [
-      duality.dex.MessageComposer.withTypeUrl.placeLimitOrder({
+      neutron.dex.MessageComposer.withTypeUrl.placeLimitOrder({
         order_type: orderType,
         tick_index_in_to_out: tickIndexInToOut,
         amount_in: amountIn,
