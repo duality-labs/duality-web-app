@@ -18,7 +18,7 @@ import { useSimplePrice } from '../../tokenPrices';
 import {
   chainFeeTokens,
   devChain,
-  dualityChain,
+  nativeChain,
   providerChain,
   useIbcOpenTransfers,
 } from './useChains';
@@ -90,7 +90,7 @@ const assetList = [
   .filter((assets) => !assets.chain_name.startsWith('terra'));
 const chainList = [
   ...chainRegistryChainList,
-  dualityChain,
+  nativeChain,
   providerChain,
   isTestnet && devChain,
 ].filter((chain): chain is Chain => !!chain);
@@ -138,7 +138,7 @@ export function useMainnetTokens(sortFunction = defaultSort) {
 }
 
 const dualityTokensFilter = (chain: Chain) =>
-  chain.chain_id === dualityChain.chain_id;
+  chain.chain_id === nativeChain.chain_id;
 export function useDualityTokens(sortFunction = defaultSort) {
   tokenListCache['dualityTokens'] =
     tokenListCache['dualityTokens'] || getTokens(dualityTokensFilter);
@@ -206,7 +206,7 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
         // remove existing IBC informations and add new IBC denom information
         .map(({ ibc, ...token }) => {
           // return unchanged tokens from native chain
-          if (token.chain.chain_id === dualityChain.chain_id) {
+          if (token.chain.chain_id === nativeChain.chain_id) {
             return token;
           }
           // append ibcDenom as a denom alias
@@ -223,10 +223,10 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
             return {
               ...token,
               // append IBC information to existing known token/assets.
-              // Duality will have assets registered in chain-registry,
+              // Neutron has assets registered in chain-registry,
               // but for not yet known/documented channels (in dev and testnet)
               // this appended information allows us to identify which tokens
-              // a Duality chain IBC denom represents
+              // a Neutron chain IBC denom represents
               denom_units: token.denom_units.map(
                 ({ aliases = [], ...unit }) => {
                   const ibcDenom = getIbcDenom(unit.denom, channelID, portID);
@@ -246,7 +246,7 @@ export function useTokensWithIbcInfo(tokenList: Token[]) {
                 // note: this may not be accurate:
                 //       a channel may transfer many denoms from a source chain.
                 //       this *should* be the base denom of token in question
-                //       because duality operates on indivisible (base) denoms,
+                //       because Neutron operates on indivisible (base) denoms,
                 //       but it is *possible* to IBC transfer a non-base denom
                 //       which would be a *bad idea* for whoever did that
                 source_denom: token.base,
@@ -349,7 +349,7 @@ export function matchTokenByDenom(denom: string) {
       // the denom is an IBC token identifier, use available matching function
       return matchTokenBySymbol(denom);
     }
-    // match Duality chain token denoms only
+    // match native chain token denoms only
     else if (REACT_APP__CHAIN_ID) {
       return (token: Token) =>
         token.chain.chain_id === REACT_APP__CHAIN_ID &&

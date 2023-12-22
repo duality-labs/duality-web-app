@@ -4,14 +4,14 @@ import { useEffect } from 'react';
 import { AccountData, OfflineSigner } from '@cosmjs/proto-signing';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
 import { chainRegistryChainToKeplr } from '@chain-registry/keplr';
-import { dualityChain, providerChain } from '../hooks/useChains';
+import { nativeChain, providerChain } from '../hooks/useChains';
 import { devAssets, providerAssets } from '../hooks/useTokens';
 import { AssetList } from '@chain-registry/types';
 
 const { REACT_APP__CHAIN_ID: chainId = '' } = import.meta.env;
 
 const chainInfo: ChainInfo = chainRegistryChainToKeplr(
-  dualityChain,
+  nativeChain,
   [devAssets].filter((list): list is AssetList => !!list)
 );
 

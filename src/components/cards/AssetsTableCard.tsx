@@ -11,7 +11,7 @@ import useTokens, {
 import BridgeCard from './BridgeCard';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
-import { dualityChain } from '../../lib/web3/hooks/useChains';
+import { nativeChain } from '../../lib/web3/hooks/useChains';
 
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import {
@@ -75,7 +75,7 @@ export default function AssetsTableCard({
         return new BigNumber(foundUserAsset?.amount || 0);
       }
       function getTokenChain(token: Token) {
-        if (token.chain.chain_id === dualityChain.chain_id) {
+        if (token.chain.chain_id === nativeChain.chain_id) {
           return 2;
         }
         if (token.ibc) {
@@ -206,7 +206,7 @@ function AssetRow({
       </td>
       {showActions && (
         <td>
-          {token.chain.chain_id !== dualityChain.chain_id && (
+          {token.chain.chain_id !== nativeChain.chain_id && (
             // disable buttons if there is no known path to bridge them here
             <fieldset disabled={!token.ibc}>
               <BridgeButton
