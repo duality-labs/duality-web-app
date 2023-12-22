@@ -85,7 +85,7 @@ function useUserPoolMetadata(
             id: Long.fromNumber(id),
           };
           return {
-            queryKey: ['duality.dex.poolMetadata', id],
+            queryKey: ['neutron.dex.poolMetadata', id],
             queryFn: async (): Promise<PoolMetadata | null> => {
               const lcdClient = await lcdClientPromise;
               if (lcdClient) {
@@ -313,7 +313,7 @@ function useUserDepositsTotalReserves(
             fee,
           };
           return {
-            queryKey: ['duality.dex.pool', params, sharesOwned],
+            queryKey: ['neutron.dex.pool', params, sharesOwned],
             queryFn: async () => {
               // we use an RPC call here because the LCD endpoint always 404s
               const client = await lcdClientPromise;

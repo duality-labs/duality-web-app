@@ -39,7 +39,7 @@ interface TokenPickerProps {
   children?: ReactNode;
 }
 
-type AssetModeType = 'User' | 'All' | 'Duality';
+type AssetModeType = 'User' | 'All' | 'Chain';
 
 function useSelectedButtonBackgroundMove(
   value: string
@@ -100,7 +100,7 @@ export default function TokenPicker({
   const tokenList = givenTokenList || defaultTokenList;
   const userList = useUserTokens();
   const [assetMode, setAssetMode] = useState<AssetModeType>(
-    userList.length ? 'User' : 'Duality'
+    userList.length ? 'User' : 'Chain'
   );
   const currentID = useId();
 
@@ -132,7 +132,7 @@ export default function TokenPicker({
   const filteredList = useFilteredTokenList(
     (() => {
       switch (assetMode) {
-        case 'Duality':
+        case 'Chain':
           return dualityTokensList;
         case 'User':
           return userList;
@@ -271,13 +271,13 @@ export default function TokenPicker({
           <button
             type="button"
             className="button pill py-3 px-4"
-            ref={createRefForValue('Duality')}
-            onClick={() => setAssetMode('Duality')}
+            ref={createRefForValue('Chain')}
+            onClick={() => setAssetMode('Chain')}
           >
-            Duality Chain Assets
+            Neutron Chain Assets
           </button>
         </div>
-        <ul className="token-picker-body duality-scrollbar" ref={bodyRef}>
+        <ul className="token-picker-body modal-scrollbar" ref={bodyRef}>
           {filteredList.length > 0 ? (
             filteredList.map(({ chain, symbol, token }, index) => {
               return token ? (
