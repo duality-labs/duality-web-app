@@ -191,7 +191,7 @@ export function useToken(
 }
 
 // connected IBC info into given token list
-export function useTokensWithIbcInfo(tokenList: Token[]) {
+export function useTokensWithIbcInfo(tokenList: Token[]): Token[] {
   const ibcOpenTransfersInfo = useIbcOpenTransfers();
   return useMemo(() => {
     return (

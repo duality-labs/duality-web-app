@@ -89,7 +89,16 @@ export default function AssetsTableCard({
 
   // sort tokens
   const sortedList = useMemo(() => {
-    return tokenListWithIBC.sort(sortByValue);
+    // filter and sort tokens
+    return (
+      tokenListWithIBC
+        // filter to native chain and IBC bridgable tokens
+        .filter(
+          (token) => token.chain.chain_id === nativeChain.chain_id || token.ibc
+        )
+        // sort by USD value
+        .sort(sortByValue)
+    );
   }, [tokenListWithIBC, sortByValue]);
 
   const [searchValue, setSearchValue] = useState<string>('');
