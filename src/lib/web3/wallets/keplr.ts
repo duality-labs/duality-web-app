@@ -5,14 +5,13 @@ import { AccountData, OfflineSigner } from '@cosmjs/proto-signing';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
 import { chainRegistryChainToKeplr } from '@chain-registry/keplr';
 import { chainList, nativeChain } from '../hooks/useChains';
-import { devAssets, devAssetLists } from '../hooks/useTokens';
-import { AssetList } from '@chain-registry/types';
+import { assetLists } from '../hooks/useTokens';
 
 const { REACT_APP__CHAIN_ID: chainId = '' } = import.meta.env;
 
 const chainInfo: ChainInfo = chainRegistryChainToKeplr(
   nativeChain,
-  [devAssets].filter((list): list is AssetList => !!list)
+  assetLists.filter((list) => list.chain_name === nativeChain.chain_name)
 );
 
 declare global {
@@ -114,8 +113,7 @@ export async function getChainInfo(chainId: string) {
   invariant(keplr, 'Keplr extension is not installed or enabled');
   const chain = chainList.find((chain) => chain.chain_id === chainId);
   const chainAssets =
-    chain &&
-    devAssetLists?.find((list) => list.chain_name === chain.chain_name);
+    chain && assetLists.find((list) => list.chain_name === chain.chain_name);
   if (chain && chainAssets) {
     // add auth popup for potentially not registered external chain
     await keplr.experimentalSuggestChain(
