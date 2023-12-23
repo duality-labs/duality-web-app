@@ -31,7 +31,7 @@ const {
   REACT_APP__CHAIN_PRETTY_NAME = REACT_APP__CHAIN_NAME || '[chain_pretty_name]',
   REACT_APP__CHAIN_ID = '[chain_id]',
   REACT_APP__CHAIN_FEE_TOKENS = '',
-  REACT_APP__PROVIDER_CHAIN = '',
+  REACT_APP__DEV_CHAINS = '',
   REACT_APP__RPC_API = '',
   REACT_APP__REST_API = '',
 } = import.meta.env;
@@ -78,25 +78,26 @@ export const nativeChain: Chain = {
 export const devChain: Chain = { ...nativeChain };
 export const chainFeeTokens: ChainFeeTokens = devChain.fees?.fee_tokens || [];
 
-export const providerChain: Chain | undefined = REACT_APP__PROVIDER_CHAIN
-  ? JSON.parse(REACT_APP__PROVIDER_CHAIN)
+const devChainList: Chain[] = REACT_APP__DEV_CHAINS
+  ? JSON.parse(REACT_APP__DEV_CHAINS)
   : undefined;
-
 export const chainList = chainRegistryChainList
   // override chain-registry chains with our specific chains by matching name
   .map((chain) => {
     if (chain.chain_name === nativeChain.chain_name) {
       return nativeChain;
     }
-    if (providerChain && chain.chain_name === providerChain.chain_name) {
-      return providerChain;
+    const foundDevChain = devChainList?.find(
+      (devChain) => devChain.chain_name === chain.chain_name
+    );
+    if (foundDevChain) {
+      return foundDevChain;
     }
     if (isTestnet && chain.chain_name === devChain.chain_name) {
       return devChain;
     }
     return chain;
-  })
-  .filter((chain): chain is Chain => !!chain);
+  });
 
 export function useChainAddress(chain?: Chain): {
   data?: string;
