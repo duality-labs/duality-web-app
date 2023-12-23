@@ -14,83 +14,85 @@ import {
 import { useSimplePrice } from '../../tokenPrices';
 import {
   chainFeeTokens,
-  devChain,
   nativeChain,
   chainList,
   useIbcOpenTransfers,
 } from './useChains';
 
 const {
-  REACT_APP__IS_MAINNET = 'mainnet',
   REACT_APP__CHAIN_ID = '',
   REACT_APP__DEV_ASSETS = '',
-  REACT_APP__DEV_ASSET_MAP = '',
+  REACT_APP__DEV_NATIVE_ASSET_MAP = '',
 } = import.meta.env;
-
-const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 
 type TokenList = Array<Token>;
 
-export const devAssetLists: AssetList[] | undefined = REACT_APP__DEV_ASSETS
+const devAssetLists: AssetList[] | undefined = REACT_APP__DEV_ASSETS
   ? JSON.parse(REACT_APP__DEV_ASSETS)
   : undefined;
 
-export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
-  ? {
-      chain_name: devChain.chain_name,
-      assets: Object.entries(
-        JSON.parse(REACT_APP__DEV_ASSET_MAP) as { [tokenId: TokenID]: string }
-      ).flatMap<Asset>(([tokenId, path]) => {
-        const devChainName = devChain.chain_name;
-        const [symbol, chainName = devChainName] = path.split('/');
-        const foundAssetList = chainRegistryAssetList.find(
-          (list) => list.chain_name === chainName
-        );
-        const foundAsset = foundAssetList?.assets.find((asset) => {
-          return asset.symbol === symbol;
-        });
-        // overwrite chain asset with fake tokenId of dev chain
-        return foundAsset
-          ? {
-              ...foundAsset,
-              chain: devChain,
-              // fix: remove clashing TypeScript types
-              traces: undefined,
-              // overwrite base denom for denom matching in Keplr fees
-              base: tokenId,
-              // add denom alias for denom exponent matching
-              denom_units: foundAsset.denom_units.map((unit) => {
-                return unit.denom === foundAsset.base
-                  ? // add token as base denom, move original denom to aliases
-                    {
-                      ...unit,
-                      denom: tokenId,
-                      aliases: [...(unit.aliases || []), unit.denom],
-                    }
-                  : unit;
-              }),
-            }
-          : [];
-      }),
-    }
-  : undefined;
+const devMappedAssetsList: AssetList | undefined =
+  REACT_APP__DEV_NATIVE_ASSET_MAP
+    ? {
+        chain_name: nativeChain.chain_name,
+        assets: Object.entries(
+          JSON.parse(REACT_APP__DEV_NATIVE_ASSET_MAP) as {
+            [tokenId: TokenID]: string;
+          }
+        ).flatMap<Asset>(([tokenId, path]) => {
+          const devChainName = nativeChain.chain_name;
+          const [symbol, chainName = devChainName] = path.split('/');
+          const foundAssetList = chainRegistryAssetList.find(
+            (list) => list.chain_name === chainName
+          );
+          const foundAsset = foundAssetList?.assets.find((asset) => {
+            return asset.symbol === symbol;
+          });
+          // overwrite chain asset with fake tokenId of dev chain
+          return foundAsset
+            ? {
+                ...foundAsset,
+                // overwrite base denom for denom matching in Keplr fees
+                base: tokenId,
+                // add denom alias for denom exponent matching
+                denom_units: foundAsset.denom_units.map((unit) => {
+                  return unit.denom === foundAsset.base
+                    ? // add token as base denom, move original denom to aliases
+                      {
+                        ...unit,
+                        denom: tokenId,
+                        aliases: [...(unit.aliases || []), unit.denom],
+                      }
+                    : unit;
+                }),
+              }
+            : [];
+        }),
+      }
+    : undefined;
 
-const assetList = [
-  ...chainRegistryAssetList,
-  ...(devAssetLists || []),
-  // add any dev assets added to the environment
-  isTestnet && devAssets,
-]
-  .filter((assets): assets is AssetList => !!assets)
-  // remove duplicate assets
-  // todo: work out how to include terra assets without duplication
-  .filter((assets) => !assets.chain_name.startsWith('terra'));
+export const assetLists = chainRegistryAssetList
+  // override chain-registry chains with our specific chains by matching name
+  .map((chain) => {
+    // use REACT_APP__DEV_NATIVE_ASSET_MAP list to replace any chain info
+    if (devMappedAssetsList && chain.chain_name === nativeChain.chain_name) {
+      return devMappedAssetsList;
+    }
+    // use REACT_APP__DEV_ASSETS list to replace any chain info
+    const foundDevChainAssets = devAssetLists?.find(
+      (devAssetList) => devAssetList.chain_name === chain.chain_name
+    );
+    if (foundDevChainAssets) {
+      return foundDevChainAssets;
+    }
+    return chain;
+  });
 
 // transform AssetList into TokenList
 // for easier filtering/ordering by token attributes
 function getTokens(condition: (chain: Chain) => boolean) {
   // go through each chain
-  return assetList.reduce<TokenList>((result, { chain_name, assets }) => {
+  return assetLists.reduce<TokenList>((result, { chain_name, assets }) => {
     // add each asset with the parent chain details
     const chain = chainList.find((chain) => chain.chain_name === chain_name);
     return chain && condition(chain)
