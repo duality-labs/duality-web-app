@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.48](https://github.com/duality-labs/duality-web-app/compare/v0.3.47...v0.3.48) (2023-12-23)
+
+
+### Features
+
+* update app page meta description ([#504](https://github.com/duality-labs/duality-web-app/issues/504)) ([702fab4](https://github.com/duality-labs/duality-web-app/commit/702fab44636d27be082ee43b2f22ebd7e47bbad9))
+
 ## [0.3.47](https://github.com/duality-labs/duality-web-app/compare/v0.3.46...v0.3.47) (2023-12-14)
 
 
