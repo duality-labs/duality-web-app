@@ -23,7 +23,7 @@ import {
 const {
   REACT_APP__IS_MAINNET = 'mainnet',
   REACT_APP__CHAIN_ID = '',
-  REACT_APP__PROVIDER_ASSETS = '',
+  REACT_APP__DEV_ASSETS = '',
   REACT_APP__DEV_ASSET_MAP = '',
 } = import.meta.env;
 
@@ -31,8 +31,8 @@ const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 
 type TokenList = Array<Token>;
 
-export const providerAssets: AssetList | undefined = REACT_APP__PROVIDER_ASSETS
-  ? (JSON.parse(REACT_APP__PROVIDER_ASSETS) as AssetList)
+export const devAssetLists: AssetList[] | undefined = REACT_APP__DEV_ASSETS
+  ? JSON.parse(REACT_APP__DEV_ASSETS)
   : undefined;
 
 export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
@@ -77,7 +77,7 @@ export const devAssets: AssetList | undefined = REACT_APP__DEV_ASSET_MAP
 
 const assetList = [
   ...chainRegistryAssetList,
-  providerAssets,
+  ...(devAssetLists || []),
   // add any dev assets added to the environment
   isTestnet && devAssets,
 ]
