@@ -486,18 +486,18 @@ export function useIndexerStreamOfDualDataSet<
   ) as StaleWhileRevalidateState<[DataSet, DataSet]>;
 }
 
-// add higher-level function to fetch multiple pages of data as "one request"
-export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
+// add higher-level functions to fetch multiple pages of data as "one request"
+async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
   baseURL: URL | string,
   IndexerClass: typeof IndexerStreamAccumulateSingleDataSet,
   opts?: AccumulatorOptions & StreamOptions
 ): Promise<BaseDataSet<DataRow>>;
-export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
+async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
   baseURL: URL | string,
   IndexerClass: typeof IndexerStreamAccumulateDualDataSet,
   opts?: AccumulatorOptions & StreamOptions
 ): Promise<BaseDataSet<DataRow>[]>;
-export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
+async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
   baseURL: URL | string,
   IndexerClass:
     | typeof IndexerStreamAccumulateSingleDataSet
@@ -525,4 +525,18 @@ export async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
     // individual data updates
     stream.accumulateUpdates = accumulateUpdatesUsingMutation;
   });
+}
+
+export function fetchSingleDataSetFromIndexer<DataRow extends BaseDataRow>(
+  url: URL | string,
+  opts?: AccumulatorOptions & StreamOptions
+): Promise<BaseDataSet<DataRow>> {
+  return fetchDataFromIndexer(url, IndexerStreamAccumulateSingleDataSet, opts);
+}
+
+export function fetchDualDataSetFromIndexer<DataRow extends BaseDataRow>(
+  url: URL | string,
+  opts?: AccumulatorOptions & StreamOptions
+): Promise<BaseDataSet<DataRow>[]> {
+  return fetchDataFromIndexer(url, IndexerStreamAccumulateDualDataSet, opts);
 }
