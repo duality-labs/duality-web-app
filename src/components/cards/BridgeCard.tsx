@@ -231,7 +231,13 @@ export default function BridgeCard({
   return (
     <div className={['bridge-card', className].filter(Boolean).join(' ')}>
       <form onSubmit={bridgeTokens}>
-        <fieldset className="col gap-lg" disabled={isValidatingBridgeTokens}>
+        <fieldset
+          className="col gap-lg"
+          disabled={
+            !(token && chainAddressFrom && chainAddressTo) &&
+            isValidatingBridgeTokens
+          }
+        >
           <div className="flex path-box">
             <div className="path-box__grid">
               <div className="col">
@@ -414,14 +420,12 @@ export default function BridgeCard({
               </div>
             </div>
           </div>
-          {token && (
-            <BridgeButton
-              chainFrom={chainFrom}
-              chainTo={chainTo}
-              token={token}
-              value={value}
-            />
-          )}
+          <BridgeButton
+            chainFrom={chainFrom}
+            chainTo={chainTo}
+            token={token}
+            value={value}
+          />
         </fieldset>
       </form>
     </div>
