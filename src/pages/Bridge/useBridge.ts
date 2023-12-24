@@ -160,7 +160,7 @@ export default function useBridge(
         // (this may be redundant as we know there is an IBC connection already)
         const clientFromStatus =
           await lcdClientFrom.ibc.core.client.v1.clientStatus({
-            client_id: connection.client_id,
+            client_id: connection.counterparty.client_id,
           });
         if (clientFromStatus.status !== 'Active') {
           throw new Error(
