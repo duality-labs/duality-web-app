@@ -1,5 +1,5 @@
 import { Chain } from '@chain-registry/types';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ibc, router } from '@duality-labs/dualityjs';
 import { QueryParamsResponse as QueryRouterParams } from '@duality-labs/dualityjs/types/codegen/router/v1/query';
 import { QueryClientStatesResponse } from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
@@ -69,30 +69,17 @@ export function useChainAddress(chain?: Chain): {
   isValidating: boolean;
   error?: Error;
 } {
-  const chainId = chain?.chain_id;
-  const [{ data, isValidating, error }, setChainState] = useState<{
-    data?: string;
-    isValidating: boolean;
-    error?: Error;
-  }>({
-    isValidating: false,
+  const chainId = chain?.chain_id ?? '';
+  const { data, isFetching, error } = useQuery({
+    enabled: !!chainId,
+    queryKey: ['useChainAddress', chainId],
+    queryFn: async (): Promise<string> => {
+      return getChainInfo(chainId).then((chainInfo) => chainInfo.bech32Address);
+    },
+    // if the request was declined, don't keep re-requesting it
+    retry: false,
   });
-  useMemo(() => {
-    if (chainId) {
-      setChainState({ isValidating: true });
-      getChainInfo(chainId)
-        .then((chainInfo) => {
-          setChainState({
-            data: chainInfo.bech32Address,
-            isValidating: false,
-          });
-        })
-        .catch((error) => {
-          setChainState({ isValidating: false, error });
-        });
-    }
-  }, [chainId]);
-  return { data, isValidating, error };
+  return { data, isValidating: isFetching, error: error || undefined };
 }
 
 async function getIbcLcdClient(
