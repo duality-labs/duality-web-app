@@ -12,6 +12,7 @@ import BridgeCard from './BridgeCard';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import { nativeChain } from '../../lib/web3/hooks/useChains';
+import { useWeb3 } from '../../lib/web3/useWeb3';
 
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import {
@@ -36,6 +37,7 @@ export default function AssetsTableCard({
   tokenList: givenTokenList,
   ...tableCardProps
 }: AssetsTableCardOptions & Partial<TableCardProps<string>>) {
+  const { address, connectWallet } = useWeb3();
   const tokenList = useTokens();
   const tokenListWithIBC = useTokensWithIbcInfo(givenTokenList || tokenList);
   const allUserBankAssets = useUserBankValues();
@@ -119,6 +121,16 @@ export default function AssetsTableCard({
       )}
       searchValue={searchValue}
       setSearchValue={setSearchValue}
+      headerActions={
+        !address && (
+          <button
+            className="connect-wallet button-primary p-3 px-4"
+            onClick={connectWallet}
+          >
+            Connect Wallet
+          </button>
+        )
+      }
       {...tableCardProps}
     >
       <table>
@@ -173,6 +185,7 @@ function AssetRow({
   value,
   showActions,
 }: TokenCoin & AssetsTableCardOptions) {
+  const { address } = useWeb3();
   return (
     <tr>
       <td>
@@ -217,7 +230,7 @@ function AssetRow({
         <td>
           {token.chain.chain_id !== nativeChain.chain_id && (
             // disable buttons if there is no known path to bridge them here
-            <fieldset disabled={!token.ibc}>
+            <fieldset disabled={!address || !token.ibc}>
               <BridgeButton
                 className="button button-primary-outline nowrap mx-0"
                 from={token}
