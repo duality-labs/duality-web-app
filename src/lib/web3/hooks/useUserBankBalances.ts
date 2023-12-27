@@ -17,6 +17,7 @@ import { useWeb3 } from '../useWeb3';
 import { isDexShare } from '../utils/shares';
 import { MessageActionEvent, TendermintTxData } from '../events';
 import { CoinTransferEvent, mapEventAttributes } from '../utils/events';
+import { useFetchAllPaginatedPages } from './useQueries';
 
 // fetch all the user's bank balance
 function useAllUserBankBalances(): UseQueryResult<Coin[]> {
@@ -91,13 +92,8 @@ function useAllUserBankBalances(): UseQueryResult<Coin[]> {
     }
   }, [refetch, address]);
 
-  const { fetchNextPage, data, hasNextPage } = result;
-  // fetch more data if data has changed but there are still more pages to get
-  useEffect(() => {
-    if (fetchNextPage && hasNextPage) {
-      fetchNextPage();
-    }
-  }, [fetchNextPage, data, hasNextPage]);
+  // fetch all pages
+  useFetchAllPaginatedPages(result);
 
   // combine all non-zero balances
   const pages = result.data?.pages;
