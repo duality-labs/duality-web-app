@@ -14,11 +14,7 @@ import {
   checkMsgSuccessToast,
   createLoadingToast,
 } from '../../components/Notifications/common';
-import {
-  Token,
-  getDisplayDenomAmount,
-  getTokenId,
-} from '../../lib/web3/utils/tokens';
+import { getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import {
   DexDepositEvent,
   mapEventAttributes,
@@ -26,6 +22,10 @@ import {
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { formatAmount } from '../../lib/utils/number';
+import useTokens, {
+  matchTokenByDenom,
+  useTokensWithIbcInfo,
+} from '../../lib/web3/hooks/useTokens';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -47,9 +47,9 @@ function getVirtualTickIndexes(
     : [];
 }
 
-export function useDeposit([tokenA, tokenB]: [
-  Token | undefined,
-  Token | undefined
+export function useDeposit([denomA, denomB]: [
+  string | undefined,
+  string | undefined
 ]): [
   {
     data?: SendDepositResponse;
@@ -57,28 +57,30 @@ export function useDeposit([tokenA, tokenB]: [
     error?: string;
   },
   (
-    tokenA: Token | undefined,
-    tokenB: Token | undefined,
+    denomA: string | undefined,
+    denomB: string | undefined,
     fee: BigNumber | undefined,
     userTicks: TickGroup
   ) => Promise<void>
 ] {
   // get previous ticks context
-  const [token0, token1] =
-    useOrderedTokenPair([getTokenId(tokenA), getTokenId(tokenB)]) || [];
+  const [denom0, denom1] =
+    useOrderedTokenPair([denomA, denomB]) || [denomA, denomB].sort();
   const {
     data: [token0Ticks, token1Ticks],
-  } = useTokenPairTickLiquidity([token0, token1]);
+  } = useTokenPairTickLiquidity([denom0, denom1]);
 
   const [data, setData] = useState<SendDepositResponse | undefined>(undefined);
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string>();
   const web3 = useWeb3();
 
+  const allTokens = useTokensWithIbcInfo(useTokens());
+
   const sendDepositRequest = useCallback(
     async function (
-      tokenA: Token | undefined,
-      tokenB: Token | undefined,
+      denomA: string | undefined,
+      denomB: string | undefined,
       fee: BigNumber | undefined,
       userTicks: TickGroup
     ) {
@@ -88,7 +90,15 @@ export function useDeposit([tokenA, tokenB]: [
           throw new Error('Wallet not connected');
         }
         const web3Address = web3.address;
-        if (!tokenA || !tokenB) {
+        if (!denom0 || !denom1) {
+          throw new Error('Denoms not set');
+        }
+        if (!denomA || !denomB) {
+          throw new Error('Denoms not set');
+        }
+        const token0 = allTokens.find(matchTokenByDenom(denom0));
+        const token1 = allTokens.find(matchTokenByDenom(denom1));
+        if (!token0 || !token1) {
           throw new Error('Tokens not set');
         }
         if (!fee || !fee.isGreaterThanOrEqualTo(0)) {
@@ -96,32 +106,32 @@ export function useDeposit([tokenA, tokenB]: [
         }
 
         // do not make requests if they are not routable
-        const tokenIdA = getTokenId(tokenA);
-        const tokenIdB = getTokenId(tokenB);
-        if (!tokenIdA) {
+        if (!token0) {
           throw new Error(
-            `Token ${tokenA.symbol} has no address on the Neutron chain`
+            `Token ${denom0} has no address on the Neutron chain`
           );
         }
-        if (!tokenIdB) {
+        if (!token1) {
           throw new Error(
-            `Token ${tokenB.symbol} has no address on the Neutron chain`
+            `Token ${denom1} has no address on the Neutron chain`
           );
         }
 
-        const forward = token0 === tokenIdA && token1 === tokenIdB;
-        const reverse = token0 === tokenIdB && token1 === tokenIdA;
+        const forward = denom0 === denomA && denom1 === denomB;
+        const reverse = denom0 === denomB && denom1 === denomA;
+        const tokenA = forward ? token0 : token1;
+        const tokenB = reverse ? token0 : token1;
         const pairTicks = forward || reverse;
 
         // if (!pairs || !pairTicks) {
         //   throw new Error(
         //     `Cannot initialize a new pair here: ${[
         //       `our calculation of pair ID as either "${getPairID(
-        //         tokenIdA,
-        //         tokenIdB
+        //         denomA,
+        //         denomB
         //       )}" or "${getPairID(
-        //         tokenIdB,
-        //         tokenIdA
+        //         denomB,
+        //         denomA
         //       )}" may be incorrect.`,
         //     ].join(', ')}`
         //   );
@@ -254,8 +264,8 @@ export function useDeposit([tokenA, tokenB]: [
             [
               duality.dex.MessageComposer.withTypeUrl.deposit({
                 creator: web3Address,
-                tokenA: tokenIdA,
-                tokenB: tokenIdB,
+                tokenA: denomA,
+                tokenB: denomB,
                 receiver: web3Address,
                 // note: tick indexes must be in the form of "A to B"
                 // as that is what is noted by the key sent to the API
@@ -332,14 +342,14 @@ export function useDeposit([tokenA, tokenB]: [
                   attributes['ReservesOneDeposited']
                 );
                 if (
-                  tokenIdA === attributes['TokenZero'] &&
-                  tokenIdB === attributes['TokenOne']
+                  denomA === attributes['TokenZero'] &&
+                  denomB === attributes['TokenOne']
                 ) {
                   acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease0);
                   acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease1);
                 } else if (
-                  tokenIdA === attributes['TokenOne'] &&
-                  tokenIdB === attributes['TokenZero']
+                  denomA === attributes['TokenOne'] &&
+                  denomB === attributes['TokenZero']
                 ) {
                   acc.receivedTokenA = acc.receivedTokenA.plus(shareIncrease1);
                   acc.receivedTokenB = acc.receivedTokenB.plus(shareIncrease0);
@@ -428,7 +438,15 @@ export function useDeposit([tokenA, tokenB]: [
         console.error(e);
       }
     },
-    [web3.address, web3.wallet, token0, token1, token0Ticks, token1Ticks]
+    [
+      web3.address,
+      web3.wallet,
+      denom0,
+      denom1,
+      allTokens,
+      token0Ticks,
+      token1Ticks,
+    ]
   );
 
   return [{ data, isValidating, error }, sendDepositRequest];
