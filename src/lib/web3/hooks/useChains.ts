@@ -1,17 +1,29 @@
 import { chains as chainRegistryChainList } from 'chain-registry';
 import { Chain } from '@chain-registry/types';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ibc, router } from '@duality-labs/dualityjs';
 import { QueryParamsResponse as QueryRouterParams } from '@duality-labs/dualityjs/types/codegen/router/v1/query';
-import { QueryClientStatesResponse } from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
 import { Params as QueryConnectionParams } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
-import { QueryConnectionsResponse } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
-import { QueryChannelsResponse } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/query';
+import {
+  QueryClientStatesRequest,
+  QueryClientStatesResponse,
+} from '@duality-labs/dualityjs/types/codegen/ibc/core/client/v1/query';
+import {
+  QueryConnectionsRequest,
+  QueryConnectionsResponse,
+} from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/query';
+import {
+  QueryChannelsRequest,
+  QueryChannelsResponse,
+} from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/query';
 import { QueryBalanceResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { State as ChannelState } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/channel';
 import { State as ConnectionState } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
-import { useQuery } from '@tanstack/react-query';
-import { useDeepCompareMemoize } from 'use-deep-compare-effect';
+import {
+  UseInfiniteQueryResult,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query';
 
 import { getChainInfo } from '../wallets/keplr';
 import dualityLogo from '../../../assets/logo/logo.svg';
@@ -125,11 +137,27 @@ async function getIbcLcdClient(
   }
 }
 
+function useFetchAllPaginatedPages(results: UseInfiniteQueryResult) {
+  const { fetchNextPage, isFetchingNextPage, hasNextPage } = results;
+  // fetch more data if data has changed but there are still more pages to get
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      // cancelRefetch will create a new request for each hook
+      // and should not be done here because this is an effect not a user action
+      fetchNextPage({ cancelRefetch: false });
+    }
+  }, [fetchNextPage, isFetchingNextPage, hasNextPage]);
+}
+
 function useIbcClientStates(chain: Chain) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
-  return useQuery({
+  const results = useInfiniteQuery({
     queryKey: ['ibc-client-states', restEndpoint],
-    queryFn: async (): Promise<QueryClientStatesResponse> => {
+    queryFn: async ({
+      pageParam: key,
+    }: {
+      pageParam?: Uint8Array;
+    }): Promise<QueryClientStatesResponse> => {
       // get IBC LCD client
       const lcd = await getIbcLcdClient(restEndpoint);
       // note: it appears that clients may appear in this list if they are of:
@@ -138,56 +166,141 @@ function useIbcClientStates(chain: Chain) {
       //           using GET/ibc/core/client/v1/client_status/07-tendermint-0)
       // we ignore the status of the light clients here, but their status should
       // be checked at the moment they are required for a transfer
+      const params: QueryClientStatesRequest = {
+        pagination: {
+          key,
+          count_total: !key,
+        },
+      };
       return (
-        lcd?.ibc.core.client.v1.clientStates() ?? {
+        lcd?.ibc.core.client.v1.clientStates(params) ?? {
           client_states: [],
-          pagination: { total: Long.ZERO },
+          pagination: {
+            total: Long.ZERO,
+          },
         }
       );
     },
+    defaultPageParam: undefined,
+    getNextPageParam: (lastPage): Uint8Array | undefined => {
+      // don't pass an empty array as that will trigger another page to download
+      return lastPage?.pagination?.next_key?.length
+        ? lastPage.pagination.next_key
+        : undefined;
+    },
     refetchInterval: 5 * minutes,
     refetchOnMount: false,
+    staleTime: Number.POSITIVE_INFINITY,
   });
+
+  // fetch all pages
+  useFetchAllPaginatedPages(results);
+
+  // combine all data pages
+  const data = useMemo(
+    () => results.data?.pages.flatMap((page) => page.client_states),
+    [results.data?.pages]
+  );
+
+  return { ...results, data };
 }
 
 function useIbcConnections(chain: Chain) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
-  return useQuery({
+  const results = useInfiniteQuery({
     queryKey: ['ibc-connections', restEndpoint],
-    queryFn: async (): Promise<QueryConnectionsResponse> => {
+    queryFn: async ({
+      pageParam: key,
+    }: {
+      pageParam?: Uint8Array;
+    }): Promise<QueryConnectionsResponse> => {
       // get IBC LCD client
       const lcd = await getIbcLcdClient(restEndpoint);
+      const params: QueryConnectionsRequest = {
+        pagination: {
+          key,
+          count_total: !key,
+        },
+      };
       return (
-        lcd?.ibc.core.connection.v1.connections() ?? {
+        lcd?.ibc.core.connection.v1.connections(params) ?? {
           connections: [],
           pagination: { total: Long.ZERO },
           height: { revision_height: Long.ZERO, revision_number: Long.ZERO },
         }
       );
     },
+    defaultPageParam: undefined,
+    getNextPageParam: (lastPage): Uint8Array | undefined => {
+      // don't pass an empty array as that will trigger another page to download
+      return lastPage?.pagination?.next_key?.length
+        ? lastPage.pagination.next_key
+        : undefined;
+    },
     refetchInterval: 5 * minutes,
     refetchOnMount: false,
+    staleTime: Number.POSITIVE_INFINITY,
   });
+
+  // fetch all pages
+  useFetchAllPaginatedPages(results);
+
+  // combine all data pages
+  const data = useMemo(
+    () => results.data?.pages.flatMap((page) => page.connections),
+    [results.data?.pages]
+  );
+
+  return { ...results, data };
 }
 
 function useIbcChannels(chain: Chain) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
-  return useQuery({
+  const results = useInfiniteQuery({
     queryKey: ['ibc-channels', restEndpoint],
-    queryFn: async (): Promise<QueryChannelsResponse> => {
+    queryFn: async ({
+      pageParam: key,
+    }: {
+      pageParam?: Uint8Array;
+    }): Promise<QueryChannelsResponse> => {
       // get IBC LCD client
       const lcd = await getIbcLcdClient(restEndpoint);
+      const params: QueryChannelsRequest = {
+        pagination: {
+          key,
+          count_total: !key,
+        },
+      };
       return (
-        lcd?.ibc.core.channel.v1.channels() ?? {
+        lcd?.ibc.core.channel.v1.channels(params) ?? {
           channels: [],
           pagination: { total: Long.ZERO },
           height: { revision_height: Long.ZERO, revision_number: Long.ZERO },
         }
       );
     },
+    defaultPageParam: undefined,
+    getNextPageParam: (lastPage): Uint8Array | undefined => {
+      // don't pass an empty array as that will trigger another page to download
+      return lastPage?.pagination?.next_key?.length
+        ? lastPage.pagination.next_key
+        : undefined;
+    },
     refetchInterval: 5 * minutes,
     refetchOnMount: false,
+    staleTime: Number.POSITIVE_INFINITY,
   });
+
+  // fetch all pages
+  useFetchAllPaginatedPages(results);
+
+  // combine all data pages
+  const data = useMemo(
+    () => results.data?.pages.flatMap((page) => page.channels),
+    [results.data?.pages]
+  );
+
+  return { ...results, data };
 }
 
 function filterConnectionsOpen(
@@ -203,13 +316,10 @@ function filterChannelsOpen(
 }
 
 export function useIbcOpenTransfers(chain: Chain = nativeChain) {
-  const { data: clientStateData } = useIbcClientStates(chain);
-  const { data: connectionData } = useIbcConnections(chain);
-  const { data: channelData } = useIbcChannels(chain);
+  const { data: clientStates } = useIbcClientStates(chain);
+  const { data: connections } = useIbcConnections(chain);
+  const { data: channels } = useIbcChannels(chain);
 
-  const clientStates = useDeepCompareMemoize(clientStateData?.client_states);
-  const connections = useDeepCompareMemoize(connectionData?.connections);
-  const channels = useDeepCompareMemoize(channelData?.channels);
   return useMemo(() => {
     // get openClients (all listed clients are assumed to be working)
     const openClients = clientStates || [];
