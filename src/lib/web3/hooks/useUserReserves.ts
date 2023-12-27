@@ -6,17 +6,13 @@ import { Coin } from '@cosmjs/proto-signing';
 import { PoolMetadata } from '@duality-labs/dualityjs/types/codegen/neutron/dex/pool_metadata';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/neutron/dex/deposit_record';
 import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
-import {
-  QueryGetPoolMetadataRequest,
-  QueryPoolRequest,
-} from '@duality-labs/dualityjs/types/codegen/neutron/dex/query';
+import { QueryGetPoolMetadataRequest } from '@duality-labs/dualityjs/types/codegen/neutron/dex/query';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import { useCosmosLcdClient, useLcdClientPromise } from '../lcdClient';
 import { useUserDeposits } from './useUserDeposits';
 import { useSimplePrice } from '../../tokenPrices';
 
-import { getPairID } from '../utils/pairs';
 import { priceToTickIndex, tickIndexToPrice } from '../utils/ticks';
 import {
   Token,
@@ -298,27 +294,34 @@ function useUserDepositsTotalReserves(
 ): CombinedUseQueries<UserReservesTotalReserves[]> {
   const lcdClientPromise = useLcdClientPromise();
   const { data: userPairDeposits } = useUserDeposits(tokenPair);
+  const { data: userPoolMetadata } = useUserPoolMetadata();
 
   // for each specific amount of userDeposits, fetch the totalShares that match
   const memoizedData = useRef<UserReservesTotalReserves[]>();
   const result = useQueries({
     queries: useMemo(() => {
       return (userPairDeposits || []).flatMap((deposit) => {
-        const { pair_id: pairID, fee, shares_owned: sharesOwned } = deposit;
-        if (Number(sharesOwned) > 0) {
+        if (Number(deposit.shares_owned) > 0) {
           // query pool reserves
-          const params: QueryPoolRequest = {
-            pair_id: getPairID(pairID.token0, pairID.token1),
-            tick_index: deposit.center_tick_index,
-            fee,
-          };
+          const poolId = userPoolMetadata?.find((metadata) => {
+            return (
+              metadata.pair_id.token0 === deposit.pair_id.token0 &&
+              metadata.pair_id.token1 === deposit.pair_id.token1 &&
+              metadata.tick.equals(deposit.center_tick_index) &&
+              metadata.fee.equals(deposit.fee)
+            );
+          })?.id;
+          if (!poolId) {
+            return [];
+          }
+
           return {
-            queryKey: ['neutron.dex.pool', params, sharesOwned],
+            queryKey: ['neutron.dex.pool', poolId, deposit.shares_owned],
             queryFn: async () => {
               // we use an RPC call here because the LCD endpoint always 404s
               const client = await lcdClientPromise;
               return client.neutron.dex
-                .pool(params)
+                .poolByID({ pool_id: poolId })
                 .then(({ pool }): UserReservesTotalReserves => {
                   return {
                     deposit,
@@ -332,7 +335,7 @@ function useUserDepositsTotalReserves(
                   // assume the result was a 404: there is 0 liquidity
                   return {
                     deposit,
-                    params,
+                    poolId,
                     totalReserves: { reserves0: '0', reserves1: '0' },
                   };
                 });
@@ -342,7 +345,7 @@ function useUserDepositsTotalReserves(
         }
         return [];
       });
-    }, [lcdClientPromise, userPairDeposits]),
+    }, [lcdClientPromise, userPairDeposits, userPoolMetadata]),
     combine(results) {
       // only process data from successfully resolved queries
       const data = results.flatMap((result) => result.data ?? []);
