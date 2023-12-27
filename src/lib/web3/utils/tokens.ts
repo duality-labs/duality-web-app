@@ -32,6 +32,11 @@ export function resolveTokenIdPair(
 
 export const ibcDenomRegex = /^ibc\/[0-9A-Fa-f]+$/;
 export function getIbcBaseDenom(token: Token | undefined): string | undefined {
+  // we store specific IBC denoms in base string for user balance tokens
+  // todo: this workaround should be fixed
+  if (token && ibcDenomRegex.test(token.base)) {
+    return token.base;
+  }
   const ibcDenom = token?.ibc?.source_denom;
   // return the source IBC denom if it is found
   if (ibcDenom) {
