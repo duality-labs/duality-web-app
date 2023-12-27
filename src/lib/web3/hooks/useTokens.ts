@@ -200,17 +200,18 @@ export function useTokensWithIbcInfo(tokenList: Token[]): Token[] {
         .map(({ ibc, ...token }) => {
           // return unchanged tokens from native chain
           if (token.chain.chain_id === nativeChain.chain_id) {
-            return token;
+            return { ...token, ibc: undefined };
           }
           // append ibcDenom as a denom alias
-          const ibcOpenTransferInfo = ibcOpenTransfersInfo.find(({ chain }) => {
-            return chain.chain_id === token.chain.chain_id;
+          const ibcOpenTransferInfos = ibcOpenTransfersInfo.filter((info) => {
+            return (
+              info.chain.chain_id === token.chain.chain_id &&
+              info.chain.chain_name === token.chain.chain_name &&
+              info.chain.network_type === nativeChain.network_type
+            );
           });
           // found connection info
-          if (ibcOpenTransferInfo) {
-            const channel = ibcOpenTransferInfo.channel;
-            const channelID = channel.channel_id;
-            const portID = channel.port_id;
+          if (ibcOpenTransferInfos) {
             return {
               ...token,
               // append IBC information to existing known token/assets.
@@ -220,20 +221,24 @@ export function useTokensWithIbcInfo(tokenList: Token[]): Token[] {
               // a Neutron chain IBC denom represents
               denom_units: token.denom_units.map(
                 ({ aliases = [], ...unit }) => {
-                  const ibcDenom = getIbcDenom(unit.denom, channelID, portID);
+                  const ibcDenoms = ibcOpenTransferInfos.map(({ channel }) => {
+                    return getIbcDenom(
+                      unit.denom,
+                      channel.channel_id,
+                      channel.port_id
+                    );
+                  });
                   return {
                     ...unit,
                     // place the calculated IBC denom as a unit denom alias.
                     // the local chain knows the IBC denom, and this unit->denom
                     // of this token and chain is what the IBC denom represents
-                    aliases: [...aliases, ibcDenom],
+                    aliases: [...aliases, ...ibcDenoms],
                   };
                 }
               ),
               // append our calculated IBC denom source information here
               ibc: {
-                dst_channel: channel.channel_id,
-                source_channel: channel.counterparty?.channel_id,
                 // note: this may not be accurate:
                 //       a channel may transfer many denoms from a source chain.
                 //       this *should* be the base denom of token in question
@@ -244,9 +249,9 @@ export function useTokensWithIbcInfo(tokenList: Token[]): Token[] {
               },
             };
           }
-          // else return the unchanged token
+          // else return the unchanged token without IBC info
           else {
-            return token;
+            return { ...token, ibc: undefined };
           }
         })
     );
