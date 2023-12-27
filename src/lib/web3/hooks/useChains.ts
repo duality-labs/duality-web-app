@@ -1,5 +1,5 @@
 import { Chain } from '@chain-registry/types';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { ibc, router } from '@duality-labs/dualityjs';
 import { QueryParamsResponse as QueryRouterParams } from '@duality-labs/dualityjs/types/codegen/router/v1/query';
 import { Params as QueryConnectionParams } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
@@ -18,16 +18,13 @@ import {
 import { QueryBalanceResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
 import { State as ChannelState } from '@duality-labs/dualityjs/types/codegen/ibc/core/channel/v1/channel';
 import { State as ConnectionState } from '@duality-labs/dualityjs/types/codegen/ibc/core/connection/v1/connection';
-import {
-  UseInfiniteQueryResult,
-  useInfiniteQuery,
-  useQuery,
-} from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import { getChainInfo } from '../wallets/keplr';
 import dualityLogo from '../../../assets/logo/logo.svg';
 import { Token, getTokenId } from '../utils/tokens';
 import { minutes } from '../../utils/time';
+import { useFetchAllPaginatedPages } from './useQueries';
 import Long from 'long';
 
 interface QueryConnectionParamsResponse {
@@ -101,18 +98,6 @@ async function getIbcLcdClient(
   if (restEndpoint) {
     return ibc.ClientFactory.createLCDClient({ restEndpoint });
   }
-}
-
-function useFetchAllPaginatedPages(results: UseInfiniteQueryResult) {
-  const { fetchNextPage, isFetchingNextPage, hasNextPage } = results;
-  // fetch more data if data has changed but there are still more pages to get
-  useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      // cancelRefetch will create a new request for each hook
-      // and should not be done here because this is an effect not a user action
-      fetchNextPage({ cancelRefetch: false });
-    }
-  }, [fetchNextPage, isFetchingNextPage, hasNextPage]);
 }
 
 function useIbcClientStates(chain: Chain) {
