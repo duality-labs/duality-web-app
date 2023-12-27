@@ -19,6 +19,8 @@ import { neutron } from '@duality-labs/dualityjs';
 export interface EditedPosition extends UserReserves {
   token0: Token;
   token1: Token;
+  denom0: string;
+  denom1: string;
   tickDiff0: BigNumber;
   tickDiff1: BigNumber;
 }

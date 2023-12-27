@@ -193,7 +193,7 @@ export function useToken(
 // connected IBC info into given token list
 export function useTokensWithIbcInfo(tokenList: Token[]): Token[] {
   const ibcOpenTransfersInfo = useIbcOpenTransfers();
-  return useMemo(() => {
+  return useMemo((): Array<Token> => {
     return (
       tokenList
         // remove existing IBC informations and add new IBC denom information
@@ -294,6 +294,21 @@ export function useTokenBySymbol(symbol: string | undefined) {
     return undefined;
   }
   return tokensWithIbcInfo.find(matchTokenBySymbol(symbol));
+}
+
+// helper function to derive token and denoms from URL paths
+export function useTokenAndDenomFromPath(
+  pathParam: string | undefined
+): [Token | undefined, string | undefined] {
+  const token = useTokenBySymbol(pathParam);
+  const baseDenom = useMemo(
+    () =>
+      token?.denom_units
+        .find((unit) => unit.denom === token.base)
+        ?.aliases?.find((alias) => alias === pathParam) ?? token?.base,
+    [pathParam, token]
+  );
+  return [token, baseDenom];
 }
 
 // get a "symbol" string that can be later decoded by matchTokenBySymbol

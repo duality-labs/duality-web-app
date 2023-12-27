@@ -9,7 +9,6 @@ import subscriber from '../subscriptionManager';
 import { Token, getDenomAmount } from '../utils/tokens';
 import useTokens, {
   matchTokenByDenom,
-  matchTokens,
   useTokensWithIbcInfo,
 } from './useTokens';
 import { useLcdClientPromise } from '../lcdClient';
@@ -146,10 +145,28 @@ export function useUserBankBalances(): UseQueryResult<TokenCoin[]> {
   const allTokensWithIBC = useTokensWithIbcInfo(useTokens());
   const data = useMemo<TokenCoin[] | undefined>(() => {
     // check all known tokens with IBC context for matching balance denoms
-    return result.data?.reduce<TokenCoin[]>((result, balance) => {
-      const token = allTokensWithIBC.find(matchTokenByDenom(balance.denom));
+    return result.data?.reduce<TokenCoin[]>((result, { amount, denom }) => {
+      const token = allTokensWithIBC.find(matchTokenByDenom(denom));
       if (token) {
-        result.push({ token, ...balance });
+        // return token with the user's specific denom as base
+        result.push({
+          token: {
+            ...token,
+            base: denom,
+            denom_units: token.denom_units.map((unit) => {
+              if (unit.denom === token.base) {
+                return {
+                  ...unit,
+                  denom,
+                  aliases: [token.base, ...(unit.aliases ?? [])],
+                };
+              }
+              return unit;
+            }),
+          },
+          amount,
+          denom,
+        });
       }
       return result;
     }, []);
@@ -164,24 +181,22 @@ export function useUserBankBalances(): UseQueryResult<TokenCoin[]> {
 // note: if dealing with IBC tokens, ensure Token has IBC context
 //       (by fetching it with useTokensWithIbcInfo)
 function useUserBankBalance(
-  token: Token | undefined
+  denom: string | undefined
 ): UseQueryResult<TokenCoin> {
   const { data: balances, ...rest } = useUserBankBalances();
   const balance = useMemo(() => {
     // find the balance that matches the token
-    return (
-      token && balances?.find((balance) => matchTokens(balance.token, token))
-    );
-  }, [balances, token]);
+    return balances?.find((balance) => balance.denom === denom);
+  }, [balances, denom]);
   return { data: balance, ...rest } as UseQueryResult<TokenCoin>;
 }
 
 // the bank balances may be in denoms that are neither base or display units
 // convert them to base or display units with the following handler functions
 export function useBankBalanceBaseAmount(
-  token: Token | undefined
+  denom: string | undefined
 ): UseQueryResult<string> {
-  const { data: balance, ...rest } = useUserBankBalance(token);
+  const { data: balance, ...rest } = useUserBankBalance(denom);
   const balanceAmount = useMemo(() => {
     return (
       balance &&
@@ -196,9 +211,9 @@ export function useBankBalanceBaseAmount(
   return { data: balanceAmount, ...rest } as UseQueryResult<string>;
 }
 export function useBankBalanceDisplayAmount(
-  token: Token | undefined
+  denom: string | undefined
 ): UseQueryResult<string> {
-  const { data: balance, ...rest } = useUserBankBalance(token);
+  const { data: balance, ...rest } = useUserBankBalance(denom);
   const balanceAmount = useMemo(() => {
     return (
       balance &&

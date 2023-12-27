@@ -15,7 +15,7 @@ import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/neutron/de
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
   getTokenPathPart,
-  useTokenBySymbol,
+  useTokenAndDenomFromPath,
 } from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import NumberInput, {
@@ -63,8 +63,8 @@ function Swap() {
 
   // change tokens to match pathname
   const match = useMatch('/swap/:tokenA/:tokenB');
-  const tokenA = useTokenBySymbol(match?.params['tokenA']);
-  const tokenB = useTokenBySymbol(match?.params['tokenB']);
+  const [tokenA, denomA] = useTokenAndDenomFromPath(match?.params['tokenA']);
+  const [tokenB, denomB] = useTokenAndDenomFromPath(match?.params['tokenB']);
 
   // don't change tokens directly:
   // change the path name which will in turn update the tokens selected
@@ -138,7 +138,7 @@ function Swap() {
     ]
   );
 
-  const { data: balanceTokenA } = useBankBalanceDisplayAmount(tokenA);
+  const { data: balanceTokenA } = useBankBalanceDisplayAmount(denomA);
   const valueAConvertedNumber = new BigNumber(valueAConverted || 0);
   const hasFormData =
     address && tokenA && tokenB && valueAConvertedNumber.isGreaterThan(0);
@@ -382,6 +382,7 @@ function Swap() {
             onValueChanged={onValueAChanged}
             onTokenChanged={setTokenA}
             token={tokenA}
+            denom={denomA}
             value={lastUpdatedA ? inputValueA : valueAConverted}
             className={
               isValidatingRate && !lastUpdatedA
@@ -411,6 +412,7 @@ function Swap() {
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}
             token={tokenB}
+            denom={denomB}
             value={lastUpdatedA ? valueBConverted : inputValueB}
             className={
               isValidatingRate && lastUpdatedA
