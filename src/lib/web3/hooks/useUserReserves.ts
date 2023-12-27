@@ -6,10 +6,7 @@ import { Coin } from '@cosmjs/proto-signing';
 import { PoolMetadata } from '@duality-labs/dualityjs/types/codegen/duality/dex/pool_metadata';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
 import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
-import {
-  QueryGetPoolMetadataRequest,
-  QueryPoolRequest,
-} from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+import { QueryGetPoolMetadataRequest } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import {
@@ -19,7 +16,6 @@ import {
 import { useUserDeposits } from './useUserDeposits';
 import { useSimplePrice } from '../../tokenPrices';
 
-import { getPairID } from '../utils/pairs';
 import { priceToTickIndex, tickIndexToPrice } from '../utils/ticks';
 import {
   Token,
@@ -301,27 +297,34 @@ function useUserDepositsTotalReserves(
 ): CombinedUseQueries<UserReservesTotalReserves[]> {
   const restClientPromise = useDexRestClientPromise();
   const { data: userPairDeposits } = useUserDeposits(tokenPair);
+  const { data: userPoolMetadata } = useUserPoolMetadata();
 
   // for each specific amount of userDeposits, fetch the totalShares that match
   const memoizedData = useRef<UserReservesTotalReserves[]>();
   const result = useQueries({
     queries: useMemo(() => {
       return (userPairDeposits || []).flatMap((deposit) => {
-        const { pairID, fee, sharesOwned } = deposit;
-        if (Number(sharesOwned) > 0) {
+        if (Number(deposit.sharesOwned) > 0) {
           // query pool reserves
-          const params: QueryPoolRequest = {
-            pairID: getPairID(pairID.token0, pairID.token1),
-            tickIndex: deposit.centerTickIndex,
-            fee,
-          };
+          const poolId = userPoolMetadata?.find((metadata) => {
+            return (
+              metadata.pairID.token0 === deposit.pairID.token0 &&
+              metadata.pairID.token1 === deposit.pairID.token1 &&
+              metadata.tick.equals(deposit.centerTickIndex) &&
+              metadata.fee.equals(deposit.fee)
+            );
+          })?.ID;
+          if (!poolId) {
+            return [];
+          }
+
           return {
-            queryKey: ['duality.dex.pool', params, sharesOwned],
+            queryKey: ['duality.dex.pool', poolId, deposit.sharesOwned],
             queryFn: async () => {
               // we use an RPC call here because the LCD endpoint always 404s
               const client = await restClientPromise;
               return client.dex
-                .pool(params)
+                .poolByID({ poolID: poolId })
                 .then(({ pool }): UserReservesTotalReserves => {
                   return {
                     deposit,
@@ -335,7 +338,7 @@ function useUserDepositsTotalReserves(
                   // assume the result was a 404: there is 0 liquidity
                   return {
                     deposit,
-                    params,
+                    poolId,
                     totalReserves: { reserves0: '0', reserves1: '0' },
                   };
                 });
@@ -345,7 +348,7 @@ function useUserDepositsTotalReserves(
         }
         return [];
       });
-    }, [restClientPromise, userPairDeposits]),
+    }, [restClientPromise, userPairDeposits, userPoolMetadata]),
     combine(results) {
       // only process data from successfully resolved queries
       const data = results.flatMap((result) => result.data ?? []);
