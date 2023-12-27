@@ -6,7 +6,7 @@ import PoolsTableCard, {
 
 import {
   getTokenPathPart,
-  useTokenBySymbol,
+  useTokenAndDenomFromPath,
 } from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 import { useUserHasDeposits } from '../../lib/web3/hooks/useUserDeposits';
@@ -36,8 +36,8 @@ function Pools() {
       matchTokenManagement.params['addOrEdit'] === 'edit');
   const match = matchTokens || matchTokenManagement;
 
-  const tokenA = useTokenBySymbol(match?.params['tokenA']);
-  const tokenB = useTokenBySymbol(match?.params['tokenB']);
+  const [tokenA, denomA] = useTokenAndDenomFromPath(match?.params['tokenA']);
+  const [tokenB, denomB] = useTokenAndDenomFromPath(match?.params['tokenB']);
 
   // don't change tokens directly:
   // change the path name which will in turn update the tokens selected
@@ -74,6 +74,8 @@ function Pools() {
       <PoolManagement
         tokenA={tokenA}
         tokenB={tokenB}
+        denomA={denomA}
+        denomB={denomB}
         setTokenA={setTokenAPath}
         setTokenB={setTokenBPath}
         setTokens={setTokensPath}
