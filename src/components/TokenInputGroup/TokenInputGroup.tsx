@@ -22,6 +22,7 @@ interface InputGroupProps {
   exclusion?: Token;
   value?: string;
   token?: Token;
+  denom?: string;
   /** disables both the input and the token (gets overwritten by the other 2) */
   disabled?: boolean;
   disabledInput?: boolean;
@@ -42,6 +43,7 @@ export default function TokenInputGroup({
   exclusion,
   value,
   token,
+  denom = token?.base,
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
@@ -67,7 +69,7 @@ export default function TokenInputGroup({
     return '';
   }, [value, price]);
 
-  const { data: balance } = useBankBalanceDisplayAmount(token);
+  const { data: balance } = useBankBalanceDisplayAmount(denom);
   const maxValue = givenMaxValue || balance;
   return (
     <div

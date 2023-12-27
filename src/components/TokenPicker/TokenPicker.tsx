@@ -330,6 +330,7 @@ export default function TokenPicker({
 
 function TokenPickerItem({
   token,
+  denom = token?.base,
   chain = [],
   symbol = [],
   index,
@@ -339,6 +340,7 @@ function TokenPickerItem({
   setSelectedIndex,
 }: {
   token: Token;
+  denom?: string;
   chain: string[];
   symbol: string[];
   index: number;
@@ -351,7 +353,7 @@ function TokenPickerItem({
   const exclusionId = getTokenId(exclusion);
   const logos = token.logo_URIs;
   const isDisabled = !!exclusionId && exclusionId === tokenId;
-  const { data: balance = 0 } = useBankBalanceDisplayAmount(token);
+  const { data: balance = 0 } = useBankBalanceDisplayAmount(denom);
   const {
     data: [price = 0],
   } = useSimplePrice(Number(balance) ? [token] : []);
