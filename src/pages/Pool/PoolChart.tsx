@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import Chart, { ChartProps } from '../../components/charts/Chart';
 import TimeSeriesBarChart from '../../components/charts/TimeSeriesBarChart';
@@ -21,6 +21,7 @@ import { formatAmount } from '../../lib/utils/number';
 
 import './PoolChart.scss';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { useFetchAllPaginatedPages } from '../../lib/web3/hooks/useQueries';
 
 const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 
@@ -127,13 +128,7 @@ function useTimeSeriesData(
     getIndexerTokenPathPart(tokenA),
     getIndexerTokenPathPart(tokenB),
   ].join('/')}/${resolution}`;
-  const {
-    data: resultData,
-    error,
-    isFetching,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery({
+  const result = useInfiniteQuery({
     queryKey: [path],
     queryFn: async ({ pageParam: pageKey }): Promise<TimeSeriesPage> => {
       const queryParams = new URLSearchParams();
@@ -162,16 +157,12 @@ function useTimeSeriesData(
     },
   });
 
-  // fetch more data if data has changed but there are still more pages to get
-  useEffect(() => {
-    if (fetchNextPage && hasNextPage) {
-      fetchNextPage();
-    }
-  }, [fetchNextPage, resultData, hasNextPage]);
+  // fetch all pages
+  useFetchAllPaginatedPages(result);
 
   // collect page data together
+  const { data: { pages } = {}, error, isFetching } = result;
   return useMemo<TimeSeriesRow[] | null | undefined>(() => {
-    const { pages } = resultData || {};
     // return error state as null
     if (error) {
       return null;
@@ -193,7 +184,7 @@ function useTimeSeriesData(
       : pages?.flatMap<TimeSeriesRow>(({ data: rows = [] }) =>
           rows.map<TimeSeriesRow>(([timeUnix, values]) => [timeUnix, values])
         );
-  }, [resultData, isFetching, error, getValues]);
+  }, [pages, isFetching, error, getValues]);
 }
 
 // if data is in the form [timeUnix, [amountA, amountB]]
