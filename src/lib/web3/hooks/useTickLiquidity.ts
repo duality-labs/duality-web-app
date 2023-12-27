@@ -20,9 +20,11 @@ export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
   data?: [ReserveDataSet, ReserveDataSet];
   error?: unknown;
 } {
+  const encodedA = tokenIdA && encodeURIComponent(tokenIdA);
+  const encodedB = tokenIdB && encodeURIComponent(tokenIdB);
   // stream data from indexer
   return useIndexerStreamOfDualDataSet<ReserveDataRow>(
-    tokenIdA && tokenIdB && `/liquidity/pair/${tokenIdA}/${tokenIdB}`,
+    encodedA && encodedB && `/liquidity/pair/${encodedA}/${encodedB}`,
     {
       // remove entries of value 0 from the accumulated map, they are not used
       mapEntryRemovalValue: 0,
