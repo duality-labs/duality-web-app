@@ -19,13 +19,14 @@ import {
   TokenIdPair,
   TokenPair,
   getBaseDenomAmount,
-  getTokenId,
   resolveTokenIdPair,
 } from '../utils/tokens';
-import useTokens, { useTokensWithIbcInfo } from './useTokens';
 import { useTokenPairMapLiquidity } from '../../web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from './useTokenPairs';
-import { useUserDexDenomBalances } from './useUserBankBalances';
+import {
+  useUserBankBalances,
+  useUserDexDenomBalances,
+} from './useUserBankBalances';
 import { getDexSharePoolID } from '../utils/shares';
 
 interface PairReserves {
@@ -459,50 +460,35 @@ export function useEstimatedUserReserves(
     error,
   } = useUserIndicativeReserves(tokenPair);
 
-  const allTokens = useTokensWithIbcInfo(useTokens());
-  const allTokensByIdMap = useMemo<Map<string, Token>>(() => {
-    return allTokens.reduce<Map<string, Token>>((acc, token) => {
-      const id = getTokenId(token);
-      if (id && !acc.has(id)) {
-        acc.set(id, token);
-      }
-      return acc;
-    }, new Map());
-  }, [allTokens]);
-
-  const tokenByIdMap = useMemo<Map<string, Token>>(() => {
-    const searchedTokenStrings: string[] = [];
-    return (userIndicatveReserves || []).reduce<Map<string, Token>>(
-      (acc, indicateReserves) => {
-        for (const tokenId of Object.values(indicateReserves.deposit.pair_id)) {
-          if (!searchedTokenStrings.includes(tokenId)) {
-            const foundToken = allTokensByIdMap.get(tokenId);
-            if (foundToken) {
-              acc.set(tokenId, foundToken);
-            }
-            searchedTokenStrings.push(tokenId);
-          }
-        }
-        return acc;
-      },
-      new Map()
+  const { data: balances } = useUserBankBalances();
+  const userTokensByDenom = useMemo<Map<string, Token>>(() => {
+    const map = new Map<string, Token>();
+    const restrictToTokens = new Set(
+      userIndicatveReserves?.flatMap((reserve) => [
+        reserve.deposit.pair_id.token0,
+        reserve.deposit.pair_id.token1,
+      ])
     );
-  }, [userIndicatveReserves, allTokensByIdMap]);
+    for (const balance of balances || []) {
+      // if not yet set and should be set, then set
+      if (restrictToTokens.has(balance.denom) && !map.has(balance.denom)) {
+        map.set(balance.denom, balance.token);
+      }
+    }
+    return map;
+  }, [balances, userIndicatveReserves]);
 
   const tokenList = useMemo(
-    () => Array.from(tokenByIdMap.values()),
-    [tokenByIdMap]
+    () => Array.from(userTokensByDenom.values()),
+    [userTokensByDenom]
   );
 
   const { data: tokenPrices } = useSimplePrice(tokenList);
 
-  const tokenPriceByIdMap = useMemo(() => {
+  const tokenPriceByDenomMap = useMemo(() => {
     return tokenList.reduce<Map<string, number | undefined>>(
       (acc, token, index) => {
-        const tokenId = getTokenId(token);
-        if (tokenId) {
-          acc.set(tokenId, tokenPrices[index]);
-        }
+        acc.set(token.base, tokenPrices[index]);
         return acc;
       },
       new Map()
@@ -511,13 +497,13 @@ export function useEstimatedUserReserves(
 
   // using the current price, make assumptions about the current reserves
   return useMemo(() => {
-    if (Object.values(tokenPriceByIdMap).every((price = 0) => price > 0)) {
+    if (Object.values(tokenPriceByDenomMap).every((price = 0) => price > 0)) {
       const userReserves = userIndicatveReserves?.flatMap<UserValuedReserves>(
         ({ deposit, indicativeReserves: { reserves0, reserves1 } }) => {
-          const token0 = tokenByIdMap.get(deposit.pair_id.token0);
-          const token1 = tokenByIdMap.get(deposit.pair_id.token1);
-          const tokenPrice0 = tokenPriceByIdMap.get(deposit.pair_id.token0);
-          const tokenPrice1 = tokenPriceByIdMap.get(deposit.pair_id.token1);
+          const token0 = userTokensByDenom.get(deposit.pair_id.token0);
+          const token1 = userTokensByDenom.get(deposit.pair_id.token1);
+          const tokenPrice0 = tokenPriceByDenomMap.get(deposit.pair_id.token0);
+          const tokenPrice1 = tokenPriceByDenomMap.get(deposit.pair_id.token1);
           if (token0 && token1 && tokenPrice0 && tokenPrice1) {
             const display0 = getBaseDenomAmount(token0, 1) || 1;
             const display1 = getBaseDenomAmount(token1, 1) || 1;
@@ -563,8 +549,8 @@ export function useEstimatedUserReserves(
       error,
     };
   }, [
-    tokenByIdMap,
-    tokenPriceByIdMap,
+    userTokensByDenom,
+    tokenPriceByDenomMap,
     userIndicatveReserves,
     isFetching,
     error,
