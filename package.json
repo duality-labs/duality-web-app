@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@chain-registry/keplr": "^1.30.0",
+    "@chain-registry/utils": "^1.17.0",
     "@cosmjs/crypto": "0.31.1",
     "@cosmjs/proto-signing": "0.31.1",
     "@cosmjs/stargate": "0.31.1",
