@@ -9,7 +9,7 @@ const {
   REACT_APP__CHAIN_NAME = '',
   REACT_APP__CHAIN_IS_TESTNET = '',
   REACT_APP__CHAIN_REGISTRY_CHAIN_NAMES = '',
-  REACT_APP__CHAIN_REGISTRY_ENDPOINT = 'https://registry.ping.pub',
+  REACT_APP__CHAIN_REGISTRY_ENDPOINTS = '["https://registry.ping.pub"]',
 } = process.env;
 
 const isTestnet = REACT_APP__CHAIN_IS_TESTNET
@@ -23,12 +23,17 @@ const chainRegistryChainNames: string[] = JSON.parse(
   REACT_APP__CHAIN_REGISTRY_CHAIN_NAMES || '[]'
 );
 
+// chain registry endpoints are endpoints where we can get ~up-to-date (cached)
+// asset and IBC data. it is expected that this data will change infrequently
+const chainRegistryEndpoints: string[] = JSON.parse(
+  REACT_APP__CHAIN_REGISTRY_ENDPOINTS
+).map((endpoint: string) => (isTestnet ? `${endpoint}/testnets` : endpoint));
+
 export function useChainUtil(chainName = REACT_APP__CHAIN_NAME) {
-  // abstract out chain client creation for easy try-catch in hook
-  async function createChainRegistryClient() {
-    const chainRegistryEndpoint = REACT_APP__CHAIN_REGISTRY_ENDPOINT;
+  // abstract out chain client creation for any chain-registry data endpoint
+  async function createChainRegistryClient(chainRegistryEndpoint: string) {
     const chainRegistryClient = new ChainRegistryClient({
-      baseUrl: `${chainRegistryEndpoint}${isTestnet ? '/testnets' : ''}`,
+      baseUrl: chainRegistryEndpoint,
       chainNames: Array.from(new Set([chainName, ...chainRegistryChainNames])),
     });
 
@@ -50,11 +55,14 @@ export function useChainUtil(chainName = REACT_APP__CHAIN_NAME) {
   return useSWRImmutable(
     ['chain-registry-client', chainName],
     async (): Promise<ChainRegistryChainUtil> => {
-      try {
-        return await createChainRegistryClient();
-      } catch {
-        throw new Error('Could not get current chain-registry data');
+      for (const chainRegistryEndpoint of chainRegistryEndpoints) {
+        try {
+          return await createChainRegistryClient(chainRegistryEndpoint);
+        } catch {
+          // try next endpoint if there is one
+        }
       }
+      throw new Error('Could not get current chain-registry data');
     },
     {
       // don't retry if we found an error we already tried all endpoints
