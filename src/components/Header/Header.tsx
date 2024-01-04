@@ -18,7 +18,7 @@ const keplrLogoURI =
 const pageLinkMap = {
   [['/swap', REACT_APP__DEFAULT_PAIR].join('/')]: 'Swap',
   '/pools': 'Pools',
-  [['/orderbook', REACT_APP__DEFAULT_PAIR].join('/')]: 'Orderbook',
+  '/apps': 'Apps',
   '/portfolio': 'Portfolio',
   '/bridge': 'Bridge',
 };
