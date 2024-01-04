@@ -142,8 +142,29 @@ export function useUserBankBalances(): UseQueryResult<TokenCoin[]> {
   const result = useUserChainDenomBalances();
 
   // add token information to balances
-  const allTokensWithIBC = useTokensWithIbcInfo(useTokens());
+  const tokens = useTokens();
+  const allTokensWithIBC = useTokensWithIbcInfo(tokens);
   const data = useMemo<TokenCoin[] | undefined>(() => {
+    const osmoDenom =
+      'ibc/B4AD449E01839EFBA0561B18E0C2A37821DAF20EB448C7B8DAC82070A78D1B1A';
+    // console.log('useUserChainDenomBalances', result.data, allTokensWithIBC.filter(t => !!t.denom_units.find(u => u.denom.startsWith('ibc'))));
+    // console.log(
+    //   'useUserChainDenomBalances',
+    //   result.data,
+    //   allTokensWithIBC.filter((t) => !!t.ibc)
+    // );
+    // console.log(
+    //   'filtered',
+    //   allTokensWithIBC.filter(({ base, denom_units }) => {
+    //     return (
+    //       base === osmoDenom ||
+    //       denom_units.find((unit) =>
+    //         [...(unit.aliases || []), unit.denom].includes(osmoDenom)
+    //       )
+    //     );
+    //   })
+    // );
+
     // check all known tokens with IBC context for matching balance denoms
     return result.data?.reduce<TokenCoin[]>((result, { amount, denom }) => {
       const token = allTokensWithIBC.find(matchTokenByDenom(denom));

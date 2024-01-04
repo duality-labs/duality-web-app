@@ -89,6 +89,12 @@ export function useDeposit([denomA, denomB]: [
         if (!web3.address || !web3.wallet) {
           throw new Error('Wallet not connected');
         }
+        console.log({
+          denom0,
+          denom1,
+          denomA,
+          denomB,
+        });
         const web3Address = web3.address;
         if (!denom0 || !denom1) {
           throw new Error('Denoms not set');

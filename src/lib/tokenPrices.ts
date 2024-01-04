@@ -124,10 +124,10 @@ function useCombinedSimplePrices(
     fetcher,
     {
       // refresh and refetch infrequently to stay below API limits
-      refreshInterval: 10000,
-      dedupingInterval: 10000,
-      focusThrottleInterval: 10000,
-      errorRetryInterval: 10000,
+      refreshInterval: 30000,
+      dedupingInterval: 30000,
+      focusThrottleInterval: 30000,
+      errorRetryInterval: 30000,
     }
   );
 }
