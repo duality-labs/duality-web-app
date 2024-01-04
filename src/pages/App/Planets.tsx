@@ -21,7 +21,7 @@ export default function Planets() {
       <Planet name="swap" bottom={0} width={947} right={0} />
       <Planet name="pools" top="10vh" width={774} right={0} />
       <Planet name="portfolio" top="10vh" width={1200} right={0} />
-      <Planet name="apps/mars" top={0} width={1200} right={0} />
+      <Planet name="apps/mars" top={0} right={0} />
     </>
   );
 }
@@ -50,6 +50,15 @@ function Planet({
   const isMars = name === 'apps/mars';
   const style = useMemo(() => {
     if (isMars) {
+      if (!active) {
+        return {
+          opacity: 0,
+        };
+      } else {
+        return {
+          opacity: 'inherit',
+        };
+      }
     }
     return {
       top,
@@ -77,7 +86,7 @@ function Planet({
       src={src}
       className={
         isMars
-          ? 'planet-bg'
+          ? 'planet-bg fadeIn'
           : ['planet-bg', active && 'active', className]
               .filter(Boolean)
               .join(' ')
