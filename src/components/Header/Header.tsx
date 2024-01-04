@@ -7,7 +7,7 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useThemeMode } from '../../lib/themeProvider';
 
 import Drawer from '../Drawer';
-import logoWithText from '../../assets/logo/logo-with-text-white.svg';
+import logoWithText from '../../assets/logo/neutron-white-logo.svg';
 import './Header.scss';
 
 const { REACT_APP__DEFAULT_PAIR = '' } = process.env;
@@ -18,7 +18,7 @@ const keplrLogoURI =
 const pageLinkMap = {
   [['/swap', REACT_APP__DEFAULT_PAIR].join('/')]: 'Swap',
   '/pools': 'Pools',
-  '/apps': 'Apps',
+  '/apps': 'Ecosystem',
   '/portfolio': 'Portfolio',
   '/bridge': 'Bridge',
 };

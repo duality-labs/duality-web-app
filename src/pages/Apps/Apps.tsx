@@ -33,7 +33,7 @@ export default function MyLiquidity() {
 
   return (
     <div className="my-liquidity-page container col flex gap-5 py-6">
-      <div>
+      <div style={{ width: '40em', height: '25em' }}>
         <Link
           className="logo"
           // may be redirected by other logic from here
@@ -41,8 +41,8 @@ export default function MyLiquidity() {
         >
           <div
             style={{
-              width: '40em',
               height: '25em',
+
               backgroundImage:
                 'url("https://neutron.marsprotocol.io/_next/static/media/bg.0851eeb4.svg")',
               backgroundSize: 'cover',
@@ -64,6 +64,10 @@ export default function MyLiquidity() {
                 currentTarget.outerHTML = 'Duality';
               }}
             ></img>
+            <div className="ml-5">
+              <h2 className="h2">The Advanced Orderbook</h2>
+              <p>Get the best trading experience</p>
+            </div>
           </div>
         </Link>
       </div>
