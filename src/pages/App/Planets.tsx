@@ -21,7 +21,7 @@ export default function Planets() {
       <Planet name="swap" bottom={0} width={947} right={0} />
       <Planet name="pools" top="10vh" width={774} right={0} />
       <Planet name="portfolio" top="10vh" width={1200} right={0} />
-      <Planet name="apps/mars" top={0} right={0} />
+      <Planet name="apps/mars" top={0} width="100vw" right={0} />
     </>
   );
 }
@@ -53,10 +53,14 @@ function Planet({
       if (!active) {
         return {
           opacity: 0,
+          top: 0,
+          width: '100vw',
         };
       } else {
         return {
           opacity: 'inherit',
+          top: 0,
+          width: '100vw',
         };
       }
     }
