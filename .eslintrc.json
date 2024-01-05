@@ -1,17 +1,24 @@
 {
+  "root": true,
+  "env": { "browser": true, "es2020": true },
   "extends": [
-    "react-app",
-    "react-app/jest",
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
-    "plugin:@typescript-eslint/recommended",
     "plugin:jsx-a11y/recommended",
     "prettier"
   ],
-  "plugins": ["jsx-a11y"],
+  "ignorePatterns": ["dist"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["react-refresh"],
   "rules": {
     "no-console": "warn",
     "quotes": ["warn", "single"],
-    "react/react-in-jsx-scope": "off"
+    "react/react-in-jsx-scope": "off",
+    "react-refresh/only-export-components": [
+      "warn",
+      { "allowConstantExport": true }
+    ]
   }
 }
