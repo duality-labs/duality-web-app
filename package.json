@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "jest",
     "prepare": "husky install && npm run prepare:trading-view-bundles",
-    "prepare:duality-js": "cp src/assets/duality.js public/duality.js",
+    "prepare:duality-js": "cp src/assets/duality.js build/duality.js",
     "prepare:trading-view-bundles": "mkdir -p public/charting_library/bundles && cp node_modules/@tradingview/charting-library/charting_library/bundles/* public/charting_library/bundles"
   },
   "engines": {
