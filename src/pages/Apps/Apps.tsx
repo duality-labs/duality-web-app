@@ -1,14 +1,11 @@
 import { Link, useMatch } from 'react-router-dom';
 
-import marsCard from '../../assets/mocks/mars-card.png';
-import marsCard2 from '../../assets/mocks/mars-card-2.png';
-
 export default function MyLiquidity() {
   if (useMatch('/apps/mars')) {
     return (
-      <div className="mt-5 mb-auto">
+      <div className="container col flex gap-5 py-6">
         <img
-          className="m-5"
+          className="m-5 mr-auto"
           src="https://raw.githubusercontent.com/cosmos/chain-registry/master/mars/images/mars-protocol.svg"
           alt="Mars"
           style={{
@@ -21,18 +18,17 @@ export default function MyLiquidity() {
             currentTarget.outerHTML = 'Duality';
           }}
         ></img>
-        <div className="mt-5">
-          <img src={marsCard} alt="Mars" />
-        </div>
-        <div className="mt-5">
-          <img src={marsCard2} alt="Mars" />
-        </div>
+        <iframe
+          title="mars"
+          src="https://codepen.io/dib542/embed/VwReGra"
+          style={{ display: 'block', width: '100%', height: 500 }}
+        />
       </div>
     );
   }
 
   return (
-    <div className="my-liquidity-page container col flex gap-5 py-6">
+    <div className="container col flex gap-5 py-6">
       <div style={{ width: '40em', height: '25em' }}>
         <Link
           className="logo"
