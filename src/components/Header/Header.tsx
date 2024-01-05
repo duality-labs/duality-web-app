@@ -1,33 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { useThemeMode } from '../../lib/themeProvider';
+import { ThemeContext } from '../../lib/theme/themeProvider';
 
 import Drawer from '../Drawer';
 import logoWithText from '../../assets/logo/logo-with-text-white.svg';
-import './Header.scss';
+import { defaultPage, pageLinkMap } from './routes';
 
-const { REACT_APP__DEFAULT_PAIR = '' } = import.meta.env;
+import './Header.scss';
 
 const keplrLogoURI =
   'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
 
-const pageLinkMap = {
-  [['/swap', REACT_APP__DEFAULT_PAIR].join('/')]: 'Swap',
-  '/pools': 'Pools',
-  [['/orderbook', REACT_APP__DEFAULT_PAIR].join('/')]: 'Orderbook',
-  '/portfolio': 'Portfolio',
-  '/bridge': 'Bridge',
-};
-
-export const defaultPage = Object.keys(pageLinkMap).at(0) ?? '/';
-
 export default function Header() {
   const { connectWallet, address } = useWeb3();
-  const { themeMode, toggleThemeMode } = useThemeMode();
+  const { themeMode, toggleThemeMode } = useContext(ThemeContext);
 
   const [menuIsOpen, setMenuIsOpen] = useState(false);
   const toggleMenuIsOpen = useCallback(
