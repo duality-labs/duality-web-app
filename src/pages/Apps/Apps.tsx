@@ -1,6 +1,48 @@
 import { Link, useMatch } from 'react-router-dom';
+import { useWeb3 } from '../../lib/web3/useWeb3';
+import { useEffect, useRef } from 'react';
+
+interface DualityFrontEndMessageWalletAddress {
+  type: 'WalletAddress';
+  data: string | null;
+}
+interface DualityFrontEndMessageWalletExtension {
+  type: 'WalletExtension';
+  data: {
+    name: 'keplr';
+    isConnected: boolean;
+  };
+}
+export type DualityFrontEndMessage =
+  | DualityFrontEndMessageWalletExtension
+  | DualityFrontEndMessageWalletAddress;
 
 export default function Apps() {
+  const example1Ref = useRef<HTMLIFrameElement>(null);
+
+  const { wallet, address } = useWeb3();
+
+  useEffect(() => {
+    const message: DualityFrontEndMessageWalletExtension = {
+      type: 'WalletExtension',
+      data: {
+        name: 'keplr',
+        isConnected: !!wallet,
+      },
+    };
+    // post to iframes
+    example1Ref.current?.contentWindow?.postMessage(message);
+  }, [wallet]);
+
+  useEffect(() => {
+    const message: DualityFrontEndMessageWalletAddress = {
+      type: 'WalletAddress',
+      data: address,
+    };
+    // post to iframes
+    example1Ref.current?.contentWindow?.postMessage(message);
+  }, [address]);
+
   if (useMatch('/apps/mars')) {
     return (
       <div className="container col flex gap-5 py-6">
@@ -17,6 +59,7 @@ export default function Apps() {
         ></img>
         <iframe
           title="mars"
+          ref={example1Ref}
           src="https://codepen.io/dib542/embed/VwReGra"
           style={{ display: 'block', width: '100%', height: 500 }}
         />
