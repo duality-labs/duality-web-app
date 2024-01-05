@@ -11,7 +11,7 @@ import {
   LibrarySymbolInfo,
   SearchSymbolResultItem,
   Bar,
-} from '@tradingview/charting-library';
+} from 'charting_library';
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 
