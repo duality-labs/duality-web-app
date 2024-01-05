@@ -81,6 +81,8 @@ export function router(
         tickIndexOut,
       };
     } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('calculation error', err);
       throw err;
     }
   }
@@ -221,6 +223,6 @@ export function calculateOut({
 }
 
 // mock implementation of fee calculation
-export function calculateFee(data: RouterResult): BigNumber {
+export function calculateFee(): BigNumber {
   return new BigNumber(0);
 }

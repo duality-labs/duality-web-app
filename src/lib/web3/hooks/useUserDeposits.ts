@@ -69,7 +69,7 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
   useEffect(() => {
     if (address) {
       const onTxBalanceUpdate = (
-        event: MessageActionEvent,
+        _event: MessageActionEvent,
         tx: TendermintTxData
       ) => {
         const events = tx.value.TxResult.result.events.map(mapEventAttributes);

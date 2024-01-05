@@ -323,7 +323,7 @@ function ChartFees({
   );
 }
 
-function getStatVolatilityValues([open, high, low, close]: number[]): number[] {
+function getStatVolatilityValues([, , , close]: number[]): number[] {
   return [tickIndexToPrice(new BigNumber(close)).toNumber()];
 }
 function ChartVolatility({

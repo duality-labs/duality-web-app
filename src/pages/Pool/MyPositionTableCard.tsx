@@ -18,8 +18,6 @@ import TableCard from '../../components/cards/TableCard';
 import ValueBar from '../../components/Table/ValueBar';
 
 function MyPositionTableCard({
-  tokenA,
-  tokenB,
   title = 'My Position',
   header,
   data,
