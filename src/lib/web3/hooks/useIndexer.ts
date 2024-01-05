@@ -1,7 +1,7 @@
 import useSWRSubscription, { SWRSubscription } from 'swr/subscription';
 import { seconds } from '../../utils/time';
 
-const { REACT_APP__INDEXER_API = '' } = process.env;
+const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 
 type FlattenSingularItems<T> = T extends [infer U] ? U : T;
 

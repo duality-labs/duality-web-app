@@ -24,10 +24,10 @@ import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
 import { IndexerStreamAccumulateSingleDataSet } from '../../lib/web3/hooks/useIndexer';
 
-const { REACT_APP__INDEXER_API = '', NODE_ENV = 'production' } = process.env;
+const { REACT_APP__INDEXER_API = '', PROD } = import.meta.env;
 
 const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
-  debug: NODE_ENV !== 'production',
+  debug: !PROD,
   autosize: true,
   container: '',
   locale: 'en',

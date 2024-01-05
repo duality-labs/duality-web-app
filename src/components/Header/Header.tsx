@@ -10,7 +10,7 @@ import Drawer from '../Drawer';
 import logoWithText from '../../assets/logo/neutron-white-logo.svg';
 import './Header.scss';
 
-const { REACT_APP__DEFAULT_PAIR = '' } = process.env;
+const { REACT_APP__DEFAULT_PAIR = '' } = import.meta.env;
 
 const keplrLogoURI =
   'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';

@@ -31,7 +31,7 @@ const {
   REACT_APP__CHAIN_ASSETS = '',
   REACT_APP__PROVIDER_ASSETS = '',
   REACT_APP__DEV_ASSET_MAP = '',
-} = process.env;
+} = import.meta.env;
 
 const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
 
