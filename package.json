@@ -5,10 +5,11 @@
   "private": true,
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && npm run prepare:trading-view-bundles",
+    "build": "react-scripts build && npm run prepare:trading-view-bundles && npm run prepare:duality-js",
     "test": "react-scripts test",
     "lint": "eslint .",
     "prepare": "husky install && npm run prepare:trading-view-bundles",
+    "prepare:duality-js": "cp src/assets/duality.js public/duality.js",
     "prepare:trading-view-bundles": "mkdir -p public/charting_library/bundles && cp node_modules/@tradingview/charting-library/charting_library/bundles/* public/charting_library/bundles"
   },
   "engines": {
