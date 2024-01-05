@@ -252,7 +252,9 @@ export function useRemoteChainRpcEndpoint(chain?: Chain) {
                 return rpcEndpoint;
               })
             ),
-            new Promise<string>((resolve, reject) => setTimeout(reject, 10000)),
+            new Promise<string>((_resolve, reject) =>
+              setTimeout(reject, 10000)
+            ),
           ]);
           return rpcEndpoint ?? null;
         } catch (e) {
@@ -293,7 +295,9 @@ export function useRemoteChainRestEndpoint(chain?: Chain) {
                 return restEndpoint;
               })
             ),
-            new Promise<string>((resolve, reject) => setTimeout(reject, 10000)),
+            new Promise<string>((_resolve, reject) =>
+              setTimeout(reject, 10000)
+            ),
           ]);
           return restEndpoint ?? null;
         } catch (e) {
