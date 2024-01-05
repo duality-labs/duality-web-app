@@ -1,6 +1,3 @@
-/* bring in normalize.css styles first */
-@import-normalise;
-
 /* reset all margins and padding */
 * {
   margin: 0;
