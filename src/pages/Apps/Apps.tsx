@@ -1,6 +1,6 @@
 import { Link, useMatch } from 'react-router-dom';
 
-export default function MyLiquidity() {
+export default function Apps() {
   if (useMatch('/apps/mars')) {
     return (
       <div className="container col flex gap-5 py-6">
@@ -13,9 +13,6 @@ export default function MyLiquidity() {
             height: '10em',
             color: 'white',
             filter: 'invert(100%)',
-          }}
-          onError={({ currentTarget }) => {
-            currentTarget.outerHTML = 'Duality';
           }}
         ></img>
         <iframe
@@ -55,9 +52,6 @@ export default function MyLiquidity() {
                 height: '10em',
                 color: 'white',
                 filter: 'invert(100%)',
-              }}
-              onError={({ currentTarget }) => {
-                currentTarget.outerHTML = 'Duality';
               }}
             ></img>
             <div className="ml-5">
