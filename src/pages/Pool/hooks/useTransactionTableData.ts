@@ -6,7 +6,7 @@ import { guessInvertedOrder } from '../../../lib/web3/utils/pairs';
 import { DexMessageAction } from '../../../lib/web3/utils/events';
 import { WalletAddress } from '../../../lib/web3/utils/address';
 
-const { REACT_APP__RPC_API = '' } = process.env;
+const { REACT_APP__RPC_API = '' } = import.meta.env;
 
 type Hash = string;
 type EncodedData = string;

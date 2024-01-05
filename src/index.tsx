@@ -5,7 +5,8 @@ import './index.scss';
 
 // add Buffer.from support for '@duality-labs/dualityjs'
 import { Buffer } from 'buffer';
-global.Buffer = Buffer;
+window.global = window.globalThis;
+window.Buffer = Buffer;
 
 // ensure App is loaded after Buffer because Keplr needs it on import
 const App = React.lazy(() => import('./pages/App'));

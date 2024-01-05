@@ -34,7 +34,7 @@ import useOnDragMove from '../hooks/useOnDragMove';
 
 import './LiquiditySelector.scss';
 
-const { REACT_APP__MAX_TICK_INDEXES = '' } = process.env;
+const { REACT_APP__MAX_TICK_INDEXES = '' } = import.meta.env;
 const [
   priceMinIndex = Number.MIN_SAFE_INTEGER,
   priceMaxIndex = Number.MAX_SAFE_INTEGER,

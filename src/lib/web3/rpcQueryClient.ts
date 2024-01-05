@@ -7,7 +7,7 @@ import { Tendermint34Client, HttpEndpoint } from '@cosmjs/tendermint-rpc';
 
 import { useMemo } from 'react';
 
-const { REACT_APP__RPC_API = '' } = process.env;
+const { REACT_APP__RPC_API = '' } = import.meta.env;
 
 const getRpcEndpointKey = (rpcEndpoint: string | HttpEndpoint) => {
   if (typeof rpcEndpoint === 'string') {

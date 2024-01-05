@@ -85,7 +85,7 @@ import NumberInput from '../../components/inputs/NumberInput/NumberInput';
 const {
   REACT_APP__MAX_FRACTION_DIGITS = '',
   REACT_APP__MAX_TICK_INDEXES = '',
-} = process.env;
+} = import.meta.env;
 const maxFractionDigits = parseInt(REACT_APP__MAX_FRACTION_DIGITS) || 20;
 const [
   priceMinIndex = Number.MIN_SAFE_INTEGER,
