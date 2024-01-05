@@ -5,7 +5,7 @@ import { ObservableList, useObservableList } from './utils/observableList';
 import { Token } from './web3/utils/tokens';
 import { devChain } from './web3/hooks/useChains';
 
-const { REACT_APP__DEV_ASSET_PRICE_MAP } = process.env;
+const { REACT_APP__DEV_ASSET_PRICE_MAP } = import.meta.env;
 const defaultDevAssetPrice = 1;
 
 const baseAPI = 'https://api.coingecko.com/api/v3';

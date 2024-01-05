@@ -14,7 +14,7 @@ import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useTokenValueTotal } from '../../lib/web3/hooks/useTokens';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
-const { REACT_APP__INDEXER_API = '' } = process.env;
+const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 
 function useIndexerData(
   tokenA: Token,

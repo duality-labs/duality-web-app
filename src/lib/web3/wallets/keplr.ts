@@ -8,7 +8,7 @@ import { dualityChain, providerChain } from '../hooks/useChains';
 import { devAssets, dualityAssets, providerAssets } from '../hooks/useTokens';
 import { AssetList } from '@chain-registry/types';
 
-const { REACT_APP__CHAIN_ID: chainId = '' } = process.env;
+const { REACT_APP__CHAIN_ID: chainId = '' } = import.meta.env;
 
 const chainInfo: ChainInfo = chainRegistryChainToKeplr(
   dualityChain,

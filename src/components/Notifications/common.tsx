@@ -9,7 +9,7 @@ import { DeliverTxResponse } from '@cosmjs/stargate';
 import { coerceError } from '../../lib/utils/error';
 import { seconds } from '../../lib/utils/time';
 
-const { REACT_APP__REST_API } = process.env;
+const { REACT_APP__REST_API } = import.meta.env;
 
 // standard error codes can be found in https://github.com/cosmos/cosmos-sdk/blob/v0.45.4/types/errors/errors.go
 // however custom modules may register additional error codes

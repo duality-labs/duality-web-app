@@ -7,7 +7,7 @@ import {
   getSigningIbcClient,
 } from '@duality-labs/dualityjs';
 
-const { REACT_APP__RPC_API = '' } = process.env;
+const { REACT_APP__RPC_API = '' } = import.meta.env;
 
 export default function rpcClient(
   wallet?: OfflineSigner,
