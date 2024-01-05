@@ -16,9 +16,9 @@ import {
   formatAmount,
   formatPrice,
   formatMaximumSignificantDecimals,
-  roundToSignificantDigits,
   formatPercentage,
 } from '../../lib/utils/number';
+import { getRangeIndexes } from './helpers';
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
@@ -126,7 +126,7 @@ const poleWidth = 8;
 export default function LiquiditySelector({
   tokenA,
   tokenB,
-  fee,
+  // fee,
   userTickSelected = -1,
   setUserTickSelected,
   initialPriceIndex,
@@ -629,7 +629,7 @@ export default function LiquiditySelector({
     return tickBuckets.reduce(
       (
         result,
-        [lowerBoundIndex, upperBoundIndex, tokenAValue, tokenBValue]
+        [_lowerBoundIndex, _upperBoundIndex, tokenAValue, tokenBValue]
       ) => {
         return Math.max(result, tokenAValue.toNumber(), tokenBValue.toNumber());
       },
@@ -1064,28 +1064,6 @@ function getRangePositions(
   ];
 }
 
-export function getRangeIndexes(
-  currentPriceIndex: number | undefined,
-  fractionalRangeMinIndex: number,
-  fractionalRangeMaxIndex: number
-) {
-  const roundedCurrentPriceIndex =
-    currentPriceIndex && Math.round(currentPriceIndex);
-  const rangeMinIndex = roundToSignificantDigits(fractionalRangeMinIndex);
-  const rangeMaxIndex = roundToSignificantDigits(fractionalRangeMaxIndex);
-  // align fractional index positions to whole tick index positions
-  // for the min and max cases
-  if (roundedCurrentPriceIndex === undefined) {
-    return [rangeMinIndex - 0.5, rangeMaxIndex + 0.5];
-  }
-  return [
-    Math.ceil(rangeMinIndex) +
-      (rangeMinIndex >= roundedCurrentPriceIndex ? -1 : 0),
-    Math.floor(rangeMaxIndex) +
-      (rangeMaxIndex <= roundedCurrentPriceIndex ? +1 : 0),
-  ];
-}
-
 function TicksBackgroundArea({
   rangeMinIndex,
   rangeMaxIndex,
@@ -1162,7 +1140,7 @@ function TicksArea({
   const lastDisplacementMin = useRef<number>(0);
   const [startDragMin, isDraggingMin] = useOnDragMove(
     useCallback(
-      (ev: Event, displacement = { x: 0, y: 0 }) => {
+      (_ev: Event, displacement = { x: 0, y: 0 }) => {
         if (displacement.x && displacement.x !== lastDisplacementMin.current) {
           const newDisplacement = displacement.x - lastDisplacementMin.current;
           const pixelsPerIndex = plotX(1) - plotX(0);
@@ -1196,7 +1174,7 @@ function TicksArea({
   const lastDisplacementMax = useRef<number>(0);
   const [startDragMax, isDraggingMax] = useOnDragMove(
     useCallback(
-      (ev: Event, displacement = { x: 0, y: 0 }) => {
+      (_ev: Event, displacement = { x: 0, y: 0 }) => {
         if (displacement.x && displacement.x !== lastDisplacementMax.current) {
           const newDisplacement = displacement.x - lastDisplacementMax.current;
           const pixelsPerIndex = plotX(1) - plotX(0);
@@ -1632,7 +1610,7 @@ function TicksGroup({
 
   const [startDragTick, isDragging] = useOnDragMove(
     useCallback(
-      (ev: Event, displacement = { x: 0, y: 0 }) => {
+      (_ev: Event, displacement = { x: 0, y: 0 }) => {
         // exit if there is no tick
         const { index: userTickSelected, tick } =
           lastSelectedTick.current || {};

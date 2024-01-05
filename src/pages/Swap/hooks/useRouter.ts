@@ -187,7 +187,9 @@ export function getRouterEstimates(
     // return estimate from current result
     if (routerResult) {
       const rate = routerResult.amountOut.dividedBy(routerResult.amountIn);
-      const extraFee = calculateFee(routerResult);
+      const extraFee = calculateFee();
+      // todo: use result
+      // const extraFee = calculateFee(routerResult);
       const estimate = {
         tokenA: routerResult.tokenIn,
         tokenB: routerResult.tokenOut,
