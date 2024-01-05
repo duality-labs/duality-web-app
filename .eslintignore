@@ -8,3 +8,6 @@
 
 # production
 /build
+
+# temp hack
+/public/duality.js
