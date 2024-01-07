@@ -89,7 +89,9 @@ toast.blank = (message: string, opts?: ToastOptions) =>
   baseToast(createToast(message, opts), opts);
 
 export default function Notifications() {
-  const { toasts, handlers } = useToaster();
+  const { toasts, handlers } = useToaster({
+    duration: 7000,
+  });
   const { startPause, endPause, calculateOffset, updateHeight } = handlers;
 
   return (
