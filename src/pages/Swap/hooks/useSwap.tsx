@@ -23,6 +23,7 @@ import {
   MsgPlaceLimitOrderResponse,
   MsgPlaceLimitOrder,
 } from '@duality-labs/dualityjs/types/codegen/duality/dex/tx';
+import { useMutation } from '@tanstack/react-query';
 
 async function sendSwap(
   {
@@ -203,3 +204,10 @@ export function useSwap(): [
 
   return [{ data, isValidating: validating, error }, sendRequest];
 }
+
+
+// function useSomething() {
+//   return useMutation({
+//     mutationFn: () => {},
+//   });
+// }

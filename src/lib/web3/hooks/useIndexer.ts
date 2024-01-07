@@ -1,5 +1,7 @@
 import useSWRSubscription, { SWRSubscription } from 'swr/subscription';
 import { seconds } from '../../utils/time';
+import type { SigningStargateClient } from '@cosmjs/stargate';
+import { duality } from '@duality-labs/dualityjs';
 
 const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 
@@ -42,6 +44,57 @@ interface AccumulatorOptions {
   // (0 values should be removed from liquidity maps)
   mapEntryRemovalValue?: 0;
 }
+
+// const parentOrigin = 'https://app.duality.xyz'
+
+// interface DualityFrontEndMessageWalletAddress {
+//   type: 'WalletAddress';
+//   data: string;
+// }
+// interface DualityFrontEndMessageUnknown {
+//   type: string;
+//   data: unknown;
+// }
+// type DualityFrontEndMessage =
+//   | DualityFrontEndMessageUnknown
+//   | DualityFrontEndMessageWalletAddress;
+
+// function filterToMessageType(eventType: string, allowedOrigin: string) {
+//   return (event: MessageEvent) => {
+//     return event.origin === allowedOrigin && event.data.type === eventType;
+//   };
+// }
+
+// export function subscribeToDualityMessage<T extends DualityFrontEndMessage>(
+//   messageDataType: T['type'],
+//   eventCallback: (event: MessageEvent<T>['data']) => void,
+//   allowedOrigin = parentOrigin
+// ): () => void {
+//   const handleEvent = (event: MessageEvent) => {
+//     if (filterToMessageType(messageDataType, allowedOrigin)) {
+//       try {
+//         eventCallback(event.data);
+//       } catch (e) {
+//         console.error('error in frame message:', e, event);
+//       }
+//     }
+//   };
+//   // add listener and return cleanup function
+//   window.addEventListener('message', handleEvent);
+//   return () => window.removeEventListener('message', handleEvent);
+// }
+
+// export function postDualityMessage(...args: Parameters<SigningStargateClient['signAndBroadcast']>) {
+//    if (window.top?.origin === parentOrigin) {
+//     return window.top.postMessage({ type: 'signAndBroadcast', args})
+//    }
+//    duality.dex.MsgPlaceLimitOrder.fromPartial({
+
+//    })
+// }
+
+// const subscribe = subscribeToDualityMessage<DualityFrontEndMessageWalletAddress>('WalletAddress', ({data}) => console.log('data', data));
+
 export class IndexerStream<DataRow = BaseDataRow> {
   // use single AbortController for all the requests
   private abortController = new AbortController();
