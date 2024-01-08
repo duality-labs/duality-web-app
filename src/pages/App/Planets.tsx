@@ -5,6 +5,7 @@ import planetSwapSVG from '../../assets/planets/planet-swap.svg';
 import planetLiquiditySVG from '../../assets/planets/planet-liquidity.svg';
 import planetPortfolioSVG from '../../assets/planets/planet-portfolio.svg';
 import marsSVG from '../../assets/planets/mars.svg';
+import customPNG from '../../assets/planets/custom.png';
 
 import './Planets.scss';
 
@@ -13,6 +14,7 @@ const planets: { [planetName: string]: string | undefined } = {
   pools: planetLiquiditySVG,
   portfolio: planetPortfolioSVG,
   'apps/mars': marsSVG,
+  'apps/custom': customPNG,
 };
 
 export default function Planets() {
@@ -22,6 +24,7 @@ export default function Planets() {
       <Planet name="pools" top="10vh" width={774} right={0} />
       <Planet name="portfolio" top="10vh" width={1200} right={0} />
       <Planet name="apps/mars" top={0} width="100vw" right={0} />
+      <Planet name="apps/custom" top={0} width="100vw" right={0} />
     </>
   );
 }
@@ -47,20 +50,22 @@ function Planet({
   width?: number | string;
 }) {
   const active = useMatch(`${name}/*`);
-  const isMars = name === 'apps/mars';
+  const isApp = name.startsWith('apps/');
   const style = useMemo(() => {
-    if (isMars) {
+    if (isApp) {
       if (!active) {
         return {
           opacity: 0,
           top: 0,
-          width: '100vw',
+          minWidth: '100vw',
+          minHeight: '100vh',
         };
       } else {
         return {
           opacity: 'inherit',
           top: 0,
-          width: '100vw',
+          minWidth: '100vw',
+          minHeight: '100vh',
         };
       }
     }
@@ -84,12 +89,12 @@ function Planet({
             )})`,
       }),
     };
-  }, [isMars, top, bottom, width, left, active, right]);
+  }, [isApp, top, bottom, width, left, active, right]);
   return src ? (
     <img
       src={src}
       className={
-        isMars
+        isApp
           ? 'planet-bg fadeIn'
           : ['planet-bg', active && 'active', className]
               .filter(Boolean)

@@ -25,9 +25,17 @@ const marsStyle = {
   borderColor: '#421f32',
   height: 100,
 };
+const customStyle = {
+  borderRadius: '1rem',
+  borderWidth: 5,
+  borderStyle: 'solid',
+  borderColor: '#1f2e42',
+  height: 100,
+};
 export default function Apps() {
   const marsSimple = useMatch('/apps/mars');
   const marsAdvanced = useMatch('/apps/mars/advanced');
+  const custom = useMatch('/apps/custom');
   if (marsSimple) {
     return (
       <div className="container col flex gap-5 py-6">
@@ -104,11 +112,49 @@ export default function Apps() {
       </div>
     );
   }
+  const iframeSrc = new URLSearchParams(window.location.search).get(
+    'custom-iframe'
+  );
+  if (custom) {
+    return (
+      <div className="container col flex gap-5 py-6">
+        <img
+          className="m-5"
+          src="https://raw.githubusercontent.com/codesandbox/codesandbox-client/master/packages/app/public/codesandbox-256.png"
+          alt="Mars"
+          style={{
+            objectFit: 'contain',
+            objectPosition: 'left',
+            height: '9em',
+            color: 'white',
+          }}
+        ></img>
+        <h2 className="h1">Custom</h2>
+
+        <p>Your own frame sandbox to test with</p>
+        <p>
+          Fork the code at{' '}
+          <a
+            style={{ textDecoration: 'underline' }}
+            href="https://codesandbox.io/p/github/dib542/duality-front-end-sdk-example-1/main?file=%2F.env%3A4%2C1&workspaceId=04fd8ca2-1425-43ef-96c0-411ec69b972a"
+          >
+            CodeSandbox.io
+          </a>{' '}
+          to start and use a query parameter
+          <code style={{ display: 'block' }}>
+            &quot;?custom-iframe=[encodeURIComponent(URL)]&quot;
+          </code>
+          on this page to generate the custom iframe.
+        </p>
+        {iframeSrc && <AppIFrame src={iframeSrc} style={customStyle} />}
+      </div>
+    );
+  }
 
   return (
     <div className="container col flex gap-5 py-6">
-      <div className="row flex gap-5">
-        <div style={{ width: '45em', height: '25em' }}>
+      <div className="row gap-5">
+        <div style={{ width: '42.5em', height: '25em' }}>
           <Link
             className="logo"
             // may be redirected by other logic from here
@@ -148,7 +194,7 @@ export default function Apps() {
           </Link>
         </div>
 
-        <div style={{ width: '45em', height: '25em' }}>
+        <div style={{ width: '42.5em', height: '25em' }}>
           <Link
             className="logo"
             // may be redirected by other logic from here
@@ -183,6 +229,51 @@ export default function Apps() {
                   Demo of data subscription and outer frame wallet tx signing
                   using frame messaging
                 </i>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </div>
+      <div className="row gap-5">
+        <div style={{ width: '42.5em', height: '25em' }}>
+          <Link
+            className="logo"
+            // may be redirected by other logic from here
+            to={`/apps/custom${
+              location.search ||
+              '?custom-iframe=https%3A%2F%2F65xs47-5173.csb.app%2F'
+            }`}
+          >
+            <div
+              style={{
+                height: 'auto',
+                backgroundImage:
+                  'url("https://repository-images.githubusercontent.com/352395151/6bbc7180-b70a-11eb-908b-c0c9098ec5d8")',
+                backgroundSize: 'cover',
+                borderRadius: '1rem',
+                border: '.35rem solid #1f2e42',
+              }}
+            >
+              <img
+                className="m-5"
+                src="https://raw.githubusercontent.com/codesandbox/codesandbox-client/master/packages/app/public/codesandbox-256.png"
+                alt="Mars"
+                style={{
+                  objectFit: 'cover',
+                  height: '9em',
+                  color: 'white',
+                }}
+              ></img>
+              <div className="ml-5">
+                <h2 className="h1">Custom</h2>
+                <br />
+                <p style={{ marginBottom: 15 }}>
+                  <i>
+                    use a query parameter
+                    &quot;?custom-iframe=[encodeURIComponent(URL)]&quot; to link
+                    to a custom code sandbox frame.
+                  </i>
+                </p>
               </div>
             </div>
           </Link>
