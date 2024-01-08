@@ -108,7 +108,7 @@ export default function Apps() {
           <li>transaction response notification state --&gt; outer frame</li>
           <li>transaction response notification state shown in outer frame</li>
         </ul>
-        <AppIFrame src="https://2rfjdl-5173.csb.app/" style={marsStyle} />
+        <AppIFrame src="https://2hdtks-5173.csb.app/" style={marsStyle} />
       </div>
     );
   }
@@ -241,7 +241,7 @@ export default function Apps() {
             // may be redirected by other logic from here
             to={`/apps/custom${
               location.search ||
-              '?custom-iframe=https%3A%2F%2F65xs47-5173.csb.app%2F'
+              '?custom-iframe=https%3A%2F%2Ftqljss-5173.csb.app%2F'
             }`}
           >
             <div
