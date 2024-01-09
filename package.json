@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && npm run prepare:trading-view-bundles",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint --ext mjs,js,jsx,ts,tsx --max-warnings 0 --report-unused-disable-directives .",
     "preview": "vite preview",
     "test": "jest",
     "prepare": "husky install && npm run prepare:trading-view-bundles",
@@ -90,7 +90,7 @@
       "prettier --write"
     ],
     "**/*.{mjs,js,jsx,ts,tsx}": [
-      "eslint --max-warnings 0"
+      "eslint --max-warnings 0 --report-unused-disable-directives"
     ]
   },
   "browserslist": {
