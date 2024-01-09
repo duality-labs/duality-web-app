@@ -26,7 +26,6 @@
       }
     ],
     "no-console": "warn",
-    "no-undef": "off",
     "no-unsafe-optional-chaining": "off",
     "no-useless-catch": "off",
     "quotes": ["warn", "single"],
