@@ -25,7 +25,6 @@
         "varsIgnorePattern": "^_"
       }
     ],
-    "no-async-promise-executor": "off",
     "no-case-declarations": "off",
     "no-console": "warn",
     "no-prototype-builtins": "off",
