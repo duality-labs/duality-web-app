@@ -12,7 +12,7 @@ const { REACT_APP__RPC_API = '' } = import.meta.env;
 const getRpcEndpointKey = (rpcEndpoint: string | HttpEndpoint) => {
   if (typeof rpcEndpoint === 'string') {
     return rpcEndpoint;
-  } else if (!!rpcEndpoint) {
+  } else if (rpcEndpoint) {
     return rpcEndpoint.url;
   }
 };

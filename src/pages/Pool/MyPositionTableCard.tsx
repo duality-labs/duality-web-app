@@ -246,7 +246,7 @@ export function MyEditedPositionTableCard({
       editedUserPosition
         // sort by price
         .sort((a, b) => {
-          return !!invertedTokenOrder
+          return invertedTokenOrder
             ? b.deposit.centerTickIndex.toNumber() -
                 a.deposit.centerTickIndex.toNumber()
             : a.deposit.centerTickIndex.toNumber() -

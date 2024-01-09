@@ -18,7 +18,7 @@ const _lcdClients: Record<string, LcdClient> = {};
 const getLcdEndpointKey = (lcdEndpoint: string | HttpEndpoint) => {
   if (typeof lcdEndpoint === 'string') {
     return lcdEndpoint;
-  } else if (!!lcdEndpoint) {
+  } else if (lcdEndpoint) {
     return lcdEndpoint.url;
   }
 };

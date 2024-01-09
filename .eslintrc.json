@@ -28,7 +28,6 @@
     "no-async-promise-executor": "off",
     "no-case-declarations": "off",
     "no-console": "warn",
-    "no-extra-boolean-cast": "off",
     "no-prototype-builtins": "off",
     "no-undef": "off",
     "no-unsafe-optional-chaining": "off",
