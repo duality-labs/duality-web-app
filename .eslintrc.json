@@ -26,8 +26,6 @@
       }
     ],
     "no-console": "warn",
-    "no-unsafe-optional-chaining": "off",
-    "no-useless-catch": "off",
     "quotes": ["warn", "single"],
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
