@@ -14,7 +14,9 @@
   "forwardPorts": [5173],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "npm install",
+  // install at least the min npm version that is expected (the image specifies only node version)
+  // then with the correct npm version install the dependencies
+  "postCreateCommand": "npm i -g npm@$( jq -r '.engines.npm' package.json ) && npm install",
   // Use 'postStartCommand' to run commands after the container is started/restarted.
   "postStartCommand": "npm run test",
 
