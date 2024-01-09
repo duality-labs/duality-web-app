@@ -25,7 +25,7 @@ export const getRpcClient = async (
   if (!key) {
     throw new Error('No RPC endpoint given');
   }
-  if (_rpcClients.hasOwnProperty(key)) {
+  if (key in _rpcClients) {
     return _rpcClients[key];
   }
   const tmClient = await Tendermint34Client.connect(key);

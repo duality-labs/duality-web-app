@@ -30,7 +30,7 @@ const getLcdClient = async (
   if (!key) {
     throw new Error('No LCD endpoint given');
   }
-  if (_lcdClients.hasOwnProperty(key)) {
+  if (key in _lcdClients) {
     return _lcdClients[key];
   }
   const lcd = await duality.ClientFactory.createLCDClient({
