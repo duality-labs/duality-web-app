@@ -420,11 +420,11 @@ function EventColumn<
         return !tokenA && !tokenB && isValidating
           ? '...'
           : formatCurrency(
+              // get value of tokenA
               new BigNumber(
                 getDisplayDenomAmount(tokenA, getTokenAReserves()) || 0
               )
-                .multipliedBy// get value of tokenA
-                (tokenAPrice || 0)
+                .multipliedBy(tokenAPrice || 0)
                 .plus(
                   // get value of tokenB
                   new BigNumber(
@@ -567,11 +567,11 @@ function SwapColumn({
         return !tokenA && !tokenB && isValidating
           ? '...'
           : formatCurrency(
+              // get value of tokenA
               new BigNumber(
                 getDisplayDenomAmount(tokenA, getTokenAReserves()) || 0
               )
-                .multipliedBy// get value of tokenA
-                (tokenAPrice || 0)
+                .multipliedBy(tokenAPrice || 0)
                 .plus(
                   // get value of tokenB
                   new BigNumber(
