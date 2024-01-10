@@ -48,8 +48,8 @@ function createCustomEvent(
                 {
                   type: eventType,
                   attributes: Object.entries(eventData).map(([key, value]) => ({
-                    key: Buffer.from(key).toString('base64'),
-                    value: value && Buffer.from(value).toString('base64'),
+                    key,
+                    value,
                   })),
                 },
               ],
@@ -628,7 +628,10 @@ describe('The event subscription manager', function () {
         server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(1);
-        expect(handler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(handler).toHaveBeenCalledWith(
+          getMessageObject(actionName),
+          getTxObject(actionName)
+        );
       });
       it('should be able to listen for a specific type of message', async function () {
         const handler = jest.fn();
@@ -642,7 +645,10 @@ describe('The event subscription manager', function () {
         server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(1);
-        expect(handler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(handler).toHaveBeenCalledWith(
+          getMessageObject(actionName),
+          getTxObject(actionName)
+        );
       });
       it('should be able to listen to multiple messages', async function () {
         const handler = jest.fn();
@@ -659,7 +665,8 @@ describe('The event subscription manager', function () {
         actionNames.forEach((actionName, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            getMessageObject(actionName)
+            getMessageObject(actionName),
+            getTxObject(actionName)
           );
         });
       });
@@ -676,7 +683,8 @@ describe('The event subscription manager', function () {
         repeatArray.forEach((_, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            getMessageObject(actionName)
+            getMessageObject(actionName),
+            getTxObject(actionName)
           );
         });
       });
@@ -697,7 +705,8 @@ describe('The event subscription manager', function () {
         repeatArray.forEach((_, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            getMessageObject(actionName)
+            getMessageObject(actionName),
+            getTxObject(actionName)
           );
         });
       });
@@ -720,7 +729,8 @@ describe('The event subscription manager', function () {
         actionNames.forEach((actionName, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            getMessageObject(actionName)
+            getMessageObject(actionName),
+            getTxObject(actionName)
           );
         });
       });
@@ -744,9 +754,13 @@ describe('The event subscription manager', function () {
 
         expect(handler).toHaveBeenCalledTimes(1);
         expect(otherHandler).toHaveBeenCalledTimes(1);
-        expect(handler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(handler).toHaveBeenCalledWith(
+          getMessageObject(actionName),
+          getTxObject(actionName)
+        );
         expect(otherHandler).toHaveBeenCalledWith(
-          getMessageObject(otherActionName)
+          getMessageObject(otherActionName),
+          getTxObject(otherActionName)
         );
       });
     });
@@ -849,7 +863,8 @@ describe('The event subscription manager', function () {
 
         expect(handler).toHaveBeenCalledTimes(1);
         expect(handler).toHaveBeenLastCalledWith(
-          getMessageObject(otherActionName)
+          getMessageObject(otherActionName),
+          getTxObject(otherActionName)
         );
       });
       it('should be able to only unsubscribe from a specific subscription and not all (based on the callback)', async function () {
@@ -871,7 +886,10 @@ describe('The event subscription manager', function () {
 
         expect(handler).toHaveBeenCalledTimes(0);
         expect(otherHandler).toHaveBeenCalledTimes(1);
-        expect(otherHandler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(otherHandler).toHaveBeenCalledWith(
+          getMessageObject(actionName),
+          getTxObject(actionName)
+        );
       });
       it('should be able to only unsubscribe from a specific subscription and not all (based on the callback but otherwise generic)', async function () {
         const handler = jest.fn();
@@ -891,7 +909,10 @@ describe('The event subscription manager', function () {
 
         expect(handler).toHaveBeenCalledTimes(0);
         expect(otherHandler).toHaveBeenCalledTimes(1);
-        expect(otherHandler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(otherHandler).toHaveBeenCalledWith(
+          getMessageObject(actionName),
+          getTxObject(actionName)
+        );
       });
     });
   });
@@ -905,6 +926,27 @@ function getMessageObject(actionName: string) {
   return {
     'message.module': 'duality',
     'message.action': actionName,
+  };
+}
+
+function getTxObject(actionName: string) {
+  return {
+    type: 'tendermint/event/Tx',
+    value: {
+      TxResult: {
+        result: {
+          events: [
+            {
+              attributes: [
+                { key: 'module', value: 'duality' },
+                { key: 'action', value: actionName },
+              ],
+              type: 'message',
+            },
+          ],
+        },
+      },
+    },
   };
 }
 
