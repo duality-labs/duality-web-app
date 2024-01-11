@@ -175,7 +175,7 @@ export default function Stars() {
 
   // add animation for star movement on navigation change
   const hyperjumpAnimation = useCallback(function onHyperjumpTransitionFrame(
-    now: DOMHighResTimeStamp,
+    _now: DOMHighResTimeStamp,
     progress: number,
     lastProgress: number
   ): void {

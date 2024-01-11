@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { Asset, Chain } from '@chain-registry/types';
 import { sha256 } from '@cosmjs/crypto';
 
-const { REACT_APP__CHAIN_ID = '' } = process.env;
+const { REACT_APP__CHAIN_ID = '' } = import.meta.env;
 
 export interface Token extends Asset {
   // each asset should have exactly one chain parent

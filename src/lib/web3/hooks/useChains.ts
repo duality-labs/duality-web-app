@@ -30,7 +30,7 @@ const {
   REACT_APP__PROVIDER_CHAIN = '',
   REACT_APP__RPC_API = '',
   REACT_APP__REST_API = '',
-} = process.env;
+} = import.meta.env;
 
 type ChainFeeTokens = NonNullable<Chain['fees']>['fee_tokens'];
 export const dualityChain: Chain = {
@@ -227,7 +227,7 @@ export function useIbcOpenTransfers(chain: Chain = dualityChain) {
   }, [clientStates, connections, channels]);
 }
 
-export function useConnectedChainIDs(chain: Chain = dualityChain) {
+export function useConnectedChainIDs() {
   const openTransfers = useIbcOpenTransfers();
   // return only chain IDs for easy comparison to different lists
   return useMemo(() => {
@@ -252,7 +252,9 @@ export function useRemoteChainRpcEndpoint(chain?: Chain) {
                 return rpcEndpoint;
               })
             ),
-            new Promise<string>((resolve, reject) => setTimeout(reject, 10000)),
+            new Promise<string>((_resolve, reject) =>
+              setTimeout(reject, 10000)
+            ),
           ]);
           return rpcEndpoint ?? null;
         } catch (e) {
@@ -293,7 +295,9 @@ export function useRemoteChainRestEndpoint(chain?: Chain) {
                 return restEndpoint;
               })
             ),
-            new Promise<string>((resolve, reject) => setTimeout(reject, 10000)),
+            new Promise<string>((_resolve, reject) =>
+              setTimeout(reject, 10000)
+            ),
           ]);
           return restEndpoint ?? null;
         } catch (e) {

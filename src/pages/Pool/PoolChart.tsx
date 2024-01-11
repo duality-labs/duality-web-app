@@ -22,7 +22,7 @@ import { formatAmount } from '../../lib/utils/number';
 import './PoolChart.scss';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
-const { REACT_APP__INDEXER_API = '' } = process.env;
+const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 
 const timePeriodKeys: TimePeriodKey[] = ['24H', '1W', '1M', '1Y', 'ALL'];
 
@@ -323,7 +323,7 @@ function ChartFees({
   );
 }
 
-function getStatVolatilityValues([open, high, low, close]: number[]): number[] {
+function getStatVolatilityValues([, , , close]: number[]): number[] {
   return [tickIndexToPrice(new BigNumber(close)).toNumber()];
 }
 function ChartVolatility({

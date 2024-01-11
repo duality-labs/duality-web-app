@@ -3,7 +3,7 @@ import { HttpEndpoint } from '@cosmjs/tendermint-rpc';
 import { duality } from '@duality-labs/dualityjs';
 import { useMemo } from 'react';
 
-const { REACT_APP__REST_API = '' } = process.env;
+const { REACT_APP__REST_API = '' } = import.meta.env;
 
 export function lcdClient(rpcURL = REACT_APP__REST_API) {
   return duality.ClientFactory.createLCDClient({ restEndpoint: rpcURL });

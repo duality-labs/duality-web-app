@@ -11,7 +11,7 @@ import {
   LibrarySymbolInfo,
   SearchSymbolResultItem,
   Bar,
-} from '@tradingview/charting-library';
+} from 'charting_library';
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 
@@ -24,10 +24,10 @@ import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
 import { IndexerStreamAccumulateSingleDataSet } from '../../lib/web3/hooks/useIndexer';
 
-const { REACT_APP__INDEXER_API = '', NODE_ENV = 'production' } = process.env;
+const { REACT_APP__INDEXER_API = '', PROD } = import.meta.env;
 
 const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
-  debug: NODE_ENV !== 'production',
+  debug: !PROD,
   autosize: true,
   container: '',
   locale: 'en',
@@ -179,9 +179,9 @@ export default function OrderBookChart({
         },
         resolveSymbol: (
           symbolName,
-          onSymbolResolvedCallback,
-          onResolveErrorCallback,
-          extension
+          onSymbolResolvedCallback
+          // onResolveErrorCallback,
+          // extension
         ) => {
           // if not on correct page, go to correct page
           navigate(`/orderbook/${symbolName}`);
@@ -208,8 +208,8 @@ export default function OrderBookChart({
         },
         searchSymbols: (
           userInput = '',
-          exchange, // will always be "Duality"
-          symbolType, // will always be "crypto"
+          _exchange, // will always be "Duality"
+          _symbolType, // will always be "crypto"
           onResultReadyCallback
         ) => {
           const tokens = Array.from(new Set(tokenPairs.flatMap((v) => v)));
@@ -288,8 +288,8 @@ export default function OrderBookChart({
           symbolInfo,
           resolution,
           onRealtimeCallback,
-          subscriberUID,
-          onResetCacheNeededCallback
+          subscriberUID
+          // onResetCacheNeededCallback
         ) => {
           const fetchID = getFetchID(symbolInfo, resolution);
           const url = getFetchURL(tokenIdA, tokenIdB, resolution, {

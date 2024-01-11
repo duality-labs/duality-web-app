@@ -9,7 +9,7 @@ import { DeliverTxResponse } from '@cosmjs/stargate';
 import { coerceError } from '../../lib/utils/error';
 import { seconds } from '../../lib/utils/time';
 
-const { REACT_APP__REST_API } = process.env;
+const { REACT_APP__REST_API = '' } = import.meta.env;
 
 // standard error codes can be found in https://github.com/cosmos/cosmos-sdk/blob/v0.45.4/types/errors/errors.go
 // however custom modules may register additional error codes
@@ -70,8 +70,7 @@ export function checkMsgSuccessToast(
 
 export function checkMsgRejectedToast(
   err: Error & { response?: MinimalTxResponse },
-  { id, title, description, descriptionLink }: ToastOptions = {},
-  { restEndpoint = REACT_APP__REST_API }: TransactionConfig = {}
+  { id, title, description, descriptionLink }: ToastOptions = {}
 ) {
   if (!err.response && err?.message.includes('rejected')) {
     return toast.error(title || 'Transaction Rejected', {
@@ -91,7 +90,7 @@ export function checkMsgOutOfGasToast(
   { restEndpoint = REACT_APP__REST_API }: TransactionConfig = {}
 ) {
   if (err?.response?.code === ERROR_OUT_OF_GAS) {
-    const { gasUsed, gasWanted, transactionHash } = err?.response;
+    const { gasUsed, gasWanted, transactionHash } = err?.response ?? {};
 
     return toast.error(title || 'Transaction Failed', {
       id,
@@ -219,7 +218,7 @@ export async function createTransactionToasts<T extends MinimalTxResponse>(
       };
       // catch transaction errors
       // chain toast checks so only one toast may be shown
-      checkMsgRejectedToast(err, { id }, config) ||
+      checkMsgRejectedToast(err, { id }) ||
         checkMsgOutOfGasToast(err, { id }, config) ||
         checkMsgErrorToast(err, toastOptions, config);
 

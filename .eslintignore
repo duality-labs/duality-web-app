@@ -8,3 +8,6 @@
 
 # production
 /build
+
+# TradingView library
+/public/charting_library

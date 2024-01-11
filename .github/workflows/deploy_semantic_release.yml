@@ -89,17 +89,14 @@ jobs:
           node-version: ${{ steps.get-node-version.outputs.NODE_VERSION }}
           cache: npm
 
-      - name: Add testnet specific environment settings over production settings
-        run: cp .env.development .env.local
-
       - name: Install dependencies
         # note: from https://github.com/actions/setup-node/issues/49#issuecomment-1293249466
         # security consideration:
         # Skip post-install scripts here, as a malicious script could steal NODE_AUTH_TOKEN.
         # use variable to read in the exact chart library dependency specified in package.json
         run: |
-          TVC_LOCATION=$( node -p "require('./package.json').dependencies['@tradingview/charting-library'].replace('github:','github.com/')" );
-          npm install --ignore-scripts @tradingview/charting-library@https://dib542:$TOKEN@$TVC_LOCATION
+          TVC_LOCATION=$( node -p "require('./package.json').dependencies['charting_library'].replace('github:','github.com/')" );
+          npm install --ignore-scripts https://dib542:$TOKEN@$TVC_LOCATION
         env:
           # to install TradingView private dependency, private GitHub credentials are needed
           # secret tokens are added in Github project settings under [project]/settings/secrets/actions
@@ -109,8 +106,9 @@ jobs:
       - name: Run post-install scripts
         run: npm rebuild && npm run prepare --if-present
 
+      # run build with .env.development file (instead of .env.production)
       - name: Build
-        run: npm run build
+        run: npm run build -- --mode development
         env:
           REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
 

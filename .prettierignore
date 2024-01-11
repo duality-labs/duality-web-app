@@ -9,5 +9,8 @@
 # production
 /build
 
+# ignore chart library dependency
+/public/charting_library
+
 # ignore change log, it is auto-formatted by semantic release
 CHANGELOG.md
