@@ -14,6 +14,14 @@ const config: UserConfig & { test?: InlineConfig } = defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    deps: {
+      optimizer: {
+        web: {
+          // some libraries are not ESM are require transforming
+          include: ['@visx/scale'],
+        },
+      },
+    },
   },
 });
 
