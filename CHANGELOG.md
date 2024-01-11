@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.49](https://github.com/duality-labs/duality-web-app/compare/v0.3.48...v0.3.49) (2024-01-11)
+
+
+### Fixes
+
+* improve CI builds by replacing Create React App with Vite ([#512](https://github.com/duality-labs/duality-web-app/issues/512)) ([bb35d8e](https://github.com/duality-labs/duality-web-app/commit/bb35d8ec9a68c62878bf5b65fa0b8ce0ef80fd66))
+
 ## [0.3.48](https://github.com/duality-labs/duality-web-app/compare/v0.3.47...v0.3.48) (2023-12-23)
 
 
