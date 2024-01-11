@@ -10,10 +10,10 @@ To set up the front end locally, connected to the current online testnet:
 
 1. `$ npm install`
 2. `$ npm start`
-3. The dev site should become available at http://localhost:3000
+3. The dev site should become available at http://localhost:5173
 4. Install/enable [the Keplr extension](https://github.com/chainapsis/keplr-wallet)
    on your browser
-5. when you visit/refresh http://localhost:3000, allow the site to connect to
+5. when you visit/refresh http://localhost:5173, allow the site to connect to
    the Duality testnet chain through Keplr prompt window that should appear
 6. Select the Duality testnet chain on your Keplr extension
 7. Add/select a valid Cosmos account on Keplr

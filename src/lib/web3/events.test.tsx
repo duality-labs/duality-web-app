@@ -1,4 +1,6 @@
-import WS from 'jest-websocket-mock';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import WS from 'vitest-websocket-mock';
+
 import {
   createSubscriptionManager,
   EventType,
@@ -48,8 +50,8 @@ function createCustomEvent(
                 {
                   type: eventType,
                   attributes: Object.entries(eventData).map(([key, value]) => ({
-                    key: Buffer.from(key).toString('base64'),
-                    value: value && Buffer.from(value).toString('base64'),
+                    key,
+                    value,
                   })),
                 },
               ],
@@ -77,8 +79,8 @@ describe('The event subscription manager', function () {
   describe('The event subscription manager', function () {
     afterEach(() => {
       // should call the following line for safety but it prints a large warning everytime
-      // jest.runOnlyPendingTimers();
-      jest.useRealTimers();
+      // vi.runOnlyPendingTimers();
+      vi.useRealTimers();
     });
 
     beforeEach(function () {
@@ -89,20 +91,24 @@ describe('The event subscription manager', function () {
       await server?.closed;
     });
 
-    it('should be able to open a connection', function (done) {
-      subManager = createSubscriptionManager(url);
-      subManager.open();
-      subManager.addSocketListener('open', () => done());
+    it('should be able to open a connection', async function (): Promise<void> {
+      return new Promise((resolve) => {
+        subManager = createSubscriptionManager(url);
+        subManager.open();
+        subManager.addSocketListener('open', () => resolve());
+      });
     });
 
-    it('should be able to close an open connection', function (done) {
-      subManager = createSubscriptionManager(url);
-      subManager.addSocketListener('close', function (event) {
-        expect(event.wasClean).toBe(true);
-        done();
+    it('should be able to close an open connection', async function (): Promise<void> {
+      return new Promise((resolve) => {
+        subManager = createSubscriptionManager(url);
+        subManager.addSocketListener('close', function (event) {
+          expect(event.wasClean).toBe(true);
+          resolve();
+        });
+        subManager.addSocketListener('open', () => server.error());
+        subManager.open();
       });
-      subManager.addSocketListener('open', () => server.error());
-      subManager.open();
     });
 
     it('should be able to call close without an open connection', function () {
@@ -112,7 +118,7 @@ describe('The event subscription manager', function () {
     });
 
     it('should be able to call open twice without opening two sockets', async function () {
-      const handler = jest.fn();
+      const handler = vi.fn();
       subManager = createSubscriptionManager(url);
       subManager.addSocketListener('open', handler);
       subManager.open();
@@ -123,7 +129,7 @@ describe('The event subscription manager', function () {
     });
 
     it('should be able to open, close and reopen a connection', async function () {
-      const handler = jest.fn();
+      const handler = vi.fn();
       subManager = createSubscriptionManager(url);
       subManager.addSocketListener('open', handler);
       subManager.open();
@@ -136,7 +142,7 @@ describe('The event subscription manager', function () {
     });
 
     it('should be able to open, wait, close and reopen a connection', async function () {
-      const handler = jest.fn();
+      const handler = vi.fn();
       subManager = createSubscriptionManager(url);
       subManager.addSocketListener('open', handler);
       const reopenedPromise = new Promise((resolve) => {
@@ -163,7 +169,7 @@ describe('The event subscription manager', function () {
     });
 
     it('should be able to able to reconnect after a "network error"', async function () {
-      const handler = jest.fn();
+      const handler = vi.fn();
       subManager = createSubscriptionManager(url);
       subManager.addSocketListener('open', handler);
       const reopenedPromise = new Promise((resolve) => {
@@ -171,7 +177,7 @@ describe('The event subscription manager', function () {
         subManager.addSocketListener('open', onOpen);
         async function onOpen() {
           subManager.removeSocketListener('open', onOpen);
-          jest.useFakeTimers({ legacyFakeTimers: false });
+          vi.useFakeTimers();
           server.close({
             code: 1001,
             reason: 'server blip',
@@ -180,9 +186,9 @@ describe('The event subscription manager', function () {
           await server.closed;
           server = new WS(url);
           // speed up reconnection waiting time
-          jest.advanceTimersByTime(10000);
+          vi.advanceTimersByTime(10000);
           await server.connected;
-          jest.useRealTimers();
+          vi.useRealTimers();
         }
         // wait for a reopening confirmation
         subManager.addSocketListener('close', onClose);
@@ -199,7 +205,7 @@ describe('The event subscription manager', function () {
     });
 
     it('should not be affected by a fake clean close event', async function () {
-      const handler = jest.fn();
+      const handler = vi.fn();
       subManager = createSubscriptionManager(url);
       subManager.addSocketListener('open', handler);
       subManager.open();
@@ -225,13 +231,15 @@ describe('The event subscription manager', function () {
     const otherActionName = 'steT';
     const actionNames = [actionName, otherActionName];
 
-    beforeEach(function (done) {
-      server = new WS(url, { jsonProtocol: true });
-      subManager = createSubscriptionManager(url);
-      subManager.open();
-      subManager.addSocketListener('open', () => {
-        // ensure server also thinks it is connected
-        server.connected.then(() => done());
+    beforeEach(async function (): Promise<void> {
+      return new Promise((resolve) => {
+        server = new WS(url, { jsonProtocol: true });
+        subManager = createSubscriptionManager(url);
+        subManager.open();
+        subManager.addSocketListener('open', () => {
+          // ensure server also thinks it is connected
+          server.connected.then(() => resolve());
+        });
       });
     });
 
@@ -242,7 +250,7 @@ describe('The event subscription manager', function () {
 
     describe('(subscription tests)', function () {
       it('should be able to listen for any type of event', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
         subManager.subscribe(handler, {});
         const [id] = await resolveQueuedMessageIDs(server);
         const message = createCustomEvent(id);
@@ -255,8 +263,8 @@ describe('The event subscription manager', function () {
         );
       });
       it('should be able to listen for a specific type of event', async function () {
-        const handler = jest.fn();
-        const otherHandler = jest.fn();
+        const handler = vi.fn();
+        const otherHandler = vi.fn();
         subManager.subscribe(handler, {}, EventType.EventTxValue);
         subManager.subscribe(otherHandler, {}, EventType.EventNewBlockValue);
         const [id, id2] = await resolveQueuedMessageIDs(server);
@@ -300,7 +308,7 @@ describe('The event subscription manager', function () {
         );
       });
       it('should be able to listen to multiple events', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
         subManager.subscribe(handler, {});
         const [id] = await resolveQueuedMessageIDs(server);
         actionNames.forEach((actionName) => {
@@ -316,7 +324,7 @@ describe('The event subscription manager', function () {
         });
       });
       it('should be able to listen to multiple events of any type', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
         subManager.subscribe(handler, {});
         const [id] = await resolveQueuedMessageIDs(server);
         const message1 = createCustomEvent(
@@ -344,7 +352,7 @@ describe('The event subscription manager', function () {
         );
       });
       it('should be ok to subscribe multiple times without an actionMessage', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
         const repeatArray = Array.from({ length: 2 });
         repeatArray.forEach(() => subManager.subscribe(handler, {}));
         const [id] = await resolveQueuedMessageIDs(server);
@@ -360,7 +368,7 @@ describe('The event subscription manager', function () {
         });
       });
       it('should be ok to subscribe multiple times with an actionMessage', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
         const repeatArray = Array.from({ length: 2 });
         repeatArray.forEach(() =>
           subManager.subscribe(handler, {
@@ -380,7 +388,7 @@ describe('The event subscription manager', function () {
         });
       });
       it('should be ok to subscribe multiple times with different actionMessages', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         actionNames.forEach((actionName) =>
           subManager.subscribe(handler, {
@@ -401,8 +409,8 @@ describe('The event subscription manager', function () {
       });
 
       it('should be ok to ignore unregistered events', async function () {
-        const handler = jest.fn();
-        const otherHandler = jest.fn();
+        const handler = vi.fn();
+        const otherHandler = vi.fn();
         subManager.subscribe(handler, {
           message: { action: actionName },
         });
@@ -440,7 +448,7 @@ describe('The event subscription manager', function () {
 
     describe('(unsubscription tests)', function () {
       it('should be able to unsubscribe from a specific event', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribe(handler, {
           message: { action: actionName },
@@ -456,7 +464,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to unsubscribe without params', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribe(handler, {
           message: { action: actionName },
@@ -470,7 +478,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to unsubscribe from a generic subscription', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribe(handler, {});
         const [id] = await resolveQueuedMessageIDs(server);
@@ -482,7 +490,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to unsubscribe from multiple specific subscriptions with one call', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribe(handler, {
           message: { action: actionName },
@@ -501,7 +509,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to unsubscribe from multiple subscriptions with one fully generic call', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         actionNames.forEach((actionName) => {
           subManager.subscribe(handler, {
@@ -519,7 +527,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to unsubscribe from multiple subscriptions with one fully generic call (using resolveAllQueuedMessages)', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         actionNames.forEach((actionName) => {
           subManager.subscribe(handler, {
@@ -537,7 +545,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to only unsubscribe from a specific subscription and not all (based on the action name)', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         actionNames.forEach((actionName) => {
           subManager.subscribe(handler, {
@@ -564,8 +572,8 @@ describe('The event subscription manager', function () {
         );
       });
       it('should be able to only unsubscribe from a specific subscription and not all (based on the callback)', async function () {
-        const handler = jest.fn();
-        const otherHandler = jest.fn();
+        const handler = vi.fn();
+        const otherHandler = vi.fn();
 
         subManager.subscribe(handler, {
           message: { action: actionName },
@@ -591,8 +599,8 @@ describe('The event subscription manager', function () {
         );
       });
       it('should be able to only unsubscribe from a specific subscription and not all (based on the callback but otherwise generic)', async function () {
-        const handler = jest.fn();
-        const otherHandler = jest.fn();
+        const handler = vi.fn();
+        const otherHandler = vi.fn();
 
         subManager.subscribe(handler, {
           message: { action: actionName },
@@ -619,7 +627,7 @@ describe('The event subscription manager', function () {
 
     describe('(message subscription tests)', function () {
       it('should be able to listen for any type of message', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribeMessage(handler, {});
 
@@ -628,10 +636,13 @@ describe('The event subscription manager', function () {
         server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(1);
-        expect(handler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(handler).toHaveBeenCalledWith(
+          getMessageObject(actionName),
+          getTxObject(actionName)
+        );
       });
       it('should be able to listen for a specific type of message', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribeMessage(handler, {
           message: { action: actionName },
@@ -642,10 +653,13 @@ describe('The event subscription manager', function () {
         server.send(message);
 
         expect(handler).toHaveBeenCalledTimes(1);
-        expect(handler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(handler).toHaveBeenCalledWith(
+          getMessageObject(actionName),
+          getTxObject(actionName)
+        );
       });
       it('should be able to listen to multiple messages', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribeMessage(handler, {});
         const [id] = await resolveQueuedMessageIDs(server);
@@ -659,12 +673,13 @@ describe('The event subscription manager', function () {
         actionNames.forEach((actionName, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            getMessageObject(actionName)
+            getMessageObject(actionName),
+            getTxObject(actionName)
           );
         });
       });
       it('should be ok to subscribe multiple times without an actionMessage', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
         const repeatArray = Array.from({ length: 2 });
 
         repeatArray.forEach(() => subManager.subscribeMessage(handler, {}));
@@ -676,12 +691,13 @@ describe('The event subscription manager', function () {
         repeatArray.forEach((_, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            getMessageObject(actionName)
+            getMessageObject(actionName),
+            getTxObject(actionName)
           );
         });
       });
       it('should be ok to subscribe multiple times with an actionMessage', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
         const repeatArray = Array.from({ length: 2 });
 
         repeatArray.forEach(() =>
@@ -697,12 +713,13 @@ describe('The event subscription manager', function () {
         repeatArray.forEach((_, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            getMessageObject(actionName)
+            getMessageObject(actionName),
+            getTxObject(actionName)
           );
         });
       });
       it('should be ok to subscribe multiple times with different actionMessages', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         actionNames.forEach((actionName) =>
           subManager.subscribeMessage(handler, {
@@ -720,13 +737,14 @@ describe('The event subscription manager', function () {
         actionNames.forEach((actionName, index) => {
           expect(handler).toHaveBeenNthCalledWith(
             index + 1,
-            getMessageObject(actionName)
+            getMessageObject(actionName),
+            getTxObject(actionName)
           );
         });
       });
       it('should be ok to ignore unregistered messages', async function () {
-        const handler = jest.fn();
-        const otherHandler = jest.fn();
+        const handler = vi.fn();
+        const otherHandler = vi.fn();
 
         subManager.subscribeMessage(handler, {
           message: { action: actionName },
@@ -744,16 +762,20 @@ describe('The event subscription manager', function () {
 
         expect(handler).toHaveBeenCalledTimes(1);
         expect(otherHandler).toHaveBeenCalledTimes(1);
-        expect(handler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(handler).toHaveBeenCalledWith(
+          getMessageObject(actionName),
+          getTxObject(actionName)
+        );
         expect(otherHandler).toHaveBeenCalledWith(
-          getMessageObject(otherActionName)
+          getMessageObject(otherActionName),
+          getTxObject(otherActionName)
         );
       });
     });
 
     describe('(message unsubscription tests)', function () {
       it('should be able to unsubscribe from a specific message', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribeMessage(handler, {
           message: { action: actionName },
@@ -768,7 +790,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to unsubscribe without params', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribeMessage(handler, {
           message: { action: actionName },
@@ -781,7 +803,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to unsubscribe from a generic subscription', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribeMessage(handler, {});
         const [id] = await resolveQueuedMessageIDs(server);
@@ -792,7 +814,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to unsubscribe from multiple specific subscriptions with one call', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         subManager.subscribeMessage(handler, {
           message: { action: actionName },
@@ -810,7 +832,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to unsubscribe from multiple subscriptions with one fully generic call', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         actionNames.forEach((actionName) => {
           subManager.subscribeMessage(handler, {
@@ -829,7 +851,7 @@ describe('The event subscription manager', function () {
         expect(handler).toHaveBeenCalledTimes(0);
       });
       it('should be able to only unsubscribe from a specific subscription and not all (based on the action name)', async function () {
-        const handler = jest.fn();
+        const handler = vi.fn();
 
         actionNames.forEach((actionName) => {
           subManager.subscribeMessage(handler, {
@@ -849,12 +871,13 @@ describe('The event subscription manager', function () {
 
         expect(handler).toHaveBeenCalledTimes(1);
         expect(handler).toHaveBeenLastCalledWith(
-          getMessageObject(otherActionName)
+          getMessageObject(otherActionName),
+          getTxObject(otherActionName)
         );
       });
       it('should be able to only unsubscribe from a specific subscription and not all (based on the callback)', async function () {
-        const handler = jest.fn();
-        const otherHandler = jest.fn();
+        const handler = vi.fn();
+        const otherHandler = vi.fn();
 
         subManager.subscribeMessage(handler, {
           message: { action: actionName },
@@ -871,11 +894,14 @@ describe('The event subscription manager', function () {
 
         expect(handler).toHaveBeenCalledTimes(0);
         expect(otherHandler).toHaveBeenCalledTimes(1);
-        expect(otherHandler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(otherHandler).toHaveBeenCalledWith(
+          getMessageObject(actionName),
+          getTxObject(actionName)
+        );
       });
       it('should be able to only unsubscribe from a specific subscription and not all (based on the callback but otherwise generic)', async function () {
-        const handler = jest.fn();
-        const otherHandler = jest.fn();
+        const handler = vi.fn();
+        const otherHandler = vi.fn();
 
         subManager.subscribeMessage(handler, {
           message: { action: actionName },
@@ -891,7 +917,10 @@ describe('The event subscription manager', function () {
 
         expect(handler).toHaveBeenCalledTimes(0);
         expect(otherHandler).toHaveBeenCalledTimes(1);
-        expect(otherHandler).toHaveBeenCalledWith(getMessageObject(actionName));
+        expect(otherHandler).toHaveBeenCalledWith(
+          getMessageObject(actionName),
+          getTxObject(actionName)
+        );
       });
     });
   });
@@ -905,6 +934,27 @@ function getMessageObject(actionName: string) {
   return {
     'message.module': 'duality',
     'message.action': actionName,
+  };
+}
+
+function getTxObject(actionName: string) {
+  return {
+    type: 'tendermint/event/Tx',
+    value: {
+      TxResult: {
+        result: {
+          events: [
+            {
+              attributes: [
+                { key: 'module', value: 'duality' },
+                { key: 'action', value: actionName },
+              ],
+              type: 'message',
+            },
+          ],
+        },
+      },
+    },
   };
 }
 
