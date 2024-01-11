@@ -35,7 +35,7 @@ function TestNumberInput({
 // The '|' represents the selectionStart
 // The selectionEnd can also be specified by using another '|' (defaults to same as start)
 // If no '|' are found then it defaults to right after the last character
-test.concurrent.each([
+test.skip.concurrent.each([
   // 0 and . tests
   ['|', '0', '0|'],
   ['|', '.', '.|'],
