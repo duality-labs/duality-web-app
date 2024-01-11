@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "lint": "eslint --ext mjs,js,jsx,ts,tsx --max-warnings 0 --report-unused-disable-directives .",
     "preview": "vite preview",
-    "test": "jest",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "prepare": "husky install && npm run prepare:trading-view-bundles",
     "prepare:trading-view-bundles": "mkdir -p public/charting_library/bundles && cp node_modules/charting_library/charting_library/bundles/* public/charting_library/bundles"
   },
@@ -57,11 +57,7 @@
     "stream": "npm:stream-browserify@3.0.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.23.7",
-    "@babel/preset-env": "^7.23.8",
-    "@babel/preset-typescript": "^7.23.3",
     "@chain-registry/types": "^0.16.0",
-    "@jest/globals": "^29.7.0",
     "@keplr-wallet/types": "^0.12.20",
     "@testing-library/jest-dom": "^6.2.0",
     "@testing-library/react": "^14.1.2",
@@ -75,8 +71,6 @@
     "@typescript-eslint/eslint-plugin": "^6.14.0",
     "@typescript-eslint/parser": "^6.14.0",
     "@vitejs/plugin-react": "^4.2.1",
-    "babel-jest": "^29.7.0",
-    "babel-plugin-transform-import-meta": "^2.2.1",
     "eslint": "^8.55.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-jsx-a11y": "^6.5.1",

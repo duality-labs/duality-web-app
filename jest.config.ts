@@ -6,7 +6,7 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/src/tests/setupTests.mjs'],
   transform: {
     // process `*.ts` and `*.tsx` files with `ts-jest`
-    '^.+\\.tsx?$': 'babel-jest',
+    '^.+\\.tsx?$': 'ts-jest',
   },
   //   extensionsToTreatAsEsm: ['.ts', '.tsx', '.jsx'],
   moduleNameMapper: {
