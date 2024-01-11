@@ -1,4 +1,3 @@
-import WS from 'jest-websocket-mock';
 import {
   createSubscriptionManager,
   EventType,
