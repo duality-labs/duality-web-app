@@ -18,7 +18,7 @@ const _lcdClients: Record<string, LcdClient> = {};
 const getLcdEndpointKey = (lcdEndpoint: string | HttpEndpoint) => {
   if (typeof lcdEndpoint === 'string') {
     return lcdEndpoint;
-  } else if (!!lcdEndpoint) {
+  } else if (lcdEndpoint) {
     return lcdEndpoint.url;
   }
 };
@@ -30,7 +30,7 @@ const getLcdClient = async (
   if (!key) {
     throw new Error('No LCD endpoint given');
   }
-  if (_lcdClients.hasOwnProperty(key)) {
+  if (key in _lcdClients) {
     return _lcdClients[key];
   }
   const lcd = await duality.ClientFactory.createLCDClient({

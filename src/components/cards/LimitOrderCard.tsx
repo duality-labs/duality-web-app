@@ -35,22 +35,25 @@ import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
 import {
-  LimitOrderTypeKeys,
   LimitOrderContextProvider,
-  orderTypeTextMap,
   LimitOrderFormContext,
   LimitOrderFormSetContext,
-  defaultExecutionType,
-  orderTypeEnum,
-  timePeriods,
-  timePeriodLabels,
-  TimePeriod,
 } from './LimitOrderContext';
 import SelectInput from '../inputs/SelectInput';
 import { timeUnits } from '../../lib/utils/time';
 import { displayPriceToTickIndex } from '../../lib/web3/utils/ticks';
+import {
+  orderTypeTextMap,
+  orderTypeEnum,
+  timePeriods,
+  timePeriodLabels,
+  TimePeriod,
+  AllowedLimitOrderTypeKey,
+} from '../../lib/web3/utils/limitOrders';
+
 import Drawer from '../Drawer';
 
+const defaultExecutionType: AllowedLimitOrderTypeKey = 'FILL_OR_KILL';
 const TabContext = createContext<
   [
     tabIndex?: number,
@@ -116,7 +119,7 @@ function LimitOrderNav({
 
   return (
     <div className="p-md pt-4">
-      <LimitOrderContextProvider>
+      <LimitOrderContextProvider defaultExecutionType={defaultExecutionType}>
         <Tabs
           className="limitorder-type"
           tabs={tabs}
@@ -412,10 +415,12 @@ function LimitOrder({
         </div>
       )}
       <div className="my-md">
-        <SelectInput<LimitOrderTypeKeys>
+        <SelectInput<AllowedLimitOrderTypeKey>
           className="flex col m-0 p-0"
-          list={Object.keys(orderTypeTextMap) as LimitOrderTypeKeys[]}
-          getLabel={(key = defaultExecutionType) => orderTypeTextMap[key]}
+          list={Object.keys(orderTypeTextMap) as AllowedLimitOrderTypeKey[]}
+          getLabel={(key = defaultExecutionType) =>
+            key && orderTypeTextMap[key]
+          }
           value={formState.execution}
           onChange={formSetState.setExecution}
           floating

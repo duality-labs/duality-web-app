@@ -1,5 +1,5 @@
-import { Web3Provider } from '../../lib/web3/useWeb3';
-import { ThemeProvider } from '../../lib/themeProvider';
+import { Web3Provider } from '../../lib/web3/Web3Context';
+import { ThemeProvider } from '../../lib/theme/themeProvider';
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Navigate } from 'react-router';
@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Header from '../../components/Header';
 import Notifications from '../../components/Notifications';
-import { defaultPage } from '../../components/Header/Header';
+import { defaultPage } from '../../components/Header/routes';
 
 import Stars from './Stars';
 import Planets from './Planets';

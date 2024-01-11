@@ -148,7 +148,7 @@ export default function AssetsTableCard({
           ) : (
             <tr>
               <td colSpan={3} align="center">
-                No {!!searchValue ? 'Matching' : ''} Assets Found
+                No {searchValue ? 'Matching' : ''} Assets Found
               </td>
             </tr>
           )}

@@ -1,11 +1,9 @@
-/* eslint-disable no-template-curly-in-string */
-
 /**
  * config for Semantic Release workflow
  * docs: https://github.com/semantic-release/semantic-release/blob/master/docs/usage/configuration.md#configuration
  **/
 
-module.exports = {
+export default {
   branches: ['main'],
   dryRun: false,
   plugins: [

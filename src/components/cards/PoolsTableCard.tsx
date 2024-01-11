@@ -120,7 +120,7 @@ export default function PoolsTableCard<T extends string | number>({
           <tbody>
             <tr>
               <td align="center">
-                No {!!searchValue ? 'Matching' : ''} Pools Found
+                No {searchValue ? 'Matching' : ''} Pools Found
               </td>
             </tr>
           </tbody>
@@ -299,7 +299,7 @@ export function MyPoolsTableCard<T extends string | number>({
           <tbody>
             <tr>
               <td align="center">
-                No {!!searchValue ? 'Matching' : ''} Pools Found
+                No {searchValue ? 'Matching' : ''} Pools Found
               </td>
             </tr>
           </tbody>
@@ -414,7 +414,7 @@ function TokenPair({
   token0,
   token1,
   onClick,
-  as = !!onClick ? 'button' : 'div',
+  as = onClick ? 'button' : 'div',
 }: {
   token0: Token;
   token1: Token;
