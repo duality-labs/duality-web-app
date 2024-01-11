@@ -91,20 +91,24 @@ describe('The event subscription manager', function () {
       await server?.closed;
     });
 
-    it('should be able to open a connection', function (done) {
-      subManager = createSubscriptionManager(url);
-      subManager.open();
-      subManager.addSocketListener('open', () => done());
+    it('should be able to open a connection', async function (): Promise<void> {
+      return new Promise((resolve) => {
+        subManager = createSubscriptionManager(url);
+        subManager.open();
+        subManager.addSocketListener('open', () => resolve());
+      });
     });
 
-    it('should be able to close an open connection', function (done) {
-      subManager = createSubscriptionManager(url);
-      subManager.addSocketListener('close', function (event) {
-        expect(event.wasClean).toBe(true);
-        done();
+    it('should be able to close an open connection', async function (): Promise<void> {
+      return new Promise((resolve) => {
+        subManager = createSubscriptionManager(url);
+        subManager.addSocketListener('close', function (event) {
+          expect(event.wasClean).toBe(true);
+          resolve();
+        });
+        subManager.addSocketListener('open', () => server.error());
+        subManager.open();
       });
-      subManager.addSocketListener('open', () => server.error());
-      subManager.open();
     });
 
     it('should be able to call close without an open connection', function () {
@@ -227,13 +231,15 @@ describe('The event subscription manager', function () {
     const otherActionName = 'steT';
     const actionNames = [actionName, otherActionName];
 
-    beforeEach(function (done) {
-      server = new WS(url, { jsonProtocol: true });
-      subManager = createSubscriptionManager(url);
-      subManager.open();
-      subManager.addSocketListener('open', () => {
-        // ensure server also thinks it is connected
-        server.connected.then(() => done());
+    beforeEach(async function (): Promise<void> {
+      return new Promise((resolve) => {
+        server = new WS(url, { jsonProtocol: true });
+        subManager = createSubscriptionManager(url);
+        subManager.open();
+        subManager.addSocketListener('open', () => {
+          // ensure server also thinks it is connected
+          server.connected.then(() => resolve());
+        });
       });
     });
 
