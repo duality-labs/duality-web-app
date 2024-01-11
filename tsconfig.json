@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "esnext",
     "useDefineForClassFields": true,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "module": "esnext",
     "skipLibCheck": true,
 
     /* Bundler mode */
