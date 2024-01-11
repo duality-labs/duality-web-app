@@ -1,1 +1,2 @@
-export { default, toast } from './Notifications';
+export { default } from './Notifications';
+export { toast } from './toast';

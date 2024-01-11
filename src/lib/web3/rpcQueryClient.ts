@@ -12,7 +12,7 @@ const { REACT_APP__RPC_API = '' } = import.meta.env;
 const getRpcEndpointKey = (rpcEndpoint: string | HttpEndpoint) => {
   if (typeof rpcEndpoint === 'string') {
     return rpcEndpoint;
-  } else if (!!rpcEndpoint) {
+  } else if (rpcEndpoint) {
     return rpcEndpoint.url;
   }
 };
@@ -25,7 +25,7 @@ export const getRpcClient = async (
   if (!key) {
     throw new Error('No RPC endpoint given');
   }
-  if (_rpcClients.hasOwnProperty(key)) {
+  if (key in _rpcClients) {
     return _rpcClients[key];
   }
   const tmClient = await Tendermint34Client.connect(key);

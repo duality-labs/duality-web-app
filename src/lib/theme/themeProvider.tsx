@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useState,
-  useContext,
-  createContext,
-  useCallback,
-} from 'react';
+import { useEffect, useState, createContext, useCallback } from 'react';
 
 export type ThemeMode = 'light' | 'dark';
 export type SavedThemeMode = ThemeMode | null;
@@ -20,7 +14,7 @@ interface ThemeContextType {
   themeMode: ThemeMode;
 }
 
-const ThemeContext = createContext<ThemeContextType>({
+export const ThemeContext = createContext<ThemeContextType>({
   toggleThemeMode: () => void 0,
   setThemeMode: () => void 0,
   themeMode: getTheme(),
@@ -101,19 +95,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useThemeMode() {
-  return useContext(ThemeContext);
-}
-
 function getSavedTheme(): SavedThemeMode {
   return 'dark' || (localStorage.getItem(storageName) as SavedThemeMode);
 }
 
-export function getTheme(): ThemeMode {
+function getTheme(): ThemeMode {
   return getSavedTheme() ?? getDefaultBrowserTheme();
 }
 
-export function getDefaultBrowserTheme(): ThemeMode {
+function getDefaultBrowserTheme(): ThemeMode {
   return getComputedStyle(document.documentElement)
     .getPropertyValue(themeProperty)
     .trim() as ThemeMode;

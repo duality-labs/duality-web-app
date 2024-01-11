@@ -416,18 +416,23 @@ function EventColumn<
           getTokenReservesInDenom(tokenB, getTokenBReserves().toFixed()) || 0
         );
       case 'Total Value':
-        const values = [
-          new BigNumber(
-            getDisplayDenomAmount(tokenA, getTokenAReserves()) || 0
-          ).multipliedBy(tokenAPrice || 0),
-          new BigNumber(
-            getDisplayDenomAmount(tokenB, getTokenBReserves()) || 0
-          ).multipliedBy(tokenBPrice || 0),
-        ];
         // return loading start or calculated value
         return !tokenA && !tokenB && isValidating
           ? '...'
-          : formatCurrency(values[0].plus(values[1]).toNumber());
+          : formatCurrency(
+              // get value of tokenA
+              new BigNumber(
+                getDisplayDenomAmount(tokenA, getTokenAReserves()) || 0
+              )
+                .multipliedBy(tokenAPrice || 0)
+                .plus(
+                  // get value of tokenB
+                  new BigNumber(
+                    getDisplayDenomAmount(tokenB, getTokenBReserves()) || 0
+                  ).multipliedBy(tokenBPrice || 0)
+                )
+                .toNumber()
+            );
       case 'Time':
         return tx.timestamp
           ? formatRelativeTime(tx.timestamp)
@@ -558,18 +563,23 @@ function SwapColumn({
           getTokenReservesInDenom(tokenB, getTokenBReserves()) || '0'
         );
       case 'Total Value':
-        const values = [
-          new BigNumber(
-            getDisplayDenomAmount(tokenA, getTokenAReserves()) || 0
-          ).multipliedBy(tokenAPrice || 0),
-          new BigNumber(
-            getDisplayDenomAmount(tokenB, getTokenBReserves()) || 0
-          ).multipliedBy(tokenBPrice || 0),
-        ];
         // return loading start or calculated value
         return !tokenA && !tokenB && isValidating
           ? '...'
-          : formatCurrency(values[0].plus(values[1]).toNumber());
+          : formatCurrency(
+              // get value of tokenA
+              new BigNumber(
+                getDisplayDenomAmount(tokenA, getTokenAReserves()) || 0
+              )
+                .multipliedBy(tokenAPrice || 0)
+                .plus(
+                  // get value of tokenB
+                  new BigNumber(
+                    getDisplayDenomAmount(tokenB, getTokenBReserves()) || 0
+                  ).multipliedBy(tokenBPrice || 0)
+                )
+                .toNumber()
+            );
       case 'Time':
         return tx.timestamp
           ? formatRelativeTime(tx.timestamp)

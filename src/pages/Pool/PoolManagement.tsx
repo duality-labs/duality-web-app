@@ -25,11 +25,8 @@ import { useNumericInputState } from '../../components/inputs/NumberInput';
 import TokenInputGroup from '../../components/TokenInputGroup';
 import TokenPicker from '../../components/TokenPicker/TokenPicker';
 import LiquiditySelector from '../../components/Liquidity/LiquiditySelector';
-import {
-  TickGroup,
-  Tick,
-  getRangeIndexes,
-} from '../../components/Liquidity/LiquiditySelector';
+import { TickGroup, Tick } from '../../components/Liquidity/LiquiditySelector';
+import { getRangeIndexes } from '../../components/Liquidity/helpers';
 import useCurrentPriceIndexFromTicks from '../../components/Liquidity/useCurrentPriceFromTicks';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';

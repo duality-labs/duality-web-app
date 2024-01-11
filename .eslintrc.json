@@ -25,18 +25,14 @@
         "varsIgnorePattern": "^_"
       }
     ],
-    "no-async-promise-executor": "off",
-    "no-case-declarations": "off",
     "no-console": "warn",
-    "no-extra-boolean-cast": "off",
-    "no-prototype-builtins": "off",
-    "no-undef": "off",
-    "no-unsafe-optional-chaining": "off",
-    "no-useless-catch": "off",
     "quotes": ["warn", "single"],
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
-    "react/react-in-jsx-scope": "off",
-    "react-refresh/only-export-components": "off"
+    "react-refresh/only-export-components": [
+      "warn",
+      { "allowConstantExport": true }
+    ],
+    "react/react-in-jsx-scope": "off"
   }
 }

@@ -915,14 +915,11 @@ function getClientMessageID(message: Awaited<WS['nextMessage']>) {
 
 async function resolveQueuedMessages(server: WS) {
   const messages: Array<Awaited<WS['nextMessage']>> = [];
-  await new Promise<void>(async (resolve) => {
+  messages.push(await server.nextMessage);
+  await delay(1);
+  while (server.messagesToConsume.pendingItems.length > 0) {
     messages.push(await server.nextMessage);
-    await delay(1);
-    while (server.messagesToConsume.pendingItems.length > 0) {
-      messages.push(await server.nextMessage);
-    }
-    resolve();
-  });
+  }
   return messages;
 }
 

@@ -389,7 +389,7 @@ export default function BridgeCard({
             <div className="row">
               <div className="col">Estimated Time</div>
               <div className="col ml-auto">
-                {!!(from || to) ? <>{chainTime ?? '...'}</> : null}
+                {from || to ? <>{chainTime ?? '...'}</> : null}
               </div>
             </div>
             <div className="row">

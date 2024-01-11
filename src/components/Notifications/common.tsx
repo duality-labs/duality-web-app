@@ -3,9 +3,9 @@ import {
   faCheckCircle,
   faCircleXmark,
 } from '@fortawesome/free-solid-svg-icons';
-
-import { toast } from './Notifications';
 import { DeliverTxResponse } from '@cosmjs/stargate';
+
+import { toast } from './toast';
 import { coerceError } from '../../lib/utils/error';
 import { seconds } from '../../lib/utils/time';
 

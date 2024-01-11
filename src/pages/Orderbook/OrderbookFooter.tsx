@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { orderTypeTextMap } from '../../components/cards/LimitOrderContext';
+import { orderTypeTextMap } from '../../lib/web3/utils/limitOrders';
 import Table from '../../components/Table/Table';
 import { RelativeAndAbsoluteTime } from '../../components/Time';
 
