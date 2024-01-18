@@ -38,8 +38,16 @@ import {
   getTokenId,
 } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
+import {
+  useChainUtil,
+  useChainAssetLists,
+} from '../../lib/web3/hooks/useDenomsFromRegistry';
+import { ChainRegistryChainUtil } from '@chain-registry/client';
 
 import './Swap.scss';
+import { AssetList } from '@chain-registry/types';
+import { sha256 } from '@cosmjs/crypto';
+import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 type CardType = 'trade' | 'settings';
 type OrderType = 'market' | 'limit';
@@ -289,9 +297,75 @@ function Swap() {
     );
   }, [rateTokenOrderAuto]);
 
+  const chainUtil = useChainUtil();
+  useEffect(() => {
+    function getTrace({
+      base_denom,
+      path,
+    }: {
+      path: string;
+      base_denom: string;
+    }) {
+      const denom = `${path}/${base_denom}`;
+      return (
+        'ibc/' +
+        Buffer.from(sha256(Buffer.from(denom)))
+          .toString('hex')
+          .toUpperCase()
+      );
+    }
+    if (chainUtil) {
+      const denomTraceIBCs = denomTraces.map(({ base_denom, path }) => {
+        const denom = `${path}/${base_denom}`;
+        return (
+          'ibc/' +
+          Buffer.from(sha256(Buffer.from(denom)))
+            .toString('hex')
+            .toUpperCase()
+        );
+      });
+      console.log('denomTraceIBCs', denomTraceIBCs.length);
+
+      const allBaseDenoms = (chainUtil?.chainInfo.assetLists as AssetList[])
+        ?.at(0)
+        ?.assets.map((a) => a.base);
+      console.log('allBaseDenoms', allBaseDenoms);
+
+      // console.log('matched denoms', denomTraceIBCs.filter(denom => allBaseDenoms?.includes(denom)))
+      // console.log('unmatched denoms', denomTraceIBCs.filter(denom => !allBaseDenoms?.includes(denom)))
+
+      console.log(
+        'matched denomTraces',
+        denomTraces
+          .filter((denom) => allBaseDenoms?.includes(getTrace(denom)))
+          .sort((a, b) => a.path.localeCompare(b.path))
+      );
+      console.log(
+        'unmatched denomTraces',
+        denomTraces
+          .filter((denom) => !allBaseDenoms?.includes(getTrace(denom)))
+          .sort((a, b) => a.path.localeCompare(b.path))
+      );
+
+      // console.log(
+      //   'chainUtil getAssetByDenom',
+      //   chainUtil?.chainInfo.assetLists
+      //   // chainUtil?.getAssetByDenom(
+      //   //   'ibc/26139E488F510BDA8DDE5614D358A38502BDA061954B8D10ADEFC4EAA58552FF'
+      //   // )
+      // );
+    }
+  }, [chainUtil]);
+
+  const chainAssetLists = useChainAssetLists();
+  useEffect(() => {
+    console.log('chainAssetLists', chainAssetLists);
+  }, [chainAssetLists]);
+
   // set the token order for the rate
   useEffect(() => {
     if (tokenA && tokenB) {
+      // console.log('tokenA', tokenA);
       // place B as stable denominator
       if (!isStablecoin(tokenA) && isStablecoin(tokenB)) {
         setRateTokenOrderAuto([tokenA, tokenB]);
@@ -564,6 +638,7 @@ function SettingsCard({
   inputSlippage: string;
   setInputSlippage: React.Dispatch<React.SetStateAction<string>>;
 }) {
+  const [denomtrace, stepDenomTrace] = useDenomTraceIteration();
   return (
     <div
       className={[
@@ -599,7 +674,277 @@ function SettingsCard({
             Auto
           </button>
         </div>
+        <div>
+          <div className="row gap-2">
+            <button
+              type="button"
+              className="button button-warning"
+              onClick={() => stepDenomTrace(-1)}
+            >
+              prev
+            </button>
+            <button
+              type="button"
+              className="button button-warning"
+              onClick={() => stepDenomTrace(1)}
+            >
+              next
+            </button>
+            <button
+              type="button"
+              className="button button-warning"
+              onClick={() => stepDenomTrace(10)}
+            >
+              jump 10
+            </button>
+          </div>
+          <div>
+            index {denomTraces.indexOf(denomtrace)}/{denomTraces.length}
+            <DenomInfo
+              path={denomtrace.path}
+              baseDenom={denomtrace.base_denom}
+            />
+          </div>
+          <div>{JSON.stringify(denomtrace)}</div>
+        </div>
       </div>
     </div>
   );
+}
+
+// define default options to start exploring without fetching too much data
+const defaultChainUtilOptions = {
+  chainNames: ['neutrontestnet'],
+  selectedAssestListNames: ['neutrontestnet'],
+};
+
+function DenomInfo({ path, baseDenom }: { path: string; baseDenom: string }) {
+  const transferChannels: Array<[portId: string, channelId: string]> =
+    useDeepCompareMemoize(
+      path
+        .split('/')
+        .flatMap((path, index, paths) =>
+          index % 2 !== 0 ? [[paths[index - 1], path]] : []
+        )
+    );
+  // const [transferChainNames, setTransferChainNames] = useState([
+  //   'neutrontestnet',
+  // ]);
+  // const chainUtils = useChainUtil(transferChainNames);
+
+  const [{ chainNames, selectedAssestListNames }, setChainUtilOpts] = useState<{
+    chainNames: string[];
+    selectedAssestListNames: string[];
+  }>(defaultChainUtilOptions);
+  const chainUtil = useChainUtil(chainNames, selectedAssestListNames);
+
+  useEffect(() => console.log('changed chainNames', chainNames), [chainNames]);
+  useEffect(
+    () =>
+      console.log('changed selectedAssestListNames', selectedAssestListNames),
+    [selectedAssestListNames]
+  );
+  useEffect(() => console.log('changed chainUtil', chainUtil), [chainUtil]);
+
+  useEffect(() => {
+    // reset the chain names
+    setChainUtilOpts(defaultChainUtilOptions);
+  }, [path]);
+
+  const ibcHash = Buffer.from(sha256(Buffer.from(`${path}/${baseDenom}`)))
+    .toString('hex')
+    .toUpperCase();
+  const ibcDenom = useMemo(() => {
+    try {
+      return chainUtil?.getAssetByDenom('ibc/' + ibcHash);
+    } catch (e) {
+      console.log('why does this throw?', e);
+    }
+  }, [chainUtil, ibcHash]);
+
+  // make chain util fetch deeper
+  useEffect(() => {
+    const lastChainName = chainNames.at(-1);
+    const ibcData = chainUtil?.chainInfo.fetcher.getChainIbcData(
+      lastChainName || ''
+    );
+    const nextTransferChannelIndex = chainNames.length - 1;
+    const nextTransferChannel = transferChannels.at(nextTransferChannelIndex);
+    console.log('will fetch more IBC data? for', lastChainName, {
+      ibcDenom: !ibcDenom,
+      ibcData: !!ibcData,
+      lastChainName: !!lastChainName,
+      nextTransferChannel: !!nextTransferChannel,
+      chainUtil: !!chainUtil,
+    });
+
+    function setNextChainName(chainName: string) {
+      setChainUtilOpts(({ chainNames }) => {
+        // if this would be the last step then find the assetlist of this chain
+        // otherwise we should keep searching IBC data
+        if (chainNames.length >= transferChannels.length) {
+          return {
+            chainNames,
+            selectedAssestListNames: [chainName],
+          };
+        } else {
+          return {
+            chainNames: [...chainNames, chainName],
+            selectedAssestListNames: [],
+          };
+        }
+      });
+    }
+    // if we don't have all the transfer channel hops covered then fetch more IBC data
+    if (!ibcDenom && ibcData && lastChainName && nextTransferChannel) {
+      console.log('will fetch more IBC data', ibcData);
+      const [portId, channelId] = nextTransferChannel;
+      for (const ibcDataRow of ibcData) {
+        // look up chain 1
+        if (ibcDataRow.chain_1.chain_name === lastChainName) {
+          const foundChannel = ibcDataRow.channels.find((channel) => {
+            return (
+              channel.chain_1.channel_id === channelId &&
+              channel.chain_1.port_id === portId
+            );
+          });
+          if (foundChannel) {
+            console.log('found channel in ', ibcDataRow, {
+              lastChainName,
+              nextTransferChannel,
+            });
+            setNextChainName(ibcDataRow.chain_2.chain_name);
+            break;
+          }
+        }
+        // look up chain 2
+        else if (ibcDataRow.chain_2.chain_name === lastChainName) {
+          const foundChannel = ibcDataRow.channels.find((channel) => {
+            return (
+              channel.chain_2.channel_id === channelId &&
+              channel.chain_2.port_id === portId
+            );
+          });
+          if (foundChannel) {
+            console.log('found channel in ', ibcDataRow, {
+              lastChainName,
+              nextTransferChannel,
+            });
+            setNextChainName(ibcDataRow.chain_1.chain_name);
+            break;
+          }
+        }
+      }
+      console.log('could not find channel in', ibcData, {
+        lastChainName,
+        nextTransferChannel,
+      });
+      // } else if () {
+      //   console.log('will fetch more asset data', ibcData, ibcDenom);
+      //   console.log('transferChainNames', chainNames);
+      //   console.log('transferChannels', transferChannels);
+    } else {
+      console.log('will not fetch more IBC data', ibcData, ibcDenom);
+
+      // const lastChainName = chainNames.at(-1);
+      // const ibcData = chainUtil?.chainInfo.fetcher.getChainIbcData(
+      //   lastChainName || ''
+      // );
+      // const nextTransferChannelIndex = chainNames.length - 1;
+      // const nextTransferChannel = transferChannels.at(nextTransferChannelIndex);
+      console.log('nextTransferChannel', nextTransferChannel);
+      console.log('nextTransferChannel', nextTransferChannel);
+
+      console.log('transferChainNames', chainNames);
+      console.log('transferChannels', transferChannels);
+    }
+  }, [ibcDenom, chainNames, chainUtil, transferChannels]);
+
+  return (
+    <div>
+      <div>
+        Denom:{' '}
+        {'ibc/' +
+          Buffer.from(sha256(Buffer.from(`${path}/${baseDenom}`)))
+            .toString('hex')
+            .toUpperCase()}
+      </div>
+      <div>
+        {path}/{baseDenom}
+      </div>
+      <div>{transferChannels.join(' - ')}</div>
+      <i>{JSON.stringify(ibcDenom)}</i>
+      {/* {chainUtil?.chainInfo.fetcher.getChainIbcData()} */}
+    </div>
+  );
+}
+
+function useDenomTraceIteration(): [
+  {
+    path: string;
+    base_denom: string;
+  },
+  (step: number) => void
+] {
+  const [traceIndex, setTraceIndex] = useState(0);
+
+  const selectedTrace = denomTraces[traceIndex];
+  const stepIndex = useCallback(
+    (step: number) =>
+      setTraceIndex((index) => {
+        return (index + step) % denomTraces.length;
+      }),
+    []
+  );
+
+  return [selectedTrace, stepIndex];
+}
+
+const denomTraces = [
+  { path: 'transfer/channel-1', base_denom: 'uatom' },
+  { path: 'transfer/channel-133', base_denom: 'unois' },
+  { path: 'transfer/channel-15', base_denom: 'umars' },
+  {
+    path: 'transfer/channel-151',
+    base_denom: 'cosmosvaloper1x357jc0vvtnhr2an86r46a0ekqtk74jk4cd73h/1',
+  },
+  { path: 'transfer/channel-160', base_denom: 'utia' },
+  { path: 'transfer/channel-168', base_denom: 'uatom' },
+  { path: 'transfer/channel-174', base_denom: 'uosmo' },
+  { path: 'transfer/channel-186', base_denom: 'uosmo' },
+  { path: 'transfer/channel-196', base_denom: 'uosmo' },
+  { path: 'transfer/channel-204', base_denom: 'utia' },
+  { path: 'transfer/channel-208', base_denom: 'unls' },
+  { path: 'transfer/channel-209', base_denom: 'unls' },
+  { path: 'transfer/channel-21', base_denom: 'uosmo' },
+  { path: 'transfer/channel-221', base_denom: 'utia' },
+  { path: 'transfer/channel-23', base_denom: 'umars' },
+  { path: 'transfer/channel-239', base_denom: 'uatom' },
+  { path: 'transfer/channel-24', base_denom: 'uosmo' },
+  { path: 'transfer/channel-28', base_denom: 'uosmo' },
+  {
+    path: 'transfer/channel-3',
+    base_denom:
+      'cw20:terra167dsqkh2alurx997wmycw9ydkyu54gyswe3ygmrs4lwume3vmwks8ruqnv',
+  },
+  { path: 'transfer/channel-369', base_denom: 'uatom' },
+  { path: 'transfer/channel-8', base_denom: 'eth-wei' },
+  { path: 'transfer/channel-8', base_denom: 'uausdc' },
+  { path: 'transfer/channel-8', base_denom: 'uaxl' },
+  { path: 'transfer/channel-8', base_denom: 'wsteth-wei' },
+  { path: 'transfer/channel-94', base_denom: 'umars' },
+  { path: 'transfer/channel-96', base_denom: 'uatom' },
+  { path: 'transfer/channel-97/transfer/channel-16', base_denom: 'untrn' },
+  { path: 'transfer/channel-97', base_denom: 'umars' },
+  { path: 'transfer/channel-98', base_denom: 'uluna' },
+].sort((a, b) => getPathLength(a) - getPathLength(b));
+
+function getPathLength({
+  path,
+  base_denom,
+}: {
+  path: string;
+  base_denom: string;
+}) {
+  return path.split('/').length / 2;
 }

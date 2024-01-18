@@ -202,6 +202,7 @@ export function MyPoolsTableCard<T extends string | number>({
       ]
     >
   >(() => {
+    console.log('userValuedReserves', userValuedReserves);
     // collect positions into token pair groups
     const userValuedReservesMap = (userValuedReserves || []).reduce<{
       [pairID: string]: {

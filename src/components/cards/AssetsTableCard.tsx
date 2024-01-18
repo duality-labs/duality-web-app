@@ -22,6 +22,16 @@ import {
 } from '../../lib/web3/utils/tokens';
 
 import './AssetsTableCard.scss';
+import {
+  useChainUtil,
+  useTracedAsset,
+} from '../../lib/web3/hooks/useDenomsFromRegistry';
+import {
+  ChainRegistryClient,
+  ChainRegistryClientOptions,
+  ChainRegistryChainUtil,
+} from '@chain-registry/client';
+import { useDenomTrace } from '../../lib/web3/hooks/useDenomsFromChain';
 
 type TokenCoin = Coin & {
   token: Token;
@@ -149,8 +159,8 @@ export default function AssetsTableCard({
               return foundUserAsset ? (
                 <AssetRow
                   key={`${token.base}-${token.chain.chain_name}`}
-                  {...foundUserAsset}
                   token={token}
+                  denom={foundUserAsset.denom}
                   amount={foundUserAsset.amount}
                   value={foundUserAsset.value}
                   showActions={showActions}
@@ -179,14 +189,25 @@ export default function AssetsTableCard({
   );
 }
 
+function Traces() {
+  return;
+}
+
 function AssetRow({
-  token,
+  denom,
+  // token,
   amount,
   value,
   showActions,
 }: TokenCoin & AssetsTableCardOptions) {
   const { address } = useWeb3();
-  return (
+  const trace = useDenomTrace(denom);
+  const {
+    data: { asset: token, chain },
+    isValidating,
+  } = useTracedAsset(denom);
+
+  return token && chain ? (
     <tr>
       <td>
         <div className="row gap-3 token-and-chain">
@@ -203,22 +224,26 @@ function AssetRow({
                 {token.display.toUpperCase()}
               </div>
             </div>
-            <div className="row">
-              <div className="col subtext">
-                {token.chain.pretty_name ??
-                  token.chain.chain_name
+            <div className="subtext">
+              <span>
+                {chain.pretty_name ??
+                  chain.chain_name
                     .split('')
                     .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
-              </div>
+              </span>
+              {trace?.path && <span className="ml-2">({trace.path})</span>}
             </div>
           </div>
         </div>
       </td>
       <td>
         <div>
-          {`${formatAmount(getDisplayDenomAmount(token, amount) || '', {
-            useGrouping: true,
-          })}`}
+          {`${formatAmount(
+            getDisplayDenomAmount({ ...token, chain }, amount) || '',
+            {
+              useGrouping: true,
+            }
+          )}`}
         </div>
         <div className="subtext">
           {`${formatCurrency(value?.toFixed() || '', {
@@ -228,18 +253,18 @@ function AssetRow({
       </td>
       {showActions && (
         <td>
-          {token.chain.chain_id !== nativeChain.chain_id && (
+          {chain.chain_id !== nativeChain.chain_id && (
             // disable buttons if there is no known path to bridge them here
             <fieldset disabled={!address || !token.ibc}>
               <BridgeButton
                 className="button button-primary-outline nowrap mx-0"
-                from={token}
+                from={{ ...token, chain }}
               >
                 Deposit
               </BridgeButton>
               <BridgeButton
                 className="button button-outline nowrap mx-0 ml-3"
-                to={token}
+                to={{ ...token, chain }}
               >
                 Withdraw
               </BridgeButton>
@@ -247,6 +272,14 @@ function AssetRow({
           )}
         </td>
       )}
+    </tr>
+  ) : isValidating ? (
+    <tr>
+      <td>Searcing...</td>
+    </tr>
+  ) : (
+    <tr>
+      <td>Not Found</td>
     </tr>
   );
 }

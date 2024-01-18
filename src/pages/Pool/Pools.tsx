@@ -43,12 +43,15 @@ function Pools() {
   // change the path name which will in turn update the tokens selected
   const setTokensPath = useCallback(
     ([tokenA, tokenB]: [Token?, Token?]) => {
+      console.log('set tokenA', tokenA);
+      console.log('set tokenB', tokenB);
       if (tokenA || tokenB) {
         const path = [
           getTokenPathPart(tokenA),
           getTokenPathPart(tokenB),
           isManagementPath ? matchTokenManagement.params['addOrEdit'] : '',
         ];
+        console.log('path', path);
         navigate(`/pools/${path.filter(Boolean).join('/')}`);
       } else {
         navigate('/pools');
