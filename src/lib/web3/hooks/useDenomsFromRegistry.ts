@@ -1,14 +1,15 @@
 import useSWRImmutable from 'swr/immutable';
 import { SWRResponse } from 'swr';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   ChainRegistryClient,
   ChainRegistryClientOptions,
   ChainRegistryChainUtil,
 } from '@chain-registry/client';
 import { Asset, AssetList, Chain } from '@chain-registry/types';
-import { useDeepCompareMemoize } from 'use-deep-compare-effect';
+
 import { useDenomTrace } from './useDenomsFromChain';
+import { useAssetClient } from './useDenomClients';
 
 const {
   REACT_APP__CHAIN_NAME = '',
@@ -179,113 +180,44 @@ export function useChainAssetLists() {
   return useMemo(() => chainUtil?.chainInfo.fetcher.assetLists, [chainUtil]);
 }
 
-// define default options to start exploring without fetching too much data
-const defaultChainUtilOptions = {
-  chainNames: ['neutrontestnet'],
-  selectedAssestListNames: ['neutrontestnet'],
-};
-
 // this hook follows denom trace information along chain-registry IBC pair data
 // until a matching Asset is found or not
 export function useTracedAsset(
-  denom?: string
+  denom: string | undefined
 ): SWRResponse<{ asset?: Asset; chain?: Chain }> {
-  const { path = '' } = useDenomTrace(denom) || {};
-
-  const transferChannels: Array<[portId: string, channelId: string]> =
-    useDeepCompareMemoize(
-      path
-        .split('/')
-        .flatMap((path, index, paths) =>
-          index % 2 !== 0 ? [[paths[index - 1], path]] : []
-        )
-    );
-
-  const [{ chainNames, selectedAssestListNames }, setChainUtilOpts] = useState<{
-    chainNames: string[];
-    selectedAssestListNames: string[];
-  }>(defaultChainUtilOptions);
-
-  // get chain util that hopefully has the asset of the denom in question
-  const swr = useChainUtil(chainNames, selectedAssestListNames);
-  const chainUtil = swr.data;
-
-  // derive the found asset with current IBC data if it can be found
+  const { data: client, ...swr } = useAssetClient(denom);
+  const trace = useDenomTrace(denom);
   const asset = useMemo(() => {
     try {
-      return denom ? chainUtil?.getAssetByDenom(denom) : undefined;
+      return (
+        denom &&
+        client?.getChainUtil(REACT_APP__CHAIN_NAME).getAssetByDenom(denom)
+      );
     } catch {
-      // ignore error that asset cannot be found in current IBC data
+      // ignore
     }
-  }, [chainUtil, denom]);
-
-  // when switching denoms, start path exploration again
-  useEffect(() => {
-    // reset the chain names
-    setChainUtilOpts(defaultChainUtilOptions);
-  }, [path]);
-
-  // make chain util fetch deeper into the trace if needed
-  useEffect(() => {
-    const lastChainName = chainNames.at(-1) || '';
-    const ibcData = chainUtil?.chainInfo.fetcher.getChainIbcData(lastChainName);
-    const nextTransferChannelIndex = chainNames.length - 1;
-    const nextTransferChannel = transferChannels.at(nextTransferChannelIndex);
-
-    // if we don't have all the transfer channel hops covered then fetch more IBC data
-    if (!asset && ibcData && lastChainName && nextTransferChannel) {
-      const [portId, channelId] = nextTransferChannel;
-      for (const ibcDataRow of ibcData) {
-        // look up chain 1
-        if (ibcDataRow.chain_1.chain_name === lastChainName) {
-          const foundChannel = ibcDataRow.channels.find((channel) => {
-            return (
-              channel.chain_1.channel_id === channelId &&
-              channel.chain_1.port_id === portId
-            );
-          });
-          if (foundChannel) {
-            setNextChainName(ibcDataRow.chain_2.chain_name);
-            break;
-          }
-        }
-        // look up chain 2
-        else if (ibcDataRow.chain_2.chain_name === lastChainName) {
-          const foundChannel = ibcDataRow.channels.find((channel) => {
-            return (
-              channel.chain_2.channel_id === channelId &&
-              channel.chain_2.port_id === portId
-            );
-          });
-          if (foundChannel) {
-            setNextChainName(ibcDataRow.chain_1.chain_name);
-            break;
-          }
-        }
+  }, [client, denom]);
+  const chain = useMemo(() => {
+    try {
+      // if there is a trace, generate the asset lists to find the asset chain
+      if (trace) {
+        const chainName =
+          asset &&
+          client
+            ?.getGeneratedAssetLists(REACT_APP__CHAIN_NAME)
+            .find((assetList) => {
+              return assetList.assets.find(({ base }) => base === asset.base);
+            })?.chain_name;
+        return chainName && client?.getChain(chainName);
       }
+      // if there is no trace then the asset is probably of the native chain
+      else {
+        return client?.getChain(REACT_APP__CHAIN_NAME);
+      }
+    } catch {
+      // ignore
     }
-
-    function setNextChainName(chainName: string) {
-      setChainUtilOpts(({ chainNames }) => {
-        // if this would be the last step then find the assetlist of this chain
-        // otherwise we should keep searching IBC data
-        if (chainNames.length >= transferChannels.length) {
-          return {
-            chainNames,
-            selectedAssestListNames: [chainName],
-          };
-        } else {
-          return {
-            chainNames: [...chainNames, chainName],
-            selectedAssestListNames: [],
-          };
-        }
-      });
-    }
-  }, [asset, chainNames, chainUtil, transferChannels]);
-
-  // get chain of the asset
-  const { data: chain } = useChain(asset && selectedAssestListNames.at(-1));
+  }, [trace, asset, client]);
 
   return { ...swr, data: { asset, chain } } as SWRResponse;
 }
