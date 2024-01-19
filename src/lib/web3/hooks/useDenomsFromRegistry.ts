@@ -77,26 +77,15 @@ function useRelatedIbcNamePairs(
     : undefined;
 }
 
-export function useChain(chainName: string | undefined): SWRResponse<Chain> {
-  const swr = useChainUtil(chainName ? [chainName] : [], [], {
-    fetchRelatedAssets: false,
-    fetchRelatedPairs: false,
-  });
-  return {
-    ...swr,
-    data: swr.data?.chainInfo.fetcher.getChain(chainName || ''),
-  } as SWRResponse;
-}
-
 // get chain, defaulting to all related one-hop assets
-export function useChainUtil(
+export function useChainClient(
   selectedChainNames: string[] = [REACT_APP__CHAIN_NAME],
   selectedAssestListNames?: string[],
   {
     fetchRelatedPairs = true,
     fetchRelatedAssets = true,
   }: { fetchRelatedPairs?: boolean; fetchRelatedAssets?: boolean } = {}
-): SWRResponse<ChainRegistryChainUtil> {
+): SWRResponse<ChainRegistryClient> {
   const ibcNamePairs = useRelatedIbcNamePairs(
     fetchRelatedPairs ? selectedChainNames.at(-1) : undefined
   );
@@ -127,12 +116,12 @@ export function useChainUtil(
 
     // return just the chain utility instance
     // it is possible to get the original fetcher at chainUtil.chainInfo.fetcher
-    return chainRegistryClient.getChainUtil(REACT_APP__CHAIN_NAME);
+    return chainRegistryClient;
   }
 
   return useSWRImmutable(
     ['chain-util', chainNames, ibcNamePairs, assetListNames],
-    async (): Promise<ChainRegistryChainUtil> => {
+    async (): Promise<ChainRegistryClient> => {
       // restrict asset collection to specific chains or
       // check available endpoints for data
       for (const endpoint of chainRegistryFileEndpoints) {
@@ -157,6 +146,31 @@ export function useChainUtil(
       shouldRetryOnError: false,
     }
   );
+}
+
+export function useChainUtil(
+  selectedChainNames: string[] = [REACT_APP__CHAIN_NAME],
+  selectedAssestListNames?: string[],
+  opts: { fetchRelatedPairs?: boolean; fetchRelatedAssets?: boolean } = {}
+): SWRResponse<ChainRegistryChainUtil> {
+  const swr = useChainClient(selectedChainNames, selectedAssestListNames, opts);
+  // return just the chain utility instance
+  // it is possible to get the original fetcher at chainUtil.chainInfo.fetcher
+  return {
+    ...swr,
+    data: swr.data?.getChainUtil(REACT_APP__CHAIN_NAME),
+  } as SWRResponse;
+}
+
+export function useChain(chainName: string | undefined): SWRResponse<Chain> {
+  const swr = useChainClient(chainName ? [chainName] : [], [], {
+    fetchRelatedAssets: false,
+    fetchRelatedPairs: false,
+  });
+  return {
+    ...swr,
+    data: swr.data?.getChain(chainName || ''),
+  } as SWRResponse;
 }
 
 export function useChainNativeAssetList(): AssetList | undefined {
