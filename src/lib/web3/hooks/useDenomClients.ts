@@ -19,6 +19,9 @@ const {
   REACT_APP__CHAIN_IS_TESTNET = '',
   REACT_APP__CHAIN_REGISTRY_FILE_ENDPOINTS = '["https://registry.ping.pub"]',
   REACT_APP__CHAIN_REGISTRY_PATH_ENDPOINTS = '["https://registry.ping.pub"]',
+  REACT_APP__CHAIN_REGISTRY_ASSET_LISTS = '',
+  REACT_APP__CHAIN_REGISTRY_CHAINS = '',
+  REACT_APP__CHAIN_REGISTRY_IBC_DATA = '',
 } = import.meta.env;
 
 const isTestnet = REACT_APP__CHAIN_IS_TESTNET
@@ -33,6 +36,17 @@ const chainRegistryFileEndpoints: string[] = JSON.parse(
 const chainRegistryDirectoryEndpoints: string[] = JSON.parse(
   REACT_APP__CHAIN_REGISTRY_PATH_ENDPOINTS
 ).map((endpoint: string) => (isTestnet ? `${endpoint}/testnets` : endpoint));
+
+// default chain-registry data can be used to supplement chain-registry data
+const defaultAssetLists: AssetList[] = REACT_APP__CHAIN_REGISTRY_ASSET_LISTS
+  ? JSON.parse(REACT_APP__CHAIN_REGISTRY_ASSET_LISTS)
+  : undefined;
+const defaultChains: Chain[] = REACT_APP__CHAIN_REGISTRY_CHAINS
+  ? JSON.parse(REACT_APP__CHAIN_REGISTRY_CHAINS)
+  : undefined;
+const defaultIbcData: IBCInfo[] = REACT_APP__CHAIN_REGISTRY_IBC_DATA
+  ? JSON.parse(REACT_APP__CHAIN_REGISTRY_IBC_DATA)
+  : undefined;
 
 type ChainNamePair = [chainName1: string, chainName2: string];
 
@@ -275,9 +289,50 @@ async function getAssetClient(
         // update client with cached or uncached fetch data
         await Promise.all(
           client.urls.map((url) =>
-            globalFetchCache(url).then((data) =>
-              client.update(data as Chain | AssetList | IBCInfo)
-            )
+            globalFetchCache(url).then((data) => {
+              // find matching data to merge
+              const assetListOrChain = data as AssetList | Chain;
+              if (assetListOrChain.chain_name === REACT_APP__CHAIN_NAME) {
+                // merge current chain asset data with default chain asset data
+                const assetList = data as AssetList;
+                if (
+                  defaultAssetLists &&
+                  assetList.$schema?.endsWith('/assetlist.schema.json')
+                ) {
+                  const defaultAssetList = defaultAssetLists.find(
+                    ({ chain_name }) => chain_name === assetList.chain_name
+                  )?.assets;
+                  return client.update({
+                    ...assetList,
+                    // add matched chain name assets over default assets by base
+                    assets: assetList.assets.reduce<Asset[]>((acc, asset) => {
+                      const found = acc.find(({ base }) => base === asset.base);
+                      // merge asset
+                      if (found) {
+                        acc[acc.indexOf(found)] = { ...found, ...asset };
+                      }
+                      // or add asset
+                      else {
+                        acc.push(asset);
+                      }
+                      return acc;
+                    }, defaultAssetList?.slice() ?? []),
+                  });
+                }
+                // merge current chain data with default chain data
+                const chain = data as Chain;
+                if (
+                  defaultChains &&
+                  chain.$schema?.endsWith('/chain.schema.json')
+                ) {
+                  const defaultChain = defaultChains.find(
+                    ({ chain_name }) => chain_name === chain.chain_name
+                  );
+                  return client.update({ ...defaultChain, ...chain });
+                }
+              }
+              return client.update(data as Chain | AssetList | IBCInfo);
+            })
           )
         );
         return client;
@@ -396,5 +451,8 @@ async function getAssetClient(
     chainNames: [REACT_APP__CHAIN_NAME],
     ibcNamePairs: await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME),
     assetListNames: [REACT_APP__CHAIN_NAME],
+    assetLists: defaultAssetLists,
+    chains: defaultChains,
+    ibcData: defaultIbcData,
   });
 }
