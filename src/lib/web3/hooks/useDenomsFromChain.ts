@@ -5,6 +5,7 @@ import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import { DenomTrace } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
 import { useIbcRestClient } from '../clients/restClients';
+import { useDefaultDenomTraceByDenom } from './useDenomsFromRegistry';
 
 type DenomTraceByDenom = Map<string, DenomTrace>;
 
@@ -20,9 +21,19 @@ const concurrentItemCount = 3;
 export function useDenomTraceByDenom(
   denoms: string[]
 ): SWRCommon<DenomTraceByDenom> {
+  // get what information we can from chain-registry data
+  const defaultDataState = useDefaultDenomTraceByDenom();
+  const { data: defaultDenomTraceByDenom } = defaultDataState;
+
   // use only unique IBC denoms
   const ibcDenoms = useDeepCompareMemoize(
-    Array.from(new Set(denoms)).filter((denom) => denom.startsWith('ibc/'))
+    // only look up "unknown" denoms from the chain after we have registry data
+    // or the chain-registry data fetching has hit an error
+    defaultDenomTraceByDenom?.size || defaultDataState.error
+      ? Array.from(new Set(denoms))
+          .filter((denom) => denom.startsWith('ibc/'))
+          .filter((denom) => !defaultDenomTraceByDenom?.has(denom))
+      : []
   );
 
   const restClient = useIbcRestClient();
@@ -55,6 +66,7 @@ export function useDenomTraceByDenom(
       initialSize: concurrentItemCount,
       revalidateFirstPage: false,
       revalidateAll: false,
+      errorRetryCount: 3,
     }
   );
 
@@ -76,9 +88,10 @@ export function useDenomTraceByDenom(
         }
         return map;
       },
-      new Map()
+      // create m denom map from base denom map created from chain-registry data
+      new Map(defaultDenomTraceByDenom)
     );
-  }, [pages]);
+  }, [defaultDenomTraceByDenom, pages]);
 
   const { isValidating, isLoading, error } = swr;
   return { isValidating, isLoading, error, data };

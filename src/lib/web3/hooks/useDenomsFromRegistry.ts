@@ -6,7 +6,9 @@ import {
   ChainRegistryClientOptions,
   ChainRegistryChainUtil,
 } from '@chain-registry/client';
+import { ibcDenom, getIbcAssetPath } from '@chain-registry/utils';
 import { AssetList, Chain } from '@chain-registry/types';
+import { DenomTrace } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
 const {
   REACT_APP__CHAIN_NAME = '',
@@ -203,4 +205,49 @@ export function useOneHopDenoms(): string[] {
     }
     return [];
   }, [client]);
+}
+
+type DenomTraceByDenom = Map<string, DenomTrace>;
+
+// get denom traces from default IBC network (one-hop)
+export function useDefaultDenomTraceByDenom(): SWRResponse<DenomTraceByDenom> {
+  const { data: client, ...swr } = useChainClient();
+
+  // find the IBC trace information of each known IBC asset
+  const denomTractByDenom = useMemo<DenomTraceByDenom>(() => {
+    const assetLists = client?.getGeneratedAssetLists(REACT_APP__CHAIN_NAME);
+    const map = new Map<string, DenomTrace>();
+    return client && assetLists
+      ? assetLists.reduce((acc, assetList) => {
+          for (const asset of assetList.assets) {
+            const trace = asset.traces?.at(0);
+            const counterparty = trace?.counterparty.chain_name;
+            const baseDenom = trace?.counterparty.base_denom;
+            const ibcAssetPath: Parameters<typeof ibcDenom>['0'] =
+              counterparty &&
+              baseDenom &&
+              getIbcAssetPath(
+                client.ibcData,
+                REACT_APP__CHAIN_NAME,
+                counterparty,
+                assetLists,
+                baseDenom
+              );
+            // if the denom has IBC trace information, then add it here
+            if (baseDenom && ibcAssetPath) {
+              // recreate IBC data into DenomTrace format
+              acc.set(asset.base, {
+                path: ibcAssetPath
+                  .flatMap(({ port_id, channel_id }) => [port_id, channel_id])
+                  .join('/'),
+                base_denom: baseDenom,
+              });
+            }
+          }
+          return acc;
+        }, map)
+      : map;
+  }, [client]);
+
+  return { ...swr, data: denomTractByDenom } as SWRResponse;
 }
