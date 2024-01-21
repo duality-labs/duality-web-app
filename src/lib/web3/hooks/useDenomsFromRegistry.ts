@@ -6,10 +6,7 @@ import {
   ChainRegistryClientOptions,
   ChainRegistryChainUtil,
 } from '@chain-registry/client';
-import { Asset, AssetList, Chain } from '@chain-registry/types';
-
-import { useDenomTrace } from './useDenomsFromChain';
-import { useAssetClient } from './useDenomClients';
+import { AssetList, Chain } from '@chain-registry/types';
 
 const {
   REACT_APP__CHAIN_NAME = '',
@@ -206,46 +203,4 @@ export function useOneHopDenoms(): string[] {
     }
     return [];
   }, [client]);
-}
-
-// this hook follows denom trace information along chain-registry IBC pair data
-// until a matching Asset is found or not
-export function useTracedAsset(
-  denom: string | undefined
-): SWRResponse<{ asset?: Asset; chain?: Chain }> {
-  const { data: client, ...swr } = useAssetClient(denom);
-  const trace = useDenomTrace(denom);
-  const asset = useMemo(() => {
-    try {
-      return (
-        denom &&
-        client?.getChainUtil(REACT_APP__CHAIN_NAME).getAssetByDenom(denom)
-      );
-    } catch {
-      // ignore
-    }
-  }, [client, denom]);
-  const chain = useMemo(() => {
-    try {
-      // if there is a trace, generate the asset lists to find the asset chain
-      if (trace) {
-        const chainName =
-          asset &&
-          client
-            ?.getGeneratedAssetLists(REACT_APP__CHAIN_NAME)
-            .find((assetList) => {
-              return assetList.assets.find(({ base }) => base === asset.base);
-            })?.chain_name;
-        return chainName && client?.getChain(chainName);
-      }
-      // if there is no trace then the asset is probably of the native chain
-      else {
-        return client?.getChain(REACT_APP__CHAIN_NAME);
-      }
-    } catch {
-      // ignore
-    }
-  }, [trace, asset, client]);
-
-  return { ...swr, data: { asset, chain } } as SWRResponse;
 }
