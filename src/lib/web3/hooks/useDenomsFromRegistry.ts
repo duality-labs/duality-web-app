@@ -174,24 +174,21 @@ export function useChain(chainName: string | undefined): SWRResponse<Chain> {
 }
 
 export function useChainNativeAssetList(): AssetList | undefined {
-  const { data: chainUtil } = useChainUtil();
+  const { data: client } = useChainClient();
   return useMemo(() => {
     // todo: use chainUtil?.chainInfo.nativeAssetList when types are fixed
-    return chainUtil?.chainInfo.nativeAssetLists;
-  }, [chainUtil]);
+    return client?.getChainAssetList(REACT_APP__CHAIN_NAME);
+  }, [client]);
 }
 
-export function useChainIbcAssetList(): AssetList | undefined {
-  const { data: chainUtil } = useChainUtil();
+export function useChainGeneratedAssetLists(): AssetList[] | undefined {
+  const { data: client } = useChainClient();
   return useMemo(() => {
-    // todo: use chainUtil?.chainInfo.assetLists when types are fixed
-    return chainUtil?.chainInfo.fetcher.getChainAssetList(chainUtil.chainName);
-  }, [chainUtil]);
-}
-
-export function useChainAssetLists() {
-  const { data: chainUtil } = useChainUtil();
-  return useMemo(() => chainUtil?.chainInfo.fetcher.assetLists, [chainUtil]);
+    // note: chainUtil.chainInfo.assetLists contains asset lists as they
+    //       exist on each chain, generally we will want the ibc denoms of
+    //       each asset, which are generated with client.getGeneratedAssetLists
+    return client?.getGeneratedAssetLists(REACT_APP__CHAIN_NAME);
+  }, [client]);
 }
 
 // return all denoms within one hop of the native chain on chain-registry
