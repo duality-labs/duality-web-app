@@ -194,6 +194,23 @@ export function useChainAssetLists() {
   return useMemo(() => chainUtil?.chainInfo.fetcher.assetLists, [chainUtil]);
 }
 
+// return all denoms within one hop of the native chain on chain-registry
+export function useOneHopDenoms(): string[] {
+  const { data: client } = useChainClient();
+  return useMemo<string[]>(() => {
+    if (client) {
+      const assetLists = [
+        client.getChainAssetList(REACT_APP__CHAIN_NAME),
+        ...(client.getGeneratedAssetLists(REACT_APP__CHAIN_NAME) ?? []),
+      ];
+      return assetLists.flatMap(
+        (assetList) => assetList?.assets.flatMap((asset) => asset.base) ?? []
+      );
+    }
+    return [];
+  }, [client]);
+}
+
 // this hook follows denom trace information along chain-registry IBC pair data
 // until a matching Asset is found or not
 export function useTracedAsset(
