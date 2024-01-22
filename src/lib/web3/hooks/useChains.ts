@@ -347,14 +347,6 @@ export function useIbcOpenTransfers(chain: Chain = nativeChain) {
   }, [clientStates, connections, channels]);
 }
 
-export function useConnectedChainIDs() {
-  const openTransfers = useIbcOpenTransfers();
-  // return only chain IDs for easy comparison to different lists
-  return useMemo(() => {
-    return openTransfers.map((openTransfer) => openTransfer.chain.chain_id);
-  }, [openTransfers]);
-}
-
 export function useRemoteChainRpcEndpoint(chain?: Chain) {
   return useQuery({
     queryKey: ['cosmos-chain-rpc-endpoints', chain?.chain_id],

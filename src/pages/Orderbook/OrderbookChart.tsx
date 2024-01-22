@@ -15,10 +15,7 @@ import {
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 
-import useTokens, {
-  matchTokenByDenom,
-  useTokensWithIbcInfo,
-} from '../../lib/web3/hooks/useTokens';
+import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
@@ -77,27 +74,26 @@ export default function OrderBookChart({
   // find chart container to fit
   const chartRef = useRef<HTMLDivElement>(null);
 
-  const tokenList = useTokensWithIbcInfo(useTokens());
   const { data: tokenPairReserves } = useTokenPairs();
+  const { data: tokenByDenom } = useTokenByDenom(
+    tokenPairReserves?.flatMap(([denom0, denom1]) => [denom0, denom1])
+  );
 
   // memoize tokenPairs so we don't trigger the graph re-rendering too often
   const tokenPairs = useDeepCompareMemoize(
     useMemo<Array<[Token, Token]>>(() => {
-      return tokenPairReserves
+      return tokenPairReserves && tokenByDenom
         ? tokenPairReserves
             // find the tokens that match our known pair token IDs
-            .map(([tokenId0, tokenId1]) => {
-              return [
-                tokenList.find(matchTokenByDenom(tokenId0)),
-                tokenList.find(matchTokenByDenom(tokenId1)),
-              ];
+            .map(([denom0, denom1]) => {
+              return [tokenByDenom.get(denom0), tokenByDenom.get(denom1)];
             })
             // remove pairs with unfound tokens
             .filter<[Token, Token]>((tokenPair): tokenPair is [Token, Token] =>
               tokenPair.every(Boolean)
             )
         : [];
-    }, [tokenList, tokenPairReserves])
+    }, [tokenByDenom, tokenPairReserves])
   );
 
   // tokenPairID is made of symbols, which is different to token paths

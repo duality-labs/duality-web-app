@@ -167,7 +167,9 @@ function LimitOrder({
     isFetching: isLoadingUserTokenOutDisplayAmount,
   } = useBankBalanceDisplayAmount(tokenOut?.base);
 
-  const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap();
+  const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap(
+    [tokenIdA, tokenIdB].filter((denom): denom is string => !!denom)
+  );
 
   const { data: routerResult } = useRouterResult({
     tokenA: getTokenId(tokenIn),
