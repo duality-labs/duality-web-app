@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useMatch } from 'react-router-dom';
 
-import { useTokenBySymbol } from '../../lib/web3/hooks/useTokens';
+import { useDenomFromPathParam } from '../../lib/web3/hooks/useTokens';
+import { useToken } from '../../lib/web3/hooks/useDenomClients';
 
 import TabsCard from '../../components/cards/TabsCard';
 import OrderbookHeader from './OrderbookHeader';
@@ -26,8 +27,10 @@ export default function OrderbookPage() {
 function Orderbook() {
   // change tokens to match pathname
   const match = useMatch('/orderbook/:tokenA/:tokenB');
-  const tokenA = useTokenBySymbol(match?.params['tokenA']);
-  const tokenB = useTokenBySymbol(match?.params['tokenB']);
+  const { data: denomA } = useDenomFromPathParam(match?.params['tokenA']);
+  const { data: denomB } = useDenomFromPathParam(match?.params['tokenB']);
+  const { data: tokenA } = useToken(denomA);
+  const { data: tokenB } = useToken(denomB);
 
   return (
     <div className="flex col gap-3">

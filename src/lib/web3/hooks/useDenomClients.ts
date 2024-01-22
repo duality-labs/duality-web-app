@@ -30,7 +30,7 @@ export function useAssetClient(denom: string | undefined) {
   );
 }
 
-type SWRCommon<Data = unknown, Error = unknown> = {
+export type SWRCommon<Data = unknown, Error = unknown> = {
   isValidating: boolean;
   isLoading: boolean;
   error: Error;
@@ -157,7 +157,7 @@ export function useAssetByDenom(
 }
 
 // export convenience hook for getting just Token for each denom
-type TokenByDenom = Map<string, Asset & { chain: Chain }>;
+export type TokenByDenom = Map<string, Asset & { chain: Chain }>;
 export function useTokenByDenom(
   denoms: string[] = []
 ): SWRCommon<TokenByDenom> {

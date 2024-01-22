@@ -5,9 +5,6 @@ import { Coin } from '@duality-labs/dualityjs/types/codegen/cosmos/base/v1beta1/
 import Dialog from '../Dialog/Dialog';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
-import useTokens, {
-  useTokensWithIbcInfo,
-} from '../../lib/web3/hooks/useTokens';
 import BridgeCard from './BridgeCard';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
@@ -20,6 +17,11 @@ import {
   getDisplayDenomAmount,
   getTokenId,
 } from '../../lib/web3/utils/tokens';
+import {
+  useToken,
+  useTokenByDenom,
+} from '../../lib/web3/hooks/useDenomClients';
+import { useDenomTrace } from '../../lib/web3/hooks/useDenomsFromChain';
 
 import './AssetsTableCard.scss';
 
@@ -38,9 +40,14 @@ export default function AssetsTableCard({
   ...tableCardProps
 }: AssetsTableCardOptions & Partial<TableCardProps<string>>) {
   const { address, connectWallet } = useWeb3();
-  const tokenList = useTokens();
-  const tokenListWithIBC = useTokensWithIbcInfo(givenTokenList || tokenList);
   const allUserBankAssets = useUserBankValues();
+  const { data: tokenByDenom } = useTokenByDenom(
+    allUserBankAssets?.flatMap((asset) => asset.denom)
+  );
+  const tokenList = useMemo(
+    () => Array.from((tokenByDenom || [])?.values()),
+    [tokenByDenom]
+  );
 
   const allUserBankAssetsByTokenId = useMemo(() => {
     return allUserBankAssets.reduce<{ [symbol: string]: TokenCoin }>(
@@ -91,17 +98,9 @@ export default function AssetsTableCard({
 
   // sort tokens
   const sortedList = useMemo(() => {
-    // filter and sort tokens
-    return (
-      tokenListWithIBC
-        // filter to native chain and IBC bridgable tokens
-        .filter(
-          (token) => token.chain.chain_id === nativeChain.chain_id || token.ibc
-        )
-        // sort by USD value
-        .sort(sortByValue)
-    );
-  }, [tokenListWithIBC, sortByValue]);
+    // sort by USD value
+    return tokenList.sort(sortByValue);
+  }, [tokenList, sortByValue]);
 
   const [searchValue, setSearchValue] = useState<string>('');
 
@@ -149,8 +148,8 @@ export default function AssetsTableCard({
               return foundUserAsset ? (
                 <AssetRow
                   key={`${token.base}-${token.chain.chain_name}`}
-                  {...foundUserAsset}
                   token={token}
+                  denom={foundUserAsset.denom}
                   amount={foundUserAsset.amount}
                   value={foundUserAsset.value}
                   showActions={showActions}
@@ -159,7 +158,7 @@ export default function AssetsTableCard({
                 <AssetRow
                   key={`${token.base}-${token.chain.chain_name}`}
                   token={token}
-                  denom={''}
+                  denom={token.base}
                   amount="0"
                   value={new BigNumber(0)}
                   showActions={showActions}
@@ -180,13 +179,17 @@ export default function AssetsTableCard({
 }
 
 function AssetRow({
-  token,
+  denom,
+  // token,
   amount,
   value,
   showActions,
 }: TokenCoin & AssetsTableCardOptions) {
   const { address } = useWeb3();
-  return (
+  const { data: trace } = useDenomTrace(denom);
+  const { data: token, isValidating } = useToken(denom);
+
+  return token ? (
     <tr>
       <td>
         <div className="row gap-3 token-and-chain">
@@ -203,13 +206,14 @@ function AssetRow({
                 {token.display.toUpperCase()}
               </div>
             </div>
-            <div className="row">
-              <div className="col subtext">
+            <div className="subtext">
+              <span>
                 {token.chain.pretty_name ??
                   token.chain.chain_name
                     .split('')
                     .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
-              </div>
+              </span>
+              {trace?.path && <span className="ml-2">({trace.path})</span>}
             </div>
           </div>
         </div>
@@ -247,6 +251,14 @@ function AssetRow({
           )}
         </td>
       )}
+    </tr>
+  ) : isValidating ? (
+    <tr>
+      <td>Searcing...</td>
+    </tr>
+  ) : (
+    <tr>
+      <td>Not Found: {denom}</td>
     </tr>
   );
 }
