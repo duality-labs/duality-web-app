@@ -7,7 +7,7 @@ import {
   ChainRegistryChainUtil,
 } from '@chain-registry/client';
 
-import { Asset, Chain } from '@chain-registry/types';
+import { AdditionalMintageTrace, Asset, Chain } from '@chain-registry/types';
 import { DenomTrace } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
 import { useDenomTrace, useDenomTraceByDenom } from './useDenomsFromChain';
@@ -170,10 +170,22 @@ export function useTokenByDenom(
       const client = clientByDenom?.get(denom);
       const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
       const asset = chainUtil?.getAssetByDenom(denom);
-      const chainName = asset
+      const chainName: string | undefined = asset
         ? asset.traces?.at(0)?.counterparty.chain_name || REACT_APP__CHAIN_NAME
         : undefined;
-      const chain = chainName && client?.getChain(chainName);
+      // todo: find a better way to pass data to the token picker
+      //       so we don't need Cosmos chain context passed through,
+      //       because some assets don't have Cosmos chain data: like Ethereum
+      const chain: Chain | undefined =
+        (denom.startsWith('factory/') &&
+          chainUtil && {
+            ...chainUtil.chainInfo.chain,
+            pretty_name:
+              (asset?.traces?.at(0) as AdditionalMintageTrace).provider ||
+              asset?.traces?.at(0)?.counterparty.chain_name ||
+              chainUtil.chainInfo.chain.pretty_name,
+          }) ||
+        (chainName ? client?.getChain(chainName) : undefined);
       if (denom && asset && chain) {
         return map.set(denom, { chain, ...asset });
       }
