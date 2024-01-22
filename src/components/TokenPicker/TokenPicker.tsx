@@ -6,6 +6,7 @@ import {
   useState,
   useId,
   ReactNode,
+  useMemo,
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
@@ -142,7 +143,7 @@ export default function TokenPicker({
 
   // update the filtered list whenever the query or the list changes
   const filteredList = useFilteredTokenList(
-    (() => {
+    useMemo(() => {
       switch (assetMode) {
         case 'Duality':
           return nativeTokenList;
@@ -151,7 +152,7 @@ export default function TokenPicker({
         default:
           return tokenList;
       }
-    })(),
+    }, [assetMode, nativeTokenList, tokenList, userList]),
     searchQuery
   );
 
