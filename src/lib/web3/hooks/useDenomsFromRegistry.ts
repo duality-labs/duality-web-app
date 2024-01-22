@@ -397,7 +397,11 @@ export function useDefaultDenomTraceByDenom(): SWRResponse<DenomTraceByDenom> {
 
   // find the IBC trace information of each known IBC asset
   const defaultDenomTraceByDenom = useMemo<DenomTraceByDenom>(() => {
-    const assetLists = client?.getGeneratedAssetLists(REACT_APP__CHAIN_NAME);
+    // there may be IBC assets on the assetList of the native chain
+    const assetLists = client && [
+      client.getChainAssetList(REACT_APP__CHAIN_NAME),
+      ...(client.getGeneratedAssetLists(REACT_APP__CHAIN_NAME) ?? []),
+    ];
     const map = new Map<string, DenomTrace>();
     return client && assetLists
       ? assetLists.reduce((acc, assetList) => {
