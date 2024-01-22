@@ -334,6 +334,34 @@ export function useOneHopDenoms(): string[] {
 
 type DenomTraceByDenom = Map<string, DenomTrace>;
 
+function getDenomTraceFromAsset(
+  client: ChainRegistryClient,
+  asset: Asset,
+  assetLists: AssetList[] = client.getGeneratedAssetLists(REACT_APP__CHAIN_NAME)
+): DenomTrace | undefined {
+  const trace = asset.traces?.at(0);
+  const counterparty = trace?.counterparty.chain_name;
+  const baseDenom = trace?.counterparty.base_denom;
+  const ibcAssetPath: Parameters<typeof ibcDenom>['0'] =
+    counterparty &&
+    baseDenom &&
+    getIbcAssetPath(
+      client.ibcData,
+      REACT_APP__CHAIN_NAME,
+      counterparty,
+      assetLists,
+      baseDenom
+    );
+
+  return baseDenom && ibcAssetPath
+    ? {
+        path: ibcAssetPath
+          .flatMap(({ port_id, channel_id }) => [port_id, channel_id])
+          .join('/'),
+        base_denom: baseDenom,
+      }
+    : undefined;
+}
 // get denom traces from default IBC network (one-hop)
 export function useDefaultDenomTraceByDenom(): SWRResponse<DenomTraceByDenom> {
   const { data: client, ...swr } = useDefaultAssetsClient();
@@ -345,28 +373,11 @@ export function useDefaultDenomTraceByDenom(): SWRResponse<DenomTraceByDenom> {
     return client && assetLists
       ? assetLists.reduce((acc, assetList) => {
           for (const asset of assetList.assets) {
-            const trace = asset.traces?.at(0);
-            const counterparty = trace?.counterparty.chain_name;
-            const baseDenom = trace?.counterparty.base_denom;
-            const ibcAssetPath: Parameters<typeof ibcDenom>['0'] =
-              counterparty &&
-              baseDenom &&
-              getIbcAssetPath(
-                client.ibcData,
-                REACT_APP__CHAIN_NAME,
-                counterparty,
-                assetLists,
-                baseDenom
-              );
+            const trace = getDenomTraceFromAsset(client, asset, assetLists);
             // if the denom has IBC trace information, then add it here
-            if (baseDenom && ibcAssetPath) {
+            if (trace) {
               // recreate IBC data into DenomTrace format
-              acc.set(asset.base, {
-                path: ibcAssetPath
-                  .flatMap(({ port_id, channel_id }) => [port_id, channel_id])
-                  .join('/'),
-                base_denom: baseDenom,
-              });
+              acc.set(asset.base, trace);
             }
           }
           return acc;
