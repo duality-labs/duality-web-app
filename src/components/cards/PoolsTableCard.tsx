@@ -1,4 +1,10 @@
-import { MouseEventHandler, ReactNode, useMemo, useState } from 'react';
+import {
+  MouseEventHandler,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { NavigateFunction, useNavigate } from 'react-router-dom';
 
 import BigNumber from 'bignumber.js';
@@ -8,7 +14,6 @@ import TableCard, { TableCardProps } from './TableCard';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import useTokens, {
-  getTokenPathPart,
   matchTokenByDenom,
   useTokensWithIbcInfo,
 } from '../../lib/web3/hooks/useTokens';
@@ -16,6 +21,7 @@ import useTokens, {
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
 import { getPairID } from '../../lib/web3/utils/pairs';
 import {
   UserValuedReserves,
@@ -39,8 +45,15 @@ export default function PoolsTableCard<T extends string | number>({
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
   const [searchValue, setSearchValue] = useState<string>('');
 
-  const tokenList = useTokensWithIbcInfo(useTokens());
   const { data: tokenPairs } = useTokenPairs();
+  const { data: tokenByDenom } = useTokenByDenom(
+    tokenPairs?.flatMap(([denom0, denom1]) => [denom0, denom1])
+  );
+  const tokenList = useMemo(
+    () => Array.from((tokenByDenom || [])?.values()),
+    [tokenByDenom]
+  );
+
   const allPairsList = useMemo<Array<PoolTableRow>>(() => {
     return tokenPairs
       ? tokenPairs
@@ -48,8 +61,8 @@ export default function PoolsTableCard<T extends string | number>({
           .map(([token0, token1, reserves0, reserves1]) => {
             return [
               getPairID(token0, token1),
-              tokenList.find(matchTokenByDenom(token0)),
-              tokenList.find(matchTokenByDenom(token1)),
+              tokenByDenom?.get(token0),
+              tokenByDenom?.get(token1),
               reserves0,
               reserves1,
             ];
@@ -59,9 +72,22 @@ export default function PoolsTableCard<T extends string | number>({
             tokenPair.every(Boolean)
           )
       : [];
-  }, [tokenList, tokenPairs]);
+  }, [tokenByDenom, tokenPairs]);
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
+
+  useEffect(
+    () => console.log('PoolsTableCard: tokenPairs', tokenPairs),
+    [tokenPairs]
+  );
+  useEffect(
+    () => console.log('PoolsTableCard: tokenByDenom', tokenByDenom),
+    [tokenByDenom]
+  );
+  useEffect(
+    () => console.log('PoolsTableCard: tokenList', tokenList),
+    [tokenList]
+  );
 
   const filteredPoolsList = useMemo<Array<PoolTableRow>>(() => {
     const tokenList = filteredPoolTokenList.map(({ token }) => token);
@@ -183,14 +209,22 @@ export function MyPoolsTableCard<T extends string | number>({
   className,
   title = 'My Pools',
   onTokenPairClick,
-  userPositionActions = defaultActions,
+  userPositionActions,
   ...tableCardProps
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
   const [searchValue, setSearchValue] = useState<string>('');
 
-  const tokenList = useTokensWithIbcInfo(useTokens());
-
   const { data: userValuedReserves } = useEstimatedUserReserves();
+  const { data: tokenByDenom } = useTokenByDenom(
+    userValuedReserves?.flatMap(({ deposit }) => [
+      deposit.pair_id.token0,
+      deposit.pair_id.token1,
+    ])
+  );
+  const tokenList = useMemo(
+    () => Array.from((tokenByDenom || [])?.values()),
+    [tokenByDenom]
+  );
 
   const myPoolsList = useMemo<
     Array<
@@ -213,8 +247,8 @@ export function MyPoolsTableCard<T extends string | number>({
       const { token0: token0Address, token1: token1Address } =
         userPosition.deposit.pair_id;
       const pairID = getPairID(token0Address, token1Address);
-      const token0 = tokenList.find(matchTokenByDenom(token0Address));
-      const token1 = tokenList.find(matchTokenByDenom(token1Address));
+      const token0 = tokenByDenom?.get(token0Address);
+      const token1 = tokenByDenom?.get(token1Address);
       if (pairID && token0 && token1) {
         map[pairID] = map[pairID] || {
           token0,
@@ -233,9 +267,25 @@ export function MyPoolsTableCard<T extends string | number>({
           return [pairId, token0, token1, userValuedReserves];
         })
       : [];
-  }, [userValuedReserves, tokenList]);
+  }, [userValuedReserves, tokenByDenom]);
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
+
+  useEffect(
+    () =>
+      console.log(
+        'MyPoolsTableCard: userValuedReserves',
+        userValuedReserves?.flatMap(({ deposit }) => [
+          deposit.pair_id.token0,
+          deposit.pair_id.token1,
+        ])
+      ),
+    [userValuedReserves]
+  );
+  useEffect(
+    () => console.log('MyPoolsTableCard: tokenByDenom', tokenByDenom),
+    [tokenByDenom]
+  );
 
   const filteredPoolsList = useMemo<
     Array<[string, Token, Token, UserValuedReserves[]]>
@@ -321,18 +371,6 @@ export interface Actions {
     }) => void;
   };
 }
-
-const defaultActions: Actions = {
-  manage: {
-    title: 'Manage',
-    className: 'button-light m-0',
-    action: ({ navigate, token0, token1 }) => {
-      return navigate(
-        `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
-      );
-    },
-  },
-};
 
 function PositionRow({
   token0,

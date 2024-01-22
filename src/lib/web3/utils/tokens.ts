@@ -50,17 +50,13 @@ export function getIbcBaseDenom(token: Token | undefined): string | undefined {
 
 // the token ID is what is the native chain uses as the identifying string of its denoms
 // it is basically the base denom in local or IBC string format
-export function getTokenId(token: Token | undefined): string | undefined {
-  // return IBC base denom or the local token base denom as the token identifier
-  if (token?.ibc) {
-    return getIbcBaseDenom(token);
-  } else if (token?.chain.chain_id === REACT_APP__CHAIN_ID) {
-    return token?.base;
-  }
+export function getTokenId(asset: Asset | undefined): string | undefined {
+  // use asset base denom as the asset identifier
+  return asset?.base;
 }
 
 export function getDenomAmount(
-  token: Token,
+  token: Asset,
   amount: BigNumber.Value,
   // default to minimum denomination output
   inputDenom: string = token.denom_units
@@ -111,7 +107,7 @@ export function getDenomAmount(
 }
 
 export function getDisplayDenomAmount(
-  token: Token,
+  token: Asset,
   amount: BigNumber.Value,
   options: {
     fractionalDigits?: number;
@@ -123,7 +119,7 @@ export function getDisplayDenomAmount(
 }
 
 export function getBaseDenomAmount(
-  token: Token,
+  token: Asset,
   amount: BigNumber.Value,
   {
     fractionalDigits = 0,
@@ -142,7 +138,7 @@ export function getBaseDenomAmount(
 }
 
 export function roundToBaseUnit(
-  token: Token,
+  token: Asset,
   amount: BigNumber.Value,
   roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN
 ): string | undefined {
@@ -156,7 +152,7 @@ export function roundToBaseUnit(
 
 // get how much a utoken amount is worth in USD
 export function getTokenValue(
-  token: Token,
+  token: Asset,
   amount: BigNumber.Value | undefined,
   price: number | undefined
 ): number | undefined {

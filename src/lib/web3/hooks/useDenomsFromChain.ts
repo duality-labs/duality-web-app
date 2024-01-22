@@ -81,8 +81,10 @@ export function useDenomTraceByDenom(
   // combine pages into one
   const { data: pages } = swr;
   const data = useMemo<DenomTraceByDenom | undefined>(() => {
+    console.log('defaultDenomTraceByDenom', defaultDenomTraceByDenom);
     return pages?.reduce<DenomTraceByDenom>(
       (map, [denom, denomTrace] = ['']) => {
+        console.log('creating map', denom, denomTrace, map);
         if (denom && denomTrace) {
           return map.set(denom, denomTrace);
         }

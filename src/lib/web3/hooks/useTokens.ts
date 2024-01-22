@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { assets as chainRegistryAssetList } from 'chain-registry';
 import { Asset, AssetList, Chain } from '@chain-registry/types';
 import {
@@ -18,6 +18,8 @@ import {
   chainList,
   useIbcOpenTransfers,
 } from './useChains';
+import { useOneHopDenoms } from './useDenomsFromRegistry';
+import { SWRCommon, TokenByDenom, useTokenByDenom } from './useDenomClients';
 
 const {
   REACT_APP__CHAIN_ID = '',
@@ -192,70 +194,16 @@ export function useToken(
 
 // connected IBC info into given token list
 export function useTokensWithIbcInfo(tokenList: Token[]): Token[] {
-  const ibcOpenTransfersInfo = useIbcOpenTransfers();
   return useMemo((): Array<Token> => {
     return (
       tokenList
+        .filter((v) => v)
         // remove existing IBC informations and add new IBC denom information
         .map(({ ibc, ...token }) => {
-          // return unchanged tokens from native chain
-          if (token.chain.chain_id === nativeChain.chain_id) {
-            return { ...token, ibc: undefined };
-          }
-          // append ibcDenom as a denom alias
-          const ibcOpenTransferInfos = ibcOpenTransfersInfo.filter((info) => {
-            return (
-              info.chain.chain_id === token.chain.chain_id &&
-              info.chain.chain_name === token.chain.chain_name &&
-              info.chain.network_type === nativeChain.network_type
-            );
-          });
-          // found connection info
-          if (ibcOpenTransferInfos) {
-            return {
-              ...token,
-              // append IBC information to existing known token/assets.
-              // Neutron has assets registered in chain-registry,
-              // but for not yet known/documented channels (in dev and testnet)
-              // this appended information allows us to identify which tokens
-              // a Neutron chain IBC denom represents
-              denom_units: token.denom_units.map(
-                ({ aliases = [], ...unit }) => {
-                  const ibcDenoms = ibcOpenTransferInfos.map(({ channel }) => {
-                    return getIbcDenom(
-                      unit.denom,
-                      channel.channel_id,
-                      channel.port_id
-                    );
-                  });
-                  return {
-                    ...unit,
-                    // place the calculated IBC denom as a unit denom alias.
-                    // the local chain knows the IBC denom, and this unit->denom
-                    // of this token and chain is what the IBC denom represents
-                    aliases: [...aliases, ...ibcDenoms],
-                  };
-                }
-              ),
-              // append our calculated IBC denom source information here
-              ibc: {
-                // note: this may not be accurate:
-                //       a channel may transfer many denoms from a source chain.
-                //       this *should* be the base denom of token in question
-                //       because Neutron operates on indivisible (base) denoms,
-                //       but it is *possible* to IBC transfer a non-base denom
-                //       which would be a *bad idea* for whoever did that
-                source_denom: token.base,
-              },
-            };
-          }
-          // else return the unchanged token without IBC info
-          else {
-            return { ...token, ibc: undefined };
-          }
+          return { ...token, chain: nativeChain };
         })
     );
-  }, [tokenList, ibcOpenTransfersInfo]);
+  }, [tokenList]);
 }
 
 // allow matching by token symbol or IBC denom string (typically from a URL)
@@ -265,65 +213,52 @@ function matchTokenBySymbol(symbol: string | undefined) {
     return () => false;
   }
   // match denom aliases for IBC tokens
-  if (symbol.match(ibcDenomRegex)) {
-    return (tokenWithIbcInfo: Token) => {
-      return (
-        !!tokenWithIbcInfo.ibc &&
-        !!tokenWithIbcInfo.denom_units?.find((unit) =>
-          unit.aliases?.find((alias) => alias === symbol)
-        )
-      );
-    };
+  if (ibcDenomRegex.test(symbol)) {
+    return (token: Token) => token.base === symbol;
   }
-  // match regular symbols for local tokens
-  else {
-    return (token: Token) => {
-      return (
-        // match Duaity chain
-        token.chain.chain_id === REACT_APP__CHAIN_ID &&
-        // match symbol
-        token.symbol === symbol
-      );
-    };
-  }
-}
-export function useTokenBySymbol(symbol: string | undefined) {
-  const allTokens = useTokens();
-  const tokensWithIbcInfo = useTokensWithIbcInfo(allTokens);
-  if (!symbol) {
-    return undefined;
-  }
-  return tokensWithIbcInfo.find(matchTokenBySymbol(symbol));
+  // match regular symbols for "known" tokens
+  return (token: Token) => token.symbol === symbol || token.base === symbol;
 }
 
-// helper function to derive token and denoms from URL paths
-export function useTokenAndDenomFromPath(
+// find denoms within one-hop of native chain from URLs
+export function useDenomFromPathParam(
   pathParam: string | undefined
-): [Token | undefined, string | undefined] {
-  const token = useTokenBySymbol(pathParam);
-  const baseDenom = useMemo(
-    () =>
-      token?.denom_units
-        .find((unit) => unit.denom === token.base)
-        ?.aliases?.find((alias) => alias === pathParam) ?? token?.base,
-    [pathParam, token]
-  );
-  return [token, baseDenom];
+): SWRCommon<string> {
+  const { data: tokenByDenom, ...swr } = useTokenByDenom(useOneHopDenoms());
+  const denom = useMemo(() => {
+    const tokens = Array.from(tokenByDenom?.values() ?? []);
+    // return denom of resolved token, or the passed param which may be a denom
+    return tokens.find(matchTokenBySymbol(pathParam))?.base ?? pathParam;
+  }, [tokenByDenom, pathParam]);
+  return { ...swr, data: denom };
 }
 
-// get a "symbol" string that can be later decoded by matchTokenBySymbol
-function getTokenSymbol(token: Token | undefined): string | undefined {
-  // return IBC denom or the local token symbol as the token identifier
-  return token?.ibc ? getIbcBaseDenom(token) : token?.symbol;
-}
 // return token identifier that can be used as a part of a URL
-// (for later decoding by matchTokenBySymbol and useTokenBySymbol)
-export function getTokenPathPart(token: Token | undefined) {
-  return encodeURIComponent(getTokenSymbol(token) ?? '-');
+// (for later decoding by matchTokenBySymbol and useDenomFromPathParam)
+function getTokenPathPart(
+  // note: this token map should be consistent, and should be the one-hop map:
+  //       `useTokenByDenom(useOneHopDenoms())`
+  tokenByDenom: TokenByDenom | undefined,
+  token: Token | undefined
+) {
+  console.log('token?.base', token?.base, tokenByDenom);
+  return encodeURIComponent(
+    (token && tokenByDenom?.get(token?.base)?.symbol) ?? token?.base ?? '-'
+  );
 }
-
+export function useGetTokenPathPart() {
+  const { data: tokenByDenom } = useTokenByDenom(useOneHopDenoms());
+  return useCallback(
+    (token: Token | undefined) => getTokenPathPart(tokenByDenom, token),
+    [tokenByDenom]
+  );
+}
 export function useTokenPathPart(token: Token | undefined) {
-  return useMemo(() => getTokenPathPart(token), [token]);
+  const { data: tokenByDenom } = useTokenByDenom(useOneHopDenoms());
+  return useMemo(
+    () => getTokenPathPart(tokenByDenom, token),
+    [tokenByDenom, token]
+  );
 }
 
 export function matchToken(tokenSearch: Token) {
@@ -346,10 +281,10 @@ export function matchToken(tokenSearch: Token) {
 export function matchTokens(tokenA: Token, tokenB: Token) {
   // check for matching chain
   if (tokenA.chain.chain_id === tokenB.chain.chain_id) {
-    // match by identifying token symbols
-    const tokenASymbol = getTokenSymbol(tokenA);
-    const tokenBSymbol = getTokenSymbol(tokenB);
-    return !!tokenASymbol && !!tokenBSymbol && tokenASymbol === tokenBSymbol;
+    // match by ID / base (which should be native or IBC or other)
+    const idA = getTokenId(tokenA);
+    const idB = getTokenId(tokenB);
+    return !!idA && !!idB && idA === idB;
   }
 }
 // utility functions to get a matching token from a list

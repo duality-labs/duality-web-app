@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Chain } from '@chain-registry/types';
+import { Asset, Chain } from '@chain-registry/types';
 import { Token } from '../../lib/web3/utils/tokens';
 
 export interface FilteredTokenContext {

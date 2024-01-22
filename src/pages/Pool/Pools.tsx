@@ -1,13 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Link, useMatch, useNavigate } from 'react-router-dom';
 import PoolsTableCard, {
+  Actions,
   MyPoolsTableCard,
 } from '../../components/cards/PoolsTableCard';
 
 import {
-  getTokenPathPart,
-  useTokenAndDenomFromPath,
+  useDenomFromPathParam,
+  useGetTokenPathPart,
 } from '../../lib/web3/hooks/useTokens';
+import { useToken } from '../../lib/web3/hooks/useDenomClients';
 import { Token } from '../../lib/web3/utils/tokens';
 import { useUserHasDeposits } from '../../lib/web3/hooks/useUserDeposits';
 
@@ -36,25 +38,31 @@ function Pools() {
       matchTokenManagement.params['addOrEdit'] === 'edit');
   const match = matchTokens || matchTokenManagement;
 
-  const [tokenA, denomA] = useTokenAndDenomFromPath(match?.params['tokenA']);
-  const [tokenB, denomB] = useTokenAndDenomFromPath(match?.params['tokenB']);
+  const { data: denomA } = useDenomFromPathParam(match?.params['tokenA']);
+  const { data: denomB } = useDenomFromPathParam(match?.params['tokenB']);
+  const { data: tokenA } = useToken(denomA);
+  const { data: tokenB } = useToken(denomB);
+  const getTokenPathPart = useGetTokenPathPart();
 
   // don't change tokens directly:
   // change the path name which will in turn update the tokens selected
   const setTokensPath = useCallback(
     ([tokenA, tokenB]: [Token?, Token?]) => {
+      console.log('set tokenA', tokenA);
+      console.log('set tokenB', tokenB);
       if (tokenA || tokenB) {
         const path = [
           getTokenPathPart(tokenA),
           getTokenPathPart(tokenB),
           isManagementPath ? matchTokenManagement.params['addOrEdit'] : '',
         ];
+        console.log('path', path);
         navigate(`/pools/${path.filter(Boolean).join('/')}`);
       } else {
         navigate('/pools');
       }
     },
-    [navigate, isManagementPath, matchTokenManagement]
+    [navigate, isManagementPath, matchTokenManagement, getTokenPathPart]
   );
   const setTokenAPath = useCallback(
     (tokenA: Token | undefined) => {
@@ -120,6 +128,23 @@ function PoolTableCards({
 
   const { data: userHasDeposits } = useUserHasDeposits();
 
+  const getTokenPathPart = useGetTokenPathPart();
+  const userPositionActions: Actions = useMemo(() => {
+    return {
+      manage: {
+        title: 'Manage',
+        className: 'button-light m-0',
+        action: ({ navigate, token0, token1 }) => {
+          return navigate(
+            `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(
+              token1
+            )}/edit`
+          );
+        },
+      },
+    };
+  }, [getTokenPathPart]);
+
   return userHasDeposits && selectedPoolsList === 'mine' ? (
     <MyPoolsTableCard<keyof typeof switchValues>
       className="flex mt-5"
@@ -128,6 +153,7 @@ function PoolTableCards({
       switchValue={selectedPoolsList}
       switchOnChange={setSelectedPoolsList}
       onTokenPairClick={setTokens}
+      userPositionActions={userPositionActions}
       scrolling={false}
     />
   ) : (

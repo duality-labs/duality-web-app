@@ -307,9 +307,35 @@ export function useIbcOpenTransfers(chain: Chain = nativeChain) {
   const { data: channels } = useIbcChannels(chain);
 
   return useMemo(() => {
+    // console.log('channels', channels?.filter((channel) => channel.channel_id === 'channel-3'))
+    // console.log('connections', connections?.filter((connection) => connection.id === 'connection-3'))
+    // console.log('clientStates', clientStates?.filter((clientState) => clientState.client_id === '07-tendermint-4'))
+    const osmosisClients = clientStates?.filter(
+      (clientState) =>
+        (clientState.client_state as { chain_id: string })?.chain_id ===
+        'osmo-test-5'
+    );
+    // console.log('osmosisClients', osmosisClients)
+    const osmosisConnections = connections?.filter((connection) =>
+      osmosisClients?.find(
+        (client) => client.client_id === connection.client_id
+      )
+    );
+    // console.log('osmosisConnections', osmosisConnections)
+    const osmosisChannels = channels?.filter((channel) =>
+      osmosisConnections?.find(
+        (connection) => connection.id === channel.connection_hops.at(0)
+      )
+    );
+    // console.log('osmosisChannels', osmosisChannels)
+    const activeosmosisChannels = osmosisChannels?.filter(
+      (channel) => channel.state === 3 && channel.counterparty.channel_id
+    );
+    // console.log('active osmosisChannels', activeosmosisChannels)
+    // console.log('clientState axelar', clientStates?.filter((clientState) => (clientState.client_state as any)?.chain_id === 'axelar-testnet-lisbon-3'))
     // get openClients (all listed clients are assumed to be working)
     const openClients = clientStates || [];
-    // get open connections
+    // get open channels
     const openConnections = (connections || []).filter(filterConnectionsOpen);
     // get open channels
     const openChannels = (channels || []).filter(filterChannelsOpen);

@@ -14,8 +14,8 @@ import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/neutron/de
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
-  getTokenPathPart,
-  useTokenAndDenomFromPath,
+  useDenomFromPathParam,
+  useGetTokenPathPart,
 } from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import NumberInput, {
@@ -25,8 +25,14 @@ import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
-import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import useTokenPairs, {
+  useOrderedTokenPair,
+} from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
+import {
+  useToken,
+  useTokenByDenom,
+} from '../../lib/web3/hooks/useDenomClients';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -40,6 +46,7 @@ import {
 import { formatLongPrice } from '../../lib/utils/number';
 
 import './Swap.scss';
+import { useOneHopDenoms } from '../../lib/web3/hooks/useDenomsFromRegistry';
 
 type CardType = 'trade' | 'settings';
 type OrderType = 'market' | 'limit';
@@ -63,8 +70,20 @@ function Swap() {
 
   // change tokens to match pathname
   const match = useMatch('/swap/:tokenA/:tokenB');
-  const [tokenA, denomA] = useTokenAndDenomFromPath(match?.params['tokenA']);
-  const [tokenB, denomB] = useTokenAndDenomFromPath(match?.params['tokenB']);
+
+  // get tokenA and tokenB from symbols of known token pair denoms
+  // const defaultDenoms = useOneHopDenoms();
+  // const { data: tokenPairs } = useTokenPairs();
+  // const { data: tokenByDenom } = useTokenByDenom(
+  //   // while tokenPairs denoms is undefined, default denoms will be used
+  //   tokenPairs?.flatMap(([token0, token1]) => [token0, token1]) ??
+  //   defaultDenoms
+  // );
+  const { data: denomA } = useDenomFromPathParam(match?.params['tokenA']);
+  const { data: denomB } = useDenomFromPathParam(match?.params['tokenB']);
+  const { data: tokenA } = useToken(denomA);
+  const { data: tokenB } = useToken(denomB);
+  const getTokenPathPart = useGetTokenPathPart();
 
   // don't change tokens directly:
   // change the path name which will in turn update the tokens selected
@@ -78,7 +97,7 @@ function Swap() {
         navigate('/swap');
       }
     },
-    [navigate]
+    [navigate, getTokenPathPart]
   );
   const setTokenA = useCallback(
     (tokenA: Token | undefined) => {
@@ -116,6 +135,16 @@ function Swap() {
 
   const rateData = getRouterEstimates(pairRequest, routerResult);
   const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap();
+
+  useEffect(
+    () => console.log('swap: routerResult', routerResult),
+    [routerResult]
+  );
+  useEffect(
+    () => console.log('swap: isValidatingRate', isValidatingRate),
+    [isValidatingRate]
+  );
+  useEffect(() => console.log('swap: rateData', rateData), [rateData]);
 
   const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
   const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
@@ -382,7 +411,6 @@ function Swap() {
             onValueChanged={onValueAChanged}
             onTokenChanged={setTokenA}
             token={tokenA}
-            denom={denomA}
             value={lastUpdatedA ? inputValueA : valueAConverted}
             className={
               isValidatingRate && !lastUpdatedA
@@ -412,7 +440,6 @@ function Swap() {
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}
             token={tokenB}
-            denom={denomB}
             value={lastUpdatedA ? valueBConverted : inputValueB}
             className={
               isValidatingRate && lastUpdatedA
