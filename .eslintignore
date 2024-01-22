@@ -11,3 +11,6 @@
 
 # TradingView library
 /public/charting_library
+
+# ignore vite build files
+.vite
