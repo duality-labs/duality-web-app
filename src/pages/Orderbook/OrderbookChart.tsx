@@ -142,7 +142,9 @@ export default function OrderBookChart({
       searchParams?: PaginationRequestQuery & BlockRangeRequestQuery
     ) => {
       const url = new URL(
-        `${REACT_APP__INDEXER_API}/timeseries/price/${symbolA}/${symbolB}${
+        `${REACT_APP__INDEXER_API}/timeseries/price/${encodeURIComponent(
+          symbolA
+        )}/${encodeURIComponent(symbolB)}${
           resolutionMap[`${resolution}`]
             ? `/${resolutionMap[`${resolution}`]}`
             : ''
