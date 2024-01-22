@@ -22,10 +22,7 @@ import {
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { formatAmount } from '../../lib/utils/number';
-import useTokens, {
-  matchTokenByDenom,
-  useTokensWithIbcInfo,
-} from '../../lib/web3/hooks/useTokens';
+import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
 
 interface SendDepositResponse {
   gasUsed: string;
@@ -75,7 +72,9 @@ export function useDeposit([denomA, denomB]: [
   const [error, setError] = useState<string>();
   const web3 = useWeb3();
 
-  const allTokens = useTokensWithIbcInfo(useTokens());
+  const { data: tokenByDenom } = useTokenByDenom(
+    [denom0, denom1].filter((denom): denom is string => !!denom)
+  );
 
   const sendDepositRequest = useCallback(
     async function (
@@ -96,8 +95,8 @@ export function useDeposit([denomA, denomB]: [
         if (!denomA || !denomB) {
           throw new Error('Denoms not set');
         }
-        const token0 = allTokens.find(matchTokenByDenom(denom0));
-        const token1 = allTokens.find(matchTokenByDenom(denom1));
+        const token0 = tokenByDenom?.get(denom0);
+        const token1 = tokenByDenom?.get(denom1);
         if (!token0 || !token1) {
           throw new Error('Tokens not set');
         }
@@ -259,7 +258,7 @@ export function useDeposit([denomA, denomB]: [
         // wrap transaction logic
         try {
           const client = await getDexSigningClient(web3.wallet);
-          const res = await client.signAndBroadcast(
+          const res: DeliverTxResponse = await client.signAndBroadcast(
             web3.address,
             [
               duality.dex.MessageComposer.withTypeUrl.deposit({
@@ -443,7 +442,7 @@ export function useDeposit([denomA, denomB]: [
       web3.wallet,
       denom0,
       denom1,
-      allTokens,
+      tokenByDenom,
       token0Ticks,
       token1Ticks,
     ]
