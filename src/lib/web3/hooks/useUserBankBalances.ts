@@ -172,8 +172,7 @@ export function useUserBankBalances(): UseQueryResult<TokenCoin[]> {
   } as UseQueryResult<TokenCoin[]>;
 }
 
-// note: if dealing with IBC tokens, ensure Token has IBC context
-//       (by fetching it with useTokensWithIbcInfo)
+// find bank balance of a specific denom
 function useUserBankBalance(
   denom: string | undefined
 ): UseQueryResult<TokenCoin> {

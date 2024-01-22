@@ -166,20 +166,6 @@ export function useChainFeeToken(): [
   return [feeToken, restrictedSetFeeDenom];
 }
 
-// connected IBC info into given token list
-export function useTokensWithIbcInfo(tokenList: Token[]): Token[] {
-  return useMemo((): Array<Token> => {
-    return (
-      tokenList
-        .filter((v) => v)
-        // remove existing IBC informations and add new IBC denom information
-        .map(({ ibc, ...token }) => {
-          return { ...token, chain: nativeChain };
-        })
-    );
-  }, [tokenList]);
-}
-
 // allow matching by token symbol or IBC denom string (typically from a URL)
 function matchTokenBySymbol(symbol: string | undefined) {
   // match nothing

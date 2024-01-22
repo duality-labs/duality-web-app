@@ -121,7 +121,8 @@ function Swap() {
   });
 
   const rateData = getRouterEstimates(pairRequest, routerResult);
-  const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap();
+  const denoms = [denomA, denomB].filter((denom): denom is string => !!denom);
+  const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap(denoms);
 
   const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
   const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
