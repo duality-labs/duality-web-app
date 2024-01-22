@@ -804,16 +804,21 @@ export default function PoolManagement({
     }
   }, [tokenA, tokenB]);
 
+  const denomPair = useMemo<[string, string] | undefined>(() => {
+    if (denomA && denomB) {
+      return [denomA, denomB];
+    }
+  }, [denomA, denomB]);
+
   const [{ isValidating: isValidatingEdit }, sendEditRequest] =
     useEditLiquidity();
 
-  const invertedTokenOrder =
-    !!tokenA && !!tokenB && guessInvertedOrder([tokenA, tokenB]);
+  const invertedTokenOrder = !!denomPair && guessInvertedOrder(denomPair);
 
   const [[viewableMinIndex, viewableMaxIndex] = [], setViewableIndexes] =
     useState<[number, number] | undefined>();
 
-  const { data: userReserves } = useAccurateUserReserves(tokenPair);
+  const { data: userReserves } = useAccurateUserReserves(denomPair);
 
   // add token information to user reserves
   // note: this could be refactored away if we didn't need token information

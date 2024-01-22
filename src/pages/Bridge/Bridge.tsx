@@ -68,7 +68,7 @@ function Tables() {
   return (
     <div className="row flex gapx-4 gapy-5 flow-wrap">
       <div className="col flex">
-        <AssetsTableCard showActions />
+        <AssetsTableCard showActions tokenList={[]} />
       </div>
     </div>
   );

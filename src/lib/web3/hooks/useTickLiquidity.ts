@@ -4,10 +4,10 @@ import BigNumber from 'bignumber.js';
 
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
-import { useToken } from '../../../lib/web3/hooks/useTokens';
 
 import { useIndexerStreamOfDualDataSet } from './useIndexer';
 import { Token, TokenID } from '../utils/tokens';
+import { useToken } from './useDenomClients';
 
 type ReserveDataRow = [tickIndex: number, reserves: number];
 type ReserveDataSet = Map<ReserveDataRow['0'], ReserveDataRow['1']>;
@@ -47,8 +47,8 @@ export function useTokenPairTickLiquidity([tokenIdA, tokenIdB]: [
   const { data, error } = useTokenPairMapLiquidity([tokenIdA, tokenIdB]);
 
   // add token context into pool reserves
-  const token0 = useToken(tokenId0);
-  const token1 = useToken(tokenId1);
+  const { data: token0 } = useToken(tokenId0);
+  const { data: token1 } = useToken(tokenId1);
 
   // add token context into pool reserves
   const [tickInfoA, tickInfoB] = useMemo<

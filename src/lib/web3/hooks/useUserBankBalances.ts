@@ -7,16 +7,15 @@ import { Coin } from '@cosmjs/proto-signing';
 
 import subscriber from '../subscriptionManager';
 import { Token, getDenomAmount } from '../utils/tokens';
-import useTokens, {
-  matchTokenByDenom,
-  useTokensWithIbcInfo,
-} from './useTokens';
 import { useCosmosRestClientPromise } from '../clients/restClients';
 import { useWeb3 } from '../useWeb3';
 import { isDexShare } from '../utils/shares';
 import { MessageActionEvent, TendermintTxData } from '../events';
 import { CoinTransferEvent, mapEventAttributes } from '../utils/events';
 import { useFetchAllPaginatedPages } from './useQueries';
+import { Asset } from '@chain-registry/types';
+
+import { useTokenByDenom } from './useDenomClients';
 
 // fetch all the user's bank balance
 function useAllUserBankBalances(): UseQueryResult<Coin[]> {
@@ -134,43 +133,38 @@ function useUserChainDenomBalances(): UseQueryResult<Coin[]> {
   } as UseQueryResult<Coin[]>;
 }
 
-// define TokenCoin to represent a Coin paired with its chain-registry token
+// define AssetCoin to represent a Coin paired with its chain-registry asset
+export interface AssetCoin extends Coin {
+  asset: Asset;
+}
+// define TokenCoin for legacy type: Coin & { token: Asset & { chain: Chain } }
 export interface TokenCoin extends Coin {
   token: Token;
 }
 export function useUserBankBalances(): UseQueryResult<TokenCoin[]> {
   const result = useUserChainDenomBalances();
 
+  const { data: tokenByDenom } = useTokenByDenom(
+    useMemo(() => result.data?.map((coin) => coin.denom), [result.data])
+  );
+
   // add token information to balances
-  const allTokensWithIBC = useTokensWithIbcInfo(useTokens());
   const data = useMemo<TokenCoin[] | undefined>(() => {
     // check all known tokens with IBC context for matching balance denoms
     return result.data?.reduce<TokenCoin[]>((result, { amount, denom }) => {
-      const token = allTokensWithIBC.find(matchTokenByDenom(denom));
-      if (token) {
+      try {
+        const token = tokenByDenom?.get(denom);
+        if (!token) {
+          throw new Error(`Asset not found for denom: ${denom}`);
+        }
         // return token with the user's specific denom as base
-        result.push({
-          token: {
-            ...token,
-            base: denom,
-            denom_units: token.denom_units.map((unit) => {
-              if (unit.denom === token.base) {
-                return {
-                  ...unit,
-                  denom,
-                  aliases: [token.base, ...(unit.aliases ?? [])],
-                };
-              }
-              return unit;
-            }),
-          },
-          amount,
-          denom,
-        });
+        result.push({ token, amount, denom });
+      } catch {
+        // ignore error about not finding denom
       }
       return result;
     }, []);
-  }, [result.data, allTokensWithIBC]);
+  }, [result.data, tokenByDenom]);
 
   return {
     ...result,

@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
-import useTokens from '../../lib/web3/hooks/useTokens';
 import { Token } from '../../lib/web3/utils/tokens';
 
 import TokenPairLogos from '../../components/TokenPairLogos/TokenPairLogos';
@@ -83,15 +82,12 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
     [tokenA, tokenB, setTokensPath]
   );
 
-  const tokenList = useTokens();
-
   return (
     <div className="row gap-md flex-centered">
       <TokenPairLogos className="h3" tokenA={tokenA} tokenB={tokenB} />
       <h2 className="h3 text-medium">
         <TokenPicker
           className="h3 text-medium px-0 inline"
-          tokenList={tokenList}
           onChange={setTokenA}
           exclusion={tokenA}
           value={tokenA}
@@ -101,7 +97,6 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
         <span>/</span>
         <TokenPicker
           className="h3 text-medium px-0 inline"
-          tokenList={tokenList}
           onChange={setTokenB}
           exclusion={tokenB}
           value={tokenB}
