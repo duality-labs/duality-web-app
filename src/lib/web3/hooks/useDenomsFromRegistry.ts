@@ -267,6 +267,23 @@ export async function getAssetClient(
   });
 }
 
+// export hook for getting a basic chain-registry client
+// default to client for native chain assets
+// note: the client can do more than chainUtil which uses native chain context
+function useNativeAssetsClient() {
+  return useSWRImmutable(
+    ['asset-client-native'],
+    async (): Promise<ChainRegistryClient | undefined> => {
+      // get asset client for all assets within one-hop of the native chain
+      return createChainRegistryClient({
+        ...defaultClientOptions,
+        chainNames: [REACT_APP__CHAIN_NAME],
+        assetListNames: [REACT_APP__CHAIN_NAME],
+      });
+    }
+  );
+}
+
 // export hook for getting a basic chain-registry client for a denom
 // defaults to client for all related one-hop assets
 // note: the client can do more than chainUtil which uses native chain context
@@ -312,6 +329,18 @@ export function useChainGeneratedAssetLists(): AssetList[] | undefined {
     //       exist on each chain, generally we will want the ibc denoms of
     //       each asset, which are generated with client.getGeneratedAssetLists
     return client?.getGeneratedAssetLists(REACT_APP__CHAIN_NAME);
+  }, [client]);
+}
+
+// return all native denoms of the native chain on chain-registry
+export function useNativeDenoms(): string[] {
+  const { data: client } = useNativeAssetsClient();
+  return useMemo<string[]>(() => {
+    if (client) {
+      const assetList = client.getChainAssetList(REACT_APP__CHAIN_NAME);
+      return assetList?.assets.map((asset) => asset.base) ?? [];
+    }
+    return [];
   }, [client]);
 }
 
