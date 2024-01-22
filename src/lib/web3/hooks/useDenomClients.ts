@@ -195,3 +195,16 @@ export function useToken(denom: string | undefined): SWRCommon<Token> {
 
   return { ...swr, data };
 }
+
+// export convenience hook for getting list of multiple Tokens
+export function useTokens(denoms: string[] = []): SWRCommon<Token[]> {
+  const { data: tokenByDenom, ...swr } = useTokenByDenom(denoms);
+
+  // list tokens
+  const data = useMemo(
+    () => Array.from((tokenByDenom || [])?.values()),
+    [tokenByDenom]
+  );
+
+  return { ...swr, data };
+}
