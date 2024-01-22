@@ -56,7 +56,7 @@ jobs:
         run: |
           TVC_LOCATION=$( node -p "require('./package.json').dependencies['charting_library'].replace('github:','github.com/')" );
           DUALITYJS_LOCATION=$( node -p "require('./package.json').dependencies['@duality-labs/dualityjs'].replace('github:','github.com/')" );
-          npm install --ignore-scripts @tradingview/charting-library@https://dib542:$TOKEN@$TVC_LOCATION @duality-labs/dualityjs@https://dib542:$TOKEN@$DUALITYJS_LOCATION
+          npm install --ignore-scripts https://dib542:$TOKEN@$TVC_LOCATION @duality-labs/dualityjs@https://dib542:$TOKEN@$DUALITYJS_LOCATION
         env:
           # to install TradingView private dependency, private GitHub credentials are needed
           # secret tokens are added in Github project settings under [project]/settings/secrets/actions
