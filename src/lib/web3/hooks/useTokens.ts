@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
 import { assets as chainRegistryAssetList } from 'chain-registry';
-import { Asset, AssetList, Chain } from '@chain-registry/types';
+import { Asset, AssetList } from '@chain-registry/types';
 import {
   Token,
   TokenID,
@@ -10,7 +10,7 @@ import {
   ibcDenomRegex,
 } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { chainFeeTokens, nativeChain, chainList } from './useChains';
+import { chainFeeTokens, nativeChain } from './useChains';
 import { useOneHopDenoms } from './useDenomsFromRegistry';
 import {
   SWRCommon,
@@ -24,8 +24,6 @@ const {
   REACT_APP__DEV_ASSETS = '',
   REACT_APP__DEV_NATIVE_ASSET_MAP = '',
 } = import.meta.env;
-
-type TokenList = Array<Token>;
 
 const devAssetLists: AssetList[] | undefined = REACT_APP__DEV_ASSETS
   ? JSON.parse(REACT_APP__DEV_ASSETS)
@@ -87,59 +85,6 @@ export const assetLists = chainRegistryAssetList
     }
     return chain;
   });
-
-// transform AssetList into TokenList
-// for easier filtering/ordering by token attributes
-function getTokens(condition: (chain: Chain) => boolean) {
-  // go through each chain
-  return assetLists.reduce<TokenList>((result, { chain_name, assets }) => {
-    // add each asset with the parent chain details
-    const chain = chainList.find((chain) => chain.chain_name === chain_name);
-    return chain && condition(chain)
-      ? result.concat(assets.map((asset) => ({ ...asset, chain })))
-      : result;
-  }, []);
-}
-
-const tokenListCache: {
-  [key: string]: TokenList;
-} = {};
-
-function defaultSort(a: Token, b: Token) {
-  // compare by symbol name
-  return a.symbol.localeCompare(b.symbol);
-}
-
-const allTokens = () => true;
-export default function useTokens(sortFunction = defaultSort) {
-  tokenListCache['allTokens'] =
-    tokenListCache['allTokens'] || getTokens(allTokens);
-  return useMemo(
-    () => tokenListCache['allTokens'].slice().sort(sortFunction),
-    [sortFunction]
-  );
-}
-
-const mainnetTokens = (chain: Chain) => chain?.network_type === 'mainnet';
-export function useMainnetTokens(sortFunction = defaultSort) {
-  tokenListCache['mainnetTokens'] =
-    tokenListCache['mainnetTokens'] || getTokens(mainnetTokens);
-  return useMemo(
-    () => tokenListCache['mainnetTokens'].slice().sort(sortFunction),
-    [sortFunction]
-  );
-}
-
-const dualityTokensFilter = (chain: Chain) =>
-  chain.chain_id === nativeChain.chain_id;
-export function useDualityTokens(sortFunction = defaultSort) {
-  tokenListCache['dualityTokens'] =
-    tokenListCache['dualityTokens'] || getTokens(dualityTokensFilter);
-  return useMemo(
-    () => tokenListCache['dualityTokens'].slice().sort(sortFunction).reverse(),
-    [sortFunction]
-  );
-}
 
 export function useChainFeeToken(): [
   Token | undefined,
