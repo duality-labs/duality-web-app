@@ -18,18 +18,15 @@ import { useSimplePrice } from '../../tokenPrices';
 
 import { priceToTickIndex, tickIndexToPrice } from '../utils/ticks';
 import {
-  Token,
   TokenIdPair,
   TokenPair,
   getBaseDenomAmount,
   resolveTokenIdPair,
 } from '../utils/tokens';
+import { useTokenByDenom } from './useDenomClients';
 import { useTokenPairMapLiquidity } from '../../web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from './useTokenPairs';
-import {
-  useUserBankBalances,
-  useUserDexDenomBalances,
-} from './useUserBankBalances';
+import { useUserDexDenomBalances } from './useUserBankBalances';
 import { getDexSharePoolID } from '../utils/shares';
 
 interface PairReserves {
@@ -459,28 +456,15 @@ export function useEstimatedUserReserves(
     error,
   } = useUserIndicativeReserves(tokenPair);
 
-  const { data: balances } = useUserBankBalances();
-  const userTokensByDenom = useMemo<Map<string, Token>>(() => {
-    const map = new Map<string, Token>();
-    const restrictToTokens = new Set(
-      userIndicatveReserves?.flatMap((reserve) => [
-        reserve.deposit.pairID.token0,
-        reserve.deposit.pairID.token1,
-      ])
-    );
-    for (const balance of balances || []) {
-      // if not yet set and should be set, then set
-      if (restrictToTokens.has(balance.denom) && !map.has(balance.denom)) {
-        map.set(balance.denom, balance.token);
-      }
-    }
-    return map;
-  }, [balances, userIndicatveReserves]);
-
-  const tokenList = useMemo(
-    () => Array.from(userTokensByDenom.values()),
-    [userTokensByDenom]
+  const { data: userTokensByDenom } = useTokenByDenom(
+    userIndicatveReserves?.flatMap(({ deposit }) => [
+      deposit.pairID.token0,
+      deposit.pairID.token1,
+    ])
   );
+  const tokenList = useMemo(() => {
+    return Array.from(userTokensByDenom?.values() ?? []);
+  }, [userTokensByDenom]);
 
   const { data: tokenPrices } = useSimplePrice(tokenList);
 
@@ -496,18 +480,19 @@ export function useEstimatedUserReserves(
 
   // using the current price, make assumptions about the current reserves
   return useMemo(() => {
-    if (Object.values(tokenPriceByDenomMap).every((price = 0) => price > 0)) {
+    // allow zero prices, will equal zero values
+    if (userTokensByDenom) {
       const userReserves = userIndicatveReserves?.flatMap<UserValuedReserves>(
         ({ deposit, indicativeReserves: { reserves0, reserves1 } }) => {
           const token0 = userTokensByDenom.get(deposit.pairID.token0);
           const token1 = userTokensByDenom.get(deposit.pairID.token1);
           const tokenPrice0 = tokenPriceByDenomMap.get(deposit.pairID.token0);
           const tokenPrice1 = tokenPriceByDenomMap.get(deposit.pairID.token1);
-          if (token0 && token1 && tokenPrice0 && tokenPrice1) {
+          if (token0 && token1) {
             const display0 = getBaseDenomAmount(token0, 1) || 1;
             const display1 = getBaseDenomAmount(token1, 1) || 1;
-            const basePrice0 = new BigNumber(tokenPrice0).dividedBy(display0);
-            const basePrice1 = new BigNumber(tokenPrice1).dividedBy(display1);
+            const basePrice0 = BigNumber(tokenPrice0 || 0).dividedBy(display0);
+            const basePrice1 = BigNumber(tokenPrice1 || 0).dividedBy(display1);
             const centerTickIndex = priceToTickIndex(
               basePrice1.div(basePrice0)
             );

@@ -49,7 +49,7 @@ export function useObservableList<T>(
   const [list, setList] = useState(() => observableList.get());
   useEffect(() => {
     observableList.subscribe(setList);
-    return observableList.unsubscribe(setList);
+    return () => observableList.unsubscribe(setList);
   }, [observableList]);
   return [
     list,

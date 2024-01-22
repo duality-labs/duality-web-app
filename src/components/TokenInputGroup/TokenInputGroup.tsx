@@ -17,7 +17,7 @@ interface InputGroupProps {
   variant?: 'success' | 'error' | false;
   onTokenChanged?: (token?: Token) => void;
   onValueChanged?: (value: string) => void;
-  tokenList?: Array<Token>;
+  denoms?: Array<string>;
   className?: string;
   exclusion?: Token;
   value?: string;
@@ -38,7 +38,7 @@ export default function TokenInputGroup({
   variant,
   onTokenChanged,
   onValueChanged,
-  tokenList,
+  denoms,
   className,
   exclusion,
   value,
@@ -121,7 +121,7 @@ export default function TokenInputGroup({
         className="gutter-l-3"
         value={token}
         onChange={onPickerChange}
-        tokenList={tokenList}
+        denoms={denoms}
         exclusion={exclusion}
         disabled={disabledToken}
       />

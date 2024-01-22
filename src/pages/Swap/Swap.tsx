@@ -14,8 +14,8 @@ import { LimitOrderType } from '@duality-labs/dualityjs/types/codegen/duality/de
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
-  getTokenPathPart,
-  useTokenAndDenomFromPath,
+  useDenomFromPathParam,
+  useGetTokenPathPart,
 } from '../../lib/web3/hooks/useTokens';
 import RadioButtonGroupInput from '../../components/RadioButtonGroupInput/RadioButtonGroupInput';
 import NumberInput, {
@@ -27,6 +27,7 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
+import { useToken } from '../../lib/web3/hooks/useDenomClients';
 
 import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -63,8 +64,13 @@ function Swap() {
 
   // change tokens to match pathname
   const match = useMatch('/swap/:tokenA/:tokenB');
-  const [tokenA, denomA] = useTokenAndDenomFromPath(match?.params['tokenA']);
-  const [tokenB, denomB] = useTokenAndDenomFromPath(match?.params['tokenB']);
+
+  // get tokenA and tokenB from symbols of known token pair denoms
+  const { data: denomA } = useDenomFromPathParam(match?.params['tokenA']);
+  const { data: denomB } = useDenomFromPathParam(match?.params['tokenB']);
+  const { data: tokenA } = useToken(denomA);
+  const { data: tokenB } = useToken(denomB);
+  const getTokenPathPart = useGetTokenPathPart();
 
   // don't change tokens directly:
   // change the path name which will in turn update the tokens selected
@@ -78,7 +84,7 @@ function Swap() {
         navigate('/swap');
       }
     },
-    [navigate]
+    [navigate, getTokenPathPart]
   );
   const setTokenA = useCallback(
     (tokenA: Token | undefined) => {
@@ -382,7 +388,6 @@ function Swap() {
             onValueChanged={onValueAChanged}
             onTokenChanged={setTokenA}
             token={tokenA}
-            denom={denomA}
             value={lastUpdatedA ? inputValueA : valueAConverted}
             className={
               isValidatingRate && !lastUpdatedA
@@ -412,7 +417,6 @@ function Swap() {
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}
             token={tokenB}
-            denom={denomB}
             value={lastUpdatedA ? valueBConverted : inputValueB}
             className={
               isValidatingRate && lastUpdatedA

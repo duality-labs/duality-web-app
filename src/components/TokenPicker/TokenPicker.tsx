@@ -6,16 +6,14 @@ import {
   useState,
   useId,
   ReactNode,
+  useMemo,
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 
 import { useFilteredTokenList } from './hooks';
-import useTokens, {
-  useDualityTokens,
-  useTokensWithIbcInfo,
-} from '../../lib/web3/hooks/useTokens';
+import { useDualityTokens } from '../../lib/web3/hooks/useTokens';
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
@@ -27,13 +25,16 @@ import Dialog from '../Dialog/Dialog';
 import SearchInput from '../inputs/SearchInput/SearchInput';
 
 import './TokenPicker.scss';
+import { useOneHopDenoms } from '../../lib/web3/hooks/useDenomsFromRegistry';
+import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
+import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
 
 interface TokenPickerProps {
   className?: string;
   onChange: (newToken: Token | undefined) => void;
   exclusion?: Token | undefined;
   value: Token | undefined;
-  tokenList?: Array<Token>;
+  denoms?: Array<string>;
   disabled?: boolean;
   showChain?: boolean;
   children?: ReactNode;
@@ -86,7 +87,7 @@ export default function TokenPicker({
   value,
   onChange,
   exclusion,
-  tokenList: givenTokenList,
+  denoms: givenDenoms,
   disabled = false,
   showChain = true,
   children,
@@ -96,8 +97,22 @@ export default function TokenPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
-  const defaultTokenList = useTokensWithIbcInfo(useTokens());
-  const tokenList = givenTokenList || defaultTokenList;
+
+  // source allowed denoms from several places
+  const defaultDenoms = useOneHopDenoms();
+  const { data: tokenPairs } = useTokenPairs();
+  // find all tokens that may be selected in this input group
+  const { data: tokenByDenom } = useTokenByDenom(
+    givenDenoms ??
+      // while tokenPairs denoms is undefined, default denoms will be used
+      tokenPairs?.flatMap(([token0, token1]) => [token0, token1]) ??
+      defaultDenoms
+  );
+  const tokenList = useMemo(
+    () => Array.from((tokenByDenom || [])?.values()),
+    [tokenByDenom]
+  );
+
   const userList = useUserTokens();
   const [assetMode, setAssetMode] = useState<AssetModeType>(
     userList.length ? 'User' : 'Duality'
