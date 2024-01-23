@@ -11,6 +11,7 @@ import { TokenIdPair, TokenPair, resolveTokenIdPair } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import { useDexRestClientPromise } from '../clients/restClients';
 import { QueryAllUserDepositsResponse } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+import { useFetchAllPaginatedPages } from './useQueries';
 
 function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
   const { address } = useWeb3();
@@ -46,13 +47,8 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
     refetchInterval: 5 * minutes,
   });
 
-  const { refetch, fetchNextPage, data, hasNextPage } = result;
-  // fetch more data if data has changed but there are still more pages to get
-  useEffect(() => {
-    if (fetchNextPage && hasNextPage) {
-      fetchNextPage();
-    }
-  }, [fetchNextPage, data, hasNextPage]);
+  // fetch all pages
+  useFetchAllPaginatedPages(result);
 
   // combine all deposits and sort them
   const userDeposits = useMemo(() => {
@@ -64,6 +60,8 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
           b.fee.sub(a.fee).toNumber()
       );
   }, [result.data]);
+
+  const { refetch } = result;
 
   // on update to user's bank balance, we should update the user's sharesOwned
   useEffect(() => {
