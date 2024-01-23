@@ -40,7 +40,6 @@ export default function Dialog({
   );
   return (
     <RadixDialog.Root open={isOpen} onOpenChange={setIsOpen}>
-      <RadixDialog.Trigger />
       <RadixDialog.Portal>
         <RadixDialog.Overlay
           className={['dialog-overlay', className].filter(Boolean).join(' ')}
