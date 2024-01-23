@@ -5,7 +5,7 @@ import Long from 'long';
 import { duality } from '@duality-labs/dualityjs';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import rpcClient from '../../lib/web3/rpcMsgClient';
+import { getDexSigningClient } from '../../lib/web3/clients/signingClients';
 import { TickGroup } from '../../components/Liquidity/LiquiditySelector';
 import {
   checkMsgErrorToast,
@@ -248,7 +248,7 @@ export function useDeposit([tokenA, tokenB]: [
 
         // wrap transaction logic
         try {
-          const client = await rpcClient(web3.wallet);
+          const client = await getDexSigningClient(web3.wallet);
           const res = await client.signAndBroadcast(
             web3.address,
             [

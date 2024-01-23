@@ -9,13 +9,13 @@ import { MessageActionEvent, TendermintTxData } from '../events';
 import { CoinTransferEvent, mapEventAttributes } from '../utils/events';
 import { TokenIdPair, TokenPair, resolveTokenIdPair } from '../utils/tokens';
 import { minutes } from '../../utils/time';
-import { useLcdClientPromise } from '../lcdClient';
+import { useDexRestClientPromise } from '../clients/restClients';
 import { QueryAllUserDepositsResponse } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 
 function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
   const { address } = useWeb3();
 
-  const lcdClientPromise = useLcdClientPromise();
+  const restClientPromise = useDexRestClientPromise();
   const result = useInfiniteQuery({
     queryKey: ['user-deposits', address],
     enabled: !!address,
@@ -26,9 +26,9 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
     }): Promise<QueryAllUserDepositsResponse | undefined> => {
       if (address) {
         // get LCD client
-        const lcd = await lcdClientPromise;
+        const lcd = await restClientPromise;
         // get all user's deposits
-        const response = await lcd.duality.dex.userDepositsAll({
+        const response = await lcd.dex.userDepositsAll({
           address,
           pagination: { key: pageKey },
         });

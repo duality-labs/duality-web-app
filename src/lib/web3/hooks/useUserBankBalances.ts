@@ -12,7 +12,7 @@ import useTokens, {
   matchTokens,
   useTokensWithIbcInfo,
 } from './useTokens';
-import { useLcdClientPromise } from '../lcdClient';
+import { useCosmosRestClientPromise } from '../clients/restClients';
 import { useWeb3 } from '../useWeb3';
 import { isDexShare } from '../utils/shares';
 import { MessageActionEvent, TendermintTxData } from '../events';
@@ -20,7 +20,7 @@ import { CoinTransferEvent, mapEventAttributes } from '../utils/events';
 
 // fetch all the user's bank balance
 function useAllUserBankBalances(): UseQueryResult<Coin[]> {
-  const lcdClientPromise = useLcdClientPromise();
+  const restClientPromise = useCosmosRestClientPromise();
   const { address } = useWeb3();
 
   const result = useInfiniteQuery({
@@ -31,8 +31,8 @@ function useAllUserBankBalances(): UseQueryResult<Coin[]> {
     }: {
       pageParam: Uint8Array | undefined;
     }): Promise<QueryAllBalancesResponse> => {
-      const client = await lcdClientPromise;
-      return client.cosmos.bank.v1beta1.allBalances({
+      const client = await restClientPromise;
+      return client.bank.v1beta1.allBalances({
         address: address || '',
         pagination: {
           key: pageKey || [],

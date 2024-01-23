@@ -13,7 +13,7 @@ import {
 import { Token, getBaseDenomAmount } from '../../lib/web3/utils/tokens';
 
 import { UserReserves } from '../../lib/web3/hooks/useUserReserves';
-import rpcClient from '../../lib/web3/rpcMsgClient';
+import { getDexSigningClient } from '../../lib/web3/clients/signingClients';
 import { duality } from '@duality-labs/dualityjs';
 
 export interface EditedPosition extends UserReserves {
@@ -83,7 +83,7 @@ export function useEditLiquidity(): [
         // wrap transaction logic
         try {
           // add each tick message into a signed broadcast
-          const client = await rpcClient(web3.wallet);
+          const client = await getDexSigningClient(web3.wallet);
           const res = await client.signAndBroadcast(
             web3.address,
             sharesDiff.flatMap(
