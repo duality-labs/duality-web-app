@@ -4,6 +4,7 @@ import { Tendermint34Client } from '@cosmjs/tendermint-rpc';
 import { GeneratedType, OfflineSigner } from '@cosmjs/proto-signing';
 import {
   getSigningIbcClient,
+  getSigningDualityClient,
   getSigningDualityClientOptions,
 } from '@duality-labs/dualityjs';
 
@@ -66,12 +67,7 @@ export async function getDexSigningClient(
   rpcEndpoint = defaultRpcEndpoint,
   defaultTypes?: ReadonlyArray<[string, GeneratedType]>
 ) {
-  const tmClient = await Tendermint34Client.connect(rpcEndpoint);
-  return SigningStargateClient.createWithSigner(
-    tmClient,
-    signer,
-    getSigningDualityClientOptions({ defaultTypes })
-  );
+  return getSigningDualityClient({ rpcEndpoint, signer, defaultTypes });
 }
 export function getIbcSigningClient(
   signer: OfflineSigner,
