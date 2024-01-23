@@ -12,7 +12,8 @@ type IbcRestClient = Awaited<ReturnType<CreateIbcClient>>['ibc'];
 
 export type { DexRestClient, CosmosRestClient, IbcRestClient };
 
-const { REACT_APP__REST_API: defaultRestEndpoint = '' } = import.meta.env;
+const { REACT_APP__REST_API = '' } = import.meta.env;
+const defaultRestEndpoint: string = REACT_APP__REST_API;
 
 // create base getter helpers
 export async function getDexRestClient(restEndpoint = defaultRestEndpoint) {

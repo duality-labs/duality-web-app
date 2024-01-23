@@ -43,14 +43,10 @@ export function useDexSigningClient(
   ).data;
 }
 
-// note: for IBC transfer: up-to-date info is more important that cached data
-//       so just using the direct signing method at user action time may be best
-export { getSigningIbcClient as getIbcSigningClient };
-
 // hook for signing client where we don't know what version of Tendermint it is
 export function useIbcSigningClient(
+  signer: OfflineSigner,
   rpcEndpoint: string,
-  signer?: OfflineSigner,
   defaultTypes?: ReadonlyArray<[string, GeneratedType]>
 ) {
   return useSWRImmutable(
@@ -61,4 +57,26 @@ export function useIbcSigningClient(
         }
       : null
   ).data;
+}
+
+// note: for IBC transfer: up-to-date info is more important that cached data
+//       so just using the direct signing method at user action time may be best
+export async function getDexSigningClient(
+  signer: OfflineSigner,
+  rpcEndpoint = defaultRpcEndpoint,
+  defaultTypes?: ReadonlyArray<[string, GeneratedType]>
+) {
+  const tmClient = await Tendermint34Client.connect(rpcEndpoint);
+  return SigningStargateClient.createWithSigner(
+    tmClient,
+    signer,
+    getSigningDualityClientOptions({ defaultTypes })
+  );
+}
+export function getIbcSigningClient(
+  signer: OfflineSigner,
+  rpcEndpoint: string,
+  defaultTypes?: ReadonlyArray<[string, GeneratedType]>
+) {
+  return getSigningIbcClient({ rpcEndpoint, signer, defaultTypes });
 }
