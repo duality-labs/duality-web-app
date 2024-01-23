@@ -3,8 +3,9 @@ import invariant from 'invariant';
 import { useEffect } from 'react';
 import { AccountData, OfflineSigner } from '@cosmjs/proto-signing';
 import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
+import { Chain } from '@chain-registry/types';
 import { chainRegistryChainToKeplr } from '@chain-registry/keplr';
-import { chainList, nativeChain } from '../hooks/useChains';
+import { nativeChain } from '../hooks/useChains';
 import { assetLists } from '../hooks/useTokens';
 
 const { REACT_APP__CHAIN_ID: chainId = '' } = import.meta.env;
@@ -107,11 +108,11 @@ export function useSyncKeplrState(
   }, [connectWallet, syncActive]);
 }
 
-export async function getChainInfo(chainId: string) {
+export async function getChainInfo(chain: Chain) {
+  const chainId = chain.chain_id;
   invariant(chainId, `Invalid chain id: ${chainId}`);
   const keplr = await getKeplr();
   invariant(keplr, 'Keplr extension is not installed or enabled');
-  const chain = chainList.find((chain) => chain.chain_id === chainId);
   const chainAssets =
     chain && assetLists.find((list) => list.chain_name === chain.chain_name);
   if (chain && chainAssets) {
