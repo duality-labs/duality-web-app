@@ -17,7 +17,7 @@ import {
   mapEventAttributes,
   CoinReceivedEvent,
 } from '../../../lib/web3/utils/events';
-import rpcClient from '../../../lib/web3/rpcMsgClient';
+import { getDexSigningClient } from '../../../lib/web3/clients/signingClients';
 import { duality } from '@duality-labs/dualityjs';
 import {
   MsgPlaceLimitOrderResponse,
@@ -62,7 +62,7 @@ async function sendSwap(
   }
 
   // send message to chain
-  const client = await rpcClient(wallet);
+  const client = await getDexSigningClient(wallet);
   return client.signAndBroadcast(
     address,
     [

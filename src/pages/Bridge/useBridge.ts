@@ -9,7 +9,10 @@ import {
 } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/tx';
 import { GetTxsEventRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/tx/v1beta1/service';
 
-import { ibcClient } from '../../lib/web3/rpcMsgClient';
+import {
+  getCosmosRestClient,
+  getIbcRestClient,
+} from '../../lib/web3/clients/restClients';
 import {
   IBCReceivePacketEvent,
   IBCSendPacketEvent,
@@ -32,6 +35,7 @@ import {
 } from '../../components/Notifications/common';
 import { coerceError } from '../../lib/utils/error';
 import { seconds } from '../../lib/utils/time';
+import { getIbcSigningClient } from '../../lib/web3/clients/signingClients';
 
 async function bridgeToken(
   client: SigningStargateClient,
@@ -147,19 +151,15 @@ export default function useBridge(
         if (!clientEndpointTo) {
           throw new Error('No destination chain endpoint found');
         }
-        const lcdClientFrom = await ibc.ClientFactory.createLCDClient({
-          restEndpoint: clientEndpointFrom,
-        });
-        const lcdClientTo = await ibc.ClientFactory.createLCDClient({
-          restEndpoint: clientEndpointTo,
-        });
+        const restClientFrom = await getIbcRestClient(clientEndpointFrom);
+        const restClientTo = await getIbcRestClient(clientEndpointTo);
         // future: can check both sides of the chain to see if they have IBC
         // - send_enabled
         // - receive_enabled
         // by querying each chain with: /ibc/apps/transfer/v1/params
         // (this may be redundant as we know there is an IBC connection already)
         const clientFromStatus =
-          await lcdClientFrom.ibc.core.client.v1.clientStatus({
+          await restClientFrom.core.client.v1.clientStatus({
             client_id: connection.client_id,
           });
         if (clientFromStatus.status !== 'Active') {
@@ -167,10 +167,9 @@ export default function useBridge(
             `The connection source client is not active. Current status: ${clientFromStatus.status}`
           );
         }
-        const clientToStatus =
-          await lcdClientTo.ibc.core.client.v1.clientStatus({
-            client_id: connection.client_id,
-          });
+        const clientToStatus = await restClientTo.core.client.v1.clientStatus({
+          client_id: connection.client_id,
+        });
         if (clientToStatus.status !== 'Active') {
           throw new Error(
             `The connection destination client is not active. Current status: ${clientToStatus.status}`
@@ -184,7 +183,10 @@ export default function useBridge(
 
         // process intended request
         // make the bridge transaction to the from chain (with correct signing)
-        const client = await ibcClient(offlineSigner, rpcClientEndpointFrom);
+        const client = await getIbcSigningClient(
+          offlineSigner,
+          rpcClientEndpointFrom
+        );
         const responseFrom = await createTransactionToasts(
           () => bridgeToken(client, account.address, request),
           {
@@ -221,7 +223,8 @@ export default function useBridge(
             // poll for expected IBC packet, but timeout after a period of time
             const timeout = Date.now() + 30 * seconds;
             while (Date.now() <= timeout) {
-              const res = await lcdClientTo.cosmos.tx.v1beta1.getTxsEvent({
+              const restClientTo = await getCosmosRestClient(clientEndpointTo);
+              const res = await restClientTo.tx.v1beta1.getTxsEvent({
                 events: `recv_packet.packet_data_hex='${packetDataHex}'`,
                 limit: '10',
                 // note: hacking request payload type because it is very wrong

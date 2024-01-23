@@ -12,7 +12,10 @@ import {
 } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
-import { useLcdClientPromise } from '../lcdClient';
+import {
+  useCosmosRestClientPromise,
+  useDexRestClientPromise,
+} from '../clients/restClients';
 import { useUserDeposits } from './useUserDeposits';
 import { useSimplePrice } from '../../tokenPrices';
 
@@ -71,7 +74,7 @@ interface CombinedUseQueries<T> {
 function useUserPoolMetadata(
   tokenPair?: TokenPair | TokenIdPair
 ): CombinedUseQueries<PoolMetadata[]> {
-  const lcdClientPromise = useLcdClientPromise();
+  const restClientPromise = useDexRestClientPromise();
   const { data: userDexDenomBalances } = useUserDexDenomBalances();
 
   // for each specific amount of userShares, fetch the totalShares that match
@@ -87,9 +90,9 @@ function useUserPoolMetadata(
           return {
             queryKey: ['duality.dex.poolMetadata', id],
             queryFn: async (): Promise<PoolMetadata | null> => {
-              const lcdClient = await lcdClientPromise;
-              if (lcdClient) {
-                return lcdClient.duality.dex
+              const restClient = await restClientPromise;
+              if (restClient) {
+                return restClient.dex
                   .poolMetadata(params)
                   .then((response) => response.PoolMetadata);
               }
@@ -105,7 +108,7 @@ function useUserPoolMetadata(
         }
         return [];
       });
-    }, [lcdClientPromise, userDexDenomBalances]),
+    }, [restClientPromise, userDexDenomBalances]),
     combine(results) {
       // only process data from successfully resolved queries
       const data = results
@@ -162,7 +165,7 @@ function useUserPoolMetadata(
 }
 
 function useUserPoolTotalShares(): CombinedUseQueries<PoolTotalShares[]> {
-  const lcdClientPromise = useLcdClientPromise();
+  const restClientPromise = useCosmosRestClientPromise();
   const { data: userDexDenomBalances } = useUserDexDenomBalances();
 
   // for each specific amount of userShares, fetch the totalShares that match
@@ -177,9 +180,9 @@ function useUserPoolTotalShares(): CombinedUseQueries<PoolTotalShares[]> {
             // include sharesOwned in query key so that share updates trigger data update
             queryKey: ['cosmos.bank.v1beta1.supplyOf', params, sharesOwned],
             queryFn: async (): Promise<PoolTotalShares | null> => {
-              const lcdClient = await lcdClientPromise;
-              if (lcdClient) {
-                return lcdClient.cosmos.bank.v1beta1
+              const restClient = await restClientPromise;
+              if (restClient) {
+                return restClient.bank.v1beta1
                   .supplyOf(params)
                   .then((response) => {
                     // userPairDeposits
@@ -195,7 +198,7 @@ function useUserPoolTotalShares(): CombinedUseQueries<PoolTotalShares[]> {
         }
         return [];
       });
-    }, [lcdClientPromise, userDexDenomBalances]),
+    }, [restClientPromise, userDexDenomBalances]),
     combine(results) {
       // only process data from successfully resolved queries
       const data = results
@@ -294,7 +297,7 @@ function useUserDepositsTotalShares(
 function useUserDepositsTotalReserves(
   tokenPair?: TokenPair | TokenIdPair
 ): CombinedUseQueries<UserReservesTotalReserves[]> {
-  const lcdClientPromise = useLcdClientPromise();
+  const restClientPromise = useDexRestClientPromise();
   const { data: userPairDeposits } = useUserDeposits(tokenPair);
 
   // for each specific amount of userDeposits, fetch the totalShares that match
@@ -314,8 +317,8 @@ function useUserDepositsTotalReserves(
             queryKey: ['duality.dex.pool', params, sharesOwned],
             queryFn: async () => {
               // we use an RPC call here because the LCD endpoint always 404s
-              const client = await lcdClientPromise;
-              return client.duality.dex
+              const client = await restClientPromise;
+              return client.dex
                 .pool(params)
                 .then(({ pool }): UserReservesTotalReserves => {
                   return {
@@ -340,7 +343,7 @@ function useUserDepositsTotalReserves(
         }
         return [];
       });
-    }, [lcdClientPromise, userPairDeposits]),
+    }, [restClientPromise, userPairDeposits]),
     combine(results) {
       // only process data from successfully resolved queries
       const data = results.flatMap((result) => result.data ?? []);
