@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.51](https://github.com/duality-labs/duality-web-app/compare/v0.3.50...v0.3.51) (2024-01-23)
+
+
+### Fixes
+
+* Semantic Release CI config again ([#521](https://github.com/duality-labs/duality-web-app/issues/521)) ([753ca3d](https://github.com/duality-labs/duality-web-app/commit/753ca3dafda842826d5e8861846761b3703a4c0d))
+* Semantic Release CI should create CHANGELOG.md commits ([#520](https://github.com/duality-labs/duality-web-app/issues/520)) ([3694b4b](https://github.com/duality-labs/duality-web-app/commit/3694b4b2f06c5728e7e956c964b24cad4110c39d))
+
 ## [0.3.49](https://github.com/duality-labs/duality-web-app/compare/v0.3.48...v0.3.49) (2024-01-11)
 
 
