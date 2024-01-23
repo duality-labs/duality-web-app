@@ -267,6 +267,14 @@ export async function getAssetClient(
   });
 }
 
+export async function getChainClient(chainName: string) {
+  return createChainRegistryClient({
+    ...defaultClientOptions,
+    chainNames: [chainName],
+    assetListNames: [chainName],
+  });
+}
+
 // export hook for getting a basic chain-registry client
 // default to client for native chain assets
 // note: the client can do more than chainUtil which uses native chain context

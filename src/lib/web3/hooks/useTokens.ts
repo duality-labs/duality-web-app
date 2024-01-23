@@ -1,16 +1,13 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
-import { assets as chainRegistryAssetList } from 'chain-registry';
-import { Asset, AssetList } from '@chain-registry/types';
 import {
   Token,
-  TokenID,
   getTokenId,
   getTokenValue,
   ibcDenomRegex,
 } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { chainFeeTokens, nativeChain } from './useChains';
+import { chainFeeTokens } from './useChains';
 import { useOneHopDenoms } from './useDenomsFromRegistry';
 import {
   SWRCommon,
@@ -19,72 +16,7 @@ import {
   useTokenByDenom,
 } from './useDenomClients';
 
-const {
-  REACT_APP__CHAIN_ID = '',
-  REACT_APP__DEV_ASSETS = '',
-  REACT_APP__DEV_NATIVE_ASSET_MAP = '',
-} = import.meta.env;
-
-const devAssetLists: AssetList[] | undefined = REACT_APP__DEV_ASSETS
-  ? JSON.parse(REACT_APP__DEV_ASSETS)
-  : undefined;
-
-const devMappedAssetsList: AssetList | undefined =
-  REACT_APP__DEV_NATIVE_ASSET_MAP
-    ? {
-        chain_name: nativeChain.chain_name,
-        assets: Object.entries(
-          JSON.parse(REACT_APP__DEV_NATIVE_ASSET_MAP) as {
-            [tokenId: TokenID]: string;
-          }
-        ).flatMap<Asset>(([tokenId, path]) => {
-          const devChainName = nativeChain.chain_name;
-          const [symbol, chainName = devChainName] = path.split('/');
-          const foundAssetList = chainRegistryAssetList.find(
-            (list) => list.chain_name === chainName
-          );
-          const foundAsset = foundAssetList?.assets.find((asset) => {
-            return asset.symbol === symbol;
-          });
-          // overwrite chain asset with fake tokenId of dev chain
-          return foundAsset
-            ? {
-                ...foundAsset,
-                // overwrite base denom for denom matching in Keplr fees
-                base: tokenId,
-                // add denom alias for denom exponent matching
-                denom_units: foundAsset.denom_units.map((unit) => {
-                  return unit.denom === foundAsset.base
-                    ? // add token as base denom, move original denom to aliases
-                      {
-                        ...unit,
-                        denom: tokenId,
-                        aliases: [...(unit.aliases || []), unit.denom],
-                      }
-                    : unit;
-                }),
-              }
-            : [];
-        }),
-      }
-    : undefined;
-
-export const assetLists = chainRegistryAssetList
-  // override chain-registry chains with our specific chains by matching name
-  .map((chain) => {
-    // use REACT_APP__DEV_NATIVE_ASSET_MAP list to replace any chain info
-    if (devMappedAssetsList && chain.chain_name === nativeChain.chain_name) {
-      return devMappedAssetsList;
-    }
-    // use REACT_APP__DEV_ASSETS list to replace any chain info
-    const foundDevChainAssets = devAssetLists?.find(
-      (devAssetList) => devAssetList.chain_name === chain.chain_name
-    );
-    if (foundDevChainAssets) {
-      return foundDevChainAssets;
-    }
-    return chain;
-  });
+const { REACT_APP__CHAIN_ID = '' } = import.meta.env;
 
 export function useChainFeeToken(): [
   Token | undefined,

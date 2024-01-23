@@ -2,18 +2,12 @@ import invariant from 'invariant';
 
 import { useEffect } from 'react';
 import { AccountData, OfflineSigner } from '@cosmjs/proto-signing';
-import { ChainInfo, Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
+import { Keplr, Window as KeplrWindow } from '@keplr-wallet/types';
 import { Chain } from '@chain-registry/types';
 import { chainRegistryChainToKeplr } from '@chain-registry/keplr';
-import { nativeChain } from '../hooks/useChains';
-import { assetLists } from '../hooks/useTokens';
+import { getChainClient } from '../hooks/useDenomsFromRegistry';
 
-const { REACT_APP__CHAIN_ID: chainId = '' } = import.meta.env;
-
-const chainInfo: ChainInfo = chainRegistryChainToKeplr(
-  nativeChain,
-  assetLists.filter((list) => list.chain_name === nativeChain.chain_name)
-);
+const { REACT_APP__CHAIN_NAME } = import.meta.env;
 
 declare global {
   interface Window extends KeplrWindow {
@@ -55,9 +49,16 @@ export async function getKeplrDualityWallet(): Promise<
   KeplrWallet | undefined
 > {
   try {
-    invariant(chainId, `Invalid chain id: ${chainId}`);
     const keplr = await getKeplr();
     invariant(keplr, 'Keplr extension is not installed or enabled');
+    const chainName: string = REACT_APP__CHAIN_NAME;
+    invariant(chainName, `Invalid chain name: ${chainName}`);
+    const chainClient = await getChainClient(chainName);
+    const chain = chainClient.getChain(chainName);
+    const chainAssetList = chainClient.getChainAssetList(chainName);
+    const chainId = chain.chain_id;
+    invariant(chainId, `Invalid chain id: ${chainId}`);
+    const chainInfo = chainRegistryChainToKeplr(chain, [chainAssetList]);
     await keplr.experimentalSuggestChain(chainInfo);
     await keplr.enable(chainId);
     const offlineSigner = keplr.getOfflineSigner(chainId);
@@ -113,12 +114,14 @@ export async function getChainInfo(chain: Chain) {
   invariant(chainId, `Invalid chain id: ${chainId}`);
   const keplr = await getKeplr();
   invariant(keplr, 'Keplr extension is not installed or enabled');
-  const chainAssets =
-    chain && assetLists.find((list) => list.chain_name === chain.chain_name);
-  if (chain && chainAssets) {
+  const chainName: string = chain.chain_name;
+  invariant(chainName, `Invalid chain name: ${chainName}`);
+  const chainClient = await getChainClient(chainName);
+  const chainAssetList = chainClient.getChainAssetList(chainName);
+  if (chain && chainAssetList) {
     // add auth popup for potentially not registered external chain
     await keplr.experimentalSuggestChain(
-      chainRegistryChainToKeplr(chain, [chainAssets])
+      chainRegistryChainToKeplr(chain, [chainAssetList])
     );
   }
   // this action causes an auth window to popup to the user if they have not yet
