@@ -1,4 +1,4 @@
-import { chains as chainRegistryChainList } from 'chain-registry';
+import { chains as chainList } from 'chain-registry';
 import { Chain } from '@chain-registry/types';
 import { useMemo } from 'react';
 import { ibc, router } from '@duality-labs/dualityjs';
@@ -33,21 +33,17 @@ interface QueryConnectionParamsResponse {
 }
 
 const {
-  REACT_APP__IS_MAINNET = 'mainnet',
   REACT_APP__CHAIN = '',
   REACT_APP__CHAIN_NAME = '[chain_name]',
   REACT_APP__CHAIN_PRETTY_NAME = REACT_APP__CHAIN_NAME || '[chain_pretty_name]',
   REACT_APP__CHAIN_ID = '[chain_id]',
   REACT_APP__CHAIN_FEE_TOKENS = '',
-  REACT_APP__DEV_CHAINS = '',
   REACT_APP__RPC_API = '',
   REACT_APP__REST_API = '',
 } = import.meta.env;
 
-const isTestnet = REACT_APP__IS_MAINNET !== 'mainnet';
-
 type ChainFeeTokens = NonNullable<Chain['fees']>['fee_tokens'];
-const neutronChain = chainRegistryChainList.find(
+const neutronChain = chainList.find(
   (chain) => chain.chain_name === REACT_APP__CHAIN_NAME
 );
 export const nativeChain: Chain = {
@@ -86,27 +82,6 @@ export const nativeChain: Chain = {
 export const devChain: Chain = { ...nativeChain };
 export const chainFeeTokens: ChainFeeTokens = devChain.fees?.fee_tokens || [];
 
-const devChainList: Chain[] = REACT_APP__DEV_CHAINS
-  ? JSON.parse(REACT_APP__DEV_CHAINS)
-  : undefined;
-export const chainList = chainRegistryChainList
-  // override chain-registry chains with our specific chains by matching name
-  .map((chain) => {
-    if (chain.chain_name === nativeChain.chain_name) {
-      return nativeChain;
-    }
-    const foundDevChain = devChainList?.find(
-      (devChain) => devChain.chain_name === chain.chain_name
-    );
-    if (foundDevChain) {
-      return foundDevChain;
-    }
-    if (isTestnet && chain.chain_name === devChain.chain_name) {
-      return devChain;
-    }
-    return chain;
-  });
-
 export function useChainAddress(chain?: Chain): {
   data?: string;
   isValidating: boolean;
@@ -114,11 +89,15 @@ export function useChainAddress(chain?: Chain): {
 } {
   const chainId = chain?.chain_id ?? '';
   const { data, isFetching, error } = useQuery({
-    enabled: !!chainId,
+    enabled: !!chain,
     queryKey: ['useChainAddress', chainId],
-    queryFn: async (): Promise<string> => {
-      return getChainInfo(chainId).then((chainInfo) => chainInfo.bech32Address);
-    },
+    queryFn: chain
+      ? async (): Promise<string> => {
+          return getChainInfo(chain).then(
+            (chainInfo) => chainInfo.bech32Address
+          );
+        }
+      : undefined,
     // if the request was declined, don't keep re-requesting it
     retry: false,
   });
