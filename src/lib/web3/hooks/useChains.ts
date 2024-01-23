@@ -21,7 +21,6 @@ import { State as ConnectionState } from '@duality-labs/neutronjs/types/codegen/
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import { getChainInfo } from '../wallets/keplr';
-import dualityLogo from '../../../assets/logo/logo.svg';
 import { Token, getTokenId } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import { useFetchAllPaginatedPages } from './useQueries';
@@ -56,10 +55,6 @@ export function useNativeChain(): SWRResponse<Chain> {
       (chain) => chain.chain_name === REACT_APP__CHAIN_NAME
     );
     const nativeChain: Chain | undefined = baseChain && {
-      // add default properties if no chain-registry chain is found
-      logo_URIs: {
-        svg: dualityLogo,
-      },
       // add base chain-registry chain
       ...baseChain,
       // override with other provided env vars
