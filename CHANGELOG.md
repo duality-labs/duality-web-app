@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.52](https://github.com/duality-labs/duality-web-app/compare/v0.3.51...v0.3.52) (2024-01-23)
+
+
+### Fixes
+
+* fetch all paginated pages of some resources ([#519](https://github.com/duality-labs/duality-web-app/issues/519)) ([1be359a](https://github.com/duality-labs/duality-web-app/commit/1be359a2ebd104b84ba4549627cd1421bfe62503))
+
 ## [0.3.51](https://github.com/duality-labs/duality-web-app/compare/v0.3.50...v0.3.51) (2024-01-23)
 
 
