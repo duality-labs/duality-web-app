@@ -22,7 +22,6 @@ import { State as ConnectionState } from '@duality-labs/dualityjs/types/codegen/
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import { getChainInfo } from '../wallets/keplr';
-import dualityLogo from '../../../assets/logo/logo.svg';
 import { Token, getTokenId } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import { useFetchAllPaginatedPages } from './useQueries';
@@ -53,9 +52,6 @@ export const nativeChain: Chain = {
   network_type: 'testnet',
   bech32_prefix: 'neutron',
   slip44: 118,
-  logo_URIs: {
-    svg: dualityLogo,
-  },
   // add base chain-registry chain
   ...neutronChain,
   // override with other provided env vars
