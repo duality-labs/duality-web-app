@@ -206,17 +206,18 @@ export function useBankBalanceBaseAmount(
 export function useBankBalanceDisplayAmount(
   denom: string | undefined
 ): UseQueryResult<string> {
-  const { data: balance, ...rest } = useUserBankBalance(denom);
+  const { data: balance, isLoading, ...rest } = useUserBankBalance(denom);
   const balanceAmount = useMemo(() => {
-    return (
-      balance &&
-      getDenomAmount(
-        balance.token,
-        balance.amount,
-        balance.denom,
-        balance.token.display
-      )
-    );
-  }, [balance]);
+    return balance
+      ? getDenomAmount(
+          balance.token,
+          balance.amount,
+          balance.denom,
+          balance.token.display
+        )
+      : !isLoading
+      ? '0'
+      : undefined;
+  }, [isLoading, balance]);
   return { data: balanceAmount, ...rest } as UseQueryResult<string>;
 }
