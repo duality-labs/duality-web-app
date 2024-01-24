@@ -66,8 +66,9 @@ jobs:
         run: npm rebuild && npm run prepare --if-present
 
       # run build with .env.development file (instead of .env.production)
+      # and add Netlify settings
       - name: Build
-        run: npm run build -- --mode deploy-previews
+        run: npm run build -- --mode deploy-previews && cp netlify.toml build/netlify.toml
         env:
           REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
 
