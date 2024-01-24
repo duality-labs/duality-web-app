@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/duality-labs/duality-web-app/compare/v1.0.0...v1.0.1) (2024-01-24)
+
+
+### Fixes
+
+* token denom handling for IBC tokens on testnet ([#516](https://github.com/duality-labs/duality-web-app/issues/516)) ([2265fe9](https://github.com/duality-labs/duality-web-app/commit/2265fe9d0c6e4dfe85012a7e6edbb6b0d6284565))
+
 ## [1.0.0](https://github.com/duality-labs/duality-web-app/compare/v0.3.52...v1.0.0) (2024-01-23)
 
 
