@@ -22,11 +22,13 @@ To set up the front end locally, connected to the current online testnet:
 
 ### Connecting to a local backend with Docker Compose
 
-1. Clone the [Duality Docker services repo](https://github.com/duality-labs/dualityd-docker-services) locally
-   - this will also require cloning the main [Duality chain repo](https://github.com/duality-labs/duality)
-2. Run the `docker compose up` commands as recommended there to bring up a locally running chain with exposed RPC and API ports
-   - using the flag `--profile simulation` when composing this service should create a locally running chain cluster with simulated trading activity: this can help provide mock data for UI development
+1. Follow the instructions for [Neutron Cosmopark local development](https://docs.neutron.org/neutron/build-and-run/cosmopark/)
+   to start a local environment with the Neutron chain and some chaines you can
+   bridge to and from
+2. The env vars for specific IBC denoms in local development should have
+   examples in .env.development
 3. Edit your own .env.development.local file to change the backend ENV vars
+   (without adding changes to git because .local files are ignnored)
 
    - `REACT_APP__REST_API=http://localhost:1317`
    - `REACT_APP__RPC_API=http://localhost:26657`
