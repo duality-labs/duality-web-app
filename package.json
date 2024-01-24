@@ -42,7 +42,6 @@
     "@visx/tooltip": "^3.1.2",
     "bignumber.js": "^9.0.2",
     "buffer": "^6.0.3",
-    "chain-registry": "^1.25.0",
     "charting_library": "github:tradingview/charting_library#66573502ce6cca24c126e043653339f1c53e8415",
     "invariant": "^2.2.4",
     "long": "^5.2.3",
