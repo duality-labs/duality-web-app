@@ -8,7 +8,7 @@ import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import BridgeCard from './BridgeCard';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
-import { nativeChain } from '../../lib/web3/hooks/useChains';
+import { useNativeChain } from '../../lib/web3/hooks/useChains';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
@@ -62,6 +62,8 @@ export default function AssetsTableCard({
     );
   }, [allUserBankAssets]);
 
+  const { data: nativeChain } = useNativeChain();
+
   // define sorting rows by token value
   const sortByValue = useCallback(
     (tokenA: Token, tokenB: Token) => {
@@ -84,7 +86,7 @@ export default function AssetsTableCard({
         return new BigNumber(foundUserAsset?.amount || 0);
       }
       function getTokenChain(token: Token) {
-        if (token.chain.chain_id === nativeChain.chain_id) {
+        if (nativeChain && token.chain.chain_id === nativeChain.chain_id) {
           return 2;
         }
         if (token.ibc) {
@@ -93,7 +95,7 @@ export default function AssetsTableCard({
         return 0;
       }
     },
-    [allUserBankAssetsByTokenId]
+    [allUserBankAssetsByTokenId, nativeChain]
   );
 
   // sort tokens
@@ -188,6 +190,7 @@ function AssetRow({
   const { address } = useWeb3();
   const { data: trace } = useDenomTrace(denom);
   const { data: token, isValidating } = useToken(denom);
+  const { data: nativeChain } = useNativeChain();
 
   return token ? (
     <tr>
@@ -230,7 +233,7 @@ function AssetRow({
           })}`}
         </div>
       </td>
-      {showActions && (
+      {showActions && nativeChain && (
         <td>
           {token.chain.chain_id !== nativeChain.chain_id && (
             // disable buttons if there is no known path to bridge them here

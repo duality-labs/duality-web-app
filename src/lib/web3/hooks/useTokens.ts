@@ -7,7 +7,7 @@ import {
   ibcDenomRegex,
 } from '../utils/tokens';
 import { useSimplePrice } from '../../tokenPrices';
-import { chainFeeTokens } from './useChains';
+import { useNativeChain } from './useChains';
 import { useOneHopDenoms } from './useDenomsFromRegistry';
 import {
   SWRCommon,
@@ -22,23 +22,30 @@ export function useChainFeeToken(): [
   Token | undefined,
   React.Dispatch<React.SetStateAction<string | undefined>>
 ] {
-  const [feeDenom, setFeeDenom] = useState(() => chainFeeTokens.at(0)?.denom);
+  const { data: nativeChain } = useNativeChain();
+  const [feeDenom, setFeeDenom] = useState<string>();
   const restrictedSetFeeDenom: React.Dispatch<
     React.SetStateAction<string | undefined>
-  > = useCallback((feeDenomOrCallback) => {
-    if (feeDenomOrCallback) {
-      if (typeof feeDenomOrCallback === 'function') {
-        setFeeDenom((prev) => getRestrictedFeeDenom(feeDenomOrCallback(prev)));
-      } else {
-        setFeeDenom(getRestrictedFeeDenom(feeDenomOrCallback));
+  > = useCallback(
+    (feeDenomOrCallback) => {
+      if (feeDenomOrCallback) {
+        if (typeof feeDenomOrCallback === 'function') {
+          setFeeDenom((prev) =>
+            getRestrictedFeeDenom(feeDenomOrCallback(prev))
+          );
+        } else {
+          setFeeDenom(getRestrictedFeeDenom(feeDenomOrCallback));
+        }
       }
-    }
-    function getRestrictedFeeDenom(
-      feeDenom: string | undefined
-    ): string | undefined {
-      return chainFeeTokens.find(({ denom }) => denom === feeDenom)?.denom;
-    }
-  }, []);
+      function getRestrictedFeeDenom(
+        feeDenom: string | undefined
+      ): string | undefined {
+        const chainFeeTokens = nativeChain?.fees?.fee_tokens;
+        return chainFeeTokens?.find(({ denom }) => denom === feeDenom)?.denom;
+      }
+    },
+    [nativeChain]
+  );
   const { data: feeToken } = useToken(feeDenom);
   return [feeToken, restrictedSetFeeDenom];
 }

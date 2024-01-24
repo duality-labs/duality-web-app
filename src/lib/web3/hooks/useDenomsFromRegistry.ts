@@ -267,12 +267,24 @@ export async function getAssetClient(
   });
 }
 
+// export hook for getting a basic chain-registry client for the native chain
 export async function getChainClient(chainName: string) {
   return createChainRegistryClient({
     ...defaultClientOptions,
     chainNames: [chainName],
     assetListNames: [chainName],
   });
+}
+
+// export hook for getting a chain-registry client for one-hop related chains
+export function useNativeChainClient() {
+  return useSWRImmutable(
+    ['native-chain-client'],
+    async (): Promise<ChainRegistryClient | undefined> => {
+      // get asset client for all assets within one-hop of the native chain
+      return getChainClient(REACT_APP__CHAIN_NAME);
+    }
+  );
 }
 
 // export hook for getting a basic chain-registry client
