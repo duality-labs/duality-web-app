@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/duality-labs/duality-web-app/compare/v0.3.52...v1.0.0) (2024-01-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* allow new major versions with Semantic Release (#522)
+
+### Features
+
+* allow new major versions with Semantic Release ([#522](https://github.com/duality-labs/duality-web-app/issues/522)) ([a198369](https://github.com/duality-labs/duality-web-app/commit/a1983699abb12bfd1640db07c2248c6a6484f402))
+
 ## [0.3.52](https://github.com/duality-labs/duality-web-app/compare/v0.3.51...v0.3.52) (2024-01-23)
 
 

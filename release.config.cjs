@@ -15,8 +15,8 @@ module.exports = {
         // see default rules: https://github.com/semantic-release/commit-analyzer/blob/master/lib/default-release-rules.js
         releaseRules: [
           // while in "alpha" mode don't increment the major version
-          { breaking: true, release: 'minor' },
-          { type: 'feat', release: 'patch' },
+          { breaking: true, release: 'major' },
+          { type: 'feat', release: 'minor' },
           { type: 'fix', release: 'patch' },
           { type: 'perf', release: 'patch' },
         ],
