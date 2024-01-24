@@ -19,7 +19,9 @@
     "npm": "^10.2.3"
   },
   "dependencies": {
-    "@chain-registry/keplr": "^1.22.1",
+    "@chain-registry/client": "^1.18.0",
+    "@chain-registry/keplr": "^1.30.0",
+    "@chain-registry/utils": "^1.17.0",
     "@cosmjs/crypto": "0.31.1",
     "@cosmjs/proto-signing": "0.31.1",
     "@cosmjs/stargate": "0.31.1",
@@ -40,7 +42,6 @@
     "@visx/tooltip": "^3.1.2",
     "bignumber.js": "^9.0.2",
     "buffer": "^6.0.3",
-    "chain-registry": "^1.20.0",
     "charting_library": "github:tradingview/charting_library#66573502ce6cca24c126e043653339f1c53e8415",
     "invariant": "^2.2.4",
     "long": "^5.2.3",
@@ -58,7 +59,7 @@
     "stream": "npm:stream-browserify@3.0.0"
   },
   "devDependencies": {
-    "@chain-registry/types": "^0.16.0",
+    "@chain-registry/types": "^0.17.1",
     "@keplr-wallet/types": "^0.12.20",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.2",

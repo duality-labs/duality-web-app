@@ -25,7 +25,12 @@ import dualityLogo from '../../../assets/logo/logo.svg';
 import { Token, getTokenId } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import { useFetchAllPaginatedPages } from './useQueries';
+import {
+  useNativeChainClient,
+  useRelatedChainsClient,
+} from './useDenomsFromRegistry';
 import Long from 'long';
+import { SWRResponse } from 'swr';
 
 interface QueryConnectionParamsResponse {
   params?: QueryConnectionParams;
@@ -34,44 +39,59 @@ interface QueryConnectionParamsResponse {
 const {
   REACT_APP__CHAIN = '',
   REACT_APP__CHAIN_NAME = '[chain_name]',
+  REACT_APP__CHAIN_PRETTY_NAME = REACT_APP__CHAIN_NAME || '[chain_pretty_name]',
   REACT_APP__CHAIN_ID = '[chain_id]',
   REACT_APP__CHAIN_FEE_TOKENS = '',
-  REACT_APP__PROVIDER_CHAIN = '',
   REACT_APP__RPC_API = '',
   REACT_APP__REST_API = '',
 } = import.meta.env;
 
 type ChainFeeTokens = NonNullable<Chain['fees']>['fee_tokens'];
-export const dualityChain: Chain = {
-  chain_id: REACT_APP__CHAIN_ID,
-  chain_name: REACT_APP__CHAIN_ID,
-  pretty_name: REACT_APP__CHAIN_NAME,
-  status: 'upcoming',
-  network_type: 'testnet',
-  bech32_prefix: 'dual',
-  slip44: 118,
-  logo_URIs: {
-    svg: dualityLogo,
-  },
-  apis: {
-    rpc: [{ address: REACT_APP__RPC_API }],
-    rest: [{ address: REACT_APP__REST_API }],
-  },
-  fees: {
-    // if not specified the fee tokens will default to the stake token in Keplr
-    // see: https://github.com/cosmology-tech/chain-registry/blob/%40chain-registry/keplr%401.22.1/packages/keplr/src/index.ts#L103-L131
-    fee_tokens: REACT_APP__CHAIN_FEE_TOKENS
-      ? (JSON.parse(REACT_APP__CHAIN_FEE_TOKENS) as ChainFeeTokens)
-      : [],
-  },
-  // override default settings with an env variable for the whole chain config
-  ...(REACT_APP__CHAIN ? (JSON.parse(REACT_APP__CHAIN) as Chain) : {}),
-};
-export const devChain = { ...dualityChain };
+export function useNativeChain(): SWRResponse<Chain> {
+  const { data: chainListClient, ...swr } = useNativeChainClient();
+  const nativeChain = useMemo<Chain | undefined>(() => {
+    const chainList = chainListClient?.chains;
+    const baseChain = chainList?.find(
+      (chain) => chain.chain_name === REACT_APP__CHAIN_NAME
+    );
+    const nativeChain: Chain | undefined = baseChain && {
+      // add default properties if no chain-registry chain is found
+      logo_URIs: {
+        svg: dualityLogo,
+      },
+      // add base chain-registry chain
+      ...baseChain,
+      // override with other provided env vars
+      status: 'upcoming',
+      network_type: 'testnet',
+      bech32_prefix: 'dual',
+      chain_id: REACT_APP__CHAIN_ID || baseChain?.chain_id,
+      chain_name: REACT_APP__CHAIN_NAME || baseChain?.chain_name,
+      pretty_name: REACT_APP__CHAIN_PRETTY_NAME || baseChain?.pretty_name,
+      apis:
+        REACT_APP__RPC_API && REACT_APP__REST_API
+          ? {
+              rpc: [{ address: REACT_APP__RPC_API }],
+              rest: [{ address: REACT_APP__REST_API }],
+            }
+          : baseChain?.apis,
+      fees: {
+        ...baseChain?.fees,
+        // if not specified the fee tokens will default to the stake token in Keplr
+        // see: https://github.com/cosmology-tech/chain-registry/blob/%40chain-registry/keplr%401.22.1/packages/keplr/src/index.ts#L103-L131
+        fee_tokens: REACT_APP__CHAIN_FEE_TOKENS
+          ? (JSON.parse(REACT_APP__CHAIN_FEE_TOKENS) as ChainFeeTokens)
+          : (baseChain?.fees?.fee_tokens as ChainFeeTokens),
+      },
+      // override default settings with an env variable for the whole chain config
+      ...(REACT_APP__CHAIN ? (JSON.parse(REACT_APP__CHAIN) as Chain) : {}),
+    };
 
-export const providerChain: Chain | undefined = REACT_APP__PROVIDER_CHAIN
-  ? JSON.parse(REACT_APP__PROVIDER_CHAIN)
-  : undefined;
+    return nativeChain;
+  }, [chainListClient]);
+
+  return { ...swr, data: nativeChain } as SWRResponse;
+}
 
 export function useChainAddress(chain?: Chain): {
   data?: string;
@@ -80,11 +100,15 @@ export function useChainAddress(chain?: Chain): {
 } {
   const chainId = chain?.chain_id ?? '';
   const { data, isFetching, error } = useQuery({
-    enabled: !!chainId,
+    enabled: !!chain,
     queryKey: ['useChainAddress', chainId],
-    queryFn: async (): Promise<string> => {
-      return getChainInfo(chainId).then((chainInfo) => chainInfo.bech32Address);
-    },
+    queryFn: chain
+      ? async (): Promise<string> => {
+          return getChainInfo(chain).then(
+            (chainInfo) => chainInfo.bech32Address
+          );
+        }
+      : undefined,
     // if the request was declined, don't keep re-requesting it
     retry: false,
   });
@@ -100,7 +124,7 @@ async function getIbcLcdClient(
   }
 }
 
-function useIbcClientStates(chain: Chain) {
+function useIbcClientStates(chain: Chain | undefined) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   const results = useInfiniteQuery({
     queryKey: ['ibc-client-states', restEndpoint],
@@ -156,7 +180,7 @@ function useIbcClientStates(chain: Chain) {
   return { ...results, data };
 }
 
-function useIbcConnections(chain: Chain) {
+function useIbcConnections(chain: Chain | undefined) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   const results = useInfiniteQuery({
     queryKey: ['ibc-connections', restEndpoint],
@@ -205,7 +229,7 @@ function useIbcConnections(chain: Chain) {
   return { ...results, data };
 }
 
-function useIbcChannels(chain: Chain) {
+function useIbcChannels(chain: Chain | undefined) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   const results = useInfiniteQuery({
     queryKey: ['ibc-channels', restEndpoint],
@@ -266,10 +290,13 @@ function filterChannelsOpen(
   return channel.state === (3 as ChannelState.STATE_OPEN);
 }
 
-export function useIbcOpenTransfers(chain: Chain = dualityChain) {
+export function useIbcOpenTransfers(givenChain: Chain | undefined) {
+  const { data: nativeChain } = useNativeChain();
+  const chain = givenChain ?? nativeChain;
   const { data: clientStates } = useIbcClientStates(chain);
   const { data: connections } = useIbcConnections(chain);
   const { data: channels } = useIbcChannels(chain);
+  const { data: chainListClient } = useRelatedChainsClient();
 
   return useMemo(() => {
     // get openClients (all listed clients are assumed to be working)
@@ -283,7 +310,12 @@ export function useIbcOpenTransfers(chain: Chain = dualityChain) {
     //       are open, then the same open resources exist on the counterparty.
     //       this may not be true, but is good enough for some UI lists
     return openClients.flatMap((clientState) => {
-      const chainID = clientState.client_state?.chain_id;
+      const chainID =
+        (clientState.client_state as unknown as { chain_id: string })
+          ?.chain_id || undefined;
+      const chainList = chainListClient?.chains;
+      const chain = chainList?.find((chain) => chain.chain_id === chainID);
+      if (!chainID || !chain) return [];
       return (
         openConnections
           // filter to connections of the current client
@@ -296,7 +328,7 @@ export function useIbcOpenTransfers(chain: Chain = dualityChain) {
                 .filter((ch) => ch.connection_hops.at(-1) === connection.id)
                 .map((channel) => {
                   return {
-                    chainID,
+                    chain,
                     client: clientState,
                     connection,
                     channel,
@@ -306,15 +338,7 @@ export function useIbcOpenTransfers(chain: Chain = dualityChain) {
           })
       );
     });
-  }, [clientStates, connections, channels]);
-}
-
-export function useConnectedChainIDs() {
-  const openTransfers = useIbcOpenTransfers();
-  // return only chain IDs for easy comparison to different lists
-  return useMemo(() => {
-    return openTransfers.map((openTransfer) => openTransfer.chainID);
-  }, [openTransfers]);
+  }, [chainListClient, clientStates, connections, channels]);
 }
 
 export function useRemoteChainRpcEndpoint(chain?: Chain) {
@@ -344,7 +368,7 @@ export function useRemoteChainRpcEndpoint(chain?: Chain) {
           return null;
         }
       }
-      // return the Duality chain REST API if this is the Duality chain
+      // return the native chain REST API if this is the native chain
       else if (chain?.chain_id === REACT_APP__CHAIN_ID) {
         return REACT_APP__RPC_API;
       }
@@ -387,7 +411,7 @@ export function useRemoteChainRestEndpoint(chain?: Chain) {
           return null;
         }
       }
-      // return the Duality chain REST API if this is the Duality chain
+      // return the native chain REST API if this is the native chain
       else if (chain?.chain_id === REACT_APP__CHAIN_ID) {
         return REACT_APP__REST_API;
       }
@@ -402,12 +426,12 @@ export function useRemoteChainRestEndpoint(chain?: Chain) {
 }
 
 export function useRemoteChainBankBalance(
-  chain: Chain,
+  chain: Chain | undefined,
   token?: Token,
   address?: string
 ) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
-  // optionally find the IBC denom when querying the Duality chain
+  // optionally find the IBC denom when querying the native chain
   const denom =
     restEndpoint === REACT_APP__REST_API
       ? getTokenId(token)
@@ -430,7 +454,7 @@ export function useRemoteChainBankBalance(
   });
 }
 
-export function useRemoteChainBlockTime(chain: Chain) {
+export function useRemoteChainBlockTime(chain: Chain | undefined) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
     enabled: !!restEndpoint,
@@ -456,7 +480,7 @@ export function useRemoteChainBlockTime(chain: Chain) {
   });
 }
 
-export function useRemoteChainFees(chain: Chain) {
+export function useRemoteChainFees(chain: Chain | undefined) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
   return useQuery({
     enabled: !!restEndpoint,

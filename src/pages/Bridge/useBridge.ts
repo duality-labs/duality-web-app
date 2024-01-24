@@ -132,8 +132,8 @@ export default function useBridge(
         if (!account || !account.address) {
           throw new Error('No wallet address');
         }
-        const connection = ibcOpenTransfers.find(({ chainID }) => {
-          return chainID === chainTo.chain_id;
+        const connection = ibcOpenTransfers.find(({ chain }) => {
+          return chain.chain_id === chainTo.chain_id;
         })?.connection;
         if (!connection) {
           throw new Error('No connection between source and destination found');
@@ -160,7 +160,7 @@ export default function useBridge(
         // (this may be redundant as we know there is an IBC connection already)
         const clientFromStatus =
           await restClientFrom.core.client.v1.clientStatus({
-            client_id: connection.client_id,
+            client_id: connection.counterparty.client_id,
           });
         if (clientFromStatus.status !== 'Active') {
           throw new Error(

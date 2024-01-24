@@ -9,7 +9,7 @@ import {
   getDisplayDenomAmount,
 } from '../../../lib/web3/utils/tokens';
 
-import { useToken } from '../../../lib/web3/hooks/useTokens';
+import { useToken } from '../../../lib/web3/hooks/useDenomClients';
 import { useTokenPairTickLiquidity } from '../../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../../lib/web3/hooks/useTokenPairs';
 import { TickInfo } from '../../../lib/web3/utils/ticks';
@@ -65,8 +65,8 @@ export function useRouterResult(pairRequest: PairRequest): {
     data: [token0Ticks, token1Ticks],
   } = useTokenPairTickLiquidity([token0, token1]);
 
-  const tokenA = useToken(pairRequest.tokenA);
-  const tokenB = useToken(pairRequest.tokenB);
+  const { data: tokenA } = useToken(pairRequest.tokenA);
+  const { data: tokenB } = useToken(pairRequest.tokenB);
 
   useEffect(() => {
     if (

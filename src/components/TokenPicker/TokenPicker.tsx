@@ -6,16 +6,13 @@ import {
   useState,
   useId,
   ReactNode,
+  useMemo,
 } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 
 import { useFilteredTokenList } from './hooks';
-import useTokens, {
-  useDualityTokens,
-  useTokensWithIbcInfo,
-} from '../../lib/web3/hooks/useTokens';
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
@@ -27,13 +24,19 @@ import Dialog from '../Dialog/Dialog';
 import SearchInput from '../inputs/SearchInput/SearchInput';
 
 import './TokenPicker.scss';
+import {
+  useNativeDenoms,
+  useOneHopDenoms,
+} from '../../lib/web3/hooks/useDenomsFromRegistry';
+import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
+import { useTokens } from '../../lib/web3/hooks/useDenomClients';
 
 interface TokenPickerProps {
   className?: string;
   onChange: (newToken: Token | undefined) => void;
   exclusion?: Token | undefined;
   value: Token | undefined;
-  tokenList?: Array<Token>;
+  denoms?: Array<string>;
   disabled?: boolean;
   showChain?: boolean;
   children?: ReactNode;
@@ -86,7 +89,7 @@ export default function TokenPicker({
   value,
   onChange,
   exclusion,
-  tokenList: givenTokenList,
+  denoms: givenDenoms,
   disabled = false,
   showChain = true,
   children,
@@ -96,8 +99,20 @@ export default function TokenPicker({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLUListElement>(null);
-  const defaultTokenList = useTokensWithIbcInfo(useTokens());
-  const tokenList = givenTokenList || defaultTokenList;
+
+  // source allowed denoms from several places
+  const defaultDenoms = useOneHopDenoms();
+  const { data: tokenPairs } = useTokenPairs();
+  // find all tokens that may be selected in this input group
+  const { data: tokenList = [] } = useTokens(
+    givenDenoms ??
+      // use known tokenPairs and common denoms as "all assets"
+      defaultDenoms.concat(
+        tokenPairs?.flatMap(([token0, token1]) => [token0, token1]) ?? []
+      )
+  );
+  const { data: nativeTokenList = [] } = useTokens(useNativeDenoms());
+
   const userList = useUserTokens();
   const [assetMode, setAssetMode] = useState<AssetModeType>(
     userList.length ? 'User' : 'Duality'
@@ -126,20 +141,18 @@ export default function TokenPicker({
     [close, onChange]
   );
 
-  const dualityTokensList = useDualityTokens();
-
   // update the filtered list whenever the query or the list changes
   const filteredList = useFilteredTokenList(
-    (() => {
+    useMemo(() => {
       switch (assetMode) {
         case 'Duality':
-          return dualityTokensList;
+          return nativeTokenList;
         case 'User':
           return userList;
         default:
           return tokenList;
       }
-    })(),
+    }, [assetMode, nativeTokenList, tokenList, userList]),
     searchQuery
   );
 
@@ -262,7 +275,7 @@ export default function TokenPicker({
           </button>
           <button
             type="button"
-            className="button pill py-3 px-4 hide"
+            className="button pill py-3 px-4"
             ref={createRefForValue('All')}
             onClick={() => setAssetMode('All')}
           >
@@ -330,6 +343,7 @@ export default function TokenPicker({
 
 function TokenPickerItem({
   token,
+  denom = token?.base,
   chain = [],
   symbol = [],
   index,
@@ -339,6 +353,7 @@ function TokenPickerItem({
   setSelectedIndex,
 }: {
   token: Token;
+  denom?: string;
   chain: string[];
   symbol: string[];
   index: number;
@@ -351,7 +366,7 @@ function TokenPickerItem({
   const exclusionId = getTokenId(exclusion);
   const logos = token.logo_URIs;
   const isDisabled = !!exclusionId && exclusionId === tokenId;
-  const { data: balance = 0 } = useBankBalanceDisplayAmount(token);
+  const { data: balance = 0 } = useBankBalanceDisplayAmount(denom);
   const {
     data: [price = 0],
   } = useSimplePrice(Number(balance) ? [token] : []);

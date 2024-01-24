@@ -9,10 +9,7 @@ import { useWeb3 } from '../../../lib/web3/useWeb3';
 import { createTransactionToasts } from '../../../components/Notifications/common';
 
 import { getDisplayDenomAmount } from '../../../lib/web3/utils/tokens';
-import useTokens, {
-  matchTokenByDenom,
-  useTokensWithIbcInfo,
-} from '../../../lib/web3/hooks/useTokens';
+import { useTokenByDenom } from '../../../lib/web3/hooks/useDenomClients';
 import {
   mapEventAttributes,
   CoinReceivedEvent,
@@ -90,7 +87,7 @@ async function sendSwap(
  * @param pairRequest the respective addresses and value
  * @returns tuple of request state and sendRequest callback
  */
-export function useSwap(): [
+export function useSwap(denoms: string[]): [
   {
     data?: MsgPlaceLimitOrderResponse;
     isValidating: boolean;
@@ -103,7 +100,7 @@ export function useSwap(): [
   const [error, setError] = useState<string>();
   const web3 = useWeb3();
 
-  const tokens = useTokensWithIbcInfo(useTokens());
+  const { data: tokenByDenom } = useTokenByDenom(denoms);
 
   const sendRequest = useCallback(
     (request: MsgPlaceLimitOrder, gasEstimate: number) => {
@@ -134,14 +131,15 @@ export function useSwap(): [
 
       const { wallet, address } = web3;
       if (!wallet || !address) return onError('Client has no wallet');
-      if (!tokens) return onError('Send not ready: token list not ready');
       // check for not well defined tick index
       const tickNumber = tickIndexInToOut.toNumber();
       if (Number.isNaN(tickNumber) || !Number.isFinite(tickNumber)) {
         return onError('Limit Price is not defined');
       }
 
-      const tokenOutToken = tokens.find(matchTokenByDenom(tokenOut));
+      const tokenInToken = tokenByDenom?.get(tokenIn);
+      const tokenOutToken = tokenByDenom?.get(tokenOut);
+      if (!tokenInToken) return onError('Token in was not found');
       if (!tokenOutToken) return onError('Token out was not found');
 
       createTransactionToasts(
@@ -198,7 +196,7 @@ export function useSwap(): [
         setError(message);
       }
     },
-    [tokens, web3]
+    [tokenByDenom, web3]
   );
 
   return [{ data, isValidating: validating, error }, sendRequest];

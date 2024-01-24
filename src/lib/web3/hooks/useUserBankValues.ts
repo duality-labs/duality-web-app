@@ -5,11 +5,11 @@ import { Token, getDenomAmount } from '../utils/tokens';
 import { TokenCoin, useUserBankBalances } from './useUserBankBalances';
 import { useSimplePrice } from '../../tokenPrices';
 
-type TokenCoinWithValue = TokenCoin & {
+export type TokenCoinWithValue = TokenCoin & {
   value: BigNumber | undefined;
 };
 
-// get all the user's bank values (tokens that are not Duality Dex shares)
+// get all the user's bank values (tokens that are not native Dex shares)
 export function useUserBankValues(): TokenCoinWithValue[] {
   const { data: balances } = useUserBankBalances();
 
@@ -38,14 +38,12 @@ export function useUserBankValues(): TokenCoinWithValue[] {
 
 // calculate total
 export function useUserBankValue(): BigNumber {
-  const allUserBankAssets = useUserBankValues();
+  const allUserBankValues = useUserBankValues();
 
-  return useMemo(
-    () =>
-      (allUserBankAssets || []).reduce((result, { value }) => {
-        if (!value) return result;
-        return result.plus(value);
-      }, new BigNumber(0)),
-    [allUserBankAssets]
-  );
+  return useMemo(() => {
+    return (allUserBankValues || []).reduce((result, { value }) => {
+      if (!value) return result;
+      return result.plus(value);
+    }, new BigNumber(0));
+  }, [allUserBankValues]);
 }

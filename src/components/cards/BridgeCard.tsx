@@ -11,9 +11,9 @@ import useBridge from '../../pages/Bridge/useBridge';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import {
-  dualityChain,
   useChainAddress,
   useIbcOpenTransfers,
+  useNativeChain,
   useRemoteChainBankBalance,
   useRemoteChainBlockTime,
   useRemoteChainFees,
@@ -53,9 +53,10 @@ export default function BridgeCard({
 }) {
   const [token, setToken] = useState<Token | undefined>(from || to);
   const [value, setValue] = useState('');
+  const { data: nativeChain } = useNativeChain();
 
-  const chainFrom = from ? from.chain : dualityChain;
-  const chainTo = to ? to.chain : dualityChain;
+  const chainFrom = from ? from.chain : nativeChain;
+  const chainTo = to ? to.chain : nativeChain;
   const { data: chainAddressFrom, isValidating: chainAddressFromIsValidating } =
     useChainAddress(chainFrom);
   const { data: chainAddressTo, isValidating: chainAddressToIsValidating } =
@@ -84,11 +85,17 @@ export default function BridgeCard({
       if (!chainAddressTo) {
         throw new Error('No To Address');
       }
+      if (!chainFrom) {
+        throw new Error('No Chain From');
+      }
+      if (!chainTo) {
+        throw new Error('No Chain To');
+      }
       const timeoutTimestamp = Long.fromNumber(
         Date.now() + defaultTimeout // calculate in ms then convert to nanoseconds
       ).multiply(1 / nanoseconds);
       const ibcTransferInfo = ibcOpenTransfers?.find((transfer) => {
-        return transfer.chainID === chainTo.chain_id;
+        return transfer.chain.chain_id === chainTo.chain_id;
       });
       if (!ibcTransferInfo) {
         throw new Error(
@@ -101,7 +108,7 @@ export default function BridgeCard({
           `Multi-hop IBC transfer paths not supported: ${connectionLength} connection hops`
         );
       }
-      // bridging to Duality
+      // bridging to native chain
       if (from) {
         if (!from.chain.chain_id) {
           throw new Error('Source Chain not found');
@@ -131,13 +138,13 @@ export default function BridgeCard({
             },
           });
           // todo: add streaming updates to UI here
-          // display wait for transaction to be confirmed on Duality Chain
+          // display wait for transaction to be confirmed on native Chain
           onSuccess?.();
         } catch {
           // handled error with toast notifications
         }
       }
-      // bridging from Duality
+      // bridging from native chain
       else if (to) {
         if (!to.chain.chain_id) {
           throw new Error('Destination Chain not found');
@@ -180,8 +187,8 @@ export default function BridgeCard({
     [
       chainAddressFrom,
       chainAddressTo,
-      chainFrom.chain_id,
-      chainTo.chain_id,
+      chainFrom,
+      chainTo,
       onSuccess,
       from,
       ibcOpenTransfers,
@@ -229,202 +236,209 @@ export default function BridgeCard({
   }, [value, chainFeesFrom, chainFeesTo]);
 
   return (
-    <div className={['bridge-card', className].filter(Boolean).join(' ')}>
-      <form onSubmit={bridgeTokens}>
-        <fieldset className="col gap-lg" disabled={isValidatingBridgeTokens}>
-          <div className="flex path-box">
-            <div className="path-box__grid">
-              <div className="col">
-                <div className="px-4 py-sm text-muted">From</div>
-              </div>
-              <div className="col">
-                <div className="row py-sm flex gap-3">
-                  <div className="col">
-                    <img
-                      src={
-                        chainFrom.logo_URIs?.svg ??
-                        chainFrom.logo_URIs?.png ??
-                        chainFrom.logo_URIs?.jpeg
-                      }
-                      className="logo"
-                      alt="logo"
-                    />
-                  </div>
-                  <div className="col">
-                    {chainFrom.pretty_name ?? chainFrom.chain_name}
-                  </div>
+    chainFrom &&
+    chainTo && (
+      <div className={['bridge-card', className].filter(Boolean).join(' ')}>
+        <form onSubmit={bridgeTokens}>
+          <fieldset
+            className="col gap-lg"
+            disabled={
+              !(token && chainAddressFrom && chainAddressTo) &&
+              isValidatingBridgeTokens
+            }
+          >
+            <div className="flex path-box">
+              <div className="path-box__grid">
+                <div className="col">
+                  <div className="px-4 py-sm text-muted">From</div>
                 </div>
-              </div>
-              {token && (
-                <div className="col px-4 py-sm">
-                  {chainFrom === dualityChain ? (
-                    <LocalChainReserves token={token} />
-                  ) : (
-                    <RemoteChainReserves
-                      chain={chainFrom}
-                      token={token}
-                      address={chainAddressFrom}
-                    />
-                  )}
-                </div>
-              )}
-              <div className="col">
-                <div className="px-4 py-sm text-muted">To</div>
-              </div>
-              <div className="col">
-                <div className="row py-sm flex gap-3">
-                  <div className="col">
-                    <img
-                      src={
-                        chainTo.logo_URIs?.svg ??
-                        chainTo.logo_URIs?.png ??
-                        chainTo.logo_URIs?.jpeg
-                      }
-                      className="logo"
-                      alt="logo"
-                    />
-                  </div>
-                  <div className="col">
-                    {chainTo.pretty_name ?? chainTo.chain_name}
+                <div className="col">
+                  <div className="row py-sm flex gap-3">
+                    <div className="col">
+                      <img
+                        src={
+                          chainFrom.logo_URIs?.svg ??
+                          chainFrom.logo_URIs?.png ??
+                          chainFrom.logo_URIs?.jpeg
+                        }
+                        className="logo"
+                        alt="logo"
+                      />
+                    </div>
+                    <div className="col">
+                      {chainFrom.pretty_name ?? chainFrom.chain_name}
+                    </div>
                   </div>
                 </div>
-              </div>
-              {token && (
-                <div className="col px-4 py-sm">
-                  {chainTo === dualityChain ? (
-                    <LocalChainReserves token={token} />
-                  ) : (
-                    <RemoteChainReserves
-                      chain={chainTo}
-                      token={token}
-                      address={chainAddressTo}
-                    />
-                  )}
+                {token && (
+                  <div className="col px-4 py-sm">
+                    {chainFrom === nativeChain ? (
+                      <LocalChainReserves token={token} />
+                    ) : (
+                      <RemoteChainReserves
+                        chain={chainFrom}
+                        token={token}
+                        address={chainAddressFrom}
+                      />
+                    )}
+                  </div>
+                )}
+                <div className="col">
+                  <div className="px-4 py-sm text-muted">To</div>
                 </div>
-              )}
+                <div className="col">
+                  <div className="row py-sm flex gap-3">
+                    <div className="col">
+                      <img
+                        src={
+                          chainTo.logo_URIs?.svg ??
+                          chainTo.logo_URIs?.png ??
+                          chainTo.logo_URIs?.jpeg
+                        }
+                        className="logo"
+                        alt="logo"
+                      />
+                    </div>
+                    <div className="col">
+                      {chainTo.pretty_name ?? chainTo.chain_name}
+                    </div>
+                  </div>
+                </div>
+                {token && (
+                  <div className="col px-4 py-sm">
+                    {chainTo === nativeChain ? (
+                      <LocalChainReserves token={token} />
+                    ) : (
+                      <RemoteChainReserves
+                        chain={chainTo}
+                        token={token}
+                        address={chainAddressTo}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="row px-4 pb-3">
+                <div className="col">
+                  <TokenPicker
+                    className="mt-sm gutter-l-3"
+                    value={token}
+                    exclusion={token}
+                    onChange={setToken}
+                    showChain={false}
+                    disabled
+                  />
+                </div>
+                <div className="col flex flex-centered">
+                  <NumberInput
+                    type="text"
+                    className={[
+                      'col flex ibc-transfer-value h3 my-sm',
+                      !Number(value) && 'input--zero',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    value={value}
+                    placeholder="0"
+                    onChange={setValue}
+                    onClick={selectAll}
+                    disabled={!token}
+                    innerRef={inputRef}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="row px-4 pb-3">
-              <div className="col">
-                <TokenPicker
-                  className="mt-sm gutter-l-3"
-                  value={token}
-                  exclusion={token}
-                  onChange={setToken}
-                  showChain={false}
+            <div className="row gap-md">
+              <div className="flex col">
+                <button
+                  type="button"
                   disabled
-                />
-              </div>
-              <div className="col flex flex-centered">
-                <NumberInput
-                  type="text"
-                  className={[
-                    'col flex ibc-transfer-value h3 my-sm',
-                    !Number(value) && 'input--zero',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  value={value}
-                  placeholder="0"
-                  onChange={setValue}
-                  onClick={selectAll}
-                  disabled={!token}
-                  innerRef={inputRef}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="row gap-md">
-            <div className="flex col">
-              <button
-                type="button"
-                disabled
-                className="button-wallet col gap-3"
-              >
-                <div className="row gap-md">
-                  <div className="col">
-                    <img src={keplrLogoURI} className="logo" alt="logo" />
+                  className="button-wallet col gap-3"
+                >
+                  <div className="row gap-md">
+                    <div className="col">
+                      <img src={keplrLogoURI} className="logo" alt="logo" />
+                    </div>
+                    <div className="col">Source</div>
                   </div>
-                  <div className="col">Source</div>
-                </div>
-                <div className="text-truncate text-muted">
-                  {chainAddressFrom ? (
-                    formatAddress(chainAddressFrom, 18)
-                  ) : (
-                    <span className="text-secondary">
-                      {chainAddressFromIsValidating
-                        ? 'Connecting...'
-                        : 'Unconnected'}
-                    </span>
-                  )}
-                </div>
-              </button>
-            </div>
-            <div className="flex col">
-              <button
-                type="button"
-                disabled
-                className="button-wallet col gap-3"
-              >
-                <div className="row gap-md">
-                  <div className="col">
-                    <img src={keplrLogoURI} className="logo" alt="logo" />
+                  <div className="text-truncate text-muted">
+                    {chainAddressFrom ? (
+                      formatAddress(chainAddressFrom, 18)
+                    ) : (
+                      <span className="text-secondary">
+                        {chainAddressFromIsValidating
+                          ? 'Connecting...'
+                          : 'Unconnected'}
+                      </span>
+                    )}
                   </div>
-                  <div className="col">Destination</div>
+                </button>
+              </div>
+              <div className="flex col">
+                <button
+                  type="button"
+                  disabled
+                  className="button-wallet col gap-3"
+                >
+                  <div className="row gap-md">
+                    <div className="col">
+                      <img src={keplrLogoURI} className="logo" alt="logo" />
+                    </div>
+                    <div className="col">Destination</div>
+                  </div>
+                  <div className="text-truncate text-muted">
+                    {chainAddressTo ? (
+                      formatAddress(chainAddressTo, 18)
+                    ) : (
+                      <span className="text-secondary">
+                        {chainAddressToIsValidating
+                          ? 'Connecting...'
+                          : 'Unconnected'}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              </div>
+            </div>
+            <div className="transaction-box my-sm p-4 col gap-md">
+              <div className="row">
+                <div className="col">Estimated Time</div>
+                <div className="col ml-auto">
+                  {from || to ? <>{chainTime ?? '...'}</> : null}
                 </div>
-                <div className="text-truncate text-muted">
-                  {chainAddressTo ? (
-                    formatAddress(chainAddressTo, 18)
-                  ) : (
-                    <span className="text-secondary">
-                      {chainAddressToIsValidating
-                        ? 'Connecting...'
-                        : 'Unconnected'}
-                    </span>
-                  )}
+              </div>
+              <div className="row">
+                <div className="col">Transfer Fee</div>
+                <div className="col ml-auto">
+                  {Number(value) ? (
+                    <>
+                      {chainFees ?? '...'} {(from || to)?.symbol}
+                    </>
+                  ) : null}
                 </div>
-              </button>
-            </div>
-          </div>
-          <div className="transaction-box my-sm p-4 col gap-md">
-            <div className="row">
-              <div className="col">Estimated Time</div>
-              <div className="col ml-auto">
-                {from || to ? <>{chainTime ?? '...'}</> : null}
+              </div>
+              <div className="row">
+                <div className="col">Total (est)</div>
+                <div className="col ml-auto">
+                  {Number(value) ? (
+                    <>
+                      {formatAmount(value, { useGrouping: true })}{' '}
+                      {(from || to)?.symbol}
+                    </>
+                  ) : null}
+                </div>
               </div>
             </div>
-            <div className="row">
-              <div className="col">Transfer Fee</div>
-              <div className="col ml-auto">
-                {Number(value) ? (
-                  <>
-                    {chainFees ?? '...'} {(from || to)?.symbol}
-                  </>
-                ) : null}
-              </div>
-            </div>
-            <div className="row">
-              <div className="col">Total (est)</div>
-              <div className="col ml-auto">
-                {Number(value) ? (
-                  <>
-                    {formatAmount(value, { useGrouping: true })}{' '}
-                    {(from || to)?.symbol}
-                  </>
-                ) : null}
-              </div>
-            </div>
-          </div>
-          {token && (
             <BridgeButton
               chainFrom={chainFrom}
               chainTo={chainTo}
               token={token}
               value={value}
             />
-          )}
-        </fieldset>
-      </form>
-    </div>
+          </fieldset>
+        </form>
+      </div>
+    )
   );
 }
 

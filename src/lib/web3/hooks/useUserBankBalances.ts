@@ -7,17 +7,15 @@ import { Coin } from '@cosmjs/proto-signing';
 
 import subscriber from '../subscriptionManager';
 import { Token, getDenomAmount } from '../utils/tokens';
-import useTokens, {
-  matchTokenByDenom,
-  matchTokens,
-  useTokensWithIbcInfo,
-} from './useTokens';
 import { useCosmosRestClientPromise } from '../clients/restClients';
 import { useWeb3 } from '../useWeb3';
 import { isDexShare } from '../utils/shares';
 import { MessageActionEvent, TendermintTxData } from '../events';
 import { CoinTransferEvent, mapEventAttributes } from '../utils/events';
 import { useFetchAllPaginatedPages } from './useQueries';
+import { Asset } from '@chain-registry/types';
+
+import { useTokenByDenom } from './useDenomClients';
 
 // fetch all the user's bank balance
 function useAllUserBankBalances(): UseQueryResult<Coin[]> {
@@ -135,25 +133,38 @@ function useUserChainDenomBalances(): UseQueryResult<Coin[]> {
   } as UseQueryResult<Coin[]>;
 }
 
-// define TokenCoin to represent a Coin paired with its chain-registry token
+// define AssetCoin to represent a Coin paired with its chain-registry asset
+export interface AssetCoin extends Coin {
+  asset: Asset;
+}
+// define TokenCoin for legacy type: Coin & { token: Asset & { chain: Chain } }
 export interface TokenCoin extends Coin {
   token: Token;
 }
 export function useUserBankBalances(): UseQueryResult<TokenCoin[]> {
   const result = useUserChainDenomBalances();
 
+  const { data: tokenByDenom } = useTokenByDenom(
+    useMemo(() => result.data?.map((coin) => coin.denom), [result.data])
+  );
+
   // add token information to balances
-  const allTokensWithIBC = useTokensWithIbcInfo(useTokens());
   const data = useMemo<TokenCoin[] | undefined>(() => {
     // check all known tokens with IBC context for matching balance denoms
-    return result.data?.reduce<TokenCoin[]>((result, balance) => {
-      const token = allTokensWithIBC.find(matchTokenByDenom(balance.denom));
-      if (token) {
-        result.push({ token, ...balance });
+    return result.data?.reduce<TokenCoin[]>((result, { amount, denom }) => {
+      try {
+        const token = tokenByDenom?.get(denom);
+        if (!token) {
+          throw new Error(`Asset not found for denom: ${denom}`);
+        }
+        // return token with the user's specific denom as base
+        result.push({ token, amount, denom });
+      } catch {
+        // ignore error about not finding denom
       }
       return result;
     }, []);
-  }, [result.data, allTokensWithIBC]);
+  }, [result.data, tokenByDenom]);
 
   return {
     ...result,
@@ -161,27 +172,24 @@ export function useUserBankBalances(): UseQueryResult<TokenCoin[]> {
   } as UseQueryResult<TokenCoin[]>;
 }
 
-// note: if dealing with IBC tokens, ensure Token has IBC context
-//       (by fetching it with useTokensWithIbcInfo)
+// find bank balance of a specific denom
 function useUserBankBalance(
-  token: Token | undefined
+  denom: string | undefined
 ): UseQueryResult<TokenCoin> {
   const { data: balances, ...rest } = useUserBankBalances();
   const balance = useMemo(() => {
     // find the balance that matches the token
-    return (
-      token && balances?.find((balance) => matchTokens(balance.token, token))
-    );
-  }, [balances, token]);
+    return balances?.find((balance) => balance.denom === denom);
+  }, [balances, denom]);
   return { data: balance, ...rest } as UseQueryResult<TokenCoin>;
 }
 
 // the bank balances may be in denoms that are neither base or display units
 // convert them to base or display units with the following handler functions
 export function useBankBalanceBaseAmount(
-  token: Token | undefined
+  denom: string | undefined
 ): UseQueryResult<string> {
-  const { data: balance, ...rest } = useUserBankBalance(token);
+  const { data: balance, ...rest } = useUserBankBalance(denom);
   const balanceAmount = useMemo(() => {
     return (
       balance &&
@@ -196,19 +204,20 @@ export function useBankBalanceBaseAmount(
   return { data: balanceAmount, ...rest } as UseQueryResult<string>;
 }
 export function useBankBalanceDisplayAmount(
-  token: Token | undefined
+  denom: string | undefined
 ): UseQueryResult<string> {
-  const { data: balance, ...rest } = useUserBankBalance(token);
+  const { data: balance, isLoading, ...rest } = useUserBankBalance(denom);
   const balanceAmount = useMemo(() => {
-    return (
-      balance &&
-      getDenomAmount(
-        balance.token,
-        balance.amount,
-        balance.denom,
-        balance.token.display
-      )
-    );
-  }, [balance]);
+    return balance
+      ? getDenomAmount(
+          balance.token,
+          balance.amount,
+          balance.denom,
+          balance.token.display
+        )
+      : !isLoading
+      ? '0'
+      : undefined;
+  }, [isLoading, balance]);
   return { data: balanceAmount, ...rest } as UseQueryResult<string>;
 }

@@ -6,10 +6,7 @@ import { Coin } from '@cosmjs/proto-signing';
 import { PoolMetadata } from '@duality-labs/dualityjs/types/codegen/duality/dex/pool_metadata';
 import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
 import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
-import {
-  QueryGetPoolMetadataRequest,
-  QueryPoolRequest,
-} from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+import { QueryGetPoolMetadataRequest } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import {
@@ -19,17 +16,14 @@ import {
 import { useUserDeposits } from './useUserDeposits';
 import { useSimplePrice } from '../../tokenPrices';
 
-import { getPairID } from '../utils/pairs';
 import { priceToTickIndex, tickIndexToPrice } from '../utils/ticks';
 import {
-  Token,
   TokenIdPair,
   TokenPair,
   getBaseDenomAmount,
-  getTokenId,
   resolveTokenIdPair,
 } from '../utils/tokens';
-import useTokens, { useTokensWithIbcInfo } from './useTokens';
+import { useTokenByDenom } from './useDenomClients';
 import { useTokenPairMapLiquidity } from '../../web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from './useTokenPairs';
 import { useUserDexDenomBalances } from './useUserBankBalances';
@@ -301,27 +295,34 @@ function useUserDepositsTotalReserves(
 ): CombinedUseQueries<UserReservesTotalReserves[]> {
   const restClientPromise = useDexRestClientPromise();
   const { data: userPairDeposits } = useUserDeposits(tokenPair);
+  const { data: userPoolMetadata } = useUserPoolMetadata();
 
   // for each specific amount of userDeposits, fetch the totalShares that match
   const memoizedData = useRef<UserReservesTotalReserves[]>();
   const result = useQueries({
     queries: useMemo(() => {
       return (userPairDeposits || []).flatMap((deposit) => {
-        const { pairID, fee, sharesOwned } = deposit;
-        if (Number(sharesOwned) > 0) {
+        if (Number(deposit.sharesOwned) > 0) {
           // query pool reserves
-          const params: QueryPoolRequest = {
-            pairID: getPairID(pairID.token0, pairID.token1),
-            tickIndex: deposit.centerTickIndex,
-            fee,
-          };
+          const poolId = userPoolMetadata?.find((metadata) => {
+            return (
+              metadata.pairID.token0 === deposit.pairID.token0 &&
+              metadata.pairID.token1 === deposit.pairID.token1 &&
+              metadata.tick.equals(deposit.centerTickIndex) &&
+              metadata.fee.equals(deposit.fee)
+            );
+          })?.ID;
+          if (!poolId) {
+            return [];
+          }
+
           return {
-            queryKey: ['duality.dex.pool', params, sharesOwned],
+            queryKey: ['duality.dex.pool', poolId, deposit.sharesOwned],
             queryFn: async () => {
               // we use an RPC call here because the LCD endpoint always 404s
               const client = await restClientPromise;
               return client.dex
-                .pool(params)
+                .poolByID({ poolID: poolId })
                 .then(({ pool }): UserReservesTotalReserves => {
                   return {
                     deposit,
@@ -335,7 +336,7 @@ function useUserDepositsTotalReserves(
                   // assume the result was a 404: there is 0 liquidity
                   return {
                     deposit,
-                    params,
+                    poolId,
                     totalReserves: { reserves0: '0', reserves1: '0' },
                   };
                 });
@@ -345,7 +346,7 @@ function useUserDepositsTotalReserves(
         }
         return [];
       });
-    }, [restClientPromise, userPairDeposits]),
+    }, [restClientPromise, userPairDeposits, userPoolMetadata]),
     combine(results) {
       // only process data from successfully resolved queries
       const data = results.flatMap((result) => result.data ?? []);
@@ -455,50 +456,22 @@ export function useEstimatedUserReserves(
     error,
   } = useUserIndicativeReserves(tokenPair);
 
-  const allTokens = useTokensWithIbcInfo(useTokens());
-  const allTokensByIdMap = useMemo<Map<string, Token>>(() => {
-    return allTokens.reduce<Map<string, Token>>((acc, token) => {
-      const id = getTokenId(token);
-      if (id && !acc.has(id)) {
-        acc.set(id, token);
-      }
-      return acc;
-    }, new Map());
-  }, [allTokens]);
-
-  const tokenByIdMap = useMemo<Map<string, Token>>(() => {
-    const searchedTokenStrings: string[] = [];
-    return (userIndicatveReserves || []).reduce<Map<string, Token>>(
-      (acc, indicateReserves) => {
-        for (const tokenId of Object.values(indicateReserves.deposit.pairID)) {
-          if (!searchedTokenStrings.includes(tokenId)) {
-            const foundToken = allTokensByIdMap.get(tokenId);
-            if (foundToken) {
-              acc.set(tokenId, foundToken);
-            }
-            searchedTokenStrings.push(tokenId);
-          }
-        }
-        return acc;
-      },
-      new Map()
-    );
-  }, [userIndicatveReserves, allTokensByIdMap]);
-
-  const tokenList = useMemo(
-    () => Array.from(tokenByIdMap.values()),
-    [tokenByIdMap]
+  const { data: userTokensByDenom } = useTokenByDenom(
+    userIndicatveReserves?.flatMap(({ deposit }) => [
+      deposit.pairID.token0,
+      deposit.pairID.token1,
+    ])
   );
+  const tokenList = useMemo(() => {
+    return Array.from(userTokensByDenom?.values() ?? []);
+  }, [userTokensByDenom]);
 
   const { data: tokenPrices } = useSimplePrice(tokenList);
 
-  const tokenPriceByIdMap = useMemo(() => {
+  const tokenPriceByDenomMap = useMemo(() => {
     return tokenList.reduce<Map<string, number | undefined>>(
       (acc, token, index) => {
-        const tokenId = getTokenId(token);
-        if (tokenId) {
-          acc.set(tokenId, tokenPrices[index]);
-        }
+        acc.set(token.base, tokenPrices[index]);
         return acc;
       },
       new Map()
@@ -507,18 +480,19 @@ export function useEstimatedUserReserves(
 
   // using the current price, make assumptions about the current reserves
   return useMemo(() => {
-    if (Object.values(tokenPriceByIdMap).every((price = 0) => price > 0)) {
+    // allow zero prices, will equal zero values
+    if (userTokensByDenom) {
       const userReserves = userIndicatveReserves?.flatMap<UserValuedReserves>(
         ({ deposit, indicativeReserves: { reserves0, reserves1 } }) => {
-          const token0 = tokenByIdMap.get(deposit.pairID.token0);
-          const token1 = tokenByIdMap.get(deposit.pairID.token1);
-          const tokenPrice0 = tokenPriceByIdMap.get(deposit.pairID.token0);
-          const tokenPrice1 = tokenPriceByIdMap.get(deposit.pairID.token1);
-          if (token0 && token1 && tokenPrice0 && tokenPrice1) {
+          const token0 = userTokensByDenom.get(deposit.pairID.token0);
+          const token1 = userTokensByDenom.get(deposit.pairID.token1);
+          const tokenPrice0 = tokenPriceByDenomMap.get(deposit.pairID.token0);
+          const tokenPrice1 = tokenPriceByDenomMap.get(deposit.pairID.token1);
+          if (token0 && token1) {
             const display0 = getBaseDenomAmount(token0, 1) || 1;
             const display1 = getBaseDenomAmount(token1, 1) || 1;
-            const basePrice0 = new BigNumber(tokenPrice0).dividedBy(display0);
-            const basePrice1 = new BigNumber(tokenPrice1).dividedBy(display1);
+            const basePrice0 = BigNumber(tokenPrice0 || 0).dividedBy(display0);
+            const basePrice1 = BigNumber(tokenPrice1 || 0).dividedBy(display1);
             const centerTickIndex = priceToTickIndex(
               basePrice1.div(basePrice0)
             );
@@ -559,8 +533,8 @@ export function useEstimatedUserReserves(
       error,
     };
   }, [
-    tokenByIdMap,
-    tokenPriceByIdMap,
+    userTokensByDenom,
+    tokenPriceByDenomMap,
     userIndicatveReserves,
     isFetching,
     error,

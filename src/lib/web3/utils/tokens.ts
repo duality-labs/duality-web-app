@@ -2,8 +2,6 @@ import BigNumber from 'bignumber.js';
 import { Asset, Chain } from '@chain-registry/types';
 import { sha256 } from '@cosmjs/crypto';
 
-const { REACT_APP__CHAIN_ID = '' } = import.meta.env;
-
 export interface Token extends Asset {
   // each asset should have exactly one chain parent
   chain: Chain;
@@ -32,6 +30,11 @@ export function resolveTokenIdPair(
 
 export const ibcDenomRegex = /^ibc\/[0-9A-Fa-f]+$/;
 export function getIbcBaseDenom(token: Token | undefined): string | undefined {
+  // we store specific IBC denoms in base string for user balance tokens
+  // todo: this workaround should be fixed
+  if (token && ibcDenomRegex.test(token.base)) {
+    return token.base;
+  }
   const ibcDenom = token?.ibc?.source_denom;
   // return the source IBC denom if it is found
   if (ibcDenom) {
@@ -43,19 +46,15 @@ export function getIbcBaseDenom(token: Token | undefined): string | undefined {
   }
 }
 
-// the token ID is what is the Duality chain uses as the identifying string of its denoms
+// the token ID is what is the native chain uses as the identifying string of its denoms
 // it is basically the base denom in local or IBC string format
-export function getTokenId(token: Token | undefined): string | undefined {
-  // return IBC base denom or the local token base denom as the token identifier
-  if (token?.ibc) {
-    return getIbcBaseDenom(token);
-  } else if (token?.chain.chain_id === REACT_APP__CHAIN_ID) {
-    return token?.base;
-  }
+export function getTokenId(asset: Asset | undefined): string | undefined {
+  // use asset base denom as the asset identifier
+  return asset?.base;
 }
 
 export function getDenomAmount(
-  token: Token,
+  token: Asset,
   amount: BigNumber.Value,
   // default to minimum denomination output
   inputDenom: string = token.denom_units
@@ -106,7 +105,7 @@ export function getDenomAmount(
 }
 
 export function getDisplayDenomAmount(
-  token: Token,
+  token: Asset,
   amount: BigNumber.Value,
   options: {
     fractionalDigits?: number;
@@ -118,7 +117,7 @@ export function getDisplayDenomAmount(
 }
 
 export function getBaseDenomAmount(
-  token: Token,
+  token: Asset,
   amount: BigNumber.Value,
   {
     fractionalDigits = 0,
@@ -137,7 +136,7 @@ export function getBaseDenomAmount(
 }
 
 export function roundToBaseUnit(
-  token: Token,
+  token: Asset,
   amount: BigNumber.Value,
   roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN
 ): string | undefined {
@@ -151,7 +150,7 @@ export function roundToBaseUnit(
 
 // get how much a utoken amount is worth in USD
 export function getTokenValue(
-  token: Token,
+  token: Asset,
   amount: BigNumber.Value | undefined,
   price: number | undefined
 ): number | undefined {

@@ -161,12 +161,16 @@ function getEditedPositionTick(
 export default function PoolManagement({
   tokenA,
   tokenB,
+  denomA = tokenA?.base,
+  denomB = tokenB?.base,
   setTokenA,
   setTokenB,
   setTokens,
 }: {
   tokenA: Token | undefined;
   tokenB: Token | undefined;
+  denomA?: string;
+  denomB?: string;
   setTokenA: (tokenA: Token | undefined) => void;
   setTokenB: (tokenB: Token | undefined) => void;
   setTokens: ([tokenA, tokenB]: [Token?, Token?]) => void;
@@ -263,7 +267,7 @@ export default function PoolManagement({
   }, [isValueAZero, isValueBZero]);
 
   const [{ isValidating: isValidatingDeposit }, sendDepositRequest] =
-    useDeposit([tokenA, tokenB]);
+    useDeposit([denomA, denomB]);
 
   const [maybeUserTicks, setUserTicksUnprotected] = useState<TickGroup>([]);
   // ensure that setting of user ticks never goes outside our prescribed bounds
@@ -361,8 +365,8 @@ export default function PoolManagement({
 
       if (feeType?.fee) {
         await sendDepositRequest(
-          tokenA,
-          tokenB,
+          denomA,
+          denomB,
           new BigNumber(feeType.fee),
           normalizedTicks
         );
@@ -371,8 +375,8 @@ export default function PoolManagement({
     [
       values,
       valuesValid,
-      tokenA,
-      tokenB,
+      denomA,
+      denomB,
       feeType,
       userTicks,
       sendDepositRequest,
@@ -780,8 +784,8 @@ export default function PoolManagement({
     feeType,
   ]);
 
-  const { data: balanceTokenA } = useBankBalanceBaseAmount(tokenA);
-  const { data: balanceTokenB } = useBankBalanceBaseAmount(tokenB);
+  const { data: balanceTokenA } = useBankBalanceBaseAmount(denomA);
+  const { data: balanceTokenB } = useBankBalanceBaseAmount(denomB);
 
   // compare with BigNumber to avoid float imprecision
   const hasSufficientFundsA =
@@ -800,16 +804,21 @@ export default function PoolManagement({
     }
   }, [tokenA, tokenB]);
 
+  const denomPair = useMemo<[string, string] | undefined>(() => {
+    if (denomA && denomB) {
+      return [denomA, denomB];
+    }
+  }, [denomA, denomB]);
+
   const [{ isValidating: isValidatingEdit }, sendEditRequest] =
     useEditLiquidity();
 
-  const invertedTokenOrder =
-    !!tokenA && !!tokenB && guessInvertedOrder([tokenA, tokenB]);
+  const invertedTokenOrder = !!denomPair && guessInvertedOrder(denomPair);
 
   const [[viewableMinIndex, viewableMaxIndex] = [], setViewableIndexes] =
     useState<[number, number] | undefined>();
 
-  const { data: userReserves } = useAccurateUserReserves(tokenPair);
+  const { data: userReserves } = useAccurateUserReserves(denomPair);
 
   // add token information to user reserves
   // note: this could be refactored away if we didn't need token information
@@ -822,7 +831,13 @@ export default function PoolManagement({
     return (
       token0 &&
       token1 &&
-      userReserves?.map((userReserve) => ({ ...userReserve, token0, token1 }))
+      userReserves?.map((userReserve) => ({
+        ...userReserve,
+        token0,
+        denom0: token0Address,
+        token1,
+        denom1: token1Address,
+      }))
     );
   }, [userReserves, tokenPair]);
 
@@ -979,6 +994,7 @@ export default function PoolManagement({
               }}
               onTokenChanged={setTokenA}
               token={tokenA}
+              denom={denomA}
               value={inputValueA}
               exclusion={tokenB}
             />
@@ -1002,6 +1018,7 @@ export default function PoolManagement({
               }}
               onTokenChanged={setTokenB}
               token={tokenB}
+              denom={denomB}
               value={inputValueB}
               exclusion={tokenA}
             />

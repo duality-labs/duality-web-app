@@ -1,5 +1,5 @@
 import { Link, useMatch, useNavigate } from 'react-router-dom';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   Actions,
   MyPoolsTableCard,
@@ -13,7 +13,7 @@ import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
 import './MyLiquidity.scss';
 import useUserTokens from '../../lib/web3/hooks/useUserTokens';
 import { Token } from '../../lib/web3/utils/tokens';
-import { getTokenPathPart } from '../../lib/web3/hooks/useTokens';
+import { useGetTokenPathPart } from '../../lib/web3/hooks/useTokens';
 
 export default function MyLiquidity() {
   return (
@@ -120,14 +120,32 @@ function Tables() {
     [navigate]
   );
 
+  const getTokenPathPart = useGetTokenPathPart();
+
   const goToPositionManagementPage = useCallback(
     ([token0, token1]: [Token, Token]) => {
       return navigate(
         `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
       );
     },
-    [navigate]
+    [navigate, getTokenPathPart]
   );
+
+  const userPositionActions: Actions = useMemo(() => {
+    return {
+      manage: {
+        title: 'Manage',
+        className: 'button-light m-0',
+        action: ({ navigate, token0, token1 }) => {
+          return navigate(
+            `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(
+              token1
+            )}/edit`
+          );
+        },
+      },
+    };
+  }, [getTokenPathPart]);
 
   return (
     <div className="row flex gapx-4 gapy-5 flow-wrap">
@@ -165,15 +183,3 @@ function Tables() {
     </div>
   );
 }
-
-const userPositionActions: Actions = {
-  manage: {
-    title: 'Manage',
-    className: 'button-light m-0',
-    action: ({ navigate, token0, token1 }) => {
-      return navigate(
-        `/pools/${getTokenPathPart(token0)}/${getTokenPathPart(token1)}/edit`
-      );
-    },
-  },
-};
