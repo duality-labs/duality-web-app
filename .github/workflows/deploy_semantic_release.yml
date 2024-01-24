@@ -106,9 +106,9 @@ jobs:
       - name: Run post-install scripts
         run: npm rebuild && npm run prepare --if-present
 
-      # run build with .env.development file (instead of .env.production)
+      # run build with .env.testnet file (instead of .env.production)
       - name: Build
-        run: npm run build -- --mode development
+        run: npm run build -- --mode testnet
         env:
           REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
 

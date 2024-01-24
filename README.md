@@ -61,4 +61,4 @@ https://github.com/neutron-org/neutron/releases
 
 ## Deployed At
 
-Current build of `main` should be available at https://app.dev.duality.xyz
+Current build of `main` should be available at https://app.testnet.duality.xyz
