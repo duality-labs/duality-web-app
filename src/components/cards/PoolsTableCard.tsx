@@ -193,8 +193,8 @@ export function MyPoolsTableCard<T extends string | number>({
   const { data: userValuedReserves } = useEstimatedUserReserves();
   const { data: tokenByDenom } = useTokenByDenom(
     userValuedReserves?.flatMap(({ deposit }) => [
-      deposit.pairID.token0,
-      deposit.pairID.token1,
+      deposit.pair_id.token0,
+      deposit.pair_id.token1,
     ])
   );
   const tokenList = useMemo(
@@ -221,7 +221,7 @@ export function MyPoolsTableCard<T extends string | number>({
       };
     }>((map, userPosition) => {
       const { token0: token0Address, token1: token1Address } =
-        userPosition.deposit.pairID;
+        userPosition.deposit.pair_id;
       const pairID = getPairID(token0Address, token1Address);
       const token0 = tokenByDenom?.get(token0Address);
       const token1 = tokenByDenom?.get(token1Address);

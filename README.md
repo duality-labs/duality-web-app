@@ -2,14 +2,14 @@
 
 The code for the Duality front-end web app.
 
-This version of the front end is intended to work with the release of the backend that is noted in the [@duality-labs/dualityjs](https://www.npmjs.com/package/@duality-labs/dualityjs) dependency in package.json
+This version of the front end is intended to work with the release of the backend that is noted in the [@duality-labs/neutronjs](https://www.npmjs.com/package/@duality-labs/neutronjs) dependency in package.json
 
 ## Setting up the dev environment
 
 To set up the front end locally, connected to the current online testnet:
 
 1. `$ npm install`
-2. `$ npm start`
+2. `$ npm run dev`
 3. The dev site should become available at http://localhost:5173
 4. Install/enable [the Keplr extension](https://github.com/chainapsis/keplr-wallet)
    on your browser
@@ -22,11 +22,13 @@ To set up the front end locally, connected to the current online testnet:
 
 ### Connecting to a local backend with Docker Compose
 
-1. Clone the [Duality Docker services repo](https://github.com/duality-labs/dualityd-docker-services) locally
-   - this will also require cloning the main [Duality chain repo](https://github.com/duality-labs/duality)
-2. Run the `docker compose up` commands as recommended there to bring up a locally running chain with exposed RPC and API ports
-   - using the flag `--profile simulation` when composing this service should create a locally running chain cluster with simulated trading activity: this can help provide mock data for UI development
+1. Follow the instructions for [Neutron Cosmopark local development](https://docs.neutron.org/neutron/build-and-run/cosmopark/)
+   to start a local environment with the Neutron chain and some chaines you can
+   bridge to and from
+2. The env vars for specific IBC denoms in local development should have
+   examples in .env.development
 3. Edit your own .env.development.local file to change the backend ENV vars
+   (without adding changes to git because .local files are ignnored)
 
    - `REACT_APP__REST_API=http://localhost:1317`
    - `REACT_APP__RPC_API=http://localhost:26657`
@@ -40,7 +42,7 @@ To set up the front end locally, connected to the current online testnet:
 
 4. Start/restart your development server to use these new ENV vars:
 
-   - `npm start`
+   - `npm run dev`
 
    your development should now be making requests to your local backend
 
@@ -51,14 +53,14 @@ We use TypeScript types and API client code generated from the backend repo
 .proto files and the
 [@osmonauts/telescope](https://www.npmjs.com/package/@osmonauts/telescope)
 package to help define the shape of the API for the frontend code base.
-These files exist at https://github.com/duality-labs/dualityjs
+These files exist at https://github.com/duality-labs/neutronjs
 
 The current backend repository version to use with the frontend
 should be defined in the package.json file: here the version number of the
-https://github.com/duality-labs/dualityjs dependency should represent
+https://github.com/duality-labs/neutronjs dependency should represent
 the corresponding backend API version number to use, see
-https://github.com/duality-labs/duality/releases
+https://github.com/neutron-org/neutron/releases
 
 ## Deployed At
 
-Current build of `main` should be available at https://app.dev.duality.xyz
+Current build of `main` should be available at https://app.testnet.duality.xyz

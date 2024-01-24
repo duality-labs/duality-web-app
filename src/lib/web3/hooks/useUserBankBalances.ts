@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import { UseQueryResult, useInfiniteQuery } from '@tanstack/react-query';
-import { PageRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/base/query/v1beta1/pagination';
-import { QueryAllBalancesResponse } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
+import { PageRequest } from '@duality-labs/neutronjs/types/codegen/cosmos/base/query/v1beta1/pagination';
+import { QueryAllBalancesResponse } from '@duality-labs/neutronjs/types/codegen/cosmos/bank/v1beta1/query';
 import { Coin } from '@cosmjs/proto-signing';
 
 import subscriber from '../subscriptionManager';

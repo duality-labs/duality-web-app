@@ -1,24 +1,33 @@
 import useSWRImmutable from 'swr/immutable';
-import { duality, ibc, cosmos } from '@duality-labs/dualityjs';
+import { neutron, ibc, cosmos, packetforward } from '@duality-labs/neutronjs';
 import { useMemo } from 'react';
 
-type CreateDexClient = typeof duality.ClientFactory.createLCDClient;
+type CreateDexClient = typeof neutron.ClientFactory.createLCDClient;
 type CreateCosmosClient = typeof cosmos.ClientFactory.createLCDClient;
 type CreateIbcClient = typeof ibc.ClientFactory.createLCDClient;
+type CreatePacketClient = typeof packetforward.ClientFactory.createLCDClient;
 
-type DexRestClient = Awaited<ReturnType<CreateDexClient>>['duality'];
+type DexRestClient = Awaited<ReturnType<CreateDexClient>>['neutron'];
 type CosmosRestClient = Awaited<ReturnType<CreateCosmosClient>>['cosmos'];
 type IbcRestClient = Awaited<ReturnType<CreateIbcClient>>['ibc'];
+type PacketRestClient = Awaited<
+  ReturnType<CreatePacketClient>
+>['packetforward'];
 
-export type { DexRestClient, CosmosRestClient, IbcRestClient };
+export type {
+  DexRestClient,
+  CosmosRestClient,
+  IbcRestClient,
+  PacketRestClient,
+};
 
 const { REACT_APP__REST_API = '' } = import.meta.env;
 const defaultRestEndpoint: string = REACT_APP__REST_API;
 
 // create base getter helpers
 export async function getDexRestClient(restEndpoint = defaultRestEndpoint) {
-  const client = await duality.ClientFactory.createLCDClient({ restEndpoint });
-  return client.duality;
+  const client = await neutron.ClientFactory.createLCDClient({ restEndpoint });
+  return client.neutron;
 }
 export async function getCosmosRestClient(restEndpoint = defaultRestEndpoint) {
   const client = await cosmos.ClientFactory.createLCDClient({ restEndpoint });
@@ -27,6 +36,12 @@ export async function getCosmosRestClient(restEndpoint = defaultRestEndpoint) {
 export async function getIbcRestClient(restEndpoint = defaultRestEndpoint) {
   const client = await ibc.ClientFactory.createLCDClient({ restEndpoint });
   return client.ibc;
+}
+export async function getPacketRestClient(restEndpoint = defaultRestEndpoint) {
+  const client = await packetforward.ClientFactory.createLCDClient({
+    restEndpoint,
+  });
+  return client.packetforward;
 }
 
 // create LCD/REST client hooks from a cached base client
@@ -37,19 +52,23 @@ function useBaseRestClients(restEndpoint?: string) {
     return {
       ibc: await getIbcRestClient(restEndpoint),
       cosmos: await getCosmosRestClient(restEndpoint),
-      duality: await getDexRestClient(restEndpoint),
+      neutron: await getDexRestClient(restEndpoint),
+      packetforward: await getPacketRestClient(restEndpoint),
     };
   }).data;
 }
 
 export function useDexRestClient(restEndpoint?: string) {
-  return useBaseRestClients(restEndpoint)?.duality;
+  return useBaseRestClients(restEndpoint)?.neutron;
 }
 export function useCosmosRestClient(restEndpoint?: string) {
   return useBaseRestClients(restEndpoint)?.cosmos;
 }
 export function useIbcRestClient(restEndpoint?: string) {
   return useBaseRestClients(restEndpoint)?.ibc;
+}
+export function usePacketForwardRestClient(restEndpoint?: string) {
+  return useBaseRestClients(restEndpoint)?.packetforward;
 }
 
 // create promise hooks, useful for when clients are needed in cached queries
@@ -61,4 +80,7 @@ export function useCosmosRestClientPromise(restEndpoint?: string) {
 }
 export function useIbcRestClientPromise(restEndpoint?: string) {
   return useMemo(async () => getIbcRestClient(restEndpoint), [restEndpoint]);
+}
+export function usePacketForwardRestClientPromise(restEndpoint?: string) {
+  return useMemo(async () => getPacketRestClient(restEndpoint), [restEndpoint]);
 }

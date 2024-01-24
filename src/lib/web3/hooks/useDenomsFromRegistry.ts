@@ -8,7 +8,7 @@ import {
 } from '@chain-registry/client';
 import { ibcDenom, getIbcAssetPath } from '@chain-registry/utils';
 import { Asset, AssetList, Chain, IBCInfo } from '@chain-registry/types';
-import { DenomTrace } from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/transfer';
+import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
 const {
   REACT_APP__CHAIN_NAME = '',

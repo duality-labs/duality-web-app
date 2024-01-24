@@ -1,13 +1,13 @@
 import { useCallback, useState } from 'react';
 import BigNumber from 'bignumber.js';
-import { ibc } from '@duality-labs/dualityjs';
+import { ibc } from '@duality-labs/neutronjs';
 import { DeliverTxResponse, SigningStargateClient } from '@cosmjs/stargate';
 import { Chain } from '@chain-registry/types';
 import {
   MsgTransfer,
   MsgTransferResponse,
-} from '@duality-labs/dualityjs/types/codegen/ibc/applications/transfer/v1/tx';
-import { GetTxsEventRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/tx/v1beta1/service';
+} from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/tx';
+import { GetTxsEventRequest } from '@duality-labs/neutronjs/types/codegen/cosmos/tx/v1beta1/service';
 
 import {
   getCosmosRestClient,

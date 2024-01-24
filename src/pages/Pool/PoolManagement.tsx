@@ -145,11 +145,11 @@ function getEditedPositionTick(
         ? maybeTickDiff1.plus(reserves.reserves1 || 0)
         : maybeTickDiff0.plus(reserves.reserves0 || 0),
       tickIndexBToA:
-        (!invertedTokenOrder ? 1 : -1) * deposit.centerTickIndex.toNumber(),
+        (!invertedTokenOrder ? 1 : -1) * deposit.center_tick_index.toNumber(),
       priceBToA: tickIndexToPrice(
         !invertedTokenOrder
-          ? new BigNumber(deposit.centerTickIndex.toNumber())
-          : new BigNumber(deposit.centerTickIndex.toNumber()).negated()
+          ? new BigNumber(deposit.center_tick_index.toNumber())
+          : new BigNumber(deposit.center_tick_index.toNumber()).negated()
       ),
       fee: deposit.fee.toNumber(),
       tokenA: !invertedTokenOrder ? token0 : token1,
@@ -824,8 +824,8 @@ export default function PoolManagement({
   // note: this could be refactored away if we didn't need token information
   //       for converting denom amounts. but the conversion ability is helpful
   const userTokenReserves = useMemo(() => {
-    const token0Address = userReserves?.at(0)?.deposit.pairID.token0 ?? '';
-    const token1Address = userReserves?.at(0)?.deposit.pairID.token1 ?? '';
+    const token0Address = userReserves?.at(0)?.deposit.pair_id.token0 ?? '';
+    const token1Address = userReserves?.at(0)?.deposit.pair_id.token1 ?? '';
     const token0 = tokenPair?.find(matchTokenByDenom(token0Address));
     const token1 = tokenPair?.find(matchTokenByDenom(token1Address));
     return (
@@ -855,12 +855,18 @@ export default function PoolManagement({
           if (
             // check if the user's deposits have changed at all
             !(
-              deposit.pairID.token0 === updatedDeposit.pairID.token0 &&
-              deposit.pairID.token1 === updatedDeposit.pairID.token1 &&
-              deposit.sharesOwned === updatedDeposit.sharesOwned &&
-              deposit.lowerTickIndex.equals(updatedDeposit.lowerTickIndex) &&
-              deposit.centerTickIndex.equals(updatedDeposit.centerTickIndex) &&
-              deposit.upperTickIndex.equals(updatedDeposit.upperTickIndex) &&
+              deposit.pair_id.token0 === updatedDeposit.pair_id.token0 &&
+              deposit.pair_id.token1 === updatedDeposit.pair_id.token1 &&
+              deposit.shares_owned === updatedDeposit.shares_owned &&
+              deposit.lower_tick_index.equals(
+                updatedDeposit.lower_tick_index
+              ) &&
+              deposit.center_tick_index.equals(
+                updatedDeposit.center_tick_index
+              ) &&
+              deposit.upper_tick_index.equals(
+                updatedDeposit.upper_tick_index
+              ) &&
               deposit.fee.equals(updatedDeposit.fee)
             )
           ) {
@@ -1139,7 +1145,7 @@ export default function PoolManagement({
               : [userPosition.token0, userPosition.token1];
             const price = formatPrice(
               tickIndexToPrice(
-                new BigNumber(userPosition.deposit.centerTickIndex.toNumber())
+                new BigNumber(userPosition.deposit.center_tick_index.toNumber())
               ).toNumber()
             );
             const withdrawA = diffA.isLessThan(0) && (
@@ -1198,7 +1204,7 @@ export default function PoolManagement({
             );
             return (
               <Fragment
-                key={`${userPosition.deposit.centerTickIndex}-${userPosition.deposit.fee}`}
+                key={`${userPosition.deposit.center_tick_index}-${userPosition.deposit.fee}`}
               >
                 {depositA}
                 {depositB}

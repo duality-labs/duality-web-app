@@ -31,7 +31,7 @@ function createCustomEvent(
   eventType = 'message'
 ): WebSocketServerMessage {
   const eventData: { [key: string]: string } = {
-    module: 'duality',
+    module: 'neutron',
     ...attributes,
   };
   const { type = 'tendermint/event/Tx' } = options;
@@ -932,7 +932,7 @@ async function delay(ms: number) {
 
 function getMessageObject(actionName: string) {
   return {
-    'message.module': 'duality',
+    'message.module': 'neutron',
     'message.action': actionName,
   };
 }
@@ -946,7 +946,7 @@ function getTxObject(actionName: string) {
           events: [
             {
               attributes: [
-                { key: 'module', value: 'duality' },
+                { key: 'module', value: 'neutron' },
                 { key: 'action', value: actionName },
               ],
               type: 'message',

@@ -3,10 +3,10 @@ import Long from 'long';
 import { useMemo, useRef } from 'react';
 import { UseQueryResult, useQueries } from '@tanstack/react-query';
 import { Coin } from '@cosmjs/proto-signing';
-import { PoolMetadata } from '@duality-labs/dualityjs/types/codegen/duality/dex/pool_metadata';
-import { DepositRecord } from '@duality-labs/dualityjs/types/codegen/duality/dex/deposit_record';
-import { QuerySupplyOfRequest } from '@duality-labs/dualityjs/types/codegen/cosmos/bank/v1beta1/query';
-import { QueryGetPoolMetadataRequest } from '@duality-labs/dualityjs/types/codegen/duality/dex/query';
+import { PoolMetadata } from '@duality-labs/neutronjs/types/codegen/neutron/dex/pool_metadata';
+import { DepositRecord } from '@duality-labs/neutronjs/types/codegen/neutron/dex/deposit_record';
+import { QuerySupplyOfRequest } from '@duality-labs/neutronjs/types/codegen/cosmos/bank/v1beta1/query';
+import { QueryGetPoolMetadataRequest } from '@duality-labs/neutronjs/types/codegen/neutron/dex/query';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 
 import {
@@ -82,13 +82,13 @@ function useUserPoolMetadata(
             id: Long.fromNumber(id),
           };
           return {
-            queryKey: ['duality.dex.poolMetadata', id],
+            queryKey: ['neutron.dex.poolMetadata', id],
             queryFn: async (): Promise<PoolMetadata | null> => {
               const restClient = await restClientPromise;
               if (restClient) {
                 return restClient.dex
                   .poolMetadata(params)
-                  .then((response) => response.PoolMetadata);
+                  .then((response) => response.Pool_metadata);
               }
               return null;
             },
@@ -114,7 +114,7 @@ function useUserPoolMetadata(
         for (let i = 0; i < data.length; i++) {
           const a = memoizedData.current[i];
           const b = data[i];
-          if (!a.ID.equals(b.ID)) {
+          if (!a.id.equals(b.id)) {
             // an item has changed, update data
             memoizedData.current = data;
             break;
@@ -141,10 +141,10 @@ function useUserPoolMetadata(
       const [tokenA, tokenB] = tokenPairIDs;
       return result.data?.filter((metadata) => {
         return (
-          (metadata.pairID.token0 === tokenA &&
-            metadata.pairID.token1 === tokenB) ||
-          (metadata.pairID.token0 === tokenB &&
-            metadata.pairID.token1 === tokenA)
+          (metadata.pair_id.token0 === tokenA &&
+            metadata.pair_id.token1 === tokenB) ||
+          (metadata.pair_id.token0 === tokenB &&
+            metadata.pair_id.token1 === tokenA)
         );
       });
     }
@@ -256,9 +256,9 @@ function useUserDepositsTotalShares(
         const remainingUserPoolMetadataSet = Array.from(userPoolMetadataSet);
         for (const metadata of remainingUserPoolMetadataSet) {
           if (
-            metadata.pairID.token0 === deposit.pairID.token0 &&
-            metadata.pairID.token1 === deposit.pairID.token1 &&
-            metadata.tick.equals(deposit.centerTickIndex) &&
+            metadata.pair_id.token0 === deposit.pair_id.token0 &&
+            metadata.pair_id.token1 === deposit.pair_id.token1 &&
+            metadata.tick.equals(deposit.center_tick_index) &&
             metadata.fee.equals(deposit.fee)
           ) {
             // remove this value from the search set
@@ -273,7 +273,7 @@ function useUserDepositsTotalShares(
 
   const userDepositsTotalShares = useMemo(() => {
     return userDepositsWithPoolID?.map(({ deposit, metadata }) => {
-      const poolID = metadata?.ID.toNumber();
+      const poolID = metadata?.id.toNumber();
       const totalShares =
         poolID !== undefined
           ? totalSharesByPoolID.get(poolID)?.totalShares ?? '0'
@@ -302,33 +302,33 @@ function useUserDepositsTotalReserves(
   const result = useQueries({
     queries: useMemo(() => {
       return (userPairDeposits || []).flatMap((deposit) => {
-        if (Number(deposit.sharesOwned) > 0) {
+        if (Number(deposit.shares_owned) > 0) {
           // query pool reserves
           const poolId = userPoolMetadata?.find((metadata) => {
             return (
-              metadata.pairID.token0 === deposit.pairID.token0 &&
-              metadata.pairID.token1 === deposit.pairID.token1 &&
-              metadata.tick.equals(deposit.centerTickIndex) &&
+              metadata.pair_id.token0 === deposit.pair_id.token0 &&
+              metadata.pair_id.token1 === deposit.pair_id.token1 &&
+              metadata.tick.equals(deposit.center_tick_index) &&
               metadata.fee.equals(deposit.fee)
             );
-          })?.ID;
+          })?.id;
           if (!poolId) {
             return [];
           }
 
           return {
-            queryKey: ['duality.dex.pool', poolId, deposit.sharesOwned],
+            queryKey: ['neutron.dex.pool', poolId, deposit.shares_owned],
             queryFn: async () => {
               // we use an RPC call here because the LCD endpoint always 404s
               const client = await restClientPromise;
               return client.dex
-                .poolByID({ poolID: poolId })
+                .poolByID({ pool_id: poolId })
                 .then(({ pool }): UserReservesTotalReserves => {
                   return {
                     deposit,
                     totalReserves: {
-                      reserves0: pool?.lower_tick0.reservesMakerDenom || '0',
-                      reserves1: pool?.upper_tick1.reservesMakerDenom || '0',
+                      reserves0: pool?.lower_tick0.reserves_maker_denom || '0',
+                      reserves1: pool?.upper_tick1.reserves_maker_denom || '0',
                     },
                   };
                 })
@@ -397,7 +397,7 @@ function useUserIndicativeReserves(
           isEqualDeposit(data.deposit, deposit)
         );
         if (foundTotalShares && foundTotalReserves) {
-          const sharesOwned = new BigNumber(deposit.sharesOwned);
+          const sharesOwned = new BigNumber(deposit.shares_owned);
           const totalShares = new BigNumber(foundTotalShares.totalShares);
           const totalReserves = foundTotalReserves.totalReserves;
           const reserves0 = new BigNumber(totalReserves.reserves0);
@@ -405,8 +405,12 @@ function useUserIndicativeReserves(
           const userPercentageOfShares = totalShares.isZero()
             ? totalShares
             : sharesOwned.dividedBy(totalShares);
-          const lowerTickIndex = new BigNumber(deposit.lowerTickIndex.toInt());
-          const upperTickIndex = new BigNumber(deposit.upperTickIndex.toInt());
+          const lowerTickIndex = new BigNumber(
+            deposit.lower_tick_index.toInt()
+          );
+          const upperTickIndex = new BigNumber(
+            deposit.upper_tick_index.toInt()
+          );
           const allReservesAsToken0 = reserves0.plus(
             reserves1.multipliedBy(tickIndexToPrice(lowerTickIndex))
           );
@@ -458,8 +462,8 @@ export function useEstimatedUserReserves(
 
   const { data: userTokensByDenom } = useTokenByDenom(
     userIndicatveReserves?.flatMap(({ deposit }) => [
-      deposit.pairID.token0,
-      deposit.pairID.token1,
+      deposit.pair_id.token0,
+      deposit.pair_id.token1,
     ])
   );
   const tokenList = useMemo(() => {
@@ -484,10 +488,10 @@ export function useEstimatedUserReserves(
     if (userTokensByDenom) {
       const userReserves = userIndicatveReserves?.flatMap<UserValuedReserves>(
         ({ deposit, indicativeReserves: { reserves0, reserves1 } }) => {
-          const token0 = userTokensByDenom.get(deposit.pairID.token0);
-          const token1 = userTokensByDenom.get(deposit.pairID.token1);
-          const tokenPrice0 = tokenPriceByDenomMap.get(deposit.pairID.token0);
-          const tokenPrice1 = tokenPriceByDenomMap.get(deposit.pairID.token1);
+          const token0 = userTokensByDenom.get(deposit.pair_id.token0);
+          const token1 = userTokensByDenom.get(deposit.pair_id.token1);
+          const tokenPrice0 = tokenPriceByDenomMap.get(deposit.pair_id.token0);
+          const tokenPrice1 = tokenPriceByDenomMap.get(deposit.pair_id.token1);
           if (token0 && token1) {
             const display0 = getBaseDenomAmount(token0, 1) || 1;
             const display1 = getBaseDenomAmount(token1, 1) || 1;
@@ -498,7 +502,7 @@ export function useEstimatedUserReserves(
             );
             // decide if the reserves are of token0 or token1
             const depositIsLeftOfPrice = centerTickIndex.isLessThan(
-              deposit.centerTickIndex.toInt()
+              deposit.center_tick_index.toInt()
             );
             return depositIsLeftOfPrice
               ? {
@@ -558,10 +562,10 @@ function isEqualDeposit(a: DepositRecord, b: DepositRecord) {
   // compare by reference or compare by properties
   return (
     a === b ||
-    (a.sharesOwned === b.sharesOwned &&
-      a.pairID.token0 === b.pairID.token0 &&
-      a.pairID.token1 === b.pairID.token1 &&
-      a.centerTickIndex.equals(b.centerTickIndex) &&
+    (a.shares_owned === b.shares_owned &&
+      a.pair_id.token0 === b.pair_id.token0 &&
+      a.pair_id.token1 === b.pair_id.token1 &&
+      a.center_tick_index.equals(b.center_tick_index) &&
       a.fee.equals(b.fee))
   );
 }
@@ -600,12 +604,13 @@ export function useAccurateUserReserves(
           // note: reserve of token is in tickIndexTakerToMaker and needs to be
           //       converted into tickIndex1to0 to align with token0/token1 math
           const reserves0 =
-            liquidityMap0?.get(deposit.lowerTickIndex.toNumber()) || 0;
+            liquidityMap0?.get(deposit.lower_tick_index.toNumber()) || 0;
           const reserves1 =
-            liquidityMap1?.get(deposit.upperTickIndex.negate().toNumber()) || 0;
+            liquidityMap1?.get(deposit.upper_tick_index.negate().toNumber()) ||
+            0;
           // return in key, value format ready to create an array or map
           // use this format because it is easy to memoize and deep-compare
-          return [deposit.centerTickIndex.toNumber(), [reserves0, reserves1]];
+          return [deposit.center_tick_index.toNumber(), [reserves0, reserves1]];
         }
       );
     }, [liquidityMap0, liquidityMap1, userIndicativeReserves])
@@ -621,13 +626,13 @@ export function useAccurateUserReserves(
         ({ deposit, indicativeReserves }) => {
           // find state from tick liquidity
           const [reserves0, reserves1] = liquidityMap?.get(
-            deposit.centerTickIndex.toNumber()
+            deposit.center_tick_index.toNumber()
           ) || [0, 0];
           // compute user reserves from state to
           const reserves1As0 =
             reserves1 *
             tickIndexToPrice(
-              new BigNumber(deposit.centerTickIndex.toNumber())
+              new BigNumber(deposit.center_tick_index.toNumber())
             ).toNumber();
           const totalAs0 = reserves0 + reserves1As0;
           const percentage0 = totalAs0 > 0 ? reserves0 / totalAs0 : 0;
