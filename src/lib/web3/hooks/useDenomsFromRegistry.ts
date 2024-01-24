@@ -325,7 +325,7 @@ function useNativeAssetsClient() {
 // note: the client can do more than chainUtil which uses native chain context
 function useDefaultAssetsClient() {
   return useSWRImmutable(
-    ['asset-client'],
+    ['asset-client-one-hop'],
     async (): Promise<ChainRegistryClient | undefined> => {
       // get asset client for all assets within one-hop of the native chain
       const ibcNamePairs = await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME);

@@ -2,6 +2,8 @@ import AssetsTableCard from '../../components/cards/AssetsTableCard';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValue } from '../../lib/web3/hooks/useUserBankValues';
+import { useTokens } from '../../lib/web3/hooks/useDenomClients';
+import { useOneHopDenoms } from '../../lib/web3/hooks/useDenomsFromRegistry';
 
 import '../MyLiquidity/MyLiquidity.scss';
 
@@ -65,10 +67,11 @@ function HeroCard() {
 }
 
 function Tables() {
+  const { data: oneHopTokens } = useTokens(useOneHopDenoms());
   return (
     <div className="row flex gapx-4 gapy-5 flow-wrap">
       <div className="col flex">
-        <AssetsTableCard showActions tokenList={[]} />
+        <AssetsTableCard showActions tokenList={oneHopTokens} />
       </div>
     </div>
   );

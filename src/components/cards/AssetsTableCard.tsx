@@ -45,8 +45,8 @@ export default function AssetsTableCard({
     allUserBankAssets?.flatMap((asset) => asset.denom)
   );
   const tokenList = useMemo(
-    () => Array.from((tokenByDenom || [])?.values()),
-    [tokenByDenom]
+    () => givenTokenList || Array.from((tokenByDenom || [])?.values()),
+    [givenTokenList, tokenByDenom]
   );
 
   const allUserBankAssetsByTokenId = useMemo(() => {
