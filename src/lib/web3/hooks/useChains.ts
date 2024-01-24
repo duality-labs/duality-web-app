@@ -79,8 +79,8 @@ export const nativeChain: Chain = {
   // override default settings with an env variable for the whole chain config
   ...(REACT_APP__CHAIN ? (JSON.parse(REACT_APP__CHAIN) as Chain) : {}),
 } as Chain;
-export const devChain: Chain = { ...nativeChain };
-export const chainFeeTokens: ChainFeeTokens = devChain.fees?.fee_tokens || [];
+export const chainFeeTokens: ChainFeeTokens =
+  nativeChain.fees?.fee_tokens || [];
 
 export function useChainAddress(chain?: Chain): {
   data?: string;

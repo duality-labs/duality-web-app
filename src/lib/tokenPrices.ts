@@ -3,16 +3,14 @@ import { useEffect, useMemo } from 'react';
 
 import { ObservableList, useObservableList } from './utils/observableList';
 import { Token } from './web3/utils/tokens';
-import { devChain } from './web3/hooks/useChains';
 
 const { REACT_APP__DEV_ASSET_PRICE_MAP } = import.meta.env;
-const defaultDevAssetPrice = 1;
 
 const baseAPI = 'https://api.coingecko.com/api/v3';
 
 // identify dev tokens using a specific dev chain id
-function isDevToken(token?: Token) {
-  return !!devChain && !!token && token.chain?.chain_id === devChain?.chain_id;
+function isDevToken(token?: Token): boolean {
+  return !!(token && devTokenPriceMap[token.symbol]);
 }
 
 const devTokenPriceMap: Record<string, number> = (() => {
@@ -24,9 +22,7 @@ const devTokenPriceMap: Record<string, number> = (() => {
 })();
 
 function getDevTokenPrice(token: Token | undefined): number | undefined {
-  return token && isDevToken(token)
-    ? devTokenPriceMap[token.symbol] || defaultDevAssetPrice
-    : undefined;
+  return token ? devTokenPriceMap[token.symbol] : undefined;
 }
 
 class FetchError extends Error {
