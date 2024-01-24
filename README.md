@@ -9,7 +9,7 @@ This version of the front end is intended to work with the release of the backen
 To set up the front end locally, connected to the current online testnet:
 
 1. `$ npm install`
-2. `$ npm start`
+2. `$ npm run dev`
 3. The dev site should become available at http://localhost:5173
 4. Install/enable [the Keplr extension](https://github.com/chainapsis/keplr-wallet)
    on your browser
@@ -42,7 +42,7 @@ To set up the front end locally, connected to the current online testnet:
 
 4. Start/restart your development server to use these new ENV vars:
 
-   - `npm start`
+   - `npm run dev`
 
    your development should now be making requests to your local backend
 
