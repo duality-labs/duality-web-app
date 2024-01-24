@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/duality-labs/duality-web-app/compare/v1.0.1...v2.0.0) (2024-01-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* update app to Neutron testnet (#503)
+
+### Features
+
+* update app to Neutron testnet ([#503](https://github.com/duality-labs/duality-web-app/issues/503)) ([90e6a9e](https://github.com/duality-labs/duality-web-app/commit/90e6a9e7ad875df5aaf15258070a57edf508729e))
+
 ## [1.0.1](https://github.com/duality-labs/duality-web-app/compare/v1.0.0...v1.0.1) (2024-01-24)
 
 
