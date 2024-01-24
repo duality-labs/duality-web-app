@@ -1,4 +1,6 @@
 # duality-web-app
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fduality-labs%2Fduality-web-app.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fduality-labs%2Fduality-web-app?ref=badge_shield)
+
 
 The code for the Duality front-end web app.
 
@@ -62,3 +64,7 @@ https://github.com/duality-labs/duality/releases
 ## Deployed At
 
 Current build of `main` should be available at https://app.dev.duality.xyz
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fduality-labs%2Fduality-web-app.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fduality-labs%2Fduality-web-app?ref=badge_large)
