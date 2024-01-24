@@ -287,6 +287,22 @@ export function useNativeChainClient() {
   );
 }
 
+// export hook for getting a chain-registry client for one-hop related chains
+export function useRelatedChainsClient() {
+  return useSWRImmutable(
+    ['related-chains-client'],
+    async (): Promise<ChainRegistryClient | undefined> => {
+      // get asset client for all assets within one-hop of the native chain
+      const ibcNamePairs = await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME);
+      const relatedChainNames = Array.from(new Set(ibcNamePairs?.flat()));
+      return createChainRegistryClient({
+        ...defaultClientOptions,
+        chainNames: relatedChainNames,
+      });
+    }
+  );
+}
+
 // export hook for getting a basic chain-registry client
 // default to client for native chain assets
 // note: the client can do more than chainUtil which uses native chain context

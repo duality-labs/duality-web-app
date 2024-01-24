@@ -1,4 +1,3 @@
-import { chains as chainList } from 'chain-registry';
 import { Chain } from '@chain-registry/types';
 import { useMemo } from 'react';
 import { ibc, router } from '@duality-labs/dualityjs';
@@ -26,7 +25,10 @@ import dualityLogo from '../../../assets/logo/logo.svg';
 import { Token, getTokenId } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import { useFetchAllPaginatedPages } from './useQueries';
-import { useNativeChainClient } from './useDenomsFromRegistry';
+import {
+  useNativeChainClient,
+  useRelatedChainsClient,
+} from './useDenomsFromRegistry';
 import Long from 'long';
 import { SWRResponse } from 'swr';
 
@@ -294,6 +296,7 @@ export function useIbcOpenTransfers(givenChain: Chain | undefined) {
   const { data: clientStates } = useIbcClientStates(chain);
   const { data: connections } = useIbcConnections(chain);
   const { data: channels } = useIbcChannels(chain);
+  const { data: chainListClient } = useRelatedChainsClient();
 
   return useMemo(() => {
     // get openClients (all listed clients are assumed to be working)
@@ -310,7 +313,8 @@ export function useIbcOpenTransfers(givenChain: Chain | undefined) {
       const chainID =
         (clientState.client_state as unknown as { chain_id: string })
           ?.chain_id || undefined;
-      const chain = chainList.find((chain) => chain.chain_id === chainID);
+      const chainList = chainListClient?.chains;
+      const chain = chainList?.find((chain) => chain.chain_id === chainID);
       if (!chainID || !chain) return [];
       return (
         openConnections
@@ -334,7 +338,7 @@ export function useIbcOpenTransfers(givenChain: Chain | undefined) {
           })
       );
     });
-  }, [clientStates, connections, channels]);
+  }, [chainListClient, clientStates, connections, channels]);
 }
 
 export function useRemoteChainRpcEndpoint(chain?: Chain) {
