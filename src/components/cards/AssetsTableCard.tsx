@@ -191,6 +191,11 @@ function AssetRow({
   const { data: trace } = useDenomTrace(denom);
   const { data: token, isValidating } = useToken(denom);
   const { data: nativeChain } = useNativeChain();
+  const singleHopIbcCounterParty =
+    token?.traces &&
+    token.traces.length === 1 &&
+    token.traces.at(0)?.type === 'ibc' &&
+    token.traces.at(0)?.counterparty;
 
   return token ? (
     <tr>
@@ -237,7 +242,7 @@ function AssetRow({
         <td>
           {token.chain.chain_id !== nativeChain.chain_id && (
             // disable buttons if there is no known path to bridge them here
-            <fieldset disabled={!address || !token.ibc}>
+            <fieldset disabled={!address || !singleHopIbcCounterParty}>
               <BridgeButton
                 className="button button-primary-outline nowrap mx-0"
                 from={token}
