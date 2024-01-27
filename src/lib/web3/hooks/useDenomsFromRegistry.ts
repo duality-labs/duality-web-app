@@ -344,12 +344,12 @@ function useDefaultAssetsClient() {
 }
 
 export function useChainUtil(): SWRResponse<ChainRegistryChainUtil> {
-  const swr = useDefaultAssetsClient();
+  const { data, ...swr } = useDefaultAssetsClient();
   // return just the chain utility instance
   // it is possible to get the original fetcher at chainUtil.chainInfo.fetcher
   return {
     ...swr,
-    data: swr.data?.getChainUtil(REACT_APP__CHAIN_NAME),
+    data: useMemo(() => data?.getChainUtil(REACT_APP__CHAIN_NAME), [data]),
   } as SWRResponse;
 }
 
