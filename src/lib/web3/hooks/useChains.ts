@@ -21,7 +21,6 @@ import { State as ConnectionState } from '@duality-labs/neutronjs/types/codegen/
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import { getChainInfo } from '../wallets/keplr';
-import { Token, getTokenId } from '../utils/tokens';
 import { minutes } from '../../utils/time';
 import { useFetchAllPaginatedPages } from './useQueries';
 import {
@@ -420,16 +419,10 @@ export function useRemoteChainRestEndpoint(chain?: Chain) {
 
 export function useRemoteChainBankBalance(
   chain: Chain | undefined,
-  token?: Token,
-  address?: string
+  denom?: string, // the denom on the queried chain
+  address?: string // the address on the queried chain
 ) {
   const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
-  // optionally find the IBC denom when querying the native chain
-  const denom =
-    restEndpoint === REACT_APP__REST_API
-      ? getTokenId(token)
-      : // query the base denom of any external chains
-        token?.base;
   return useQuery({
     enabled: !!denom,
     queryKey: ['cosmos-chain-endpoints', restEndpoint, address],

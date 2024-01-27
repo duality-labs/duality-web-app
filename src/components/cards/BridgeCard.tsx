@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import Long from 'long';
 import { useCallback, useMemo, useState } from 'react';
-import { Chain } from '@chain-registry/types';
+import { Asset, Chain } from '@chain-registry/types';
 import { coin } from '@cosmjs/stargate';
 
 import TokenPicker from '../TokenPicker/TokenPicker';
@@ -442,6 +442,11 @@ export default function BridgeCard({
   );
 }
 
+// get an asset denom as known from its original chain
+function getBaseDenom(asset: Asset): string {
+  return asset.traces?.at(0)?.counterparty.base_denom ?? asset.base;
+}
+
 function BridgeButton({
   chainFrom,
   chainTo,
@@ -458,7 +463,7 @@ function BridgeButton({
 
   const { data: bankBalanceAvailable } = useRemoteChainBankBalance(
     chainFrom,
-    token,
+    token && getBaseDenom(token),
     chainAddressFrom
   );
 
@@ -523,7 +528,7 @@ function RemoteChainReserves({
   const { data: chainEndpoint, isFetching: isFetchingChainEndpoint } =
     useRemoteChainRestEndpoint(chain);
   const { data: bankBalance, isFetching: isFetchingBankBalance } =
-    useRemoteChainBankBalance(chain, token, address);
+    useRemoteChainBankBalance(chain, token && getBaseDenom(token), address);
 
   if (chainEndpoint && address) {
     const bankBalanceAmount = bankBalance?.balance?.amount;
