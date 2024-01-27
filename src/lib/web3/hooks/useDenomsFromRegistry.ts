@@ -298,6 +298,9 @@ export function useRelatedChainsClient() {
       return createChainRegistryClient({
         ...defaultClientOptions,
         chainNames: relatedChainNames,
+        // pass IBC name pairs related only to native chain so that the client
+        // doesn't try to fetch IBC data between other listed unrelated chains
+        ibcNamePairs,
       });
     }
   );
