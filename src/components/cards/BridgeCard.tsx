@@ -20,6 +20,7 @@ import {
   useSingleHopChannelInfo,
   useSingleHopChannelStatus,
 } from '../../pages/Bridge/useChannelInfo';
+import { useRelatedChainsClient } from '../../lib/web3/hooks/useDenomsFromRegistry';
 
 import { minutes, nanoseconds } from '../../lib/utils/time';
 import { formatAddress } from '../../lib/web3/utils/address';
@@ -61,6 +62,20 @@ export default function BridgeCard({
     useChainAddress(chainFrom);
   const { data: chainAddressTo, isValidating: chainAddressToIsValidating } =
     useChainAddress(chainTo);
+
+  // find the asset as seen from the source chain
+  const { data: relatedChainsClient } = useRelatedChainsClient();
+  const chainFromAsset = useMemo(() => {
+    return from
+      ? relatedChainsClient
+          ?.getChainUtil(from.chain.chain_name)
+          .getAssetByDenom(getBaseDenom(from))
+      : nativeChain &&
+          to &&
+          relatedChainsClient
+            ?.getChainUtil(nativeChain.chain_name)
+            .getAssetByDenom(to.base);
+  }, [from, nativeChain, relatedChainsClient, to]);
 
   // find the channel information on the from side for the bridge request
   const { data: channelInfo } = useSingleHopChannelInfo(
@@ -421,8 +436,8 @@ export default function BridgeCard({
             </div>
             <BridgeButton
               chainFrom={chainFrom}
+              chainFromAsset={chainFromAsset}
               chainTo={chainTo}
-              token={token}
               value={value}
               disabled={
                 chainClientStatusFrom?.status !== 'Active' ||
@@ -443,14 +458,14 @@ function getBaseDenom(asset: Asset): string {
 
 function BridgeButton({
   chainFrom,
+  chainFromAsset,
   chainTo,
-  token,
   value,
   disabled,
 }: {
   chainFrom: Chain;
+  chainFromAsset?: Asset;
   chainTo: Chain;
-  token?: Token;
   value: string;
   disabled: boolean;
 }) {
@@ -459,20 +474,20 @@ function BridgeButton({
 
   const { data: bankBalanceAvailable } = useRemoteChainBankBalance(
     chainFrom,
-    token && getBaseDenom(token),
+    chainFromAsset?.base,
     chainAddressFrom
   );
 
   const hasAvailableBalance = useMemo(() => {
     return new BigNumber(value || 0).isLessThanOrEqualTo(
-      token
+      chainFromAsset
         ? getDisplayDenomAmount(
-            token,
+            chainFromAsset,
             bankBalanceAvailable?.balance?.amount || 0
           ) || 0
         : 0
     );
-  }, [value, bankBalanceAvailable, token]);
+  }, [value, bankBalanceAvailable, chainFromAsset]);
 
   const errorMessage = useMemo<string | undefined>(() => {
     switch (true) {
@@ -486,14 +501,14 @@ function BridgeButton({
   // return "incomplete" state
   if (
     disabled ||
-    !token ||
+    !chainFromAsset ||
     !chainAddressFrom ||
     !chainAddressTo ||
     !Number(value)
   ) {
     return (
       <button type="submit" className="button-primary h3 p-4" disabled>
-        Bridge {token?.symbol}
+        Bridge {chainFromAsset?.symbol}
       </button>
     );
   }
@@ -507,7 +522,11 @@ function BridgeButton({
         errorMessage ? 'button-error' : 'button-primary',
       ].join(' ')}
     >
-      {errorMessage ? <>{errorMessage}</> : <>Bridge {token?.symbol}</>}
+      {errorMessage ? (
+        <>{errorMessage}</>
+      ) : (
+        <>Bridge {chainFromAsset?.symbol}</>
+      )}
     </button>
   );
 }
