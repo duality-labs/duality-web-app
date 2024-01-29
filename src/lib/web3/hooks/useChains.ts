@@ -102,7 +102,8 @@ export function useRemoteChainRpcEndpoint(chain?: Chain) {
               setTimeout(reject, 10000)
             ),
           ]);
-          return rpcEndpoint ?? null;
+          // remove trailing slash
+          return rpcEndpoint ? rpcEndpoint.replace(/\/$/, '') : null;
         } catch (e) {
           // all requests failed or the requests timed out
           return null;
@@ -145,7 +146,8 @@ export function useRemoteChainRestEndpoint(chain?: Chain) {
               setTimeout(reject, 10000)
             ),
           ]);
-          return restEndpoint ?? null;
+          // remove trailing slash
+          return restEndpoint ? restEndpoint.replace(/\/$/, '') : null;
         } catch (e) {
           // all requests failed or the requests timed out
           return null;
