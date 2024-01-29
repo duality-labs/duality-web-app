@@ -1,20 +1,13 @@
 import { Chain } from '@chain-registry/types';
 import { useMemo } from 'react';
 import { ibc } from '@duality-labs/neutronjs';
-import { QueryParamsResponse as QueryRouterParams } from '@duality-labs/neutronjs/types/codegen/packetforward/v1/query';
-import { Params as QueryConnectionParams } from '@duality-labs/neutronjs/types/codegen/ibc/core/connection/v1/connection';
 import { QueryBalanceResponse } from '@duality-labs/neutronjs/types/codegen/cosmos/bank/v1beta1/query';
 import { useQuery } from '@tanstack/react-query';
 
 import { getChainInfo } from '../wallets/keplr';
 import { minutes } from '../../utils/time';
 import { useNativeChainClient } from './useDenomsFromRegistry';
-import { usePacketForwardRestClientPromise } from '../clients/restClients';
 import { SWRResponse } from 'swr';
-
-interface QueryConnectionParamsResponse {
-  params?: QueryConnectionParams;
-}
 
 const {
   REACT_APP__CHAIN = '',
@@ -190,45 +183,6 @@ export function useRemoteChainBankBalance(
       } else {
         return null;
       }
-    },
-    refetchInterval: 5 * minutes,
-  });
-}
-
-export function useRemoteChainBlockTime(chain: Chain | undefined) {
-  const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
-  return useQuery({
-    enabled: !!restEndpoint,
-    queryKey: ['cosmos-chain-block-time', restEndpoint],
-    queryFn: async (): Promise<QueryConnectionParamsResponse | null> => {
-      if (restEndpoint) {
-        const client = await ibc.ClientFactory.createLCDClient({
-          restEndpoint,
-        });
-        try {
-          const params = await client.ibc.core.connection.v1.connectionParams();
-          // fix return type to point to connection params and not client params
-          return params as unknown as QueryConnectionParamsResponse;
-        } catch (e) {
-          // many chains do not return this route, in which case: state empty
-          return {};
-        }
-      } else {
-        return null;
-      }
-    },
-    refetchInterval: 5 * minutes,
-  });
-}
-
-export function useRemoteChainFees(chain: Chain | undefined) {
-  const clientPromise = usePacketForwardRestClientPromise();
-  const { data: restEndpoint } = useRemoteChainRestEndpoint(chain);
-  return useQuery({
-    queryKey: ['cosmos-chain-fees', restEndpoint],
-    queryFn: async (): Promise<QueryRouterParams | null> => {
-      const client = await clientPromise;
-      return client.v1.params();
     },
     refetchInterval: 5 * minutes,
   });

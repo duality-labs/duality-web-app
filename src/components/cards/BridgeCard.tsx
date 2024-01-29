@@ -14,8 +14,6 @@ import {
   useChainAddress,
   useNativeChain,
   useRemoteChainBankBalance,
-  useRemoteChainBlockTime,
-  useRemoteChainFees,
   useRemoteChainRestEndpoint,
 } from '../../lib/web3/hooks/useChains';
 import {
@@ -222,42 +220,6 @@ export default function BridgeCard({
     ]
   );
 
-  // find expected transfer time (1 block on source + 1 block on destination)
-  const { data: chainTimeFrom } = useRemoteChainBlockTime(chainFrom);
-  const { data: chainTimeTo } = useRemoteChainBlockTime(chainTo);
-  const chainTime = useMemo(() => {
-    if (chainTimeFrom !== undefined && chainTimeTo !== undefined) {
-      // default to 30s (in Nanoseconds)
-      const defaultMaxChainTime = '30000000000';
-      const chainMsFrom = new BigNumber(
-        chainTimeFrom?.params?.max_expected_time_per_block?.toString() ??
-          defaultMaxChainTime
-      ).multipliedBy(nanoseconds);
-      const chainMsTo = new BigNumber(
-        chainTimeTo?.params?.max_expected_time_per_block?.toString() ??
-          defaultMaxChainTime
-      ).multipliedBy(nanoseconds);
-      const blockMinutes = chainMsFrom.plus(chainMsTo).dividedBy(minutes);
-      return `<${formatAmount(blockMinutes.toFixed(0), {
-        useGrouping: true,
-      })} minute${blockMinutes.isGreaterThan(1) ? 's' : ''}`;
-    }
-  }, [chainTimeFrom, chainTimeTo]);
-
-  // find transfer fees
-  const { data: chainFeesFrom } = useRemoteChainFees(chainFrom);
-  const { data: chainFeesTo } = useRemoteChainFees(chainTo);
-  const chainFees = useMemo(() => {
-    if (chainFeesFrom !== undefined && chainFeesTo !== undefined) {
-      const one = new BigNumber(1);
-      const fee = new BigNumber(value)
-        .multipliedBy(one.plus(chainFeesFrom?.params?.fee_percentage ?? 0))
-        .multipliedBy(one.plus(chainFeesTo?.params?.fee_percentage ?? 0))
-        .minus(value);
-      return formatAmount(fee.toFixed(), { useGrouping: true });
-    }
-  }, [value, chainFeesFrom, chainFeesTo]);
-
   return (
     chainFrom &&
     chainTo && (
@@ -450,33 +412,6 @@ export default function BridgeCard({
                   ) : (
                     'Checking...'
                   )}
-                </div>
-              </div>
-              <div className="row">
-                <div className="col">Estimated Time</div>
-                <div className="col ml-auto">
-                  {from || to ? <>{chainTime ?? '...'}</> : null}
-                </div>
-              </div>
-              <div className="row">
-                <div className="col">Transfer Fee</div>
-                <div className="col ml-auto">
-                  {Number(value) ? (
-                    <>
-                      {chainFees ?? '...'} {(from || to)?.symbol}
-                    </>
-                  ) : null}
-                </div>
-              </div>
-              <div className="row">
-                <div className="col">Total (est)</div>
-                <div className="col ml-auto">
-                  {Number(value) ? (
-                    <>
-                      {formatAmount(value, { useGrouping: true })}{' '}
-                      {(from || to)?.symbol}
-                    </>
-                  ) : null}
                 </div>
               </div>
             </div>
