@@ -18,7 +18,10 @@ import {
   useRemoteChainFees,
   useRemoteChainRestEndpoint,
 } from '../../lib/web3/hooks/useChains';
-import { useSingleHopChannelInfo } from '../../pages/Bridge/useChannelInfo';
+import {
+  useSingleHopChannelInfo,
+  useSingleHopChannelStatus,
+} from '../../pages/Bridge/useChannelInfo';
 
 import { minutes, nanoseconds } from '../../lib/utils/time';
 import { formatAddress } from '../../lib/web3/utils/address';
@@ -68,6 +71,15 @@ export default function BridgeCard({
     token
   );
 
+  const { data: chainClientStatusFrom } = useSingleHopChannelStatus(
+    chainFrom,
+    useSingleHopChannelInfo(chainFrom, chainTo, token).data?.client_id
+  );
+  const { data: chainClientStatusTo } = useSingleHopChannelStatus(
+    chainTo,
+    useSingleHopChannelInfo(chainTo, chainFrom, token).data?.client_id
+  );
+
   const { wallet } = useWeb3();
   const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(
     chainFrom,
@@ -101,6 +113,25 @@ export default function BridgeCard({
       if (!channelInfo) {
         throw new Error(
           `IBC transfer path (${chainFrom.chain_id} -> ${chainTo.chain_id}) not found`
+        );
+      }
+      // future: can check both sides of the chain to see if they have IBC
+      // - send_enabled
+      // - receive_enabled
+      // by querying each chain with: /ibc/apps/transfer/v1/params
+      // (this may be redundant as we know there is an IBC connection already)
+      if (chainClientStatusFrom?.status !== 'Active') {
+        throw new Error(
+          `The connection source client is not active. Current status: ${
+            chainClientStatusFrom?.status ?? 'unknown'
+          }`
+        );
+      }
+      if (chainClientStatusTo?.status !== 'Active') {
+        throw new Error(
+          `The connection destination client is not active. Current status: ${
+            chainClientStatusTo?.status ?? 'unknown'
+          }`
         );
       }
       // bridging to native chain
@@ -171,17 +202,19 @@ export default function BridgeCard({
       }
     },
     [
+      wallet,
+      from,
+      to,
       chainAddressFrom,
       chainAddressTo,
       chainFrom,
       chainTo,
-      onSuccess,
-      from,
       channelInfo,
-      sendRequest,
-      to,
+      chainClientStatusFrom?.status,
+      chainClientStatusTo?.status,
       value,
-      wallet,
+      sendRequest,
+      onSuccess,
     ]
   );
 
