@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import Long from 'long';
 import { useCallback, useMemo, useState } from 'react';
-import { Asset, Chain, IBCInfo, IBCTrace } from '@chain-registry/types';
+import { Asset, Chain } from '@chain-registry/types';
 import { coin } from '@cosmjs/stargate';
 
 import TokenPicker from '../TokenPicker/TokenPicker';
@@ -18,7 +18,7 @@ import {
   useRemoteChainFees,
   useRemoteChainRestEndpoint,
 } from '../../lib/web3/hooks/useChains';
-import { useRelatedChainsClient } from '../../lib/web3/hooks/useDenomsFromRegistry';
+import { useSingleHopChannelInfo } from '../../pages/Bridge/useChannelInfo';
 
 import { minutes, nanoseconds } from '../../lib/utils/time';
 import { formatAddress } from '../../lib/web3/utils/address';
@@ -36,53 +36,6 @@ const defaultTimeout = 30 * minutes;
 
 const keplrLogoURI =
   'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
-
-type ChannelInfo = {
-  chain_name: string;
-  client_id: string;
-  connection_id: string;
-  channel_id: string;
-  port_id: string;
-  ordering: string;
-  version: string;
-  tags: object | undefined;
-};
-
-function getChannelSideInfo(
-  ibcInfo: IBCInfo,
-  channelId: string
-): ChannelInfo | undefined {
-  const channel = ibcInfo.channels.find((channel) => {
-    return (
-      channel.chain_1.channel_id === channelId ||
-      channel.chain_2.channel_id === channelId
-    );
-  });
-  if (channel) {
-    // return the channel and connection props of the IBC chain side
-    const chainSide =
-      channel.chain_1.channel_id === channelId ? 'chain_1' : 'chain_2';
-    return {
-      // take channel props
-      ordering: channel.ordering,
-      version: channel.version,
-      tags: channel.tags,
-      // take channel side props
-      ...channel[chainSide],
-      // take connection side props
-      ...ibcInfo[chainSide],
-    };
-  }
-}
-
-function getSingleHopIbcTrace(asset: Asset): IBCTrace | undefined {
-  if (asset.traces?.length === 1) {
-    const trace = asset.traces?.at(0);
-    if (trace && trace?.type === 'ibc') {
-      return trace as IBCTrace;
-    }
-  }
-}
 
 export default function BridgeCard({
   from,
@@ -109,33 +62,7 @@ export default function BridgeCard({
     useChainAddress(chainTo);
 
   // find the channel information on the from side for the bridge request
-  const { data: relatedChainsClient } = useRelatedChainsClient();
-  const singleHopChannelInfo = useMemo<ChannelInfo | undefined>(() => {
-    const ibcTrace = token && getSingleHopIbcTrace(token);
-    if (ibcTrace) {
-      // find matching ibcInfo from relatedChainsClient ibcData
-      const ibcInfo =
-        chainFrom?.chain_name && chainTo?.chain_name
-          ? relatedChainsClient?.ibcData.find((connection) => {
-              return (
-                (connection.chain_1.chain_name === chainFrom.chain_name &&
-                  connection.chain_2.chain_name === chainTo.chain_name) ||
-                (connection.chain_1.chain_name === chainTo.chain_name &&
-                  connection.chain_2.chain_name === chainFrom.chain_name)
-              );
-            })
-          : undefined;
-
-      if (ibcInfo && chainFrom) {
-        return [
-          getChannelSideInfo(ibcInfo, ibcTrace.chain.channel_id),
-          getChannelSideInfo(ibcInfo, ibcTrace.counterparty.channel_id),
-        ]
-          .filter((info) => info?.chain_name === chainFrom.chain_name)
-          .at(0);
-      }
-    }
-  }, [chainFrom, chainTo, token, relatedChainsClient]);
+  const channelInfo = useSingleHopChannelInfo(chainFrom, chainTo, token);
 
   const { wallet } = useWeb3();
   const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(
@@ -167,7 +94,7 @@ export default function BridgeCard({
       const timeoutTimestamp = Long.fromNumber(
         Date.now() + defaultTimeout // calculate in ms then convert to nanoseconds
       ).multiply(1 / nanoseconds);
-      if (!singleHopChannelInfo) {
+      if (!channelInfo) {
         throw new Error(
           `IBC transfer path (${chainFrom.chain_id} -> ${chainTo.chain_id}) not found`
         );
@@ -193,8 +120,8 @@ export default function BridgeCard({
             timeout_timestamp: timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
-            source_port: singleHopChannelInfo.port_id,
-            source_channel: singleHopChannelInfo.channel_id,
+            source_port: channelInfo.port_id,
+            source_channel: channelInfo.channel_id,
             memo: '',
             timeout_height: {
               revision_height: Long.ZERO,
@@ -223,8 +150,8 @@ export default function BridgeCard({
             timeout_timestamp: timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
-            source_port: singleHopChannelInfo.port_id,
-            source_channel: singleHopChannelInfo.channel_id,
+            source_port: channelInfo.port_id,
+            source_channel: channelInfo.channel_id,
             memo: '',
             timeout_height: {
               revision_height: Long.ZERO,
@@ -246,7 +173,7 @@ export default function BridgeCard({
       chainTo,
       onSuccess,
       from,
-      singleHopChannelInfo,
+      channelInfo,
       sendRequest,
       to,
       value,
