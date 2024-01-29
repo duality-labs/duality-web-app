@@ -84,7 +84,11 @@ export default function BridgeCard({
 
   const { wallet } = useWeb3();
   const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(
+    // add chain source details
     chainFrom,
+    chainAddressFrom,
+    from ? getBaseDenom(from) : to?.base,
+    // add chain destination details
     chainTo
   );
   const bridgeTokens = useCallback<React.FormEventHandler<HTMLFormElement>>(

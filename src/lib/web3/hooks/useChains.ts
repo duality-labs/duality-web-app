@@ -81,12 +81,20 @@ export function useChainAddress(chain?: Chain): {
   return { data, isValidating: isFetching, error: error || undefined };
 }
 
-export function useRemoteChainRpcEndpoint(chain?: Chain) {
+type CreateIbcRpcClient = typeof ibc.ClientFactory.createRPCQueryClient;
+type IbcRpcClient = Awaited<ReturnType<CreateIbcRpcClient>>;
+export async function defaultRpcClientCheck(client: IbcRpcClient) {
+  await client.cosmos.base.tendermint.v1beta1.getNodeInfo();
+}
+export function useRemoteChainRpcEndpoint(
+  chain?: Chain,
+  check?: (client: IbcRpcClient) => Promise<void>
+) {
   return useQuery({
-    queryKey: ['cosmos-chain-rpc-endpoints', chain?.chain_id],
+    queryKey: ['cosmos-chain-rpc-endpoints', chain?.chain_id, !!check],
     queryFn: async (): Promise<string | null> => {
       const rpcEndpoints = (chain?.apis?.rpc ?? []).map((rest) => rest.address);
-      if (rpcEndpoints.length > 0) {
+      if (check && rpcEndpoints.length > 0) {
         try {
           const rpcEndpoint = await Promise.race([
             Promise.any(
@@ -94,7 +102,7 @@ export function useRemoteChainRpcEndpoint(chain?: Chain) {
                 const client = await ibc.ClientFactory.createRPCQueryClient({
                   rpcEndpoint,
                 });
-                await client.cosmos.base.tendermint.v1beta1.getNodeInfo();
+                await check(client);
                 return rpcEndpoint;
               })
             ),

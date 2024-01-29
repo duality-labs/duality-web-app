@@ -79,6 +79,8 @@ async function bridgeToken(
 
 export default function useBridge(
   chainFrom?: Chain,
+  chainFromAddress?: string,
+  chainFromDenom?: string,
   chainTo?: Chain
 ): [
   {
@@ -97,7 +99,17 @@ export default function useBridge(
   const { data: restEndpointTo, refetch: refetchTo } =
     useRemoteChainRestEndpoint(chainTo);
   const { data: rpcEndpointFrom, refetch: refetchRpc } =
-    useRemoteChainRpcEndpoint(chainFrom);
+    useRemoteChainRpcEndpoint(
+      chainFrom,
+      chainFromAddress && chainFromDenom
+        ? async (client) => {
+            await client.cosmos.bank.v1beta1.spendableBalanceByDenom({
+              address: chainFromAddress,
+              denom: chainFromDenom,
+            });
+          }
+        : undefined
+    );
 
   const sendRequest = useCallback(
     async (request: MsgTransfer) => {
