@@ -71,14 +71,18 @@ export default function BridgeCard({
     token
   );
 
-  const { data: chainClientStatusFrom } = useSingleHopChannelStatus(
+  const {
+    data: chainClientStatusFrom,
+    isLoading: chainClientStatusFromIsLoading,
+  } = useSingleHopChannelStatus(
     chainFrom,
     useSingleHopChannelInfo(chainFrom, chainTo, token).data?.client_id
   );
-  const { data: chainClientStatusTo } = useSingleHopChannelStatus(
-    chainTo,
-    useSingleHopChannelInfo(chainTo, chainFrom, token).data?.client_id
-  );
+  const { data: chainClientStatusTo, isLoading: chainClientStatusToIsLoading } =
+    useSingleHopChannelStatus(
+      chainTo,
+      useSingleHopChannelInfo(chainTo, chainFrom, token).data?.client_id
+    );
 
   const { wallet } = useWeb3();
   const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(
@@ -421,6 +425,34 @@ export default function BridgeCard({
             </div>
             <div className="transaction-box my-sm p-4 col gap-md">
               <div className="row">
+                <div className="col">Source chain status</div>
+                <div className="col ml-auto">
+                  {chainClientStatusFrom?.status === 'Active' ? (
+                    <span>{chainClientStatusFrom.status}</span>
+                  ) : !chainClientStatusFromIsLoading ? (
+                    <span className="text-error">
+                      {chainClientStatusFrom?.status ?? 'Not connected'}
+                    </span>
+                  ) : (
+                    'Checking...'
+                  )}
+                </div>
+              </div>
+              <div className="row">
+                <div className="col">Destination chain status</div>
+                <div className="col ml-auto">
+                  {chainClientStatusTo?.status === 'Active' ? (
+                    <span>{chainClientStatusTo.status}</span>
+                  ) : !chainClientStatusToIsLoading ? (
+                    <span className="text-error">
+                      {chainClientStatusTo?.status ?? 'Not connected'}
+                    </span>
+                  ) : (
+                    'Checking...'
+                  )}
+                </div>
+              </div>
+              <div className="row">
                 <div className="col">Estimated Time</div>
                 <div className="col ml-auto">
                   {from || to ? <>{chainTime ?? '...'}</> : null}
@@ -453,6 +485,10 @@ export default function BridgeCard({
               chainTo={chainTo}
               token={token}
               value={value}
+              disabled={
+                chainClientStatusFrom?.status !== 'Active' ||
+                chainClientStatusTo?.status !== 'Active'
+              }
             />
           </fieldset>
         </form>
@@ -471,11 +507,13 @@ function BridgeButton({
   chainTo,
   token,
   value,
+  disabled,
 }: {
   chainFrom: Chain;
   chainTo: Chain;
   token?: Token;
   value: string;
+  disabled: boolean;
 }) {
   const { data: chainAddressFrom } = useChainAddress(chainFrom);
   const { data: chainAddressTo } = useChainAddress(chainTo);
@@ -507,7 +545,13 @@ function BridgeButton({
   }, [hasAvailableBalance]);
 
   // return "incomplete" state
-  if (!token || !chainAddressFrom || !chainAddressTo || !Number(value)) {
+  if (
+    disabled ||
+    !token ||
+    !chainAddressFrom ||
+    !chainAddressTo ||
+    !Number(value)
+  ) {
     return (
       <button type="submit" className="button-primary h3 p-4" disabled>
         Bridge {token?.symbol}
