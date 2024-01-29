@@ -232,7 +232,7 @@ export default function BridgeCard({
           <fieldset
             className="col gap-lg"
             disabled={
-              !(token && chainAddressFrom && chainAddressTo) &&
+              !(token && chainAddressFrom && chainAddressTo) ||
               isValidatingBridgeTokens
             }
           >
