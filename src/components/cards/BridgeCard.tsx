@@ -507,7 +507,7 @@ function BridgeButton({
     !Number(value)
   ) {
     return (
-      <button type="submit" className="button-primary h3 p-4" disabled>
+      <button type="submit" className="button-primary h4 p-4" disabled>
         Bridge {chainFromAsset?.symbol}
       </button>
     );
@@ -518,7 +518,7 @@ function BridgeButton({
       type={errorMessage ? 'button' : 'submit'}
       onClick={() => undefined}
       className={[
-        'h3 p-4',
+        'h4 p-4',
         errorMessage ? 'button-error' : 'button-primary',
       ].join(' ')}
     >
