@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import Long from 'long';
 import { useCallback, useMemo, useState } from 'react';
-import { Asset, Chain } from '@chain-registry/types';
+import { Asset, Chain, IBCInfo, IBCTrace } from '@chain-registry/types';
 import { coin } from '@cosmjs/stargate';
 
 import TokenPicker from '../TokenPicker/TokenPicker';
@@ -12,13 +12,13 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import {
   useChainAddress,
-  useIbcOpenTransfers,
   useNativeChain,
   useRemoteChainBankBalance,
   useRemoteChainBlockTime,
   useRemoteChainFees,
   useRemoteChainRestEndpoint,
 } from '../../lib/web3/hooks/useChains';
+import { useRelatedChainsClient } from '../../lib/web3/hooks/useDenomsFromRegistry';
 
 import { minutes, nanoseconds } from '../../lib/utils/time';
 import { formatAddress } from '../../lib/web3/utils/address';
@@ -28,7 +28,6 @@ import {
   Token,
   getBaseDenomAmount,
   getDisplayDenomAmount,
-  getIbcDenom,
 } from '../../lib/web3/utils/tokens';
 
 import './BridgeCard.scss';
@@ -37,6 +36,53 @@ const defaultTimeout = 30 * minutes;
 
 const keplrLogoURI =
   'https://raw.githubusercontent.com/chainapsis/keplr-wallet/master/docs/.vuepress/public/favicon-256.png';
+
+type ChannelInfo = {
+  chain_name: string;
+  client_id: string;
+  connection_id: string;
+  channel_id: string;
+  port_id: string;
+  ordering: string;
+  version: string;
+  tags: object | undefined;
+};
+
+function getChannelSideInfo(
+  ibcInfo: IBCInfo,
+  channelId: string
+): ChannelInfo | undefined {
+  const channel = ibcInfo.channels.find((channel) => {
+    return (
+      channel.chain_1.channel_id === channelId ||
+      channel.chain_2.channel_id === channelId
+    );
+  });
+  if (channel) {
+    // return the channel and connection props of the IBC chain side
+    const chainSide =
+      channel.chain_1.channel_id === channelId ? 'chain_1' : 'chain_2';
+    return {
+      // take channel props
+      ordering: channel.ordering,
+      version: channel.version,
+      tags: channel.tags,
+      // take channel side props
+      ...channel[chainSide],
+      // take connection side props
+      ...ibcInfo[chainSide],
+    };
+  }
+}
+
+function getSingleHopIbcTrace(asset: Asset): IBCTrace | undefined {
+  if (asset.traces?.length === 1) {
+    const trace = asset.traces?.at(0);
+    if (trace && trace?.type === 'ibc') {
+      return trace as IBCTrace;
+    }
+  }
+}
 
 export default function BridgeCard({
   from,
@@ -62,7 +108,34 @@ export default function BridgeCard({
   const { data: chainAddressTo, isValidating: chainAddressToIsValidating } =
     useChainAddress(chainTo);
 
-  const ibcOpenTransfers = useIbcOpenTransfers(chainFrom);
+  // find the channel information on the from side for the bridge request
+  const { data: relatedChainsClient } = useRelatedChainsClient();
+  const singleHopChannelInfo = useMemo<ChannelInfo | undefined>(() => {
+    const ibcTrace = token && getSingleHopIbcTrace(token);
+    if (ibcTrace) {
+      // find matching ibcInfo from relatedChainsClient ibcData
+      const ibcInfo =
+        chainFrom?.chain_name && chainTo?.chain_name
+          ? relatedChainsClient?.ibcData.find((connection) => {
+              return (
+                (connection.chain_1.chain_name === chainFrom.chain_name &&
+                  connection.chain_2.chain_name === chainTo.chain_name) ||
+                (connection.chain_1.chain_name === chainTo.chain_name &&
+                  connection.chain_2.chain_name === chainFrom.chain_name)
+              );
+            })
+          : undefined;
+
+      if (ibcInfo && chainFrom) {
+        return [
+          getChannelSideInfo(ibcInfo, ibcTrace.chain.channel_id),
+          getChannelSideInfo(ibcInfo, ibcTrace.counterparty.channel_id),
+        ]
+          .filter((info) => info?.chain_name === chainFrom.chain_name)
+          .at(0);
+      }
+    }
+  }, [chainFrom, chainTo, token, relatedChainsClient]);
 
   const { wallet } = useWeb3();
   const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(
@@ -94,18 +167,9 @@ export default function BridgeCard({
       const timeoutTimestamp = Long.fromNumber(
         Date.now() + defaultTimeout // calculate in ms then convert to nanoseconds
       ).multiply(1 / nanoseconds);
-      const ibcTransferInfo = ibcOpenTransfers?.find((transfer) => {
-        return transfer.chain.chain_id === chainTo.chain_id;
-      });
-      if (!ibcTransferInfo) {
+      if (!singleHopChannelInfo) {
         throw new Error(
           `IBC transfer path (${chainFrom.chain_id} -> ${chainTo.chain_id}) not found`
-        );
-      }
-      const connectionLength = ibcTransferInfo.channel.connection_hops.length;
-      if (connectionLength !== 1) {
-        throw new Error(
-          `Multi-hop IBC transfer paths not supported: ${connectionLength} connection hops`
         );
       }
       // bridging to native chain
@@ -125,12 +189,12 @@ export default function BridgeCard({
 
         try {
           await sendRequest({
-            token: coin(amount, tokenDenom),
+            token: coin(amount, getBaseDenom(from)),
             timeout_timestamp: timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
-            source_port: ibcTransferInfo.channel.port_id,
-            source_channel: ibcTransferInfo.channel.channel_id,
+            source_port: singleHopChannelInfo.port_id,
+            source_channel: singleHopChannelInfo.channel_id,
             memo: '',
             timeout_height: {
               revision_height: Long.ZERO,
@@ -153,23 +217,14 @@ export default function BridgeCard({
         if (!baseAmount || !Number(baseAmount)) {
           throw new Error('Invalid Token Amount');
         }
-        if (!ibcTransferInfo.channel.counterparty) {
-          throw new Error('No egress connection information found');
-        }
-        // find the base IBC denom to match the base amount being sent
-        const tokenBaseDenom = getIbcDenom(
-          to.base,
-          ibcTransferInfo.channel.channel_id,
-          ibcTransferInfo.channel.port_id
-        );
         try {
           await sendRequest({
-            token: coin(baseAmount, tokenBaseDenom),
+            token: coin(baseAmount, to.base),
             timeout_timestamp: timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
-            source_port: ibcTransferInfo.channel.counterparty.port_id,
-            source_channel: ibcTransferInfo.channel.counterparty.channel_id,
+            source_port: singleHopChannelInfo.port_id,
+            source_channel: singleHopChannelInfo.channel_id,
             memo: '',
             timeout_height: {
               revision_height: Long.ZERO,
@@ -191,7 +246,7 @@ export default function BridgeCard({
       chainTo,
       onSuccess,
       from,
-      ibcOpenTransfers,
+      singleHopChannelInfo,
       sendRequest,
       to,
       value,
