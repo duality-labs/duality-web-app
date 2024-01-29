@@ -62,7 +62,11 @@ export default function BridgeCard({
     useChainAddress(chainTo);
 
   // find the channel information on the from side for the bridge request
-  const channelInfo = useSingleHopChannelInfo(chainFrom, chainTo, token);
+  const { data: channelInfo } = useSingleHopChannelInfo(
+    chainFrom,
+    chainTo,
+    token
+  );
 
   const { wallet } = useWeb3();
   const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(

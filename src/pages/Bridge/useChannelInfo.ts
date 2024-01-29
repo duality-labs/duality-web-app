@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { SWRResponse } from 'swr';
 import { Asset, Chain, IBCInfo, IBCTrace } from '@chain-registry/types';
 
 import { useRelatedChainsClient } from '../../lib/web3/hooks/useDenomsFromRegistry';
@@ -54,10 +55,10 @@ export function useSingleHopChannelInfo(
   chain?: Chain,
   counterChain?: Chain,
   token?: Asset
-): ChannelInfo | undefined {
+): SWRResponse<ChannelInfo> {
   // find the channel information on the from side for the bridge request
-  const { data: relatedChainsClient } = useRelatedChainsClient();
-  return useMemo<ChannelInfo | undefined>(() => {
+  const { data: relatedChainsClient, ...swr } = useRelatedChainsClient();
+  const channelInfo = useMemo<ChannelInfo | undefined>(() => {
     const ibcTrace = token && getSingleHopIbcTrace(token);
     if (ibcTrace) {
       // find matching ibcInfo from relatedChainsClient ibcData
@@ -86,4 +87,6 @@ export function useSingleHopChannelInfo(
       }
     }
   }, [chain, counterChain, token, relatedChainsClient]);
+
+  return { ...swr, data: channelInfo } as SWRResponse;
 }
