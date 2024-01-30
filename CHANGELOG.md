@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/duality-labs/duality-web-app/compare/v2.0.0...v2.0.1) (2024-01-30)
+
+
+### Fixes
+
+* bridging functionality for testnet ([#524](https://github.com/duality-labs/duality-web-app/issues/524)) ([1bb9f7b](https://github.com/duality-labs/duality-web-app/commit/1bb9f7b6e61a59efa4d5e438f8e055d798e785da))
+
 ## [2.0.0](https://github.com/duality-labs/duality-web-app/compare/v1.0.1...v2.0.0) (2024-01-24)
 
 
