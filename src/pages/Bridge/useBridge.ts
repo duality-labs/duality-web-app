@@ -71,7 +71,7 @@ async function bridgeToken(
     signingAddress,
     [ibc.applications.transfer.v1.MessageComposer.withTypeUrl.transfer(msg)],
     {
-      gas: '100000',
+      gas: '150000',
       amount: [],
     }
   );
