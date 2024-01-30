@@ -110,7 +110,8 @@ export default function AssetsTableCard({
   // sort tokens
   const sortedList = useMemo(() => {
     // sort by USD value
-    return tokenList.sort(sortByValue);
+    // create new array to ensure re-rendering with new reference
+    return [...tokenList].sort(sortByValue);
   }, [tokenList, sortByValue]);
 
   const [searchValue, setSearchValue] = useState<string>('');
