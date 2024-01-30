@@ -2,6 +2,9 @@ import BigNumber from 'bignumber.js';
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { Coin } from '@duality-labs/neutronjs/types/codegen/cosmos/base/v1beta1/coin';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+
 import Dialog from '../Dialog/Dialog';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
@@ -24,6 +27,12 @@ import {
 import { useDenomTrace } from '../../lib/web3/hooks/useDenomsFromChain';
 
 import './AssetsTableCard.scss';
+
+const { REACT_APP__BRIDGE_LINKS = '' } = import.meta.env;
+
+const bridgeLinks: { [baseDenom: string]: string[] } = REACT_APP__BRIDGE_LINKS
+  ? JSON.parse(REACT_APP__BRIDGE_LINKS)
+  : {};
 
 type TokenCoin = Coin & {
   token: Token;
@@ -180,6 +189,22 @@ export default function AssetsTableCard({
   );
 }
 
+function ExternalLink({
+  className,
+  href,
+  children,
+}: {
+  className?: string;
+  href: string;
+  children: ReactNode;
+}) {
+  return (
+    <a target="_blank" rel="noreferrer" href={href} className={className}>
+      {children} <FontAwesomeIcon icon={faUpRightFromSquare}></FontAwesomeIcon>
+    </a>
+  );
+}
+
 function AssetRow({
   denom,
   // token,
@@ -240,22 +265,53 @@ function AssetRow({
       </td>
       {showActions && nativeChain && (
         <td>
-          {token.chain.chain_id !== nativeChain.chain_id && (
-            // disable buttons if there is no known path to bridge them here
-            <fieldset disabled={!address || !singleHopIbcCounterParty}>
-              <BridgeButton
-                className="button button-primary-outline nowrap mx-0"
-                from={token}
-              >
-                Deposit
-              </BridgeButton>
-              <BridgeButton
-                className="button button-outline nowrap mx-0 ml-3"
-                to={token}
-              >
-                Withdraw
-              </BridgeButton>
-            </fieldset>
+          {bridgeLinks[token.base]?.length > 0 ? (
+            bridgeLinks[token.base].length === 1 ? (
+              // add external link
+              <div>
+                <ExternalLink
+                  className="button button-primary-outline nowrap mx-0"
+                  href={bridgeLinks[token.base][0]}
+                >
+                  Bridge
+                </ExternalLink>
+              </div>
+            ) : (
+              // add external links
+              <div>
+                <ExternalLink
+                  className="button button-primary-outline nowrap mx-0"
+                  href={bridgeLinks[token.base][0]}
+                >
+                  Deposit
+                </ExternalLink>
+                <ExternalLink
+                  className="button button-outline nowrap mx-0 ml-3"
+                  href={bridgeLinks[token.base][1]}
+                >
+                  Withdraw
+                </ExternalLink>
+              </div>
+            )
+          ) : (
+            // add Dialog action
+            token.chain.chain_id !== nativeChain.chain_id && (
+              // disable buttons if there is no known path to bridge them here
+              <fieldset disabled={!address || !singleHopIbcCounterParty}>
+                <BridgeButton
+                  className="button button-primary-outline nowrap mx-0"
+                  from={token}
+                >
+                  Deposit
+                </BridgeButton>
+                <BridgeButton
+                  className="button button-outline nowrap mx-0 ml-3"
+                  to={token}
+                >
+                  Withdraw
+                </BridgeButton>
+              </fieldset>
+            )
           )}
         </td>
       )}
