@@ -223,6 +223,8 @@ export function MyPoolsTableCard<T extends string | number>({
       const { token0: token0Address, token1: token1Address } =
         userPosition.deposit.pair_id;
       const pairID = getPairID(token0Address, token1Address);
+      // why isn't pair: maker_denom "factory/neutron1xdtwh5jr4zjx8g3zh29jud75c666wua7tsmum3ajm6ylf782etfs60dj2h/wstETH"<>"untrn" here ???
+      console.log('pairID', pairID)
       const token0 = tokenByDenom?.get(token0Address);
       const token1 = tokenByDenom?.get(token1Address);
       if (pairID && token0 && token1) {

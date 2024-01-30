@@ -52,6 +52,7 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
 
   // combine all deposits and sort them
   const userDeposits = useMemo(() => {
+    console.log('result', result.data)
     return result.data?.pages
       ?.flatMap((deposits) => deposits?.deposits || [])
       .sort(
