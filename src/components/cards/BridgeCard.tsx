@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import Long from 'long';
 import { useCallback, useMemo, useState } from 'react';
-import { Chain } from '@chain-registry/types';
+import { Asset, Chain } from '@chain-registry/types';
 import { coin } from '@cosmjs/stargate';
 
 import TokenPicker from '../TokenPicker/TokenPicker';
@@ -12,13 +12,15 @@ import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import {
   useChainAddress,
-  useIbcOpenTransfers,
   useNativeChain,
   useRemoteChainBankBalance,
-  useRemoteChainBlockTime,
-  useRemoteChainFees,
   useRemoteChainRestEndpoint,
 } from '../../lib/web3/hooks/useChains';
+import {
+  useSingleHopChannelInfo,
+  useSingleHopChannelStatus,
+} from '../../pages/Bridge/useChannelInfo';
+import { useRelatedChainsClient } from '../../lib/web3/hooks/useDenomsFromRegistry';
 
 import { minutes, nanoseconds } from '../../lib/utils/time';
 import { formatAddress } from '../../lib/web3/utils/address';
@@ -28,7 +30,6 @@ import {
   Token,
   getBaseDenomAmount,
   getDisplayDenomAmount,
-  getIbcDenom,
 } from '../../lib/web3/utils/tokens';
 
 import './BridgeCard.scss';
@@ -62,11 +63,47 @@ export default function BridgeCard({
   const { data: chainAddressTo, isValidating: chainAddressToIsValidating } =
     useChainAddress(chainTo);
 
-  const ibcOpenTransfers = useIbcOpenTransfers(chainFrom);
+  // find the asset as seen from the source chain
+  const { data: relatedChainsClient } = useRelatedChainsClient();
+  const chainFromAsset = useMemo(() => {
+    return from
+      ? relatedChainsClient
+          ?.getChainUtil(from.chain.chain_name)
+          .getAssetByDenom(getBaseDenom(from))
+      : nativeChain &&
+          to &&
+          relatedChainsClient
+            ?.getChainUtil(nativeChain.chain_name)
+            .getAssetByDenom(to.base);
+  }, [from, nativeChain, relatedChainsClient, to]);
+
+  // find the channel information on the from side for the bridge request
+  const { data: channelInfo } = useSingleHopChannelInfo(
+    chainFrom,
+    chainTo,
+    token
+  );
+
+  const {
+    data: chainClientStatusFrom,
+    isLoading: chainClientStatusFromIsLoading,
+  } = useSingleHopChannelStatus(
+    chainFrom,
+    useSingleHopChannelInfo(chainFrom, chainTo, token).data?.client_id
+  );
+  const { data: chainClientStatusTo, isLoading: chainClientStatusToIsLoading } =
+    useSingleHopChannelStatus(
+      chainTo,
+      useSingleHopChannelInfo(chainTo, chainFrom, token).data?.client_id
+    );
 
   const { wallet } = useWeb3();
   const [{ isValidating: isValidatingBridgeTokens }, sendRequest] = useBridge(
+    // add chain source details
     chainFrom,
+    chainAddressFrom,
+    from ? getBaseDenom(from) : to?.base,
+    // add chain destination details
     chainTo
   );
   const bridgeTokens = useCallback<React.FormEventHandler<HTMLFormElement>>(
@@ -94,18 +131,28 @@ export default function BridgeCard({
       const timeoutTimestamp = Long.fromNumber(
         Date.now() + defaultTimeout // calculate in ms then convert to nanoseconds
       ).multiply(1 / nanoseconds);
-      const ibcTransferInfo = ibcOpenTransfers?.find((transfer) => {
-        return transfer.chain.chain_id === chainTo.chain_id;
-      });
-      if (!ibcTransferInfo) {
+      if (!channelInfo) {
         throw new Error(
           `IBC transfer path (${chainFrom.chain_id} -> ${chainTo.chain_id}) not found`
         );
       }
-      const connectionLength = ibcTransferInfo.channel.connection_hops.length;
-      if (connectionLength !== 1) {
+      // future: can check both sides of the chain to see if they have IBC
+      // - send_enabled
+      // - receive_enabled
+      // by querying each chain with: /ibc/apps/transfer/v1/params
+      // (this may be redundant as we know there is an IBC connection already)
+      if (chainClientStatusFrom?.status !== 'Active') {
         throw new Error(
-          `Multi-hop IBC transfer paths not supported: ${connectionLength} connection hops`
+          `The connection source client is not active. Current status: ${
+            chainClientStatusFrom?.status ?? 'unknown'
+          }`
+        );
+      }
+      if (chainClientStatusTo?.status !== 'Active') {
+        throw new Error(
+          `The connection destination client is not active. Current status: ${
+            chainClientStatusTo?.status ?? 'unknown'
+          }`
         );
       }
       // bridging to native chain
@@ -125,12 +172,12 @@ export default function BridgeCard({
 
         try {
           await sendRequest({
-            token: coin(amount, tokenDenom),
+            token: coin(amount, getBaseDenom(from)),
             timeout_timestamp: timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
-            source_port: ibcTransferInfo.channel.port_id,
-            source_channel: ibcTransferInfo.channel.channel_id,
+            source_port: channelInfo.port_id,
+            source_channel: channelInfo.channel_id,
             memo: '',
             timeout_height: {
               revision_height: Long.ZERO,
@@ -153,23 +200,14 @@ export default function BridgeCard({
         if (!baseAmount || !Number(baseAmount)) {
           throw new Error('Invalid Token Amount');
         }
-        if (!ibcTransferInfo.channel.counterparty) {
-          throw new Error('No egress connection information found');
-        }
-        // find the base IBC denom to match the base amount being sent
-        const tokenBaseDenom = getIbcDenom(
-          to.base,
-          ibcTransferInfo.channel.channel_id,
-          ibcTransferInfo.channel.port_id
-        );
         try {
           await sendRequest({
-            token: coin(baseAmount, tokenBaseDenom),
+            token: coin(baseAmount, to.base),
             timeout_timestamp: timeoutTimestamp,
             sender: chainAddressFrom,
             receiver: chainAddressTo,
-            source_port: ibcTransferInfo.channel.counterparty.port_id,
-            source_channel: ibcTransferInfo.channel.counterparty.channel_id,
+            source_port: channelInfo.port_id,
+            source_channel: channelInfo.channel_id,
             memo: '',
             timeout_height: {
               revision_height: Long.ZERO,
@@ -185,55 +223,21 @@ export default function BridgeCard({
       }
     },
     [
+      wallet,
+      from,
+      to,
       chainAddressFrom,
       chainAddressTo,
       chainFrom,
       chainTo,
-      onSuccess,
-      from,
-      ibcOpenTransfers,
-      sendRequest,
-      to,
+      channelInfo,
+      chainClientStatusFrom?.status,
+      chainClientStatusTo?.status,
       value,
-      wallet,
+      sendRequest,
+      onSuccess,
     ]
   );
-
-  // find expected transfer time (1 block on source + 1 block on destination)
-  const { data: chainTimeFrom } = useRemoteChainBlockTime(chainFrom);
-  const { data: chainTimeTo } = useRemoteChainBlockTime(chainTo);
-  const chainTime = useMemo(() => {
-    if (chainTimeFrom !== undefined && chainTimeTo !== undefined) {
-      // default to 30s (in Nanoseconds)
-      const defaultMaxChainTime = '30000000000';
-      const chainMsFrom = new BigNumber(
-        chainTimeFrom?.params?.max_expected_time_per_block?.toString() ??
-          defaultMaxChainTime
-      ).multipliedBy(nanoseconds);
-      const chainMsTo = new BigNumber(
-        chainTimeTo?.params?.max_expected_time_per_block?.toString() ??
-          defaultMaxChainTime
-      ).multipliedBy(nanoseconds);
-      const blockMinutes = chainMsFrom.plus(chainMsTo).dividedBy(minutes);
-      return `<${formatAmount(blockMinutes.toFixed(0), {
-        useGrouping: true,
-      })} minute${blockMinutes.isGreaterThan(1) ? 's' : ''}`;
-    }
-  }, [chainTimeFrom, chainTimeTo]);
-
-  // find transfer fees
-  const { data: chainFeesFrom } = useRemoteChainFees(chainFrom);
-  const { data: chainFeesTo } = useRemoteChainFees(chainTo);
-  const chainFees = useMemo(() => {
-    if (chainFeesFrom !== undefined && chainFeesTo !== undefined) {
-      const one = new BigNumber(1);
-      const fee = new BigNumber(value)
-        .multipliedBy(one.plus(chainFeesFrom?.params?.fee_percentage ?? 0))
-        .multipliedBy(one.plus(chainFeesTo?.params?.fee_percentage ?? 0))
-        .minus(value);
-      return formatAmount(fee.toFixed(), { useGrouping: true });
-    }
-  }, [value, chainFeesFrom, chainFeesTo]);
 
   return (
     chainFrom &&
@@ -243,7 +247,7 @@ export default function BridgeCard({
           <fieldset
             className="col gap-lg"
             disabled={
-              !(token && chainAddressFrom && chainAddressTo) &&
+              !(token && chainAddressFrom && chainAddressTo) ||
               isValidatingBridgeTokens
             }
           >
@@ -402,38 +406,43 @@ export default function BridgeCard({
             </div>
             <div className="transaction-box my-sm p-4 col gap-md">
               <div className="row">
-                <div className="col">Estimated Time</div>
+                <div className="col">Source chain status</div>
                 <div className="col ml-auto">
-                  {from || to ? <>{chainTime ?? '...'}</> : null}
+                  {chainClientStatusFrom?.status === 'Active' ? (
+                    <span>{chainClientStatusFrom.status}</span>
+                  ) : !chainClientStatusFromIsLoading ? (
+                    <span className="text-error">
+                      {chainClientStatusFrom?.status ?? 'Not connected'}
+                    </span>
+                  ) : (
+                    'Checking...'
+                  )}
                 </div>
               </div>
               <div className="row">
-                <div className="col">Transfer Fee</div>
+                <div className="col">Destination chain status</div>
                 <div className="col ml-auto">
-                  {Number(value) ? (
-                    <>
-                      {chainFees ?? '...'} {(from || to)?.symbol}
-                    </>
-                  ) : null}
-                </div>
-              </div>
-              <div className="row">
-                <div className="col">Total (est)</div>
-                <div className="col ml-auto">
-                  {Number(value) ? (
-                    <>
-                      {formatAmount(value, { useGrouping: true })}{' '}
-                      {(from || to)?.symbol}
-                    </>
-                  ) : null}
+                  {chainClientStatusTo?.status === 'Active' ? (
+                    <span>{chainClientStatusTo.status}</span>
+                  ) : !chainClientStatusToIsLoading ? (
+                    <span className="text-error">
+                      {chainClientStatusTo?.status ?? 'Not connected'}
+                    </span>
+                  ) : (
+                    'Checking...'
+                  )}
                 </div>
               </div>
             </div>
             <BridgeButton
               chainFrom={chainFrom}
+              chainFromAsset={chainFromAsset}
               chainTo={chainTo}
-              token={token}
               value={value}
+              disabled={
+                chainClientStatusFrom?.status !== 'Active' ||
+                chainClientStatusTo?.status !== 'Active'
+              }
             />
           </fieldset>
         </form>
@@ -442,36 +451,43 @@ export default function BridgeCard({
   );
 }
 
+// get an asset denom as known from its original chain
+function getBaseDenom(asset: Asset): string {
+  return asset.traces?.at(0)?.counterparty.base_denom ?? asset.base;
+}
+
 function BridgeButton({
   chainFrom,
+  chainFromAsset,
   chainTo,
-  token,
   value,
+  disabled,
 }: {
   chainFrom: Chain;
+  chainFromAsset?: Asset;
   chainTo: Chain;
-  token?: Token;
   value: string;
+  disabled: boolean;
 }) {
   const { data: chainAddressFrom } = useChainAddress(chainFrom);
   const { data: chainAddressTo } = useChainAddress(chainTo);
 
   const { data: bankBalanceAvailable } = useRemoteChainBankBalance(
     chainFrom,
-    token,
+    chainFromAsset?.base,
     chainAddressFrom
   );
 
   const hasAvailableBalance = useMemo(() => {
     return new BigNumber(value || 0).isLessThanOrEqualTo(
-      token
+      chainFromAsset
         ? getDisplayDenomAmount(
-            token,
+            chainFromAsset,
             bankBalanceAvailable?.balance?.amount || 0
           ) || 0
         : 0
     );
-  }, [value, bankBalanceAvailable, token]);
+  }, [value, bankBalanceAvailable, chainFromAsset]);
 
   const errorMessage = useMemo<string | undefined>(() => {
     switch (true) {
@@ -483,10 +499,16 @@ function BridgeButton({
   }, [hasAvailableBalance]);
 
   // return "incomplete" state
-  if (!token || !chainAddressFrom || !chainAddressTo || !Number(value)) {
+  if (
+    disabled ||
+    !chainFromAsset ||
+    !chainAddressFrom ||
+    !chainAddressTo ||
+    !Number(value)
+  ) {
     return (
-      <button type="submit" className="button-primary h3 p-4" disabled>
-        Bridge {token?.symbol}
+      <button type="submit" className="button-primary h4 p-4" disabled>
+        Bridge {chainFromAsset?.symbol}
       </button>
     );
   }
@@ -496,11 +518,15 @@ function BridgeButton({
       type={errorMessage ? 'button' : 'submit'}
       onClick={() => undefined}
       className={[
-        'h3 p-4',
+        'h4 p-4',
         errorMessage ? 'button-error' : 'button-primary',
       ].join(' ')}
     >
-      {errorMessage ? <>{errorMessage}</> : <>Bridge {token?.symbol}</>}
+      {errorMessage ? (
+        <>{errorMessage}</>
+      ) : (
+        <>Bridge {chainFromAsset?.symbol}</>
+      )}
     </button>
   );
 }
@@ -523,7 +549,7 @@ function RemoteChainReserves({
   const { data: chainEndpoint, isFetching: isFetchingChainEndpoint } =
     useRemoteChainRestEndpoint(chain);
   const { data: bankBalance, isFetching: isFetchingBankBalance } =
-    useRemoteChainBankBalance(chain, token, address);
+    useRemoteChainBankBalance(chain, token && getBaseDenom(token), address);
 
   if (chainEndpoint && address) {
     const bankBalanceAmount = bankBalance?.balance?.amount;

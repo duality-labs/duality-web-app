@@ -298,6 +298,9 @@ export function useRelatedChainsClient() {
       return createChainRegistryClient({
         ...defaultClientOptions,
         chainNames: relatedChainNames,
+        // pass IBC name pairs related only to native chain so that the client
+        // doesn't try to fetch IBC data between other listed unrelated chains
+        ibcNamePairs,
       });
     }
   );
@@ -341,12 +344,12 @@ function useDefaultAssetsClient() {
 }
 
 export function useChainUtil(): SWRResponse<ChainRegistryChainUtil> {
-  const swr = useDefaultAssetsClient();
+  const { data, ...swr } = useDefaultAssetsClient();
   // return just the chain utility instance
   // it is possible to get the original fetcher at chainUtil.chainInfo.fetcher
   return {
     ...swr,
-    data: swr.data?.getChainUtil(REACT_APP__CHAIN_NAME),
+    data: useMemo(() => data?.getChainUtil(REACT_APP__CHAIN_NAME), [data]),
   } as SWRResponse;
 }
 
