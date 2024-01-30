@@ -2,6 +2,9 @@ import BigNumber from 'bignumber.js';
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { Coin } from '@duality-labs/neutronjs/types/codegen/cosmos/base/v1beta1/coin';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+
 import Dialog from '../Dialog/Dialog';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
@@ -24,6 +27,12 @@ import {
 import { useDenomTrace } from '../../lib/web3/hooks/useDenomsFromChain';
 
 import './AssetsTableCard.scss';
+
+const { REACT_APP__BRIDGE_LINKS = '' } = import.meta.env;
+
+const bridgeLinks: { [baseDenom: string]: string[] } = REACT_APP__BRIDGE_LINKS
+  ? JSON.parse(REACT_APP__BRIDGE_LINKS)
+  : {};
 
 type TokenCoin = Coin & {
   token: Token;
@@ -75,7 +84,9 @@ export default function AssetsTableCard({
         // if value is equal, sort by amount
         getTokenAmount(b).minus(getTokenAmount(a)).toNumber() ||
         // if amount is equal, sort by local chain
-        getTokenChain(tokenB) - getTokenChain(tokenA)
+        getTokenChain(tokenB) - getTokenChain(tokenA) ||
+        // lastly sort by symbol
+        tokenA.symbol.localeCompare(tokenB.symbol)
       );
       function getTokenValue(id: string) {
         const foundUserAsset = allUserBankAssetsByTokenId[id];
@@ -101,7 +112,8 @@ export default function AssetsTableCard({
   // sort tokens
   const sortedList = useMemo(() => {
     // sort by USD value
-    return tokenList.sort(sortByValue);
+    // create new array to ensure re-rendering with new reference
+    return [...tokenList].sort(sortByValue);
   }, [tokenList, sortByValue]);
 
   const [searchValue, setSearchValue] = useState<string>('');
@@ -180,6 +192,22 @@ export default function AssetsTableCard({
   );
 }
 
+function ExternalLink({
+  className,
+  href,
+  children,
+}: {
+  className?: string;
+  href: string;
+  children: ReactNode;
+}) {
+  return (
+    <a target="_blank" rel="noreferrer" href={href} className={className}>
+      {children} <FontAwesomeIcon icon={faUpRightFromSquare}></FontAwesomeIcon>
+    </a>
+  );
+}
+
 function AssetRow({
   denom,
   // token,
@@ -214,14 +242,14 @@ function AssetRow({
                 {token.display.toUpperCase()}
               </div>
             </div>
-            <div className="subtext">
+            <div className="subtext row gapx-2 flow-wrap">
               <span>
                 {token.chain.pretty_name ??
                   token.chain.chain_name
                     .split('')
                     .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
               </span>
-              {trace?.path && <span className="ml-2">({trace.path})</span>}
+              {trace?.path && <span>({trace.path})</span>}
             </div>
           </div>
         </div>
@@ -240,22 +268,53 @@ function AssetRow({
       </td>
       {showActions && nativeChain && (
         <td>
-          {token.chain.chain_id !== nativeChain.chain_id && (
-            // disable buttons if there is no known path to bridge them here
-            <fieldset disabled={!address || !singleHopIbcCounterParty}>
-              <BridgeButton
-                className="button button-primary-outline nowrap mx-0"
-                from={token}
-              >
-                Deposit
-              </BridgeButton>
-              <BridgeButton
-                className="button button-outline nowrap mx-0 ml-3"
-                to={token}
-              >
-                Withdraw
-              </BridgeButton>
-            </fieldset>
+          {bridgeLinks[token.base]?.length > 0 ? (
+            bridgeLinks[token.base].length === 1 ? (
+              // add external link
+              <div>
+                <ExternalLink
+                  className="button button-primary-outline nowrap mx-0"
+                  href={bridgeLinks[token.base][0]}
+                >
+                  Bridge
+                </ExternalLink>
+              </div>
+            ) : (
+              // add external links
+              <div>
+                <ExternalLink
+                  className="button button-primary-outline nowrap mx-0"
+                  href={bridgeLinks[token.base][0]}
+                >
+                  Deposit
+                </ExternalLink>
+                <ExternalLink
+                  className="button button-outline nowrap mx-0 ml-3"
+                  href={bridgeLinks[token.base][1]}
+                >
+                  Withdraw
+                </ExternalLink>
+              </div>
+            )
+          ) : (
+            // add Dialog action
+            token.chain.chain_id !== nativeChain.chain_id && (
+              // disable buttons if there is no known path to bridge them here
+              <fieldset disabled={!address || !singleHopIbcCounterParty}>
+                <BridgeButton
+                  className="button button-primary-outline nowrap mx-0"
+                  from={token}
+                >
+                  Deposit
+                </BridgeButton>
+                <BridgeButton
+                  className="button button-outline nowrap mx-0 ml-3"
+                  to={token}
+                >
+                  Withdraw
+                </BridgeButton>
+              </fieldset>
+            )
           )}
         </td>
       )}
