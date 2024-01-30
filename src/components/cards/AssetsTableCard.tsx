@@ -84,7 +84,9 @@ export default function AssetsTableCard({
         // if value is equal, sort by amount
         getTokenAmount(b).minus(getTokenAmount(a)).toNumber() ||
         // if amount is equal, sort by local chain
-        getTokenChain(tokenB) - getTokenChain(tokenA)
+        getTokenChain(tokenB) - getTokenChain(tokenA) ||
+        // lastly sort by symbol
+        tokenA.symbol.localeCompare(tokenB.symbol)
       );
       function getTokenValue(id: string) {
         const foundUserAsset = allUserBankAssetsByTokenId[id];
