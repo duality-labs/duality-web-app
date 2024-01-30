@@ -214,14 +214,14 @@ function AssetRow({
                 {token.display.toUpperCase()}
               </div>
             </div>
-            <div className="subtext">
+            <div className="subtext row gapx-2 flow-wrap">
               <span>
                 {token.chain.pretty_name ??
                   token.chain.chain_name
                     .split('')
                     .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
               </span>
-              {trace?.path && <span className="ml-2">({trace.path})</span>}
+              {trace?.path && <span>({trace.path})</span>}
             </div>
           </div>
         </div>
