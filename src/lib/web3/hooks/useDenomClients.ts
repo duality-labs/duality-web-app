@@ -76,6 +76,8 @@ export function useAssetClientByDenom(
       parallel: true,
       initialSize: 1,
       use: [immutable],
+      revalidateFirstPage: false,
+      revalidateAll: false,
     }
   );
 
