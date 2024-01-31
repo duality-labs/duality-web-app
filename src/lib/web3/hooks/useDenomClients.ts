@@ -41,8 +41,6 @@ type AssetByDenom = Map<string, Asset>;
 type AssetClientByDenom = Map<string, ChainRegistryClient>;
 type AssetChainUtilByDenom = Map<string, ChainRegistryChainUtil>;
 
-const concurrentItemCount = 3;
-
 // export hook for getting ChainRegistryClient instances for each denom
 export function useAssetClientByDenom(
   denoms: string[] = []
@@ -69,24 +67,23 @@ export function useAssetClientByDenom(
       //       then no other keys will be evaluated and fetch will not be called.
       // todo: refactoring with a dynamic list of useQueries may solve this.
       //       for now, ensure the key is different if more traces are available.
-      const traceKeys = Array.from(denomTraceByDenom?.keys() ?? []);
-      return denom ? [denom, trace, `asset-client-${traceKeys}`] : null;
+      return denom ? [denom, trace, 'asset-client'] : null;
     },
     async ([denom, trace]) => {
       return [denom, await getAssetClient(denom, trace)];
     },
     {
       parallel: true,
+      initialSize: 1,
       use: [immutable],
-      initialSize: concurrentItemCount,
     }
   );
 
-  // get all pages, concurrentItemCount at a time
+  // get all pages, one at a time
   const { size, setSize } = swr2;
   useEffect(() => {
     if (size < uniqueDenoms.length) {
-      setSize((s) => Math.min(uniqueDenoms.length, s + concurrentItemCount));
+      setSize((s) => Math.min(uniqueDenoms.length, s + 1));
     }
   }, [size, setSize, uniqueDenoms]);
 

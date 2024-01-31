@@ -16,8 +16,6 @@ type SWRCommon<Data = unknown, Error = unknown> = {
   data: Data | undefined;
 };
 
-const concurrentItemCount = 3;
-
 export function useDenomTraceByDenom(
   denoms: string[]
 ): SWRCommon<DenomTraceByDenom> {
@@ -62,19 +60,19 @@ export function useDenomTraceByDenom(
     // these endpoint responses never change
     {
       parallel: true,
+      initialSize: 1,
       use: [immutable],
-      initialSize: concurrentItemCount,
       revalidateFirstPage: false,
       revalidateAll: false,
       errorRetryCount: 3,
     }
   );
 
-  // get all pages, concurrentItemCount at a time
+  // get all pages, one at a time
   const { size, setSize } = swr;
   useEffect(() => {
     if (size < ibcDenoms.length) {
-      setSize((size) => Math.min(ibcDenoms.length, size + concurrentItemCount));
+      setSize((size) => Math.min(ibcDenoms.length, size + 1));
     }
   }, [size, setSize, ibcDenoms]);
 
