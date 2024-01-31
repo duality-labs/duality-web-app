@@ -41,8 +41,6 @@ type AssetByDenom = Map<string, Asset>;
 type AssetClientByDenom = Map<string, ChainRegistryClient>;
 type AssetChainUtilByDenom = Map<string, ChainRegistryChainUtil>;
 
-const concurrentItemCount = 3;
-
 // export hook for getting ChainRegistryClient instances for each denom
 export function useAssetClientByDenom(
   denoms: string[] = []
@@ -60,33 +58,30 @@ export function useAssetClientByDenom(
       [denom: string, trace: DenomTrace | undefined, key: string] | null
     >
   >(
+    // allow hash to be an empty string
     (index: number) => {
       const denom = uniqueDenoms.at(index);
       const trace = denom ? denomTraceByDenom?.get(denom) : undefined;
-      // note: you might expect that because the page size is 3
-      //       that 3 keys will be evaluated to see if they have changed,
-      //       but only 1 key will be evaluated. if the first key has no change
-      //       then no other keys will be evaluated and fetch will not be called.
-      // todo: refactoring with a dynamic list of useQueries may solve this.
-      //       for now, ensure the key is different if more traces are available.
-      const traceKeys = Array.from(denomTraceByDenom?.keys() ?? []);
-      return denom ? [denom, trace, `asset-client-${traceKeys}`] : null;
+      return [denom || '', trace, 'asset-client'];
     },
+    // handle cases of empty hash string
     async ([denom, trace]) => {
-      return [denom, await getAssetClient(denom, trace)];
+      return [denom, denom ? await getAssetClient(denom, trace) : undefined];
     },
     {
       parallel: true,
+      initialSize: 1,
       use: [immutable],
-      initialSize: concurrentItemCount,
+      revalidateFirstPage: false,
+      revalidateAll: false,
     }
   );
 
-  // get all pages, concurrentItemCount at a time
+  // get all pages, resolving one key at a time
   const { size, setSize } = swr2;
   useEffect(() => {
     if (size < uniqueDenoms.length) {
-      setSize((s) => Math.min(uniqueDenoms.length, s + concurrentItemCount));
+      setSize((size) => Math.min(uniqueDenoms.length, size + 1));
     }
   }, [size, setSize, uniqueDenoms]);
 
