@@ -612,6 +612,17 @@ function LimitOrder({
         </div>
       )}
       <div className="my-md">
+        <div className="mb-2">
+          Order type{' '}
+          <a
+            className="button button-primary-outline px-2 py-0"
+            href="https://docs.neutron.org/neutron/modules/dex/messages/#order-types"
+            target="_blank"
+            rel="noreferrer"
+          >
+            ?
+          </a>
+        </div>
         <SelectInput<AllowedLimitOrderTypeKey>
           className="flex col m-0 p-0"
           list={
