@@ -63,7 +63,7 @@ export function useDenomTraceByDenom(
     // these endpoint responses never change
     {
       parallel: true,
-      initialSize: 1,
+      initialSize: 0,
       use: [immutable],
       revalidateFirstPage: false,
       revalidateAll: false,
@@ -71,13 +71,12 @@ export function useDenomTraceByDenom(
     }
   );
 
-  // get all pages, one at a time
-  const { size, setSize } = swr;
+  // get all pages, all at once
+  const { setSize } = swr;
   useEffect(() => {
-    if (size < ibcDenoms.length) {
-      setSize((size) => Math.min(ibcDenoms.length, size + 1));
-    }
-  }, [size, setSize, ibcDenoms]);
+    const itemCount = ibcDenoms.length;
+    setSize((size) => (size < itemCount ? itemCount : size));
+  }, [setSize, ibcDenoms.length]);
 
   // combine pages into one
   const { data: pages } = swr;

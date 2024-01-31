@@ -74,20 +74,19 @@ export function useAssetClientByDenom(
     },
     {
       parallel: true,
-      initialSize: 1,
+      initialSize: 0,
       use: [immutable],
       revalidateFirstPage: false,
       revalidateAll: false,
     }
   );
 
-  // get all pages, one at a time
-  const { size, setSize } = swr2;
+  // get all pages, all at once
+  const { setSize } = swr2;
   useEffect(() => {
-    if (size < uniqueDenoms.length) {
-      setSize((s) => Math.min(uniqueDenoms.length, s + 1));
-    }
-  }, [size, setSize, uniqueDenoms]);
+    const itemCount = uniqueDenoms.length;
+    setSize((size) => (size < itemCount ? itemCount : size));
+  }, [setSize, uniqueDenoms.length]);
 
   // combine pages into one
   const chainUtilByDenom = useMemo<AssetClientByDenom>(() => {
