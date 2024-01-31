@@ -38,10 +38,13 @@ export function useDenomTraceByDenom(
   const swr = useSWRInfinite<
     [string, DenomTrace?],
     Error,
-    SWRInfiniteKeyLoader<DenomTrace, [denom: string, namespace: string]>
+    SWRInfiniteKeyLoader<DenomTrace, [denom: string, namespace: string] | null>
   >(
     // allow hash to be an empty string
-    (index: number) => [ibcDenoms.at(index) || '', 'denom-trace'],
+    (index: number) => {
+      const denom = ibcDenoms.at(index);
+      return denom ? [denom, 'denom-trace'] : null;
+    },
     // handle cases of undefined client and empty hash string
     restClient
       ? async ([denom]) => {
