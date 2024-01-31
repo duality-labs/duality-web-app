@@ -58,13 +58,15 @@ export function useAssetClientByDenom(
       [denom: string, trace: DenomTrace | undefined, key: string] | null
     >
   >(
+    // allow hash to be an empty string
     (index: number) => {
       const denom = uniqueDenoms.at(index);
       const trace = denom ? denomTraceByDenom?.get(denom) : undefined;
-      return denom ? [denom, trace, 'asset-client'] : null;
+      return [denom || '', trace, 'asset-client'];
     },
+    // handle cases of empty hash string
     async ([denom, trace]) => {
-      return [denom, await getAssetClient(denom, trace)];
+      return [denom, denom ? await getAssetClient(denom, trace) : undefined];
     },
     {
       parallel: true,
@@ -79,7 +81,7 @@ export function useAssetClientByDenom(
   const { size, setSize } = swr2;
   useEffect(() => {
     if (size < uniqueDenoms.length) {
-      setSize((s) => Math.min(uniqueDenoms.length, s + 1));
+      setSize((size) => Math.min(uniqueDenoms.length, size + 1));
     }
   }, [size, setSize, uniqueDenoms]);
 
