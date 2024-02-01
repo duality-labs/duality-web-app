@@ -86,7 +86,7 @@ export function useAssetClientByDenom(
   }, [size, setSize, uniqueDenoms]);
 
   // combine pages into one
-  const chainUtilByDenom = useMemo<AssetClientByDenom>(() => {
+  const clientByDenom = useMemo<AssetClientByDenom>(() => {
     return (pages || []).reduce<AssetClientByDenom>(
       (map, [denom, client] = ['']) => {
         const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
@@ -104,7 +104,7 @@ export function useAssetClientByDenom(
     isValidating: swr1.isValidating || swr2.isValidating,
     isLoading: swr1.isLoading || swr2.isLoading,
     error: swr1.error || swr2.error,
-    data: chainUtilByDenom,
+    data: clientByDenom,
   };
 }
 
