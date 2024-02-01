@@ -66,7 +66,11 @@ export function useAssetClientByDenom(
     },
     // handle cases of empty hash string
     async ([denom, trace]) => {
-      return [denom, denom ? await getAssetClient(denom, trace) : undefined];
+      return denom
+        ? // return denom key with possible asset client (if found)
+          [denom, await getAssetClient(denom, trace)]
+        : // return "empty" result that won't be mapped
+          [''];
     },
     {
       parallel: true,
