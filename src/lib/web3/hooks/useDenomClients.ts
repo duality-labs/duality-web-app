@@ -168,10 +168,9 @@ export function useTokenByDenom(
       const chainName: string | undefined = asset
         ? asset.traces?.at(0)?.counterparty.chain_name || REACT_APP__CHAIN_NAME
         : undefined;
-      // todo: find a better way to pass data to the token picker
-      //       so we don't need Cosmos chain context passed through,
-      //       because some assets don't have Cosmos chain data: like Ethereum
+      // get asset's chain data
       const chain: Chain | undefined =
+        // create altered nativeChain data for nativeChain factory tokens
         (denom.startsWith('factory/') &&
           chainUtil && {
             ...chainUtil.chainInfo.chain,
@@ -180,8 +179,13 @@ export function useTokenByDenom(
               asset?.traces?.at(0)?.counterparty.chain_name ||
               chainUtil.chainInfo.chain.pretty_name,
           }) ||
+        // by default: add a found chain through the chain-registry client data
         (chainName ? client?.getChain(chainName) : undefined);
+      // add asset to map if it contains enough data
       if (denom && asset && chain) {
+        // todo: find a better way to pass data to the token picker
+        //       so we don't need Cosmos chain context passed through,
+        //       because some assets don't have Cosmos chain data: like Ethereum
         return map.set(denom, { chain, ...asset });
       }
       return map;
