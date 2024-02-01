@@ -112,6 +112,7 @@ async function createChainRegistryClient(
   for (const endpoint of chainRegistryFileEndpoints) {
     try {
       const client = new ChainRegistryClient({
+        ...defaultClientOptions,
         ...opts,
         baseUrl: endpoint,
       });
@@ -260,7 +261,6 @@ export async function getAssetClient(
 
   // start recursive chain with just native assets and all related IBC info
   return _getAssetClient({
-    ...defaultClientOptions,
     chainNames: [REACT_APP__CHAIN_NAME],
     ibcNamePairs: await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME),
     assetListNames: [REACT_APP__CHAIN_NAME],
@@ -270,7 +270,6 @@ export async function getAssetClient(
 // export hook for getting a basic chain-registry client for the native chain
 export async function getChainClient(chainName: string) {
   return createChainRegistryClient({
-    ...defaultClientOptions,
     chainNames: [chainName],
     assetListNames: [chainName],
   });
@@ -296,7 +295,6 @@ export function useRelatedChainsClient() {
       const ibcNamePairs = await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME);
       const relatedChainNames = Array.from(new Set(ibcNamePairs?.flat()));
       return createChainRegistryClient({
-        ...defaultClientOptions,
         chainNames: relatedChainNames,
         // pass IBC name pairs related only to native chain so that the client
         // doesn't try to fetch IBC data between other listed unrelated chains
@@ -315,7 +313,6 @@ function useNativeAssetsClient() {
     async (): Promise<ChainRegistryClient | undefined> => {
       // get asset client for all assets within one-hop of the native chain
       return createChainRegistryClient({
-        ...defaultClientOptions,
         chainNames: [REACT_APP__CHAIN_NAME],
         assetListNames: [REACT_APP__CHAIN_NAME],
       });
@@ -334,7 +331,6 @@ function useDefaultAssetsClient() {
       const ibcNamePairs = await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME);
       const relatedChainNames = Array.from(new Set(ibcNamePairs?.flat()));
       return createChainRegistryClient({
-        ...defaultClientOptions,
         chainNames: [REACT_APP__CHAIN_NAME],
         ibcNamePairs,
         assetListNames: relatedChainNames,
