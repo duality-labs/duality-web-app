@@ -43,10 +43,11 @@ const defaultChains: Chain[] = REACT_APP__CHAIN_REGISTRY_CHAINS
 const defaultIbcData: IBCInfo[] = REACT_APP__CHAIN_REGISTRY_IBC_DATA
   ? JSON.parse(REACT_APP__CHAIN_REGISTRY_IBC_DATA)
   : undefined;
-const defaultClientOptions = {
+const defaultClientOptions: ChainRegistryClientOptions = {
   assetLists: defaultAssetLists,
   chains: defaultChains,
   ibcData: defaultIbcData,
+  chainNames: [REACT_APP__CHAIN_NAME],
 };
 
 type ChainNamePair = [chainName1: string, chainName2: string];
@@ -107,7 +108,7 @@ async function getRelatedIbcNamePairs(exploreChainName: string) {
 }
 
 async function createChainRegistryClient(
-  opts: ChainRegistryClientOptions
+  opts: Partial<ChainRegistryClientOptions>
 ): Promise<ChainRegistryClient> {
   for (const endpoint of chainRegistryFileEndpoints) {
     try {
