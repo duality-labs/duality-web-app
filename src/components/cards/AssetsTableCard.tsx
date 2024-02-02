@@ -236,20 +236,18 @@ function AssetRow({
               alt={`${token.symbol} logo`}
             />
           </div>
-          <div className="col">
+          <div className="col flex">
+            <div className="row">{token.display.toUpperCase()}</div>
             <div className="row">
-              <div className="col token-denom">
-                {token.display.toUpperCase()}
+              <div className="col row-lg gapx-2 subtext text-left">
+                <span>
+                  {token.chain.pretty_name ??
+                    token.chain.chain_name
+                      .split('')
+                      .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
+                </span>
+                {trace?.path && <span className="nowrap">({trace.path})</span>}
               </div>
-            </div>
-            <div className="subtext row gapx-2 flow-wrap">
-              <span>
-                {token.chain.pretty_name ??
-                  token.chain.chain_name
-                    .split('')
-                    .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
-              </span>
-              {trace?.path && <span>({trace.path})</span>}
             </div>
           </div>
         </div>

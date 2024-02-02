@@ -437,22 +437,19 @@ function TokenPair({
           alt={`${token1.name} logo`}
         />
       </div>
-      <div className="col">
-        <div className="row">
-          <div className="col token-denom">
-            {token0.display.toUpperCase()}
-            {' / '}
-            {token1.display.toUpperCase()}
-          </div>
+      <div className="col flex">
+        <div className="row flow-wrap gapx-2">
+          <span className="nowrap">{token0.display.toUpperCase()} /</span>
+          <span className="nowrap">{token1.display.toUpperCase()}</span>
         </div>
         <div className="row">
-          <div className="col subtext text-left">
+          <div className="col row-lg gapx-2 subtext text-left">
             {token0.chain.pretty_name === token1.chain.pretty_name ? (
               <span className="nowrap">{token0.chain.pretty_name}</span>
             ) : (
               <>
                 <span className="nowrap">{token0.chain.pretty_name} /</span>
-                <span>{token1.chain.pretty_name}</span>
+                <span className="nowrap">{token1.chain.pretty_name}</span>
               </>
             )}
           </div>
