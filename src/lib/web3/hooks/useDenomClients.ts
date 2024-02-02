@@ -162,14 +162,74 @@ export function useAssetByDenom(
   return { ...swr, data };
 }
 
+// for possible types of assets in base denom
+// see: https://github.com/cosmos/chain-registry/blob/3e16e0d/assetlist.schema.json#L56
+const bridgedWasmAddressRegex = /^(\w+):([a-z]+)(\w{8,})$/;
+const factoryAddressRegex = /^factory\/(\w+)\/(\w+)$/;
+
+function shortenAddress(address: string) {
+  return address.length >= 9
+    ? `${address.slice(0, 3)}...${address.slice(-3)}`
+    : address;
+}
+
+// create asset from available denom information
+function createAssetFromDenom(denom: string): Asset {
+  const [match, address, name = denom] = denom.match(factoryAddressRegex) || [];
+  return {
+    base: denom,
+    display: denom,
+    denom_units: [{ denom: denom, exponent: 0 }],
+    name: denom,
+    description: match ? `factory token on ${address} for ${name}` : undefined,
+    symbol: match
+      ? // use pretty factory address
+        `${name} (factory) ${shortenAddress(address)}`
+      : // default to what we know
+        denom,
+  };
+}
+// create asset from available IBC trace information
+function createAssetFromIbcTrace(denom: string, trace: DenomTrace): Asset {
+  const [match, type, chain, address] =
+    trace.base_denom.match(bridgedWasmAddressRegex) || [];
+
+  return {
+    base: denom,
+    display: denom,
+    denom_units: [{ denom: denom, exponent: 0 }],
+    name: trace.base_denom,
+    description: match ? `factory token on ${address} for ${name}` : undefined,
+    symbol: match
+      ? // use pretty trace address
+        `${chain}(${type.toUpperCase()}) ${shortenAddress(address)}`
+      : // default to what we know
+        trace.base_denom,
+  };
+}
+
+// defined a default "unknown" chain
+const undefinedChain: Chain = {
+  $schema: '../chain.schema.json',
+  chain_id: '',
+  chain_name: 'undefined',
+  network_type: '',
+  pretty_name: '[unknown chain]',
+  slip44: 1,
+  status: '',
+  bech32_prefix: '',
+};
+
 // export convenience hook for getting just Token for each denom
 export type TokenByDenom = Map<string, Asset & { chain: Chain }>;
 export function useTokenByDenom(
   denoms: string[] = []
 ): SWRCommon<TokenByDenom> {
-  const { data: clientByDenom, ...swr } = useAssetClientByDenom(denoms);
+  const uniqueDenoms = useDeepCompareMemoize(Array.from(new Set(denoms)));
+  const { data: traceByDenom, ...swr1 } = useDenomTraceByDenom(uniqueDenoms);
+  const { data: clientByDenom, ...swr2 } = useAssetClientByDenom(denoms);
 
-  // return only found tokens
+  // return found tokens and a generic Unknown tokens
   const data = useMemo(() => {
     const denoms = Array.from(clientByDenom?.keys() || []);
     return denoms.reduce<TokenByDenom>((map, denom) => {
@@ -198,12 +258,27 @@ export function useTokenByDenom(
         //       so we don't need Cosmos chain context passed through,
         //       because some assets don't have Cosmos chain data: like Ethereum
         return map.set(denom, { chain, ...asset });
+      } else if (denom) {
+        // create
+        const denomTrace = traceByDenom?.get(denom);
+        if (denomTrace) {
+          const asset = createAssetFromIbcTrace(denom, denomTrace);
+          return map.set(denom, { ...asset, chain: undefinedChain });
+        } else {
+          const asset = createAssetFromDenom(denom);
+          return map.set(denom, { ...asset, chain: undefinedChain });
+        }
       }
       return map;
     }, new Map());
-  }, [clientByDenom]);
+  }, [clientByDenom, traceByDenom]);
 
-  return { ...swr, data };
+  return {
+    isValidating: swr1.isValidating || swr2.isValidating,
+    isLoading: swr1.isLoading || swr2.isLoading,
+    error: swr1.error || swr2.error,
+    data,
+  };
 }
 
 // export convenience hook for getting just one Token for one denom
