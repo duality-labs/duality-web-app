@@ -246,7 +246,25 @@ function AssetRow({
                       .split('')
                       .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
                 </span>
-                {trace?.path && <span className="nowrap">({trace.path})</span>}
+                {trace?.path && (
+                  <div className="row flow-wrap">
+                    {trace.path.split('/').flatMap((part, index, parts) => {
+                      const port = parts[index - 1];
+                      const channel = part;
+                      return index % 2 === 1 ? (
+                        <span className="nowrap" key={index}>
+                          {index > 1 ? '' : '('}
+                          {port}
+                          {'/'}
+                          {channel}
+                          {index + 1 < parts.length ? '/' : ')'}
+                        </span>
+                      ) : (
+                        []
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
