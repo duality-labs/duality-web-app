@@ -22,7 +22,7 @@ export function useAssetClient(denom: string | undefined) {
 
   return useSWRImmutable(
     ['asset-client', denom, trace],
-    async (): Promise<ChainRegistryClient | undefined> => {
+    async (): Promise<ChainRegistryClient | null | undefined> => {
       // get asset client if available
       return (denom && getAssetClient(denom, trace)) || undefined;
     }
@@ -37,7 +37,7 @@ export type SWRCommon<Data = unknown, Error = unknown> = {
 };
 
 type AssetByDenom = Map<string, Asset>;
-type AssetClientByDenom = Map<string, ChainRegistryClient>;
+type AssetClientByDenom = Map<string, ChainRegistryClient | null | undefined>;
 type AssetChainUtilByDenom = Map<string, ChainRegistryChainUtil>;
 
 // export hook for getting ChainRegistryClient instances for each denom
@@ -77,6 +77,10 @@ export function useAssetClientByDenom(
               // if the client if found, return that
               if (client && asset) {
                 return map.set(denom, client);
+              }
+              // if the client is undefined (pending) or null (not found/correct)
+              else {
+                return map.set(denom, client ? null : client);
               }
             }
             return map;

@@ -181,7 +181,7 @@ async function createChainRegistryClient(
 export async function getAssetClient(
   denom: string | undefined,
   ibcTrace?: DenomTrace
-): Promise<ChainRegistryClient | undefined> {
+): Promise<ChainRegistryClient | null> {
   const transferChannels: Array<[portId: string, channelId: string]> = (
     ibcTrace?.path ?? ''
   )
@@ -192,7 +192,7 @@ export async function getAssetClient(
 
   async function _getAssetClient(
     opts: ChainRegistryClientOptions
-  ): Promise<ChainRegistryClient | undefined> {
+  ): Promise<ChainRegistryClient | null> {
     const client = await createChainRegistryClient(opts);
     try {
       // return successfully if we found the asset
@@ -238,6 +238,9 @@ export async function getAssetClient(
         }
       }
     }
+
+    // if no client is able to be resolved, return null
+    return null;
 
     async function _getNextChainNameClient(chainName: string) {
       // if this would be the last step then find the assetlist of this chain
