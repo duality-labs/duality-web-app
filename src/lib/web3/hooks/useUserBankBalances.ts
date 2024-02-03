@@ -133,6 +133,14 @@ function useUserChainDenomBalances(): UseQueryResult<Coin[]> {
   } as UseQueryResult<Coin[]>;
 }
 
+export function useUserBankBalancesDenoms() {
+  const result = useUserChainDenomBalances();
+  return useMemo(
+    () => (result.data || []).map((coin) => coin.denom).sort(),
+    [result.data]
+  );
+}
+
 // define AssetCoin to represent a Coin paired with its chain-registry asset
 export interface AssetCoin extends Coin {
   asset: Asset;

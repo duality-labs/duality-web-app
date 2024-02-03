@@ -993,7 +993,7 @@ export default function PoolManagement({
           {tokenA ? (
             <TokenInputGroup
               className="flex"
-              defaultToUserTokens={true}
+              defaultAssetMode="Dex"
               variant={!hasSufficientFundsA && 'error'}
               onValueChanged={(value) => {
                 setInputValueA(value);
@@ -1008,7 +1008,7 @@ export default function PoolManagement({
           ) : (
             <TokenPicker
               className="flex button-primary p-4"
-              defaultToUserTokens={true}
+              defaultAssetMode="Dex"
               value={tokenA}
               onChange={setTokenA}
               exclusion={tokenB}
@@ -1019,7 +1019,7 @@ export default function PoolManagement({
           {tokenB ? (
             <TokenInputGroup
               className="flex"
-              defaultToUserTokens={true}
+              defaultAssetMode="Dex"
               variant={!hasSufficientFundsB && 'error'}
               onValueChanged={(value) => {
                 setInputValueB(value);
@@ -1034,7 +1034,7 @@ export default function PoolManagement({
           ) : (
             <TokenPicker
               className="flex button-primary p-4"
-              defaultToUserTokens={true}
+              defaultAssetMode="Dex"
               value={tokenB}
               onChange={setTokenB}
               exclusion={tokenA}
