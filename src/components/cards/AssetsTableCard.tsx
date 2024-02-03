@@ -9,6 +9,8 @@ import Dialog from '../Dialog/Dialog';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import BridgeCard from './BridgeCard';
+import AssetIcon from '../assets/AssetIcon';
+
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import { useNativeChain } from '../../lib/web3/hooks/useChains';
@@ -228,13 +230,9 @@ function AssetRow({
   return token ? (
     <tr>
       <td>
-        <div className="row gap-3 token-and-chain my-1 py-xs">
+        <div className="row gap-3 my-1 py-xs">
           <div className="col mt-xs">
-            <img
-              className="token-logo"
-              src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
-              alt={`${token.symbol} logo`}
-            />
+            <AssetIcon asset={token} />
           </div>
           <div className="col flex">
             <div className="row">{token.display.toUpperCase()}</div>

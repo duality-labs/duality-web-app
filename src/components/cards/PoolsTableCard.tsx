@@ -4,6 +4,7 @@ import { NavigateFunction, useNavigate } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 
 import TableCard, { TableCardProps } from './TableCard';
+import AssetIconPair from '../assets/AssetIconPair';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
@@ -422,20 +423,11 @@ function TokenPair({
   return (
     <BaseElement
       type={as === 'button' ? 'button' : undefined}
-      className="row gap-3 token-and-chain"
+      className="row gap-3"
       onClick={onClick}
     >
-      <div className="row mt-xs flow-nowrap">
-        <img
-          className="token-logo"
-          src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
-          alt={`${token0.name} logo`}
-        />
-        <img
-          className="token-logo"
-          src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
-          alt={`${token1.name} logo`}
-        />
+      <div className="col mt-xs">
+        <AssetIconPair asset0={token0} asset1={token1} />
       </div>
       <div className="col flex">
         <div className="row flow-wrap gapx-2">
