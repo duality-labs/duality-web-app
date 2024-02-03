@@ -90,13 +90,103 @@ export default function TokenPicker({
   value,
   onChange,
   exclusion,
-  denoms: givenDenoms,
+  denoms,
   disabled = false,
   showChain = true,
   defaultToUserTokens = false,
   children,
 }: TokenPickerProps) {
+  // control dialog opening from outside dialog
   const [isOpen, setIsOpen] = useState(false);
+  const open = useCallback(() => {
+    setIsOpen(true);
+  }, []);
+
+  return (
+    <>
+      {children ? (
+        <button
+          type="button"
+          className={[
+            className,
+            isOpen && 'open',
+            !value?.symbol && 'no-selected-token',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={open}
+          disabled={disabled}
+        >
+          {children}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={[
+            className,
+            'my-1',
+            'token-picker-toggle',
+            isOpen && 'open',
+            !value?.symbol && 'no-selected-token',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          onClick={open}
+          disabled={disabled}
+        >
+          {value?.logo_URIs ? (
+            <img
+              className="token-image"
+              alt={`${value.symbol} logo`}
+              // in this context (large images) prefer SVGs over PNGs for better images
+              src={value.logo_URIs.svg || value.logo_URIs.png}
+            />
+          ) : (
+            <FontAwesomeIcon
+              icon={faQuestionCircle}
+              size="2x"
+              className="token-image token-image-not-found"
+            ></FontAwesomeIcon>
+          )}
+          <span className="token-symbol">
+            {value?.symbol ?? 'Select A Token'}
+          </span>
+          {showChain && (
+            <span className="token-chain">
+              {value?.chain.pretty_name ?? value?.chain.chain_name}
+            </span>
+          )}
+        </button>
+      )}
+      {isOpen && (
+        <TokenPickerDialog
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          onChange={onChange}
+          exclusion={exclusion}
+          denoms={denoms}
+          defaultToUserTokens={defaultToUserTokens}
+        />
+      )}
+    </>
+  );
+}
+
+function TokenPickerDialog({
+  isOpen,
+  setIsOpen,
+  onChange,
+  exclusion,
+  denoms: givenDenoms,
+  defaultToUserTokens,
+}: {
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onChange: (newToken: Token | undefined) => void;
+  exclusion?: Token | undefined;
+  denoms?: Array<string>;
+  defaultToUserTokens?: boolean;
+}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -121,14 +211,10 @@ export default function TokenPicker({
   const [assetMode = defaultAssetMode, setAssetMode] = useState<AssetMode>();
   const currentID = useId();
 
-  const open = useCallback(() => {
-    setIsOpen(true);
-  }, []);
-
   const close = useCallback(() => {
     setSearchQuery('');
     setIsOpen(false);
-  }, []);
+  }, [setIsOpen]);
 
   const selectToken = useCallback(
     (token?: Token) => {
@@ -195,60 +281,6 @@ export default function TokenPicker({
     useSelectedButtonBackgroundMove(assetMode);
   return (
     <>
-      {children ? (
-        <button
-          type="button"
-          className={[
-            className,
-            isOpen && 'open',
-            !value?.symbol && 'no-selected-token',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          onClick={open}
-          disabled={disabled}
-        >
-          {children}
-        </button>
-      ) : (
-        <button
-          type="button"
-          className={[
-            className,
-            'my-1',
-            'token-picker-toggle',
-            isOpen && 'open',
-            !value?.symbol && 'no-selected-token',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          onClick={open}
-          disabled={disabled}
-        >
-          {value?.logo_URIs ? (
-            <img
-              className="token-image"
-              alt={`${value.symbol} logo`}
-              // in this context (large images) prefer SVGs over PNGs for better images
-              src={value.logo_URIs.svg || value.logo_URIs.png}
-            />
-          ) : (
-            <FontAwesomeIcon
-              icon={faQuestionCircle}
-              size="2x"
-              className="token-image token-image-not-found"
-            ></FontAwesomeIcon>
-          )}
-          <span className="token-symbol">
-            {value?.symbol ?? 'Select A Token'}
-          </span>
-          {showChain && (
-            <span className="token-chain">
-              {value?.chain.pretty_name ?? value?.chain.chain_name}
-            </span>
-          )}
-        </button>
-      )}
       <Dialog
         isOpen={isOpen}
         setIsOpen={setIsOpen}
