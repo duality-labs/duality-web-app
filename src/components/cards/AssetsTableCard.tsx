@@ -228,7 +228,7 @@ function AssetRow({
   return token ? (
     <tr>
       <td>
-        <div className="row gap-3 token-and-chain">
+        <div className="row gap-3 token-and-chain my-1 py-xs">
           <div className="col mt-xs">
             <img
               className="token-logo"
@@ -276,7 +276,7 @@ function AssetRow({
             useGrouping: true,
           })}`}
         </div>
-        <div className="subtext">
+        <div className="subtext mt-1">
           {`${formatCurrency(value?.toFixed() || '', {
             maximumFractionDigits: 6,
           })}`}
