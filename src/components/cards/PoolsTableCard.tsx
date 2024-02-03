@@ -425,7 +425,7 @@ function TokenPair({
       className="row gap-3 token-and-chain"
       onClick={onClick}
     >
-      <div className="row flex-centered flow-nowrap">
+      <div className="row mt-xs flow-nowrap">
         <img
           className="token-logo"
           src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
@@ -443,7 +443,7 @@ function TokenPair({
           <span className="nowrap">{token1.display.toUpperCase()}</span>
         </div>
         <div className="row">
-          <div className="col row-lg gapx-2 subtext text-left">
+          <div className="col row-lg gapx-2 subtext text-left mr-xs">
             {token0.chain.pretty_name === token1.chain.pretty_name ? (
               <span className="nowrap">{token0.chain.pretty_name}</span>
             ) : (
