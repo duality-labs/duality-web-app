@@ -410,7 +410,9 @@ function TokenPickerItem({
             ></FontAwesomeIcon>
           )}
           <span className="token-symbol">
-            <abbr title={token.display}>{textListWithMark(symbol)}</abbr>
+            <abbr title={token.description ?? token.name}>
+              {textListWithMark(symbol)}
+            </abbr>
           </span>
           <span className="chain-name">{textListWithMark(chain)}</span>
           {new BigNumber(balance).isZero() ? (
