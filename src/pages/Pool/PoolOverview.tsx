@@ -11,6 +11,7 @@ import PoolChart from './PoolChart';
 import { SmallCardRow } from '../../components/cards/SmallCard';
 import StatCardTVL from '../../components/stats/StatCardTVL';
 import AssetIcon from '../../components/assets/AssetIcon';
+import AssetSymbol from '../../components/assets/AssetName';
 
 import { formatAddress } from '../../lib/web3/utils/address';
 import {
@@ -160,7 +161,9 @@ function PairComposition({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
               <div className="col my-2">
                 <AssetIcon asset={row} />
               </div>
-              {row.symbol}
+              <div className="col">
+                <AssetSymbol asset={row} />
+              </div>
             </td>
           );
         },

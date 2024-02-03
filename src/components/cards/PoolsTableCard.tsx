@@ -5,6 +5,7 @@ import BigNumber from 'bignumber.js';
 
 import TableCard, { TableCardProps } from './TableCard';
 import AssetIconPair from '../assets/AssetIconPair';
+import AssetSymbol from '../assets/AssetName';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
@@ -431,8 +432,12 @@ function TokenPair({
       </div>
       <div className="col flex">
         <div className="row flow-wrap gapx-2">
-          <span className="nowrap">{token0.symbol} /</span>
-          <span className="nowrap">{token1.symbol}</span>
+          <span className="nowrap">
+            <AssetSymbol asset={token0} /> /
+          </span>
+          <span className="nowrap">
+            <AssetSymbol asset={token1} />
+          </span>
         </div>
         <div className="row">
           <div className="col row-lg gapx-2 subtext text-left mr-xs">
