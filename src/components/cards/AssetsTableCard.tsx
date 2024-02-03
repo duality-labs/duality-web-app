@@ -229,7 +229,7 @@ function AssetRow({
     <tr>
       <td>
         <div className="row gap-3 token-and-chain">
-          <div className="col flex-centered">
+          <div className="col mt-xs">
             <img
               className="token-logo"
               src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
