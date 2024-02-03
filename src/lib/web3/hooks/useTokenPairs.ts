@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { TokenID } from '../utils/tokens';
 import { useIndexerStreamOfSingleDataSet } from './useIndexer';
-import { useDeepCompareMemoize } from 'use-deep-compare-effect';
+import { useUniqueDenoms } from './useDenomClients';
 
 export type TokenPairReserves = [
   token0: TokenID,
@@ -36,10 +36,8 @@ export default function useTokenPairs(): TokenPairsState {
 export function useTokenPairsDenoms() {
   const { data: tokenPairs } = useTokenPairs();
   // return unique list of sorted token denoms (no update on different order)
-  return useDeepCompareMemoize(
-    Array.from(
-      new Set(tokenPairs?.flatMap(([token0, token1]) => [token0, token1]) ?? [])
-    ).sort()
+  return useUniqueDenoms(
+    tokenPairs?.flatMap(([token0, token1]) => [token0, token1])
   );
 }
 

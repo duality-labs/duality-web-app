@@ -41,7 +41,7 @@ type AssetByDenom = Map<string, Asset>;
 type AssetClientByDenom = Map<string, ChainRegistryClient | null | undefined>;
 type AssetChainUtilByDenom = Map<string, ChainRegistryChainUtil>;
 
-function useUniqueDenoms(denoms: string[] = []): string[] {
+export function useUniqueDenoms(denoms: string[] = []): string[] {
   return useDeepCompareMemoize(Array.from(new Set(denoms)).sort());
 }
 
