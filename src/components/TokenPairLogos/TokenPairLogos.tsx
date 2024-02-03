@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import unknownTokenSVG from '../../assets/tokens/_empty.svg';
 
 import { Token } from '../../lib/web3/utils/tokens';
 
@@ -13,18 +12,13 @@ function TokenImage({
   className: string;
   token?: Token;
 }) {
-  return token?.logo_URIs ? (
+  return (
     <img
       className={['token-logo', className].join(' ')}
-      alt={`${token.symbol ?? 'token'} logo`}
+      alt={`${token?.symbol ?? 'token'} logo`}
       // in this context (large images) prefer SVGs over PNGs for better images
-      src={token.logo_URIs.svg || token.logo_URIs.png}
+      src={token?.logo_URIs?.svg || token?.logo_URIs?.png || unknownTokenSVG}
     />
-  ) : (
-    <FontAwesomeIcon
-      icon={faQuestionCircle}
-      className={['token-logo', 'token-image-not-found', className].join(' ')}
-    ></FontAwesomeIcon>
   );
 }
 
