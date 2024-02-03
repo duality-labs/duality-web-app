@@ -14,8 +14,12 @@ import BigNumber from 'bignumber.js';
 
 import { useFilteredTokenList } from './hooks';
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
-import useUserTokens from '../../lib/web3/hooks/useUserTokens';
-import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
+import { useTokens } from '../../lib/web3/hooks/useDenomClients';
+import { useTokenPairsDenoms } from '../../lib/web3/hooks/useTokenPairs';
+import {
+  useBankBalanceDisplayAmount,
+  useUserBankBalancesDenoms,
+} from '../../lib/web3/hooks/useUserBankBalances';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
@@ -24,26 +28,20 @@ import Dialog from '../Dialog/Dialog';
 import SearchInput from '../inputs/SearchInput/SearchInput';
 
 import './TokenPicker.scss';
-import {
-  useNativeDenoms,
-  useOneHopDenoms,
-} from '../../lib/web3/hooks/useDenomsFromRegistry';
-import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
-import { useTokens } from '../../lib/web3/hooks/useDenomClients';
 
 interface TokenPickerProps {
   className?: string;
   onChange: (newToken: Token | undefined) => void;
   exclusion?: Token | undefined;
   value: Token | undefined;
-  denoms?: Array<string>;
   disabled?: boolean;
   showChain?: boolean;
-  defaultToUserTokens?: boolean;
+  defaultAssetMode?: AssetMode;
   children?: ReactNode;
 }
 
-type AssetMode = 'User' | 'All' | 'Chain';
+type AssetMode = 'User' | 'Dex' | 'All';
+export type { AssetMode as TokenPickerAssetMode };
 
 function useSelectedButtonBackgroundMove(
   value: string
@@ -90,10 +88,9 @@ export default function TokenPicker({
   value,
   onChange,
   exclusion,
-  denoms,
   disabled = false,
   showChain = true,
-  defaultToUserTokens = false,
+  defaultAssetMode,
   children,
 }: TokenPickerProps) {
   // control dialog opening from outside dialog
@@ -164,8 +161,7 @@ export default function TokenPicker({
           setIsOpen={setIsOpen}
           onChange={onChange}
           exclusion={exclusion}
-          denoms={denoms}
-          defaultToUserTokens={defaultToUserTokens}
+          defaultAssetMode={defaultAssetMode}
         />
       )}
     </>
@@ -177,15 +173,13 @@ function TokenPickerDialog({
   setIsOpen,
   onChange,
   exclusion,
-  denoms: givenDenoms,
-  defaultToUserTokens,
+  defaultAssetMode: givenDefaultAssetMode = 'All',
 }: {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   onChange: (newToken: Token | undefined) => void;
   exclusion?: Token | undefined;
-  denoms?: Array<string>;
-  defaultToUserTokens?: boolean;
+  defaultAssetMode?: AssetMode;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -193,21 +187,18 @@ function TokenPickerDialog({
   const bodyRef = useRef<HTMLUListElement>(null);
 
   // source allowed denoms from several places
-  const defaultDenoms = useOneHopDenoms();
-  const { data: tokenPairs } = useTokenPairs();
+  const userDenoms = useUserBankBalancesDenoms();
+  const dexDenoms = useTokenPairsDenoms();
   // find all tokens that may be selected in this input group
-  const { data: tokenList = [] } = useTokens(
-    givenDenoms ??
-      // use known tokenPairs and common denoms as "all assets"
-      defaultDenoms.concat(
-        tokenPairs?.flatMap(([token0, token1]) => [token0, token1]) ?? []
-      )
-  );
-  const { data: nativeTokenList = [] } = useTokens(useNativeDenoms());
+  const { data: dexTokenList = [] } = useTokens(dexDenoms);
+  const { data: userTokenList = [] } = useTokens(userDenoms);
 
-  const userList = useUserTokens();
+  // make an exception to the default asset mode:
+  // show the user the Dex assets if they have no assets themselves
   const defaultAssetMode =
-    defaultToUserTokens && userList.length ? 'User' : 'All';
+    givenDefaultAssetMode === 'User' && userTokenList.length === 0
+      ? 'All'
+      : givenDefaultAssetMode;
   const [assetMode = defaultAssetMode, setAssetMode] = useState<AssetMode>();
   const currentID = useId();
 
@@ -228,14 +219,23 @@ function TokenPickerDialog({
   const filteredList = useFilteredTokenList(
     useMemo(() => {
       switch (assetMode) {
-        case 'Chain':
-          return nativeTokenList;
         case 'User':
-          return userList;
+          return userTokenList;
+        case 'Dex':
+          return dexTokenList;
         default:
-          return tokenList;
+          // compile user and dex lists into one list
+          return [...userTokenList, ...dexTokenList].reduce<Token[]>(
+            (tokens, token) => {
+              if (!tokens.find(({ base }) => base === token.base)) {
+                return [...tokens, token];
+              }
+              return tokens;
+            },
+            []
+          );
       }
-    }, [assetMode, nativeTokenList, tokenList, userList]),
+    }, [assetMode, dexTokenList, userTokenList]),
     searchQuery
   );
 
@@ -305,18 +305,18 @@ function TokenPickerDialog({
           <button
             type="button"
             className="button pill py-3 px-4"
-            ref={createRefForValue('All')}
-            onClick={() => setAssetMode('All')}
+            ref={createRefForValue('Dex')}
+            onClick={() => setAssetMode('Dex')}
           >
-            All Assets
+            Dex Assets
           </button>
           <button
             type="button"
             className="button pill py-3 px-4"
-            ref={createRefForValue('Chain')}
-            onClick={() => setAssetMode('Chain')}
+            ref={createRefForValue('All')}
+            onClick={() => setAssetMode('All')}
           >
-            Neutron Chain Assets
+            All Assets
           </button>
         </div>
         <ul className="token-picker-body modal-scrollbar" ref={bodyRef}>
