@@ -40,11 +40,15 @@ type AssetByDenom = Map<string, Asset>;
 type AssetClientByDenom = Map<string, ChainRegistryClient | null | undefined>;
 type AssetChainUtilByDenom = Map<string, ChainRegistryChainUtil>;
 
+function useUniqueDenoms(denoms: string[] = []): string[] {
+  return useDeepCompareMemoize(Array.from(new Set(denoms)).sort());
+}
+
 // export hook for getting ChainRegistryClient instances for each denom
-export function useAssetClientByDenom(
-  denoms: string[] = []
+function useAssetClientByDenom(
+  denoms: string[] | undefined
 ): SWRCommon<AssetClientByDenom> {
-  const uniqueDenoms = useDeepCompareMemoize(Array.from(new Set(denoms)));
+  const uniqueDenoms = useUniqueDenoms(denoms);
   const swr1 = useDenomTraceByDenom(uniqueDenoms);
   const { data: denomTraceByDenom } = swr1;
 
@@ -101,14 +105,14 @@ export function useAssetClientByDenom(
 }
 
 export function useAssetChainUtilByDenom(
-  denoms: string[] = []
+  denoms: string[] | undefined
 ): SWRCommon<AssetChainUtilByDenom> {
-  const { data: clientByDenom, ...swr } = useAssetClientByDenom(denoms);
+  const uniqueDenoms = useUniqueDenoms(denoms);
+  const { data: clientByDenom, ...swr } = useAssetClientByDenom(uniqueDenoms);
 
   // substitute chain utils for assets
   const data = useMemo(() => {
-    const denoms = Array.from(clientByDenom?.keys() || []);
-    return denoms.reduce<AssetChainUtilByDenom>((map, denom) => {
+    return uniqueDenoms.reduce<AssetChainUtilByDenom>((map, denom) => {
       const client = clientByDenom?.get(denom);
       const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
       if (denom && chainUtil) {
@@ -116,21 +120,22 @@ export function useAssetChainUtilByDenom(
       }
       return map;
     }, new Map());
-  }, [clientByDenom]);
+  }, [uniqueDenoms, clientByDenom]);
 
   return { ...swr, data };
 }
 
 // export convenience hook for getting just Assets for each denom
 export function useAssetByDenom(
-  denoms: string[] = []
+  denoms: string[] | undefined
 ): SWRCommon<AssetByDenom> {
-  const { data: chainUtilByDenom, ...swr } = useAssetChainUtilByDenom(denoms);
+  const uniqueDenoms = useUniqueDenoms(denoms);
+  const { data: chainUtilByDenom, ...swr } =
+    useAssetChainUtilByDenom(uniqueDenoms);
 
   // substitute chain utils for assets
   const data = useMemo(() => {
-    const denoms = Array.from(chainUtilByDenom?.keys() || []);
-    return denoms.reduce<AssetByDenom>((map, denom) => {
+    return uniqueDenoms.reduce<AssetByDenom>((map, denom) => {
       const chainUtil = chainUtilByDenom?.get(denom);
       const asset = chainUtil?.getAssetByDenom(denom);
       if (denom && chainUtil && asset) {
@@ -138,7 +143,7 @@ export function useAssetByDenom(
       }
       return map;
     }, new Map());
-  }, [chainUtilByDenom]);
+  }, [uniqueDenoms, chainUtilByDenom]);
 
   return { ...swr, data };
 }
@@ -216,16 +221,15 @@ const undefinedChain: Chain = {
 // export convenience hook for getting just Token for each denom
 export type TokenByDenom = Map<string, Asset & { chain: Chain }>;
 export function useTokenByDenom(
-  denoms: string[] = []
+  denoms: string[] | undefined
 ): SWRCommon<TokenByDenom> {
-  const uniqDenoms = useDeepCompareMemoize(Array.from(new Set(denoms)).sort());
-  const { data: traceByDenom, ...swr1 } = useDenomTraceByDenom(uniqDenoms);
-  const { data: clientByDenom, ...swr2 } = useAssetClientByDenom(uniqDenoms);
+  const uniqueDenoms = useUniqueDenoms(denoms);
+  const { data: traceByDenom, ...swr1 } = useDenomTraceByDenom(uniqueDenoms);
+  const { data: clientByDenom, ...swr2 } = useAssetClientByDenom(uniqueDenoms);
 
   // return found tokens and a generic Unknown tokens
   const data = useMemo(() => {
-    const denoms = Array.from(clientByDenom?.keys() || []);
-    return denoms.reduce<TokenByDenom>((map, denom) => {
+    return uniqueDenoms.reduce<TokenByDenom>((map, denom) => {
       const client = clientByDenom?.get(denom);
       const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
       const asset = chainUtil?.getAssetByDenom(denom);
@@ -264,7 +268,7 @@ export function useTokenByDenom(
       }
       return map;
     }, new Map());
-  }, [clientByDenom, traceByDenom]);
+  }, [uniqueDenoms, clientByDenom, traceByDenom]);
 
   return {
     isValidating: swr1.isValidating || swr2.isValidating,
@@ -287,7 +291,7 @@ export function useToken(denom: string | undefined): SWRCommon<Token> {
 }
 
 // export convenience hook for getting list of multiple Tokens
-export function useTokens(denoms: string[] = []): SWRCommon<Token[]> {
+export function useTokens(denoms: string[] | undefined): SWRCommon<Token[]> {
   const { data: tokenByDenom, ...swr } = useTokenByDenom(denoms);
 
   // list tokens
