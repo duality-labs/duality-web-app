@@ -42,7 +42,7 @@ interface TokenPickerProps {
   children?: ReactNode;
 }
 
-type AssetModeType = 'User' | 'All' | 'Chain';
+type AssetMode = 'User' | 'All' | 'Chain';
 
 function useSelectedButtonBackgroundMove(
   value: string
@@ -114,15 +114,9 @@ export default function TokenPicker({
   const { data: nativeTokenList = [] } = useTokens(useNativeDenoms());
 
   const userList = useUserTokens();
-  const [assetMode, setAssetMode] = useState<AssetModeType>(
-    userList.length ? 'User' : 'Chain'
-  );
+  const defaultAssetMode = userList.length > 0 ? 'User' : 'All';
+  const [assetMode = defaultAssetMode, setAssetMode] = useState<AssetMode>();
   const currentID = useId();
-
-  useEffect(() => {
-    if (!userList.length)
-      setAssetMode((oldMode) => (oldMode === 'User' ? 'All' : oldMode));
-  }, [userList.length]);
 
   const open = useCallback(() => {
     setIsOpen(true);
