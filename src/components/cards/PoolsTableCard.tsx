@@ -269,7 +269,7 @@ export function MyPoolsTableCard<T extends string | number>({
         <table>
           <thead>
             <tr>
-              <th>Pair</th>
+              <th>Pool</th>
               <th>Value</th>
               <th>Composition</th>
               {Object.keys(userPositionActions || {}).length > 0 && (
