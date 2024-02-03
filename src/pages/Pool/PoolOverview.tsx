@@ -38,7 +38,6 @@ import { useSimplePrice } from '../../lib/tokenPrices';
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
 import { formatRelativeTime } from '../../lib/utils/time';
 
-import './Pool.scss';
 import {
   useTokenPathPart,
   useTokenValue,
@@ -47,6 +46,8 @@ import StatCardVolume from '../../components/stats/StatCardVolume';
 import StatCardFees from '../../components/stats/StatCardFees';
 import StatCardVolatility from '../../components/stats/StatCardVolatility';
 import { useStatComposition } from '../../components/stats/hooks';
+
+import './Pool.scss';
 
 export default function PoolOverview({
   tokenA,
