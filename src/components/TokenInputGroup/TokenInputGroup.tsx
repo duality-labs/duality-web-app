@@ -23,6 +23,7 @@ interface InputGroupProps {
   value?: string;
   token?: Token;
   denom?: string;
+  defaultToUserTokens?: boolean;
   /** disables both the input and the token (gets overwritten by the other 2) */
   disabled?: boolean;
   disabledInput?: boolean;
@@ -44,6 +45,7 @@ export default function TokenInputGroup({
   value,
   token,
   denom = token?.base,
+  defaultToUserTokens,
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
@@ -124,6 +126,7 @@ export default function TokenInputGroup({
         denoms={denoms}
         exclusion={exclusion}
         disabled={disabledToken}
+        defaultToUserTokens={defaultToUserTokens}
       />
       <NumberInput
         type="text"
