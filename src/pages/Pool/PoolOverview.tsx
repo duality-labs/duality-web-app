@@ -10,6 +10,7 @@ import Tabs from '../../components/Tabs/Tabs';
 import PoolChart from './PoolChart';
 import { SmallCardRow } from '../../components/cards/SmallCard';
 import StatCardTVL from '../../components/stats/StatCardTVL';
+import AssetIcon from '../../components/assets/AssetIcon';
 
 import { formatAddress } from '../../lib/web3/utils/address';
 import {
@@ -152,17 +153,12 @@ function PairComposition({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         function TokenCell1({ row }: { row: Token }) {
           return (
             <td
-              className=" flex row gap-3"
+              className="flex row gap-3"
               style={{ alignItems: 'center', justifyContent: 'flex-start' }}
             >
-              <div className="price-card__token-logo col my-2">
-                <img
-                  className="token-logo token-current"
-                  alt={`${row.symbol} logo`}
-                  src={row.logo_URIs?.svg ?? row.logo_URIs?.png}
-                />
+              <div className="col my-2">
+                <AssetIcon asset={row} />
               </div>
-
               {row.symbol}
             </td>
           );
