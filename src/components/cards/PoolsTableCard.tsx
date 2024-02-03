@@ -431,8 +431,8 @@ function TokenPair({
       </div>
       <div className="col flex">
         <div className="row flow-wrap gapx-2">
-          <span className="nowrap">{token0.display.toUpperCase()} /</span>
-          <span className="nowrap">{token1.display.toUpperCase()}</span>
+          <span className="nowrap">{token0.symbol} /</span>
+          <span className="nowrap">{token1.symbol}</span>
         </div>
         <div className="row">
           <div className="col row-lg gapx-2 subtext text-left mr-xs">

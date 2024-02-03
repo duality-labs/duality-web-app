@@ -235,7 +235,7 @@ function AssetRow({
             <AssetIcon asset={token} />
           </div>
           <div className="col flex">
-            <div className="row">{token.display.toUpperCase()}</div>
+            <div className="row">{token.symbol}</div>
             <div className="row">
               <div className="col row-lg gapx-2 subtext text-left">
                 <span>
