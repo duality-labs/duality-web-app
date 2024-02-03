@@ -237,9 +237,9 @@ export type TokenByDenom = Map<string, Asset & { chain: Chain }>;
 export function useTokenByDenom(
   denoms: string[] = []
 ): SWRCommon<TokenByDenom> {
-  const uniqueDenoms = useDeepCompareMemoize(Array.from(new Set(denoms)));
-  const { data: traceByDenom, ...swr1 } = useDenomTraceByDenom(uniqueDenoms);
-  const { data: clientByDenom, ...swr2 } = useAssetClientByDenom(denoms);
+  const uniqDenoms = useDeepCompareMemoize(Array.from(new Set(denoms)).sort());
+  const { data: traceByDenom, ...swr1 } = useDenomTraceByDenom(uniqDenoms);
+  const { data: clientByDenom, ...swr2 } = useAssetClientByDenom(uniqDenoms);
 
   // return found tokens and a generic Unknown tokens
   const data = useMemo(() => {
