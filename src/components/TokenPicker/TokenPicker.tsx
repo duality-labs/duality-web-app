@@ -15,6 +15,7 @@ import BigNumber from 'bignumber.js';
 import { useFilteredTokenList } from './hooks';
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useTokens } from '../../lib/web3/hooks/useDenomClients';
+import { useTokensSortedByValue } from '../../lib/web3/hooks/useTokens';
 import { useTokenPairsDenoms } from '../../lib/web3/hooks/useTokenPairs';
 import {
   useBankBalanceDisplayAmount,
@@ -216,29 +217,28 @@ function TokenPickerDialog({
   );
 
   // update the filtered list whenever the query or the list changes
-  const filteredList = useFilteredTokenList(
-    useMemo(() => {
-      switch (assetMode) {
-        case 'User':
-          return userTokenList;
-        case 'Dex':
-          // hide unrecommended not found (generated from denom) assets
-          return dexTokenList.filter((token) => token.chain.chain_id);
-        default:
-          // compile user and dex lists into one list
-          return [...userTokenList, ...dexTokenList].reduce<Token[]>(
-            (tokens, token) => {
-              if (!tokens.find(({ base }) => base === token.base)) {
-                return [...tokens, token];
-              }
-              return tokens;
-            },
-            []
-          );
-      }
-    }, [assetMode, dexTokenList, userTokenList]),
-    searchQuery
-  );
+  const unsortedTokenList = useMemo(() => {
+    switch (assetMode) {
+      case 'User':
+        return userTokenList;
+      case 'Dex':
+        // hide unrecommended not found (generated from denom) assets
+        return dexTokenList.filter((token) => token.chain.chain_id);
+      default:
+        // compile user and dex lists into one list
+        return [...userTokenList, ...dexTokenList].reduce<Token[]>(
+          (tokens, token) => {
+            if (!tokens.find(({ base }) => base === token.base)) {
+              return [...tokens, token];
+            }
+            return tokens;
+          },
+          []
+        );
+    }
+  }, [assetMode, dexTokenList, userTokenList]);
+  const sortedTokenList = useTokensSortedByValue(unsortedTokenList);
+  const filteredList = useFilteredTokenList(sortedTokenList, searchQuery);
 
   // udate the selected index each time the list changes
   useEffect(() => {
