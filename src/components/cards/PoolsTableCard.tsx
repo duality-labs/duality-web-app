@@ -23,6 +23,7 @@ import {
 import './PoolsTableCard.scss';
 
 interface PoolsTableCardOptions {
+  showUnknownTokens?: boolean;
   onTokenPairClick?: (tokens: [token0: Token, token1: Token]) => void;
   userPositionActions?: Actions;
 }
@@ -33,6 +34,7 @@ export default function PoolsTableCard<T extends string | number>({
   className,
   title = 'All Pools',
   onTokenPairClick,
+  showUnknownTokens = false,
   ...tableCardProps
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
   const [searchValue, setSearchValue] = useState<string>('');
@@ -41,30 +43,40 @@ export default function PoolsTableCard<T extends string | number>({
   const { data: tokenByDenom } = useTokenByDenom(
     tokenPairs?.flatMap(([denom0, denom1]) => [denom0, denom1])
   );
-  const tokenList = useMemo(
-    () => Array.from((tokenByDenom || [])?.values()),
-    [tokenByDenom]
-  );
+  const tokenList = useMemo(() => {
+    const tokenList = Array.from((tokenByDenom || [])?.values());
+    return showUnknownTokens
+      ? tokenList
+      : tokenList.filter((token) => !!token.chain.chain_id);
+  }, [tokenByDenom, showUnknownTokens]);
 
   const allPairsList = useMemo<Array<PoolTableRow>>(() => {
     return tokenPairs
       ? tokenPairs
           // find the tokens that match our known pair token IDs
-          .map(([token0, token1, reserves0, reserves1]) => {
-            return [
-              getPairID(token0, token1),
-              tokenByDenom?.get(token0),
-              tokenByDenom?.get(token1),
-              reserves0,
-              reserves1,
-            ];
+          .map(([denom0, denom1, reserves0, reserves1]) => {
+            const token0 = tokenByDenom?.get(denom0);
+            const token1 = tokenByDenom?.get(denom1);
+            if (token0 && token1) {
+              // show unknown tokens or test that both tokens are known
+              if (
+                showUnknownTokens ||
+                (token0.chain.chain_id && token1.chain.chain_id)
+              ) {
+                return [
+                  getPairID(denom0, denom1),
+                  token0,
+                  token1,
+                  reserves0,
+                  reserves1,
+                ];
+              }
+            }
           })
           // remove pairs with unfound tokens
-          .filter<PoolTableRow>((tokenPair): tokenPair is PoolTableRow =>
-            tokenPair.every(Boolean)
-          )
+          .filter<PoolTableRow>((pair): pair is PoolTableRow => !!pair)
       : [];
-  }, [tokenByDenom, tokenPairs]);
+  }, [showUnknownTokens, tokenByDenom, tokenPairs]);
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
   const filteredPoolsList = useMemo<Array<PoolTableRow>>(() => {

@@ -222,7 +222,8 @@ function TokenPickerDialog({
         case 'User':
           return userTokenList;
         case 'Dex':
-          return dexTokenList;
+          // hide unrecommended not found (generated from denom) assets
+          return dexTokenList.filter((token) => token.chain.chain_id);
         default:
           // compile user and dex lists into one list
           return [...userTokenList, ...dexTokenList].reduce<Token[]>(
