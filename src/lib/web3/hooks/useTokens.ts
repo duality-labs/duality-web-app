@@ -222,10 +222,12 @@ export function useTokensSortedByValue(tokenList: Token[]) {
       // sort first by value
       return (
         getTokenValue(b).minus(getTokenValue(a)).toNumber() ||
-        // if value is equal, sort by amount
-        getTokenAmount(b).minus(getTokenAmount(a)).toNumber() ||
-        // if amount is equal, sort by local chain
+        // if value is equal, sort by local chain
         getTokenChain(tokenB) - getTokenChain(tokenA) ||
+        // if local chain is equal, sort by known chain
+        getKnownChain(tokenB) - getKnownChain(tokenA) ||
+        // if known chain is equal, sort by amount
+        getTokenAmount(b).minus(getTokenAmount(a)).toNumber() ||
         // lastly sort by symbol
         tokenA.symbol.localeCompare(tokenB.symbol)
       );
@@ -242,6 +244,12 @@ export function useTokensSortedByValue(tokenList: Token[]) {
           return 2;
         }
         if (token.ibc) {
+          return 1;
+        }
+        return 0;
+      }
+      function getKnownChain(token: Token) {
+        if (token.chain.chain_id) {
           return 1;
         }
         return 0;
