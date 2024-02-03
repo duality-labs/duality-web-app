@@ -10,6 +10,7 @@ import Dialog from '../Dialog/Dialog';
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import BridgeCard from './BridgeCard';
 import AssetIcon from '../assets/AssetIcon';
+import AssetSymbol from '../assets/AssetName';
 
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
@@ -235,7 +236,9 @@ function AssetRow({
             <AssetIcon asset={token} />
           </div>
           <div className="col flex">
-            <div className="row">{token.symbol}</div>
+            <div className="row">
+              <AssetSymbol asset={token} />
+            </div>
             <div className="row">
               <div className="col row-lg gapx-2 subtext text-left">
                 <span>

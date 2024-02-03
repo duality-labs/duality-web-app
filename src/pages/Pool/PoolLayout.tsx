@@ -4,6 +4,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 import TokenPairLogos from '../../components/TokenPairLogos';
+import AssetSymbol from '../../components/assets/AssetName';
+
 import { Token } from '../../lib/web3/utils/tokens';
 import { useTokenPathPart } from '../../lib/web3/hooks/useTokens';
 
@@ -70,7 +72,8 @@ export default function PoolLayout({
             <div className="pool-page__header row my-4">
               <TokenPairLogos className="h3" tokenA={tokenA} tokenB={tokenB} />
               <h2 className="h3">
-                {tokenA?.symbol} {tokenB?.symbol} Pool
+                <AssetSymbol asset={tokenA} /> <AssetSymbol asset={tokenB} />{' '}
+                Pool
               </h2>
               <button
                 type="button"

@@ -7,6 +7,8 @@ import { Token } from '../../lib/web3/utils/tokens';
 
 import TokenPairLogos from '../../components/TokenPairLogos/TokenPairLogos';
 import TokenPicker from '../../components/TokenPicker/TokenPicker';
+import AssetSymbol from '../../components/assets/AssetName';
+
 import { formatCurrency, formatPercentage } from '../../lib/utils/number';
 import { useStatPrice, useStatVolume } from '../../components/stats/hooks';
 
@@ -92,7 +94,7 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
           exclusion={tokenA}
           value={tokenA}
         >
-          {tokenA?.symbol ?? 'Select'}
+          {tokenA ? <AssetSymbol asset={tokenA} /> : 'Select'}
         </TokenPicker>
         <span>/</span>
         <TokenPicker
@@ -101,7 +103,7 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
           exclusion={tokenB}
           value={tokenB}
         >
-          {tokenB?.symbol ?? 'Select'}
+          {tokenB ? <AssetSymbol asset={tokenB} /> : 'Select'}
         </TokenPicker>
       </h2>
       <button
