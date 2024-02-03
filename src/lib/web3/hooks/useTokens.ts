@@ -70,6 +70,10 @@ export function useDenomFromPathParam(
 ): SWRCommon<string> {
   const { data: tokenByDenom, ...swr } = useTokenByDenom(useOneHopDenoms());
   const denom = useMemo(() => {
+    // exclude specific "empty" token denom string for URL parts
+    if (pathParam === '-') {
+      return undefined;
+    }
     const tokens = Array.from(tokenByDenom?.values() ?? []);
     // return denom of resolved token, or the passed param which may be a denom
     return tokens.find(matchTokenBySymbol(pathParam))?.base ?? pathParam;
