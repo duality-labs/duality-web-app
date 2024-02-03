@@ -164,45 +164,57 @@ export function useAssetByDenom(
 
 // for possible types of assets in base denom
 // see: https://github.com/cosmos/chain-registry/blob/3e16e0d/assetlist.schema.json#L56
-const bridgedWasmAddressRegex = /^(\w+):([a-z]+)(\w{8,})$/;
-const factoryAddressRegex = /^factory\/(\w+)\/(\w+)$/;
+const bridgedWasmAddressRegex = /^(\w+):(\w+)$/;
+const factoryAddressRegex = /^factory\/(\w+)\/(.+)$/;
+const addressRegex = /^([a-z]+)([a-z0-9]+)$/;
 
-function shortenAddress(address: string) {
+function shortenHash(address: string) {
   return address.length >= 9
     ? `${address.slice(0, 3)}...${address.slice(-3)}`
     : address;
 }
 
+// somtimes token addresses can have differing lengths
+// - neutron1rylsg4js5nrm4acaqez5v95mv279lpfrstfupwqykkg6mcyt6lsqxafdcf
+// - neutron1tdn2c8u9war2x0gmr504scqzq26mle7yfjn728
+// split these to the prefix and hash
+function splitAddress(address: string = ''): [string, string] {
+  const [_, prefix, hash] = address.match(addressRegex) || [];
+  return [prefix || '', hash || ''];
+}
+
 // create asset from available denom information
 function createAssetFromDenom(denom: string): Asset {
   const [match, address, name = denom] = denom.match(factoryAddressRegex) || [];
+  const [prefix, hash] = splitAddress(address);
   return {
     base: denom,
     display: denom,
     denom_units: [{ denom: denom, exponent: 0 }],
     name: denom,
-    description: match ? `factory token on ${address} for ${name}` : undefined,
+    description: match && `factory token "${name}" on ${address}`,
     symbol: match
       ? // use pretty factory address
-        `${name} (factory) ${shortenAddress(address)}`
+        `${name} on ${prefix}${shortenHash(hash)}`
       : // default to what we know
         denom,
   };
 }
 // create asset from available IBC trace information
 function createAssetFromIbcTrace(denom: string, trace: DenomTrace): Asset {
-  const [match, type, chain, address] =
+  const [match, type, address] =
     trace.base_denom.match(bridgedWasmAddressRegex) || [];
+  const [prefix, hash] = splitAddress(address);
 
   return {
     base: denom,
     display: denom,
     denom_units: [{ denom: denom, exponent: 0 }],
     name: trace.base_denom,
-    description: match ? `factory token on ${address} for ${name}` : undefined,
+    description: match && `${type} token from ${prefix}: ${address}`,
     symbol: match
       ? // use pretty trace address
-        `${chain}(${type.toUpperCase()}) ${shortenAddress(address)}`
+        `${prefix}(${type.toUpperCase()}) ${shortenHash(hash)}`
       : // default to what we know
         trace.base_denom,
   };
