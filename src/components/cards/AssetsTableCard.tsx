@@ -27,6 +27,7 @@ import {
   useToken,
   useTokenByDenom,
 } from '../../lib/web3/hooks/useDenomClients';
+import { useTokensSortedByValue } from '../../lib/web3/hooks/useTokens';
 import { useDenomTrace } from '../../lib/web3/hooks/useDenomsFromChain';
 
 import './AssetsTableCard.scss';
@@ -74,50 +75,8 @@ export default function AssetsTableCard({
     );
   }, [allUserBankAssets]);
 
-  const { data: nativeChain } = useNativeChain();
-
-  // define sorting rows by token value
-  const sortByValue = useCallback(
-    (tokenA: Token, tokenB: Token) => {
-      const a = getTokenId(tokenA) || '';
-      const b = getTokenId(tokenB) || '';
-      // sort first by value
-      return (
-        getTokenValue(b).minus(getTokenValue(a)).toNumber() ||
-        // if value is equal, sort by amount
-        getTokenAmount(b).minus(getTokenAmount(a)).toNumber() ||
-        // if amount is equal, sort by local chain
-        getTokenChain(tokenB) - getTokenChain(tokenA) ||
-        // lastly sort by symbol
-        tokenA.symbol.localeCompare(tokenB.symbol)
-      );
-      function getTokenValue(id: string) {
-        const foundUserAsset = allUserBankAssetsByTokenId[id];
-        return foundUserAsset?.value || new BigNumber(0);
-      }
-      function getTokenAmount(id: string) {
-        const foundUserAsset = allUserBankAssetsByTokenId[id];
-        return new BigNumber(foundUserAsset?.amount || 0);
-      }
-      function getTokenChain(token: Token) {
-        if (nativeChain && token.chain.chain_id === nativeChain.chain_id) {
-          return 2;
-        }
-        if (token.ibc) {
-          return 1;
-        }
-        return 0;
-      }
-    },
-    [allUserBankAssetsByTokenId, nativeChain]
-  );
-
   // sort tokens
-  const sortedList = useMemo(() => {
-    // sort by USD value
-    // create new array to ensure re-rendering with new reference
-    return [...tokenList].sort(sortByValue);
-  }, [tokenList, sortByValue]);
+  const sortedList = useTokensSortedByValue(tokenList);
 
   const [searchValue, setSearchValue] = useState<string>('');
 
