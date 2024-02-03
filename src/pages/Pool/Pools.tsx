@@ -146,6 +146,8 @@ function PoolTableCards({
     <MyPoolsTableCard<keyof typeof switchValues>
       className="flex mt-5"
       title="My Pools"
+      // allow user to see any unrecommended pools they may still own
+      showUnknownTokens={true}
       switchValues={switchValues}
       switchValue={selectedPoolsList}
       switchOnChange={setSelectedPoolsList}
