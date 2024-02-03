@@ -383,6 +383,7 @@ function Swap() {
         </div>
         <div className="card-row">
           <TokenInputGroup
+            defaultToUserTokens={true}
             variant={
               (!hasSufficientFunds || error?.insufficientLiquidityIn) && 'error'
             }

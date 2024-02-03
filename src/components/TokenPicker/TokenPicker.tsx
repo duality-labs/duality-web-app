@@ -39,6 +39,7 @@ interface TokenPickerProps {
   denoms?: Array<string>;
   disabled?: boolean;
   showChain?: boolean;
+  defaultToUserTokens?: boolean;
   children?: ReactNode;
 }
 
@@ -92,6 +93,7 @@ export default function TokenPicker({
   denoms: givenDenoms,
   disabled = false,
   showChain = true,
+  defaultToUserTokens = false,
   children,
 }: TokenPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -114,7 +116,8 @@ export default function TokenPicker({
   const { data: nativeTokenList = [] } = useTokens(useNativeDenoms());
 
   const userList = useUserTokens();
-  const defaultAssetMode = userList.length > 0 ? 'User' : 'All';
+  const defaultAssetMode =
+    defaultToUserTokens && userList.length ? 'User' : 'All';
   const [assetMode = defaultAssetMode, setAssetMode] = useState<AssetMode>();
   const currentID = useId();
 
