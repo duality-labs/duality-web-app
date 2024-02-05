@@ -48,8 +48,9 @@ export function useObservableList<T>(
   });
   const [list, setList] = useState(() => observableList.get());
   useEffect(() => {
-    observableList.subscribe(setList);
-    return () => observableList.unsubscribe(setList);
+    const setListWithNewReference = (list: T[]) => setList([...list]);
+    observableList.subscribe(setListWithNewReference);
+    return () => observableList.unsubscribe(setListWithNewReference);
   }, [observableList]);
   return [
     list,
