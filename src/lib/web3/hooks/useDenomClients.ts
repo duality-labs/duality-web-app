@@ -1,6 +1,6 @@
-import useSWRImmutable, { immutable } from 'swr/immutable';
-import useSWRInfinite, { SWRInfiniteKeyLoader } from 'swr/infinite';
-import { useEffect, useMemo } from 'react';
+import useSWRImmutable from 'swr/immutable';
+import { useQueries } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import {
   ChainRegistryClient,
@@ -8,7 +8,6 @@ import {
 } from '@chain-registry/client';
 
 import { AdditionalMintageTrace, Asset, Chain } from '@chain-registry/types';
-import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
 import { useDenomTrace, useDenomTraceByDenom } from './useDenomsFromChain';
 import { Token } from '../utils/tokens';
@@ -49,62 +48,51 @@ export function useAssetClientByDenom(
   const swr1 = useDenomTraceByDenom(uniqueDenoms);
   const { data: denomTraceByDenom } = swr1;
 
-  // fetch a client for each denom and trace
-  const { data: pages, ...swr2 } = useSWRInfinite<
-    [denom: string, client?: ChainRegistryClient],
-    Error,
-    SWRInfiniteKeyLoader<
-      [denom: string, client?: ChainRegistryClient],
-      [denom: string, trace: DenomTrace | undefined, key: string] | null
-    >
-  >(
-    // allow hash to be an empty string
-    (index: number) => {
-      const denom = uniqueDenoms.at(index);
-      const trace = denom ? denomTraceByDenom?.get(denom) : undefined;
-      return [denom || '', trace, 'asset-client'];
+  const { data: clientByDenom, ...swr2 } = useQueries({
+    queries: uniqueDenoms.flatMap((denom) => {
+      const trace = denomTraceByDenom?.get(denom);
+      return {
+        queryKey: ['useAssetClientByDenom', denom, trace],
+        queryFn: async (): Promise<[string, ChainRegistryClient?]> => {
+          return [denom, await getAssetClient(denom, trace)];
+        },
+        // never refetch these values, they will never change
+        staleTime: Infinity,
+        refetchInterval: Infinity,
+        refetchOnMount: false,
+        refetchOnReconnect: false,
+        refetchOnWindowFocus: false,
+      };
+    }),
+    combine: (results) => {
+      return {
+        isLoading: results.every((result) => result.isPending),
+        isValidating: results.some((result) => result.isFetching),
+        data: results.reduce<AssetClientByDenom>(
+          (map, { isPending, data: [denom, client] = [] }) => {
+            // if resolved then add data
+            if (!isPending && denom) {
+              const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
+              const asset = chainUtil?.getAssetByDenom(denom);
+              // if the client if found, return that
+              if (client && asset) {
+                return map.set(denom, client);
+              }
+            }
+            return map;
+          },
+          new Map()
+        ),
+        error: results.find((result) => result.error)?.error,
+      };
     },
-    // handle cases of empty hash string
-    async ([denom, trace]) => {
-      return [denom, denom ? await getAssetClient(denom, trace) : undefined];
-    },
-    {
-      parallel: true,
-      initialSize: 1,
-      use: [immutable],
-      revalidateFirstPage: false,
-      revalidateAll: false,
-    }
-  );
-
-  // get all pages, resolving one key at a time
-  const { size, setSize } = swr2;
-  useEffect(() => {
-    if (size < uniqueDenoms.length) {
-      setSize((size) => Math.min(uniqueDenoms.length, size + 1));
-    }
-  }, [size, setSize, uniqueDenoms]);
-
-  // combine pages into one
-  const chainUtilByDenom = useMemo<AssetClientByDenom>(() => {
-    return (pages || []).reduce<AssetClientByDenom>(
-      (map, [denom, client] = ['']) => {
-        const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
-        const asset = chainUtil?.getAssetByDenom(denom);
-        if (denom && client && asset) {
-          return map.set(denom, client);
-        }
-        return map;
-      },
-      new Map()
-    );
-  }, [pages]);
+  });
 
   return {
     isValidating: swr1.isValidating || swr2.isValidating,
     isLoading: swr1.isLoading || swr2.isLoading,
     error: swr1.error || swr2.error,
-    data: chainUtilByDenom,
+    data: clientByDenom,
   };
 }
 
