@@ -160,6 +160,7 @@ function PairRow({
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   const {
+    isValidating,
     data: [price0, price1],
   } = useSimplePrice([token0, token1]);
 
@@ -173,14 +174,18 @@ function PairRow({
     return [0, 0];
   }, [price0, price1, token0, reserves0, token1, reserves1]);
 
-  if (token0 && token1 && price0 !== undefined && price1 !== undefined) {
+  if (token0 && token1) {
     return (
       <tr>
         <td className="min-width">
           <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
         {/* TVL col */}
-        <td>{formatCurrency(value0 + value1)}</td>
+        <td>
+          {isValidating && !value0 && !value1
+            ? '...'
+            : formatCurrency(value0 + value1)}
+        </td>
         {/* Volume (7 days) col */}
         <td>-</td>
         {/* Volatility (7 days) col */}
@@ -188,11 +193,7 @@ function PairRow({
       </tr>
     );
   }
-  return (
-    <tr>
-      <td colSpan={100}>Fetching price data ...</td>
-    </tr>
-  );
+  return null;
 }
 
 export function MyPoolsTableCard<T extends string | number>({
