@@ -176,7 +176,7 @@ export function useTokenByDenom(
           chainUtil && {
             ...chainUtil.chainInfo.chain,
             pretty_name:
-              (asset?.traces?.at(0) as AdditionalMintageTrace).provider ||
+              (asset?.traces?.at(0) as AdditionalMintageTrace)?.provider ||
               asset?.traces?.at(0)?.counterparty.chain_name ||
               chainUtil.chainInfo.chain.pretty_name,
           }) ||
