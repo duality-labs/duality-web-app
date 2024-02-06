@@ -169,9 +169,7 @@ export default function Header() {
             ))}
           </Drawer>
         </nav>
-        <div id="banner">
-          <div>Example banner text</div>
-        </div>
+        <div id="banner"></div>
       </div>
     </header>
   );
