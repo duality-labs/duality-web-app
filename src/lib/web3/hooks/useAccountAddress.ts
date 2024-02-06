@@ -20,6 +20,24 @@ export default import.meta.env.REACT_APP__GOOGLE_TAG_USER_ID_TRACKING
       // start with no tracking consent
       const [userIdConsentGranted, setUserIdConsentGranted] = useState(false);
 
+      // find out when the Tag Manager custom API is available to use
+      const [gtmIsReady, setGtmIsReady] = useState(false);
+      useEffect(() => {
+        let delay = 100;
+        let timeout: ReturnType<typeof setTimeout>;
+        const check = () => {
+          if (w.isConsentGranted) {
+            setGtmIsReady(true);
+          } else {
+            // add a linear backoff delay
+            delay += 100;
+            timeout = setTimeout(check, delay);
+          }
+        };
+        check();
+        return () => clearTimeout(timeout);
+      }, []);
+
       // sync React consent state with Tag Manager state
       // using global window hooks that expose Tag Manager's
       // isConsentGranted: https://developers.google.com/tag-platform/tag-manager/templates/api#isconsentgranted
@@ -27,18 +45,20 @@ export default import.meta.env.REACT_APP__GOOGLE_TAG_USER_ID_TRACKING
       // removeConsentListener: added custom handler to not accumulate callbacks
       // in a custom template tag in some environments (such as beta)
       useEffect(() => {
-        setUserIdConsentGranted(
-          w.isConsentGranted?.('user_id_storage') || false
-        );
+        if (gtmIsReady) {
+          // set value
+          setUserIdConsentGranted(!!w.isConsentGranted?.('user_id_storage'));
 
-        const onConsentChange = (_: string, granted: boolean) => {
-          setUserIdConsentGranted(granted);
-        };
-        w.addConsentListener?.('user_id_storage', onConsentChange);
-        return () => {
-          w.removeConsentListener?.('user_id_storage', onConsentChange);
-        };
-      }, []);
+          // or wait for value to be set
+          const onConsentChange = (_: string, granted: boolean) => {
+            setUserIdConsentGranted(granted);
+          };
+          w.addConsentListener?.('user_id_storage', onConsentChange);
+          return () => {
+            w.removeConsentListener?.('user_id_storage', onConsentChange);
+          };
+        }
+      }, [gtmIsReady]);
 
       // if and only if the user has given consent, then add the userId to GTM
       const previousSetUserIdRef = useRef<string | null>(null);
