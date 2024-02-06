@@ -98,4 +98,14 @@ header,
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  // banner style for default decent banner messages
+  #banner:has(> div) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2em;
+    background-color: #2f78a0;
+    box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.25);
+  }
 }
