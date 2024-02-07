@@ -187,6 +187,18 @@ function AssetRow({
     token.traces.at(0)?.type === 'ibc' &&
     token.traces.at(0)?.counterparty;
 
+  const isBridgable = !!singleHopIbcCounterParty;
+  const isNativeChain = !!(
+    token &&
+    nativeChain &&
+    token.chain.chain_id === nativeChain.chain_id
+  );
+
+  // filter out unbridgable non-native tokens on the Bridge page
+  if (showActions && !isNativeChain && !isBridgable) {
+    return null;
+  }
+
   return token ? (
     <tr>
       <td>
@@ -274,9 +286,9 @@ function AssetRow({
             )
           ) : (
             // add Dialog action
-            token.chain.chain_id !== nativeChain.chain_id && (
+            !isNativeChain && (
               // disable buttons if there is no known path to bridge them here
-              <fieldset disabled={!address || !singleHopIbcCounterParty}>
+              <fieldset disabled={!address || !isBridgable}>
                 <BridgeButton
                   className="button button-primary-outline nowrap mx-0"
                   from={token}
