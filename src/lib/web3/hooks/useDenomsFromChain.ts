@@ -30,7 +30,7 @@ export function useDenomTraceByDenom(
     defaultDenomTraceByDenom?.size || defaultDataState.error
       ? Array.from(new Set(denoms))
           .filter((denom) => denom.startsWith('ibc/'))
-          .filter((denom) => !defaultDenomTraceByDenom?.has(denom))
+          .filter((denom) => defaultDenomTraceByDenom?.has(denom))
       : []
   );
 
