@@ -6,6 +6,7 @@ import {
   ChainRegistryClient,
   ChainRegistryChainUtil,
 } from '@chain-registry/client';
+import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
 import { AdditionalMintageTrace, Asset, Chain } from '@chain-registry/types';
 
@@ -57,7 +58,7 @@ function useAssetClientByDenom(
       const trace = denomTraceByDenom?.get(denom);
       return {
         queryKey: ['useAssetClientByDenom', denom, trace],
-        queryFn: async (): Promise<[string, ChainRegistryClient?]> => {
+        queryFn: async (): Promise<[string, ChainRegistryClient | null]> => {
           return [denom, await getAssetClient(denom, trace)];
         },
         // never refetch these values, they will never change
