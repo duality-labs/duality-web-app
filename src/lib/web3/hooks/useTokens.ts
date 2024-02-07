@@ -11,13 +11,9 @@ import {
 import { useSimplePrice } from '../../tokenPrices';
 import { useNativeChain } from './useChains';
 import { useOneHopDenoms } from './useDenomsFromRegistry';
-import {
-  SWRCommon,
-  TokenByDenom,
-  useToken,
-  useTokenByDenom,
-} from './useDenomClients';
+import { TokenByDenom, useToken, useTokenByDenom } from './useDenomClients';
 import { useUserBankValues } from './useUserBankValues';
+import { SWRCommon, useSwrResponse } from './useSWR';
 
 const { REACT_APP__CHAIN_ID = '' } = import.meta.env;
 
@@ -81,7 +77,7 @@ export function useDenomFromPathParam(
     // return denom of resolved token, or the passed param which may be a denom
     return tokens.find(matchTokenBySymbol(pathParam))?.base ?? pathParam;
   }, [tokenByDenom, pathParam]);
-  return { ...swr, data: denom };
+  return useSwrResponse(denom, swr);
 }
 
 // return token identifier that can be used as a part of a URL

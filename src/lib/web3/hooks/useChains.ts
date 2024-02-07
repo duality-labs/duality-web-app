@@ -7,7 +7,11 @@ import { useQuery } from '@tanstack/react-query';
 import { getChainInfo } from '../wallets/keplr';
 import { minutes } from '../../utils/time';
 import { useNativeChainClient } from './useDenomsFromRegistry';
-import { SWRResponse } from 'swr';
+import {
+  SWRCommon,
+  useSwrResponse,
+  useSwrResponseFromReactQuery,
+} from './useSWR';
 
 const {
   REACT_APP__CHAIN = '',
@@ -20,7 +24,7 @@ const {
 } = import.meta.env;
 
 type ChainFeeTokens = NonNullable<Chain['fees']>['fee_tokens'];
-export function useNativeChain(): SWRResponse<Chain> {
+export function useNativeChain(): SWRCommon<Chain> {
   const { data: chainListClient, ...swr } = useNativeChainClient();
   const nativeChain = useMemo<Chain | undefined>(() => {
     const chainList = chainListClient?.chains;
@@ -56,16 +60,12 @@ export function useNativeChain(): SWRResponse<Chain> {
     return nativeChain;
   }, [chainListClient]);
 
-  return { ...swr, data: nativeChain } as SWRResponse;
+  return useSwrResponse(nativeChain, swr);
 }
 
-export function useChainAddress(chain?: Chain): {
-  data?: string;
-  isValidating: boolean;
-  error?: Error;
-} {
+export function useChainAddress(chain?: Chain): SWRCommon<string> {
   const chainId = chain?.chain_id ?? '';
-  const { data, isFetching, error } = useQuery({
+  const queryResult = useQuery({
     enabled: !!chain,
     queryKey: ['useChainAddress', chainId],
     queryFn: chain
@@ -78,7 +78,7 @@ export function useChainAddress(chain?: Chain): {
     // if the request was declined, don't keep re-requesting it
     retry: false,
   });
-  return { data, isValidating: isFetching, error: error || undefined };
+  return useSwrResponseFromReactQuery(queryResult.data, queryResult);
 }
 
 type CreateIbcRpcClient = typeof ibc.ClientFactory.createRPCQueryClient;

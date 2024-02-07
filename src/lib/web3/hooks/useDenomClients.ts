@@ -13,6 +13,7 @@ import { AdditionalMintageTrace, Asset, Chain } from '@chain-registry/types';
 import { useDenomTrace, useDenomTraceByDenom } from './useDenomsFromChain';
 import { Token } from '../utils/tokens';
 import { getAssetClient } from './useDenomsFromRegistry';
+import { SWRCommon, useSwrResponse } from './useSWR';
 
 const { REACT_APP__CHAIN_NAME = '' } = import.meta.env;
 
@@ -29,13 +30,6 @@ export function useAssetClient(denom: string | undefined) {
     }
   );
 }
-
-export type SWRCommon<Data = unknown, Error = unknown> = {
-  isValidating: boolean;
-  isLoading: boolean;
-  error: Error;
-  data: Data | undefined;
-};
 
 type AssetByDenom = Map<string, Asset>;
 type AssetClientByDenom = Map<string, ChainRegistryClient | null | undefined>;
@@ -97,12 +91,7 @@ function useAssetClientByDenom(
     },
   });
 
-  return {
-    isValidating: swr1.isValidating || swr2.isValidating,
-    isLoading: swr1.isLoading || swr2.isLoading,
-    error: swr1.error || swr2.error,
-    data: clientByDenom,
-  };
+  return useSwrResponse(clientByDenom, swr1, swr2);
 }
 
 export function useAssetChainUtilByDenom(
@@ -123,7 +112,7 @@ export function useAssetChainUtilByDenom(
     }, new Map());
   }, [uniqueDenoms, clientByDenom]);
 
-  return { ...swr, data };
+  return useSwrResponse(data, swr);
 }
 
 // export convenience hook for getting just Assets for each denom
@@ -146,7 +135,7 @@ export function useAssetByDenom(
     }, new Map());
   }, [uniqueDenoms, chainUtilByDenom]);
 
-  return { ...swr, data };
+  return useSwrResponse(data, swr);
 }
 
 // for possible types of assets in base denom
@@ -271,12 +260,7 @@ export function useTokenByDenom(
     }, new Map());
   }, [uniqueDenoms, clientByDenom, traceByDenom]);
 
-  return {
-    isValidating: swr1.isValidating || swr2.isValidating,
-    isLoading: swr1.isLoading || swr2.isLoading,
-    error: swr1.error || swr2.error,
-    data,
-  };
+  return useSwrResponse(data, swr1, swr2);
 }
 
 // export convenience hook for getting just one Token for one denom
@@ -288,7 +272,7 @@ export function useToken(denom: string | undefined): SWRCommon<Token> {
     return denom ? tokenByDenom?.get(denom) : undefined;
   }, [tokenByDenom, denom]);
 
-  return { ...swr, data };
+  return useSwrResponse(data, swr);
 }
 
 // export convenience hook for getting list of multiple Tokens
@@ -301,5 +285,5 @@ export function useTokens(denoms: string[] | undefined): SWRCommon<Token[]> {
     [tokenByDenom]
   );
 
-  return { ...swr, data };
+  return useSwrResponse(data, swr);
 }

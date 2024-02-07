@@ -1,5 +1,4 @@
 import useSWRImmutable from 'swr/immutable';
-import { SWRResponse } from 'swr';
 import { useMemo } from 'react';
 import {
   ChainRegistryClient,
@@ -9,6 +8,7 @@ import {
 import { ibcDenom, getIbcAssetPath } from '@chain-registry/utils';
 import { Asset, AssetList, Chain, IBCInfo } from '@chain-registry/types';
 import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
+import { SWRCommon, useSwrResponse } from './useSWR';
 
 const {
   REACT_APP__CHAIN_NAME = '',
@@ -343,14 +343,12 @@ function useDefaultAssetsClient() {
   );
 }
 
-export function useChainUtil(): SWRResponse<ChainRegistryChainUtil> {
+export function useChainUtil(): SWRCommon<ChainRegistryChainUtil> {
   const { data, ...swr } = useDefaultAssetsClient();
   // return just the chain utility instance
   // it is possible to get the original fetcher at chainUtil.chainInfo.fetcher
-  return {
-    ...swr,
-    data: useMemo(() => data?.getChainUtil(REACT_APP__CHAIN_NAME), [data]),
-  } as SWRResponse;
+  const util = useMemo(() => data?.getChainUtil(REACT_APP__CHAIN_NAME), [data]);
+  return useSwrResponse(util, swr);
 }
 
 export function useChainNativeAssetList(): AssetList | undefined {
@@ -431,7 +429,7 @@ function getDenomTraceFromAsset(
     : undefined;
 }
 // get denom traces from default IBC network (one-hop)
-export function useDefaultDenomTraceByDenom(): SWRResponse<DenomTraceByDenom> {
+export function useDefaultDenomTraceByDenom(): SWRCommon<DenomTraceByDenom> {
   const { data: client, ...swr } = useDefaultAssetsClient();
 
   // find the IBC trace information of each known IBC asset
@@ -457,5 +455,5 @@ export function useDefaultDenomTraceByDenom(): SWRResponse<DenomTraceByDenom> {
       : map;
   }, [client]);
 
-  return { ...swr, data: defaultDenomTraceByDenom } as SWRResponse;
+  return useSwrResponse<DenomTraceByDenom>(defaultDenomTraceByDenom, swr);
 }
