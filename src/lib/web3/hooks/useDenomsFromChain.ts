@@ -39,16 +39,22 @@ export function useDenomTraceByDenom(
       const hash = denom.split('ibc/').at(1);
       if (restClient && hash) {
         return {
-          queryKey: ['useDenomTraceByDenom', denom, hash],
+          queryKey: [
+            'useDenomTraceByDenom',
+            denom,
+            hash,
+            defaultDenomTraceByDenom?.size,
+          ],
           queryFn: async (): Promise<[string, DenomTrace?]> => {
+            const foundDefaultTrace = defaultDenomTraceByDenom?.get(denom);
             return [
               denom,
-              hash
-                ? await restClient.applications.transfer.v1
-                    .denomTrace({ hash })
-                    .then((response) => response.denom_trace)
-                    .catch(() => undefined)
-                : undefined,
+              foundDefaultTrace ||
+                (hash
+                  ? await restClient.applications.transfer.v1
+                      .denomTrace({ hash })
+                      .then((response) => response.denom_trace)
+                  : undefined),
             ];
           },
           // never refetch these values, they will never change
