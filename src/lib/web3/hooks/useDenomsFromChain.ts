@@ -47,6 +47,7 @@ export function useDenomTraceByDenom(
                 ? await restClient.applications.transfer.v1
                     .denomTrace({ hash })
                     .then((response) => response.denom_trace)
+                    .catch(() => undefined)
                 : undefined,
             ];
           },
