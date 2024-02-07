@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
-import { UseQueryResult, useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { PageRequest } from '@duality-labs/neutronjs/types/codegen/cosmos/base/query/v1beta1/pagination';
 import { QueryAllBalancesResponse } from '@duality-labs/neutronjs/types/codegen/cosmos/bank/v1beta1/query';
 import { Coin } from '@cosmjs/proto-signing';
@@ -16,9 +16,14 @@ import { useFetchAllPaginatedPages } from './useQueries';
 import { Asset } from '@chain-registry/types';
 
 import { useTokenByDenom } from './useDenomClients';
+import {
+  SWRCommon,
+  useSwrResponse,
+  useSwrResponseFromReactQuery,
+} from './useSWR';
 
 // fetch all the user's bank balance
-function useAllUserBankBalances(): UseQueryResult<Coin[]> {
+function useAllUserBankBalances(): SWRCommon<Coin[]> {
   const restClientPromise = useCosmosRestClientPromise();
   const { address } = useWeb3();
 
@@ -103,34 +108,26 @@ function useAllUserBankBalances(): UseQueryResult<Coin[]> {
     return nonZeroBalances;
   }, [pages]);
 
-  return {
-    ...result,
-    data: useDeepCompareMemoize(allNonZeroBalances),
-  } as UseQueryResult<Coin[]>;
+  const data = useDeepCompareMemoize(allNonZeroBalances);
+  return useSwrResponseFromReactQuery(data, result);
 }
 
-export function useUserDexDenomBalances(): UseQueryResult<Coin[]> {
+export function useUserDexDenomBalances(): SWRCommon<Coin[]> {
   const result = useAllUserBankBalances();
   // filter the data to only Dex coins
   const data = useMemo(() => {
     return result.data?.filter((balance) => !!isDexShare(balance));
   }, [result.data]);
-  return {
-    ...result,
-    data,
-  } as UseQueryResult<Coin[]>;
+  return useSwrResponse(data, result);
 }
 
-function useUserChainDenomBalances(): UseQueryResult<Coin[]> {
+function useUserChainDenomBalances(): SWRCommon<Coin[]> {
   const result = useAllUserBankBalances();
   // filter the data to only plain coins
   const data = useMemo(() => {
     return result.data?.filter((balance) => !isDexShare(balance));
   }, [result.data]);
-  return {
-    ...result,
-    data,
-  } as UseQueryResult<Coin[]>;
+  return useSwrResponse(data, result);
 }
 
 export function useUserBankBalancesDenoms() {
@@ -149,7 +146,7 @@ export interface AssetCoin extends Coin {
 export interface TokenCoin extends Coin {
   token: Token;
 }
-export function useUserBankBalances(): UseQueryResult<TokenCoin[]> {
+export function useUserBankBalances(): SWRCommon<TokenCoin[]> {
   const result = useUserChainDenomBalances();
 
   const { data: tokenByDenom } = useTokenByDenom(
@@ -174,29 +171,24 @@ export function useUserBankBalances(): UseQueryResult<TokenCoin[]> {
     }, []);
   }, [result.data, tokenByDenom]);
 
-  return {
-    ...result,
-    data,
-  } as UseQueryResult<TokenCoin[]>;
+  return useSwrResponse(data, result);
 }
 
 // find bank balance of a specific denom
-function useUserBankBalance(
-  denom: string | undefined
-): UseQueryResult<TokenCoin> {
+function useUserBankBalance(denom: string | undefined): SWRCommon<TokenCoin> {
   const { data: balances, ...rest } = useUserBankBalances();
   const balance = useMemo(() => {
     // find the balance that matches the token
     return balances?.find((balance) => balance.denom === denom);
   }, [balances, denom]);
-  return { data: balance, ...rest } as UseQueryResult<TokenCoin>;
+  return useSwrResponse(balance, rest);
 }
 
 // the bank balances may be in denoms that are neither base or display units
 // convert them to base or display units with the following handler functions
 export function useBankBalanceBaseAmount(
   denom: string | undefined
-): UseQueryResult<string> {
+): SWRCommon<string> {
   const { data: balance, ...rest } = useUserBankBalance(denom);
   const balanceAmount = useMemo(() => {
     return (
@@ -209,12 +201,13 @@ export function useBankBalanceBaseAmount(
       )
     );
   }, [balance]);
-  return { data: balanceAmount, ...rest } as UseQueryResult<string>;
+  return useSwrResponse(balanceAmount, rest);
 }
 export function useBankBalanceDisplayAmount(
   denom: string | undefined
-): UseQueryResult<string> {
-  const { data: balance, isLoading, ...rest } = useUserBankBalance(denom);
+): SWRCommon<string> {
+  const swr = useUserBankBalance(denom);
+  const { data: balance, isLoading } = swr;
   const balanceAmount = useMemo(() => {
     return balance
       ? getDenomAmount(
@@ -227,5 +220,5 @@ export function useBankBalanceDisplayAmount(
       ? '0'
       : undefined;
   }, [isLoading, balance]);
-  return { data: balanceAmount, ...rest } as UseQueryResult<string>;
+  return useSwrResponse(balanceAmount, swr);
 }

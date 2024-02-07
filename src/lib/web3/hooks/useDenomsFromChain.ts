@@ -4,15 +4,9 @@ import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applicatio
 
 import { useIbcRestClient } from '../clients/restClients';
 import { useDefaultDenomTraceByDenom } from './useDenomsFromRegistry';
+import { SWRCommon, useSwrResponse } from './useSWR';
 
 type DenomTraceByDenom = Map<string, DenomTrace>;
-
-type SWRCommon<Data = unknown, Error = unknown> = {
-  isValidating: boolean;
-  isLoading: boolean;
-  error: Error;
-  data: Data | undefined;
-};
 
 export function useDenomTraceByDenom(
   denoms: string[]
@@ -86,11 +80,10 @@ export function useDenomTraceByDenom(
     },
   });
 
-  const { isValidating, isLoading, error } = swr;
-  return { isValidating, isLoading, error, data: denomTraceByDenom };
+  return useSwrResponse(denomTraceByDenom, swr);
 }
 
 export function useDenomTrace(denom = ''): SWRCommon<DenomTrace> {
   const { data: denomTraceByDenom, ...swr } = useDenomTraceByDenom([denom]);
-  return { ...swr, data: denomTraceByDenom?.get(denom) };
+  return useSwrResponse<DenomTrace>(denomTraceByDenom?.get(denom), swr);
 }
