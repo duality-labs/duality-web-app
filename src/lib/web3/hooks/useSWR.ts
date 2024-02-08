@@ -53,3 +53,28 @@ export function useSwrResponseFromReactQuery<T>(
   );
   return useSwrResponse(data, swr1, swr2);
 }
+
+export function isEqualMap<K, V>(
+  map1: Map<K, V>,
+  map2: Map<K, V> = new Map<K, V>()
+): boolean {
+  // compare map keys and values if they are the same size
+  if (map1.size === map2.size) {
+    const entries1 = map1.entries();
+    const entries2 = map2.entries();
+    for (let i = 0; i < map1.size; i++) {
+      const [key1, value1] = entries1.next().value;
+      const [key2, value2] = entries2.next().value;
+      if (key1 !== key2 || value1 !== value2) {
+        // an item is different
+        return false;
+      }
+    }
+    // no changes found
+    return true;
+  }
+  // the map size is different
+  else {
+    return false;
+  }
+}
