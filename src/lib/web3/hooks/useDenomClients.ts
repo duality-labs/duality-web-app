@@ -72,16 +72,7 @@ function useAssetClientByDenom(
     return results.reduce<AssetClientByDenom>((map, [denom, client]) => {
       // if resolved then add data
       if (denom) {
-        const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
-        const asset = chainUtil?.getAssetByDenom(denom);
-        // if the client if found, return that
-        if (client && asset) {
-          return map.set(denom, client);
-        }
-        // if the client is undefined (pending) or null (not found/correct)
-        else {
-          return map.set(denom, client ? null : client);
-        }
+        return map.set(denom, client);
       }
       return map;
     }, new Map());
