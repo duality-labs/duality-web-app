@@ -81,6 +81,77 @@ function useAssetClientByDenom(
   return useSwrResponse(clientByDenom, swr1, swr2);
 }
 
+// export hook for getting ChainRegistryClient instances for each denom
+function useAssetClientOfDenoms(
+  denoms: string[] | undefined
+): SWRCommon<[client: ChainRegistryClient | undefined, denoms: string[]]> {
+  const uniqueDenoms = useUniqueDenoms(denoms);
+  const swr1 = useDenomTraceByDenom(uniqueDenoms);
+  const { data: denomTraceByDenom } = swr1;
+
+  const { data: results, ...swr2 } = useQueries({
+    queries: uniqueDenoms.flatMap((denom) => {
+      const trace = denomTraceByDenom?.get(denom);
+      return {
+        queryKey: ['useAssetClientByDenom', denom, trace],
+        queryFn: async (): Promise<[string, ChainRegistryClient | null]> => {
+          return [denom, await getAssetClient(denom, trace)];
+        },
+        // never refetch these values, they will never change
+        staleTime: Infinity,
+        refetchInterval: Infinity,
+        refetchOnMount: false,
+        refetchOnReconnect: false,
+        refetchOnWindowFocus: false,
+      };
+    }),
+    // use generic simple as possible combination
+    combine: useCombineResults(),
+  });
+
+  const client = useMemo(() => {
+    // compute map
+    return results.reduce<[ChainRegistryClient | undefined, string[]]>(
+      ([aggregatedClient, denoms], [denom, client]) => {
+        // if resolved then add data
+        if (aggregatedClient) {
+          if (client) {
+            // add all unfound parts
+            client.chains.forEach((chain) => {
+              aggregatedClient.upsertChain(chain);
+              // if (!aggregatedClient.chains.includes(chain)) {
+              //   aggregatedClient.upsertChain(chain);
+              // }
+              // else { console.log('found chain') }
+            });
+            client.assetLists.forEach((assetList) => {
+              aggregatedClient.updateAssetList(assetList);
+              // if (!aggregatedClient.assetLists.includes(assetList)) {
+              //   aggregatedClient.updateAssetList(assetList);
+              // }
+              // else { console.log('found ibcData') }
+            });
+            client.ibcData.forEach((ibcData) => {
+              aggregatedClient.upsertIbcData(ibcData);
+              // if (!aggregatedClient.ibcData.includes(ibcData)) {
+              //   aggregatedClient.upsertIbcData(ibcData);
+              // }
+              // else { console.log('found ibcData') }
+            });
+            denoms.push(denom);
+          }
+          return [aggregatedClient, denoms];
+        } else {
+          return [client || undefined, denoms];
+        }
+      },
+      [undefined, []]
+    );
+  }, [results]);
+
+  return useSwrResponse(client, swr1, swr2);
+}
+
 export function useAssetChainUtilByDenom(
   denoms: string[] | undefined
 ): SWRCommon<AssetChainUtilByDenom> {
@@ -202,13 +273,22 @@ export function useTokenByDenom(
 ): SWRCommon<TokenByDenom> {
   const uniqueDenoms = useUniqueDenoms(denoms);
   const { data: traceByDenom, ...swr1 } = useDenomTraceByDenom(uniqueDenoms);
-  const { data: clientByDenom, ...swr2 } = useAssetClientByDenom(uniqueDenoms);
+  const { data: [client] = [], ...swr2 } = useAssetClientOfDenoms(uniqueDenoms);
 
   // return found tokens and a generic Unknown tokens
   const data = useMemo(() => {
+    const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
     return uniqueDenoms.reduce<TokenByDenom>((map, denom) => {
-      const client = clientByDenom?.get(denom);
-      const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
+      // skip unknown denoms
+      // if (!clientDenoms?.includes(denom)) {
+      //   return map;
+      // }
+      try {
+        chainUtil?.getAssetByDenom(denom);
+      } catch {
+        // console.log('cannot find denom', denom)
+        return map;
+      }
       const asset = chainUtil?.getAssetByDenom(denom);
       const chainName: string | undefined = asset
         ? asset.traces?.at(0)?.counterparty.chain_name || REACT_APP__CHAIN_NAME
@@ -245,7 +325,7 @@ export function useTokenByDenom(
       }
       return map;
     }, new Map());
-  }, [uniqueDenoms, clientByDenom, traceByDenom]);
+  }, [uniqueDenoms, client, traceByDenom]);
 
   return useSwrResponse(data, swr1, swr2);
 }
