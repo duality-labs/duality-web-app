@@ -398,7 +398,22 @@ export function useOneHopDenoms(): string[] {
     if (client) {
       const assetLists = [
         client.getChainAssetList(REACT_APP__CHAIN_NAME),
-        ...(client.getGeneratedAssetLists(REACT_APP__CHAIN_NAME) ?? []),
+        // make "one-hop" include only tokens on other chains that
+        // aren't IBC tokens from another chain (another hop)
+        // other known base_denom prefixes include: factory/, stk/, erc20/
+        ...(client.getGeneratedAssetLists(REACT_APP__CHAIN_NAME) ?? []).map(
+          (assetList) => {
+            return {
+              ...assetList,
+              assets: assetList.assets.filter(
+                (asset) =>
+                  !asset.traces ||
+                  (asset.traces.length === 1 &&
+                    !asset.traces[0].counterparty.base_denom.startsWith('ibc/'))
+              ),
+            };
+          }
+        ),
       ];
       return assetLists.flatMap(
         (assetList) => assetList?.assets.map((asset) => asset.base) ?? []
