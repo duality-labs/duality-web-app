@@ -148,7 +148,7 @@ function useTimeSeriesData(
       const response = await fetch(`${REACT_APP__INDEXER_API}/${path}${query}`);
       return await response.json();
     },
-    defaultPageParam: '',
+    initialPageParam: '',
     getNextPageParam: (lastPage: TimeSeriesPage) => {
       // don't pass an empty array as that will trigger another page to download
       return lastPage?.pagination?.next_key?.length
