@@ -1,6 +1,6 @@
 import useSWRImmutable from 'swr/immutable';
 import { useQueries } from '@tanstack/react-query';
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import {
   ChainRegistryClient,
@@ -13,7 +13,7 @@ import { AdditionalMintageTrace, Asset, Chain } from '@chain-registry/types';
 import { useDenomTrace, useDenomTraceByDenom } from './useDenomsFromChain';
 import { Token } from '../utils/tokens';
 import { getAssetClient } from './useDenomsFromRegistry';
-import { SWRCommon, isEqualMap, useSwrResponse } from './useSWR';
+import { SWRCommon, useCombineResults, useSwrResponse } from './useSWR';
 
 const { REACT_APP__CHAIN_NAME = '' } = import.meta.env;
 
@@ -47,8 +47,7 @@ function useAssetClientByDenom(
   const swr1 = useDenomTraceByDenom(uniqueDenoms);
   const { data: denomTraceByDenom } = swr1;
 
-  const memoizedData = useRef<AssetClientByDenom>();
-  const { data: clientByDenom, ...swr2 } = useQueries({
+  const { data: results, ...swr2 } = useQueries({
     queries: uniqueDenoms.flatMap((denom) => {
       const trace = denomTraceByDenom?.get(denom);
       return {
@@ -64,42 +63,29 @@ function useAssetClientByDenom(
         refetchOnWindowFocus: false,
       };
     }),
-    combine: (results) => {
-      // compute data
-      const data = results.reduce<AssetClientByDenom>(
-        (map, { isPending, data: [denom, client] = [] }) => {
-          // if resolved then add data
-          if (!isPending && denom) {
-            const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
-            const asset = chainUtil?.getAssetByDenom(denom);
-            // if the client if found, return that
-            if (client && asset) {
-              return map.set(denom, client);
-            }
-            // if the client is undefined (pending) or null (not found/correct)
-            else {
-              return map.set(denom, client ? null : client);
-            }
-          }
-          return map;
-        },
-        new Map()
-      );
-
-      // update the memoized reference if the new data is different
-      if (!isEqualMap(data, memoizedData.current)) {
-        memoizedData.current = data;
-      }
-
-      // return memoized data and combined result state
-      return {
-        data: memoizedData.current,
-        isLoading: results.every((result) => result.isPending),
-        isValidating: results.some((result) => result.isFetching),
-        error: results.find((result) => result.error)?.error,
-      };
-    },
+    // use generic simple as possible combination
+    combine: useCombineResults(),
   });
+
+  const clientByDenom = useMemo(() => {
+    // compute map
+    return results.reduce<AssetClientByDenom>((map, [denom, client]) => {
+      // if resolved then add data
+      if (denom) {
+        const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
+        const asset = chainUtil?.getAssetByDenom(denom);
+        // if the client if found, return that
+        if (client && asset) {
+          return map.set(denom, client);
+        }
+        // if the client is undefined (pending) or null (not found/correct)
+        else {
+          return map.set(denom, client ? null : client);
+        }
+      }
+      return map;
+    }, new Map());
+  }, [results]);
 
   return useSwrResponse(clientByDenom, swr1, swr2);
 }
