@@ -1,11 +1,15 @@
 import { UseQueryResult } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { SWRResponse } from 'swr';
 
 export type SWRCommon<Data = unknown, Error = unknown> = Omit<
   SWRResponse<Data, Error>,
   'mutate'
 >;
+interface SWRCommonWithRequiredData<Data = unknown, Error = unknown>
+  extends SWRCommon<Data, Error> {
+  data: Data;
+}
 
 export function useSwrResponse<T>(
   data: T | undefined,
@@ -52,6 +56,52 @@ export function useSwrResponseFromReactQuery<T>(
     [queryResult2]
   );
   return useSwrResponse(data, swr1, swr2);
+}
+
+export function useCombineResults<Data, Error>(): (
+  results: UseQueryResult<Data, Error>[]
+) => SWRCommonWithRequiredData<Data[], Error> {
+  const memoizedData = useRef<Data[]>([]);
+  return useCallback((results: UseQueryResult<Data, Error>[]) => {
+    const data = results.flatMap((result) =>
+      result.data ? [result.data] : []
+    );
+    // update the memoized reference if the new data is different
+    if (!isEqualArray(data, memoizedData.current)) {
+      memoizedData.current = data;
+    }
+    // return memoized data and combined result state
+    return {
+      data: memoizedData.current,
+      isLoading: results.every((result) => result.isPending),
+      isValidating: results.some((result) => result.isFetching),
+      error: results.find((result) => result.error)?.error ?? undefined,
+    };
+  }, []);
+}
+
+export function isEqualArray<V>(
+  array1: Array<V>,
+  array2: Array<V> = new Array<V>()
+): boolean {
+  // compare array values if they are the same length
+  if (array1.length === array2.length) {
+    const length = array1.length;
+    for (let i = 0; i < length; i++) {
+      const value1 = array1[i];
+      const value2 = array2[i];
+      if (value1 !== value2) {
+        // an item is different
+        return false;
+      }
+    }
+    // no changes found
+    return true;
+  }
+  // the array length is different
+  else {
+    return false;
+  }
 }
 
 export function isEqualMap<K, V>(

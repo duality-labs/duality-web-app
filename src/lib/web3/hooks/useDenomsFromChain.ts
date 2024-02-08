@@ -1,11 +1,11 @@
 import { useQueries } from '@tanstack/react-query';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
-import { useRef } from 'react';
+import { useMemo } from 'react';
 import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
 import { useIbcRestClient } from '../clients/restClients';
 import { useDefaultDenomTraceByDenom } from './useDenomsFromRegistry';
-import { SWRCommon, isEqualMap, useSwrResponse } from './useSWR';
+import { SWRCommon, useCombineResults, useSwrResponse } from './useSWR';
 
 type DenomTraceByDenom = Map<string, DenomTrace>;
 
@@ -29,8 +29,7 @@ export function useDenomTraceByDenom(
 
   const restClient = useIbcRestClient();
 
-  const memoizedData = useRef<DenomTraceByDenom>();
-  const { data: denomTraceByDenom, ...swr } = useQueries({
+  const { data: results, ...swr } = useQueries({
     queries: ibcDenoms.flatMap((denom) => {
       const hash = denom.split('ibc/').at(1);
       if (restClient && hash) {
@@ -63,33 +62,20 @@ export function useDenomTraceByDenom(
       }
       return [];
     }),
-    combine: (results) => {
-      // compute data
-      const data = results.reduce<DenomTraceByDenom>(
-        (map, { data: [denom, trace] = [] }) => {
-          // if resolved then add data
-          if (denom && trace) {
-            return map.set(denom, trace);
-          }
-          return map;
-        },
-        new Map()
-      );
-
-      // update the memoized reference if the new data is different
-      if (!isEqualMap(data, memoizedData.current)) {
-        memoizedData.current = data;
-      }
-
-      // return memoized data and combined result state
-      return {
-        data: memoizedData.current,
-        isLoading: results.every((result) => result.isPending),
-        isValidating: results.some((result) => result.isFetching),
-        error: results.find((result) => result.error)?.error,
-      };
-    },
+    // use generic simple as possible combination
+    combine: useCombineResults(),
   });
+
+  const denomTraceByDenom = useMemo(() => {
+    // compute map
+    return results.reduce<DenomTraceByDenom>((map, [denom, trace]) => {
+      // if resolved then add data
+      if (denom && trace) {
+        return map.set(denom, trace);
+      }
+      return map;
+    }, new Map());
+  }, [results]);
 
   return useSwrResponse(denomTraceByDenom, swr);
 }
