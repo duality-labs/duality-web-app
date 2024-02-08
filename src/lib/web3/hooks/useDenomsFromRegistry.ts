@@ -123,13 +123,13 @@ async function createChainRegistryClient(
           globalFetchCache(url).then((data) => {
             // find matching data to merge
             const assetListOrChain = data as AssetList | Chain;
+            const assetList: AssetList | undefined =
+              assetListOrChain.$schema?.endsWith('/assetlist.schema.json')
+                ? (assetListOrChain as AssetList)
+                : undefined;
             if (assetListOrChain.chain_name === REACT_APP__CHAIN_NAME) {
               // merge current chain asset data with default chain asset data
-              const assetList = data as AssetList;
-              if (
-                defaultAssetLists &&
-                assetList.$schema?.endsWith('/assetlist.schema.json')
-              ) {
+              if (assetList && defaultAssetLists) {
                 const defaultAssetList = defaultAssetLists.find(
                   ({ chain_name }) => chain_name === assetList.chain_name
                 )?.assets;
@@ -161,6 +161,16 @@ async function createChainRegistryClient(
                 );
                 return client.update({ ...defaultChain, ...chain });
               }
+            }
+            // remove multi-hop denoms from other chains
+            else if (assetList) {
+              return client.update({
+                ...assetList,
+                // add matched chain name assets over default assets by base
+                assets: assetList.assets.filter((asset) => {
+                  return (asset.traces?.length || 0) < 2;
+                }),
+              });
             }
             return client.update(data as Chain | AssetList | IBCInfo);
           })
