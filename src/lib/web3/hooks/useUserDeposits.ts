@@ -37,7 +37,7 @@ function useAllUserDeposits(): UseQueryResult<DepositRecord[]> {
         return response;
       }
     },
-    defaultPageParam: undefined as Uint8Array | undefined,
+    initialPageParam: undefined as Uint8Array | undefined,
     getNextPageParam: (lastPage): Uint8Array | undefined => {
       // don't pass an empty array as that will trigger another page to download
       return lastPage?.pagination?.next_key?.length
