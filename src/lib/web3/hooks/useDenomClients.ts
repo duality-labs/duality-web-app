@@ -8,7 +8,13 @@ import {
 } from '@chain-registry/client';
 import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
-import { AdditionalMintageTrace, Asset, Chain } from '@chain-registry/types';
+import {
+  AdditionalMintageTrace,
+  Asset,
+  AssetList,
+  Chain,
+  IBCInfo,
+} from '@chain-registry/types';
 
 import { useDenomTrace, useDenomTraceByDenom } from './useDenomsFromChain';
 import { Token } from '../utils/tokens';
@@ -109,44 +115,51 @@ function useAssetClientOfDenoms(
     combine: useCombineResults(),
   });
 
-  const client = useMemo(() => {
+  const client = useMemo<
+    [client: ChainRegistryClient | undefined, denoms: string[]]
+  >(() => {
     // compute map
-    return results.reduce<[ChainRegistryClient | undefined, string[]]>(
-      ([aggregatedClient, denoms], [denom, client]) => {
+    const { denoms, ...clientData } = results.reduce<{
+      chains: Chain[];
+      assetLists: AssetList[];
+      ibcData: IBCInfo[];
+      denoms: string[];
+    }>(
+      (clientData, [denom, client]) => {
         // if resolved then add data
-        if (aggregatedClient) {
-          if (client) {
-            // add all unfound parts
-            client.chains.forEach((chain) => {
-              aggregatedClient.upsertChain(chain);
-              // if (!aggregatedClient.chains.includes(chain)) {
-              //   aggregatedClient.upsertChain(chain);
-              // }
-              // else { console.log('found chain') }
-            });
-            client.assetLists.forEach((assetList) => {
-              aggregatedClient.updateAssetList(assetList);
-              // if (!aggregatedClient.assetLists.includes(assetList)) {
-              //   aggregatedClient.updateAssetList(assetList);
-              // }
-              // else { console.log('found ibcData') }
-            });
-            client.ibcData.forEach((ibcData) => {
-              aggregatedClient.upsertIbcData(ibcData);
-              // if (!aggregatedClient.ibcData.includes(ibcData)) {
-              //   aggregatedClient.upsertIbcData(ibcData);
-              // }
-              // else { console.log('found ibcData') }
-            });
-            denoms.push(denom);
-          }
-          return [aggregatedClient, denoms];
-        } else {
-          return [client || undefined, denoms];
+        if (client) {
+          clientData.denoms.push(denom);
+          client.chains.forEach((chain) => {
+            if (!clientData.chains.includes(chain)) {
+              clientData.chains.push(chain);
+            }
+          });
+          client.assetLists.forEach((assetList) => {
+            if (!clientData.assetLists.includes(assetList)) {
+              clientData.assetLists.push(assetList);
+            }
+          });
+          client.ibcData.forEach((ibcInfo) => {
+            if (!clientData.ibcData.includes(ibcInfo)) {
+              clientData.ibcData.push(ibcInfo);
+            }
+          });
         }
+        return clientData;
       },
-      [undefined, []]
+      { chains: [], assetLists: [], ibcData: [], denoms: [] }
     );
+    if (denoms.length) {
+      return [
+        new ChainRegistryClient({
+          ...clientData,
+          chainNames: [REACT_APP__CHAIN_NAME],
+        }),
+        denoms,
+      ];
+    } else {
+      return [undefined, denoms];
+    }
   }, [results]);
 
   return useSwrResponse(client, swr1, swr2);
@@ -273,20 +286,22 @@ export function useTokenByDenom(
 ): SWRCommon<TokenByDenom> {
   const uniqueDenoms = useUniqueDenoms(denoms);
   const { data: traceByDenom, ...swr1 } = useDenomTraceByDenom(uniqueDenoms);
-  const { data: [client] = [], ...swr2 } = useAssetClientOfDenoms(uniqueDenoms);
+  const { data: [client, clientDenoms] = [], ...swr2 } =
+    useAssetClientOfDenoms(uniqueDenoms);
 
   // return found tokens and a generic Unknown tokens
   const data = useMemo(() => {
     const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
     return uniqueDenoms.reduce<TokenByDenom>((map, denom) => {
       // skip unknown denoms
-      // if (!clientDenoms?.includes(denom)) {
-      //   return map;
-      // }
+      if (!clientDenoms?.includes(denom)) {
+        return map;
+      }
       try {
         chainUtil?.getAssetByDenom(denom);
-      } catch {
-        // console.log('cannot find denom', denom)
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('cannot find denom', denom, e);
         return map;
       }
       const asset = chainUtil?.getAssetByDenom(denom);
@@ -325,7 +340,7 @@ export function useTokenByDenom(
       }
       return map;
     }, new Map());
-  }, [uniqueDenoms, client, traceByDenom]);
+  }, [uniqueDenoms, client, clientDenoms, traceByDenom]);
 
   return useSwrResponse(data, swr1, swr2);
 }
