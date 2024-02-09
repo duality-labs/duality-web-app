@@ -394,7 +394,7 @@ export function useNativeDenoms(): string[] {
 // return all denoms within one hop of the native chain on chain-registry
 export function useOneHopDenoms(): string[] {
   const { data: client } = useDefaultAssetsClient();
-  return useMemo<string[]>(() => {
+  const swr = useSWRImmutable<string[]>(['oneHopDenoms', client], () => {
     if (client) {
       const assetLists = [
         client.getChainAssetList(REACT_APP__CHAIN_NAME),
@@ -415,12 +415,15 @@ export function useOneHopDenoms(): string[] {
           }
         ),
       ];
-      return assetLists.flatMap(
+      const result = assetLists.flatMap(
         (assetList) => assetList?.assets.map((asset) => asset.base) ?? []
       );
+      return result;
     }
     return [];
-  }, [client]);
+  });
+
+  return swr.data || [];
 }
 
 type DenomTraceByDenom = Map<string, DenomTrace>;
@@ -458,7 +461,7 @@ export function useDefaultDenomTraceByDenom(): SWRCommon<DenomTraceByDenom> {
   const { data: client, ...swr } = useDefaultAssetsClient();
 
   // find the IBC trace information of each known IBC asset
-  const defaultDenomTraceByDenom = useMemo<DenomTraceByDenom>(() => {
+  const swr2 = useSWRImmutable<DenomTraceByDenom>(['defTraByD', client], () => {
     // there may be IBC assets on the assetList of the native chain
     const assetLists = client && [
       client.getChainAssetList(REACT_APP__CHAIN_NAME),
@@ -478,7 +481,7 @@ export function useDefaultDenomTraceByDenom(): SWRCommon<DenomTraceByDenom> {
           return acc;
         }, map)
       : map;
-  }, [client]);
+  });
 
-  return useSwrResponse<DenomTraceByDenom>(defaultDenomTraceByDenom, swr);
+  return useSwrResponse<DenomTraceByDenom>(swr2.data, swr);
 }
