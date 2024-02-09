@@ -208,8 +208,18 @@ export function useTokenByDenom(
   const { data: traceByDenom, ...swr1 } = useDenomTraceByDenom(uniqueDenoms);
   const { data: clientByDenom, ...swr2 } = useAssetClientByDenom(uniqueDenoms);
 
+  // the function client.getChainUtil(chainName) can be quite intensive depending
+  // on how much IBC data is related to the chain in question
+  // we cache the results for sets of unique denoms (which are often re-used)
+  const cacheKey = [
+    ...uniqueDenoms,
+    // compare traces by keys because we only allow defined traces in the map
+    ...Array.from(traceByDenom?.keys() || []),
+    // compare clients by keys because we only allow defined clients in the map
+    ...Array.from(clientByDenom?.keys() || []),
+  ];
   // return found tokens and a generic Unknown tokens
-  const data = useMemo(() => {
+  const { data } = useSWRImmutable(cacheKey, () => {
     return uniqueDenoms.reduce<TokenByDenom>((map, denom) => {
       const client = clientByDenom?.get(denom);
       const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
@@ -249,7 +259,7 @@ export function useTokenByDenom(
       }
       return map;
     }, new Map());
-  }, [uniqueDenoms, clientByDenom, traceByDenom]);
+  });
 
   return useSwrResponse(data, swr1, swr2);
 }
