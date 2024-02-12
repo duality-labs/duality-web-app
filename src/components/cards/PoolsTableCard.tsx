@@ -4,6 +4,8 @@ import { NavigateFunction, useNavigate } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 
 import TableCard, { TableCardProps } from './TableCard';
+import AssetIconPair from '../assets/AssetIconPair';
+import AssetSymbol from '../assets/AssetName';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
@@ -21,6 +23,7 @@ import {
 import './PoolsTableCard.scss';
 
 interface PoolsTableCardOptions {
+  showUnknownTokens?: boolean;
   onTokenPairClick?: (tokens: [token0: Token, token1: Token]) => void;
   userPositionActions?: Actions;
 }
@@ -31,6 +34,7 @@ export default function PoolsTableCard<T extends string | number>({
   className,
   title = 'All Pools',
   onTokenPairClick,
+  showUnknownTokens = false,
   ...tableCardProps
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
   const [searchValue, setSearchValue] = useState<string>('');
@@ -39,30 +43,40 @@ export default function PoolsTableCard<T extends string | number>({
   const { data: tokenByDenom } = useTokenByDenom(
     tokenPairs?.flatMap(([denom0, denom1]) => [denom0, denom1])
   );
-  const tokenList = useMemo(
-    () => Array.from((tokenByDenom || [])?.values()),
-    [tokenByDenom]
-  );
+  const tokenList = useMemo(() => {
+    const tokenList = Array.from((tokenByDenom || [])?.values());
+    return showUnknownTokens
+      ? tokenList
+      : tokenList.filter((token) => !!token.chain.chain_id);
+  }, [tokenByDenom, showUnknownTokens]);
 
   const allPairsList = useMemo<Array<PoolTableRow>>(() => {
     return tokenPairs
       ? tokenPairs
           // find the tokens that match our known pair token IDs
-          .map(([token0, token1, reserves0, reserves1]) => {
-            return [
-              getPairID(token0, token1),
-              tokenByDenom?.get(token0),
-              tokenByDenom?.get(token1),
-              reserves0,
-              reserves1,
-            ];
+          .map(([denom0, denom1, reserves0, reserves1]) => {
+            const token0 = tokenByDenom?.get(denom0);
+            const token1 = tokenByDenom?.get(denom1);
+            if (token0 && token1) {
+              // show unknown tokens or test that both tokens are known
+              if (
+                showUnknownTokens ||
+                (token0.chain.chain_id && token1.chain.chain_id)
+              ) {
+                return [
+                  getPairID(denom0, denom1),
+                  token0,
+                  token1,
+                  reserves0,
+                  reserves1,
+                ];
+              }
+            }
           })
           // remove pairs with unfound tokens
-          .filter<PoolTableRow>((tokenPair): tokenPair is PoolTableRow =>
-            tokenPair.every(Boolean)
-          )
+          .filter<PoolTableRow>((pair): pair is PoolTableRow => !!pair)
       : [];
-  }, [tokenByDenom, tokenPairs]);
+  }, [showUnknownTokens, tokenByDenom, tokenPairs]);
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
   const filteredPoolsList = useMemo<Array<PoolTableRow>>(() => {
@@ -146,6 +160,7 @@ function PairRow({
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
   const {
+    isValidating,
     data: [price0, price1],
   } = useSimplePrice([token0, token1]);
 
@@ -159,14 +174,18 @@ function PairRow({
     return [0, 0];
   }, [price0, price1, token0, reserves0, token1, reserves1]);
 
-  if (token0 && token1 && price0 !== undefined && price1 !== undefined) {
+  if (token0 && token1) {
     return (
       <tr>
         <td className="min-width">
           <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
         {/* TVL col */}
-        <td>{formatCurrency(value0 + value1)}</td>
+        <td>
+          {isValidating && !value0 && !value1
+            ? '...'
+            : formatCurrency(value0 + value1)}
+        </td>
         {/* Volume (7 days) col */}
         <td>-</td>
         {/* Volatility (7 days) col */}
@@ -174,11 +193,7 @@ function PairRow({
       </tr>
     );
   }
-  return (
-    <tr>
-      <td colSpan={100}>Fetching price data ...</td>
-    </tr>
-  );
+  return null;
 }
 
 export function MyPoolsTableCard<T extends string | number>({
@@ -267,7 +282,7 @@ export function MyPoolsTableCard<T extends string | number>({
         <table>
           <thead>
             <tr>
-              <th>Pair</th>
+              <th>Pool</th>
               <th>Value</th>
               <th>Composition</th>
               {Object.keys(userPositionActions || {}).length > 0 && (
@@ -422,37 +437,29 @@ function TokenPair({
   return (
     <BaseElement
       type={as === 'button' ? 'button' : undefined}
-      className="row gap-3 token-and-chain"
+      className="row gap-3"
       onClick={onClick}
     >
-      <div className="row flex-centered flow-nowrap">
-        <img
-          className="token-logo"
-          src={token0.logo_URIs?.svg || token0.logo_URIs?.png || ''}
-          alt={`${token0.name} logo`}
-        />
-        <img
-          className="token-logo"
-          src={token1.logo_URIs?.svg || token1.logo_URIs?.png || ''}
-          alt={`${token1.name} logo`}
-        />
+      <div className="col mt-xs">
+        <AssetIconPair asset0={token0} asset1={token1} />
       </div>
-      <div className="col">
-        <div className="row">
-          <div className="col token-denom">
-            {token0.display.toUpperCase()}
-            {' / '}
-            {token1.display.toUpperCase()}
-          </div>
+      <div className="col flex">
+        <div className="row flow-wrap gapx-2">
+          <span className="nowrap">
+            <AssetSymbol asset={token0} /> /
+          </span>
+          <span className="nowrap">
+            <AssetSymbol asset={token1} />
+          </span>
         </div>
         <div className="row">
-          <div className="col subtext text-left">
+          <div className="col row-lg gapx-2 subtext text-left mr-xs">
             {token0.chain.pretty_name === token1.chain.pretty_name ? (
               <span className="nowrap">{token0.chain.pretty_name}</span>
             ) : (
               <>
                 <span className="nowrap">{token0.chain.pretty_name} /</span>
-                <span>{token1.chain.pretty_name}</span>
+                <span className="nowrap">{token1.chain.pretty_name}</span>
               </>
             )}
           </div>

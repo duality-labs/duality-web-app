@@ -23,7 +23,7 @@ export function useAssetClient(denom: string | undefined) {
 
   return useSWRImmutable(
     ['asset-client', denom, trace],
-    async (): Promise<ChainRegistryClient | undefined> => {
+    async (): Promise<ChainRegistryClient | null | undefined> => {
       // get asset client if available
       return (denom && getAssetClient(denom, trace)) || undefined;
     }
@@ -38,20 +38,24 @@ export type SWRCommon<Data = unknown, Error = unknown> = {
 };
 
 type AssetByDenom = Map<string, Asset>;
-type AssetClientByDenom = Map<string, ChainRegistryClient>;
+type AssetClientByDenom = Map<string, ChainRegistryClient | null | undefined>;
 type AssetChainUtilByDenom = Map<string, ChainRegistryChainUtil>;
 
+export function useUniqueDenoms(denoms: string[] = []): string[] {
+  return useDeepCompareMemoize(Array.from(new Set(denoms)).sort());
+}
+
 // export hook for getting ChainRegistryClient instances for each denom
-export function useAssetClientByDenom(
-  denoms: string[] = []
+function useAssetClientByDenom(
+  denoms: string[] | undefined
 ): SWRCommon<AssetClientByDenom> {
-  const uniqueDenoms = useDeepCompareMemoize(Array.from(new Set(denoms)));
+  const uniqueDenoms = useUniqueDenoms(denoms);
   const swr1 = useDenomTraceByDenom(uniqueDenoms);
   const { data: denomTraceByDenom } = swr1;
 
   // fetch a client for each denom and trace
   const { data: pages, ...swr2 } = useSWRInfinite<
-    [denom: string, client?: ChainRegistryClient],
+    [denom: string, client?: ChainRegistryClient | null],
     Error,
     SWRInfiniteKeyLoader<
       [denom: string, client?: ChainRegistryClient],
@@ -66,7 +70,11 @@ export function useAssetClientByDenom(
     },
     // handle cases of empty hash string
     async ([denom, trace]) => {
-      return [denom, denom ? await getAssetClient(denom, trace) : undefined];
+      return denom
+        ? // return denom key with possible asset client (if found)
+          [denom, await getAssetClient(denom, trace)]
+        : // return "empty" result that won't be mapped
+          [''];
     },
     {
       parallel: true,
@@ -86,13 +94,20 @@ export function useAssetClientByDenom(
   }, [size, setSize, uniqueDenoms]);
 
   // combine pages into one
-  const chainUtilByDenom = useMemo<AssetClientByDenom>(() => {
+  const clientByDenom = useMemo<AssetClientByDenom>(() => {
     return (pages || []).reduce<AssetClientByDenom>(
       (map, [denom, client] = ['']) => {
-        const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
-        const asset = chainUtil?.getAssetByDenom(denom);
-        if (denom && client && asset) {
-          return map.set(denom, client);
+        if (denom) {
+          const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
+          const asset = chainUtil?.getAssetByDenom(denom);
+          // if the client if found, return that
+          if (client && asset) {
+            return map.set(denom, client);
+          }
+          // if the client is undefined (pending) or null (not found/correct)
+          else {
+            return map.set(denom, client ? null : client);
+          }
         }
         return map;
       },
@@ -104,19 +119,19 @@ export function useAssetClientByDenom(
     isValidating: swr1.isValidating || swr2.isValidating,
     isLoading: swr1.isLoading || swr2.isLoading,
     error: swr1.error || swr2.error,
-    data: chainUtilByDenom,
+    data: clientByDenom,
   };
 }
 
 export function useAssetChainUtilByDenom(
-  denoms: string[] = []
+  denoms: string[] | undefined
 ): SWRCommon<AssetChainUtilByDenom> {
-  const { data: clientByDenom, ...swr } = useAssetClientByDenom(denoms);
+  const uniqueDenoms = useUniqueDenoms(denoms);
+  const { data: clientByDenom, ...swr } = useAssetClientByDenom(uniqueDenoms);
 
   // substitute chain utils for assets
   const data = useMemo(() => {
-    const denoms = Array.from(clientByDenom?.keys() || []);
-    return denoms.reduce<AssetChainUtilByDenom>((map, denom) => {
+    return uniqueDenoms.reduce<AssetChainUtilByDenom>((map, denom) => {
       const client = clientByDenom?.get(denom);
       const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
       if (denom && chainUtil) {
@@ -124,21 +139,22 @@ export function useAssetChainUtilByDenom(
       }
       return map;
     }, new Map());
-  }, [clientByDenom]);
+  }, [uniqueDenoms, clientByDenom]);
 
   return { ...swr, data };
 }
 
 // export convenience hook for getting just Assets for each denom
 export function useAssetByDenom(
-  denoms: string[] = []
+  denoms: string[] | undefined
 ): SWRCommon<AssetByDenom> {
-  const { data: chainUtilByDenom, ...swr } = useAssetChainUtilByDenom(denoms);
+  const uniqueDenoms = useUniqueDenoms(denoms);
+  const { data: chainUtilByDenom, ...swr } =
+    useAssetChainUtilByDenom(uniqueDenoms);
 
   // substitute chain utils for assets
   const data = useMemo(() => {
-    const denoms = Array.from(chainUtilByDenom?.keys() || []);
-    return denoms.reduce<AssetByDenom>((map, denom) => {
+    return uniqueDenoms.reduce<AssetByDenom>((map, denom) => {
       const chainUtil = chainUtilByDenom?.get(denom);
       const asset = chainUtil?.getAssetByDenom(denom);
       if (denom && chainUtil && asset) {
@@ -146,32 +162,106 @@ export function useAssetByDenom(
       }
       return map;
     }, new Map());
-  }, [chainUtilByDenom]);
+  }, [uniqueDenoms, chainUtilByDenom]);
 
   return { ...swr, data };
 }
 
+// for possible types of assets in base denom
+// see: https://github.com/cosmos/chain-registry/blob/3e16e0d/assetlist.schema.json#L56
+const bridgedWasmLikeAddressRegex = /^(\w+):(\w+)$/;
+const factoryAddressRegex = /^factory\/(\w+)\/(.+)$/;
+const addressRegex = /^([a-z]+)([a-z0-9]+)$/;
+
+function shortenHash(address: string, toSideLength = 3) {
+  return address.length >= 9
+    ? `${address.slice(0, toSideLength)}...${address.slice(-toSideLength)}`
+    : address;
+}
+// optionally shorten hex hashes (including IBC hashes)
+function maybeShortenHexHash(str: string) {
+  return str.replaceAll(/[0-9A-F]{15,}/g, (match) => shortenHash(match, 6));
+}
+
+// somtimes token addresses can have differing lengths
+// - neutron1rylsg4js5nrm4acaqez5v95mv279lpfrstfupwqykkg6mcyt6lsqxafdcf
+// - neutron1tdn2c8u9war2x0gmr504scqzq26mle7yfjn728
+// split these to the prefix and hash
+function splitAddress(address: string = ''): [string, string] {
+  const [_, prefix, hash] = address.match(addressRegex) || [];
+  return [prefix || '', hash || ''];
+}
+
+// create asset from available denom information
+function createAssetFromDenom(denom: string): Asset {
+  const [match, address, name = denom] = denom.match(factoryAddressRegex) || [];
+  const [prefix, hash] = splitAddress(address);
+  return {
+    base: denom,
+    display: denom,
+    denom_units: [{ denom: denom, exponent: 0 }],
+    name: denom,
+    description: match && `factory token "${name}" on ${address}`,
+    symbol: match
+      ? // use pretty factory address
+        `${name} on ${prefix}${shortenHash(hash)}`
+      : // default to what we know
+        maybeShortenHexHash(denom),
+  };
+}
+// create asset from available IBC trace information
+function createAssetFromIbcTrace(denom: string, trace: DenomTrace): Asset {
+  const [match, type, address] =
+    trace.base_denom.match(bridgedWasmLikeAddressRegex) || [];
+  const [prefix, hash] = splitAddress(address);
+
+  return {
+    base: denom,
+    display: denom,
+    denom_units: [{ denom: denom, exponent: 0 }],
+    name: trace.base_denom,
+    description: match && `${type} token from ${prefix}: ${address}`,
+    symbol: match
+      ? // use pretty trace address
+        `${prefix}(${type.toUpperCase()}) ${shortenHash(hash)}`
+      : // default to what we know
+        maybeShortenHexHash(trace.base_denom),
+  };
+}
+
+// defined a default "unknown" chain
+const undefinedChain: Chain = {
+  $schema: '../chain.schema.json',
+  chain_id: '',
+  chain_name: 'undefined',
+  network_type: '',
+  pretty_name: '[unknown chain]',
+  slip44: 1,
+  status: '',
+  bech32_prefix: '',
+};
+
 // export convenience hook for getting just Token for each denom
 export type TokenByDenom = Map<string, Asset & { chain: Chain }>;
 export function useTokenByDenom(
-  denoms: string[] = []
+  denoms: string[] | undefined
 ): SWRCommon<TokenByDenom> {
-  const { data: clientByDenom, ...swr } = useAssetClientByDenom(denoms);
+  const uniqueDenoms = useUniqueDenoms(denoms);
+  const { data: traceByDenom, ...swr1 } = useDenomTraceByDenom(uniqueDenoms);
+  const { data: clientByDenom, ...swr2 } = useAssetClientByDenom(uniqueDenoms);
 
-  // return only found tokens
+  // return found tokens and a generic Unknown tokens
   const data = useMemo(() => {
-    const denoms = Array.from(clientByDenom?.keys() || []);
-    return denoms.reduce<TokenByDenom>((map, denom) => {
+    return uniqueDenoms.reduce<TokenByDenom>((map, denom) => {
       const client = clientByDenom?.get(denom);
       const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
       const asset = chainUtil?.getAssetByDenom(denom);
       const chainName: string | undefined = asset
         ? asset.traces?.at(0)?.counterparty.chain_name || REACT_APP__CHAIN_NAME
         : undefined;
-      // todo: find a better way to pass data to the token picker
-      //       so we don't need Cosmos chain context passed through,
-      //       because some assets don't have Cosmos chain data: like Ethereum
+      // get asset's chain data
       const chain: Chain | undefined =
+        // create altered nativeChain data for nativeChain factory tokens
         (denom.startsWith('factory/') &&
           chainUtil && {
             ...chainUtil.chainInfo.chain,
@@ -180,15 +270,35 @@ export function useTokenByDenom(
               asset?.traces?.at(0)?.counterparty.chain_name ||
               chainUtil.chainInfo.chain.pretty_name,
           }) ||
+        // by default: add a found chain through the chain-registry client data
         (chainName ? client?.getChain(chainName) : undefined);
+      // add asset to map if it contains enough data
       if (denom && asset && chain) {
+        // todo: find a better way to pass data to the token picker
+        //       so we don't need Cosmos chain context passed through,
+        //       because some assets don't have Cosmos chain data: like Ethereum
         return map.set(denom, { chain, ...asset });
+      } else if (denom) {
+        // create
+        const denomTrace = traceByDenom?.get(denom);
+        if (denomTrace) {
+          const asset = createAssetFromIbcTrace(denom, denomTrace);
+          return map.set(denom, { ...asset, chain: undefinedChain });
+        } else {
+          const asset = createAssetFromDenom(denom);
+          return map.set(denom, { ...asset, chain: undefinedChain });
+        }
       }
       return map;
     }, new Map());
-  }, [clientByDenom]);
+  }, [uniqueDenoms, clientByDenom, traceByDenom]);
 
-  return { ...swr, data };
+  return {
+    isValidating: swr1.isValidating || swr2.isValidating,
+    isLoading: swr1.isLoading || swr2.isLoading,
+    error: swr1.error || swr2.error,
+    data,
+  };
 }
 
 // export convenience hook for getting just one Token for one denom
@@ -204,7 +314,7 @@ export function useToken(denom: string | undefined): SWRCommon<Token> {
 }
 
 // export convenience hook for getting list of multiple Tokens
-export function useTokens(denoms: string[] = []): SWRCommon<Token[]> {
+export function useTokens(denoms: string[] | undefined): SWRCommon<Token[]> {
   const { data: tokenByDenom, ...swr } = useTokenByDenom(denoms);
 
   // list tokens

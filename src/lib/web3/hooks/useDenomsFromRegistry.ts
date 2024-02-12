@@ -43,10 +43,11 @@ const defaultChains: Chain[] = REACT_APP__CHAIN_REGISTRY_CHAINS
 const defaultIbcData: IBCInfo[] = REACT_APP__CHAIN_REGISTRY_IBC_DATA
   ? JSON.parse(REACT_APP__CHAIN_REGISTRY_IBC_DATA)
   : undefined;
-const defaultClientOptions = {
+const defaultClientOptions: ChainRegistryClientOptions = {
   assetLists: defaultAssetLists,
   chains: defaultChains,
   ibcData: defaultIbcData,
+  chainNames: [REACT_APP__CHAIN_NAME],
 };
 
 type ChainNamePair = [chainName1: string, chainName2: string];
@@ -107,11 +108,12 @@ async function getRelatedIbcNamePairs(exploreChainName: string) {
 }
 
 async function createChainRegistryClient(
-  opts: ChainRegistryClientOptions
+  opts: Partial<ChainRegistryClientOptions>
 ): Promise<ChainRegistryClient> {
   for (const endpoint of chainRegistryFileEndpoints) {
     try {
       const client = new ChainRegistryClient({
+        ...defaultClientOptions,
         ...opts,
         baseUrl: endpoint,
       });
@@ -179,7 +181,7 @@ async function createChainRegistryClient(
 export async function getAssetClient(
   denom: string | undefined,
   ibcTrace?: DenomTrace
-): Promise<ChainRegistryClient | undefined> {
+): Promise<ChainRegistryClient | null> {
   const transferChannels: Array<[portId: string, channelId: string]> = (
     ibcTrace?.path ?? ''
   )
@@ -190,7 +192,7 @@ export async function getAssetClient(
 
   async function _getAssetClient(
     opts: ChainRegistryClientOptions
-  ): Promise<ChainRegistryClient | undefined> {
+  ): Promise<ChainRegistryClient | null> {
     const client = await createChainRegistryClient(opts);
     try {
       // return successfully if we found the asset
@@ -237,6 +239,9 @@ export async function getAssetClient(
       }
     }
 
+    // if no client is able to be resolved, return null
+    return null;
+
     async function _getNextChainNameClient(chainName: string) {
       // if this would be the last step then find the assetlist of this chain
       // otherwise we should keep searching IBC data
@@ -260,7 +265,6 @@ export async function getAssetClient(
 
   // start recursive chain with just native assets and all related IBC info
   return _getAssetClient({
-    ...defaultClientOptions,
     chainNames: [REACT_APP__CHAIN_NAME],
     ibcNamePairs: await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME),
     assetListNames: [REACT_APP__CHAIN_NAME],
@@ -270,7 +274,6 @@ export async function getAssetClient(
 // export hook for getting a basic chain-registry client for the native chain
 export async function getChainClient(chainName: string) {
   return createChainRegistryClient({
-    ...defaultClientOptions,
     chainNames: [chainName],
     assetListNames: [chainName],
   });
@@ -296,7 +299,6 @@ export function useRelatedChainsClient() {
       const ibcNamePairs = await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME);
       const relatedChainNames = Array.from(new Set(ibcNamePairs?.flat()));
       return createChainRegistryClient({
-        ...defaultClientOptions,
         chainNames: relatedChainNames,
         // pass IBC name pairs related only to native chain so that the client
         // doesn't try to fetch IBC data between other listed unrelated chains
@@ -315,7 +317,6 @@ function useNativeAssetsClient() {
     async (): Promise<ChainRegistryClient | undefined> => {
       // get asset client for all assets within one-hop of the native chain
       return createChainRegistryClient({
-        ...defaultClientOptions,
         chainNames: [REACT_APP__CHAIN_NAME],
         assetListNames: [REACT_APP__CHAIN_NAME],
       });
@@ -334,7 +335,6 @@ function useDefaultAssetsClient() {
       const ibcNamePairs = await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME);
       const relatedChainNames = Array.from(new Set(ibcNamePairs?.flat()));
       return createChainRegistryClient({
-        ...defaultClientOptions,
         chainNames: [REACT_APP__CHAIN_NAME],
         ibcNamePairs,
         assetListNames: relatedChainNames,

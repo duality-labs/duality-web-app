@@ -14,8 +14,13 @@ import BigNumber from 'bignumber.js';
 
 import { useFilteredTokenList } from './hooks';
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
-import useUserTokens from '../../lib/web3/hooks/useUserTokens';
-import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
+import { useTokens } from '../../lib/web3/hooks/useDenomClients';
+import { useTokensSortedByValue } from '../../lib/web3/hooks/useTokens';
+import { useTokenPairsDenoms } from '../../lib/web3/hooks/useTokenPairs';
+import {
+  useBankBalanceDisplayAmount,
+  useUserBankBalancesDenoms,
+} from '../../lib/web3/hooks/useUserBankBalances';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { formatAmount, formatCurrency } from '../../lib/utils/number';
@@ -24,25 +29,20 @@ import Dialog from '../Dialog/Dialog';
 import SearchInput from '../inputs/SearchInput/SearchInput';
 
 import './TokenPicker.scss';
-import {
-  useNativeDenoms,
-  useOneHopDenoms,
-} from '../../lib/web3/hooks/useDenomsFromRegistry';
-import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
-import { useTokens } from '../../lib/web3/hooks/useDenomClients';
 
 interface TokenPickerProps {
   className?: string;
   onChange: (newToken: Token | undefined) => void;
   exclusion?: Token | undefined;
   value: Token | undefined;
-  denoms?: Array<string>;
   disabled?: boolean;
   showChain?: boolean;
+  defaultAssetMode?: AssetMode;
   children?: ReactNode;
 }
 
-type AssetModeType = 'User' | 'All' | 'Chain';
+type AssetMode = 'User' | 'Dex' | 'All';
+export type { AssetMode as TokenPickerAssetMode };
 
 function useSelectedButtonBackgroundMove(
   value: string
@@ -89,113 +89,17 @@ export default function TokenPicker({
   value,
   onChange,
   exclusion,
-  denoms: givenDenoms,
   disabled = false,
   showChain = true,
+  defaultAssetMode,
   children,
 }: TokenPickerProps) {
+  // control dialog opening from outside dialog
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<HTMLUListElement>(null);
-
-  // source allowed denoms from several places
-  const defaultDenoms = useOneHopDenoms();
-  const { data: tokenPairs } = useTokenPairs();
-  // find all tokens that may be selected in this input group
-  const { data: tokenList = [] } = useTokens(
-    givenDenoms ??
-      // use known tokenPairs and common denoms as "all assets"
-      defaultDenoms.concat(
-        tokenPairs?.flatMap(([token0, token1]) => [token0, token1]) ?? []
-      )
-  );
-  const { data: nativeTokenList = [] } = useTokens(useNativeDenoms());
-
-  const userList = useUserTokens();
-  const [assetMode, setAssetMode] = useState<AssetModeType>(
-    userList.length ? 'User' : 'Chain'
-  );
-  const currentID = useId();
-
-  useEffect(() => {
-    if (!userList.length)
-      setAssetMode((oldMode) => (oldMode === 'User' ? 'All' : oldMode));
-  }, [userList.length]);
-
   const open = useCallback(() => {
     setIsOpen(true);
   }, []);
 
-  const close = useCallback(() => {
-    setSearchQuery('');
-    setIsOpen(false);
-  }, []);
-
-  const selectToken = useCallback(
-    (token?: Token) => {
-      onChange(token);
-      close();
-    },
-    [close, onChange]
-  );
-
-  // update the filtered list whenever the query or the list changes
-  const filteredList = useFilteredTokenList(
-    useMemo(() => {
-      switch (assetMode) {
-        case 'Chain':
-          return nativeTokenList;
-        case 'User':
-          return userList;
-        default:
-          return tokenList;
-      }
-    }, [assetMode, nativeTokenList, tokenList, userList]),
-    searchQuery
-  );
-
-  // udate the selected index each time the list changes
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [filteredList]);
-
-  const onKeyDown = useCallback(
-    function (event: React.KeyboardEvent) {
-      setSelectedIndex(function (newIndex) {
-        if (event.key === 'ArrowUp') {
-          newIndex -= 1;
-        } else if (event.key === 'ArrowDown') {
-          newIndex += 1;
-        } else if (event.key === 'Escape') {
-          close();
-          return newIndex;
-        } else if (event.key === 'Enter') {
-          const token = filteredList[newIndex];
-          if (token && getTokenId(exclusion) !== getTokenId(token.token))
-            selectToken(token?.token);
-        } else {
-          // Ignore all of the keys not including above
-          return newIndex;
-        }
-        // If key pressed is in the list above then cancel all default behaviour
-        event.stopPropagation();
-        event.preventDefault();
-
-        // fix the selected index if it's out of bounds
-        if (newIndex < 0) newIndex = filteredList.length - 1;
-        else if (newIndex >= filteredList.length) newIndex = 0;
-
-        bodyRef?.current?.children[newIndex]?.scrollIntoView();
-        return newIndex;
-      });
-    },
-    [filteredList, close, exclusion, selectToken]
-  );
-
-  const [movingAssetRef, createRefForValue] =
-    useSelectedButtonBackgroundMove(assetMode);
   return (
     <>
       {children ? (
@@ -252,6 +156,132 @@ export default function TokenPicker({
           )}
         </button>
       )}
+      {isOpen && (
+        <TokenPickerDialog
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          onChange={onChange}
+          exclusion={exclusion}
+          defaultAssetMode={defaultAssetMode}
+        />
+      )}
+    </>
+  );
+}
+
+function TokenPickerDialog({
+  isOpen,
+  setIsOpen,
+  onChange,
+  exclusion,
+  defaultAssetMode: givenDefaultAssetMode = 'All',
+}: {
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onChange: (newToken: Token | undefined) => void;
+  exclusion?: Token | undefined;
+  defaultAssetMode?: AssetMode;
+}) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLUListElement>(null);
+
+  // source allowed denoms from several places
+  const userDenoms = useUserBankBalancesDenoms();
+  const dexDenoms = useTokenPairsDenoms();
+  // find all tokens that may be selected in this input group
+  const { data: dexTokenList = [] } = useTokens(dexDenoms);
+  const { data: userTokenList = [] } = useTokens(userDenoms);
+
+  // make an exception to the default asset mode:
+  // show the user the Dex assets if they have no assets themselves
+  const defaultAssetMode =
+    givenDefaultAssetMode === 'User' && userTokenList.length === 0
+      ? 'All'
+      : givenDefaultAssetMode;
+  const [assetMode = defaultAssetMode, setAssetMode] = useState<AssetMode>();
+  const currentID = useId();
+
+  const close = useCallback(() => {
+    setSearchQuery('');
+    setIsOpen(false);
+  }, [setIsOpen]);
+
+  const selectToken = useCallback(
+    (token?: Token) => {
+      onChange(token);
+      close();
+    },
+    [close, onChange]
+  );
+
+  // update the filtered list whenever the query or the list changes
+  const unsortedTokenList = useMemo(() => {
+    switch (assetMode) {
+      case 'User':
+        return userTokenList;
+      case 'Dex':
+        // hide unrecommended not found (generated from denom) assets
+        return dexTokenList.filter((token) => token.chain.chain_id);
+      default:
+        // compile user and dex lists into one list
+        return [...userTokenList, ...dexTokenList].reduce<Token[]>(
+          (tokens, token) => {
+            if (!tokens.find(({ base }) => base === token.base)) {
+              return [...tokens, token];
+            }
+            return tokens;
+          },
+          []
+        );
+    }
+  }, [assetMode, dexTokenList, userTokenList]);
+  const sortedTokenList = useTokensSortedByValue(unsortedTokenList);
+  const filteredList = useFilteredTokenList(sortedTokenList, searchQuery);
+
+  // udate the selected index each time the list changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [filteredList]);
+
+  const onKeyDown = useCallback(
+    function (event: React.KeyboardEvent) {
+      setSelectedIndex(function (newIndex) {
+        if (event.key === 'ArrowUp') {
+          newIndex -= 1;
+        } else if (event.key === 'ArrowDown') {
+          newIndex += 1;
+        } else if (event.key === 'Escape') {
+          close();
+          return newIndex;
+        } else if (event.key === 'Enter') {
+          const token = filteredList[newIndex];
+          if (token && getTokenId(exclusion) !== getTokenId(token.token))
+            selectToken(token?.token);
+        } else {
+          // Ignore all of the keys not including above
+          return newIndex;
+        }
+        // If key pressed is in the list above then cancel all default behaviour
+        event.stopPropagation();
+        event.preventDefault();
+
+        // fix the selected index if it's out of bounds
+        if (newIndex < 0) newIndex = filteredList.length - 1;
+        else if (newIndex >= filteredList.length) newIndex = 0;
+
+        bodyRef?.current?.children[newIndex]?.scrollIntoView();
+        return newIndex;
+      });
+    },
+    [filteredList, close, exclusion, selectToken]
+  );
+
+  const [movingAssetRef, createRefForValue] =
+    useSelectedButtonBackgroundMove(assetMode);
+  return (
+    <>
       <Dialog
         isOpen={isOpen}
         setIsOpen={setIsOpen}
@@ -276,18 +306,18 @@ export default function TokenPicker({
           <button
             type="button"
             className="button pill py-3 px-4"
-            ref={createRefForValue('All')}
-            onClick={() => setAssetMode('All')}
+            ref={createRefForValue('Dex')}
+            onClick={() => setAssetMode('Dex')}
           >
-            All Assets
+            Dex Assets
           </button>
           <button
             type="button"
             className="button pill py-3 px-4"
-            ref={createRefForValue('Chain')}
-            onClick={() => setAssetMode('Chain')}
+            ref={createRefForValue('All')}
+            onClick={() => setAssetMode('All')}
           >
-            Neutron Chain Assets
+            All Assets
           </button>
         </div>
         <ul className="token-picker-body modal-scrollbar" ref={bodyRef}>
@@ -410,7 +440,9 @@ function TokenPickerItem({
             ></FontAwesomeIcon>
           )}
           <span className="token-symbol">
-            <abbr title={token.display}>{textListWithMark(symbol)}</abbr>
+            <abbr title={token.description ?? token.name}>
+              {textListWithMark(symbol)}
+            </abbr>
           </span>
           <span className="chain-name">{textListWithMark(chain)}</span>
           {new BigNumber(balance).isZero() ? (

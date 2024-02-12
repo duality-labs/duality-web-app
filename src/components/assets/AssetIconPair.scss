@@ -1,0 +1,13 @@
+.asset-icon-pair {
+  position: relative;
+  // allow token pair logos to overlap slightly
+  .asset-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .asset-icon + .asset-icon {
+    left: auto;
+    right: 0;
+  }
+}
