@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/duality-labs/duality-web-app/compare/v2.1.0...v2.1.1) (2024-02-12)
+
+
+### Other
+
+* add beta deployments (part 1: improvements) ([#533](https://github.com/duality-labs/duality-web-app/issues/533)) ([181adb6](https://github.com/duality-labs/duality-web-app/commit/181adb6e3b3e8f4aa28ff247ebb4e5855db88ac6))
+
 ## [2.1.0](https://github.com/duality-labs/duality-web-app/compare/v2.0.3...v2.1.0) (2024-02-12)
 
 
