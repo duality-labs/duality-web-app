@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/duality-labs/duality-web-app/compare/v2.0.3...v2.1.0) (2024-02-12)
+
+
+### Features
+
+* improve display of unknown denoms ([#532](https://github.com/duality-labs/duality-web-app/issues/532)) ([710dac9](https://github.com/duality-labs/duality-web-app/commit/710dac9bd2163ad5d8cff838617e10e229511b05))
+
 ## [2.0.3](https://github.com/duality-labs/duality-web-app/compare/v2.0.2...v2.0.3) (2024-01-31)
 
 
