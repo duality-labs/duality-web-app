@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { SWRResponse } from 'swr';
 import { useQuery } from '@tanstack/react-query';
 import { Asset, Chain, IBCInfo, IBCTrace } from '@chain-registry/types';
 import { QueryClientStatusResponse } from '@duality-labs/neutronjs/types/codegen/ibc/core/client/v1/query';
@@ -7,6 +6,11 @@ import { QueryClientStatusResponse } from '@duality-labs/neutronjs/types/codegen
 import { useRelatedChainsClient } from '../../lib/web3/hooks/useDenomsFromRegistry';
 import { useRemoteChainRestEndpoint } from '../../lib/web3/hooks/useChains';
 import { getIbcRestClient } from '../../lib/web3/clients/restClients';
+import {
+  SWRCommon,
+  useSwrResponse,
+  useSwrResponseFromReactQuery,
+} from '../../lib/web3/hooks/useSWR';
 
 type ChannelInfo = {
   chain_name: string;
@@ -58,7 +62,7 @@ function getSingleHopIbcTrace(asset: Asset): IBCTrace | undefined {
 function useConnectionInfo(
   chain?: Chain,
   counterChain?: Chain
-): SWRResponse<IBCInfo> {
+): SWRCommon<IBCInfo> {
   // find the channel information on the from side for the bridge request
   const { data: relatedChainsClient, ...swr } = useRelatedChainsClient();
   const data = useMemo<IBCInfo | undefined>(() => {
@@ -76,14 +80,14 @@ function useConnectionInfo(
         })
       : undefined;
   }, [chain, counterChain, relatedChainsClient]);
-  return { ...swr, data } as SWRResponse;
+  return useSwrResponse(data, swr);
 }
 
 export function useSingleHopChannelInfo(
   chain?: Chain,
   counterChain?: Chain,
   token?: Asset
-): SWRResponse<ChannelInfo> {
+): SWRCommon<ChannelInfo> {
   // find the channel information on the from side for the bridge request
   const { data: ibcInfo, ...swr } = useConnectionInfo(chain, counterChain);
   const channelInfo = useMemo<ChannelInfo | undefined>(() => {
@@ -100,12 +104,11 @@ export function useSingleHopChannelInfo(
       }
     }
   }, [chain, ibcInfo, token]);
-
-  return { ...swr, data: channelInfo } as SWRResponse;
+  return useSwrResponse(channelInfo, swr);
 }
 
 export function useSingleHopChannelStatus(chain?: Chain, clientId?: string) {
-  const { data: restEndpoint, ...swr } = useRemoteChainRestEndpoint(chain);
+  const { data: restEndpoint, ...query2 } = useRemoteChainRestEndpoint(chain);
   const query = useQuery({
     queryKey: ['core.client.v1.clientStatus', restEndpoint, clientId],
     queryFn: async (): Promise<QueryClientStatusResponse | null> => {
@@ -117,6 +120,5 @@ export function useSingleHopChannelStatus(chain?: Chain, clientId?: string) {
     refetchInterval: false,
     refetchOnMount: false,
   });
-
-  return restEndpoint === undefined ? { ...swr, data: undefined } : query;
+  return useSwrResponseFromReactQuery(query.data, query, query2);
 }

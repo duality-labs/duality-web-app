@@ -1,5 +1,4 @@
 import useSWRImmutable from 'swr/immutable';
-import { SWRResponse } from 'swr';
 import { useMemo } from 'react';
 import {
   ChainRegistryClient,
@@ -9,6 +8,7 @@ import {
 import { ibcDenom, getIbcAssetPath } from '@chain-registry/utils';
 import { Asset, AssetList, Chain, IBCInfo } from '@chain-registry/types';
 import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
+import { SWRCommon, useSwrResponse } from './useSWR';
 
 const {
   REACT_APP__CHAIN_NAME = '',
@@ -343,14 +343,12 @@ function useDefaultAssetsClient() {
   );
 }
 
-export function useChainUtil(): SWRResponse<ChainRegistryChainUtil> {
+export function useChainUtil(): SWRCommon<ChainRegistryChainUtil> {
   const { data, ...swr } = useDefaultAssetsClient();
   // return just the chain utility instance
   // it is possible to get the original fetcher at chainUtil.chainInfo.fetcher
-  return {
-    ...swr,
-    data: useMemo(() => data?.getChainUtil(REACT_APP__CHAIN_NAME), [data]),
-  } as SWRResponse;
+  const util = useMemo(() => data?.getChainUtil(REACT_APP__CHAIN_NAME), [data]);
+  return useSwrResponse(util, swr);
 }
 
 export function useChainNativeAssetList(): AssetList | undefined {
@@ -386,18 +384,20 @@ export function useNativeDenoms(): string[] {
 // return all denoms within one hop of the native chain on chain-registry
 export function useOneHopDenoms(): string[] {
   const { data: client } = useDefaultAssetsClient();
-  return useMemo<string[]>(() => {
+  const swr = useSWRImmutable<string[]>(['oneHopDenoms', client], () => {
     if (client) {
       const assetLists = [
         client.getChainAssetList(REACT_APP__CHAIN_NAME),
         ...(client.getGeneratedAssetLists(REACT_APP__CHAIN_NAME) ?? []),
       ];
       return assetLists.flatMap(
-        (assetList) => assetList?.assets.flatMap((asset) => asset.base) ?? []
+        (assetList) => assetList?.assets.map((asset) => asset.base) ?? []
       );
     }
     return [];
-  }, [client]);
+  });
+
+  return swr.data || [];
 }
 
 type DenomTraceByDenom = Map<string, DenomTrace>;
@@ -431,11 +431,11 @@ function getDenomTraceFromAsset(
     : undefined;
 }
 // get denom traces from default IBC network (one-hop)
-export function useDefaultDenomTraceByDenom(): SWRResponse<DenomTraceByDenom> {
+export function useDefaultDenomTraceByDenom(): SWRCommon<DenomTraceByDenom> {
   const { data: client, ...swr } = useDefaultAssetsClient();
 
   // find the IBC trace information of each known IBC asset
-  const defaultDenomTraceByDenom = useMemo<DenomTraceByDenom>(() => {
+  const swr2 = useSWRImmutable<DenomTraceByDenom>(['defTraByD', client], () => {
     // there may be IBC assets on the assetList of the native chain
     const assetLists = client && [
       client.getChainAssetList(REACT_APP__CHAIN_NAME),
@@ -455,7 +455,7 @@ export function useDefaultDenomTraceByDenom(): SWRResponse<DenomTraceByDenom> {
           return acc;
         }, map)
       : map;
-  }, [client]);
+  });
 
-  return { ...swr, data: defaultDenomTraceByDenom } as SWRResponse;
+  return useSwrResponse<DenomTraceByDenom>(swr2.data, swr);
 }

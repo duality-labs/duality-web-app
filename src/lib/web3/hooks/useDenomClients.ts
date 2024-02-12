@@ -1,6 +1,6 @@
-import useSWRImmutable, { immutable } from 'swr/immutable';
-import useSWRInfinite, { SWRInfiniteKeyLoader } from 'swr/infinite';
-import { useEffect, useMemo } from 'react';
+import useSWRImmutable from 'swr/immutable';
+import { useQueries } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import {
   ChainRegistryClient,
@@ -13,6 +13,7 @@ import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applicatio
 import { useDenomTrace, useDenomTraceByDenom } from './useDenomsFromChain';
 import { Token } from '../utils/tokens';
 import { getAssetClient } from './useDenomsFromRegistry';
+import { SWRCommon, useCombineResults, useSwrResponse } from './useSWR';
 
 const { REACT_APP__CHAIN_NAME = '' } = import.meta.env;
 
@@ -30,13 +31,6 @@ export function useAssetClient(denom: string | undefined) {
   );
 }
 
-export type SWRCommon<Data = unknown, Error = unknown> = {
-  isValidating: boolean;
-  isLoading: boolean;
-  error: Error;
-  data: Data | undefined;
-};
-
 type AssetByDenom = Map<string, Asset>;
 type AssetClientByDenom = Map<string, ChainRegistryClient | null | undefined>;
 type AssetChainUtilByDenom = Map<string, ChainRegistryChainUtil>;
@@ -53,74 +47,38 @@ function useAssetClientByDenom(
   const swr1 = useDenomTraceByDenom(uniqueDenoms);
   const { data: denomTraceByDenom } = swr1;
 
-  // fetch a client for each denom and trace
-  const { data: pages, ...swr2 } = useSWRInfinite<
-    [denom: string, client?: ChainRegistryClient | null],
-    Error,
-    SWRInfiniteKeyLoader<
-      [denom: string, client?: ChainRegistryClient],
-      [denom: string, trace: DenomTrace | undefined, key: string] | null
-    >
-  >(
-    // allow hash to be an empty string
-    (index: number) => {
-      const denom = uniqueDenoms.at(index);
-      const trace = denom ? denomTraceByDenom?.get(denom) : undefined;
-      return [denom || '', trace, 'asset-client'];
-    },
-    // handle cases of empty hash string
-    async ([denom, trace]) => {
-      return denom
-        ? // return denom key with possible asset client (if found)
-          [denom, await getAssetClient(denom, trace)]
-        : // return "empty" result that won't be mapped
-          [''];
-    },
-    {
-      parallel: true,
-      initialSize: 1,
-      use: [immutable],
-      revalidateFirstPage: false,
-      revalidateAll: false,
-    }
-  );
+  const { data: results, ...swr2 } = useQueries({
+    queries: uniqueDenoms.flatMap((denom) => {
+      const trace = denomTraceByDenom?.get(denom);
+      return {
+        queryKey: ['useAssetClientByDenom', denom, trace],
+        queryFn: async (): Promise<[string, ChainRegistryClient | null]> => {
+          return [denom, await getAssetClient(denom, trace)];
+        },
+        // never refetch these values, they will never change
+        staleTime: Infinity,
+        refetchInterval: Infinity,
+        refetchOnMount: false,
+        refetchOnReconnect: false,
+        refetchOnWindowFocus: false,
+      };
+    }),
+    // use generic simple as possible combination
+    combine: useCombineResults(),
+  });
 
-  // get all pages, resolving one key at a time
-  const { size, setSize } = swr2;
-  useEffect(() => {
-    if (size < uniqueDenoms.length) {
-      setSize((size) => Math.min(uniqueDenoms.length, size + 1));
-    }
-  }, [size, setSize, uniqueDenoms]);
+  const clientByDenom = useMemo(() => {
+    // compute map
+    return results.reduce<AssetClientByDenom>((map, [denom, client]) => {
+      // if resolved then add data
+      if (denom) {
+        return map.set(denom, client);
+      }
+      return map;
+    }, new Map());
+  }, [results]);
 
-  // combine pages into one
-  const clientByDenom = useMemo<AssetClientByDenom>(() => {
-    return (pages || []).reduce<AssetClientByDenom>(
-      (map, [denom, client] = ['']) => {
-        if (denom) {
-          const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
-          const asset = chainUtil?.getAssetByDenom(denom);
-          // if the client if found, return that
-          if (client && asset) {
-            return map.set(denom, client);
-          }
-          // if the client is undefined (pending) or null (not found/correct)
-          else {
-            return map.set(denom, client ? null : client);
-          }
-        }
-        return map;
-      },
-      new Map()
-    );
-  }, [pages]);
-
-  return {
-    isValidating: swr1.isValidating || swr2.isValidating,
-    isLoading: swr1.isLoading || swr2.isLoading,
-    error: swr1.error || swr2.error,
-    data: clientByDenom,
-  };
+  return useSwrResponse(clientByDenom, swr1, swr2);
 }
 
 export function useAssetChainUtilByDenom(
@@ -141,7 +99,7 @@ export function useAssetChainUtilByDenom(
     }, new Map());
   }, [uniqueDenoms, clientByDenom]);
 
-  return { ...swr, data };
+  return useSwrResponse(data, swr);
 }
 
 // export convenience hook for getting just Assets for each denom
@@ -164,7 +122,7 @@ export function useAssetByDenom(
     }, new Map());
   }, [uniqueDenoms, chainUtilByDenom]);
 
-  return { ...swr, data };
+  return useSwrResponse(data, swr);
 }
 
 // for possible types of assets in base denom
@@ -250,8 +208,18 @@ export function useTokenByDenom(
   const { data: traceByDenom, ...swr1 } = useDenomTraceByDenom(uniqueDenoms);
   const { data: clientByDenom, ...swr2 } = useAssetClientByDenom(uniqueDenoms);
 
+  // the function client.getChainUtil(chainName) can be quite intensive depending
+  // on how much IBC data is related to the chain in question
+  // we cache the results for sets of unique denoms (which are often re-used)
+  const cacheKey = [
+    ...uniqueDenoms,
+    // compare traces by keys because we only allow defined traces in the map
+    ...Array.from(traceByDenom?.keys() || []),
+    // compare clients by keys because we only allow defined clients in the map
+    ...Array.from(clientByDenom?.keys() || []),
+  ];
   // return found tokens and a generic Unknown tokens
-  const data = useMemo(() => {
+  const { data } = useSWRImmutable(cacheKey, () => {
     return uniqueDenoms.reduce<TokenByDenom>((map, denom) => {
       const client = clientByDenom?.get(denom);
       const chainUtil = client?.getChainUtil(REACT_APP__CHAIN_NAME);
@@ -291,14 +259,9 @@ export function useTokenByDenom(
       }
       return map;
     }, new Map());
-  }, [uniqueDenoms, clientByDenom, traceByDenom]);
+  });
 
-  return {
-    isValidating: swr1.isValidating || swr2.isValidating,
-    isLoading: swr1.isLoading || swr2.isLoading,
-    error: swr1.error || swr2.error,
-    data,
-  };
+  return useSwrResponse(data, swr1, swr2);
 }
 
 // export convenience hook for getting just one Token for one denom
@@ -310,7 +273,7 @@ export function useToken(denom: string | undefined): SWRCommon<Token> {
     return denom ? tokenByDenom?.get(denom) : undefined;
   }, [tokenByDenom, denom]);
 
-  return { ...swr, data };
+  return useSwrResponse(data, swr);
 }
 
 // export convenience hook for getting list of multiple Tokens
@@ -323,5 +286,5 @@ export function useTokens(denoms: string[] | undefined): SWRCommon<Token[]> {
     [tokenByDenom]
   );
 
-  return { ...swr, data };
+  return useSwrResponse(data, swr);
 }
