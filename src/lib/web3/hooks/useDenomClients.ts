@@ -169,14 +169,18 @@ export function useAssetByDenom(
 
 // for possible types of assets in base denom
 // see: https://github.com/cosmos/chain-registry/blob/3e16e0d/assetlist.schema.json#L56
-const bridgedWasmAddressRegex = /^(\w+):(\w+)$/;
+const bridgedWasmLikeAddressRegex = /^(\w+):(\w+)$/;
 const factoryAddressRegex = /^factory\/(\w+)\/(.+)$/;
 const addressRegex = /^([a-z]+)([a-z0-9]+)$/;
 
-function shortenHash(address: string) {
+function shortenHash(address: string, toSideLength = 3) {
   return address.length >= 9
-    ? `${address.slice(0, 3)}...${address.slice(-3)}`
+    ? `${address.slice(0, toSideLength)}...${address.slice(-toSideLength)}`
     : address;
+}
+// optionally shorten hex hashes (including IBC hashes)
+function maybeShortenHexHash(str: string) {
+  return str.replaceAll(/[0-9A-F]{15,}/g, (match) => shortenHash(match, 6));
 }
 
 // somtimes token addresses can have differing lengths
@@ -202,13 +206,13 @@ function createAssetFromDenom(denom: string): Asset {
       ? // use pretty factory address
         `${name} on ${prefix}${shortenHash(hash)}`
       : // default to what we know
-        denom,
+        maybeShortenHexHash(denom),
   };
 }
 // create asset from available IBC trace information
 function createAssetFromIbcTrace(denom: string, trace: DenomTrace): Asset {
   const [match, type, address] =
-    trace.base_denom.match(bridgedWasmAddressRegex) || [];
+    trace.base_denom.match(bridgedWasmLikeAddressRegex) || [];
   const [prefix, hash] = splitAddress(address);
 
   return {
@@ -221,7 +225,7 @@ function createAssetFromIbcTrace(denom: string, trace: DenomTrace): Asset {
       ? // use pretty trace address
         `${prefix}(${type.toUpperCase()}) ${shortenHash(hash)}`
       : // default to what we know
-        trace.base_denom,
+        maybeShortenHexHash(trace.base_denom),
   };
 }
 
