@@ -65,21 +65,47 @@ jobs:
       - name: Run post-install scripts
         run: npm rebuild && npm run prepare --if-present
 
-      # run build with .env.development file (instead of .env.production)
+      # run build with .env.testnet file (instead of .env.production)
       # and add Netlify settings
-      - name: Build
-        run: npm run build -- --mode deploy-previews && cp netlify.toml build/netlify.toml
+      - name: Build testnet
+        run: npm run build -- --mode testnet && cp netlify.toml build/netlify.toml
         env:
           REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
 
-      - name: Deploy preview to Netlify
-        id: netlify_deploy
+      - name: Deploy testnet preview to Netlify
+        id: netlify_deploy_testnet_preview
         # see: https://github.com/marketplace/actions/netlify-deploy
         uses: jsmrcaga/action-netlify-deploy@v1.7.2
         with:
           # secret tokens are added in Github project settings under [project]/settings/secrets/actions
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_TESTNET_SITE_ID }}
+          NETLIFY_DEPLOY_MESSAGE: Preview deploy ${{ github.ref }} # github.ref looks like `refs/pull/[PR#]/merge`
+          NETLIFY_DEPLOY_TO_PROD: false
+          deploy_alias: ${{ steps.get-deploy-alias.outputs.DEPLOY_PREVIEW_ALIAS }}
+          build_directory: build
+          # we skip the build steps in this custom step because if we allow the project to build inside this step
+          # and specify the node version for that, this action will first download the latest node version,
+          # then switch back to the specified node version, then build the project.
+          # this wastes build minutes, so we instead pre-build the "build" folder
+          build_command: echo "already built app"
+          install_command: echo "already installed dependencies"
+
+      # run build with .env.beta file (instead of .env.production)
+      # and add Netlify settings
+      - name: Build
+        run: npm run build -- --mode beta && cp netlify.toml build/netlify.toml
+        env:
+          REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
+
+      - name: Deploy beta preview to Netlify
+        id: netlify_deploy_beta_preview
+        # see: https://github.com/marketplace/actions/netlify-deploy
+        uses: jsmrcaga/action-netlify-deploy@v1.7.2
+        with:
+          # secret tokens are added in Github project settings under [project]/settings/secrets/actions
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_BETA_SITE_ID }}
           NETLIFY_DEPLOY_MESSAGE: Preview deploy ${{ github.ref }} # github.ref looks like `refs/pull/[PR#]/merge`
           NETLIFY_DEPLOY_TO_PROD: false
           deploy_alias: ${{ steps.get-deploy-alias.outputs.DEPLOY_PREVIEW_ALIAS }}
@@ -99,6 +125,11 @@ jobs:
         # get deploy outputs: see https://github.com/marketplace/actions/netlify-deploy#outputs
         # get PR number: see https://github.com/actions/checkout/issues/58#issuecomment-812259610
         run: |
-          echo "Preview URL: ${{ steps.netlify_deploy.outputs.NETLIFY_PREVIEW_URL }}" > netlify.txt
-          echo "Logs: ${{ steps.netlify_deploy.outputs.NETLIFY_LOGS_URL }}" >> netlify.txt
+          echo "## Deploy Previews" > netlify.txt
+          echo "### Testnet" >> netlify.txt
+          echo "Preview URL: ${{ steps.netlify_deploy_testnet_preview.outputs.NETLIFY_PREVIEW_URL }}" >> netlify.txt
+          echo "Logs: ${{ steps.netlify_deploy_testnet_preview.outputs.NETLIFY_LOGS_URL }}" >> netlify.txt
+          echo "### Beta" >> netlify.txt
+          echo "Preview URL: ${{ steps.netlify_deploy_beta_preview.outputs.NETLIFY_PREVIEW_URL }}" >> netlify.txt
+          echo "Logs: ${{ steps.netlify_deploy_beta_preview.outputs.NETLIFY_LOGS_URL }}" >> netlify.txt
           gh pr comment ${{ github.event.pull_request.number }} --body-file netlify.txt || true
