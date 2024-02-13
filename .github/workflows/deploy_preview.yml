@@ -45,9 +45,6 @@ jobs:
           node-version: ${{ steps.get-node-version.outputs.NODE_VERSION }}
           cache: npm
 
-      - name: Add deployment preview specific environment variables
-        run: cp .env.deploy-previews .env.local
-
       - name: Install dependencies
         # note: from https://github.com/actions/setup-node/issues/49#issuecomment-1293249466
         # security consideration:
