@@ -123,13 +123,13 @@ async function createChainRegistryClient(
           globalFetchCache(url).then((data) => {
             // find matching data to merge
             const assetListOrChain = data as AssetList | Chain;
+            const assetList: AssetList | undefined =
+              assetListOrChain.$schema?.endsWith('/assetlist.schema.json')
+                ? (assetListOrChain as AssetList)
+                : undefined;
             if (assetListOrChain.chain_name === REACT_APP__CHAIN_NAME) {
               // merge current chain asset data with default chain asset data
-              const assetList = data as AssetList;
-              if (
-                defaultAssetLists &&
-                assetList.$schema?.endsWith('/assetlist.schema.json')
-              ) {
+              if (assetList && defaultAssetLists) {
                 const defaultAssetList = defaultAssetLists.find(
                   ({ chain_name }) => chain_name === assetList.chain_name
                 )?.assets;
@@ -161,6 +161,16 @@ async function createChainRegistryClient(
                 );
                 return client.update({ ...defaultChain, ...chain });
               }
+            }
+            // remove multi-hop denoms from other chains
+            else if (assetList) {
+              return client.update({
+                ...assetList,
+                // add matched chain name assets over default assets by base
+                assets: assetList.assets.filter((asset) => {
+                  return (asset.traces?.length || 0) < 2;
+                }),
+              });
             }
             return client.update(data as Chain | AssetList | IBCInfo);
           })
@@ -388,7 +398,22 @@ export function useOneHopDenoms(): string[] {
     if (client) {
       const assetLists = [
         client.getChainAssetList(REACT_APP__CHAIN_NAME),
-        ...(client.getGeneratedAssetLists(REACT_APP__CHAIN_NAME) ?? []),
+        // make "one-hop" include only tokens on other chains that
+        // aren't IBC tokens from another chain (another hop)
+        // other known base_denom prefixes include: factory/, stk/, erc20/
+        ...(client.getGeneratedAssetLists(REACT_APP__CHAIN_NAME) ?? []).map(
+          (assetList) => {
+            return {
+              ...assetList,
+              assets: assetList.assets.filter(
+                (asset) =>
+                  !asset.traces ||
+                  (asset.traces.length === 1 &&
+                    !asset.traces[0].counterparty.base_denom.startsWith('ibc/'))
+              ),
+            };
+          }
+        ),
       ];
       return assetLists.flatMap(
         (assetList) => assetList?.assets.map((asset) => asset.base) ?? []

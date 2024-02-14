@@ -12,6 +12,7 @@ import {
   getKeplrWalletAccount,
   useSyncKeplrState,
 } from './wallets/keplr';
+import useAccountAddress from './hooks/useAccountAddress';
 
 export interface Web3ContextValue {
   connectWallet?: () => void;
@@ -89,6 +90,9 @@ export function Web3Provider({ children }: Web3ContextProps) {
     connectWallet,
     localStorage.getItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY) === 'keplr'
   );
+
+  // add any other environment specific third-party hooks that use the address
+  useAccountAddress(address);
 
   return (
     <Web3Context.Provider

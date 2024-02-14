@@ -108,19 +108,47 @@ jobs:
 
       # run build with .env.testnet file (instead of .env.production)
       # and add Netlify settings
-      - name: Build
+      - name: Build testnet
         run: npm run build -- --mode testnet && cp netlify.toml build/netlify.toml
         env:
           REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
 
-      - name: Deploy preview to Netlify
-        id: netlify_deploy
+      - name: Deploy testnet to Netlify
+        id: netlify_deploy_testnet
         # see: https://github.com/marketplace/actions/netlify-deploy
         uses: jsmrcaga/action-netlify-deploy@v1.7.2
         with:
           # secret tokens are added in Github project settings under [project]/settings/secrets/actions
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_TESTNET_SITE_ID }}
+          NETLIFY_DEPLOY_MESSAGE: 'Production deploy ${{ github.ref }}' # github.ref looks like `refs/pull/[PR#]/merge`
+          NETLIFY_DEPLOY_TO_PROD: true
+          build_directory: build
+          # we skip the build steps in this custom step because if we allow the project to build inside this step
+          # and specify the node version for that, this action will first download the latest node version,
+          # then switch back to the specified node version, then build the project.
+          # this wastes build minutes, so we instead pre-build the "build" folder
+          build_command: echo "already built app"
+          install_command: echo "already installed dependencies"
+
+      - name: Clear build folder
+        run: rm -rf build
+
+      # run build with .env.beta file (instead of .env.production)
+      # and add Netlify settings
+      - name: Build beta
+        run: npm run build -- --mode beta && cp netlify.toml build/netlify.toml
+        env:
+          REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
+
+      - name: Deploy beta to Netlify
+        id: netlify_deploy_beta
+        # see: https://github.com/marketplace/actions/netlify-deploy
+        uses: jsmrcaga/action-netlify-deploy@v1.7.2
+        with:
+          # secret tokens are added in Github project settings under [project]/settings/secrets/actions
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_BETA_SITE_ID }}
           NETLIFY_DEPLOY_MESSAGE: 'Production deploy ${{ github.ref }}' # github.ref looks like `refs/pull/[PR#]/merge`
           NETLIFY_DEPLOY_TO_PROD: true
           build_directory: build

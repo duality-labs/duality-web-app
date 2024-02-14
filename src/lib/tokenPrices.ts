@@ -120,10 +120,10 @@ function useCombinedSimplePrices(
     fetcher,
     {
       // refresh and refetch infrequently to stay below API limits
-      refreshInterval: 10000,
-      dedupingInterval: 10000,
-      focusThrottleInterval: 10000,
-      errorRetryInterval: 10000,
+      refreshInterval: 30000,
+      dedupingInterval: 30000,
+      focusThrottleInterval: 30000,
+      errorRetryInterval: 30000,
     }
   );
 }
@@ -223,7 +223,7 @@ export function useHasPriceData(
 ) {
   const { data, isValidating } = useSimplePrice(tokens, currencyID);
   // do not claim price data if tokens won't use any CoinGecko lookups
-  if (tokens.every((token) => !!token?.coingecko_id)) {
+  if (tokens.every((token) => !token?.coingecko_id)) {
     return false;
   }
   return isValidating || data.some(Boolean);
