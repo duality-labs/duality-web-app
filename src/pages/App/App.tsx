@@ -61,10 +61,11 @@ function App() {
 
 export default App;
 
-function Fallback({ error }: { error?: Error }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function Fallback(_: { error?: Error }) {
   return (
-    <div>
-      error ({typeof error}): {JSON.stringify(error)}
+    <div style={{ margin: 'auto', padding: '2em' }}>
+      An error occurred, refresh the page to try again
     </div>
   );
 }
