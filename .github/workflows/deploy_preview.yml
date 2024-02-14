@@ -88,9 +88,12 @@ jobs:
           build_command: echo "already built app"
           install_command: echo "already installed dependencies"
 
+      - name: Clear build folder
+        run: rm -rf build
+
       # run build with .env.beta file (instead of .env.production)
       # and add Netlify settings
-      - name: Build
+      - name: Build beta
         run: npm run build -- --mode beta && cp netlify.toml build/netlify.toml
         env:
           REACT_APP__BUILD_NUMBER: ${{ github.run_id }}
