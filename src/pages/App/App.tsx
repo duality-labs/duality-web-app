@@ -4,7 +4,6 @@ import { ThemeProvider } from '../../lib/theme/themeProvider';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Navigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Component, ErrorInfo, ReactNode } from 'react';
 
 import Header from '../../components/Header';
 import Notifications from '../../components/Notifications';
@@ -29,81 +28,32 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <ErrorBoundary fallback={Fallback}>
-      <Web3Provider>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <BrowserRouter>
-              <Header />
-              <Stars />
-              <Planets />
-              <main>
-                <Routes>
-                  <Route index element={<Navigate to={defaultPage} />} />
-                  <Route path="swap/*" element={<Swap />} />
-                  <Route path="pools/*" element={<Pool />} />
-                  {!REACT_APP__HIDE_ORDERBOOK && (
-                    <Route path="orderbook/*" element={<Orderbook />} />
-                  )}
-                  <Route path="portfolio/*" element={<MyLiquidity />} />
-                  <Route path="bridge" element={<Bridge />} />
-                  <Route path="*" element={<div>Not found</div>} />
-                </Routes>
-                <Notifications />
-              </main>
-            </BrowserRouter>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </Web3Provider>
-    </ErrorBoundary>
+    <Web3Provider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <BrowserRouter>
+            <Header />
+            <Stars />
+            <Planets />
+            <main>
+              <Routes>
+                <Route index element={<Navigate to={defaultPage} />} />
+                <Route path="swap/*" element={<Swap />} />
+                <Route path="pools/*" element={<Pool />} />
+                {!REACT_APP__HIDE_ORDERBOOK && (
+                  <Route path="orderbook/*" element={<Orderbook />} />
+                )}
+                <Route path="portfolio/*" element={<MyLiquidity />} />
+                <Route path="bridge" element={<Bridge />} />
+                <Route path="*" element={<div>Not found</div>} />
+              </Routes>
+              <Notifications />
+            </main>
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </Web3Provider>
   );
 }
 
 export default App;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function Fallback(_: { error?: Error }) {
-  return (
-    <div style={{ margin: 'auto', padding: '2em' }}>
-      An error occurred, refresh the page to try again
-    </div>
-  );
-}
-
-class ErrorBoundary extends Component<{
-  fallback: (props: { error?: Error }) => ReactNode;
-  children: ReactNode;
-}> {
-  state: { didCatch: boolean; error?: Error } = { didCatch: false };
-
-  constructor(props: {
-    fallback: (props: { error?: Error }) => ReactNode;
-    children: ReactNode;
-  }) {
-    super(props);
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    // Update state so the next render will show the fallback UI.
-    return { didCatch: true, error };
-  }
-
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    // Example "componentStack":
-    //   in ComponentThatThrows (created by App)
-    //   in ErrorBoundary (created by App)
-    //   in div (created by App)
-    //   in App
-    // eslint-disable-next-line no-console
-    console.error(error, info.componentStack);
-  }
-
-  render() {
-    if (this.state.didCatch) {
-      // You can render any custom fallback UI
-      return this.props.fallback({ error: this.state.error });
-    }
-
-    return this.props.children;
-  }
-}
