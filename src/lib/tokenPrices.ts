@@ -223,7 +223,7 @@ export function useHasPriceData(
 ) {
   const { data, isValidating } = useSimplePrice(tokens, currencyID);
   // do not claim price data if tokens won't use any CoinGecko lookups
-  if (tokens.every((token) => !!token?.coingecko_id)) {
+  if (tokens.every((token) => !token?.coingecko_id)) {
     return false;
   }
   return isValidating || data.some(Boolean);
