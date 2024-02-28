@@ -48,14 +48,14 @@ export async function getKeplrDualityWallet(
 ): Promise<KeplrWallet | undefined> {
   try {
     invariant(chain, 'Chain is not set');
+    const chainId = chain.chain_id;
+    invariant(chainId, `Invalid chain id: ${chainId}`);
     const chainName = chain.chain_name;
     invariant(chainName, `Invalid chain name: ${chainName}`);
     const keplr = await getKeplr();
     invariant(keplr, 'Keplr extension is not installed or enabled');
     const chainClient = await getChainClient(chainName);
     const chainAssetList = chainClient.getChainAssetList(chainName);
-    const chainId = chain.chain_id;
-    invariant(chainId, `Invalid chain id: ${chainId}`);
     const chainInfo = chainRegistryChainToKeplr(chain, [chainAssetList]);
     await keplr.experimentalSuggestChain(chainInfo);
     await keplr.enable(chainId);
@@ -112,7 +112,7 @@ export async function getChainInfo(chain: Chain) {
   invariant(chainId, `Invalid chain id: ${chainId}`);
   const keplr = await getKeplr();
   invariant(keplr, 'Keplr extension is not installed or enabled');
-  const chainName: string = chain.chain_name;
+  const chainName = chain.chain_name;
   invariant(chainName, `Invalid chain name: ${chainName}`);
   const chainClient = await getChainClient(chainName);
   const chainAssetList = chainClient.getChainAssetList(chainName);
