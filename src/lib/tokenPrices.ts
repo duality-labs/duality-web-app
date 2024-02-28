@@ -4,7 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { ObservableList, useObservableList } from './utils/observableList';
 import { Token } from './web3/utils/tokens';
 
-const { REACT_APP__DEV_ASSET_PRICE_MAP } = import.meta.env;
+const { DEV, REACT_APP__DEV_ASSET_PRICE_MAP } = import.meta.env;
 
 const baseAPI = 'https://api.coingecko.com/api/v3';
 
@@ -183,7 +183,9 @@ export function useSimplePrice(
     return tokens.map((token) =>
       token?.coingecko_id
         ? // if the information is fetchable, return fetched (number) or not yet fetched (undefined)
-          (data?.[token.coingecko_id]?.[currencyID] as number | undefined)
+          (data?.[token.coingecko_id]?.[currencyID] as number | undefined) ??
+          // in dev, if is stablecoin query (USDC/USD or USDT/USD) default to 1
+          (DEV && token.coingecko_id.startsWith(currencyID) ? 1 : undefined)
         : // if the information is not fetchable, return a dev token price or 0 (unpriced)
           getDevTokenPrice(token) || 0
     );
