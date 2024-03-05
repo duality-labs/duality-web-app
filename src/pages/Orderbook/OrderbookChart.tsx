@@ -20,6 +20,7 @@ import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
 import { IndexerStreamAccumulateSingleDataSet } from '../../lib/web3/hooks/useIndexer';
+import { days, hours, minutes, seconds } from '../../lib/utils/time';
 
 const { REACT_APP__INDEXER_API = '', PROD } = import.meta.env;
 
@@ -120,10 +121,19 @@ export default function OrderBookChart({
       '1D': 'day', // day
     };
 
+    const resolutionInMsMap: {
+      [tradingViewResolution: string]: number;
+    } = {
+      '1S': 1 * seconds,
+      '1': 1 * minutes,
+      '60': 1 * hours,
+      '1D': 1 * days,
+    };
+
     // keep track of data subscription state here
     type FetchID = string;
     type SubscriberUUID = string;
-    const knownTimestamps: Map<FetchID, number> = new Map();
+    const lastBars: Map<FetchID, Bar> = new Map();
     const knownHeights: Map<FetchID, number> = new Map();
     const streams: Map<
       SubscriberUUID,
@@ -266,15 +276,34 @@ export default function OrderBookChart({
                 onCompleted: (data, height) => {
                   stream.unsubscribe();
                   knownHeights.set(fetchID, height);
-                  const bars: Bar[] = Array.from(data)
-                    // note: the data needs to be in chronological order
-                    // and our API delivers results in reverse-chronological order
-                    .reverse()
-                    .map(getBarFromTimeSeriesRow);
-                  // record most recent time stamp of this fetch
-                  const lastTimestamp = bars.at(-1)?.time;
-                  if (lastTimestamp) {
-                    knownTimestamps.set(fetchID, lastTimestamp);
+                  const resolutionInMs = resolutionInMsMap[resolution];
+                  const bars: Bar[] = Array.from(data).reduceRight<Bar[]>(
+                    (acc, data) => {
+                      const bar = getBarFromTimeSeriesRow(data);
+                      // fill in any gaps with the last close price
+                      const lastBar = acc[acc.length - 1];
+                      const extraBars: Bar[] = [];
+                      if (lastBar && resolutionInMs) {
+                        let lastTimestamp = lastBar.time;
+                        while (lastTimestamp + resolutionInMs < bar.time) {
+                          lastTimestamp += resolutionInMs;
+                          extraBars.push({
+                            time: lastTimestamp,
+                            open: lastBar.close,
+                            high: lastBar.close,
+                            low: lastBar.close,
+                            close: lastBar.close,
+                          });
+                        }
+                      }
+                      return [...acc, ...extraBars, bar];
+                    },
+                    []
+                  );
+                  // record most recent bar info of this fetch
+                  const lastBar = bars.at(-1);
+                  if (lastBar) {
+                    lastBars.set(fetchID, lastBar);
                   }
                   onHistoryCallback(bars, { noData: !bars.length });
                 },
@@ -303,18 +332,37 @@ export default function OrderBookChart({
           const stream =
             new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(url, {
               onUpdate: (dataUpdates) => {
-                const lastTimestamp = knownTimestamps.get(fetchID);
+                let lastBar = lastBars.get(fetchID);
+                const resolutionInMs = resolutionInMsMap[resolution];
                 // note: the data needs to be in chronological order
                 // and our API delivers results in reverse-chronological order
                 const chronologicalUpdates = dataUpdates.reverse();
                 for (const row of chronologicalUpdates) {
                   const bar = getBarFromTimeSeriesRow(row);
+                  // add extra empty bars if there would be a gap in time
+                  if (lastBar && resolutionInMs) {
+                    let lastTimestamp = lastBar.time;
+                    while (lastTimestamp + resolutionInMs < bar.time) {
+                      lastTimestamp += resolutionInMs;
+                      onRealtimeCallback({
+                        time: lastTimestamp,
+                        open: lastBar.close,
+                        high: lastBar.close,
+                        low: lastBar.close,
+                        close: lastBar.close,
+                      });
+                    }
+                  }
                   // add only bars that are new or updates to last timestamp
-                  if (!lastTimestamp || bar.time >= lastTimestamp) {
+                  if (!lastBar || bar.time >= lastBar.time) {
                     onRealtimeCallback(bar);
                   }
-                  // record last timestamp
-                  knownTimestamps.set(fetchID, bar.time);
+                  // record last timestamp (to state, and shortcut in-loop var)
+                  lastBar = bar;
+                }
+                // record last bar to state
+                if (lastBar) {
+                  lastBars.set(fetchID, lastBar);
                 }
               },
               onError: (e) => {
