@@ -123,6 +123,7 @@ export default function OrderBookChart({
     // keep track of data subscription state here
     type FetchID = string;
     type SubscriberUUID = string;
+    const knownTimestamps: Map<FetchID, number> = new Map();
     const knownHeights: Map<FetchID, number> = new Map();
     const streams: Map<
       SubscriberUUID,
@@ -270,6 +271,11 @@ export default function OrderBookChart({
                     // and our API delivers results in reverse-chronological order
                     .reverse()
                     .map(getBarFromTimeSeriesRow);
+                  // record most recent time stamp of this fetch
+                  const lastTimestamp = bars.at(-1)?.time;
+                  if (lastTimestamp) {
+                    knownTimestamps.set(fetchID, lastTimestamp);
+                  }
                   onHistoryCallback(bars, { noData: !bars.length });
                 },
                 onError: (e) => {
@@ -297,11 +303,18 @@ export default function OrderBookChart({
           const stream =
             new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(url, {
               onUpdate: (dataUpdates) => {
+                const lastTimestamp = knownTimestamps.get(fetchID);
                 // note: the data needs to be in chronological order
                 // and our API delivers results in reverse-chronological order
                 const chronologicalUpdates = dataUpdates.reverse();
                 for (const row of chronologicalUpdates) {
-                  onRealtimeCallback(getBarFromTimeSeriesRow(row));
+                  const bar = getBarFromTimeSeriesRow(row);
+                  // add only bars that are new or updates to last timestamp
+                  if (!lastTimestamp || bar.time >= lastTimestamp) {
+                    onRealtimeCallback(bar);
+                  }
+                  // record last timestamp
+                  knownTimestamps.set(fetchID, bar.time);
                 }
               },
               onError: (e) => {
