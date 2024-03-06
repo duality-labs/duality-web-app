@@ -55,6 +55,19 @@ import {
 import Drawer from '../Drawer';
 
 const defaultExecutionType: AllowedLimitOrderTypeKey = 'FILL_OR_KILL';
+
+function formatNumericAmount(defaultValue = '') {
+  return (amount: number | string) => {
+    return amount
+      ? formatAmount(
+          amount,
+          { useGrouping: false },
+          { reformatSmallValues: false }
+        )
+      : defaultValue;
+  };
+}
+
 const TabContext = createContext<
   [
     tabIndex?: number,
@@ -354,7 +367,7 @@ function LimitOrder({
           }
           onChange={formSetState.setAmount}
           suffix={tokenA?.symbol}
-          format={formatAmount}
+          format={formatNumericAmount('')}
           // todo: estimate amountIn needed to match an amountOut value
           //       to be able to allow setting amountOut here in buyMode
           readOnly={buyMode}
@@ -396,9 +409,10 @@ function LimitOrder({
           <NumericInputRow
             prefix="Limit Price"
             value={formState.limitPrice ?? ''}
+            placeholder="market"
             onChange={formSetState.setLimitPrice}
             suffix={tokenA && tokenB && `${tokenA.symbol}/${tokenB.symbol}`}
-            format={formatAmount}
+            format={formatNumericAmount('')}
           />
         </div>
       )}
@@ -545,6 +559,7 @@ function NumericInputRow({
   className,
   prefix = '',
   value = '',
+  placeholder = '0',
   onInput,
   onChange = onInput,
   suffix = '',
@@ -556,6 +571,7 @@ function NumericInputRow({
   className?: string;
   prefix?: string;
   value: string;
+  placeholder?: string;
   onInput?: (value: string) => void;
   onChange?: (value: string) => void;
   suffix?: string;
@@ -601,12 +617,12 @@ function NumericInputRow({
       <input
         type="number"
         className="numeric-value-input__input flex"
-        placeholder="0"
+        placeholder={placeholder}
         value={internalValue}
-        onInput={() => maybeUpdate(inputRef.current?.value || '0', onInput)}
+        onInput={() => maybeUpdate(inputRef.current?.value || '', onInput)}
         onChange={(e) => {
           setInternalValue(e.target.value);
-          maybeUpdate(e.target.value || '0', onChange);
+          maybeUpdate(e.target.value || '', onChange);
         }}
         onBlur={() => setInternalValue(undefined)}
         readOnly={readOnly}
