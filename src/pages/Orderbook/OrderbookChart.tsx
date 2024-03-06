@@ -278,7 +278,9 @@ export default function OrderBookChart({
               {
                 onCompleted: (data, height) => {
                   stream.unsubscribe();
-                  knownHeights.set(fetchID, height);
+                  if (height > (knownHeights.get(fetchID) ?? 0)) {
+                    knownHeights.set(fetchID, height);
+                  }
                   const resolutionInMs = resolutionInMsMap[resolution];
                   const bars: Bar[] = Array.from(data).reduceRight<Bar[]>(
                     (acc, data) => {
@@ -305,7 +307,10 @@ export default function OrderBookChart({
                   );
                   // record most recent bar info of this fetch
                   const lastBar = bars.at(-1);
-                  if (lastBar) {
+                  if (
+                    lastBar &&
+                    lastBar.time > (lastBars.get(fetchID)?.time ?? 0)
+                  ) {
                     lastBars.set(fetchID, lastBar);
                   }
                   onHistoryCallback(bars, { noData: !bars.length });
