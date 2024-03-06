@@ -43,7 +43,7 @@ import SelectInput from '../inputs/SelectInput';
 import { timeUnits } from '../../lib/utils/time';
 import { displayPriceToTickIndex } from '../../lib/web3/utils/ticks';
 import {
-  orderTypeTextMap,
+  inputOrderTypeTextMap,
   orderTypeEnum,
   timePeriods,
   timePeriodLabels,
@@ -405,9 +405,13 @@ function LimitOrder({
       <div className="my-md">
         <SelectInput<AllowedLimitOrderTypeKey>
           className="flex col m-0 p-0"
-          list={Object.keys(orderTypeTextMap) as AllowedLimitOrderTypeKey[]}
+          list={
+            Object.keys(inputOrderTypeTextMap) as Array<
+              keyof typeof inputOrderTypeTextMap
+            >
+          }
           getLabel={(key = defaultExecutionType) =>
-            key && orderTypeTextMap[key]
+            key && inputOrderTypeTextMap[key]
           }
           value={formState.execution}
           onChange={formSetState.setExecution}
