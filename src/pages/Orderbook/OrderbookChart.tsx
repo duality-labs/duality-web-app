@@ -11,6 +11,7 @@ import {
   LibrarySymbolInfo,
   SearchSymbolResultItem,
   Bar,
+  Timezone,
 } from 'charting_library';
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
@@ -29,6 +30,7 @@ const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
   autosize: true,
   container: '',
   locale: 'en',
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone as Timezone,
   disabled_features: ['use_localstorage_for_settings'],
   enabled_features: ['study_templates'],
   charts_storage_url: 'https://saveload.tradingview.com',
