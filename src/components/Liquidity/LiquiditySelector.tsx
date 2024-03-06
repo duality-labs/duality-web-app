@@ -31,6 +31,8 @@ import {
 } from '../../lib/web3/utils/ticks';
 import useCurrentPriceIndexFromTicks from './useCurrentPriceFromTicks';
 import useOnDragMove from '../hooks/useOnDragMove';
+import { useIndexerStreamOfSingleDataSet } from '../../lib/web3/hooks/useIndexer';
+import { TimeSeriesRow } from '../stats/utils';
 
 import './LiquiditySelector.scss';
 
@@ -123,6 +125,51 @@ const bottomPadding = 26; // height of axis-ticks element
 
 const poleWidth = 8;
 
+function usePrice(
+  tokenA?: Token,
+  tokenB?: Token
+): [timestamp?: TimeSeriesRow[0], price?: TimeSeriesRow[1]] {
+  const encodedA = tokenA && encodeURIComponent(tokenA.base);
+  const encodedB = tokenB && encodeURIComponent(tokenB.base);
+
+  const { data: stream } = useIndexerStreamOfSingleDataSet<TimeSeriesRow>(
+    encodedA &&
+      encodedB &&
+      `/timeseries/price/${encodedA}/${encodedB}/second?pagination.limit=1`
+  );
+
+  const maxTimestamp = useMemo(() => {
+    if (stream) {
+      const timestamps = Array.from(stream?.keys());
+      const maxTimestamp = Math.max(...timestamps);
+      for (const timestamp of timestamps) {
+        if (timestamp !== maxTimestamp) {
+          stream.delete(timestamp);
+        }
+      }
+      return maxTimestamp;
+    }
+  }, [stream]);
+
+  return [maxTimestamp, stream?.get(maxTimestamp || 0)];
+}
+
+const lociRatio = 10;
+const lociIndex = Math.round(Math.log(lociRatio) / Math.log(1.0001));
+const amplitude1 = -5000;
+const period1 = 3600;
+const amplitude2 = -1000;
+const period2 = 600;
+const twoPi = Math.PI * 2;
+
+function getBotPriceIndex(unixTimestamp = Math.round(Date.now() / 1000)) {
+  return (
+    lociIndex +
+    amplitude1 * Math.sin((unixTimestamp / period1) * twoPi) +
+    amplitude2 * Math.sin((unixTimestamp / period2) * twoPi)
+  );
+}
+
 export default function LiquiditySelector({
   tokenA,
   tokenB,
@@ -145,6 +192,13 @@ export default function LiquiditySelector({
   oneSidedLiquidity = false,
   ControlsComponent,
 }: LiquiditySelectorProps) {
+  // stream data from indexer
+  const [timestamp, [, , , tickIndexFromIndexer] = []] = usePrice(
+    tokenA,
+    tokenB
+  );
+  const tickIndexFromBot = getBotPriceIndex(timestamp);
+
   const shortcutTickIndexToDisplayPrice = useCallback(
     (index: BigNumber) =>
       tickIndexToDisplayPrice(new BigNumber(index), tokenA, tokenB) ||
@@ -792,6 +846,11 @@ export default function LiquiditySelector({
         percentY={percentY}
         tickIndexToPrice={shortcutTickIndexToDisplayPrice}
         priceToTickIndex={shortcutDisplayPriceToTickIndex}
+        tickMarkIndexes={
+          [edgePriceIndex, tickIndexFromIndexer, tickIndexFromBot].filter(
+            (v) => v !== undefined
+          ) as number[]
+        }
       />
       {!advanced && (
         <TicksArea
@@ -901,8 +960,22 @@ export default function LiquiditySelector({
     setZoomRange,
   ]);
 
+  // use indexer to pull in current price according to indexer
+  // also pull in current height to calculate current goal price
   return (
     <>
+      <div className="col" style={{ width: 160 }}>
+        <h3>Stats</h3>
+        <div>
+          {tokenA?.symbol} ticks: {tokenATicks.length}
+        </div>
+        <div>
+          {tokenB?.symbol} ticks: {tokenBTicks.length}
+        </div>
+        <div>green: liquidity price</div>
+        <div>white: last swap price</div>
+        <div>red: bot target price</div>
+      </div>
       <div className="svg-container" ref={svgContainer}>
         {containerSize.width > 0 && containerSize.height > 0 ? svg : null}
       </div>
@@ -2026,22 +2099,30 @@ function Axis({
 }) {
   return (
     <g className={['axis', className].filter(Boolean).join(' ')}>
-      <g className="axis-ticks">{tickMarkIndexes.map(mapTickMarkIndex)}</g>
+      <g className="axis-ticks">
+        {tickMarkIndexes.slice().reverse().map(mapTickMarkIndex)}
+      </g>
     </g>
   );
 
   function mapTickMarkIndex(tickMarkIndex: number, index: number) {
     return (
       <g key={index} className="axis-tick">
-        {tickMarkIndex === highlightedTickIndex && (
+        {
           <line
-            className="line--success"
+            className={
+              tickMarkIndex === highlightedTickIndex
+                ? 'line--success'
+                : index === 0
+                ? 'line--warning'
+                : 'line'
+            }
             x1={plotX(tickMarkIndex).toFixed(3)}
             x2={plotX(tickMarkIndex).toFixed(3)}
             y1={plotY(0) + 8}
             y2={percentY(1)}
           />
-        )}
+        }
         <text
           filter="url(#text-solid-background)"
           className={

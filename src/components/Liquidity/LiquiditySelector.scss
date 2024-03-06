@@ -173,6 +173,9 @@
   line.line--success {
     stroke: hsl(165, 83%, 57%);
   }
+  line.line--warning {
+    stroke: hsl(21, 83%, 57%);
+  }
   text.text--success {
     fill: hsl(165, 83%, 57%);
   }
