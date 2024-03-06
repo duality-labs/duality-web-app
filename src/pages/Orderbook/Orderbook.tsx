@@ -27,6 +27,7 @@ export default function OrderbookPage() {
 function Orderbook() {
   // change tokens to match pathname
   const match = useMatch('/orderbook/:tokenA/:tokenB');
+  // need to add some sort of opt-out flag, allow resolving a denom only if it is found in a registry?
   const { data: denomA } = useDenomFromPathParam(match?.params['tokenA']);
   const { data: denomB } = useDenomFromPathParam(match?.params['tokenB']);
   const { data: tokenA } = useToken(denomA);
@@ -40,9 +41,11 @@ function Orderbook() {
       <div className="orderbook-body row gap-3">
         <div className="flex col">
           <div className="flex page-card">
-            {tokenA && tokenB && (
-              <OrderBookChart tokenA={tokenA} tokenB={tokenB} />
-            )}
+            {tokenA &&
+              tokenB &&
+              `${denomA}${denomB}` === `${denomA}${denomB}`.toLowerCase() && (
+                <OrderBookChart tokenA={tokenA} tokenB={tokenB} />
+              )}
           </div>
         </div>
         <div className="col">
