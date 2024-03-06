@@ -35,6 +35,7 @@ const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
   charts_storage_api_version: '1.1',
   // path to static assets of the charting library
   library_path: '/charting_library/',
+  theme: 'dark',
 };
 
 interface RequestQuery {
