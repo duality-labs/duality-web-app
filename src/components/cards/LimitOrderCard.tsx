@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import type { MsgPlaceLimitOrder } from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
 
 import TabsCard from './TabsCard';
 import Tabs from '../Tabs';
@@ -270,51 +271,50 @@ function LimitOrder({
         const result = routerResult;
         const forward = result.tokenIn === tokenId0;
         const tickIndexLimit = tickIndexOut * (forward ? 1 : -1);
-        swapRequest(
-          {
-            amount_in: getBaseDenomAmount(tokenIn, result.amountIn) || '0',
-            token_in: result.tokenIn,
-            token_out: result.tokenOut,
-            creator: address,
-            receiver: address,
-            // see LimitOrderType in types repo (cannot import at runtime)
-            // https://github.com/duality-labs/neutronjs/blob/2cf50a7af7bf7c6b1490a590a4e1756b848096dd/src/codegen/duality/dex/tx.ts#L6-L13
-            // using type IMMEDIATE_OR_CANCEL so that partially filled requests
-            // succeed (in testing when swapping 1e18 utokens, often the order
-            // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
-            // todo: use type FILL_OR_KILL: order must be filled completely
-            order_type: orderTypeEnum[execution],
-            // todo: set tickIndex to allow for a tolerance:
-            //   the below function is a tolerance of 0
-            tick_index_in_to_out: Long.fromNumber(
-              showLimitPrice
-                ? // set given limit price
-                  displayPriceToTickIndex(
-                    new BigNumber(limitPrice),
-                    forward ? tokenIn : tokenOut,
-                    forward ? tokenOut : tokenIn
-                  )?.toNumber() || NaN
-                : // or default to market end trade price (with tolerance)
-                  tickIndexLimit
-            ),
-            // optional params
-            // only add maxOut for "taker" (immediate) orders
-            ...((execution === 'FILL_OR_KILL' ||
-              execution === 'IMMEDIATE_OR_CANCEL') && {
-              maxAmountOut:
-                getBaseDenomAmount(tokenOut, result.amountOut) || '0',
-            }),
-            // only add expiration time to timed limit orders
-            ...(execution === 'GOOD_TIL_TIME' &&
-              !isNaN(expirationTimeMs) && {
-                expirationTime: {
-                  seconds: Long.fromNumber(Math.round(expirationTimeMs / 1000)),
-                  nanos: 0,
-                },
-              }),
-          },
-          gasEstimate || 0
-        );
+        const msgPlaceLimitOrder: MsgPlaceLimitOrder = {
+          amount_in: getBaseDenomAmount(tokenIn, result.amountIn) || '0',
+          token_in: result.tokenIn,
+          token_out: result.tokenOut,
+          creator: address,
+          receiver: address,
+          // see LimitOrderType in types repo (cannot import at runtime)
+          // https://github.com/duality-labs/neutronjs/blob/2cf50a7af7bf7c6b1490a590a4e1756b848096dd/src/codegen/duality/dex/tx.ts#L6-L13
+          // using type IMMEDIATE_OR_CANCEL so that partially filled requests
+          // succeed (in testing when swapping 1e18 utokens, often the order
+          // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
+          // todo: use type FILL_OR_KILL: order must be filled completely
+          order_type: orderTypeEnum[execution],
+          // todo: set tickIndex to allow for a tolerance:
+          //   the below function is a tolerance of 0
+          tick_index_in_to_out: Long.fromNumber(
+            showLimitPrice
+              ? // set given limit price
+                displayPriceToTickIndex(
+                  new BigNumber(limitPrice),
+                  forward ? tokenIn : tokenOut,
+                  forward ? tokenOut : tokenIn
+                )?.toNumber() || NaN
+              : // or default to market end trade price (with tolerance)
+                tickIndexLimit
+          ),
+        };
+        // optional params
+        // only add maxOut for "taker" (immediate) orders
+        if (
+          result.amountOut &&
+          (execution === 'FILL_OR_KILL' || execution === 'IMMEDIATE_OR_CANCEL')
+        ) {
+          msgPlaceLimitOrder.max_amount_out =
+            getBaseDenomAmount(tokenOut, result.amountOut) || '0';
+        }
+        // only add expiration time to timed limit orders
+        if (execution === 'GOOD_TIL_TIME' && !isNaN(expirationTimeMs)) {
+          msgPlaceLimitOrder.expiration_time = {
+            seconds: Long.fromNumber(Math.round(expirationTimeMs / 1000)),
+            nanos: 0,
+          };
+        }
+        swapRequest(msgPlaceLimitOrder, gasEstimate || 0);
       }
     },
     [
