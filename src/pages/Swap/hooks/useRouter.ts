@@ -1,9 +1,12 @@
+import BigNumber from 'bignumber.js';
 import { useEffect, useState } from 'react';
+
 import { PairRequest, PairResult, RouterResult } from './index';
 import { routerAsync, calculateFee, SwapError } from './router';
-import { formatMaximumSignificantDecimals } from '../../../lib/utils/number';
 
-import BigNumber from 'bignumber.js';
+import { formatMaximumSignificantDecimals } from '../../../lib/utils/number';
+import { TickInfo } from '../../../lib/web3/utils/ticks';
+import { getPairID } from '../../../lib/web3/utils/pairs';
 import {
   getBaseDenomAmount,
   getDisplayDenomAmount,
@@ -12,8 +15,6 @@ import {
 import { useToken } from '../../../lib/web3/hooks/useDenomClients';
 import { useTokenPairTickLiquidity } from '../../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../../lib/web3/hooks/useTokenPairs';
-import { TickInfo } from '../../../lib/web3/utils/ticks';
-import { getPairID } from '../../../lib/web3/utils/pairs';
 
 const cachedRequests: {
   [token0: string]: { [token1: string]: PairResult };
