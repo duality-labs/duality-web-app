@@ -138,13 +138,11 @@ function LimitOrder({
   tokenB,
   sell: sellMode = false,
   showLimitPrice = false,
-  showTriggerPrice = false,
 }: {
   tokenA?: Token;
   tokenB?: Token;
   sell?: boolean;
   showLimitPrice?: boolean;
-  showTriggerPrice?: boolean;
 }) {
   const buyMode = !sellMode;
   const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
@@ -250,7 +248,6 @@ function LimitOrder({
       const amount = Number(formState.amount ?? NaN);
       const timeAmount = Number(formState.timeAmount ?? NaN);
       const limitPrice = Number(formState.limitPrice ?? NaN);
-      const triggerPrice = Number(formState.triggerPrice ?? NaN);
       // calculate the expiration time in JS epoch (milliseconds)
       const expirationTimeMs =
         timeAmount && timePeriod
@@ -262,7 +259,6 @@ function LimitOrder({
         (execution === 'GOOD_TIL_TIME' ? !isNaN(expirationTimeMs) : true) &&
         (execution === 'GOOD_TIL_TIME' ? timePeriod !== undefined : true) &&
         (showLimitPrice ? !isNaN(limitPrice) : true) &&
-        (showTriggerPrice ? !isNaN(triggerPrice) : true) &&
         address &&
         routerResult &&
         tokenIn &&
@@ -325,7 +321,6 @@ function LimitOrder({
       formState,
       routerResult,
       showLimitPrice,
-      showTriggerPrice,
       address,
       tokenIn,
       tokenOut,
@@ -402,17 +397,6 @@ function LimitOrder({
             prefix="Limit Price"
             value={formState.limitPrice ?? ''}
             onChange={formSetState.setLimitPrice}
-            suffix={tokenA && tokenB && `${tokenA.symbol}/${tokenB.symbol}`}
-            format={formatAmount}
-          />
-        </div>
-      )}
-      {showTriggerPrice && (
-        <div className="my-md">
-          <NumericInputRow
-            prefix="Trigger Price"
-            value={formState.triggerPrice ?? ''}
-            onChange={formSetState.setTriggerPrice}
             suffix={tokenA && tokenB && `${tokenA.symbol}/${tokenB.symbol}`}
             format={formatAmount}
           />
