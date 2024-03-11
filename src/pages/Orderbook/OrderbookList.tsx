@@ -29,8 +29,8 @@ export default function OrderBookList({
   const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
   const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
   const {
-    data: [token0Ticks = [], token1Ticks = []],
-  } = useTokenPairTickLiquidity([tokenId0, tokenId1]);
+    data: [tokenATicks = [], tokenBTicks = []],
+  } = useTokenPairTickLiquidity([tokenIdA, tokenIdB]);
 
   const [forward, reverse] = [
     tokenId0 === tokenIdA && tokenId1 === tokenIdB,
@@ -40,10 +40,6 @@ export default function OrderBookList({
   const currentPrice = useCurrentPriceFromTicks(tokenIdA, tokenIdB);
   const resolutionPercent = 0.01; // size of price steps
 
-  // todo: this needs fixes, the comparison between prices is off because it
-  //       sometimes compares price1To0 and priceBToA
-  //       it would greatly benefit from useTokenPairTickLiquidity returning
-  //       price and tickIndexes in BtoA form
   const getTickBuckets = useCallback(
     (forward: boolean) => {
       const resolutionOrderOfMagnitude = getOrderOfMagnitude(resolutionPercent);
@@ -55,7 +51,7 @@ export default function OrderBookList({
             resolutionOrderOfMagnitude
         );
 
-      const ticks = forward ? token0Ticks : token1Ticks;
+      const ticks = forward ? tokenATicks : tokenBTicks;
       const precision = 1 - resolutionOrderOfMagnitude;
       const tickBucketLimits = Array.from({ length: shownTickRows }).flatMap(
         (_, index) =>
@@ -117,14 +113,14 @@ export default function OrderBookList({
 
       return [...fakeTicks, ...spacingTicks].slice(0, shownTickRows);
     },
-    [currentPrice, token0Ticks, token1Ticks, tokenA, tokenB]
+    [currentPrice, tokenATicks, tokenBTicks, tokenA, tokenB]
   );
 
   // get tokenA as the top ascending from current price list
-  const tokenATicks = useMemo<Array<TickInfo | undefined>>(() => {
+  const filteredTokenATicks = useMemo<Array<TickInfo | undefined>>(() => {
     return getTickBuckets(!!forward).reverse();
   }, [forward, getTickBuckets]);
-  const tokenBTicks = useMemo<Array<TickInfo | undefined>>(() => {
+  const filteredTokenBTicks = useMemo<Array<TickInfo | undefined>>(() => {
     return getTickBuckets(!forward);
   }, [forward, getTickBuckets]);
 
@@ -135,7 +131,8 @@ export default function OrderBookList({
   useEffect(() => {
     if (
       !lastTokenATicks.current ||
-      JSON.stringify(tokenATicks) !== JSON.stringify(lastTokenATicks.current)
+      JSON.stringify(filteredTokenATicks) !==
+        JSON.stringify(lastTokenATicks.current)
     ) {
       // set old data
       if (lastTokenATicks.current) {
@@ -145,9 +142,9 @@ export default function OrderBookList({
         );
       }
       // set new data
-      lastTokenATicks.current = tokenATicks;
+      lastTokenATicks.current = filteredTokenATicks;
     }
-  }, [tokenATicks]);
+  }, [filteredTokenATicks]);
 
   const [previousTokenBTicks, setPrevTokenBTicks] = useState<Array<TickInfo>>(
     []
@@ -156,7 +153,8 @@ export default function OrderBookList({
   useEffect(() => {
     if (
       !lastTokenBTicks.current ||
-      JSON.stringify(tokenATicks) !== JSON.stringify(lastTokenBTicks.current)
+      JSON.stringify(filteredTokenBTicks) !==
+        JSON.stringify(lastTokenBTicks.current)
     ) {
       // set old data
       if (lastTokenBTicks.current) {
@@ -166,9 +164,9 @@ export default function OrderBookList({
         );
       }
       // set new data
-      lastTokenBTicks.current = tokenATicks;
+      lastTokenBTicks.current = filteredTokenBTicks;
     }
-  }, [tokenATicks]);
+  }, [filteredTokenBTicks]);
 
   const [previousPrice, setPreviousPrice] = useState<BigNumber | undefined>();
   const lastPrice = useRef<BigNumber | undefined>(currentPrice);
@@ -185,7 +183,7 @@ export default function OrderBookList({
       // set new data
       lastPrice.current = currentPrice;
     }
-  }, [currentPrice, tokenATicks]);
+  }, [currentPrice, filteredTokenATicks]);
 
   const priceDecimalPlaces =
     currentPrice !== undefined
@@ -210,7 +208,7 @@ export default function OrderBookList({
           </tr>
         </thead>
         <tbody className="orderbook-list__table__ticks-a">
-          {tokenATicks.map((tick, index) => {
+          {filteredTokenATicks.map((tick, index) => {
             return (
               <OrderbookListRow
                 key={index}
@@ -241,7 +239,7 @@ export default function OrderBookList({
           </tr>
         </tbody>
         <tbody className="orderbook-list__table__ticks-b">
-          {tokenBTicks.map((tick, index) => {
+          {filteredTokenBTicks.map((tick, index) => {
             return (
               <OrderbookListRow
                 key={index}
