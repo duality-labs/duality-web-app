@@ -15,7 +15,7 @@ const { REACT_APP__RPC_API: defaultRpcEndpoint = '' } = import.meta.env;
 //       because we already know that the native chain is at Tendermint37.
 //       the base `getSigningNeutronClient` will make a network request to check
 function useTendermint37Client(rpcEndpoint: string) {
-  return useSWRImmutable(['rpc', rpcEndpoint], async () => {
+  return useSWRImmutable(['tmClient', rpcEndpoint], async () => {
     return Tendermint34Client.connect(rpcEndpoint);
   }).data;
 }
