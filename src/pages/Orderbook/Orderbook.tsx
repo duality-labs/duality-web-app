@@ -26,7 +26,7 @@ export default function OrderbookPage() {
 
 function Orderbook() {
   // change tokens to match pathname
-  const match = useMatch('/orderbook/:tokenA/:tokenB');
+  const match = useMatch('/orderbook/:tokenB/:tokenA');
   const { data: denomA } = useDenomFromPathParam(match?.params['tokenA']);
   const { data: denomB } = useDenomFromPathParam(match?.params['tokenB']);
   const { data: tokenA } = useToken(denomA);
@@ -41,7 +41,7 @@ function Orderbook() {
         <div className="flex col">
           <div className="flex page-card">
             {tokenA && tokenB && (
-              <OrderBookChart tokenA={tokenA} tokenB={tokenB} />
+              <OrderBookChart tokenA={tokenB} tokenB={tokenA} />
             )}
           </div>
         </div>
