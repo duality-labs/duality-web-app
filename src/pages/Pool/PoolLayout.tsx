@@ -43,9 +43,9 @@ export default function PoolLayout({
             <>
               <Link
                 className="text-light-alt"
-                to={`/pools/${tokenAPath}/${tokenBPath}`}
+                to={`/pools/${tokenBPath}/${tokenAPath}`}
               >
-                {tokenA.symbol}/{tokenB.symbol}
+                {tokenB.symbol}/{tokenA.symbol}
               </Link>
               <span>{'>'}</span>
               <span>
@@ -54,7 +54,7 @@ export default function PoolLayout({
             </>
           ) : tokenA && tokenB ? (
             <span>
-              {tokenA.symbol}/{tokenB.symbol}
+              {tokenB.symbol}/{tokenA.symbol}
             </span>
           ) : (
             <span>Create New Position</span>
@@ -70,9 +70,13 @@ export default function PoolLayout({
         >
           <div className="col">
             <div className="pool-page__header row my-4">
-              <TokenPairLogos className="h3" tokenA={tokenA} tokenB={tokenB} />
+              <TokenPairLogos
+                className="h3"
+                tokenLeft={tokenB}
+                tokenRight={tokenA}
+              />
               <h2 className="h3">
-                <AssetSymbol asset={tokenA} /> <AssetSymbol asset={tokenB} />{' '}
+                <AssetSymbol asset={tokenB} /> <AssetSymbol asset={tokenA} />{' '}
                 Pool
               </h2>
               <button

@@ -240,9 +240,9 @@ export default function OrderBookList({
               }
             >
               {currentPrice
-                ? `${formatAmount(currentPrice.toNumber())} ${tokenA.symbol}/${
-                    tokenB.symbol
-                  }`
+                ? `${formatAmount(currentPrice.toNumber())} ${
+                    tokenA.symbol
+                  } per ${tokenB.symbol}`
                 : '-'}
             </DiffCell>
           </tr>

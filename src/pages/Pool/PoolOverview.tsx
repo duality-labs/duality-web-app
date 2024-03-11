@@ -60,7 +60,7 @@ export default function PoolOverview({
   setTokens: ([tokenA, tokenB]: [Token?, Token?]) => void;
 }) {
   const swap = useCallback(() => {
-    setTokens([tokenB, tokenA]);
+    setTokens([tokenA, tokenB]);
   }, [tokenA, tokenB, setTokens]);
 
   const tokenPair = useMemo<TokenPair>(
@@ -77,14 +77,14 @@ export default function PoolOverview({
       <div className="row mt-3 mb-xl">
         <div className="col">
           <PriceCardRow>
-            <PairPriceCard tokenA={tokenA} tokenB={tokenB} />
             <PairPriceCard tokenA={tokenB} tokenB={tokenA} />
+            <PairPriceCard tokenA={tokenA} tokenB={tokenB} />
           </PriceCardRow>
         </div>
         <div className="col ml-auto">
           <div className="row gap-lg">
             <div className="col">
-              <Link to={`/pools/${tokenAPath}/${tokenBPath}/add`}>
+              <Link to={`/pools/${tokenBPath}/${tokenAPath}/add`}>
                 <button className="button button-primary py-3 px-4">
                   {userHasDeposits ? (
                     <>Add To Position</>
@@ -96,7 +96,7 @@ export default function PoolOverview({
             </div>
             {userHasDeposits && (
               <div className="col">
-                <Link to={`/pools/${tokenAPath}/${tokenBPath}/edit`}>
+                <Link to={`/pools/${tokenBPath}/${tokenAPath}/edit`}>
                   <button className="button button-primary py-3 px-4">
                     Edit Position
                   </button>
@@ -104,7 +104,7 @@ export default function PoolOverview({
               </div>
             )}
             <div className="col">
-              <Link to={`/orderbook/${tokenAPath}/${tokenBPath}`}>
+              <Link to={`/orderbook/${tokenBPath}/${tokenAPath}`}>
                 <button className="button button-primary-outline py-3 px-4">
                   Trade
                 </button>
@@ -185,7 +185,7 @@ function PairComposition({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           );
         },
       ],
-      data: [tokenA, tokenB],
+      data: [tokenB, tokenA],
     };
   }, [amountA, amountB, tokenA, tokenB, valueA, valueB]);
 
@@ -240,8 +240,8 @@ function PoolOverviewTable({
 const transactionTableHeadings = [
   'Type',
   'Total Value',
-  'Token A Amount',
   'Token B Amount',
+  'Token A Amount',
   'Wallet',
   'Time',
 ] as const;

@@ -180,8 +180,8 @@ function LimitOrder({
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
 
-  const tokenIn = !buyMode ? tokenA : tokenB;
-  const tokenOut = buyMode ? tokenA : tokenB;
+  const tokenIn = !buyMode ? tokenB : tokenA;
+  const tokenOut = buyMode ? tokenB : tokenA;
   const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
   const { data: userBalanceTokenIn, isLoading: isLoadingUserBalanceTokenIn } =
     useBankBalanceBaseAmount(denomIn);
@@ -550,7 +550,7 @@ function LimitOrder({
             formSetState.setAmount?.(value);
             setTokenInBalanceFraction(undefined);
           }}
-          suffix={tokenA?.symbol}
+          suffix={tokenB?.symbol}
           format={formatNumericAmount('')}
         />
       </div>
@@ -606,7 +606,7 @@ function LimitOrder({
             value={formState.limitPrice ?? ''}
             placeholder="market"
             onChange={formSetState.setLimitPrice}
-            suffix={tokenA && tokenB && `${tokenA.symbol}/${tokenB.symbol}`}
+            suffix={tokenA && tokenB && `${tokenA.symbol} per ${tokenB.symbol}`}
             format={formatNumericAmount('')}
           />
         </div>
@@ -691,7 +691,7 @@ function LimitOrder({
                 : '-'
             )
           )}
-          suffix={tokenA && tokenB && `${tokenA.symbol}/${tokenB.symbol}`}
+          suffix={tokenA && tokenB && `${tokenA.symbol} per ${tokenB.symbol}`}
         />
       </div>
       <div>
@@ -709,7 +709,7 @@ function LimitOrder({
                 )
               : '-'
           }
-          suffix={tokenB?.symbol}
+          suffix={tokenA?.symbol}
         />
       </div>
       {warning ? (
