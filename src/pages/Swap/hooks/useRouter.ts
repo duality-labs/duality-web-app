@@ -1,5 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { neutron } from '@duality-labs/neutronjs';
+import type { MsgPlaceLimitOrder } from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
 
 import { PairRequest, PairResult, RouterResult } from './index';
 import { routerAsync, calculateFee, SwapError } from './router';
@@ -12,9 +15,13 @@ import {
   getDisplayDenomAmount,
 } from '../../../lib/web3/utils/tokens';
 
+import { useWeb3 } from '../../../lib/web3/useWeb3';
+import { useTxSimulationClient } from '../../../lib/web3/clients/signingClients';
+
 import { useToken } from '../../../lib/web3/hooks/useDenomClients';
 import { useTokenPairTickLiquidity } from '../../../lib/web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from '../../../lib/web3/hooks/useTokenPairs';
+import { useSwrResponseFromReactQuery } from '../../../lib/web3/hooks/useSWR';
 
 const cachedRequests: {
   [token0: string]: { [token1: string]: PairResult };
@@ -42,6 +49,49 @@ async function getRouterResult(
       token1Ticks
     );
   }
+}
+
+/**
+ * Gets the simulated results and gas usage of a limit order transaction
+ * @param msgPlaceLimitOrder the MsgPlaceLimitOrder request
+ * @param memo optional memo string to add
+ * @returns aync request state and data of { gasInfo, txResult, msgResponse }
+ */
+export function useSimulatedLimitOrderResult(
+  msgPlaceLimitOrder: MsgPlaceLimitOrder | undefined,
+  memo = ''
+) {
+  // use signing client simulation function to get simulated response and gas
+  const { wallet, address } = useWeb3();
+  const txSimulationClient = useTxSimulationClient(wallet);
+  const result = useQuery({
+    queryKey: [txSimulationClient, address, JSON.stringify(msgPlaceLimitOrder)],
+    queryFn: async () => {
+      if (txSimulationClient && address && msgPlaceLimitOrder) {
+        const { gasInfo, result } = await txSimulationClient.simulate(
+          address,
+          [
+            neutron.dex.MessageComposer.withTypeUrl.placeLimitOrder(
+              msgPlaceLimitOrder
+            ),
+          ],
+          memo
+        );
+        // return successful response
+        if (result && result.msgResponses.length > 0) {
+          const response = neutron.dex.MsgPlaceLimitOrderResponse.decode(
+            result.msgResponses[0].value
+          );
+          return { gasInfo, result, response };
+        }
+        // likely an error result
+        return { gasInfo, result };
+      }
+      return null;
+    },
+  });
+
+  return useSwrResponseFromReactQuery(result.data, result);
 }
 
 /**
