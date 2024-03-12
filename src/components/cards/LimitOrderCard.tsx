@@ -435,7 +435,7 @@ function LimitOrder({
       userBalanceTokenInDisplayAmount &&
       new BigNumber(amountInBaseAmount).isGreaterThan(userBalanceTokenIn)
     ) {
-      return `Order limited to max input balance: ${formatAmount(
+      return `Order limited to input balance: ${formatAmount(
         userBalanceTokenInDisplayAmount
       )}${tokenIn?.symbol}`;
     }
@@ -457,7 +457,7 @@ function LimitOrder({
             .multipliedBy(1.001)
             .isGreaterThan(userBalanceTokenIn)
         ) {
-          return `Order limited to max input balance: ${formatAmount(
+          return `Order limited to input balance: ${formatAmount(
             userBalanceTokenInDisplayAmount
           )}${tokenIn?.symbol}`;
         } else {
@@ -480,7 +480,7 @@ function LimitOrder({
             .multipliedBy(1.001)
             .isGreaterThanOrEqualTo(userBalanceTokenIn)
         ) {
-          return `Order limited to max input balance: ${formatAmount(
+          return `Order limited to input balance: ${formatAmount(
             userBalanceTokenInDisplayAmount
           )}${tokenIn?.symbol}`;
         } else {
