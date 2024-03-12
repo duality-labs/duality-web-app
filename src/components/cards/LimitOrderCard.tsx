@@ -333,18 +333,43 @@ function LimitOrder({
 
   const warning = useMemo<string | undefined>(() => {
     const { amount } = formState;
+    // check if buy input amount is too high
+    const baseAmount = tokenOut && getBaseDenomAmount(tokenOut, amount || 0);
+    if (simulationResult?.response) {
+      if (
+        buyMode &&
+        userBalanceTokenInDisplayAmount &&
+        new BigNumber(baseAmount || 0).isGreaterThan(
+          simulationResult.response.taker_coin_out.amount || 0
+        )
+      ) {
+        return `Order limited to max input balance: ${formatAmount(
+          userBalanceTokenInDisplayAmount
+        )}${tokenIn?.symbol}`;
+      }
+    }
     // check if sell input amount is too high
     if (
       !buyMode &&
+      tokenIn &&
+      userBalanceTokenIn &&
       userBalanceTokenInDisplayAmount &&
-      new BigNumber(amount || 0).isGreaterThan(userBalanceTokenInDisplayAmount)
+      new BigNumber(baseAmount || 0).isGreaterThan(userBalanceTokenIn)
     ) {
       return `Order limited to max input balance: ${formatAmount(
         userBalanceTokenInDisplayAmount
       )}${tokenIn?.symbol}`;
     }
     return undefined;
-  }, [buyMode, formState, tokenIn?.symbol, userBalanceTokenInDisplayAmount]);
+  }, [
+    buyMode,
+    formState,
+    simulationResult,
+    tokenIn,
+    tokenOut,
+    userBalanceTokenIn,
+    userBalanceTokenInDisplayAmount,
+  ]);
 
   // set fee token from native chain if not yet set
   const [chainFeeToken, setChainFeeToken] = useChainFeeToken();
