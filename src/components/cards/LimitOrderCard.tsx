@@ -4,11 +4,15 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import type { MsgPlaceLimitOrder } from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
+import type {
+  LimitOrderType,
+  MsgPlaceLimitOrder,
+} from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
 
 import TabsCard from './TabsCard';
 import Tabs from '../Tabs';
@@ -28,12 +32,12 @@ import {
 import './LimitOrderCard.scss';
 import Tooltip from '../Tooltip';
 import { useSwap } from '../../pages/Swap/hooks/useSwap';
-import { useRouterResult } from '../../pages/Swap/hooks/useRouter';
+import { useSimulatedLimitOrderResult } from '../../pages/Swap/hooks/useRouter';
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
-import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 import { useChainFeeToken } from '../../lib/web3/hooks/useTokens';
+import { useNativeChain } from '../../lib/web3/hooks/useChains';
+
 import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
 import {
   LimitOrderContextProvider,
@@ -42,7 +46,6 @@ import {
 } from './LimitOrderContext';
 import SelectInput from '../inputs/SelectInput';
 import { timeUnits } from '../../lib/utils/time';
-import { displayPriceToTickIndex } from '../../lib/web3/utils/ticks';
 import {
   inputOrderTypeTextMap,
   orderTypeEnum,
@@ -51,8 +54,17 @@ import {
   TimePeriod,
   AllowedLimitOrderTypeKey,
 } from '../../lib/web3/utils/limitOrders';
+import {
+  DexTickUpdateEvent,
+  mapEventAttributes,
+} from '../../lib/web3/utils/events';
+import { displayPriceToTickIndex } from '../../lib/web3/utils/ticks';
 
 import Drawer from '../Drawer';
+
+const { REACT_APP__MAX_TICK_INDEXES = '' } = import.meta.env;
+const [, priceMaxIndex = Number.MAX_SAFE_INTEGER] =
+  `${REACT_APP__MAX_TICK_INDEXES}`.split(',').map(Number).filter(Boolean);
 
 const defaultExecutionType: AllowedLimitOrderTypeKey = 'FILL_OR_KILL';
 
@@ -159,11 +171,7 @@ function LimitOrder({
   showLimitPrice?: boolean;
 }) {
   const buyMode = !sellMode;
-  const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
-  const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
-  const {
-    data: [token0Ticks, token1Ticks],
-  } = useTokenPairTickLiquidity([tokenId0, tokenId1]);
+  const [denomA, denomB] = [getTokenId(tokenA), getTokenId(tokenB)];
 
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
@@ -174,151 +182,86 @@ function LimitOrder({
     data: userTokenInDisplayAmount,
     isValidating: isLoadingUserTokenInDisplayAmount,
   } = useBankBalanceDisplayAmount(tokenIn?.base);
-  const {
-    data: userTokenOutDisplayAmount,
-    isValidating: isLoadingUserTokenOutDisplayAmount,
-  } = useBankBalanceDisplayAmount(tokenOut?.base);
 
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap(
-    [tokenIdA, tokenIdB].filter((denom): denom is string => !!denom)
+    [denomA, denomB].filter((denom): denom is string => !!denom)
   );
 
-  const { data: routerResult } = useRouterResult({
-    tokenA: getTokenId(tokenIn),
-    tokenB: getTokenId(tokenOut),
-    valueA: formState.amount,
-    valueB: undefined,
-  });
   const { address, connectWallet } = useWeb3();
 
-  const gasEstimate = useMemo(() => {
-    if (routerResult) {
-      // convert to swap request format
-      const result = routerResult;
-      // Cosmos requires tokens in integer format of smallest denomination
-      // calculate gas estimate
-      const tickMin =
-        routerResult.tickIndexIn &&
-        routerResult.tickIndexOut &&
-        Math.min(
-          routerResult.tickIndexIn.toNumber(),
-          routerResult.tickIndexOut.toNumber()
-        );
-      const tickMax =
-        routerResult.tickIndexIn &&
-        routerResult.tickIndexOut &&
-        Math.max(
-          routerResult.tickIndexIn.toNumber(),
-          routerResult.tickIndexOut.toNumber()
-        );
-      const forward = result.tokenIn === tokenId0;
-      const ticks = forward ? token1Ticks : token0Ticks;
-      const ticksPassed =
-        (tickMin !== undefined &&
-          tickMax !== undefined &&
-          ticks?.filter((tick) => {
-            return (
-              tick.tickIndex1To0.isGreaterThanOrEqualTo(tickMin) &&
-              tick.tickIndex1To0.isLessThanOrEqualTo(tickMax)
-            );
-          })) ||
-        [];
-      const ticksUsed =
-        ticksPassed?.filter(
-          forward
-            ? (tick) => !tick.reserve1.isZero()
-            : (tick) => !tick.reserve0.isZero()
-        ).length || 0;
-      const ticksUnused =
-        new Set<number>([
-          ...(ticksPassed?.map((tick) => tick.tickIndex1To0.toNumber()) || []),
-        ]).size - ticksUsed;
-      const gasEstimate = ticksUsed
-        ? // 120000 base
-          120000 +
-          // add 80000 if multiple ticks need to be traversed
-          (ticksUsed > 1 ? 80000 : 0) +
-          // add 1000000 for each tick that we need to remove liquidity from
-          1000000 * (ticksUsed - 1) +
-          // add 500000 for each tick we pass without drawing liquidity from
-          500000 * ticksUnused +
-          // add another 500000 for each reverse tick we pass without drawing liquidity from
-          (forward ? 0 : 500000 * ticksUnused)
-        : 0;
-      return gasEstimate;
-    }
-    return undefined;
-  }, [routerResult, tokenId0, token0Ticks, token1Ticks]);
+  const simulatedMsgPlaceLimitOrder: MsgPlaceLimitOrder | undefined =
+    useMemo(() => {
+      const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
 
-  const onFormSubmit = useCallback(
-    function (event?: React.FormEvent<HTMLFormElement>) {
-      if (event) event.preventDefault();
-      // calculate tolerance from user slippage settings
-      // set tiny minimum of tolerance as the frontend calculations
-      // don't always exactly align with the backend calculations
-      const tolerance = Math.max(1e-12, Number(formState.slippage) || 0);
-      const tickIndexOut = routerResult?.tickIndexOut?.toNumber() || NaN;
       const { execution, timePeriod } = formState;
-      const amount = Number(formState.amount ?? NaN);
       const timeAmount = Number(formState.timeAmount ?? NaN);
-      const limitPrice = Number(formState.limitPrice ?? NaN);
+      const limitPrice = Number(formState.limitPrice || NaN); // do not allow 0
       // calculate the expiration time in JS epoch (milliseconds)
       const expirationTimeMs =
         timeAmount && timePeriod
           ? new Date(Date.now() + timeAmount * timeUnits[timePeriod]).getTime()
           : NaN;
+
+      // in buy mode: buy the amount out with the user's available balance
+      const amountIn = buyMode
+        ? tokenIn &&
+          userTokenInDisplayAmount &&
+          Number(userTokenInDisplayAmount) > 0
+          ? getBaseDenomAmount(tokenIn, userTokenInDisplayAmount)
+          : undefined
+        : tokenIn && formState.amount
+        ? getBaseDenomAmount(tokenIn, formState.amount)
+        : undefined;
+      const maxAmountOut = buyMode ? formState.amount : undefined;
+
+      // check format of request
       if (
-        !isNaN(amount) &&
         execution &&
         (execution === 'GOOD_TIL_TIME' ? !isNaN(expirationTimeMs) : true) &&
         (execution === 'GOOD_TIL_TIME' ? timePeriod !== undefined : true) &&
-        (showLimitPrice ? !isNaN(limitPrice) : true) &&
         address &&
-        routerResult &&
-        tokenIn &&
-        tokenOut &&
-        !isNaN(tolerance) &&
-        !isNaN(tickIndexOut)
+        denomIn &&
+        denomOut &&
+        amountIn &&
+        !isNaN(Number(amountIn || NaN)) &&
+        // check that amount out is valid if in buy mode
+        (!buyMode || !isNaN(Number(maxAmountOut || NaN)))
       ) {
-        // convert to swap request format
-        const result = routerResult;
-        const forward = result.tokenIn === tokenId0;
-        const tickIndexLimit = tickIndexOut * (forward ? 1 : -1);
+        // when buying: select tick index below the limit
+        // when selling: select tick index above the limit
+        const rounding = buyMode ? 'floor' : 'ceil';
+        const limitTickIndexInToOut =
+          limitPrice > 0
+            ? displayPriceToTickIndex(
+                new BigNumber(limitPrice),
+                tokenOut,
+                tokenIn,
+                rounding
+              )
+            : undefined;
+
         const msgPlaceLimitOrder: MsgPlaceLimitOrder = {
-          amount_in: getBaseDenomAmount(tokenIn, result.amountIn) || '0',
-          token_in: result.tokenIn,
-          token_out: result.tokenOut,
+          amount_in: amountIn,
+          token_in: denomIn,
+          token_out: denomOut,
           creator: address,
           receiver: address,
-          // see LimitOrderType in types repo (cannot import at runtime)
-          // https://github.com/duality-labs/neutronjs/blob/2cf50a7af7bf7c6b1490a590a4e1756b848096dd/src/codegen/duality/dex/tx.ts#L6-L13
-          // using type IMMEDIATE_OR_CANCEL so that partially filled requests
-          // succeed (in testing when swapping 1e18 utokens, often the order
-          // would be filled with 1e18-2 utokens and FILL_OR_KILL would fail)
-          // todo: use type FILL_OR_KILL: order must be filled completely
-          order_type: orderTypeEnum[execution],
-          // todo: set tickIndex to allow for a tolerance:
-          //   the below function is a tolerance of 0
-          tick_index_in_to_out: Long.fromNumber(
-            showLimitPrice
-              ? // set given limit price
-                displayPriceToTickIndex(
-                  new BigNumber(limitPrice),
-                  forward ? tokenIn : tokenOut,
-                  forward ? tokenOut : tokenIn
-                )?.toNumber() || NaN
-              : // or default to market end trade price (with tolerance)
-                tickIndexLimit
-          ),
+          order_type: orderTypeEnum[execution] as LimitOrderType,
+          // if no limit assume market value
+          tick_index_in_to_out:
+            limitTickIndexInToOut !== undefined
+              ? Long.fromNumber(limitTickIndexInToOut.toNumber())
+              : Long.fromNumber(priceMaxIndex),
         };
         // optional params
         // only add maxOut for "taker" (immediate) orders
         if (
-          result.amountOut &&
+          tokenOut &&
+          maxAmountOut &&
           (execution === 'FILL_OR_KILL' || execution === 'IMMEDIATE_OR_CANCEL')
         ) {
           msgPlaceLimitOrder.max_amount_out =
-            getBaseDenomAmount(tokenOut, result.amountOut) || '0';
+            getBaseDenomAmount(tokenOut, maxAmountOut) || '0';
         }
         // only add expiration time to timed limit orders
         if (execution === 'GOOD_TIL_TIME' && !isNaN(expirationTimeMs)) {
@@ -327,18 +270,64 @@ function LimitOrder({
             nanos: 0,
           };
         }
-        swapRequest(msgPlaceLimitOrder, gasEstimate || 0);
+        return msgPlaceLimitOrder;
+      }
+    }, [
+      address,
+      buyMode,
+      formState,
+      tokenIn,
+      tokenOut,
+      userTokenInDisplayAmount,
+    ]);
+
+  const { data: simulationResult, isValidating: isValidatingSimulation } =
+    useSimulatedLimitOrderResult(simulatedMsgPlaceLimitOrder);
+
+  const onFormSubmit = useCallback(
+    function (event?: React.FormEvent<HTMLFormElement>) {
+      if (event) event.preventDefault();
+
+      // calculate last price out from result
+      const lastPriceEvent = simulationResult?.result?.events.findLast(
+        (event) => event.type === 'TickUpdate'
+      );
+
+      if (lastPriceEvent) {
+        const denomIn = getTokenId(tokenIn);
+
+        // calculate tolerance from user slippage settings
+        // set tiny minimum of tolerance as the frontend calculations
+        // don't always exactly align with the backend calculations
+        const tolerance = Math.max(1e-12, Number(formState.slippage) || 0);
+        const toleranceFactor = 1 + tolerance;
+        // calculate last price out from matching event results
+        const lastPrice =
+          mapEventAttributes<DexTickUpdateEvent>(lastPriceEvent)?.attributes;
+        const direction =
+          lastPrice.TokenIn === denomIn
+            ? lastPrice.TokenIn === lastPrice.TokenZero
+            : lastPrice.TokenIn === lastPrice.TokenOne;
+
+        const tickIndexLimitInToOut = direction
+          ? Math.floor(Number(lastPrice.TickIndex) / toleranceFactor)
+          : Math.floor(Number(lastPrice.TickIndex) * toleranceFactor);
+
+        if (simulatedMsgPlaceLimitOrder && tickIndexLimitInToOut) {
+          const msgPlaceLimitOrder = {
+            ...simulatedMsgPlaceLimitOrder,
+            tick_index_in_to_out: Long.fromNumber(tickIndexLimitInToOut),
+          };
+          const gasEstimate = simulationResult?.gasInfo?.gasUsed.toNumber();
+          swapRequest(msgPlaceLimitOrder, gasEstimate || 0);
+        }
       }
     },
     [
       formState,
-      routerResult,
-      showLimitPrice,
-      address,
       tokenIn,
-      tokenOut,
-      tokenId0,
-      gasEstimate,
+      simulatedMsgPlaceLimitOrder,
+      simulationResult,
       swapRequest,
     ]
   );
@@ -347,30 +336,31 @@ function LimitOrder({
     const { amount, limitPrice } = formState;
     if (Number(amount) > 0) {
       if (showLimitPrice && !Number(limitPrice)) {
-        return 'Limit Price is not valid';
+        return undefined;
       }
     }
     return undefined;
   }, [formState, showLimitPrice]);
 
-  const [chainFeeToken] = useChainFeeToken();
+  // set fee token from native chain if not yet set
+  const [chainFeeToken, setChainFeeToken] = useChainFeeToken();
+  const { data: nativeChain } = useNativeChain();
+  useEffect(() => {
+    const firstFeeToken = nativeChain?.fees?.fee_tokens.at(0);
+    if (firstFeeToken) {
+      setChainFeeToken((feeToken) => feeToken || firstFeeToken.denom);
+    }
+  }, [nativeChain, setChainFeeToken]);
 
   return (
     <form onSubmit={onFormSubmit}>
       <div className="mt-2 mb-4">
         <NumericInputRow
           prefix="Amount"
-          value={
-            buyMode
-              ? formatAmount(routerResult?.amountOut.toNumber() || 0)
-              : formState.amount || ''
-          }
+          value={formState.amount || ''}
           onChange={formSetState.setAmount}
           suffix={tokenA?.symbol}
           format={formatNumericAmount('')}
-          // todo: estimate amountIn needed to match an amountOut value
-          //       to be able to allow setting amountOut here in buyMode
-          readOnly={buyMode}
         />
       </div>
       <RangeListSliderInput
@@ -407,7 +397,7 @@ function LimitOrder({
       {showLimitPrice && (
         <div className="my-md">
           <NumericInputRow
-            prefix="Limit Price"
+            prefix={`Limit Price ${buyMode ? '<=' : '>='}`}
             value={formState.limitPrice ?? ''}
             placeholder="market"
             onChange={formSetState.setLimitPrice}
@@ -454,14 +444,17 @@ function LimitOrder({
         <NumericValueRow
           prefix="Est. Fee"
           value={
-            chainFeeToken
+            chainFeeToken && simulationResult?.gasInfo?.gasUsed
               ? formatPrice(
                   formatMaximumSignificantDecimals(
-                    getDisplayDenomAmount(chainFeeToken, gasEstimate || 0) || 0,
+                    getDisplayDenomAmount(
+                      chainFeeToken,
+                      simulationResult.gasInfo.gasUsed.toString()
+                    ) || 0,
                     3
                   )
                 )
-              : 'N/A'
+              : '-'
           }
           suffix={chainFeeToken?.symbol}
         />
@@ -471,14 +464,15 @@ function LimitOrder({
           prefix="Est. Average Price"
           value={formatPrice(
             formatMaximumSignificantDecimals(
-              buyMode
-                ? routerResult?.amountOut
-                    .div(routerResult.amountIn)
-                    .toNumber() || '-'
-                : routerResult?.amountIn
-                    .div(routerResult.amountOut)
-                    .toNumber() || '-',
-              3
+              simulationResult?.response
+                ? !buyMode
+                  ? new BigNumber(
+                      simulationResult.response.taker_coin_out.amount
+                    ).div(simulationResult.response.coin_in.amount)
+                  : new BigNumber(simulationResult.response.coin_in.amount).div(
+                      simulationResult.response.taker_coin_out.amount
+                    )
+                : '-'
             )
           )}
           suffix={tokenA && tokenB && `${tokenA.symbol}/${tokenB.symbol}`}
@@ -486,12 +480,19 @@ function LimitOrder({
       </div>
       <div>
         <NumericValueRow
-          prefix="Total"
-          value={formatAmount(
-            !buyMode
-              ? routerResult?.amountOut.toNumber() || 0
-              : formState.amount || 0
-          )}
+          prefix={`Total ${buyMode ? 'Cost' : 'Result'}`}
+          value={
+            tokenIn && simulationResult?.response
+              ? formatAmount(
+                  getDisplayDenomAmount(
+                    tokenIn,
+                    buyMode
+                      ? simulationResult.response.coin_in.amount
+                      : simulationResult.response.taker_coin_out.amount
+                  ) || 0
+                )
+              : '-'
+          }
           suffix={tokenB?.symbol}
         />
       </div>
@@ -509,48 +510,34 @@ function LimitOrder({
         <button
           className="limit-order__confirm-button flex button-primary my-lg py-4"
           onClick={!address ? connectWallet : undefined}
-          disabled={isValidatingSwap || !!warning || !Number(formState.amount)}
+          disabled={
+            isValidatingSwap ||
+            isValidatingSimulation ||
+            !simulationResult ||
+            !!warning ||
+            !Number(formState.amount)
+          }
         >
           {!address ? 'Connect Wallet' : buyMode ? 'Buy' : 'Sell'}
         </button>
       </div>
-      {!buyMode ? (
-        <NumericValueRow
-          prefix="Available Balance"
-          value={formatAmount(
-            formatMaximumSignificantDecimals(
-              tokenA
-                ? (userTokenInDisplayAmount ??
-                    (isLoadingUserTokenInDisplayAmount && '-')) ||
-                    0
-                : '-',
-              3
-            ),
-            {
-              useGrouping: true,
-            }
-          )}
-          suffix={tokenA?.symbol}
-        />
-      ) : (
-        <NumericValueRow
-          prefix="Available Balance"
-          value={formatAmount(
-            formatMaximumSignificantDecimals(
-              tokenB
-                ? (userTokenOutDisplayAmount ??
-                    (isLoadingUserTokenOutDisplayAmount && '-')) ||
-                    0
-                : '-',
-              3
-            ),
-            {
-              useGrouping: true,
-            }
-          )}
-          suffix={tokenB?.symbol}
-        />
-      )}
+      <NumericValueRow
+        prefix="Available Balance"
+        value={formatAmount(
+          formatMaximumSignificantDecimals(
+            tokenIn
+              ? (userTokenInDisplayAmount ??
+                  (isLoadingUserTokenInDisplayAmount && '-')) ||
+                  0
+              : '-',
+            3
+          ),
+          {
+            useGrouping: true,
+          }
+        )}
+        suffix={tokenIn?.symbol}
+      />
     </form>
   );
 }
