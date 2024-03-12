@@ -23,20 +23,21 @@ export const orderTypeEnum: {
   UNRECOGNIZED: -1,
 };
 
-export const inputOrderTypeTextMap: {
+export const inputOrderTypeTextMap: Partial<{
   [key in AllowedLimitOrderTypeKey]: string;
+}> = {
+  FILL_OR_KILL: 'Fill Or Kill',
+  IMMEDIATE_OR_CANCEL: 'Immediate Or Cancel',
+};
+
+export const orderTypeTextMap: {
+  [key in keyof typeof LimitOrderType]: string;
 } = {
   GOOD_TIL_CANCELLED: 'Good Til Canceled',
   FILL_OR_KILL: 'Fill Or Kill',
   IMMEDIATE_OR_CANCEL: 'Immediate Or Cancel',
   JUST_IN_TIME: 'Just In Time',
   GOOD_TIL_TIME: 'Good Til Time',
-};
-
-export const orderTypeTextMap: {
-  [key in keyof typeof LimitOrderType]: string;
-} = {
-  ...inputOrderTypeTextMap,
   UNRECOGNIZED: 'Unrecognized',
 };
 
