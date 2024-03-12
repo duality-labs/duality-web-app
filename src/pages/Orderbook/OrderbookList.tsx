@@ -41,7 +41,7 @@ export default function OrderBookList({
   const resolutionPercent = 0.01; // size of price steps
 
   const getTickBuckets = useCallback(
-    (forward: boolean) => {
+    (forward: boolean, descendingOrder = forward) => {
       const resolutionOrderOfMagnitude = getOrderOfMagnitude(resolutionPercent);
       const step =
         currentPrice &&
@@ -56,7 +56,7 @@ export default function OrderBookList({
       const tickBucketLimits = Array.from({ length: shownTickRows }).flatMap(
         (_, index) =>
           currentPrice && step
-            ? forward
+            ? descendingOrder
               ? Number(
                   currentPrice
                     .minus(index * step)
@@ -69,34 +69,43 @@ export default function OrderBookList({
                 )
             : []
       );
-      const limit = forward
+      const tickBucketsLimit = descendingOrder
         ? Math.min(...tickBucketLimits)
         : Math.max(...tickBucketLimits);
 
-      const groupedTicks = ticks.reduce<{
-        [roundedPrice: string]: number;
-      }>((acc, tick) => {
-        // add if price is within bounds
-        if (
-          step &&
-          currentPrice &&
-          (forward
-            ? tick.price1To0.isGreaterThanOrEqualTo(limit)
-            : tick.price1To0.isLessThanOrEqualTo(limit))
-        ) {
-          const roundedPrice = Number(
-            tick.price1To0.toPrecision(
-              precision,
-              forward ? BigNumber.ROUND_FLOOR : BigNumber.ROUND_CEIL
-            )
-          );
-          acc[roundedPrice] = acc[roundedPrice] || 0;
-          acc[roundedPrice] += (
-            forward ? tick.reserve0 : tick.reserve1
-          ).toNumber();
-        }
-        return acc;
-      }, {});
+      const groupedTickEntries = ticks.reduce<
+        Array<[roundedPrice: number, reserves: number]>
+      >(
+        (acc, tick) => {
+          // add if price is within bounds
+          if (
+            step &&
+            currentPrice &&
+            // select tick prices within the outer edge of price buckets
+            (descendingOrder
+              ? tick.price1To0.isGreaterThanOrEqualTo(tickBucketsLimit)
+              : tick.price1To0.isLessThanOrEqualTo(tickBucketsLimit)) &&
+            // select tick prices within the inner edge of price buckets
+            (descendingOrder
+              ? tick.price1To0.isLessThanOrEqualTo(currentPrice)
+              : tick.price1To0.isGreaterThanOrEqualTo(currentPrice))
+          ) {
+            const foundEntry = acc.find(([limit]) => {
+              return descendingOrder
+                ? tick.price1To0.isGreaterThanOrEqualTo(limit)
+                : tick.price1To0.isLessThanOrEqualTo(limit);
+            });
+            if (foundEntry !== undefined) {
+              foundEntry[1] += (
+                forward ? tick.reserve0 : tick.reserve1
+              ).toNumber();
+            }
+          }
+          return acc;
+        },
+        tickBucketLimits.map((limit) => [limit, 0])
+      );
+      const groupedTicks = Object.fromEntries(groupedTickEntries);
 
       // create TickInfo replacements for bucketed data
       const fakeTicks = tickBucketLimits.map((key): TickInfo => {
@@ -118,7 +127,7 @@ export default function OrderBookList({
 
   // get tokenA as the top ascending from current price list
   const filteredTokenATicks = useMemo<Array<TickInfo | undefined>>(() => {
-    return getTickBuckets(!!forward).reverse();
+    return getTickBuckets(forward).reverse();
   }, [forward, getTickBuckets]);
   const filteredTokenBTicks = useMemo<Array<TickInfo | undefined>>(() => {
     return getTickBuckets(!forward);
