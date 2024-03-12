@@ -193,6 +193,91 @@ function LimitOrder({
 
   const { address, connectWallet } = useWeb3();
 
+  const [tokenInBalanceFraction, setTokenInBalanceFraction] =
+    useState<number>();
+
+  const buyAmountSimulatedMsgPlaceLimitOrder = useMemo<
+    MsgPlaceLimitOrder | undefined
+  >(() => {
+    if (address && userBalanceTokenIn && tokenInBalanceFraction !== undefined) {
+      const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
+      if (
+        denomIn &&
+        denomOut &&
+        userBalanceTokenIn &&
+        Number(userBalanceTokenIn) > 0 &&
+        tokenInBalanceFraction > 0
+      ) {
+        return {
+          amount_in: new BigNumber(userBalanceTokenIn)
+            .multipliedBy(tokenInBalanceFraction)
+            .toFixed(0),
+          token_in: denomIn,
+          token_out: denomOut,
+          creator: address,
+          receiver: address,
+          order_type: orderTypeEnum.IMMEDIATE_OR_CANCEL,
+          // don't use a limit to find target amount in
+          tick_index_in_to_out: Long.fromNumber(priceMaxIndex),
+        };
+      }
+    }
+  }, [address, tokenIn, tokenInBalanceFraction, tokenOut, userBalanceTokenIn]);
+  const {
+    data: buyAmountSimulationResult,
+    isLoading: isLoadingBuyAmountSimulationResult,
+  } = useSimulatedLimitOrderResult(buyAmountSimulatedMsgPlaceLimitOrder);
+
+  const {
+    amountInDisplayAmount,
+    amountInBaseAmount,
+    amountOutDisplayAmount,
+    amountOutBaseAmount,
+  } = useMemo(() => {
+    if (tokenIn && tokenOut) {
+      // get amount in from sell mode
+      const amountInDisplayAmount = !buyMode ? formState.amount : undefined;
+      // get amount out from buy mode
+      const amountOutDisplayAmount =
+        (buyMode || undefined) &&
+        (buyAmountSimulationResult || isLoadingBuyAmountSimulationResult
+          ? // if we have a buy simulation result then show it or its loading state
+            buyAmountSimulationResult?.response
+            ? getDisplayDenomAmount(
+                tokenOut,
+                buyAmountSimulationResult.response.taker_coin_out.amount,
+                {
+                  // output a little more rounded than usual
+                  fractionalDigits: 3,
+                  significantDigits: 5,
+                }
+              )
+            : ''
+          : // else use the amount value directly
+            formState.amount);
+
+      // return converted values for convenience
+      return {
+        amountInDisplayAmount,
+        amountInBaseAmount:
+          amountInDisplayAmount &&
+          getBaseDenomAmount(tokenIn, amountInDisplayAmount),
+        amountOutDisplayAmount,
+        amountOutBaseAmount:
+          amountOutDisplayAmount &&
+          getBaseDenomAmount(tokenOut, amountOutDisplayAmount),
+      };
+    }
+    return {};
+  }, [
+    buyAmountSimulationResult,
+    buyMode,
+    formState.amount,
+    isLoadingBuyAmountSimulationResult,
+    tokenIn,
+    tokenOut,
+  ]);
+
   const simulatedMsgPlaceLimitOrder: MsgPlaceLimitOrder | undefined =
     useMemo(() => {
       const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
@@ -215,8 +300,8 @@ function LimitOrder({
             ? userBalanceTokenIn
             : undefined
           : // use given amount
-            getBaseDenomAmount(tokenIn, formState.amount || 0));
-      const maxAmountOut = buyMode ? formState.amount : undefined;
+            amountInBaseAmount);
+      const maxAmountOut = buyMode ? amountOutBaseAmount : undefined;
 
       // check format of request
       if (
@@ -266,8 +351,7 @@ function LimitOrder({
           maxAmountOut &&
           (execution === 'FILL_OR_KILL' || execution === 'IMMEDIATE_OR_CANCEL')
         ) {
-          msgPlaceLimitOrder.max_amount_out =
-            getBaseDenomAmount(tokenOut, maxAmountOut) || '0';
+          msgPlaceLimitOrder.max_amount_out = maxAmountOut;
         }
         // only add expiration time to timed limit orders
         if (execution === 'GOOD_TIL_TIME' && !isNaN(expirationTimeMs)) {
@@ -278,7 +362,16 @@ function LimitOrder({
         }
         return msgPlaceLimitOrder;
       }
-    }, [address, buyMode, formState, tokenIn, tokenOut, userBalanceTokenIn]);
+    }, [
+      address,
+      amountInBaseAmount,
+      amountOutBaseAmount,
+      buyMode,
+      formState,
+      tokenIn,
+      tokenOut,
+      userBalanceTokenIn,
+    ]);
 
   const { data: simulationResult, isValidating: isValidatingSimulation } =
     useSimulatedLimitOrderResult(simulatedMsgPlaceLimitOrder);
@@ -332,18 +425,15 @@ function LimitOrder({
   );
 
   const warning = useMemo<string | undefined>(() => {
-    const amount = formState.amount || 0;
-    const baseAmountIn = (tokenIn && getBaseDenomAmount(tokenIn, amount)) || 0;
-    const baseAmountOut =
-      (tokenOut && getBaseDenomAmount(tokenOut, amount)) || 0;
     // check simulation-less conditions first
     // check if sell input amount is too high
     if (
       !buyMode &&
       tokenIn &&
+      amountInBaseAmount &&
       userBalanceTokenIn &&
       userBalanceTokenInDisplayAmount &&
-      new BigNumber(baseAmountIn).isGreaterThan(userBalanceTokenIn)
+      new BigNumber(amountInBaseAmount).isGreaterThan(userBalanceTokenIn)
     ) {
       return `Order limited to max input balance: ${formatAmount(
         userBalanceTokenInDisplayAmount
@@ -354,8 +444,9 @@ function LimitOrder({
       // check if buy input amount is too high
       if (
         buyMode &&
+        amountOutBaseAmount &&
         userBalanceTokenInDisplayAmount &&
-        new BigNumber(baseAmountOut).isGreaterThan(
+        new BigNumber(amountOutBaseAmount).isGreaterThan(
           simulationResult.response.taker_coin_out.amount || 0
         )
       ) {
@@ -375,9 +466,10 @@ function LimitOrder({
       }
       if (
         !buyMode &&
+        amountInBaseAmount &&
         userBalanceTokenInDisplayAmount &&
         // allow for rounding on Dex
-        new BigNumber(baseAmountIn)
+        new BigNumber(amountInBaseAmount)
           .multipliedBy(0.999)
           .isGreaterThan(simulationResult.response.coin_in.amount || 0)
       ) {
@@ -398,11 +490,11 @@ function LimitOrder({
     }
     return undefined;
   }, [
+    amountInBaseAmount,
+    amountOutBaseAmount,
     buyMode,
-    formState,
     simulationResult,
     tokenIn,
-    tokenOut,
     userBalanceTokenIn,
     userBalanceTokenInDisplayAmount,
   ]);
@@ -423,8 +515,14 @@ function LimitOrder({
       <div className="mt-2 mb-4">
         <NumericInputRow
           prefix="Amount"
-          value={formState.amount || ''}
-          onChange={formSetState.setAmount}
+          placeholder={isLoadingBuyAmountSimulationResult ? 'finding...' : '0'}
+          value={
+            buyMode ? amountOutDisplayAmount || '' : amountInDisplayAmount || ''
+          }
+          onChange={(value) => {
+            formSetState.setAmount?.(value);
+            setTokenInBalanceFraction(undefined);
+          }}
           suffix={tokenA?.symbol}
           format={formatNumericAmount('')}
         />
@@ -436,25 +534,35 @@ function LimitOrder({
           !userBalanceTokenInDisplayAmount && isLoadingUserBalanceTokenIn
         }
         value={
+          tokenInBalanceFraction ||
           new BigNumber(formState.amount || 0)
             .dividedBy(userBalanceTokenInDisplayAmount || 1)
-            .toNumber() || 0
+            .toNumber() ||
+          0
         }
         onChange={useCallback(
           (value: number) => {
-            const numericValue = Number(value);
-            const display = new BigNumber(userBalanceTokenInDisplayAmount || 0);
-            const newValue =
-              numericValue < 1
-                ? // round calculated values
-                  formatAmount(display.multipliedBy(numericValue).toNumber())
-                : // or pass full value (while truncating fractional zeros)
-                  display.toFixed();
-            if (newValue) {
-              formSetState.setAmount?.(newValue || '');
+            const numericValue = Math.max(0, Math.min(1, Number(value) || 0));
+            if (buyMode) {
+              formSetState.setAmount?.('');
+              setTokenInBalanceFraction(numericValue);
+            } else {
+              setTokenInBalanceFraction(undefined);
+              const display = new BigNumber(
+                userBalanceTokenInDisplayAmount || 0
+              );
+              const newValue =
+                numericValue < 1
+                  ? // round calculated values
+                    formatAmount(display.multipliedBy(numericValue).toNumber())
+                  : // or pass full value (while truncating fractional zeros)
+                    display.toFixed();
+              if (newValue) {
+                formSetState.setAmount?.(newValue || '');
+              }
             }
           },
-          [formSetState, userBalanceTokenInDisplayAmount]
+          [buyMode, formSetState, userBalanceTokenInDisplayAmount]
         )}
       />
       {showLimitPrice && (
@@ -578,7 +686,7 @@ function LimitOrder({
             isValidatingSimulation ||
             !simulationResult ||
             !!warning ||
-            !Number(formState.amount)
+            (!Number(amountInBaseAmount) && !Number(amountOutBaseAmount))
           }
         >
           {!address ? 'Connect Wallet' : buyMode ? 'Buy' : 'Sell'}
