@@ -509,6 +509,16 @@ function LimitOrder({
     }
   }, [nativeChain, setChainFeeToken]);
 
+  const [lastKnownPrice, setLastKnownPrice] = useState<number>(0);
+  useEffect(() => {
+    if (simulationResult?.response) {
+      const price = new BigNumber(simulationResult.response.coin_in.amount).div(
+        simulationResult.response.taker_coin_out.amount
+      );
+      setLastKnownPrice(price.toNumber());
+    }
+  }, [simulationResult?.response]);
+
   // disable fieldset with no address because the estimation requires a signed client
   const fieldset = (
     <fieldset disabled={!address}>
@@ -535,8 +545,18 @@ function LimitOrder({
         }
         value={
           tokenInBalanceFraction ||
-          new BigNumber(formState.amount || 0)
-            .dividedBy(userBalanceTokenInDisplayAmount || 1)
+          new BigNumber(
+            buyMode
+              ? simulationResult?.response
+                ? // get actual async amount
+                  simulationResult.response.coin_in.amount
+                : // estimate amount from price
+                  new BigNumber(amountOutBaseAmount || 0).multipliedBy(
+                    lastKnownPrice
+                  )
+              : amountInBaseAmount || 0
+          )
+            .dividedBy(userBalanceTokenIn || 1)
             .toNumber() ||
           0
         }
