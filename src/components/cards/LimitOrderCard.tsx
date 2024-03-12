@@ -333,21 +333,8 @@ function LimitOrder({
 
   const warning = useMemo<string | undefined>(() => {
     const { amount } = formState;
-    // check if buy input amount is too high
     const baseAmount = tokenOut && getBaseDenomAmount(tokenOut, amount || 0);
-    if (simulationResult?.response) {
-      if (
-        buyMode &&
-        userBalanceTokenInDisplayAmount &&
-        new BigNumber(baseAmount || 0).isGreaterThan(
-          simulationResult.response.taker_coin_out.amount || 0
-        )
-      ) {
-        return `Order limited to max input balance: ${formatAmount(
-          userBalanceTokenInDisplayAmount
-        )}${tokenIn?.symbol}`;
-      }
-    }
+    // check simulation-less conditions first
     // check if sell input amount is too high
     if (
       !buyMode &&
@@ -359,6 +346,53 @@ function LimitOrder({
       return `Order limited to max input balance: ${formatAmount(
         userBalanceTokenInDisplayAmount
       )}${tokenIn?.symbol}`;
+    }
+    // else check simulation results
+    else if (simulationResult?.response) {
+      // check if buy input amount is too high
+      if (
+        buyMode &&
+        userBalanceTokenInDisplayAmount &&
+        new BigNumber(baseAmount || 0).isGreaterThan(
+          simulationResult.response.taker_coin_out.amount || 0
+        )
+      ) {
+        // check if amount in was limited to the bank balance
+        if (
+          userBalanceTokenIn &&
+          new BigNumber(
+            simulationResult.response.coin_in.amount || 0
+          ).isGreaterThan(userBalanceTokenIn)
+        ) {
+          return `Order limited to max input balance: ${formatAmount(
+            userBalanceTokenInDisplayAmount
+          )}${tokenIn?.symbol}`;
+        } else {
+          return 'Insufficient liquidity available';
+        }
+      }
+      if (
+        !buyMode &&
+        userBalanceTokenInDisplayAmount &&
+        // allow for rounding on Dex
+        new BigNumber(baseAmount || 0)
+          .multipliedBy(0.999)
+          .isGreaterThan(simulationResult.response.coin_in.amount || 0)
+      ) {
+        // check if amount in was limited to the bank balance
+        if (
+          userBalanceTokenIn &&
+          new BigNumber(simulationResult.response.coin_in.amount || 0)
+            .plus(1)
+            .isGreaterThanOrEqualTo(userBalanceTokenIn)
+        ) {
+          return `Order limited to max input balance: ${formatAmount(
+            userBalanceTokenInDisplayAmount
+          )}${tokenIn?.symbol}`;
+        } else {
+          return 'Insufficient liquidity available';
+        }
+      }
     }
     return undefined;
   }, [
