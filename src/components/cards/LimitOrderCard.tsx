@@ -207,13 +207,15 @@ function LimitOrder({
           : NaN;
 
       // in buy mode: buy the amount out with the user's available balance
-      const amountIn = buyMode
-        ? tokenIn && userBalanceTokenIn && Number(userBalanceTokenIn) > 0
-          ? userBalanceTokenIn
-          : undefined
-        : tokenIn && formState.amount
-        ? getBaseDenomAmount(tokenIn, formState.amount)
-        : undefined;
+      const amountIn =
+        tokenIn &&
+        (buyMode
+          ? // use bank balance
+            userBalanceTokenIn && Number(userBalanceTokenIn) > 0
+            ? userBalanceTokenIn
+            : undefined
+          : // use given amount
+            getBaseDenomAmount(tokenIn, formState.amount || 0));
       const maxAmountOut = buyMode ? formState.amount : undefined;
 
       // check format of request
@@ -225,7 +227,9 @@ function LimitOrder({
         denomIn &&
         denomOut &&
         amountIn &&
-        !isNaN(Number(amountIn || NaN)) &&
+        Number(amountIn) > 0 &&
+        userBalanceTokenIn &&
+        Number(userBalanceTokenIn) > 0 &&
         // check that amount out is valid if in buy mode
         (!buyMode || !isNaN(Number(maxAmountOut || NaN)))
       ) {
@@ -243,7 +247,7 @@ function LimitOrder({
             : undefined;
 
         const msgPlaceLimitOrder: MsgPlaceLimitOrder = {
-          amount_in: amountIn,
+          amount_in: BigNumber.min(amountIn, userBalanceTokenIn).toFixed(0),
           token_in: denomIn,
           token_out: denomOut,
           creator: address,
