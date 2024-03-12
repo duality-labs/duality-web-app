@@ -332,14 +332,19 @@ function LimitOrder({
   );
 
   const warning = useMemo<string | undefined>(() => {
-    const { amount, limitPrice } = formState;
-    if (Number(amount) > 0) {
-      if (showLimitPrice && !Number(limitPrice)) {
-        return undefined;
-      }
+    const { amount } = formState;
+    // check if sell input amount is too high
+    if (
+      !buyMode &&
+      userBalanceTokenInDisplayAmount &&
+      new BigNumber(amount || 0).isGreaterThan(userBalanceTokenInDisplayAmount)
+    ) {
+      return `Order limited to max input balance: ${formatAmount(
+        userBalanceTokenInDisplayAmount
+      )}${tokenIn?.symbol}`;
     }
     return undefined;
-  }, [formState, showLimitPrice]);
+  }, [buyMode, formState, tokenIn?.symbol, userBalanceTokenInDisplayAmount]);
 
   // set fee token from native chain if not yet set
   const [chainFeeToken, setChainFeeToken] = useChainFeeToken();
