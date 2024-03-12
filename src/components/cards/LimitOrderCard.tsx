@@ -453,9 +453,9 @@ function LimitOrder({
         // check if amount in was limited to the bank balance
         if (
           userBalanceTokenIn &&
-          new BigNumber(
-            simulationResult.response.coin_in.amount || 0
-          ).isGreaterThan(userBalanceTokenIn)
+          new BigNumber(simulationResult.response.coin_in.amount || 0)
+            .multipliedBy(1.001)
+            .isGreaterThan(userBalanceTokenIn)
         ) {
           return `Order limited to max input balance: ${formatAmount(
             userBalanceTokenInDisplayAmount
@@ -477,7 +477,7 @@ function LimitOrder({
         if (
           userBalanceTokenIn &&
           new BigNumber(simulationResult.response.coin_in.amount || 0)
-            .plus(1)
+            .multipliedBy(1.001)
             .isGreaterThanOrEqualTo(userBalanceTokenIn)
         ) {
           return `Order limited to max input balance: ${formatAmount(
