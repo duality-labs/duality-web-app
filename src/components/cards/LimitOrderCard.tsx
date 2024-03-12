@@ -352,8 +352,9 @@ function LimitOrder({
     }
   }, [nativeChain, setChainFeeToken]);
 
-  return (
-    <form onSubmit={onFormSubmit}>
+  // disable fieldset with no address because the estimation requires a signed client
+  const fieldset = (
+    <fieldset disabled={!address}>
       <div className="mt-2 mb-4">
         <NumericInputRow
           prefix="Amount"
@@ -538,8 +539,9 @@ function LimitOrder({
         )}
         suffix={tokenIn?.symbol}
       />
-    </form>
+    </fieldset>
   );
+  return <form onSubmit={onFormSubmit}>{fieldset}</form>;
 }
 
 function NumericInputRow({
