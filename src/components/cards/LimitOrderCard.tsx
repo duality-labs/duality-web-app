@@ -332,8 +332,10 @@ function LimitOrder({
   );
 
   const warning = useMemo<string | undefined>(() => {
-    const { amount } = formState;
-    const baseAmount = tokenOut && getBaseDenomAmount(tokenOut, amount || 0);
+    const amount = formState.amount || 0;
+    const baseAmountIn = (tokenIn && getBaseDenomAmount(tokenIn, amount)) || 0;
+    const baseAmountOut =
+      (tokenOut && getBaseDenomAmount(tokenOut, amount)) || 0;
     // check simulation-less conditions first
     // check if sell input amount is too high
     if (
@@ -341,7 +343,7 @@ function LimitOrder({
       tokenIn &&
       userBalanceTokenIn &&
       userBalanceTokenInDisplayAmount &&
-      new BigNumber(baseAmount || 0).isGreaterThan(userBalanceTokenIn)
+      new BigNumber(baseAmountIn).isGreaterThan(userBalanceTokenIn)
     ) {
       return `Order limited to max input balance: ${formatAmount(
         userBalanceTokenInDisplayAmount
@@ -353,7 +355,7 @@ function LimitOrder({
       if (
         buyMode &&
         userBalanceTokenInDisplayAmount &&
-        new BigNumber(baseAmount || 0).isGreaterThan(
+        new BigNumber(baseAmountOut).isGreaterThan(
           simulationResult.response.taker_coin_out.amount || 0
         )
       ) {
@@ -375,7 +377,7 @@ function LimitOrder({
         !buyMode &&
         userBalanceTokenInDisplayAmount &&
         // allow for rounding on Dex
-        new BigNumber(baseAmount || 0)
+        new BigNumber(baseAmountIn)
           .multipliedBy(0.999)
           .isGreaterThan(simulationResult.response.coin_in.amount || 0)
       ) {
