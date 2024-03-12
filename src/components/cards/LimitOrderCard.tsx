@@ -34,7 +34,10 @@ import Tooltip from '../Tooltip';
 import { useSwap } from '../../pages/Swap/hooks/useSwap';
 import { useSimulatedLimitOrderResult } from '../../pages/Swap/hooks/useRouter';
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
+import {
+  useBankBalanceBaseAmount,
+  useBankBalanceDisplayAmount,
+} from '../../lib/web3/hooks/useUserBankBalances';
 import { useChainFeeToken } from '../../lib/web3/hooks/useTokens';
 import { useNativeChain } from '../../lib/web3/hooks/useChains';
 
@@ -178,10 +181,11 @@ function LimitOrder({
 
   const tokenIn = !buyMode ? tokenA : tokenB;
   const tokenOut = buyMode ? tokenA : tokenB;
-  const {
-    data: userTokenInDisplayAmount,
-    isValidating: isLoadingUserTokenInDisplayAmount,
-  } = useBankBalanceDisplayAmount(tokenIn?.base);
+  const { data: userBalanceTokenIn, isLoading: isLoadingUserBalanceTokenIn } =
+    useBankBalanceBaseAmount(tokenIn?.base);
+  const { data: userBalanceTokenInDisplayAmount } = useBankBalanceDisplayAmount(
+    tokenIn?.base
+  );
 
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap(
     [denomA, denomB].filter((denom): denom is string => !!denom)
@@ -204,10 +208,8 @@ function LimitOrder({
 
       // in buy mode: buy the amount out with the user's available balance
       const amountIn = buyMode
-        ? tokenIn &&
-          userTokenInDisplayAmount &&
-          Number(userTokenInDisplayAmount) > 0
-          ? getBaseDenomAmount(tokenIn, userTokenInDisplayAmount)
+        ? tokenIn && userBalanceTokenIn && Number(userBalanceTokenIn) > 0
+          ? userBalanceTokenIn
           : undefined
         : tokenIn && formState.amount
         ? getBaseDenomAmount(tokenIn, formState.amount)
@@ -272,14 +274,7 @@ function LimitOrder({
         }
         return msgPlaceLimitOrder;
       }
-    }, [
-      address,
-      buyMode,
-      formState,
-      tokenIn,
-      tokenOut,
-      userTokenInDisplayAmount,
-    ]);
+    }, [address, buyMode, formState, tokenIn, tokenOut, userBalanceTokenIn]);
 
   const { data: simulationResult, isValidating: isValidatingSimulation } =
     useSimulatedLimitOrderResult(simulatedMsgPlaceLimitOrder);
@@ -368,31 +363,28 @@ function LimitOrder({
         className="mb-4"
         list={userBankBalanceRangePercentages}
         disabled={
-          !userTokenInDisplayAmount && isLoadingUserTokenInDisplayAmount
+          !userBalanceTokenInDisplayAmount && isLoadingUserBalanceTokenIn
         }
         value={
           new BigNumber(formState.amount || 0)
-            .dividedBy(userTokenInDisplayAmount || 1)
+            .dividedBy(userBalanceTokenInDisplayAmount || 1)
             .toNumber() || 0
         }
         onChange={useCallback(
           (value: number) => {
             const numericValue = Number(value);
+            const display = new BigNumber(userBalanceTokenInDisplayAmount || 0);
             const newValue =
               numericValue < 1
                 ? // round calculated values
-                  formatAmount(
-                    new BigNumber(userTokenInDisplayAmount || 0)
-                      .multipliedBy(numericValue)
-                      .toNumber()
-                  )
+                  formatAmount(display.multipliedBy(numericValue).toNumber())
                 : // or pass full value (while truncating fractional zeros)
-                  new BigNumber(userTokenInDisplayAmount || '0').toFixed();
+                  display.toFixed();
             if (newValue) {
               formSetState.setAmount?.(newValue || '');
             }
           },
-          [formSetState, userTokenInDisplayAmount]
+          [formSetState, userBalanceTokenInDisplayAmount]
         )}
       />
       {showLimitPrice && (
@@ -527,8 +519,8 @@ function LimitOrder({
         value={formatAmount(
           formatMaximumSignificantDecimals(
             tokenIn
-              ? (userTokenInDisplayAmount ??
-                  (isLoadingUserTokenInDisplayAmount && '-')) ||
+              ? (userBalanceTokenInDisplayAmount ??
+                  (isLoadingUserBalanceTokenIn && '-')) ||
                   0
               : '-',
             3
