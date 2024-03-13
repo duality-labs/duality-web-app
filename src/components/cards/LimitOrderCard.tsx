@@ -235,10 +235,16 @@ function LimitOrder({
     amountOutBaseAmount,
   } = useMemo(() => {
     if (tokenIn && tokenOut) {
-      // get amount in from sell mode (in base amount to round input correctly)
+      // get amount in from input in sell mode or the slider in buy mode
       const amountInBaseAmount = !buyMode
-        ? getBaseDenomAmount(tokenIn, formState.amount || 0)
-        : undefined;
+        ? // get amount in from sell mode (in base amount to round input correctly)
+          getBaseDenomAmount(tokenIn, formState.amount || 0)
+        : // in buy mode get the input slider value only if defined
+          (tokenInBalanceFraction !== undefined &&
+            new BigNumber(userBalanceTokenIn || 0)
+              .multipliedBy(tokenInBalanceFraction || 0)
+              .toFixed(0)) ||
+          undefined;
       // get amount out from buy mode
       const amountOutBaseAmount =
         (buyMode || undefined) &&
@@ -273,8 +279,10 @@ function LimitOrder({
     buyMode,
     formState.amount,
     isLoadingBuyAmountSimulationResult,
+    tokenInBalanceFraction,
     tokenIn,
     tokenOut,
+    userBalanceTokenIn,
   ]);
 
   const simulatedMsgPlaceLimitOrder: MsgPlaceLimitOrder | undefined =
@@ -290,17 +298,14 @@ function LimitOrder({
           ? new Date(Date.now() + timeAmount * timeUnits[timePeriod]).getTime()
           : NaN;
 
+      // find amounts in/out for the order
       // in buy mode: buy the amount out with the user's available balance
       const amountIn =
-        tokenIn &&
-        (buyMode
-          ? // use bank balance
-            userBalanceTokenIn && Number(userBalanceTokenIn) > 0
-            ? userBalanceTokenIn
-            : undefined
-          : // use given amount
-            amountInBaseAmount);
-      const maxAmountOut = buyMode ? amountOutBaseAmount : undefined;
+        amountInBaseAmount ||
+        // use bank balance in buy mode if amount was not defined by slider
+        (buyMode ? userBalanceTokenIn : undefined);
+      // use amount out to set the order limit only if the amount in is not set
+      const maxAmountOut = amountOutBaseAmount;
 
       // check format of request
       if (
@@ -311,11 +316,10 @@ function LimitOrder({
         denomIn &&
         denomOut &&
         amountIn &&
-        Number(amountIn) > 0 &&
         userBalanceTokenIn &&
-        Number(userBalanceTokenIn) > 0 &&
-        // check that amount out is valid if in buy mode
-        (!buyMode || !isNaN(Number(maxAmountOut || NaN)))
+        Number(amountIn) > 0 &&
+        // either amount in or out should be more than zero
+        (Number(amountInBaseAmount) > 0 || Number(amountOutBaseAmount) > 0)
       ) {
         // when buying: select tick index below the limit
         // when selling: select tick index above the limit
@@ -545,15 +549,12 @@ function LimitOrder({
         value={
           tokenInBalanceFraction ||
           new BigNumber(
-            buyMode
-              ? simulationResult?.response
-                ? // get actual async amount
-                  simulationResult.response.coin_in.amount
-                : // estimate amount from price
-                  new BigNumber(amountOutBaseAmount || 0).multipliedBy(
-                    lastKnownPrice
-                  )
-              : amountInBaseAmount || 0
+            // use amount given from text input or range slider input
+            amountInBaseAmount ||
+              // estimate amount from price
+              new BigNumber(amountOutBaseAmount || 0).multipliedBy(
+                lastKnownPrice || 0
+              )
           )
             .dividedBy(userBalanceTokenIn || 1)
             .toNumber() ||
