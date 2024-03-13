@@ -13,6 +13,7 @@ import {
   useSyncKeplrState,
 } from './wallets/keplr';
 import useAccountAddress from './hooks/useAccountAddress';
+import { useNativeChain } from './hooks/useChains';
 
 export interface Web3ContextValue {
   connectWallet?: () => void;
@@ -37,15 +38,20 @@ export function Web3Provider({ children }: Web3ContextProps) {
   const [address, setAddress] = useState<string | null>(null);
   const [wallet, setWallet] = useState<OfflineSigner | null>(null);
 
+  const { data: nativeChain } = useNativeChain();
+
   // set callback to run when user opts in to connecting their wallet
   const connectWallet = useCallback(
     async (walletType: SupportedWallet | string = '') => {
+      // skip if nativeChain isn't yet available
+      if (!nativeChain) return;
+      // get wallet and address of native chain
       const [wallet, address] = await (async function (): Promise<
         [OfflineSigner?, string?]
       > {
         switch (walletType) {
           case 'keplr': {
-            const wallet = await getKeplrDualityWallet();
+            const wallet = await getKeplrDualityWallet(nativeChain);
             const account = wallet && (await getKeplrWalletAccount(wallet));
             return [wallet, account?.address];
           }
@@ -65,7 +71,7 @@ export function Web3Provider({ children }: Web3ContextProps) {
         localStorage.removeItem(LOCAL_STORAGE_WALLET_CONNECTED_KEY);
       }
     },
-    []
+    [nativeChain]
   );
 
   // sync wallet to saved wallet type on load
@@ -94,14 +100,16 @@ export function Web3Provider({ children }: Web3ContextProps) {
   // add any other environment specific third-party hooks that use the address
   useAccountAddress(address);
 
+  const connectKeplr = useCallback(
+    async () => await connectWallet('keplr'),
+    [connectWallet]
+  );
+
   return (
     <Web3Context.Provider
       value={{
         // only connect to Keplr wallets for now
-        connectWallet: useCallback(
-          async () => await connectWallet('keplr'),
-          [connectWallet]
-        ),
+        connectWallet: nativeChain && connectKeplr,
         wallet,
         address,
       }}

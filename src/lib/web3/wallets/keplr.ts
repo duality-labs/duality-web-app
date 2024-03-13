@@ -7,8 +7,6 @@ import { Chain } from '@chain-registry/types';
 import { chainRegistryChainToKeplr } from '@chain-registry/keplr';
 import { getChainClient } from '../hooks/useDenomsFromRegistry';
 
-const { REACT_APP__CHAIN_NAME } = import.meta.env;
-
 declare global {
   interface Window extends KeplrWindow {
     keplr: Keplr;
@@ -45,19 +43,19 @@ async function getKeplr(): Promise<Keplr | undefined> {
 type KeplrWallet = OfflineSigner;
 type KeplrWalletAccount = AccountData;
 
-export async function getKeplrDualityWallet(): Promise<
-  KeplrWallet | undefined
-> {
+export async function getKeplrDualityWallet(
+  chain: Chain
+): Promise<KeplrWallet | undefined> {
   try {
-    const keplr = await getKeplr();
-    invariant(keplr, 'Keplr extension is not installed or enabled');
-    const chainName: string = REACT_APP__CHAIN_NAME;
-    invariant(chainName, `Invalid chain name: ${chainName}`);
-    const chainClient = await getChainClient(chainName);
-    const chain = chainClient.getChain(chainName);
-    const chainAssetList = chainClient.getChainAssetList(chainName);
+    invariant(chain, 'Chain is not set');
     const chainId = chain.chain_id;
     invariant(chainId, `Invalid chain id: ${chainId}`);
+    const chainName = chain.chain_name;
+    invariant(chainName, `Invalid chain name: ${chainName}`);
+    const keplr = await getKeplr();
+    invariant(keplr, 'Keplr extension is not installed or enabled');
+    const chainClient = await getChainClient(chainName);
+    const chainAssetList = chainClient.getChainAssetList(chainName);
     const chainInfo = chainRegistryChainToKeplr(chain, [chainAssetList]);
     await keplr.experimentalSuggestChain(chainInfo);
     await keplr.enable(chainId);
@@ -114,7 +112,7 @@ export async function getChainInfo(chain: Chain) {
   invariant(chainId, `Invalid chain id: ${chainId}`);
   const keplr = await getKeplr();
   invariant(keplr, 'Keplr extension is not installed or enabled');
-  const chainName: string = chain.chain_name;
+  const chainName = chain.chain_name;
   invariant(chainName, `Invalid chain name: ${chainName}`);
   const chainClient = await getChainClient(chainName);
   const chainAssetList = chainClient.getChainAssetList(chainName);
