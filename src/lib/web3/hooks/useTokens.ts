@@ -1,5 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
+import { Coin } from '@cosmjs/proto-signing';
+
 import {
   Token,
   getTokenId,
@@ -9,12 +11,9 @@ import {
 import { useSimplePrice } from '../../tokenPrices';
 import { useNativeChain } from './useChains';
 import { useOneHopDenoms } from './useDenomsFromRegistry';
-import {
-  SWRCommon,
-  TokenByDenom,
-  useToken,
-  useTokenByDenom,
-} from './useDenomClients';
+import { TokenByDenom, useToken, useTokenByDenom } from './useDenomClients';
+import { useUserBankValues } from './useUserBankValues';
+import { SWRCommon, useSwrResponse } from './useSWR';
 
 const { REACT_APP__CHAIN_ID = '' } = import.meta.env;
 
@@ -70,11 +69,15 @@ export function useDenomFromPathParam(
 ): SWRCommon<string> {
   const { data: tokenByDenom, ...swr } = useTokenByDenom(useOneHopDenoms());
   const denom = useMemo(() => {
+    // exclude specific "empty" token denom string for URL parts
+    if (pathParam === '-') {
+      return undefined;
+    }
     const tokens = Array.from(tokenByDenom?.values() ?? []);
     // return denom of resolved token, or the passed param which may be a denom
     return tokens.find(matchTokenBySymbol(pathParam))?.base ?? pathParam;
   }, [tokenByDenom, pathParam]);
-  return { ...swr, data: denom };
+  return useSwrResponse(denom, swr);
 }
 
 // return token identifier that can be used as a part of a URL
@@ -183,4 +186,78 @@ export function useTokenValueTotal(
   else {
     return null;
   }
+}
+
+type TokenCoin = Coin & {
+  token: Token;
+  value: BigNumber | undefined;
+};
+
+export function useTokensSortedByValue(tokenList: Token[]) {
+  const allUserBankAssets = useUserBankValues();
+  const allUserBankAssetsByTokenId = useMemo(() => {
+    return allUserBankAssets.reduce<{ [symbol: string]: TokenCoin }>(
+      (acc, asset) => {
+        const symbol = getTokenId(asset.token);
+        if (symbol) {
+          acc[symbol] = asset;
+        }
+        return acc;
+      },
+      {}
+    );
+  }, [allUserBankAssets]);
+
+  const { data: nativeChain } = useNativeChain();
+
+  // define sorting rows by token value
+  const sortByValue = useCallback(
+    (tokenA: Token, tokenB: Token) => {
+      const a = getTokenId(tokenA) || '';
+      const b = getTokenId(tokenB) || '';
+      // sort first by value
+      return (
+        getTokenValue(b).minus(getTokenValue(a)).toNumber() ||
+        // if value is equal, sort by local chain
+        getTokenChain(tokenB) - getTokenChain(tokenA) ||
+        // if local chain is equal, sort by known chain
+        getKnownChain(tokenB) - getKnownChain(tokenA) ||
+        // if known chain is equal, sort by amount
+        getTokenAmount(b).minus(getTokenAmount(a)).toNumber() ||
+        // lastly sort by symbol
+        tokenA.symbol.localeCompare(tokenB.symbol)
+      );
+      function getTokenValue(id: string) {
+        const foundUserAsset = allUserBankAssetsByTokenId[id];
+        return foundUserAsset?.value || new BigNumber(0);
+      }
+      function getTokenAmount(id: string) {
+        const foundUserAsset = allUserBankAssetsByTokenId[id];
+        return new BigNumber(foundUserAsset?.amount || 0);
+      }
+      function getTokenChain(token: Token) {
+        if (nativeChain && token.chain.chain_id === nativeChain.chain_id) {
+          return 2;
+        }
+        if (token.ibc) {
+          return 1;
+        }
+        return 0;
+      }
+      function getKnownChain(token: Token) {
+        if (token.chain.chain_id) {
+          return 1;
+        }
+        return 0;
+      }
+    },
+    [allUserBankAssetsByTokenId, nativeChain]
+  );
+
+  // sort tokens
+  return useMemo(() => {
+    // sort by USD value
+    // create new array to ensure re-rendering with new reference
+    return [...tokenList].sort(sortByValue);
+  }, [tokenList, sortByValue]);
 }

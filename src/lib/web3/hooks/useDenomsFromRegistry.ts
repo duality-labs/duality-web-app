@@ -1,5 +1,4 @@
 import useSWRImmutable from 'swr/immutable';
-import { SWRResponse } from 'swr';
 import { useMemo } from 'react';
 import {
   ChainRegistryClient,
@@ -9,6 +8,7 @@ import {
 import { ibcDenom, getIbcAssetPath } from '@chain-registry/utils';
 import { Asset, AssetList, Chain, IBCInfo } from '@chain-registry/types';
 import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
+import { SWRCommon, useSwrResponse } from './useSWR';
 
 const {
   REACT_APP__CHAIN_NAME = '',
@@ -43,10 +43,11 @@ const defaultChains: Chain[] = REACT_APP__CHAIN_REGISTRY_CHAINS
 const defaultIbcData: IBCInfo[] = REACT_APP__CHAIN_REGISTRY_IBC_DATA
   ? JSON.parse(REACT_APP__CHAIN_REGISTRY_IBC_DATA)
   : undefined;
-const defaultClientOptions = {
+const defaultClientOptions: ChainRegistryClientOptions = {
   assetLists: defaultAssetLists,
   chains: defaultChains,
   ibcData: defaultIbcData,
+  chainNames: [REACT_APP__CHAIN_NAME],
 };
 
 type ChainNamePair = [chainName1: string, chainName2: string];
@@ -107,11 +108,12 @@ async function getRelatedIbcNamePairs(exploreChainName: string) {
 }
 
 async function createChainRegistryClient(
-  opts: ChainRegistryClientOptions
+  opts: Partial<ChainRegistryClientOptions>
 ): Promise<ChainRegistryClient> {
   for (const endpoint of chainRegistryFileEndpoints) {
     try {
       const client = new ChainRegistryClient({
+        ...defaultClientOptions,
         ...opts,
         baseUrl: endpoint,
       });
@@ -121,13 +123,13 @@ async function createChainRegistryClient(
           globalFetchCache(url).then((data) => {
             // find matching data to merge
             const assetListOrChain = data as AssetList | Chain;
+            const assetList: AssetList | undefined =
+              assetListOrChain.$schema?.endsWith('/assetlist.schema.json')
+                ? (assetListOrChain as AssetList)
+                : undefined;
             if (assetListOrChain.chain_name === REACT_APP__CHAIN_NAME) {
               // merge current chain asset data with default chain asset data
-              const assetList = data as AssetList;
-              if (
-                defaultAssetLists &&
-                assetList.$schema?.endsWith('/assetlist.schema.json')
-              ) {
+              if (assetList && defaultAssetLists) {
                 const defaultAssetList = defaultAssetLists.find(
                   ({ chain_name }) => chain_name === assetList.chain_name
                 )?.assets;
@@ -160,6 +162,16 @@ async function createChainRegistryClient(
                 return client.update({ ...defaultChain, ...chain });
               }
             }
+            // remove multi-hop denoms from other chains
+            else if (assetList) {
+              return client.update({
+                ...assetList,
+                // add matched chain name assets over default assets by base
+                assets: assetList.assets.filter((asset) => {
+                  return (asset.traces?.length || 0) < 2;
+                }),
+              });
+            }
             return client.update(data as Chain | AssetList | IBCInfo);
           })
         )
@@ -179,7 +191,7 @@ async function createChainRegistryClient(
 export async function getAssetClient(
   denom: string | undefined,
   ibcTrace?: DenomTrace
-): Promise<ChainRegistryClient | undefined> {
+): Promise<ChainRegistryClient | null> {
   const transferChannels: Array<[portId: string, channelId: string]> = (
     ibcTrace?.path ?? ''
   )
@@ -190,7 +202,7 @@ export async function getAssetClient(
 
   async function _getAssetClient(
     opts: ChainRegistryClientOptions
-  ): Promise<ChainRegistryClient | undefined> {
+  ): Promise<ChainRegistryClient | null> {
     const client = await createChainRegistryClient(opts);
     try {
       // return successfully if we found the asset
@@ -237,6 +249,9 @@ export async function getAssetClient(
       }
     }
 
+    // if no client is able to be resolved, return null
+    return null;
+
     async function _getNextChainNameClient(chainName: string) {
       // if this would be the last step then find the assetlist of this chain
       // otherwise we should keep searching IBC data
@@ -260,7 +275,6 @@ export async function getAssetClient(
 
   // start recursive chain with just native assets and all related IBC info
   return _getAssetClient({
-    ...defaultClientOptions,
     chainNames: [REACT_APP__CHAIN_NAME],
     ibcNamePairs: await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME),
     assetListNames: [REACT_APP__CHAIN_NAME],
@@ -270,7 +284,6 @@ export async function getAssetClient(
 // export hook for getting a basic chain-registry client for the native chain
 export async function getChainClient(chainName: string) {
   return createChainRegistryClient({
-    ...defaultClientOptions,
     chainNames: [chainName],
     assetListNames: [chainName],
   });
@@ -296,7 +309,6 @@ export function useRelatedChainsClient() {
       const ibcNamePairs = await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME);
       const relatedChainNames = Array.from(new Set(ibcNamePairs?.flat()));
       return createChainRegistryClient({
-        ...defaultClientOptions,
         chainNames: relatedChainNames,
         // pass IBC name pairs related only to native chain so that the client
         // doesn't try to fetch IBC data between other listed unrelated chains
@@ -315,7 +327,6 @@ function useNativeAssetsClient() {
     async (): Promise<ChainRegistryClient | undefined> => {
       // get asset client for all assets within one-hop of the native chain
       return createChainRegistryClient({
-        ...defaultClientOptions,
         chainNames: [REACT_APP__CHAIN_NAME],
         assetListNames: [REACT_APP__CHAIN_NAME],
       });
@@ -334,7 +345,6 @@ function useDefaultAssetsClient() {
       const ibcNamePairs = await getRelatedIbcNamePairs(REACT_APP__CHAIN_NAME);
       const relatedChainNames = Array.from(new Set(ibcNamePairs?.flat()));
       return createChainRegistryClient({
-        ...defaultClientOptions,
         chainNames: [REACT_APP__CHAIN_NAME],
         ibcNamePairs,
         assetListNames: relatedChainNames,
@@ -343,14 +353,12 @@ function useDefaultAssetsClient() {
   );
 }
 
-export function useChainUtil(): SWRResponse<ChainRegistryChainUtil> {
+export function useChainUtil(): SWRCommon<ChainRegistryChainUtil> {
   const { data, ...swr } = useDefaultAssetsClient();
   // return just the chain utility instance
   // it is possible to get the original fetcher at chainUtil.chainInfo.fetcher
-  return {
-    ...swr,
-    data: useMemo(() => data?.getChainUtil(REACT_APP__CHAIN_NAME), [data]),
-  } as SWRResponse;
+  const util = useMemo(() => data?.getChainUtil(REACT_APP__CHAIN_NAME), [data]);
+  return useSwrResponse(util, swr);
 }
 
 export function useChainNativeAssetList(): AssetList | undefined {
@@ -386,18 +394,35 @@ export function useNativeDenoms(): string[] {
 // return all denoms within one hop of the native chain on chain-registry
 export function useOneHopDenoms(): string[] {
   const { data: client } = useDefaultAssetsClient();
-  return useMemo<string[]>(() => {
+  const swr = useSWRImmutable<string[]>(['oneHopDenoms', client], () => {
     if (client) {
       const assetLists = [
         client.getChainAssetList(REACT_APP__CHAIN_NAME),
-        ...(client.getGeneratedAssetLists(REACT_APP__CHAIN_NAME) ?? []),
+        // make "one-hop" include only tokens on other chains that
+        // aren't IBC tokens from another chain (another hop)
+        // other known base_denom prefixes include: factory/, stk/, erc20/
+        ...(client.getGeneratedAssetLists(REACT_APP__CHAIN_NAME) ?? []).map(
+          (assetList) => {
+            return {
+              ...assetList,
+              assets: assetList.assets.filter(
+                (asset) =>
+                  !asset.traces ||
+                  (asset.traces.length === 1 &&
+                    !asset.traces[0].counterparty.base_denom.startsWith('ibc/'))
+              ),
+            };
+          }
+        ),
       ];
       return assetLists.flatMap(
-        (assetList) => assetList?.assets.flatMap((asset) => asset.base) ?? []
+        (assetList) => assetList?.assets.map((asset) => asset.base) ?? []
       );
     }
     return [];
-  }, [client]);
+  });
+
+  return swr.data || [];
 }
 
 type DenomTraceByDenom = Map<string, DenomTrace>;
@@ -431,11 +456,11 @@ function getDenomTraceFromAsset(
     : undefined;
 }
 // get denom traces from default IBC network (one-hop)
-export function useDefaultDenomTraceByDenom(): SWRResponse<DenomTraceByDenom> {
+export function useDefaultDenomTraceByDenom(): SWRCommon<DenomTraceByDenom> {
   const { data: client, ...swr } = useDefaultAssetsClient();
 
   // find the IBC trace information of each known IBC asset
-  const defaultDenomTraceByDenom = useMemo<DenomTraceByDenom>(() => {
+  const swr2 = useSWRImmutable<DenomTraceByDenom>(['defTraByD', client], () => {
     // there may be IBC assets on the assetList of the native chain
     const assetLists = client && [
       client.getChainAssetList(REACT_APP__CHAIN_NAME),
@@ -455,7 +480,7 @@ export function useDefaultDenomTraceByDenom(): SWRResponse<DenomTraceByDenom> {
           return acc;
         }, map)
       : map;
-  }, [client]);
+  });
 
-  return { ...swr, data: defaultDenomTraceByDenom } as SWRResponse;
+  return useSwrResponse<DenomTraceByDenom>(swr2.data, swr);
 }

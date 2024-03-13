@@ -9,6 +9,9 @@ import Dialog from '../Dialog/Dialog';
 
 import TableCard, { TableCardProps } from '../../components/cards/TableCard';
 import BridgeCard from './BridgeCard';
+import AssetIcon from '../assets/AssetIcon';
+import AssetSymbol from '../assets/AssetName';
+
 import { useUserBankValues } from '../../lib/web3/hooks/useUserBankValues';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
 import { useNativeChain } from '../../lib/web3/hooks/useChains';
@@ -24,6 +27,7 @@ import {
   useToken,
   useTokenByDenom,
 } from '../../lib/web3/hooks/useDenomClients';
+import { useTokensSortedByValue } from '../../lib/web3/hooks/useTokens';
 import { useDenomTrace } from '../../lib/web3/hooks/useDenomsFromChain';
 
 import './AssetsTableCard.scss';
@@ -71,50 +75,8 @@ export default function AssetsTableCard({
     );
   }, [allUserBankAssets]);
 
-  const { data: nativeChain } = useNativeChain();
-
-  // define sorting rows by token value
-  const sortByValue = useCallback(
-    (tokenA: Token, tokenB: Token) => {
-      const a = getTokenId(tokenA) || '';
-      const b = getTokenId(tokenB) || '';
-      // sort first by value
-      return (
-        getTokenValue(b).minus(getTokenValue(a)).toNumber() ||
-        // if value is equal, sort by amount
-        getTokenAmount(b).minus(getTokenAmount(a)).toNumber() ||
-        // if amount is equal, sort by local chain
-        getTokenChain(tokenB) - getTokenChain(tokenA) ||
-        // lastly sort by symbol
-        tokenA.symbol.localeCompare(tokenB.symbol)
-      );
-      function getTokenValue(id: string) {
-        const foundUserAsset = allUserBankAssetsByTokenId[id];
-        return foundUserAsset?.value || new BigNumber(0);
-      }
-      function getTokenAmount(id: string) {
-        const foundUserAsset = allUserBankAssetsByTokenId[id];
-        return new BigNumber(foundUserAsset?.amount || 0);
-      }
-      function getTokenChain(token: Token) {
-        if (nativeChain && token.chain.chain_id === nativeChain.chain_id) {
-          return 2;
-        }
-        if (token.ibc) {
-          return 1;
-        }
-        return 0;
-      }
-    },
-    [allUserBankAssetsByTokenId, nativeChain]
-  );
-
   // sort tokens
-  const sortedList = useMemo(() => {
-    // sort by USD value
-    // create new array to ensure re-rendering with new reference
-    return [...tokenList].sort(sortByValue);
-  }, [tokenList, sortByValue]);
+  const sortedList = useTokensSortedByValue(tokenList);
 
   const [searchValue, setSearchValue] = useState<string>('');
 
@@ -225,31 +187,57 @@ function AssetRow({
     token.traces.at(0)?.type === 'ibc' &&
     token.traces.at(0)?.counterparty;
 
+  const isBridgable = !!singleHopIbcCounterParty;
+  const isNativeChain = !!(
+    token &&
+    nativeChain &&
+    token.chain.chain_id === nativeChain.chain_id
+  );
+
+  // filter out unbridgable non-native tokens on the Bridge page
+  if (showActions && !isNativeChain && !isBridgable) {
+    return null;
+  }
+
   return token ? (
     <tr>
       <td>
-        <div className="row gap-3 token-and-chain">
-          <div className="col flex-centered">
-            <img
-              className="token-logo"
-              src={token.logo_URIs?.svg ?? token.logo_URIs?.png}
-              alt={`${token.symbol} logo`}
-            />
+        <div className="row gap-3 my-1 py-xs">
+          <div className="col mt-xs">
+            <AssetIcon asset={token} />
           </div>
-          <div className="col">
+          <div className="col flex">
             <div className="row">
-              <div className="col token-denom">
-                {token.display.toUpperCase()}
-              </div>
+              <AssetSymbol asset={token} />
             </div>
-            <div className="subtext row gapx-2 flow-wrap">
-              <span>
-                {token.chain.pretty_name ??
-                  token.chain.chain_name
-                    .split('')
-                    .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
-              </span>
-              {trace?.path && <span>({trace.path})</span>}
+            <div className="row">
+              <div className="col row-lg gapx-2 subtext text-left">
+                <span>
+                  {token.chain.pretty_name ??
+                    token.chain.chain_name
+                      .split('')
+                      .map((v, i) => (i > 0 ? v : v.toUpperCase()))}
+                </span>
+                {trace?.path && (
+                  <div className="row flow-wrap">
+                    {trace.path.split('/').flatMap((part, index, parts) => {
+                      const port = parts[index - 1];
+                      const channel = part;
+                      return index % 2 === 1 ? (
+                        <span className="nowrap" key={index}>
+                          {index > 1 ? '' : '('}
+                          {port}
+                          {'/'}
+                          {channel}
+                          {index + 1 < parts.length ? '/' : ')'}
+                        </span>
+                      ) : (
+                        []
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -260,7 +248,7 @@ function AssetRow({
             useGrouping: true,
           })}`}
         </div>
-        <div className="subtext">
+        <div className="subtext mt-1">
           {`${formatCurrency(value?.toFixed() || '', {
             maximumFractionDigits: 6,
           })}`}
@@ -298,9 +286,9 @@ function AssetRow({
             )
           ) : (
             // add Dialog action
-            token.chain.chain_id !== nativeChain.chain_id && (
+            !isNativeChain && (
               // disable buttons if there is no known path to bridge them here
-              <fieldset disabled={!address || !singleHopIbcCounterParty}>
+              <fieldset disabled={!address || !isBridgable}>
                 <BridgeButton
                   className="button button-primary-outline nowrap mx-0"
                   from={token}

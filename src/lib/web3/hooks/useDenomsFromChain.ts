@@ -1,22 +1,13 @@
-import useSWRInfinite, { SWRInfiniteKeyLoader } from 'swr/infinite';
-import { immutable } from 'swr/immutable';
-import { useEffect, useMemo } from 'react';
+import { useQueries } from '@tanstack/react-query';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
+import { useMemo } from 'react';
 import { DenomTrace } from '@duality-labs/neutronjs/types/codegen/ibc/applications/transfer/v1/transfer';
 
 import { useIbcRestClient } from '../clients/restClients';
 import { useDefaultDenomTraceByDenom } from './useDenomsFromRegistry';
+import { SWRCommon, useCombineResults, useSwrResponse } from './useSWR';
 
 type DenomTraceByDenom = Map<string, DenomTrace>;
-
-type SWRCommon<Data = unknown, Error = unknown> = {
-  isValidating: boolean;
-  isLoading: boolean;
-  error: Error;
-  data: Data | undefined;
-};
-
-const concurrentItemCount = 3;
 
 export function useDenomTraceByDenom(
   denoms: string[]
@@ -32,72 +23,64 @@ export function useDenomTraceByDenom(
     defaultDenomTraceByDenom?.size || defaultDataState.error
       ? Array.from(new Set(denoms))
           .filter((denom) => denom.startsWith('ibc/'))
-          .filter((denom) => !defaultDenomTraceByDenom?.has(denom))
+          .filter((denom) => defaultDenomTraceByDenom?.has(denom))
       : []
   );
 
   const restClient = useIbcRestClient();
-  const swr = useSWRInfinite<
-    [string, DenomTrace?],
-    Error,
-    SWRInfiniteKeyLoader<DenomTrace, [denom: string, namespace: string]>
-  >(
-    // allow hash to be an empty string
-    (index: number) => [ibcDenoms.at(index) || '', 'denom-trace'],
-    // handle cases of undefined client and empty hash string
-    restClient
-      ? async ([denom]) => {
-          const hash = denom.split('ibc/').at(1);
-          return [
+
+  const { data: results, ...swr } = useQueries({
+    queries: ibcDenoms.flatMap((denom) => {
+      const hash = denom.split('ibc/').at(1);
+      if (restClient && hash) {
+        return {
+          queryKey: [
+            'useDenomTraceByDenom',
             denom,
-            // fetch denom trace only if the denom has an IBC hash
-            hash
-              ? await restClient.applications.transfer.v1
-                  .denomTrace({ hash })
-                  .then((response) => response.denom_trace)
-              : undefined,
-          ];
-        }
-      : null,
-    // these endpoint responses never change
-    {
-      parallel: true,
-      use: [immutable],
-      initialSize: concurrentItemCount,
-      revalidateFirstPage: false,
-      revalidateAll: false,
-      errorRetryCount: 3,
-    }
-  );
+            hash,
+            defaultDenomTraceByDenom?.size,
+          ],
+          queryFn: async (): Promise<[string, DenomTrace?]> => {
+            const foundDefaultTrace = defaultDenomTraceByDenom?.get(denom);
+            return [
+              denom,
+              foundDefaultTrace ||
+                (hash
+                  ? await restClient.applications.transfer.v1
+                      .denomTrace({ hash })
+                      .then((response) => response.denom_trace)
+                  : undefined),
+            ];
+          },
+          // never refetch these values, they will never change
+          staleTime: Infinity,
+          refetchInterval: Infinity,
+          refetchOnMount: false,
+          refetchOnReconnect: false,
+          refetchOnWindowFocus: false,
+        };
+      }
+      return [];
+    }),
+    // use generic simple as possible combination
+    combine: useCombineResults(),
+  });
 
-  // get all pages, concurrentItemCount at a time
-  const { size, setSize } = swr;
-  useEffect(() => {
-    if (size < ibcDenoms.length) {
-      setSize((size) => Math.min(ibcDenoms.length, size + concurrentItemCount));
-    }
-  }, [size, setSize, ibcDenoms]);
+  const denomTraceByDenom = useMemo(() => {
+    // compute map
+    return results.reduce<DenomTraceByDenom>((map, [denom, trace]) => {
+      // if resolved then add data
+      if (denom && trace) {
+        return map.set(denom, trace);
+      }
+      return map;
+    }, new Map());
+  }, [results]);
 
-  // combine pages into one
-  const { data: pages } = swr;
-  const data = useMemo<DenomTraceByDenom | undefined>(() => {
-    return pages?.reduce<DenomTraceByDenom>(
-      (map, [denom, denomTrace] = ['']) => {
-        if (denom && denomTrace) {
-          return map.set(denom, denomTrace);
-        }
-        return map;
-      },
-      // create m denom map from base denom map created from chain-registry data
-      new Map(defaultDenomTraceByDenom)
-    );
-  }, [defaultDenomTraceByDenom, pages]);
-
-  const { isValidating, isLoading, error } = swr;
-  return { isValidating, isLoading, error, data };
+  return useSwrResponse(denomTraceByDenom, swr);
 }
 
 export function useDenomTrace(denom = ''): SWRCommon<DenomTrace> {
   const { data: denomTraceByDenom, ...swr } = useDenomTraceByDenom([denom]);
-  return { ...swr, data: denomTraceByDenom?.get(denom) };
+  return useSwrResponse<DenomTrace>(denomTraceByDenom?.get(denom), swr);
 }

@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import TokenPicker from '../TokenPicker';
+import { TokenPickerAssetMode } from '../TokenPicker/TokenPicker';
 import { Token, roundToBaseUnit } from '../../lib/web3/utils/tokens';
 
 import NumberInput from '../inputs/NumberInput';
@@ -23,6 +24,7 @@ interface InputGroupProps {
   value?: string;
   token?: Token;
   denom?: string;
+  defaultAssetMode?: TokenPickerAssetMode;
   /** disables both the input and the token (gets overwritten by the other 2) */
   disabled?: boolean;
   disabledInput?: boolean;
@@ -38,12 +40,12 @@ export default function TokenInputGroup({
   variant,
   onTokenChanged,
   onValueChanged,
-  denoms,
   className,
   exclusion,
   value,
   token,
   denom = token?.base,
+  defaultAssetMode,
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
@@ -121,9 +123,9 @@ export default function TokenInputGroup({
         className="gutter-l-3"
         value={token}
         onChange={onPickerChange}
-        denoms={denoms}
         exclusion={exclusion}
         disabled={disabledToken}
+        defaultAssetMode={defaultAssetMode}
       />
       <NumberInput
         type="text"

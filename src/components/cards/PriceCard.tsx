@@ -1,5 +1,8 @@
 import { ReactNode } from 'react';
 
+import AssetIcon from '../assets/AssetIcon';
+import AssetSymbol from '../assets/AssetName';
+
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useCurrentPriceFromTicks } from '../Liquidity/useCurrentPriceFromTicks';
 import { formatPrice } from '../../lib/utils/number';
@@ -19,15 +22,13 @@ export function PriceCard({
   return (
     <div className="price-card row flex-centered gap-3 px-4 py-2">
       <div className="price-card__token-logo col my-2">
-        <img
-          className="token-logo token-current"
-          alt={`${tokenA.symbol} logo`}
-          src={tokenA.logo_URIs?.svg ?? tokenA.logo_URIs?.png}
-        />
+        <AssetIcon asset={tokenA} height="1.5em" />
       </div>
       <div className="price-card__text row">
         <div className="row gap-sm">
-          <span>{tokenA.symbol}</span>
+          <span>
+            <AssetSymbol asset={tokenA} />
+          </span>
           <span>=</span>
           <span>
             {price !== undefined && !isNaN(price)
@@ -36,7 +37,13 @@ export function PriceCard({
                 })
               : '-'}
           </span>
-          <span>{typeof tokenB === 'string' ? tokenB : tokenB.symbol}</span>
+          <span>
+            {typeof tokenB === 'string' ? (
+              tokenB
+            ) : (
+              <AssetSymbol asset={tokenB} />
+            )}
+          </span>
         </div>
       </div>
     </div>

@@ -383,6 +383,7 @@ function Swap() {
         </div>
         <div className="card-row">
           <TokenInputGroup
+            defaultAssetMode="User"
             variant={
               (!hasSufficientFunds || error?.insufficientLiquidityIn) && 'error'
             }
@@ -414,6 +415,7 @@ function Swap() {
         </div>
         <div className="card-row">
           <TokenInputGroup
+            defaultAssetMode="Dex"
             variant={error?.insufficientLiquidityOut && 'error'}
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}

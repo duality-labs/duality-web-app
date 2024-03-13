@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.2.0](https://github.com/duality-labs/duality-web-app/compare/v2.1.1...v2.2.0) (2024-02-14)
+
+
+### Features
+
+* add beta environment and deployments ([#534](https://github.com/duality-labs/duality-web-app/issues/534)) ([1cce3b6](https://github.com/duality-labs/duality-web-app/commit/1cce3b66875f92cec8b57aed755573134da81cc8))
+
+## [2.1.1](https://github.com/duality-labs/duality-web-app/compare/v2.1.0...v2.1.1) (2024-02-12)
+
+
+### Other
+
+* add beta deployments (part 1: improvements) ([#533](https://github.com/duality-labs/duality-web-app/issues/533)) ([181adb6](https://github.com/duality-labs/duality-web-app/commit/181adb6e3b3e8f4aa28ff247ebb4e5855db88ac6))
+
+## [2.1.0](https://github.com/duality-labs/duality-web-app/compare/v2.0.3...v2.1.0) (2024-02-12)
+
+
+### Features
+
+* improve display of unknown denoms ([#532](https://github.com/duality-labs/duality-web-app/issues/532)) ([710dac9](https://github.com/duality-labs/duality-web-app/commit/710dac9bd2163ad5d8cff838617e10e229511b05))
+
+## [2.0.3](https://github.com/duality-labs/duality-web-app/compare/v2.0.2...v2.0.3) (2024-01-31)
+
+
+### Fixes
+
+* improve display of factory tokens (such as wstETH) ([#528](https://github.com/duality-labs/duality-web-app/issues/528)) ([40c2160](https://github.com/duality-labs/duality-web-app/commit/40c21606bfd455f74d06380651c5cfd51fe48fcf))
+
 ## [2.0.2](https://github.com/duality-labs/duality-web-app/compare/v2.0.1...v2.0.2) (2024-01-30)
 
 

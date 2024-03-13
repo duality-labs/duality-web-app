@@ -160,11 +160,11 @@ function LimitOrder({
   const tokenOut = buyMode ? tokenA : tokenB;
   const {
     data: userTokenInDisplayAmount,
-    isFetching: isLoadingUserTokenInDisplayAmount,
+    isValidating: isLoadingUserTokenInDisplayAmount,
   } = useBankBalanceDisplayAmount(tokenIn?.base);
   const {
     data: userTokenOutDisplayAmount,
-    isFetching: isLoadingUserTokenOutDisplayAmount,
+    isValidating: isLoadingUserTokenOutDisplayAmount,
   } = useBankBalanceDisplayAmount(tokenOut?.base);
 
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap(
@@ -347,8 +347,9 @@ function LimitOrder({
 
   const [chainFeeToken] = useChainFeeToken();
 
-  return (
-    <form onSubmit={onFormSubmit}>
+  // disable fieldset with no address because the estimation requires a signed client
+  const fieldset = (
+    <fieldset disabled={!address}>
       <div className="mt-2 mb-4">
         <NumericInputRow
           prefix="Amount"
@@ -560,8 +561,9 @@ function LimitOrder({
           suffix={tokenB?.symbol}
         />
       )}
-    </form>
+    </fieldset>
   );
+  return <form onSubmit={onFormSubmit}>{fieldset}</form>;
 }
 
 function NumericInputRow({

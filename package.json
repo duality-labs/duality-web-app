@@ -1,7 +1,7 @@
 {
   "name": "duality-webapp",
   "homepage": "https://app.duality.xyz",
-  "version": "2.0.2",
+  "version": "2.2.0",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -34,7 +34,7 @@
     "@keplr-wallet/stores": "^0.12.20",
     "@radix-ui/react-dialog": "^1.0.5",
     "@react-hook/resize-observer": "^1.2.6",
-    "@tanstack/react-query": "^5.0.0-alpha.35",
+    "@tanstack/react-query": "^5.18.1",
     "@visx/event": "^3.0.1",
     "@visx/group": "^3.0.0",
     "@visx/scale": "^3.0.0",

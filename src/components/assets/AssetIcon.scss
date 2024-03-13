@@ -1,0 +1,9 @@
+.asset-icon {
+  // add a tiny faint shadow to all token logos
+  // this helps if a token image background matches the surrounding area
+  filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.1));
+
+  &.asset-image-not-found {
+    opacity: 0.3;
+  }
+}
