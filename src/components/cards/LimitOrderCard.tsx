@@ -443,52 +443,54 @@ function LimitOrder({
       )}${tokenIn?.symbol}`;
     }
     // else check simulation results
-    else if (simulationResult?.response) {
-      // check if buy input amount is too high
-      if (
-        buyMode &&
-        amountOutBaseAmount &&
-        userBalanceTokenInDisplayAmount &&
-        new BigNumber(amountOutBaseAmount).isGreaterThan(
-          simulationResult.response.taker_coin_out.amount || 0
-        )
-      ) {
-        // check if amount in was limited to the bank balance
-        if (
-          userBalanceTokenIn &&
-          new BigNumber(simulationResult.response.coin_in.amount || 0)
-            .multipliedBy(1.001)
-            .isGreaterThan(userBalanceTokenIn)
-        ) {
-          return `Order limited to input balance: ${formatAmount(
-            userBalanceTokenInDisplayAmount
-          )}${tokenIn?.symbol}`;
-        } else {
-          return 'Insufficient liquidity available';
-        }
+    else if (simulatedMsgPlaceLimitOrder && simulationResult?.response) {
+      // set tolerance for imprecise checks
+      const tolerance = 0.0001;
+
+      // check direct sell type (car be in buy mode using balance range slider)
+      const sellOrderIsLimited =
+        amountInBaseAmount !== undefined &&
+        userBalanceTokenIn !== undefined &&
+        new BigNumber(amountInBaseAmount).isGreaterThan(userBalanceTokenIn);
+
+      // note: this warning can be triggered by amount in ~= the user's balance
+      const buyOrderIsLimited =
+        amountInBaseAmount === undefined &&
+        userBalanceTokenIn !== undefined &&
+        simulationResult &&
+        new BigNumber(simulationResult.response.coin_in.amount)
+          // make up for possible rounding on Dex (note this is inaccurate)
+          .multipliedBy(1 + tolerance)
+          .isGreaterThan(userBalanceTokenIn);
+
+      // check if the trade has been limited
+      if (buyOrderIsLimited || sellOrderIsLimited) {
+        return `Order limited to input balance: ${formatAmount(
+          userBalanceTokenInDisplayAmount || '?'
+        )}${tokenIn?.symbol}`;
       }
+
+      // check for insufficient liquidity
       if (
-        !buyMode &&
-        amountInBaseAmount &&
-        userBalanceTokenInDisplayAmount &&
-        // allow for rounding on Dex
-        new BigNumber(amountInBaseAmount)
-          .multipliedBy(0.999)
-          .isGreaterThan(simulationResult.response.coin_in.amount || 0)
+        // check if less was used than expected
+        (amountInBaseAmount !== undefined &&
+          new BigNumber(simulationResult.response.coin_in.amount)
+            // make up for possible rounding on Dex (note this is inaccurate)
+            .multipliedBy(1 + tolerance)
+            .isLessThan(amountInBaseAmount)) ||
+        // check if less was found than expected
+        (amountOutBaseAmount !== undefined &&
+          new BigNumber(simulationResult.response.taker_coin_out.amount)
+            // make up for possible rounding on Dex (note this is inaccurate)
+            .multipliedBy(1 + tolerance)
+            .isLessThan(amountOutBaseAmount))
       ) {
-        // check if amount in was limited to the bank balance
-        if (
-          userBalanceTokenIn &&
-          new BigNumber(simulationResult.response.coin_in.amount || 0)
-            .multipliedBy(1.001)
-            .isGreaterThanOrEqualTo(userBalanceTokenIn)
-        ) {
-          return `Order limited to input balance: ${formatAmount(
-            userBalanceTokenInDisplayAmount
-          )}${tokenIn?.symbol}`;
-        } else {
-          return 'Insufficient liquidity available';
-        }
+        return `Insufficient liquidity: max ${formatAmount(
+          simulationResult.response.coin_in.amount,
+          {
+            useGrouping: true,
+          }
+        )}${tokenIn?.symbol} used`;
       }
     }
     return undefined;
@@ -496,6 +498,7 @@ function LimitOrder({
     amountInBaseAmount,
     amountOutBaseAmount,
     buyMode,
+    simulatedMsgPlaceLimitOrder,
     simulationResult,
     tokenIn,
     userBalanceTokenIn,
