@@ -40,6 +40,7 @@ import {
 } from '../../lib/web3/hooks/useUserBankBalances';
 import { useChainFeeToken } from '../../lib/web3/hooks/useTokens';
 import { useNativeChain } from '../../lib/web3/hooks/useChains';
+import { useCurrentPriceFromTicks } from '../Liquidity/useCurrentPriceFromTicks';
 
 import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
 import {
@@ -181,11 +182,11 @@ function LimitOrder({
 
   const tokenIn = !buyMode ? tokenA : tokenB;
   const tokenOut = buyMode ? tokenA : tokenB;
+  const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
   const { data: userBalanceTokenIn, isLoading: isLoadingUserBalanceTokenIn } =
-    useBankBalanceBaseAmount(tokenIn?.base);
-  const { data: userBalanceTokenInDisplayAmount } = useBankBalanceDisplayAmount(
-    tokenIn?.base
-  );
+    useBankBalanceBaseAmount(denomIn);
+  const { data: userBalanceTokenInDisplayAmount } =
+    useBankBalanceDisplayAmount(denomIn);
 
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap(
     [denomA, denomB].filter((denom): denom is string => !!denom)
@@ -525,6 +526,8 @@ function LimitOrder({
     }
   }, [simulationResult?.response]);
 
+  const currentPriceFromTicks = useCurrentPriceFromTicks(denomIn, denomOut);
+
   // disable fieldset with no address because the estimation requires a signed client
   const fieldset = (
     <fieldset disabled={!address}>
@@ -556,7 +559,7 @@ function LimitOrder({
             amountInBaseAmount ||
               // estimate amount from price
               new BigNumber(amountOutBaseAmount || 0).multipliedBy(
-                lastKnownPrice || 0
+                lastKnownPrice || currentPriceFromTicks || 0
               )
           )
             .dividedBy(userBalanceTokenIn || 1)
