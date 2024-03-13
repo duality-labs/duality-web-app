@@ -290,7 +290,8 @@ function LimitOrder({
     useMemo(() => {
       const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
 
-      const { execution, timePeriod } = formState;
+      const execution = formState.execution;
+      const timePeriod = formState.timePeriod;
       const timeAmount = Number(formState.timeAmount ?? NaN);
       const limitPrice = Number(formState.limitPrice || NaN); // do not allow 0
       // calculate the expiration time in JS epoch (milliseconds)
@@ -371,7 +372,10 @@ function LimitOrder({
       amountInBaseAmount,
       amountOutBaseAmount,
       buyMode,
-      formState,
+      formState.execution,
+      formState.limitPrice,
+      formState.timeAmount,
+      formState.timePeriod,
       tokenIn,
       tokenOut,
       userBalanceTokenIn,
