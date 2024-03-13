@@ -66,6 +66,7 @@ export function useSimulatedLimitOrderResult(
   const txSimulationClient = useTxSimulationClient(wallet);
   const result = useQuery({
     queryKey: [txSimulationClient, address, JSON.stringify(msgPlaceLimitOrder)],
+    enabled: Boolean(txSimulationClient && address && msgPlaceLimitOrder),
     queryFn: async () => {
       if (txSimulationClient && address && msgPlaceLimitOrder) {
         const { gasInfo, result } = await txSimulationClient.simulate(
@@ -87,7 +88,6 @@ export function useSimulatedLimitOrderResult(
         // likely an error result
         return { gasInfo, result };
       }
-      return null;
     },
   });
 

@@ -10,7 +10,6 @@ import {
   faSliders,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import { LimitOrderType } from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
 
 import TokenInputGroup from '../../components/TokenInputGroup';
 import {
@@ -25,22 +24,31 @@ import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
-import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
-import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useToken } from '../../lib/web3/hooks/useDenomClients';
 
-import { getRouterEstimates, useRouterResult } from './hooks/useRouter';
+import { useSimulatedLimitOrderResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
 
 import { formatPercentage } from '../../lib/utils/number';
 import {
   Token,
   getBaseDenomAmount,
+  getDisplayDenomAmount,
   getTokenId,
 } from '../../lib/web3/utils/tokens';
 import { formatLongPrice } from '../../lib/utils/number';
+import { orderTypeEnum } from '../../lib/web3/utils/limitOrders';
+import {
+  DexTickUpdateEvent,
+  mapEventAttributes,
+} from '../../lib/web3/utils/events';
+import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 import './Swap.scss';
+
+const { REACT_APP__MAX_TICK_INDEXES = '' } = import.meta.env;
+const [, priceMaxIndex = Number.MAX_SAFE_INTEGER] =
+  `${REACT_APP__MAX_TICK_INDEXES}`.split(',').map(Number).filter(Boolean);
 
 type CardType = 'trade' | 'settings';
 type OrderType = 'market' | 'limit';
@@ -103,29 +111,59 @@ function Swap() {
   const [inputValueA, setInputValueA, valueA = '0'] = useNumericInputState();
   const [inputValueB, setInputValueB, valueB = '0'] = useNumericInputState();
   const [lastUpdatedA, setLastUpdatedA] = useState(true);
-  const pairRequest = {
-    tokenA: getTokenId(tokenA),
-    tokenB: getTokenId(tokenB),
-    valueA: lastUpdatedA ? valueA : undefined,
-    valueB: lastUpdatedA ? undefined : valueB,
-  };
-  const {
-    data: routerResult,
-    isValidating: isValidatingRate,
-    error,
-  } = useRouterResult({
-    tokenA: getTokenId(tokenA),
-    tokenB: getTokenId(tokenB),
-    valueA: lastUpdatedA ? valueA : undefined,
-    valueB: lastUpdatedA ? undefined : valueB,
-  });
 
-  const rateData = getRouterEstimates(pairRequest, routerResult);
   const denoms = [denomA, denomB].filter((denom): denom is string => !!denom);
   const [{ isValidating: isValidatingSwap }, swapRequest] = useSwap(denoms);
 
-  const valueAConverted = lastUpdatedA ? valueA : rateData?.valueA;
-  const valueBConverted = lastUpdatedA ? rateData?.valueB : valueB;
+  const { data: balanceTokenA } = useBankBalanceDisplayAmount(denomA);
+
+  // create reusable swap msg
+  const swapMsg = useMemo(() => {
+    const amountIn = tokenA && Number(getBaseDenomAmount(tokenA, valueA));
+    if (address && denomA && denomB && amountIn && amountIn > 0) {
+      return {
+        amount_in: amountIn.toFixed(0),
+        token_in: denomA,
+        token_out: denomB,
+        creator: address,
+        receiver: address,
+        // see LimitOrderType in types repo (cannot import at runtime)
+        // using type FILL_OR_KILL so that partially filled requests fail
+        order_type: orderTypeEnum.IMMEDIATE_OR_CANCEL,
+        // trade as far as we can go
+        tick_index_in_to_out: Long.fromNumber(priceMaxIndex),
+      };
+    }
+  }, [address, denomA, denomB, tokenA, valueA]);
+
+  // simulate trade with swap msg
+  const {
+    data: simulationResult,
+    isValidating: isValidatingRate,
+    error,
+  } = useSimulatedLimitOrderResult(swapMsg);
+
+  const rate =
+    simulationResult?.response &&
+    new BigNumber(simulationResult.response.taker_coin_out.amount).dividedBy(
+      simulationResult.response.coin_in.amount
+    );
+  const valueAConverted = lastUpdatedA
+    ? valueA
+    : tokenA &&
+      tokenB &&
+      getDisplayDenomAmount(
+        tokenA,
+        getBaseDenomAmount(tokenB, rate?.multipliedBy(valueB) || 0) || 0
+      );
+  const valueBConverted = lastUpdatedA
+    ? tokenA &&
+      tokenB &&
+      getDisplayDenomAmount(
+        tokenB,
+        getBaseDenomAmount(tokenA, rate?.multipliedBy(valueA) || 0) || 0
+      )
+    : valueB;
 
   const swapTokens = useCallback(
     function () {
@@ -145,7 +183,6 @@ function Swap() {
     ]
   );
 
-  const { data: balanceTokenA } = useBankBalanceDisplayAmount(denomA);
   const valueAConvertedNumber = new BigNumber(valueAConverted || 0);
   const hasFormData =
     address && tokenA && tokenB && valueAConvertedNumber.isGreaterThan(0);
@@ -155,11 +192,39 @@ function Swap() {
   const [inputSlippage, setInputSlippage, slippage = '0'] =
     useNumericInputState(defaultSlippage);
 
-  const [token0, token1] =
-    useOrderedTokenPair([getTokenId(tokenA), getTokenId(tokenB)]) || [];
-  const {
-    data: [token0Ticks, token1Ticks],
-  } = useTokenPairTickLiquidity([token0, token1]);
+  const gasEstimate = simulationResult?.gasInfo?.gasUsed.toNumber();
+
+  const tickUpdateEvents = useMemo(() => {
+    // calculate ordered tick updates from result events
+    return simulationResult?.result?.events
+      .filter((event) => event.type === 'TickUpdate')
+      .map(mapEventAttributes)
+      .filter(
+        (event): event is DexTickUpdateEvent =>
+          event.type === 'TickUpdate' && event.attributes.TokenIn === denomA
+      )
+      .sort(
+        (a, b) =>
+          Number(a.attributes.TickIndex) - Number(b.attributes.TickIndex)
+      );
+  }, [denomA, simulationResult?.result?.events]);
+
+  const tickIndexLimitInToOut = useMemo(() => {
+    // calculate last price out from result
+    const lastPrice = tickUpdateEvents?.at(-1)?.attributes;
+    if (lastPrice) {
+      const direction =
+        lastPrice.TokenIn === denomA
+          ? lastPrice.TokenIn === lastPrice.TokenZero
+          : lastPrice.TokenIn === lastPrice.TokenOne;
+
+      const tolerance = Math.max(1e-12, parseFloat(slippage) / 100);
+      const toleranceFactor = 1 + tolerance;
+      return direction
+        ? Math.floor(Number(lastPrice.TickIndex) / toleranceFactor)
+        : Math.floor(Number(lastPrice.TickIndex) * toleranceFactor);
+    }
+  }, [denomA, slippage, tickUpdateEvents]);
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -168,100 +233,40 @@ function Swap() {
       // set tiny minimum of tolerance as the frontend calculations
       // don't always exactly align with the backend calculations
       const tolerance = Math.max(1e-12, parseFloat(slippage) / 100);
-      const tickIndexLimit = routerResult?.tickIndexOut?.toNumber();
+      const toleranceFactor = 1 + tolerance;
+      const amountIn = tokenA && Number(getBaseDenomAmount(tokenA, valueA));
       if (
-        address &&
-        routerResult &&
-        tokenA &&
-        tokenB &&
-        !isNaN(tolerance) &&
-        tickIndexLimit !== undefined &&
-        !isNaN(tickIndexLimit)
+        swapMsg &&
+        amountIn &&
+        simulationResult?.response?.taker_coin_out.amount &&
+        Number(simulationResult.response.taker_coin_out.amount) > 0 &&
+        tickIndexLimitInToOut &&
+        gasEstimate
       ) {
+        const amountOut = new BigNumber(
+          simulationResult.response.taker_coin_out.amount
+        ).multipliedBy(toleranceFactor);
         // convert to swap request format
-        const result = routerResult;
-        // Cosmos requires tokens in integer format of smallest denomination
-        // calculate gas estimate
-        const tickMin =
-          routerResult.tickIndexIn &&
-          routerResult.tickIndexOut &&
-          Math.min(
-            routerResult.tickIndexIn.toNumber(),
-            routerResult.tickIndexOut.toNumber()
-          );
-        const tickMax =
-          routerResult.tickIndexIn &&
-          routerResult.tickIndexOut &&
-          Math.max(
-            routerResult.tickIndexIn.toNumber(),
-            routerResult.tickIndexOut.toNumber()
-          );
-        const forward = result.tokenIn === token0;
-        const ticks = forward ? token1Ticks : token0Ticks;
-        const ticksPassed =
-          (tickMin !== undefined &&
-            tickMax !== undefined &&
-            ticks?.filter((tick) => {
-              return (
-                tick.tickIndex1To0.isGreaterThanOrEqualTo(tickMin) &&
-                tick.tickIndex1To0.isLessThanOrEqualTo(tickMax)
-              );
-            })) ||
-          [];
-        const ticksUsed =
-          ticksPassed?.filter(
-            forward
-              ? (tick) => !tick.reserve1.isZero()
-              : (tick) => !tick.reserve0.isZero()
-          ).length || 0;
-        const ticksUnused =
-          new Set<number>([
-            ...(ticksPassed?.map((tick) => tick.tickIndex1To0.toNumber()) ||
-              []),
-          ]).size - ticksUsed;
-        const gasEstimate = ticksUsed
-          ? // 120000 base
-            120000 +
-            // add 80000 if multiple ticks need to be traversed
-            (ticksUsed > 1 ? 80000 : 0) +
-            // add 1000000 for each tick that we need to remove liquidity from
-            1000000 * (ticksUsed - 1) +
-            // add 500000 for each tick we pass without drawing liquidity from
-            500000 * ticksUnused +
-            // add another 500000 for each reverse tick we pass without drawing liquidity from
-            (forward ? 0 : 500000 * ticksUnused)
-          : 0;
-
         swapRequest(
           {
-            amount_in: getBaseDenomAmount(tokenA, result.amountIn) || '0',
-            token_in: result.tokenIn,
-            token_out: result.tokenOut,
-            creator: address,
-            receiver: address,
-            // see LimitOrderType in types repo (cannot import at runtime)
+            ...swapMsg,
             // using type FILL_OR_KILL so that partially filled requests fail
-            order_type: 1 as LimitOrderType.FILL_OR_KILL,
-            // todo: set tickIndex to allow for a tolerance:
-            //   the below function is a tolerance of 0
-            tick_index_in_to_out: Long.fromNumber(
-              tickIndexLimit * (forward ? 1 : -1)
-            ),
-            max_amount_out: getBaseDenomAmount(tokenB, result.amountOut) || '0',
+            order_type: orderTypeEnum.FILL_OR_KILL,
+            tick_index_in_to_out: Long.fromNumber(tickIndexLimitInToOut),
+            max_amount_out: amountOut.toFixed(0),
           },
           gasEstimate
         );
       }
     },
     [
-      address,
-      routerResult,
-      tokenA,
-      tokenB,
-      token0,
-      token0Ticks,
-      token1Ticks,
       slippage,
+      tokenA,
+      valueA,
+      swapMsg,
+      simulationResult,
+      tickIndexLimitInToOut,
+      gasEstimate,
       swapRequest,
     ]
   );
@@ -327,16 +332,20 @@ function Swap() {
     }
   }, [tokenA, tokenB]);
 
-  const priceImpact =
-    routerResult &&
-    routerResult.priceBToAIn?.isGreaterThan(0) &&
-    routerResult.priceBToAOut?.isGreaterThan(0)
-      ? new BigNumber(
-          new BigNumber(routerResult.priceBToAIn).dividedBy(
-            new BigNumber(routerResult.priceBToAOut)
-          )
-        ).minus(1)
-      : undefined;
+  const priceImpact = useMemo(() => {
+    // calculate first and last prices out from sorted result events
+    const firstPriceEvent = tickUpdateEvents?.at(0);
+    const lastPriceEvent = tickUpdateEvents?.at(-1);
+    if (firstPriceEvent && lastPriceEvent) {
+      const firstPrice = tickIndexToPrice(
+        new BigNumber(firstPriceEvent.attributes.TickIndex)
+      );
+      const lastPrice = tickIndexToPrice(
+        new BigNumber(lastPriceEvent.attributes.TickIndex)
+      );
+      return firstPrice.dividedBy(lastPrice).minus(1);
+    }
+  }, [tickUpdateEvents]);
 
   const tradeCard = (
     <div className="trade-card">
@@ -391,19 +400,14 @@ function Swap() {
             onTokenChanged={setTokenA}
             token={tokenA}
             value={lastUpdatedA ? inputValueA : valueAConverted}
-            className={
-              isValidatingRate && !lastUpdatedA
-                ? valueAConverted
-                  ? 'estimated-rate'
-                  : 'loading-token'
-                : ''
-            }
+            className={!tokenA ? 'loading-token' : ''}
             exclusion={tokenB}
           ></TokenInputGroup>
         </div>
         <div className="card-row my-3">
           <button
             type="button"
+            disabled={isValidatingRate || isValidatingSwap}
             onClick={swapTokens}
             className="icon-button swap-button"
           >
@@ -421,81 +425,80 @@ function Swap() {
             onTokenChanged={setTokenB}
             token={tokenB}
             value={lastUpdatedA ? valueBConverted : inputValueB}
-            className={
-              isValidatingRate && lastUpdatedA
-                ? valueBConverted
-                  ? 'estimated-rate'
-                  : 'loading-token'
-                : ''
-            }
+            className={!tokenB ? 'loading-token' : ''}
+            disabled={isValidatingRate || isValidatingSwap}
             exclusion={tokenA}
             disabledInput={true}
           ></TokenInputGroup>
         </div>
         <div className="card-row text-detail">
-          {tokenA &&
-            tokenB &&
-            parseFloat(valueAConverted || '') > 0 &&
-            parseFloat(valueBConverted || '') > 0 && (
-              <div className="text-grid my-4">
-                <span className="text-header">Exchange Rate</span>
-                <span className="text-value">
-                  {routerResult && rateTokenOrder ? (
-                    <>
-                      1 {rateTokenOrder[1].symbol} ={' '}
-                      {formatLongPrice(
-                        routerResult.tokenIn === getTokenId(rateTokenOrder[1])
-                          ? routerResult.amountOut
-                              .dividedBy(routerResult.amountIn)
-                              .toFixed()
-                          : routerResult.amountIn
-                              .dividedBy(routerResult.amountOut)
-                              .toFixed()
-                      )}{' '}
-                      {rateTokenOrder[0].symbol}
-                      <button
-                        className="icon-button ml-3"
-                        type="button"
-                        onClick={toggleRateTokenOrderManual}
-                      >
-                        <FontAwesomeIcon
-                          icon={faArrowRightArrowLeft}
-                        ></FontAwesomeIcon>
-                      </button>
-                    </>
-                  ) : isValidatingRate ? (
-                    'Finding exchange rate...'
-                  ) : (
-                    'No exchange information'
-                  )}
-                </span>
-                <span className="text-header">Price Impact</span>
-                {priceImpact && (
-                  <span
-                    className={[
-                      'text-value',
-                      (() => {
-                        switch (true) {
-                          case priceImpact.isGreaterThanOrEqualTo(0):
-                            return 'text-success';
-                          case priceImpact.isGreaterThan(-0.01):
-                            return 'text-value';
-                          case priceImpact.isGreaterThan(-0.05):
-                            return 'text';
-                          default:
-                            return 'text-error';
-                        }
-                      })(),
-                    ].join(' ')}
-                  >
-                    {formatPercentage(priceImpact.toFixed(), {
-                      maximumSignificantDigits: 4,
-                      minimumSignificantDigits: 4,
-                    })}
-                  </span>
+          {tokenA && tokenB && (simulationResult || isValidatingRate) && (
+            <div className="text-grid my-4">
+              <span className="text-header">Exchange Rate</span>
+              <span className="text-value">
+                {simulationResult?.response && rateTokenOrder ? (
+                  <>
+                    1 {rateTokenOrder[1].symbol} ={' '}
+                    {formatLongPrice(
+                      simulationResult.response.coin_in.denom ===
+                        getTokenId(rateTokenOrder[1])
+                        ? new BigNumber(
+                            simulationResult.response.taker_coin_out.amount
+                          )
+                            .dividedBy(simulationResult.response.coin_in.amount)
+                            .toFixed()
+                        : new BigNumber(
+                            simulationResult.response.coin_in.amount
+                          )
+                            .dividedBy(
+                              simulationResult.response.taker_coin_out.amount
+                            )
+                            .toFixed()
+                    )}{' '}
+                    {rateTokenOrder[0].symbol}
+                    <button
+                      className="icon-button ml-3"
+                      type="button"
+                      onClick={toggleRateTokenOrderManual}
+                    >
+                      <FontAwesomeIcon
+                        icon={faArrowRightArrowLeft}
+                      ></FontAwesomeIcon>
+                    </button>
+                  </>
+                ) : isValidatingRate ? (
+                  'Finding exchange rate...'
+                ) : (
+                  'No exchange information'
                 )}
-              </div>
-            )}
+              </span>
+              <span className="text-header">Price Impact</span>
+              {priceImpact && (
+                <span
+                  className={[
+                    'text-value',
+                    (() => {
+                      switch (true) {
+                        case priceImpact.isGreaterThanOrEqualTo(0):
+                          return 'text-success';
+                        case priceImpact.isGreaterThan(-0.01):
+                          return 'text-value';
+                        case priceImpact.isGreaterThan(-0.05):
+                          return 'text';
+                        default:
+                          return 'text-error';
+                      }
+                    })(),
+                  ].join(' ')}
+                >
+                  {formatPercentage(priceImpact.toFixed(), {
+                    maximumSignificantDigits: 4,
+                    minimumSignificantDigits: 4,
+                  })}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="mt-4">
           {address ? (
