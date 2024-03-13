@@ -235,37 +235,36 @@ function LimitOrder({
     amountOutBaseAmount,
   } = useMemo(() => {
     if (tokenIn && tokenOut) {
-      // get amount in from sell mode
-      const amountInDisplayAmount = !buyMode ? formState.amount : undefined;
+      // get amount in from sell mode (in base amount to round input correctly)
+      const amountInBaseAmount = !buyMode
+        ? getBaseDenomAmount(tokenIn, formState.amount || 0)
+        : undefined;
       // get amount out from buy mode
-      const amountOutDisplayAmount =
+      const amountOutBaseAmount =
         (buyMode || undefined) &&
         (buyAmountSimulationResult || isLoadingBuyAmountSimulationResult
-          ? // if we have a buy simulation result then show it or its loading state
-            buyAmountSimulationResult?.response
-            ? getDisplayDenomAmount(
-                tokenOut,
-                buyAmountSimulationResult.response.taker_coin_out.amount,
-                {
-                  // output a little more rounded than usual
-                  fractionalDigits: 3,
-                  significantDigits: 5,
-                }
-              )
-            : ''
-          : // else use the amount value directly
-            formState.amount);
+          ? // if we have a buy simulation result then show it or loading state
+            buyAmountSimulationResult?.response?.taker_coin_out.amount ?? ''
+          : // else use value directly (in base amount to round input correctly)
+            getBaseDenomAmount(tokenOut, formState.amount || 0));
 
       // return converted values for convenience
       return {
-        amountInDisplayAmount,
-        amountInBaseAmount:
-          amountInDisplayAmount &&
-          getBaseDenomAmount(tokenIn, amountInDisplayAmount),
-        amountOutDisplayAmount,
-        amountOutBaseAmount:
-          amountOutDisplayAmount &&
-          getBaseDenomAmount(tokenOut, amountOutDisplayAmount),
+        amountInBaseAmount,
+        amountInDisplayAmount: !buyMode
+          ? formState.amount
+          : amountInBaseAmount &&
+            getDisplayDenomAmount(tokenIn, amountInBaseAmount),
+        amountOutBaseAmount,
+        amountOutDisplayAmount:
+          buyAmountSimulationResult || isLoadingBuyAmountSimulationResult
+            ? amountOutBaseAmount &&
+              getDisplayDenomAmount(tokenOut, amountOutBaseAmount, {
+                // output a little more rounded than usual for form inputs
+                fractionalDigits: 3,
+                significantDigits: 5,
+              })
+            : formState.amount,
       };
     }
     return {};
