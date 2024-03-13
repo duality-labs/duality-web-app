@@ -74,8 +74,11 @@ export function useDenomFromPathParam(
       return undefined;
     }
     const tokens = Array.from(tokenByDenom?.values() ?? []);
-    // return denom of resolved token, or the passed param which may be a denom
-    return tokens.find(matchTokenBySymbol(pathParam))?.base ?? pathParam;
+    // return denom of resolved token
+    // note: to use passed param as a backup denom, use property expansion, eg.
+    //       const { data: denomA = match?.params['tokenA'] }
+    //         = useDenomFromPathParam(match?.params['tokenA']);
+    return tokens.find(matchTokenBySymbol(pathParam))?.base;
   }, [tokenByDenom, pathParam]);
   return useSwrResponse(denom, swr);
 }
