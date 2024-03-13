@@ -15,7 +15,7 @@ import { TokenByDenom, useToken, useTokenByDenom } from './useDenomClients';
 import { useUserBankValues } from './useUserBankValues';
 import { SWRCommon, useSwrResponse } from './useSWR';
 
-const { REACT_APP__CHAIN_ID = '' } = import.meta.env;
+const { REACT_APP__CHAIN_NAME = '' } = import.meta.env;
 
 export function useChainFeeToken(): [
   Token | undefined,
@@ -145,9 +145,9 @@ export function matchTokenByDenom(denom: string) {
       return matchTokenBySymbol(denom);
     }
     // match native chain token denoms only
-    else if (REACT_APP__CHAIN_ID) {
+    else if (REACT_APP__CHAIN_NAME) {
       return (token: Token) =>
-        token.chain.chain_id === REACT_APP__CHAIN_ID &&
+        token.chain.chain_name === REACT_APP__CHAIN_NAME &&
         !!token.denom_units.find((unit) => unit.denom === denom);
     }
   }

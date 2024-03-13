@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/duality-labs/duality-web-app/compare/v2.2.0...v2.2.1) (2024-03-13)
+
+
+### Fixes
+
+* local development setup with Neutron CosmoPark ([#536](https://github.com/duality-labs/duality-web-app/issues/536)) ([31b4e55](https://github.com/duality-labs/duality-web-app/commit/31b4e55b816f762b70fd277fa0e98304d02838ee))
+
 ## [2.2.0](https://github.com/duality-labs/duality-web-app/compare/v2.1.1...v2.2.0) (2024-02-14)
 
 
