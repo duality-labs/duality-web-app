@@ -708,7 +708,6 @@ function LimitOrder({
             isValidatingSwap ||
             isValidatingSimulation ||
             !simulationResult ||
-            !!warning ||
             (!Number(amountInBaseAmount) && !Number(amountOutBaseAmount))
           }
         >
