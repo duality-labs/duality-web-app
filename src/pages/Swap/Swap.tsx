@@ -151,7 +151,7 @@ function Swap() {
     isValidating: isValidatingRate,
     error: simulationError = simulationResult?.error,
     refetch: simulationRefetch,
-  } = useSimulatedLimitOrderResult(swapMsg);
+  } = useSimulatedLimitOrderResult(swapMsg, { keepPreviousData: true });
 
   const rate =
     simulationResult?.response &&
