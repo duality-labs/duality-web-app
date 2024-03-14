@@ -88,7 +88,7 @@ class LimitOrderTxSimulationError extends TxSimulationError {
  */
 export function useSimulatedLimitOrderResult(
   msgPlaceLimitOrder: MsgPlaceLimitOrder | undefined,
-  memo = ''
+  opts: Partial<{ memo: string; keepPreviousData: boolean }> = {}
 ) {
   // use signing client simulation function to get simulated response and gas
   const { wallet, address } = useWeb3();
@@ -112,7 +112,7 @@ export function useSimulatedLimitOrderResult(
               msgPlaceLimitOrder
             ),
           ],
-          memo
+          opts.memo
         );
         // return successful response
         if (result && result.msgResponses.length > 0) {
@@ -135,7 +135,7 @@ export function useSimulatedLimitOrderResult(
       }
     },
     // persist results (with error in error key)
-    placeholderData: keepPreviousData,
+    placeholderData: opts.keepPreviousData ? keepPreviousData : undefined,
   });
 
   return useSwrResponseFromReactQuery<
