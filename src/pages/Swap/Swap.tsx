@@ -119,6 +119,9 @@ function Swap() {
   const { data: balanceTokenA } = useBankBalanceDisplayAmount(denomA);
 
   // update simulation whenever price changes
+  // todo: replace with something more lightweight if reliably available
+  //       eg. using the stats endpoint of last known price of last 48 hours
+  //       which will require reasonable handling when recent price is unknown
   const currentPriceFromTicks = useCurrentPriceFromTicks(denomA, denomB);
 
   // create reusable swap msg
