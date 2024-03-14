@@ -25,6 +25,7 @@ import PriceDataDisclaimer from '../../components/PriceDataDisclaimer';
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { useBankBalanceDisplayAmount } from '../../lib/web3/hooks/useUserBankBalances';
 import { useToken } from '../../lib/web3/hooks/useDenomClients';
+import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
 
 import { useSimulatedLimitOrderResult } from './hooks/useRouter';
 import { useSwap } from './hooks/useSwap';
@@ -117,10 +118,13 @@ function Swap() {
 
   const { data: balanceTokenA } = useBankBalanceDisplayAmount(denomA);
 
+  // update simulation whenever price changes
+  const currentPriceFromTicks = useCurrentPriceFromTicks(denomA, denomB);
+
   // create reusable swap msg
   const swapMsg = useMemo(() => {
     const amountIn = tokenA && Number(getBaseDenomAmount(tokenA, valueA));
-    if (address && denomA && denomB) {
+    if (address && denomA && denomB && currentPriceFromTicks) {
       return {
         amount_in: (amountIn || 0).toFixed(0),
         token_in: denomA,
@@ -136,7 +140,7 @@ function Swap() {
         tick_index_in_to_out: Long.fromNumber(priceMaxIndex),
       };
     }
-  }, [address, denomA, denomB, tokenA, valueA]);
+  }, [address, denomA, denomB, tokenA, valueA, currentPriceFromTicks]);
 
   // simulate trade with swap msg
   const {
