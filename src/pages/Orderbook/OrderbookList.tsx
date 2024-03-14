@@ -29,8 +29,8 @@ export default function OrderBookList({
   const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
   const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
   const {
-    data: [token0Ticks = [], token1Ticks = []],
-  } = useTokenPairTickLiquidity([tokenId0, tokenId1]);
+    data: [tokenATicks = [], tokenBTicks = []],
+  } = useTokenPairTickLiquidity([tokenIdA, tokenIdB]);
 
   const [forward, reverse] = [
     tokenId0 === tokenIdA && tokenId1 === tokenIdB,
@@ -40,12 +40,8 @@ export default function OrderBookList({
   const currentPrice = useCurrentPriceFromTicks(tokenIdA, tokenIdB);
   const resolutionPercent = 0.01; // size of price steps
 
-  // todo: this needs fixes, the comparison between prices is off because it
-  //       sometimes compares price1To0 and priceBToA
-  //       it would greatly benefit from useTokenPairTickLiquidity returning
-  //       price and tickIndexes in BtoA form
   const getTickBuckets = useCallback(
-    (forward: boolean) => {
+    (forward: boolean, descendingOrder = forward) => {
       const resolutionOrderOfMagnitude = getOrderOfMagnitude(resolutionPercent);
       const step =
         currentPrice &&
@@ -55,12 +51,12 @@ export default function OrderBookList({
             resolutionOrderOfMagnitude
         );
 
-      const ticks = forward ? token0Ticks : token1Ticks;
+      const ticks = forward ? tokenATicks : tokenBTicks;
       const precision = 1 - resolutionOrderOfMagnitude;
       const tickBucketLimits = Array.from({ length: shownTickRows }).flatMap(
         (_, index) =>
           currentPrice && step
-            ? forward
+            ? descendingOrder
               ? Number(
                   currentPrice
                     .minus(index * step)
@@ -73,34 +69,43 @@ export default function OrderBookList({
                 )
             : []
       );
-      const limit = forward
+      const tickBucketsLimit = descendingOrder
         ? Math.min(...tickBucketLimits)
         : Math.max(...tickBucketLimits);
 
-      const groupedTicks = ticks.reduce<{
-        [roundedPrice: string]: number;
-      }>((acc, tick) => {
-        // add if price is within bounds
-        if (
-          step &&
-          currentPrice &&
-          (forward
-            ? tick.price1To0.isGreaterThanOrEqualTo(limit)
-            : tick.price1To0.isLessThanOrEqualTo(limit))
-        ) {
-          const roundedPrice = Number(
-            tick.price1To0.toPrecision(
-              precision,
-              forward ? BigNumber.ROUND_FLOOR : BigNumber.ROUND_CEIL
-            )
-          );
-          acc[roundedPrice] = acc[roundedPrice] || 0;
-          acc[roundedPrice] += (
-            forward ? tick.reserve0 : tick.reserve1
-          ).toNumber();
-        }
-        return acc;
-      }, {});
+      const groupedTickEntries = ticks.reduce<
+        Array<[roundedPrice: number, reserves: number]>
+      >(
+        (acc, tick) => {
+          // add if price is within bounds
+          if (
+            step &&
+            currentPrice &&
+            // select tick prices within the outer edge of price buckets
+            (descendingOrder
+              ? tick.price1To0.isGreaterThanOrEqualTo(tickBucketsLimit)
+              : tick.price1To0.isLessThanOrEqualTo(tickBucketsLimit)) &&
+            // select tick prices within the inner edge of price buckets
+            (descendingOrder
+              ? tick.price1To0.isLessThanOrEqualTo(currentPrice)
+              : tick.price1To0.isGreaterThanOrEqualTo(currentPrice))
+          ) {
+            const foundEntry = acc.find(([limit]) => {
+              return descendingOrder
+                ? tick.price1To0.isGreaterThanOrEqualTo(limit)
+                : tick.price1To0.isLessThanOrEqualTo(limit);
+            });
+            if (foundEntry !== undefined) {
+              foundEntry[1] += (
+                forward ? tick.reserve0 : tick.reserve1
+              ).toNumber();
+            }
+          }
+          return acc;
+        },
+        tickBucketLimits.map((limit) => [limit, 0])
+      );
+      const groupedTicks = Object.fromEntries(groupedTickEntries);
 
       // create TickInfo replacements for bucketed data
       const fakeTicks = tickBucketLimits.map((key): TickInfo => {
@@ -117,14 +122,14 @@ export default function OrderBookList({
 
       return [...fakeTicks, ...spacingTicks].slice(0, shownTickRows);
     },
-    [currentPrice, token0Ticks, token1Ticks, tokenA, tokenB]
+    [currentPrice, tokenATicks, tokenBTicks, tokenA, tokenB]
   );
 
   // get tokenA as the top ascending from current price list
-  const tokenATicks = useMemo<Array<TickInfo | undefined>>(() => {
-    return getTickBuckets(!!forward).reverse();
+  const filteredTokenATicks = useMemo<Array<TickInfo | undefined>>(() => {
+    return getTickBuckets(forward).reverse();
   }, [forward, getTickBuckets]);
-  const tokenBTicks = useMemo<Array<TickInfo | undefined>>(() => {
+  const filteredTokenBTicks = useMemo<Array<TickInfo | undefined>>(() => {
     return getTickBuckets(!forward);
   }, [forward, getTickBuckets]);
 
@@ -135,7 +140,8 @@ export default function OrderBookList({
   useEffect(() => {
     if (
       !lastTokenATicks.current ||
-      JSON.stringify(tokenATicks) !== JSON.stringify(lastTokenATicks.current)
+      JSON.stringify(filteredTokenATicks) !==
+        JSON.stringify(lastTokenATicks.current)
     ) {
       // set old data
       if (lastTokenATicks.current) {
@@ -145,9 +151,9 @@ export default function OrderBookList({
         );
       }
       // set new data
-      lastTokenATicks.current = tokenATicks;
+      lastTokenATicks.current = filteredTokenATicks;
     }
-  }, [tokenATicks]);
+  }, [filteredTokenATicks]);
 
   const [previousTokenBTicks, setPrevTokenBTicks] = useState<Array<TickInfo>>(
     []
@@ -156,7 +162,8 @@ export default function OrderBookList({
   useEffect(() => {
     if (
       !lastTokenBTicks.current ||
-      JSON.stringify(tokenATicks) !== JSON.stringify(lastTokenBTicks.current)
+      JSON.stringify(filteredTokenBTicks) !==
+        JSON.stringify(lastTokenBTicks.current)
     ) {
       // set old data
       if (lastTokenBTicks.current) {
@@ -166,9 +173,9 @@ export default function OrderBookList({
         );
       }
       // set new data
-      lastTokenBTicks.current = tokenATicks;
+      lastTokenBTicks.current = filteredTokenBTicks;
     }
-  }, [tokenATicks]);
+  }, [filteredTokenBTicks]);
 
   const [previousPrice, setPreviousPrice] = useState<BigNumber | undefined>();
   const lastPrice = useRef<BigNumber | undefined>(currentPrice);
@@ -185,7 +192,7 @@ export default function OrderBookList({
       // set new data
       lastPrice.current = currentPrice;
     }
-  }, [currentPrice, tokenATicks]);
+  }, [currentPrice, filteredTokenATicks]);
 
   const priceDecimalPlaces =
     currentPrice !== undefined
@@ -210,7 +217,7 @@ export default function OrderBookList({
           </tr>
         </thead>
         <tbody className="orderbook-list__table__ticks-a">
-          {tokenATicks.map((tick, index) => {
+          {filteredTokenATicks.map((tick, index) => {
             return (
               <OrderbookListRow
                 key={index}
@@ -241,7 +248,7 @@ export default function OrderBookList({
           </tr>
         </tbody>
         <tbody className="orderbook-list__table__ticks-b">
-          {tokenBTicks.map((tick, index) => {
+          {filteredTokenBTicks.map((tick, index) => {
             return (
               <OrderbookListRow
                 key={index}
