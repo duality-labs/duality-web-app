@@ -23,6 +23,13 @@ export const orderTypeEnum: {
   UNRECOGNIZED: -1,
 };
 
+export const inputOrderTypeTextMap: Partial<{
+  [key in AllowedLimitOrderTypeKey]: string;
+}> = {
+  FILL_OR_KILL: 'Fill Or Kill',
+  IMMEDIATE_OR_CANCEL: 'Immediate Or Cancel',
+};
+
 export const orderTypeTextMap: {
   [key in keyof typeof LimitOrderType]: string;
 } = {
