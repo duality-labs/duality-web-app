@@ -334,6 +334,8 @@ function LimitOrder({
                 tokenIn,
                 rounding
               )
+                // change limit direction depending on token direction
+                ?.multipliedBy(buyMode ? -1 : 1)
             : undefined;
 
         const msgPlaceLimitOrder: MsgPlaceLimitOrder = {
