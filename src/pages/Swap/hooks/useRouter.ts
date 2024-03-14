@@ -1,8 +1,12 @@
 import BigNumber from 'bignumber.js';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { TxExtension } from '@cosmjs/stargate';
 import { neutron } from '@duality-labs/neutronjs';
-import type { MsgPlaceLimitOrder } from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
+import type {
+  MsgPlaceLimitOrder,
+  MsgPlaceLimitOrderResponse,
+} from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
 
 import { PairRequest, PairResult, RouterResult } from './index';
 import { routerAsync, calculateFee, SwapError } from './router';
@@ -50,6 +54,31 @@ async function getRouterResult(
     );
   }
 }
+type SimulateResponse = Awaited<ReturnType<TxExtension['tx']['simulate']>>;
+type ExtendedSimulateResponse = Partial<
+  SimulateResponse & { response: MsgPlaceLimitOrderResponse }
+>;
+class TxSimulationError extends Error {
+  constructor(error: unknown) {
+    // parse messages to handle any possible library excpetions
+    const message = (error as Error)?.message || `${error}`;
+    super(message);
+    this.name = 'TxSimulationError';
+  }
+}
+class LimitOrderTxSimulationError extends TxSimulationError {
+  insufficientLiquidity: boolean;
+  constructor(error: unknown) {
+    super(error);
+    this.name = 'LimitOrderTxSimulationError';
+
+    // parse out message codes
+    this.insufficientLiquidity = this.message.includes(
+      // eslint-disable-next-line quotes
+      "Fill Or Kill limit order couldn't be executed in its entirety"
+    );
+  }
+}
 
 /**
  * Gets the simulated results and gas usage of a limit order transaction
@@ -64,11 +93,16 @@ export function useSimulatedLimitOrderResult(
   // use signing client simulation function to get simulated response and gas
   const { wallet, address } = useWeb3();
   const txSimulationClient = useTxSimulationClient(wallet);
-  const result = useQuery({
+  const result = useQuery<
+    ExtendedSimulateResponse | undefined,
+    LimitOrderTxSimulationError
+  >({
     queryKey: [txSimulationClient, address, JSON.stringify(msgPlaceLimitOrder)],
     enabled: Boolean(txSimulationClient && address && msgPlaceLimitOrder),
-    queryFn: async () => {
-      if (txSimulationClient && address && msgPlaceLimitOrder) {
+    queryFn: async (): Promise<ExtendedSimulateResponse | undefined> => {
+      // early exit to help types, should match "enabled" property condition
+      if (!(txSimulationClient && address && msgPlaceLimitOrder)) return;
+      try {
         const { gasInfo, result } = await txSimulationClient.simulate(
           address,
           [
@@ -87,11 +121,20 @@ export function useSimulatedLimitOrderResult(
         }
         // likely an error result
         return { gasInfo, result };
+      } catch (error) {
+        throw new LimitOrderTxSimulationError(error);
       }
+    },
+    // don't retry insufficientLiquidity errors
+    retry(failureCount, error) {
+      return failureCount < 3 && !error.insufficientLiquidity;
     },
   });
 
-  return useSwrResponseFromReactQuery(result.data, result);
+  return useSwrResponseFromReactQuery<
+    ExtendedSimulateResponse | undefined,
+    LimitOrderTxSimulationError
+  >(result.data, result);
 }
 
 /**

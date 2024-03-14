@@ -11,11 +11,11 @@ interface SWRCommonWithRequiredData<Data = unknown, Error = unknown>
   data: Data;
 }
 
-export function useSwrResponse<T>(
-  data: T | undefined,
-  swr1: Omit<SWRCommon, 'data'>,
-  swr2?: Omit<SWRCommon, 'data'>
-): SWRCommon<T> {
+export function useSwrResponse<Data, Error = unknown>(
+  data: Data | undefined,
+  swr1: Omit<SWRCommon<Data, Error>, 'data'>,
+  swr2?: Omit<SWRCommon<Data, Error>, 'data'>
+): SWRCommon<Data, Error> {
   return useMemo(() => {
     return {
       isLoading: !!(swr1.isLoading || swr2?.isLoading),
@@ -34,11 +34,11 @@ export function useSwrResponse<T>(
   ]);
 }
 
-export function useSwrResponseFromReactQuery<T>(
-  data: T | undefined,
-  queryResult1: Omit<UseQueryResult, 'data'>,
-  queryResult2?: Omit<UseQueryResult, 'data'>
-): SWRCommon<T> {
+export function useSwrResponseFromReactQuery<Data, Error = unknown>(
+  data: Data | undefined,
+  queryResult1: Omit<UseQueryResult<Data, Error>, 'data'>,
+  queryResult2?: Omit<UseQueryResult<Data, Error>, 'data'>
+): SWRCommon<Data, Error> {
   const swr1 = useMemo(
     () => ({
       isLoading: queryResult1.isPending,

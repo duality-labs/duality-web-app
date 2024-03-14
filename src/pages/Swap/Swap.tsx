@@ -127,9 +127,8 @@ function Swap() {
         token_out: denomB,
         creator: address,
         receiver: address,
-        // see LimitOrderType in types repo (cannot import at runtime)
         // using type FILL_OR_KILL so that partially filled requests fail
-        order_type: orderTypeEnum.IMMEDIATE_OR_CANCEL,
+        order_type: orderTypeEnum.FILL_OR_KILL,
         // trade as far as we can go
         tick_index_in_to_out: Long.fromNumber(priceMaxIndex),
       };
@@ -140,7 +139,7 @@ function Swap() {
   const {
     data: simulationResult,
     isValidating: isValidatingRate,
-    error,
+    error: simulationError,
   } = useSimulatedLimitOrderResult(swapMsg);
 
   const rate =
@@ -393,9 +392,7 @@ function Swap() {
         <div className="card-row">
           <TokenInputGroup
             defaultAssetMode="User"
-            variant={
-              (!hasSufficientFunds || error?.insufficientLiquidityIn) && 'error'
-            }
+            variant={!hasSufficientFunds && 'error'}
             onValueChanged={onValueAChanged}
             onTokenChanged={setTokenA}
             token={tokenA}
@@ -420,7 +417,7 @@ function Swap() {
         <div className="card-row">
           <TokenInputGroup
             defaultAssetMode="Dex"
-            variant={error?.insufficientLiquidityOut && 'error'}
+            variant={simulationError?.insufficientLiquidity && 'error'}
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}
             token={tokenB}
@@ -432,7 +429,7 @@ function Swap() {
           ></TokenInputGroup>
         </div>
         <div className="card-row text-detail">
-          {tokenA && tokenB && (simulationResult || isValidatingRate) && (
+          {tokenA && tokenB && Number(inputValueA) > 0 && (
             <div className="text-grid my-4">
               <span className="text-header">Exchange Rate</span>
               <span className="text-value">
@@ -504,9 +501,7 @@ function Swap() {
           {address ? (
             hasFormData &&
             hasSufficientFunds &&
-            !error?.insufficientLiquidity &&
-            !error?.insufficientLiquidityIn &&
-            !error?.insufficientLiquidityOut ? (
+            !simulationError?.insufficientLiquidity ? (
               <button
                 className="submit-button button-primary"
                 type="submit"
@@ -514,7 +509,7 @@ function Swap() {
               >
                 {orderType === 'limit' ? 'Place Limit Order' : 'Swap'}
               </button>
-            ) : error?.insufficientLiquidity ? (
+            ) : simulationError?.insufficientLiquidity ? (
               <button className="submit-button button-error" type="button">
                 Insufficient liquidity
               </button>
