@@ -226,7 +226,7 @@ function LimitOrder({
   }, [address, tokenIn, tokenInBalanceFraction, tokenOut, userBalanceTokenIn]);
   const {
     data: buyAmountSimulationResult,
-    isLoading: isLoadingBuyAmountSimulationResult,
+    isValidating: isValidatingBuyAmountSimulationResult,
   } = useSimulatedLimitOrderResult(buyAmountSimulatedMsgPlaceLimitOrder);
 
   const {
@@ -249,7 +249,7 @@ function LimitOrder({
       // get amount out from buy mode
       const amountOutBaseAmount =
         (buyMode || undefined) &&
-        (buyAmountSimulationResult || isLoadingBuyAmountSimulationResult
+        (buyAmountSimulationResult || isValidatingBuyAmountSimulationResult
           ? // if we have a buy simulation result then show it or loading state
             buyAmountSimulationResult?.response?.taker_coin_out.amount ?? ''
           : // else use value directly (in base amount to round input correctly)
@@ -264,7 +264,7 @@ function LimitOrder({
             getDisplayDenomAmount(tokenIn, amountInBaseAmount),
         amountOutBaseAmount,
         amountOutDisplayAmount:
-          buyAmountSimulationResult || isLoadingBuyAmountSimulationResult
+          buyAmountSimulationResult || isValidatingBuyAmountSimulationResult
             ? amountOutBaseAmount &&
               getDisplayDenomAmount(tokenOut, amountOutBaseAmount, {
                 // output a little more rounded than usual for form inputs
@@ -279,7 +279,7 @@ function LimitOrder({
     buyAmountSimulationResult,
     buyMode,
     formState.amount,
-    isLoadingBuyAmountSimulationResult,
+    isValidatingBuyAmountSimulationResult,
     tokenInBalanceFraction,
     tokenIn,
     tokenOut,
@@ -538,7 +538,9 @@ function LimitOrder({
       <div className="mt-2 mb-4">
         <NumericInputRow
           prefix="Amount"
-          placeholder={isLoadingBuyAmountSimulationResult ? 'finding...' : '0'}
+          placeholder={
+            isValidatingBuyAmountSimulationResult ? 'finding...' : '0'
+          }
           value={
             buyMode ? amountOutDisplayAmount || '' : amountInDisplayAmount || ''
           }
