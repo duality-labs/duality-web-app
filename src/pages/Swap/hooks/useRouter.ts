@@ -20,7 +20,10 @@ import {
 } from '../../../lib/web3/utils/tokens';
 
 import { useWeb3 } from '../../../lib/web3/useWeb3';
-import { useTxSimulationClient } from '../../../lib/web3/clients/signingClients';
+import {
+  useTxSimulationClient,
+  TxSimulationError,
+} from '../../../lib/web3/clients/signingClients';
 
 import { useToken } from '../../../lib/web3/hooks/useDenomClients';
 import { useTokenPairTickLiquidity } from '../../../lib/web3/hooks/useTickLiquidity';
@@ -54,18 +57,12 @@ async function getRouterResult(
     );
   }
 }
+
 type SimulateResponse = Awaited<ReturnType<TxExtension['tx']['simulate']>>;
 type ExtendedSimulateResponse = Partial<
   SimulateResponse & { response: MsgPlaceLimitOrderResponse }
 >;
-class TxSimulationError extends Error {
-  constructor(error: unknown) {
-    // parse messages to handle any possible library excpetions
-    const message = (error as Error)?.message || `${error}`;
-    super(message);
-    this.name = 'TxSimulationError';
-  }
-}
+
 class LimitOrderTxSimulationError extends TxSimulationError {
   insufficientLiquidity: boolean;
   constructor(error: unknown) {

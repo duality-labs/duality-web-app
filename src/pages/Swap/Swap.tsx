@@ -421,7 +421,14 @@ function Swap() {
             onValueChanged={onValueBChanged}
             onTokenChanged={setTokenB}
             token={tokenB}
-            value={lastUpdatedA ? valueBConverted : inputValueB}
+            // if result is zero, don't show calculated fractional decimals
+            value={
+              lastUpdatedA
+                ? Number(valueBConverted) > 0
+                  ? valueBConverted
+                  : '0'
+                : inputValueB
+            }
             className={!tokenB ? 'loading-token' : ''}
             disabled={isValidatingRate || isValidatingSwap}
             exclusion={tokenA}

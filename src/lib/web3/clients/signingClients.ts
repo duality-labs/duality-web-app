@@ -34,6 +34,14 @@ type TxSimulationClient = {
     ...args: Parameters<SigningStargateClient['simulate']>
   ) => ReturnType<TxExtension['tx']['simulate']>;
 };
+export class TxSimulationError extends Error {
+  constructor(error: unknown) {
+    // parse messages to handle any possible library excpetions
+    const message = (error as Error)?.message || `${error}`;
+    super(message);
+    this.name = 'TxSimulationError';
+  }
+}
 
 export function useTxSimulationClient(
   signer: OfflineSigner | null,
@@ -41,10 +49,12 @@ export function useTxSimulationClient(
   defaultTypes: ReadonlyArray<[string, GeneratedType]> = neutronProtoRegistry
 ) {
   const tmClient = useTendermint37Client(rpcEndpoint);
-  return useSWRImmutable<TxSimulationClient | undefined>(
+  return useSWRImmutable<TxSimulationClient | undefined, TxSimulationError>(
     tmClient && signer ? ['queryClient', rpcEndpoint] : null,
     async (): Promise<TxSimulationClient | undefined> => {
-      if (tmClient && signer) {
+      // early return null condition keys to assist types in this function
+      if (!(tmClient && signer)) return;
+      try {
         const stargateClient = await StargateClient.create(tmClient);
         const stargateQueryClient = new QueryClient(tmClient);
         const stargateQueryTxClient = setupTxExtension(stargateQueryClient);
@@ -71,6 +81,8 @@ export function useTxSimulationClient(
             );
           },
         };
+      } catch (error) {
+        throw new TxSimulationError(error);
       }
     }
   ).data;
