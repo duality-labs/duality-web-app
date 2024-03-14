@@ -22,8 +22,6 @@ import MyLiquidity from '../MyLiquidity';
 
 import './App.scss';
 
-const { REACT_APP__HIDE_ORDERBOOK = '' } = import.meta.env;
-
 const queryClient = new QueryClient();
 
 function App() {
@@ -40,9 +38,7 @@ function App() {
                 <Route index element={<Navigate to={defaultPage} />} />
                 <Route path="swap/*" element={<Swap />} />
                 <Route path="pools/*" element={<Pool />} />
-                {!REACT_APP__HIDE_ORDERBOOK && (
-                  <Route path="orderbook/*" element={<Orderbook />} />
-                )}
+                <Route path="orderbook/*" element={<Orderbook />} />
                 <Route path="portfolio/*" element={<MyLiquidity />} />
                 <Route path="bridge" element={<Bridge />} />
                 <Route path="*" element={<div>Not found</div>} />

@@ -30,8 +30,8 @@ function Pools() {
   const navigate = useNavigate();
 
   // change tokens to match pathname
-  const matchTokens = useMatch('/pools/:tokenA/:tokenB');
-  const matchTokenManagement = useMatch('/pools/:tokenA/:tokenB/:addOrEdit');
+  const matchTokens = useMatch('/pools/:tokenB/:tokenA');
+  const matchTokenManagement = useMatch('/pools/:tokenB/:tokenA/:addOrEdit');
   const isManagementPath =
     !!matchTokenManagement &&
     (matchTokenManagement.params['addOrEdit'] === 'add' ||
