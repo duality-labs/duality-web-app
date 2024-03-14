@@ -143,6 +143,7 @@ function Swap() {
     data: simulationResult,
     isValidating: isValidatingRate,
     error: simulationError = simulationResult?.error,
+    refetch: simulationRefetch,
   } = useSimulatedLimitOrderResult(swapMsg);
 
   const rate =
@@ -229,7 +230,7 @@ function Swap() {
   }, [denomA, slippage, tickUpdateEvents]);
 
   const onFormSubmit = useCallback(
-    function (event?: React.FormEvent<HTMLFormElement>) {
+    async function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
       // calculate tolerance from user slippage settings
       // set tiny minimum of tolerance as the frontend calculations
@@ -249,7 +250,7 @@ function Swap() {
           simulationResult.response.taker_coin_out.amount
         ).multipliedBy(toleranceFactor);
         // convert to swap request format
-        swapRequest(
+        await swapRequest(
           {
             ...swapMsg,
             // using type FILL_OR_KILL so that partially filled requests fail
@@ -262,6 +263,7 @@ function Swap() {
           },
           gasEstimate
         );
+        simulationRefetch?.();
       }
     },
     [
@@ -269,10 +271,11 @@ function Swap() {
       tokenA,
       valueA,
       swapMsg,
-      simulationResult,
+      simulationResult?.response?.taker_coin_out.amount,
       tickIndexLimitInToOut,
       gasEstimate,
       swapRequest,
+      simulationRefetch,
     ]
   );
 

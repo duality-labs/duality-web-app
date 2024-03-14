@@ -1,11 +1,11 @@
-import { UseQueryResult } from '@tanstack/react-query';
+import { RefetchOptions, UseQueryResult } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef } from 'react';
 import { SWRResponse } from 'swr';
 
 export type SWRCommon<Data = unknown, Error = unknown> = Omit<
   SWRResponse<Data, Error>,
   'mutate'
->;
+> & { refetch?: (opts?: RefetchOptions) => void };
 interface SWRCommonWithRequiredData<Data = unknown, Error = unknown>
   extends SWRCommon<Data, Error> {
   data: Data;
@@ -21,23 +21,26 @@ export function useSwrResponse<Data, Error = unknown>(
       isLoading: !!(swr1.isLoading || swr2?.isLoading),
       isValidating: !!(swr1.isValidating || swr2?.isValidating),
       error: swr1.error || swr2?.error,
+      refetch: swr1.refetch || swr2?.refetch,
       data,
     };
   }, [
-    data,
     swr1.isLoading,
     swr1.isValidating,
     swr1.error,
+    swr1.refetch,
     swr2?.isLoading,
     swr2?.isValidating,
     swr2?.error,
+    swr2?.refetch,
+    data,
   ]);
 }
 
 type QueryResultCommon<Data, Error = unknown> = Pick<
   UseQueryResult<Data, Error>,
   'isPending' | 'isFetching' | 'error'
->;
+> & { refetch: (opts?: RefetchOptions) => unknown };
 
 export function useSwrResponseFromReactQuery<Data, Error = unknown>(
   data: Data | undefined,
@@ -49,6 +52,7 @@ export function useSwrResponseFromReactQuery<Data, Error = unknown>(
       isLoading: queryResult1.isPending,
       isValidating: queryResult1.isFetching,
       error: queryResult1.error || undefined,
+      refetch: queryResult1.refetch,
     }),
     [queryResult1]
   );
@@ -57,6 +61,7 @@ export function useSwrResponseFromReactQuery<Data, Error = unknown>(
       isLoading: !!queryResult2?.isPending,
       isValidating: !!queryResult2?.isFetching,
       error: queryResult2?.error || undefined,
+      refetch: queryResult2?.refetch,
     }),
     [queryResult2]
   );
@@ -81,6 +86,7 @@ export function useCombineResults<Data, Error>(): (
       isLoading: results.every((result) => result.isPending),
       isValidating: results.some((result) => result.isFetching),
       error: results.find((result) => result.error)?.error ?? undefined,
+      refetch: results.find((result) => result.refetch)?.refetch ?? undefined,
     };
   }, []);
 }
