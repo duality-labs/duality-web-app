@@ -66,6 +66,9 @@ type ExtendedSimulateResponse = Partial<
   }
 >;
 
+const FILL_OR_KILL_ERROR =
+  // eslint-disable-next-line quotes
+  "Fill Or Kill limit order couldn't be executed in its entirety";
 class LimitOrderTxSimulationError extends TxSimulationError {
   insufficientLiquidity: boolean;
   constructor(error: unknown) {
@@ -73,10 +76,7 @@ class LimitOrderTxSimulationError extends TxSimulationError {
     this.name = 'LimitOrderTxSimulationError';
 
     // parse out message codes
-    this.insufficientLiquidity = this.message.includes(
-      // eslint-disable-next-line quotes
-      "Fill Or Kill limit order couldn't be executed in its entirety"
-    );
+    this.insufficientLiquidity = this.message.includes(FILL_OR_KILL_ERROR);
   }
 }
 
@@ -119,7 +119,13 @@ export function useSimulatedLimitOrderResult(
           const response = neutron.dex.MsgPlaceLimitOrderResponse.decode(
             result.msgResponses[0].value
           );
-          return { gasInfo, result, response };
+          // add liquidity error if appropriate
+          const error = new BigNumber(response.coin_in.amount)
+            .multipliedBy(1.0001)
+            .isLessThan(msgPlaceLimitOrder.amount_in)
+            ? new LimitOrderTxSimulationError(FILL_OR_KILL_ERROR)
+            : undefined;
+          return { gasInfo, result, response, error };
         }
         // likely an error result
         return { gasInfo, result };
