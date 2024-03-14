@@ -39,7 +39,7 @@ jobs:
         run: npx playwright install --with-deps
         working-directory: ./neutron-end2end-tests
 
-      - name: Run Playwright tests for bridge:ci
+      - name: Run Playwright tests for duality:ci
         run: yarn duality_testnet:ci
         working-directory: ./neutron-end2end-tests
         env:
