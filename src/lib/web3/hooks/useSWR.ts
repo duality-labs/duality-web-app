@@ -34,10 +34,15 @@ export function useSwrResponse<Data, Error = unknown>(
   ]);
 }
 
+type QueryResultCommon<Data, Error = unknown> = Pick<
+  UseQueryResult<Data, Error>,
+  'isPending' | 'isFetching' | 'error'
+>;
+
 export function useSwrResponseFromReactQuery<Data, Error = unknown>(
   data: Data | undefined,
-  queryResult1: Omit<UseQueryResult<Data, Error>, 'data'>,
-  queryResult2?: Omit<UseQueryResult<Data, Error>, 'data'>
+  queryResult1: QueryResultCommon<Data, Error>,
+  queryResult2?: QueryResultCommon<Data, Error>
 ): SWRCommon<Data, Error> {
   const swr1 = useMemo(
     () => ({
