@@ -121,7 +121,7 @@ export function useSimulatedLimitOrderResult(
           );
           // add liquidity error if appropriate
           const error = new BigNumber(response.coin_in.amount)
-            .multipliedBy(1.0001)
+            .multipliedBy(1.01)
             .isLessThan(msgPlaceLimitOrder.amount_in)
             ? new LimitOrderTxSimulationError(FILL_OR_KILL_ERROR)
             : undefined;
