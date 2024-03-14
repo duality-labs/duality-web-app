@@ -120,9 +120,9 @@ function Swap() {
   // create reusable swap msg
   const swapMsg = useMemo(() => {
     const amountIn = tokenA && Number(getBaseDenomAmount(tokenA, valueA));
-    if (address && denomA && denomB && amountIn && amountIn > 0) {
+    if (address && denomA && denomB) {
       return {
-        amount_in: amountIn.toFixed(0),
+        amount_in: (amountIn || 0).toFixed(0),
         token_in: denomA,
         token_out: denomB,
         creator: address,
@@ -139,7 +139,7 @@ function Swap() {
   const {
     data: simulationResult,
     isValidating: isValidatingRate,
-    error: simulationError,
+    error: simulationError = simulationResult?.error,
   } = useSimulatedLimitOrderResult(swapMsg);
 
   const rate =

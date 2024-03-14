@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { TxExtension } from '@cosmjs/stargate';
 import { neutron } from '@duality-labs/neutronjs';
 import type {
@@ -60,7 +60,10 @@ async function getRouterResult(
 
 type SimulateResponse = Awaited<ReturnType<TxExtension['tx']['simulate']>>;
 type ExtendedSimulateResponse = Partial<
-  SimulateResponse & { response: MsgPlaceLimitOrderResponse }
+  SimulateResponse & {
+    response: MsgPlaceLimitOrderResponse;
+    error: LimitOrderTxSimulationError;
+  }
 >;
 
 class LimitOrderTxSimulationError extends TxSimulationError {
@@ -99,6 +102,8 @@ export function useSimulatedLimitOrderResult(
     queryFn: async (): Promise<ExtendedSimulateResponse | undefined> => {
       // early exit to help types, should match "enabled" property condition
       if (!(txSimulationClient && address && msgPlaceLimitOrder)) return;
+      // return empty response for a zero amount query
+      if (!Number(msgPlaceLimitOrder.amount_in)) return {};
       try {
         const { gasInfo, result } = await txSimulationClient.simulate(
           address,
@@ -119,13 +124,12 @@ export function useSimulatedLimitOrderResult(
         // likely an error result
         return { gasInfo, result };
       } catch (error) {
-        throw new LimitOrderTxSimulationError(error);
+        // return error so that it may be persisted
+        return { error: new LimitOrderTxSimulationError(error) };
       }
     },
-    // don't retry insufficientLiquidity errors
-    retry(failureCount, error) {
-      return failureCount < 3 && !error.insufficientLiquidity;
-    },
+    // persist results (with error in error key)
+    placeholderData: keepPreviousData,
   });
 
   return useSwrResponseFromReactQuery<
