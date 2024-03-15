@@ -1,11 +1,10 @@
 name: UI Tests
 
 on:
-  workflow_dispatch:
+    workflow_dispatch:
     workflow_run:
-    workflows: ["Deploy Preview"]
-    types:
-      - completed
+      workflows: ["Deploy Preview"]
+      types: [completed]
 
 env:
   GIT_PAT: ${{ secrets.GIT_PAT }}
