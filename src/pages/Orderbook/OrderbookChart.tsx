@@ -139,6 +139,7 @@ export default function OrderBookChart({
     // keep track of data subscription state here
     type FetchID = string;
     type SubscriberUUID = string;
+    const firstBars: Map<FetchID, Bar> = new Map();
     const lastBars: Map<FetchID, Bar> = new Map();
     const knownHeights: Map<FetchID, number> = new Map();
     const streams: Map<
@@ -308,6 +309,30 @@ export default function OrderBookChart({
                     },
                     []
                   );
+                  // fill in any gaps (between pages) to the earliest known bars
+                  const previousBar = firstBars.get(fetchID);
+                  const currentLastBar = bars.at(-1);
+                  if (previousBar && currentLastBar) {
+                    let lastTimestamp = currentLastBar.time;
+                    while (lastTimestamp + resolutionInMs < previousBar.time) {
+                      lastTimestamp += resolutionInMs;
+                      bars.push({
+                        time: lastTimestamp,
+                        open: currentLastBar.close,
+                        high: currentLastBar.close,
+                        low: currentLastBar.close,
+                        close: currentLastBar.close,
+                      });
+                    }
+                  }
+                  // record earliest bar info of this fetch
+                  const firstBar = bars.at(0);
+                  if (
+                    firstBar &&
+                    firstBar.time > (firstBars.get(fetchID)?.time ?? 0)
+                  ) {
+                    firstBars.set(fetchID, firstBar);
+                  }
                   // record most recent bar info of this fetch
                   const lastBar = bars.at(-1);
                   if (
