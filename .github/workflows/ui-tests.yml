@@ -8,24 +8,23 @@ env:
   GIT_PAT: ${{ secrets.GIT_PAT }}
   MNEMONIC: ${{ secrets.MNEMONIC }}
   MNEMONIC_MAINNET: ${{ secrets.MNEMONIC_MAINNET }}
+  MNEMONIC_METAMASK: ${{ secrets.MNEMONIC_METAMASK }}
   PATH_COSMOSTATION: './wallets/cosmostation'
   PATH_KEPLR: './wallets/keplr'
   PATH_LEAP: './wallets/leap'
   PATH_METAMASK: './wallets/metamask' 
+  PRIVATE_KEY_METAMASK: ${{ secrets.PRIVATE_KEY_METAMASK }}
+  PUBLIC_ADDRESS_CONTRACT_ETH: ${{ secrets.PUBLIC_ADDRESS_CONTRACT_ETH }}
   WALLET_PASSWORD: ${{ secrets.WALLET_PASSWORD }}
 
 jobs:
-  github-actions-testnet:
+  vercel-testnet:
     if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: 'main' 
-
       - name: Clone Playwright tests repository
-        run: git clone https://x-access-token:${{ secrets.GIT_PAT }}@github.com/neutron-org/neutron-end2end-tests.git
+        run: |
+          git clone https://x-access-token:${{ secrets.GIT_PAT }}@github.com/neutron-org/neutron-end2end-tests.git --branch main --single-branch
 
       - uses: actions/setup-node@v3
         with:
