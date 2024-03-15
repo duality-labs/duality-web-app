@@ -38,11 +38,23 @@ jobs:
         run: npx playwright install --with-deps
         working-directory: ./neutron-end2end-tests
 
+      - name: Download Preview URLs Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: preview-urls
+
+      - name: Extract Testnet Preview URL
+        id: extract-url
+        run: |
+          URL=$(grep -oP 'Preview URL: \K.*' netlify.txt | head -1)
+          echo "Extracted Preview URL: $URL"
+          echo "::set-output name=PREVIEW_URL::$URL"
+
       - name: Run Playwright tests for duality:ci
         run: yarn duality_testnet:ci
         working-directory: ./neutron-end2end-tests
         env:
-          BASE_URL: ${{ github.event.deployment_status.environment_url }}
+          BASE_URL: ${{ steps.extract-url.outputs.PREVIEW_URL }}
 
       - uses: actions/upload-artifact@v3
         if: always()
