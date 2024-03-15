@@ -2,7 +2,7 @@ name: UI Tests
 
 on:
   workflow_dispatch:
-  deployment_status:
+    workflow_run:
     workflows: ["Deploy Preview"]
     types:
       - completed
