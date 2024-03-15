@@ -313,7 +313,12 @@ export default function OrderBookChart({
                   ) {
                     lastBars.set(fetchID, lastBar);
                   }
-                  onHistoryCallback(bars, { noData: !bars.length });
+                  // note: don't claim "noData" unless you can be sure there is
+                  //       no more data. if the first page of data (5 hours)
+                  //       is empty and we declare "noData", it will not query
+                  //       for the next time period (the 5 hours before that)
+                  // todo: possibly add "most_recent_timestamp" data in indexer
+                  onHistoryCallback(bars, { noData: undefined });
                 },
                 onError: (e) => {
                   onErrorCallback(
