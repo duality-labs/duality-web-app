@@ -153,6 +153,11 @@ export class IndexerStream<DataRow = BaseDataRow> {
     const fetchOptions = { signal: this.abortController.signal };
     try {
       let knownHeight = 0;
+      // check for desired real-time: if query is open ended to the future
+      const isRealtimeRequest = !(
+        Number(url.searchParams.get('pagination.before')) ||
+        Number(url.searchParams.get('block_range.to_height'))
+      );
       // hack/fix: to control time limit behavior, assume the before timestamp
       //           is in the past as we can't candle future timestamp limits
       const toHeight = url.searchParams.get('pagination.before')
@@ -166,7 +171,7 @@ export class IndexerStream<DataRow = BaseDataRow> {
           // overwrite block height to request from (to long-poll next update)
           // note: known height is usually the chain height so the request
           //       will be answered when the next block of data is available)
-          if (knownHeight) {
+          if (isRealtimeRequest && knownHeight) {
             url.searchParams.set(
               'block_range.from_height',
               knownHeight.toFixed()
