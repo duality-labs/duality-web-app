@@ -9,7 +9,7 @@ type value = string | number;
 type BaseDataRow = FlattenSingularItems<[id: value, values: value | value[]]>;
 type BaseDataSet<DataRow extends BaseDataRow> = Map<DataRow['0'], DataRow['1']>;
 
-type IndexerPage<DataRow = BaseDataRow> = {
+export type IndexerPage<DataRow = BaseDataRow> = {
   shape:
     | [[string, string | string[]]]
     | [[[string, string | string[]]], [[string, string | string[]]]];

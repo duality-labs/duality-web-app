@@ -20,7 +20,10 @@ import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
-import { IndexerStreamAccumulateSingleDataSet } from '../../lib/web3/hooks/useIndexer';
+import {
+  IndexerPage,
+  IndexerStreamAccumulateSingleDataSet,
+} from '../../lib/web3/hooks/useIndexer';
 import { days, hours, minutes, seconds } from '../../lib/utils/time';
 
 const { REACT_APP__INDEXER_API = '', PROD } = import.meta.env;
@@ -276,7 +279,7 @@ export default function OrderBookChart({
             new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
               url,
               {
-                onCompleted: (data, height) => {
+                onCompleted: async (data, height) => {
                   stream.unsubscribe();
                   if (height > (knownHeights.get(fetchID) ?? 0)) {
                     knownHeights.set(fetchID, height);
@@ -313,12 +316,31 @@ export default function OrderBookChart({
                   ) {
                     lastBars.set(fetchID, lastBar);
                   }
-                  // note: don't claim "noData" unless you can be sure there is
-                  //       no more data. if the first page of data (5 hours)
-                  //       is empty and we declare "noData", it will not query
-                  //       for the next time period (the 5 hours before that)
-                  // todo: possibly add "most_recent_timestamp" data in indexer
-                  onHistoryCallback(bars, { noData: undefined });
+                  // if no bars were received: determine if there are other bars
+                  // that can be fetched in a subsequent query
+                  if (!bars.length) {
+                    const previousDataURL = getFetchURL(
+                      tokenIdA,
+                      tokenIdB,
+                      resolution,
+                      {
+                        'pagination.before': periodParams.from?.toFixed(0),
+                        'pagination.limit': '1',
+                      }
+                    );
+                    const previousData: IndexerPage<TimeSeriesRow> =
+                      await fetch(previousDataURL).then((response) =>
+                        response.json()
+                      );
+                    const previousUnixTimestamp = previousData.data[0]?.[0];
+                    // inform the chart that there is more data starting at this
+                    // next timestamp (or not): it will adjust the next query
+                    return onHistoryCallback(bars, {
+                      noData: !previousUnixTimestamp,
+                      nextTime: previousUnixTimestamp || null,
+                    });
+                  }
+                  onHistoryCallback(bars);
                 },
                 onError: (e) => {
                   onErrorCallback(
