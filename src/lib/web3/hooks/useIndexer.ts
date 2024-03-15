@@ -513,9 +513,15 @@ async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
 ): Promise<BaseDataSet<DataRow> | BaseDataSet<DataRow>[]> {
   return new Promise((resolve, reject) => {
     const url = new URL(baseURL, REACT_APP__INDEXER_API);
-    // set max height to now, which will cause the request to end at now height
-    const before = Date.now() / 1000;
-    url.searchParams.append('pagination.before', before.toFixed(0));
+    // limit max height to stop the request from streaming realtime updates
+    const isRealtimeRequest = !(
+      Number(url.searchParams.get('pagination.before')) ||
+      Number(url.searchParams.get('block_range.to_height'))
+    );
+    if (isRealtimeRequest) {
+      const before = Date.now() / 1000;
+      url.searchParams.append('pagination.before', before.toFixed(0));
+    }
     // add stream listener and resolve promise on completion
     const stream = new IndexerClass<DataRow>(
       url,
