@@ -168,20 +168,22 @@ export class IndexerStream<DataRow = BaseDataRow> {
         let retries = 0;
         let nextKey: string | undefined = undefined;
         do {
+          // create new URL that can be mutated without mutating original URL
+          const loopURL = new URL(url);
           // overwrite block height to request from (to long-poll next update)
           // note: known height is usually the chain height so the request
           //       will be answered when the next block of data is available)
           if (isRealtimeRequest && knownHeight) {
-            url.searchParams.set(
+            loopURL.searchParams.set(
               'block_range.from_height',
               knownHeight.toFixed()
             );
           }
           // add next page key if not all data was returned by last request
           if (nextKey) {
-            url.searchParams.set('pagination.key', nextKey);
+            loopURL.searchParams.set('pagination.key', nextKey);
           }
-          const response = await fetch(url.toString(), fetchOptions);
+          const response = await fetch(loopURL.toString(), fetchOptions);
           if (response.status === 200) {
             const {
               data = [],
