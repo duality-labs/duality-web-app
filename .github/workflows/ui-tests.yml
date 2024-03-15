@@ -3,6 +3,9 @@ name: UI Tests
 on:
   workflow_dispatch:
   deployment_status:
+    workflows: ["Deploy Preview"]
+    types:
+      - completed
 
 env:
   GIT_PAT: ${{ secrets.GIT_PAT }}
