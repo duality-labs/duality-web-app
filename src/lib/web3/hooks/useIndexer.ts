@@ -9,7 +9,7 @@ type value = string | number;
 type BaseDataRow = FlattenSingularItems<[id: value, values: value | value[]]>;
 type BaseDataSet<DataRow extends BaseDataRow> = Map<DataRow['0'], DataRow['1']>;
 
-type IndexerPage<DataRow = BaseDataRow> = {
+export type IndexerPage<DataRow = BaseDataRow> = {
   shape:
     | [[string, string | string[]]]
     | [[[string, string | string[]]], [[string, string | string[]]]];
@@ -153,6 +153,11 @@ export class IndexerStream<DataRow = BaseDataRow> {
     const fetchOptions = { signal: this.abortController.signal };
     try {
       let knownHeight = 0;
+      // check for desired real-time: if query is open ended to the future
+      const isRealtimeRequest = !(
+        Number(url.searchParams.get('pagination.before')) ||
+        Number(url.searchParams.get('block_range.to_height'))
+      );
       // hack/fix: to control time limit behavior, assume the before timestamp
       //           is in the past as we can't candle future timestamp limits
       const toHeight = url.searchParams.get('pagination.before')
@@ -163,20 +168,22 @@ export class IndexerStream<DataRow = BaseDataRow> {
         let retries = 0;
         let nextKey: string | undefined = undefined;
         do {
+          // create new URL that can be mutated without mutating original URL
+          const loopURL = new URL(url);
+          // add next page key if not all data was returned by last request
+          if (nextKey) {
+            loopURL.searchParams.set('pagination.key', nextKey);
+          }
           // overwrite block height to request from (to long-poll next update)
           // note: known height is usually the chain height so the request
           //       will be answered when the next block of data is available)
-          if (knownHeight) {
-            url.searchParams.set(
+          else if (isRealtimeRequest && knownHeight) {
+            loopURL.searchParams.set(
               'block_range.from_height',
               knownHeight.toFixed()
             );
           }
-          // add next page key if not all data was returned by last request
-          if (nextKey) {
-            url.searchParams.set('pagination.key', nextKey);
-          }
-          const response = await fetch(url.toString(), fetchOptions);
+          const response = await fetch(loopURL.toString(), fetchOptions);
           if (response.status === 200) {
             const {
               data = [],
@@ -506,9 +513,15 @@ async function fetchDataFromIndexer<DataRow extends BaseDataRow>(
 ): Promise<BaseDataSet<DataRow> | BaseDataSet<DataRow>[]> {
   return new Promise((resolve, reject) => {
     const url = new URL(baseURL, REACT_APP__INDEXER_API);
-    // set max height to now, which will cause the request to end at now height
-    const before = Date.now() / 1000;
-    url.searchParams.append('pagination.before', before.toFixed(0));
+    // limit max height to stop the request from streaming realtime updates
+    const isRealtimeRequest = !(
+      Number(url.searchParams.get('pagination.before')) ||
+      Number(url.searchParams.get('block_range.to_height'))
+    );
+    if (isRealtimeRequest) {
+      const before = Date.now() / 1000;
+      url.searchParams.append('pagination.before', before.toFixed(0));
+    }
     // add stream listener and resolve promise on completion
     const stream = new IndexerClass<DataRow>(
       url,

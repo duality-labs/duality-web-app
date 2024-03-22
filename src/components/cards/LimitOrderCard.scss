@@ -49,7 +49,7 @@
     }
   }
 
-  .token-amount-input {
+  .numeric-value-input {
     color: hsl(218deg, 11%, 65%);
     background-color: hsla(216, 20%, 25%, 1);
     border: 1px solid var(--page-card-border);
@@ -61,6 +61,15 @@
       text-align: right;
       flex: 1 1 auto;
       width: 80px;
+      // disable spin buttons on desktop
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        display: none; /* Webkit/Safari/Chrome/Edge */
+      }
+      &[type='number'] {
+        appearance: textfield;
+        -moz-appearance: textfield; /* Firefox */
+      }
     }
     // fix vertical alignment
     align-items: baseline;
