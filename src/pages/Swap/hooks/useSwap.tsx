@@ -93,7 +93,7 @@ export function useSwap(denoms: string[]): [
     isValidating: boolean;
     error?: string;
   },
-  (request: MsgPlaceLimitOrder, gasEstimate: number) => void
+  (request: MsgPlaceLimitOrder, gasEstimate: number) => Promise<void>
 ] {
   const [data, setData] = useState<MsgPlaceLimitOrderResponse>();
   const [validating, setValidating] = useState(false);
@@ -103,7 +103,7 @@ export function useSwap(denoms: string[]): [
   const { data: tokenByDenom } = useTokenByDenom(denoms);
 
   const sendRequest = useCallback(
-    (request: MsgPlaceLimitOrder, gasEstimate: number) => {
+    async (request: MsgPlaceLimitOrder, gasEstimate: number) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
       const {
@@ -142,7 +142,7 @@ export function useSwap(denoms: string[]): [
       if (!tokenInToken) return onError('Token in was not found');
       if (!tokenOutToken) return onError('Token out was not found');
 
-      createTransactionToasts(
+      await createTransactionToasts(
         () => {
           return sendSwap({ wallet, address }, request, gasEstimate);
         },
