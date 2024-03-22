@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/duality-labs/duality-web-app/compare/v2.2.1...v2.3.0) (2024-03-22)
+
+
+### Features
+
+* improve Orderbook page UI ([#527](https://github.com/duality-labs/duality-web-app/issues/527)) ([3f5e90a](https://github.com/duality-labs/duality-web-app/commit/3f5e90a5980fcd68a9ae1b43f7a66229bff93c97))
+
 ## [2.2.1](https://github.com/duality-labs/duality-web-app/compare/v2.2.0...v2.2.1) (2024-03-13)
 
 
