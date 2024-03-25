@@ -20,7 +20,7 @@ env:
   WALLET_PASSWORD: ${{ secrets.WALLET_PASSWORD }}
 
 jobs:
-  vercel-testnet:
+  github-action-testnet:
     if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     steps:
