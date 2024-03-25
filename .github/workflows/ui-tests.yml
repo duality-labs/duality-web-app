@@ -40,6 +40,25 @@ jobs:
         run: npx playwright install --with-deps
         working-directory: ./neutron-end2end-tests
 
+      - name: Check Available Artifacts
+        id: check_artifacts
+        run: |
+          ARTIFACTS=$(curl \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts")
+          echo "$ARTIFACTS"
+          echo "ARTIFACTS_JSON<<EOF" >> $GITHUB_ENV
+          echo "$ARTIFACTS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Log Artifact Names
+        run: |
+          echo "Artifacts JSON: $ARTIFACTS_JSON"
+          ARTIFACT_NAMES=$(echo $ARTIFACTS_JSON | jq -r '.artifacts | .[] | .name')
+          echo "Available Artifacts: $ARTIFACT_NAMES"
+
+
       - name: Download Preview URLs Artifact
         uses: actions/download-artifact@v2
         with:
@@ -65,20 +84,3 @@ jobs:
           path: ./neutron-end2end-tests/playwright-report/
           retention-days: 2
 
-      - name: Check Available Artifacts
-        id: check_artifacts
-        run: |
-          ARTIFACTS=$(curl \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts")
-          echo "$ARTIFACTS"
-          echo "ARTIFACTS_JSON<<EOF" >> $GITHUB_ENV
-          echo "$ARTIFACTS" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Log Artifact Names
-        run: |
-          echo "Artifacts JSON: $ARTIFACTS_JSON"
-          ARTIFACT_NAMES=$(echo $ARTIFACTS_JSON | jq -r '.artifacts | .[] | .name')
-          echo "Available Artifacts: $ARTIFACT_NAMES"
