@@ -2,9 +2,9 @@ name: UI Tests
 
 on:
     workflow_dispatch:
-    workflow_run:
-      workflows: ["Deploy Preview"]
-      types: [completed]
+    pull_request:
+      branches: [main]
+      types: [opened, synchronize, labeled]
 
 env:
   GIT_PAT: ${{ secrets.GIT_PAT }}
@@ -21,7 +21,7 @@ env:
 
 jobs:
   github-action-testnet:
-    if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'
+    if: (!github.event.label && contains(github.event.pull_request.labels.*.name, 'deploy preview')) || github.event.label.name == 'deploy preview'
     runs-on: ubuntu-latest
     steps:
       - name: Clone Playwright tests repository
