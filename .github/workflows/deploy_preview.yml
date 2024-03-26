@@ -95,7 +95,7 @@ jobs:
         name: Create GitHub Preview deployment
         id: deployment
         with:
-            token: '${{ github.token }}'
+            token: '${{ secrets.GIT_PAT }}'
             environment-url: ${{ steps.netlify_deploy_testnet_preview.outputs.NETLIFY_PREVIEW_URL }}
             environment: Preview
             initial-status: success
