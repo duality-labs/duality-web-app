@@ -6,12 +6,14 @@ on:
     types: [opened, synchronize, labeled]
 
 jobs:
-  deployment:
+  build_preview:
     # require 'deploy preview' label
     # but do not run if already labeled with 'deploy preview' and a different label was just added
     # eg. a PR that already has a preview has the label "released" applied by semantic release bot
     if: (!github.event.label && contains(github.event.pull_request.labels.*.name, 'deploy preview')) || github.event.label.name == 'deploy preview'
     runs-on: ubuntu-latest
+    permissions:
+      deployments: write
 
     steps:
       - name: Checkout branch head (not merged head)
@@ -166,3 +168,11 @@ jobs:
         with:
           name: preview-urls
           path: netlify.txt
+
+      - uses: chrnorm/deployment-action@v2
+        name: Create GitHub deployment
+        id: deployment
+        with:
+          token: '${{ github.token }}'
+          environment-url: ${{ steps.netlify_deploy_testnet_preview.outputs.NETLIFY_PREVIEW_URL }}
+          environment: Preview
