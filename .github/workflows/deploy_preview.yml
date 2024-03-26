@@ -12,9 +12,9 @@ jobs:
     # eg. a PR that already has a preview has the label "released" applied by semantic release bot
     if: (!github.event.label && contains(github.event.pull_request.labels.*.name, 'deploy preview')) || github.event.label.name == 'deploy preview'
     runs-on: ubuntu-latest
-    permissions:
-      deployments: write
-      issues: write
+    # permissions:
+    #   deployments: write
+    #   issues: write
 
     steps:
       - name: Checkout branch head (not merged head)
