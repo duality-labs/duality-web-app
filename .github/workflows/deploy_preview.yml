@@ -90,6 +90,14 @@ jobs:
           build_command: echo "already built app"
           install_command: echo "already installed dependencies"
 
+      - uses: chrnorm/deployment-action@v2
+        name: Create GitHub Preview deployment
+        id: deployment
+        with:
+            token: '${{ github.token }}'
+            environment-url: ${{ steps.netlify_deploy_testnet_preview.outputs.NETLIFY_PREVIEW_URL }}
+            environment: Preview
+            initial-status: success
       - name: Clear build folder
         run: rm -rf build
 
@@ -136,11 +144,3 @@ jobs:
           echo "Logs: ${{ steps.netlify_deploy_beta_preview.outputs.NETLIFY_LOGS_URL }}" >> netlify.txt
           gh pr comment ${{ github.event.pull_request.number }} --body-file netlify.txt || true
 
-      - uses: chrnorm/deployment-action@v2
-        name: Create GitHub deployment
-        id: deployment
-        with:
-          token: '${{ github.token }}'
-          environment-url: ${{ steps.netlify_deploy_testnet_preview.outputs.NETLIFY_PREVIEW_URL }}
-          environment: Preview
-          initial-status: success
