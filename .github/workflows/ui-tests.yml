@@ -19,7 +19,7 @@ env:
 
 jobs:
   github-action-testnet:
-    if: github.event.deployment_status.state == 'success'
+    if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'Success'
     runs-on: ubuntu-latest
     steps:
       - name: Clone Playwright tests repository
