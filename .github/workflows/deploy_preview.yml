@@ -6,7 +6,7 @@ on:
     types: [opened, synchronize, labeled]
 
 jobs:
-  build_preview:
+  deployment:
     # require 'deploy preview' label
     # but do not run if already labeled with 'deploy preview' and a different label was just added
     # eg. a PR that already has a preview has the label "released" applied by semantic release bot
