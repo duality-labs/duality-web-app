@@ -12,6 +12,9 @@ jobs:
     # eg. a PR that already has a preview has the label "released" applied by semantic release bot
     if: (!github.event.label && contains(github.event.pull_request.labels.*.name, 'deploy preview')) || github.event.label.name == 'deploy preview'
     runs-on: ubuntu-latest
+    # permissions:
+    #   deployments: write
+    #   issues: write
 
     steps:
       - name: Checkout branch head (not merged head)
@@ -88,6 +91,14 @@ jobs:
           build_command: echo "already built app"
           install_command: echo "already installed dependencies"
 
+      - uses: chrnorm/deployment-action@v2
+        name: Create GitHub Preview deployment
+        id: deployment
+        with:
+            token: '${{ secrets.GIT_PAT }}'
+            environment-url: ${{ steps.netlify_deploy_testnet_preview.outputs.NETLIFY_PREVIEW_URL }}
+            environment: Preview
+            initial-status: success
       - name: Clear build folder
         run: rm -rf build
 
@@ -133,3 +144,4 @@ jobs:
           echo "Preview URL: ${{ steps.netlify_deploy_beta_preview.outputs.NETLIFY_PREVIEW_URL }}" >> netlify.txt
           echo "Logs: ${{ steps.netlify_deploy_beta_preview.outputs.NETLIFY_LOGS_URL }}" >> netlify.txt
           gh pr comment ${{ github.event.pull_request.number }} --body-file netlify.txt || true
+
