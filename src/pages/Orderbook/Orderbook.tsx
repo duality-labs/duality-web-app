@@ -45,7 +45,7 @@ function Orderbook() {
             )}
           </div>
         </div>
-        <div className="col">
+        {/* <div className="col">
           <TabsCard
             className="flex"
             style={{
@@ -75,7 +75,7 @@ function Orderbook() {
         </div>
         <div className="col">
           <LimitOrderCard tokenA={tokenA} tokenB={tokenB} />
-        </div>
+        </div> */}
       </div>
       <div className="orderbook-footer row">
         <OrderbookFooter tokenA={tokenA} tokenB={tokenB} />

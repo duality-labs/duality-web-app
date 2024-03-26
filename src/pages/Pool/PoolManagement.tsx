@@ -1331,8 +1331,8 @@ export default function PoolManagement({
       <div className="mt-3">
         <div className="col flex gap-lg">
           <div className="col row-lg gap-4 col-slide-container gutter-x-4">
-            {addLiquidityForm}
-            <div className="col flex gap-4">
+            {/* {addLiquidityForm} */}
+            <div className="col flex gap-4 ml-4">
               {tokenA && tokenB && currentPriceIndexFromTicks === undefined && (
                 <div className="page-card col">
                   <div className="h4">Select Starting Price</div>
