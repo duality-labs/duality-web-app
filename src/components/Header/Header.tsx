@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link, LinkProps, useResolvedPath, useMatch } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faExternalLink } from '@fortawesome/free-solid-svg-icons';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
 import { ThemeContext } from '../../lib/theme/themeProvider';
@@ -97,21 +97,40 @@ export default function Header() {
           </div>
           <div className="col col-lg">
             <div className="row gap-4 ml-5">
-              {Object.entries(pageLinkMap).map(([link, description]) => (
-                <div className="col" key={link}>
-                  <NavLink
-                    className="button ghost-button"
-                    to={link}
-                    onClick={closeMenuAndScrollToTop}
-                  >
-                    {description}
-                  </NavLink>
-                </div>
-              ))}
+              {Object.entries(pageLinkMap)
+                // add relative links
+                .filter(([link]) => link.startsWith('/'))
+                .map(([link, description]) => (
+                  <div className="col" key={link}>
+                    <NavLink
+                      className="button ghost-button"
+                      to={link}
+                      onClick={closeMenuAndScrollToTop}
+                    >
+                      {description}
+                    </NavLink>
+                  </div>
+                ))}
             </div>
           </div>
           <div className="col ml-auto">
             <div className="row gap-4">
+              {Object.entries(pageLinkMap)
+                // add external links
+                .filter(([link]) => !link.startsWith('/'))
+                .map(([link, description]) => (
+                  <div className="col col-lg" key={link}>
+                    <a
+                      className="button ghost-button"
+                      href={link}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {description}{' '}
+                      <FontAwesomeIcon className="ml-2" icon={faExternalLink} />
+                    </a>
+                  </div>
+                ))}
               <div className="col hide">
                 <button
                   className="link no-blend"
@@ -158,13 +177,27 @@ export default function Header() {
           <Drawer className="pt-4" expanded={menuIsOpen}>
             {Object.entries(pageLinkMap).map(([link, description]) => (
               <div className="col" key={link}>
-                <NavLink
-                  className="button ghost-button"
-                  to={link}
-                  onClick={closeMenuAndScrollToTop}
-                >
-                  {description}
-                </NavLink>
+                {link.startsWith('/') ? (
+                  // relative links
+                  <NavLink
+                    className="button ghost-button"
+                    to={link}
+                    onClick={closeMenuAndScrollToTop}
+                  >
+                    {description}
+                  </NavLink>
+                ) : (
+                  // external links
+                  <a
+                    className="button ghost-button"
+                    href={link}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {description}{' '}
+                    <FontAwesomeIcon className="ml-2" icon={faExternalLink} />
+                  </a>
+                )}
               </div>
             ))}
           </Drawer>
