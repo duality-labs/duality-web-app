@@ -47,7 +47,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: playwright-report-ui
+          name: playwright-report-duality
           path: ./neutron-end2end-tests/playwright-report/
           retention-days: 2
 
