@@ -7,7 +7,6 @@ on:
 env:
   MNEMONIC: ${{ secrets.MNEMONIC }}
   MNEMONIC_MAINNET: ${{ secrets.MNEMONIC_MAINNET }}
-  WALLET_PASSWORD: ${{ secrets.WALLET_PASSWORD }}
 
 jobs:
   github-action-testnet:
