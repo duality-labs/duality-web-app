@@ -15,6 +15,11 @@ header,
     z-index: 3;
   }
 
+  // don't overflow on buttons
+  nav .button {
+    white-space: nowrap;
+  }
+
   // add header background as only being visible when scrolled (over elements)
   // or when opened on mobile (also over other elements)
   & > .container,
