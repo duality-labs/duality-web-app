@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Clone Playwright tests repository
         run: |
-          git clone https://x-access-token:${{ secrets.GIT_PAT }}@github.com/neutron-org/neutron-end2end-tests.git --branch main --single-branch
+          git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/neutron-org/neutron-end2end-tests.git --branch main --single-branch
 
       - uses: actions/setup-node@v3
         with:
