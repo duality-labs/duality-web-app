@@ -10,6 +10,7 @@ export const pageLinkMap = {
   }),
   '/portfolio': 'Portfolio',
   '/bridge': 'Bridge',
+  'https://duality.gitbook.io/duality-documentation/user-interface': 'Docs',
 };
 
 export const defaultPage = Object.keys(pageLinkMap).at(0) ?? '/';

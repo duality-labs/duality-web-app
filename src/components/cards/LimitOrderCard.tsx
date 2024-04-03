@@ -603,15 +603,16 @@ function NumericInputRow({
 
   return (
     <div
-      className={['token-amount-input flex row py-3 px-4', className]
+      className={['numeric-value-input flex row py-3 px-4', className]
         .filter(Boolean)
         .join(' ')}
     >
       {prefix && (
-        <div className="token-amount-input__prefix mr-3">{prefix}</div>
+        <div className="numeric-value-input__prefix mr-3">{prefix}</div>
       )}
       <input
-        className="token-amount-input__input flex"
+        type="number"
+        className="numeric-value-input__input flex"
         placeholder="0"
         value={internalValue}
         onInput={() => maybeUpdate(inputRef.current?.value || '0', onInput)}
@@ -624,7 +625,7 @@ function NumericInputRow({
         style={readOnly ? { outline: 'none' } : undefined}
       ></input>
       {suffix && (
-        <div className="token-amount-input__suffix ml-3">{suffix}</div>
+        <div className="numeric-value-input__suffix ml-3">{suffix}</div>
       )}
     </div>
   );

@@ -11,6 +11,7 @@ import {
   LibrarySymbolInfo,
   SearchSymbolResultItem,
   Bar,
+  Timezone,
 } from 'charting_library';
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
@@ -19,7 +20,11 @@ import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { TimeSeriesRow } from '../../components/stats/utils';
-import { IndexerStreamAccumulateSingleDataSet } from '../../lib/web3/hooks/useIndexer';
+import {
+  IndexerPage,
+  IndexerStreamAccumulateSingleDataSet,
+} from '../../lib/web3/hooks/useIndexer';
+import { days, hours, minutes, seconds } from '../../lib/utils/time';
 
 const { REACT_APP__INDEXER_API = '', PROD } = import.meta.env;
 
@@ -28,12 +33,14 @@ const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
   autosize: true,
   container: '',
   locale: 'en',
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone as Timezone,
   disabled_features: ['use_localstorage_for_settings'],
   enabled_features: ['study_templates'],
   charts_storage_url: 'https://saveload.tradingview.com',
   charts_storage_api_version: '1.1',
   // path to static assets of the charting library
   library_path: '/charting_library/',
+  theme: 'dark',
 };
 
 interface RequestQuery {
@@ -120,9 +127,20 @@ export default function OrderBookChart({
       '1D': 'day', // day
     };
 
+    const resolutionInMsMap: {
+      [tradingViewResolution: string]: number;
+    } = {
+      '1S': 1 * seconds,
+      '1': 1 * minutes,
+      '60': 1 * hours,
+      '1D': 1 * days,
+    };
+
     // keep track of data subscription state here
     type FetchID = string;
     type SubscriberUUID = string;
+    const firstBars: Map<FetchID, Bar> = new Map();
+    const lastBars: Map<FetchID, Bar> = new Map();
     const knownHeights: Map<FetchID, number> = new Map();
     const streams: Map<
       SubscriberUUID,
@@ -262,15 +280,92 @@ export default function OrderBookChart({
             new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(
               url,
               {
-                onCompleted: (data, height) => {
+                onCompleted: async (data, height) => {
                   stream.unsubscribe();
-                  knownHeights.set(fetchID, height);
-                  const bars: Bar[] = Array.from(data)
-                    // note: the data needs to be in chronological order
-                    // and our API delivers results in reverse-chronological order
-                    .reverse()
-                    .map(getBarFromTimeSeriesRow);
-                  onHistoryCallback(bars, { noData: !bars.length });
+                  if (height > (knownHeights.get(fetchID) ?? 0)) {
+                    knownHeights.set(fetchID, height);
+                  }
+                  const resolutionInMs = resolutionInMsMap[resolution];
+                  const bars: Bar[] = Array.from(data).reduceRight<Bar[]>(
+                    (acc, data) => {
+                      const bar = getBarFromTimeSeriesRow(data);
+                      // fill in any gaps with the last close price
+                      const lastBar = acc[acc.length - 1];
+                      const extraBars: Bar[] = [];
+                      if (lastBar && resolutionInMs) {
+                        let lastTimestamp = lastBar.time;
+                        while (lastTimestamp + resolutionInMs < bar.time) {
+                          lastTimestamp += resolutionInMs;
+                          extraBars.push({
+                            time: lastTimestamp,
+                            open: lastBar.close,
+                            high: lastBar.close,
+                            low: lastBar.close,
+                            close: lastBar.close,
+                          });
+                        }
+                      }
+                      return [...acc, ...extraBars, bar];
+                    },
+                    []
+                  );
+                  // fill in any gaps (between pages) to the earliest known bars
+                  const previousBar = firstBars.get(fetchID);
+                  const currentLastBar = bars.at(-1);
+                  if (previousBar && currentLastBar) {
+                    let lastTimestamp = currentLastBar.time;
+                    while (lastTimestamp + resolutionInMs < previousBar.time) {
+                      lastTimestamp += resolutionInMs;
+                      bars.push({
+                        time: lastTimestamp,
+                        open: currentLastBar.close,
+                        high: currentLastBar.close,
+                        low: currentLastBar.close,
+                        close: currentLastBar.close,
+                      });
+                    }
+                  }
+                  // record earliest bar info of this fetch
+                  const firstBar = bars.at(0);
+                  if (
+                    firstBar &&
+                    firstBar.time > (firstBars.get(fetchID)?.time ?? 0)
+                  ) {
+                    firstBars.set(fetchID, firstBar);
+                  }
+                  // record most recent bar info of this fetch
+                  const lastBar = bars.at(-1);
+                  if (
+                    lastBar &&
+                    lastBar.time > (lastBars.get(fetchID)?.time ?? 0)
+                  ) {
+                    lastBars.set(fetchID, lastBar);
+                  }
+                  // if no bars were received: determine if there are other bars
+                  // that can be fetched in a subsequent query
+                  if (!bars.length) {
+                    const previousDataURL = getFetchURL(
+                      tokenIdA,
+                      tokenIdB,
+                      resolution,
+                      {
+                        'pagination.before': periodParams.from?.toFixed(0),
+                        'pagination.limit': '1',
+                      }
+                    );
+                    const previousData: IndexerPage<TimeSeriesRow> =
+                      await fetch(previousDataURL).then((response) =>
+                        response.json()
+                      );
+                    const previousUnixTimestamp = previousData.data[0]?.[0];
+                    // inform the chart that there is more data starting at this
+                    // next timestamp (or not): it will adjust the next query
+                    return onHistoryCallback(bars, {
+                      noData: !previousUnixTimestamp,
+                      nextTime: previousUnixTimestamp || null,
+                    });
+                  }
+                  onHistoryCallback(bars);
                 },
                 onError: (e) => {
                   onErrorCallback(
@@ -297,11 +392,37 @@ export default function OrderBookChart({
           const stream =
             new IndexerStreamAccumulateSingleDataSet<TimeSeriesRow>(url, {
               onUpdate: (dataUpdates) => {
+                let lastBar = lastBars.get(fetchID);
+                const resolutionInMs = resolutionInMsMap[resolution];
                 // note: the data needs to be in chronological order
                 // and our API delivers results in reverse-chronological order
                 const chronologicalUpdates = dataUpdates.reverse();
                 for (const row of chronologicalUpdates) {
-                  onRealtimeCallback(getBarFromTimeSeriesRow(row));
+                  const bar = getBarFromTimeSeriesRow(row);
+                  // add extra empty bars if there would be a gap in time
+                  if (lastBar && resolutionInMs) {
+                    let lastTimestamp = lastBar.time;
+                    while (lastTimestamp + resolutionInMs < bar.time) {
+                      lastTimestamp += resolutionInMs;
+                      onRealtimeCallback({
+                        time: lastTimestamp,
+                        open: lastBar.close,
+                        high: lastBar.close,
+                        low: lastBar.close,
+                        close: lastBar.close,
+                      });
+                    }
+                  }
+                  // add only bars that are new or updates to last timestamp
+                  if (!lastBar || bar.time >= lastBar.time) {
+                    onRealtimeCallback(bar);
+                  }
+                  // record last timestamp (to state, and shortcut in-loop var)
+                  lastBar = bar;
+                }
+                // record last bar to state
+                if (lastBar) {
+                  lastBars.set(fetchID, lastBar);
                 }
               },
               onError: (e) => {
