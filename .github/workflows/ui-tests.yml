@@ -1,0 +1,44 @@
+name: UI Tests
+
+on:
+    workflow_dispatch:
+    deployment_status:
+
+env:
+  MNEMONIC: ${{ secrets.MNEMONIC }}
+  MNEMONIC_MAINNET: ${{ secrets.MNEMONIC_MAINNET }}
+
+jobs:
+  github-action-testnet:
+    if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone Playwright tests repository
+        run: |
+          git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/neutron-org/neutron-end2end-tests.git --branch main --single-branch
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: yarn install --immutable
+        working-directory: ./neutron-end2end-tests
+        
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+        working-directory: ./neutron-end2end-tests
+
+      - name: Run Playwright tests for duality
+        run: yarn duality_testnet:ci
+        working-directory: ./neutron-end2end-tests
+        env:
+          BASE_URL: ${{ github.event.deployment_status.environment_url }}
+
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report-duality-ui
+          path: ./neutron-end2end-tests/playwright-report/
+          retention-days: 2
+
