@@ -7,10 +7,14 @@ import TableCard, { TableCardProps } from './TableCard';
 import AssetIconPair from '../assets/AssetIconPair';
 import AssetSymbol from '../assets/AssetName';
 
-import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
+import { useStatTVL, useStatVolatility, useStatVolume } from '../stats/hooks';
 
-import { formatAmount, formatCurrency } from '../../lib/utils/number';
+import {
+  formatAmount,
+  formatCurrency,
+  formatUnavailableStates,
+} from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
@@ -100,13 +104,13 @@ export default function PoolsTableCard<T extends string | number>({
             <tr>
               <th>Pool</th>
               <th>TVL</th>
-              <th>Volume (7 days)</th>
+              <th>Volume (24h)</th>
               <th>Volatility (7 days)</th>
             </tr>
           </thead>
           <tbody>
             {filteredPoolsList.map((row: PoolTableRow) => {
-              const [pairId, token0, token1, reserves0, reserves1] = row;
+              const [pairId, token0, token1] = row;
               const onRowClick:
                 | MouseEventHandler<HTMLButtonElement>
                 | undefined = onTokenPairClick
@@ -118,8 +122,6 @@ export default function PoolsTableCard<T extends string | number>({
                   key={pairId}
                   token0={token0}
                   token1={token1}
-                  reserves0={reserves0}
-                  reserves1={reserves1}
                   onClick={onRowClick}
                 />
               );
@@ -149,30 +151,15 @@ export default function PoolsTableCard<T extends string | number>({
 function PairRow({
   token0,
   token1,
-  reserves0 = 0,
-  reserves1 = 0,
   onClick,
 }: {
   token0: Token;
   token1: Token;
-  reserves0: number;
-  reserves1: number;
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
-  const {
-    isValidating,
-    data: [price0, price1],
-  } = useSimplePrice([token0, token1]);
-
-  const [value0, value1] = useMemo<[number, number]>(() => {
-    if (price0 && price1) {
-      return [
-        Number(getDisplayDenomAmount(token0, reserves0)) * price0 || 0,
-        Number(getDisplayDenomAmount(token1, reserves1)) * price1 || 0,
-      ];
-    }
-    return [0, 0];
-  }, [price0, price1, token0, reserves0, token1, reserves1]);
+  const [, tvl] = useStatTVL(token0, token1);
+  const [, volume] = useStatVolume(token0, token1);
+  const [, volatility] = useStatVolatility(token0, token1);
 
   if (token0 && token1) {
     return (
@@ -181,15 +168,11 @@ function PairRow({
           <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
         {/* TVL col */}
-        <td>
-          {isValidating && !value0 && !value1
-            ? '...'
-            : formatCurrency(value0 + value1)}
-        </td>
-        {/* Volume (7 days) col */}
-        <td>-</td>
+        <td>{formatUnavailableStates(tvl, formatCurrency)}</td>
+        {/* Volume (24 hours) col */}
+        <td>{formatUnavailableStates(volume, formatCurrency)}</td>
         {/* Volatility (7 days) col */}
-        <td>-</td>
+        <td>{formatUnavailableStates(volatility, formatAmount)}</td>
       </tr>
     );
   }
