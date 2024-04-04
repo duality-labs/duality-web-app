@@ -41,6 +41,8 @@ interface AccumulatorOptions {
   // optional value to remove from accumulator maps
   // (0 values should be removed from liquidity maps)
   mapEntryRemovalValue?: 0;
+  // optional initial setting of the accumulateUpdates function
+  accumulateUpdates?: typeof accumulateUpdates;
 }
 export class IndexerStream<DataRow = BaseDataRow> {
   // use single AbortController for all the requests
@@ -456,8 +458,8 @@ function useIndexerStream<
   // define subscription callback which may or may not be used in this component
   // it is passed to useSWRSubscription to handle if the subscription should be
   // created/held/destroyed as multiple components may listen for the same data
-  const subscribe: SWRSubscription<string, DataSet | DataSet[], Error> = (
-    url,
+  const subscribe: SWRSubscription<string[], DataSet | DataSet[], Error> = (
+    [url],
     { next }
   ) => {
     const stream = new IndexerClass<DataRow>(
@@ -473,11 +475,19 @@ function useIndexerStream<
       // so this has been restricted through types
       opts
     );
+    if (opts?.accumulateUpdates) {
+      stream.accumulateUpdates = opts.accumulateUpdates;
+    }
     return () => stream.unsubscribe();
   };
 
   // return cached subscription data
-  return useSWRSubscription<DataSet | DataSet[], Error>(`${url}`, subscribe);
+  return useSWRSubscription<DataSet | DataSet[], Error>(
+    // create key from URL and options
+    [`${url}`, IndexerClass, ...Object.entries(opts || {}).flat()],
+    // the subscription object will differ for any given options
+    subscribe
+  );
 }
 
 // higher-level hook to stream real-time DataSet of Indexer URL
@@ -509,29 +519,11 @@ export function useIndexerStreamLastUpdateOfSingleDataSet<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
 >(url: URL | string | undefined, opts?: AccumulatorOptions) {
-  const subscribe: SWRSubscription<string[], DataSet, Error> = (
-    [url],
-    { next }
-  ) => {
-    const stream = new IndexerStreamAccumulateSingleDataSet<DataRow>(
-      url,
-      {
-        onAccumulated: (dataSet) => {
-          next(null, dataSet as DataSet);
-        },
-        onError: (error) => next(error),
-      },
-      opts
-    );
-    stream.accumulateUpdates = accumulateLastUpdateOnly;
-    return () => stream.unsubscribe();
-  };
-
   // return cached subscription data
-  return useSWRSubscription<DataSet, Error>(
-    [`${url}`, 'last-update'],
-    subscribe
-  );
+  return useIndexerStreamOfSingleDataSet<DataRow, DataSet>(url, {
+    accumulateUpdates: accumulateLastUpdateOnly,
+    ...opts,
+  });
 }
 
 // add higher-level functions to fetch multiple pages of data as "one request"
