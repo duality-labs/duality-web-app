@@ -27,11 +27,12 @@ function useTimeSeriesData(
   return useMemo<TimeSeriesRow[] | null | undefined>(() => {
     const data = update.data;
     const error = update.error;
-    // return error state as null
-    if (error && !data) {
+    // return error state as null, and return "there is no data" as null
+    if (error || data?.size === 0) {
       return null;
     }
-    if (!data || !data.size) {
+    // return uninitialized data state as "not yet defined", ie. a loading state
+    if (!data) {
       return undefined;
     }
     // sort timeseries rows reverse chronologically

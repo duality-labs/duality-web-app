@@ -88,6 +88,10 @@ export class IndexerStream<DataRow = BaseDataRow> {
         // add event source and add a cancellation listener
         const eventSource = new EventSource(url);
         this.abortController.signal.onabort = () => eventSource.close();
+        const setEmptyDataSet = (e: MessageEvent<string>) => {
+          const heightOfData = Number(e.lastEventId.split(':').at(0));
+          callbacks.onUpdate?.([], heightOfData);
+        };
         // listen for updates and remove listener if aborted
         eventSource.addEventListener(
           'update',
@@ -105,6 +109,9 @@ export class IndexerStream<DataRow = BaseDataRow> {
               }
             }
             if (dataUpdates) {
+              // prevent heartbeat from setting an empty data update
+              eventSource.removeEventListener('heartbeat', setEmptyDataSet);
+              // get data height
               const heightOfData = Number(e.lastEventId.split(':').at(0));
               // send update directly to listener
               callbacks.onUpdate?.(dataUpdates, heightOfData);
@@ -112,6 +119,11 @@ export class IndexerStream<DataRow = BaseDataRow> {
           },
           listenerOptions
         );
+        // for the first heartbeat, if no data has yet come set "no data" state
+        eventSource.addEventListener('heartbeat', setEmptyDataSet, {
+          ...listenerOptions,
+          once: true,
+        });
         // 'end' message is sent if a data stream is complete
         eventSource.addEventListener(
           'end',
@@ -465,6 +477,7 @@ function useIndexerStream<
     const stream = new IndexerClass<DataRow>(
       url,
       {
+        // note: dataSet may be empty on return of an initial "no rows" payload
         onAccumulated: (dataSet) => {
           // note: the TypeScript here is a bit hacky but this should be ok
           next(null, dataSet as unknown as DataSet | DataSet[]);
