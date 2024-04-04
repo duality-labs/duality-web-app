@@ -1,9 +1,7 @@
-import useSWR from 'swr';
 import { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import {
-  TimeSeriesPage,
   TimeSeriesRow,
   TokenValuePair,
   getIndexerTokenPathPart,
@@ -13,22 +11,9 @@ import {
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useTokenValueTotal } from '../../lib/web3/hooks/useTokens';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { useIndexerStreamLastUpdateOfSingleDataSet } from '../../lib/web3/hooks/useIndexer';
 
 const { REACT_APP__INDEXER_API = '' } = import.meta.env;
-
-function useIndexerData(
-  tokenA: Token,
-  tokenB: Token,
-  getIndexerPath: (tokenA: Token, tokenB: Token) => string
-) {
-  return useSWR<TimeSeriesPage>(
-    `${REACT_APP__INDEXER_API}/${getIndexerPath(tokenA, tokenB)}`,
-    async (url) => {
-      const response = await fetch(url);
-      return response.json();
-    }
-  );
-}
 
 function useTimeSeriesData(
   tokenA: Token,
@@ -36,26 +21,32 @@ function useTimeSeriesData(
   getIndexerPath: (tokenA: Token, tokenB: Token) => string,
   getValues?: (values: number[]) => number[]
 ) {
-  const response = useIndexerData(tokenA, tokenB, getIndexerPath);
-  const { data: pages, error } = response;
+  const url = `${REACT_APP__INDEXER_API}/${getIndexerPath(tokenA, tokenB)}`;
+  const update = useIndexerStreamLastUpdateOfSingleDataSet<TimeSeriesRow>(url);
 
   return useMemo<TimeSeriesRow[] | null | undefined>(() => {
+    const data = update.data;
+    const error = update.error;
     // return error state as null
-    if (error && !pages) {
+    if (error && !data) {
       return null;
     }
-    if (!pages || !pages.data) {
+    if (!data || !data.size) {
       return undefined;
     }
+    // sort timeseries rows reverse chronologically
+    const reverseChronologicalRows: TimeSeriesRow[] = Array.from(data).sort(
+      (a, b) => b[0] - a[0]
+    );
     // return success state as loading or data
-    return pages && getValues
-      ? pages.data
-          .filter(Boolean) // row may be `null`
+    return getValues
+      ? reverseChronologicalRows
+          // map in specific values
           .map(([timeUnix, values = []]) => {
             return [timeUnix, getValues(values)];
           })
-      : pages?.data;
-  }, [error, pages, getValues]);
+      : reverseChronologicalRows;
+  }, [update.data, update.error, getValues]);
 }
 
 function useStatData(

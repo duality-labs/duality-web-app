@@ -250,7 +250,8 @@ function accumulateUpdates<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 >(currentMap: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions) {
-  // create new map or use current map
+  // create new map: this will allow React hooks to function as expected,
+  // each new update returns a new Map object (not the same but mutated object)
   const newMap = new Map(currentMap) as DataSet;
   // add data updates to new map
   return accumulateUpdatesUsingMutation(newMap, dataUpdates, opts);
@@ -273,6 +274,16 @@ function accumulateUpdatesUsingMutation<
     }
   }
   return map;
+}
+
+// accumulation function that disregards state and returns only the last update
+function accumulateLastUpdateOnly<
+  DataRow extends BaseDataRow,
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
+>(_map: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions) {
+  // add data updates to a new map (ignore previous state)
+  const newMap = new Map() as DataSet;
+  return accumulateUpdatesUsingMutation(newMap, dataUpdates, opts);
 }
 
 interface StreamSingleDataSetCallbacks<
@@ -491,6 +502,36 @@ export function useIndexerStreamOfDualDataSet<
     IndexerStreamAccumulateDualDataSet,
     opts
   ) as StaleWhileRevalidateState<[DataSet, DataSet]>;
+}
+
+// higher-level hook to stream real-time last update of a DataSet of Indexer URL
+export function useIndexerStreamLastUpdateOfSingleDataSet<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(url: URL | string | undefined, opts?: AccumulatorOptions) {
+  const subscribe: SWRSubscription<string[], DataSet, Error> = (
+    [url],
+    { next }
+  ) => {
+    const stream = new IndexerStreamAccumulateSingleDataSet<DataRow>(
+      url,
+      {
+        onAccumulated: (dataSet) => {
+          next(null, dataSet as DataSet);
+        },
+        onError: (error) => next(error),
+      },
+      opts
+    );
+    stream.accumulateUpdates = accumulateLastUpdateOnly;
+    return () => stream.unsubscribe();
+  };
+
+  // return cached subscription data
+  return useSWRSubscription<DataSet, Error>(
+    [`${url}`, 'last-update'],
+    subscribe
+  );
 }
 
 // add higher-level functions to fetch multiple pages of data as "one request"
