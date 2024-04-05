@@ -101,6 +101,24 @@ function useStatTokenValue(
   return [timeUnix, valueTotal, valueDiffTotal];
 }
 
+// Real-time price
+function getRealtimePricePath(tokenA: Token, tokenB: Token) {
+  return `timeseries/price/${getTokenId(tokenA)}/${getTokenId(tokenB)}`;
+}
+function getLastPriceValue([, , , close]: number[]): number[] {
+  return [tickIndexToPrice(new BigNumber(close)).toNumber()];
+}
+export function useRealtimePrice(tokenA: Token, tokenB: Token) {
+  const [timeUnix, prices] = useStatData(
+    tokenA,
+    tokenB,
+    getRealtimePricePath,
+    getLastPriceValue
+  );
+  // return single values from data
+  return [timeUnix, prices && prices[0]];
+}
+
 // Price
 function getStatPricePath(tokenA: Token, tokenB: Token) {
   return `stats/price/${getTokenId(tokenA)}/${getTokenId(tokenB)}`;
