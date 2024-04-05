@@ -527,16 +527,61 @@ export function useIndexerStreamOfDualDataSet<
   ) as StaleWhileRevalidateState<[DataSet, DataSet]>;
 }
 
+function useIndexerStreamLastUpdate<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(
+  url: URL | string | undefined,
+  IndexerClass:
+    | typeof IndexerStreamAccumulateSingleDataSet
+    | typeof IndexerStreamAccumulateDualDataSet,
+  opts?: AccumulatorOptions
+): StaleWhileRevalidateState<DataSet | [DataSet, DataSet]> {
+  // return cached subscription data
+  const hook =
+    IndexerClass === IndexerStreamAccumulateDualDataSet
+      ? useIndexerStreamOfDualDataSet
+      : useIndexerStreamOfSingleDataSet;
+  return hook<DataRow, DataSet>(url, {
+    accumulateUpdates: accumulateLastUpdateOnly,
+    ...opts,
+  });
+}
+
 // higher-level hook to stream real-time last update of a DataSet of Indexer URL
 export function useIndexerStreamLastUpdateOfSingleDataSet<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
->(url: URL | string | undefined, opts?: AccumulatorOptions) {
+>(
+  url: URL | string | undefined,
+  opts?: AccumulatorOptions
+): StaleWhileRevalidateState<DataSet> {
   // return cached subscription data
-  return useIndexerStreamOfSingleDataSet<DataRow, DataSet>(url, {
-    accumulateUpdates: accumulateLastUpdateOnly,
-    ...opts,
-  });
+  return useIndexerStreamLastUpdate<DataRow, DataSet>(
+    url,
+    IndexerStreamAccumulateSingleDataSet,
+    {
+      accumulateUpdates: accumulateLastUpdateOnly,
+      ...opts,
+    }
+  ) as StaleWhileRevalidateState<DataSet>;
+}
+export function useIndexerStreamLastUpdateOfDualDataSet<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(
+  url: URL | string | undefined,
+  opts?: AccumulatorOptions
+): StaleWhileRevalidateState<[DataSet, DataSet]> {
+  // return cached subscription data
+  return useIndexerStreamLastUpdate<DataRow, DataSet>(
+    url,
+    IndexerStreamAccumulateDualDataSet,
+    {
+      accumulateUpdates: accumulateLastUpdateOnly,
+      ...opts,
+    }
+  ) as StaleWhileRevalidateState<[DataSet, DataSet]>;
 }
 
 // add higher-level functions to fetch multiple pages of data as "one request"
