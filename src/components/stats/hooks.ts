@@ -1,7 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
+import useSWR from 'swr';
 
 import {
+  TimeSeriesPage,
   TimeSeriesRow,
   TokenValuePair,
   getIndexerTokenPathPart,
@@ -108,19 +110,41 @@ function useStatTokenValue(
 }
 
 // Real-time price
-function getRealtimePricePath(tokenA: Token, tokenB: Token) {
-  return `timeseries/price/${getTokenId(tokenA)}/${getTokenId(tokenB)}`;
-}
 function getLastPriceValue([, , , close]: number[]): number[] {
   return [tickIndexToPrice(new BigNumber(close)).toNumber()];
 }
 export function useRealtimePrice(tokenA: Token, tokenB: Token) {
-  const [timeUnix, prices] = useStatData(
-    tokenA,
-    tokenB,
-    getRealtimePricePath,
-    getLastPriceValue
+  // fetch most recent value with a page limit
+  const fetchURL = new URL(
+    `timeseries/price/${getTokenId(tokenA)}/${getTokenId(tokenB)}`,
+    REACT_APP__INDEXER_API
   );
+  fetchURL.searchParams.append('pagination.limit', '1');
+  const { data: latestDataUpdate } = useSWR<TimeSeriesPage>(
+    [fetchURL.toString(), 'fetch'],
+    () => fetch(fetchURL).then((response) => response.json())
+  );
+  const knownHeight = latestDataUpdate?.block_range.to_height;
+
+  const getRealtimePricePath = useCallback(
+    (tokenA: Token, tokenB: Token): string | undefined => {
+      return knownHeight
+        ? `timeseries/price/${getTokenId(tokenA)}/${getTokenId(
+            tokenB
+          )}?block_range.from_height=${knownHeight}`
+        : undefined;
+    },
+    [knownHeight]
+  );
+
+  const [timeUnix, prices] =
+    useStatData(tokenA, tokenB, getRealtimePricePath, getLastPriceValue) ||
+    // get price from latestDataUpdate if available
+    (latestDataUpdate &&
+      latestDataUpdate.data && [
+        latestDataUpdate.data[0][0],
+        getLastPriceValue(latestDataUpdate.data[0][1]),
+      ]);
   // return single values from data
   return [timeUnix, prices && prices[0]];
 }
