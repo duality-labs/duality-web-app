@@ -475,6 +475,10 @@ function useIndexerStream<
     [url],
     { next }
   ) => {
+    // if URL is undefined or an empty string, do not stream it
+    if (!url) {
+      return () => undefined;
+    }
     const stream = new IndexerClass<DataRow>(
       url,
       {

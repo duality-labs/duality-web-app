@@ -18,10 +18,11 @@ const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 function useLastUpdateOfIndexerData(
   tokenA: Token,
   tokenB: Token,
-  getIndexerPath: (tokenA: Token, tokenB: Token) => string,
+  getIndexerPath: (tokenA: Token, tokenB: Token) => string | undefined,
   getValues?: (values: number[]) => number[]
 ) {
-  const url = `${REACT_APP__INDEXER_API}/${getIndexerPath(tokenA, tokenB)}`;
+  const urlPath = getIndexerPath(tokenA, tokenB);
+  const url = urlPath && `${REACT_APP__INDEXER_API}/${urlPath}`;
   const update = useIndexerStreamLastUpdateOfSingleDataSet<TimeSeriesRow>(url);
 
   return useMemo<TimeSeriesRow[] | null | undefined>(() => {
@@ -53,7 +54,7 @@ function useLastUpdateOfIndexerData(
 function useStatData(
   tokenA: Token,
   tokenB: Token,
-  getIndexerPath: (tokenA: Token, tokenB: Token) => string,
+  getIndexerPath: (tokenA: Token, tokenB: Token) => string | undefined,
   getValues?: (values: number[]) => number[]
 ): [
   number | null | undefined,
