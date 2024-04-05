@@ -15,7 +15,7 @@ import { useIndexerStreamLastUpdateOfSingleDataSet } from '../../lib/web3/hooks/
 
 const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 
-function useTimeSeriesData(
+function useLastUpdateOfIndexerData(
   tokenA: Token,
   tokenB: Token,
   getIndexerPath: (tokenA: Token, tokenB: Token) => string,
@@ -60,7 +60,12 @@ function useStatData(
   number[] | null | undefined,
   number[] | null | undefined
 ] {
-  const data = useTimeSeriesData(tokenA, tokenB, getIndexerPath, getValues);
+  const data = useLastUpdateOfIndexerData(
+    tokenA,
+    tokenB,
+    getIndexerPath,
+    getValues
+  );
 
   const [timeUnix, values] = data
     ? getLastDataValues(data) || [null, null]
