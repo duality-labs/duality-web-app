@@ -1,3 +1,4 @@
+import useSWR from 'swr';
 import useSWRSubscription, { SWRSubscription } from 'swr/subscription';
 import { seconds } from '../../utils/time';
 
@@ -643,4 +644,22 @@ export function fetchDualDataSetFromIndexer<DataRow extends BaseDataRow>(
   opts?: AccumulatorOptions & StreamOptions
 ): Promise<BaseDataSet<DataRow>[]> {
   return fetchDataFromIndexer(url, IndexerStreamAccumulateDualDataSet, opts);
+}
+
+export function useFetchSingleDataSetFromIndexer<DataRow extends BaseDataRow>(
+  url: URL | string,
+  opts?: AccumulatorOptions & StreamOptions
+) {
+  return useSWR([url.toString(), opts, 'fetch'], () =>
+    fetchSingleDataSetFromIndexer<DataRow>(url, opts)
+  );
+}
+
+export function useFetchDualDataSetFromIndexer<DataRow extends BaseDataRow>(
+  url: URL | string,
+  opts?: AccumulatorOptions & StreamOptions
+) {
+  return useSWR([url.toString(), opts, 'fetch'], () =>
+    fetchDualDataSetFromIndexer<DataRow>(url, opts)
+  );
 }
