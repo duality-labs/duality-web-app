@@ -64,6 +64,7 @@ import {
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
 import { displayPriceToTickIndex } from '../../lib/web3/utils/ticks';
+import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 
 import Drawer from '../Drawer';
 
@@ -328,17 +329,17 @@ function LimitOrder({
       ) {
         // when buying: select tick index below the limit
         // when selling: select tick index above the limit
-        const rounding = buyMode ? 'floor' : 'ceil';
         const limitTickIndexInToOut =
           limitPrice > 0
             ? displayPriceToTickIndex(
                 new BigNumber(limitPrice),
                 tokenOut,
                 tokenIn,
-                rounding
+                // change limit rounding direction depending on token direction
+                guessInvertedOrder([denomIn, denomOut]) ? 'floor' : 'ceil'
               )
-                // change limit direction depending on token direction
-                ?.multipliedBy(buyMode ? -1 : 1)
+                // change limit direction depending on buying direction
+                ?.multipliedBy(buyMode ? 1 : -1)
             : undefined;
 
         const msgPlaceLimitOrder: MsgPlaceLimitOrder = {
