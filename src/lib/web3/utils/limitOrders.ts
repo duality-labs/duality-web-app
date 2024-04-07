@@ -36,6 +36,9 @@ export const orderTypeTextMap: Record<keyof typeof LimitOrderType, string> = {
 const inputOrderTypes: Array<keyof typeof orderTypeTextMap> = [
   'FILL_OR_KILL',
   'IMMEDIATE_OR_CANCEL',
+  'JUST_IN_TIME',
+  'GOOD_TIL_TIME',
+  'GOOD_TIL_CANCELLED',
 ];
 export const inputOrderTypeTextMap: Partial<typeof orderTypeTextMap> =
   inputOrderTypes.reduce((acc, key) => {
