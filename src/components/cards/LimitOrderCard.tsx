@@ -51,12 +51,13 @@ import {
 import SelectInput from '../inputs/SelectInput';
 import { timeUnits } from '../../lib/utils/time';
 import {
-  inputOrderTypeTextMap,
   orderTypeEnum,
   timePeriods,
   timePeriodLabels,
   TimePeriod,
   AllowedLimitOrderTypeKey,
+  inputOrderTypes,
+  orderTypeTextMap,
 } from '../../lib/web3/utils/limitOrders';
 import {
   DexTickUpdateEvent,
@@ -625,14 +626,8 @@ function LimitOrder({
         </div>
         <SelectInput<AllowedLimitOrderTypeKey>
           className="flex col m-0 p-0"
-          list={
-            Object.keys(inputOrderTypeTextMap) as Array<
-              keyof typeof inputOrderTypeTextMap
-            >
-          }
-          getLabel={(key = defaultExecutionType) =>
-            key && inputOrderTypeTextMap[key]
-          }
+          list={inputOrderTypes}
+          getLabel={(key = defaultExecutionType) => orderTypeTextMap[key]}
           value={formState.execution}
           onChange={formSetState.setExecution}
           floating
