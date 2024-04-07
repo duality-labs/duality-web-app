@@ -320,6 +320,8 @@ function LimitOrder({
         denomOut &&
         amountIn &&
         userBalanceTokenIn &&
+        // if limit price is set it should be above 0
+        (isNaN(limitPrice) || Number(limitPrice) > 0) &&
         Number(amountIn) > 0 &&
         // either amount in or out should be more than zero
         (Number(amountInBaseAmount) > 0 || Number(amountOutBaseAmount) > 0)
