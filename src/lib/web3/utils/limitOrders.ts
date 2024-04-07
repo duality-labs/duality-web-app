@@ -23,16 +23,7 @@ export const orderTypeEnum: {
   UNRECOGNIZED: -1,
 };
 
-export const inputOrderTypeTextMap: Partial<{
-  [key in AllowedLimitOrderTypeKey]: string;
-}> = {
-  FILL_OR_KILL: 'Fill Or Kill',
-  IMMEDIATE_OR_CANCEL: 'Immediate Or Cancel',
-};
-
-export const orderTypeTextMap: {
-  [key in keyof typeof LimitOrderType]: string;
-} = {
+export const orderTypeTextMap: Record<keyof typeof LimitOrderType, string> = {
   GOOD_TIL_CANCELLED: 'Good Til Canceled',
   FILL_OR_KILL: 'Fill Or Kill',
   IMMEDIATE_OR_CANCEL: 'Immediate Or Cancel',
@@ -40,6 +31,19 @@ export const orderTypeTextMap: {
   GOOD_TIL_TIME: 'Good Til Time',
   UNRECOGNIZED: 'Unrecognized',
 };
+
+// restrict the order types available to use in inputs
+const inputOrderTypes: Array<keyof typeof orderTypeTextMap> = [
+  'FILL_OR_KILL',
+  'IMMEDIATE_OR_CANCEL',
+];
+export const inputOrderTypeTextMap: Partial<typeof orderTypeTextMap> =
+  inputOrderTypes.reduce((acc, key) => {
+    if (inputOrderTypes.includes(key)) {
+      acc[key] = orderTypeTextMap[key];
+    }
+    return acc;
+  }, {} as Partial<typeof orderTypeTextMap>);
 
 export const timePeriods = [
   'seconds',
