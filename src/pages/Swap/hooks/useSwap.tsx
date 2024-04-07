@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
-import { OfflineSigner, parseCoins } from '@cosmjs/proto-signing';
+import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 
 import { formatAmount } from '../../../lib/utils/number';
@@ -10,10 +10,6 @@ import { createTransactionToasts } from '../../../components/Notifications/commo
 
 import { getDisplayDenomAmount } from '../../../lib/web3/utils/tokens';
 import { useTokenByDenom } from '../../../lib/web3/hooks/useDenomClients';
-import {
-  mapEventAttributes,
-  CoinReceivedEvent,
-} from '../../../lib/web3/utils/events';
 import { getDexSigningClient } from '../../../lib/web3/clients/signingClients';
 import { neutron } from '@duality-labs/neutronjs';
 import {
@@ -149,25 +145,12 @@ export function useSwap(denoms: string[]): [
         {
           onLoadingMessage: 'Executing your trade',
           onSuccess(res) {
-            const amountOut = res.events.reduce<BigNumber>((result, event) => {
-              if (
-                event.type === 'coin_received' &&
-                event.attributes.find(
-                  ({ key, value }) => key === 'receiver' && value === address
-                )
-              ) {
-                // collect into more usable format for parsing
-                const { attributes } =
-                  mapEventAttributes<CoinReceivedEvent>(event);
-                // parse coin string for matching tokens
-                const coin = parseCoins(attributes.amount)[0];
-                if (coin?.denom === tokenOut) {
-                  return result.plus(coin?.amount || 0);
-                }
-              }
-              return result;
-            }, new BigNumber(0));
-
+            const msgResponseValue = res.msgResponses.at(0)?.value;
+            const response = msgResponseValue
+              ? neutron.dex.MsgPlaceLimitOrderResponse.decode(msgResponseValue)
+              : undefined;
+            const amountOut =
+              response && Number(response.taker_coin_out.amount);
             const description = amountOut
               ? `Received ${formatAmount(
                   getDisplayDenomAmount(
