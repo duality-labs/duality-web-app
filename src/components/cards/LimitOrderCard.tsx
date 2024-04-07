@@ -391,12 +391,18 @@ function LimitOrder({
     function (event?: React.FormEvent<HTMLFormElement>) {
       if (event) event.preventDefault();
 
-      // calculate last price out from result
-      const lastPriceEvent = simulationResult?.result?.events.findLast(
-        (event) => event.type === 'TickUpdate'
-      );
+      // define function to get the current market limit index with a tolerance
+      const getMarketLimitIndex = () => {
+        // calculate last price out from result
+        const lastPriceEvent = simulationResult?.result?.events.findLast(
+          (event) => event.type === 'TickUpdate'
+        );
 
-      if (lastPriceEvent) {
+        // if market limit simulation made no update to the liquidity then skip
+        if (!lastPriceEvent) {
+          return;
+        }
+
         const denomIn = getTokenId(tokenIn);
 
         // calculate tolerance from user slippage settings
@@ -412,23 +418,33 @@ function LimitOrder({
             ? lastPrice.TokenIn === lastPrice.TokenZero
             : lastPrice.TokenIn === lastPrice.TokenOne;
 
-        const tickIndexLimitInToOut = direction
+        return direction
           ? Math.floor(Number(lastPrice.TickIndex) / toleranceFactor)
           : Math.floor(Number(lastPrice.TickIndex) * toleranceFactor);
+      };
 
-        if (simulatedMsgPlaceLimitOrder && tickIndexLimitInToOut) {
-          const msgPlaceLimitOrder = {
-            ...simulatedMsgPlaceLimitOrder,
-            tick_index_in_to_out: Long.fromNumber(tickIndexLimitInToOut),
-          };
-          const gasEstimate = simulationResult?.gasInfo?.gasUsed.toNumber();
-          swapRequest(msgPlaceLimitOrder, gasEstimate || 0);
-        }
+      const tickIndexLimitInToOut = formState.limitPrice
+        ? displayPriceToTickIndex(
+            new BigNumber(formState.limitPrice),
+            tokenIn,
+            tokenOut
+          )?.toNumber()
+        : getMarketLimitIndex();
+
+      // if the msg is defined and the limit is ok, then proceed
+      if (simulatedMsgPlaceLimitOrder && tickIndexLimitInToOut !== undefined) {
+        const msgPlaceLimitOrder = {
+          ...simulatedMsgPlaceLimitOrder,
+          tick_index_in_to_out: Long.fromNumber(tickIndexLimitInToOut),
+        };
+        const gasEstimate = simulationResult?.gasInfo?.gasUsed.toNumber();
+        swapRequest(msgPlaceLimitOrder, gasEstimate || 0);
       }
     },
     [
       formState,
       tokenIn,
+      tokenOut,
       simulatedMsgPlaceLimitOrder,
       simulationResult,
       swapRequest,
