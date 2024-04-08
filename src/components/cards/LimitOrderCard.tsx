@@ -1,5 +1,7 @@
 import Long from 'long';
 import BigNumber from 'bignumber.js';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSpinner } from '@fortawesome/free-solid-svg-icons';
 import {
   createContext,
   useCallback,
@@ -392,11 +394,19 @@ function LimitOrder({
       userBalanceTokenIn,
     ]);
 
+  const lastSimulatedMsgPlaceLimitOrder = useRef<MsgPlaceLimitOrder>();
   const { data: simulationResult, isValidating: isValidatingSimulation } =
     useSimulatedLimitOrderResult(simulatedMsgPlaceLimitOrder, {
+      // if the limit order payload hasn't changed then keep the previous data
+      keepPreviousData:
+        lastSimulatedMsgPlaceLimitOrder.current === simulatedMsgPlaceLimitOrder,
       // invalidate the request cache when the liquidity height changes
       memo: `height of ${meta?.height}`,
     });
+  // update last simulatedMsgPlaceLimitOrder for comparison on the next render
+  useEffect(() => {
+    lastSimulatedMsgPlaceLimitOrder.current = simulatedMsgPlaceLimitOrder;
+  }, [simulatedMsgPlaceLimitOrder]);
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -719,6 +729,7 @@ function LimitOrder({
       <div>
         <NumericValueRow
           prefix={`Total ${buyMode ? 'Cost' : 'Result'}`}
+          loading={isValidatingSimulation}
           value={
             tokenIn && simulationResult?.response
               ? formatAmount(
@@ -750,7 +761,6 @@ function LimitOrder({
           onClick={!address ? connectWallet : undefined}
           disabled={
             isValidatingSwap ||
-            isValidatingSimulation ||
             !simulationResult ||
             (!Number(amountInBaseAmount) && !Number(amountOutBaseAmount))
           }
@@ -862,11 +872,13 @@ function NumericInputRow({
 
 function NumericValueRow({
   prefix = '',
+  loading = false,
   value = '',
   suffix = '',
   tooltip,
 }: {
   prefix?: string;
+  loading?: boolean;
   value: string;
   suffix?: string;
   tooltip?: string;
@@ -877,7 +889,10 @@ function NumericValueRow({
         {prefix}
         {tooltip && <Tooltip>{tooltip}</Tooltip>}
       </div>
-      <div className="numeric-value-row__value ml-auto">{value}</div>
+      <div className="numeric-value-row__loading ml-auto">
+        {loading && <FontAwesomeIcon className="fa-spin" icon={faSpinner} />}
+      </div>
+      <div className="numeric-value-row__value ml-3">{value}</div>
       {suffix && <div className="numeric-value-row__suffix ml-3">{suffix}</div>}
     </div>
   );
