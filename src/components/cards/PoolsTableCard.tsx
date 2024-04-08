@@ -102,10 +102,10 @@ export default function PoolsTableCard<T extends string | number>({
         <table>
           <thead>
             <tr>
-              <th>Pool</th>
-              <th>TVL</th>
-              <th>Volume (24h)</th>
-              <th>Volatility (10 days)</th>
+              <th style={{ width: '25%' }}>Pool</th>
+              <th style={{ width: '25%' }}>TVL</th>
+              <th style={{ width: '25%' }}>Volume (24h)</th>
+              <th style={{ width: '25%' }}>Volatility (10 days)</th>
             </tr>
           </thead>
           <tbody>
@@ -265,6 +265,10 @@ export function MyPoolsTableCard<T extends string | number>({
         <table>
           <thead>
             <tr>
+              <th style={{ width: '20%' }}>Pool</th>
+              <th style={{ width: '20%' }}>Value</th>
+              <th style={{ width: '40%' }}>Composition</th>
+              <th style={{ width: '20%' }}>Action</th>
               <th>Pool</th>
               <th>Value</th>
               <th>Composition</th>
