@@ -350,7 +350,7 @@ function ChartBase({
   return (
     <div className="chart">
       <ChartHeader
-        dataRow={highlightedData || chartData?.[0]}
+        dataRow={highlightedData || chartData?.at(-1)}
         timeFormatter={timeFormatter}
         valueFormatter={valueFormatter}
       />
