@@ -105,7 +105,7 @@ export default function PoolsTableCard<T extends string | number>({
               <th>Pool</th>
               <th>TVL</th>
               <th>Volume (24h)</th>
-              <th>Volatility (7 days)</th>
+              <th>Volatility (10 days)</th>
             </tr>
           </thead>
           <tbody>
