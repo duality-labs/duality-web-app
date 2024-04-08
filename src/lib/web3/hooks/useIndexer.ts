@@ -441,7 +441,7 @@ export class IndexerStreamAccumulateDualDataSet<
 interface StreamMetadata {
   height: number;
 }
-interface StaleWhileRevalidateStreamState<DataSetOrDataSets> {
+export interface StaleWhileRevalidateStreamState<DataSetOrDataSets> {
   data?: DataSetOrDataSets;
   meta?: StreamMetadata;
   error?: Error;

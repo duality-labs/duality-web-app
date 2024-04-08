@@ -14,6 +14,7 @@ import {
 } from '../../../lib/web3/clients/signingClients';
 
 import { useSwrResponseFromReactQuery } from '../../../lib/web3/hooks/useSWR';
+import { createMemo } from '../../../lib/web3/utils/memo';
 
 type SimulateResponse = Awaited<ReturnType<TxExtension['tx']['simulate']>>;
 type ExtendedSimulateResponse = Partial<
@@ -50,11 +51,17 @@ export function useSimulatedLimitOrderResult(
   // use signing client simulation function to get simulated response and gas
   const { wallet, address } = useWeb3();
   const txSimulationClient = useTxSimulationClient(wallet);
+  const memo = createMemo(opts.memo);
   const result = useQuery<
     ExtendedSimulateResponse | undefined,
     LimitOrderTxSimulationError
   >({
-    queryKey: [txSimulationClient, address, JSON.stringify(msgPlaceLimitOrder)],
+    queryKey: [
+      txSimulationClient,
+      address,
+      JSON.stringify(msgPlaceLimitOrder),
+      memo,
+    ],
     enabled: Boolean(txSimulationClient && address && msgPlaceLimitOrder),
     queryFn: async (): Promise<ExtendedSimulateResponse | undefined> => {
       // early exit to help types, should match "enabled" property condition

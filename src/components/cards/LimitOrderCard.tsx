@@ -40,6 +40,7 @@ import {
 } from '../../lib/web3/hooks/useUserBankBalances';
 import { useChainFeeToken } from '../../lib/web3/hooks/useTokens';
 import { useNativeChain } from '../../lib/web3/hooks/useChains';
+import { useTokenPairMapLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
 import { useCurrentPriceFromTicks } from '../Liquidity/useCurrentPriceFromTicks';
 
 import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
@@ -189,6 +190,7 @@ function LimitOrder({
     useBankBalanceBaseAmount(denomIn);
   const { data: userBalanceTokenInDisplayAmount } =
     useBankBalanceDisplayAmount(denomIn);
+  const { meta } = useTokenPairMapLiquidity([denomA, denomB]);
 
   const [{ isValidating: isValidatingSwap, error }, swapRequest] = useSwap(
     [denomA, denomB].filter((denom): denom is string => !!denom)
@@ -229,7 +231,10 @@ function LimitOrder({
   const {
     data: buyAmountSimulationResult,
     isValidating: isValidatingBuyAmountSimulationResult,
-  } = useSimulatedLimitOrderResult(buyAmountSimulatedMsgPlaceLimitOrder);
+  } = useSimulatedLimitOrderResult(buyAmountSimulatedMsgPlaceLimitOrder, {
+    // invalidate the request cache when the liquidity height changes
+    memo: `height of ${meta?.height}`,
+  });
 
   const {
     amountInDisplayAmount,
@@ -388,7 +393,10 @@ function LimitOrder({
     ]);
 
   const { data: simulationResult, isValidating: isValidatingSimulation } =
-    useSimulatedLimitOrderResult(simulatedMsgPlaceLimitOrder);
+    useSimulatedLimitOrderResult(simulatedMsgPlaceLimitOrder, {
+      // invalidate the request cache when the liquidity height changes
+      memo: `height of ${meta?.height}`,
+    });
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
