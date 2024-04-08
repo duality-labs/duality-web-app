@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 import Chart, { ChartProps } from '../../components/charts/Chart';
@@ -9,9 +8,9 @@ import ButtonGroup from '../../components/ButtonGroup/ButtonGroup';
 
 import { days, hours, weeks } from '../../lib/utils/time';
 import { Token, getTokenValue } from '../../lib/web3/utils/tokens';
+import { useIndexerStreamOfSingleDataSet } from '../../lib/web3/hooks/useIndexer';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import {
-  TimeSeriesPage,
   TimeSeriesRow,
   formatStatPercentageValue,
   formatStatTokenValue,
@@ -21,7 +20,6 @@ import { formatAmount } from '../../lib/utils/number';
 
 import './PoolChart.scss';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
-import { useFetchAllPaginatedPages } from '../../lib/web3/hooks/useQueries';
 
 const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 
@@ -117,90 +115,62 @@ function getDataResolution(
 }
 
 function useTimeSeriesData(
+  pathPart: string,
   tokenA: Token,
   tokenB: Token,
   timePeriodKey: TimePeriodKey,
-  basePath: string,
   getValues?: (values: number[]) => number[]
 ) {
-  const resolution = getDataResolution(timePeriodKey) || 'day';
-  const path = `${basePath}/${[
-    getIndexerTokenPathPart(tokenA),
-    getIndexerTokenPathPart(tokenB),
-  ].join('/')}/${resolution}`;
-  const result = useInfiniteQuery({
-    queryKey: [path],
-    queryFn: async ({ pageParam: pageKey }): Promise<TimeSeriesPage> => {
-      const queryParams = new URLSearchParams();
-      if (pageKey) {
-        queryParams.append('pagination.key', pageKey);
-      } else {
-        // add time restriction
-        const startTimeMs = getPaginationLimit(timePeriodKey);
-        if (startTimeMs) {
-          queryParams.append(
-            'pagination.after',
-            (startTimeMs / 1000).toFixed(0)
-          );
-        }
-      }
-      const query = queryParams.toString() ? `?${queryParams}` : '';
-      const response = await fetch(`${REACT_APP__INDEXER_API}/${path}${query}`);
-      return await response.json();
-    },
-    initialPageParam: '',
-    getNextPageParam: (lastPage: TimeSeriesPage) => {
-      // don't pass an empty array as that will trigger another page to download
-      return lastPage?.pagination?.next_key?.length
-        ? lastPage?.pagination?.next_key
-        : undefined;
-    },
-  });
+  const urlPath = useMemo(() => {
+    const denomA = getIndexerTokenPathPart(tokenA);
+    const denomB = getIndexerTokenPathPart(tokenB);
+    const resolution = getDataResolution(timePeriodKey) || 'day';
+    const from = getPaginationLimit(timePeriodKey) || 0;
+    return `${pathPart}/${denomA}/${denomB}/${resolution}?after=${from}`;
+  }, [pathPart, tokenA, tokenB, timePeriodKey]);
+  const url = urlPath && `${REACT_APP__INDEXER_API}/${urlPath}`;
+  const stream = useIndexerStreamOfSingleDataSet<TimeSeriesRow>(url);
 
-  // fetch all pages
-  useFetchAllPaginatedPages(result);
-
-  // collect page data together
-  const { data: { pages } = {}, error, isFetching } = result;
   return useMemo<TimeSeriesRow[] | null | undefined>(() => {
-    // return error state as null
-    if (error) {
+    const data = stream.data;
+    const error = stream.error;
+    // return error state as null, and return "there is no data" as null
+    if (error || data?.size === 0) {
       return null;
     }
-    if (!pages) {
-      if (!isFetching) {
-        return undefined;
-      }
-      return pages;
+    // return uninitialized data state as "not yet defined", ie. a loading state
+    if (!data) {
+      return undefined;
     }
+    // sort timeseries rows chronologically
+    const chronologicalRows: TimeSeriesRow[] = Array.from(data).sort(
+      (a, b) => a[0] - b[0]
+    );
     // return success state as loading or data
-    return pages && getValues
-      ? pages?.flatMap<TimeSeriesRow>(({ data: rows = [] }) =>
-          rows.map<TimeSeriesRow>(([timeUnix, values]) => [
-            timeUnix,
-            getValues(values),
-          ])
-        )
-      : pages?.flatMap<TimeSeriesRow>(({ data: rows = [] }) =>
-          rows.map<TimeSeriesRow>(([timeUnix, values]) => [timeUnix, values])
-        );
-  }, [pages, isFetching, error, getValues]);
+    return getValues
+      ? chronologicalRows
+          // map in specific values
+          .map(([timeUnix, values = []]) => {
+            return [timeUnix, getValues(values)];
+          })
+      : chronologicalRows;
+  }, [stream.data, stream.error, getValues]);
 }
 
 // if data is in the form [timeUnix, [amountA, amountB]]
 // then transform the data using price data to [timeUnix, [valueA, valueB]]
 function useTimeSeriesTokenValues(
+  pathPart: string,
   tokenA: Token,
   tokenB: Token,
   timePeriodKey: TimePeriodKey,
-  basePath: string,
   getValues?: (values: number[]) => number[]
 ): TimeSeriesRow[] | null | undefined {
   const data = useTimeSeriesData(
+    pathPart,
     tokenA,
     tokenB,
     timePeriodKey,
-    basePath,
     getValues
   );
   const {
@@ -227,6 +197,7 @@ function useTimeSeriesTokenValues(
   }, [tokenA, tokenB, priceA, priceB, data]);
 }
 
+// TVL
 function getStatTvlValues([amountA, amountB]: number[]): number[] {
   return [amountA, amountB];
 }
@@ -240,10 +211,10 @@ function ChartTVL({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesTokenValues(
+    'timeseries/tvl',
     tokenA,
     tokenB,
     timePeriodKey,
-    'timeseries/tvl',
     getStatTvlValues
   );
   return (
@@ -269,10 +240,10 @@ function ChartVolume({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesTokenValues(
+    'timeseries/volume',
     tokenA,
     tokenB,
     timePeriodKey,
-    'timeseries/volume',
     getStatVolumeValues
   );
   return (
@@ -298,10 +269,10 @@ function ChartFees({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesTokenValues(
+    'timeseries/volume',
     tokenA,
     tokenB,
     timePeriodKey,
-    'timeseries/volume',
     getStatFeeValues
   );
   return (
@@ -327,10 +298,10 @@ function ChartVolatility({
   timePeriodKey: TimePeriodKey;
 }) {
   const data = useTimeSeriesData(
+    'timeseries/price',
     tokenA,
     tokenB,
     timePeriodKey,
-    'timeseries/price',
     getStatVolatilityValues
   );
   return (
