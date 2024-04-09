@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/duality-labs/duality-web-app/compare/v2.4.0...v2.5.0) (2024-04-09)
+
+
+### Features
+
+* add indexer subscriptions for stat values ([#543](https://github.com/duality-labs/duality-web-app/issues/543)) ([9a2f538](https://github.com/duality-labs/duality-web-app/commit/9a2f538e2d8541730b85d1928dba59ae31590333))
+
 ## [2.4.0](https://github.com/duality-labs/duality-web-app/compare/v2.3.0...v2.4.0) (2024-04-02)
 
 
