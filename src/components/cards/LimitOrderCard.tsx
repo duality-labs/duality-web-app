@@ -62,6 +62,7 @@ import {
   inputOrderTypes,
   orderTypeTextMap,
   nonImmediateOrderTypes,
+  immediateOrderTypes,
 } from '../../lib/web3/utils/limitOrders';
 import {
   DexTickUpdateEvent,
@@ -299,6 +300,9 @@ function LimitOrder({
     userBalanceTokenIn,
   ]);
 
+  // todo: replace currentPriceFromTicks with realtimePrice from useRealtimePrice
+  const currentPriceFromTicks = useCurrentPriceFromTicks(denomIn, denomOut);
+
   const simulatedMsgPlaceLimitOrder: MsgPlaceLimitOrder | undefined =
     useMemo(() => {
       const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
@@ -367,13 +371,33 @@ function LimitOrder({
               : Long.fromNumber(priceMaxIndex),
         };
         // optional params
-        // only add maxOut for "taker" (immediate) orders
-        if (
-          tokenOut &&
-          maxAmountOut &&
-          (execution === 'FILL_OR_KILL' || execution === 'IMMEDIATE_OR_CANCEL')
-        ) {
-          msgPlaceLimitOrder.max_amount_out = maxAmountOut;
+        // only add maxOut for buy orders
+        if (tokenOut && maxAmountOut && currentPriceFromTicks) {
+          // set max out on taker orders
+          if (
+            immediateOrderTypes.includes(orderTypeEnum[execution] as number)
+          ) {
+            // note: if attempting to pass a non-immediate order, fails with error
+            //       "MaxAmountOut can only be set for taker only limit orders."
+            msgPlaceLimitOrder.max_amount_out = maxAmountOut;
+          }
+          // set an estimated max in instead for non-immediate orders
+          else {
+            // note: this is a bit or an awkward estimation that goes from the
+            //       user's set limit to the current price
+            const estimatedTokenIn =
+              Number(maxAmountOut) *
+              BigNumber[buyMode ? 'min' : 'max'](
+                tickIndexToPrice(
+                  limitTickIndexInToOut ?? new BigNumber(priceMaxIndex)
+                ),
+                currentPriceFromTicks
+              ).toNumber();
+            msgPlaceLimitOrder.amount_in = BigNumber.min(
+              msgPlaceLimitOrder.amount_in,
+              estimatedTokenIn
+            ).toFixed(0);
+          }
         }
         // only add expiration time to timed limit orders
         if (execution === 'GOOD_TIL_TIME' && !isNaN(expirationTimeMs)) {
@@ -389,6 +413,7 @@ function LimitOrder({
       amountInBaseAmount,
       amountOutBaseAmount,
       buyMode,
+      currentPriceFromTicks,
       formState.execution,
       formState.limitPrice,
       formState.timeAmount,
@@ -518,34 +543,18 @@ function LimitOrder({
           userBalanceTokenInDisplayAmount || '?'
         )}${tokenIn?.symbol}`;
       }
-
-      // check for insufficient liquidity
-      if (
-        // check if less was used than expected
-        (amountInBaseAmount !== undefined &&
-          new BigNumber(simulationResult.response.coin_in.amount)
-            // make up for possible rounding on Dex (note this is inaccurate)
-            .multipliedBy(1 + tolerance)
-            .isLessThan(amountInBaseAmount)) ||
-        // check if less was found than expected
-        (amountOutBaseAmount !== undefined &&
-          new BigNumber(simulationResult.response.taker_coin_out.amount)
-            // make up for possible rounding on Dex (note this is inaccurate)
-            .multipliedBy(1 + tolerance)
-            .isLessThan(amountOutBaseAmount))
-      ) {
-        return `Insufficient liquidity: max ${formatAmount(
-          simulationResult.response.coin_in.amount,
-          {
-            useGrouping: true,
-          }
-        )}${tokenIn?.symbol} used`;
-      }
     }
+
+    if (
+      Number(amountInBaseAmount) &&
+      simulationResult?.error?.insufficientLiquidity
+    ) {
+      return 'Insufficient Liquidity: cannot complete order';
+    }
+
     return undefined;
   }, [
     amountInBaseAmount,
-    amountOutBaseAmount,
     buyMode,
     simulatedMsgPlaceLimitOrder,
     simulationResult,
@@ -573,8 +582,6 @@ function LimitOrder({
       setLastKnownPrice(price.toNumber());
     }
   }, [simulationResult?.response]);
-
-  const currentPriceFromTicks = useCurrentPriceFromTicks(denomIn, denomOut);
 
   // find coinIn and coinOut from the simulation results
   const tranchedReserves =
@@ -768,7 +775,12 @@ function LimitOrder({
           suffix={tokenA?.symbol}
         />
       </div>
-      {Number(formState.amount) && simulationResult && !coinIn ? (
+      {warning ? (
+        // show a warning if an amount has been entered, but the form fails validation
+        <div className="mt-4">
+          <div className="text-error flex text-center">{warning}</div>
+        </div>
+      ) : Number(formState.amount) && simulationResult && !coinIn ? (
         // show a warning if an amount in, but no amount out
         <div className="mt-4">
           <div className="text-warning flex text-center">
@@ -776,11 +788,6 @@ function LimitOrder({
             <p>and this limit price at this time</p>
             <p>Choose a limit closer to the current price</p>
           </div>
-        </div>
-      ) : warning ? (
-        // show a warning if an amount has been entered, but the form fails validation
-        <div className="mt-4">
-          <div className="text-error flex text-center">{warning}</div>
         </div>
       ) : error ? (
         <div className="mt-4">
