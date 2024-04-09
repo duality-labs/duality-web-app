@@ -14,6 +14,7 @@ import {
 
 import { useSwrResponseFromReactQuery } from '../../../lib/web3/hooks/useSWR';
 import { createMemo } from '../../../lib/web3/utils/memo';
+import { orderTypeEnum } from '../../../lib/web3/utils/limitOrders';
 import {
   DexPlaceLimitOrderEvent,
   mapEventAttributes,
@@ -52,7 +53,11 @@ class LimitOrderTxSimulationError extends TxSimulationError {
  */
 export function useSimulatedLimitOrderResult(
   msgPlaceLimitOrder: MsgPlaceLimitOrder | undefined,
-  opts: Partial<{ memo: string; keepPreviousData: boolean }> = {}
+  opts: Partial<{
+    memo: string;
+    keepPreviousData: boolean;
+    workaroundErrorForFoK: boolean;
+  }> = {}
 ) {
   // use signing client simulation function to get simulated response and gas
   const { wallet, address } = useWeb3();
@@ -75,15 +80,61 @@ export function useSimulatedLimitOrderResult(
       // return empty response for a zero amount query
       if (!Number(msgPlaceLimitOrder.amount_in)) return {};
       try {
-        const { gasInfo, result } = await txSimulationClient.simulate(
-          address,
-          [
-            neutron.dex.MessageComposer.withTypeUrl.placeLimitOrder(
-              msgPlaceLimitOrder
-            ),
-          ],
-          opts.memo
-        );
+        const placeOrder = async (msgPlaceLimitOrder: MsgPlaceLimitOrder) => {
+          return txSimulationClient.simulate(
+            address,
+            [
+              neutron.dex.MessageComposer.withTypeUrl.placeLimitOrder(
+                msgPlaceLimitOrder
+              ),
+            ],
+            opts.memo
+          );
+        };
+
+        // note: this is a workaround to deal with FoK "insufficient liquidity"
+        //       errors that may occur due to bad rounding behavior in the dex
+        const placeOrders = async (msgPlaceLimitOrder: MsgPlaceLimitOrder) => {
+          try {
+            return await placeOrder(msgPlaceLimitOrder);
+          } catch (e) {
+            const error = e instanceof Error ? e : new Error(`${e}`);
+            // retry the simulation with an IMMEDIATE_OR_CANCEL order
+            // if it was a FILL_OR_KILL order with "insufficient liquidity"
+            if (
+              msgPlaceLimitOrder.order_type === orderTypeEnum.FILL_OR_KILL &&
+              error.message?.includes('executed in its entirety.')
+            ) {
+              // get decoded response of the IMMEDIATE_OR_CANCEL equivalent
+              const response = await placeOrder({
+                ...msgPlaceLimitOrder,
+                order_type: orderTypeEnum.IMMEDIATE_OR_CANCEL,
+              });
+              const decodedResponse =
+                response.result &&
+                neutron.dex.MsgPlaceLimitOrderResponse.decode(
+                  response.result.msgResponses[0].value
+                );
+
+              // if the IoC order was just a few tokens (rounding) short of FoK:
+              // then replace the FoK response with this IoC response
+              if (
+                decodedResponse &&
+                Number(msgPlaceLimitOrder.amount_in) -
+                  Number(decodedResponse.coin_in.amount) <
+                  3
+              ) {
+                return response;
+              }
+              // otherwise continue to throw the original error
+            }
+            throw e;
+          }
+        };
+
+        const { gasInfo, result } = opts.workaroundErrorForFoK
+          ? await placeOrders(msgPlaceLimitOrder)
+          : await placeOrder(msgPlaceLimitOrder);
         // return successful response
         if (result && result.msgResponses.length > 0) {
           const response = neutron.dex.MsgPlaceLimitOrderResponse.decode(

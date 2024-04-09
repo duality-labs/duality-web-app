@@ -152,6 +152,8 @@ function Swap() {
   } = useSimulatedLimitOrderResult(swapMsg, {
     keepPreviousData: Number(swapMsg?.amount_in) > 0,
     memo: `height of ${meta?.height}`,
+    // allow using IoC orders for simulation if FoK orders fail
+    workaroundErrorForFoK: true,
   });
 
   const rate =
