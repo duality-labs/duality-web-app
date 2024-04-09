@@ -135,10 +135,7 @@ function Swap() {
         creator: address,
         receiver: address,
         // using type FILL_OR_KILL so that partially filled requests fail
-        // note: using IMMEDIATE_OR_CANCEL while FILL_OR_KILL has a bug
-        //       that often can result in rounding errors and incomplete orders
-        //       revert this (non-squashed commit) when it is fixed
-        order_type: orderTypeEnum.IMMEDIATE_OR_CANCEL,
+        order_type: orderTypeEnum.FILL_OR_KILL,
         // trade as far as we can go
         tick_index_in_to_out: Long.fromNumber(priceMaxIndex),
       };
@@ -261,10 +258,7 @@ function Swap() {
           {
             ...swapMsg,
             // using type FILL_OR_KILL so that partially filled requests fail
-            // note: using IMMEDIATE_OR_CANCEL while FILL_OR_KILL has a bug
-            //       that often can result in rounding errors and incomplete orders
-            //       revert this (non-squashed commit) when it is fixed
-            order_type: orderTypeEnum.IMMEDIATE_OR_CANCEL,
+            order_type: orderTypeEnum.FILL_OR_KILL,
             tick_index_in_to_out: Long.fromNumber(tickIndexLimitInToOut),
             max_amount_out: amountOut.toFixed(0),
           },

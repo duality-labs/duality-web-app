@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { TxExtension } from '@cosmjs/stargate';
 import { neutron } from '@duality-labs/neutronjs';
@@ -31,9 +30,6 @@ type ExtendedSimulateResponse = Partial<
   }
 >;
 
-const FILL_OR_KILL_ERROR =
-  // eslint-disable-next-line quotes
-  "Fill Or Kill limit order couldn't be executed in its entirety";
 class LimitOrderTxSimulationError extends TxSimulationError {
   insufficientLiquidity: boolean;
   constructor(error: unknown) {
@@ -41,7 +37,10 @@ class LimitOrderTxSimulationError extends TxSimulationError {
     this.name = 'LimitOrderTxSimulationError';
 
     // parse out message codes
-    this.insufficientLiquidity = this.message.includes(FILL_OR_KILL_ERROR);
+    this.insufficientLiquidity = this.message.includes(
+      // eslint-disable-next-line quotes
+      "Fill Or Kill limit order couldn't be executed in its entirety"
+    );
   }
 }
 
@@ -104,19 +103,12 @@ export function useSimulatedLimitOrderResult(
             Number(placeLimitOrderEvent?.attributes.AmountIn || 0) -
             tranchedReserves;
 
-          // add liquidity error if appropriate
-          const error = new BigNumber(response.coin_in.amount)
-            .multipliedBy(1.01)
-            .isLessThan(msgPlaceLimitOrder.amount_in)
-            ? new LimitOrderTxSimulationError(FILL_OR_KILL_ERROR)
-            : undefined;
           // note: hopefully tranchedReserves can be added to the
           //       MsgPlaceLimitOrderResponse payload so that we don't need to derive it here
           return {
             gasInfo,
             result,
             response: { ...response, tranchedReserves, swappedReserves },
-            error,
           };
         }
         // likely an error result
