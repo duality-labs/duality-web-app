@@ -554,7 +554,7 @@ function LimitOrder({
       }
     }
 
-    if (Number(amountInBaseAmount)) {
+    if (Number(simulatedMsgPlaceLimitOrder?.amount_in)) {
       if (simulationResult?.error?.message.includes('Swap amount too small')) {
         return '"Swap amount too small" error';
       }
