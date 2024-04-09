@@ -268,12 +268,8 @@ export function MyPoolsTableCard<T extends string | number>({
               <th style={{ width: '20%' }}>Pool</th>
               <th style={{ width: '20%' }}>Value</th>
               <th style={{ width: '40%' }}>Composition</th>
-              <th style={{ width: '20%' }}>Action</th>
-              <th>Pool</th>
-              <th>Value</th>
-              <th>Composition</th>
               {Object.keys(userPositionActions || {}).length > 0 && (
-                <th>Action</th>
+                <th style={{ width: '20%' }}>Action</th>
               )}
             </tr>
           </thead>
