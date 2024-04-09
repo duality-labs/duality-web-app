@@ -141,16 +141,13 @@ export function useRealtimePrice(tokenA: Token, tokenB: Token) {
     [knownHeight]
   );
 
-  const [timeUnix, prices] =
-    useStatData(tokenA, tokenB, getRealtimePricePath, getLastPriceValue) ||
-    // get price from latestDataUpdate if available
-    (latestDataUpdate &&
-      latestDataUpdate.data && [
-        latestDataUpdate.data[0][0],
-        getLastPriceValue(latestDataUpdate.data[0][1]),
-      ]);
+  const mostRecentUpdate = useStatData(tokenA, tokenB, getRealtimePricePath);
+  // read data from latest update or last fetched value or return null
+  const [timeUnix, lastRow] = mostRecentUpdate.find((v) => v)
+    ? mostRecentUpdate
+    : latestDataUpdate?.data[0] ?? [null, null, null];
   // return single values from data
-  return [timeUnix, prices && prices[0]];
+  return [timeUnix, lastRow && getLastPriceValue(lastRow)[0]];
 }
 
 // Price
