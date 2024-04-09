@@ -488,6 +488,10 @@ function Swap() {
                   'Finding exchange rate...'
                 ) : simulationError?.insufficientLiquidity ? (
                   'Insufficient liquidity'
+                ) : simulationError?.message?.includes(
+                    'Swap amount too small'
+                  ) ? (
+                  'Swap amount too small'
                 ) : pairHasLiquidity ? (
                   'No exchange information'
                 ) : (
