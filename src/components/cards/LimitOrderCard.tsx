@@ -240,6 +240,8 @@ function LimitOrder({
     isValidating: isValidatingBuyAmountSimulationResult,
   } = useSimulatedLimitOrderResult(buyAmountSimulatedMsgPlaceLimitOrder, {
     // invalidate the request cache when the liquidity height changes
+    keepPreviousData:
+      Number(buyAmountSimulatedMsgPlaceLimitOrder?.amount_in) > 0,
     memo: `height of ${meta?.height}`,
   });
 
@@ -428,7 +430,14 @@ function LimitOrder({
     useSimulatedLimitOrderResult(simulatedMsgPlaceLimitOrder, {
       // if the limit order payload hasn't changed then keep the previous data
       keepPreviousData:
-        lastSimulatedMsgPlaceLimitOrder.current === simulatedMsgPlaceLimitOrder,
+        // don't keep when input goes to 0
+        (Number(simulatedMsgPlaceLimitOrder?.amount_in) > 0 &&
+          // if in buy amount calculation mode let it pass
+          buyAmountSimulationResult?.response !== undefined) ||
+        // don't change if input exists and hasn't changed
+        (simulatedMsgPlaceLimitOrder !== undefined &&
+          lastSimulatedMsgPlaceLimitOrder.current ===
+            simulatedMsgPlaceLimitOrder),
       // invalidate the request cache when the liquidity height changes
       memo: `height of ${meta?.height}`,
     });
