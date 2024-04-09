@@ -105,7 +105,7 @@ const headings = [
   'Filled (at order time)',
   'Total',
   'Status',
-];
+].slice(0, 7);
 const columns = [
   TimeColumn,
   TypeColumn,
@@ -115,7 +115,7 @@ const columns = [
   FilledColumn,
   TotalColumn,
   StatusColumn,
-];
+].slice(0, 7);
 
 function TimeColumn({ row: tx }: { row: Tx }) {
   return (
@@ -273,7 +273,7 @@ function TotalColumn({
 
 function StatusColumn() {
   // todo: un-hardcode
-  return <td>Filled</td>;
+  return <td>-</td>;
 }
 
 // helper functions
