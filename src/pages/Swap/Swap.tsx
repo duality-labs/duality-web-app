@@ -486,6 +486,8 @@ function Swap() {
                   </>
                 ) : isValidatingRate ? (
                   'Finding exchange rate...'
+                ) : simulationError?.insufficientLiquidity ? (
+                  'Insufficient liquidity'
                 ) : pairHasLiquidity ? (
                   'No exchange information'
                 ) : (
