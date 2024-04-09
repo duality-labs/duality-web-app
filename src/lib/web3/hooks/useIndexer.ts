@@ -422,8 +422,8 @@ export class IndexerStreamAccumulateDualDataSet<
   ) => {
     // create new objects (to escape React referential-equality comparision)
     this.dataSets = [
-      this.accumulateUpdates(this.dataSets[0], dataUpdates[0], opts),
-      this.accumulateUpdates(this.dataSets[1], dataUpdates[1], opts),
+      this.accumulateUpdates(this.dataSets[0], dataUpdates[0] || [], opts),
+      this.accumulateUpdates(this.dataSets[1], dataUpdates[1] || [], opts),
     ];
     return this.dataSets;
   };
