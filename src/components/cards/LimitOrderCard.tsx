@@ -195,6 +195,7 @@ function LimitOrder({
   const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
   const { data: userBalanceTokenIn, isLoading: isLoadingUserBalanceTokenIn } =
     useBankBalanceBaseAmount(denomIn);
+  const { data: userBalanceTokenOut } = useBankBalanceBaseAmount(denomOut);
   const { data: userBalanceTokenInDisplayAmount } =
     useBankBalanceDisplayAmount(denomIn);
   const { meta } = useTokenPairMapLiquidity([denomA, denomB]);
@@ -645,16 +646,22 @@ function LimitOrder({
         }
         value={
           tokenInBalanceFraction ||
-          new BigNumber(
-            // use amount given from text input or range slider input
-            amountInBaseAmount ||
-              // estimate amount from price
-              new BigNumber(amountOutBaseAmount || 0).multipliedBy(
-                lastKnownPrice || currentPriceFromTicks || 0
+          (buyMode
+            ? // in buy mode estimate the fraction of the token out
+              Number(userBalanceTokenOut)
+              ? Number(amountOutBaseAmount) / Number(userBalanceTokenOut) || 0
+              : 0
+            : // in sell mode estimate the fraction of the token in
+              new BigNumber(
+                // use amount given from text input or range slider input
+                amountInBaseAmount ||
+                  // estimate amount from price
+                  new BigNumber(amountOutBaseAmount || 0).multipliedBy(
+                    lastKnownPrice || currentPriceFromTicks || 0
+                  )
               )
-          )
-            .dividedBy(userBalanceTokenIn || 1)
-            .toNumber() ||
+                .dividedBy(userBalanceTokenIn || 1)
+                .toNumber()) ||
           0
         }
         onChange={useCallback(
