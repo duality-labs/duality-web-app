@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/duality-labs/duality-web-app/compare/v2.5.0...v2.6.0) (2024-04-09)
+
+
+### Features
+
+* improve Orderbook UI and buy/sell orders ([#539](https://github.com/duality-labs/duality-web-app/issues/539)) ([6139e1d](https://github.com/duality-labs/duality-web-app/commit/6139e1db367c915cdbf4b259629e00936278d6f0)), closes [#537](https://github.com/duality-labs/duality-web-app/issues/537) [#541](https://github.com/duality-labs/duality-web-app/issues/541)
+
 ## [2.5.0](https://github.com/duality-labs/duality-web-app/compare/v2.4.0...v2.5.0) (2024-04-09)
 
 
