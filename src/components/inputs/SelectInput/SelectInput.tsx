@@ -87,18 +87,18 @@ export default function SelectInput<T>({
     () => setExpanded((expanded) => !expanded),
     []
   );
-  const close = useCallback(() => setExpanded(false), []);
+  const close = useCallback(() => setTimeout(() => setExpanded(false), 1), []);
   return (
     <div
       className={['select-input', className, expanded && 'expanded']
         .filter(Boolean)
         .join(' ')}
+      onBlur={close}
     >
       <button
         className="select-input-selection row flex flex-centered"
         type="button"
         onClick={toggleExpand}
-        onBlur={close}
       >
         <div className="col mr-auto">
           <SelectedComponent
