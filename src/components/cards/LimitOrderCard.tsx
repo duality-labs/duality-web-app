@@ -61,12 +61,16 @@ import {
   AllowedLimitOrderTypeKey,
   inputOrderTypes,
   orderTypeTextMap,
+  nonImmediateOrderTypes,
 } from '../../lib/web3/utils/limitOrders';
 import {
   DexTickUpdateEvent,
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
-import { displayPriceToTickIndex } from '../../lib/web3/utils/ticks';
+import {
+  displayPriceToTickIndex,
+  tickIndexToPrice,
+} from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
 
 import Drawer from '../Drawer';
@@ -572,6 +576,31 @@ function LimitOrder({
 
   const currentPriceFromTicks = useCurrentPriceFromTicks(denomIn, denomOut);
 
+  // find coinIn and coinOut from the simulation results
+  const tranchedReserves =
+    (simulatedMsgPlaceLimitOrder &&
+      nonImmediateOrderTypes.includes(
+        simulatedMsgPlaceLimitOrder.order_type as number
+      ) &&
+      simulationResult?.response?.tranchedReserves) ||
+    0;
+  // determine the amount of coin out that should be possible from tranches
+  const tranchedAmountOut =
+    tranchedReserves /
+      (simulatedMsgPlaceLimitOrder?.tick_index_in_to_out
+        ? // use the limit price
+          tickIndexToPrice(
+            new BigNumber(
+              simulatedMsgPlaceLimitOrder.tick_index_in_to_out.toNumber()
+            )
+          ).toNumber()
+        : // use the market price or NaN
+          currentPriceFromTicks?.toNumber() ?? 0) || 0;
+  const coinIn = Number(simulationResult?.response?.coin_in.amount || 0);
+  const coinOut =
+    Number(simulationResult?.response?.taker_coin_out.amount || 0) +
+    tranchedAmountOut;
+
   // disable fieldset with no address because the estimation requires a signed client
   const fieldset = (
     <fieldset disabled={!address}>
@@ -714,12 +743,8 @@ function LimitOrder({
             formatMaximumSignificantDecimals(
               simulationResult?.response
                 ? !buyMode
-                  ? new BigNumber(
-                      simulationResult.response.taker_coin_out.amount
-                    ).div(simulationResult.response.coin_in.amount)
-                  : new BigNumber(simulationResult.response.coin_in.amount).div(
-                      simulationResult.response.taker_coin_out.amount
-                    )
+                  ? coinOut / coinIn || '-'
+                  : coinIn / coinOut || '-'
                 : '-'
             )
           )}
@@ -731,13 +756,11 @@ function LimitOrder({
           prefix={`Total ${buyMode ? 'Cost' : 'Result'}`}
           loading={isValidatingSimulation}
           value={
-            tokenIn && simulationResult?.response
+            tokenIn && simulationResult
               ? formatAmount(
                   getDisplayDenomAmount(
                     tokenIn,
-                    buyMode
-                      ? simulationResult.response.coin_in.amount
-                      : simulationResult.response.taker_coin_out.amount
+                    buyMode ? coinIn || '-' : coinOut || '-'
                   ) || 0
                 )
               : '-'
@@ -745,7 +768,16 @@ function LimitOrder({
           suffix={tokenA?.symbol}
         />
       </div>
-      {warning ? (
+      {Number(formState.amount) && simulationResult && !coinIn ? (
+        // show a warning if an amount in, but no amount out
+        <div className="mt-4">
+          <div className="text-warning flex text-center">
+            <p>No trade will occur with this type of order</p>
+            <p>and this limit price at this time</p>
+            <p>Choose a limit closer to the current price</p>
+          </div>
+        </div>
+      ) : warning ? (
         // show a warning if an amount has been entered, but the form fails validation
         <div className="mt-4">
           <div className="text-error flex text-center">{warning}</div>
@@ -762,6 +794,7 @@ function LimitOrder({
           disabled={
             isValidatingSwap ||
             !simulationResult ||
+            !coinOut ||
             (!Number(amountInBaseAmount) && !Number(amountOutBaseAmount))
           }
         >

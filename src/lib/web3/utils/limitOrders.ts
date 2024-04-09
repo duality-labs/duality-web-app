@@ -41,6 +41,16 @@ export const inputOrderTypes: Array<AllowedLimitOrderTypeKey> = [
   'GOOD_TIL_CANCELLED',
 ];
 
+export const immediateOrderTypes = [
+  orderTypeEnum.FILL_OR_KILL,
+  orderTypeEnum.IMMEDIATE_OR_CANCEL,
+] as const;
+export const nonImmediateOrderTypes = [
+  orderTypeEnum.JUST_IN_TIME,
+  orderTypeEnum.GOOD_TIL_TIME,
+  orderTypeEnum.GOOD_TIL_CANCELLED,
+] as const;
+
 export const timePeriods = [
   'seconds',
   'minutes',

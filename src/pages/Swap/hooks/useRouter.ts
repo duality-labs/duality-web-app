@@ -15,11 +15,18 @@ import {
 
 import { useSwrResponseFromReactQuery } from '../../../lib/web3/hooks/useSWR';
 import { createMemo } from '../../../lib/web3/utils/memo';
+import {
+  DexPlaceLimitOrderEvent,
+  mapEventAttributes,
+} from '../../../lib/web3/utils/events';
 
 type SimulateResponse = Awaited<ReturnType<TxExtension['tx']['simulate']>>;
 type ExtendedSimulateResponse = Partial<
   SimulateResponse & {
-    response: MsgPlaceLimitOrderResponse;
+    response: MsgPlaceLimitOrderResponse & {
+      tranchedReserves: number;
+      swappedReserves: number;
+    };
     error: LimitOrderTxSimulationError;
   }
 >;
@@ -83,13 +90,34 @@ export function useSimulatedLimitOrderResult(
           const response = neutron.dex.MsgPlaceLimitOrderResponse.decode(
             result.msgResponses[0].value
           );
+          const placeLimitOrderEvent = result.events
+            .map<DexPlaceLimitOrderEvent>(mapEventAttributes)
+            .find((event) => event.attributes.action === 'PlaceLimitOrder');
+          // determine the amount of reserves that were added to tranches,
+          // these reserves have not yet been traded (so we may estimate them)
+          // note: hopefully tranchedReserves can be added to the
+          //       MsgPlaceLimitOrderResponse payload so that we don't need to derive it here
+          const tranchedReserves = Number(
+            placeLimitOrderEvent?.attributes.Shares || 0
+          );
+          const swappedReserves =
+            Number(placeLimitOrderEvent?.attributes.AmountIn || 0) -
+            tranchedReserves;
+
           // add liquidity error if appropriate
           const error = new BigNumber(response.coin_in.amount)
             .multipliedBy(1.01)
             .isLessThan(msgPlaceLimitOrder.amount_in)
             ? new LimitOrderTxSimulationError(FILL_OR_KILL_ERROR)
             : undefined;
-          return { gasInfo, result, response, error };
+          // note: hopefully tranchedReserves can be added to the
+          //       MsgPlaceLimitOrderResponse payload so that we don't need to derive it here
+          return {
+            gasInfo,
+            result,
+            response: { ...response, tranchedReserves, swappedReserves },
+            error,
+          };
         }
         // likely an error result
         return { gasInfo, result };
