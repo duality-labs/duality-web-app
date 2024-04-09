@@ -1,5 +1,6 @@
 import useSWR from 'swr';
 import useSWRSubscription, { SWRSubscription } from 'swr/subscription';
+import { useMemo } from 'react';
 import { seconds } from '../../utils/time';
 
 const { REACT_APP__INDEXER_API = '' } = import.meta.env;
@@ -421,8 +422,8 @@ export class IndexerStreamAccumulateDualDataSet<
   ) => {
     // create new objects (to escape React referential-equality comparision)
     this.dataSets = [
-      this.accumulateUpdates(this.dataSets[0], dataUpdates[0], opts),
-      this.accumulateUpdates(this.dataSets[1], dataUpdates[1], opts),
+      this.accumulateUpdates(this.dataSets[0], dataUpdates[0] || [], opts),
+      this.accumulateUpdates(this.dataSets[1], dataUpdates[1] || [], opts),
     ];
     return this.dataSets;
   };
@@ -437,8 +438,12 @@ export class IndexerStreamAccumulateDualDataSet<
   }
 }
 
-interface StaleWhileRevalidateState<DataSetOrDataSets> {
+interface StreamMetadata {
+  height: number;
+}
+export interface StaleWhileRevalidateStreamState<DataSetOrDataSets> {
   data?: DataSetOrDataSets;
+  meta?: StreamMetadata;
   error?: Error;
 }
 // add higher-level hook to stream real-time DataSet or DataSets of Indexer URL
@@ -449,7 +454,7 @@ function useIndexerStream<
   url: URL | string | undefined,
   IndexerClass: typeof IndexerStreamAccumulateSingleDataSet,
   opts?: AccumulatorOptions
-): StaleWhileRevalidateState<DataSet>;
+): StaleWhileRevalidateStreamState<DataSet>;
 function useIndexerStream<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
@@ -457,7 +462,7 @@ function useIndexerStream<
   url: URL | string | undefined,
   IndexerClass: typeof IndexerStreamAccumulateDualDataSet,
   opts?: AccumulatorOptions
-): StaleWhileRevalidateState<DataSet[]>;
+): StaleWhileRevalidateStreamState<DataSet[]>;
 function useIndexerStream<
   DataRow extends BaseDataRow,
   DataSet = BaseDataSet<DataRow>
@@ -467,14 +472,15 @@ function useIndexerStream<
     | typeof IndexerStreamAccumulateSingleDataSet
     | typeof IndexerStreamAccumulateDualDataSet,
   opts?: AccumulatorOptions
-): StaleWhileRevalidateState<DataSet | DataSet[]> {
+): StaleWhileRevalidateStreamState<DataSet | DataSet[]> {
   // define subscription callback which may or may not be used in this component
   // it is passed to useSWRSubscription to handle if the subscription should be
   // created/held/destroyed as multiple components may listen for the same data
-  const subscribe: SWRSubscription<string[], DataSet | DataSet[], Error> = (
-    [url],
-    { next }
-  ) => {
+  const subscribe: SWRSubscription<
+    string[],
+    [DataSet | DataSet[], StreamMetadata],
+    Error
+  > = ([url], { next }) => {
     // if URL is undefined or an empty string, do not stream it
     if (!url) {
       return () => undefined;
@@ -483,9 +489,9 @@ function useIndexerStream<
       url,
       {
         // note: dataSet may be empty on return of an initial "no rows" payload
-        onAccumulated: (dataSet) => {
+        onAccumulated: (dataSet, height) => {
           // note: the TypeScript here is a bit hacky but this should be ok
-          next(null, dataSet as unknown as DataSet | DataSet[]);
+          next(null, [dataSet as unknown as DataSet | DataSet[], { height }]);
         },
         onError: (error) => next(error),
       },
@@ -500,11 +506,21 @@ function useIndexerStream<
   };
 
   // return cached subscription data
-  return useSWRSubscription<DataSet | DataSet[], Error>(
+  const streamState = useSWRSubscription<[DataSet | DataSet[], StreamMetadata]>(
     // create key from URL and options
     [`${url}`, IndexerClass, ...Object.entries(opts || {}).flat()],
     // the subscription object will differ for any given options
     subscribe
+  );
+
+  // extract out meta data into an additional property
+  return useMemo<StaleWhileRevalidateStreamState<DataSet | DataSet[]>>(
+    () => ({
+      ...streamState,
+      data: streamState.data?.[0],
+      meta: streamState.data?.[1],
+    }),
+    [streamState]
   );
 }
 
@@ -529,7 +545,7 @@ export function useIndexerStreamOfDualDataSet<
     url,
     IndexerStreamAccumulateDualDataSet,
     opts
-  ) as StaleWhileRevalidateState<[DataSet, DataSet]>;
+  ) as StaleWhileRevalidateStreamState<[DataSet, DataSet]>;
 }
 
 function useIndexerStreamLastUpdate<
@@ -541,7 +557,7 @@ function useIndexerStreamLastUpdate<
     | typeof IndexerStreamAccumulateSingleDataSet
     | typeof IndexerStreamAccumulateDualDataSet,
   opts?: AccumulatorOptions
-): StaleWhileRevalidateState<DataSet | [DataSet, DataSet]> {
+): StaleWhileRevalidateStreamState<DataSet | [DataSet, DataSet]> {
   // return cached subscription data
   const hook =
     IndexerClass === IndexerStreamAccumulateDualDataSet
@@ -560,7 +576,7 @@ export function useIndexerStreamLastUpdateOfSingleDataSet<
 >(
   url: URL | string | undefined,
   opts?: AccumulatorOptions
-): StaleWhileRevalidateState<DataSet> {
+): StaleWhileRevalidateStreamState<DataSet> {
   // return cached subscription data
   return useIndexerStreamLastUpdate<DataRow, DataSet>(
     url,
@@ -569,7 +585,7 @@ export function useIndexerStreamLastUpdateOfSingleDataSet<
       accumulateUpdates: accumulateLastUpdateOnly,
       ...opts,
     }
-  ) as StaleWhileRevalidateState<DataSet>;
+  ) as StaleWhileRevalidateStreamState<DataSet>;
 }
 export function useIndexerStreamLastUpdateOfDualDataSet<
   DataRow extends BaseDataRow,
@@ -577,7 +593,7 @@ export function useIndexerStreamLastUpdateOfDualDataSet<
 >(
   url: URL | string | undefined,
   opts?: AccumulatorOptions
-): StaleWhileRevalidateState<[DataSet, DataSet]> {
+): StaleWhileRevalidateStreamState<[DataSet, DataSet]> {
   // return cached subscription data
   return useIndexerStreamLastUpdate<DataRow, DataSet>(
     url,
@@ -586,7 +602,7 @@ export function useIndexerStreamLastUpdateOfDualDataSet<
       accumulateUpdates: accumulateLastUpdateOnly,
       ...opts,
     }
-  ) as StaleWhileRevalidateState<[DataSet, DataSet]>;
+  ) as StaleWhileRevalidateStreamState<[DataSet, DataSet]>;
 }
 
 // add higher-level functions to fetch multiple pages of data as "one request"

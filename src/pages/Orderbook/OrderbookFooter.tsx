@@ -102,10 +102,10 @@ const headings = [
   'Side',
   'Price',
   'Amount',
-  'Filled',
+  'Filled (at order time)',
   'Total',
   'Status',
-];
+].slice(0, 7);
 const columns = [
   TimeColumn,
   TypeColumn,
@@ -115,7 +115,7 @@ const columns = [
   FilledColumn,
   TotalColumn,
   StatusColumn,
-];
+].slice(0, 7);
 
 function TimeColumn({ row: tx }: { row: Tx }) {
   return (
@@ -216,6 +216,11 @@ function FilledColumn({
   context?: OrderbookFooterTableContext;
 }) {
   const events = getMappedEvents(tx);
+  const placeLimitOrderEvent: DexPlaceLimitOrderEvent | undefined = events.find(
+    (event) =>
+      event.attributes['action'] === 'PlaceLimitOrder' &&
+      Number(event.attributes['Shares']) > 0
+  ) as DexPlaceLimitOrderEvent | undefined;
   const attributes = getPlaceLimitOrderActionEvent(tx);
   const [tokenIn] =
     tokenA && tokenB && attributes
@@ -231,7 +236,9 @@ function FilledColumn({
   return (
     <td className="text-right">
       {formatPercentage(
-        Number(reservesIn) / (Number(attributes?.AmountIn) || 1)
+        (Number(reservesIn) -
+          Number(placeLimitOrderEvent?.attributes['Shares'] || 0)) /
+          (Number(attributes?.AmountIn) || 1)
       )}
     </td>
   );
@@ -266,7 +273,7 @@ function TotalColumn({
 
 function StatusColumn() {
   // todo: un-hardcode
-  return <td>Filled</td>;
+  return <td>-</td>;
 }
 
 // helper functions

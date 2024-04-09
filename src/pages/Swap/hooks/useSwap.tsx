@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { DeliverTxResponse } from '@cosmjs/stargate';
-import { OfflineSigner, parseCoins } from '@cosmjs/proto-signing';
+import { OfflineSigner } from '@cosmjs/proto-signing';
 import { BigNumber } from 'bignumber.js';
 
 import { formatAmount } from '../../../lib/utils/number';
@@ -10,10 +10,6 @@ import { createTransactionToasts } from '../../../components/Notifications/commo
 
 import { getDisplayDenomAmount } from '../../../lib/web3/utils/tokens';
 import { useTokenByDenom } from '../../../lib/web3/hooks/useDenomClients';
-import {
-  mapEventAttributes,
-  CoinReceivedEvent,
-} from '../../../lib/web3/utils/events';
 import { getDexSigningClient } from '../../../lib/web3/clients/signingClients';
 import { neutron } from '@duality-labs/neutronjs';
 import {
@@ -93,7 +89,7 @@ export function useSwap(denoms: string[]): [
     isValidating: boolean;
     error?: string;
   },
-  (request: MsgPlaceLimitOrder, gasEstimate: number) => void
+  (request: MsgPlaceLimitOrder, gasEstimate: number) => Promise<void>
 ] {
   const [data, setData] = useState<MsgPlaceLimitOrderResponse>();
   const [validating, setValidating] = useState(false);
@@ -103,7 +99,7 @@ export function useSwap(denoms: string[]): [
   const { data: tokenByDenom } = useTokenByDenom(denoms);
 
   const sendRequest = useCallback(
-    (request: MsgPlaceLimitOrder, gasEstimate: number) => {
+    async (request: MsgPlaceLimitOrder, gasEstimate: number) => {
       if (!request) return onError('Missing Tokens and value');
       if (!web3) return onError('Missing Provider');
       const {
@@ -142,32 +138,19 @@ export function useSwap(denoms: string[]): [
       if (!tokenInToken) return onError('Token in was not found');
       if (!tokenOutToken) return onError('Token out was not found');
 
-      createTransactionToasts(
+      await createTransactionToasts(
         () => {
           return sendSwap({ wallet, address }, request, gasEstimate);
         },
         {
           onLoadingMessage: 'Executing your trade',
           onSuccess(res) {
-            const amountOut = res.events.reduce<BigNumber>((result, event) => {
-              if (
-                event.type === 'coin_received' &&
-                event.attributes.find(
-                  ({ key, value }) => key === 'receiver' && value === address
-                )
-              ) {
-                // collect into more usable format for parsing
-                const { attributes } =
-                  mapEventAttributes<CoinReceivedEvent>(event);
-                // parse coin string for matching tokens
-                const coin = parseCoins(attributes.amount)[0];
-                if (coin?.denom === tokenOut) {
-                  return result.plus(coin?.amount || 0);
-                }
-              }
-              return result;
-            }, new BigNumber(0));
-
+            const msgResponseValue = res.msgResponses.at(0)?.value;
+            const response = msgResponseValue
+              ? neutron.dex.MsgPlaceLimitOrderResponse.decode(msgResponseValue)
+              : undefined;
+            const amountOut =
+              response && Number(response.taker_coin_out.amount);
             const description = amountOut
               ? `Received ${formatAmount(
                   getDisplayDenomAmount(

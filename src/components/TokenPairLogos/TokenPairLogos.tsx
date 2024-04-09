@@ -42,12 +42,12 @@ function TokenLogo({
 const tokenSwitchDelayMs = 800;
 export default function TokenPairLogos({
   className,
-  tokenA,
-  tokenB,
+  tokenLeft: tokenA,
+  tokenRight: tokenB,
 }: {
   className?: string;
-  tokenA?: Token;
-  tokenB?: Token;
+  tokenLeft?: Token;
+  tokenRight?: Token;
 }) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [previousTokenA, setPreviousTokenA] = useState(tokenA);

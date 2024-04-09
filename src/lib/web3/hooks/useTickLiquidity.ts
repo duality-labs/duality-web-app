@@ -5,7 +5,10 @@ import BigNumber from 'bignumber.js';
 import { TickInfo, tickIndexToPrice } from '../utils/ticks';
 import { useOrderedTokenPair } from './useTokenPairs';
 
-import { useIndexerStreamOfDualDataSet } from './useIndexer';
+import {
+  StaleWhileRevalidateStreamState,
+  useIndexerStreamOfDualDataSet,
+} from './useIndexer';
 import { Token, TokenID } from '../utils/tokens';
 import { useToken } from './useDenomClients';
 
@@ -16,10 +19,7 @@ type ReserveDataSet = Map<ReserveDataRow['0'], ReserveDataRow['1']>;
 export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
   TokenID?,
   TokenID?
-]): {
-  data?: [ReserveDataSet, ReserveDataSet];
-  error?: unknown;
-} {
+]): StaleWhileRevalidateStreamState<[ReserveDataSet, ReserveDataSet]> {
   const encodedA = tokenIdA && encodeURIComponent(tokenIdA);
   const encodedB = tokenIdB && encodeURIComponent(tokenIdB);
   // stream data from indexer
