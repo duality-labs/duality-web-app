@@ -7,8 +7,9 @@ import TableCard, { TableCardProps } from './TableCard';
 import AssetIconPair from '../assets/AssetIconPair';
 import AssetSymbol from '../assets/AssetName';
 
+import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
-import { useStatTVL, useStatVolatility, useStatVolume } from '../stats/hooks';
+import { useStatVolatility, useStatVolume } from '../stats/hooks';
 
 import {
   formatAmount,
@@ -110,7 +111,7 @@ export default function PoolsTableCard<T extends string | number>({
           </thead>
           <tbody>
             {filteredPoolsList.map((row: PoolTableRow) => {
-              const [pairId, token0, token1] = row;
+              const [pairId, token0, token1, reserves0, reserves1] = row;
               const onRowClick:
                 | MouseEventHandler<HTMLButtonElement>
                 | undefined = onTokenPairClick
@@ -122,6 +123,8 @@ export default function PoolsTableCard<T extends string | number>({
                   key={pairId}
                   token0={token0}
                   token1={token1}
+                  reserves0={reserves0}
+                  reserves1={reserves1}
                   onClick={onRowClick}
                 />
               );
@@ -151,13 +154,31 @@ export default function PoolsTableCard<T extends string | number>({
 function PairRow({
   token0,
   token1,
+  reserves0 = 0,
+  reserves1 = 0,
   onClick,
 }: {
   token0: Token;
   token1: Token;
+  reserves0: number;
+  reserves1: number;
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
-  const [, tvl] = useStatTVL(token0, token1);
+  const {
+    isValidating,
+    data: [price0, price1],
+  } = useSimplePrice([token0, token1]);
+
+  const tvl = useMemo<number | undefined | null>(() => {
+    if (price0 && price1) {
+      const value0 = Number(getDisplayDenomAmount(token0, reserves0)) * price0;
+      const value1 = Number(getDisplayDenomAmount(token1, reserves1)) * price1;
+      return (value0 || 0) + (value1 || 0);
+    }
+    // return null only if prices are non-zero and the request is not validating
+    return !isValidating ? null : undefined;
+  }, [price0, price1, isValidating, token0, reserves0, token1, reserves1]);
+
   const [, volume] = useStatVolume(token0, token1);
   const [, volatility] = useStatVolatility(token0, token1);
 
