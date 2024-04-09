@@ -564,6 +564,10 @@ function LimitOrder({
       }
     }
 
+    if (simulationResult?.error?.message.includes('executed in its entirety')) {
+      return 'Cannot execute Fill Or Kill order in its entirety';
+    }
+
     return undefined;
   }, [
     amountInBaseAmount,
