@@ -555,11 +555,13 @@ function LimitOrder({
       }
     }
 
-    if (
-      Number(amountInBaseAmount) &&
-      simulationResult?.error?.insufficientLiquidity
-    ) {
-      return 'Insufficient Liquidity: cannot complete order';
+    if (Number(amountInBaseAmount)) {
+      if (simulationResult?.error?.message.includes('Swap amount too small')) {
+        return '"Swap amount too small" error';
+      }
+      if (simulationResult?.error?.insufficientLiquidity) {
+        return 'Insufficient Liquidity: cannot complete order';
+      }
     }
 
     return undefined;
