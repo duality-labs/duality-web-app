@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BigNumber from 'bignumber.js';
 
-import { useCurrentPriceFromTicks } from '../../components/Liquidity/useCurrentPriceFromTicks';
+import { useRealtimePrice } from '../../components/stats/hooks';
 import {
   formatAmount,
   getDecimalPlaces,
@@ -37,7 +37,7 @@ export default function OrderBookList({
     tokenId1 === tokenIdA && tokenId0 === tokenIdB,
   ];
 
-  const currentPrice = useCurrentPriceFromTicks(tokenIdA, tokenIdB);
+  const [, currentPrice] = useRealtimePrice(tokenA, tokenB);
   const resolutionPercent = 0.01; // size of price steps
 
   const getTickBuckets = useCallback(
@@ -47,8 +47,7 @@ export default function OrderBookList({
         currentPrice &&
         Math.pow(
           10,
-          getOrderOfMagnitude(currentPrice.toNumber()) +
-            resolutionOrderOfMagnitude
+          getOrderOfMagnitude(currentPrice) + resolutionOrderOfMagnitude
         );
 
       const ticks = forward ? tokenATicks : tokenBTicks;
@@ -58,12 +57,12 @@ export default function OrderBookList({
           currentPrice && step
             ? descendingOrder
               ? Number(
-                  currentPrice
+                  new BigNumber(currentPrice)
                     .minus(index * step)
                     .toPrecision(precision, BigNumber.ROUND_FLOOR)
                 )
               : Number(
-                  currentPrice
+                  new BigNumber(currentPrice)
                     .plus(index * step)
                     .toPrecision(precision, BigNumber.ROUND_CEIL)
                 )
@@ -177,12 +176,12 @@ export default function OrderBookList({
     }
   }, [filteredTokenBTicks]);
 
-  const [previousPrice, setPreviousPrice] = useState<BigNumber | undefined>();
-  const lastPrice = useRef<BigNumber | undefined>(currentPrice);
+  const [previousPrice, setPreviousPrice] = useState<number | undefined>();
+  const lastPrice = useRef<number | undefined>(currentPrice || undefined);
   useEffect(() => {
     if (
       currentPrice &&
-      (!lastPrice.current || !lastPrice.current.isEqualTo(currentPrice))
+      (!lastPrice.current || lastPrice.current !== currentPrice)
     ) {
       // set old data
       if (lastPrice.current) {
@@ -195,9 +194,9 @@ export default function OrderBookList({
   }, [currentPrice, filteredTokenATicks]);
 
   const priceDecimalPlaces =
-    currentPrice !== undefined
+    currentPrice !== undefined && currentPrice !== null
       ? getDecimalPlaces(
-          currentPrice.toNumber(),
+          currentPrice,
           1 - getOrderOfMagnitude(resolutionPercent)
         )
       : undefined;
@@ -236,13 +235,15 @@ export default function OrderBookList({
               colSpan={2}
               className="text-center py-3"
               diff={
-                previousPrice && currentPrice?.minus(previousPrice).toNumber()
+                previousPrice && currentPrice
+                  ? currentPrice - previousPrice
+                  : undefined
               }
             >
               {currentPrice
-                ? `${formatAmount(currentPrice.toNumber())} ${
-                    tokenA.symbol
-                  } per ${tokenB.symbol}`
+                ? `${formatAmount(currentPrice)} ${tokenA.symbol} per ${
+                    tokenB.symbol
+                  }`
                 : '-'}
             </DiffCell>
           </tr>
