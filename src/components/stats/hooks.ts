@@ -18,12 +18,12 @@ import { useIndexerStreamLastUpdateOfSingleDataSet } from '../../lib/web3/hooks/
 const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 
 function useLastUpdateOfIndexerData(
-  tokenA: Token,
-  tokenB: Token,
+  tokenA: Token | undefined,
+  tokenB: Token | undefined,
   getIndexerPath: (tokenA: Token, tokenB: Token) => string | undefined,
   getValues?: (values: number[]) => number[]
 ) {
-  const urlPath = getIndexerPath(tokenA, tokenB);
+  const urlPath = tokenA && tokenB && getIndexerPath(tokenA, tokenB);
   const url = urlPath && `${REACT_APP__INDEXER_API}/${urlPath}`;
   const update = useIndexerStreamLastUpdateOfSingleDataSet<TimeSeriesRow>(url);
 
@@ -54,8 +54,8 @@ function useLastUpdateOfIndexerData(
 }
 
 function useStatData(
-  tokenA: Token,
-  tokenB: Token,
+  tokenA: Token | undefined,
+  tokenB: Token | undefined,
   getIndexerPath: (tokenA: Token, tokenB: Token) => string | undefined,
   getValues?: (values: number[]) => number[]
 ): [
@@ -113,29 +113,30 @@ function useStatTokenValue(
 function getLastPriceValue([, , , close]: number[]): number[] {
   return [tickIndexToPrice(new BigNumber(close)).toNumber()];
 }
-export function useRealtimePrice(tokenA: Token, tokenB: Token) {
+export function useRealtimePrice(
+  tokenA: Token | undefined,
+  tokenB: Token | undefined
+) {
   // fetch most recent value with a page limit
+  const denomA = tokenA && getIndexerTokenPathPart(tokenA);
+  const denomB = tokenB && getIndexerTokenPathPart(tokenB);
   const fetchURL = new URL(
-    `timeseries/price/${getIndexerTokenPathPart(
-      tokenA
-    )}/${getIndexerTokenPathPart(tokenB)}`,
+    `timeseries/price/${denomA}/${denomB}`,
     REACT_APP__INDEXER_API
   );
   fetchURL.searchParams.append('pagination.limit', '1');
   const { data: latestDataUpdate } = useSWR<TimeSeriesPage>(
-    [fetchURL.toString(), 'fetch'],
+    denomA && denomB ? [fetchURL.toString(), 'fetch'] : null,
     () => fetch(fetchURL).then((response) => response.json())
   );
   const knownHeight = latestDataUpdate?.block_range.to_height;
 
   const getRealtimePricePath = useCallback(
     (tokenA: Token, tokenB: Token): string | undefined => {
+      const denomA = tokenA && getIndexerTokenPathPart(tokenA);
+      const denomB = tokenB && getIndexerTokenPathPart(tokenB);
       return knownHeight
-        ? `timeseries/price/${getIndexerTokenPathPart(
-            tokenA
-          )}/${getIndexerTokenPathPart(
-            tokenB
-          )}?block_range.from_height=${knownHeight}`
+        ? `timeseries/price/${denomA}/${denomB}?block_range.from_height=${knownHeight}`
         : undefined;
     },
     [knownHeight]
