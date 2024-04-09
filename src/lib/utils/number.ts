@@ -168,8 +168,8 @@ export function formatCurrency(
 export function formatUnavailableStates<T = string | number>(
   value: T | null | undefined,
   format?: (value: T) => string,
-  loadingState = '...',
-  nullState = 'N/A'
+  nullState = '-',
+  loadingState = '...'
 ) {
   return value === undefined
     ? loadingState
