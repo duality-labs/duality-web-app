@@ -10,7 +10,7 @@ import {
   getLastDataChanges,
   getLastDataValues,
 } from './utils';
-import { Token, getTokenId } from '../../lib/web3/utils/tokens';
+import { Token } from '../../lib/web3/utils/tokens';
 import { useTokenValueTotal } from '../../lib/web3/hooks/useTokens';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 import { useIndexerStreamLastUpdateOfSingleDataSet } from '../../lib/web3/hooks/useIndexer';
@@ -116,7 +116,9 @@ function getLastPriceValue([, , , close]: number[]): number[] {
 export function useRealtimePrice(tokenA: Token, tokenB: Token) {
   // fetch most recent value with a page limit
   const fetchURL = new URL(
-    `timeseries/price/${getTokenId(tokenA)}/${getTokenId(tokenB)}`,
+    `timeseries/price/${getIndexerTokenPathPart(
+      tokenA
+    )}/${getIndexerTokenPathPart(tokenB)}`,
     REACT_APP__INDEXER_API
   );
   fetchURL.searchParams.append('pagination.limit', '1');
@@ -129,7 +131,9 @@ export function useRealtimePrice(tokenA: Token, tokenB: Token) {
   const getRealtimePricePath = useCallback(
     (tokenA: Token, tokenB: Token): string | undefined => {
       return knownHeight
-        ? `timeseries/price/${getTokenId(tokenA)}/${getTokenId(
+        ? `timeseries/price/${getIndexerTokenPathPart(
+            tokenA
+          )}/${getIndexerTokenPathPart(
             tokenB
           )}?block_range.from_height=${knownHeight}`
         : undefined;
@@ -151,7 +155,9 @@ export function useRealtimePrice(tokenA: Token, tokenB: Token) {
 
 // Price
 function getStatPricePath(tokenA: Token, tokenB: Token) {
-  return `stats/price/${getTokenId(tokenA)}/${getTokenId(tokenB)}`;
+  return `stats/price/${getIndexerTokenPathPart(
+    tokenA
+  )}/${getIndexerTokenPathPart(tokenB)}`;
 }
 export function useStatPrice(
   tokenA: Token,
