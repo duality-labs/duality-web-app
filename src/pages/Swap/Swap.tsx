@@ -122,7 +122,8 @@ function Swap() {
   // todo: replace with something more lightweight if reliably available
   //       eg. using the stats endpoint of last known price of last 48 hours
   //       which will require reasonable handling when recent price is unknown
-  const { meta } = useTokenPairMapLiquidity([denomA, denomB]);
+  const { data: pairTicks, meta } = useTokenPairMapLiquidity([denomA, denomB]);
+  const pairHasLiquidity = !!pairTicks?.reduce((acc, set) => acc + set.size, 0);
 
   // create reusable swap msg
   const swapMsg = useMemo(() => {
@@ -485,8 +486,10 @@ function Swap() {
                   </>
                 ) : isValidatingRate ? (
                   'Finding exchange rate...'
-                ) : (
+                ) : pairHasLiquidity ? (
                   'No exchange information'
+                ) : (
+                  'Pair is not initialized'
                 )}
               </span>
               <span className="text-header">Price Impact</span>
