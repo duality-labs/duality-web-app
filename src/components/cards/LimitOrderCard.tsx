@@ -498,7 +498,7 @@ function LimitOrder({
           tick_index_in_to_out: Long.fromNumber(tickIndexLimitInToOut),
         };
         const gasEstimate = simulationResult?.gasInfo?.gasUsed.toNumber();
-        swapRequest(msgPlaceLimitOrder, gasEstimate || 0);
+        swapRequest(msgPlaceLimitOrder, (gasEstimate || 0) * 1.5);
       }
     },
     [
