@@ -43,7 +43,7 @@ import {
 import { useChainFeeToken } from '../../lib/web3/hooks/useTokens';
 import { useNativeChain } from '../../lib/web3/hooks/useChains';
 import { useTokenPairMapLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
-import { useCurrentPriceFromTicks } from '../Liquidity/useCurrentPriceFromTicks';
+import { useRealtimePrice } from '../stats/hooks';
 
 import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
 import {
@@ -303,8 +303,7 @@ function LimitOrder({
     userBalanceTokenIn,
   ]);
 
-  // todo: replace currentPriceFromTicks with realtimePrice from useRealtimePrice
-  const currentPriceFromTicks = useCurrentPriceFromTicks(denomIn, denomOut);
+  const [, currentPrice] = useRealtimePrice(tokenIn, tokenOut);
 
   const simulatedMsgPlaceLimitOrder: MsgPlaceLimitOrder | undefined =
     useMemo(() => {
@@ -375,7 +374,7 @@ function LimitOrder({
         };
         // optional params
         // only add maxOut for buy orders
-        if (tokenOut && maxAmountOut && currentPriceFromTicks) {
+        if (tokenOut && maxAmountOut && currentPrice) {
           // set max out on taker orders
           if (
             immediateOrderTypes.includes(orderTypeEnum[execution] as number)
@@ -394,7 +393,7 @@ function LimitOrder({
                 tickIndexToPrice(
                   limitTickIndexInToOut ?? new BigNumber(priceMaxIndex)
                 ),
-                currentPriceFromTicks
+                currentPrice
               ).toNumber();
             msgPlaceLimitOrder.amount_in = BigNumber.min(
               msgPlaceLimitOrder.amount_in,
@@ -416,7 +415,7 @@ function LimitOrder({
       amountInBaseAmount,
       amountOutBaseAmount,
       buyMode,
-      currentPriceFromTicks,
+      currentPrice,
       formState.execution,
       formState.limitPrice,
       formState.timeAmount,
@@ -618,7 +617,7 @@ function LimitOrder({
             )
           ).toNumber()
         : // use the market price or NaN
-          currentPriceFromTicks?.toNumber() ?? 0) || 0;
+          currentPrice ?? 0) || 0;
   const coinIn = Number(simulationResult?.response?.coin_in.amount || 0);
   const coinOut =
     Number(simulationResult?.response?.taker_coin_out.amount || 0) +
@@ -663,7 +662,7 @@ function LimitOrder({
                 amountInBaseAmount ||
                   // estimate amount from price
                   new BigNumber(amountOutBaseAmount || 0).multipliedBy(
-                    lastKnownPrice || currentPriceFromTicks || 0
+                    lastKnownPrice || currentPrice || 0
                   )
               )
                 .dividedBy(userBalanceTokenIn || 1)
