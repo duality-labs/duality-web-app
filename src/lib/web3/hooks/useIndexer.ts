@@ -1,3 +1,4 @@
+import useSWR from 'swr';
 import useSWRSubscription, { SWRSubscription } from 'swr/subscription';
 import { seconds } from '../../utils/time';
 
@@ -41,6 +42,8 @@ interface AccumulatorOptions {
   // optional value to remove from accumulator maps
   // (0 values should be removed from liquidity maps)
   mapEntryRemovalValue?: 0;
+  // optional initial setting of the accumulateUpdates function
+  accumulateUpdates?: typeof accumulateUpdates;
 }
 export class IndexerStream<DataRow = BaseDataRow> {
   // use single AbortController for all the requests
@@ -86,6 +89,10 @@ export class IndexerStream<DataRow = BaseDataRow> {
         // add event source and add a cancellation listener
         const eventSource = new EventSource(url);
         this.abortController.signal.onabort = () => eventSource.close();
+        const setEmptyDataSet = (e: MessageEvent<string>) => {
+          const heightOfData = Number(e.lastEventId.split(':').at(0));
+          callbacks.onUpdate?.([], heightOfData);
+        };
         // listen for updates and remove listener if aborted
         eventSource.addEventListener(
           'update',
@@ -103,6 +110,9 @@ export class IndexerStream<DataRow = BaseDataRow> {
               }
             }
             if (dataUpdates) {
+              // prevent heartbeat from setting an empty data update
+              eventSource.removeEventListener('heartbeat', setEmptyDataSet);
+              // get data height
               const heightOfData = Number(e.lastEventId.split(':').at(0));
               // send update directly to listener
               callbacks.onUpdate?.(dataUpdates, heightOfData);
@@ -110,6 +120,11 @@ export class IndexerStream<DataRow = BaseDataRow> {
           },
           listenerOptions
         );
+        // for the first heartbeat, if no data has yet come set "no data" state
+        eventSource.addEventListener('heartbeat', setEmptyDataSet, {
+          ...listenerOptions,
+          once: true,
+        });
         // 'end' message is sent if a data stream is complete
         eventSource.addEventListener(
           'end',
@@ -250,7 +265,8 @@ function accumulateUpdates<
   DataRow extends BaseDataRow,
   DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
 >(currentMap: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions) {
-  // create new map or use current map
+  // create new map: this will allow React hooks to function as expected,
+  // each new update returns a new Map object (not the same but mutated object)
   const newMap = new Map(currentMap) as DataSet;
   // add data updates to new map
   return accumulateUpdatesUsingMutation(newMap, dataUpdates, opts);
@@ -273,6 +289,16 @@ function accumulateUpdatesUsingMutation<
     }
   }
   return map;
+}
+
+// accumulation function that disregards state and returns only the last update
+function accumulateLastUpdateOnly<
+  DataRow extends BaseDataRow,
+  DataSet extends BaseDataSet<DataRow> = BaseDataSet<DataRow>
+>(_map: DataSet, dataUpdates: DataRow[], opts: AccumulatorOptions) {
+  // add data updates to a new map (ignore previous state)
+  const newMap = new Map() as DataSet;
+  return accumulateUpdatesUsingMutation(newMap, dataUpdates, opts);
 }
 
 interface StreamSingleDataSetCallbacks<
@@ -445,13 +471,18 @@ function useIndexerStream<
   // define subscription callback which may or may not be used in this component
   // it is passed to useSWRSubscription to handle if the subscription should be
   // created/held/destroyed as multiple components may listen for the same data
-  const subscribe: SWRSubscription<string, DataSet | DataSet[], Error> = (
-    url,
+  const subscribe: SWRSubscription<string[], DataSet | DataSet[], Error> = (
+    [url],
     { next }
   ) => {
+    // if URL is undefined or an empty string, do not stream it
+    if (!url) {
+      return () => undefined;
+    }
     const stream = new IndexerClass<DataRow>(
       url,
       {
+        // note: dataSet may be empty on return of an initial "no rows" payload
         onAccumulated: (dataSet) => {
           // note: the TypeScript here is a bit hacky but this should be ok
           next(null, dataSet as unknown as DataSet | DataSet[]);
@@ -462,11 +493,19 @@ function useIndexerStream<
       // so this has been restricted through types
       opts
     );
+    if (opts?.accumulateUpdates) {
+      stream.accumulateUpdates = opts.accumulateUpdates;
+    }
     return () => stream.unsubscribe();
   };
 
   // return cached subscription data
-  return useSWRSubscription<DataSet | DataSet[], Error>(`${url}`, subscribe);
+  return useSWRSubscription<DataSet | DataSet[], Error>(
+    // create key from URL and options
+    [`${url}`, IndexerClass, ...Object.entries(opts || {}).flat()],
+    // the subscription object will differ for any given options
+    subscribe
+  );
 }
 
 // higher-level hook to stream real-time DataSet of Indexer URL
@@ -490,6 +529,63 @@ export function useIndexerStreamOfDualDataSet<
     url,
     IndexerStreamAccumulateDualDataSet,
     opts
+  ) as StaleWhileRevalidateState<[DataSet, DataSet]>;
+}
+
+function useIndexerStreamLastUpdate<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(
+  url: URL | string | undefined,
+  IndexerClass:
+    | typeof IndexerStreamAccumulateSingleDataSet
+    | typeof IndexerStreamAccumulateDualDataSet,
+  opts?: AccumulatorOptions
+): StaleWhileRevalidateState<DataSet | [DataSet, DataSet]> {
+  // return cached subscription data
+  const hook =
+    IndexerClass === IndexerStreamAccumulateDualDataSet
+      ? useIndexerStreamOfDualDataSet
+      : useIndexerStreamOfSingleDataSet;
+  return hook<DataRow, DataSet>(url, {
+    accumulateUpdates: accumulateLastUpdateOnly,
+    ...opts,
+  });
+}
+
+// higher-level hook to stream real-time last update of a DataSet of Indexer URL
+export function useIndexerStreamLastUpdateOfSingleDataSet<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(
+  url: URL | string | undefined,
+  opts?: AccumulatorOptions
+): StaleWhileRevalidateState<DataSet> {
+  // return cached subscription data
+  return useIndexerStreamLastUpdate<DataRow, DataSet>(
+    url,
+    IndexerStreamAccumulateSingleDataSet,
+    {
+      accumulateUpdates: accumulateLastUpdateOnly,
+      ...opts,
+    }
+  ) as StaleWhileRevalidateState<DataSet>;
+}
+export function useIndexerStreamLastUpdateOfDualDataSet<
+  DataRow extends BaseDataRow,
+  DataSet = BaseDataSet<DataRow>
+>(
+  url: URL | string | undefined,
+  opts?: AccumulatorOptions
+): StaleWhileRevalidateState<[DataSet, DataSet]> {
+  // return cached subscription data
+  return useIndexerStreamLastUpdate<DataRow, DataSet>(
+    url,
+    IndexerStreamAccumulateDualDataSet,
+    {
+      accumulateUpdates: accumulateLastUpdateOnly,
+      ...opts,
+    }
   ) as StaleWhileRevalidateState<[DataSet, DataSet]>;
 }
 
@@ -552,4 +648,22 @@ export function fetchDualDataSetFromIndexer<DataRow extends BaseDataRow>(
   opts?: AccumulatorOptions & StreamOptions
 ): Promise<BaseDataSet<DataRow>[]> {
   return fetchDataFromIndexer(url, IndexerStreamAccumulateDualDataSet, opts);
+}
+
+export function useFetchSingleDataSetFromIndexer<DataRow extends BaseDataRow>(
+  url: URL | string,
+  opts?: AccumulatorOptions & StreamOptions
+) {
+  return useSWR([url.toString(), opts, 'fetch'], () =>
+    fetchSingleDataSetFromIndexer<DataRow>(url, opts)
+  );
+}
+
+export function useFetchDualDataSetFromIndexer<DataRow extends BaseDataRow>(
+  url: URL | string,
+  opts?: AccumulatorOptions & StreamOptions
+) {
+  return useSWR([url.toString(), opts, 'fetch'], () =>
+    fetchDualDataSetFromIndexer<DataRow>(url, opts)
+  );
 }

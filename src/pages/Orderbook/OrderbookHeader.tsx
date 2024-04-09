@@ -10,7 +10,11 @@ import TokenPicker from '../../components/TokenPicker/TokenPicker';
 import AssetSymbol from '../../components/assets/AssetName';
 
 import { formatCurrency, formatPercentage } from '../../lib/utils/number';
-import { useStatPrice, useStatVolume } from '../../components/stats/hooks';
+import {
+  useRealtimePrice,
+  useStatPrice,
+  useStatVolume,
+} from '../../components/stats/hooks';
 
 import './OrderbookHeader.scss';
 
@@ -136,17 +140,23 @@ function OrderbookStatsRow({
 
 function StatColPrice({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   const [, price, priceDiff] = useStatPrice(tokenA, tokenB);
+  const [, realtimePrice = price] = useRealtimePrice(tokenA, tokenB);
   const previousPrice =
     !isNaN(price ?? NaN) && !isNaN(priceDiff ?? NaN)
       ? Number(price) - Number(priceDiff)
       : undefined;
+  const realtimeDiff =
+    !isNaN(realtimePrice ?? NaN) && !isNaN(previousPrice ?? NaN)
+      ? Number(realtimePrice) - Number(previousPrice)
+      : undefined;
+
   return (
     <StatCol
       heading="Last Price"
       value={price ?? undefined}
       change={
-        previousPrice !== undefined
-          ? Number(priceDiff) / Number(previousPrice)
+        previousPrice !== undefined && realtimeDiff !== undefined
+          ? Number(realtimeDiff) / Number(previousPrice)
           : undefined
       }
     />

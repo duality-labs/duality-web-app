@@ -9,8 +9,13 @@ import AssetSymbol from '../assets/AssetName';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
+import { useStatVolatility, useStatVolume } from '../stats/hooks';
 
-import { formatAmount, formatCurrency } from '../../lib/utils/number';
+import {
+  formatAmount,
+  formatCurrency,
+  formatUnavailableStates,
+} from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
 import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
@@ -98,10 +103,10 @@ export default function PoolsTableCard<T extends string | number>({
         <table>
           <thead>
             <tr>
-              <th>Pool</th>
-              <th>TVL</th>
-              <th>Volume (7 days)</th>
-              <th>Volatility (7 days)</th>
+              <th style={{ width: '25%' }}>Pool</th>
+              <th style={{ width: '25%' }}>TVL</th>
+              <th style={{ width: '25%' }}>Volume (24h)</th>
+              <th style={{ width: '25%' }}>Volatility (10 days)</th>
             </tr>
           </thead>
           <tbody>
@@ -164,15 +169,18 @@ function PairRow({
     data: [price0, price1],
   } = useSimplePrice([token0, token1]);
 
-  const [value0, value1] = useMemo<[number, number]>(() => {
+  const tvl = useMemo<number | undefined | null>(() => {
     if (price0 && price1) {
-      return [
-        Number(getDisplayDenomAmount(token0, reserves0)) * price0 || 0,
-        Number(getDisplayDenomAmount(token1, reserves1)) * price1 || 0,
-      ];
+      const value0 = Number(getDisplayDenomAmount(token0, reserves0)) * price0;
+      const value1 = Number(getDisplayDenomAmount(token1, reserves1)) * price1;
+      return (value0 || 0) + (value1 || 0);
     }
-    return [0, 0];
-  }, [price0, price1, token0, reserves0, token1, reserves1]);
+    // return null only if prices are non-zero and the request is not validating
+    return !isValidating ? null : undefined;
+  }, [price0, price1, isValidating, token0, reserves0, token1, reserves1]);
+
+  const [, volume] = useStatVolume(token0, token1);
+  const [, volatility] = useStatVolatility(token0, token1);
 
   if (token0 && token1) {
     return (
@@ -181,15 +189,11 @@ function PairRow({
           <TokenPair token0={token0} token1={token1} onClick={onClick} />
         </td>
         {/* TVL col */}
-        <td>
-          {isValidating && !value0 && !value1
-            ? '...'
-            : formatCurrency(value0 + value1)}
-        </td>
-        {/* Volume (7 days) col */}
-        <td>-</td>
+        <td>{formatUnavailableStates(tvl, formatCurrency)}</td>
+        {/* Volume (24 hours) col */}
+        <td>{formatUnavailableStates(volume, formatCurrency)}</td>
         {/* Volatility (7 days) col */}
-        <td>-</td>
+        <td>{formatUnavailableStates(volatility, formatAmount)}</td>
       </tr>
     );
   }
@@ -282,11 +286,11 @@ export function MyPoolsTableCard<T extends string | number>({
         <table>
           <thead>
             <tr>
-              <th>Pool</th>
-              <th>Value</th>
-              <th>Composition</th>
+              <th style={{ width: '20%' }}>Pool</th>
+              <th style={{ width: '20%' }}>Value</th>
+              <th style={{ width: '40%' }}>Composition</th>
               {Object.keys(userPositionActions || {}).length > 0 && (
-                <th>Action</th>
+                <th style={{ width: '20%' }}>Action</th>
               )}
             </tr>
           </thead>

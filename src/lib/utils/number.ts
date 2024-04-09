@@ -163,3 +163,17 @@ export function formatCurrency(
     ...numberFormatOptions,
   });
 }
+
+// format special values for `undefined` and `null` when using another formatter
+export function formatUnavailableStates<T = string | number>(
+  value: T | null | undefined,
+  format?: (value: T) => string,
+  nullState = '-',
+  loadingState = '...'
+) {
+  return value === undefined
+    ? loadingState
+    : value === null
+    ? nullState
+    : format?.(value);
+}

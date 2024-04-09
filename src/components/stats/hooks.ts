@@ -1,6 +1,6 @@
-import useSWR from 'swr';
 import { useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
+import useSWR from 'swr';
 
 import {
   TimeSeriesPage,
@@ -10,65 +10,65 @@ import {
   getLastDataChanges,
   getLastDataValues,
 } from './utils';
-import { Token, getTokenId } from '../../lib/web3/utils/tokens';
+import { Token } from '../../lib/web3/utils/tokens';
 import { useTokenValueTotal } from '../../lib/web3/hooks/useTokens';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
+import { useIndexerStreamLastUpdateOfSingleDataSet } from '../../lib/web3/hooks/useIndexer';
 
 const { REACT_APP__INDEXER_API = '' } = import.meta.env;
 
-function useIndexerData(
+function useLastUpdateOfIndexerData(
   tokenA: Token,
   tokenB: Token,
-  getIndexerPath: (tokenA: Token, tokenB: Token) => string
-) {
-  return useSWR<TimeSeriesPage>(
-    `${REACT_APP__INDEXER_API}/${getIndexerPath(tokenA, tokenB)}`,
-    async (url) => {
-      const response = await fetch(url);
-      return response.json();
-    }
-  );
-}
-
-function useTimeSeriesData(
-  tokenA: Token,
-  tokenB: Token,
-  getIndexerPath: (tokenA: Token, tokenB: Token) => string,
+  getIndexerPath: (tokenA: Token, tokenB: Token) => string | undefined,
   getValues?: (values: number[]) => number[]
 ) {
-  const response = useIndexerData(tokenA, tokenB, getIndexerPath);
-  const { data: pages, error } = response;
+  const urlPath = getIndexerPath(tokenA, tokenB);
+  const url = urlPath && `${REACT_APP__INDEXER_API}/${urlPath}`;
+  const update = useIndexerStreamLastUpdateOfSingleDataSet<TimeSeriesRow>(url);
 
   return useMemo<TimeSeriesRow[] | null | undefined>(() => {
-    // return error state as null
-    if (error && !pages) {
+    const data = update.data;
+    const error = update.error;
+    // return error state as null, and return "there is no data" as null
+    if (error || data?.size === 0) {
       return null;
     }
-    if (!pages || !pages.data) {
+    // return uninitialized data state as "not yet defined", ie. a loading state
+    if (!data) {
       return undefined;
     }
+    // sort timeseries rows reverse chronologically
+    const reverseChronologicalRows: TimeSeriesRow[] = Array.from(data).sort(
+      (a, b) => b[0] - a[0]
+    );
     // return success state as loading or data
-    return pages && getValues
-      ? pages.data
-          .filter(Boolean) // row may be `null`
+    return getValues
+      ? reverseChronologicalRows
+          // map in specific values
           .map(([timeUnix, values = []]) => {
             return [timeUnix, getValues(values)];
           })
-      : pages?.data;
-  }, [error, pages, getValues]);
+      : reverseChronologicalRows;
+  }, [update.data, update.error, getValues]);
 }
 
 function useStatData(
   tokenA: Token,
   tokenB: Token,
-  getIndexerPath: (tokenA: Token, tokenB: Token) => string,
+  getIndexerPath: (tokenA: Token, tokenB: Token) => string | undefined,
   getValues?: (values: number[]) => number[]
 ): [
   number | null | undefined,
   number[] | null | undefined,
   number[] | null | undefined
 ] {
-  const data = useTimeSeriesData(tokenA, tokenB, getIndexerPath, getValues);
+  const data = useLastUpdateOfIndexerData(
+    tokenA,
+    tokenB,
+    getIndexerPath,
+    getValues
+  );
 
   const [timeUnix, values] = data
     ? getLastDataValues(data) || [null, null]
@@ -109,9 +109,55 @@ function useStatTokenValue(
   return [timeUnix, valueTotal, valueDiffTotal];
 }
 
+// Real-time price
+function getLastPriceValue([, , , close]: number[]): number[] {
+  return [tickIndexToPrice(new BigNumber(close)).toNumber()];
+}
+export function useRealtimePrice(tokenA: Token, tokenB: Token) {
+  // fetch most recent value with a page limit
+  const fetchURL = new URL(
+    `timeseries/price/${getIndexerTokenPathPart(
+      tokenA
+    )}/${getIndexerTokenPathPart(tokenB)}`,
+    REACT_APP__INDEXER_API
+  );
+  fetchURL.searchParams.append('pagination.limit', '1');
+  const { data: latestDataUpdate } = useSWR<TimeSeriesPage>(
+    [fetchURL.toString(), 'fetch'],
+    () => fetch(fetchURL).then((response) => response.json())
+  );
+  const knownHeight = latestDataUpdate?.block_range.to_height;
+
+  const getRealtimePricePath = useCallback(
+    (tokenA: Token, tokenB: Token): string | undefined => {
+      return knownHeight
+        ? `timeseries/price/${getIndexerTokenPathPart(
+            tokenA
+          )}/${getIndexerTokenPathPart(
+            tokenB
+          )}?block_range.from_height=${knownHeight}`
+        : undefined;
+    },
+    [knownHeight]
+  );
+
+  const [timeUnix, prices] =
+    useStatData(tokenA, tokenB, getRealtimePricePath, getLastPriceValue) ||
+    // get price from latestDataUpdate if available
+    (latestDataUpdate &&
+      latestDataUpdate.data && [
+        latestDataUpdate.data[0][0],
+        getLastPriceValue(latestDataUpdate.data[0][1]),
+      ]);
+  // return single values from data
+  return [timeUnix, prices && prices[0]];
+}
+
 // Price
 function getStatPricePath(tokenA: Token, tokenB: Token) {
-  return `stats/price/${getTokenId(tokenA)}/${getTokenId(tokenB)}`;
+  return `stats/price/${getIndexerTokenPathPart(
+    tokenA
+  )}/${getIndexerTokenPathPart(tokenB)}`;
 }
 export function useStatPrice(
   tokenA: Token,
