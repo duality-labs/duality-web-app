@@ -395,35 +395,34 @@ export function MyEditedPositionTableCard({
                 )}
               </td>
               <td className="row gap-2 ml-3 mr-3">
-                {reserveA?.plus(reserveB || 0).isGreaterThan(0) &&
-                  (reserveA.isZero() || reserveB.isZero()) && (
-                    <button
-                      type="button"
-                      className={'button button-light ml-auto'}
-                      onClick={() => {
-                        setEditedUserPosition((ticks) => {
-                          return ticks.map((tick) => {
-                            return tick.deposit.center_tick_index.toNumber() ===
-                              deposit.center_tick_index.toNumber() &&
-                              tick.deposit.fee.toNumber() ===
-                                deposit.fee.toNumber()
-                              ? {
-                                  ...tick,
-                                  tickDiff0: new BigNumber(
-                                    tick.reserves.reserves0 ?? 0
-                                  ).negated(),
-                                  tickDiff1: new BigNumber(
-                                    tick.reserves.reserves1 ?? 0
-                                  ).negated(),
-                                }
-                              : tick;
-                          });
+                {reserveA?.plus(reserveB || 0).isGreaterThan(0) && (
+                  <button
+                    type="button"
+                    className={'button button-light ml-auto'}
+                    onClick={() => {
+                      setEditedUserPosition((ticks) => {
+                        return ticks.map((tick) => {
+                          return tick.deposit.center_tick_index.toNumber() ===
+                            deposit.center_tick_index.toNumber() &&
+                            tick.deposit.fee.toNumber() ===
+                              deposit.fee.toNumber()
+                            ? {
+                                ...tick,
+                                tickDiff0: new BigNumber(
+                                  tick.reserves.reserves0 ?? 0
+                                ).negated(),
+                                tickDiff1: new BigNumber(
+                                  tick.reserves.reserves1 ?? 0
+                                ).negated(),
+                              }
+                            : tick;
                         });
-                      }}
-                    >
-                      <>Withdraw</>
-                    </button>
-                  )}
+                      });
+                    }}
+                  >
+                    <>Withdraw</>
+                  </button>
+                )}
                 {(!tickDiff0.isZero() || !tickDiff1.isZero()) && (
                   <button
                     type="button"
