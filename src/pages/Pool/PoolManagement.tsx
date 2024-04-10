@@ -1304,7 +1304,7 @@ export default function PoolManagement({
         tokenA && tokenB && editMode ? (
           <div className="row gap-3">
             <div className="col">
-              <Link to={`/pools/${tokenAPath}/${tokenBPath}/add`}>
+              <Link to={`/pools/${tokenBPath}/${tokenAPath}/add`}>
                 <button className="button button-primary py-3 px-4">
                   Add To Position
                 </button>
@@ -1317,7 +1317,7 @@ export default function PoolManagement({
           editedUserPosition &&
           editedUserPosition.length > 0 && (
             <div className="col">
-              <Link to={`/pools/${tokenAPath}/${tokenBPath}/edit`}>
+              <Link to={`/pools/${tokenBPath}/${tokenAPath}/edit`}>
                 <button className="button button-primary py-3 px-4">
                   Edit Position
                 </button>
