@@ -60,7 +60,7 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
   const setTokensPath = useCallback(
     ([tokenA, tokenB]: [Token?, Token?]) => {
       if (tokenA || tokenB) {
-        const path = [tokenB?.symbol ?? '-', tokenA?.symbol ?? '-'];
+        const path = [tokenA?.symbol ?? '-', tokenB?.symbol ?? '-'];
         navigate(`/orderbook/${path.filter(Boolean).join('/')}`);
       } else {
         navigate('/orderbook');
@@ -90,17 +90,8 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
 
   return (
     <div className="row gap-md flex-centered">
-      <TokenPairLogos className="h3" tokenLeft={tokenB} tokenRight={tokenA} />
+      <TokenPairLogos className="h3" tokenLeft={tokenA} tokenRight={tokenB} />
       <h2 className="h3 text-medium">
-        <TokenPicker
-          className="h3 text-medium px-0 inline"
-          onChange={setTokenB}
-          exclusion={tokenB}
-          value={tokenB}
-        >
-          {tokenB ? <AssetSymbol asset={tokenB} /> : 'Select'}
-        </TokenPicker>
-        <span>/</span>
         <TokenPicker
           className="h3 text-medium px-0 inline"
           onChange={setTokenA}
@@ -108,6 +99,15 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
           value={tokenA}
         >
           {tokenA ? <AssetSymbol asset={tokenA} /> : 'Select'}
+        </TokenPicker>
+        <span>/</span>
+        <TokenPicker
+          className="h3 text-medium px-0 inline"
+          onChange={setTokenB}
+          exclusion={tokenB}
+          value={tokenB}
+        >
+          {tokenB ? <AssetSymbol asset={tokenB} /> : 'Select'}
         </TokenPicker>
       </h2>
       <button

@@ -106,7 +106,7 @@ export default function OrderBookChart({
   // tokenPairID is made of symbols, which is different to token paths
   const tokenPairID = useMemo(() => {
     if (tokenA && tokenB) {
-      return `${tokenA.symbol}/${tokenB.symbol}`;
+      return `${tokenB.symbol}/${tokenA.symbol}`;
     }
   }, [tokenA, tokenB]);
 
