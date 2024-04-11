@@ -77,8 +77,8 @@ export default function PoolOverview({
       <div className="row mt-3 mb-xl">
         <div className="col">
           <PriceCardRow>
-            <PairPriceCard tokenA={tokenB} tokenB={tokenA} />
             <PairPriceCard tokenA={tokenA} tokenB={tokenB} />
+            <PairPriceCard tokenA={tokenB} tokenB={tokenA} />
           </PriceCardRow>
         </div>
         <div className="col ml-auto">
@@ -185,7 +185,7 @@ function PairComposition({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           );
         },
       ],
-      data: [tokenB, tokenA],
+      data: [tokenA, tokenB],
     };
   }, [amountA, amountB, tokenA, tokenB, valueA, valueB]);
 
@@ -240,8 +240,8 @@ function PoolOverviewTable({
 const transactionTableHeadings = [
   'Type',
   'Total Value',
-  'Token B Amount',
   'Token A Amount',
+  'Token B Amount',
   'Wallet',
   'Time',
 ] as const;
