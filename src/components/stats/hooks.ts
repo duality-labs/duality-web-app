@@ -116,7 +116,7 @@ function getLastPriceValue([, , , close]: number[]): number[] {
 export function useRealtimePrice(
   tokenA: Token | undefined,
   tokenB: Token | undefined
-) {
+): [timeUnix: number | null | undefined, priceBtoA: number | null | undefined] {
   // fetch most recent value with a page limit
   const denomA = tokenA && getIndexerTokenPathPart(tokenA);
   const denomB = tokenB && getIndexerTokenPathPart(tokenB);
