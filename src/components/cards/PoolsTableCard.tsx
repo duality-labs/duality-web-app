@@ -4,8 +4,7 @@ import { NavigateFunction, useNavigate } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 
 import TableCard, { TableCardProps } from './TableCard';
-import AssetIconPair from '../assets/AssetIconPair';
-import AssetSymbol from '../assets/AssetName';
+import TokenPairInput from '../inputs/TokenPairInput';
 
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { useFilteredTokenList } from '../../components/TokenPicker/hooks';
@@ -191,7 +190,7 @@ function PairRow({
     return (
       <tr>
         <td className="min-width">
-          <TokenPair token0={token0} token1={token1} onClick={onClick} />
+          <TokenPairInput token0={token0} token1={token1} onClick={onClick} />
         </td>
         {/* TVL col */}
         <td>{formatUnavailableStates(tvl, formatCurrency)}</td>
@@ -349,7 +348,7 @@ function PositionRow({
     return (
       <tr>
         <td>
-          <TokenPair token0={token0} token1={token1} onClick={onClick} />
+          <TokenPairInput token0={token0} token1={token1} onClick={onClick} />
         </td>
         <td>{formatCurrency(value.toNumber())}</td>
         <td>
@@ -394,51 +393,4 @@ function PositionRow({
     );
   }
   return null;
-}
-
-function TokenPair({
-  token0,
-  token1,
-  onClick,
-  as = onClick ? 'button' : 'div',
-}: {
-  token0: Token;
-  token1: Token;
-  as?: React.ElementType;
-  onClick?: MouseEventHandler<HTMLButtonElement>;
-}) {
-  const BaseElement = as;
-  return (
-    <BaseElement
-      type={as === 'button' ? 'button' : undefined}
-      className="row gap-3"
-      onClick={onClick}
-    >
-      <div className="col mt-xs">
-        <AssetIconPair asset0={token0} asset1={token1} />
-      </div>
-      <div className="col flex">
-        <div className="row flow-wrap gapx-2">
-          <span className="nowrap">
-            <AssetSymbol asset={token0} /> /
-          </span>
-          <span className="nowrap">
-            <AssetSymbol asset={token1} />
-          </span>
-        </div>
-        <div className="row">
-          <div className="col row-lg gapx-2 subtext text-left mr-xs">
-            {token0.chain.pretty_name === token1.chain.pretty_name ? (
-              <span className="nowrap">{token0.chain.pretty_name}</span>
-            ) : (
-              <>
-                <span className="nowrap">{token0.chain.pretty_name} /</span>
-                <span className="nowrap">{token1.chain.pretty_name}</span>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </BaseElement>
-  );
 }
