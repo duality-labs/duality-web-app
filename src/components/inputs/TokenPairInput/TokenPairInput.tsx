@@ -4,13 +4,13 @@ import AssetIconPair from '../../assets/AssetIconPair';
 import AssetSymbol from '../../assets/AssetName';
 
 export default function TokenPairInput({
-  token0,
-  token1,
+  tokenA,
+  tokenB,
   onClick,
   as = onClick ? 'button' : 'div',
 }: {
-  token0: Token;
-  token1: Token;
+  tokenA: Token;
+  tokenB: Token;
   as?: React.ElementType;
   onClick?: MouseEventHandler<HTMLButtonElement>;
 }) {
@@ -22,25 +22,25 @@ export default function TokenPairInput({
       onClick={onClick}
     >
       <div className="col mt-xs">
-        <AssetIconPair asset0={token0} asset1={token1} />
+        <AssetIconPair asset0={tokenA} asset1={tokenB} />
       </div>
       <div className="col flex">
         <div className="row flow-wrap gapx-2">
           <span className="nowrap">
-            <AssetSymbol asset={token0} /> /
+            <AssetSymbol asset={tokenA} /> /
           </span>
           <span className="nowrap">
-            <AssetSymbol asset={token1} />
+            <AssetSymbol asset={tokenB} />
           </span>
         </div>
         <div className="row">
           <div className="col row-lg gapx-2 subtext text-left mr-xs">
-            {token0.chain.pretty_name === token1.chain.pretty_name ? (
-              <span className="nowrap">{token0.chain.pretty_name}</span>
+            {tokenA.chain.pretty_name === tokenB.chain.pretty_name ? (
+              <span className="nowrap">{tokenA.chain.pretty_name}</span>
             ) : (
               <>
-                <span className="nowrap">{token0.chain.pretty_name} /</span>
-                <span className="nowrap">{token1.chain.pretty_name}</span>
+                <span className="nowrap">{tokenA.chain.pretty_name} /</span>
+                <span className="nowrap">{tokenB.chain.pretty_name}</span>
               </>
             )}
           </div>

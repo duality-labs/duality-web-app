@@ -190,7 +190,7 @@ function PairRow({
     return (
       <tr>
         <td className="min-width">
-          <TokenPairInput token0={token0} token1={token1} onClick={onClick} />
+          <TokenPairInput tokenA={token0} tokenB={token1} onClick={onClick} />
         </td>
         {/* TVL col */}
         <td>{formatUnavailableStates(tvl, formatCurrency)}</td>
@@ -348,7 +348,7 @@ function PositionRow({
     return (
       <tr>
         <td>
-          <TokenPairInput token0={token0} token1={token1} onClick={onClick} />
+          <TokenPairInput tokenA={token0} tokenB={token1} onClick={onClick} />
         </td>
         <td>{formatCurrency(value.toNumber())}</td>
         <td>
