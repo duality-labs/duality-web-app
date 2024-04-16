@@ -5,7 +5,7 @@ import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { Token } from '../../lib/web3/utils/tokens';
 
-import TokenPairLogos from '../../components/TokenPairLogos/TokenPairLogos';
+import TokenPairInput from '../../components/inputs/TokenPairInput';
 import TokenPicker from '../../components/TokenPicker/TokenPicker';
 import AssetSymbol from '../../components/assets/AssetName';
 
@@ -89,8 +89,8 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
   );
 
   return (
-    <div className="row gap-md flex-centered">
-      <TokenPairLogos className="h3" tokenLeft={tokenA} tokenRight={tokenB} />
+    <div className="orderbook-nav row gap-md flex-centered">
+      <TokenPairInput tokenA={tokenA} tokenB={tokenB} />
       <h2 className="h3 text-medium">
         <TokenPicker
           className="h3 text-medium px-0 inline"

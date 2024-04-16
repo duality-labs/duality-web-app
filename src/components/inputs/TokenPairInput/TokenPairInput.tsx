@@ -27,7 +27,7 @@ export default function TokenPairInput({
       className="token-pair-input row gap-3"
       onClick={onClick}
     >
-      <div className="token-pair-input__logos col mt-xs">
+      <div className="token-pair-input__logos col">
         <TokenPairLogos tokenLeft={tokenA} tokenRight={tokenB} />
       </div>
       <div className="col flex">
