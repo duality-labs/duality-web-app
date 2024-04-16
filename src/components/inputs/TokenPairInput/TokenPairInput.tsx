@@ -1,4 +1,4 @@
-import { Fragment, MouseEventHandler } from 'react';
+import { Fragment, MouseEventHandler, ReactNode } from 'react';
 import { Token } from '../../../lib/web3/utils/tokens';
 import TokenPairLogos from '../../TokenPairLogos';
 import AssetSymbol from '../../assets/AssetName';
@@ -6,25 +6,34 @@ import AssetSymbol from '../../assets/AssetName';
 import './TokenPairInput.scss';
 
 export default function TokenPairInput({
+  className,
+  disabled,
   tokenA,
   tokenB,
   onClick,
   as = onClick ? 'button' : 'div',
   tokenPlaceholder = '[unknown]',
   chainPlaceholder = '',
+  renderText,
 }: {
+  className?: string;
+  disabled?: boolean;
   tokenA: Token | undefined;
   tokenB: Token | undefined;
   as?: React.ElementType;
   onClick?: MouseEventHandler<HTMLButtonElement>;
   tokenPlaceholder?: string;
   chainPlaceholder?: string;
+  renderText?: (text: string) => ReactNode;
 }) {
   const BaseElement = as;
   return (
     <BaseElement
       type={as === 'button' ? 'button' : undefined}
-      className="token-pair-input row gap-3"
+      disabled={disabled}
+      className={['token-pair-input row gap-3', className]
+        .filter(Boolean)
+        .join(' ')}
       onClick={onClick}
     >
       <div className="token-pair-input__logos col">
@@ -37,7 +46,11 @@ export default function TokenPairInput({
               <Fragment key={index}>
                 {index > 0 && <span className="nowrap mx-0">/</span>}
                 <span className="nowrap">
-                  <AssetSymbol asset={token} placeholder={tokenPlaceholder} />
+                  {renderText && token ? (
+                    renderText(token.symbol)
+                  ) : (
+                    <AssetSymbol asset={token} placeholder={tokenPlaceholder} />
+                  )}
                 </span>
               </Fragment>
             );
@@ -53,7 +66,11 @@ export default function TokenPairInput({
                 return (
                   <Fragment key={index}>
                     {index > 0 && <span className="nowrap mx-0">/</span>}
-                    <span className="nowrap">{name || chainPlaceholder}</span>
+                    <span className="nowrap">
+                      {renderText && name
+                        ? renderText(name)
+                        : name || chainPlaceholder}
+                    </span>
                   </Fragment>
                 );
               })}

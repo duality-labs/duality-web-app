@@ -2,4 +2,13 @@
   .token-pair-input__logos {
     font-size: 1.2rem;
   }
+
+  &[type='button']:hover {
+    background-color: var(--token-search-bg);
+  }
+
+  .subtext {
+    font-size: 0.85em;
+    color: #bfbfbf;
+  }
 }

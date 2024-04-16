@@ -64,3 +64,31 @@ export function useFilteredTokenList(
     [list, regexQuery]
   );
 }
+
+interface TokenPair {
+  token0: Token;
+  token1: Token;
+}
+
+export function useFilteredPairsList<T extends TokenPair>(
+  pairsList: T[] | undefined,
+  searchQuery: string
+): Array<T> | undefined {
+  const tokenList = useMemo(() => {
+    const tokenSet = pairsList?.reduce((acc, { token0, token1 }) => {
+      acc.add(token0);
+      acc.add(token1);
+      return acc;
+    }, new Set<Token>());
+    return tokenSet ? Array.from(tokenSet) : [];
+  }, [pairsList]);
+  const filteredPairTokenList = useFilteredTokenList(tokenList, searchQuery);
+  return useMemo<Array<T> | undefined>(() => {
+    return pairsList?.filter(({ token0, token1 }) => {
+      return (
+        filteredPairTokenList.includes(token0) ||
+        filteredPairTokenList.includes(token1)
+      );
+    });
+  }, [pairsList, filteredPairTokenList]);
+}

@@ -258,7 +258,7 @@ function useTokensSortByValue() {
   );
 }
 
-export function useTokensSortedByValue(tokenList: Token[]) {
+export function useTokensSortedByValue(tokenList: Token[]): Token[] {
   // define sorting rows by token value
   const sortByValue = useTokensSortByValue();
 

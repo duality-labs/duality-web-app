@@ -4,12 +4,15 @@ import { UserReserves, UserValuedReserves } from './useUserReserves';
 import { Token } from '../utils/tokens';
 import { getPairID } from '../utils/pairs';
 import { SWRCommon, useSwrResponse } from './useSWR';
+import BigNumber from 'bignumber.js';
 
 export interface UserPair<T extends UserReserves | UserValuedReserves> {
   pairId: string;
   token0: Token;
   token1: Token;
   userReserves: T[];
+  userReserves0: number;
+  userReserves1: number;
 }
 
 export function useUserPairs<T extends UserReserves | UserValuedReserves>(
@@ -47,7 +50,23 @@ export function useUserPairs<T extends UserReserves | UserValuedReserves>(
     return userValuedReservesMap
       ? Object.entries(userValuedReservesMap).map<UserPair<T>>(
           ([pairId, { token0, token1, userReserves }]) => {
-            return { pairId, token0, token1, userReserves };
+            return {
+              pairId,
+              token0,
+              token1,
+              userReserves,
+              // sum the reserves of the pair
+              userReserves0: userReserves
+                .reduce((acc, r) => {
+                  return acc.plus(r.reserves.reserves0);
+                }, new BigNumber(0))
+                .toNumber(),
+              userReserves1: userReserves
+                .reduce((acc, r) => {
+                  return acc.plus(r.reserves.reserves1);
+                }, new BigNumber(0))
+                .toNumber(),
+            };
           }
         )
       : [];
