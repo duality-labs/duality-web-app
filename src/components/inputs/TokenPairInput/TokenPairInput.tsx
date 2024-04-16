@@ -10,11 +10,13 @@ export default function TokenPairInput({
   tokenB,
   onClick,
   as = onClick ? 'button' : 'div',
+  placeholder = 'Select',
 }: {
-  tokenA: Token;
-  tokenB: Token;
+  tokenA: Token | undefined;
+  tokenB: Token | undefined;
   as?: React.ElementType;
   onClick?: MouseEventHandler<HTMLButtonElement>;
+  placeholder?: string;
 }) {
   const BaseElement = as;
   return (
@@ -37,17 +39,30 @@ export default function TokenPairInput({
         </div>
         <div className="row">
           <div className="col row-lg gapx-2 subtext text-left mr-xs">
-            {tokenA.chain.pretty_name === tokenB.chain.pretty_name ? (
-              <span className="nowrap">{tokenA.chain.pretty_name}</span>
+            {tokenA === tokenB ? (
+              <TokenName token={tokenA} placeholder={placeholder} />
             ) : (
               <>
-                <span className="nowrap">{tokenA.chain.pretty_name} /</span>
-                <span className="nowrap">{tokenB.chain.pretty_name}</span>
+                <TokenName token={tokenA} placeholder={placeholder} />
+                <span className="nowrap mx-2">/</span>
+                <TokenName token={tokenB} placeholder={placeholder} />
               </>
             )}
           </div>
         </div>
       </div>
     </BaseElement>
+  );
+}
+
+function TokenName({
+  token,
+  placeholder,
+}: {
+  token: Token | undefined;
+  placeholder: string;
+}) {
+  return (
+    <span className="nowrap">{token?.chain.pretty_name || placeholder} /</span>
   );
 }
