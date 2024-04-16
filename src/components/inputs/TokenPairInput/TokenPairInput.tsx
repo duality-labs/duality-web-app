@@ -1,4 +1,4 @@
-import { MouseEventHandler } from 'react';
+import { Fragment, MouseEventHandler } from 'react';
 import { Token } from '../../../lib/web3/utils/tokens';
 import TokenPairLogos from '../../TokenPairLogos';
 import AssetSymbol from '../../assets/AssetName';
@@ -10,13 +10,15 @@ export default function TokenPairInput({
   tokenB,
   onClick,
   as = onClick ? 'button' : 'div',
-  placeholder = 'Select',
+  tokenPlaceholder = '[unknown]',
+  chainPlaceholder = '',
 }: {
   tokenA: Token | undefined;
   tokenB: Token | undefined;
   as?: React.ElementType;
   onClick?: MouseEventHandler<HTMLButtonElement>;
-  placeholder?: string;
+  tokenPlaceholder?: string;
+  chainPlaceholder?: string;
 }) {
   const BaseElement = as;
   return (
@@ -30,39 +32,34 @@ export default function TokenPairInput({
       </div>
       <div className="col flex">
         <div className="row flow-wrap gapx-2">
-          <span className="nowrap">
-            <AssetSymbol asset={tokenA} /> /
-          </span>
-          <span className="nowrap">
-            <AssetSymbol asset={tokenB} />
-          </span>
+          {[tokenA, tokenB].map((token, index) => {
+            return (
+              <Fragment key={index}>
+                {index > 0 && <span className="nowrap mx-0">/</span>}
+                <span className="nowrap">
+                  <AssetSymbol asset={token} placeholder={tokenPlaceholder} />
+                </span>
+              </Fragment>
+            );
+          })}
         </div>
         <div className="row">
           <div className="col row-lg gapx-2 subtext text-left mr-xs">
-            {tokenA === tokenB ? (
-              <TokenName token={tokenA} placeholder={placeholder} />
-            ) : (
-              <>
-                <TokenName token={tokenA} placeholder={placeholder} />
-                <span className="nowrap mx-2">/</span>
-                <TokenName token={tokenB} placeholder={placeholder} />
-              </>
-            )}
+            {[tokenA?.chain.pretty_name, tokenB?.chain.pretty_name]
+              .filter((name, index, names) => {
+                return name && !names.slice(0, index).includes(name);
+              })
+              .map((name, index) => {
+                return (
+                  <Fragment key={index}>
+                    {index > 0 && <span className="nowrap mx-0">/</span>}
+                    <span className="nowrap">{name || chainPlaceholder}</span>
+                  </Fragment>
+                );
+              })}
           </div>
         </div>
       </div>
     </BaseElement>
-  );
-}
-
-function TokenName({
-  token,
-  placeholder,
-}: {
-  token: Token | undefined;
-  placeholder: string;
-}) {
-  return (
-    <span className="nowrap">{token?.chain.pretty_name || placeholder} /</span>
   );
 }
