@@ -1,7 +1,9 @@
 import { MouseEventHandler } from 'react';
 import { Token } from '../../../lib/web3/utils/tokens';
-import AssetIconPair from '../../assets/AssetIconPair';
+import TokenPairLogos from '../../TokenPairLogos';
 import AssetSymbol from '../../assets/AssetName';
+
+import './TokenPairInput.scss';
 
 export default function TokenPairInput({
   tokenA,
@@ -18,11 +20,11 @@ export default function TokenPairInput({
   return (
     <BaseElement
       type={as === 'button' ? 'button' : undefined}
-      className="row gap-3"
+      className="token-pair-input row gap-3"
       onClick={onClick}
     >
-      <div className="col mt-xs">
-        <AssetIconPair asset0={tokenA} asset1={tokenB} />
+      <div className="token-pair-input__logos col mt-xs">
+        <TokenPairLogos tokenLeft={tokenA} tokenRight={tokenB} />
       </div>
       <div className="col flex">
         <div className="row flow-wrap gapx-2">
