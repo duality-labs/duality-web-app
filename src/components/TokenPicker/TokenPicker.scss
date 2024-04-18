@@ -35,14 +35,20 @@ $min-body-height: 150px;
   }
 }
 
-.token-image {
-  height: font-size.$token-logo-svg;
-  width: font-size.$token-logo-svg;
-  min-width: 2rem;
-  object-fit: contain;
-  font-size: font-size.$token-logo-svg;
-  align-self: center;
-  text-align: center;
+.token-picker-toggle,
+.token-picker-dialog {
+  .token-image {
+    height: font-size.$token-logo-svg;
+    width: font-size.$token-logo-svg;
+    min-width: 2rem;
+    object-fit: contain;
+    font-size: font-size.$token-logo-svg;
+    align-self: center;
+    text-align: center;
+  }
+  .token-image-not-found {
+    opacity: 0.3;
+  }
 }
 
 .token-picker-body {
@@ -181,10 +187,6 @@ $min-body-height: 150px;
   }
 }
 
-.token-image-not-found {
-  opacity: 0.3;
-}
-
 .token-picker-dialog {
   &.dialog-overlay {
     background-color: var(--dialog-backdrop);
@@ -238,7 +240,7 @@ $min-body-height: 150px;
   }
 }
 
-.token-asset-selection {
+.token-picker-dialog .token-asset-selection {
   & {
     isolation: isolate;
     position: relative;
