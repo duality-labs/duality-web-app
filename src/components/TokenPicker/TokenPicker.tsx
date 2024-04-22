@@ -3,11 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 
-import {
-  useFilteredTokenList,
-  useTokenSearchContext,
-  useTokenSearchRegex,
-} from './hooks';
+import { useFilteredTokenList, useUniqueChainName } from './hooks';
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useTokens } from '../../lib/web3/hooks/useDenomClients';
 import {
@@ -189,17 +185,11 @@ export default function TokenPicker({
 }
 
 function TokenPickerItem({
-  value,
+  value: token,
   values,
-  searchQuery,
   renderMarkedTextSections,
 }: SelectionModalDialogRow<Token>) {
-  const regexQuery = useTokenSearchRegex(searchQuery);
-  const { chain, symbol, token } = useTokenSearchContext(
-    values,
-    value,
-    regexQuery
-  );
+  const chainName = useUniqueChainName(values, token);
 
   const tokenId = getTokenId(token);
   const logos = token.logo_URIs;
@@ -215,7 +205,7 @@ function TokenPickerItem({
           // in this context (small images) prefer PNGs over SVGs
           // for reduced number of elements to be drawn in list
           src={logos.svg || logos.png}
-          alt={`${symbol || 'Token'} logo`}
+          alt={`${token.symbol || 'Token'} logo`}
           className="token-image"
         />
       ) : (
@@ -227,10 +217,10 @@ function TokenPickerItem({
       )}
       <span className="token-symbol">
         <abbr title={token.description ?? token.name}>
-          {renderMarkedTextSections(symbol)}
+          {renderMarkedTextSections(token.symbol)}
         </abbr>
       </span>
-      <span className="chain-name">{renderMarkedTextSections(chain)}</span>
+      <span className="chain-name">{renderMarkedTextSections(chainName)}</span>
       {new BigNumber(balance).isZero() ? (
         <span className="token-zero-balance">{formatAmount(balance)}</span>
       ) : (

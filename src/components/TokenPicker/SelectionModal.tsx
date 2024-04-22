@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import Dialog from '../Dialog/Dialog';
 import SearchInput from '../inputs/SearchInput/SearchInput';
+import { useTokenSearchRegex } from './hooks';
 
 import './SelectionModal.scss';
 
@@ -118,7 +119,7 @@ export interface SelectionModalDialogRow<T> {
   selected: boolean;
   focused: boolean;
   searchQuery?: string;
-  renderMarkedTextSections: (textList: Array<string>) => ReactNode;
+  renderMarkedTextSections: (text: string) => ReactNode;
 }
 export interface SelectionModalDialog<T, Tab extends string> {
   className?: string;
@@ -211,6 +212,18 @@ function SelectionModalDialog<T, Tab extends string>({
     [values, close, excludedValues, selectValue]
   );
 
+  const regexQuery = useTokenSearchRegex(searchQuery);
+  const renderMarkedTextSections = useCallback(
+    (text: string): ReactNode => {
+      const textList = regexQuery ? text.split(regexQuery) ?? [] : [text];
+      return textList.map(function (text, index) {
+        if (index % 2) return <mark key={index}>{text}</mark>;
+        return <span key={index}>{text}</span>;
+      });
+    },
+    [regexQuery]
+  );
+
   const [movingAssetRef, createRefForValue] =
     useSelectedButtonBackgroundMove(tab);
   return (
@@ -298,11 +311,4 @@ function SelectionModalDialog<T, Tab extends string>({
       </Dialog>
     </>
   );
-}
-
-function renderMarkedTextSections(textList: Array<string>) {
-  return textList.map(function (text, index) {
-    if (index % 2) return <mark key={index}>{text}</mark>;
-    return <span key={index}>{text}</span>;
-  });
 }
