@@ -55,3 +55,29 @@ export function useUserPairs<T extends UserReserves | UserValuedReserves>(
 
   return useSwrResponse(userPairs, swr);
 }
+
+interface UserValuedPair extends UserPair<UserValuedReserves> {
+  value: number;
+}
+
+export function useUserValuedPairs(
+  userValuedReserves: UserValuedReserves[] | undefined
+): SWRCommon<UserValuedPair[]> {
+  const { data: userPairs, ...swr } = useUserPairs(userValuedReserves);
+  const userValuedPairs = useMemo(() => {
+    return (
+      userPairs
+        // calculate pair value
+        ?.map<UserValuedPair>((userPair) => ({
+          ...userPair,
+          value: userPair.userReserves.reduce(
+            (acc, userReserve) => acc + userReserve.value,
+            0
+          ),
+        }))
+        // sort pairs by descending value
+        .sort((a, b) => b.value - a.value)
+    );
+  }, [userPairs]);
+  return useSwrResponse(userValuedPairs, swr);
+}

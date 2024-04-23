@@ -25,7 +25,10 @@ import {
   useEstimatedUserReserves,
   useValuedUserReserves,
 } from '../../lib/web3/hooks/useUserReserves';
-import { UserPair, useUserPairs } from '../../lib/web3/hooks/useUserPairs';
+import {
+  UserPair,
+  useUserValuedPairs,
+} from '../../lib/web3/hooks/useUserPairs';
 
 import './PoolsTableCard.scss';
 
@@ -215,7 +218,7 @@ export function MyPoolsTableCard<T extends string | number>({
 
   const { data: userReserves } = useEstimatedUserReserves();
   const { data: userValuedReserves } = useValuedUserReserves(userReserves);
-  const { data: userValuedPairsList } = useUserPairs(userValuedReserves);
+  const { data: userValuedPairsList } = useUserValuedPairs(userValuedReserves);
   const { data: tokenByDenom } = useTokenByDenom(
     userReserves?.flatMap(({ deposit }) => [
       deposit.pair_id.token0,
@@ -229,12 +232,18 @@ export function MyPoolsTableCard<T extends string | number>({
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
   const filteredPoolsList = useMemo<UserPair<UserValuedReserves>[]>(() => {
-    return (userValuedPairsList || []).filter(({ token0, token1 }) => {
-      return (
-        filteredPoolTokenList.includes(token0) ||
-        filteredPoolTokenList.includes(token1)
-      );
-    });
+    return (
+      (userValuedPairsList || [])
+        // filter to tokens that match the search query
+        .filter(({ token0, token1 }) => {
+          return (
+            filteredPoolTokenList.includes(token0) ||
+            filteredPoolTokenList.includes(token1)
+          );
+        })
+        // sort by descending value
+        .sort((a, b) => b.value - a.value)
+    );
   }, [userValuedPairsList, filteredPoolTokenList]);
 
   return (
