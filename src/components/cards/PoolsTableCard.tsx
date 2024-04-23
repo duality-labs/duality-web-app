@@ -17,7 +17,10 @@ import {
   formatUnavailableStates,
 } from '../../lib/utils/number';
 import { Token, getDisplayDenomAmount } from '../../lib/web3/utils/tokens';
-import useTokenPairs from '../../lib/web3/hooks/useTokenPairs';
+import useTokenPairs, {
+  ValuedTokenPair,
+  useValuedTokenPairs,
+} from '../../lib/web3/hooks/useTokenPairs';
 import { useTokenByDenom } from '../../lib/web3/hooks/useDenomClients';
 import { getPairID } from '../../lib/web3/utils/pairs';
 import {
@@ -38,8 +41,6 @@ interface PoolsTableCardOptions {
   userPositionActions?: Actions;
 }
 
-type PoolTableRow = [string, Token, Token, number, number];
-
 export default function PoolsTableCard<T extends string | number>({
   className,
   title = 'All Pools',
@@ -50,8 +51,9 @@ export default function PoolsTableCard<T extends string | number>({
   const [searchValue, setSearchValue] = useState<string>('');
 
   const { data: tokenPairs } = useTokenPairs();
+  const { data: valuedTokenPairs } = useValuedTokenPairs(tokenPairs);
   const { data: tokenByDenom } = useTokenByDenom(
-    tokenPairs?.flatMap(([denom0, denom1]) => [denom0, denom1])
+    valuedTokenPairs?.flatMap(({ denom0, denom1 }) => [denom0, denom1])
   );
   const tokenList = useMemo(() => {
     const tokenList = Array.from((tokenByDenom || [])?.values());
@@ -60,42 +62,38 @@ export default function PoolsTableCard<T extends string | number>({
       : tokenList.filter((token) => !!token.chain.chain_id);
   }, [tokenByDenom, showUnknownTokens]);
 
-  const allPairsList = useMemo<Array<PoolTableRow>>(() => {
-    return tokenPairs
-      ? tokenPairs
+  const allPairsList = useMemo<Array<ValuedTokenPair>>(() => {
+    return valuedTokenPairs
+      ? valuedTokenPairs
           // find the tokens that match our known pair token IDs
-          .map(([denom0, denom1, reserves0, reserves1]) => {
-            const token0 = tokenByDenom?.get(denom0);
-            const token1 = tokenByDenom?.get(denom1);
+          .filter((pair) => {
+            const { token0, token1 } = pair;
             if (token0 && token1) {
               // show unknown tokens or test that both tokens are known
               if (
                 showUnknownTokens ||
                 (token0.chain.chain_id && token1.chain.chain_id)
               ) {
-                return [
-                  getPairID(denom0, denom1),
-                  token0,
-                  token1,
-                  reserves0,
-                  reserves1,
-                ];
+                return true;
               }
             }
           })
-          // remove pairs with unfound tokens
-          .filter<PoolTableRow>((pair): pair is PoolTableRow => !!pair)
       : [];
-  }, [showUnknownTokens, tokenByDenom, tokenPairs]);
+  }, [showUnknownTokens, valuedTokenPairs]);
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
-  const filteredPoolsList = useMemo<Array<PoolTableRow>>(() => {
-    return allPairsList.filter(([, token0, token1]) => {
-      return (
-        filteredPoolTokenList.includes(token0) ||
-        filteredPoolTokenList.includes(token1)
-      );
-    });
+  const filteredPoolsList = useMemo<Array<ValuedTokenPair>>(() => {
+    return (
+      allPairsList
+        .filter(({ token0, token1 }) => {
+          return (
+            filteredPoolTokenList.includes(token0) ||
+            filteredPoolTokenList.includes(token1)
+          );
+        })
+        // sort by descending token pair values
+        .sort((a, b) => b.value - a.value)
+    );
   }, [allPairsList, filteredPoolTokenList]);
 
   return (
@@ -117,8 +115,8 @@ export default function PoolsTableCard<T extends string | number>({
             </tr>
           </thead>
           <tbody>
-            {filteredPoolsList.map((row: PoolTableRow) => {
-              const [pairId, token0, token1, reserves0, reserves1] = row;
+            {filteredPoolsList.map((pair: ValuedTokenPair) => {
+              const { token0, token1, reserves0, reserves1 } = pair;
               const onRowClick:
                 | MouseEventHandler<HTMLButtonElement>
                 | undefined = onTokenPairClick
@@ -127,7 +125,7 @@ export default function PoolsTableCard<T extends string | number>({
               return (
                 // show general pair data
                 <PairRow
-                  key={pairId}
+                  key={getPairID(pair.denom0, pair.denom1)}
                   token0={token0}
                   token1={token1}
                   reserves0={reserves0}
