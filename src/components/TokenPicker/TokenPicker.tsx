@@ -143,7 +143,7 @@ export default function TokenPicker({
   const filteredList = useFilteredTokenList(sortedTokenList, searchQuery);
   const valueInList = useMemo(() => {
     // ensure value exists in the values array by matching by ID
-    return value && filteredList?.find(matchToken(value));
+    return (value && filteredList?.find(matchToken(value))) || value;
   }, [value, filteredList]);
   const excludedValues = useMemo(() => {
     // ensure excluded values exist in the values array by matching by ID
