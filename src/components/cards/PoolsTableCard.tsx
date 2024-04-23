@@ -23,7 +23,9 @@ import { getPairID } from '../../lib/web3/utils/pairs';
 import {
   UserValuedReserves,
   useEstimatedUserReserves,
+  useValuedUserReserves,
 } from '../../lib/web3/hooks/useUserReserves';
+import { UserPair, useUserPairs } from '../../lib/web3/hooks/useUserPairs';
 
 import './PoolsTableCard.scss';
 
@@ -209,9 +211,11 @@ export function MyPoolsTableCard<T extends string | number>({
 }: Omit<TableCardProps<T>, 'children'> & PoolsTableCardOptions) {
   const [searchValue, setSearchValue] = useState<string>('');
 
-  const { data: userValuedReserves } = useEstimatedUserReserves();
+  const { data: userReserves } = useEstimatedUserReserves();
+  const { data: userValuedReserves } = useValuedUserReserves(userReserves);
+  const { data: userValuedPairsList } = useUserPairs(userValuedReserves);
   const { data: tokenByDenom } = useTokenByDenom(
-    userValuedReserves?.flatMap(({ deposit }) => [
+    userReserves?.flatMap(({ deposit }) => [
       deposit.pair_id.token0,
       deposit.pair_id.token1,
     ])
@@ -221,58 +225,13 @@ export function MyPoolsTableCard<T extends string | number>({
     [tokenByDenom]
   );
 
-  const myPoolsList = useMemo<
-    Array<
-      [
-        pairID: string,
-        token0: Token,
-        token1: Token,
-        userValuedReserves: UserValuedReserves[]
-      ]
-    >
-  >(() => {
-    // collect positions into token pair groups
-    const userValuedReservesMap = (userValuedReserves || []).reduce<{
-      [pairID: string]: {
-        token0: Token;
-        token1: Token;
-        userValuedReserves: UserValuedReserves[];
-      };
-    }>((map, userPosition) => {
-      const { token0: token0Address, token1: token1Address } =
-        userPosition.deposit.pair_id;
-      const pairID = getPairID(token0Address, token1Address);
-      const token0 = tokenByDenom?.get(token0Address);
-      const token1 = tokenByDenom?.get(token1Address);
-      if (pairID && token0 && token1) {
-        map[pairID] = map[pairID] || {
-          token0,
-          token1,
-          userValuedReserves: [],
-        };
-        map[pairID].userValuedReserves.push(userPosition);
-      }
-      return map;
-    }, {});
-
-    return userValuedReservesMap
-      ? Object.entries(userValuedReservesMap).map<
-          [string, Token, Token, UserValuedReserves[]]
-        >(([pairId, { token0, token1, userValuedReserves }]) => {
-          return [pairId, token0, token1, userValuedReserves];
-        })
-      : [];
-  }, [userValuedReserves, tokenByDenom]);
-
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
-  const filteredPoolsList = useMemo<
-    Array<[string, Token, Token, UserValuedReserves[]]>
-  >(() => {
+  const filteredPoolsList = useMemo<UserPair<UserValuedReserves>[]>(() => {
     const tokenList = filteredPoolTokenList.map(({ token }) => token);
-    return myPoolsList.filter(([, token0, token1]) => {
+    return (userValuedPairsList || []).filter(({ token0, token1 }) => {
       return tokenList.includes(token0) || tokenList.includes(token1);
     });
-  }, [myPoolsList, filteredPoolTokenList]);
+  }, [userValuedPairsList, filteredPoolTokenList]);
 
   return (
     <TableCard
@@ -296,7 +255,7 @@ export function MyPoolsTableCard<T extends string | number>({
           </thead>
           <tbody>
             {filteredPoolsList.map(
-              ([pairId, token0, token1, userValuedReserves]) => {
+              ({ pairId, token0, token1, userReserves }) => {
                 const onRowClick:
                   | MouseEventHandler<HTMLButtonElement>
                   | undefined = onTokenPairClick
@@ -308,7 +267,7 @@ export function MyPoolsTableCard<T extends string | number>({
                     key={pairId}
                     token0={token0}
                     token1={token1}
-                    userValuedReserves={userValuedReserves}
+                    userValuedReserves={userReserves}
                     onClick={onRowClick}
                     actions={userPositionActions}
                   />

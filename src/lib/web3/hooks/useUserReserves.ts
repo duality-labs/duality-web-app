@@ -28,6 +28,7 @@ import { useTokenPairMapLiquidity } from '../../web3/hooks/useTickLiquidity';
 import { useOrderedTokenPair } from './useTokenPairs';
 import { useUserDexDenomBalances } from './useUserBankBalances';
 import { getDexSharePoolID } from '../utils/shares';
+import { SWRCommon, useSwrResponse } from './useSWR';
 
 interface PairReserves {
   reserves0: string;
@@ -453,7 +454,7 @@ function useUserIndicativeReserves(
 
 export function useEstimatedUserReserves(
   tokenPair?: TokenPair | TokenIdPair
-): CombinedUseQueries<UserValuedReserves[]> {
+): CombinedUseQueries<UserReserves[]> {
   const {
     data: userIndicatveReserves,
     isFetching,
@@ -486,7 +487,7 @@ export function useEstimatedUserReserves(
   return useMemo(() => {
     // allow zero prices, will equal zero values
     if (userTokensByDenom) {
-      const userReserves = userIndicatveReserves?.flatMap<UserValuedReserves>(
+      const userReserves = userIndicatveReserves?.flatMap<UserReserves>(
         ({ deposit, indicativeReserves: { reserves0, reserves1 } }) => {
           const token0 = userTokensByDenom.get(deposit.pair_id.token0);
           const token1 = userTokensByDenom.get(deposit.pair_id.token1);
@@ -511,7 +512,6 @@ export function useEstimatedUserReserves(
                     reserves0,
                     reserves1: '0',
                   },
-                  value: basePrice0.multipliedBy(reserves0).toNumber(),
                 }
               : {
                   deposit,
@@ -519,7 +519,6 @@ export function useEstimatedUserReserves(
                     reserves0: '0',
                     reserves1,
                   },
-                  value: basePrice1.multipliedBy(reserves1).toNumber(),
                 };
           }
           return [];
@@ -545,17 +544,79 @@ export function useEstimatedUserReserves(
   ]);
 }
 
+export function useValuedUserReserves(
+  userReserves?: UserReserves[]
+): SWRCommon<UserValuedReserves[]> {
+  // find the tokens of the user's reserves
+  const { data: userTokensByDenom, ...swr } = useTokenByDenom(
+    userReserves?.flatMap(({ deposit }) => [
+      deposit.pair_id.token0,
+      deposit.pair_id.token1,
+    ])
+  );
+  const tokenList = useMemo(() => {
+    return Array.from(userTokensByDenom?.values() ?? []);
+  }, [userTokensByDenom]);
+
+  const { data: tokenPrices } = useSimplePrice(tokenList);
+
+  const tokenPriceByDenomMap = useMemo(() => {
+    return tokenList.reduce<Map<string, number | undefined>>(
+      (acc, token, index) => {
+        acc.set(token.base, tokenPrices[index]);
+        return acc;
+      },
+      new Map()
+    );
+  }, [tokenList, tokenPrices]);
+
+  // using the current price, make assumptions about the current reserves
+  const userValuedReserves = useMemo(() => {
+    // allow zero prices, will equal zero values
+    if (userTokensByDenom) {
+      return userReserves?.flatMap<UserValuedReserves>(
+        ({ deposit, reserves: { reserves0, reserves1 } }) => {
+          const token0 = userTokensByDenom.get(deposit.pair_id.token0);
+          const token1 = userTokensByDenom.get(deposit.pair_id.token1);
+          const tokenPrice0 = tokenPriceByDenomMap.get(deposit.pair_id.token0);
+          const tokenPrice1 = tokenPriceByDenomMap.get(deposit.pair_id.token1);
+          if (token0 && token1) {
+            const display0 = getBaseDenomAmount(token0, 1) || 1;
+            const display1 = getBaseDenomAmount(token1, 1) || 1;
+            const basePrice0 = BigNumber(tokenPrice0 || 0).dividedBy(display0);
+            const basePrice1 = BigNumber(tokenPrice1 || 0).dividedBy(display1);
+            return {
+              deposit,
+              reserves: {
+                reserves0,
+                reserves1,
+              },
+              value:
+                basePrice0.multipliedBy(reserves0).toNumber() +
+                basePrice1.multipliedBy(reserves1).toNumber(),
+            };
+          }
+          return [];
+        }
+      );
+    }
+  }, [userTokensByDenom, tokenPriceByDenomMap, userReserves]);
+
+  return useSwrResponse(userValuedReserves, swr);
+}
+
 // calculate total
 export function useEstimatedUserReservesValue(
   tokenPair?: TokenPair | TokenIdPair
 ): BigNumber {
-  const { data: estimatedUserReserves } = useEstimatedUserReserves(tokenPair);
+  const { data: userReserves } = useEstimatedUserReserves(tokenPair);
+  const { data: valuedUserReserves } = useValuedUserReserves(userReserves);
   return useMemo(() => {
-    return (estimatedUserReserves || []).reduce<BigNumber>(
-      (acc, estimatedUserReserve) => acc.plus(estimatedUserReserve.value),
+    return (valuedUserReserves || []).reduce<BigNumber>(
+      (acc, valuedUserReserves) => acc.plus(valuedUserReserves.value),
       new BigNumber(0)
     );
-  }, [estimatedUserReserves]);
+  }, [valuedUserReserves]);
 }
 
 function isEqualDeposit(a: DepositRecord, b: DepositRecord) {
