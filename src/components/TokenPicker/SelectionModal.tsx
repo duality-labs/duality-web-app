@@ -133,6 +133,7 @@ export interface SelectionModalDialog<T, Tab extends string> {
   setSearchQuery?: React.Dispatch<React.SetStateAction<string>>;
   tabs?: Tab[];
   tab?: Tab;
+  tabsNote?: ReactNode;
   onTabChange?: (newTab: Tab) => void;
   showChain?: boolean;
   header: ReactNode;
@@ -151,6 +152,7 @@ function SelectionModalDialog<T, Tab extends string>({
   setSearchQuery,
   tabs,
   tab,
+  tabsNote,
   onTabChange,
   header,
   placholder,
@@ -270,6 +272,7 @@ function SelectionModalDialog<T, Tab extends string>({
               </button>
             );
           })}
+          {tabsNote && <div className="tabs-note ml-auto">{tabsNote}</div>}
         </div>
         <ul className="selection-modal-body modal-scrollbar" ref={bodyRef}>
           {values.length > 0
