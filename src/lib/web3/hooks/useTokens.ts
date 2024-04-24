@@ -127,9 +127,9 @@ export function matchToken(tokenSearch: Token) {
   return () => false;
 }
 
-export function matchTokens(tokenA: Token, tokenB: Token) {
+export function matchTokens(tokenA?: Token, tokenB?: Token) {
   // check for matching chain
-  if (tokenA.chain.chain_id === tokenB.chain.chain_id) {
+  if (tokenA && tokenB && tokenA.chain.chain_id === tokenB.chain.chain_id) {
     // match by ID / base (which should be native or IBC or other)
     const idA = getTokenId(tokenA);
     const idB = getTokenId(tokenB);

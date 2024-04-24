@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import unknownTokenSVG from '../../assets/tokens/_empty.svg';
 
 import { Token } from '../../lib/web3/utils/tokens';
+import { matchTokens } from '../../lib/web3/hooks/useTokens';
 
 import './TokenPairLogos.scss';
 
@@ -52,8 +53,8 @@ export default function TokenPairLogos({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [previousTokenA, setPreviousTokenA] = useState(tokenA);
   const [previousTokenB, setPreviousTokenB] = useState(tokenB);
-  const tokenAisTransitioning = tokenA !== previousTokenA;
-  const tokenBisTransitioning = tokenB !== previousTokenB;
+  const tokenAisTransitioning = !matchTokens(tokenA, previousTokenA);
+  const tokenBisTransitioning = !matchTokens(tokenB, previousTokenB);
   const tokensTransitioning = tokenAisTransitioning || tokenBisTransitioning;
 
   // set the middle of the transition
