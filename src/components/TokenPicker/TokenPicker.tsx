@@ -243,11 +243,12 @@ function TokenPickerDialog({
   }, [assetMode, dexTokenList, userTokenList]);
   const sortedTokenList = useTokensSortedByValue(unsortedTokenList);
   const filteredList = useFilteredTokenList(sortedTokenList, searchQuery);
+  const filteredListOrder = filteredList.map((token) => token.base).join(',');
 
-  // udate the selected index each time the list changes
+  // udate the selected index each time the list order changes
   useEffect(() => {
     setSelectedIndex(0);
-  }, [filteredList]);
+  }, [filteredListOrder]);
 
   const onKeyDown = useCallback(
     function (event: React.KeyboardEvent) {
