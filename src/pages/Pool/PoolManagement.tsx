@@ -567,7 +567,7 @@ export default function PoolManagement({
           : 'A'
         : undefined;
     });
-    setTokens([tokenA, tokenB]);
+    setTokens([tokenB, tokenA]);
     setInitialPrice((price) => {
       const priceNumber = Number(price);
       if (priceNumber > 0) {
@@ -990,32 +990,6 @@ export default function PoolManagement({
       >
         <div className="chart-header row h4">Add Liquidity</div>
         <div className="card-row my-3">
-          {tokenB ? (
-            <TokenInputGroup
-              className="flex"
-              defaultAssetMode="Dex"
-              variant={!hasSufficientFundsB && 'error'}
-              onValueChanged={(value) => {
-                setInputValueB(value);
-                setLastUsedInput('B');
-              }}
-              onTokenChanged={setTokenB}
-              token={tokenB}
-              denom={denomB}
-              value={inputValueB}
-              exclusion={tokenA}
-            />
-          ) : (
-            <TokenPicker
-              className="flex button-primary p-4"
-              defaultAssetMode="Dex"
-              value={tokenB}
-              onChange={setTokenB}
-              exclusion={tokenA}
-            />
-          )}
-        </div>
-        <div className="card-row my-3">
           {tokenA ? (
             <TokenInputGroup
               className="flex"
@@ -1038,6 +1012,32 @@ export default function PoolManagement({
               value={tokenA}
               onChange={setTokenA}
               exclusion={tokenB}
+            />
+          )}
+        </div>
+        <div className="card-row my-3">
+          {tokenB ? (
+            <TokenInputGroup
+              className="flex"
+              defaultAssetMode="Dex"
+              variant={!hasSufficientFundsB && 'error'}
+              onValueChanged={(value) => {
+                setInputValueB(value);
+                setLastUsedInput('B');
+              }}
+              onTokenChanged={setTokenB}
+              token={tokenB}
+              denom={denomB}
+              value={inputValueB}
+              exclusion={tokenA}
+            />
+          ) : (
+            <TokenPicker
+              className="flex button-primary p-4"
+              defaultAssetMode="Dex"
+              value={tokenB}
+              onChange={setTokenB}
+              exclusion={tokenA}
             />
           )}
         </div>

@@ -26,7 +26,7 @@ export default function OrderbookPage() {
 
 function Orderbook() {
   // change tokens to match pathname
-  const match = useMatch('/orderbook/:tokenB/:tokenA');
+  const match = useMatch('/orderbook/:tokenA/:tokenB');
   const { data: denomA } = useDenomFromPathParam(match?.params['tokenA']);
   const { data: denomB } = useDenomFromPathParam(match?.params['tokenB']);
   const { data: tokenA } = useToken(denomA);

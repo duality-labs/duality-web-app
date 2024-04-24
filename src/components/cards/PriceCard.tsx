@@ -3,10 +3,10 @@ import { ReactNode } from 'react';
 import AssetIcon from '../assets/AssetIcon';
 import AssetSymbol from '../assets/AssetName';
 
-import { Token, getTokenId } from '../../lib/web3/utils/tokens';
-import { useCurrentPriceFromTicks } from '../Liquidity/useCurrentPriceFromTicks';
+import { Token } from '../../lib/web3/utils/tokens';
 import { formatPrice } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
+import { useRealtimePrice } from '../stats/hooks';
 
 import './PriceCard.scss';
 
@@ -57,15 +57,12 @@ export function PairPriceCard({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const currentPrice = useCurrentPriceFromTicks(
-    getTokenId(tokenA),
-    getTokenId(tokenB)
-  );
+  const [, currentPriceBtoA] = useRealtimePrice(tokenA, tokenB);
   return (
     <PriceCard
       tokenA={tokenA}
       tokenB={tokenB}
-      price={currentPrice?.toNumber()}
+      price={currentPriceBtoA ? 1 / currentPriceBtoA : undefined}
     />
   );
 }
