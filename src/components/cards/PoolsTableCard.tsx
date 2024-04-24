@@ -87,9 +87,11 @@ export default function PoolsTableCard<T extends string | number>({
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
   const filteredPoolsList = useMemo<Array<PoolTableRow>>(() => {
-    const tokenList = filteredPoolTokenList.map(({ token }) => token);
     return allPairsList.filter(([, token0, token1]) => {
-      return tokenList.includes(token0) || tokenList.includes(token1);
+      return (
+        filteredPoolTokenList.includes(token0) ||
+        filteredPoolTokenList.includes(token1)
+      );
     });
   }, [allPairsList, filteredPoolTokenList]);
 
@@ -227,9 +229,11 @@ export function MyPoolsTableCard<T extends string | number>({
 
   const filteredPoolTokenList = useFilteredTokenList(tokenList, searchValue);
   const filteredPoolsList = useMemo<UserPair<UserValuedReserves>[]>(() => {
-    const tokenList = filteredPoolTokenList.map(({ token }) => token);
     return (userValuedPairsList || []).filter(({ token0, token1 }) => {
-      return tokenList.includes(token0) || tokenList.includes(token1);
+      return (
+        filteredPoolTokenList.includes(token0) ||
+        filteredPoolTokenList.includes(token1)
+      );
     });
   }, [userValuedPairsList, filteredPoolTokenList]);
 
