@@ -1,79 +1,89 @@
 import { useMemo } from 'react';
-import { Chain } from '@chain-registry/types';
 import { Token } from '../../lib/web3/utils/tokens';
 
-export interface FilteredTokenContext {
+export interface TokenSearchContext {
   chain: string[];
   symbol: string[];
   token: Token;
 }
-export function useFilteredTokenList(
+export function useTokenSearchContext(
   list: Token[],
-  searchQuery: string
-): FilteredTokenContext[] {
-  // update the chains lookup only when the token list changes
-  const chainsByPrettyName = useMemo<Map<string, Set<Chain>>>(
-    function () {
-      return list.reduce((result, token) => {
-        const name = token.chain.pretty_name;
-        // use set to ensure unique chains
-        const chains = result.get(name) || new Set<Chain>();
-        if (!chains.has(token.chain)) {
-          return result.set(token.chain.pretty_name, chains.add(token.chain));
-        }
-        return result;
-      }, new Map<string, Set<Chain>>());
-    },
-    [list]
-  );
-
+  token: Token,
+  regexQuery: RegExp | undefined
+): TokenSearchContext {
   // update the filtered list whenever the query or the list changes
   return useMemo(
     function () {
       function getChainName(token: Token) {
-        const chains = chainsByPrettyName.get(token.chain.pretty_name);
-        return (chains?.size || 0) > 1
+        const uniqueChainName = !list.find((listToken) => {
+          // check for matching name
+          return (
+            listToken.chain.pretty_name === token.chain.pretty_name &&
+            // and check for not the same chain exactly
+            listToken.chain.chain_id !== token.chain.chain_id
+          );
+        });
+        return !uniqueChainName
           ? `${token.chain.pretty_name} (${token.chain.chain_name})`
           : token.chain.pretty_name;
       }
 
+      const chainName = getChainName(token);
+      return regexQuery
+        ? // Split the symbol and name using the query (and include the query in the list)
+          {
+            chain: chainName?.split(regexQuery) || [''],
+            symbol: token.symbol?.split(regexQuery) || [''],
+            token,
+          }
+        : {
+            chain: [chainName],
+            symbol: [token.symbol],
+            token,
+          };
+    },
+    [list, regexQuery, token]
+  );
+}
+
+export function useTokenSearchRegex(searchQuery?: string): RegExp | undefined {
+  if (searchQuery) {
+    // remove invalid characters + remove space limitations (but still match any found)
+    const queryRegexText = searchQuery
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ') //condense spaces
+      .replace(/^["']*(.*)["']*$/, '$1') // remove enclosing quotes
+      .replace(/[^a-z0-9 ]/gi, (char) => `\\${char}`); // whitelist ok chars
+    return new RegExp(`(${queryRegexText})`, 'i');
+  }
+}
+
+export function useFilteredTokenList(
+  list: Token[],
+  searchQuery: string
+): Token[] {
+  const regexQuery = useTokenSearchRegex(searchQuery);
+
+  // update the filtered list whenever the query or the list changes
+  return useMemo(
+    function () {
       // if the query is empty return the full list
-      if (!searchQuery) {
-        return list.map((token) => ({
-          chain: [getChainName(token)],
-          symbol: [token.symbol],
-          token,
-        }));
+      if (!regexQuery) {
+        return list;
       }
 
-      // remove invalid characters + remove space limitations (but still match any found)
-      const queryRegexText = searchQuery
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, ' ') //condense spaces
-        .replace(/^["']*(.*)["']*$/, '$1') // remove enclosing quotes
-        .replace(/[^a-z0-9 ]/gi, (char) => `\\${char}`); // whitelist ok chars
-      const regexQuery = new RegExp(`(${queryRegexText})`, 'i');
-
-      return list
-        .filter((token) =>
-          [
-            token.symbol,
-            token.name,
-            token.base,
-            token.display,
-            token.chain.pretty_name,
-            token.chain.chain_name,
-          ].some((txt) => txt && regexQuery.test(txt))
-        )
-        .map(function (token) {
-          // Split the symbol and name using the query (and include the query in the list)
-          const symbolResult = token.symbol?.split(regexQuery) || [''];
-          const chainName = getChainName(token);
-          const nameResult = chainName?.split(regexQuery) || [''];
-          return { chain: nameResult, symbol: symbolResult, token };
-        });
+      return list.filter((token) =>
+        [
+          token.symbol,
+          token.name,
+          token.base,
+          token.display,
+          token.chain.pretty_name,
+          token.chain.chain_name,
+        ].some((txt) => txt && regexQuery.test(txt))
+      );
     },
-    [list, chainsByPrettyName, searchQuery]
+    [list, regexQuery]
   );
 }

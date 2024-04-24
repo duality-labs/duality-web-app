@@ -196,7 +196,7 @@ type TokenCoin = Coin & {
   value: BigNumber | undefined;
 };
 
-export function useTokensSortedByValue(tokenList: Token[]) {
+function useTokensSortByValue() {
   const allUserBankAssets = useUserBankValues();
   const allUserBankAssetsByTokenId = useMemo(() => {
     return allUserBankAssets.reduce<{ [symbol: string]: TokenCoin }>(
@@ -214,7 +214,7 @@ export function useTokensSortedByValue(tokenList: Token[]) {
   const { data: nativeChain } = useNativeChain();
 
   // define sorting rows by token value
-  const sortByValue = useCallback(
+  return useCallback(
     (tokenA: Token, tokenB: Token) => {
       const a = getTokenId(tokenA) || '';
       const b = getTokenId(tokenB) || '';
@@ -256,6 +256,11 @@ export function useTokensSortedByValue(tokenList: Token[]) {
     },
     [allUserBankAssetsByTokenId, nativeChain]
   );
+}
+
+export function useTokensSortedByValue(tokenList: Token[]) {
+  // define sorting rows by token value
+  const sortByValue = useTokensSortByValue();
 
   // sort tokens
   return useMemo(() => {

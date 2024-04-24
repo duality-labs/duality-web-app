@@ -118,7 +118,7 @@ export default function AssetsTableCard({
         </thead>
         <tbody>
           {filteredList.length > 0 ? (
-            filteredList.map(({ token }) => {
+            filteredList.map((token) => {
               const id = getTokenId(token) || '';
               const foundUserAsset = allUserBankAssetsByTokenId[id];
               return foundUserAsset ? (

@@ -12,7 +12,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import BigNumber from 'bignumber.js';
 
-import { useFilteredTokenList } from './hooks';
+import {
+  useFilteredTokenList,
+  useTokenSearchContext,
+  useTokenSearchRegex,
+} from './hooks';
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
 import { useTokens } from '../../lib/web3/hooks/useDenomClients';
 import { useTokensSortedByValue } from '../../lib/web3/hooks/useTokens';
@@ -239,29 +243,31 @@ function TokenPickerDialog({
   }, [assetMode, dexTokenList, userTokenList]);
   const sortedTokenList = useTokensSortedByValue(unsortedTokenList);
   const filteredList = useFilteredTokenList(sortedTokenList, searchQuery);
+  const filteredListOrder = filteredList.map((token) => token.base).join(',');
 
-  // udate the selected index each time the list changes
+  // udate the selected index each time the list order changes
   useEffect(() => {
     setSelectedIndex(0);
-  }, [filteredList]);
+  }, [filteredListOrder]);
 
   const onKeyDown = useCallback(
     function (event: React.KeyboardEvent) {
-      setSelectedIndex(function (newIndex) {
+      setSelectedIndex(function (index) {
+        let newIndex = index;
         if (event.key === 'ArrowUp') {
           newIndex -= 1;
         } else if (event.key === 'ArrowDown') {
           newIndex += 1;
         } else if (event.key === 'Escape') {
           close();
-          return newIndex;
+          return index;
         } else if (event.key === 'Enter') {
-          const token = filteredList[newIndex];
-          if (token && getTokenId(exclusion) !== getTokenId(token.token))
-            selectToken(token?.token);
+          const token = filteredList[index];
+          if (token && getTokenId(exclusion) !== getTokenId(token))
+            selectToken(token);
         } else {
           // Ignore all of the keys not including above
-          return newIndex;
+          return index;
         }
         // If key pressed is in the list above then cancel all default behaviour
         event.stopPropagation();
@@ -322,15 +328,15 @@ function TokenPickerDialog({
         </div>
         <ul className="token-picker-body modal-scrollbar" ref={bodyRef}>
           {filteredList.length > 0 ? (
-            filteredList.map(({ chain, symbol, token }, index) => {
+            filteredList.map((token, index) => {
               return token ? (
                 <TokenPickerItem
                   key={`${getTokenId(token) ?? token.base}:${
                     token.chain.chain_name
                   }`}
+                  searchQuery={searchQuery}
+                  tokens={sortedTokenList}
                   token={token}
-                  chain={chain}
-                  symbol={symbol}
                   index={index}
                   exclusion={exclusion}
                   selectedIndex={selectedIndex}
@@ -372,26 +378,29 @@ function TokenPickerDialog({
 }
 
 function TokenPickerItem({
+  tokens,
   token,
+  searchQuery,
   denom = token?.base,
-  chain = [],
-  symbol = [],
   index,
   exclusion,
   selectedIndex,
   selectToken,
   setSelectedIndex,
 }: {
+  tokens: Token[];
   token: Token;
+  searchQuery?: string;
   denom?: string;
-  chain: string[];
-  symbol: string[];
   index: number;
   exclusion?: Token;
   selectedIndex: number;
   selectToken: (token?: Token) => void;
   setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
 }) {
+  const regexQuery = useTokenSearchRegex(searchQuery);
+  const { chain, symbol } = useTokenSearchContext(tokens, token, regexQuery);
+
   const tokenId = getTokenId(token);
   const exclusionId = getTokenId(exclusion);
   const logos = token.logo_URIs;
