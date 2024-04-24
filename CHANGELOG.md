@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/duality-labs/duality-web-app/compare/v2.6.0...v2.6.1) (2024-04-24)
+
+
+### Fixes
+
+* improve displayed token orders ([#544](https://github.com/duality-labs/duality-web-app/issues/544)) ([62f3b9b](https://github.com/duality-labs/duality-web-app/commit/62f3b9bef85a4de925ee1a3371b839250752a2d8))
+
 ## [2.6.0](https://github.com/duality-labs/duality-web-app/compare/v2.5.0...v2.6.0) (2024-04-09)
 
 
