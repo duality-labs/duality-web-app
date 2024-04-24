@@ -192,6 +192,7 @@ function TokenPairPickerItem({
         tokenA={token0}
         tokenB={token1}
         renderText={renderMarkedTextSections}
+        disableLogoTransitions={true}
       />
       <span className="token-pair-value">{formatCurrency(value)}</span>
     </>

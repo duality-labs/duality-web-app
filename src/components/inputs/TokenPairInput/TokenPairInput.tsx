@@ -8,6 +8,7 @@ import './TokenPairInput.scss';
 export default function TokenPairInput({
   className,
   disabled,
+  disableLogoTransitions,
   tokenA,
   tokenB,
   onClick,
@@ -18,6 +19,7 @@ export default function TokenPairInput({
 }: {
   className?: string;
   disabled?: boolean;
+  disableLogoTransitions?: boolean;
   tokenA: Token | undefined;
   tokenB: Token | undefined;
   as?: React.ElementType;
@@ -37,7 +39,11 @@ export default function TokenPairInput({
       onClick={onClick}
     >
       <div className="token-pair-input__logos col">
-        <TokenPairLogos tokenLeft={tokenA} tokenRight={tokenB} />
+        <TokenPairLogos
+          tokenLeft={tokenA}
+          tokenRight={tokenB}
+          disableTransitions={disableLogoTransitions}
+        />
       </div>
       <div className="col flex">
         <div className="row flow-wrap gapx-2">
