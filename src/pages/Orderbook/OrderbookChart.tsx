@@ -34,12 +34,8 @@ const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
   container: '',
   locale: 'en',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone as Timezone,
-  disabled_features: [
-    'use_localstorage_for_settings',
-    'header_symbol_search',
-    'header_compare',
-  ],
-  enabled_features: ['study_templates'],
+  disabled_features: ['header_symbol_search', 'header_compare'],
+  enabled_features: [],
   charts_storage_url: 'https://saveload.tradingview.com',
   charts_storage_api_version: '1.1',
   // path to static assets of the charting library
