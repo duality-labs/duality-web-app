@@ -252,21 +252,22 @@ function TokenPickerDialog({
 
   const onKeyDown = useCallback(
     function (event: React.KeyboardEvent) {
-      setSelectedIndex(function (newIndex) {
+      setSelectedIndex(function (index) {
+        let newIndex = index;
         if (event.key === 'ArrowUp') {
           newIndex -= 1;
         } else if (event.key === 'ArrowDown') {
           newIndex += 1;
         } else if (event.key === 'Escape') {
           close();
-          return newIndex;
+          return index;
         } else if (event.key === 'Enter') {
-          const token = filteredList[newIndex];
+          const token = filteredList[index];
           if (token && getTokenId(exclusion) !== getTokenId(token))
             selectToken(token);
         } else {
           // Ignore all of the keys not including above
-          return newIndex;
+          return index;
         }
         // If key pressed is in the list above then cancel all default behaviour
         event.stopPropagation();
