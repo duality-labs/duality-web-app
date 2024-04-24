@@ -29,6 +29,7 @@ yarn-error.log*
 
 # Vite
 .vite
+vite.config.ts.timestamp-*
 
 #editors
 .idea
