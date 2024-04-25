@@ -90,9 +90,9 @@ export default function SelectInput<T>({
 
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    function handleClickOutside(e: Event) {
+    function handleClickOutside(event: Event) {
       // only collapse if new focus doesn't exist or is outside of the container
-      const target = e.target as Element | null;
+      const target = event.target as Element | null;
       if (!target?.nodeType || !containerRef.current?.contains(target)) {
         setExpanded(false);
       }
