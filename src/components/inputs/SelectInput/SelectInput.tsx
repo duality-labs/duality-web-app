@@ -1,6 +1,6 @@
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ReactNode, useCallback, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import Drawer from '../../Drawer';
 import RadioInput from '../../RadioInput';
 import { OptionProps, RadioInputProps } from '../../RadioInput/RadioInput';
@@ -87,13 +87,34 @@ export default function SelectInput<T>({
     () => setExpanded((expanded) => !expanded),
     []
   );
-  const close = useCallback(() => setTimeout(() => setExpanded(false), 1), []);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClickOutside() {
+      const activeElement = document.activeElement;
+      if (!activeElement || !containerRef.current?.contains(activeElement)) {
+        setExpanded(false);
+      }
+    }
+    // Bind the event listener to document
+    if (expanded) {
+      // use focusout instead of blur because blur don't not always bubble
+      // - https://www.quirksmode.org/dom/events/blurfocus.html
+      // - https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event
+      document.addEventListener('focusout', handleClickOutside);
+      return () => {
+        // Unbind the event listener on clean up
+        document.removeEventListener('focusout', handleClickOutside);
+      };
+    }
+  }, [expanded]);
+
   return (
     <div
+      ref={containerRef}
       className={['select-input', className, expanded && 'expanded']
         .filter(Boolean)
         .join(' ')}
-      onBlur={close}
     >
       <button
         className="select-input-selection row flex flex-centered"
