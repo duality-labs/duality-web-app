@@ -99,12 +99,22 @@ export default function SelectInput<T>({
     // Bind the event listener to document
     if (expanded) {
       // use focusout instead of blur because blur don't not always bubble
+      // use focusin instead of focusout because tabbing to a child triggers
+      // "focusout" with the document.body as the activeElement
+      // use click and keydown and touchstart to catch start of all input types
       // - https://www.quirksmode.org/dom/events/blurfocus.html
+      // - https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event
       // - https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event
-      document.addEventListener('focusout', handleClickOutside);
+      document.addEventListener('focusin', handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
+      document.addEventListener('keydown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
       return () => {
         // Unbind the event listener on clean up
-        document.removeEventListener('focusout', handleClickOutside);
+        document.removeEventListener('focusin', handleClickOutside);
+        document.removeEventListener('click', handleClickOutside);
+        document.removeEventListener('keydown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
       };
     }
   }, [expanded]);
