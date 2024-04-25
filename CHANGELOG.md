@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.7.0](https://github.com/duality-labs/duality-web-app/compare/v2.6.1...v2.7.0) (2024-04-25)
+
+
+### Features
+
+* improve Orderbook pair selection UI ([#546](https://github.com/duality-labs/duality-web-app/issues/546)) ([966d480](https://github.com/duality-labs/duality-web-app/commit/966d480a5f0b627cc037987d0dacc2cbb1b23d48))
+
+
+### Other
+
+* abstract out token and token pair list hooks ([#548](https://github.com/duality-labs/duality-web-app/issues/548)) ([08f07df](https://github.com/duality-labs/duality-web-app/commit/08f07df2f9a79efe4d60ecc93a07a2ca6e6a049d))
+* remove temp Vite config files ([#547](https://github.com/duality-labs/duality-web-app/issues/547)) ([ebc6f51](https://github.com/duality-labs/duality-web-app/commit/ebc6f51512a5d631d034f6abc149ab4dc65222b4))
+
 ## [2.6.1](https://github.com/duality-labs/duality-web-app/compare/v2.6.0...v2.6.1) (2024-04-24)
 
 
