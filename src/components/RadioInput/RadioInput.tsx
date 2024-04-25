@@ -8,6 +8,7 @@ export interface OptionProps<T> {
 }
 export interface RadioInputProps<T> {
   inputType?: 'radio' | 'checkbox';
+  disabled?: boolean;
   OptionComponent?: React.ElementType<OptionProps<T>>;
   OptionContainerComponent?: React.ElementType;
   onChange?: (value: T, index: number) => void;
@@ -37,6 +38,7 @@ export default function RadioInput<T>({
   list,
   maxColumnCount,
   value,
+  disabled,
   name,
   className,
   containerClassName,
@@ -74,6 +76,7 @@ export default function RadioInput<T>({
               type={inputType}
               name={groupName}
               id={id}
+              disabled={disabled}
               checked={index === selectedIndex}
               onChange={() => onChange?.(option, index)}
               onClick={onClick}

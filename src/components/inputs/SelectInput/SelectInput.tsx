@@ -147,6 +147,7 @@ export default function SelectInput<T>({
         floating={floating}
       >
         <RadioInput<T>
+          disabled={!expanded}
           inputType="checkbox"
           className={[
             'select-input-group',
