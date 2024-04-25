@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import unknownTokenSVG from '../../assets/tokens/_empty.svg';
 
 import { Token } from '../../lib/web3/utils/tokens';
+import { matchTokens } from '../../lib/web3/hooks/useTokens';
 
 import './TokenPairLogos.scss';
 
@@ -44,29 +45,31 @@ export default function TokenPairLogos({
   className,
   tokenLeft: tokenA,
   tokenRight: tokenB,
+  disableTransitions = false,
 }: {
   className?: string;
   tokenLeft?: Token;
   tokenRight?: Token;
+  disableTransitions?: boolean;
 }) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [previousTokenA, setPreviousTokenA] = useState(tokenA);
   const [previousTokenB, setPreviousTokenB] = useState(tokenB);
-  const tokenAisTransitioning = tokenA !== previousTokenA;
-  const tokenBisTransitioning = tokenB !== previousTokenB;
+  const tokenAisTransitioning = !matchTokens(tokenA, previousTokenA);
+  const tokenBisTransitioning = !matchTokens(tokenB, previousTokenB);
   const tokensTransitioning = tokenAisTransitioning || tokenBisTransitioning;
 
   // set the middle of the transition
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (tokensTransitioning && containerRef.current) {
+    if (!disableTransitions && tokensTransitioning && containerRef.current) {
       containerRef.current?.classList.add('token-pair-transition-start');
       setTimeout(() => {
         containerRef.current?.classList.add('token-pair-transition-end');
         containerRef.current?.classList.remove('token-pair-transition-start');
       }, tokenSwitchDelayMs / 1.25); // cut-off early for smoother transition
     }
-  }, [tokensTransitioning]);
+  }, [disableTransitions, tokensTransitioning]);
 
   // update tokens after the transition
   useEffect(() => {

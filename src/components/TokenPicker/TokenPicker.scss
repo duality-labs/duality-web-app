@@ -1,95 +1,31 @@
-@use '../../styles/mixins-vars/animations.scss' as animations;
-@use '../../styles/mixins-vars/paddings.scss' as paddings;
-@use '../../styles/mixins-vars/margins.scss' as margins;
 @use '../../styles/font/size.scss' as font-size;
 @use '../../styles/font/weight.scss' as font-weight;
 
-$no-token-border-size: 2px;
-$min-body-height: 150px;
-
-.token-picker-head {
-  & {
-    @include paddings.padding('y', 3);
-    @include paddings.padding('x', 4);
-    position: relative;
-    flex: 0 0 auto;
+.token-picker-toggle,
+.token-picker-dialog {
+  .token-image {
+    height: font-size.$token-logo-svg;
+    width: font-size.$token-logo-svg;
+    min-width: 2rem;
+    object-fit: contain;
+    font-size: font-size.$token-logo-svg;
+    align-self: center;
+    text-align: center;
   }
-
-  label {
-    @include paddings.padding('t', 0);
-    @include paddings.padding('x', 0);
-    @include paddings.padding('b', 4);
-    font-size: font-size.$h2;
-    cursor: pointer;
-    display: block;
-    flex: 1 1 auto;
-    color: var(--text-default);
+  .token-image-not-found {
+    opacity: 0.3;
   }
-
-  .search-input input {
-    // todo: put the input in the dialog body not the dialog header
-    // this workaround is unnecessarily complex
-    width: calc(
-      100% + #{paddings.size(4) * 2 + font-size.$text-m}
-    ); // 100% + parent paddings + x
-  }
-}
-
-.token-image {
-  height: font-size.$token-logo-svg;
-  width: font-size.$token-logo-svg;
-  min-width: 2rem;
-  object-fit: contain;
-  font-size: font-size.$token-logo-svg;
-  align-self: center;
-  text-align: center;
 }
 
 .token-picker-body {
   li {
-    & {
-      @include paddings.padding('*', 0);
-      @include margins.margin('*', 0);
-      list-style: none;
-    }
-
-    a,
-    button,
-    label {
+    button {
       & {
-        @include paddings.padding('y', 4);
-        @include paddings.padding('r', 0);
-        @include margins.gap('x', 4);
-        @include margins.gap('y', 2);
-        transition: background-color animations.$short-duration
-            animations.$default-mode,
-          box-shadow animations.$short-duration animations.$default-mode;
-        box-shadow: 0 0 0 100vmax transparent; // shadow so that the background will ignore parent padding-x
-        clip-path: inset(0 -100vmax); // so the shadow only "bleeds" on the side
         grid-template-columns: font-size.$token-logo-svg-list 1fr auto;
-        background-color: transparent;
         grid-template-rows: 50% 50%;
         text-align: start;
         align-items: flex-end;
-        border-radius: 0;
-        outline: none;
         display: grid;
-        width: 100%;
-      }
-
-      &:hover:not(.disabled),
-      &:focus:not(.disabled),
-      &.selected:not(.disabled) {
-        box-shadow: 0 0 0 100vmax var(--selected-token);
-        background-color: var(--selected-token);
-      }
-
-      &.disabled {
-        box-shadow: 0 0 0 100vmax rgba(32, 32, 32, 0.5);
-        background-color: rgba(32, 32, 32, 0.5);
-        color: var(--text-disabled);
-        cursor: not-allowed;
-        user-select: none;
       }
     }
 
@@ -142,10 +78,6 @@ $min-body-height: 150px;
     display: grid;
   }
 
-  &:disabled {
-    pointer-events: none;
-  }
-
   .token-image {
     margin-top: 2px;
     margin-right: 10px;
@@ -178,83 +110,5 @@ $min-body-height: 150px;
     .token-chain {
       display: none;
     }
-  }
-}
-
-.token-image-not-found {
-  opacity: 0.3;
-}
-
-.token-picker-dialog {
-  &.dialog-overlay {
-    background-color: var(--dialog-backdrop);
-  }
-
-  &.dialog-content {
-    overflow: hidden;
-    border: paddings.size(2) solid var(--dialog-border);
-    background-color: var(--dialog-bg);
-  }
-
-  .dialog-header-row {
-    @include paddings.padding('b', 0);
-  }
-
-  .dialog-body {
-    & {
-      @include paddings.padding('y', 0);
-      @include paddings.padding('x', 0);
-      flex-direction: column;
-      overflow: hidden;
-      display: flex;
-    }
-
-    & > * {
-      @include paddings.padding('x', 5);
-      flex: 0 0 auto;
-    }
-
-    & > .token-picker-body {
-      @include margins.margin('t', 0);
-      @include margins.margin('b', 2);
-      min-height: $min-body-height;
-      flex: 1 1 auto;
-    }
-
-    mark {
-      color: var(--icon-button);
-      background-color: var(--icon-button-bg);
-    }
-  }
-
-  .dialog-header-close-button {
-    @include margins.margin('l', 'auto');
-    @include margins.margin('t', 2);
-    background-color: transparent;
-    border: 0px none transparent;
-    color: var(--text-default);
-    font-size: font-size.$h2;
-    margin-bottom: auto;
-  }
-}
-
-.token-asset-selection {
-  & {
-    isolation: isolate;
-    position: relative;
-  }
-
-  .token-moving-asset {
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    z-index: -1;
-    left: 0;
-    top: 0;
-  }
-
-  .transition-ready {
-    transition: left animations.$short-duration animations.$default-mode,
-      width animations.$short-duration animations.$default-mode;
   }
 }

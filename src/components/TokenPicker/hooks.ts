@@ -6,44 +6,21 @@ export interface TokenSearchContext {
   symbol: string[];
   token: Token;
 }
-export function useTokenSearchContext(
-  list: Token[],
-  token: Token,
-  regexQuery: RegExp | undefined
-): TokenSearchContext {
+export function useUniqueChainName(tokens: Token[], token: Token): string {
   // update the filtered list whenever the query or the list changes
-  return useMemo(
-    function () {
-      function getChainName(token: Token) {
-        const uniqueChainName = !list.find((listToken) => {
-          // check for matching name
-          return (
-            listToken.chain.pretty_name === token.chain.pretty_name &&
-            // and check for not the same chain exactly
-            listToken.chain.chain_id !== token.chain.chain_id
-          );
-        });
-        return !uniqueChainName
-          ? `${token.chain.pretty_name} (${token.chain.chain_name})`
-          : token.chain.pretty_name;
-      }
-
-      const chainName = getChainName(token);
-      return regexQuery
-        ? // Split the symbol and name using the query (and include the query in the list)
-          {
-            chain: chainName?.split(regexQuery) || [''],
-            symbol: token.symbol?.split(regexQuery) || [''],
-            token,
-          }
-        : {
-            chain: [chainName],
-            symbol: [token.symbol],
-            token,
-          };
-    },
-    [list, regexQuery, token]
-  );
+  return useMemo(() => {
+    const uniqueChainName = !tokens.find((listToken) => {
+      // check for matching name
+      return (
+        listToken.chain.pretty_name === token.chain.pretty_name &&
+        // and check for not the same chain exactly
+        listToken.chain.chain_id !== token.chain.chain_id
+      );
+    });
+    return !uniqueChainName
+      ? `${token.chain.pretty_name} (${token.chain.chain_name})`
+      : token.chain.pretty_name;
+  }, [tokens, token]);
 }
 
 export function useTokenSearchRegex(searchQuery?: string): RegExp | undefined {
@@ -86,4 +63,32 @@ export function useFilteredTokenList(
     },
     [list, regexQuery]
   );
+}
+
+interface TokenPair {
+  token0: Token;
+  token1: Token;
+}
+
+export function useFilteredPairsList<T extends TokenPair>(
+  pairsList: T[] | undefined,
+  searchQuery: string
+): Array<T> | undefined {
+  const tokenList = useMemo(() => {
+    const tokenSet = pairsList?.reduce((acc, { token0, token1 }) => {
+      acc.add(token0);
+      acc.add(token1);
+      return acc;
+    }, new Set<Token>());
+    return tokenSet ? Array.from(tokenSet) : [];
+  }, [pairsList]);
+  const filteredPairTokenList = useFilteredTokenList(tokenList, searchQuery);
+  return useMemo<Array<T> | undefined>(() => {
+    return pairsList?.filter(({ token0, token1 }) => {
+      return (
+        filteredPairTokenList.includes(token0) ||
+        filteredPairTokenList.includes(token1)
+      );
+    });
+  }, [pairsList, filteredPairTokenList]);
 }

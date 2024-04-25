@@ -1,13 +1,11 @@
-import { ReactNode, useCallback } from 'react';
+import { ReactNode, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowRightArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 import { Token } from '../../lib/web3/utils/tokens';
 
-import TokenPairLogos from '../../components/TokenPairLogos/TokenPairLogos';
-import TokenPicker from '../../components/TokenPicker/TokenPicker';
-import AssetSymbol from '../../components/assets/AssetName';
+import TokenPairPicker from '../../components/TokenPicker/TokenPairPicker';
 
 import { formatCurrency, formatPercentage } from '../../lib/utils/number';
 import {
@@ -68,18 +66,6 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
     },
     [navigate]
   );
-  const setTokenA = useCallback(
-    (tokenA: Token | undefined) => {
-      setTokensPath([tokenA, tokenB]);
-    },
-    [setTokensPath, tokenB]
-  );
-  const setTokenB = useCallback(
-    (tokenB: Token | undefined) => {
-      setTokensPath([tokenA, tokenB]);
-    },
-    [setTokensPath, tokenA]
-  );
 
   const swapTokens = useCallback(
     function () {
@@ -88,28 +74,21 @@ function OrderbookNav({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
     [tokenA, tokenB, setTokensPath]
   );
 
+  const pickTokenCallback = useCallback(
+    ([tokenA, tokenB]: [tokenA?: Token, tokenB?: Token]) => {
+      setTokensPath([tokenA, tokenB]);
+    },
+    [setTokensPath]
+  );
+
   return (
-    <div className="row gap-md flex-centered">
-      <TokenPairLogos className="h3" tokenLeft={tokenA} tokenRight={tokenB} />
-      <h2 className="h3 text-medium">
-        <TokenPicker
-          className="h3 text-medium px-0 inline"
-          onChange={setTokenA}
-          exclusion={tokenA}
-          value={tokenA}
-        >
-          {tokenA ? <AssetSymbol asset={tokenA} /> : 'Select'}
-        </TokenPicker>
-        <span>/</span>
-        <TokenPicker
-          className="h3 text-medium px-0 inline"
-          onChange={setTokenB}
-          exclusion={tokenB}
-          value={tokenB}
-        >
-          {tokenB ? <AssetSymbol asset={tokenB} /> : 'Select'}
-        </TokenPicker>
-      </h2>
+    <div className="orderbook-nav row gap-3 flex-centered">
+      <TokenPairPicker
+        className="gutter-y-2 gutter-l-4 px-4"
+        value={useMemo(() => [tokenA, tokenB], [tokenA, tokenB])}
+        onChange={pickTokenCallback}
+        defaultAssetMode="Your Pools"
+      />
       <button
         type="button"
         className="ml-auto icon-button"
