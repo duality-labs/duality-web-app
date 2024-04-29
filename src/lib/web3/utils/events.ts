@@ -74,8 +74,8 @@ export interface DexDepositEvent {
     action: 'DepositLP';
     Creator: WalletAddress;
     Receiver: WalletAddress;
-    TokenZero: string;
-    TokenOne: string;
+    TokenZero: TokenID;
+    TokenOne: TokenID;
     TickIndex: string;
     Fee: string;
     SharesMinted: string;
@@ -91,8 +91,8 @@ export interface DexWithdrawalEvent {
     action: 'WithdrawLP';
     Creator: WalletAddress;
     Receiver: WalletAddress;
-    TokenZero: string;
-    TokenOne: string;
+    TokenZero: TokenID;
+    TokenOne: TokenID;
     TickIndex: string;
     Fee: string;
     ReservesZeroWithdrawn: string;
@@ -124,9 +124,9 @@ export interface DexPlaceLimitOrderEvent {
     action: 'PlaceLimitOrder';
     Creator: WalletAddress;
     Receiver: WalletAddress;
-    TokenZero: string;
-    TokenOne: string;
-    TokenIn: string;
+    TokenZero: TokenID;
+    TokenOne: TokenID;
+    TokenIn: TokenID;
     AmountIn: string;
     LimitTick: string;
     OrderType:
@@ -146,10 +146,10 @@ export interface DexCancelLimitOrderEvent {
     module: 'dex';
     action: 'CancelLimitOrder';
     Creator: WalletAddress;
-    TokenZero: string;
-    TokenOne: string;
-    TokenIn: string;
-    TokenOut: string;
+    TokenZero: TokenID;
+    TokenOne: TokenID;
+    TokenIn: TokenID;
+    TokenOut: TokenID;
     TrancheKey: string;
     AmountOut: string;
   };
@@ -161,10 +161,10 @@ export interface DexWithdrawLimitOrderEvent {
     module: 'dex';
     action: 'WithdrawLimitOrder';
     Creator: WalletAddress;
-    TokenZero: string;
-    TokenOne: string;
-    TokenIn: string;
-    TokenOut: string;
+    TokenZero: TokenID;
+    TokenOne: TokenID;
+    TokenIn: TokenID;
+    TokenOut: TokenID;
     TrancheKey: string;
     AmountOut: string;
   };
@@ -173,9 +173,9 @@ export interface DexWithdrawLimitOrderEvent {
 interface DexTickUpdateEventCommonAttributes {
   module: 'dex';
   action: 'TickUpdate';
-  TokenZero: string;
-  TokenOne: string;
-  TokenIn: string;
+  TokenZero: TokenID;
+  TokenOne: TokenID;
+  TokenIn: TokenID;
   TickIndex: string;
   Reserves: string;
 }
