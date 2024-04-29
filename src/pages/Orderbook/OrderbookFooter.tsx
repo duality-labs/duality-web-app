@@ -92,8 +92,8 @@ function OrderbookFooterTable({
 }
 
 interface OrderbookFooterTableContext {
-  tokenA?: Token;
-  tokenB?: Token;
+  tokenA: Token;
+  tokenB: Token;
 }
 
 const headings = [
@@ -139,10 +139,10 @@ function TypeColumn({ row: tx }: { row: Tx }) {
 
 function SideColumn({
   row: tx,
-  context: { tokenA, tokenB } = {},
+  context: { tokenA, tokenB },
 }: {
   row: Tx;
-  context?: OrderbookFooterTableContext;
+  context: OrderbookFooterTableContext;
 }) {
   const attributes = getPlaceLimitOrderActionEvent(tx);
   if (attributes) {
@@ -164,10 +164,10 @@ function SideColumn({
 // price is the end price of the trade
 function PriceColumn({
   row: tx,
-  context: { tokenA, tokenB } = {},
+  context: { tokenA, tokenB },
 }: {
   row: Tx;
-  context?: OrderbookFooterTableContext;
+  context: OrderbookFooterTableContext;
 }) {
   const events = getMappedEvents(tx);
   const attributes = getPlaceLimitOrderActionEvent(tx);
@@ -187,10 +187,10 @@ function PriceColumn({
 
 function AmountColumn({
   row: tx,
-  context: { tokenA, tokenB } = {},
+  context: { tokenA, tokenB },
 }: {
   row: Tx;
-  context?: OrderbookFooterTableContext;
+  context: OrderbookFooterTableContext;
 }) {
   const events = getMappedEvents(tx);
   const attributes = getPlaceLimitOrderActionEvent(tx);
@@ -210,10 +210,10 @@ function AmountColumn({
 
 function FilledColumn({
   row: tx,
-  context: { tokenA, tokenB } = {},
+  context: { tokenA, tokenB },
 }: {
   row: Tx;
-  context?: OrderbookFooterTableContext;
+  context: OrderbookFooterTableContext;
 }) {
   const events = getMappedEvents(tx);
   const placeLimitOrderEvent: DexPlaceLimitOrderEvent | undefined = events.find(
@@ -246,10 +246,10 @@ function FilledColumn({
 
 function TotalColumn({
   row: tx,
-  context: { tokenA, tokenB } = {},
+  context: { tokenA, tokenB },
 }: {
   row: Tx;
-  context?: OrderbookFooterTableContext;
+  context: OrderbookFooterTableContext;
 }) {
   const {
     data: [tokenAPrice, tokenBPrice],

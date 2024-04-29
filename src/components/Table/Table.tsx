@@ -1,7 +1,10 @@
 import { Fragment, ReactNode } from 'react';
 import './Table.scss';
 
-export default function Table<DataRow, Context = Record<string, unknown>>({
+export default function Table<
+  DataRow,
+  Context extends unknown | undefined = undefined
+>({
   data,
   columns = [],
   headings = [],
@@ -14,11 +17,11 @@ export default function Table<DataRow, Context = Record<string, unknown>>({
     React.FunctionComponent<{
       row: DataRow;
       rows: DataRow[];
-      context?: Context;
+      context: Context;
     }>
   >;
   headings?: Array<ReactNode> | (() => Array<ReactNode>);
-  context?: Context;
+  context: Context;
   rowDescription?: string;
   filtered?: boolean;
 }) {
