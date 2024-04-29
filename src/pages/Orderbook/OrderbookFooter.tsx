@@ -318,9 +318,6 @@ function WithdrawnColumn({
         : [tokenB, tokenA]
       : [];
 
-  const userTranche = userLimitOrderMap?.get(attributes?.TrancheKey || '');
-  const sharesFromLimitOrder = userTranche && getUserShares(userTranche);
-
   if (tokenIn && tokenOut && attributes) {
     const makerReservesUserTotal = getTokenReserves(
       tokenIn,
@@ -330,14 +327,13 @@ function WithdrawnColumn({
     // only show if reserves entered were greater than zero
     // note: sometimes an IMMEDIATE_OR_CANCEL order may use 0 reserves
     if (makerReservesUserTotal.isGreaterThan(0)) {
+      // get initially swapped reserves
       const makerSwapReserves = makerReservesUserTotal.minus(attributes.Shares);
-      const sharesFromInitialSwap = getUserShares({
-        shares_owned: makerSwapReserves.toFixed(0),
-        shares_cancelled: '0',
-        shares_withdrawn: makerSwapReserves.toFixed(0),
-      });
-
-      const withdrawn = sharesFromInitialSwap.withdrawn.plus(
+      // get shares withdrawn from user tranche
+      const userTranche = userLimitOrderMap?.get(attributes?.TrancheKey || '');
+      const sharesFromLimitOrder = userTranche && getUserShares(userTranche);
+      // combine shares
+      const withdrawn = makerSwapReserves.plus(
         sharesFromLimitOrder?.withdrawn ?? 0
       );
       const withdrawnFraction = withdrawn.div(makerReservesUserTotal);
