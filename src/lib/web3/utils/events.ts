@@ -121,19 +121,38 @@ export interface DexPlaceLimitOrderEvent {
   };
 }
 
-export interface DexTickUpdateEvent {
-  type: 'message' | 'TickUpdate';
-  attributes: {
-    module: 'dex';
-    action: 'TickUpdate';
-    TokenZero: string;
-    TokenOne: string;
-    TokenIn: string;
-    TickIndex: string;
-    Fee: string;
-    Reserves: string;
-  };
+interface DexTickUpdateEventCommonAttributes {
+  module: 'dex';
+  action: 'TickUpdate';
+  TokenZero: string;
+  TokenOne: string;
+  TokenIn: string;
+  TickIndex: string;
+  Reserves: string;
 }
+interface DexTickUpdateReservesEventAttributes
+  extends DexTickUpdateEventCommonAttributes {
+  Fee: string;
+}
+interface DexTickUpdateTrancheEventAttributes
+  extends DexTickUpdateEventCommonAttributes {
+  TrancheKey: string;
+}
+
+export interface DexTickUpdateEvent<
+  // a TickUpdate must contain a Fee or TrancheKey but not both (XOR)
+  T extends
+    | DexTickUpdateEventCommonAttributes
+    | DexTickUpdateReservesEventAttributes
+    | DexTickUpdateTrancheEventAttributes = DexTickUpdateEventCommonAttributes
+> {
+  type: 'TickUpdate';
+  attributes: T;
+}
+export type DexTickUpdateReservesEvent =
+  DexTickUpdateEvent<DexTickUpdateReservesEventAttributes>;
+export type DexTickUpdateTrancheEvent =
+  DexTickUpdateEvent<DexTickUpdateTrancheEventAttributes>;
 
 // CoinString is an amount and denom like "1000uATOM"
 // typically handled with object type Coin from @cosmjs/stargate
