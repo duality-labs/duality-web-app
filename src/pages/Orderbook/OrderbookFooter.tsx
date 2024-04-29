@@ -1,4 +1,6 @@
 import BigNumber from 'bignumber.js';
+import { useMemo } from 'react';
+import { LimitOrderTrancheUser } from '@duality-labs/neutronjs/types/codegen/neutron/dex/limit_order_tranche_user';
 
 import { orderTypeTextMap } from '../../lib/web3/utils/limitOrders';
 import Table from '../../components/Table/Table';
@@ -29,6 +31,10 @@ import { useSimplePrice } from '../../lib/tokenPrices';
 import useTransactionTableData, {
   Tx,
 } from '../Pool/hooks/useTransactionTableData';
+
+import { useUserLimitOrderTranches } from '../../lib/web3/hooks/useUserLimitOrders';
+import { useTranche } from '../../lib/web3/hooks/useTranches';
+import { getTokenPairID } from '../../lib/web3/utils/pairs';
 
 import './OrderbookFooter.scss';
 
@@ -81,12 +87,35 @@ function OrderbookFooterTable({
     pageSize,
   });
 
+  const { data: userLimitOrders } = useUserLimitOrderTranches();
+  const userLimitOrderMapOfPair = useMemo(() => {
+    const tradePairId = tokenA && tokenB && getTokenPairID([tokenA, tokenB]);
+    const denomA = getTokenId(tokenA);
+    const denomB = getTokenId(tokenB);
+    return tradePairId
+      ? userLimitOrders
+          ?.filter((limitOrderTranche) => {
+            // accept tranche
+            return (
+              (limitOrderTranche.trade_pair_id.maker_denom === denomA &&
+                limitOrderTranche.trade_pair_id.taker_denom === denomB) ||
+              (limitOrderTranche.trade_pair_id.maker_denom === denomB &&
+                limitOrderTranche.trade_pair_id.taker_denom === denomA)
+            );
+          })
+          .reduce((acc, limitOrderTranche) => {
+            acc.set(limitOrderTranche.tranche_key, limitOrderTranche);
+            return acc;
+          }, new Map<string, LimitOrderTrancheUser>())
+      : null;
+  }, [tokenA, tokenB, userLimitOrders]);
+
   return (
     <Table<Tx, OrderbookFooterTableContext>
       headings={headings}
       columns={columns}
       data={data?.txs}
-      context={{ tokenA, tokenB }}
+      context={{ tokenA, tokenB, userLimitOrderMap: userLimitOrderMapOfPair }}
     />
   );
 }
@@ -94,6 +123,7 @@ function OrderbookFooterTable({
 interface OrderbookFooterTableContext {
   tokenA: Token;
   tokenB: Token;
+  userLimitOrderMap: Map<string, LimitOrderTrancheUser> | undefined | null;
 }
 
 const headings = [
@@ -102,20 +132,22 @@ const headings = [
   'Side',
   'Price',
   'Amount',
-  'Filled (at order time)',
   'Total',
+  'Filled',
+  'Withdrawn',
   'Status',
-].slice(0, 7);
+];
 const columns = [
   TimeColumn,
   TypeColumn,
   SideColumn,
   PriceColumn,
   AmountColumn,
-  FilledColumn,
   TotalColumn,
+  FilledColumn,
+  WithdrawnColumn,
   StatusColumn,
-].slice(0, 7);
+];
 
 function TimeColumn({ row: tx }: { row: Tx }) {
   return (
@@ -208,9 +240,30 @@ function AmountColumn({
   );
 }
 
+function getUserShares(
+  userTranche: Pick<
+    LimitOrderTrancheUser,
+    'shares_cancelled' | 'shares_owned' | 'shares_withdrawn'
+  >
+) {
+  const shares = {
+    owned: new BigNumber(userTranche.shares_owned),
+    cancelled: new BigNumber(userTranche.shares_cancelled),
+    withdrawn: new BigNumber(userTranche.shares_withdrawn),
+  };
+  // derive more properties
+  const uncancelled = shares.owned.minus(shares.cancelled);
+  const unwithdrawn = uncancelled.minus(shares.withdrawn);
+  return {
+    ...shares,
+    uncancelled,
+    unwithdrawn,
+  };
+}
+
 function FilledColumn({
   row: tx,
-  context: { tokenA, tokenB },
+  context: { userLimitOrderMap },
 }: {
   row: Tx;
   context: OrderbookFooterTableContext;
@@ -222,26 +275,80 @@ function FilledColumn({
       Number(event.attributes['Shares']) > 0
   ) as DexPlaceLimitOrderEvent | undefined;
   const attributes = getPlaceLimitOrderActionEvent(tx);
-  const [tokenIn] =
+
+  const userTranche = userLimitOrderMap?.get(attributes?.TrancheKey || '');
+  const sharesFromLimitOrder = userTranche && getUserShares(userTranche);
+
+  // conditionally fetch the details of this tranche
+  const { data: tranche } = useTranche(
+    sharesFromLimitOrder?.unwithdrawn.isGreaterThan(0)
+      ? placeLimitOrderEvent
+      : undefined
+  );
+  const makerReservesFromLimitOrder = tranche?.limit_order_tranche && {
+    total: new BigNumber(tranche.limit_order_tranche.total_maker_denom),
+    unfilled: new BigNumber(tranche.limit_order_tranche.reserves_maker_denom),
+  };
+
+  const makerReservesUnfilledFraction =
+    makerReservesFromLimitOrder?.total &&
+    makerReservesFromLimitOrder?.unfilled.div(
+      makerReservesFromLimitOrder.total
+    );
+  return (
+    <td className="text-right">
+      {formatPercentage(1 - (makerReservesUnfilledFraction?.toNumber() ?? 0))}
+    </td>
+  );
+}
+
+function WithdrawnColumn({
+  row: tx,
+  context: { tokenA, tokenB, userLimitOrderMap },
+}: {
+  row: Tx;
+  context: OrderbookFooterTableContext;
+}) {
+  const events = getMappedEvents(tx);
+  const attributes = getPlaceLimitOrderActionEvent(tx);
+  const [tokenIn, tokenOut] =
     tokenA && tokenB && attributes
       ? attributes.TokenIn === getTokenId(tokenA)
         ? [tokenA, tokenB]
         : [tokenB, tokenA]
       : [];
-  const reservesIn =
-    tokenIn && attributes && getTokenReserves(tokenIn, events, attributes);
-  // todo: fix, this doesn't calculated filled amount
-  //       to calculate filled amount we would need to know the number of reserves
-  //       used in TickUpdates (but this shows a new token total, not the diff)
-  return (
-    <td className="text-right">
-      {formatPercentage(
-        (Number(reservesIn) -
-          Number(placeLimitOrderEvent?.attributes['Shares'] || 0)) /
-          (Number(attributes?.AmountIn) || 1)
-      )}
-    </td>
-  );
+
+  const userTranche = userLimitOrderMap?.get(attributes?.TrancheKey || '');
+  const sharesFromLimitOrder = userTranche && getUserShares(userTranche);
+
+  if (tokenIn && tokenOut && attributes) {
+    const makerReservesUserTotal = getTokenReserves(
+      tokenIn,
+      events,
+      attributes
+    );
+    // only show if reserves entered were greater than zero
+    // note: sometimes an IMMEDIATE_OR_CANCEL order may use 0 reserves
+    if (makerReservesUserTotal.isGreaterThan(0)) {
+      const makerSwapReserves = makerReservesUserTotal.minus(attributes.Shares);
+      const sharesFromInitialSwap = getUserShares({
+        shares_owned: makerSwapReserves.toFixed(0),
+        shares_cancelled: '0',
+        shares_withdrawn: makerSwapReserves.toFixed(0),
+      });
+
+      const withdrawn = sharesFromInitialSwap.withdrawn.plus(
+        sharesFromLimitOrder?.withdrawn ?? 0
+      );
+      const withdrawnFraction = withdrawn.div(makerReservesUserTotal);
+      return (
+        <td className="text-right">
+          {formatPercentage(withdrawnFraction.toNumber())}
+        </td>
+      );
+    }
+  }
+  return <td>-</td>;
 }
 
 function TotalColumn({
@@ -271,9 +378,17 @@ function TotalColumn({
   return <td>{formatCurrency(value?.toNumber() || 0)}</td>;
 }
 
-function StatusColumn() {
-  // todo: un-hardcode
-  return <td>-</td>;
+function StatusColumn({
+  row: tx,
+  context: { userLimitOrderMap },
+}: {
+  row: Tx;
+  context: OrderbookFooterTableContext;
+}) {
+  const attributes = getPlaceLimitOrderActionEvent(tx);
+  const userTranche = userLimitOrderMap?.get(attributes?.TrancheKey || '');
+  const shares = userTranche && getUserShares(userTranche);
+  return <td>{shares?.unwithdrawn.isGreaterThan(0) ? 'Open' : 'Closed'}</td>;
 }
 
 // helper functions
