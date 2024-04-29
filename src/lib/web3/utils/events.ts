@@ -67,6 +67,11 @@ export type DexEvent =
   | DexWithdrawLimitOrderEvent
   | DexTickUpdateEvent;
 
+export type DexLimitOrderEvent =
+  | DexPlaceLimitOrderEvent
+  | DexWithdrawLimitOrderEvent
+  | DexCancelLimitOrderEvent;
+
 export interface DexDepositEvent {
   type: 'message';
   attributes: {
