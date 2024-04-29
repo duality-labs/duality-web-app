@@ -59,9 +59,12 @@ export type CosmosEvent =
 export type IBCEvent = IBCSendPacketEvent | IBCReceivePacketEvent;
 
 export type DexEvent =
-  | DexPlaceLimitOrderEvent
   | DexDepositEvent
   | DexWithdrawalEvent
+  | DexMultihopSwapEvent
+  | DexPlaceLimitOrderEvent
+  | DexCancelLimitOrderEvent
+  | DexWithdrawLimitOrderEvent
   | DexTickUpdateEvent;
 
 export interface DexDepositEvent {
@@ -98,6 +101,22 @@ export interface DexWithdrawalEvent {
   };
 }
 
+export interface DexMultihopSwapEvent {
+  type: 'message';
+  attributes: {
+    module: 'dex';
+    action: 'MultihopSwap';
+    Creator: WalletAddress;
+    Receiver: WalletAddress;
+    TokenIn: string;
+    TokenOut: string;
+    AmountIn: string;
+    AmountOut: string;
+    Route: string;
+    Dust: string;
+  };
+}
+
 export interface DexPlaceLimitOrderEvent {
   type: 'message';
   attributes: {
@@ -118,6 +137,36 @@ export interface DexPlaceLimitOrderEvent {
       | 'GOOD_TIL_TIME';
     Shares: string;
     TrancheKey: string;
+  };
+}
+
+export interface DexCancelLimitOrderEvent {
+  type: 'message';
+  attributes: {
+    module: 'dex';
+    action: 'CancelLimitOrder';
+    Creator: WalletAddress;
+    TokenZero: string;
+    TokenOne: string;
+    TokenIn: string;
+    TokenOut: string;
+    TrancheKey: string;
+    AmountOut: string;
+  };
+}
+
+export interface DexWithdrawLimitOrderEvent {
+  type: 'message';
+  attributes: {
+    module: 'dex';
+    action: 'WithdrawLimitOrder';
+    Creator: WalletAddress;
+    TokenZero: string;
+    TokenOne: string;
+    TokenIn: string;
+    TokenOut: string;
+    TrancheKey: string;
+    AmountOut: string;
   };
 }
 
