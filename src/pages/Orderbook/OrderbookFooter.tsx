@@ -164,7 +164,7 @@ function TimeColumn({ row: tx }: { row: Tx }) {
 function TypeColumn({ row: tx }: { row: Tx }) {
   const attributes = getPlaceLimitOrderActionEvent(tx);
   if (attributes) {
-    return <td>{orderTypeTextMap[attributes.OrderType]}</td>;
+    return <td className="nowrap">{orderTypeTextMap[attributes.OrderType]}</td>;
   }
   return <td></td>;
 }
