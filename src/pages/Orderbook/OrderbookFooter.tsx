@@ -1,9 +1,12 @@
 import BigNumber from 'bignumber.js';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { LimitOrderTrancheUser } from '@duality-labs/neutronjs/types/codegen/neutron/dex/limit_order_tranche_user';
 
 import { orderTypeTextMap } from '../../lib/web3/utils/limitOrders';
 import Table from '../../components/Table/Table';
+import Drawer from '../../components/Drawer';
 import { RelativeAndAbsoluteTime } from '../../components/Time';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
@@ -134,7 +137,6 @@ const headings = [
   'Amount',
   'Total',
   'Filled',
-  'Withdrawn',
   'Status',
 ];
 const columns = [
@@ -145,7 +147,6 @@ const columns = [
   AmountColumn,
   TotalColumn,
   FilledColumn,
-  WithdrawnColumn,
   StatusColumn,
 ];
 
@@ -302,13 +303,12 @@ function FilledColumn({
   );
 }
 
-function WithdrawnColumn({
-  row: tx,
-  context: { tokenA, tokenB, userLimitOrderMap },
-}: {
-  row: Tx;
-  context: OrderbookFooterTableContext;
-}) {
+function getSharesState(
+  tx: Tx,
+  { tokenA, tokenB, userLimitOrderMap }: OrderbookFooterTableContext
+):
+  | { owned: BigNumber; withdrawn: BigNumber; cancelled: BigNumber }
+  | undefined {
   const events = getMappedEvents(tx);
   const attributes = getPlaceLimitOrderActionEvent(tx);
   const [tokenIn, tokenOut] =
@@ -336,15 +336,13 @@ function WithdrawnColumn({
       const withdrawn = makerSwapReserves.plus(
         sharesFromLimitOrder?.withdrawn ?? 0
       );
-      const withdrawnFraction = withdrawn.div(makerReservesUserTotal);
-      return (
-        <td className="text-right">
-          {formatPercentage(withdrawnFraction.toNumber())}
-        </td>
-      );
+      return {
+        owned: makerReservesUserTotal,
+        withdrawn,
+        cancelled: sharesFromLimitOrder?.cancelled ?? new BigNumber(0),
+      };
     }
   }
-  return <td>-</td>;
 }
 
 function TotalColumn({
@@ -376,15 +374,55 @@ function TotalColumn({
 
 function StatusColumn({
   row: tx,
-  context: { userLimitOrderMap },
+  context,
 }: {
   row: Tx;
   context: OrderbookFooterTableContext;
 }) {
+  const { userLimitOrderMap } = context;
   const attributes = getPlaceLimitOrderActionEvent(tx);
   const userTranche = userLimitOrderMap?.get(attributes?.TrancheKey || '');
   const shares = userTranche && getUserShares(userTranche);
-  return <td>{shares?.unwithdrawn.isGreaterThan(0) ? 'Open' : 'Closed'}</td>;
+  const [expanded, setExpanded] = useState(false);
+  const statusOpen = !!shares?.unwithdrawn.isGreaterThan(0);
+  const { owned, withdrawn, cancelled } = getSharesState(tx, context) || {};
+  const withdrawnFraction = owned && withdrawn?.div(owned);
+  const cancelledFraction = owned && cancelled?.div(owned);
+  return (
+    <td className="actions">
+      {statusOpen ? (
+        <>
+          <button
+            className={['button-light my-2', expanded && 'expanded'].join(' ')}
+            onClick={() => setExpanded((expanded) => !expanded)}
+          >
+            Open
+            <FontAwesomeIcon className="ml-sm" icon={faAngleDown} />
+          </button>
+          <Drawer expanded={expanded}>
+            {withdrawnFraction &&
+              withdrawnFraction.isGreaterThan(0) &&
+              withdrawnFraction.isLessThan(1) && (
+                <div className="text-right">
+                  Withdrawn: {formatPercentage(withdrawnFraction.toNumber())}
+                </div>
+              )}
+            {cancelledFraction &&
+              cancelledFraction.isGreaterThan(0) &&
+              cancelledFraction.isLessThan(1) && (
+                <div className="text-right">
+                  Cancelled: {formatPercentage(cancelledFraction.toNumber())}
+                </div>
+              )}
+          </Drawer>
+        </>
+      ) : (
+        <button className="button-light my-2" disabled>
+          Closed
+        </button>
+      )}
+    </td>
+  );
 }
 
 // helper functions
