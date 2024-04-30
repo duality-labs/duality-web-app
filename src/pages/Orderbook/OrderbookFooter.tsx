@@ -38,6 +38,8 @@ import useTransactionTableData, {
 
 import { useUserLimitOrderTranches } from '../../lib/web3/hooks/useUserLimitOrders';
 import { useTranche } from '../../lib/web3/hooks/useTranches';
+import { useWithdrawFilledLimitOrder } from './useWithdrawFilledLimitOrder';
+import { useCancelLimitOrder } from './useCancelLimitOrder';
 import { getTokenPairID } from '../../lib/web3/utils/pairs';
 
 import './OrderbookFooter.scss';
@@ -413,6 +415,12 @@ function StatusColumn({
       makerReservesFromLimitOrder.total
     );
 
+  // get withdrawing/cancelling tranche state
+  const { address } = useWeb3();
+  const [withdrawingState, withdrawTranche] = useWithdrawFilledLimitOrder();
+  const [cancellingState, cancelTranche] = useCancelLimitOrder();
+  const loading = withdrawingState.isValidating || cancellingState.isValidating;
+
   return (
     <td className="actions">
       {statusOpen ? (
@@ -443,15 +451,49 @@ function StatusColumn({
               {shares?.unwithdrawn.isGreaterThan(0) &&
                 makerReservesUnfilledFraction?.isLessThan(1) && (
                   <div className="col ml-2">
-                    <button className="button-primary-outline my-2">
-                      Withdraw
+                    <button
+                      className="button-primary-outline my-2"
+                      disabled={loading}
+                      onClick={() => {
+                        !loading &&
+                          address &&
+                          userTranche?.tranche_key &&
+                          withdrawTranche([
+                            {
+                              creator: address,
+                              tranche_key: userTranche.tranche_key,
+                            },
+                          ]);
+                      }}
+                    >
+                      {withdrawingState.isValidating
+                        ? 'Withdrawing...'
+                        : 'Withdraw'}
                     </button>
                   </div>
                 )}
               {shares?.uncancelled.isGreaterThan(0) &&
                 makerReservesUnfilledFraction?.isGreaterThan(0) && (
                   <div className="col ml-2">
-                    <button className="button-outline my-2">Cancel</button>
+                    <button
+                      className="button-primary-outline my-2"
+                      disabled={loading}
+                      onClick={() => {
+                        !loading &&
+                          address &&
+                          userTranche?.tranche_key &&
+                          cancelTranche([
+                            {
+                              creator: address,
+                              tranche_key: userTranche.tranche_key,
+                            },
+                          ]);
+                      }}
+                    >
+                      {cancellingState.isValidating
+                        ? 'Cancelling...'
+                        : 'Cancel'}
+                    </button>
                   </div>
                 )}
             </div>
