@@ -66,6 +66,7 @@ export type DexEvent =
   | DexCancelLimitOrderEvent
   | DexWithdrawLimitOrderEvent
   | DexTickUpdateEvent;
+export type DexEventAction = DexEvent['attributes']['action'];
 
 export type DexLimitOrderEvent =
   | DexPlaceLimitOrderEvent

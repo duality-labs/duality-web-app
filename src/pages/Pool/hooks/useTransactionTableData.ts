@@ -35,7 +35,7 @@ export interface Tx {
   };
   tx: EncodedData;
 }
-interface GetTxsEventResponseManuallyType {
+export interface GetTxsEventResponseManuallyType {
   jsonrpc: '2.0';
   id: -1;
   result: {
