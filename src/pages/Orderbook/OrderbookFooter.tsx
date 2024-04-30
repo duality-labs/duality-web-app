@@ -223,13 +223,26 @@ function PriceColumn({
     <td className="text-right">
       {reservesIn &&
       reservesIn?.isGreaterThan(0) &&
-      reservesOut?.isGreaterThan(0)
-        ? formatCurrency(
-            !isOrdered
-              ? reservesOut.dividedBy(reservesIn).toNumber()
-              : reservesIn.dividedBy(reservesOut).toNumber()
-          )
-        : '-'}
+      reservesOut?.isGreaterThan(0) ? (
+        // show actual traded price
+        formatCurrency(
+          !isOrdered
+            ? reservesOut.dividedBy(reservesIn).toNumber()
+            : reservesIn.dividedBy(reservesOut).toNumber()
+        )
+      ) : (
+        // show order limit price
+        <div className="text-muted">
+          {isOrdered ? '<' : '>'}
+          {formatCurrency(
+            tickIndexToPrice(
+              new BigNumber(isOrdered ? 1 : -1).multipliedBy(
+                getPlaceLimitOrderEvent(tx)?.attributes.LimitTick ?? NaN
+              )
+            ).toNumber()
+          )}
+        </div>
+      )}
     </td>
   );
 }
@@ -249,14 +262,7 @@ function useTxMsgPlaceLimitOrder(tx: Tx): MsgPlaceLimitOrder | undefined {
   return useTxMsgPlaceLimitOrders(tx).at(0);
 }
 
-function AmountColumn({
-  row: tx,
-  context,
-}: {
-  row: Tx;
-  context: OrderbookFooterTableContext;
-}) {
-  const { tokenB: tokenMain } = context;
+function getDisplayReservesMain(tx: Tx, context: OrderbookFooterTableContext) {
   const events = getMappedEvents(tx);
   const attributes = getPlaceLimitOrderActionEvent(tx);
   const isOrdered = isContextOrdered(tx, context);
@@ -267,11 +273,23 @@ function AmountColumn({
     getDisplayDenomReserves(tokenIn, events, attributes);
 
   // convert the place limit order input if needed
-  const reservesMain = !isOrdered
+  return !isOrdered
     ? reservesIn
     : new BigNumber(reservesIn || 0)
         .dividedBy(tickIndexToPrice(new BigNumber(attributes?.LimitTick || 0)))
         .toNumber();
+}
+
+function AmountColumn({
+  row: tx,
+  context,
+}: {
+  row: Tx;
+  context: OrderbookFooterTableContext;
+}) {
+  const tokenMain = context.tokenB;
+  // convert the place limit order input if needed
+  const reservesMain = getDisplayReservesMain(tx, context);
   return (
     <td className="text-right">
       {formatAmount(reservesMain || 0)} {tokenMain?.symbol}
@@ -584,28 +602,18 @@ function FilledColumn({
 
 function TotalColumn({
   row: tx,
-  context: { tokenA, tokenB },
+  context,
 }: {
   row: Tx;
   context: OrderbookFooterTableContext;
 }) {
+  const reservesMain = getDisplayReservesMain(tx, context);
+  const tokenMain = context.tokenB;
   const {
-    data: [tokenAPrice, tokenBPrice],
-  } = useSimplePrice([tokenA, tokenB]);
-  const events = getMappedEvents(tx);
-  const attributes = getPlaceLimitOrderActionEvent(tx);
+    data: [priceMain],
+  } = useSimplePrice([tokenMain]);
 
-  const value =
-    tokenA &&
-    tokenB &&
-    attributes &&
-    (attributes.TokenIn === getTokenId(tokenA)
-      ? new BigNumber(
-          getDisplayDenomReserves(tokenA, events, attributes) || 0
-        ).multipliedBy(tokenAPrice || 0)
-      : new BigNumber(
-          getDisplayDenomReserves(tokenB, events, attributes) || 0
-        ).multipliedBy(tokenBPrice || 0));
+  const value = new BigNumber(reservesMain ?? 0).multipliedBy(priceMain || 0);
   return <td>{formatCurrency(value?.toNumber() || 0)}</td>;
 }
 
