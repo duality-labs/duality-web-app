@@ -79,15 +79,18 @@ export default function OrderbookFooter({
   );
 }
 
+type Status = 'Open' | 'Closed';
 const pageSize = 10;
 function OrderbookFooterTable({
   tokenA,
   tokenB,
   account,
+  filterToStatus,
 }: {
   tokenA: Token;
   tokenB: Token;
   account: WalletAddress;
+  filterToStatus?: Status;
 }) {
   const { data } = useTransactionTableData({
     tokenA,
@@ -120,12 +123,33 @@ function OrderbookFooterTable({
       : null;
   }, [tokenA, tokenB, userLimitOrders]);
 
+  const [headings, columns] = useMemo(() => {
+    const columnMap = new Map();
+    columnMap.set('Time', TimeColumn);
+    columnMap.set('Type', TypeColumn);
+    columnMap.set('Side', SideColumn);
+    columnMap.set('Price', PriceColumn);
+    columnMap.set('Amount', AmountColumn);
+    columnMap.set('Total', TotalColumn);
+    if (filterToStatus === 'Open') {
+      columnMap.set('Filled', FilledColumn);
+    }
+    columnMap.set('Status', StatusColumn);
+    columnMap.set('', ActionColumn);
+    return [Array.from(columnMap.keys()), Array.from(columnMap.values())];
+  }, [filterToStatus]);
+
   return (
     <Table<Tx, OrderbookFooterTableContext>
       headings={headings}
       columns={columns}
       data={data?.txs}
-      context={{ tokenA, tokenB, userLimitOrderMap: userLimitOrderMapOfPair }}
+      context={{
+        tokenA,
+        tokenB,
+        userLimitOrderMap: userLimitOrderMapOfPair,
+        filterToStatus,
+      }}
     />
   );
 }
@@ -134,30 +158,8 @@ interface OrderbookFooterTableContext {
   tokenA: Token;
   tokenB: Token;
   userLimitOrderMap: Map<string, LimitOrderTrancheUser> | undefined | null;
+  filterToStatus?: Status;
 }
-
-const headings = [
-  'Time',
-  'Type',
-  'Side',
-  'Price',
-  'Amount',
-  'Total',
-  'Filled',
-  'Status',
-  '',
-];
-const columns = [
-  TimeColumn,
-  TypeColumn,
-  SideColumn,
-  PriceColumn,
-  AmountColumn,
-  TotalColumn,
-  FilledColumn,
-  StatusColumn,
-  ActionColumn,
-];
 
 function TimeColumn({ row: tx }: { row: Tx }) {
   return (
@@ -656,6 +658,7 @@ function ActionColumn({
   const limitOrderFilledFraction =
     orderState && getLimitOrderFilledFraction(orderState);
 
+  const statusOpen = orderState && getOpenState(orderState);
   // get withdrawing/cancelling tranche state
   const { address } = useWeb3();
   const [withdrawingState, withdrawTranche] = useWithdrawFilledLimitOrder();
@@ -683,6 +686,12 @@ function ActionColumn({
             {cancelledFraction.isLessThan(1)
               ? ` (${formatPercentage(cancelledFraction.toNumber())})`
               : ''}
+          </div>
+        )}
+        {statusOpen && context.filterToStatus !== 'Open' && (
+          <div className="my-xs ml-1 mr-3 pt-1">
+            Filled:{' '}
+            {formatPercentage(limitOrderFilledFraction?.toNumber() ?? 0)}
           </div>
         )}
         {limitOrderFilledFraction?.isGreaterThan(0) && (
