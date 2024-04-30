@@ -393,7 +393,7 @@ function StatusColumn({
       {statusOpen ? (
         <>
           <button
-            className={['button-light my-2', expanded && 'expanded'].join(' ')}
+            className={['button-muted my-2', expanded && 'expanded'].join(' ')}
             onClick={() => setExpanded((expanded) => !expanded)}
           >
             Open
@@ -414,10 +414,24 @@ function StatusColumn({
                   Cancelled: {formatPercentage(cancelledFraction.toNumber())}
                 </div>
               )}
+            <div className="row text-right">
+              {shares?.unwithdrawn.isGreaterThan(0) && (
+                <div className="col ml-2">
+                  <button className="button-primary-outline my-2">
+                    Withdraw
+                  </button>
+                </div>
+              )}
+              {shares?.uncancelled.isGreaterThan(0) && (
+                <div className="col ml-2">
+                  <button className="button-outline my-2">Cancel</button>
+                </div>
+              )}
+            </div>
           </Drawer>
         </>
       ) : (
-        <button className="button-light my-2" disabled>
+        <button className="button-muted my-2" disabled>
           Closed
         </button>
       )}

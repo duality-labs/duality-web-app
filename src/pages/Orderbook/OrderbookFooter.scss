@@ -17,6 +17,12 @@
     text-align: right;
   }
 
+  th:last-child {
+    width: 12em;
+  }
+  .actions .row {
+    justify-content: flex-end;
+  }
   .actions svg {
     transition: transform animations.$short-duration animations.$default-mode;
     transform: rotate(0deg);
