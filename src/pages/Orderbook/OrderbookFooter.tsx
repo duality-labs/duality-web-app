@@ -44,6 +44,7 @@ import {
 import { useWithdrawFilledLimitOrder } from './useWithdrawFilledLimitOrder';
 import { useCancelLimitOrder } from './useCancelLimitOrder';
 import { getTokenPairID } from '../../lib/web3/utils/pairs';
+import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 import './OrderbookFooter.scss';
 
@@ -250,23 +251,30 @@ function useTxMsgPlaceLimitOrder(tx: Tx): MsgPlaceLimitOrder | undefined {
 
 function AmountColumn({
   row: tx,
-  context: { tokenA, tokenB },
+  context,
 }: {
   row: Tx;
   context: OrderbookFooterTableContext;
 }) {
+  const { tokenB: tokenMain } = context;
   const events = getMappedEvents(tx);
   const attributes = getPlaceLimitOrderActionEvent(tx);
-  const tokenIn =
-    tokenA &&
-    tokenB &&
-    attributes &&
-    (attributes.TokenIn === getTokenId(tokenA) ? tokenA : tokenB);
+  const isOrdered = isContextOrdered(tx, context);
+  const [tokenIn] = getTokenInOut(tx, context);
   const reservesIn =
-    tokenIn && getDisplayDenomReserves(tokenIn, events, attributes);
+    tokenIn &&
+    attributes &&
+    getDisplayDenomReserves(tokenIn, events, attributes);
+
+  // convert the place limit order input if needed
+  const reservesMain = !isOrdered
+    ? reservesIn
+    : new BigNumber(reservesIn || 0)
+        .dividedBy(tickIndexToPrice(new BigNumber(attributes?.LimitTick || 0)))
+        .toNumber();
   return (
     <td className="text-right">
-      {formatAmount(reservesIn || 0)} {tokenIn?.symbol}
+      {formatAmount(reservesMain || 0)} {tokenMain?.symbol}
     </td>
   );
 }
@@ -297,11 +305,7 @@ function getTokenInOut(
   tx: Tx,
   { tokenA, tokenB }: OrderbookFooterTableContext
 ): [Token?, Token?] {
-  const events = getMappedEvents(tx);
-  const placeLimitOrderEvent: DexPlaceLimitOrderEvent | undefined = events.find(
-    (event): event is DexPlaceLimitOrderEvent =>
-      event.attributes['action'] === 'PlaceLimitOrder'
-  );
+  const placeLimitOrderEvent = getPlaceLimitOrderEvent(tx);
 
   return tokenA && tokenB && placeLimitOrderEvent?.attributes
     ? placeLimitOrderEvent.attributes.TokenIn === getTokenId(tokenA)
@@ -315,15 +319,22 @@ function isContextOrdered(tx: Tx, context: OrderbookFooterTableContext) {
   return tokenIn === context.tokenA && tokenOut === context.tokenB;
 }
 
+function getPlaceLimitOrderEvent(
+  tx: Tx,
+  events: DexEvent[] = getMappedEvents(tx)
+): DexPlaceLimitOrderEvent | undefined {
+  return events.find(
+    (event): event is DexPlaceLimitOrderEvent =>
+      event.attributes['action'] === 'PlaceLimitOrder'
+  );
+}
+
 function useOrderState(
   tx: Tx,
   { tokenA, tokenB, userLimitOrderMap }: OrderbookFooterTableContext
 ): OrderState | undefined {
   const events = getMappedEvents(tx);
-  const placeLimitOrderEvent: DexPlaceLimitOrderEvent | undefined = events.find(
-    (event): event is DexPlaceLimitOrderEvent =>
-      event.attributes['action'] === 'PlaceLimitOrder'
-  );
+  const placeLimitOrderEvent = getPlaceLimitOrderEvent(tx, events);
 
   // calculate the swap state
   const swap = useMemo<OrderState['swap'] | undefined>(() => {
