@@ -2,8 +2,11 @@ import BigNumber from 'bignumber.js';
 import { useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
+import { decodeTxRaw } from '@cosmjs/proto-signing';
+import { neutron, neutronAminoConverters } from '@duality-labs/neutronjs';
 import { LimitOrderTrancheUser } from '@duality-labs/neutronjs/types/codegen/neutron/dex/limit_order_tranche_user';
-import { QueryGetLimitOrderTrancheResponse } from '@duality-labs/neutronjs/types/codegen/neutron/dex/query';
+import { LimitOrderTranche } from '@duality-labs/neutronjs/types/codegen/neutron/dex/limit_order_tranche';
+import { MsgPlaceLimitOrder } from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
 
 import { orderTypeTextMap } from '../../lib/web3/utils/limitOrders';
 import Table from '../../components/Table/Table';
@@ -37,7 +40,10 @@ import useTransactionTableData, {
 } from '../Pool/hooks/useTransactionTableData';
 
 import { useUserLimitOrderTranches } from '../../lib/web3/hooks/useUserLimitOrders';
-import { useTranche } from '../../lib/web3/hooks/useTranches';
+import {
+  useTranche,
+  useUserInactiveTranche,
+} from '../../lib/web3/hooks/useTranches';
 import { useWithdrawFilledLimitOrder } from './useWithdrawFilledLimitOrder';
 import { useCancelLimitOrder } from './useCancelLimitOrder';
 import { getTokenPairID } from '../../lib/web3/utils/pairs';
@@ -200,25 +206,40 @@ function SideColumn({
 // price is the end price of the trade
 function PriceColumn({
   row: tx,
-  context: { tokenA, tokenB },
+  context,
 }: {
   row: Tx;
   context: OrderbookFooterTableContext;
 }) {
-  const events = getMappedEvents(tx);
-  const attributes = getPlaceLimitOrderActionEvent(tx);
-  const reservesIn =
-    tokenA && attributes && getTokenReserves(tokenA, events, attributes);
-  const reservesOut =
-    tokenB && attributes && getTokenReserves(tokenB, events, attributes);
+  const orderState = useOrderState(tx, context);
+  const swapReserves = orderState?.swap.reserves;
+  const limitOrderReserves = getLimitOrderReserves(orderState)?.reserves;
+
+  const reservesIn = swapReserves?.maker.plus(limitOrderReserves?.maker || 0);
+  const reservesOut = swapReserves?.taker.plus(limitOrderReserves?.taker || 0);
 
   return (
     <td className="text-right">
-      {Number(reservesOut) && Number(reservesIn)
-        ? formatCurrency(Number(reservesOut) / Number(reservesIn))
+      {reservesIn && reservesOut?.isGreaterThan(0)
+        ? formatCurrency(reservesOut.dividedBy(reservesIn).toNumber())
         : '-'}
     </td>
   );
+}
+
+// allow decoded of tx's MsgPlaceLimitOrder msgs
+type MsgTypeURL = keyof typeof neutronAminoConverters;
+const msgPlaceLimitOrderTypeURL: MsgTypeURL = '/neutron.dex.MsgPlaceLimitOrder';
+function useTxMsgPlaceLimitOrders(tx: Tx): Array<MsgPlaceLimitOrder> {
+  return useMemo(() => {
+    const decodedTx = decodeTxRaw(Buffer.from(tx.tx, 'base64'));
+    return decodedTx.body.messages
+      .filter((msg) => msg.typeUrl === msgPlaceLimitOrderTypeURL)
+      .map((msg) => neutron.dex.MsgPlaceLimitOrder.decode(msg.value));
+  }, [tx.tx]);
+}
+function useTxMsgPlaceLimitOrder(tx: Tx): MsgPlaceLimitOrder | undefined {
+  return useTxMsgPlaceLimitOrders(tx).at(0);
 }
 
 function AmountColumn({
@@ -244,114 +265,263 @@ function AmountColumn({
   );
 }
 
-function getUserShares(
-  userTranche: Pick<
-    LimitOrderTrancheUser,
-    'shares_cancelled' | 'shares_owned' | 'shares_withdrawn'
-  >
-) {
-  const shares = {
-    owned: new BigNumber(userTranche.shares_owned),
-    cancelled: new BigNumber(userTranche.shares_cancelled),
-    withdrawn: new BigNumber(userTranche.shares_withdrawn),
+interface ReservesState {
+  maker: BigNumber;
+  taker: BigNumber;
+}
+interface OrderState {
+  swap: {
+    reserves: ReservesState;
   };
-  // derive more properties
-  const uncancelled = shares.owned.minus(shares.cancelled);
-  const unwithdrawn = uncancelled.minus(shares.withdrawn);
-  return {
-    ...shares,
-    uncancelled,
-    unwithdrawn,
+  limitOrder: {
+    trancheKey: string;
+    userShares: {
+      owned: BigNumber;
+      withdrawn: BigNumber;
+      cancelled: BigNumber;
+    };
+    tranche: {
+      total: ReservesState;
+      reserves: ReservesState;
+    };
   };
 }
 
-function getFilledState(tranche?: QueryGetLimitOrderTrancheResponse) {
-  return (
-    tranche?.limit_order_tranche && {
-      total: new BigNumber(tranche.limit_order_tranche.total_maker_denom),
-      unfilled: new BigNumber(tranche.limit_order_tranche.reserves_maker_denom),
-    }
+function useOrderState(
+  tx: Tx,
+  { tokenA, tokenB, userLimitOrderMap }: OrderbookFooterTableContext
+): OrderState | undefined {
+  const events = getMappedEvents(tx);
+  const placeLimitOrderEvent: DexPlaceLimitOrderEvent | undefined = events.find(
+    (event): event is DexPlaceLimitOrderEvent =>
+      event.attributes['action'] === 'PlaceLimitOrder'
   );
+
+  // calculate the swap state
+  const swap = useMemo<OrderState['swap'] | undefined>(() => {
+    if (placeLimitOrderEvent) {
+      const [_tokenIn, tokenOut] =
+        tokenA && tokenB && placeLimitOrderEvent.attributes
+          ? placeLimitOrderEvent.attributes.TokenIn === getTokenId(tokenA)
+            ? [tokenA, tokenB]
+            : [tokenB, tokenA]
+          : [];
+      const amountOut =
+        (tokenOut &&
+          getTokenReserves(
+            tokenOut,
+            events,
+            placeLimitOrderEvent.attributes
+          )) ??
+        '0';
+
+      // determine the swapped reserves
+      return {
+        reserves: {
+          maker: new BigNumber(placeLimitOrderEvent.attributes.AmountIn).minus(
+            placeLimitOrderEvent.attributes.Shares
+          ),
+          taker: new BigNumber(amountOut),
+        },
+      };
+    }
+  }, [events, placeLimitOrderEvent, tokenA, tokenB]);
+
+  // calculate limit order states: only note tranche keys that have shares
+  const trancheKey =
+    Number(placeLimitOrderEvent?.attributes.Shares) > 0
+      ? placeLimitOrderEvent?.attributes.TrancheKey
+      : undefined;
+  const userTrancheActive = userLimitOrderMap?.get(trancheKey || '');
+  const userTrancheInactive = useUserInactiveTranche(
+    trancheKey && !userTrancheActive ? placeLimitOrderEvent : undefined
+  ).data?.limit_order_tranche_user;
+
+  // get user shares: there are expected to be active or inactive shares
+  // for a valid trancheKey but they may be still loading or have failed to load
+  const userShares = getSharesState(userTrancheActive || userTrancheInactive);
+  const hasOpenShares = userShares?.owned
+    .minus(userShares.cancelled)
+    .minus(userShares.withdrawn)
+    ?.isGreaterThan(0);
+
+  // fetch the details of the tranche only if the user has open (active) shares
+  // the general tranche does not contain usable information after closed
+  const dexTranche = useTranche(
+    hasOpenShares ? placeLimitOrderEvent : undefined
+  ).data?.limit_order_tranche;
+
+  return useMemo<OrderState | undefined>(() => {
+    if (swap) {
+      // if a valid tranche exists we need to find the limit order information:
+      // - the user's limit order shares (active or inactive)
+      // - the general tranche state (to determine if filled or not)
+      if (trancheKey) {
+        if (userShares) {
+          const tranche = getTrancheState(dexTranche);
+          // create a fake dex tranche for closed tranches (to avoid lookup)
+          if (
+            tranche ||
+            userShares.owned.isLessThanOrEqualTo(
+              userShares.withdrawn.plus(userShares.cancelled)
+            )
+          ) {
+            return {
+              swap,
+              limitOrder: {
+                trancheKey,
+                userShares,
+                tranche: tranche || {
+                  reserves: {
+                    maker: new BigNumber(userShares.cancelled),
+                    taker: new BigNumber(userShares.withdrawn),
+                  },
+                  total: {
+                    maker: new BigNumber(userShares.owned),
+                    taker: new BigNumber(userShares.owned),
+                  },
+                },
+              },
+            };
+          }
+        }
+      } else {
+        return {
+          swap,
+          // add empty limit order state for orders that generate no limit order
+          limitOrder: {
+            trancheKey: '',
+            userShares: {
+              owned: new BigNumber(0),
+              withdrawn: new BigNumber(0),
+              cancelled: new BigNumber(0),
+            },
+            tranche: {
+              total: {
+                maker: new BigNumber(0),
+                taker: new BigNumber(0),
+              },
+              reserves: {
+                maker: new BigNumber(0),
+                taker: new BigNumber(0),
+              },
+            },
+          },
+        };
+      }
+    }
+  }, [dexTranche, swap, trancheKey, userShares]);
+
+  // user shares state: may be still loading or have failed to load
+  function getSharesState(
+    tranche: LimitOrderTrancheUser | undefined
+  ): OrderState['limitOrder']['userShares'] | undefined {
+    return (
+      tranche && {
+        owned: new BigNumber(tranche.shares_owned),
+        withdrawn: new BigNumber(tranche.shares_withdrawn),
+        cancelled: new BigNumber(tranche.shares_cancelled),
+      }
+    );
+  }
+  // general tranche state: may be still loading or have failed to load
+  function getTrancheState(
+    tranche: LimitOrderTranche | undefined
+  ): OrderState['limitOrder']['tranche'] | undefined {
+    return (
+      tranche && {
+        total: {
+          maker: new BigNumber(tranche.total_maker_denom),
+          taker: new BigNumber(tranche.total_taker_denom),
+        },
+        reserves: {
+          maker: new BigNumber(tranche.reserves_maker_denom),
+          taker: new BigNumber(tranche.reserves_taker_denom),
+        },
+      }
+    );
+  }
+}
+
+function getOpenShares(orderState: OrderState): BigNumber {
+  return orderState.limitOrder.userShares.owned
+    .minus(orderState.limitOrder.userShares.withdrawn)
+    .minus(orderState.limitOrder.userShares.cancelled);
+}
+function getOpenState(orderState: OrderState): boolean {
+  return getOpenShares(orderState).isGreaterThan(0);
+}
+function getLimitOrderFilledFraction(order: OrderState): BigNumber | undefined {
+  const hasOpenShares = getOpenState(order);
+  if (hasOpenShares) {
+    const { limitOrder } = order;
+    const shareTotal = limitOrder.tranche.total.maker;
+    const sharesFilled = shareTotal.minus(limitOrder.tranche.reserves.maker);
+    return shareTotal.isGreaterThan(0)
+      ? sharesFilled?.div(shareTotal)
+      : undefined;
+  }
+}
+
+function getLimitOrderReserves(
+  order: OrderState | undefined
+): OrderState['swap'] | undefined {
+  if (order) {
+    const filledFraction = getLimitOrderFilledFraction(order);
+    const limitOrder = order.limitOrder;
+    // calculate the
+    const maxReservesIn = limitOrder.userShares.owned;
+    const maxReservesOut = limitOrder.tranche.total.maker.isGreaterThan(0)
+      ? limitOrder.userShares.owned
+          .dividedBy(limitOrder.tranche.total.maker)
+          .multipliedBy(limitOrder.tranche.total.taker)
+      : new BigNumber(0);
+    return (
+      filledFraction && {
+        reserves: {
+          maker: filledFraction.multipliedBy(maxReservesIn),
+          taker: filledFraction.multipliedBy(maxReservesOut),
+        },
+      }
+    );
+  }
 }
 
 function FilledColumn({
   row: tx,
-  context: { userLimitOrderMap },
+  context,
 }: {
   row: Tx;
   context: OrderbookFooterTableContext;
 }) {
-  const events = getMappedEvents(tx);
-  const placeLimitOrderEvent: DexPlaceLimitOrderEvent | undefined = events.find(
-    (event) =>
-      event.attributes['action'] === 'PlaceLimitOrder' &&
-      Number(event.attributes['Shares']) > 0
-  ) as DexPlaceLimitOrderEvent | undefined;
-  const attributes = getPlaceLimitOrderActionEvent(tx);
+  const orderState = useOrderState(tx, context);
+  const isImmediate = orderState?.limitOrder.userShares.owned.isZero();
+  const hasOpenShares = orderState && getOpenState(orderState);
 
-  const userTranche = userLimitOrderMap?.get(attributes?.TrancheKey || '');
-  const sharesFromLimitOrder = userTranche && getUserShares(userTranche);
+  const msgPlaceLimitOrder = useTxMsgPlaceLimitOrder(tx);
+  const isUsingMaxOut = isImmediate && !!msgPlaceLimitOrder?.max_amount_out;
+  const msgReservesIn = new BigNumber(msgPlaceLimitOrder?.amount_in ?? 0);
+  const msgReservesOut = new BigNumber(msgPlaceLimitOrder?.max_amount_out ?? 0);
+  const userShares = orderState?.limitOrder.userShares;
 
-  // conditionally fetch the details of this tranche
-  const { data: tranche } = useTranche(
-    sharesFromLimitOrder?.unwithdrawn.isGreaterThan(0)
-      ? placeLimitOrderEvent
-      : undefined
-  );
-  const makerReservesFromLimitOrder = getFilledState(tranche);
-
-  const makerReservesUnfilledFraction =
-    makerReservesFromLimitOrder?.total &&
-    makerReservesFromLimitOrder?.unfilled.div(
-      makerReservesFromLimitOrder.total
-    );
+  const reservesFilledFraction = isImmediate
+    ? // calculate immediately swapped percentage ("Filled%" = "Swapped%")
+      isUsingMaxOut
+      ? // use percentage of maxOut limit asked for
+        orderState?.swap.reserves.taker.dividedBy(msgReservesOut)
+      : // use percentage of reserves in asked for
+        orderState?.swap.reserves.maker.dividedBy(msgReservesIn)
+    : // calculate limit order "fill" percentage
+    !hasOpenShares
+    ? // calculate limit order withdrawn percentage ("Filled%" = "Withdrawn%")
+      userShares?.withdrawn.dividedBy(userShares.owned)
+    : // calculate limit order fill percentage
+      orderState && getLimitOrderFilledFraction(orderState);
   return (
     <td className="text-right">
-      {formatPercentage(1 - (makerReservesUnfilledFraction?.toNumber() ?? 0))}
+      {formatPercentage(reservesFilledFraction?.toNumber() ?? 0)}
     </td>
   );
-}
-
-function getSharesState(
-  tx: Tx,
-  { tokenA, tokenB, userLimitOrderMap }: OrderbookFooterTableContext
-):
-  | { owned: BigNumber; withdrawn: BigNumber; cancelled: BigNumber }
-  | undefined {
-  const events = getMappedEvents(tx);
-  const attributes = getPlaceLimitOrderActionEvent(tx);
-  const [tokenIn, tokenOut] =
-    tokenA && tokenB && attributes
-      ? attributes.TokenIn === getTokenId(tokenA)
-        ? [tokenA, tokenB]
-        : [tokenB, tokenA]
-      : [];
-
-  if (tokenIn && tokenOut && attributes) {
-    const makerReservesUserTotal = getTokenReserves(
-      tokenIn,
-      events,
-      attributes
-    );
-    // only show if reserves entered were greater than zero
-    // note: sometimes an IMMEDIATE_OR_CANCEL order may use 0 reserves
-    if (makerReservesUserTotal.isGreaterThan(0)) {
-      // get initially swapped reserves
-      const makerSwapReserves = makerReservesUserTotal.minus(attributes.Shares);
-      // get shares withdrawn from user tranche
-      const userTranche = userLimitOrderMap?.get(attributes?.TrancheKey || '');
-      const sharesFromLimitOrder = userTranche && getUserShares(userTranche);
-      // combine shares
-      const withdrawn = makerSwapReserves.plus(
-        sharesFromLimitOrder?.withdrawn ?? 0
-      );
-      return {
-        owned: makerReservesUserTotal,
-        withdrawn,
-        cancelled: sharesFromLimitOrder?.cancelled ?? new BigNumber(0),
-      };
-    }
-  }
 }
 
 function TotalColumn({
@@ -388,32 +558,18 @@ function StatusColumn({
   row: Tx;
   context: OrderbookFooterTableContext;
 }) {
-  const { userLimitOrderMap } = context;
-  const attributes = getPlaceLimitOrderActionEvent(tx);
-  const userTranche = userLimitOrderMap?.get(attributes?.TrancheKey || '');
-  const shares = userTranche && getUserShares(userTranche);
   const [expanded, setExpanded] = useState(false);
   // if shares are withdrawable then the status is Open
-  const statusOpen = !!shares?.unwithdrawn.isGreaterThan(0);
+  const orderState = useOrderState(tx, context);
+  const trancheKey = orderState?.limitOrder.trancheKey;
+  const statusOpen = orderState && getOpenState(orderState);
   // get shares state
-  const { owned, withdrawn, cancelled } = getSharesState(tx, context) || {};
-  const withdrawnFraction = owned && withdrawn?.div(owned);
-  const cancelledFraction = owned && cancelled?.div(owned);
-  // fetch the state of this tranche if the tranche is still open for actions
-  const { data: tranche } = useTranche(
-    statusOpen
-      ? (getMappedEvents(tx).find(
-          (event) => event.attributes['action'] === 'PlaceLimitOrder'
-        ) as DexPlaceLimitOrderEvent | undefined)
-      : undefined
-  );
+  const shares = orderState?.limitOrder.userShares;
+  const withdrawnFraction = shares?.withdrawn?.div(shares.owned);
+  const cancelledFraction = shares?.cancelled?.div(shares.owned);
   // get filled state
-  const makerReservesFromLimitOrder = getFilledState(tranche);
-  const makerReservesUnfilledFraction =
-    makerReservesFromLimitOrder?.total &&
-    makerReservesFromLimitOrder?.unfilled.div(
-      makerReservesFromLimitOrder.total
-    );
+  const limitOrderFilledFraction =
+    orderState && getLimitOrderFilledFraction(orderState);
 
   // get withdrawing/cancelling tranche state
   const { address } = useWeb3();
@@ -448,54 +604,50 @@ function StatusColumn({
                 </div>
               )}
             <div className="row text-right">
-              {shares?.unwithdrawn.isGreaterThan(0) &&
-                makerReservesUnfilledFraction?.isLessThan(1) && (
-                  <div className="col ml-2">
-                    <button
-                      className="button-primary-outline my-2"
-                      disabled={loading}
-                      onClick={() => {
-                        !loading &&
-                          address &&
-                          userTranche?.tranche_key &&
-                          withdrawTranche([
-                            {
-                              creator: address,
-                              tranche_key: userTranche.tranche_key,
-                            },
-                          ]);
-                      }}
-                    >
-                      {withdrawingState.isValidating
-                        ? 'Withdrawing...'
-                        : 'Withdraw'}
-                    </button>
-                  </div>
-                )}
-              {shares?.uncancelled.isGreaterThan(0) &&
-                makerReservesUnfilledFraction?.isGreaterThan(0) && (
-                  <div className="col ml-2">
-                    <button
-                      className="button-primary-outline my-2"
-                      disabled={loading}
-                      onClick={() => {
-                        !loading &&
-                          address &&
-                          userTranche?.tranche_key &&
-                          cancelTranche([
-                            {
-                              creator: address,
-                              tranche_key: userTranche.tranche_key,
-                            },
-                          ]);
-                      }}
-                    >
-                      {cancellingState.isValidating
-                        ? 'Cancelling...'
-                        : 'Cancel'}
-                    </button>
-                  </div>
-                )}
+              {limitOrderFilledFraction?.isGreaterThan(0) && (
+                <div className="col ml-2">
+                  <button
+                    className="button-primary-outline my-2"
+                    disabled={loading}
+                    onClick={() => {
+                      !loading &&
+                        address &&
+                        trancheKey &&
+                        withdrawTranche([
+                          {
+                            creator: address,
+                            tranche_key: trancheKey,
+                          },
+                        ]);
+                    }}
+                  >
+                    {withdrawingState.isValidating
+                      ? 'Withdrawing...'
+                      : 'Withdraw'}
+                  </button>
+                </div>
+              )}
+              {limitOrderFilledFraction?.isLessThan(1) && (
+                <div className="col ml-2">
+                  <button
+                    className="button-primary-outline my-2"
+                    disabled={loading}
+                    onClick={() => {
+                      !loading &&
+                        address &&
+                        trancheKey &&
+                        cancelTranche([
+                          {
+                            creator: address,
+                            tranche_key: trancheKey,
+                          },
+                        ]);
+                    }}
+                  >
+                    {cancellingState.isValidating ? 'Cancelling...' : 'Cancel'}
+                  </button>
+                </div>
+              )}
             </div>
           </Drawer>
         </>
