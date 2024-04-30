@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { LimitOrderTrancheUser } from '@duality-labs/neutronjs/types/codegen/neutron/dex/limit_order_tranche_user';
+import { QueryGetLimitOrderTrancheResponse } from '@duality-labs/neutronjs/types/codegen/neutron/dex/query';
 
 import { orderTypeTextMap } from '../../lib/web3/utils/limitOrders';
 import Table from '../../components/Table/Table';
@@ -262,6 +263,15 @@ function getUserShares(
   };
 }
 
+function getFilledState(tranche?: QueryGetLimitOrderTrancheResponse) {
+  return (
+    tranche?.limit_order_tranche && {
+      total: new BigNumber(tranche.limit_order_tranche.total_maker_denom),
+      unfilled: new BigNumber(tranche.limit_order_tranche.reserves_maker_denom),
+    }
+  );
+}
+
 function FilledColumn({
   row: tx,
   context: { userLimitOrderMap },
@@ -286,10 +296,7 @@ function FilledColumn({
       ? placeLimitOrderEvent
       : undefined
   );
-  const makerReservesFromLimitOrder = tranche?.limit_order_tranche && {
-    total: new BigNumber(tranche.limit_order_tranche.total_maker_denom),
-    unfilled: new BigNumber(tranche.limit_order_tranche.reserves_maker_denom),
-  };
+  const makerReservesFromLimitOrder = getFilledState(tranche);
 
   const makerReservesUnfilledFraction =
     makerReservesFromLimitOrder?.total &&
@@ -384,10 +391,28 @@ function StatusColumn({
   const userTranche = userLimitOrderMap?.get(attributes?.TrancheKey || '');
   const shares = userTranche && getUserShares(userTranche);
   const [expanded, setExpanded] = useState(false);
+  // if shares are withdrawable then the status is Open
   const statusOpen = !!shares?.unwithdrawn.isGreaterThan(0);
+  // get shares state
   const { owned, withdrawn, cancelled } = getSharesState(tx, context) || {};
   const withdrawnFraction = owned && withdrawn?.div(owned);
   const cancelledFraction = owned && cancelled?.div(owned);
+  // fetch the state of this tranche if the tranche is still open for actions
+  const { data: tranche } = useTranche(
+    statusOpen
+      ? (getMappedEvents(tx).find(
+          (event) => event.attributes['action'] === 'PlaceLimitOrder'
+        ) as DexPlaceLimitOrderEvent | undefined)
+      : undefined
+  );
+  // get filled state
+  const makerReservesFromLimitOrder = getFilledState(tranche);
+  const makerReservesUnfilledFraction =
+    makerReservesFromLimitOrder?.total &&
+    makerReservesFromLimitOrder?.unfilled.div(
+      makerReservesFromLimitOrder.total
+    );
+
   return (
     <td className="actions">
       {statusOpen ? (
@@ -415,18 +440,20 @@ function StatusColumn({
                 </div>
               )}
             <div className="row text-right">
-              {shares?.unwithdrawn.isGreaterThan(0) && (
-                <div className="col ml-2">
-                  <button className="button-primary-outline my-2">
-                    Withdraw
-                  </button>
-                </div>
-              )}
-              {shares?.uncancelled.isGreaterThan(0) && (
-                <div className="col ml-2">
-                  <button className="button-outline my-2">Cancel</button>
-                </div>
-              )}
+              {shares?.unwithdrawn.isGreaterThan(0) &&
+                makerReservesUnfilledFraction?.isLessThan(1) && (
+                  <div className="col ml-2">
+                    <button className="button-primary-outline my-2">
+                      Withdraw
+                    </button>
+                  </div>
+                )}
+              {shares?.uncancelled.isGreaterThan(0) &&
+                makerReservesUnfilledFraction?.isGreaterThan(0) && (
+                  <div className="col ml-2">
+                    <button className="button-outline my-2">Cancel</button>
+                  </div>
+                )}
             </div>
           </Drawer>
         </>
