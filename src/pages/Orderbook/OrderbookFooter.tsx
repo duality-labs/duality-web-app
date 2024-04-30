@@ -203,7 +203,7 @@ function SideColumn({
   return <td></td>;
 }
 
-// price is the end price of the trade
+// price is the average price of the trade
 function PriceColumn({
   row: tx,
   context,
@@ -472,21 +472,37 @@ function getLimitOrderReserves(
   if (order) {
     const filledFraction = getLimitOrderFilledFraction(order);
     const limitOrder = order.limitOrder;
-    // calculate the
+    // calculate the equivalent reserves based off general tranche data
     const maxReservesIn = limitOrder.userShares.owned;
     const maxReservesOut = limitOrder.tranche.total.maker.isGreaterThan(0)
       ? limitOrder.userShares.owned
           .dividedBy(limitOrder.tranche.total.maker)
           .multipliedBy(limitOrder.tranche.total.taker)
       : new BigNumber(0);
-    return (
-      filledFraction && {
-        reserves: {
-          maker: filledFraction.multipliedBy(maxReservesIn),
-          taker: filledFraction.multipliedBy(maxReservesOut),
-        },
-      }
-    );
+
+    return getOpenState(order)
+      ? filledFraction
+        ? // if state is open then report reserves that would be available on withdraw
+          {
+            reserves: {
+              maker: filledFraction.multipliedBy(maxReservesIn),
+              taker: filledFraction.multipliedBy(maxReservesOut),
+            },
+          }
+        : undefined
+      : // if the state was closed then how many reserves were actually in/out
+        {
+          reserves: {
+            maker: limitOrder.userShares.owned.minus(
+              limitOrder.userShares.cancelled
+            ),
+            taker: limitOrder.tranche.total.maker.isGreaterThan(0)
+              ? limitOrder.userShares.withdrawn
+                  .dividedBy(limitOrder.tranche.total.maker)
+                  .multipliedBy(limitOrder.tranche.total.taker)
+              : new BigNumber(0),
+          },
+        };
   }
 }
 
