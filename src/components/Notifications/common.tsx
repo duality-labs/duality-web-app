@@ -16,7 +16,7 @@ const { REACT_APP__REST_API = '' } = import.meta.env;
 const REQUEST_SUCCESS = 0;
 const ERROR_OUT_OF_GAS = 11;
 
-interface ToastOptions {
+export interface ToastOptions {
   id?: string;
   title?: string;
   description?: string;
