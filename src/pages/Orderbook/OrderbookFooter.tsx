@@ -449,7 +449,10 @@ function getOpenShares(orderState: OrderState): BigNumber {
     .minus(orderState.limitOrder.userShares.cancelled);
 }
 function getOpenState(orderState: OrderState): boolean {
-  return getOpenShares(orderState).isGreaterThan(0);
+  // note: add workaround here, rounding may leave a small number of shares
+  // todo: revert this sub-commit when bug is merged and released
+  //       https://github.com/neutron-org/neutron/pull/479
+  return getOpenShares(orderState).isGreaterThan(3);
 }
 function getLimitOrderFilledFraction(order: OrderState): BigNumber | undefined {
   const hasOpenShares = getOpenState(order);
