@@ -210,6 +210,7 @@ function PriceColumn({
   row: Tx;
   context: OrderbookFooterTableContext;
 }) {
+  const isOrdered = isContextOrdered(tx, context);
   const orderState = useOrderState(tx, context);
   const swapReserves = orderState?.swap.reserves;
   const limitOrderReserves = getLimitOrderReserves(orderState)?.reserves;
@@ -219,8 +220,14 @@ function PriceColumn({
 
   return (
     <td className="text-right">
-      {reservesIn && reservesOut?.isGreaterThan(0)
-        ? formatCurrency(reservesOut.dividedBy(reservesIn).toNumber())
+      {reservesIn &&
+      reservesIn?.isGreaterThan(0) &&
+      reservesOut?.isGreaterThan(0)
+        ? formatCurrency(
+            !isOrdered
+              ? reservesOut.dividedBy(reservesIn).toNumber()
+              : reservesIn.dividedBy(reservesOut).toNumber()
+          )
         : '-'}
     </td>
   );
@@ -284,6 +291,28 @@ interface OrderState {
       reserves: ReservesState;
     };
   };
+}
+
+function getTokenInOut(
+  tx: Tx,
+  { tokenA, tokenB }: OrderbookFooterTableContext
+): [Token?, Token?] {
+  const events = getMappedEvents(tx);
+  const placeLimitOrderEvent: DexPlaceLimitOrderEvent | undefined = events.find(
+    (event): event is DexPlaceLimitOrderEvent =>
+      event.attributes['action'] === 'PlaceLimitOrder'
+  );
+
+  return tokenA && tokenB && placeLimitOrderEvent?.attributes
+    ? placeLimitOrderEvent.attributes.TokenIn === getTokenId(tokenA)
+      ? [tokenA, tokenB]
+      : [tokenB, tokenA]
+    : [];
+}
+
+function isContextOrdered(tx: Tx, context: OrderbookFooterTableContext) {
+  const [tokenIn, tokenOut] = getTokenInOut(tx, context);
+  return tokenIn === context.tokenA && tokenOut === context.tokenB;
 }
 
 function useOrderState(
