@@ -18,10 +18,7 @@
   }
 
   th:last-child {
-    width: 12em;
-  }
-  .actions .row {
-    justify-content: flex-end;
+    width: 10em;
   }
   .actions svg {
     transition: transform animations.$short-duration animations.$default-mode;

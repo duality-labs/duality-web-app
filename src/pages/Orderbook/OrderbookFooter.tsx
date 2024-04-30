@@ -1,7 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useMemo, useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
+import { useMemo } from 'react';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { neutron, neutronAminoConverters } from '@duality-labs/neutronjs';
 import { LimitOrderTrancheUser } from '@duality-labs/neutronjs/types/codegen/neutron/dex/limit_order_tranche_user';
@@ -10,7 +8,6 @@ import { MsgPlaceLimitOrder } from '@duality-labs/neutronjs/types/codegen/neutro
 
 import { orderTypeTextMap } from '../../lib/web3/utils/limitOrders';
 import Table from '../../components/Table/Table';
-import Drawer from '../../components/Drawer';
 import { RelativeAndAbsoluteTime } from '../../components/Time';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
@@ -147,6 +144,7 @@ const headings = [
   'Total',
   'Filled',
   'Status',
+  '',
 ];
 const columns = [
   TimeColumn,
@@ -157,6 +155,7 @@ const columns = [
   TotalColumn,
   FilledColumn,
   StatusColumn,
+  ActionColumn,
 ];
 
 function TimeColumn({ row: tx }: { row: Tx }) {
@@ -577,11 +576,30 @@ function StatusColumn({
   row: Tx;
   context: OrderbookFooterTableContext;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  // if shares are withdrawable then the status is Open
+  const orderState = useOrderState(tx, context);
+  const statusOpen = orderState && getOpenState(orderState);
+  return (
+    <td>
+      <div className="row">
+        <div className="col badge badge-lg badge-muted my-2 ml-auto">
+          {statusOpen ? 'Open' : 'Closed'}
+        </div>
+      </div>
+    </td>
+  );
+}
+
+function ActionColumn({
+  row: tx,
+  context,
+}: {
+  row: Tx;
+  context: OrderbookFooterTableContext;
+}) {
   // if shares are withdrawable then the status is Open
   const orderState = useOrderState(tx, context);
   const trancheKey = orderState?.limitOrder.trancheKey;
-  const statusOpen = orderState && getOpenState(orderState);
   // get shares state
   const shares = orderState?.limitOrder.userShares;
   const withdrawnFraction = shares?.withdrawn?.div(shares.owned);
@@ -598,83 +616,70 @@ function StatusColumn({
 
   return (
     <td className="actions">
-      {statusOpen ? (
-        <>
-          <button
-            className={['button-muted my-2', expanded && 'expanded'].join(' ')}
-            onClick={() => setExpanded((expanded) => !expanded)}
-          >
-            Open
-            <FontAwesomeIcon className="ml-sm" icon={faAngleDown} />
-          </button>
-          <Drawer expanded={expanded}>
-            {withdrawnFraction &&
-              withdrawnFraction.isGreaterThan(0) &&
-              withdrawnFraction.isLessThan(1) && (
-                <div className="text-right">
-                  Withdrawn: {formatPercentage(withdrawnFraction.toNumber())}
-                </div>
-              )}
-            {cancelledFraction &&
-              cancelledFraction.isGreaterThan(0) &&
-              cancelledFraction.isLessThan(1) && (
-                <div className="text-right">
-                  Cancelled: {formatPercentage(cancelledFraction.toNumber())}
-                </div>
-              )}
-            <div className="row text-right">
-              {limitOrderFilledFraction?.isGreaterThan(0) && (
-                <div className="col ml-2">
-                  <button
-                    className="button-primary-outline my-2"
-                    disabled={loading}
-                    onClick={() => {
-                      !loading &&
-                        address &&
-                        trancheKey &&
-                        withdrawTranche([
-                          {
-                            creator: address,
-                            tranche_key: trancheKey,
-                          },
-                        ]);
-                    }}
-                  >
-                    {withdrawingState.isValidating
-                      ? 'Withdrawing...'
-                      : 'Withdraw'}
-                  </button>
-                </div>
-              )}
-              {limitOrderFilledFraction?.isLessThan(1) && (
-                <div className="col ml-2">
-                  <button
-                    className="button-primary-outline my-2"
-                    disabled={loading}
-                    onClick={() => {
-                      !loading &&
-                        address &&
-                        trancheKey &&
-                        cancelTranche([
-                          {
-                            creator: address,
-                            tranche_key: trancheKey,
-                          },
-                        ]);
-                    }}
-                  >
-                    {cancellingState.isValidating ? 'Cancelling...' : 'Cancel'}
-                  </button>
-                </div>
-              )}
-            </div>
-          </Drawer>
-        </>
-      ) : (
-        <button className="button-muted my-2" disabled>
-          Closed
-        </button>
-      )}
+      <div className="row">
+        {orderState?.limitOrder.userShares.owned.isGreaterThan(0) && (
+          // add divider for limit order types
+          <div className="col m-2 ml-0"></div>
+        )}
+        {withdrawnFraction && withdrawnFraction.isGreaterThan(0) && (
+          <div className="col badge badge-lg badge-muted">
+            Withdrawn
+            {withdrawnFraction.isLessThan(1)
+              ? ` (${formatPercentage(withdrawnFraction.toNumber())})`
+              : ''}
+          </div>
+        )}
+        {cancelledFraction && cancelledFraction.isGreaterThan(0) && (
+          <div className="col badge badge-lg badge-muted">
+            Cancelled
+            {cancelledFraction.isLessThan(1)
+              ? ` (${formatPercentage(cancelledFraction.toNumber())})`
+              : ''}
+          </div>
+        )}
+        {limitOrderFilledFraction?.isGreaterThan(0) && (
+          <div className="col">
+            <button
+              className="button-primary-outline my-2"
+              disabled={loading}
+              onClick={() => {
+                !loading &&
+                  address &&
+                  trancheKey &&
+                  withdrawTranche([
+                    {
+                      creator: address,
+                      tranche_key: trancheKey,
+                    },
+                  ]);
+              }}
+            >
+              {withdrawingState.isValidating ? 'Withdrawing...' : 'Withdraw'}
+            </button>
+          </div>
+        )}
+        {limitOrderFilledFraction?.isLessThan(1) && (
+          <div className="col">
+            <button
+              className="button-primary-outline"
+              disabled={loading}
+              onClick={() => {
+                !loading &&
+                  address &&
+                  trancheKey &&
+                  cancelTranche([
+                    {
+                      creator: address,
+                      tranche_key: trancheKey,
+                    },
+                  ]);
+              }}
+            >
+              {cancellingState.isValidating ? 'Cancelling...' : 'Cancel'}
+            </button>
+          </div>
+        )}
+      </div>
     </td>
   );
 }
