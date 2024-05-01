@@ -43,7 +43,12 @@
     width: 6em;
   }
   .column- {
-    width: 14em;
+    width: 12em;
+  }
+  .actions {
+    .row .col:has(button) {
+      align-self: center;
+    }
   }
   .actions svg {
     transition: transform animations.$short-duration animations.$default-mode;
