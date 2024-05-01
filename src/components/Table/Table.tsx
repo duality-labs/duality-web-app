@@ -38,7 +38,17 @@ export default function Table<
               // wrap strings in the expected element
               return (
                 <Fragment key={index}>
-                  {typeof heading !== 'object' ? <th>{heading}</th> : heading}
+                  {typeof heading !== 'object' ? (
+                    <th
+                      className={`column-${heading}`
+                        .toLowerCase()
+                        .replaceAll(/[^\w]/g, '-')}
+                    >
+                      {heading}
+                    </th>
+                  ) : (
+                    heading
+                  )}
                 </Fragment>
               );
             }

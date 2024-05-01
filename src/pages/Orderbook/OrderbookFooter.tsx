@@ -189,17 +189,14 @@ function TypeColumn({ row: tx }: { row: Tx }) {
     const timestamp = getExpirationTime(tx);
     return (
       <td className="">
-        <div
-          className="row"
-          style={{ alignItems: 'center', justifyContent: 'flex-start' }}
-        >
-          <div className="col nowrap mr-2">
+        <div className="row" style={{ alignItems: 'center', flexFlow: 'wrap' }}>
+          <div className="col nowrap mr-3">
             {orderTypeTextMap[attributes.OrderType]}
           </div>
           {timestamp && (
             <div className="col my-2">
               <div className="text-muted nowrap">
-                : <RelativeAndAbsoluteTime timestamp={timestamp} />
+                <RelativeAndAbsoluteTime timestamp={timestamp} />
               </div>
             </div>
           )}
@@ -705,11 +702,7 @@ function ActionColumn({
 
   return (
     <td className="actions">
-      <div className="row">
-        {orderState?.limitOrder.userShares.owned.isGreaterThan(0) && (
-          // add divider for limit order types
-          <div className="col m-2 ml-0"></div>
-        )}
+      <div className="row gapx-3">
         {withdrawnFraction && withdrawnFraction.isGreaterThan(0) && (
           <div className="col badge badge-lg badge-muted">
             Withdrawn
@@ -727,7 +720,7 @@ function ActionColumn({
           </div>
         )}
         {statusOpen && context.filterToStatus !== 'Open' && (
-          <div className="my-xs ml-1 mr-3 pt-1">
+          <div className="col my-xs ml-1 mr-3 pt-1">
             Filled:{' '}
             {formatPercentage(limitOrderFilledFraction?.toNumber() ?? 0)}
           </div>

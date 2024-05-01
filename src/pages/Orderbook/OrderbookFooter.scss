@@ -17,7 +17,22 @@
     text-align: right;
   }
 
-  th:last-child {
+  .column-time {
+    width: 10em;
+  }
+  .column-type {
+    width: 12em;
+  }
+  .column-side {
+    width: 4em;
+  }
+  .column-price {
+    width: 8em;
+  }
+  .column-filled {
+    width: 8em;
+  }
+  .column- {
     width: 12em;
   }
   .actions svg {
