@@ -167,6 +167,13 @@ function OrderbookFooterTable({
 
   return (
     <Table<Tx, OrderbookFooterTableContext>
+      className={
+        filterToStatus
+          ? `table-with-filter-${filterToStatus
+              .toLowerCase()
+              .replaceAll(/[^\w]/g, '-')}`
+          : ''
+      }
       headings={headings}
       columns={columns}
       data={filteredTxs}

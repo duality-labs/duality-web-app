@@ -5,6 +5,7 @@ export default function Table<
   DataRow,
   Context extends unknown | undefined = undefined
 >({
+  className,
   data,
   columns = [],
   headings = [],
@@ -13,6 +14,7 @@ export default function Table<
   rowDescription = 'Data',
   filtered = false,
 }: {
+  className?: string;
   data?: DataRow[];
   columns?: Array<
     React.FunctionComponent<{
@@ -32,7 +34,10 @@ export default function Table<
   }
 
   return (
-    <table className="simple-table" style={{ width: '100%' }}>
+    <table
+      className={['simple-table', className].join(' ')}
+      style={{ width: '100%' }}
+    >
       <thead>
         <tr>
           {(Array.isArray(headings) ? headings : headings()).map(

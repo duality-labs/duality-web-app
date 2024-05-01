@@ -43,6 +43,11 @@
   .column- {
     width: 12em;
   }
+  .table-with-filter-open-orders {
+    .column- {
+      width: 8em;
+    }
+  }
   .actions {
     .row .col:has(button) {
       align-self: center;
