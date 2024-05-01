@@ -164,15 +164,16 @@ function OrderbookFooterTable({
 
   const filteredTxs = useMemo(() => {
     return filterToStatus === 'Open Orders'
-      ? // filter to open orders
+      ? // filter to open orders as they are available in the API
+        // note: it is possible to do more, but showing this
+        //       check this sub-commit to see previous filtering logic
         txs?.txs.filter((tx) => {
           const placeLimitOrderEvent = getPlaceLimitOrderEvent(tx);
           const trancheKey = placeLimitOrderEvent?.attributes.TrancheKey;
-          const userLimitOrder = userLimitOrderMapOfPair?.get(trancheKey ?? '');
-          return !!userLimitOrder;
+          return userLimitOrderMapOfPairUnfiltered?.has(trancheKey ?? '');
         })
       : txs?.txs;
-  }, [filterToStatus, txs?.txs, userLimitOrderMapOfPair]);
+  }, [filterToStatus, txs?.txs, userLimitOrderMapOfPairUnfiltered]);
 
   const [headings, columns] = useMemo(() => {
     const columnMap = new Map();
