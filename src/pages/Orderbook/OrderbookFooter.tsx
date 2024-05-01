@@ -775,7 +775,8 @@ function ActionColumn({
             {formatPercentage(limitOrderFilledFraction?.toNumber() ?? 0)}
           </div>
         )}
-        {limitOrderFilledFraction?.isGreaterThan(0) && (
+        {(limitOrderFilledFraction?.isGreaterThan(0) ||
+          (statusExpired && limitOrderFilledFraction?.isZero())) && (
           <div className="col">
             <button
               className="button-primary-outline"
