@@ -52,12 +52,14 @@ export default function useTransactionTableData({
   account,
   action,
   pageSize = 10,
+  orderByAscending,
 }: {
   tokenA: Token;
   tokenB: Token;
   account?: WalletAddress;
   action?: DexMessageAction;
   pageSize?: number;
+  orderByAscending?: boolean;
 }) {
   const tokenIdA = getTokenId(tokenA) || '';
   const tokenIdB = getTokenId(tokenB) || '';
@@ -122,6 +124,7 @@ export default function useTransactionTableData({
           )}"`,
           `per_page=${pageSize}`,
           `page=${pageOffset + 1}`,
+          `order_by="${orderByAscending ? 'asc' : 'desc'}"`,
         ].join('&')}`
       );
       const result = (await response.json()) as GetTxsEventResponseManuallyType;
