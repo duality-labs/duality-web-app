@@ -175,8 +175,32 @@ function TimeColumn({ row: tx }: { row: Tx }) {
 
 function TypeColumn({ row: tx }: { row: Tx }) {
   const attributes = getPlaceLimitOrderActionEvent(tx);
+  const txMsg = useTxMsgPlaceLimitOrder(tx);
   if (attributes) {
-    return <td className="nowrap">{orderTypeTextMap[attributes.OrderType]}</td>;
+    const timestamp =
+      txMsg?.expiration_time &&
+      new Date(
+        txMsg.expiration_time.seconds.multiply(1000).toNumber()
+      ).toISOString();
+    return (
+      <td className="">
+        <div
+          className="row"
+          style={{ alignItems: 'center', justifyContent: 'flex-start' }}
+        >
+          <div className="col nowrap mr-2">
+            {orderTypeTextMap[attributes.OrderType]}
+          </div>
+          {txMsg?.expiration_time && (
+            <div className="col my-2">
+              <div className="text-muted nowrap">
+                : <RelativeAndAbsoluteTime timestamp={timestamp} />
+              </div>
+            </div>
+          )}
+        </div>
+      </td>
+    );
   }
   return <td></td>;
 }
