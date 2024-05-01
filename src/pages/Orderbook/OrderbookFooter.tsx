@@ -65,7 +65,7 @@ export default function OrderbookFooter({
   return (
     <TableCard<keyof typeof switchValues>
       title="Orders"
-      className="pb-5"
+      className="pb-5 flex"
       scrolling={false}
       switchValues={switchValues}
       switchValue={filter}
@@ -86,7 +86,7 @@ export default function OrderbookFooter({
 }
 
 type StatusFilter = 'Open Orders' | 'Recent Orders';
-const pageSize = 10;
+const pageSize = 30;
 function OrderbookFooterTable({
   tokenA,
   tokenB,
