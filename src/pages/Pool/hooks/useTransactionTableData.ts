@@ -56,7 +56,7 @@ export default function useTransactionTableData({
 }: {
   tokenA: Token;
   tokenB: Token;
-  account?: WalletAddress;
+  account?: WalletAddress | null;
   action?: DexMessageAction;
   pageSize?: number;
   orderByAscending?: boolean;
@@ -75,7 +75,8 @@ export default function useTransactionTableData({
       pageSize,
       pageOffset,
     ],
-    enabled: !!(tokenIdA && tokenIdB),
+    // disable is account is specifically `null` (eg. wallet is connecting)
+    enabled: !!(tokenIdA && tokenIdB) && account !== null,
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
       const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
 

@@ -12,7 +12,6 @@ import Table from '../../components/Table/Table';
 import { RelativeAndAbsoluteTime } from '../../components/Time';
 
 import { useWeb3 } from '../../lib/web3/useWeb3';
-import { WalletAddress } from '../../lib/web3/utils/address';
 import {
   ChainEvent,
   DexEvent,
@@ -62,7 +61,6 @@ export default function OrderbookFooter({
   tokenA?: Token;
   tokenB?: Token;
 }) {
-  const { address: account } = useWeb3();
   const [filter, setFilter] = useState<keyof typeof switchValues>('recent');
   return (
     <TableCard<keyof typeof switchValues>
@@ -74,11 +72,10 @@ export default function OrderbookFooter({
       switchOnChange={setFilter}
     >
       <div className="row orderbook-orders">
-        {tokenA && tokenB && account && (
+        {tokenA && tokenB && (
           <OrderbookFooterTable
             tokenA={tokenA}
             tokenB={tokenB}
-            account={account}
             filterToStatus={switchValues[filter]}
           />
         )}
@@ -92,19 +89,18 @@ const pageSize = 30;
 function OrderbookFooterTable({
   tokenA,
   tokenB,
-  account,
   filterToStatus,
 }: {
   tokenA: Token;
   tokenB: Token;
-  account: WalletAddress;
   filterToStatus?: StatusFilter;
 }) {
+  const { address } = useWeb3();
   const { data: txs, refetch } = useTransactionTableData({
     tokenA,
     tokenB,
     action: 'PlaceLimitOrder',
-    account,
+    account: address ?? undefined,
     pageSize,
   });
 
