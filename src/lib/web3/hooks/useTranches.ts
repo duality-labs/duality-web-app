@@ -14,6 +14,7 @@ import { orderTypeEnum } from '../utils/limitOrders';
 import { GetTxsEventResponseManuallyType } from '../../../pages/Pool/hooks/useTransactionTableData';
 
 import {
+  ChainEvent,
   DexCancelLimitOrderEvent,
   DexEvent,
   DexEventAction,
@@ -27,6 +28,7 @@ import { useWeb3 } from '../useWeb3';
 import { useDexRpcQueryClient } from '../clients/rpcClients';
 import { useDexRestClientPromise } from '../clients/restClients';
 import { useSwrResponseFromReactQuery } from './useSWR';
+import { tickIndexToPrice } from '../utils/ticks';
 
 const { REACT_APP__RPC_API = '' } = import.meta.env;
 
@@ -142,17 +144,6 @@ export function useUserInactiveTranche(
             getReceivedTokenAmount(events, { address })
           );
         });
-        const events = txs.flatMap((tx) => {
-          return (
-            tx.tx_result.events
-              .map(mapEventAttributes)
-              // filter to only open LimitOrder events
-              .filter((event): event is DexEvent => event.type === 'message')
-              .filter((event): event is DexOpenLimitOrderEvent =>
-                openLimitOrderActions.includes(event.attributes.action)
-              )
-          );
-        });
 
         const tokenIn = placeLimitOrderEvent.attributes.TokenIn;
         const tokenOut = tokenIn === tokenZero ? tokenOne : tokenZero;
@@ -166,35 +157,56 @@ export function useUserInactiveTranche(
             placeLimitOrderEvent.attributes.LimitTick
           ),
           tranche_key: placeLimitOrderEvent.attributes.TrancheKey,
-          address: placeLimitOrderEvent.attributes.Receiver,
+          address: placeLimitOrderEvent.attributes.Creator,
           shares_owned: placeLimitOrderEvent.attributes.Shares,
           shares_withdrawn: '0',
           shares_cancelled: '0',
           order_type: orderTypeEnum[placeLimitOrderEvent.attributes.OrderType],
         };
         // replay open limit order actions matching the user across the state
-        const userTranche = events.reduce<LimitOrderTrancheUser>(
-          (acc, event) => {
-            // accumulate withdrawn shares
-            if (event.attributes.action === 'WithdrawLimitOrder') {
-              const takerAmountOut = new BigNumber(event.attributes.AmountOut);
-              const makerAmountIn = takerAmountOut.multipliedBy(
-                placeLimitOrderEvent.attributes.LimitTick
-              );
-              acc.shares_withdrawn = new BigNumber(acc.shares_withdrawn)
-                .plus(makerAmountIn)
+        const getUserReceivedTokenAmount = (
+          events: ChainEvent[],
+          denom: string
+        ) => {
+          return getReceivedTokenAmount(events, {
+            address: placeLimitOrderEvent.attributes.Creator,
+            matchTokenId: denom,
+          });
+        };
+        const userTranche = txs.reduce<LimitOrderTrancheUser>((acc, tx) => {
+          const events = tx.tx_result.events.map(mapEventAttributes);
+          const event = events
+            .filter((event): event is DexEvent => event.type === 'message')
+            .find((event): event is DexOpenLimitOrderEvent =>
+              openLimitOrderActions.includes(event.attributes.action)
+            );
+          // accumulate shares
+          // workaround: maker amount may be "withdrawn" from expired orders
+          //             so parsing must accumulate either denom in events
+          if (event) {
+            const amountMaker = getUserReceivedTokenAmount(events, tokenIn);
+            const amountTaker = getUserReceivedTokenAmount(events, tokenOut);
+            const direction = new BigNumber(tokenIn === tokenZero ? 1 : -1);
+            const amountTakerShares = amountTaker.multipliedBy(
+              tickIndexToPrice(
+                direction.multipliedBy(
+                  placeLimitOrderEvent.attributes.LimitTick
+                )
+              )
+            );
+            if (amountMaker.isGreaterThan(0)) {
+              acc.shares_cancelled = new BigNumber(acc.shares_cancelled)
+                .plus(amountMaker)
                 .toFixed(0, BigNumber.ROUND_UP);
             }
-            // accumulate cancelled shares
-            else if (event.attributes.action === 'CancelLimitOrder') {
-              acc.shares_cancelled = new BigNumber(acc.shares_cancelled)
-                .plus(event.attributes.AmountOut)
-                .toFixed(0);
+            if (amountTakerShares.isGreaterThan(0)) {
+              acc.shares_withdrawn = new BigNumber(acc.shares_withdrawn)
+                .plus(amountTakerShares)
+                .toFixed(0, BigNumber.ROUND_UP);
             }
-            return acc;
-          },
-          initialUserTrancheState
-        );
+          }
+          return acc;
+        }, initialUserTrancheState);
 
         // because the accumulation math could be incorrect, adjust it here:
         const owned = new BigNumber(userTranche.shares_owned);
