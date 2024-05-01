@@ -697,7 +697,7 @@ function ActionColumn({
         {limitOrderFilledFraction?.isGreaterThan(0) && (
           <div className="col">
             <button
-              className="button-primary-outline my-2"
+              className="button-primary-outline"
               disabled={loading}
               onClick={() => {
                 !loading &&
