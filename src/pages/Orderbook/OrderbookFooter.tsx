@@ -756,17 +756,23 @@ function ActionColumn({
         {withdrawnFraction && withdrawnFraction.isGreaterThan(0) && (
           <div className="col badge badge-lg badge-muted">
             Withdrawn
-            {withdrawnFraction.isLessThan(1)
-              ? ` (${formatPercentage(withdrawnFraction.toNumber())})`
-              : ''}
+            {
+              // show detail only if less that ~100% withdrawn state
+              withdrawnFraction.isLessThan(0.995)
+                ? ` (${formatPercentage(withdrawnFraction.toNumber())})`
+                : ''
+            }
           </div>
         )}
         {cancelledFraction && cancelledFraction.isGreaterThan(0) && (
           <div className="col badge badge-lg badge-muted">
             Cancelled
-            {cancelledFraction.isLessThan(1)
-              ? ` (${formatPercentage(cancelledFraction.toNumber())})`
-              : ''}
+            {
+              // show detail only if less that ~100% cancelled state
+              cancelledFraction.isLessThan(0.995)
+                ? ` (${formatPercentage(cancelledFraction.toNumber())})`
+                : ''
+            }
           </div>
         )}
         {statusOpen && context.filterToStatus !== 'Open Orders' && (
