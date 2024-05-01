@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { neutron, neutronAminoConverters } from '@duality-labs/neutronjs';
 import { LimitOrderTrancheUser } from '@duality-labs/neutronjs/types/codegen/neutron/dex/limit_order_tranche_user';
@@ -7,6 +7,7 @@ import { LimitOrderTranche } from '@duality-labs/neutronjs/types/codegen/neutron
 import { MsgPlaceLimitOrder } from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
 
 import { orderTypeTextMap } from '../../lib/web3/utils/limitOrders';
+import TableCard from '../../components/cards/TableCard';
 import Table from '../../components/Table/Table';
 import { RelativeAndAbsoluteTime } from '../../components/Time';
 
@@ -48,6 +49,10 @@ import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
 import './OrderbookFooter.scss';
 
+const switchValues: Record<'recent' | 'open', StatusFilter | undefined> = {
+  recent: 'Recent Orders',
+  open: 'Open Orders',
+};
 export default function OrderbookFooter({
   tokenA,
   tokenB,
@@ -56,30 +61,31 @@ export default function OrderbookFooter({
   tokenB?: Token;
 }) {
   const { address: account } = useWeb3();
+  const [filter, setFilter] = useState<keyof typeof switchValues>('recent');
   return (
-    <div className="page-card flex">
-      <div className="row flex-centered mb-lg">
-        <div className="col">
-          <div className="row flex-centered gap-lg">
-            <h4 className="h4">Orders</h4>
-          </div>
-        </div>
-        <div className="col ml-auto"></div>
-      </div>
+    <TableCard<keyof typeof switchValues>
+      title="Orders"
+      className="pb-5"
+      scrolling={false}
+      switchValues={switchValues}
+      switchValue={filter}
+      switchOnChange={setFilter}
+    >
       <div className="row orderbook-orders">
         {tokenA && tokenB && account && (
           <OrderbookFooterTable
             tokenA={tokenA}
             tokenB={tokenB}
             account={account}
+            filterToStatus={switchValues[filter]}
           />
         )}
       </div>
-    </div>
+    </TableCard>
   );
 }
 
-type Status = 'Open' | 'Closed';
+type StatusFilter = 'Open Orders' | 'Recent Orders';
 const pageSize = 10;
 function OrderbookFooterTable({
   tokenA,
@@ -90,9 +96,9 @@ function OrderbookFooterTable({
   tokenA: Token;
   tokenB: Token;
   account: WalletAddress;
-  filterToStatus?: Status;
+  filterToStatus?: StatusFilter;
 }) {
-  const { data } = useTransactionTableData({
+  const { data: txs } = useTransactionTableData({
     tokenA,
     tokenB,
     action: 'PlaceLimitOrder',
@@ -123,6 +129,29 @@ function OrderbookFooterTable({
       : null;
   }, [tokenA, tokenB, userLimitOrders]);
 
+  const filteredTxs = useMemo(() => {
+    return filterToStatus === 'Open Orders'
+      ? // filter to open orders
+        txs?.txs.filter((tx) => {
+          const placeLimitOrderEvent = getPlaceLimitOrderEvent(tx);
+          const trancheKey = placeLimitOrderEvent?.attributes.TrancheKey;
+          const userLimitOrder = userLimitOrderMapOfPair?.get(trancheKey ?? '');
+          return (
+            userLimitOrder &&
+            getOpenState(
+              {} as OrderState,
+              getOpenShares({
+                owned: new BigNumber(userLimitOrder.shares_owned),
+                withdrawn: new BigNumber(userLimitOrder.shares_withdrawn),
+                cancelled: new BigNumber(userLimitOrder.shares_cancelled),
+              })
+            )
+            // todo: filter out expired open orders that cannot be cancelled
+          );
+        })
+      : txs?.txs;
+  }, [filterToStatus, txs?.txs, userLimitOrderMapOfPair]);
+
   const [headings, columns] = useMemo(() => {
     const columnMap = new Map();
     columnMap.set('Time', TimeColumn);
@@ -131,7 +160,7 @@ function OrderbookFooterTable({
     columnMap.set('Price', PriceColumn);
     columnMap.set('Amount', AmountColumn);
     columnMap.set('Total', TotalColumn);
-    if (filterToStatus === 'Open') {
+    if (filterToStatus === 'Open Orders') {
       columnMap.set('Filled', FilledColumn);
     }
     columnMap.set('Status', StatusColumn);
@@ -143,7 +172,7 @@ function OrderbookFooterTable({
     <Table<Tx, OrderbookFooterTableContext>
       headings={headings}
       columns={columns}
-      data={data?.txs}
+      data={filteredTxs}
       context={{
         tokenA,
         tokenB,
@@ -158,7 +187,7 @@ interface OrderbookFooterTableContext {
   tokenA: Token;
   tokenB: Token;
   userLimitOrderMap: Map<string, LimitOrderTrancheUser> | undefined | null;
-  filterToStatus?: Status;
+  filterToStatus?: StatusFilter;
 }
 
 function TimeColumn({ row: tx }: { row: Tx }) {
@@ -531,16 +560,21 @@ function useOrderState(
   }
 }
 
-function getOpenShares(orderState: OrderState): BigNumber {
-  return orderState.limitOrder.userShares.owned
-    .minus(orderState.limitOrder.userShares.withdrawn)
-    .minus(orderState.limitOrder.userShares.cancelled);
+function getOpenShares(
+  userShares: OrderState['limitOrder']['userShares']
+): BigNumber {
+  return userShares.owned
+    .minus(userShares.withdrawn)
+    .minus(userShares.cancelled);
 }
-function getOpenState(orderState: OrderState): boolean {
+function getOpenState(
+  orderState: OrderState,
+  openShares = getOpenShares(orderState?.limitOrder.userShares)
+): boolean {
   // note: add workaround here, rounding may leave a small number of shares
   // todo: revert this sub-commit when bug is merged and released
   //       https://github.com/neutron-org/neutron/pull/479
-  return getOpenShares(orderState).isGreaterThan(3);
+  return openShares.isGreaterThan(3);
 }
 function getExpiredState(tx: Tx): boolean {
   const expiration = getExpirationTime(tx);
@@ -719,7 +753,7 @@ function ActionColumn({
               : ''}
           </div>
         )}
-        {statusOpen && context.filterToStatus !== 'Open' && (
+        {statusOpen && context.filterToStatus !== 'Open Orders' && (
           <div className="col my-xs ml-1 mr-3 pt-1">
             Filled:{' '}
             {formatPercentage(limitOrderFilledFraction?.toNumber() ?? 0)}
