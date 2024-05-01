@@ -100,7 +100,7 @@ function OrderbookFooterTable({
     tokenA,
     tokenB,
     action: 'PlaceLimitOrder',
-    account: address ?? undefined,
+    account: address,
     pageSize,
   });
 

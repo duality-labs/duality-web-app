@@ -75,10 +75,17 @@ export default function useTransactionTableData({
       pageSize,
       pageOffset,
     ],
-    // disable is account is specifically `null` (eg. wallet is connecting)
-    enabled: !!(tokenIdA && tokenIdB) && account !== null,
+    enabled: !!(tokenIdA && tokenIdB),
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
       const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
+
+      // disable if account is specifically `null` (eg. wallet is not connected)
+      if (account === null) {
+        return {
+          txs: [],
+          total_count: '0',
+        };
+      }
 
       /*
        * note: you would expect the following to work, but the ABCI query check
