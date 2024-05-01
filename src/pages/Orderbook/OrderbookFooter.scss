@@ -6,8 +6,54 @@
     color: hsla(0, 84%, 63%, 1);
   }
 
+  th {
+    padding-bottom: 1px;
+  }
+
   th + th + th,
   td + td + td {
     text-align: right;
+  }
+
+  .column-time {
+    width: 7.5em;
+  }
+  .column-type {
+    width: 12.5em;
+    text-align: left !important;
+  }
+  .column-side {
+    width: 4em;
+  }
+  .column-price {
+    width: 8em;
+  }
+  .column-amount {
+    width: 8em;
+  }
+  .column-total {
+    width: 8em;
+  }
+  .column-filled {
+    width: 8em;
+  }
+  .column-status {
+    width: 6em;
+  }
+  .column- {
+    width: 12em;
+  }
+  .table-with-filter-open-orders {
+    .column- {
+      width: 8em;
+    }
+  }
+  .actions {
+    .row:empty {
+      display: none;
+    }
+    .row .col:has(button) {
+      align-self: center;
+    }
   }
 }

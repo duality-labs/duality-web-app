@@ -1,24 +1,31 @@
 import { Fragment, ReactNode } from 'react';
 import './Table.scss';
 
-export default function Table<DataRow, Context = Record<string, unknown>>({
+export default function Table<
+  DataRow,
+  Context extends unknown | undefined = undefined
+>({
+  className,
   data,
   columns = [],
   headings = [],
+  getRowKey,
   context,
   rowDescription = 'Data',
   filtered = false,
 }: {
+  className?: string;
   data?: DataRow[];
   columns?: Array<
     React.FunctionComponent<{
       row: DataRow;
       rows: DataRow[];
-      context?: Context;
+      context: Context;
     }>
   >;
   headings?: Array<ReactNode> | (() => Array<ReactNode>);
-  context?: Context;
+  getRowKey?: (row: DataRow) => string | number;
+  context: Context;
   rowDescription?: string;
   filtered?: boolean;
 }) {
@@ -27,7 +34,10 @@ export default function Table<DataRow, Context = Record<string, unknown>>({
   }
 
   return (
-    <table className="simple-table" style={{ width: '100%' }}>
+    <table
+      className={['simple-table', className].join(' ')}
+      style={{ width: '100%' }}
+    >
       <thead>
         <tr>
           {(Array.isArray(headings) ? headings : headings()).map(
@@ -35,7 +45,17 @@ export default function Table<DataRow, Context = Record<string, unknown>>({
               // wrap strings in the expected element
               return (
                 <Fragment key={index}>
-                  {typeof heading !== 'object' ? <th>{heading}</th> : heading}
+                  {typeof heading !== 'object' ? (
+                    <th
+                      className={`column-${heading}`
+                        .toLowerCase()
+                        .replaceAll(/[^\w]/g, '-')}
+                    >
+                      {heading}
+                    </th>
+                  ) : (
+                    heading
+                  )}
                 </Fragment>
               );
             }
@@ -46,7 +66,7 @@ export default function Table<DataRow, Context = Record<string, unknown>>({
         {data && data.length > 0 ? (
           data.map((row, index, rows) => {
             return (
-              <tr key={index}>
+              <tr key={getRowKey?.(row) || index}>
                 {columns.map((Column, index) => {
                   // allow component to handle setting of <td>
                   return (

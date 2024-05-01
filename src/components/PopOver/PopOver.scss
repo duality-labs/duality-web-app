@@ -5,5 +5,6 @@
 .popover {
   & {
     border-radius: paddings.size(3) !important;
+    z-index: 1;
   }
 }
