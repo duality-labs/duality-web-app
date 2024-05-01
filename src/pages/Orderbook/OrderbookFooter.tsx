@@ -770,7 +770,7 @@ function ActionColumn({
   const loading = withdrawingState.isValidating || cancellingState.isValidating;
 
   return (
-    <td className="actions col gapx-3 gapy-sm">
+    <td className="actions gapx-3 gapy-sm">
       <div className="row flow-wrap gapx-3 gapy-sm">
         {swappedFraction && swappedFraction.isGreaterThan(0) && (
           <div className="col badge badge-lg badge-muted">
