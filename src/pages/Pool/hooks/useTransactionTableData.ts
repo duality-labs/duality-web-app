@@ -104,21 +104,25 @@ export default function useTransactionTableData({
        */
 
       const response = await fetch(
-        `${REACT_APP__RPC_API}/tx_search?query="${encodeURIComponent(
-          [
-            `message.module='${'dex'}'`,
-            !invertedOrder
-              ? `message.TokenZero='${tokenIdA}'`
-              : `message.TokenZero='${tokenIdB}'`,
-            !invertedOrder
-              ? `message.TokenOne='${tokenIdB}'`
-              : `message.TokenOne='${tokenIdA}'`,
-            account ? `message.Creator='${account}'` : '',
-            action ? `message.action='${action}'` : '',
-          ]
-            .filter(Boolean)
-            .join(' AND ')
-        )}"&per_page=${pageSize}&page=${pageOffset + 1}`
+        `${REACT_APP__RPC_API}/tx_search?${[
+          `query="${encodeURIComponent(
+            [
+              `message.module='${'dex'}'`,
+              !invertedOrder
+                ? `message.TokenZero='${tokenIdA}'`
+                : `message.TokenZero='${tokenIdB}'`,
+              !invertedOrder
+                ? `message.TokenOne='${tokenIdB}'`
+                : `message.TokenOne='${tokenIdA}'`,
+              account ? `message.Creator='${account}'` : '',
+              action ? `message.action='${action}'` : '',
+            ]
+              .filter(Boolean)
+              .join(' AND ')
+          )}"`,
+          `per_page=${pageSize}`,
+          `page=${pageOffset + 1}`,
+        ].join('&')}`
       );
       const result = (await response.json()) as GetTxsEventResponseManuallyType;
       const { total_count, txs } = result['result'];
