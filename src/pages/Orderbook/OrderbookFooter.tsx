@@ -107,7 +107,7 @@ function OrderbookFooterTable({
   });
 
   const { data: userLimitOrders } = useUserLimitOrderTranches();
-  const userLimitOrderMapOfPairUnfiltered = useMemo(() => {
+  const userLimitOrderMapOfPair = useMemo(() => {
     const tradePairId = tokenA && tokenB && getTokenPairID([tokenA, tokenB]);
     const denomA = getTokenId(tokenA);
     const denomB = getTokenId(tokenB);
@@ -129,39 +129,6 @@ function OrderbookFooterTable({
       : null;
   }, [tokenA, tokenB, userLimitOrders]);
 
-  // workaround: there is a mismatch in the userLimitOrderTranches and whether
-  //             a withdrawal/cancel action can be applied to either
-  const userLimitOrderMapOfPair = useMemo(() => {
-    const userLimitOrderMapOfPair = new Map<string, LimitOrderTrancheUser>();
-    // filter map userLimitOrderTranches to only acceptable tranches
-    // todo: check back here occasionally to see if these filters can be deleted
-    if (userLimitOrderMapOfPairUnfiltered?.size) {
-      const entries = userLimitOrderMapOfPairUnfiltered.entries();
-      for (const [trancheKey, order] of entries) {
-        const tx = txs?.txs.find((tx) => {
-          const placeLimitOrderEvent = getPlaceLimitOrderEvent(tx);
-          return placeLimitOrderEvent?.attributes.TrancheKey === trancheKey;
-        });
-        // only accept non-expired userLimitOrderTranches
-        const expiredState = tx && getExpiredState(tx);
-        // only accept shares above a certain tolerance
-        const initialShares = new BigNumber(
-          (tx && getPlaceLimitOrderEvent(tx)?.attributes.Shares) || 0
-        );
-        const belowTolerance =
-          initialShares.isGreaterThan(0) &&
-          new BigNumber(order.shares_owned)
-            .dividedBy(initialShares)
-            .isLessThan(0.01);
-        // filter here
-        if (!expiredState && !belowTolerance) {
-          userLimitOrderMapOfPair.set(trancheKey, order);
-        }
-      }
-    }
-    return userLimitOrderMapOfPair;
-  }, [userLimitOrderMapOfPairUnfiltered, txs?.txs]);
-
   const filteredTxs = useMemo(() => {
     return filterToStatus === 'Open Orders'
       ? // filter to open orders as they are available in the API
@@ -170,10 +137,10 @@ function OrderbookFooterTable({
         txs?.txs.filter((tx) => {
           const placeLimitOrderEvent = getPlaceLimitOrderEvent(tx);
           const trancheKey = placeLimitOrderEvent?.attributes.TrancheKey;
-          return userLimitOrderMapOfPairUnfiltered?.has(trancheKey ?? '');
+          return userLimitOrderMapOfPair?.has(trancheKey ?? '');
         })
       : txs?.txs;
-  }, [filterToStatus, txs?.txs, userLimitOrderMapOfPairUnfiltered]);
+  }, [filterToStatus, txs?.txs, userLimitOrderMapOfPair]);
 
   const [headings, columns] = useMemo(() => {
     const columnMap = new Map();
@@ -472,7 +439,28 @@ function useOrderState(
     Number(placeLimitOrderEvent?.attributes.Shares) > 0
       ? placeLimitOrderEvent?.attributes.TrancheKey
       : undefined;
-  const userTrancheActive = userLimitOrderMap?.get(trancheKey || '');
+
+  // workaround: there is a mismatch in the userLimitOrderTranches and whether
+  //             a withdrawal/cancel action can be applied to either
+  const userTrancheActive = useMemo(() => {
+    // only accept non-expired userLimitOrderTranches
+    const expiredState = tx && getExpiredState(tx);
+    // only accept shares above a certain tolerance
+    const initialShares = new BigNumber(
+      (tx && getPlaceLimitOrderEvent(tx)?.attributes.Shares) || 0
+    );
+    const userLimitOrder = userLimitOrderMap?.get(trancheKey ?? '');
+    const belowTolerance =
+      initialShares.isGreaterThan(0) &&
+      new BigNumber(userLimitOrder?.shares_owned ?? 0)
+        .dividedBy(initialShares)
+        .isLessThan(0.01);
+    // filter here
+    if (!expiredState && !belowTolerance) {
+      return userLimitOrder;
+    }
+  }, [tx, userLimitOrderMap, trancheKey]);
+
   const userTrancheInactive = useUserInactiveTranche(
     trancheKey && !userTrancheActive ? placeLimitOrderEvent : undefined
   ).data?.limit_order_tranche_user;
