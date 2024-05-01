@@ -18,7 +18,7 @@
   }
 
   .column-time {
-    width: 10em;
+    width: 8em;
   }
   .column-type {
     width: 12em;
@@ -29,11 +29,20 @@
   .column-price {
     width: 8em;
   }
+  .column-amount {
+    width: 8em;
+  }
+  .column-total {
+    width: 8em;
+  }
   .column-filled {
     width: 8em;
   }
+  .column-status {
+    width: 6em;
+  }
   .column- {
-    width: 12em;
+    width: 14em;
   }
   .actions svg {
     transition: transform animations.$short-duration animations.$default-mode;
