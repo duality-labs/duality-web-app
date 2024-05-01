@@ -107,7 +107,7 @@ function OrderbookFooterTable({
   });
 
   const { data: userLimitOrders } = useUserLimitOrderTranches();
-  const userLimitOrderMapOfPair = useMemo(() => {
+  const userLimitOrderMapOfPairUnfiltered = useMemo(() => {
     const tradePairId = tokenA && tokenB && getTokenPairID([tokenA, tokenB]);
     const denomA = getTokenId(tokenA);
     const denomB = getTokenId(tokenB);
@@ -129,6 +129,39 @@ function OrderbookFooterTable({
       : null;
   }, [tokenA, tokenB, userLimitOrders]);
 
+  // workaround: there is a mismatch in the userLimitOrderTranches and whether
+  //             a withdrawal/cancel action can be applied to either
+  const userLimitOrderMapOfPair = useMemo(() => {
+    const userLimitOrderMapOfPair = new Map<string, LimitOrderTrancheUser>();
+    // filter map userLimitOrderTranches to only acceptable tranches
+    // todo: check back here occasionally to see if these filters can be deleted
+    if (userLimitOrderMapOfPairUnfiltered?.size) {
+      const entries = userLimitOrderMapOfPairUnfiltered.entries();
+      for (const [trancheKey, order] of entries) {
+        const tx = txs?.txs.find((tx) => {
+          const placeLimitOrderEvent = getPlaceLimitOrderEvent(tx);
+          return placeLimitOrderEvent?.attributes.TrancheKey === trancheKey;
+        });
+        // only accept non-expired userLimitOrderTranches
+        const expiredState = tx && getExpiredState(tx);
+        // only accept shares above a certain tolerance
+        const initialShares = new BigNumber(
+          (tx && getPlaceLimitOrderEvent(tx)?.attributes.Shares) || 0
+        );
+        const belowTolerance =
+          initialShares.isGreaterThan(0) &&
+          new BigNumber(order.shares_owned)
+            .dividedBy(initialShares)
+            .isLessThan(0.01);
+        // filter here
+        if (!expiredState && !belowTolerance) {
+          userLimitOrderMapOfPair.set(trancheKey, order);
+        }
+      }
+    }
+    return userLimitOrderMapOfPair;
+  }, [userLimitOrderMapOfPairUnfiltered, txs?.txs]);
+
   const filteredTxs = useMemo(() => {
     return filterToStatus === 'Open Orders'
       ? // filter to open orders
@@ -136,18 +169,7 @@ function OrderbookFooterTable({
           const placeLimitOrderEvent = getPlaceLimitOrderEvent(tx);
           const trancheKey = placeLimitOrderEvent?.attributes.TrancheKey;
           const userLimitOrder = userLimitOrderMapOfPair?.get(trancheKey ?? '');
-          return (
-            userLimitOrder &&
-            getOpenState(
-              {} as OrderState,
-              getOpenShares({
-                owned: new BigNumber(userLimitOrder.shares_owned),
-                withdrawn: new BigNumber(userLimitOrder.shares_withdrawn),
-                cancelled: new BigNumber(userLimitOrder.shares_cancelled),
-              })
-            )
-            // todo: filter out expired open orders that cannot be cancelled
-          );
+          return !!userLimitOrder;
         })
       : txs?.txs;
   }, [filterToStatus, txs?.txs, userLimitOrderMapOfPair]);
@@ -456,7 +478,8 @@ function useOrderState(
 
   // get user shares: there are expected to be active or inactive shares
   // for a valid trancheKey but they may be still loading or have failed to load
-  const userShares = getSharesState(userTrancheActive || userTrancheInactive);
+  const userTranche = userTrancheActive || userTrancheInactive;
+  const userShares = userTranche && getSharesState(userTranche);
   const hasOpenShares = userShares?.owned
     .minus(userShares.cancelled)
     .minus(userShares.withdrawn)
@@ -477,12 +500,7 @@ function useOrderState(
         if (userShares) {
           const tranche = getTrancheState(dexTranche);
           // create a fake dex tranche for closed tranches (to avoid lookup)
-          if (
-            tranche ||
-            userShares.owned.isLessThanOrEqualTo(
-              userShares.withdrawn.plus(userShares.cancelled)
-            )
-          ) {
+          if (trancheKey) {
             return {
               swap,
               limitOrder: {
@@ -531,15 +549,13 @@ function useOrderState(
 
   // user shares state: may be still loading or have failed to load
   function getSharesState(
-    tranche: LimitOrderTrancheUser | undefined
-  ): OrderState['limitOrder']['userShares'] | undefined {
-    return (
-      tranche && {
-        owned: new BigNumber(tranche.shares_owned),
-        withdrawn: new BigNumber(tranche.shares_withdrawn),
-        cancelled: new BigNumber(tranche.shares_cancelled),
-      }
-    );
+    tranche: LimitOrderTrancheUser
+  ): OrderState['limitOrder']['userShares'] {
+    return {
+      owned: new BigNumber(tranche.shares_owned),
+      withdrawn: new BigNumber(tranche.shares_withdrawn),
+      cancelled: new BigNumber(tranche.shares_cancelled),
+    };
   }
   // general tranche state: may be still loading or have failed to load
   function getTrancheState(
