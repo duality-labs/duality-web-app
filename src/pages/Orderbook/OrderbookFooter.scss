@@ -1,5 +1,3 @@
-@use '../../styles/mixins-vars/animations.scss' as animations;
-
 .orderbook-orders {
   .text-success {
     color: hsla(158, 60%, 48%, 1);
@@ -49,12 +47,5 @@
     .row .col:has(button) {
       align-self: center;
     }
-  }
-  .actions svg {
-    transition: transform animations.$short-duration animations.$default-mode;
-    transform: rotate(0deg);
-  }
-  .actions .expanded svg {
-    transform: rotate(180deg);
   }
 }
