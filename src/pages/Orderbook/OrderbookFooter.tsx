@@ -173,15 +173,20 @@ function TimeColumn({ row: tx }: { row: Tx }) {
   );
 }
 
+function getExpirationTime(tx: Tx) {
+  const txMsg = getTxMsgPlaceLimitOrders(tx).at(0);
+  return (
+    txMsg?.expiration_time &&
+    new Date(
+      txMsg.expiration_time.seconds.multiply(1000).toNumber()
+    ).toISOString()
+  );
+}
+
 function TypeColumn({ row: tx }: { row: Tx }) {
   const attributes = getPlaceLimitOrderActionEvent(tx);
-  const txMsg = useTxMsgPlaceLimitOrder(tx);
   if (attributes) {
-    const timestamp =
-      txMsg?.expiration_time &&
-      new Date(
-        txMsg.expiration_time.seconds.multiply(1000).toNumber()
-      ).toISOString();
+    const timestamp = getExpirationTime(tx);
     return (
       <td className="">
         <div
@@ -191,7 +196,7 @@ function TypeColumn({ row: tx }: { row: Tx }) {
           <div className="col nowrap mr-2">
             {orderTypeTextMap[attributes.OrderType]}
           </div>
-          {txMsg?.expiration_time && (
+          {timestamp && (
             <div className="col my-2">
               <div className="text-muted nowrap">
                 : <RelativeAndAbsoluteTime timestamp={timestamp} />
@@ -278,14 +283,17 @@ type MsgTypeURL = keyof typeof neutronAminoConverters;
 const msgPlaceLimitOrderTypeURL: MsgTypeURL = '/neutron.dex.MsgPlaceLimitOrder';
 function useTxMsgPlaceLimitOrders(tx: Tx): Array<MsgPlaceLimitOrder> {
   return useMemo(() => {
-    const decodedTx = decodeTxRaw(Buffer.from(tx.tx, 'base64'));
-    return decodedTx.body.messages
-      .filter((msg) => msg.typeUrl === msgPlaceLimitOrderTypeURL)
-      .map((msg) => neutron.dex.MsgPlaceLimitOrder.decode(msg.value));
-  }, [tx.tx]);
+    return getTxMsgPlaceLimitOrders(tx);
+  }, [tx]);
 }
 function useTxMsgPlaceLimitOrder(tx: Tx): MsgPlaceLimitOrder | undefined {
   return useTxMsgPlaceLimitOrders(tx).at(0);
+}
+function getTxMsgPlaceLimitOrders(tx: Tx): MsgPlaceLimitOrder[] {
+  const decodedTx = decodeTxRaw(Buffer.from(tx.tx, 'base64'));
+  return decodedTx.body.messages
+    .filter((msg) => msg.typeUrl === msgPlaceLimitOrderTypeURL)
+    .map((msg) => neutron.dex.MsgPlaceLimitOrder.decode(msg.value));
 }
 
 function getDisplayReservesMain(tx: Tx, context: OrderbookFooterTableContext) {
@@ -537,6 +545,10 @@ function getOpenState(orderState: OrderState): boolean {
   //       https://github.com/neutron-org/neutron/pull/479
   return getOpenShares(orderState).isGreaterThan(3);
 }
+function getExpiredState(tx: Tx): boolean {
+  const expiration = getExpirationTime(tx);
+  return !!expiration && new Date(expiration).valueOf() < Date.now();
+}
 function getLimitOrderFilledFraction(order: OrderState): BigNumber | undefined {
   const hasOpenShares = getOpenState(order);
   if (hasOpenShares) {
@@ -653,11 +665,12 @@ function StatusColumn({
   // if shares are withdrawable then the status is Open
   const orderState = useOrderState(tx, context);
   const statusOpen = orderState && getOpenState(orderState);
+  const statusExpired = getExpiredState(tx);
   return (
     <td>
       <div className="row">
         <div className="col badge badge-lg badge-muted my-2 ml-auto">
-          {statusOpen ? 'Open' : 'Closed'}
+          {statusOpen ? (statusExpired ? 'Expired' : 'Open') : 'Closed'}
         </div>
       </div>
     </td>
@@ -683,6 +696,7 @@ function ActionColumn({
     orderState && getLimitOrderFilledFraction(orderState);
 
   const statusOpen = orderState && getOpenState(orderState);
+  const statusExpired = getExpiredState(tx);
   // get withdrawing/cancelling tranche state
   const { address } = useWeb3();
   const [withdrawingState, withdrawTranche] = useWithdrawFilledLimitOrder();
@@ -739,7 +753,7 @@ function ActionColumn({
             </button>
           </div>
         )}
-        {limitOrderFilledFraction?.isLessThan(1) && (
+        {!statusExpired && limitOrderFilledFraction?.isLessThan(1) && (
           <div className="col">
             <button
               className="button-primary-outline"
