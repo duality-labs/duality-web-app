@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/duality-labs/duality-web-app/compare/v2.7.0...v2.8.0) (2024-05-01)
+
+
+### Features
+
+* improve Orders table in the orderbook UI ([#551](https://github.com/duality-labs/duality-web-app/issues/551)) ([2a7de78](https://github.com/duality-labs/duality-web-app/commit/2a7de78e5fe5cae081c2ca04ca51b98c9449adc1)), closes [/github.com/neutron-org/neutron/blob/v3.0.0/x/dex/types/keys.go#L186-L277](https://github.com/duality-labs//github.com/neutron-org/neutron/blob/v3.0.0/x/dex/types/keys.go/issues/L186-L277)
+
 ## [2.7.0](https://github.com/duality-labs/duality-web-app/compare/v2.6.1...v2.7.0) (2024-04-25)
 
 
