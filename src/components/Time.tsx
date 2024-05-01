@@ -1,5 +1,5 @@
-import { Ref, forwardRef, useMemo } from 'react';
-import { days, hours, minutes, weeks } from '../lib/utils/time';
+import { Ref, forwardRef, useEffect, useMemo, useState } from 'react';
+import { days, hours, minutes, seconds, weeks } from '../lib/utils/time';
 import PopOver from './PopOver/PopOver';
 
 type RelativeTimeProps = JSX.IntrinsicElements['time'] & {
@@ -7,6 +7,10 @@ type RelativeTimeProps = JSX.IntrinsicElements['time'] & {
   options?: Partial<Intl.RelativeTimeFormatOptions>;
   ref?: Ref<HTMLTimeElement>;
 };
+
+function getMsSinceNow(timestamp?: string | number | Date): number | undefined {
+  return timestamp ? new Date(timestamp).valueOf() - Date.now() : undefined;
+}
 
 export const RelativeTime = forwardRef(function RelativeTimeComponent(
   {
@@ -24,13 +28,25 @@ export const RelativeTime = forwardRef(function RelativeTimeComponent(
     });
   }, [localeMatcher, numeric, style]);
 
+  const [msSinceNow, setMsSinceNow] = useState(() => getMsSinceNow(timestamp));
+  useEffect(() => {
+    const updateFrequency = 10 * seconds;
+    const updateMsSinceNow = () => {
+      setMsSinceNow(getMsSinceNow(timestamp));
+      timeout = setTimeout(updateMsSinceNow, updateFrequency);
+    };
+    let timeout = setTimeout(updateMsSinceNow, updateFrequency);
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [timestamp]);
+
   const [displayValue, displayUnits] = useMemo<
     [number, Intl.RelativeTimeFormatUnit]
   >(() => {
-    if (!timestamp) {
+    if (msSinceNow === undefined) {
       return [0, 'minutes'];
     }
-    const msSinceNow = new Date(timestamp).valueOf() - Date.now();
     const diff = Math.abs(msSinceNow);
     switch (true) {
       case diff < 60 * minutes:
@@ -42,7 +58,7 @@ export const RelativeTime = forwardRef(function RelativeTimeComponent(
       default:
         return [msSinceNow / weeks, 'weeks'];
     }
-  }, [timestamp]);
+  }, [msSinceNow]);
 
   return timestamp !== undefined ? (
     <time
