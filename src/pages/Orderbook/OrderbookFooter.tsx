@@ -774,8 +774,8 @@ function ActionColumn({
   const loading = withdrawingState.isValidating || cancellingState.isValidating;
 
   return (
-    <td className="actions">
-      <div className="row gapx-3">
+    <td className="actions col gapx-3 gapy-sm">
+      <div className="row flow-wrap gapx-3 gapy-sm">
         {swappedFraction && swappedFraction.isGreaterThan(0) && (
           <div className="col badge badge-lg badge-muted">
             Swapped
@@ -809,6 +809,8 @@ function ActionColumn({
             }
           </div>
         )}
+      </div>
+      <div className="row flow-wrap gapx-3 gapy-sm">
         {statusOpen && context.filterToStatus !== 'Open Orders' && (
           <div className="col my-xs ml-1 mr-3 pt-1">
             Filled:{' '}
