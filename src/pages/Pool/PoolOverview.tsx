@@ -191,7 +191,12 @@ function PairComposition({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
 
   return (
     <TableCard title="Pair Composition" className="pb-5" scrolling={false}>
-      <Table<Token> data={data} columns={columns} headings={headings} />
+      <Table<Token, undefined>
+        data={data}
+        columns={columns}
+        headings={headings}
+        context={undefined}
+      />
     </TableCard>
   );
 }
@@ -355,6 +360,7 @@ function TransactionsTable({
         ))}
         columns={columns}
         rowDescription="Transactions"
+        context={undefined}
       />
     </div>
   );

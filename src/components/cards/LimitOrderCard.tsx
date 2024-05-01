@@ -487,7 +487,9 @@ function LimitOrder({
             new BigNumber(formState.limitPrice),
             tokenIn,
             tokenOut
-          )?.toNumber()
+          )
+            ?.multipliedBy(buyMode ? 1 : -1)
+            ?.toNumber()
         : getMarketLimitIndex();
 
       // if the msg is defined and the limit is ok, then proceed
@@ -501,11 +503,14 @@ function LimitOrder({
       }
     },
     [
-      formState,
+      formState.limitPrice,
+      formState.slippage,
       tokenIn,
       tokenOut,
+      buyMode,
       simulatedMsgPlaceLimitOrder,
-      simulationResult,
+      simulationResult?.result?.events,
+      simulationResult?.gasInfo?.gasUsed,
       swapRequest,
     ]
   );

@@ -35,7 +35,7 @@ export interface Tx {
   };
   tx: EncodedData;
 }
-interface GetTxsEventResponseManuallyType {
+export interface GetTxsEventResponseManuallyType {
   jsonrpc: '2.0';
   id: -1;
   result: {
@@ -52,12 +52,14 @@ export default function useTransactionTableData({
   account,
   action,
   pageSize = 10,
+  orderByAscending,
 }: {
   tokenA: Token;
   tokenB: Token;
-  account?: WalletAddress;
+  account?: WalletAddress | null;
   action?: DexMessageAction;
   pageSize?: number;
+  orderByAscending?: boolean;
 }) {
   const tokenIdA = getTokenId(tokenA) || '';
   const tokenIdB = getTokenId(tokenB) || '';
@@ -76,6 +78,14 @@ export default function useTransactionTableData({
     enabled: !!(tokenIdA && tokenIdB),
     queryFn: async (): Promise<GetTxsEventResponseManuallyType['result']> => {
       const invertedOrder = guessInvertedOrder([tokenIdA, tokenIdB]);
+
+      // disable if account is specifically `null` (eg. wallet is not connected)
+      if (account === null) {
+        return {
+          txs: [],
+          total_count: '0',
+        };
+      }
 
       /*
        * note: you would expect the following to work, but the ABCI query check
@@ -104,21 +114,26 @@ export default function useTransactionTableData({
        */
 
       const response = await fetch(
-        `${REACT_APP__RPC_API}/tx_search?query="${encodeURIComponent(
-          [
-            `message.module='${'dex'}'`,
-            !invertedOrder
-              ? `message.TokenZero='${tokenIdA}'`
-              : `message.TokenZero='${tokenIdB}'`,
-            !invertedOrder
-              ? `message.TokenOne='${tokenIdB}'`
-              : `message.TokenOne='${tokenIdA}'`,
-            account ? `message.Creator='${account}'` : '',
-            action ? `message.action='${action}'` : '',
-          ]
-            .filter(Boolean)
-            .join(' AND ')
-        )}"&per_page=${pageSize}&page=${pageOffset + 1}`
+        `${REACT_APP__RPC_API}/tx_search?${[
+          `query="${encodeURIComponent(
+            [
+              `message.module='${'dex'}'`,
+              !invertedOrder
+                ? `message.TokenZero='${tokenIdA}'`
+                : `message.TokenZero='${tokenIdB}'`,
+              !invertedOrder
+                ? `message.TokenOne='${tokenIdB}'`
+                : `message.TokenOne='${tokenIdA}'`,
+              account ? `message.Creator='${account}'` : '',
+              action ? `message.action='${action}'` : '',
+            ]
+              .filter(Boolean)
+              .join(' AND ')
+          )}"`,
+          `per_page=${pageSize}`,
+          `page=${pageOffset + 1}`,
+          `order_by="${orderByAscending ? 'asc' : 'desc'}"`,
+        ].join('&')}`
       );
       const result = (await response.json()) as GetTxsEventResponseManuallyType;
       const { total_count, txs } = result['result'];

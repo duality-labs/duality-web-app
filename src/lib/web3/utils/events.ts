@@ -59,10 +59,19 @@ export type CosmosEvent =
 export type IBCEvent = IBCSendPacketEvent | IBCReceivePacketEvent;
 
 export type DexEvent =
-  | DexPlaceLimitOrderEvent
   | DexDepositEvent
   | DexWithdrawalEvent
+  | DexMultihopSwapEvent
+  | DexPlaceLimitOrderEvent
+  | DexCancelLimitOrderEvent
+  | DexWithdrawLimitOrderEvent
   | DexTickUpdateEvent;
+export type DexEventAction = DexEvent['attributes']['action'];
+
+export type DexLimitOrderEvent =
+  | DexPlaceLimitOrderEvent
+  | DexWithdrawLimitOrderEvent
+  | DexCancelLimitOrderEvent;
 
 export interface DexDepositEvent {
   type: 'message';
@@ -71,8 +80,8 @@ export interface DexDepositEvent {
     action: 'DepositLP';
     Creator: WalletAddress;
     Receiver: WalletAddress;
-    TokenZero: string;
-    TokenOne: string;
+    TokenZero: TokenID;
+    TokenOne: TokenID;
     TickIndex: string;
     Fee: string;
     SharesMinted: string;
@@ -88,13 +97,29 @@ export interface DexWithdrawalEvent {
     action: 'WithdrawLP';
     Creator: WalletAddress;
     Receiver: WalletAddress;
-    TokenZero: string;
-    TokenOne: string;
+    TokenZero: TokenID;
+    TokenOne: TokenID;
     TickIndex: string;
     Fee: string;
     ReservesZeroWithdrawn: string;
     ReservesOneWithdrawn: string;
     SharesRemoved: string;
+  };
+}
+
+export interface DexMultihopSwapEvent {
+  type: 'message';
+  attributes: {
+    module: 'dex';
+    action: 'MultihopSwap';
+    Creator: WalletAddress;
+    Receiver: WalletAddress;
+    TokenIn: string;
+    TokenOut: string;
+    AmountIn: string;
+    AmountOut: string;
+    Route: string;
+    Dust: string;
   };
 }
 
@@ -105,9 +130,9 @@ export interface DexPlaceLimitOrderEvent {
     action: 'PlaceLimitOrder';
     Creator: WalletAddress;
     Receiver: WalletAddress;
-    TokenZero: string;
-    TokenOne: string;
-    TokenIn: string;
+    TokenZero: TokenID;
+    TokenOne: TokenID;
+    TokenIn: TokenID;
     AmountIn: string;
     LimitTick: string;
     OrderType:
@@ -121,19 +146,68 @@ export interface DexPlaceLimitOrderEvent {
   };
 }
 
-export interface DexTickUpdateEvent {
-  type: 'message' | 'TickUpdate';
+export interface DexCancelLimitOrderEvent {
+  type: 'message';
   attributes: {
     module: 'dex';
-    action: 'TickUpdate';
-    TokenZero: string;
-    TokenOne: string;
-    TokenIn: string;
-    TickIndex: string;
-    Fee: string;
-    Reserves: string;
+    action: 'CancelLimitOrder';
+    Creator: WalletAddress;
+    TokenZero: TokenID;
+    TokenOne: TokenID;
+    TokenIn: TokenID;
+    TokenOut: TokenID;
+    TrancheKey: string;
+    AmountOut: string;
   };
 }
+
+export interface DexWithdrawLimitOrderEvent {
+  type: 'message';
+  attributes: {
+    module: 'dex';
+    action: 'WithdrawLimitOrder';
+    Creator: WalletAddress;
+    TokenZero: TokenID;
+    TokenOne: TokenID;
+    TokenIn: TokenID;
+    TokenOut: TokenID;
+    TrancheKey: string;
+    AmountOut: string;
+  };
+}
+
+interface DexTickUpdateEventCommonAttributes {
+  module: 'dex';
+  action: 'TickUpdate';
+  TokenZero: TokenID;
+  TokenOne: TokenID;
+  TokenIn: TokenID;
+  TickIndex: string;
+  Reserves: string;
+}
+interface DexTickUpdateReservesEventAttributes
+  extends DexTickUpdateEventCommonAttributes {
+  Fee: string;
+}
+interface DexTickUpdateTrancheEventAttributes
+  extends DexTickUpdateEventCommonAttributes {
+  TrancheKey: string;
+}
+
+export interface DexTickUpdateEvent<
+  // a TickUpdate must contain a Fee or TrancheKey but not both (XOR)
+  T extends
+    | DexTickUpdateEventCommonAttributes
+    | DexTickUpdateReservesEventAttributes
+    | DexTickUpdateTrancheEventAttributes = DexTickUpdateEventCommonAttributes
+> {
+  type: 'TickUpdate';
+  attributes: T;
+}
+export type DexTickUpdateReservesEvent =
+  DexTickUpdateEvent<DexTickUpdateReservesEventAttributes>;
+export type DexTickUpdateTrancheEvent =
+  DexTickUpdateEvent<DexTickUpdateTrancheEventAttributes>;
 
 // CoinString is an amount and denom like "1000uATOM"
 // typically handled with object type Coin from @cosmjs/stargate
