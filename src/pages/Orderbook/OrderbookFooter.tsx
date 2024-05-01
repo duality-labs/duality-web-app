@@ -786,7 +786,7 @@ function ActionColumn({
           (statusExpired && limitOrderFilledFraction?.isZero())) && (
           <div className="col">
             <button
-              className="button-primary-outline"
+              className="button-primary-outline mx-0"
               disabled={loading}
               onClick={() => {
                 !loading &&
