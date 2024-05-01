@@ -736,9 +736,12 @@ function ActionColumn({
   const orderState = useOrderState(tx, context);
   const trancheKey = orderState?.limitOrder.trancheKey;
   // get shares state
+  const swapReserves = orderState?.swap.reserves;
   const shares = orderState?.limitOrder.userShares;
-  const withdrawnFraction = shares?.withdrawn?.div(shares.owned);
-  const cancelledFraction = shares?.cancelled?.div(shares.owned);
+  const totalMakerAmount = shares?.owned.plus(swapReserves?.maker ?? 0) ?? 1;
+  const swappedFraction = swapReserves?.maker.div(totalMakerAmount);
+  const withdrawnFraction = shares?.withdrawn?.div(totalMakerAmount);
+  const cancelledFraction = shares?.cancelled?.div(totalMakerAmount);
   // get filled state
   const limitOrderFilledFraction =
     orderState && getLimitOrderFilledFraction(orderState);
@@ -754,6 +757,17 @@ function ActionColumn({
   return (
     <td className="actions">
       <div className="row gapx-3">
+        {swappedFraction && swappedFraction.isGreaterThan(0) && (
+          <div className="col badge badge-lg badge-muted">
+            Swapped
+            {
+              // show detail only if less that ~100% swapped state
+              swappedFraction.isLessThan(0.995)
+                ? ` (${formatPercentage(swappedFraction.toNumber())})`
+                : ''
+            }
+          </div>
+        )}
         {withdrawnFraction && withdrawnFraction.isGreaterThan(0) && (
           <div className="col badge badge-lg badge-muted">
             Withdrawn
