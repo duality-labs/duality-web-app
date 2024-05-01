@@ -8,6 +8,7 @@ export default function Table<
   data,
   columns = [],
   headings = [],
+  getRowKey,
   context,
   rowDescription = 'Data',
   filtered = false,
@@ -21,6 +22,7 @@ export default function Table<
     }>
   >;
   headings?: Array<ReactNode> | (() => Array<ReactNode>);
+  getRowKey?: (row: DataRow) => string | number;
   context: Context;
   rowDescription?: string;
   filtered?: boolean;
@@ -59,7 +61,7 @@ export default function Table<
         {data && data.length > 0 ? (
           data.map((row, index, rows) => {
             return (
-              <tr key={index}>
+              <tr key={getRowKey?.(row) || index}>
                 {columns.map((Column, index) => {
                   // allow component to handle setting of <td>
                   return (

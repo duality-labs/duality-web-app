@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { neutron, neutronAminoConverters } from '@duality-labs/neutronjs';
 import { LimitOrderTrancheUser } from '@duality-labs/neutronjs/types/codegen/neutron/dex/limit_order_tranche_user';
@@ -170,6 +170,7 @@ function OrderbookFooterTable({
       headings={headings}
       columns={columns}
       data={filteredTxs}
+      getRowKey={useCallback((tx: Tx) => tx.hash, [])}
       context={{
         tokenA,
         tokenB,
