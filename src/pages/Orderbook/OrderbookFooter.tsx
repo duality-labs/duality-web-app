@@ -44,6 +44,8 @@ import {
 } from '../../lib/web3/hooks/useTranches';
 import { useWithdrawFilledLimitOrder } from './useWithdrawFilledLimitOrder';
 import { useCancelLimitOrder } from './useCancelLimitOrder';
+import useOnUserDexMsg from '../../lib/web3/hooks/useOnUserDexMsg';
+
 import { getTokenPairID } from '../../lib/web3/utils/pairs';
 import { tickIndexToPrice } from '../../lib/web3/utils/ticks';
 
@@ -98,12 +100,17 @@ function OrderbookFooterTable({
   account: WalletAddress;
   filterToStatus?: StatusFilter;
 }) {
-  const { data: txs } = useTransactionTableData({
+  const { data: txs, refetch } = useTransactionTableData({
     tokenA,
     tokenB,
     action: 'PlaceLimitOrder',
     account,
     pageSize,
+  });
+
+  // subscribe to updates to the user's limit orders
+  useOnUserDexMsg<DexPlaceLimitOrderEvent>('PlaceLimitOrder', () => {
+    refetch({ cancelRefetch: false });
   });
 
   const { data: userLimitOrders } = useUserLimitOrderTranches();
