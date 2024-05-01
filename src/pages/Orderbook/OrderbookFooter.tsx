@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { neutron, neutronAminoConverters } from '@duality-labs/neutronjs';
 import { LimitOrderTrancheUser } from '@duality-labs/neutronjs/types/codegen/neutron/dex/limit_order_tranche_user';
@@ -442,9 +442,8 @@ function useOrderState(
 
   // workaround: there is a mismatch in the userLimitOrderTranches and whether
   //             a withdrawal/cancel action can be applied to either
+  const expiredState = useExpiredState(tx);
   const userTrancheActive = useMemo(() => {
-    // only accept non-expired userLimitOrderTranches
-    const expiredState = tx && getExpiredState(tx);
     // only accept shares above a certain tolerance
     const initialShares = new BigNumber(
       (tx && getPlaceLimitOrderEvent(tx)?.attributes.Shares) || 0
@@ -456,10 +455,11 @@ function useOrderState(
         .dividedBy(initialShares)
         .isLessThan(0.01);
     // filter here
+    // only accept non-expired userLimitOrderTranches
     if (!expiredState && !belowTolerance) {
       return userLimitOrder;
     }
-  }, [tx, userLimitOrderMap, trancheKey]);
+  }, [tx, userLimitOrderMap, trancheKey, expiredState]);
 
   const userTrancheInactive = useUserInactiveTranche(
     trancheKey && !userTrancheActive ? placeLimitOrderEvent : undefined
@@ -585,6 +585,22 @@ function getExpiredState(tx: Tx): boolean {
   const expiration = getExpirationTime(tx);
   return !!expiration && new Date(expiration).valueOf() < Date.now();
 }
+function useExpiredState(tx: Tx) {
+  // tracke current expired state and update value when it expires
+  const [expired, setExpired] = useState(() => getExpiredState(tx));
+  useEffect(() => {
+    const checkIfExpired = () => {
+      setExpired((expired) => expired || getExpiredState(tx));
+    };
+    const expiration = getExpirationTime(tx);
+    const msLeftToExpiration = new Date(expiration || 0).valueOf() - Date.now();
+    if (msLeftToExpiration > 0) {
+      const timeout = setTimeout(checkIfExpired, msLeftToExpiration + 1);
+      return () => clearTimeout(timeout);
+    }
+  }, [tx]);
+  return expired;
+}
 function getLimitOrderFilledFraction(order: OrderState): BigNumber | undefined {
   const hasOpenShares = getOpenState(order);
   if (hasOpenShares) {
@@ -701,7 +717,7 @@ function StatusColumn({
   // if shares are withdrawable then the status is Open
   const orderState = useOrderState(tx, context);
   const statusOpen = orderState && getOpenState(orderState);
-  const statusExpired = getExpiredState(tx);
+  const statusExpired = useExpiredState(tx);
   return (
     <td>
       <div className="row">
@@ -735,7 +751,7 @@ function ActionColumn({
     orderState && getLimitOrderFilledFraction(orderState);
 
   const statusOpen = orderState && getOpenState(orderState);
-  const statusExpired = getExpiredState(tx);
+  const statusExpired = useExpiredState(tx);
   // get withdrawing/cancelling tranche state
   const { address } = useWeb3();
   const [withdrawingState, withdrawTranche] = useWithdrawFilledLimitOrder();
