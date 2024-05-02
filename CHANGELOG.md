@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.1](https://github.com/duality-labs/duality-web-app/compare/v2.8.0...v2.8.1) (2024-05-02)
+
+
+### Fixes
+
+* Select Input UI should not close before selecting input ([#550](https://github.com/duality-labs/duality-web-app/issues/550)) ([a9d8e4f](https://github.com/duality-labs/duality-web-app/commit/a9d8e4f46959e5557571e7c590520e3371cc05cc))
+
 ## [2.8.0](https://github.com/duality-labs/duality-web-app/compare/v2.7.0...v2.8.0) (2024-05-01)
 
 
