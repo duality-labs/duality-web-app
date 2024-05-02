@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0](https://github.com/duality-labs/duality-web-app/compare/v2.8.1...v2.9.0) (2024-05-02)
+
+
+### Features
+
+* add demo testnet pair to testnet envs ([#553](https://github.com/duality-labs/duality-web-app/issues/553)) ([e50f747](https://github.com/duality-labs/duality-web-app/commit/e50f747376d012a7cbdb5e3d24fea4cbd3264f4a))
+
 ## [2.8.1](https://github.com/duality-labs/duality-web-app/compare/v2.8.0...v2.8.1) (2024-05-02)
 
 
