@@ -113,8 +113,8 @@ export default function LimitOrderCard({
       <TabsCard
         className="flex limitorder-card"
         style={{
-          // fix width to a minimum to allow tabs to be of equal size
-          minWidth: '20em',
+          // fix width to a minimum for most pairs to be displayed comfortably
+          minWidth: '24.5em',
         }}
         tabs={useMemo(() => {
           return [
