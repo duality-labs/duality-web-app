@@ -59,8 +59,9 @@
       font-weight: 500;
       color: hsl(218deg, 11%, 65%);
       text-align: right;
-      flex: 1 1 auto;
-      width: 80px;
+      // set minimum width to allow for word "market" / 5 digits and separator
+      flex: 1 0 auto;
+      width: 3.3em;
       // disable spin buttons on desktop
       &::-webkit-outer-spin-button,
       &::-webkit-inner-spin-button {
