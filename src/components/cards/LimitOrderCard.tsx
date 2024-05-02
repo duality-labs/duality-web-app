@@ -702,7 +702,7 @@ function LimitOrder({
       {showLimitPrice && (
         <div className="my-md">
           <NumericInputRow
-            prefix={`Limit Price ${buyMode ? '<=' : '>='}`}
+            prefix={`Limit ${buyMode ? '<=' : '>='}`}
             value={formState.limitPrice ?? ''}
             placeholder="market"
             onChange={formSetState.setLimitPrice}
@@ -771,7 +771,7 @@ function LimitOrder({
       </div>
       <div>
         <NumericValueRow
-          prefix="Est. Average Price"
+          prefix="Est. Avg. Price"
           value={formatPrice(
             formatMaximumSignificantDecimals(
               simulationResult?.response
