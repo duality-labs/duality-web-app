@@ -1,6 +1,6 @@
 import { faAngleDown } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ReactNode, useCallback, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import Drawer from '../../Drawer';
 import RadioInput from '../../RadioInput';
 import { OptionProps, RadioInputProps } from '../../RadioInput/RadioInput';
@@ -87,13 +87,45 @@ export default function SelectInput<T>({
     () => setExpanded((expanded) => !expanded),
     []
   );
-  const close = useCallback(() => setTimeout(() => setExpanded(false), 1), []);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClickOutside(event: Event) {
+      // only collapse if new focus doesn't exist or is outside of the container
+      const target = event.target as Element | null;
+      if (!target?.nodeType || !containerRef.current?.contains(target)) {
+        setExpanded(false);
+      }
+    }
+    // Bind the event listener to document
+    if (expanded) {
+      // use focusout instead of blur because blur don't not always bubble
+      // use focusin instead of focusout because tabbing to a child triggers
+      // "focusout" with the document.body as the activeElement
+      // use click and keydown and touchstart to catch start of all input types
+      // - https://www.quirksmode.org/dom/events/blurfocus.html
+      // - https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event
+      // - https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event
+      document.addEventListener('focusin', handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
+      document.addEventListener('keydown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      return () => {
+        // Unbind the event listener on clean up
+        document.removeEventListener('focusin', handleClickOutside);
+        document.removeEventListener('click', handleClickOutside);
+        document.removeEventListener('keydown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
+    }
+  }, [expanded]);
+
   return (
     <div
+      ref={containerRef}
       className={['select-input', className, expanded && 'expanded']
         .filter(Boolean)
         .join(' ')}
-      onBlur={close}
     >
       <button
         className="select-input-selection row flex flex-centered"
@@ -116,6 +148,7 @@ export default function SelectInput<T>({
         floating={floating}
       >
         <RadioInput<T>
+          disabled={!expanded}
           inputType="checkbox"
           className={[
             'select-input-group',
