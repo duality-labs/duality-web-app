@@ -1,27 +1,6 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
 
 .limitorder-card {
-  .limitorder-type {
-    // style limit order type selection like pills
-    .tabs__nav {
-      margin-left: 0 !important;
-      margin-right: 0 !important;
-      border: 1px solid var(--page-card-border);
-      border-radius: paddings.$p-3;
-      overflow: hidden;
-      .tabs__nav-button {
-        flex: 1;
-        border-radius: 0;
-        padding: paddings.$p-3 0 !important;
-        font-size: 0.85em;
-        &.active {
-          color: hsla(165, 83%, 57%, 1);
-          font-weight: bold;
-        }
-      }
-    }
-  }
-
   // override default select input styles
   .select-input {
     .select-input-selection {

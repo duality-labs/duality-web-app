@@ -3,7 +3,6 @@ import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner } from '@fortawesome/free-solid-svg-icons';
 import {
-  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -15,9 +14,6 @@ import type {
   LimitOrderType,
   MsgPlaceLimitOrder,
 } from '@duality-labs/neutronjs/types/codegen/neutron/dex/tx';
-
-import TabsCard from './TabsCard';
-import Tabs from '../Tabs';
 
 import {
   Token,
@@ -47,10 +43,10 @@ import { useRealtimePrice } from '../stats/hooks';
 
 import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
 import {
-  LimitOrderContextProvider,
   LimitOrderFormContext,
   LimitOrderFormSetContext,
 } from './LimitOrderContext';
+import RadioButtonGroupInput from '../RadioButtonGroupInput/RadioButtonGroupInput';
 import SelectInput from '../inputs/SelectInput';
 import { timeUnits } from '../../lib/utils/time';
 import {
@@ -94,13 +90,6 @@ function formatNumericAmount(defaultValue = '') {
   };
 }
 
-const TabContext = createContext<
-  [
-    tabIndex?: number,
-    setTabIndex?: React.Dispatch<React.SetStateAction<number>>
-  ]
->([]);
-
 export default function LimitOrderCard({
   tokenA,
   tokenB,
@@ -109,82 +98,54 @@ export default function LimitOrderCard({
   tokenB?: Token;
 }) {
   return (
-    <TabContext.Provider value={useState(0)}>
-      <TabsCard
-        className="flex limitorder-card"
-        style={{
-          // fix width to a minimum for most pairs to be displayed comfortably
-          minWidth: '24.5em',
-        }}
-        tabs={useMemo(() => {
-          return [
-            {
-              nav: 'Buy',
-              Tab: () => <LimitOrderNav tokenA={tokenA} tokenB={tokenB} />,
-            },
-            {
-              nav: 'Sell',
-              Tab: () => <LimitOrderNav tokenA={tokenA} tokenB={tokenB} sell />,
-            },
-          ];
-        }, [tokenA, tokenB])}
-      />
-    </TabContext.Provider>
-  );
-}
-
-function LimitOrderNav({
-  tokenA,
-  tokenB,
-  sell = false,
-}: {
-  tokenA?: Token;
-  tokenB?: Token;
-  sell?: boolean;
-}) {
-  const [tabIndex, setTabIndex] = useContext(TabContext);
-  const tabs = useMemo(() => {
-    const props = { tokenA, tokenB, sell };
-    return [
-      {
-        nav: 'Limit',
-        Tab: () => <LimitOrder {...props} showLimitPrice />,
-      },
-      {
-        nav: 'Market',
-        Tab: () => <LimitOrder {...props} />,
-      },
-    ];
-  }, [tokenA, tokenB, sell]);
-
-  return (
-    <div className="p-md pt-4">
-      <LimitOrderContextProvider defaultExecutionType={defaultExecutionType}>
-        <Tabs
-          className="limitorder-type"
-          tabs={tabs}
-          value={tabIndex}
-          onChange={setTabIndex}
-        />
-      </LimitOrderContextProvider>
+    <div
+      className="page-card flex limitorder-card py-0 px-md"
+      style={{
+        // fix width to a minimum for most pairs to be displayed comfortably
+        minWidth: '24.5em',
+      }}
+    >
+      <h3 className="h4 p-4">Place Order</h3>
+      <LimitOrder tokenA={tokenA} tokenB={tokenB} />
     </div>
   );
 }
 
+const modeTabs = ['Buy', 'Sell'] as const;
+type ModeTab = typeof modeTabs[number];
+
+const priceTabs = ['Swap', 'Limit'] as const;
+type PriceTab = typeof priceTabs[number];
+
 const userBankBalanceRangePercentages = [0, 0.1, 0.25, 0.5, 0.75, 1];
 
-function LimitOrder({
-  tokenA,
-  tokenB,
-  sell: sellMode = false,
-  showLimitPrice = false,
-}: {
-  tokenA?: Token;
-  tokenB?: Token;
-  sell?: boolean;
-  showLimitPrice?: boolean;
-}) {
-  const buyMode = !sellMode;
+function LimitOrder({ tokenA, tokenB }: { tokenA?: Token; tokenB?: Token }) {
+  const [modeTab, setModeTab] = useState<ModeTab>(modeTabs[0]);
+  const [priceTab, setPriceTab] = useState<PriceTab>(priceTabs[0]);
+
+  const cardModeNav = (
+    <div className="row">
+      <div className="col">
+        <RadioButtonGroupInput<PriceTab>
+          className="order-type-input mb-4"
+          values={priceTabs}
+          value={priceTab}
+          onChange={setPriceTab}
+        />
+      </div>
+      <div className="col ml-auto h3">
+        <RadioButtonGroupInput<ModeTab>
+          className="order-type-input mb-4"
+          values={modeTabs}
+          value={modeTab}
+          onChange={setModeTab}
+        />
+      </div>
+    </div>
+  );
+
+  const showLimitPrice = priceTab === 'Limit';
+  const buyMode = modeTab === 'Buy';
   const [denomA, denomB] = [getTokenId(tokenA), getTokenId(tokenB)];
 
   const formState = useContext(LimitOrderFormContext);
@@ -853,7 +814,12 @@ function LimitOrder({
       />
     </fieldset>
   );
-  return <form onSubmit={onFormSubmit}>{fieldset}</form>;
+  return (
+    <>
+      {cardModeNav}
+      <form onSubmit={onFormSubmit}>{fieldset}</form>
+    </>
+  );
 }
 
 function NumericInputRow({

@@ -72,7 +72,7 @@ function useSelectedButtonBackgroundMove<T extends string | number>(
 interface Props<T extends string | number> {
   className?: string;
   buttonClassName?: string;
-  values: { [value in T]: ReactNode } | Map<T, ReactNode> | T[];
+  values: { [value in T]: ReactNode } | Map<T, ReactNode> | readonly T[];
   value: T;
   onChange: (value: T) => void;
 }
