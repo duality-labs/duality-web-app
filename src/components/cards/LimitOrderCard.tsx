@@ -104,7 +104,6 @@ export default function LimitOrderCard({
         minWidth: '24.5em',
       }}
     >
-      <h3 className="h4 p-4">Place Order</h3>
       {tokenA && tokenB && (
         <LimitOrderContextProvider defaultExecutionType={defaultExecutionType}>
           <LimitOrder tokenA={tokenA} tokenB={tokenB} />
@@ -195,17 +194,18 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
 
   const cardModeNav = (
     <div className="row">
-      <div className="col">
+      <h3 className="h4 pb-0 pt-lg pr-4">Order</h3>
+      <div className="col ml-auto">
         <RadioButtonGroupInput<PriceTab>
-          className="order-type-input mb-4"
+          className="order-type-input my-4"
           values={priceTabs}
           value={priceTab}
           onChange={switchPriceTab}
         />
       </div>
-      <div className="col ml-auto h3">
+      <div className="col ml-4 h3">
         <RadioButtonGroupInput<ModeTab>
-          className="order-type-input mb-4"
+          className="order-type-input my-4"
           values={modeTabs}
           value={modeTab}
           onChange={switchModeTab}
