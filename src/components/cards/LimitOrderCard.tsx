@@ -679,6 +679,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
               maximumSignificantDigits: 5,
             })
           }
+          disabledInput={isLoadingUserBalanceTokenIn}
         ></TokenInputGroup>
       </div>
       <div className="row gutter-y-3 flex-centered direction-button-row">
@@ -785,6 +786,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       <div>
         <NumericValueRow
           prefix="Est. Avg. Price"
+          loading={isValidatingSimulation}
           value={formatPrice(
             formatMaximumSignificantDecimals(
               simulationResult?.response
@@ -799,23 +801,6 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
             )
           )}
           suffix={tokenA && tokenB && `${tokenA.symbol} per ${tokenB.symbol}`}
-        />
-      </div>
-      <div>
-        <NumericValueRow
-          prefix={`Total ${buyMode ? 'Cost' : 'Result'}`}
-          loading={isValidatingSimulation}
-          value={
-            tokenIn && simulationResult
-              ? formatAmount(
-                  getDisplayDenomAmount(
-                    tokenIn,
-                    buyMode ? coinIn || '-' : coinOut || '-'
-                  ) || 0
-                )
-              : '-'
-          }
-          suffix={tokenA?.symbol}
         />
       </div>
       {warning ? (
@@ -853,23 +838,6 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           {!address ? 'Connect Wallet' : buyMode ? 'Buy' : 'Sell'}
         </button>
       </div>
-      <NumericValueRow
-        prefix="Available Balance"
-        value={formatAmount(
-          formatMaximumSignificantDecimals(
-            tokenIn
-              ? (userBalanceTokenInDisplayAmount ??
-                  (isLoadingUserBalanceTokenIn && '-')) ||
-                  0
-              : '-',
-            3
-          ),
-          {
-            useGrouping: true,
-          }
-        )}
-        suffix={tokenIn?.symbol}
-      />
     </fieldset>
   );
   return (
