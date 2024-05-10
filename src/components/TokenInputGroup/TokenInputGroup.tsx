@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { ReactNode, useCallback, useMemo } from 'react';
 import BigNumber from 'bignumber.js';
 
 import TokenPicker from '../TokenPicker';
@@ -29,6 +29,7 @@ interface InputGroupProps {
   disabled?: boolean;
   disabledInput?: boolean;
   disabledToken?: boolean;
+  header?: ReactNode;
   maxValue?: number;
 }
 
@@ -46,6 +47,7 @@ export default function TokenInputGroup({
   token,
   denom = token?.base,
   defaultAssetMode,
+  header,
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
@@ -83,14 +85,15 @@ export default function TokenInputGroup({
         .filter(Boolean)
         .join(' ')}
     >
-      {maxValue && (
-        <h5 className="token-group-title">
-          Available{' '}
-          {formatAmount(maxValue, {
-            useGrouping: true,
-          })}
-        </h5>
-      )}
+      {header ||
+        (maxValue && (
+          <h5 className="token-group-title">
+            Available{' '}
+            {formatAmount(maxValue, {
+              useGrouping: true,
+            })}
+          </h5>
+        ))}
       {!disabledInput && token && maxValue && Number(maxValue) > 0 && (
         <span className="token-group-balance">
           <button
