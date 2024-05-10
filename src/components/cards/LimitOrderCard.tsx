@@ -304,10 +304,8 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       if (Number(limitOption) >= 0) {
         formSetState.setLimitPrice?.('');
       }
-      // set mode to limit order if limit is greater than 0
-      switchPriceTab(Number(limitOption) === 0 ? 'Swap' : 'Limit');
     },
-    [formSetState, switchPriceTab]
+    [formSetState]
   );
 
   // combine offset and current price to get dynamic limit price
@@ -723,8 +721,8 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   // disable fieldset with no address because the estimation requires a signed client
   const fieldset = (
     <fieldset disabled={!address}>
-      <div className="mb-4">
-        <div className="limit-price">
+      <Drawer expanded={priceTab === 'Limit'}>
+        <div className="limit-price mb-4">
           <div
             className="flex row flex-centered gap-2"
             style={{ alignItems: 'center', justifyContent: 'flex-start' }}
@@ -775,7 +773,8 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
             />
           </div>
         </div>
-      </div>
+        <div style={{ height: 0 }}>&nbsp;</div>
+      </Drawer>
       <div className="row">
         <TokenInputGroup
           className="flex"
