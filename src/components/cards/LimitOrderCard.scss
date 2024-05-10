@@ -1,4 +1,5 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
+@use '../../styles/font/size.scss' as font-size;
 
 .limitorder-card {
   // override default select input styles
@@ -39,6 +40,13 @@
       border-radius: 100%;
       background: var(--page-card-border);
       font-size: 1.25em;
+    }
+  }
+
+  .radio-button-group-switch {
+    &.text-s button {
+      padding: paddings.$p-2 paddings.$p-sm;
+      font-size: font-size.$text-s;
     }
   }
 

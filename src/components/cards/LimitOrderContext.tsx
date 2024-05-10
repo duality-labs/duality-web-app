@@ -43,8 +43,8 @@ export function LimitOrderContextProvider({
 }) {
   const [amountInOut, setAmountInOut] = useState<[string, string]>(['', '']);
   const [limitPrice, setLimitPrice] = useState('');
-  const [timeAmount, setTimeAmount] = useState('28');
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('days');
+  const [timeAmount, setTimeAmount] = useState('1');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('hours');
   const [execution, setExecution] = useState(defaultExecutionType);
   const [slippage, setSlippage] = useState('');
 

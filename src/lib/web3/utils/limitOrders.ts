@@ -57,6 +57,8 @@ export const timePeriods = [
   'hours',
   'days',
   'weeks',
+  'months',
+  'years',
 ] as const;
 export type TimePeriod = typeof timePeriods[number];
 
@@ -68,4 +70,6 @@ export const timePeriodLabels: {
   hours: 'Hours',
   days: 'Days',
   weeks: 'Weeks',
+  months: 'Months',
+  years: 'Years',
 };

@@ -56,8 +56,6 @@ import {
   timePeriodLabels,
   TimePeriod,
   AllowedLimitOrderTypeKey,
-  inputOrderTypes,
-  orderTypeTextMap,
   nonImmediateOrderTypes,
   immediateOrderTypes,
 } from '../../lib/web3/utils/limitOrders';
@@ -108,7 +106,7 @@ export default function LimitOrderCard({
     >
       <h3 className="h4 p-4">Place Order</h3>
       {tokenA && tokenB && (
-        <LimitOrderContextProvider defaultExecutionType="FILL_OR_KILL">
+        <LimitOrderContextProvider defaultExecutionType={defaultExecutionType}>
           <LimitOrder tokenA={tokenA} tokenB={tokenB} />
         </LimitOrderContextProvider>
       )}
@@ -122,12 +120,62 @@ type ModeTab = typeof modeTabs[number];
 const priceTabs = ['Swap', 'Limit'] as const;
 type PriceTab = typeof priceTabs[number];
 
+const expirationOptions = {
+  '1 days': '1 day',
+  '1 weeks': '1 week',
+  '1 months': '1 month',
+  '1 years': '1 year',
+  custom: 'Custom',
+} as const;
+type ExpirationOptions = keyof typeof expirationOptions;
+
+function getShortcutExpirationTime(
+  expiration: ExpirationOptions
+): [number, TimePeriod] | undefined {
+  const timeString = expiration.split(' ');
+  if (timeString.length >= 2) {
+    const [timeAmount, timePeriod] = timeString;
+    return [Number(timeAmount), timePeriod as TimePeriod];
+  }
+}
+function getCustomExpirationTimeMs(timeAmount: number, timePeriod: TimePeriod) {
+  return timeAmount && timePeriod
+    ? timePeriod === 'years' || timePeriod === 'months'
+      ? (() => {
+          const date = new Date();
+          if (timePeriod === 'years') {
+            date.setFullYear(date.getFullYear() + 1);
+          }
+          if (timePeriod === 'months') {
+            date.setMonth(date.getMonth() + 1);
+          }
+          return date;
+        })().getTime()
+      : new Date(Date.now() + timeAmount * timeUnits[timePeriod]).getTime()
+    : NaN;
+}
+
+function getExpirationTimeMs(
+  expiration: ExpirationOptions,
+  formState: { timeAmount?: string; timePeriod?: TimePeriod }
+) {
+  const [timeAmount, timePeriod]: [number, TimePeriod] =
+    getShortcutExpirationTime(expiration) || [
+      Number(formState.timeAmount ?? 1),
+      formState.timePeriod || 'days',
+    ];
+  return getCustomExpirationTimeMs(timeAmount, timePeriod);
+}
+
 function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   const [modeTab, setModeTab] = useState<ModeTab>(modeTabs[0]);
   const [priceTab, setPriceTab] = useState<PriceTab>(priceTabs[0]);
 
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
+
+  const [hasExpiry, setHasExpiry] = useState<boolean>(false);
+  const [expiration, setExpiration] = useState<ExpirationOptions>('1 days');
 
   const switchModeTab = useCallback(() => {
     // change tab
@@ -257,14 +305,12 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
 
       const execution = formState.execution;
-      const timePeriod = formState.timePeriod;
-      const timeAmount = Number(formState.timeAmount ?? NaN);
       const limitPrice = Number(formState.limitPrice || NaN); // do not allow 0
       // calculate the expiration time in JS epoch (milliseconds)
-      const expirationTimeMs =
-        timeAmount && timePeriod
-          ? new Date(Date.now() + timeAmount * timeUnits[timePeriod]).getTime()
-          : NaN;
+      const expirationTimeMs = getExpirationTimeMs(expiration, {
+        timeAmount: formState.timeAmount,
+        timePeriod: formState.timePeriod,
+      });
 
       // find amounts in/out for the order
       // in buy mode: buy the amount out with the user's available balance
@@ -276,7 +322,6 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       if (
         execution &&
         (execution === 'GOOD_TIL_TIME' ? !isNaN(expirationTimeMs) : true) &&
-        (execution === 'GOOD_TIL_TIME' ? timePeriod !== undefined : true) &&
         address &&
         denomIn &&
         denomOut &&
@@ -346,11 +391,19 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           }
         }
         // only add expiration time to timed limit orders
-        if (execution === 'GOOD_TIL_TIME' && !isNaN(expirationTimeMs)) {
-          msgPlaceLimitOrder.expiration_time = {
-            seconds: Long.fromNumber(Math.round(expirationTimeMs / 1000)),
-            nanos: 0,
-          };
+        if (formState.execution === 'GOOD_TIL_TIME') {
+          const expirationTimeMs = getExpirationTimeMs(expiration, {
+            timeAmount: formState.timeAmount,
+            timePeriod: formState.timePeriod,
+          });
+          if (hasExpiry && !isNaN(expirationTimeMs)) {
+            msgPlaceLimitOrder.expiration_time = {
+              seconds: Long.fromNumber(Math.round(expirationTimeMs / 1000)),
+              nanos: 0,
+            };
+          } else {
+            msgPlaceLimitOrder.order_type = orderTypeEnum['GOOD_TIL_CANCELLED'];
+          }
         }
         return msgPlaceLimitOrder;
       }
@@ -360,10 +413,12 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       amountOutBaseAmount,
       buyMode,
       estimatedPriceInToOut,
+      expiration,
       formState.execution,
       formState.limitPrice,
       formState.timeAmount,
       formState.timePeriod,
+      hasExpiry,
       priceTab,
       tokenIn,
       tokenOut,
@@ -441,6 +496,23 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           ...simulatedMsgPlaceLimitOrder,
           tick_index_in_to_out: Long.fromNumber(tickIndexLimitInToOut),
         };
+
+        // only add expiration time to timed limit orders
+        if (formState.execution === 'GOOD_TIL_TIME') {
+          const expirationTimeMs = getExpirationTimeMs(expiration, {
+            timeAmount: formState.timeAmount,
+            timePeriod: formState.timePeriod,
+          });
+          if (hasExpiry && !isNaN(expirationTimeMs)) {
+            msgPlaceLimitOrder.expiration_time = {
+              seconds: Long.fromNumber(Math.round(expirationTimeMs / 1000)),
+              nanos: 0,
+            };
+          } else {
+            msgPlaceLimitOrder.order_type = orderTypeEnum['GOOD_TIL_CANCELLED'];
+          }
+        }
+
         const gasEstimate = simulationResult?.gasInfo?.gasUsed.toNumber();
         swapRequest(msgPlaceLimitOrder, (gasEstimate || 0) * 1.5);
       }
@@ -448,12 +520,17 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
     [
       formState.limitPrice,
       formState.slippage,
+      formState.timeAmount,
+      formState.timePeriod,
+      formState.execution,
       tokenIn,
       tokenOut,
       buyMode,
       simulatedMsgPlaceLimitOrder,
       simulationResult?.result?.events,
       simulationResult?.gasInfo?.gasUsed,
+      expiration,
+      hasExpiry,
       swapRequest,
     ]
   );
@@ -638,32 +715,50 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         ></TokenInputGroup>
       </div>
       <div className="my-md">
-        <div className="mb-2">
-          Order type{' '}
-          <a
-            className="button button-primary-outline px-2 py-0"
-            href="https://docs.neutron.org/neutron/modules/dex/messages/#order-types"
-            target="_blank"
-            rel="noreferrer"
-          >
-            ?
-          </a>
-        </div>
-        <SelectInput<AllowedLimitOrderTypeKey>
-          className="flex col m-0 p-0"
-          list={inputOrderTypes}
-          getLabel={(key = defaultExecutionType) => orderTypeTextMap[key]}
-          value={formState.execution}
-          onChange={formSetState.setExecution}
-          floating
-        />
         <Drawer expanded={formState.execution === 'GOOD_TIL_TIME'}>
-          <div className="mb-3 flex row gap-3">
+          <div className="row flex-centered">
+            <div className="col mr-2">
+              <label className="my-2">
+                Expires:
+                <input
+                  className="ml-2"
+                  type="checkbox"
+                  checked={hasExpiry}
+                  onChange={(e) => setHasExpiry(e.target.checked)}
+                  style={{ appearance: 'checkbox' }}
+                />
+              </label>
+            </div>
+            <div className="col ml-auto">
+              {hasExpiry ? (
+                <RadioButtonGroupInput<ExpirationOptions>
+                  className="order-type-input text-s"
+                  values={expirationOptions}
+                  value={expiration}
+                  onChange={setExpiration}
+                />
+              ) : (
+                'No expiry'
+              )}
+            </div>
+          </div>
+        </Drawer>
+        <Drawer
+          expanded={
+            formState.execution === 'GOOD_TIL_TIME' &&
+            hasExpiry &&
+            expiration === 'custom'
+          }
+        >
+          <div className="my-3 flex row gap-3">
             <NumericInputRow
               className="mb-3"
               prefix="Time"
               value={formState.timeAmount ?? ''}
-              onChange={formSetState.setTimeAmount}
+              onChange={(v) => {
+                setExpiration('custom');
+                formSetState.setTimeAmount?.(v);
+              }}
             />
             <SelectInput<TimePeriod>
               className="flex col m-0 p-0"
