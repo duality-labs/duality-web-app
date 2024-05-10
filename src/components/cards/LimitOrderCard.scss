@@ -2,6 +2,10 @@
 @use '../../styles/font/size.scss' as font-size;
 
 .limitorder-card {
+  & {
+    overflow: visible;
+  }
+
   // override default select input styles
   .select-input {
     .select-input-selection {

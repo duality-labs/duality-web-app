@@ -917,7 +917,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       ) : null}
       <div className="flex row">
         <button
-          className="limit-order__confirm-button flex button-primary my-lg py-4"
+          className="limit-order__confirm-button flex button-primary mt-lg p-4"
           onClick={!address ? connectWallet : undefined}
           disabled={
             isValidatingSwap ||
