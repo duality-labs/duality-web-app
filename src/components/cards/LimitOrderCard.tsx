@@ -128,15 +128,11 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
 
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
-  const [lastKnownPrice, setLastKnownPrice] = useState<number>(0);
   const switchModeTab = useCallback(() => {
     // change tab
     setModeTab((mode) => (mode === 'Buy' ? 'Sell' : 'Buy'));
     // set new amount and estimated exchange rate
     formSetState.setAmountInOut?.(([a, b]) => [b, a]);
-    setLastKnownPrice((lastKnownPrice) =>
-      lastKnownPrice ? 1 / lastKnownPrice : 0
-    );
   }, [formSetState]);
 
   const cardModeNav = (
@@ -203,7 +199,48 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
     return {};
   }, [tokenIn, tokenOut, formState.amountIn, formState.amountOut]);
 
-  const [, currentPrice] = useRealtimePrice(tokenIn, tokenOut);
+  const [, currentPriceAtoB] = useRealtimePrice(tokenA, tokenB);
+  const currentPriceInToOut = currentPriceAtoB
+    ? tokenA === tokenIn
+      ? currentPriceAtoB
+      : 1 / currentPriceAtoB
+    : undefined;
+
+  // detect when the user has asked for a limit "outside liquidity bounds"
+  // in these cases the simulation won't help because it can only compute the
+  // immediate result of the msg tx: the future amountOut must be estimated
+  const outsideBounds =
+    // ensure bounds can be calculated
+    currentPriceAtoB &&
+    formState.limitPrice &&
+    formState.execution &&
+    // check if the user is using a limit order
+    // ie. the user may have requested a price outside liquidity bounds
+    priceTab === 'Limit' &&
+    // check if the user is using a non-immediate order type
+    // ie. the order may not be filled immediately in the simulation
+    nonImmediateOrderTypes.includes(
+      orderTypeEnum[formState.execution] as number
+    ) &&
+    // check if the user requested a price outside liquidity bounds
+    // ie. the order may not be filled immediately in the simulation
+    (buyMode
+      ? new BigNumber(formState.limitPrice).lt(currentPriceAtoB)
+      : new BigNumber(formState.limitPrice).gt(currentPriceAtoB));
+
+  // the best estimated price will depend on whether the limit is out of bounds
+  const [lastKnownPrice, setLastKnownPrice] = useState<number>(0);
+  const estimatedPriceInToOut =
+    outsideBounds && formState.limitPrice
+      ? // calculate limitPriceInToOut value
+        tokenA === tokenIn
+        ? new BigNumber(formState.limitPrice).toNumber()
+        : new BigNumber(1).dividedBy(formState.limitPrice).toNumber()
+      : // or use last known price (for more accuracy)
+      // falling back to current price (for less accuracy)
+      Number.isFinite(lastKnownPrice)
+      ? lastKnownPrice
+      : currentPriceInToOut || 0;
 
   const simulatedMsgPlaceLimitOrder: MsgPlaceLimitOrder | undefined =
     useMemo(() => {
@@ -265,13 +302,13 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           order_type: orderTypeEnum[execution] as LimitOrderType,
           // if no limit assume market value
           tick_index_in_to_out:
-            limitTickIndexInToOut !== undefined
+            limitTickIndexInToOut !== undefined && priceTab === 'Limit'
               ? Long.fromNumber(limitTickIndexInToOut.toNumber())
               : Long.fromNumber(priceMaxIndex),
         };
         // optional params
         // only add maxOut for buy orders
-        if (tokenOut && maxAmountOut && currentPrice) {
+        if (tokenOut && maxAmountOut && estimatedPriceInToOut) {
           // set max out on taker orders
           if (
             immediateOrderTypes.includes(orderTypeEnum[execution] as number)
@@ -290,7 +327,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
                 tickIndexToPrice(
                   limitTickIndexInToOut ?? new BigNumber(priceMaxIndex)
                 ),
-                currentPrice
+                estimatedPriceInToOut
               ).toNumber();
             msgPlaceLimitOrder.amount_in = BigNumber.min(
               msgPlaceLimitOrder.amount_in,
@@ -312,11 +349,12 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       amountInBaseAmount,
       amountOutBaseAmount,
       buyMode,
-      currentPrice,
+      estimatedPriceInToOut,
       formState.execution,
       formState.limitPrice,
       formState.timeAmount,
       formState.timePeriod,
+      priceTab,
       tokenIn,
       tokenOut,
       userBalanceTokenIn,
@@ -516,19 +554,21 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
             )
           ).toNumber()
         : // use the market price or NaN
-          currentPrice ?? 0) || 0;
+          currentPriceInToOut ?? 0) || 0;
   const coinIn =
     isValidatingSimulation && lastKnownPrice
       ? amountOutBaseAmount && lastKnownPrice > 0
         ? new BigNumber(amountOutBaseAmount)
-            .multipliedBy(lastKnownPrice)
+            .multipliedBy(estimatedPriceInToOut)
             .toNumber()
         : 0
       : Number(simulationResult?.response?.coin_in.amount || 0);
   const coinOut =
     isValidatingSimulation && lastKnownPrice
       ? amountInBaseAmount && lastKnownPrice > 0
-        ? new BigNumber(amountInBaseAmount).dividedBy(lastKnownPrice).toNumber()
+        ? new BigNumber(amountInBaseAmount)
+            .dividedBy(estimatedPriceInToOut || 1)
+            .toNumber()
         : 0
       : Number(simulationResult?.response?.taker_coin_out.amount || 0) +
         tranchedAmountOut;
@@ -652,8 +692,12 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
             formatMaximumSignificantDecimals(
               simulationResult?.response
                 ? !buyMode
-                  ? coinOut / coinIn || '-'
-                  : coinIn / coinOut || '-'
+                  ? (isValidatingSimulation
+                      ? 1 / estimatedPriceInToOut
+                      : coinOut / coinIn) || '-'
+                  : (isValidatingSimulation
+                      ? estimatedPriceInToOut
+                      : coinIn / coinOut) || '-'
                 : '-'
             )
           )}
