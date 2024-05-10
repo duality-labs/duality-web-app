@@ -903,11 +903,16 @@ function NumericInputRow({
       className={['numeric-value-input flex row py-3 px-4', className]
         .filter(Boolean)
         .join(' ')}
+      onClick={() => inputRef.current?.focus()}
+      onKeyDown={() => inputRef.current?.focus()}
+      role="button"
+      tabIndex={0}
     >
       {prefix && (
         <div className="numeric-value-input__prefix mr-3">{prefix}</div>
       )}
       <input
+        ref={inputRef}
         type="number"
         className="numeric-value-input__input flex"
         placeholder={placeholder}
