@@ -128,10 +128,15 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
 
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
+  const [lastKnownPrice, setLastKnownPrice] = useState<number>(0);
   const switchModeTab = useCallback(() => {
-    // change tab and defined amount
+    // change tab
     setModeTab((mode) => (mode === 'Buy' ? 'Sell' : 'Buy'));
+    // set new amount and estimated exchange rate
     formSetState.setAmountInOut?.(([a, b]) => [b, a]);
+    setLastKnownPrice((lastKnownPrice) =>
+      lastKnownPrice ? 1 / lastKnownPrice : 0
+    );
   }, [formSetState]);
 
   const cardModeNav = (
@@ -483,7 +488,6 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
     }
   }, [nativeChain, setChainFeeToken]);
 
-  const [, setLastKnownPrice] = useState<number>(0);
   useEffect(() => {
     if (simulationResult?.response) {
       const price = new BigNumber(simulationResult.response.coin_in.amount).div(
@@ -513,10 +517,21 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           ).toNumber()
         : // use the market price or NaN
           currentPrice ?? 0) || 0;
-  const coinIn = Number(simulationResult?.response?.coin_in.amount || 0);
+  const coinIn =
+    isValidatingSimulation && lastKnownPrice
+      ? amountOutBaseAmount && lastKnownPrice > 0
+        ? new BigNumber(amountOutBaseAmount)
+            .multipliedBy(lastKnownPrice)
+            .toNumber()
+        : 0
+      : Number(simulationResult?.response?.coin_in.amount || 0);
   const coinOut =
-    Number(simulationResult?.response?.taker_coin_out.amount || 0) +
-    tranchedAmountOut;
+    isValidatingSimulation && lastKnownPrice
+      ? amountInBaseAmount && lastKnownPrice > 0
+        ? new BigNumber(amountInBaseAmount).dividedBy(lastKnownPrice).toNumber()
+        : 0
+      : Number(simulationResult?.response?.taker_coin_out.amount || 0) +
+        tranchedAmountOut;
 
   // disable fieldset with no address because the estimation requires a signed client
   const fieldset = (
