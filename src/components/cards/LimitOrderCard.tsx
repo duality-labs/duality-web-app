@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import {
+  ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -68,6 +69,9 @@ import {
   tickIndexToPrice,
 } from '../../lib/web3/utils/ticks';
 import { guessInvertedOrder } from '../../lib/web3/utils/pairs';
+
+import AssetIcon from '../assets/AssetIcon';
+import AssetSymbol from '../assets/AssetName';
 
 import Drawer from '../Drawer';
 
@@ -656,13 +660,41 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   const fieldset = (
     <fieldset disabled={!address}>
       {showLimitPrice && (
-        <div className="mb-md">
+        <div className="limit-price mb-md pt-md">
+          <div
+            className="flex row flex-centered gap-2"
+            style={{ alignItems: 'center', justifyContent: 'flex-start' }}
+          >
+            <span>When 1</span>
+            <div className="col my-2">
+              <AssetIcon asset={tokenB} height="1.5em" />
+            </div>
+            <div className="col">
+              <AssetSymbol asset={tokenB} />
+            </div>
+            <span>is worth</span>
+          </div>
           <NumericInputRow
-            prefix={`Limit ${buyMode ? '<=' : '>='}`}
             value={formState.limitPrice ?? ''}
-            placeholder="market"
+            placeholder={formatAmount(currentPriceAtoB || 0, {
+              maximumSignificantDigits: 7,
+            })}
             onChange={formSetState.setLimitPrice}
-            suffix={tokenA && tokenB && `${tokenA.symbol} per ${tokenB.symbol}`}
+            suffix={
+              tokenA && (
+                <div
+                  className="flex row flex-centered gap-2"
+                  style={{ alignItems: 'center', justifyContent: 'flex-start' }}
+                >
+                  <div className="col my-2">
+                    <AssetIcon asset={tokenA} height="1.5em" />
+                  </div>
+                  <div className="col">
+                    <AssetSymbol asset={tokenA} />
+                  </div>
+                </div>
+              )
+            }
             format={formatNumericAmount('')}
           />
         </div>
@@ -862,12 +894,12 @@ function NumericInputRow({
   readOnly = false,
 }: {
   className?: string;
-  prefix?: string;
+  prefix?: ReactNode;
   value: string;
   placeholder?: string;
   onInput?: (value: string) => void;
   onChange?: (value: string) => void;
-  suffix?: string;
+  suffix?: ReactNode;
   min?: number;
   max?: number;
   format?: (value: number) => string;
@@ -900,7 +932,7 @@ function NumericInputRow({
 
   return (
     <div
-      className={['numeric-value-input flex row py-3 px-4', className]
+      className={['numeric-value-input flex row', className]
         .filter(Boolean)
         .join(' ')}
       onClick={() => inputRef.current?.focus()}
