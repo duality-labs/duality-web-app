@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useMemo } from 'react';
+import React, { ReactNode, useCallback, useMemo, useRef } from 'react';
 import BigNumber from 'bignumber.js';
 
 import TokenPicker from '../TokenPicker';
@@ -75,6 +75,7 @@ export default function TokenInputGroup({
 
   const { data: balance } = useBankBalanceDisplayAmount(denom);
   const maxValue = givenMaxValue ?? balance;
+  const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div
       className={[
@@ -84,6 +85,10 @@ export default function TokenInputGroup({
       ]
         .filter(Boolean)
         .join(' ')}
+      onClick={() => inputRef.current?.focus()}
+      onKeyDown={() => inputRef.current?.focus()}
+      role="button"
+      tabIndex={0}
     >
       {header ||
         (maxValue && (
@@ -120,6 +125,7 @@ export default function TokenInputGroup({
       />
       <NumberInput
         type="text"
+        innerRef={inputRef}
         className={['token-group-input', !Number(value) && 'input--zero']
           .filter(Boolean)
           .join(' ')}
