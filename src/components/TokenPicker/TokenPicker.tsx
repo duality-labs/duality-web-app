@@ -28,7 +28,7 @@ import './TokenPicker.scss';
 
 interface TokenPickerProps {
   className?: string;
-  onChange: (newToken: Token | undefined) => void;
+  onChange?: (newToken: Token | undefined) => void;
   exclusion?: Token | undefined;
   value: Token | undefined;
   disabled?: boolean;

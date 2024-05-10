@@ -113,7 +113,7 @@ export default function TokenInputGroup({
       <TokenPicker
         className="gutter-l-3"
         value={token}
-        onChange={onPickerChange}
+        onChange={onTokenChanged ? onPickerChange : undefined}
         exclusion={exclusion}
         disabled={disabledToken}
         defaultAssetMode={defaultAssetMode}
