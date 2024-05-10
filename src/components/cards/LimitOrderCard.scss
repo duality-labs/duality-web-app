@@ -28,6 +28,20 @@
     }
   }
 
+  .direction-button-row {
+    & {
+      z-index: 1;
+      position: relative;
+    }
+    .direction-button {
+      width: 1.6em;
+      height: 1.6em;
+      border-radius: 100%;
+      background: var(--page-card-border);
+      font-size: 1.25em;
+    }
+  }
+
   .numeric-value-input {
     color: hsl(218deg, 11%, 65%);
     background-color: hsla(216, 20%, 25%, 1);
