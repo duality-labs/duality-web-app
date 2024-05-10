@@ -306,11 +306,6 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
 
       const execution = formState.execution;
       const limitPrice = Number(formState.limitPrice || NaN); // do not allow 0
-      // calculate the expiration time in JS epoch (milliseconds)
-      const expirationTimeMs = getExpirationTimeMs(expiration, {
-        timeAmount: formState.timeAmount,
-        timePeriod: formState.timePeriod,
-      });
 
       // find amounts in/out for the order
       // in buy mode: buy the amount out with the user's available balance
@@ -321,7 +316,6 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       // check format of request
       if (
         execution &&
-        (execution === 'GOOD_TIL_TIME' ? !isNaN(expirationTimeMs) : true) &&
         address &&
         denomIn &&
         denomOut &&
@@ -393,8 +387,8 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         // only add expiration time to timed limit orders
         if (formState.execution === 'GOOD_TIL_TIME') {
           const expirationTimeMs = getExpirationTimeMs(expiration, {
-            timeAmount: formState.timeAmount,
-            timePeriod: formState.timePeriod,
+            timeAmount: '1',
+            timePeriod: 'days',
           });
           if (hasExpiry && !isNaN(expirationTimeMs)) {
             msgPlaceLimitOrder.expiration_time = {
@@ -416,8 +410,6 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       expiration,
       formState.execution,
       formState.limitPrice,
-      formState.timeAmount,
-      formState.timePeriod,
       hasExpiry,
       priceTab,
       tokenIn,
