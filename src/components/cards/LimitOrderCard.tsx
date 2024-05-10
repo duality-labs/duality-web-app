@@ -296,7 +296,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         : new BigNumber(1).dividedBy(formState.limitPrice).toNumber()
       : // or use last known price (for more accuracy)
       // falling back to current price (for less accuracy)
-      Number.isFinite(lastKnownPrice)
+      lastKnownPrice && Number.isFinite(lastKnownPrice)
       ? lastKnownPrice
       : currentPriceInToOut || 0;
 
