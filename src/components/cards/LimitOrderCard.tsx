@@ -569,6 +569,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
               maximumSignificantDigits: 5,
             })
           }
+          maxValue={0}
         ></TokenInputGroup>
       </div>
       <div className="my-md">

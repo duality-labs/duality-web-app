@@ -74,7 +74,7 @@ export default function TokenInputGroup({
   }, [value, price]);
 
   const { data: balance } = useBankBalanceDisplayAmount(denom);
-  const maxValue = givenMaxValue || balance;
+  const maxValue = givenMaxValue ?? balance;
   return (
     <div
       className={[
@@ -94,7 +94,7 @@ export default function TokenInputGroup({
             })}
           </h5>
         ))}
-      {!disabledInput && token && maxValue && Number(maxValue) > 0 && (
+      {!disabledInput && token && !!maxValue && Number(maxValue) > 0 && (
         <span className="token-group-balance">
           <button
             type="button"
