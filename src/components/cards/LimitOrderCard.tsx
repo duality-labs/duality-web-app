@@ -128,12 +128,22 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
 
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
+
   const switchModeTab = useCallback(() => {
     // change tab
     setModeTab((mode) => (mode === 'Buy' ? 'Sell' : 'Buy'));
     // set new amount and estimated exchange rate
     formSetState.setAmountInOut?.(([a, b]) => [b, a]);
   }, [formSetState]);
+
+  const switchPriceTab = useCallback(() => {
+    // change tab
+    const newPriceTab = priceTab === 'Limit' ? 'Swap' : 'Limit';
+    setPriceTab(newPriceTab);
+    // enforce changed execution type
+    const newExec = newPriceTab === 'Limit' ? 'GOOD_TIL_TIME' : 'FILL_OR_KILL';
+    formSetState.setExecution?.(newExec);
+  }, [formSetState, priceTab]);
 
   const cardModeNav = (
     <div className="row">
@@ -142,7 +152,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           className="order-type-input mb-4"
           values={priceTabs}
           value={priceTab}
-          onChange={setPriceTab}
+          onChange={switchPriceTab}
         />
       </div>
       <div className="col ml-auto h3">
