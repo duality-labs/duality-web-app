@@ -105,18 +105,6 @@ export default function TokenInputGroup({
           >
             MAX
           </button>
-          <button
-            type="button"
-            className="badge badge-light"
-            onClick={() =>
-              // allow rounding on half of balance because we don't need an exact target
-              onValueChanged?.(
-                roundToBaseUnit(token, Number(maxValue) / 2) || ''
-              )
-            }
-          >
-            HALF
-          </button>
         </span>
       )}
       <TokenPicker
