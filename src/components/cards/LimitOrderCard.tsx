@@ -134,6 +134,24 @@ const expirationOptions = {
 } as const;
 type ExpirationOptions = keyof typeof expirationOptions;
 
+const buyLimitPriceOptions = {
+  0: 'Market',
+  1: '-1%',
+  5: '-5%',
+  10: '-10%',
+  [-1]: '',
+} as const;
+const sellLimitPriceOptions = {
+  0: 'Market',
+  1: '+1%',
+  5: '+5%',
+  10: '+10%',
+  [-1]: '',
+} as const;
+type LimitPriceOptions =
+  | keyof typeof buyLimitPriceOptions
+  | keyof typeof sellLimitPriceOptions;
+
 function getShortcutExpirationTime(
   expiration: ExpirationOptions
 ): [number, TimePeriod] | undefined {
@@ -182,21 +200,29 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   const [expiration, setExpiration] = useState<ExpirationOptions>('none');
   const hasExpiry = expiration !== 'none';
 
-  const switchModeTab = useCallback(() => {
-    // change tab
-    setModeTab((mode) => (mode === 'Buy' ? 'Sell' : 'Buy'));
-    // set new amount and estimated exchange rate
-    formSetState.setAmountInOut?.(([a, b]) => [b, a]);
-  }, [formSetState]);
+  const switchModeTab = useCallback(
+    (newModeTab: ModeTab) => {
+      // change tab
+      setModeTab(newModeTab);
+      // set new amount and estimated exchange rate
+      if (modeTab !== newModeTab) {
+        formSetState.setAmountInOut?.(([a, b]) => [b, a]);
+      }
+    },
+    [formSetState, modeTab]
+  );
 
-  const switchPriceTab = useCallback(() => {
-    // change tab
-    const newPriceTab = priceTab === 'Limit' ? 'Swap' : 'Limit';
-    setPriceTab(newPriceTab);
-    // enforce changed execution type
-    const newExec = newPriceTab === 'Limit' ? 'GOOD_TIL_TIME' : 'FILL_OR_KILL';
-    formSetState.setExecution?.(newExec);
-  }, [formSetState, priceTab]);
+  const switchPriceTab = useCallback(
+    (newPriceTab: PriceTab) => {
+      // change tab
+      setPriceTab(newPriceTab);
+      // enforce changed execution type
+      const newExec =
+        newPriceTab === 'Limit' ? 'GOOD_TIL_TIME' : 'FILL_OR_KILL';
+      formSetState.setExecution?.(newExec);
+    },
+    [formSetState]
+  );
 
   const cardModeNav = (
     <div className="row">
@@ -219,7 +245,6 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
     </div>
   );
 
-  const showLimitPrice = priceTab === 'Limit';
   const buyMode = modeTab === 'Buy';
   const [denomA, denomB] = [getTokenId(tokenA), getTokenId(tokenB)];
 
@@ -269,6 +294,34 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       : 1 / currentPriceAtoB
     : undefined;
 
+  const [limitOption, setLimitOption] = useState<LimitPriceOptions>(0);
+
+  const switchLimitOption = useCallback(
+    (limitOption: LimitPriceOptions) => {
+      // set value
+      setLimitOption(limitOption);
+      // remove custom limit price if setting one here
+      if (Number(limitOption) >= 0) {
+        formSetState.setLimitPrice?.('');
+      }
+      // set mode to limit order if limit is greater than 0
+      switchPriceTab(Number(limitOption) === 0 ? 'Swap' : 'Limit');
+    },
+    [formSetState, switchPriceTab]
+  );
+
+  // combine offset and current price to get dynamic limit price
+  const offsetLimitPrice = useMemo<string | undefined>(() => {
+    if (currentPriceAtoB && limitOption >= 0) {
+      return formatAmount(
+        new BigNumber(currentPriceAtoB)
+          .multipliedBy(1 + (buyMode ? -limitOption : limitOption) / 100)
+          .toFixed(),
+        { maximumSignificantDigits: 6 }
+      );
+    }
+  }, [buyMode, currentPriceAtoB, limitOption]);
+
   // detect when the user has asked for a limit "outside liquidity bounds"
   // in these cases the simulation won't help because it can only compute the
   // immediate result of the msg tx: the future amountOut must be estimated
@@ -310,7 +363,11 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       const [denomIn, denomOut] = [getTokenId(tokenIn), getTokenId(tokenOut)];
 
       const execution = formState.execution;
-      const limitPrice = Number(formState.limitPrice || NaN); // do not allow 0
+      // find limit price from custom limit price or limit price offset
+      // calculation, and do not pass 0: allow NaN to raise errors
+      const limitPrice = Number(
+        formState.limitPrice || (limitOption > 0 ? offsetLimitPrice : NaN)
+      );
 
       // find amounts in/out for the order
       // in buy mode: buy the amount out with the user's available balance
@@ -416,6 +473,8 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       formState.execution,
       formState.limitPrice,
       hasExpiry,
+      limitOption,
+      offsetLimitPrice,
       priceTab,
       tokenIn,
       tokenOut,
@@ -477,12 +536,14 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           : Math.floor(Number(lastPrice.TickIndex) * toleranceFactor);
       };
 
-      const tickIndexLimitInToOut = formState.limitPrice
-        ? displayPriceToTickIndex(
-            new BigNumber(formState.limitPrice),
-            tokenIn,
-            tokenOut
-          )
+      // find limit price from custom limit price or limit price offset
+      // calculation, and do not pass 0: allow NaN to raise errors
+      const limitPrice = Number(
+        formState.limitPrice || (limitOption > 0 ? offsetLimitPrice : NaN)
+      );
+
+      const tickIndexLimitInToOut = limitPrice
+        ? displayPriceToTickIndex(new BigNumber(limitPrice), tokenIn, tokenOut)
             ?.multipliedBy(buyMode ? 1 : -1)
             ?.toNumber()
         : getMarketLimitIndex();
@@ -517,18 +578,20 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
     [
       formState.limitPrice,
       formState.slippage,
+      formState.execution,
       formState.timeAmount,
       formState.timePeriod,
-      formState.execution,
+      limitOption,
+      offsetLimitPrice,
       tokenIn,
       tokenOut,
       buyMode,
       simulatedMsgPlaceLimitOrder,
       simulationResult?.result?.events,
       simulationResult?.gasInfo?.gasUsed,
+      swapRequest,
       expiration,
       hasExpiry,
-      swapRequest,
     ]
   );
 
@@ -660,8 +723,8 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   // disable fieldset with no address because the estimation requires a signed client
   const fieldset = (
     <fieldset disabled={!address}>
-      {showLimitPrice && (
-        <div className="limit-price mb-md pt-md">
+      <div className="mb-4">
+        <div className="limit-price">
           <div
             className="flex row flex-centered gap-2"
             style={{ alignItems: 'center', justifyContent: 'flex-start' }}
@@ -676,11 +739,16 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
             <span>is worth</span>
           </div>
           <NumericInputRow
-            value={formState.limitPrice ?? ''}
+            value={formState.limitPrice || offsetLimitPrice || ''}
             placeholder={formatAmount(currentPriceAtoB || 0, {
               maximumSignificantDigits: 7,
             })}
-            onChange={formSetState.setLimitPrice}
+            onChange={(price) => {
+              // set price
+              formSetState.setLimitPrice?.(price);
+              // and remove generated market offset price
+              switchLimitOption(-1);
+            }}
             suffix={
               tokenA && (
                 <div
@@ -698,8 +766,16 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
             }
             format={formatNumericAmount('')}
           />
+          <div className="row">
+            <RadioButtonGroupInput<LimitPriceOptions>
+              className="mt-3 order-type-input text-s"
+              values={buyMode ? buyLimitPriceOptions : sellLimitPriceOptions}
+              value={limitOption}
+              onChange={switchLimitOption}
+            />
+          </div>
         </div>
-      )}
+      </div>
       <div className="row">
         <TokenInputGroup
           className="flex"
@@ -719,7 +795,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         <button
           type="button"
           disabled={isValidatingSwap}
-          onClick={switchModeTab}
+          onClick={() => switchModeTab(modeTab === 'Buy' ? 'Sell' : 'Buy')}
           className="icon-button direction-button"
         >
           <FontAwesomeIcon icon={faArrowDown}></FontAwesomeIcon>

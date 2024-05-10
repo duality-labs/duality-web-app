@@ -47,6 +47,17 @@
         font-size: 1.5em;
       }
     }
+    .radio-button-group-switch {
+      & {
+        flex: 0 0 auto;
+      }
+      .moving-background {
+        background-color: var(--token-search-bg);
+      }
+    }
+  }
+  .radio-button-group-switch {
+    flex: 0 0 auto;
   }
 
   .direction-button-row {
