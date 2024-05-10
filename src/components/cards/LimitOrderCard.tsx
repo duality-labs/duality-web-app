@@ -105,7 +105,7 @@ export default function LimitOrderCard({
       className="page-card flex limitorder-card py-0 px-md"
       style={{
         // fix width to a minimum for most pairs to be displayed comfortably
-        minWidth: '24.5em',
+        minWidth: '25em',
       }}
     >
       <h3 className="h4 p-4">Place Order</h3>
@@ -125,6 +125,7 @@ const priceTabs = ['Swap', 'Limit'] as const;
 type PriceTab = typeof priceTabs[number];
 
 const expirationOptions = {
+  none: 'None',
   '1 days': '1 day',
   '1 weeks': '1 week',
   '1 months': '1 month',
@@ -178,8 +179,8 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   const formState = useContext(LimitOrderFormContext);
   const formSetState = useContext(LimitOrderFormSetContext);
 
-  const [hasExpiry, setHasExpiry] = useState<boolean>(false);
-  const [expiration, setExpiration] = useState<ExpirationOptions>('1 days');
+  const [expiration, setExpiration] = useState<ExpirationOptions>('none');
+  const hasExpiry = expiration !== 'none';
 
   const switchModeTab = useCallback(() => {
     // change tab
@@ -742,37 +743,20 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       <div className="my-md">
         <Drawer expanded={formState.execution === 'GOOD_TIL_TIME'}>
           <div className="row flex-centered">
-            <div className="col mr-2">
-              <label className="my-2">
-                Expires:
-                <input
-                  className="ml-2"
-                  type="checkbox"
-                  checked={hasExpiry}
-                  onChange={(e) => setHasExpiry(e.target.checked)}
-                  style={{ appearance: 'checkbox' }}
-                />
-              </label>
-            </div>
+            <div className="col my-2 mr-2">Expiry</div>
             <div className="col ml-auto">
-              {hasExpiry ? (
-                <RadioButtonGroupInput<ExpirationOptions>
-                  className="order-type-input text-s"
-                  values={expirationOptions}
-                  value={expiration}
-                  onChange={setExpiration}
-                />
-              ) : (
-                'No expiry'
-              )}
+              <RadioButtonGroupInput<ExpirationOptions>
+                className="order-type-input text-s"
+                values={expirationOptions}
+                value={expiration}
+                onChange={setExpiration}
+              />
             </div>
           </div>
         </Drawer>
         <Drawer
           expanded={
-            formState.execution === 'GOOD_TIL_TIME' &&
-            hasExpiry &&
-            expiration === 'custom'
+            formState.execution === 'GOOD_TIL_TIME' && expiration === 'custom'
           }
         >
           <div className="my-3 flex row gap-3">
