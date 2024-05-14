@@ -29,6 +29,7 @@ interface InputGroupProps {
   disabled?: boolean;
   disabledInput?: boolean;
   disabledToken?: boolean;
+  inactive?: boolean;
   header?: ReactNode;
   subHeader?: ReactNode;
   maxValue?: number;
@@ -53,6 +54,7 @@ export default function TokenInputGroup({
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
+  inactive = false,
   maxValue: givenMaxValue,
 }: InputGroupProps) {
   const onPickerChange = useCallback(
@@ -137,7 +139,11 @@ export default function TokenInputGroup({
           <NumberInput
             type="text"
             innerRef={inputRef}
-            className={['token-group-input', !Number(value) && 'input--zero']
+            className={[
+              'token-group-input',
+              !Number(value) && 'input--zero',
+              inactive && 'text-muted',
+            ]
               .filter(Boolean)
               .join(' ')}
             value={value}
@@ -153,7 +159,13 @@ export default function TokenInputGroup({
               };
             }, [])}
           />
-          <span className="token-group-value">{secondaryValue}</span>
+          <span
+            className={['token-group-value', inactive && 'text-muted']
+              .filter(Boolean)
+              .join(' ')}
+          >
+            {secondaryValue}
+          </span>
         </div>
       </div>
     </div>

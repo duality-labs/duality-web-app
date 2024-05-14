@@ -258,6 +258,7 @@ fieldset:disabled *:not(:has(> *)) {
 input {
   background-color: transparent;
   border: none;
+  color: var(--default-alt);
 }
 
 hr {

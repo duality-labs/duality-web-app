@@ -831,6 +831,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           onValueChanged={setAmountIn}
           token={tokenIn}
           variant={hasInsufficientFunds && 'error'}
+          inactive={!formState?.amountIn && isValidatingSimulation}
           value={valueIn}
           disabledInput={isLoadingUserBalanceTokenIn}
         ></TokenInputGroup>
@@ -851,6 +852,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           header="You receive"
           onValueChanged={setAmountOut}
           token={tokenOut}
+          inactive={!formState?.amountOut && isValidatingSimulation}
           value={valueOut}
           maxValue={0}
         ></TokenInputGroup>
