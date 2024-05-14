@@ -479,7 +479,17 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       userBalanceTokenIn,
     ]);
 
-  const lastSimulatedMsgPlaceLimitOrder = useRef<MsgPlaceLimitOrder>();
+  // keep track of whether the simulation result was calculated on the given
+  // user inputs (but the dex price may be different) by tracking last msg
+  const [lastSimulatedMsgPlaceLimitOrder, setLastSimulatedMsgPlaceLimitOrder] =
+    useState<MsgPlaceLimitOrder>();
+  const simulationResultMatchesInput = useMemo(() => {
+    return (
+      simulatedMsgPlaceLimitOrder !== undefined &&
+      lastSimulatedMsgPlaceLimitOrder === simulatedMsgPlaceLimitOrder
+    );
+  }, [lastSimulatedMsgPlaceLimitOrder, simulatedMsgPlaceLimitOrder]);
+
   const { data: simulationResult, isValidating: isValidatingSimulation } =
     useSimulatedLimitOrderResult(simulatedMsgPlaceLimitOrder, {
       // if the limit order payload hasn't changed then keep the previous data
@@ -487,16 +497,17 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         // don't keep when input goes to 0
         Number(simulatedMsgPlaceLimitOrder?.amount_in) > 0 ||
         // don't change if input exists and hasn't changed
-        (simulatedMsgPlaceLimitOrder !== undefined &&
-          lastSimulatedMsgPlaceLimitOrder.current ===
-            simulatedMsgPlaceLimitOrder),
+        simulationResultMatchesInput,
       // invalidate the request cache when the liquidity height changes
       memo: `height of ${meta?.height}`,
     });
   // update last simulatedMsgPlaceLimitOrder for comparison on the next render
   useEffect(() => {
-    lastSimulatedMsgPlaceLimitOrder.current = simulatedMsgPlaceLimitOrder;
-  }, [simulatedMsgPlaceLimitOrder]);
+    // set only after simulation result has been found
+    if (!isValidatingSimulation) {
+      setLastSimulatedMsgPlaceLimitOrder(simulatedMsgPlaceLimitOrder);
+    }
+  }, [isValidatingSimulation, simulatedMsgPlaceLimitOrder]);
 
   const onFormSubmit = useCallback(
     function (event?: React.FormEvent<HTMLFormElement>) {
@@ -951,7 +962,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           disabled={
             isValidatingSwap ||
             !simulationResult ||
-            !coinOut ||
+            !simulationResultMatchesInput ||
             (!Number(amountInBaseAmount) && !Number(amountOutBaseAmount))
           }
         >
