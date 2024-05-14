@@ -39,7 +39,7 @@ export function useSwrResponse<Data, Error = unknown>(
 
 type QueryResultCommon<Data, Error = unknown> = Pick<
   UseQueryResult<Data, Error>,
-  'isPending' | 'isFetching' | 'error'
+  'isLoading' | 'isFetching' | 'error'
 > & { refetch: (opts?: RefetchOptions) => unknown };
 
 export function useSwrResponseFromReactQuery<Data, Error = unknown>(
@@ -49,7 +49,7 @@ export function useSwrResponseFromReactQuery<Data, Error = unknown>(
 ): SWRCommon<Data, Error> {
   const swr1 = useMemo(
     () => ({
-      isLoading: queryResult1.isPending,
+      isLoading: queryResult1.isLoading,
       isValidating: queryResult1.isFetching,
       error: queryResult1.error || undefined,
       refetch: queryResult1.refetch,
@@ -58,7 +58,7 @@ export function useSwrResponseFromReactQuery<Data, Error = unknown>(
   );
   const swr2 = useMemo(
     () => ({
-      isLoading: !!queryResult2?.isPending,
+      isLoading: !!queryResult2?.isLoading,
       isValidating: !!queryResult2?.isFetching,
       error: queryResult2?.error || undefined,
       refetch: queryResult2?.refetch,
@@ -83,7 +83,7 @@ export function useCombineResults<Data, Error>(): (
     // return memoized data and combined result state
     return {
       data: memoizedData.current,
-      isLoading: results.every((result) => result.isPending),
+      isLoading: results.every((result) => result.isLoading),
       isValidating: results.some((result) => result.isFetching),
       error: results.find((result) => result.error)?.error ?? undefined,
       refetch: results.find((result) => result.refetch)?.refetch ?? undefined,

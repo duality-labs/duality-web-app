@@ -856,6 +856,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           inactive={!formState?.amountOut && isValidatingSimulation}
           value={valueOut}
           maxValue={0}
+          disabledInput={isLoadingUserBalanceTokenIn}
         ></TokenInputGroup>
       </div>
       <div className="my-md">
