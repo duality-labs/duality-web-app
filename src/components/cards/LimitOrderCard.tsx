@@ -718,6 +718,27 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       : Number(simulationResult?.response?.taker_coin_out.amount || 0) +
         tranchedAmountOut;
 
+  const valueIn = useMemo(() => {
+    return (
+      formState?.amountIn ||
+      formatAmount(getDisplayDenomAmount(tokenIn, coinIn) || 0, {
+        maximumSignificantDigits: 5,
+      })
+    );
+  }, [coinIn, formState?.amountIn, tokenIn]);
+  const valueOut = useMemo(() => {
+    return (
+      formState?.amountOut ||
+      formatAmount(getDisplayDenomAmount(tokenOut, coinOut) || 0, {
+        maximumSignificantDigits: 5,
+      })
+    );
+  }, [coinOut, formState?.amountOut, tokenOut]);
+
+  const hasInsufficientFunds = new BigNumber(
+    userBalanceTokenInDisplayAmount || 0
+  ).isLessThan(Number(valueIn) || Number(valueOut) || 0);
+
   // disable fieldset with no address because the estimation requires a signed client
   const fieldset = (
     <fieldset disabled={!address}>
@@ -781,12 +802,8 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           header="You pay"
           onValueChanged={setAmountIn}
           token={tokenIn}
-          value={
-            formState?.amountIn ||
-            formatAmount(getDisplayDenomAmount(tokenIn, coinIn) || 0, {
-              maximumSignificantDigits: 5,
-            })
-          }
+          variant={hasInsufficientFunds && 'error'}
+          value={valueIn}
           disabledInput={isLoadingUserBalanceTokenIn}
         ></TokenInputGroup>
       </div>
@@ -806,12 +823,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           header="You receive"
           onValueChanged={setAmountOut}
           token={tokenOut}
-          value={
-            formState?.amountOut ||
-            formatAmount(getDisplayDenomAmount(tokenOut, coinOut) || 0, {
-              maximumSignificantDigits: 5,
-            })
-          }
+          value={valueOut}
           maxValue={0}
         ></TokenInputGroup>
       </div>
