@@ -717,7 +717,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         ? // don't estimate higher than the user's balance because the simulate
           // function won't accept an input higher than the user's balance
           BigNumber.min(
-            userBalanceTokenInDisplayAmount || 0,
+            userBalanceTokenIn || 0,
             new BigNumber(amountOutBaseAmount).multipliedBy(
               estimatedPriceInToOut
             )
@@ -730,7 +730,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         ? // don't estimate higher than the user's balance because the simulate
           // function won't accept an input higher than the user's balance
           BigNumber.min(
-            userBalanceTokenInDisplayAmount || 0,
+            userBalanceTokenIn || 0,
             new BigNumber(amountInBaseAmount)
           )
             .dividedBy(estimatedPriceInToOut || 1)
