@@ -30,6 +30,7 @@ interface InputGroupProps {
   disabledInput?: boolean;
   disabledToken?: boolean;
   header?: ReactNode;
+  subHeader?: ReactNode;
   maxValue?: number;
 }
 
@@ -48,6 +49,7 @@ export default function TokenInputGroup({
   denom = token?.base,
   defaultAssetMode,
   header,
+  subHeader,
   disabled = false,
   disabledInput = disabled,
   disabledToken = disabled,
@@ -100,6 +102,9 @@ export default function TokenInputGroup({
                 })}`) || <>&nbsp;</>}
           </h5>
         </div>
+        {subHeader && (
+          <div className="col token-group-sub-header my-1">{subHeader}</div>
+        )}
         {!disabledInput && token && !!maxValue && Number(maxValue) > 0 && (
           <div className="col token-group-balance gap-3">
             <button
