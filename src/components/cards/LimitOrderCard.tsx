@@ -703,15 +703,25 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   const coinIn =
     isValidatingSimulation && lastKnownPrice
       ? amountOutBaseAmount && lastKnownPrice > 0
-        ? new BigNumber(amountOutBaseAmount)
-            .multipliedBy(estimatedPriceInToOut)
-            .toNumber()
+        ? // don't estimate higher than the user's balance because the simulate
+          // function won't accept an input higher than the user's balance
+          BigNumber.min(
+            userBalanceTokenInDisplayAmount || 0,
+            new BigNumber(amountOutBaseAmount).multipliedBy(
+              estimatedPriceInToOut
+            )
+          ).toNumber()
         : 0
       : Number(simulationResult?.response?.coin_in.amount || 0);
   const coinOut =
     isValidatingSimulation && lastKnownPrice
       ? amountInBaseAmount && lastKnownPrice > 0
-        ? new BigNumber(amountInBaseAmount)
+        ? // don't estimate higher than the user's balance because the simulate
+          // function won't accept an input higher than the user's balance
+          BigNumber.min(
+            userBalanceTokenInDisplayAmount || 0,
+            new BigNumber(amountInBaseAmount)
+          )
             .dividedBy(estimatedPriceInToOut || 1)
             .toNumber()
         : 0
