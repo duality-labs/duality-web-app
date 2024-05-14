@@ -91,7 +91,7 @@ export default function TokenInputGroup({
       tabIndex={0}
     >
       <div className="row gap-3">
-        <div className="col flex">
+        <div className="col flex my-1">
           <h5 className="token-group-title">
             {header ||
               (maxValue &&
