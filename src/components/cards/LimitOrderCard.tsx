@@ -800,6 +800,13 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         <TokenInputGroup
           className="flex"
           header="You pay"
+          subHeader={
+            !userBalanceTokenIn &&
+            hasInsufficientFunds &&
+            `Your balance: ${formatAmount(
+              userBalanceTokenInDisplayAmount || 0
+            )}`
+          }
           onValueChanged={setAmountIn}
           token={tokenIn}
           variant={hasInsufficientFunds && 'error'}
