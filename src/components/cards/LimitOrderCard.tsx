@@ -762,7 +762,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
 
   // disable fieldset with no address because the estimation requires a signed client
   const fieldset = (
-    <fieldset disabled={!address}>
+    <fieldset>
       <Drawer expanded={priceTab === 'Limit'}>
         <div className="limit-price mb-4">
           <div
@@ -822,11 +822,12 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           className="flex"
           header="You pay"
           subHeader={
-            !userBalanceTokenIn &&
-            hasInsufficientFunds &&
-            `Your balance: ${formatAmount(
-              userBalanceTokenInDisplayAmount || 0
-            )}`
+            (!address && 'Wallet not connected') ||
+            (!userBalanceTokenIn &&
+              hasInsufficientFunds &&
+              `Your balance: ${formatAmount(
+                userBalanceTokenInDisplayAmount || 0
+              )}`)
           }
           onValueChanged={setAmountIn}
           token={tokenIn}
@@ -958,18 +959,26 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         </div>
       ) : null}
       <div className="flex row">
-        <button
-          className="limit-order__confirm-button flex button-primary mt-lg p-4"
-          onClick={!address ? connectWallet : undefined}
-          disabled={
-            isValidatingSwap ||
-            !simulationResult ||
-            !simulationResultMatchesInput ||
-            (!Number(amountInBaseAmount) && !Number(amountOutBaseAmount))
-          }
-        >
-          {!address ? 'Connect Wallet' : buyMode ? 'Buy' : 'Sell'}
-        </button>
+        {address ? (
+          <button
+            className="h4 flex button-primary mt-lg p-4"
+            disabled={
+              isValidatingSwap ||
+              !simulationResult ||
+              !simulationResultMatchesInput ||
+              (!Number(amountInBaseAmount) && !Number(amountOutBaseAmount))
+            }
+          >
+            {buyMode ? 'Buy' : 'Sell'}
+          </button>
+        ) : (
+          <button
+            className="h4 flex button-primary mt-lg p-4"
+            onClick={connectWallet}
+          >
+            Connect Wallet
+          </button>
+        )}
       </div>
     </fieldset>
   );
