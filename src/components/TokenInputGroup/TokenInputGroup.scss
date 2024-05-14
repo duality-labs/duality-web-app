@@ -9,8 +9,6 @@
     border-radius: 1rem;
     border: 1px solid transparent;
     background-color: var(--default);
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto 1fr auto;
     color: var(--default-alt);
     display: grid;
     row-gap: 2px;
@@ -34,41 +32,24 @@
   }
 
   .token-picker-toggle {
-    grid-column: 1;
     text-align: start;
-    grid-row-start: 2;
-    grid-row-end: 4;
-    grid-row: 2 / 4;
-    row-gap: 2px;
-
     .token-chain {
       margin-bottom: -2px;
     }
   }
 
   .token-group-title {
-    grid-column: 1;
     font-size: font-size.$text-m;
-    text-align: start;
-    grid-row: 1;
     font-weight: normal;
-    align-self: center;
   }
 
   .token-group-balance {
     font-size: font-size.$text-m;
-    grid-column: 2;
-    grid-row: 1;
     text-align: end;
-    display: flex;
-    gap: paddings.$p-3;
-    margin-left: auto;
   }
 
   .token-group-value {
     font-size: font-size.$text-m;
-    grid-column: 2;
-    grid-row: 3;
     text-align: end;
   }
 
@@ -79,11 +60,7 @@
       border: 0px none transparent;
       font-size: font-size.$input;
       color: var(--default-alt);
-      grid-column: 2;
-      text-align: end;
-      grid-row: 2;
       outline: none;
-      margin-top: margins.$m-2;
     }
 
     &:disabled {
