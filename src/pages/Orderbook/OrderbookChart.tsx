@@ -29,6 +29,11 @@ import { days, hours, minutes, seconds } from '../../lib/utils/time';
 const { REACT_APP__INDEXER_API = '', PROD } = import.meta.env;
 
 const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
+  custom_css_url: '/tradingview.css',
+  settings_overrides: {
+    'paneProperties.backgroundType': 'solid',
+    'paneProperties.background': '#101828', // var(--default)
+  },
   debug: !PROD,
   autosize: true,
   container: '',
