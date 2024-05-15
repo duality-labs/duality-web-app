@@ -962,7 +962,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       <div className="flex row">
         {address ? (
           <button
-            className="h4 flex button-primary mt-lg p-4"
+            className="h4 flex button-primary mt-lg mb-md p-4"
             disabled={
               isValidatingSwap ||
               !simulationResult ||
@@ -974,7 +974,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           </button>
         ) : (
           <button
-            className="h4 flex button-primary mt-lg p-4"
+            className="h4 flex button-primary mt-lg mb-md p-4"
             onClick={connectWallet}
           >
             Connect Wallet

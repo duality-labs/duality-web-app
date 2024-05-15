@@ -39,11 +39,9 @@ function Orderbook() {
       </div>
       <div className="orderbook-body row gap-3">
         <div className="flex col">
-          <div className="flex page-card">
-            {tokenA && tokenB && (
-              <OrderBookChart tokenA={tokenB} tokenB={tokenA} />
-            )}
-          </div>
+          {tokenA && tokenB && (
+            <OrderBookChart tokenA={tokenB} tokenB={tokenA} />
+          )}
         </div>
         <div className="col">
           <TabsCard
