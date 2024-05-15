@@ -77,6 +77,12 @@ a {
   width: 100vw;
   max-width: calc(1440px + 10vw);
 }
+@media (min-width: 1440px) {
+  .container .decontainer {
+    margin: 0 calc(1440px / 2 - 100vw / 2);
+    padding: 0 5vw;
+  }
+}
 
 .row,
 .col {

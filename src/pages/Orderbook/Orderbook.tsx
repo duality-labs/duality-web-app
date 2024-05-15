@@ -33,7 +33,7 @@ function Orderbook() {
   const { data: tokenB } = useToken(denomB);
 
   return (
-    <div className="flex col gap-3">
+    <div className="decontainer flex col gap-3">
       <div className="orderbook-header row">
         <OrderbookHeader tokenA={tokenA} tokenB={tokenB} />
       </div>
