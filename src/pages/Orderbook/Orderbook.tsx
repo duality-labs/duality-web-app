@@ -39,37 +39,45 @@ function Orderbook() {
       </div>
       <div className="orderbook-body row gap-3">
         <div className="flex col">
-          {tokenA && tokenB && (
-            <OrderBookChart tokenA={tokenB} tokenB={tokenA} />
-          )}
-        </div>
-        <div className="col">
-          <TabsCard
-            className="flex"
-            style={{
-              // fix width to a minimum to allow tabs to be of equal size
-              // sized to the word "Orderbook" with padding
-              minWidth: '15em',
-            }}
-            tabs={useMemo(() => {
-              return [
-                {
-                  nav: 'Orderbook',
-                  Tab: () =>
-                    tokenA && tokenB ? (
-                      <OrderBookList tokenA={tokenA} tokenB={tokenB} />
-                    ) : null,
-                },
-                {
-                  nav: 'Trades',
-                  Tab: () =>
-                    tokenA && tokenB ? (
-                      <OrderBookTradesList tokenA={tokenA} tokenB={tokenB} />
-                    ) : null,
-                },
-              ];
-            }, [tokenA, tokenB])}
-          />
+          <div className="orderbook-chart-book flex row">
+            <div className="flex col">
+              {tokenA && tokenB && (
+                <OrderBookChart tokenA={tokenB} tokenB={tokenA} />
+              )}
+            </div>
+            <div className="chart-depth-connector col"></div>
+            <div className="col">
+              <TabsCard
+                className="flex"
+                style={{
+                  // fix width to a minimum to allow tabs to be of equal size
+                  // sized to the word "Orderbook" with padding
+                  minWidth: '15em',
+                }}
+                tabs={useMemo(() => {
+                  return [
+                    {
+                      nav: 'Orderbook',
+                      Tab: () =>
+                        tokenA && tokenB ? (
+                          <OrderBookList tokenA={tokenA} tokenB={tokenB} />
+                        ) : null,
+                    },
+                    {
+                      nav: 'Trades',
+                      Tab: () =>
+                        tokenA && tokenB ? (
+                          <OrderBookTradesList
+                            tokenA={tokenA}
+                            tokenB={tokenB}
+                          />
+                        ) : null,
+                    },
+                  ];
+                }, [tokenA, tokenB])}
+              />
+            </div>
+          </div>
         </div>
         <div className="col">
           <LimitOrderCard tokenA={tokenA} tokenB={tokenB} />

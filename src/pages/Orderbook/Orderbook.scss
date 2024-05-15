@@ -5,4 +5,14 @@
   .page-card {
     @include paddings.padding('y', 'md');
   }
+
+  .orderbook-chart-book {
+    background-color: #151924;
+    border-radius: 1rem;
+    overflow: hidden;
+
+    .chart-depth-connector {
+      min-width: paddings.$p-3;
+    }
+  }
 }
