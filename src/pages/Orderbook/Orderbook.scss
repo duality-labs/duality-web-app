@@ -7,9 +7,9 @@
   }
 
   .orderbook-chart-book {
-    background-color: var(--default);
-    border-radius: 1rem;
-    overflow: hidden;
+    iframe {
+      border-radius: 1rem;
+    }
 
     .chart-depth-connector {
       min-width: paddings.$p-3;
