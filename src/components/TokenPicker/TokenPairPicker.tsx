@@ -18,26 +18,9 @@ import {
   useEstimatedUserReserves,
   useValuedUserReserves,
 } from '../../lib/web3/hooks/useUserReserves';
+import { filterToTokenPairsWhitelist } from '../../lib/web3/hooks/useDenomsFromRegistry';
 
 import './TokenPairPicker.scss';
-
-const { REACT_APP__CHAIN_REGISTRY_ASSET_PAIR_LIST = '' } = import.meta.env;
-
-interface WhitelistedTokenPairMatch {
-  asset_1: {
-    chain_name: string;
-    asset_base: string;
-  };
-  asset_2: {
-    chain_name: string;
-    asset_base: string;
-  };
-}
-
-const tokenPairsWhitelist: WhitelistedTokenPairMatch[] | undefined =
-  REACT_APP__CHAIN_REGISTRY_ASSET_PAIR_LIST
-    ? JSON.parse(REACT_APP__CHAIN_REGISTRY_ASSET_PAIR_LIST)
-    : undefined;
 
 type TokenPair = [tokenA: Token | undefined, tokenB: Token | undefined];
 type AssetMode = 'Your Pools' | 'Dex Pools' | 'Recommended Dex Pools';
@@ -83,7 +66,9 @@ interface CommonTokenPair {
 }
 
 const tabYourPools = 'Your Pools';
-const tabDexPools = tokenPairsWhitelist ? 'Recommended Dex Pools' : 'Dex Pools';
+const tabDexPools = filterToTokenPairsWhitelist
+  ? 'Recommended Dex Pools'
+  : 'Dex Pools';
 
 export default function TokenPairPicker({
   className,
@@ -117,31 +102,13 @@ export default function TokenPairPicker({
       case tabYourPools:
         return userValuedPairs?.filter(filterToKnownTokens);
       case tabDexPools:
-        return dexValuedPairs?.filter(filterToWhitelist);
+        return dexValuedPairs?.filter(
+          filterToTokenPairsWhitelist || ((v) => v)
+        );
     }
     // hide unrecommended not found (generated from denom) assets
     function filterToKnownTokens(pair: { token0: Token; token1: Token }) {
       return pair.token0.chain.chain_id && pair.token1.chain.chain_id;
-    }
-    function filterToWhitelist(pair: { token0: Token; token1: Token }) {
-      return tokenPairsWhitelist
-        ? // match against whitelist
-          tokenPairsWhitelist.find((allowed) => {
-            return (
-              // match in aligned direction
-              (pair.token0.base === allowed.asset_1.asset_base &&
-                pair.token0.chain.chain_name === allowed.asset_1.chain_name &&
-                pair.token1.base === allowed.asset_2.asset_base &&
-                pair.token1.chain.chain_name === allowed.asset_2.chain_name) ||
-              // or match in inverted direction
-              (pair.token0.base === allowed.asset_2.asset_base &&
-                pair.token0.chain.chain_name === allowed.asset_2.chain_name &&
-                pair.token1.base === allowed.asset_1.asset_base &&
-                pair.token1.chain.chain_name === allowed.asset_1.chain_name)
-            );
-          })
-        : // or do not match against no defined whitelist
-          true;
     }
   }, [assetMode, dexValuedPairs, userValuedPairs]);
   const filteredList = useFilteredPairsList<CommonTokenPair>(

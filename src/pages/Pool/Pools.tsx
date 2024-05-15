@@ -111,7 +111,7 @@ function Pools() {
 }
 
 const switchValues = {
-  all: 'Show All',
+  all: 'Recommended Dex Pools',
   mine: 'My Positions',
 };
 
@@ -158,7 +158,7 @@ function PoolTableCards({
   ) : (
     <PoolsTableCard<keyof typeof switchValues>
       className="flex mt-5"
-      title="All Pools"
+      title="Dex Pools"
       switchValues={userHasDeposits ? switchValues : undefined}
       switchValue={selectedPoolsList}
       switchOnChange={setSelectedPoolsList}
