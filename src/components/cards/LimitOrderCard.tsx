@@ -772,6 +772,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
     <fieldset>
       <Drawer expanded={priceTab === 'Limit'}>
         <LimitPriceInput
+          className="focusable"
           tokenA={tokenA}
           tokenB={tokenB}
           limitPrice={formState.limitPrice || offsetLimitPrice || ''}
@@ -791,7 +792,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       </Drawer>
       <div className="row">
         <TokenInputGroup
-          className="flex"
+          className="focusable flex"
           header="You pay"
           subHeader={
             (!address && 'Wallet not connected') ||
@@ -821,7 +822,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       </div>
       <div className="row">
         <TokenInputGroup
-          className="flex"
+          className="focusable flex"
           header="You receive"
           onValueChanged={setAmountOut}
           token={tokenOut}
@@ -852,7 +853,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
         >
           <div className="my-3 flex row gap-3">
             <NumericInputRow
-              className="mb-3"
+              className="focusable mb-3"
               prefix="Time"
               format={formatAmount}
               value={formState.timeAmount ?? ''}
@@ -862,7 +863,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
               }}
             />
             <SelectInput<TimePeriod>
-              className="flex col m-0 p-0"
+              className="focusable flex col m-0 p-0"
               list={timePeriods.slice()}
               getLabel={(key = 'days') => timePeriodLabels[key]}
               value={formState.timePeriod}
@@ -1078,6 +1079,7 @@ function NumericValueRow({
 }
 
 function LimitPriceInput({
+  className,
   tokenA,
   tokenB,
   limitPrice,
@@ -1086,6 +1088,7 @@ function LimitPriceInput({
   limitOption,
   onLimitOptionChange,
 }: {
+  className?: string;
   tokenA: Token;
   tokenB: Token;
   limitPrice: string;
@@ -1116,6 +1119,7 @@ function LimitPriceInput({
   return (
     <div
       className={[
+        className,
         'limit-price mb-4',
         // handle '0' value limit price with an error style
         limitPrice && !Number(limitPrice) && 'limit-price--error',

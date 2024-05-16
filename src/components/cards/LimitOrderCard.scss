@@ -102,8 +102,8 @@
 
   .numeric-value-input {
     color: hsl(218deg, 11%, 65%);
-    background-color: hsla(216, 20%, 25%, 1);
-    border: 1px solid var(--page-card-border);
+    background-color: var(--default);
+    border: 1px solid var(--page-card);
     border-radius: paddings.$p-3;
     padding: paddings.$p-3 paddings.$p-4;
     input {
@@ -126,5 +126,13 @@
     }
     // fix vertical alignment
     align-items: baseline;
+  }
+
+  .select-input {
+    .select-input-selection,
+    .select-input-group,
+    .select-input-group label {
+      background-color: var(--default);
+    }
   }
 }
