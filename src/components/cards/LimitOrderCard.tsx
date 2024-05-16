@@ -753,61 +753,20 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   const fieldset = (
     <fieldset>
       <Drawer expanded={priceTab === 'Limit'}>
-        <div
-          className={[
-            'limit-price mb-4',
-            // handle '0' value limit price with an error style
-            formState.limitPrice &&
-              !Number(formState.limitPrice) &&
-              'limit-price--error',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-        >
-          <div
-            className="flex row flex-centered gap-2"
-            style={{ alignItems: 'center', justifyContent: 'flex-start' }}
-          >
-            <span>When 1</span>
-            <div className="col my-2">
-              <AssetIcon asset={tokenB} height="1.5em" />
-            </div>
-            <div className="col">
-              <AssetSymbol asset={tokenB} />
-            </div>
-            <span>is worth</span>
-          </div>
-          <div className="numeric-value-input flex row">
-            <NumberInput
-              value={formState.limitPrice || offsetLimitPrice || ''}
-              placeholder={formatAmount(currentPriceAtoB || 0, {
-                maximumSignificantDigits: 7,
-              })}
-              onChange={(price) => {
-                // set price
-                formSetState.setLimitPrice?.(price);
-                // and remove generated market offset price
-                switchLimitOption(-1);
-              }}
-            />
-            <div className="row flex-centered gap-2 ml-2">
-              <div className="col my-2">
-                <AssetIcon asset={tokenA} height="1.5em" />
-              </div>
-              <div className="col">
-                <AssetSymbol asset={tokenA} />
-              </div>
-            </div>
-          </div>
-          <div className="row">
-            <RadioButtonGroupInput<LimitPriceOptions>
-              className="mt-3 order-type-input text-s"
-              values={buyMode ? buyLimitPriceOptions : sellLimitPriceOptions}
-              value={limitOption}
-              onChange={switchLimitOption}
-            />
-          </div>
-        </div>
+        <LimitPriceInput
+          tokenA={tokenA}
+          tokenB={tokenB}
+          limitPrice={formState.limitPrice || offsetLimitPrice || ''}
+          onLimitPriceChange={(price) => {
+            // set price
+            formSetState.setLimitPrice?.(price);
+            // and remove generated market offset price
+            switchLimitOption(-1);
+          }}
+          limitOptions={buyMode ? buyLimitPriceOptions : sellLimitPriceOptions}
+          limitOption={limitOption}
+          onLimitOptionChange={switchLimitOption}
+        />
         <div style={{ height: 0 }}>&nbsp;</div>
       </Drawer>
       <div className="row">
@@ -1093,6 +1052,69 @@ function NumericValueRow({
       </div>
       <div className="numeric-value-row__value ml-3">{value}</div>
       {suffix && <div className="numeric-value-row__suffix ml-3">{suffix}</div>}
+    </div>
+  );
+}
+
+function LimitPriceInput({
+  tokenA,
+  tokenB,
+  limitPrice,
+  onLimitPriceChange,
+  limitOptions,
+  limitOption,
+  onLimitOptionChange,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  limitPrice: string;
+  onLimitPriceChange: (limitPrice: string) => void;
+  limitOptions: Record<LimitPriceOptions, ReactNode>;
+  limitOption: LimitPriceOptions;
+  onLimitOptionChange: (limitOption: LimitPriceOptions) => void;
+}) {
+  return (
+    <div
+      className={[
+        'limit-price mb-4',
+        // handle '0' value limit price with an error style
+        limitPrice && !Number(limitPrice) && 'limit-price--error',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div
+        className="flex row flex-centered gap-2"
+        style={{ alignItems: 'center', justifyContent: 'flex-start' }}
+      >
+        <span>When 1</span>
+        <div className="col my-2">
+          <AssetIcon asset={tokenB} height="1.5em" />
+        </div>
+        <div className="col">
+          <AssetSymbol asset={tokenB} />
+        </div>
+        <span>is worth</span>
+      </div>
+      <div className="numeric-value-input flex row">
+        <NumberInput value={limitPrice} onChange={onLimitPriceChange} />
+        <div className="row flex-centered gap-2 ml-2">
+          <div className="col my-2">
+            <AssetIcon asset={tokenA} height="1.5em" />
+          </div>
+          <div className="col">
+            <AssetSymbol asset={tokenA} />
+          </div>
+        </div>
+      </div>
+      <div className="row">
+        <RadioButtonGroupInput<LimitPriceOptions>
+          className="mt-3 order-type-input text-s"
+          values={limitOptions}
+          value={limitOption}
+          onChange={onLimitOptionChange}
+        />
+      </div>
     </div>
   );
 }
