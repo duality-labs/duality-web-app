@@ -753,7 +753,17 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   const fieldset = (
     <fieldset>
       <Drawer expanded={priceTab === 'Limit'}>
-        <div className="limit-price mb-4">
+        <div
+          className={[
+            'limit-price mb-4',
+            // handle '0' value limit price with an error style
+            formState.limitPrice &&
+              !Number(formState.limitPrice) &&
+              'limit-price--error',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
           <div
             className="flex row flex-centered gap-2"
             style={{ alignItems: 'center', justifyContent: 'flex-start' }}

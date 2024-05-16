@@ -59,6 +59,21 @@
         background-color: var(--token-search-bg);
       }
     }
+    &.limit-price--error {
+      &,
+      .radio-button-group-switch {
+        color: var(--error);
+        background-color: hsla(0, 73%, 97%, 1);
+        border-color: var(--error);
+      }
+      .numeric-value-input,
+      button,
+      input,
+      input:disabled {
+        background-color: hsla(0, 73%, 97%, 1);
+        color: var(--error);
+      }
+    }
   }
   .radio-button-group-switch {
     flex: 0 0 auto;
