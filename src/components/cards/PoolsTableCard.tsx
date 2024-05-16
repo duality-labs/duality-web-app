@@ -31,6 +31,7 @@ import {
   UserPair,
   useUserValuedPairs,
 } from '../../lib/web3/hooks/useUserPairs';
+import { filterToTokenPairsWhitelist } from '../../lib/web3/hooks/useDenomsFromRegistry';
 
 import './PoolsTableCard.scss';
 
@@ -42,7 +43,7 @@ interface PoolsTableCardOptions {
 
 export default function PoolsTableCard<T extends string | number>({
   className,
-  title = 'All Pools',
+  title = 'Dex Pools',
   onTokenPairClick,
   showUnknownTokens = false,
   ...tableCardProps
@@ -90,6 +91,7 @@ export default function PoolsTableCard<T extends string | number>({
             filteredPoolTokenList.includes(token1)
           );
         })
+        .filter(filterToTokenPairsWhitelist || ((v) => v))
         // sort by descending token pair values
         .sort((a, b) => b.value - a.value)
     );
