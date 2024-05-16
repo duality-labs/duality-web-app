@@ -114,10 +114,10 @@ type PriceTab = typeof priceTabs[number];
 
 const expirationOptions = {
   none: 'None',
+  '1 hours': '1 hour',
   '1 days': '1 day',
   '1 weeks': '1 week',
   '1 months': '1 month',
-  '1 years': '1 year',
   custom: 'Custom',
 } as const;
 type ExpirationOptions = keyof typeof expirationOptions;
