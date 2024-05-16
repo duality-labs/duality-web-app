@@ -127,14 +127,14 @@ const buyLimitPriceOptions = {
   1: '-1%',
   5: '-5%',
   10: '-10%',
-  [-1]: '',
+  [-1]: 'Custom',
 } as const;
 const sellLimitPriceOptions = {
   0: 'Market',
   1: '+1%',
   5: '+5%',
   10: '+10%',
-  [-1]: '',
+  [-1]: 'Custom',
 } as const;
 type LimitPriceOptions =
   | keyof typeof buyLimitPriceOptions
@@ -285,18 +285,6 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
 
   const [limitOption, setLimitOption] = useState<LimitPriceOptions>(0);
 
-  const switchLimitOption = useCallback(
-    (limitOption: LimitPriceOptions) => {
-      // set value
-      setLimitOption(limitOption);
-      // remove custom limit price if setting one here
-      if (Number(limitOption) >= 0) {
-        formSetState.setLimitPrice?.('');
-      }
-    },
-    [formSetState]
-  );
-
   // combine offset and current price to get dynamic limit price
   const offsetLimitPrice = useMemo<string | undefined>(() => {
     if (currentPriceAtoB && limitOption >= 0) {
@@ -308,6 +296,20 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
       );
     }
   }, [buyMode, currentPriceAtoB, limitOption]);
+
+  const switchLimitOption = useCallback(
+    (limitOption: LimitPriceOptions) => {
+      // set value
+      setLimitOption(limitOption);
+      // remove custom limit price if setting one here
+      if (Number(limitOption) >= 0) {
+        formSetState.setLimitPrice?.('');
+      } else {
+        formSetState.setLimitPrice?.(offsetLimitPrice || '');
+      }
+    },
+    [formSetState, offsetLimitPrice]
+  );
 
   // detect when the user has asked for a limit "outside liquidity bounds"
   // in these cases the simulation won't help because it can only compute the
@@ -758,10 +760,12 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
           tokenB={tokenB}
           limitPrice={formState.limitPrice || offsetLimitPrice || ''}
           onLimitPriceChange={(price) => {
+            // and remove generated market offset price
+            if (limitOption >= 0) {
+              switchLimitOption(-1);
+            }
             // set price
             formSetState.setLimitPrice?.(price);
-            // and remove generated market offset price
-            switchLimitOption(-1);
           }}
           limitOptions={buyMode ? buyLimitPriceOptions : sellLimitPriceOptions}
           limitOption={limitOption}
@@ -1082,6 +1086,17 @@ function LimitPriceInput({
       inputRef.current?.focus();
     }
   }, []);
+  const handleLimitOptionChange = useCallback(
+    (limitOption: LimitPriceOptions) => {
+      // action callback
+      onLimitOptionChange(limitOption);
+      // focus input when "custom" is selected
+      if (limitOption < 0) {
+        inputRef.current?.focus();
+      }
+    },
+    [onLimitOptionChange]
+  );
   return (
     <div
       className={[
@@ -1129,7 +1144,7 @@ function LimitPriceInput({
           className="mt-3 order-type-input text-s"
           values={limitOptions}
           value={limitOption}
-          onChange={onLimitOptionChange}
+          onChange={handleLimitOptionChange}
         />
       </div>
     </div>
