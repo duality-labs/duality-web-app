@@ -225,7 +225,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
 
   const cardModeNav = (
     <div className="row">
-      <h3 className="h4 pb-0 pt-lg pr-4">Order</h3>
+      <h3 className="h4 pb-0 pt-lg pr-4">Trade</h3>
       <div className="col ml-auto">
         <RadioButtonGroupInput<PriceTab>
           className="order-type-input my-4"
