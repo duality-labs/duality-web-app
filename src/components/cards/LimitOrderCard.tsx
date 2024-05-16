@@ -1073,6 +1073,14 @@ function LimitPriceInput({
   limitOption: LimitPriceOptions;
   onLimitOptionChange: (limitOption: LimitPriceOptions) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const handleClick = useCallback((event: { target: EventTarget }) => {
+    // only focus input if click comes from an unfocusable element
+    const target = event.target as HTMLElement | null;
+    if (target && target.tabIndex < 0) {
+      inputRef.current?.focus();
+    }
+  }, []);
   return (
     <div
       className={[
@@ -1082,6 +1090,10 @@ function LimitPriceInput({
       ]
         .filter(Boolean)
         .join(' ')}
+      onClick={handleClick}
+      onKeyDown={handleClick}
+      role="button"
+      tabIndex={-1}
     >
       <div
         className="flex row flex-centered gap-2"
@@ -1097,7 +1109,11 @@ function LimitPriceInput({
         <span>is worth</span>
       </div>
       <div className="numeric-value-input flex row">
-        <NumberInput value={limitPrice} onChange={onLimitPriceChange} />
+        <NumberInput
+          innerRef={inputRef}
+          value={limitPrice}
+          onChange={onLimitPriceChange}
+        />
         <div className="row flex-centered gap-2 ml-2">
           <div className="col my-2">
             <AssetIcon asset={tokenA} height="1.5em" />
