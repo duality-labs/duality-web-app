@@ -64,7 +64,7 @@ export default function OrderbookFooter({
   const [filter, setFilter] = useState<keyof typeof switchValues>('recent');
   return (
     <TableCard<keyof typeof switchValues>
-      title="Orders"
+      title="My Orders"
       className="pb-5 flex"
       scrolling={false}
       switchValues={switchValues}
