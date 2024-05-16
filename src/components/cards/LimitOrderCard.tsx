@@ -188,16 +188,19 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   const [expiration, setExpiration] = useState<ExpirationOptions>('none');
   // allow an expiration change to change the custom time amount and period
   const switchExpiration = useCallback(
-    (expiration: ExpirationOptions) => {
-      setExpiration(expiration);
-      const timeParts = expiration.split(' ') as [string, TimePeriod];
-      if (timeParts.length > 1) {
-        const [timeAmount, timePeriod] = timeParts;
-        formSetState.setTimeAmount?.(timeAmount);
-        formSetState.setTimePeriod?.(timePeriod);
+    (newExpiration: ExpirationOptions) => {
+      // when selecting custom time: prefill the form with the previous shortcut
+      if (newExpiration === 'custom') {
+        const timeParts = expiration.split(' ') as [string, TimePeriod];
+        if (timeParts.length > 1) {
+          const [timeAmount, timePeriod] = timeParts;
+          formSetState.setTimeAmount?.(timeAmount);
+          formSetState.setTimePeriod?.(timePeriod);
+        }
       }
+      setExpiration(newExpiration);
     },
-    [formSetState]
+    [formSetState, expiration]
   );
   const hasExpiry = expiration !== 'none';
 
