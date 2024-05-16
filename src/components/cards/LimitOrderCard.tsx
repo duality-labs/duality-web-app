@@ -43,6 +43,7 @@ import { useTokenPairMapLiquidity } from '../../lib/web3/hooks/useTickLiquidity'
 import { useRealtimePrice } from '../stats/hooks';
 
 import TokenInputGroup from '../TokenInputGroup';
+import NumberInput from '../inputs/NumberInput';
 import {
   LimitOrderContextProvider,
   LimitOrderFormContext,
@@ -80,18 +81,6 @@ const [, priceMaxIndex = Number.MAX_SAFE_INTEGER] =
   `${REACT_APP__MAX_TICK_INDEXES}`.split(',').map(Number).filter(Boolean);
 
 const defaultExecutionType: AllowedLimitOrderTypeKey = 'FILL_OR_KILL';
-
-function formatNumericAmount(defaultValue = '') {
-  return (amount: number | string) => {
-    return amount
-      ? formatAmount(
-          amount,
-          { useGrouping: false },
-          { reformatSmallValues: false }
-        )
-      : defaultValue;
-  };
-}
 
 export default function LimitOrderCard({
   tokenA,
@@ -778,34 +767,28 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
             </div>
             <span>is worth</span>
           </div>
-          <NumericInputRow
-            value={formState.limitPrice || offsetLimitPrice || ''}
-            placeholder={formatAmount(currentPriceAtoB || 0, {
-              maximumSignificantDigits: 7,
-            })}
-            onChange={(price) => {
-              // set price
-              formSetState.setLimitPrice?.(price);
-              // and remove generated market offset price
-              switchLimitOption(-1);
-            }}
-            suffix={
-              tokenA && (
-                <div
-                  className="flex row flex-centered gap-2"
-                  style={{ alignItems: 'center', justifyContent: 'flex-start' }}
-                >
-                  <div className="col my-2">
-                    <AssetIcon asset={tokenA} height="1.5em" />
-                  </div>
-                  <div className="col">
-                    <AssetSymbol asset={tokenA} />
-                  </div>
-                </div>
-              )
-            }
-            format={formatNumericAmount('')}
-          />
+          <div className="numeric-value-input flex row">
+            <NumberInput
+              value={formState.limitPrice || offsetLimitPrice || ''}
+              placeholder={formatAmount(currentPriceAtoB || 0, {
+                maximumSignificantDigits: 7,
+              })}
+              onChange={(price) => {
+                // set price
+                formSetState.setLimitPrice?.(price);
+                // and remove generated market offset price
+                switchLimitOption(-1);
+              }}
+            />
+            <div className="row flex-centered gap-2 ml-2">
+              <div className="col my-2">
+                <AssetIcon asset={tokenA} height="1.5em" />
+              </div>
+              <div className="col">
+                <AssetSymbol asset={tokenA} />
+              </div>
+            </div>
+          </div>
           <div className="row">
             <RadioButtonGroupInput<LimitPriceOptions>
               className="mt-3 order-type-input text-s"
