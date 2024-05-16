@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.0](https://github.com/duality-labs/duality-web-app/compare/v2.9.0...v2.10.0) (2024-05-16)
+
+
+### Features
+
+* add token pair whitelist controls for token pairs ([#559](https://github.com/duality-labs/duality-web-app/issues/559)) ([93accf6](https://github.com/duality-labs/duality-web-app/commit/93accf61b0f0fe13e1f849540d37a6af7c674a79))
+
 ## [2.9.0](https://github.com/duality-labs/duality-web-app/compare/v2.8.1...v2.9.0) (2024-05-02)
 
 
