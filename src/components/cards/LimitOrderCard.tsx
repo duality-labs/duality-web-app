@@ -1092,7 +1092,7 @@ function LimitPriceInput({
       onLimitOptionChange(limitOption);
       // focus input when "custom" is selected
       if (limitOption < 0) {
-        inputRef.current?.focus();
+        inputRef.current?.select();
       }
     },
     [onLimitOptionChange]
