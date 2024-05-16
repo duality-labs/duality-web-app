@@ -119,8 +119,6 @@ export default function OrderBookChart({
     const supportedResolutions: ResolutionString[] = [
       '1S', // second
       '1', // minute
-      '5', // 5 minutes
-      '10', // 10 minutes
       '60', // hour
       '1D', // day
     ] as ResolutionString[];
@@ -130,8 +128,6 @@ export default function OrderBookChart({
     } = {
       '1S': 'second', // second
       '1': 'minute', // minute
-      '5': 'minute', // minute
-      '10': 'minute', // minute
       '60': 'hour', // hour
       '1D': 'day', // day
     };
@@ -141,8 +137,6 @@ export default function OrderBookChart({
     } = {
       '1S': 1 * seconds,
       '1': 1 * minutes,
-      '5': 5 * minutes,
-      '10': 10 * minutes,
       '60': 1 * hours,
       '1D': 1 * days,
     };
@@ -456,7 +450,7 @@ export default function OrderBookChart({
         locale: 'en',
         symbol: tokenPairID,
         // start with minute resolution
-        interval: '5' as ResolutionString,
+        interval: '1' as ResolutionString,
         datafeed,
       };
 
