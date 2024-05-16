@@ -58,7 +58,7 @@ export interface SelectionModalChild<T> {
   className?: string;
   disabled?: boolean;
   value: T | undefined;
-  open: () => void;
+  open?: () => void;
 }
 export type SelectionModal<T, Tab extends string> = Omit<
   SelectionModalDialog<T, Tab>,
@@ -98,7 +98,7 @@ export default function SelectionModal<T, Tab extends string>({
           .join(' ')}
         disabled={disabled}
         value={value}
-        open={open}
+        open={onChange && open}
       />
       {isOpen && onChange && (
         <SelectionModalDialog<T, Tab>

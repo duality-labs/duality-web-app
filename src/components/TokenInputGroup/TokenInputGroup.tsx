@@ -90,9 +90,9 @@ export default function TokenInputGroup({
         .filter(Boolean)
         .join(' ')}
       onClick={() => inputRef.current?.focus()}
-      onKeyDown={() => inputRef.current?.focus()}
+      onKeyDown={() => undefined}
       role="button"
-      tabIndex={0}
+      tabIndex={-1}
     >
       <div className="row gap-3">
         <div className="col flex my-1">
