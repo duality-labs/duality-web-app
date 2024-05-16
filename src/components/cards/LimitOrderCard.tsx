@@ -834,6 +834,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
             <NumericInputRow
               className="mb-3"
               prefix="Time"
+              format={formatAmount}
               value={formState.timeAmount ?? ''}
               onChange={(v) => {
                 setExpiration('custom');
