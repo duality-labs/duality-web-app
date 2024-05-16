@@ -186,6 +186,19 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
   const formSetState = useContext(LimitOrderFormSetContext);
 
   const [expiration, setExpiration] = useState<ExpirationOptions>('none');
+  // allow an expiration change to change the custom time amount and period
+  const switchExpiration = useCallback(
+    (expiration: ExpirationOptions) => {
+      setExpiration(expiration);
+      const timeParts = expiration.split(' ') as [string, TimePeriod];
+      if (timeParts.length > 1) {
+        const [timeAmount, timePeriod] = timeParts;
+        formSetState.setTimeAmount?.(timeAmount);
+        formSetState.setTimePeriod?.(timePeriod);
+      }
+    },
+    [formSetState]
+  );
   const hasExpiry = expiration !== 'none';
 
   const switchModeTab = useCallback(
@@ -824,7 +837,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
                 className="order-type-input text-s"
                 values={expirationOptions}
                 value={expiration}
-                onChange={setExpiration}
+                onChange={switchExpiration}
               />
             </div>
           </div>
