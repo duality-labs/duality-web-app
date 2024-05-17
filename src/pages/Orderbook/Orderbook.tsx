@@ -5,14 +5,15 @@ import { useDenomFromPathParam } from '../../lib/web3/hooks/useTokens';
 import { useToken } from '../../lib/web3/hooks/useDenomClients';
 
 import TabsCard from '../../components/cards/TabsCard';
+import { Tab } from '../../components/Tabs/Tabs';
 import OrderbookHeader from './OrderbookHeader';
 import OrderbookFooter from './OrderbookFooter';
 import OrderBookChart from './OrderbookChart';
 import OrderBookList from './OrderbookList';
+import OrderBookTradesList from './OrderbookTradesList';
 import LimitOrderCard from '../../components/cards/LimitOrderCard';
 
 import './Orderbook.scss';
-import OrderBookTradesList from './OrderbookTradesList';
 
 export default function OrderbookPage() {
   return (
@@ -56,11 +57,11 @@ function Orderbook() {
                   // sized to the word "Orderbook" with padding
                   minWidth: '15em',
                 }}
-                tabs={useMemo(() => {
+                tabs={useMemo<Tab[]>(() => {
                   return [
                     {
                       nav: 'Orderbook',
-                      Tab: () =>
+                      tab:
                         tokenA && tokenB ? (
                           <OrderBookList
                             tokenA={tokenA}
@@ -72,7 +73,7 @@ function Orderbook() {
                     },
                     {
                       nav: 'Trades',
-                      Tab: () =>
+                      tab:
                         tokenA && tokenB ? (
                           <OrderBookTradesList
                             tokenA={tokenA}

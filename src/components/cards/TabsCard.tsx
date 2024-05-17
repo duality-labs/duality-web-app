@@ -12,7 +12,7 @@ export default function TabsCard({
   tabs: Array<Tab>;
 }) {
   const [tabIndex, setTabIndex] = useState<number>(0);
-  const { Tab } = tabs[tabIndex];
+  const { tab } = tabs[tabIndex];
 
   return (
     <div
@@ -41,9 +41,7 @@ export default function TabsCard({
         })}
       </div>
       <div className="tabs-card__tab flex row">
-        <div className="flex col">
-          <Tab />
-        </div>
+        <div className="flex col">{tab}</div>
       </div>
     </div>
   );
