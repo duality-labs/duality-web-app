@@ -7,12 +7,15 @@
   }
 
   .orderbook-chart-book {
-    .page-card:has(iframe) {
-      border-width: 0;
+    & {
+      background-color: var(--default);
+      border-radius: 1rem;
     }
 
-    iframe {
-      border-radius: 1rem;
+    .page-card:has(iframe) {
+      border-width: 0;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
     }
 
     .chart-depth-connector {
