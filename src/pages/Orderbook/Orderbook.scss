@@ -7,6 +7,10 @@
   }
 
   .orderbook-chart-book {
+    .page-card:has(iframe) {
+      border-width: 0;
+    }
+
     iframe {
       border-radius: 1rem;
     }

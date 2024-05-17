@@ -40,7 +40,7 @@ function Orderbook() {
       <div className="orderbook-body row gap-3">
         <div className="flex col">
           <div className="orderbook-chart-book flex row">
-            <div className="flex col">
+            <div className="flex col page-card p-0">
               {tokenA && tokenB && (
                 <OrderBookChart tokenA={tokenB} tokenB={tokenA} />
               )}
