@@ -203,6 +203,12 @@ export default function OrderBookList({
     }
   }, [currentPrice, filteredTokenATicks]);
 
+  const [topTicks, bottomTicks] = useMemo(() => {
+    return forward
+      ? [filteredTokenBTicks.reverse(), filteredTokenATicks.reverse()]
+      : [filteredTokenATicks, filteredTokenBTicks];
+  }, [filteredTokenATicks, filteredTokenBTicks, forward]);
+
   const priceDecimalPlaces =
     currentPrice !== undefined && currentPrice !== null
       ? getDecimalPlaces(
@@ -225,15 +231,17 @@ export default function OrderBookList({
             <th className="text-medium text-muted text-right">Amount</th>
           </tr>
         </thead>
-        <tbody className="orderbook-list__table__ticks-a">
-          {filteredTokenATicks.map((tick, index) => {
+        <tbody className="orderbook-list__table__ticks-top">
+          {topTicks.map((tick, index) => {
             return (
               <OrderbookListRow
                 key={index}
                 tick={tick}
-                previousTicks={previousTokenATicks}
-                token={tokenA}
-                reserveKey={forward ? 'reserve0' : 'reserve1'}
+                previousTicks={
+                  !forward ? previousTokenATicks : previousTokenBTicks
+                }
+                token={!forward ? tokenA : tokenB}
+                reserveKey="reserve1"
                 priceDecimalPlaces={priceDecimalPlaces}
                 onHighlight={onHighlightPrice}
               />
@@ -262,15 +270,17 @@ export default function OrderBookList({
             </DiffCell>
           </tr>
         </tbody>
-        <tbody className="orderbook-list__table__ticks-b">
-          {filteredTokenBTicks.map((tick, index) => {
+        <tbody className="orderbook-list__table__ticks-bottom">
+          {bottomTicks.map((tick, index) => {
             return (
               <OrderbookListRow
                 key={index}
                 tick={tick}
-                previousTicks={previousTokenBTicks}
-                token={tokenB}
-                reserveKey={reverse ? 'reserve0' : 'reserve1'}
+                previousTicks={
+                  !reverse ? previousTokenATicks : previousTokenBTicks
+                }
+                token={!reverse ? tokenA : tokenB}
+                reserveKey="reserve0"
                 priceDecimalPlaces={priceDecimalPlaces}
                 onHighlight={onHighlightPrice}
               />
