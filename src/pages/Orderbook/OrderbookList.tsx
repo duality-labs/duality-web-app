@@ -22,6 +22,7 @@ const spacingTicks = Array.from({ length: shownTickRows }).map(() => undefined);
 export default function OrderBookList({
   tokenA,
   tokenB,
+  priceIndication,
   setPriceIndication,
 }: {
   tokenA: Token;
@@ -233,6 +234,7 @@ export default function OrderBookList({
         </thead>
         <tbody className="orderbook-list__table__ticks-top">
           {topTicks.map((tick, index) => {
+            const price = tick && tick?.price1To0.toNumber();
             return (
               <OrderbookListRow
                 key={index}
@@ -243,6 +245,7 @@ export default function OrderBookList({
                 token={!forward ? tokenA : tokenB}
                 reserveKey="reserve1"
                 priceDecimalPlaces={priceDecimalPlaces}
+                active={price && priceIndication && price <= priceIndication}
                 onHighlight={onHighlightPrice}
               />
             );
@@ -272,6 +275,7 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__ticks-bottom">
           {bottomTicks.map((tick, index) => {
+            const price = tick && tick?.price1To0.toNumber();
             return (
               <OrderbookListRow
                 key={index}
@@ -282,6 +286,7 @@ export default function OrderBookList({
                 token={!reverse ? tokenA : tokenB}
                 reserveKey="reserve0"
                 priceDecimalPlaces={priceDecimalPlaces}
+                active={price && priceIndication && price >= priceIndication}
                 onHighlight={onHighlightPrice}
               />
             );
@@ -299,6 +304,7 @@ function OrderbookListRow({
   reserveKey,
   priceDecimalPlaces = 6,
   amountDecimalPlaces = 2,
+  active,
   onHighlight,
 }: {
   tick: TickInfo | undefined;
@@ -307,6 +313,7 @@ function OrderbookListRow({
   reserveKey: 'reserve0' | 'reserve1';
   priceDecimalPlaces?: number;
   amountDecimalPlaces?: number;
+  active?: boolean | 0;
   onHighlight?: (tick: TickInfo | undefined) => void;
 }) {
   const { data: price } = useSimplePrice(token);
@@ -333,6 +340,7 @@ function OrderbookListRow({
   return (
     <tr
       key={tick.tickIndex1To0.toNumber()}
+      className={active ? 'active' : undefined}
       onMouseEnter={onHover}
       onMouseLeave={onHoverOut}
     >

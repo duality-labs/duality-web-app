@@ -17,6 +17,10 @@
         text-align: left;
       }
     }
+    .active td {
+      background-color: var(--page-card-border);
+    }
+
     // add cell spacing
     & {
       th {
