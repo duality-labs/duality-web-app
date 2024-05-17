@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import {
@@ -12,7 +12,7 @@ import {
   SearchSymbolResultItem,
   Bar,
   Timezone,
-  IChartingLibraryWidget,
+  IChartWidgetApi,
 } from 'charting_library';
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
@@ -91,7 +91,7 @@ export default function OrderBookChart({
   const chartRef = useRef<HTMLDivElement>(null);
 
   // store chart widget when ready
-  const chartWidget = useRef<IChartingLibraryWidget>();
+  const [chart, setChart] = useState<IChartWidgetApi>();
 
   const { data: tokenPairReserves } = useTokenPairs();
   const { data: tokenByDenom } = useTokenByDenom(
@@ -475,13 +475,13 @@ export default function OrderBookChart({
           tvWidget.applyOverrides(defaultWidgetOptions.settings_overrides);
         }
         // store current widget
-        chartWidget.current = tvWidget;
+        setChart(tvWidget.activeChart());
       });
 
       // return method to cleanup widget and data subscribers
       return () => {
         // remove widget
-        chartWidget.current = undefined;
+        setChart(undefined);
         tvWidget.remove();
         // unsubscribe all requests (both getBars and subscribeBars)
         streams.forEach((stream) => {
@@ -492,7 +492,6 @@ export default function OrderBookChart({
   }, [navigate, tokenIdA, tokenIdB, tokenPairID, tokenPairs]);
 
   useEffect(() => {
-    const chart = chartWidget.current?.activeChart();
     if (chart && priceIndication) {
       const line = chart
         .createOrderLine()
@@ -501,7 +500,7 @@ export default function OrderBookChart({
         .setQuantity('');
       return () => line.remove();
     }
-  }, [priceIndication]);
+  }, [chart, priceIndication]);
 
   return <div className="trading-view-chart flex" ref={chartRef}></div>;
 }
