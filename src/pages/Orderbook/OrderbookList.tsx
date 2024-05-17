@@ -22,9 +22,12 @@ const spacingTicks = Array.from({ length: shownTickRows }).map(() => undefined);
 export default function OrderBookList({
   tokenA,
   tokenB,
+  setPriceIndication,
 }: {
   tokenA: Token;
   tokenB: Token;
+  priceIndication?: number | undefined;
+  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
 }) {
   const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
   const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
@@ -36,6 +39,13 @@ export default function OrderBookList({
     tokenId0 === tokenIdA && tokenId1 === tokenIdB,
     tokenId1 === tokenIdA && tokenId0 === tokenIdB,
   ];
+
+  const onHighlightPrice = useCallback(
+    (tick: TickInfo | undefined) => {
+      setPriceIndication?.(tick && tick?.price1To0.toNumber());
+    },
+    [setPriceIndication]
+  );
 
   const [, currentPrice] = useRealtimePrice(tokenA, tokenB);
   const resolutionPercent = 0.01; // size of price steps
@@ -225,12 +235,16 @@ export default function OrderBookList({
                 token={tokenA}
                 reserveKey={forward ? 'reserve0' : 'reserve1'}
                 priceDecimalPlaces={priceDecimalPlaces}
+                onHighlight={onHighlightPrice}
               />
             );
           })}
         </tbody>
         <tbody className="orderbook-list__table__tick-center">
-          <tr>
+          <tr
+            onMouseEnter={() => setPriceIndication?.(currentPrice || undefined)}
+            onMouseLeave={() => setPriceIndication?.(undefined)}
+          >
             <DiffCell
               colSpan={2}
               className="text-center py-3"
@@ -258,6 +272,7 @@ export default function OrderBookList({
                 token={tokenB}
                 reserveKey={reverse ? 'reserve0' : 'reserve1'}
                 priceDecimalPlaces={priceDecimalPlaces}
+                onHighlight={onHighlightPrice}
               />
             );
           })}
@@ -274,6 +289,7 @@ function OrderbookListRow({
   reserveKey,
   priceDecimalPlaces = 6,
   amountDecimalPlaces = 2,
+  onHighlight,
 }: {
   tick: TickInfo | undefined;
   previousTicks: TickInfo[];
@@ -281,8 +297,12 @@ function OrderbookListRow({
   reserveKey: 'reserve0' | 'reserve1';
   priceDecimalPlaces?: number;
   amountDecimalPlaces?: number;
+  onHighlight?: (tick: TickInfo | undefined) => void;
 }) {
   const { data: price } = useSimplePrice(token);
+  const onHover = useCallback(() => onHighlight?.(tick), [onHighlight, tick]);
+  const onHoverOut = useCallback(() => onHighlight?.(undefined), [onHighlight]);
+
   // add empty row
   if (!tick) {
     return (
@@ -301,7 +321,11 @@ function OrderbookListRow({
 
   const value = getTokenValue(token, tick[reserveKey], price);
   return (
-    <tr key={tick.tickIndex1To0.toNumber()}>
+    <tr
+      key={tick.tickIndex1To0.toNumber()}
+      onMouseEnter={onHover}
+      onMouseLeave={onHoverOut}
+    >
       <DiffCell className="text-right" diff={diff.toNumber()}>
         {formatAmount(tick.price1To0.toNumber(), {
           minimumFractionDigits: priceDecimalPlaces,

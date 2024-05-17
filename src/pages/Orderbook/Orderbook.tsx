@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useMatch } from 'react-router-dom';
 
 import { useDenomFromPathParam } from '../../lib/web3/hooks/useTokens';
@@ -32,6 +32,8 @@ function Orderbook() {
   const { data: tokenA } = useToken(denomA);
   const { data: tokenB } = useToken(denomB);
 
+  const [depthPriceIndication, setDepthPriceIndication] = useState<number>();
+
   return (
     <div className="decontainer flex col gap-3">
       <div className="orderbook-header row">
@@ -60,7 +62,12 @@ function Orderbook() {
                       nav: 'Orderbook',
                       Tab: () =>
                         tokenA && tokenB ? (
-                          <OrderBookList tokenA={tokenA} tokenB={tokenB} />
+                          <OrderBookList
+                            tokenA={tokenA}
+                            tokenB={tokenB}
+                            priceIndication={depthPriceIndication}
+                            setPriceIndication={setDepthPriceIndication}
+                          />
                         ) : null,
                     },
                     {
@@ -74,7 +81,7 @@ function Orderbook() {
                         ) : null,
                     },
                   ];
-                }, [tokenA, tokenB])}
+                }, [depthPriceIndication, tokenA, tokenB])}
               />
             </div>
           </div>
