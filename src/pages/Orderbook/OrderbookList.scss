@@ -6,9 +6,13 @@
     font-size: 0.75em;
     color: #f9fafb;
     border-spacing: 0;
-    border-collapse: collapse;
     th {
       border: 1px solid var(--page-card-border);
+      border-left: none;
+      border-right: none;
+    }
+    td {
+      border: 1px solid transparent;
       border-left: none;
       border-right: none;
     }
@@ -19,6 +23,12 @@
     }
     .active td {
       background-color: var(--page-card-border);
+    }
+    .orderbook-list__table__ticks-top .hovered td {
+      border-top-color: var(--text-default);
+    }
+    .orderbook-list__table__ticks-bottom .hovered td {
+      border-bottom-color: var(--text-default);
     }
 
     // add cell spacing

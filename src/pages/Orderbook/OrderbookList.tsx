@@ -317,8 +317,20 @@ function OrderbookListRow({
   onHighlight?: (tick: TickInfo | undefined) => void;
 }) {
   const { data: price } = useSimplePrice(token);
-  const onHover = useCallback(() => onHighlight?.(tick), [onHighlight, tick]);
-  const onHoverOut = useCallback(() => onHighlight?.(undefined), [onHighlight]);
+
+  // keep track of hover state and use as a price indication in parents
+  const [hovered, setHovered] = useState<boolean>(false);
+  const onHover = useCallback(
+    (tick: TickInfo | undefined) => {
+      // set hovered state
+      setHovered(!!tick);
+      // set parent state
+      onHighlight?.(tick);
+    },
+    [onHighlight]
+  );
+  const onHoverIn = useCallback(() => onHover(tick), [onHover, tick]);
+  const onHoverOut = useCallback(() => onHover(undefined), [onHover]);
 
   // add empty row
   if (!tick) {
@@ -340,8 +352,10 @@ function OrderbookListRow({
   return (
     <tr
       key={tick.tickIndex1To0.toNumber()}
-      className={active ? 'active' : undefined}
-      onMouseEnter={onHover}
+      className={[active && 'active', hovered && 'hovered']
+        .filter(Boolean)
+        .join(' ')}
+      onMouseEnter={onHoverIn}
       onMouseLeave={onHoverOut}
     >
       <DiffCell className="text-right" diff={diff.toNumber()}>
