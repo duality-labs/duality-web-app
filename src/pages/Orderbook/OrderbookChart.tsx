@@ -462,6 +462,12 @@ export default function OrderBookChart({
 
       // create chart widget
       const tvWidget = new widget(widgetOptions);
+      tvWidget.onChartReady(() => {
+        // re-apply overrides (somtimes not applied properly)
+        if (defaultWidgetOptions.settings_overrides) {
+          tvWidget.applyOverrides(defaultWidgetOptions.settings_overrides);
+        }
+      });
 
       // return method to cleanup widget and data subscribers
       return () => {
