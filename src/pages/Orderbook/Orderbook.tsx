@@ -45,7 +45,12 @@ function Orderbook() {
           <div className="orderbook-chart-book flex row">
             <div className="flex col page-card p-0">
               {tokenA && tokenB && (
-                <OrderBookChart tokenA={tokenB} tokenB={tokenA} />
+                <OrderBookChart
+                  tokenA={tokenB}
+                  tokenB={tokenA}
+                  priceIndication={depthPriceIndication}
+                  setPriceIndication={setDepthPriceIndication}
+                />
               )}
             </div>
             <div className="chart-depth-connector col"></div>

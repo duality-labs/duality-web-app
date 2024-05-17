@@ -12,6 +12,7 @@ import {
   SearchSymbolResultItem,
   Bar,
   Timezone,
+  IChartingLibraryWidget,
 } from 'charting_library';
 
 import { Token, getTokenId } from '../../lib/web3/utils/tokens';
@@ -74,9 +75,12 @@ type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
 export default function OrderBookChart({
   tokenA,
   tokenB,
+  priceIndication,
 }: {
   tokenA: Token;
   tokenB: Token;
+  priceIndication?: number | undefined;
+  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
 }) {
   const tokenIdA = getTokenId(tokenA);
   const tokenIdB = getTokenId(tokenB);
@@ -85,6 +89,9 @@ export default function OrderBookChart({
 
   // find chart container to fit
   const chartRef = useRef<HTMLDivElement>(null);
+
+  // store chart widget when ready
+  const chartWidget = useRef<IChartingLibraryWidget>();
 
   const { data: tokenPairReserves } = useTokenPairs();
   const { data: tokenByDenom } = useTokenByDenom(
@@ -467,11 +474,14 @@ export default function OrderBookChart({
         if (defaultWidgetOptions.settings_overrides) {
           tvWidget.applyOverrides(defaultWidgetOptions.settings_overrides);
         }
+        // store current widget
+        chartWidget.current = tvWidget;
       });
 
       // return method to cleanup widget and data subscribers
       return () => {
         // remove widget
+        chartWidget.current = undefined;
         tvWidget.remove();
         // unsubscribe all requests (both getBars and subscribeBars)
         streams.forEach((stream) => {
@@ -480,6 +490,18 @@ export default function OrderBookChart({
       };
     }
   }, [navigate, tokenIdA, tokenIdB, tokenPairID, tokenPairs]);
+
+  useEffect(() => {
+    const chart = chartWidget.current?.activeChart();
+    if (chart && priceIndication) {
+      const line = chart
+        .createOrderLine()
+        .setPrice(priceIndication)
+        .setText('')
+        .setQuantity('');
+      return () => line.remove();
+    }
+  }, [priceIndication]);
 
   return <div className="trading-view-chart flex" ref={chartRef}></div>;
 }
