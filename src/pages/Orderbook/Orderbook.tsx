@@ -8,7 +8,8 @@ import TabsCard from '../../components/cards/TabsCard';
 import { Tab } from '../../components/Tabs/Tabs';
 import OrderbookHeader from './OrderbookHeader';
 import OrderbookFooter from './OrderbookFooter';
-import OrderBookChart from './OrderbookChart';
+import OrderBookChart, { ChartPriceAxisInfo } from './OrderbookChart';
+import OrderbookChartConnector from './OrderbookChartConnector';
 import OrderBookList from './OrderbookList';
 import OrderBookTradesList from './OrderbookTradesList';
 import LimitOrderCard from '../../components/cards/LimitOrderCard';
@@ -33,7 +34,9 @@ function Orderbook() {
   const { data: tokenA } = useToken(denomA);
   const { data: tokenB } = useToken(denomB);
 
+  const [chartPriceAxis, setChartPriceAxis] = useState<ChartPriceAxisInfo>();
   const [depthPriceIndication, setDepthPriceIndication] = useState<number>();
+  const [depthPriceOffset, setDepthPriceOffset] = useState<number>();
 
   return (
     <div className="decontainer flex col gap-3">
@@ -50,10 +53,32 @@ function Orderbook() {
                   tokenB={tokenA}
                   priceIndication={depthPriceIndication}
                   setPriceIndication={setDepthPriceIndication}
+                  setPriceAxis={setChartPriceAxis}
                 />
               )}
             </div>
-            <div className="chart-depth-connector col"></div>
+            <div className="chart-depth-connector col">
+              <OrderbookChartConnector
+                connectionPoints={useMemo(() => {
+                  if (
+                    chartPriceAxis &&
+                    depthPriceIndication &&
+                    depthPriceOffset
+                  ) {
+                    return [
+                      [
+                        getChartPricePointOffset(
+                          chartPriceAxis,
+                          depthPriceIndication
+                        ),
+                        depthPriceOffset,
+                      ],
+                    ];
+                  }
+                  return [];
+                }, [chartPriceAxis, depthPriceIndication, depthPriceOffset])}
+              />
+            </div>
             <div className="col">
               <TabsCard
                 className="flex"
@@ -73,6 +98,7 @@ function Orderbook() {
                             tokenB={tokenB}
                             priceIndication={depthPriceIndication}
                             setPriceIndication={setDepthPriceIndication}
+                            setPriceOffset={setDepthPriceOffset}
                           />
                         ) : null,
                     },
@@ -100,5 +126,47 @@ function Orderbook() {
         <OrderbookFooter tokenA={tokenA} tokenB={tokenB} />
       </div>
     </div>
+  );
+}
+
+function getPointOffsetPercent(
+  value: number,
+  max: number,
+  min: number = 0,
+  mode: ChartPriceAxisInfo['mode'] = 0
+): number {
+  switch (mode) {
+    // handle linear math
+    case 0: {
+      return (value - min) / (max - min);
+    }
+  }
+  // todo: handle other math
+  return NaN;
+}
+function getPointOffset(
+  percent: number,
+  extent: number,
+  offset: number = 0
+): number {
+  return percent * extent + offset;
+}
+
+const chartPriceAxisOffset = {
+  top: 42,
+};
+function getChartPricePointOffset(
+  chartPriceAxis: ChartPriceAxisInfo,
+  price: number
+) {
+  return getPointOffset(
+    getPointOffsetPercent(
+      price,
+      chartPriceAxis.from,
+      chartPriceAxis.to,
+      chartPriceAxis.mode
+    ),
+    chartPriceAxis.height,
+    chartPriceAxisOffset.top
   );
 }

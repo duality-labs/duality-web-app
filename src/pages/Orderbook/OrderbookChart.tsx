@@ -12,6 +12,8 @@ import {
   SearchSymbolResultItem,
   Bar,
   Timezone,
+  VisiblePriceRange,
+  PriceScaleMode,
   IChartWidgetApi,
 } from 'charting_library';
 
@@ -40,7 +42,14 @@ const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
   container: '',
   locale: 'en',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone as Timezone,
-  disabled_features: ['header_symbol_search', 'header_compare'],
+  disabled_features: [
+    // disable searching for symbols inside chart: token pair search is on page
+    'header_symbol_search',
+    // disable comparing multiple symbols: can get complicated
+    'header_compare',
+    // disable mouse-down panning behavior: ensures last tick is current time
+    'chart_scroll',
+  ],
   enabled_features: [],
   charts_storage_url: 'https://saveload.tradingview.com',
   charts_storage_api_version: '1.1',
@@ -72,15 +81,23 @@ interface BlockRangeRequestQuery extends RequestQuery {
 
 type TimeSeriesResolution = 'second' | 'minute' | 'hour' | 'day' | 'month';
 
+export interface ChartPriceAxisInfo extends VisiblePriceRange {
+  mode: PriceScaleMode;
+  height: number;
+}
 export default function OrderBookChart({
   tokenA,
   tokenB,
   priceIndication,
+  setPriceAxis,
 }: {
   tokenA: Token;
   tokenB: Token;
   priceIndication?: number | undefined;
   setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
+  setPriceAxis?: React.Dispatch<
+    React.SetStateAction<ChartPriceAxisInfo | undefined>
+  >;
 }) {
   const tokenIdA = getTokenId(tokenA);
   const tokenIdB = getTokenId(tokenB);
@@ -501,6 +518,41 @@ export default function OrderBookChart({
       return () => line.remove();
     }
   }, [chart, priceIndication]);
+
+  useEffect(() => {
+    if (chart) {
+      const checkChartAxis = () => {
+        setPriceAxis?.((chartPriceAxis) => {
+          const pane = chart?.getPanes()[0];
+          const rightPriceScale = pane?.getRightPriceScales()[0];
+          const visiblePriceRange = rightPriceScale?.getVisiblePriceRange();
+          const newChartPriceAxis: ChartPriceAxisInfo | undefined =
+            rightPriceScale && visiblePriceRange
+              ? {
+                  from: visiblePriceRange.from,
+                  to: visiblePriceRange.to,
+                  mode: rightPriceScale.getMode(),
+                  height: pane.getHeight(),
+                }
+              : undefined;
+          if (
+            (chartPriceAxis && !newChartPriceAxis) ||
+            (!chartPriceAxis && newChartPriceAxis) ||
+            chartPriceAxis?.from !== newChartPriceAxis?.from ||
+            chartPriceAxis?.to !== newChartPriceAxis?.to ||
+            chartPriceAxis?.mode !== newChartPriceAxis?.mode ||
+            chartPriceAxis?.height !== newChartPriceAxis?.height
+          ) {
+            return newChartPriceAxis;
+          }
+          return chartPriceAxis;
+        });
+        timeout = setTimeout(checkChartAxis, 100);
+      };
+      let timeout = setTimeout(checkChartAxis, 0);
+      return () => clearTimeout(timeout);
+    }
+  }, [chart, setPriceAxis]);
 
   return <div className="trading-view-chart flex" ref={chartRef}></div>;
 }

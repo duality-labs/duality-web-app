@@ -16,7 +16,7 @@ import { TickInfo, priceToTickIndex } from '../../lib/web3/utils/ticks';
 import './OrderbookList.scss';
 
 // ensure that a certain amount of liquidity rows are shown in the card
-const shownTickRows = 10;
+const shownTickRows = 8;
 const spacingTicks = Array.from({ length: shownTickRows }).map(() => undefined);
 
 export default function OrderBookList({
@@ -24,11 +24,13 @@ export default function OrderBookList({
   tokenB,
   priceIndication,
   setPriceIndication,
+  setPriceOffset,
 }: {
   tokenA: Token;
   tokenB: Token;
   priceIndication?: number | undefined;
   setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
+  setPriceOffset?: React.Dispatch<React.SetStateAction<number | undefined>>;
 }) {
   const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
   const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
@@ -42,10 +44,34 @@ export default function OrderBookList({
   ];
 
   const onHighlightPrice = useCallback(
-    (tick: TickInfo | undefined) => {
-      setPriceIndication?.(tick && tick?.price1To0.toNumber());
-    },
-    [setPriceIndication]
+    (includeElementHeight: boolean) =>
+      (
+        e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
+        tick: TickInfo | undefined
+      ) => {
+        setPriceIndication?.(tick && tick?.price1To0.toNumber());
+        const row = e.target as HTMLTableRowElement | null;
+        const addOffset = (el: HTMLElement): number => {
+          if (el.tagName === 'TBODY') return 0;
+          return (
+            el.offsetTop +
+            (el.tagName !== 'TABLE' && el.offsetParent
+              ? addOffset(el.offsetParent as HTMLElement)
+              : 0)
+          );
+        };
+        setPriceOffset?.(
+          row && tick
+            ? addOffset(row) + (includeElementHeight ? row.offsetHeight : 1)
+            : undefined
+        );
+      },
+    [setPriceIndication, setPriceOffset]
+  );
+
+  const [onHighlightHighPrice, onHighlightLowPrice] = useMemo(
+    () => [onHighlightPrice(false), onHighlightPrice(true)],
+    [onHighlightPrice]
   );
 
   const [, currentPrice] = useRealtimePrice(tokenA, tokenB);
@@ -246,7 +272,7 @@ export default function OrderBookList({
                 reserveKey="reserve1"
                 priceDecimalPlaces={priceDecimalPlaces}
                 active={price && priceIndication && price <= priceIndication}
-                onHighlight={onHighlightPrice}
+                onHighlight={onHighlightHighPrice}
               />
             );
           })}
@@ -287,7 +313,7 @@ export default function OrderBookList({
                 reserveKey="reserve0"
                 priceDecimalPlaces={priceDecimalPlaces}
                 active={price && priceIndication && price >= priceIndication}
-                onHighlight={onHighlightPrice}
+                onHighlight={onHighlightLowPrice}
               />
             );
           })}
@@ -314,23 +340,35 @@ function OrderbookListRow({
   priceDecimalPlaces?: number;
   amountDecimalPlaces?: number;
   active?: boolean | 0;
-  onHighlight?: (tick: TickInfo | undefined) => void;
+  onHighlight?: (
+    e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
+    tick: TickInfo | undefined
+  ) => void;
 }) {
   const { data: price } = useSimplePrice(token);
 
   // keep track of hover state and use as a price indication in parents
   const [hovered, setHovered] = useState<boolean>(false);
   const onHover = useCallback(
-    (tick: TickInfo | undefined) => {
+    (
+      e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
+      tick: TickInfo | undefined
+    ) => {
       // set hovered state
       setHovered(!!tick);
       // set parent state
-      onHighlight?.(tick);
+      onHighlight?.(e, tick);
     },
     [onHighlight]
   );
-  const onHoverIn = useCallback(() => onHover(tick), [onHover, tick]);
-  const onHoverOut = useCallback(() => onHover(undefined), [onHover]);
+  const onHoverIn = useCallback<React.MouseEventHandler<HTMLTableRowElement>>(
+    (e) => onHover(e, tick),
+    [onHover, tick]
+  );
+  const onHoverOut = useCallback<React.MouseEventHandler<HTMLTableRowElement>>(
+    (e) => onHover(e, undefined),
+    [onHover]
+  );
 
   // add empty row
   if (!tick) {
