@@ -39,8 +39,12 @@ export default function OrderbookChartConnector({
         ctx.beginPath();
         connectionPoints.forEach(([y1, y2]) => {
           ctx.moveTo(sharpPoint(0), sharpPoint(y1));
-          ctx.lineTo(sharpPoint(0.7 * width), sharpPoint(y1));
-          ctx.lineTo(sharpPoint(0.9 * width), sharpPoint(y2));
+          ctx.lineTo(sharpPoint(0.65 * width), sharpPoint(y1));
+          ctx.bezierCurveTo(
+            ...[sharpPoint(0.9 * width), sharpPoint(y1)],
+            ...[sharpPoint(0.8 * width), sharpPoint(y2)],
+            ...[sharpPoint(width - 1), sharpPoint(y2)]
+          );
           ctx.lineTo(sharpPoint(width), sharpPoint(y2));
         });
         ctx.stroke();
