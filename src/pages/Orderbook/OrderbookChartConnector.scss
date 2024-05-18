@@ -4,6 +4,8 @@
 .orderbook-page {
   .chart-depth-connector {
     min-width: paddings.$p-3;
-    max-width: 50px;
+    max-width: 51px;
+    margin-right: -1px;
+    z-index: 2;
   }
 }
