@@ -89,21 +89,23 @@ export default function OrderBookList({
 
       const ticks = forward ? tokenATicks : tokenBTicks;
       const precision = 1 - resolutionOrderOfMagnitude;
-      const tickBucketLimits = Array.from({ length: shownTickRows }).flatMap(
-        (_, index) =>
-          currentPrice && step
-            ? descendingOrder
-              ? Number(
-                  new BigNumber(currentPrice)
-                    .minus(index * step)
-                    .toPrecision(precision, BigNumber.ROUND_FLOOR)
-                )
-              : Number(
-                  new BigNumber(currentPrice)
-                    .plus(index * step)
-                    .toPrecision(precision, BigNumber.ROUND_CEIL)
-                )
-            : []
+      // todo: fix bucket collect to stop when enough buckets are filled
+      const tickBucketLimits = Array.from({
+        length: shownTickRows * 100,
+      }).flatMap((_, index) =>
+        currentPrice && step
+          ? descendingOrder
+            ? Number(
+                new BigNumber(currentPrice)
+                  .minus(index * step)
+                  .toPrecision(precision, BigNumber.ROUND_FLOOR)
+              )
+            : Number(
+                new BigNumber(currentPrice)
+                  .plus(index * step)
+                  .toPrecision(precision, BigNumber.ROUND_CEIL)
+              )
+          : []
       );
       const tickBucketsLimit = descendingOrder
         ? Math.min(...tickBucketLimits)
@@ -144,7 +146,7 @@ export default function OrderBookList({
       const groupedTicks = Object.fromEntries(groupedTickEntries);
 
       // create TickInfo replacements for bucketed data
-      const fakeTicks = tickBucketLimits.map((key): TickInfo => {
+      const syntheticTicks = tickBucketLimits.map((key): TickInfo => {
         return {
           token0: forward ? tokenA : tokenB,
           token1: forward ? tokenB : tokenA,
@@ -156,7 +158,11 @@ export default function OrderBookList({
         };
       });
 
-      return [...fakeTicks, ...spacingTicks].slice(0, shownTickRows);
+      const nonZeroTicks = syntheticTicks.filter(
+        (tick) => !tick.reserve0.isZero() || !tick.reserve1.isZero()
+      );
+
+      return [...nonZeroTicks, ...spacingTicks].slice(0, shownTickRows);
     },
     [currentPrice, tokenATicks, tokenBTicks, tokenA, tokenB]
   );
