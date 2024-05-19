@@ -19,7 +19,10 @@ type ReserveDataSet = Map<ReserveDataRow['0'], ReserveDataRow['1']>;
 export function useTokenPairMapLiquidity([tokenIdA, tokenIdB]: [
   TokenID?,
   TokenID?
-]): StaleWhileRevalidateStreamState<[ReserveDataSet, ReserveDataSet]> {
+]): StaleWhileRevalidateStreamState<
+  [ReserveDataRow, ReserveDataRow],
+  [ReserveDataSet, ReserveDataSet]
+> {
   const encodedA = tokenIdA && encodeURIComponent(tokenIdA);
   const encodedB = tokenIdB && encodeURIComponent(tokenIdB);
   // stream data from indexer
