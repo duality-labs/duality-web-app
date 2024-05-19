@@ -26,6 +26,8 @@ export default function OrderbookPage() {
   );
 }
 
+export type PriceOffset = [price?: number, offset?: number];
+
 function Orderbook() {
   // change tokens to match pathname
   const match = useMatch('/orderbook/:tokenA/:tokenB');
@@ -35,8 +37,8 @@ function Orderbook() {
   const { data: tokenB } = useToken(denomB);
 
   const [chartPriceAxis, setChartPriceAxis] = useState<ChartPriceAxisInfo>();
-  const [depthPriceIndication, setDepthPriceIndication] = useState<number>();
-  const [depthPriceOffset, setDepthPriceOffset] = useState<number>();
+  const [[depthPriceIndication, depthPriceOffset] = [], setDepthPriceOffset] =
+    useState<PriceOffset>();
 
   return (
     <div className="decontainer flex col gap-3">
@@ -52,7 +54,6 @@ function Orderbook() {
                   tokenA={tokenB}
                   tokenB={tokenA}
                   priceIndication={depthPriceIndication}
-                  setPriceIndication={setDepthPriceIndication}
                   setPriceAxis={setChartPriceAxis}
                 />
               )}
@@ -97,7 +98,6 @@ function Orderbook() {
                             tokenA={tokenA}
                             tokenB={tokenB}
                             priceIndication={depthPriceIndication}
-                            setPriceIndication={setDepthPriceIndication}
                             setPriceOffset={setDepthPriceOffset}
                           />
                         ) : null,

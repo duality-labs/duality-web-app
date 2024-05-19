@@ -12,6 +12,7 @@ import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token, getTokenId, getTokenValue } from '../../lib/web3/utils/tokens';
 import { TickInfo, priceToTickIndex } from '../../lib/web3/utils/ticks';
+import type { PriceOffset } from './Orderbook';
 
 import './OrderbookList.scss';
 
@@ -23,14 +24,14 @@ export default function OrderBookList({
   tokenA,
   tokenB,
   priceIndication,
-  setPriceIndication,
   setPriceOffset,
 }: {
   tokenA: Token;
   tokenB: Token;
   priceIndication?: number | undefined;
-  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
-  setPriceOffset?: React.Dispatch<React.SetStateAction<number | undefined>>;
+  setPriceOffset?: React.Dispatch<
+    React.SetStateAction<PriceOffset | undefined>
+  >;
 }) {
   const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
   const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
@@ -49,7 +50,6 @@ export default function OrderBookList({
         e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
         tick: TickInfo | undefined
       ) => {
-        setPriceIndication?.(tick && tick?.price1To0.toNumber());
         const row = e.target as HTMLTableRowElement | null;
         const addOffset = (el: HTMLElement): number => {
           if (el.tagName === 'TBODY') return 0;
@@ -62,11 +62,14 @@ export default function OrderBookList({
         };
         setPriceOffset?.(
           row && tick
-            ? addOffset(row) + (includeElementHeight ? row.offsetHeight : 1)
+            ? [
+                tick.price1To0.toNumber(),
+                addOffset(row) + (includeElementHeight ? row.offsetHeight : 1),
+              ]
             : undefined
         );
       },
-    [setPriceIndication, setPriceOffset]
+    [setPriceOffset]
   );
 
   const [onHighlightHighPrice, onHighlightLowPrice] = useMemo(
@@ -285,8 +288,8 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__tick-center">
           <tr
-            onMouseEnter={() => setPriceIndication?.(currentPrice || undefined)}
-            onMouseLeave={() => setPriceIndication?.(undefined)}
+            onMouseEnter={() => setPriceOffset?.([currentPrice || undefined])}
+            onMouseLeave={() => setPriceOffset?.([])}
           >
             <DiffCell
               colSpan={2}
