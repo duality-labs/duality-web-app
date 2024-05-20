@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import BigNumber from 'bignumber.js';
+import useResizeObserver from '@react-hook/resize-observer';
 
 import { useRealtimePrice } from '../../components/stats/hooks';
 import {
@@ -15,10 +23,6 @@ import { TickInfo, priceToTickIndex } from '../../lib/web3/utils/ticks';
 import type { PriceOffset } from './Orderbook';
 
 import './OrderbookList.scss';
-
-// ensure that a certain amount of liquidity rows are shown in the card
-const shownTickRows = 8;
-const spacingTicks = Array.from({ length: shownTickRows }).map(() => undefined);
 
 export default function OrderBookList({
   tokenA,
@@ -79,6 +83,13 @@ export default function OrderBookList({
 
   const [, currentPrice] = useRealtimePrice(tokenA, tokenB);
   const resolutionPercent = 0.01; // size of price steps
+
+  // ensure that a certain amount of liquidity rows are shown in the card
+  const [shownTickRows, setShownTickRows] = useState<number>(8);
+  const spacingTicks = useMemo(
+    () => Array.from({ length: shownTickRows }).map(() => undefined),
+    [shownTickRows]
+  );
 
   const getTickBuckets = useCallback(
     (forward: boolean, descendingOrder = forward) => {
@@ -167,7 +178,15 @@ export default function OrderBookList({
 
       return [...nonZeroTicks, ...spacingTicks].slice(0, shownTickRows);
     },
-    [currentPrice, tokenATicks, tokenBTicks, tokenA, tokenB]
+    [
+      currentPrice,
+      tokenATicks,
+      tokenBTicks,
+      shownTickRows,
+      spacingTicks,
+      tokenA,
+      tokenB,
+    ]
   );
 
   // get tokenA as the top ascending from current price list
@@ -209,8 +228,45 @@ export default function OrderBookList({
         )
       : undefined;
 
+  // execute on every layout update
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const calculateRows = useCallback(() => {
+    const table = tableContainerRef.current;
+    const sections = table && {
+      header: table.querySelector('thead'),
+      spacer: table.querySelectorAll('tbody').item(0),
+      top: table.querySelectorAll('tbody').item(1),
+      center: table.querySelectorAll('tbody').item(2),
+      bottom: table.querySelectorAll('tbody').item(3),
+    };
+    if (
+      sections &&
+      sections.header &&
+      sections.top &&
+      sections.center &&
+      sections.bottom
+    ) {
+      // measure the table height
+      const tableHeight = table.offsetHeight;
+      // measure the table rows
+      const tableHeightForRows =
+        tableHeight -
+        sections.spacer.offsetHeight -
+        sections.header.offsetHeight -
+        sections.center.offsetHeight;
+      const tableRowHeight =
+        (sections.top.offsetHeight + sections.bottom.offsetHeight) /
+        (2 * shownTickRows);
+      // determine how many rows we could add to the table
+      const maxRowCount = Math.floor(tableHeightForRows / tableRowHeight / 2);
+      setShownTickRows(maxRowCount);
+    }
+  }, [shownTickRows]);
+  useResizeObserver(tableContainerRef, calculateRows);
+  useLayoutEffect(calculateRows);
+
   return (
-    <div className="flex-centered orderbook-list">
+    <div className="flex-centered orderbook-list flex" ref={tableContainerRef}>
       <table className="orderbook-list__table">
         <colgroup>
           {/* minimize the first column width */}
@@ -223,6 +279,11 @@ export default function OrderBookList({
             <th className="text-medium text-muted text-right">Amount</th>
           </tr>
         </thead>
+        <tbody className="orderbook-list__table__gap">
+          <tr>
+            <td className="table-body-spacer"></td>
+          </tr>
+        </tbody>
         <tbody className="orderbook-list__table__ticks-top">
           {topTicks.map((tick, index) => {
             const price = tick && tick?.price1To0.toNumber();

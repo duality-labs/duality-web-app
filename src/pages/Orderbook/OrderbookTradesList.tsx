@@ -86,6 +86,11 @@ export default function OrderBookTradesList({
             <th className="text-medium text-muted text-right">Time</th>
           </tr>
         </thead>
+        <tbody className="orderbook-list__table__gap">
+          <tr>
+            <td className="table-body-spacer"></td>
+          </tr>
+        </tbody>
         <tbody className="orderbook-list__table__txs">
           {tradeList.map((tx, index, txs) => {
             if (index < tradeListSize) {

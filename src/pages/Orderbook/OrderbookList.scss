@@ -1,11 +1,20 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
 
 .orderbook-list {
+  position: relative;
+
   .orderbook-list__table {
     width: 100%;
     font-size: 0.75em;
     color: #f9fafb;
     border-spacing: 0;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
     th {
       border: 1px solid var(--page-card-border);
       border-left: none;
@@ -45,8 +54,9 @@
         padding-left: 0;
       }
       // add more spacing on first row to align the spacing for whole table
-      tbody:first-of-type tr:first-child td {
-        padding-top: paddings.$p-3;
+      .table-body-spacer {
+        padding: 0;
+        padding-top: paddings.$p-2;
       }
     }
   }
