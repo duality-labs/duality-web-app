@@ -8,7 +8,7 @@ import {
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
 
-import { useRealtimePrice } from '../../components/stats/hooks';
+import { useRealtimeDisplayPrice } from '../../components/stats/hooks';
 import { formatAmount } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token } from '../../lib/web3/utils/tokens';
@@ -70,7 +70,7 @@ export default function OrderBookList({
     [onHighlightPrice]
   );
 
-  const [, currentPrice] = useRealtimePrice(tokenA, tokenB);
+  const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
 
   // ensure that a certain amount of liquidity rows are shown in the card
   const [shownTickRows, setShownTickRows] = useState<number>(8);

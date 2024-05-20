@@ -40,7 +40,7 @@ import {
 import { useChainFeeToken } from '../../lib/web3/hooks/useTokens';
 import { useNativeChain } from '../../lib/web3/hooks/useChains';
 import { useTokenPairMapLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
-import { useRealtimePrice } from '../stats/hooks';
+import { useRealtimeDisplayPrice } from '../stats/hooks';
 
 import TokenInputGroup from '../TokenInputGroup';
 import NumberInput from '../inputs/NumberInput';
@@ -292,7 +292,7 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
     return {};
   }, [tokenIn, tokenOut, formState.amountIn, formState.amountOut]);
 
-  const [, currentPriceAtoB] = useRealtimePrice(tokenA, tokenB);
+  const [, currentPriceAtoB] = useRealtimeDisplayPrice(tokenA, tokenB);
   const currentPriceInToOut = currentPriceAtoB
     ? tokenA === tokenIn
       ? currentPriceAtoB

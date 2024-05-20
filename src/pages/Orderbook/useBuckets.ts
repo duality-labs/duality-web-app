@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { useMemo } from 'react';
 
-import { useRealtimePrice } from '../../components/stats/hooks';
+import { useRealtimeDisplayPrice } from '../../components/stats/hooks';
 import {
   ReserveDataRow,
   useTokenPairMapLiquidity,
@@ -28,7 +28,7 @@ export default function useBucketsByPriceResolution(
   bucketResolution: number = 1
 ): Buckets | undefined {
   const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
-  const [, currentPrice] = useRealtimePrice(tokenA, tokenB);
+  const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
   const { data: [tokenAReserves, tokenBReserves] = [] } =
     useTokenPairMapLiquidity([tokenIdA, tokenIdB]);
 
