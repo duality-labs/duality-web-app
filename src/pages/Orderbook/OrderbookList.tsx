@@ -187,8 +187,10 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__tick-center">
           <tr
-            onMouseEnter={() => setPriceOffset?.([currentPrice || undefined])}
-            onMouseLeave={() => setPriceOffset?.([])}
+            onMouseEnter={() =>
+              setPriceOffset?.(currentPrice ? [currentPrice] : undefined)
+            }
+            onMouseLeave={() => setPriceOffset?.(undefined)}
           >
             <DiffCell
               colSpan={2}
