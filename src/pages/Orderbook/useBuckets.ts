@@ -15,20 +15,25 @@ import {
 } from '../../lib/web3/utils/tokens';
 import { getOrderOfMagnitude } from '../../lib/utils/number';
 
-type Bucket = [lowerBound: number, upperBound: number, displayReserves: number];
+export type Bucket = [
+  lowerBound: number,
+  upperBound: number,
+  displayReserves: number
+];
+export type Buckets = [bucketsA: Bucket[], bucketsB: Bucket[]];
 
 export default function useBucketsByPriceResolution(
   tokenA?: Token,
   tokenB?: Token,
   bucketResolution: number = 1
-) {
+): Buckets | undefined {
   const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
   const [, currentPrice] = useRealtimePrice(tokenA, tokenB);
   const { data: [tokenAReserves, tokenBReserves] = [] } =
     useTokenPairMapLiquidity([tokenIdA, tokenIdB]);
 
   // return bucketReserves
-  return useMemo((): [bucketsA: Bucket[], bucketsB: Bucket[]] | undefined => {
+  return useMemo((): Buckets | undefined => {
     const resolutionMagnitude = getOrderOfMagnitude(bucketResolution);
     const zero = new BigNumber(0);
 

@@ -3,6 +3,7 @@ import { useMatch } from 'react-router-dom';
 
 import { useDenomFromPathParam } from '../../lib/web3/hooks/useTokens';
 import { useToken } from '../../lib/web3/hooks/useDenomClients';
+import useBuckets from './useBuckets';
 
 import TabsCard from '../../components/cards/TabsCard';
 import { Tab } from '../../components/Tabs/Tabs';
@@ -27,6 +28,7 @@ export default function OrderbookPage() {
 }
 
 export type PriceOffset = [price?: number, offset?: number];
+const bucketResolution = 0.001; // size of price set for buckets
 
 function Orderbook() {
   // change tokens to match pathname
@@ -39,6 +41,7 @@ function Orderbook() {
   const [chartPriceAxis, setChartPriceAxis] = useState<ChartPriceAxisInfo>();
   const [[depthPriceIndication, depthPriceOffset] = [], setDepthPriceOffset] =
     useState<PriceOffset>();
+  const buckets = useBuckets(tokenA, tokenB, bucketResolution);
 
   return (
     <div className="decontainer flex col gap-3">
@@ -97,6 +100,8 @@ function Orderbook() {
                           <OrderBookList
                             tokenA={tokenA}
                             tokenB={tokenB}
+                            buckets={buckets}
+                            bucketResolution={bucketResolution}
                             priceIndication={depthPriceIndication}
                             setPriceOffset={setDepthPriceOffset}
                           />
@@ -113,7 +118,7 @@ function Orderbook() {
                         ) : null,
                     },
                   ];
-                }, [depthPriceIndication, tokenA, tokenB])}
+                }, [buckets, depthPriceIndication, tokenA, tokenB])}
               />
             </div>
           </div>

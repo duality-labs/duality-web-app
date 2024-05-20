@@ -6,53 +6,40 @@ import {
   useRef,
   useState,
 } from 'react';
-import BigNumber from 'bignumber.js';
 import useResizeObserver from '@react-hook/resize-observer';
 
 import { useRealtimePrice } from '../../components/stats/hooks';
-import {
-  formatAmount,
-  getDecimalPlaces,
-  getOrderOfMagnitude,
-} from '../../lib/utils/number';
-import { useTokenPairTickLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
-import { useOrderedTokenPair } from '../../lib/web3/hooks/useTokenPairs';
+import { formatAmount } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { Token, getTokenId, getTokenValue } from '../../lib/web3/utils/tokens';
-import { TickInfo, priceToTickIndex } from '../../lib/web3/utils/ticks';
+import { Token } from '../../lib/web3/utils/tokens';
+
 import type { PriceOffset } from './Orderbook';
+import type { Bucket, Buckets } from './useBuckets';
 
 import './OrderbookList.scss';
 
 export default function OrderBookList({
   tokenA,
   tokenB,
+  buckets,
+  bucketResolution,
   priceIndication,
   setPriceOffset,
 }: {
   tokenA: Token;
   tokenB: Token;
   priceIndication?: number | undefined;
+  buckets?: Buckets;
+  bucketResolution: number;
   setPriceOffset?: React.Dispatch<
     React.SetStateAction<PriceOffset | undefined>
   >;
 }) {
-  const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
-  const [tokenId0, tokenId1] = useOrderedTokenPair([tokenIdA, tokenIdB]) || [];
-  const {
-    data: [tokenATicks = [], tokenBTicks = []],
-  } = useTokenPairTickLiquidity([tokenIdA, tokenIdB]);
-
-  const [forward, reverse] = [
-    tokenId0 === tokenIdA && tokenId1 === tokenIdB,
-    tokenId1 === tokenIdA && tokenId0 === tokenIdB,
-  ];
-
   const onHighlightPrice = useCallback(
     (includeElementHeight: boolean) =>
       (
         e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
-        tick: TickInfo | undefined
+        bucketPrice: number | undefined
       ) => {
         const row = e.target as HTMLTableRowElement | null;
         const addOffset = (el: HTMLElement): number => {
@@ -65,9 +52,9 @@ export default function OrderBookList({
           );
         };
         setPriceOffset?.(
-          row && tick
+          row && bucketPrice
             ? [
-                tick.price1To0.toNumber(),
+                bucketPrice,
                 addOffset(row) + (includeElementHeight ? row.offsetHeight : 1),
               ]
             : undefined
@@ -82,7 +69,6 @@ export default function OrderBookList({
   );
 
   const [, currentPrice] = useRealtimePrice(tokenA, tokenB);
-  const resolutionPercent = 0.01; // size of price steps
 
   // ensure that a certain amount of liquidity rows are shown in the card
   const [shownTickRows, setShownTickRows] = useState<number>(8);
@@ -90,112 +76,6 @@ export default function OrderBookList({
     () => Array.from({ length: shownTickRows }).map(() => undefined),
     [shownTickRows]
   );
-
-  const getTickBuckets = useCallback(
-    (forward: boolean, descendingOrder = forward) => {
-      const resolutionOrderOfMagnitude = getOrderOfMagnitude(resolutionPercent);
-      const step =
-        currentPrice &&
-        Math.pow(
-          10,
-          getOrderOfMagnitude(currentPrice) + resolutionOrderOfMagnitude
-        );
-
-      const ticks = forward ? tokenATicks : tokenBTicks;
-      const precision = 1 - resolutionOrderOfMagnitude;
-      // todo: fix bucket collect to stop when enough buckets are filled
-      const tickBucketLimits = Array.from({
-        length: shownTickRows * 100,
-      }).flatMap((_, index) =>
-        currentPrice && step
-          ? descendingOrder
-            ? Number(
-                new BigNumber(currentPrice)
-                  .minus(index * step)
-                  .toPrecision(precision, BigNumber.ROUND_FLOOR)
-              )
-            : Number(
-                new BigNumber(currentPrice)
-                  .plus(index * step)
-                  .toPrecision(precision, BigNumber.ROUND_CEIL)
-              )
-          : []
-      );
-      const tickBucketsLimit = descendingOrder
-        ? Math.min(...tickBucketLimits)
-        : Math.max(...tickBucketLimits);
-
-      const groupedTickEntries = ticks.reduce<
-        Array<[roundedPrice: number, reserves: number]>
-      >(
-        (acc, tick) => {
-          // add if price is within bounds
-          if (
-            step &&
-            currentPrice &&
-            // select tick prices within the outer edge of price buckets
-            (descendingOrder
-              ? tick.price1To0.isGreaterThanOrEqualTo(tickBucketsLimit)
-              : tick.price1To0.isLessThanOrEqualTo(tickBucketsLimit)) &&
-            // select tick prices within the inner edge of price buckets
-            (descendingOrder
-              ? tick.price1To0.isLessThanOrEqualTo(currentPrice)
-              : tick.price1To0.isGreaterThanOrEqualTo(currentPrice))
-          ) {
-            const foundEntry = acc.find(([limit]) => {
-              return descendingOrder
-                ? tick.price1To0.isGreaterThanOrEqualTo(limit)
-                : tick.price1To0.isLessThanOrEqualTo(limit);
-            });
-            if (foundEntry !== undefined) {
-              foundEntry[1] += (
-                forward ? tick.reserve0 : tick.reserve1
-              ).toNumber();
-            }
-          }
-          return acc;
-        },
-        tickBucketLimits.map((limit) => [limit, 0])
-      );
-      const groupedTicks = Object.fromEntries(groupedTickEntries);
-
-      // create TickInfo replacements for bucketed data
-      const syntheticTicks = tickBucketLimits.map((key): TickInfo => {
-        return {
-          token0: forward ? tokenA : tokenB,
-          token1: forward ? tokenB : tokenA,
-          fee: new BigNumber(0),
-          price1To0: new BigNumber(key),
-          tickIndex1To0: priceToTickIndex(new BigNumber(key)),
-          reserve0: new BigNumber(forward ? groupedTicks[key] || 0 : 0),
-          reserve1: new BigNumber(forward ? 0 : groupedTicks[key] || 0),
-        };
-      });
-
-      const nonZeroTicks = syntheticTicks.filter(
-        (tick) => !tick.reserve0.isZero() || !tick.reserve1.isZero()
-      );
-
-      return [...nonZeroTicks, ...spacingTicks].slice(0, shownTickRows);
-    },
-    [
-      currentPrice,
-      tokenATicks,
-      tokenBTicks,
-      shownTickRows,
-      spacingTicks,
-      tokenA,
-      tokenB,
-    ]
-  );
-
-  // get tokenA as the top ascending from current price list
-  const filteredTokenATicks = useMemo<Array<TickInfo | undefined>>(() => {
-    return getTickBuckets(forward).reverse();
-  }, [forward, getTickBuckets]);
-  const filteredTokenBTicks = useMemo<Array<TickInfo | undefined>>(() => {
-    return getTickBuckets(!forward);
-  }, [forward, getTickBuckets]);
 
   const [previousPrice, setPreviousPrice] = useState<number | undefined>();
   const lastPrice = useRef<number | undefined>(currentPrice || undefined);
@@ -212,21 +92,21 @@ export default function OrderBookList({
       // set new data
       lastPrice.current = currentPrice;
     }
-  }, [currentPrice, filteredTokenATicks]);
+  }, [currentPrice, buckets]);
 
-  const [topTicks, bottomTicks] = useMemo(() => {
-    return forward
-      ? [filteredTokenBTicks.reverse(), filteredTokenATicks.reverse()]
-      : [filteredTokenATicks, filteredTokenBTicks];
-  }, [filteredTokenATicks, filteredTokenBTicks, forward]);
+  const [bucketsA, bucketsB] = buckets || [];
+  const [topBuckets, bottomBuckets] = useMemo(() => {
+    return [
+      [...(bucketsB ?? []), ...spacingTicks].slice(0, shownTickRows).reverse(),
+      [...(bucketsA ?? []), ...spacingTicks].slice(0, shownTickRows),
+    ];
+  }, [bucketsA, bucketsB, shownTickRows, spacingTicks]);
 
-  const priceDecimalPlaces =
-    currentPrice !== undefined && currentPrice !== null
-      ? getDecimalPlaces(
-          currentPrice,
-          1 - getOrderOfMagnitude(resolutionPercent)
-        )
-      : undefined;
+  // find how numbers should be displayed
+  const priceDecimalPlaces = useMemo(() => {
+    const decimals = bucketResolution.toFixed(18).split('.')[1] || '';
+    return decimals.replace(/0+$/, '').length;
+  }, [bucketResolution]);
 
   // execute on every layout update
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -256,12 +136,14 @@ export default function OrderBookList({
         sections.center.offsetHeight;
       const tableRowHeight =
         (sections.top.offsetHeight + sections.bottom.offsetHeight) /
-        (2 * shownTickRows);
+        (sections.top.childElementCount + sections.bottom.childElementCount);
       // determine how many rows we could add to the table
-      const maxRowCount = Math.floor(tableHeightForRows / tableRowHeight / 2);
+      const maxRowCount = tableRowHeight
+        ? Math.floor(tableHeightForRows / tableRowHeight / 2)
+        : 1;
       setShownTickRows(maxRowCount);
     }
-  }, [shownTickRows]);
+  }, []);
   useResizeObserver(tableContainerRef, calculateRows);
   useLayoutEffect(calculateRows);
 
@@ -286,18 +168,20 @@ export default function OrderBookList({
           </tr>
         </tbody>
         <tbody className="orderbook-list__table__ticks-top">
-          {topTicks.map((tick, index) => {
-            const price = tick && tick?.price1To0.toNumber();
-            return (
+          {topBuckets?.map((bucket, index) => {
+            const price = bucket?.[1];
+            return price && bucket ? (
               <OrderbookListRow
                 key={index}
-                tick={tick}
-                token={!forward ? tokenA : tokenB}
-                reserveKey="reserve1"
+                price={price}
+                bucket={bucket}
+                token={tokenB}
                 priceDecimalPlaces={priceDecimalPlaces}
                 active={price && priceIndication && price <= priceIndication}
                 onHighlight={onHighlightHighPrice}
               />
+            ) : (
+              <EmptyRow />
             );
           })}
         </tbody>
@@ -324,18 +208,20 @@ export default function OrderBookList({
           </tr>
         </tbody>
         <tbody className="orderbook-list__table__ticks-bottom">
-          {bottomTicks.map((tick, index) => {
-            const price = tick && tick?.price1To0.toNumber();
-            return (
+          {bottomBuckets?.map((bucket, index) => {
+            const price = bucket?.[0];
+            return price && bucket ? (
               <OrderbookListRow
                 key={index}
-                tick={tick}
-                token={!reverse ? tokenA : tokenB}
-                reserveKey="reserve0"
+                price={price}
+                bucket={bucket}
+                token={tokenA}
                 priceDecimalPlaces={priceDecimalPlaces}
                 active={price && priceIndication && price >= priceIndication}
                 onHighlight={onHighlightLowPrice}
               />
+            ) : (
+              <EmptyRow />
             );
           })}
         </tbody>
@@ -344,24 +230,32 @@ export default function OrderBookList({
   );
 }
 
+function EmptyRow() {
+  return (
+    <tr>
+      <td colSpan={2}>&nbsp;</td>
+    </tr>
+  );
+}
+
 function OrderbookListRow({
-  tick,
+  price: bucketPrice,
+  bucket: [_lowerBound, _upperBound, reserves],
   token,
-  reserveKey,
   priceDecimalPlaces = 6,
   amountDecimalPlaces = 2,
   active,
   onHighlight,
 }: {
-  tick: TickInfo | undefined;
+  price: number;
+  bucket: Bucket;
   token: Token;
-  reserveKey: 'reserve0' | 'reserve1';
   priceDecimalPlaces?: number;
   amountDecimalPlaces?: number;
   active?: boolean | 0;
   onHighlight?: (
     e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
-    tick: TickInfo | undefined
+    bucketPrice: number | undefined
   ) => void;
 }) {
   const { data: price } = useSimplePrice(token);
@@ -371,37 +265,28 @@ function OrderbookListRow({
   const onHover = useCallback(
     (
       e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
-      tick: TickInfo | undefined
+      bucketPrice: number | undefined
     ) => {
       // set hovered state
-      setHovered(!!tick);
+      setHovered(!!bucketPrice);
       // set parent state
-      onHighlight?.(e, tick);
+      onHighlight?.(e, bucketPrice);
     },
     [onHighlight]
   );
   const onHoverIn = useCallback<React.MouseEventHandler<HTMLTableRowElement>>(
-    (e) => onHover(e, tick),
-    [onHover, tick]
+    (e) => onHover(e, bucketPrice),
+    [onHover, bucketPrice]
   );
   const onHoverOut = useCallback<React.MouseEventHandler<HTMLTableRowElement>>(
     (e) => onHover(e, undefined),
     [onHover]
   );
 
-  // add empty row
-  if (!tick) {
-    return (
-      <tr>
-        <td colSpan={2}>&nbsp;</td>
-      </tr>
-    );
-  }
-  // add tick row
-  const value = getTokenValue(token, tick[reserveKey], price);
+  const value = reserves * (price || 0);
   return (
     <tr
-      key={tick.tickIndex1To0.toNumber()}
+      key={bucketPrice}
       className={[active && 'active', hovered && 'hovered']
         .filter(Boolean)
         .join(' ')}
@@ -409,7 +294,7 @@ function OrderbookListRow({
       onMouseLeave={onHoverOut}
     >
       <DiffCell className="text-right">
-        {formatAmount(tick.price1To0.toNumber(), {
+        {formatAmount(bucketPrice, {
           minimumFractionDigits: priceDecimalPlaces,
           maximumFractionDigits: priceDecimalPlaces,
         })}
