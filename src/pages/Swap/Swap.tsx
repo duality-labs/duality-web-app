@@ -119,9 +119,9 @@ function Swap() {
   const { data: balanceTokenA } = useBankBalanceDisplayAmount(denomA);
 
   // update simulation whenever price changes
-  const [timeUnix, lastPrice] = useRealtimeBasePrice(tokenA, tokenB);
+  const [timeUnix, hasPrice] = useRealtimeBasePrice(tokenA, tokenB);
   // note: it is an assumption that there is liquidity if there is a price
-  const pairHasLiquidity = !!lastPrice;
+  const pairHasLiquidity = !!hasPrice;
 
   // create reusable swap msg
   const swapMsg = useMemo(() => {
