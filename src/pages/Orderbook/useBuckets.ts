@@ -16,8 +16,8 @@ import {
 import { getOrderOfMagnitude } from '../../lib/utils/number';
 
 export type Bucket = [
-  lowerBound: number,
-  upperBound: number,
+  innerBound: number,
+  outerBound: number,
   displayReserves: number
 ];
 export type Buckets = [bucketsA: Bucket[], bucketsB: Bucket[]];
@@ -58,7 +58,7 @@ export default function useBucketsByPriceResolution(
         [tickIndex, reserves]: ReserveDataRow
       ): Bucket[] => {
         const lastValue = acc.at(-1);
-        const outerBound = lastValue?.[inverseDirection ? 1 : 0];
+        const outerBound = lastValue?.[1];
         const displayPrice = getDisplayPrice(tickIndex);
         // does value belong in the last bucket?
         if (
@@ -106,7 +106,7 @@ export default function useBucketsByPriceResolution(
           if (inverseDirection) {
             acc.push([innerBound, outerBound, reserves]);
           } else {
-            acc.push([outerBound, innerBound, reserves]);
+            acc.push([innerBound, outerBound, reserves]);
           }
         }
         return acc;
@@ -121,9 +121,9 @@ export default function useBucketsByPriceResolution(
         // group reserves into buckets
         .reduce<Array<Bucket>>(reduceReservesToBuckets(false), [])
         // translate reserves into displayReserves
-        .map(([lowerBound, upperBound, reserves]) => [
-          lowerBound,
-          upperBound,
+        .map(([innerBound, outerBound, reserves]) => [
+          innerBound,
+          outerBound,
           Number(getDisplayDenomAmount(tokenA, reserves)),
         ]),
       Array.from((tokenBReserves || []).entries())
@@ -132,9 +132,9 @@ export default function useBucketsByPriceResolution(
         // group reserves into buckets
         .reduce<Array<Bucket>>(reduceReservesToBuckets(true), [])
         // translate reserves into displayReserves
-        .map(([lowerBound, upperBound, reserves]) => [
-          lowerBound,
-          upperBound,
+        .map(([innerBound, outerBound, reserves]) => [
+          innerBound,
+          outerBound,
           Number(getDisplayDenomAmount(tokenB, reserves)),
         ]),
     ];

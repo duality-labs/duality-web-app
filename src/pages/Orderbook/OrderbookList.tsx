@@ -186,9 +186,9 @@ export default function OrderBookList({
           ],
           // add token A bucket offsets
           ...bucketsA.map(
-            ([lowerBound, upperBound], index): [PriceOffset, PriceOffset] => [
-              [upperBound, bottomCenterOffset + index * tableRowHeight],
-              [lowerBound, bottomCenterOffset + (index + 1) * tableRowHeight],
+            ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
+              [innerBound, bottomCenterOffset + index * tableRowHeight],
+              [outerBound, bottomCenterOffset + (index + 1) * tableRowHeight],
             ]
           ),
         ],
@@ -200,9 +200,9 @@ export default function OrderBookList({
           ],
           // add token B bucket offsets
           ...bucketsB.map(
-            ([lowerBound, upperBound], index): [PriceOffset, PriceOffset] => [
-              [lowerBound, topCenterOffset - index * tableRowHeight],
-              [upperBound, topCenterOffset - (index + 1) * tableRowHeight],
+            ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
+              [innerBound, topCenterOffset - index * tableRowHeight],
+              [outerBound, topCenterOffset - (index + 1) * tableRowHeight],
             ]
           ),
         ],
@@ -280,7 +280,7 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__ticks-bottom">
           {bottomBuckets?.map((bucket, index) => {
-            const price = bucket?.[0];
+            const price = bucket?.[1];
             return price && bucket ? (
               <OrderbookListRow
                 key={price}
@@ -311,7 +311,7 @@ function EmptyRow() {
 
 function OrderbookListRow({
   price: bucketPrice,
-  bucket: [_lowerBound, _upperBound, reserves],
+  bucket: [_innerBound, _outerBound, reserves],
   token,
   priceDecimalPlaces = 6,
   amountDecimalPlaces = 2,
