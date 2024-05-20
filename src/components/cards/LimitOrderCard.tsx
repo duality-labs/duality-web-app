@@ -43,7 +43,7 @@ import {
 import { useChainFeeToken } from '../../lib/web3/hooks/useTokens';
 import { useNativeChain } from '../../lib/web3/hooks/useChains';
 import { useTokenPairMapLiquidity } from '../../lib/web3/hooks/useTickLiquidity';
-import { useRealtimePrice } from '../stats/hooks';
+import { useRealtimeDisplayPrice } from '../stats/hooks';
 
 import RangeListSliderInput from '../inputs/RangeInput/RangeListSliderInput';
 import {
@@ -303,7 +303,7 @@ function LimitOrder({
     userBalanceTokenIn,
   ]);
 
-  const [, currentPrice] = useRealtimePrice(tokenIn, tokenOut);
+  const [, currentPrice] = useRealtimeDisplayPrice(tokenIn, tokenOut);
 
   const simulatedMsgPlaceLimitOrder: MsgPlaceLimitOrder | undefined =
     useMemo(() => {

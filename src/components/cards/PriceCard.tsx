@@ -6,7 +6,7 @@ import AssetSymbol from '../assets/AssetName';
 import { Token } from '../../lib/web3/utils/tokens';
 import { formatPrice } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
-import { useRealtimePrice } from '../stats/hooks';
+import { useRealtimeDisplayPrice } from '../stats/hooks';
 
 import './PriceCard.scss';
 
@@ -57,7 +57,7 @@ export function PairPriceCard({
   tokenA: Token;
   tokenB: Token;
 }) {
-  const [, currentPriceBtoA] = useRealtimePrice(tokenA, tokenB);
+  const [, currentPriceBtoA] = useRealtimeDisplayPrice(tokenA, tokenB);
   return (
     <PriceCard
       tokenA={tokenA}

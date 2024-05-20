@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BigNumber from 'bignumber.js';
 
-import { useRealtimePrice } from '../../components/stats/hooks';
+import { useRealtimeDisplayPrice } from '../../components/stats/hooks';
 import {
   formatAmount,
   getDecimalPlaces,
@@ -37,7 +37,7 @@ export default function OrderBookList({
     tokenId1 === tokenIdA && tokenId0 === tokenIdB,
   ];
 
-  const [, currentPrice] = useRealtimePrice(tokenA, tokenB);
+  const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
   const resolutionPercent = 0.01; // size of price steps
 
   const getTickBuckets = useCallback(
