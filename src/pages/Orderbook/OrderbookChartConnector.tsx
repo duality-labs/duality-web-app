@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
 
 import './OrderbookChartConnector.scss';
@@ -15,12 +15,12 @@ export default function OrderbookChartConnector({
 }) {
   // define what to draw
   const draw = useCallback(
-    (canvas: HTMLCanvasElement | null) => {
+    (canvas: HTMLCanvasElement | null, container: HTMLDivElement | null) => {
       const ctx = canvas?.getContext('2d');
-      if (canvas && ctx) {
+      if (container && canvas && ctx) {
         // reset canvas
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+        canvas.width = container.offsetWidth;
+        canvas.height = container.offsetHeight;
         const width = canvas.width;
         const height = canvas.height;
         ctx?.clearRect(0, 0, width, height);
@@ -102,13 +102,18 @@ export default function OrderbookChartConnector({
   const getCanvasRef = useCallback(
     (canvas: HTMLCanvasElement | null) => {
       setCanvas(canvas);
-      draw(canvas);
+      draw(canvas, containerRef.current);
     },
     [draw]
   );
 
   // redraw canvas when the screen size changes
-  useResizeObserver(canvas, () => draw(canvas));
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  useResizeObserver(containerRef, () => draw(canvas, containerRef.current));
 
-  return <canvas className="flex" ref={getCanvasRef}></canvas>;
+  return (
+    <div className="connector-container" ref={containerRef}>
+      <canvas className="flex" ref={getCanvasRef}></canvas>
+    </div>
+  );
 }

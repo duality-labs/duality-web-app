@@ -3,9 +3,21 @@
 
 .orderbook-page {
   .chart-depth-connector {
-    min-width: paddings.$p-3;
-    max-width: 61px;
+    width: 61px;
     margin-right: -1px;
     z-index: 2;
+
+    .connector-container {
+      position: relative;
+      overflow: hidden;
+      flex: 1 1 0;
+      canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+    }
   }
 }
