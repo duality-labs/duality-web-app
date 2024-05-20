@@ -172,7 +172,7 @@ export default function OrderBookList({
             const price = bucket?.[1];
             return price && bucket ? (
               <OrderbookListRow
-                key={index}
+                key={price}
                 price={price}
                 bucket={bucket}
                 token={tokenB}
@@ -181,7 +181,7 @@ export default function OrderBookList({
                 onHighlight={onHighlightHighPrice}
               />
             ) : (
-              <EmptyRow />
+              <EmptyRow key={price ?? `index-${index}`} />
             );
           })}
         </tbody>
@@ -214,7 +214,7 @@ export default function OrderBookList({
             const price = bucket?.[0];
             return price && bucket ? (
               <OrderbookListRow
-                key={index}
+                key={price}
                 price={price}
                 bucket={bucket}
                 token={tokenA}
@@ -223,7 +223,7 @@ export default function OrderBookList({
                 onHighlight={onHighlightLowPrice}
               />
             ) : (
-              <EmptyRow />
+              <EmptyRow key={price ?? `index-${index}`} />
             );
           })}
         </tbody>
