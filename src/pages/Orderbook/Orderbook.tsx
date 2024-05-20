@@ -128,6 +128,55 @@ function Orderbook() {
     }
   }, [buckets, chartPriceAxis, currentPrice, depthBucketOffsets]);
 
+  const depthPriceIndicationBucketConnection = useMemo<
+    ConnectionArea | undefined
+  >(() => {
+    const [bucketOffsetsA, bucketOffsetsB] = depthBucketOffsets;
+    if (chartPriceAxis && currentPrice && depthPriceIndication) {
+      const price = depthPriceIndication;
+      const [innerBucket, outerBucket] =
+        price <= currentPrice
+          ? [
+              bucketOffsetsA[1],
+              bucketOffsetsA.find(
+                ([[innerPriceOffset], [outerPriceOffset]]) => {
+                  return price < innerPriceOffset && price >= outerPriceOffset;
+                }
+              ),
+            ]
+          : [
+              bucketOffsetsB[1],
+              bucketOffsetsB.find(
+                ([[innerPriceOffset], [outerPriceOffset]]) => {
+                  return price > innerPriceOffset && price <= outerPriceOffset;
+                }
+              ),
+            ];
+      if (innerBucket && outerBucket) {
+        return [
+          [
+            getChartPricePointOffset(chartPriceAxis, innerBucket[0][0]),
+            innerBucket[0][1] || 0,
+          ],
+          [
+            getChartPricePointOffset(chartPriceAxis, outerBucket[1][0]),
+            outerBucket[1][1] || 0,
+          ],
+          0.15,
+        ];
+      }
+    }
+  }, [chartPriceAxis, currentPrice, depthBucketOffsets, depthPriceIndication]);
+
+  const connectionAreas = useMemo(() => {
+    return depthPriceIndicationBucketConnection
+      ? [
+          ...(depthBucketConnections ?? []),
+          depthPriceIndicationBucketConnection,
+        ]
+      : depthBucketConnections;
+  }, [depthBucketConnections, depthPriceIndicationBucketConnection]);
+
   return (
     <div className="decontainer flex col gap-3">
       <div className="orderbook-header row">
@@ -166,7 +215,7 @@ function Orderbook() {
                   }
                   return [];
                 }, [chartPriceAxis, depthPriceIndication, depthPriceOffset])}
-                connectionAreas={depthBucketConnections}
+                connectionAreas={connectionAreas}
               />
             </div>
             <div className="col">
