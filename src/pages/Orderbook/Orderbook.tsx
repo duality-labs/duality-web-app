@@ -3,6 +3,7 @@ import { useMatch } from 'react-router-dom';
 
 import { useDenomFromPathParam } from '../../lib/web3/hooks/useTokens';
 import { useToken } from '../../lib/web3/hooks/useDenomClients';
+import { useRealtimeDisplayPrice } from '../../components/stats/hooks';
 import useBuckets from './useBuckets';
 
 import TabsCard from '../../components/cards/TabsCard';
@@ -10,7 +11,9 @@ import { Tab } from '../../components/Tabs/Tabs';
 import OrderbookHeader from './OrderbookHeader';
 import OrderbookFooter from './OrderbookFooter';
 import OrderBookChart, { ChartPriceAxisInfo } from './OrderbookChart';
-import OrderbookChartConnector from './OrderbookChartConnector';
+import OrderbookChartConnector, {
+  ConnectionArea,
+} from './OrderbookChartConnector';
 import OrderBookList from './OrderbookList';
 import OrderBookTradesList from './OrderbookTradesList';
 import LimitOrderCard from '../../components/cards/LimitOrderCard';
@@ -30,6 +33,7 @@ export default function OrderbookPage() {
 export type PriceOffset = [price: number, offset?: number];
 export type BucketOffset = [inner: PriceOffset, outer: PriceOffset];
 const bucketResolution = 0.001; // size of price set for buckets
+const connectionMaxOpacity = 0.75;
 
 function Orderbook() {
   // change tokens to match pathname
@@ -43,6 +47,86 @@ function Orderbook() {
   const [[depthPriceIndication, depthPriceOffset] = [], setDepthPriceOffset] =
     useState<PriceOffset>();
   const buckets = useBuckets(tokenA, tokenB, bucketResolution);
+
+  const [depthBucketOffsets, setDepthBucketOffsets] = useState<
+    BucketOffset[][]
+  >([]);
+
+  const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
+
+  const depthBucketConnections = useMemo<ConnectionArea[] | undefined>(() => {
+    if (currentPrice && chartPriceAxis && buckets && depthBucketOffsets) {
+      const [bucketsA = [], bucketsB = []] = buckets;
+      const [bucketOffsetsA, bucketOffsetsB] = depthBucketOffsets;
+      // find the maximum reserve equivalent value for connection opacity
+      const reservesA = bucketsA.map((bucket) => bucket[2]);
+      const reservesB = bucketsB.map((bucket) => bucket[2]);
+      const maxSideReserves =
+        Math.max(
+          Math.max(...reservesA),
+          Math.max(...reservesB) * currentPrice
+        ) / connectionMaxOpacity;
+      // draw connections of chart offsets to depth offsets for each bucket
+      return [
+        ...(bucketOffsetsA
+          ? bucketsA.map<ConnectionArea>(
+              ([innerBound, outerBound, reserves]) => {
+                const bucketOffset = bucketOffsetsA.find(
+                  ([[innerPrice], [outerPrice]]) => {
+                    return (
+                      innerPrice === innerBound && outerPrice === outerBound
+                    );
+                  }
+                );
+                return [
+                  [
+                    // inner chart price offset
+                    getChartPricePointOffset(chartPriceAxis, innerBound),
+                    // inner depth price offset
+                    bucketOffset?.[0][1] || 0,
+                  ],
+                  [
+                    // outer chart price offset
+                    getChartPricePointOffset(chartPriceAxis, outerBound),
+                    // outer depth price offset
+                    bucketOffset?.[1][1] || 0,
+                  ],
+                  reserves / maxSideReserves,
+                ];
+              }
+            )
+          : []),
+        ...(bucketOffsetsB
+          ? bucketsB.map<ConnectionArea>(
+              ([innerBound, outerBound, reserves]) => {
+                const bucketOffset = bucketOffsetsB.find(
+                  ([[innerPrice], [outerPrice]]) => {
+                    return (
+                      innerPrice === innerBound && outerPrice === outerBound
+                    );
+                  }
+                );
+                return [
+                  [
+                    // inner chart price offset
+                    getChartPricePointOffset(chartPriceAxis, innerBound),
+                    // inner depth price offset
+                    bucketOffset?.[0][1] || 0,
+                  ],
+                  [
+                    // outer chart price offset
+                    getChartPricePointOffset(chartPriceAxis, outerBound),
+                    // outer depth price offset
+                    bucketOffset?.[1][1] || 0,
+                  ],
+                  (reserves * currentPrice) / maxSideReserves,
+                ];
+              }
+            )
+          : []),
+      ];
+    }
+  }, [buckets, chartPriceAxis, currentPrice, depthBucketOffsets]);
 
   return (
     <div className="decontainer flex col gap-3">
@@ -82,6 +166,7 @@ function Orderbook() {
                   }
                   return [];
                 }, [chartPriceAxis, depthPriceIndication, depthPriceOffset])}
+                connectionAreas={depthBucketConnections}
               />
             </div>
             <div className="col">
@@ -105,6 +190,7 @@ function Orderbook() {
                             bucketResolution={bucketResolution}
                             priceIndication={depthPriceIndication}
                             setPriceOffset={setDepthPriceOffset}
+                            setBucketOffsets={setDepthBucketOffsets}
                           />
                         ) : null,
                     },
