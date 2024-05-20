@@ -59,7 +59,7 @@ export default function OrderBookList({
           if (el.tagName === 'TBODY') return 0;
           return (
             el.offsetTop +
-            (el.tagName !== 'TABLE' && el.offsetParent
+            (['TABLE', 'TD'].includes(el.tagName) && el.offsetParent
               ? addOffset(el.offsetParent as HTMLElement)
               : 0)
           );
