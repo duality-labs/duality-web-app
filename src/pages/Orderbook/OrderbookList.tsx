@@ -13,7 +13,7 @@ import { formatAmount } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token } from '../../lib/web3/utils/tokens';
 
-import type { PriceOffset } from './Orderbook';
+import type { PriceOffset, BucketOffset } from './Orderbook';
 import type { Bucket, Buckets } from './useBuckets';
 
 import './OrderbookList.scss';
@@ -25,6 +25,7 @@ export default function OrderBookList({
   bucketResolution,
   priceIndication,
   setPriceOffset,
+  setBucketOffsets,
 }: {
   tokenA: Token;
   tokenB: Token;
@@ -34,6 +35,7 @@ export default function OrderBookList({
   setPriceOffset?: React.Dispatch<
     React.SetStateAction<PriceOffset | undefined>
   >;
+  setBucketOffsets?: React.Dispatch<React.SetStateAction<BucketOffset[][]>>;
 }) {
   const onHighlightPrice = useCallback(
     (includeElementHeight: boolean) =>
@@ -108,24 +110,23 @@ export default function OrderBookList({
     return decimals.replace(/0+$/, '').length;
   }, [bucketResolution]);
 
-  // execute on every layout update
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const calculateRows = useCallback(() => {
-    const table = tableContainerRef.current;
-    const sections = table && {
-      header: table.querySelector('thead'),
+  const getTableSections = useCallback((table: HTMLDivElement) => {
+    const sections = {
+      header: table.querySelectorAll('thead').item(0),
       spacer: table.querySelectorAll('tbody').item(0),
       top: table.querySelectorAll('tbody').item(1),
       center: table.querySelectorAll('tbody').item(2),
       bottom: table.querySelectorAll('tbody').item(3),
     };
-    if (
-      sections &&
-      sections.header &&
-      sections.top &&
-      sections.center &&
-      sections.bottom
-    ) {
+    if (sections.header && sections.top && sections.center && sections.bottom) {
+      return sections;
+    }
+  }, []);
+  const calculateRows = useCallback(() => {
+    const table = tableContainerRef.current;
+    const sections = table && getTableSections(table);
+    if (table && sections) {
       // measure the table height
       const tableHeight = table.offsetHeight;
       // measure the table rows
@@ -143,9 +144,77 @@ export default function OrderBookList({
         : 1;
       setShownTickRows(maxRowCount);
     }
-  }, []);
+  }, [getTableSections]);
+
+  // execute on every layout update
   useResizeObserver(tableContainerRef, calculateRows);
   useLayoutEffect(calculateRows);
+
+  // calculate measurements to send back to parent
+  const updateBucketOffsets = useCallback(() => {
+    const table = tableContainerRef.current;
+    const sections = table && getTableSections(table);
+    const tableRowHeight =
+      sections &&
+      (sections.top.offsetHeight + sections.bottom.offsetHeight) /
+        (sections.top.childElementCount + sections.bottom.childElementCount ||
+          1);
+    if (tableRowHeight && tableRowHeight > 0 && currentPrice && buckets) {
+      // set bucket offsets
+      // measure center bucket
+      const addOffset = (el: HTMLElement): number => {
+        // if (el.tagName === 'TBODY') return 0;
+        return (
+          el.offsetTop +
+          (['TABLE', 'TBODY'].includes(el.tagName) && el.offsetParent
+            ? addOffset(el.offsetParent as HTMLElement)
+            : 0)
+        );
+      };
+      const centerOffset = addOffset(sections.center);
+      const topCenterOffset = centerOffset;
+      const bottomCenterOffset = centerOffset + sections.center.offsetHeight;
+
+      // calculate offsets for all buckets
+      const [bucketsA = [], bucketsB = []] = buckets || [];
+      setBucketOffsets?.([
+        [
+          // add current price bucket
+          [
+            [currentPrice, topCenterOffset],
+            [currentPrice, bottomCenterOffset],
+          ],
+          // add token A bucket offsets
+          ...bucketsA.map(
+            ([lowerBound, upperBound], index): [PriceOffset, PriceOffset] => [
+              [upperBound, bottomCenterOffset + index * tableRowHeight],
+              [lowerBound, bottomCenterOffset + (index + 1) * tableRowHeight],
+            ]
+          ),
+        ],
+        [
+          // add current price bucket
+          [
+            [currentPrice, bottomCenterOffset],
+            [currentPrice, topCenterOffset],
+          ],
+          // add token B bucket offsets
+          ...bucketsB.map(
+            ([lowerBound, upperBound], index): [PriceOffset, PriceOffset] => [
+              [lowerBound, topCenterOffset - index * tableRowHeight],
+              [upperBound, topCenterOffset - (index + 1) * tableRowHeight],
+            ]
+          ),
+        ],
+      ]);
+    } else {
+      // unset bucket offsets
+      setBucketOffsets?.((offsets) => (offsets.length ? [] : offsets));
+    }
+  }, [buckets, currentPrice, getTableSections, setBucketOffsets]);
+  // execute on every relevent update
+  useResizeObserver(tableContainerRef, updateBucketOffsets);
+  useEffect(updateBucketOffsets, [updateBucketOffsets]);
 
   return (
     <div className="flex-centered orderbook-list flex" ref={tableContainerRef}>

@@ -28,6 +28,7 @@ export default function OrderbookPage() {
 }
 
 export type PriceOffset = [price: number, offset?: number];
+export type BucketOffset = [inner: PriceOffset, outer: PriceOffset];
 const bucketResolution = 0.001; // size of price set for buckets
 
 function Orderbook() {
