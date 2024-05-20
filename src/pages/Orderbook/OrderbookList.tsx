@@ -270,8 +270,9 @@ export default function OrderBookList({
       <table className="orderbook-list__table">
         <colgroup>
           {/* minimize the first column width */}
-          <col width="0" />
-          <col />
+          <col width="1" />
+          <col width="*" />
+          <col width="*" />
         </colgroup>
         <thead>
           <tr>
