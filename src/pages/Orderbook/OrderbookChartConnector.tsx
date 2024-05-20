@@ -4,7 +4,12 @@ import useResizeObserver from '@react-hook/resize-observer';
 import './OrderbookChartConnector.scss';
 
 type ConnectionPoint = [number, number];
-type ConnectionArea = [ConnectionPoint, ConnectionPoint, weight: number];
+type ConnectionArea = [
+  ConnectionPoint,
+  ConnectionPoint,
+  weight: number,
+  fillColor?: string | CanvasGradient | CanvasPattern
+];
 
 export default function OrderbookChartConnector({
   connectionPoints,
@@ -62,9 +67,9 @@ export default function OrderbookChartConnector({
         connectionArea: ConnectionArea,
         width: number = ctx.canvas.width
       ) {
-        const [[y1, y2], [y3, y4], weight] = connectionArea;
+        const [[y1, y2], [y3, y4], weight, fill = 'white'] = connectionArea;
         ctx.lineJoin = 'round';
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = fill;
         ctx.filter = `opacity(${weight})`;
         ctx.beginPath();
         // draw top line
