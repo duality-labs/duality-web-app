@@ -178,50 +178,6 @@ export default function OrderBookList({
     return getTickBuckets(!forward);
   }, [forward, getTickBuckets]);
 
-  const [previousTokenATicks, setPrevTokenATicks] = useState<Array<TickInfo>>(
-    []
-  );
-  const lastTokenATicks = useRef<Array<TickInfo | undefined>>();
-  useEffect(() => {
-    if (
-      !lastTokenATicks.current ||
-      JSON.stringify(filteredTokenATicks) !==
-        JSON.stringify(lastTokenATicks.current)
-    ) {
-      // set old data
-      if (lastTokenATicks.current) {
-        // and remove undefined ticks from list
-        setPrevTokenATicks(
-          lastTokenATicks.current.filter((tick): tick is TickInfo => !!tick)
-        );
-      }
-      // set new data
-      lastTokenATicks.current = filteredTokenATicks;
-    }
-  }, [filteredTokenATicks]);
-
-  const [previousTokenBTicks, setPrevTokenBTicks] = useState<Array<TickInfo>>(
-    []
-  );
-  const lastTokenBTicks = useRef<Array<TickInfo | undefined>>();
-  useEffect(() => {
-    if (
-      !lastTokenBTicks.current ||
-      JSON.stringify(filteredTokenBTicks) !==
-        JSON.stringify(lastTokenBTicks.current)
-    ) {
-      // set old data
-      if (lastTokenBTicks.current) {
-        // and remove undefined ticks from list
-        setPrevTokenBTicks(
-          lastTokenBTicks.current.filter((tick): tick is TickInfo => !!tick)
-        );
-      }
-      // set new data
-      lastTokenBTicks.current = filteredTokenBTicks;
-    }
-  }, [filteredTokenBTicks]);
-
   const [previousPrice, setPreviousPrice] = useState<number | undefined>();
   const lastPrice = useRef<number | undefined>(currentPrice || undefined);
   useEffect(() => {
@@ -274,9 +230,6 @@ export default function OrderBookList({
               <OrderbookListRow
                 key={index}
                 tick={tick}
-                previousTicks={
-                  !forward ? previousTokenATicks : previousTokenBTicks
-                }
                 token={!forward ? tokenA : tokenB}
                 reserveKey="reserve1"
                 priceDecimalPlaces={priceDecimalPlaces}
@@ -315,9 +268,6 @@ export default function OrderBookList({
               <OrderbookListRow
                 key={index}
                 tick={tick}
-                previousTicks={
-                  !reverse ? previousTokenATicks : previousTokenBTicks
-                }
                 token={!reverse ? tokenA : tokenB}
                 reserveKey="reserve0"
                 priceDecimalPlaces={priceDecimalPlaces}
@@ -334,7 +284,6 @@ export default function OrderBookList({
 
 function OrderbookListRow({
   tick,
-  previousTicks,
   token,
   reserveKey,
   priceDecimalPlaces = 6,
@@ -343,7 +292,6 @@ function OrderbookListRow({
   onHighlight,
 }: {
   tick: TickInfo | undefined;
-  previousTicks: TickInfo[];
   token: Token;
   reserveKey: 'reserve0' | 'reserve1';
   priceDecimalPlaces?: number;
@@ -388,13 +336,6 @@ function OrderbookListRow({
     );
   }
   // add tick row
-  const previousTokenATick = previousTicks.find((prev) => {
-    return prev.tickIndex1To0 === tick.tickIndex1To0;
-  });
-  const diff = previousTokenATick
-    ? tick[reserveKey].minus(previousTokenATick[reserveKey])
-    : new BigNumber(0);
-
   const value = getTokenValue(token, tick[reserveKey], price);
   return (
     <tr
@@ -405,7 +346,7 @@ function OrderbookListRow({
       onMouseEnter={onHoverIn}
       onMouseLeave={onHoverOut}
     >
-      <DiffCell className="text-right" diff={diff.toNumber()}>
+      <DiffCell className="text-right">
         {formatAmount(tick.price1To0.toNumber(), {
           minimumFractionDigits: priceDecimalPlaces,
           maximumFractionDigits: priceDecimalPlaces,
