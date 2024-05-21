@@ -128,11 +128,11 @@ export default function SelectInput<T>({
         .join(' ')}
     >
       <button
-        className="select-input-selection row flex flex-centered"
+        className="select-input-selection row flex gap-3 flex-centered"
         type="button"
         onClick={toggleExpand}
       >
-        <div className="col mr-auto">
+        <div className="col flex">
           <SelectedComponent
             value={selectedItem}
             getSelectedText={getSelectedText}

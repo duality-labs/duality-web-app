@@ -1,5 +1,14 @@
 @use '../../styles/mixins-vars/paddings.scss' as paddings;
 
+.orderbook-list__toolbar {
+  .select-input-selection {
+    padding: paddings.$p-2 paddings.$p-3;
+    background-color: var(--page-card);
+    text-align: right;
+    align-self: stretch;
+  }
+}
+
 .orderbook-list {
   position: relative;
 

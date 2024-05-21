@@ -8,6 +8,7 @@ import {
 } from 'react';
 import useResizeObserver from '@react-hook/resize-observer';
 
+import SelectInput from '../../components/inputs/SelectInput';
 import { useRealtimeDisplayPrice } from '../../components/stats/hooks';
 import { formatAmount, getOrderOfMagnitude } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
@@ -23,6 +24,7 @@ export default function OrderBookList({
   tokenB,
   buckets,
   bucketResolution,
+  setBucketResolution,
   priceIndication,
   setPriceOffset,
   setBucketOffsets,
@@ -32,6 +34,7 @@ export default function OrderBookList({
   priceIndication?: number | undefined;
   buckets?: Buckets;
   bucketResolution: number;
+  setBucketResolution: React.Dispatch<React.SetStateAction<number>>;
   setPriceOffset?: React.Dispatch<
     React.SetStateAction<PriceOffset | undefined>
   >;
@@ -257,7 +260,7 @@ export default function OrderBookList({
     }
   }, [buckets, currentPrice, shownTickRows]);
 
-  return (
+  const orderbookDepth = (
     <div className="flex-centered orderbook-list flex" ref={tableContainerRef}>
       <table className="orderbook-list__table">
         <colgroup>
@@ -346,6 +349,46 @@ export default function OrderBookList({
         </tbody>
       </table>
     </div>
+  );
+
+  const bucketResolutions = useMemo(() => {
+    const startingOrderOfMagnitude = currentPrice
+      ? getOrderOfMagnitude(currentPrice)
+      : 0;
+    return Array.from({ length: 4 }).map((_, index) => {
+      return Math.pow(10, startingOrderOfMagnitude) / Math.pow(10, index);
+    });
+  }, [currentPrice]);
+
+  return (
+    <>
+      <div className="orderbook-list__toolbar row">
+        <div
+          className="col ml-auto mt-1 gutter-b-sm"
+          style={{
+            minWidth: `${
+              Math.max(
+                ...bucketResolutions.map((resolution) =>
+                  Math.abs(getOrderOfMagnitude(resolution))
+                )
+              ) + 2
+            }em`,
+          }}
+        >
+          <div className="row flex">
+            <SelectInput<number>
+              className="focusable col flex my-0 p-0"
+              list={bucketResolutions}
+              value={bucketResolution}
+              getLabel={(value) => value || 0}
+              onChange={setBucketResolution}
+              floating
+            />
+          </div>
+        </div>
+      </div>
+      {orderbookDepth}
+    </>
   );
 }
 
