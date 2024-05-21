@@ -13,6 +13,7 @@ import { useRealtimeDisplayPrice } from '../../components/stats/hooks';
 import { formatAmount, getOrderOfMagnitude } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token } from '../../lib/web3/utils/tokens';
+import { matchTokens } from '../../lib/web3/hooks/useTokens';
 
 import type { PriceOffset, BucketOffset } from './Orderbook';
 import type { Bucket, Buckets } from './useBuckets';
@@ -351,13 +352,33 @@ export default function OrderBookList({
     </div>
   );
 
+  const [firstResolvedPrice, setFirstResolvedPrice] =
+    useState<[price: number, tokenA: Token, tokenB: Token]>();
+  useEffect(() => {
+    if (currentPrice) {
+      const [savedPrice, savedTokenA, savedTokenB] = firstResolvedPrice || [];
+      // if price is not set or the tokens changed then set new price
+      if (
+        !savedPrice ||
+        !matchTokens(savedTokenA, tokenA) ||
+        !matchTokens(savedTokenB, tokenB)
+      ) {
+        // save this price context for next comparison
+        setFirstResolvedPrice([currentPrice ?? undefined, tokenA, tokenB]);
+        // set new bucket resolution
+        if (currentPrice) {
+          // start at ~1% increments
+          const bucketResolution = getBucketResolutions(currentPrice)[2];
+          setBucketResolution(bucketResolution);
+        }
+      }
+    } else {
+      setFirstResolvedPrice(undefined);
+    }
+  }, [currentPrice, firstResolvedPrice, setBucketResolution, tokenA, tokenB]);
+
   const bucketResolutions = useMemo(() => {
-    const startingOrderOfMagnitude = currentPrice
-      ? getOrderOfMagnitude(currentPrice)
-      : 0;
-    return Array.from({ length: 4 }).map((_, index) => {
-      return Math.pow(10, startingOrderOfMagnitude) / Math.pow(10, index);
-    });
+    return getBucketResolutions(currentPrice);
   }, [currentPrice]);
 
   return (
@@ -390,6 +411,15 @@ export default function OrderBookList({
       {orderbookDepth}
     </>
   );
+}
+
+function getBucketResolutions(currentPrice?: number | null): number[] {
+  const startingOrderOfMagnitude = currentPrice
+    ? getOrderOfMagnitude(currentPrice)
+    : 0;
+  return Array.from({ length: 4 }).map((_, index) => {
+    return Math.pow(10, startingOrderOfMagnitude) / Math.pow(10, index);
+  });
 }
 
 function EmptyRow() {
