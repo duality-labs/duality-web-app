@@ -33,8 +33,8 @@ export default function OrderbookPage() {
 
 export type PriceOffset = [price: number, offset?: number];
 export type BucketOffset = [inner: PriceOffset, outer: PriceOffset];
-const bucketResolution = 0.001; // size of price set for buckets
-const connectionMaxOpacity = 0.5;
+const connectionMinOpacity = 0.1;
+const connectionMaxOpacity = 0.3;
 
 function Orderbook() {
   // change tokens to match pathname
@@ -62,11 +62,10 @@ function Orderbook() {
       // find the maximum reserve equivalent value for connection opacity
       const reservesA = bucketsA.map((bucket) => bucket[2]);
       const reservesB = bucketsB.map((bucket) => bucket[2]);
-      const maxSideReserves =
-        Math.max(
-          Math.max(...reservesA),
-          Math.max(...reservesB) * currentPrice
-        ) / connectionMaxOpacity;
+      const maxSideReserves = Math.max(
+        Math.max(...reservesA),
+        Math.max(...reservesB) * currentPrice
+      );
       // draw connections of chart offsets to depth offsets for each bucket
       return [
         bucketOffsetsA
@@ -92,7 +91,9 @@ function Orderbook() {
                     // outer depth price offset
                     bucketOffset?.[1][1] || 0,
                   ],
-                  reserves / maxSideReserves,
+                  (reserves / maxSideReserves) *
+                    (connectionMaxOpacity - connectionMinOpacity) +
+                    connectionMinOpacity,
                 ];
               }
             )
@@ -120,7 +121,9 @@ function Orderbook() {
                     // outer depth price offset
                     bucketOffset?.[1][1] || 0,
                   ],
-                  (reserves * currentPrice) / maxSideReserves,
+                  ((reserves * currentPrice) / maxSideReserves) *
+                    (connectionMaxOpacity - connectionMinOpacity) +
+                    connectionMinOpacity,
                 ];
               }
             )
