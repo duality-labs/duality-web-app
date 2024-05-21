@@ -9,7 +9,7 @@ import {
 import useResizeObserver from '@react-hook/resize-observer';
 
 import { useRealtimeDisplayPrice } from '../../components/stats/hooks';
-import { formatAmount } from '../../lib/utils/number';
+import { formatAmount, getOrderOfMagnitude } from '../../lib/utils/number';
 import { useSimplePrice } from '../../lib/tokenPrices';
 import { Token } from '../../lib/web3/utils/tokens';
 
@@ -109,6 +109,17 @@ export default function OrderBookList({
     const decimals = bucketResolution.toFixed(18).split('.')[1] || '';
     return decimals.replace(/0+$/, '').length;
   }, [bucketResolution]);
+  const [amountDecimalPlacesA, amountDecimalPlacesB] = useMemo(() => {
+    // ensure minimum displayed amount has at least 2 significant digits
+    return [
+      Math.max(0, 1 - getOrderOfMagnitude(getMinimumReserves(bucketsA))),
+      Math.max(0, 1 - getOrderOfMagnitude(getMinimumReserves(bucketsB))),
+    ];
+    function getMinimumReserves(buckets: Bucket[] | undefined) {
+      const bucketReserves = buckets?.slice(0, shownTickRows).map((b) => b[2]);
+      return bucketReserves ? Math.min(...bucketReserves) : 1;
+    }
+  }, [bucketsA, bucketsB, shownTickRows]);
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const getTableSections = useCallback((table: HTMLDivElement) => {
@@ -229,6 +240,7 @@ export default function OrderBookList({
           <tr>
             <th className="text-medium text-muted text-left">Price</th>
             <th className="text-medium text-muted text-right">Amount</th>
+            <th className="text-medium text-muted text-right">Value (USD)</th>
           </tr>
         </thead>
         <tbody className="orderbook-list__table__gap">
@@ -246,6 +258,7 @@ export default function OrderBookList({
                 bucket={bucket}
                 token={tokenB}
                 priceDecimalPlaces={priceDecimalPlaces}
+                amountDecimalPlaces={amountDecimalPlacesB}
                 active={price && priceIndication && price <= priceIndication}
                 onHighlight={onHighlightHighPrice}
               />
@@ -262,7 +275,7 @@ export default function OrderBookList({
             onMouseLeave={() => setPriceOffset?.(undefined)}
           >
             <DiffCell
-              colSpan={2}
+              colSpan={3}
               className="text-center py-3 px-1 nowrap"
               diff={
                 previousPrice && currentPrice
@@ -288,6 +301,7 @@ export default function OrderBookList({
                 bucket={bucket}
                 token={tokenA}
                 priceDecimalPlaces={priceDecimalPlaces}
+                amountDecimalPlaces={amountDecimalPlacesA}
                 active={price && priceIndication && price >= priceIndication}
                 onHighlight={onHighlightLowPrice}
               />
@@ -304,7 +318,7 @@ export default function OrderBookList({
 function EmptyRow() {
   return (
     <tr>
-      <td colSpan={2}>&nbsp;</td>
+      <td colSpan={3}>&nbsp;</td>
     </tr>
   );
 }
@@ -371,9 +385,15 @@ function OrderbookListRow({
         })}
       </DiffCell>
       <td className="text-right text-muted">
-        {formatAmount(value ?? '...', {
+        {formatAmount(reserves ?? '...', {
           minimumFractionDigits: amountDecimalPlaces,
           maximumFractionDigits: amountDecimalPlaces,
+        })}
+      </td>
+      <td className="text-right text-muted">
+        {formatAmount(value ?? '...', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
         })}
       </td>
     </tr>
