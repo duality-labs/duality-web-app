@@ -263,7 +263,7 @@ export default function OrderBookList({
           >
             <DiffCell
               colSpan={2}
-              className="text-center py-3"
+              className="text-center py-3 px-1 nowrap"
               diff={
                 previousPrice && currentPrice
                   ? currentPrice - previousPrice
