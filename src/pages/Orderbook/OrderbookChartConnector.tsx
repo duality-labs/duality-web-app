@@ -116,9 +116,9 @@ export default function OrderbookChartConnector({
         ctx.beginPath();
         // draw top line
         ctx.moveTo(sharpPoint(0), sharpPoint(y1));
-        ctx.lineTo(sharpPoint(weight * 0.4 * width), sharpPoint(y1));
+        ctx.lineTo(sharpPoint(weight * 0.4 * width + 0.5), sharpPoint(y1));
         // draw bottom line
-        ctx.lineTo(sharpPoint(weight * 0.4 * width), sharpPoint(y2));
+        ctx.lineTo(sharpPoint(weight * 0.4 * width + 0.5), sharpPoint(y2));
         ctx.lineTo(sharpPoint(0), sharpPoint(y2));
         // fill
         ctx.fill();
