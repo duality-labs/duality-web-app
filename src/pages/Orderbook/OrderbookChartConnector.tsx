@@ -57,7 +57,15 @@ export default function OrderbookChartConnector({
           drawConnectionArea(ctx, connectionArea);
         });
         chartAreas?.forEach((chartArea) => {
-          drawChartArea(ctx, chartArea);
+          // draw chart areas within the container
+          const [y1, y2] = chartArea;
+          if (
+            // if price is in container area
+            (y1 >= 0 || y2 >= 0) &&
+            (y1 <= height || y2 <= height)
+          ) {
+            drawChartArea(ctx, chartArea);
+          }
         });
       }
 
