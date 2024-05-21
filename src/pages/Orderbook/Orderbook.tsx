@@ -242,6 +242,8 @@ function Orderbook() {
     ];
   }, [depthBucketConnections, depthPriceIndicationBucketConnection]);
 
+  const [tabIndex, setTabIndex] = useState<number>(0);
+
   return (
     <div className="decontainer flex col gap-3">
       <div className="orderbook-header row">
@@ -280,7 +282,7 @@ function Orderbook() {
                   }
                   return [];
                 }, [chartPriceAxis, depthPriceIndication, depthPriceOffset])}
-                connectionAreas={connectionAreas}
+                connectionAreas={tabIndex === 0 ? connectionAreas : undefined}
                 chartAreas={chartReserveBuckets}
               />
             </div>
@@ -292,6 +294,8 @@ function Orderbook() {
                   // sized to the word "Orderbook" with padding
                   minWidth: '15em',
                 }}
+                tabIndex={tabIndex}
+                setTabIndex={setTabIndex}
                 tabs={useMemo<Tab[]>(() => {
                   return [
                     {

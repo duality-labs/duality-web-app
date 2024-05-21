@@ -6,13 +6,17 @@ import './TabsCard.scss';
 
 export default function TabsCard({
   tabs,
+  tabIndex: givenTabIndex,
+  setTabIndex: givenSetTabIndex,
   className,
   ...props
 }: JSX.IntrinsicElements['div'] & {
   tabs: Array<Tab>;
+  tabIndex?: number;
+  setTabIndex?: React.Dispatch<React.SetStateAction<number>>;
 }) {
   const [tabIndex, setTabIndex] = useState<number>(0);
-  const { tab } = tabs[tabIndex];
+  const { tab } = tabs[givenTabIndex ?? tabIndex];
 
   return (
     <div
@@ -29,11 +33,11 @@ export default function TabsCard({
               className={[
                 'tabs-card__nav-button',
                 'py-md px-4',
-                index === tabIndex && 'active',
+                index === (givenTabIndex ?? tabIndex) && 'active',
               ]
                 .filter(Boolean)
                 .join(' ')}
-              onClick={() => setTabIndex(index)}
+              onClick={() => (givenSetTabIndex ?? setTabIndex)(index)}
             >
               {tab.nav}
             </button>
