@@ -231,6 +231,21 @@ export default function OrderBookList({
   const {
     data: [priceTokenA, priceTokenB],
   } = useSimplePrice([tokenA, tokenB]);
+  const maxReservesWeight = useMemo<number>(() => {
+    const [bucketsA = [], bucketsB = []] = buckets || [];
+    // find the maximum reserve equivalent value for displaying "USD" value
+    // note: but we use current Dex price so we don't need to wait for price API
+    return currentPrice && (bucketsA.length || bucketsB.length) > 0
+      ? Math.max(
+          getMaximumDisplayedReserves(bucketsA),
+          getMaximumDisplayedReserves(bucketsB) * currentPrice
+        )
+      : Number.POSITIVE_INFINITY;
+    function getMaximumDisplayedReserves(buckets: Bucket[] | undefined) {
+      const bucketReserves = buckets?.slice(0, shownTickRows).map((b) => b[2]);
+      return bucketReserves ? Math.max(...bucketReserves) : 0;
+    }
+  }, [buckets, currentPrice, shownTickRows]);
 
   return (
     <div className="flex-centered orderbook-list flex" ref={tableContainerRef}>
@@ -262,6 +277,7 @@ export default function OrderBookList({
                 price={price}
                 reserves={reserves}
                 reserveValueUSD={priceTokenB && reserves * priceTokenB}
+                weight={(reserves * (currentPrice ?? 0)) / maxReservesWeight}
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesB}
                 variant="success"
@@ -306,6 +322,7 @@ export default function OrderBookList({
                 price={price}
                 reserves={reserves}
                 reserveValueUSD={priceTokenA && reserves * priceTokenA}
+                weight={reserves / maxReservesWeight}
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesA}
                 variant="error"
@@ -334,6 +351,7 @@ function OrderbookListRow({
   price: bucketPrice,
   reserves,
   reserveValueUSD,
+  weight,
   priceDecimalPlaces = 6,
   amountDecimalPlaces = 2,
   variant,
@@ -343,6 +361,7 @@ function OrderbookListRow({
   price: number;
   reserves: number;
   reserveValueUSD?: number;
+  weight?: number;
   priceDecimalPlaces?: number;
   amountDecimalPlaces?: number;
   variant?: 'success' | 'error';
@@ -400,7 +419,11 @@ function OrderbookListRow({
           maximumFractionDigits: amountDecimalPlaces,
         })}
       </td>
-      <td className="text-right text-muted">
+      <td className="text-right text-muted relative">
+        <div
+          className="cell-background-gradient absolute filled"
+          style={{ width: weight && `${Math.round(weight * 100)}%` }}
+        ></div>
         {formatAmount(reserveValueUSD ?? '...', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
