@@ -227,6 +227,11 @@ export default function OrderBookList({
   useResizeObserver(tableContainerRef, updateBucketOffsets);
   useEffect(updateBucketOffsets, [updateBucketOffsets]);
 
+  // get price information
+  const {
+    data: [priceTokenA, priceTokenB],
+  } = useSimplePrice([tokenA, tokenB]);
+
   return (
     <div className="flex-centered orderbook-list flex" ref={tableContainerRef}>
       <table className="orderbook-list__table">
@@ -250,13 +255,13 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__ticks-top">
           {topBuckets?.map((bucket, index) => {
-            const price = bucket?.[1];
-            return price && bucket ? (
+            const [, price, reserves] = bucket || [];
+            return price && reserves ? (
               <OrderbookListRow
                 key={price}
                 price={price}
-                bucket={bucket}
-                token={tokenB}
+                reserves={reserves}
+                reserveValueUSD={priceTokenB && reserves * priceTokenB}
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesB}
                 variant="success"
@@ -294,13 +299,13 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__ticks-bottom">
           {bottomBuckets?.map((bucket, index) => {
-            const price = bucket?.[1];
-            return price && bucket ? (
+            const [, price, reserves] = bucket || [];
+            return price && reserves ? (
               <OrderbookListRow
                 key={price}
                 price={price}
-                bucket={bucket}
-                token={tokenA}
+                reserves={reserves}
+                reserveValueUSD={priceTokenA && reserves * priceTokenA}
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesA}
                 variant="error"
@@ -327,8 +332,8 @@ function EmptyRow() {
 
 function OrderbookListRow({
   price: bucketPrice,
-  bucket: [_innerBound, _outerBound, reserves],
-  token,
+  reserves,
+  reserveValueUSD,
   priceDecimalPlaces = 6,
   amountDecimalPlaces = 2,
   variant,
@@ -336,8 +341,8 @@ function OrderbookListRow({
   onHighlight,
 }: {
   price: number;
-  bucket: Bucket;
-  token: Token;
+  reserves: number;
+  reserveValueUSD?: number;
   priceDecimalPlaces?: number;
   amountDecimalPlaces?: number;
   variant?: 'success' | 'error';
@@ -347,8 +352,6 @@ function OrderbookListRow({
     bucketPrice: number | undefined
   ) => void;
 }) {
-  const { data: price } = useSimplePrice(token);
-
   // keep track of hover state and use as a price indication in parents
   const [hovered, setHovered] = useState<boolean>(false);
   const onHover = useCallback(
@@ -372,7 +375,6 @@ function OrderbookListRow({
     [onHover]
   );
 
-  const value = reserves * (price || 0);
   return (
     <tr
       key={bucketPrice}
@@ -399,7 +401,7 @@ function OrderbookListRow({
         })}
       </td>
       <td className="text-right text-muted">
-        {formatAmount(value ?? '...', {
+        {formatAmount(reserveValueUSD ?? '...', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}
