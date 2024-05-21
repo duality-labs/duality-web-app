@@ -34,8 +34,8 @@ export default function OrderBookList({
   tokenB: Token;
   priceIndication?: number | undefined;
   buckets?: Buckets;
-  bucketResolution: number;
-  setBucketResolution: React.Dispatch<React.SetStateAction<number>>;
+  bucketResolution: number | undefined;
+  setBucketResolution: React.Dispatch<React.SetStateAction<number | undefined>>;
   setPriceOffset?: React.Dispatch<
     React.SetStateAction<PriceOffset | undefined>
   >;
@@ -109,9 +109,12 @@ export default function OrderBookList({
   }, [bucketsA, bucketsB, shownTickRows, spacingTicks]);
 
   // find how numbers should be displayed
-  const priceDecimalPlaces = useMemo(() => {
+  const priceDecimalPlaces = useMemo<number | undefined>(() => {
     // use same decimal places as the bucket resolution
-    return Math.max(0, -Math.round(getOrderOfMagnitude(bucketResolution)));
+    return (
+      bucketResolution &&
+      Math.max(0, -Math.round(getOrderOfMagnitude(bucketResolution)))
+    );
   }, [bucketResolution]);
   const [amountDecimalPlacesA, amountDecimalPlacesB] = useMemo(() => {
     // ensure minimum displayed amount has at least 2 significant digits
@@ -401,7 +404,7 @@ export default function OrderBookList({
               className="focusable col flex my-0 p-0"
               list={bucketResolutions}
               value={bucketResolution}
-              getLabel={(value) => value || 0}
+              getLabel={(value) => value}
               onChange={setBucketResolution}
               floating
             />

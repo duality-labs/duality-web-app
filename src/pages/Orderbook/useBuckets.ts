@@ -25,7 +25,7 @@ export type Buckets = [bucketsA: Bucket[], bucketsB: Bucket[]];
 export default function useBucketsByPriceResolution(
   tokenA?: Token,
   tokenB?: Token,
-  bucketResolution: number = 1
+  bucketResolution?: number
 ): Buckets | undefined {
   const [tokenIdA, tokenIdB] = [getTokenId(tokenA), getTokenId(tokenB)];
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
@@ -34,11 +34,11 @@ export default function useBucketsByPriceResolution(
 
   // return bucketReserves
   return useMemo((): Buckets | undefined => {
+    // return no buckets if the current price is not yet defined
+    if (!tokenA || !tokenB || !currentPrice || !bucketResolution) return;
+    // continue
     const resolutionMagnitude = getOrderOfMagnitude(bucketResolution);
     const zero = new BigNumber(0);
-
-    // return no buckets if the current price is not yet defined
-    if (!tokenA || !tokenB || !currentPrice) return undefined;
     const reduceReservesToBuckets = (inverseDirection: boolean) => {
       const getDisplayPrice = !inverseDirection
         ? // get token A prices

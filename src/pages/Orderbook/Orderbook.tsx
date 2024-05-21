@@ -47,7 +47,7 @@ function Orderbook() {
   const [chartPriceAxis, setChartPriceAxis] = useState<ChartPriceAxisInfo>();
   const [[depthPriceIndication, depthPriceOffset] = [], setDepthPriceOffset] =
     useState<PriceOffset>();
-  const [bucketResolution, setBucketResolution] = useState<number>(1);
+  const [bucketResolution, setBucketResolution] = useState<number>();
   const buckets = useBuckets(tokenA, tokenB, bucketResolution);
 
   const [depthBucketOffsets, setDepthBucketOffsets] = useState<
