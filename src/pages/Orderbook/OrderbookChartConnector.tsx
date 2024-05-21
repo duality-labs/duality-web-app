@@ -30,6 +30,18 @@ export default function OrderbookChartConnector({
   const draw = useCallback(
     (canvas: HTMLCanvasElement | null, container: HTMLDivElement | null) => {
       const ctx = canvas?.getContext('2d');
+
+      const connectionCurve = ctx
+        ? [
+            0,
+            ctx.canvas.width - 30,
+            ctx.canvas.width - 10,
+            ctx.canvas.width - 15,
+            ctx.canvas.width - 1,
+            ctx.canvas.width,
+          ]
+        : [];
+
       if (container && canvas && ctx) {
         // reset canvas
         canvas.width = container.offsetWidth;
@@ -52,22 +64,21 @@ export default function OrderbookChartConnector({
       // define drawing functions
       function drawConnectionPoints(
         ctx: CanvasRenderingContext2D,
-        connectionPoints: ConnectionPoint[],
-        width: number = ctx.canvas.width
+        connectionPoints: ConnectionPoint[]
       ) {
         ctx.lineWidth = 1;
         ctx.lineJoin = 'round';
         ctx.strokeStyle = 'white';
         ctx.beginPath();
         connectionPoints.forEach(([y1, y2]) => {
-          ctx.moveTo(sharpPoint(0), sharpPoint(y1));
-          ctx.lineTo(sharpPoint(0.4 * width), sharpPoint(y1));
+          ctx.moveTo(sharpPoint(connectionCurve[0]), sharpPoint(y1));
+          ctx.lineTo(sharpPoint(connectionCurve[1]), sharpPoint(y1));
           ctx.bezierCurveTo(
-            ...[sharpPoint(0.75 * width), sharpPoint(y1)],
-            ...[sharpPoint(0.65 * width), sharpPoint(y2)],
-            ...[sharpPoint(width - 1), sharpPoint(y2)]
+            ...[sharpPoint(connectionCurve[2]), sharpPoint(y1)],
+            ...[sharpPoint(connectionCurve[3]), sharpPoint(y2)],
+            ...[sharpPoint(connectionCurve[4]), sharpPoint(y2)]
           );
-          ctx.lineTo(sharpPoint(width), sharpPoint(y2));
+          ctx.lineTo(sharpPoint(connectionCurve[5]), sharpPoint(y2));
         });
         ctx.stroke();
       }
@@ -75,8 +86,7 @@ export default function OrderbookChartConnector({
       // define drawing functions
       function drawConnectionArea(
         ctx: CanvasRenderingContext2D,
-        connectionArea: ConnectionArea,
-        width: number = ctx.canvas.width
+        connectionArea: ConnectionArea
       ) {
         const [[y1, y2], [y3, y4], weight, fill = 'white'] = connectionArea;
         ctx.lineJoin = 'round';
@@ -84,23 +94,23 @@ export default function OrderbookChartConnector({
         ctx.filter = `opacity(${weight})`;
         ctx.beginPath();
         // draw top line
-        ctx.moveTo(0, y1);
-        ctx.lineTo(0.4 * width, y1);
+        ctx.moveTo(connectionCurve[0], y1);
+        ctx.lineTo(connectionCurve[1], y1);
         ctx.bezierCurveTo(
-          ...[0.75 * width, y1],
-          ...[0.65 * width, y2],
-          ...[width - 1, y2]
+          ...[connectionCurve[2], y1],
+          ...[connectionCurve[3], y2],
+          ...[connectionCurve[4], y2]
         );
-        ctx.lineTo(width, y2);
+        ctx.lineTo(connectionCurve[5], y2);
         // draw bottom line
-        ctx.lineTo(width, y4);
-        ctx.lineTo(width - 1, y4);
+        ctx.lineTo(connectionCurve[5], y4);
+        ctx.lineTo(connectionCurve[4], y4);
         ctx.bezierCurveTo(
-          ...[0.65 * width, y4],
-          ...[0.75 * width, y3],
-          ...[0.4 * width, y3]
+          ...[connectionCurve[3], y4],
+          ...[connectionCurve[2], y3],
+          ...[connectionCurve[1], y3]
         );
-        ctx.lineTo(0, y3);
+        ctx.lineTo(connectionCurve[0], y3);
         // fill
         ctx.fill();
       }
@@ -108,8 +118,7 @@ export default function OrderbookChartConnector({
       // define drawing functions
       function drawChartArea(
         ctx: CanvasRenderingContext2D,
-        chartArea: ChartArea,
-        width: number = ctx.canvas.width
+        chartArea: ChartArea
       ) {
         const [y1, y2, weight, fill = 'white'] = chartArea;
         ctx.fillStyle = fill;
@@ -117,9 +126,9 @@ export default function OrderbookChartConnector({
         ctx.beginPath();
         // draw top line
         ctx.moveTo(0, y1);
-        ctx.lineTo(weight * 0.4 * width + 0.5, y1);
+        ctx.lineTo(weight * connectionCurve[1] + 0.5, y1);
         // draw bottom line
-        ctx.lineTo(weight * 0.4 * width + 0.5, y2);
+        ctx.lineTo(weight * connectionCurve[1] + 0.5, y2);
         ctx.lineTo(0, y2);
         // fill
         ctx.fill();
