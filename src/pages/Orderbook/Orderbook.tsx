@@ -34,7 +34,7 @@ export default function OrderbookPage() {
 export type PriceOffset = [price: number, offset?: number];
 export type BucketOffset = [inner: PriceOffset, outer: PriceOffset];
 const bucketResolution = 0.001; // size of price set for buckets
-const connectionMaxOpacity = 0.75;
+const connectionMaxOpacity = 0.5;
 
 function Orderbook() {
   // change tokens to match pathname
@@ -222,7 +222,7 @@ function Orderbook() {
             getChartPricePointOffset(chartPriceAxis, outerBucket[1][0]),
             outerBucket[1][1] || 0,
           ],
-          0.15,
+          0.1,
         ];
       }
     }
