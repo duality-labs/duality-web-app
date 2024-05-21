@@ -259,6 +259,7 @@ export default function OrderBookList({
                 token={tokenB}
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesB}
+                variant="success"
                 active={price && priceIndication && price <= priceIndication}
                 onHighlight={onHighlightHighPrice}
               />
@@ -302,6 +303,7 @@ export default function OrderBookList({
                 token={tokenA}
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesA}
+                variant="error"
                 active={price && priceIndication && price >= priceIndication}
                 onHighlight={onHighlightLowPrice}
               />
@@ -329,6 +331,7 @@ function OrderbookListRow({
   token,
   priceDecimalPlaces = 6,
   amountDecimalPlaces = 2,
+  variant,
   active,
   onHighlight,
 }: {
@@ -337,6 +340,7 @@ function OrderbookListRow({
   token: Token;
   priceDecimalPlaces?: number;
   amountDecimalPlaces?: number;
+  variant?: 'success' | 'error';
   active?: boolean | 0;
   onHighlight?: (
     e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
@@ -378,7 +382,11 @@ function OrderbookListRow({
       onMouseEnter={onHoverIn}
       onMouseLeave={onHoverOut}
     >
-      <DiffCell className="text-right">
+      <DiffCell
+        className={['text-right', variant && `text-${variant}`]
+          .filter(Boolean)
+          .join(' ')}
+      >
         {formatAmount(bucketPrice, {
           minimumFractionDigits: priceDecimalPlaces,
           maximumFractionDigits: priceDecimalPlaces,
