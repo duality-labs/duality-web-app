@@ -84,23 +84,23 @@ export default function OrderbookChartConnector({
         ctx.filter = `opacity(${weight})`;
         ctx.beginPath();
         // draw top line
-        ctx.moveTo(sharpPoint(0), sharpPoint(y1));
-        ctx.lineTo(sharpPoint(0.4 * width), sharpPoint(y1));
+        ctx.moveTo(0, y1);
+        ctx.lineTo(0.4 * width, y1);
         ctx.bezierCurveTo(
-          ...[sharpPoint(0.75 * width), sharpPoint(y1)],
-          ...[sharpPoint(0.65 * width), sharpPoint(y2)],
-          ...[sharpPoint(width - 1), sharpPoint(y2)]
+          ...[0.75 * width, y1],
+          ...[0.65 * width, y2],
+          ...[width - 1, y2]
         );
-        ctx.lineTo(sharpPoint(width), sharpPoint(y2));
+        ctx.lineTo(width, y2);
         // draw bottom line
-        ctx.lineTo(sharpPoint(width), sharpPoint(y4));
-        ctx.lineTo(sharpPoint(width - 1), sharpPoint(y4));
+        ctx.lineTo(width, y4);
+        ctx.lineTo(width - 1, y4);
         ctx.bezierCurveTo(
-          ...[sharpPoint(0.65 * width), sharpPoint(y4)],
-          ...[sharpPoint(0.75 * width), sharpPoint(y3)],
-          ...[sharpPoint(0.4 * width), sharpPoint(y3)]
+          ...[0.65 * width, y4],
+          ...[0.75 * width, y3],
+          ...[0.4 * width, y3]
         );
-        ctx.lineTo(sharpPoint(0), sharpPoint(y3));
+        ctx.lineTo(0, y3);
         // fill
         ctx.fill();
       }
@@ -116,11 +116,11 @@ export default function OrderbookChartConnector({
         ctx.filter = 'opacity(1)';
         ctx.beginPath();
         // draw top line
-        ctx.moveTo(sharpPoint(0), sharpPoint(y1));
-        ctx.lineTo(sharpPoint(weight * 0.4 * width + 0.5), sharpPoint(y1));
+        ctx.moveTo(0, y1);
+        ctx.lineTo(weight * 0.4 * width + 0.5, y1);
         // draw bottom line
-        ctx.lineTo(sharpPoint(weight * 0.4 * width + 0.5), sharpPoint(y2));
-        ctx.lineTo(sharpPoint(0), sharpPoint(y2));
+        ctx.lineTo(weight * 0.4 * width + 0.5, y2);
+        ctx.lineTo(0, y2);
         // fill
         ctx.fill();
       }
