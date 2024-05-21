@@ -10,13 +10,21 @@ export type ConnectionArea = [
   weight: number,
   fillColor?: string | CanvasGradient | CanvasPattern
 ];
+export type ChartArea = [
+  y1: number,
+  y2: number,
+  weight: number,
+  fillColor?: string | CanvasGradient | CanvasPattern
+];
 
 export default function OrderbookChartConnector({
   connectionPoints,
   connectionAreas,
+  chartAreas,
 }: {
   connectionPoints?: ConnectionPoint[];
   connectionAreas?: ConnectionArea[];
+  chartAreas?: ChartArea[];
 }) {
   // define what to draw
   const draw = useCallback(
@@ -35,6 +43,9 @@ export default function OrderbookChartConnector({
         }
         connectionAreas?.forEach((connectionArea) => {
           drawConnectionArea(ctx, connectionArea);
+        });
+        chartAreas?.forEach((chartArea) => {
+          drawChartArea(ctx, chartArea);
         });
       }
 
@@ -80,7 +91,6 @@ export default function OrderbookChartConnector({
           ...[sharpPoint(0.65 * width), sharpPoint(y2)],
           ...[sharpPoint(width - 1), sharpPoint(y2)]
         );
-        ctx.lineTo(sharpPoint(width), sharpPoint(y2));
         // draw bottom line
         ctx.lineTo(sharpPoint(width), sharpPoint(y4));
         ctx.lineTo(sharpPoint(width - 1), sharpPoint(y4));
@@ -94,12 +104,32 @@ export default function OrderbookChartConnector({
         ctx.fill();
       }
 
+      // define drawing functions
+      function drawChartArea(
+        ctx: CanvasRenderingContext2D,
+        chartArea: ChartArea,
+        width: number = ctx.canvas.width
+      ) {
+        const [y1, y2, weight, fill = 'white'] = chartArea;
+        ctx.fillStyle = fill;
+        ctx.filter = 'opacity(1)';
+        ctx.beginPath();
+        // draw top line
+        ctx.moveTo(sharpPoint(0), sharpPoint(y1));
+        ctx.lineTo(sharpPoint(weight * 0.4 * width), sharpPoint(y1));
+        // draw bottom line
+        ctx.lineTo(sharpPoint(weight * 0.4 * width), sharpPoint(y2));
+        ctx.lineTo(sharpPoint(0), sharpPoint(y2));
+        // fill
+        ctx.fill();
+      }
+
       // use points centered at half-pixels for sharp lines
       function sharpPoint(value: number): number {
         return Math.round(value) + 0.5;
       }
     },
-    [connectionAreas, connectionPoints]
+    [chartAreas, connectionAreas, connectionPoints]
   );
 
   // store ref but also draw on canvas when first found

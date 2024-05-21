@@ -12,6 +12,7 @@ import OrderbookHeader from './OrderbookHeader';
 import OrderbookFooter from './OrderbookFooter';
 import OrderBookChart, { ChartPriceAxisInfo } from './OrderbookChart';
 import OrderbookChartConnector, {
+  ChartArea,
   ConnectionArea,
 } from './OrderbookChartConnector';
 import OrderBookList from './OrderbookList';
@@ -54,7 +55,7 @@ function Orderbook() {
 
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
 
-  const depthBucketConnections = useMemo<ConnectionArea[] | undefined>(() => {
+  const depthBucketConnections = useMemo<ConnectionArea[][] | undefined>(() => {
     if (currentPrice && chartPriceAxis && buckets && depthBucketOffsets) {
       const [bucketsA = [], bucketsB = []] = buckets;
       const [bucketOffsetsA, bucketOffsetsB] = depthBucketOffsets;
@@ -68,7 +69,7 @@ function Orderbook() {
         ) / connectionMaxOpacity;
       // draw connections of chart offsets to depth offsets for each bucket
       return [
-        ...(bucketOffsetsA
+        bucketOffsetsA
           ? bucketsA.map<ConnectionArea>(
               ([innerBound, outerBound, reserves]) => {
                 const bucketOffset = bucketOffsetsA.find(
@@ -95,8 +96,8 @@ function Orderbook() {
                 ];
               }
             )
-          : []),
-        ...(bucketOffsetsB
+          : [],
+        bucketOffsetsB
           ? bucketsB.map<ConnectionArea>(
               ([innerBound, outerBound, reserves]) => {
                 const bucketOffset = bucketOffsetsB.find(
@@ -123,10 +124,69 @@ function Orderbook() {
                 ];
               }
             )
-          : []),
+          : [],
       ];
     }
   }, [buckets, chartPriceAxis, currentPrice, depthBucketOffsets]);
+
+  const chartReserveBuckets = useMemo<ChartArea[] | undefined>(() => {
+    if (depthBucketConnections) {
+      const [connectionsA = [], connectionsB = []] = depthBucketConnections;
+      const reservesAreasA = connectionsA.map<
+        [y1: number, y2: number, reserves: number]
+      >(([[y1], [y2], reserves]) => {
+        // either value should be within the chart bounds above zero
+        return [y1, y2, reserves];
+      });
+      let cumulativeReservesA = 0;
+      const cumulativeReservesAreasA = reservesAreasA.map<
+        [y1: number, y2: number, reserves: number]
+      >(([y1, y2, reserves], index, reservesAreas) => {
+        // either value should be within the chart bounds above zero
+        cumulativeReservesA += reserves;
+        const nextReserves = reservesAreas[index + 1];
+        return [y1, nextReserves ? nextReserves[1] : y2, cumulativeReservesA];
+      });
+      const reservesAreasB = connectionsB.map<
+        [y1: number, y2: number, reserves: number]
+      >(([[y1], [y2], reserves]) => {
+        // either value should be within the chart bounds above zero
+        return [y1, y2, reserves];
+      });
+      let cumulativeReservesB = 0;
+      const cumulativeReservesAreasB = reservesAreasB.map<
+        [y1: number, y2: number, reserves: number]
+      >(([y1, y2, reserves], index, reservesAreas) => {
+        // either value should be within the chart bounds above zero
+        cumulativeReservesB += reserves;
+        const nextReserves = reservesAreas[index + 1];
+        return [y1, nextReserves ? nextReserves[1] : y2, cumulativeReservesB];
+      });
+      const maxCumulativeReserves =
+        Math.max(
+          cumulativeReservesAreasA.at(-1)?.[2] || 0,
+          cumulativeReservesAreasB.at(-1)?.[2] || 0
+        ) || 1;
+      return [
+        ...cumulativeReservesAreasA.map<ChartArea>(([y1, y2, reserves]) => {
+          // either value should be within the chart bounds above zero
+          return [y1, y2, reserves / maxCumulativeReserves, '#FF000022'];
+        }),
+        ...cumulativeReservesAreasB.map<ChartArea>(([y1, y2, reserves]) => {
+          // either value should be within the chart bounds above zero
+          return [y1, y2, reserves / maxCumulativeReserves, '#00FF0022'];
+        }),
+        ...reservesAreasA.map<ChartArea>(([y1, y2, reserves]) => {
+          // either value should be within the chart bounds above zero
+          return [y1, y2, reserves / maxCumulativeReserves, 'red'];
+        }),
+        ...reservesAreasB.map<ChartArea>(([y1, y2, reserves]) => {
+          // either value should be within the chart bounds above zero
+          return [y1, y2, reserves / maxCumulativeReserves, 'green'];
+        }),
+      ];
+    }
+  }, [depthBucketConnections]);
 
   const depthPriceIndicationBucketConnection = useMemo<
     ConnectionArea | undefined
@@ -169,12 +229,13 @@ function Orderbook() {
   }, [chartPriceAxis, currentPrice, depthBucketOffsets, depthPriceIndication]);
 
   const connectionAreas = useMemo(() => {
-    return depthPriceIndicationBucketConnection
-      ? [
-          ...(depthBucketConnections ?? []),
-          depthPriceIndicationBucketConnection,
-        ]
-      : depthBucketConnections;
+    return [
+      ...(depthBucketConnections?.[0] ?? []),
+      ...(depthBucketConnections?.[1] ?? []),
+      ...(depthPriceIndicationBucketConnection
+        ? [depthPriceIndicationBucketConnection]
+        : []),
+    ];
   }, [depthBucketConnections, depthPriceIndicationBucketConnection]);
 
   return (
@@ -216,6 +277,7 @@ function Orderbook() {
                   return [];
                 }, [chartPriceAxis, depthPriceIndication, depthPriceOffset])}
                 connectionAreas={connectionAreas}
+                chartAreas={chartReserveBuckets}
               />
             </div>
             <div className="col">
