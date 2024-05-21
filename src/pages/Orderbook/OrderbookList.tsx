@@ -110,8 +110,8 @@ export default function OrderBookList({
 
   // find how numbers should be displayed
   const priceDecimalPlaces = useMemo(() => {
-    const decimals = bucketResolution.toFixed(18).split('.')[1] || '';
-    return decimals.replace(/0+$/, '').length;
+    // use same decimal places as the bucket resolution
+    return Math.max(0, -Math.round(getOrderOfMagnitude(bucketResolution)));
   }, [bucketResolution]);
   const [amountDecimalPlacesA, amountDecimalPlacesB] = useMemo(() => {
     // ensure minimum displayed amount has at least 2 significant digits
