@@ -89,6 +89,8 @@ export default function OrderbookChartConnector({
         connectionArea: ConnectionArea
       ) {
         const [[y1, y2], [y3, y4], weight, fill = 'white'] = connectionArea;
+        // skip areas with no defined points
+        if (!y1 || !y2 || !y3 || !y4) return;
         ctx.lineJoin = 'round';
         ctx.fillStyle = fill;
         ctx.filter = `opacity(${weight})`;

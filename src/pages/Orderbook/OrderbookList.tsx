@@ -196,12 +196,14 @@ export default function OrderBookList({
             [currentPrice, bottomCenterOffset],
           ],
           // add token A bucket offsets
-          ...bucketsA.map(
-            ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
-              [innerBound, bottomCenterOffset + index * tableRowHeight],
-              [outerBound, bottomCenterOffset + (index + 1) * tableRowHeight],
-            ]
-          ),
+          ...bucketsA
+            .slice(0, shownTickRows)
+            .map(
+              ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
+                [innerBound, bottomCenterOffset + index * tableRowHeight],
+                [outerBound, bottomCenterOffset + (index + 1) * tableRowHeight],
+              ]
+            ),
         ],
         [
           // add current price bucket
@@ -210,19 +212,27 @@ export default function OrderBookList({
             [currentPrice, topCenterOffset],
           ],
           // add token B bucket offsets
-          ...bucketsB.map(
-            ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
-              [innerBound, topCenterOffset - index * tableRowHeight],
-              [outerBound, topCenterOffset - (index + 1) * tableRowHeight],
-            ]
-          ),
+          ...bucketsB
+            .slice(0, shownTickRows)
+            .map(
+              ([innerBound, outerBound], index): [PriceOffset, PriceOffset] => [
+                [innerBound, topCenterOffset - index * tableRowHeight],
+                [outerBound, topCenterOffset - (index + 1) * tableRowHeight],
+              ]
+            ),
         ],
       ]);
     } else {
       // unset bucket offsets
       setBucketOffsets?.((offsets) => (offsets.length ? [] : offsets));
     }
-  }, [buckets, currentPrice, getTableSections, setBucketOffsets]);
+  }, [
+    buckets,
+    currentPrice,
+    getTableSections,
+    setBucketOffsets,
+    shownTickRows,
+  ]);
   // execute on every relevent update
   useResizeObserver(tableContainerRef, updateBucketOffsets);
   useEffect(updateBucketOffsets, [updateBucketOffsets]);
