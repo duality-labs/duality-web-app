@@ -95,6 +95,7 @@ function Orderbook() {
                   (reserves / maxSideReserves) *
                     (connectionMaxOpacity - connectionMinOpacity) +
                     connectionMinOpacity,
+                  '#26801bFF',
                 ];
               }
             )
@@ -125,6 +126,7 @@ function Orderbook() {
                   ((reserves * currentPrice) / maxSideReserves) *
                     (connectionMaxOpacity - connectionMinOpacity) +
                     connectionMinOpacity,
+                  '#d6363aff',
                 ];
               }
             )
