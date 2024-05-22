@@ -29,6 +29,7 @@ export default function OrderBookList({
   priceIndication,
   setPriceIndication,
   setBucketOffsets,
+  setLimitPrice,
 }: {
   tokenA: Token;
   tokenB: Token;
@@ -38,6 +39,7 @@ export default function OrderBookList({
   setBucketResolution: React.Dispatch<React.SetStateAction<number | undefined>>;
   setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
   setBucketOffsets?: React.Dispatch<React.SetStateAction<BucketOffset[][]>>;
+  setLimitPrice?: (limitPrice: string) => void;
 }) {
   const onHighlightPrice = useCallback(
     (bucketPrice: number | undefined) => {
@@ -272,6 +274,14 @@ export default function OrderBookList({
                 variant="error"
                 active={price && priceIndication && price <= priceIndication}
                 onHighlight={onHighlightPrice}
+                onClick={(bucketPrice) => {
+                  setLimitPrice?.(
+                    formatAmount(bucketPrice, {
+                      minimumFractionDigits: priceDecimalPlaces,
+                      maximumFractionDigits: priceDecimalPlaces,
+                    })
+                  );
+                }}
               />
             ) : (
               <EmptyRow key={price ?? `index-${index}`} />
@@ -289,6 +299,7 @@ export default function OrderBookList({
           <tr
             onMouseEnter={() => setPriceIndication?.(currentPrice ?? undefined)}
             onMouseLeave={() => setPriceIndication?.(undefined)}
+            onClick={() => setLimitPrice?.('')}
           >
             <DiffCell
               colSpan={3}
@@ -322,6 +333,14 @@ export default function OrderBookList({
                 variant="success"
                 active={price && priceIndication && price >= priceIndication}
                 onHighlight={onHighlightPrice}
+                onClick={(bucketPrice) => {
+                  setLimitPrice?.(
+                    formatAmount(bucketPrice, {
+                      minimumFractionDigits: priceDecimalPlaces,
+                      maximumFractionDigits: priceDecimalPlaces,
+                    })
+                  );
+                }}
               />
             ) : (
               <EmptyRow key={price ?? `index-${index}`} />
@@ -420,6 +439,7 @@ function OrderbookListRow({
   variant,
   active,
   onHighlight,
+  onClick,
 }: {
   price: number;
   reserves: number;
@@ -430,6 +450,7 @@ function OrderbookListRow({
   variant?: 'success' | 'error';
   active?: boolean | 0;
   onHighlight?: (bucketPrice: number | undefined) => void;
+  onClick?: (bucketPrice: number) => void;
 }) {
   // keep track of hover state and use as a price indication in parents
   const [hovered, setHovered] = useState<boolean>(false);
@@ -462,6 +483,7 @@ function OrderbookListRow({
         .join(' ')}
       onMouseEnter={onHoverIn}
       onMouseLeave={onHoverOut}
+      onClick={() => onClick?.(bucketPrice)}
     >
       <DiffCell
         className={['text-right', variant && `text-${variant}`]

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useMatch } from 'react-router-dom';
 
 import { useDenomFromPathParam } from '../../lib/web3/hooks/useTokens';
@@ -278,6 +278,17 @@ function Orderbook() {
     ];
   }, [depthBucketConnections, depthPriceIndicationBucketConnection]);
 
+  // set limit price using a ref to avoid a useEffect re-rendering issue
+  const setLimitPriceRef = useRef<(limitPrice: string) => void>();
+  const getSetLimitPrice = useCallback<
+    (setLimitPrice: (limitPrice: string) => void) => void
+  >((setLimitPrice) => {
+    setLimitPriceRef.current = setLimitPrice;
+  }, []);
+  const setLimitPrice = useCallback<(limitPrice: string) => void>((price) => {
+    setLimitPriceRef.current?.(price);
+  }, []);
+
   const [tabIndex, setTabIndex] = useState<number>(0);
 
   return (
@@ -334,6 +345,7 @@ function Orderbook() {
                             priceIndication={depthPriceIndication}
                             setPriceIndication={setDepthPriceIndication}
                             setBucketOffsets={setDepthBucketOffsets}
+                            setLimitPrice={setLimitPrice}
                           />
                         ) : null,
                     },
@@ -352,6 +364,7 @@ function Orderbook() {
                   bucketResolution,
                   buckets,
                   depthPriceIndication,
+                  setLimitPrice,
                   tokenA,
                   tokenB,
                 ])}
@@ -360,7 +373,11 @@ function Orderbook() {
           </div>
         </div>
         <div className="col">
-          <LimitOrderCard tokenA={tokenA} tokenB={tokenB} />
+          <LimitOrderCard
+            tokenA={tokenA}
+            tokenB={tokenB}
+            getSetLimitPrice={getSetLimitPrice}
+          />
         </div>
       </div>
       <div className="orderbook-footer row">

@@ -85,9 +85,11 @@ const defaultExecutionType: AllowedLimitOrderTypeKey = 'FILL_OR_KILL';
 export default function LimitOrderCard({
   tokenA,
   tokenB,
+  getSetLimitPrice,
 }: {
   tokenA?: Token;
   tokenB?: Token;
+  getSetLimitPrice?: (setLimitPrice: (limitPrice: string) => void) => void;
 }) {
   return (
     <div
@@ -99,7 +101,11 @@ export default function LimitOrderCard({
     >
       {tokenA && tokenB && (
         <LimitOrderContextProvider defaultExecutionType={defaultExecutionType}>
-          <LimitOrder tokenA={tokenA} tokenB={tokenB} />
+          <LimitOrder
+            tokenA={tokenA}
+            tokenB={tokenB}
+            getSetLimitPrice={getSetLimitPrice}
+          />
         </LimitOrderContextProvider>
       )}
     </div>
@@ -178,7 +184,15 @@ function getExpirationTimeMs(
   return getCustomExpirationTimeMs(timeAmount, timePeriod);
 }
 
-function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
+function LimitOrder({
+  tokenA,
+  tokenB,
+  getSetLimitPrice,
+}: {
+  tokenA: Token;
+  tokenB: Token;
+  getSetLimitPrice?: (setLimitPrice: (limitPrice: string) => void) => void;
+}) {
   const [modeTab, setModeTab] = useState<ModeTab>(modeTabs[0]);
   const [priceTab, setPriceTab] = useState<PriceTab>(priceTabs[0]);
 
@@ -326,6 +340,21 @@ function LimitOrder({ tokenA, tokenB }: { tokenA: Token; tokenB: Token }) {
     },
     [formSetState, offsetLimitPrice]
   );
+
+  // pass up a callback for parents to set the limit price here
+  useEffect(() => {
+    getSetLimitPrice?.((limitPriceString) => {
+      const limitPrice = Number(limitPriceString);
+      if (currentPriceAtoB && limitPrice && !isNaN(limitPrice)) {
+        setPriceTab('Limit');
+        switchLimitOption(-1);
+        setModeTab(currentPriceAtoB > limitPrice ? 'Buy' : 'Sell');
+        formSetState.setLimitPrice?.(limitPriceString);
+      } else {
+        switchLimitOption(0);
+      }
+    });
+  }, [currentPriceAtoB, formSetState, getSetLimitPrice, switchLimitOption]);
 
   // detect when the user has asked for a limit "outside liquidity bounds"
   // in these cases the simulation won't help because it can only compute the
