@@ -45,8 +45,7 @@ function Orderbook() {
   const { data: tokenB } = useToken(denomB);
 
   const [chartPriceAxis, setChartPriceAxis] = useState<ChartPriceAxisInfo>();
-  const [[depthPriceIndication, depthPriceOffset] = [], setDepthPriceOffset] =
-    useState<PriceOffset>();
+  const [depthPriceIndication, setDepthPriceIndication] = useState<number>();
   const [bucketResolution, setBucketResolution] = useState<number>();
   const buckets = useBuckets(tokenA, tokenB, bucketResolution);
 
@@ -270,20 +269,53 @@ function Orderbook() {
                   if (
                     chartPriceAxis &&
                     depthPriceIndication &&
-                    depthPriceOffset
+                    depthBucketOffsets
                   ) {
-                    return [
-                      [
-                        getChartPricePointOffset(
-                          chartPriceAxis,
-                          depthPriceIndication
-                        ),
-                        depthPriceOffset,
-                      ],
-                    ];
+                    const [bucketOffsetsA = [], bucketOffsetsB = []] =
+                      depthBucketOffsets;
+                    const offset =
+                      depthPriceIndication === currentPrice
+                        ? // return average of a side's current price bucket
+                          bucketOffsetsA[0] &&
+                          ((bucketOffsetsA[0][0][1] || 0) +
+                            (bucketOffsetsA[0][1][1] || 0)) /
+                            2
+                        : // return the outer offset of any found bucket
+                          (bucketOffsetsA.find(
+                            ([[innerPrice], [outerPrice]]) => {
+                              return (
+                                depthPriceIndication < innerPrice &&
+                                depthPriceIndication >= outerPrice
+                              );
+                            }
+                          ) ??
+                            bucketOffsetsB.find(
+                              ([[innerPrice], [outerPrice]]) => {
+                                return (
+                                  depthPriceIndication > innerPrice &&
+                                  depthPriceIndication <= outerPrice
+                                );
+                              }
+                            ))?.[1][1];
+                    if (offset) {
+                      return [
+                        [
+                          getChartPricePointOffset(
+                            chartPriceAxis,
+                            depthPriceIndication
+                          ),
+                          offset,
+                        ],
+                      ];
+                    }
                   }
                   return [];
-                }, [chartPriceAxis, depthPriceIndication, depthPriceOffset])}
+                }, [
+                  chartPriceAxis,
+                  currentPrice,
+                  depthBucketOffsets,
+                  depthPriceIndication,
+                ])}
                 connectionAreas={tabIndex === 0 ? connectionAreas : undefined}
                 chartAreas={chartReserveBuckets}
               />
@@ -311,7 +343,7 @@ function Orderbook() {
                             bucketResolution={bucketResolution}
                             setBucketResolution={setBucketResolution}
                             priceIndication={depthPriceIndication}
-                            setPriceOffset={setDepthPriceOffset}
+                            setPriceIndication={setDepthPriceIndication}
                             setBucketOffsets={setDepthBucketOffsets}
                           />
                         ) : null,

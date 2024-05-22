@@ -27,7 +27,7 @@ export default function OrderBookList({
   bucketResolution,
   setBucketResolution,
   priceIndication,
-  setPriceOffset,
+  setPriceIndication,
   setBucketOffsets,
 }: {
   tokenA: Token;
@@ -36,42 +36,14 @@ export default function OrderBookList({
   buckets?: Buckets;
   bucketResolution: number | undefined;
   setBucketResolution: React.Dispatch<React.SetStateAction<number | undefined>>;
-  setPriceOffset?: React.Dispatch<
-    React.SetStateAction<PriceOffset | undefined>
-  >;
+  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
   setBucketOffsets?: React.Dispatch<React.SetStateAction<BucketOffset[][]>>;
 }) {
   const onHighlightPrice = useCallback(
-    (includeElementHeight: boolean) =>
-      (
-        e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
-        bucketPrice: number | undefined
-      ) => {
-        const row = e.target as HTMLTableRowElement | null;
-        const addOffset = (el: HTMLElement): number => {
-          if (el.tagName === 'TBODY') return 0;
-          return (
-            el.offsetTop +
-            (['TABLE', 'TD'].includes(el.tagName) && el.offsetParent
-              ? addOffset(el.offsetParent as HTMLElement)
-              : 0)
-          );
-        };
-        setPriceOffset?.(
-          row && bucketPrice
-            ? [
-                bucketPrice,
-                addOffset(row) + (includeElementHeight ? row.offsetHeight : 1),
-              ]
-            : undefined
-        );
-      },
-    [setPriceOffset]
-  );
-
-  const [onHighlightHighPrice, onHighlightLowPrice] = useMemo(
-    () => [onHighlightPrice(false), onHighlightPrice(true)],
-    [onHighlightPrice]
+    (bucketPrice: number | undefined) => {
+      setPriceIndication?.(bucketPrice);
+    },
+    [setPriceIndication]
   );
 
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
@@ -299,7 +271,7 @@ export default function OrderBookList({
                 amountDecimalPlaces={amountDecimalPlacesB}
                 variant="error"
                 active={price && priceIndication && price <= priceIndication}
-                onHighlight={onHighlightHighPrice}
+                onHighlight={onHighlightPrice}
               />
             ) : (
               <EmptyRow key={price ?? `index-${index}`} />
@@ -308,10 +280,8 @@ export default function OrderBookList({
         </tbody>
         <tbody className="orderbook-list__table__tick-center">
           <tr
-            onMouseEnter={() =>
-              setPriceOffset?.(currentPrice ? [currentPrice] : undefined)
-            }
-            onMouseLeave={() => setPriceOffset?.(undefined)}
+            onMouseEnter={() => setPriceIndication?.(currentPrice ?? undefined)}
+            onMouseLeave={() => setPriceIndication?.(undefined)}
           >
             <DiffCell
               colSpan={3}
@@ -344,7 +314,7 @@ export default function OrderBookList({
                 amountDecimalPlaces={amountDecimalPlacesA}
                 variant="success"
                 active={price && priceIndication && price >= priceIndication}
-                onHighlight={onHighlightLowPrice}
+                onHighlight={onHighlightPrice}
               />
             ) : (
               <EmptyRow key={price ?? `index-${index}`} />
@@ -452,10 +422,7 @@ function OrderbookListRow({
   amountDecimalPlaces?: number;
   variant?: 'success' | 'error';
   active?: boolean | 0;
-  onHighlight?: (
-    e: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
-    bucketPrice: number | undefined
-  ) => void;
+  onHighlight?: (bucketPrice: number | undefined) => void;
 }) {
   // keep track of hover state and use as a price indication in parents
   const [hovered, setHovered] = useState<boolean>(false);
@@ -467,7 +434,7 @@ function OrderbookListRow({
       // set hovered state
       setHovered(!!bucketPrice);
       // set parent state
-      onHighlight?.(e, bucketPrice);
+      onHighlight?.(bucketPrice);
     },
     [onHighlight]
   );
