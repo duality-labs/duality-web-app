@@ -1,0 +1,11 @@
+@import url('./OrderbookList.scss');
+
+.orderbook-trades-list {
+  overflow: auto;
+
+  th {
+    position: sticky;
+    top: 0;
+    background-color: var(--page-card);
+  }
+}

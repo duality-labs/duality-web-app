@@ -15,11 +15,11 @@ import {
   mapEventAttributes,
 } from '../../lib/web3/utils/events';
 
-import './OrderbookList.scss';
+import './OrderbookTradesList.scss';
 
 // ensure that a certain amount of rows are shown in the card
-const pageSize = 20;
-const tradeListSize = 18;
+const pageSize = 30;
+const tradeListSize = 30;
 
 export default function OrderBookTradesList({
   tokenA,
@@ -72,7 +72,7 @@ export default function OrderBookTradesList({
       : undefined;
 
   return (
-    <div className="flex-centered orderbook-list">
+    <div className="flex flex-centered orderbook-list orderbook-trades-list">
       <table className="orderbook-list__table">
         <colgroup>
           {/* minimize the first column width */}
