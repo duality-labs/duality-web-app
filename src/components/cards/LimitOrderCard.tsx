@@ -86,10 +86,12 @@ export default function LimitOrderCard({
   tokenA,
   tokenB,
   getSetLimitPrice,
+  setPriceIndication,
 }: {
   tokenA?: Token;
   tokenB?: Token;
   getSetLimitPrice?: (setLimitPrice: (limitPrice: string) => void) => void;
+  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
 }) {
   return (
     <div
@@ -105,6 +107,7 @@ export default function LimitOrderCard({
             tokenA={tokenA}
             tokenB={tokenB}
             getSetLimitPrice={getSetLimitPrice}
+            setPriceIndication={setPriceIndication}
           />
         </LimitOrderContextProvider>
       )}
@@ -188,10 +191,12 @@ function LimitOrder({
   tokenA,
   tokenB,
   getSetLimitPrice,
+  setPriceIndication,
 }: {
   tokenA: Token;
   tokenB: Token;
   getSetLimitPrice?: (setLimitPrice: (limitPrice: string) => void) => void;
+  setPriceIndication?: React.Dispatch<React.SetStateAction<number | undefined>>;
 }) {
   const [modeTab, setModeTab] = useState<ModeTab>(modeTabs[0]);
   const [priceTab, setPriceTab] = useState<PriceTab>(priceTabs[0]);
@@ -326,6 +331,28 @@ function LimitOrder({
       );
     }
   }, [buyMode, currentPriceAtoB, limitOption]);
+
+  // update the price indication from the form
+  useEffect(() => {
+    if (setPriceIndication) {
+      if (priceTab === 'Limit') {
+        if (currentPriceAtoB && limitOption === 0) {
+          setPriceIndication(currentPriceAtoB);
+        } else {
+          setPriceIndication(Number(formState.limitPrice || offsetLimitPrice));
+        }
+      } else {
+        setPriceIndication(undefined);
+      }
+    }
+  }, [
+    currentPriceAtoB,
+    formState.limitPrice,
+    limitOption,
+    offsetLimitPrice,
+    priceTab,
+    setPriceIndication,
+  ]);
 
   const switchLimitOption = useCallback(
     (limitOption: LimitPriceOptions) => {

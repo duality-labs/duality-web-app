@@ -272,7 +272,7 @@ export default function OrderBookList({
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesB}
                 variant="error"
-                active={price && priceIndication && price <= priceIndication}
+                active={price && priceIndication && minPrice < priceIndication}
                 hovered={
                   priceIndication &&
                   minPrice < priceIndication &&
@@ -336,7 +336,7 @@ export default function OrderBookList({
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesA}
                 variant="success"
-                active={price && priceIndication && price >= priceIndication}
+                active={price && priceIndication && maxPrice > priceIndication}
                 hovered={
                   priceIndication &&
                   maxPrice > priceIndication &&

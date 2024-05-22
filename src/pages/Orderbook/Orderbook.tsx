@@ -46,6 +46,7 @@ function Orderbook() {
   const { data: tokenB } = useToken(denomB);
 
   const [chartPriceAxis, setChartPriceAxis] = useState<ChartPriceAxisInfo>();
+  const [formPriceIndication, setFormPriceIndication] = useState<number>();
   const [depthPriceIndication, setDepthPriceIndication] = useState<number>();
   const [bucketResolution, setBucketResolution] = useState<number>();
   const buckets = useBuckets(tokenA, tokenB, bucketResolution);
@@ -56,11 +57,12 @@ function Orderbook() {
 
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
 
-  const depthPriceConnectionLines = useMemo<ConnectionLine[]>(() => {
-    if (chartPriceAxis && depthPriceIndication && depthBucketOffsets) {
+  const priceIndication = depthPriceIndication ?? formPriceIndication;
+  const priceConnectionLines = useMemo<ConnectionLine[]>(() => {
+    if (chartPriceAxis && priceIndication && depthBucketOffsets) {
       const [bucketOffsetsA = [], bucketOffsetsB = []] = depthBucketOffsets;
       const offset =
-        depthPriceIndication === currentPrice
+        priceIndication === currentPrice
           ? // return average of a side's current price bucket
             ((bucketOffsetsA[0]?.[0][1] || 0) +
               (bucketOffsetsA[0]?.[1][1] || 0)) /
@@ -68,27 +70,22 @@ function Orderbook() {
           : // return the outer offset of any found bucket
             (bucketOffsetsA.find(([[innerPrice], [outerPrice]]) => {
               return (
-                depthPriceIndication < innerPrice &&
-                depthPriceIndication >= outerPrice
+                priceIndication < innerPrice && priceIndication >= outerPrice
               );
             }) ??
               bucketOffsetsB.find(([[innerPrice], [outerPrice]]) => {
                 return (
-                  depthPriceIndication > innerPrice &&
-                  depthPriceIndication <= outerPrice
+                  priceIndication > innerPrice && priceIndication <= outerPrice
                 );
               }))?.[1][1];
       if (offset) {
         return [
-          [
-            getChartPricePointOffset(chartPriceAxis, depthPriceIndication),
-            offset,
-          ],
+          [getChartPricePointOffset(chartPriceAxis, priceIndication), offset],
         ];
       }
     }
     return [];
-  }, [chartPriceAxis, currentPrice, depthBucketOffsets, depthPriceIndication]);
+  }, [chartPriceAxis, currentPrice, depthBucketOffsets, priceIndication]);
 
   const depthBucketConnections = useMemo<ConnectionArea[][] | undefined>(() => {
     if (currentPrice && chartPriceAxis && buckets && depthBucketOffsets) {
@@ -228,12 +225,12 @@ function Orderbook() {
     }
   }, [depthBucketConnections]);
 
-  const depthPriceIndicationBucketConnection = useMemo<
+  const priceIndicationBucketConnection = useMemo<
     ConnectionArea | undefined
   >(() => {
     const [bucketOffsetsA, bucketOffsetsB] = depthBucketOffsets;
-    if (chartPriceAxis && currentPrice && depthPriceIndication) {
-      const price = depthPriceIndication;
+    if (chartPriceAxis && currentPrice && priceIndication) {
+      const price = priceIndication;
       const [innerBucket, outerBucket] =
         price <= currentPrice
           ? [
@@ -266,17 +263,17 @@ function Orderbook() {
         ];
       }
     }
-  }, [chartPriceAxis, currentPrice, depthBucketOffsets, depthPriceIndication]);
+  }, [chartPriceAxis, currentPrice, depthBucketOffsets, priceIndication]);
 
   const connectionAreas = useMemo(() => {
     return [
       ...(depthBucketConnections?.[0] ?? []),
       ...(depthBucketConnections?.[1] ?? []),
-      ...(depthPriceIndicationBucketConnection
-        ? [depthPriceIndicationBucketConnection]
+      ...(priceIndicationBucketConnection
+        ? [priceIndicationBucketConnection]
         : []),
     ];
-  }, [depthBucketConnections, depthPriceIndicationBucketConnection]);
+  }, [depthBucketConnections, priceIndicationBucketConnection]);
 
   // set limit price using a ref to avoid a useEffect re-rendering issue
   const setLimitPriceRef = useRef<(limitPrice: string) => void>();
@@ -305,8 +302,8 @@ function Orderbook() {
                   tokenA={tokenB}
                   tokenB={tokenA}
                   priceIndication={
-                    depthPriceIndication !== currentPrice
-                      ? depthPriceIndication
+                    priceIndication !== currentPrice
+                      ? priceIndication
                       : undefined
                   }
                   setPriceAxis={setChartPriceAxis}
@@ -315,7 +312,7 @@ function Orderbook() {
             </div>
             <div className="chart-depth-connector col">
               <OrderbookChartConnector
-                connectionLines={depthPriceConnectionLines}
+                connectionLines={priceConnectionLines}
                 connectionAreas={tabIndex === 0 ? connectionAreas : undefined}
                 chartAreas={chartReserveBuckets}
               />
@@ -342,7 +339,7 @@ function Orderbook() {
                             buckets={buckets}
                             bucketResolution={bucketResolution}
                             setBucketResolution={setBucketResolution}
-                            priceIndication={depthPriceIndication}
+                            priceIndication={priceIndication}
                             setPriceIndication={setDepthPriceIndication}
                             setBucketOffsets={setDepthBucketOffsets}
                             setLimitPrice={setLimitPrice}
@@ -363,7 +360,7 @@ function Orderbook() {
                 }, [
                   bucketResolution,
                   buckets,
-                  depthPriceIndication,
+                  priceIndication,
                   setLimitPrice,
                   tokenA,
                   tokenB,
@@ -377,6 +374,7 @@ function Orderbook() {
             tokenA={tokenA}
             tokenB={tokenB}
             getSetLimitPrice={getSetLimitPrice}
+            setPriceIndication={setFormPriceIndication}
           />
         </div>
       </div>
