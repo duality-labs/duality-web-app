@@ -297,6 +297,19 @@ export default function OrderBookList({
           className={[
             'orderbook-list__table__tick-center',
             currentPrice === priceIndication && 'active',
+            // if price indication is in the first bucket
+            currentPrice &&
+              priceIndication &&
+              bucketsB?.[0] &&
+              currentPrice < priceIndication &&
+              priceIndication <= bucketsB[0][0] &&
+              'active active-top',
+            currentPrice &&
+              priceIndication &&
+              bucketsA?.[0] &&
+              currentPrice > priceIndication &&
+              priceIndication >= bucketsA[0][0] &&
+              'active active-bottom',
           ]
             .filter(Boolean)
             .join(' ')}

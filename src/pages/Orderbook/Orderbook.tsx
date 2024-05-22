@@ -59,7 +59,12 @@ function Orderbook() {
 
   const priceIndication = depthPriceIndication ?? formPriceIndication;
   const priceConnectionLines = useMemo<ConnectionLine[]>(() => {
-    if (chartPriceAxis && priceIndication && depthBucketOffsets) {
+    if (
+      chartPriceAxis &&
+      priceIndication &&
+      depthBucketOffsets &&
+      currentPrice
+    ) {
       const [bucketOffsetsA = [], bucketOffsetsB = []] = depthBucketOffsets;
       const offset =
         priceIndication === currentPrice
@@ -67,17 +72,27 @@ function Orderbook() {
             ((bucketOffsetsA[0]?.[0][1] || 0) +
               (bucketOffsetsA[0]?.[1][1] || 0)) /
               2 || undefined
-          : // return the outer offset of any found bucket
-            (bucketOffsetsA.find(([[innerPrice], [outerPrice]]) => {
-              return (
-                priceIndication < innerPrice && priceIndication >= outerPrice
-              );
-            }) ??
-              bucketOffsetsB.find(([[innerPrice], [outerPrice]]) => {
+          : // check lower buckets
+          priceIndication < currentPrice
+          ? // check the inner edge of buckets
+            bucketOffsetsA[1] && priceIndication >= bucketOffsetsA[1][0][0]
+            ? bucketOffsetsA[1][0][1]
+            : bucketOffsetsA.find(([[innerPrice], [outerPrice]]) => {
+                return (
+                  priceIndication < innerPrice && priceIndication >= outerPrice
+                );
+              })?.[1][1]
+          : // check upper buckets
+          priceIndication > currentPrice
+          ? // check the inner edge of buckets
+            bucketOffsetsB[1] && priceIndication <= bucketOffsetsB[1][0][0]
+            ? bucketOffsetsB[1][0][1]
+            : bucketOffsetsB.find(([[innerPrice], [outerPrice]]) => {
                 return (
                   priceIndication > innerPrice && priceIndication <= outerPrice
                 );
-              }))?.[1][1];
+              })?.[1][1]
+          : undefined;
       if (offset) {
         return [
           [getChartPricePointOffset(chartPriceAxis, priceIndication), offset],

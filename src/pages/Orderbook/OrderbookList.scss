@@ -42,10 +42,12 @@
     .active td {
       background-color: var(--page-card-border);
     }
-    .orderbook-list__table__ticks-top .hovered td {
+    .orderbook-list__table__ticks-top .hovered td,
+    .orderbook-list__table__tick-center.active-top td {
       border-top-color: var(--text-default);
     }
-    .orderbook-list__table__ticks-bottom .hovered td {
+    .orderbook-list__table__ticks-bottom .hovered td,
+    .orderbook-list__table__tick-center.active-bottom td {
       border-bottom-color: var(--text-default);
     }
     .orderbook-list__table__ticks-top,
