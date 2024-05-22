@@ -278,7 +278,14 @@ export default function OrderBookList({
             );
           })}
         </tbody>
-        <tbody className="orderbook-list__table__tick-center">
+        <tbody
+          className={[
+            'orderbook-list__table__tick-center',
+            currentPrice === priceIndication && 'active',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
           <tr
             onMouseEnter={() => setPriceIndication?.(currentPrice ?? undefined)}
             onMouseLeave={() => setPriceIndication?.(undefined)}
