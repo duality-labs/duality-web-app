@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDeepCompareMemoize } from 'use-deep-compare-effect';
 import {
@@ -521,6 +521,10 @@ export default function OrderBookChart({
     }
   }, [chart, priceIndication]);
 
+  const [isFocused, setIsFocused] = useState<boolean>(false);
+  const setFocused = useCallback(() => setIsFocused(true), []);
+  const setUnfocused = useCallback(() => setIsFocused(false), []);
+
   useEffect(() => {
     if (chart) {
       const checkChartAxis = () => {
@@ -549,14 +553,21 @@ export default function OrderBookChart({
           }
           return chartPriceAxis;
         });
-        timeout = setTimeout(checkChartAxis, 100);
+        timeout = setTimeout(checkChartAxis, isFocused ? 30 : 100);
       };
       let timeout = setTimeout(checkChartAxis, 0);
       return () => clearTimeout(timeout);
     }
-  }, [chart, setPriceAxis]);
+  }, [chart, isFocused, setPriceAxis]);
 
-  return <div className="trading-view-chart flex" ref={chartRef}></div>;
+  return (
+    <div
+      className="trading-view-chart flex"
+      ref={chartRef}
+      onMouseEnter={setFocused}
+      onMouseLeave={setUnfocused}
+    ></div>
+  );
 }
 
 function getBarFromTimeSeriesRow([
