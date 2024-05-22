@@ -297,7 +297,7 @@ export default function OrderBookList({
                 weight={(reserves * (currentPrice ?? 0)) / maxReservesWeight}
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesB}
-                variant="success"
+                variant="error"
                 active={price && priceIndication && price <= priceIndication}
                 onHighlight={onHighlightHighPrice}
               />
@@ -342,7 +342,7 @@ export default function OrderBookList({
                 weight={reserves / maxReservesWeight}
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesA}
-                variant="error"
+                variant="success"
                 active={price && priceIndication && price >= priceIndication}
                 onHighlight={onHighlightLowPrice}
               />
