@@ -96,15 +96,16 @@ export default function RadioButtonGroupInput<T extends string | number>({
   const [movingAssetRef, createRefForValue] =
     useSelectedButtonBackgroundMove<T>(value);
   const entries = useMemo(() => {
+    const valueIsNumber = typeof value === 'number';
     return Array.isArray(values)
       ? values.filter(Boolean).map<[T, string]>((value) => [value, `${value}`])
       : values instanceof Map
       ? Array.from(values.entries())
       : (Object.entries(values).map(([value, description]) => [
-          value,
+          valueIsNumber ? Number(value) : value,
           description,
         ]) as [T, string][]);
-  }, [values]);
+  }, [value, values]);
   const selectedIndex = entries.findIndex(
     ([entryValue]) => entryValue === value
   );
