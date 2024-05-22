@@ -174,19 +174,19 @@ function Orderbook() {
       return [
         ...cumulativeReservesAreasA.map<ChartArea>(([y1, y2, reserves]) => {
           // either value should be within the chart bounds above zero
-          return [y1, y2, reserves / maxCumulativeReserves, '#FF000022'];
+          return [y1, y2, reserves / maxCumulativeReserves, '#f0534e42'];
         }),
         ...cumulativeReservesAreasB.map<ChartArea>(([y1, y2, reserves]) => {
           // either value should be within the chart bounds above zero
-          return [y1, y2, reserves / maxCumulativeReserves, '#00FF0022'];
+          return [y1, y2, reserves / maxCumulativeReserves, '#2683194f'];
         }),
         ...reservesAreasA.map<ChartArea>(([y1, y2, reserves]) => {
           // either value should be within the chart bounds above zero
-          return [y1, y2, reserves / maxCumulativeReserves, 'red'];
+          return [y1, y2, reserves / maxCumulativeReserves, '#d6363aff'];
         }),
         ...reservesAreasB.map<ChartArea>(([y1, y2, reserves]) => {
           // either value should be within the chart bounds above zero
-          return [y1, y2, reserves / maxCumulativeReserves, 'green'];
+          return [y1, y2, reserves / maxCumulativeReserves, '#26801bFF'];
         }),
       ];
     }

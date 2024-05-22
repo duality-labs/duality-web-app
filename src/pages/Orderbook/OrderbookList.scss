@@ -69,18 +69,25 @@
       }
     }
 
+    td.text-success {
+      color: rgb(38, 128, 27);
+    }
+    td.text-error {
+      color: hsl(1, 66%, 53%);
+    }
+
     .orderbook-list__table__ticks-top .cell-background-gradient {
       background: linear-gradient(
         90deg,
-        rgba(38, 128, 27, 0.1) 0%,
-        rgba(38, 128, 27, 0.25) 100%
+        rgba(38, 128, 27, 0.08) 0%,
+        rgba(38, 129, 26, 0.31) 100%
       );
     }
     .orderbook-list__table__ticks-bottom .cell-background-gradient {
       background: linear-gradient(
         90deg,
-        hsla(0, 84%, 63%, 0.05) 0%,
-        hsla(0, 84%, 63%, 0.25) 100%
+        hsla(0, 84%, 63%, 0.067) 0%,
+        hsla(1, 84%, 62%, 0.259) 100%
       );
     }
   }
