@@ -47,8 +47,10 @@ const defaultWidgetOptions: Partial<ChartingLibraryWidgetOptions> = {
     'header_symbol_search',
     // disable comparing multiple symbols: can get complicated
     'header_compare',
-    // disable mouse-down panning behavior: ensures last tick is current time
-    'chart_scroll',
+    // note: the mouse panning feature is called 'chart_scroll'
+    //       disabling this ensures that the right side of chart is current time
+    //       however this isn't necessary to lock to understand the liquidity
+    //       visualization we have added to the right of it
   ],
   enabled_features: [],
   charts_storage_url: 'https://saveload.tradingview.com',
