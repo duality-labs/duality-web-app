@@ -3,7 +3,7 @@ import useResizeObserver from '@react-hook/resize-observer';
 
 import './OrderbookChartConnector.scss';
 
-type ConnectionPoint = [number, number];
+export type ConnectionPoint = [number, number];
 export type ConnectionArea = [
   ConnectionPoint,
   ConnectionPoint,

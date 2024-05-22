@@ -14,6 +14,7 @@ import OrderBookChart, { ChartPriceAxisInfo } from './OrderbookChart';
 import OrderbookChartConnector, {
   ChartArea,
   ConnectionArea,
+  ConnectionPoint,
 } from './OrderbookChartConnector';
 import OrderBookList from './OrderbookList';
 import OrderBookTradesList from './OrderbookTradesList';
@@ -54,6 +55,40 @@ function Orderbook() {
   >([]);
 
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
+
+  const depthPriceConnectionPoints = useMemo<ConnectionPoint[]>(() => {
+    if (chartPriceAxis && depthPriceIndication && depthBucketOffsets) {
+      const [bucketOffsetsA = [], bucketOffsetsB = []] = depthBucketOffsets;
+      const offset =
+        depthPriceIndication === currentPrice
+          ? // return average of a side's current price bucket
+            ((bucketOffsetsA[0]?.[0][1] || 0) +
+              (bucketOffsetsA[0]?.[1][1] || 0)) /
+              2 || undefined
+          : // return the outer offset of any found bucket
+            (bucketOffsetsA.find(([[innerPrice], [outerPrice]]) => {
+              return (
+                depthPriceIndication < innerPrice &&
+                depthPriceIndication >= outerPrice
+              );
+            }) ??
+              bucketOffsetsB.find(([[innerPrice], [outerPrice]]) => {
+                return (
+                  depthPriceIndication > innerPrice &&
+                  depthPriceIndication <= outerPrice
+                );
+              }))?.[1][1];
+      if (offset) {
+        return [
+          [
+            getChartPricePointOffset(chartPriceAxis, depthPriceIndication),
+            offset,
+          ],
+        ];
+      }
+    }
+    return [];
+  }, [chartPriceAxis, currentPrice, depthBucketOffsets, depthPriceIndication]);
 
   const depthBucketConnections = useMemo<ConnectionArea[][] | undefined>(() => {
     if (currentPrice && chartPriceAxis && buckets && depthBucketOffsets) {
@@ -265,57 +300,7 @@ function Orderbook() {
             </div>
             <div className="chart-depth-connector col">
               <OrderbookChartConnector
-                connectionPoints={useMemo(() => {
-                  if (
-                    chartPriceAxis &&
-                    depthPriceIndication &&
-                    depthBucketOffsets
-                  ) {
-                    const [bucketOffsetsA = [], bucketOffsetsB = []] =
-                      depthBucketOffsets;
-                    const offset =
-                      depthPriceIndication === currentPrice
-                        ? // return average of a side's current price bucket
-                          bucketOffsetsA[0] &&
-                          ((bucketOffsetsA[0][0][1] || 0) +
-                            (bucketOffsetsA[0][1][1] || 0)) /
-                            2
-                        : // return the outer offset of any found bucket
-                          (bucketOffsetsA.find(
-                            ([[innerPrice], [outerPrice]]) => {
-                              return (
-                                depthPriceIndication < innerPrice &&
-                                depthPriceIndication >= outerPrice
-                              );
-                            }
-                          ) ??
-                            bucketOffsetsB.find(
-                              ([[innerPrice], [outerPrice]]) => {
-                                return (
-                                  depthPriceIndication > innerPrice &&
-                                  depthPriceIndication <= outerPrice
-                                );
-                              }
-                            ))?.[1][1];
-                    if (offset) {
-                      return [
-                        [
-                          getChartPricePointOffset(
-                            chartPriceAxis,
-                            depthPriceIndication
-                          ),
-                          offset,
-                        ],
-                      ];
-                    }
-                  }
-                  return [];
-                }, [
-                  chartPriceAxis,
-                  currentPrice,
-                  depthBucketOffsets,
-                  depthPriceIndication,
-                ])}
+                connectionPoints={depthPriceConnectionPoints}
                 connectionAreas={tabIndex === 0 ? connectionAreas : undefined}
                 chartAreas={chartReserveBuckets}
               />
