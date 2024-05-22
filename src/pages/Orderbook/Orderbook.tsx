@@ -58,6 +58,19 @@ function Orderbook() {
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
 
   const priceIndication = depthPriceIndication ?? formPriceIndication;
+  const activeBucketOffsets = useMemo(() => {
+    if (currentPrice && priceIndication && currentPrice !== priceIndication) {
+      const [bucketOffsetsA = [], bucketOffsetsB = []] = depthBucketOffsets;
+      return priceIndication > currentPrice
+        ? bucketOffsetsB?.filter(
+            ([[innerBound]]) => priceIndication > innerBound
+          )
+        : bucketOffsetsA?.filter(
+            ([[innerBound]]) => priceIndication < innerBound
+          );
+    }
+  }, [depthBucketOffsets, currentPrice, priceIndication]);
+
   const priceConnectionLines = useMemo<ConnectionLine[]>(() => {
     if (
       chartPriceAxis &&
@@ -65,7 +78,7 @@ function Orderbook() {
       depthBucketOffsets &&
       currentPrice
     ) {
-      const [bucketOffsetsA = [], bucketOffsetsB = []] = depthBucketOffsets;
+      const [bucketOffsetsA = []] = depthBucketOffsets;
       const offset =
         priceIndication === currentPrice
           ? // return average of a side's current price bucket
@@ -74,24 +87,10 @@ function Orderbook() {
               2 || undefined
           : // check lower buckets
           priceIndication < currentPrice
-          ? // check the inner edge of buckets
-            bucketOffsetsA[1] && priceIndication >= bucketOffsetsA[1][0][0]
-            ? bucketOffsetsA[1][0][1]
-            : bucketOffsetsA.find(([[innerPrice], [outerPrice]]) => {
-                return (
-                  priceIndication < innerPrice && priceIndication >= outerPrice
-                );
-              })?.[1][1]
+          ? activeBucketOffsets?.at(-1)?.[1][1]
           : // check upper buckets
           priceIndication > currentPrice
-          ? // check the inner edge of buckets
-            bucketOffsetsB[1] && priceIndication <= bucketOffsetsB[1][0][0]
-            ? bucketOffsetsB[1][0][1]
-            : bucketOffsetsB.find(([[innerPrice], [outerPrice]]) => {
-                return (
-                  priceIndication > innerPrice && priceIndication <= outerPrice
-                );
-              })?.[1][1]
+          ? activeBucketOffsets?.at(-1)?.[1][1]
           : undefined;
       if (offset) {
         return [
@@ -100,7 +99,13 @@ function Orderbook() {
       }
     }
     return [];
-  }, [chartPriceAxis, currentPrice, depthBucketOffsets, priceIndication]);
+  }, [
+    activeBucketOffsets,
+    chartPriceAxis,
+    currentPrice,
+    depthBucketOffsets,
+    priceIndication,
+  ]);
 
   const depthBucketConnections = useMemo<ConnectionArea[][] | undefined>(() => {
     if (currentPrice && chartPriceAxis && buckets && depthBucketOffsets) {
@@ -248,22 +253,8 @@ function Orderbook() {
       const price = priceIndication;
       const [innerBucket, outerBucket] =
         price <= currentPrice
-          ? [
-              bucketOffsetsA[1],
-              bucketOffsetsA.find(
-                ([[innerPriceOffset], [outerPriceOffset]]) => {
-                  return price < innerPriceOffset && price >= outerPriceOffset;
-                }
-              ),
-            ]
-          : [
-              bucketOffsetsB[1],
-              bucketOffsetsB.find(
-                ([[innerPriceOffset], [outerPriceOffset]]) => {
-                  return price > innerPriceOffset && price <= outerPriceOffset;
-                }
-              ),
-            ];
+          ? [bucketOffsetsA[1], activeBucketOffsets?.at(-1)]
+          : [bucketOffsetsB[1], activeBucketOffsets?.at(-1)];
       if (innerBucket && outerBucket) {
         return [
           [
@@ -271,14 +262,20 @@ function Orderbook() {
             innerBucket[0][1] || 0,
           ],
           [
-            getChartPricePointOffset(chartPriceAxis, outerBucket[1][0]),
+            getChartPricePointOffset(chartPriceAxis, priceIndication),
             outerBucket[1][1] || 0,
           ],
           0.1,
         ];
       }
     }
-  }, [chartPriceAxis, currentPrice, depthBucketOffsets, priceIndication]);
+  }, [
+    activeBucketOffsets,
+    chartPriceAxis,
+    currentPrice,
+    depthBucketOffsets,
+    priceIndication,
+  ]);
 
   const connectionAreas = useMemo(() => {
     return [

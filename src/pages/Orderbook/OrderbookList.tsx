@@ -238,6 +238,14 @@ export default function OrderBookList({
     }
   }, [buckets, currentPrice, shownTickRows]);
 
+  const activeBuckets = useMemo(() => {
+    if (currentPrice && priceIndication && currentPrice !== priceIndication) {
+      return priceIndication > currentPrice
+        ? bucketsB?.filter(([innerBound]) => priceIndication > innerBound)
+        : bucketsA?.filter(([innerBound]) => priceIndication < innerBound);
+    }
+  }, [bucketsA, bucketsB, currentPrice, priceIndication]);
+
   const orderbookDepth = (
     <div className="flex-centered orderbook-list flex" ref={tableContainerRef}>
       <table className="orderbook-list__table">
@@ -262,7 +270,8 @@ export default function OrderBookList({
         <tbody className="orderbook-list__table__ticks-top">
           {topBuckets?.map((bucket, index) => {
             const [minPrice, price, reserves] = bucket || [];
-            return minPrice && price && reserves ? (
+            const lastBucket = bucketsB?.at(-1);
+            return minPrice && price && reserves && lastBucket ? (
               <OrderbookListRow
                 key={price}
                 price={price}
@@ -272,11 +281,12 @@ export default function OrderBookList({
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesB}
                 variant="error"
-                active={price && priceIndication && minPrice < priceIndication}
+                active={bucket && activeBuckets?.includes(bucket)}
                 hovered={
+                  bucket &&
                   priceIndication &&
-                  minPrice < priceIndication &&
-                  priceIndication <= price
+                  activeBuckets?.at(-1) === bucket &&
+                  priceIndication <= lastBucket[1]
                 }
                 onHighlight={onHighlightPrice}
                 onClick={(bucketPrice) => {
@@ -339,7 +349,8 @@ export default function OrderBookList({
         <tbody className="orderbook-list__table__ticks-bottom">
           {bottomBuckets?.map((bucket, index) => {
             const [maxPrice, price, reserves] = bucket || [];
-            return maxPrice && price && reserves ? (
+            const lastBucket = bucketsA?.at(-1);
+            return maxPrice && price && reserves && lastBucket ? (
               <OrderbookListRow
                 key={price}
                 price={price}
@@ -349,11 +360,12 @@ export default function OrderBookList({
                 priceDecimalPlaces={priceDecimalPlaces}
                 amountDecimalPlaces={amountDecimalPlacesA}
                 variant="success"
-                active={price && priceIndication && maxPrice > priceIndication}
+                active={bucket && activeBuckets?.includes(bucket)}
                 hovered={
+                  bucket &&
                   priceIndication &&
-                  maxPrice > priceIndication &&
-                  priceIndication >= price
+                  activeBuckets?.at(-1) === bucket &&
+                  priceIndication >= lastBucket[1]
                 }
                 onHighlight={onHighlightPrice}
                 onClick={(bucketPrice) => {
