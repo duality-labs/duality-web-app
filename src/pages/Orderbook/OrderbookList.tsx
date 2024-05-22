@@ -510,10 +510,12 @@ function OrderbookListRow({
           className="cell-background-gradient absolute filled"
           style={{ width: weight && `${Math.round(weight * 100)}%` }}
         ></div>
-        {formatAmount(reserveValueUSD ?? '...', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}
+        <div className="relative">
+          {formatAmount(reserveValueUSD ?? '...', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+        </div>
       </td>
     </tr>
   );
