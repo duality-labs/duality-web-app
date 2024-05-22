@@ -14,7 +14,7 @@ import OrderBookChart, { ChartPriceAxisInfo } from './OrderbookChart';
 import OrderbookChartConnector, {
   ChartArea,
   ConnectionArea,
-  ConnectionPoint,
+  ConnectionLine,
 } from './OrderbookChartConnector';
 import OrderBookList from './OrderbookList';
 import OrderBookTradesList from './OrderbookTradesList';
@@ -56,7 +56,7 @@ function Orderbook() {
 
   const [, currentPrice] = useRealtimeDisplayPrice(tokenA, tokenB);
 
-  const depthPriceConnectionPoints = useMemo<ConnectionPoint[]>(() => {
+  const depthPriceConnectionLines = useMemo<ConnectionLine[]>(() => {
     if (chartPriceAxis && depthPriceIndication && depthBucketOffsets) {
       const [bucketOffsetsA = [], bucketOffsetsB = []] = depthBucketOffsets;
       const offset =
@@ -300,7 +300,7 @@ function Orderbook() {
             </div>
             <div className="chart-depth-connector col">
               <OrderbookChartConnector
-                connectionPoints={depthPriceConnectionPoints}
+                connectionLines={depthPriceConnectionLines}
                 connectionAreas={tabIndex === 0 ? connectionAreas : undefined}
                 chartAreas={chartReserveBuckets}
               />

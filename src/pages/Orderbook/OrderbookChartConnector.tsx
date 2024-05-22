@@ -3,10 +3,10 @@ import useResizeObserver from '@react-hook/resize-observer';
 
 import './OrderbookChartConnector.scss';
 
-export type ConnectionPoint = [number, number];
+export type ConnectionLine = [y1: number, y2: number];
 export type ConnectionArea = [
-  ConnectionPoint,
-  ConnectionPoint,
+  ConnectionLine,
+  ConnectionLine,
   weight: number,
   fillColor?: string | CanvasGradient | CanvasPattern
 ];
@@ -18,11 +18,11 @@ export type ChartArea = [
 ];
 
 export default function OrderbookChartConnector({
-  connectionPoints,
+  connectionLines,
   connectionAreas,
   chartAreas,
 }: {
-  connectionPoints?: ConnectionPoint[];
+  connectionLines?: ConnectionLine[];
   connectionAreas?: ConnectionArea[];
   chartAreas?: ChartArea[];
 }) {
@@ -50,8 +50,8 @@ export default function OrderbookChartConnector({
         const height = canvas.height;
         ctx?.clearRect(0, 0, width, height);
         // draw elements
-        if (connectionPoints?.length) {
-          drawConnectionPoints(ctx, connectionPoints);
+        if (connectionLines?.length) {
+          drawConnectionLines(ctx, connectionLines);
         }
         connectionAreas?.forEach((connectionArea) => {
           drawConnectionArea(ctx, connectionArea);
@@ -70,15 +70,15 @@ export default function OrderbookChartConnector({
       }
 
       // define drawing functions
-      function drawConnectionPoints(
+      function drawConnectionLines(
         ctx: CanvasRenderingContext2D,
-        connectionPoints: ConnectionPoint[]
+        connectionLines: ConnectionLine[]
       ) {
         ctx.lineWidth = 1;
         ctx.lineJoin = 'round';
         ctx.strokeStyle = 'white';
         ctx.beginPath();
-        connectionPoints.forEach(([y1, y2]) => {
+        connectionLines.forEach(([y1, y2]) => {
           ctx.moveTo(sharpPoint(connectionCurve[0]), sharpPoint(y1));
           ctx.lineTo(sharpPoint(connectionCurve[1]), sharpPoint(y1));
           ctx.bezierCurveTo(
@@ -149,7 +149,7 @@ export default function OrderbookChartConnector({
         return Math.round(value) + 0.5;
       }
     },
-    [chartAreas, connectionAreas, connectionPoints]
+    [chartAreas, connectionAreas, connectionLines]
   );
 
   // store ref but also draw on canvas when first found
