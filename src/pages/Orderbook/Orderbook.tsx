@@ -293,7 +293,11 @@ function Orderbook() {
                 <OrderBookChart
                   tokenA={tokenB}
                   tokenB={tokenA}
-                  priceIndication={depthPriceIndication}
+                  priceIndication={
+                    depthPriceIndication !== currentPrice
+                      ? depthPriceIndication
+                      : undefined
+                  }
                   setPriceAxis={setChartPriceAxis}
                 />
               )}
